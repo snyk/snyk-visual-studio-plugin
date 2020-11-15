@@ -9,8 +9,7 @@ using System.Runtime.Serialization.Json;
 namespace snyk_visual_studio_plugin
 {
     class SnykCliDownloader
-    {
-        private const string CliFileName = "snyk-win.exe";
+    {        
         private const string LatestReleasesUrl = "https://api.github.com/repos/snyk/snyk/releases/latest";
         private const string LatestReleaseDownloadUrl = "https://github.com/snyk/snyk/releases/download/{0}/{1}";
 
@@ -47,7 +46,7 @@ namespace snyk_visual_studio_plugin
 
         public void Download()
         {
-            if (!File.Exists(GetSnykCliPath()))
+            if (!File.Exists(SnykCLI.GetSnykCliPath()))
             {
                 using (var webClient = new WebClient())
                 {
@@ -60,29 +59,17 @@ namespace snyk_visual_studio_plugin
 
                     string cliVersion = latestReleaseInfo.TagName;
 
-                    string cliDownloadUrl = String.Format(LatestReleaseDownloadUrl, cliVersion, CliFileName);
+                    string cliDownloadUrl = String.Format(LatestReleaseDownloadUrl, cliVersion, SnykCLI.CliFileName);
 
-                    string snykDirectoryPath = GetSnykDirectoryPath();
+                    string snykDirectoryPath = SnykCLI.GetSnykDirectoryPath();
 
                     Directory.CreateDirectory(snykDirectoryPath);
 
-                    string cliFileDestinationPath = GetSnykCliPath();
+                    string cliFileDestinationPath = SnykCLI.GetSnykCliPath();
 
                     webClient.DownloadFile(cliDownloadUrl, cliFileDestinationPath);
                 }
             }
-        }
-
-        string GetSnykDirectoryPath()
-        {
-            string appDataPath = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData);
-
-            return appDataPath + Path.DirectorySeparatorChar + "Snyk";
-        }
-
-        string GetSnykCliPath()
-        {
-            return GetSnykDirectoryPath() + Path.DirectorySeparatorChar + CliFileName;
-        }
+        }        
     }
 }

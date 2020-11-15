@@ -53,7 +53,9 @@
   </PropertyGroup>
   <ItemGroup>
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="SnykCLI.cs" />
     <Compile Include="SnykCliDownloader.cs" />
+    <Compile Include="SnykRunScanCommand.cs" />
     <Compile Include="SnykVSPackage.cs" />
   </ItemGroup>
   <ItemGroup>
@@ -65,7 +67,11 @@
   </ItemGroup>
   <ItemGroup>
     <Content Include="index.html" />
+    <Content Include="Resources\SnykRunScanCommand.png" />
     <Content Include="Resources\SnykVSPackage.ico" />
+    <VSCTCompile Include="SnykVSPackage.vsct">
+      <ResourceName>Menus.ctmenu</ResourceName>
+    </VSCTCompile>
     <Content Include="stylesheet.css" />
   </ItemGroup>
   <ItemGroup>
