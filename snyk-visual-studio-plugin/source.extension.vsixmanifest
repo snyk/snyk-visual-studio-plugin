@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <PackageManifest Version="2.0.0" xmlns="http://schemas.microsoft.com/developer/vsx-schema/2011" xmlns:d="http://schemas.microsoft.com/developer/vsx-schema-design/2011">
   <Metadata>
-    <Identity Id="snyk_visual_studio_plugin.Alexander.89fa8cd3-437c-47f9-9e67-d773233f18aa" Version="1.0" Language="en-US" Publisher="Alexander" />
+    <Identity Id="snyk_visual_studio_plugin.Alexander.154948da-e3ba-45ce-9bee-9688a7e30462" Version="1.0" Language="en-US" Publisher="Alexander" />
     <DisplayName>snyk_visual_studio_plugin</DisplayName>
     <Description>Empty VSIX Project.</Description>
   </Metadata>
