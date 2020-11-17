@@ -41,6 +41,7 @@ namespace snyk_visual_studio_plugin
     [SuppressMessage("StyleCop.CSharp.DocumentationRules", "SA1650:ElementDocumentationMustBeSpelledCorrectly", Justification = "pkgdef, VS and vsixmanifest are valid VS terms")]
     [ProvideAutoLoad(UIContextGuids80.SolutionExists)]
     [ProvideMenuResource("Menus.ctmenu", 1)]
+    [ProvideToolWindow(typeof(SnykToolWindow))]
     public sealed class SnykVSPackage : Package
     {
         /// <summary>
@@ -73,6 +74,7 @@ namespace snyk_visual_studio_plugin
 
             cliDownloader.Download();
             SnykRunScanCommand.Initialize(this);
+            SnykToolWindowCommand.Initialize(this);
         }
 
         #endregion
