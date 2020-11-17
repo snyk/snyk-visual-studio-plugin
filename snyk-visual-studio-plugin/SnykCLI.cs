@@ -34,7 +34,7 @@ namespace snyk_visual_studio_plugin
                 }
             };
 
-            cliProcess.StartInfo.EnvironmentVariables["SNYK_TOKEN"] = "0d32ef34-a507-4707-92ea-abdb779502e0"; // TODO: Replace with Settings value.
+            cliProcess.StartInfo.EnvironmentVariables["SNYK_TOKEN"] = ""; // TODO: Replace with Settings value.
             cliProcess.StartInfo.WorkingDirectory = GetProjectDirectory();
 
             StringBuilder stringBuilder = new StringBuilder();
