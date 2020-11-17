@@ -9,6 +9,8 @@ using System.ComponentModel.Design;
 using System.Globalization;
 using Microsoft.VisualStudio.Shell;
 using Microsoft.VisualStudio.Shell.Interop;
+using System.Windows.Controls;
+using System.Windows.Data;
 
 namespace snyk_visual_studio_plugin
 {
@@ -107,7 +109,60 @@ namespace snyk_visual_studio_plugin
                     OLEMSGDEFBUTTON.OLEMSGDEFBUTTON_FIRST);
             } else
             {
+                ToolWindowPane toolWindowPane = this.package.FindToolWindow(typeof(SnykToolWindow), 0, true);
 
+                if ((null == toolWindowPane) || (null == toolWindowPane.Frame))
+                {
+                    throw new NotSupportedException("Cannot create window.");
+                }
+
+                IVsWindowFrame windowFrame = (IVsWindowFrame)toolWindowPane.Frame;
+                Microsoft.VisualStudio.ErrorHandler.ThrowOnFailure(windowFrame.Show());
+                
+                SnykToolWindowControl toolWindowControl = (SnykToolWindowControl)toolWindowPane.Content;
+                DataGrid resultsDataGrid = toolWindowControl.resultsDataGrid;
+
+                resultsDataGrid.Columns.Clear();
+                resultsDataGrid.Items.Clear();                
+
+                DataGridTextColumn titleTextColumn = new DataGridTextColumn();
+                titleTextColumn.Header = "Title";
+                titleTextColumn.Binding = new Binding("title");
+
+                DataGridTextColumn versionTextColumn = new DataGridTextColumn();
+                versionTextColumn.Header = "Version";
+                versionTextColumn.Binding = new Binding("version");
+
+                DataGridTextColumn descriptionTextColumn = new DataGridTextColumn();
+                descriptionTextColumn.Header = "Description";
+                descriptionTextColumn.Binding = new Binding("description");
+
+                DataGridTextColumn severityTextColumn = new DataGridTextColumn();
+                severityTextColumn.Header = "Severity";
+                severityTextColumn.Binding = new Binding("severity");
+
+                DataGridTextColumn fixedInTextColumn = new DataGridTextColumn();
+                fixedInTextColumn.Header = "Fixed In";
+                fixedInTextColumn.Binding = new Binding("fixedIn");
+
+                DataGridTextColumn moduleNameTextColumn = new DataGridTextColumn();
+                moduleNameTextColumn.Header = "Module Name";
+                moduleNameTextColumn.Binding = new Binding("moduleName");
+               
+                resultsDataGrid.Columns.Add(titleTextColumn);
+                resultsDataGrid.Columns.Add(moduleNameTextColumn);
+                resultsDataGrid.Columns.Add(versionTextColumn);
+                resultsDataGrid.Columns.Add(severityTextColumn);
+                //resultsDataGrid.Columns.Add(fixedInTextColumn);
+                resultsDataGrid.Columns.Add(descriptionTextColumn);
+
+                foreach (CLIVulnerabilities cliVulnerabilities in cliResult.CLIVulnerabilities)
+                {
+                    foreach (Vulnerability vulnerability in cliVulnerabilities.vulnerabilities)
+                    {
+                        resultsDataGrid.Items.Add(vulnerability);
+                    }
+                }                
             }            
         }
     }
