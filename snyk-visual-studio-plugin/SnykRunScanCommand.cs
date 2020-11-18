@@ -95,8 +95,10 @@ namespace snyk_visual_studio_plugin
         /// <param name="e">Event args.</param>
         private void MenuItemCallback(object sender, EventArgs e)
         {
-            SnykCLI cli = new SnykCLI(this.ServiceProvider);
-            CLIResult cliResult = cli.Scan();
+            SnykVSPackage snykPackage = (SnykVSPackage)package;
+
+            SnykCLI cli = new SnykCLI(snykPackage, this.ServiceProvider);
+            CLIResult cliResult = cli.Scan();            
 
             if (!cliResult.IsSuccessful())
             {
