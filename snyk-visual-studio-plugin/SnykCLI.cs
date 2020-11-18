@@ -14,27 +14,46 @@ namespace snyk_visual_studio_plugin
         public const string CliFileName = "snyk-win.exe";
 
         private IServiceProvider ServiceProvider;
+        private SnykVSPackage package;
 
-        public SnykCLI(IServiceProvider ServiceProvider)
+        public SnykCLI(SnykVSPackage snykPackage, IServiceProvider ServiceProvider)
         {
             this.ServiceProvider = ServiceProvider;
+            this.package = snykPackage;
         }
 
         public CLIResult Scan()
         {
+            StringBuilder commandsStringBuilder = new StringBuilder("--json test ");
+
+            if (!String.IsNullOrEmpty(package.CustomEndpoint))
+            {
+                commandsStringBuilder.Append(String.Format(" --api=%s ", package.CustomEndpoint));
+            }
+
+            if (package.IgnoreUnknownCA)
+            {
+                commandsStringBuilder.Append(" --insecure ");
+            }
+
+            if (!String.IsNullOrEmpty(package.Organization))
+            {                
+                commandsStringBuilder.Append(String.Format(" --org=%s ", package.Organization));
+            }
+            
             var cliProcess = new System.Diagnostics.Process
             {
                 StartInfo = new ProcessStartInfo
                 {
                     FileName = GetSnykCliPath(),
-                    Arguments = "--json test",
+                    Arguments = commandsStringBuilder.ToString(),
                     UseShellExecute = false,
                     RedirectStandardOutput = true,
                     CreateNoWindow = true,
                 }
             };
 
-            cliProcess.StartInfo.EnvironmentVariables["SNYK_TOKEN"] = ""; // TODO: Replace with Settings value.
+            cliProcess.StartInfo.EnvironmentVariables["SNYK_TOKEN"] = package.ApiToken;
             cliProcess.StartInfo.WorkingDirectory = GetProjectDirectory();
 
             StringBuilder stringBuilder = new StringBuilder();

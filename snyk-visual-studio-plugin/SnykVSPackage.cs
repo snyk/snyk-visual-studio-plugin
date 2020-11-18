@@ -15,9 +15,54 @@ using Microsoft.VisualStudio.OLE.Interop;
 using Microsoft.VisualStudio.Shell;
 using Microsoft.VisualStudio.Shell.Interop;
 using Microsoft.Win32;
+using System.ComponentModel;
 
 namespace snyk_visual_studio_plugin
 {
+
+    public class SnykOptionsPageGrid : DialogPage
+    {
+        private string apiToken = "";
+        private string customEndpoint = "";
+        private string organization = "";
+        private bool ignoreUnknownCA = false;
+
+        [Category("Snyk")]
+        [DisplayName("Token")]
+        [Description("Snyk CLI Authentication token.")]
+        public string ApiToken
+        {
+            get { return apiToken; }
+            set { apiToken = value; }
+        }
+
+        [Category("Snyk")]
+        [DisplayName("Custom endpoint")]
+        [Description("Custom endpoint.")]
+        public string CustomEndpoint
+        {
+            get { return customEndpoint; }
+            set { customEndpoint = value; }
+        }
+
+        [Category("Snyk")]
+        [DisplayName("Organization")]
+        [Description("Organization")]
+        public string Organization
+        {
+            get { return organization; }
+            set { organization = value; }
+        }
+
+        [Category("Snyk")]
+        [DisplayName("Ignore unknown CA")]
+        [Description("Ignore unknown CA.")]
+        public bool IgnoreUnknownCA
+        {
+            get { return ignoreUnknownCA; }
+            set { ignoreUnknownCA = value; }
+        }
+    }
     /// <summary>
     /// This is the class that implements the package exposed by this assembly.
     /// </summary>
@@ -42,6 +87,7 @@ namespace snyk_visual_studio_plugin
     [ProvideAutoLoad(UIContextGuids80.SolutionExists)]
     [ProvideMenuResource("Menus.ctmenu", 1)]
     [ProvideToolWindow(typeof(SnykToolWindow))]
+    [ProvideOptionPage(typeof(SnykOptionsPageGrid), "Snyk", "General settings", 0, 0, true)]
     public sealed class SnykVSPackage : Package
     {
         /// <summary>
@@ -58,6 +104,43 @@ namespace snyk_visual_studio_plugin
             // any Visual Studio service because at this point the package object is created but
             // not sited yet inside Visual Studio environment. The place to do all the other
             // initialization is the Initialize method.
+        }        
+
+        public string ApiToken
+        {
+            get
+            {
+                return GetSnykOptionsPageGrid().ApiToken;
+            }
+        }
+
+        public string Organization
+        {
+            get
+            {
+                return GetSnykOptionsPageGrid().Organization;
+            }
+        }
+
+        public bool IgnoreUnknownCA
+        {
+            get
+            {
+                return GetSnykOptionsPageGrid().IgnoreUnknownCA;
+            }
+        }
+
+        public string CustomEndpoint
+        {
+            get
+            {
+                return GetSnykOptionsPageGrid().CustomEndpoint;
+            }
+        }
+
+        private SnykOptionsPageGrid GetSnykOptionsPageGrid()
+        {
+            return (SnykOptionsPageGrid)GetDialogPage(typeof(SnykOptionsPageGrid));
         }
 
         #region Package Members
