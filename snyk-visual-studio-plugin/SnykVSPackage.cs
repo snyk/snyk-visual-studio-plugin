@@ -5,64 +5,76 @@
 //------------------------------------------------------------------------------
 
 using System;
-using System.ComponentModel.Design;
-using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
-using System.Globalization;
 using System.Runtime.InteropServices;
-using Microsoft.VisualStudio;
-using Microsoft.VisualStudio.OLE.Interop;
 using Microsoft.VisualStudio.Shell;
 using Microsoft.VisualStudio.Shell.Interop;
-using Microsoft.Win32;
-using System.ComponentModel;
+using System.Windows.Forms;
 
 namespace snyk_visual_studio_plugin
 {
+    [Guid("6558dc66-aad3-41d6-84ed-8bea01fc852d")]
+    public class SnykProjectOptionsDialogPage : DialogPage
+    {        
+        protected override IWin32Window Window
+        {
+            get
+            {
+                SnykProjectOptionsUserControl optionsUserControl = new SnykProjectOptionsUserControl(SnykVSPackage.GetInstance());
+                optionsUserControl.projectOptionsPage = this;
+                optionsUserControl.Initialize();
 
-    public class SnykOptionsPageGrid : DialogPage
+                return optionsUserControl;
+            }
+        }
+    }
+
+    [Guid("d45468c1-33d2-4dca-9780-68abaedf95e7")]
+    public class SnykGeneralOptionsDialogPage : DialogPage
     {
         private string apiToken = "";
         private string customEndpoint = "";
         private string organization = "";
         private bool ignoreUnknownCA = false;
 
-        [Category("Snyk")]
-        [DisplayName("Token")]
-        [Description("Snyk CLI Authentication token.")]
         public string ApiToken
         {
             get { return apiToken; }
             set { apiToken = value; }
         }
 
-        [Category("Snyk")]
-        [DisplayName("Custom endpoint")]
-        [Description("Custom endpoint.")]
         public string CustomEndpoint
         {
             get { return customEndpoint; }
             set { customEndpoint = value; }
         }
 
-        [Category("Snyk")]
-        [DisplayName("Organization")]
-        [Description("Organization")]
         public string Organization
         {
             get { return organization; }
             set { organization = value; }
         }
 
-        [Category("Snyk")]
-        [DisplayName("Ignore unknown CA")]
-        [Description("Ignore unknown CA.")]
         public bool IgnoreUnknownCA
         {
             get { return ignoreUnknownCA; }
             set { ignoreUnknownCA = value; }
         }
+
+        protected override IWin32Window Window
+        {
+            get
+            {
+                SnykGeneralSettingsUserControl generalSettingsUserControl = new SnykGeneralSettingsUserControl();
+
+                generalSettingsUserControl.optionsDialogPage = this;
+                generalSettingsUserControl.Initialize();
+
+                return generalSettingsUserControl;
+            }
+        }
     }
+
     /// <summary>
     /// This is the class that implements the package exposed by this assembly.
     /// </summary>
@@ -87,13 +99,16 @@ namespace snyk_visual_studio_plugin
     [ProvideAutoLoad(UIContextGuids80.SolutionExists)]
     [ProvideMenuResource("Menus.ctmenu", 1)]
     [ProvideToolWindow(typeof(SnykToolWindow))]
-    [ProvideOptionPage(typeof(SnykOptionsPageGrid), "Snyk", "General settings", 0, 0, true)]
+    [ProvideOptionPage(typeof(SnykGeneralOptionsDialogPage), "Snyk", "General settings", 1000, 1001, true)]
+    [ProvideOptionPage(typeof(SnykProjectOptionsDialogPage), "Snyk", "Project settings", 1000, 1002, true)]
     public sealed class SnykVSPackage : Package
     {
         /// <summary>
         /// SnykVSPackage GUID string.
         /// </summary>
         public const string PackageGuidString = "5ddf9abb-42ec-49b9-b201-b3e2fc2f8f89";
+
+        private static SnykVSPackage instance;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="SnykVSPackage"/> class.
@@ -104,13 +119,19 @@ namespace snyk_visual_studio_plugin
             // any Visual Studio service because at this point the package object is created but
             // not sited yet inside Visual Studio environment. The place to do all the other
             // initialization is the Initialize method.
+            instance = this;
         }        
+
+        public static SnykVSPackage GetInstance()
+        {
+            return instance;
+        }
 
         public string ApiToken
         {
             get
             {
-                return GetSnykOptionsPageGrid().ApiToken;
+                return GetSnykGeneralOptionsDialogPage().ApiToken;
             }
         }
 
@@ -118,7 +139,7 @@ namespace snyk_visual_studio_plugin
         {
             get
             {
-                return GetSnykOptionsPageGrid().Organization;
+                return GetSnykGeneralOptionsDialogPage().Organization;
             }
         }
 
@@ -126,7 +147,7 @@ namespace snyk_visual_studio_plugin
         {
             get
             {
-                return GetSnykOptionsPageGrid().IgnoreUnknownCA;
+                return GetSnykGeneralOptionsDialogPage().IgnoreUnknownCA;
             }
         }
 
@@ -134,15 +155,23 @@ namespace snyk_visual_studio_plugin
         {
             get
             {
-                return GetSnykOptionsPageGrid().CustomEndpoint;
+                return GetSnykGeneralOptionsDialogPage().CustomEndpoint;
             }
         }
 
-        private SnykOptionsPageGrid GetSnykOptionsPageGrid()
+        public string AdditionalOptions
         {
-            return (SnykOptionsPageGrid)GetDialogPage(typeof(SnykOptionsPageGrid));
+            get
+            {
+                return SnykProjectSettingsService.NewInstance(this).GetAdditionalOptions();
+            }
         }
 
+        private SnykGeneralOptionsDialogPage GetSnykGeneralOptionsDialogPage()
+        {
+            return (SnykGeneralOptionsDialogPage) GetDialogPage(typeof(SnykGeneralOptionsDialogPage));
+        }
+        
         #region Package Members
 
         /// <summary>

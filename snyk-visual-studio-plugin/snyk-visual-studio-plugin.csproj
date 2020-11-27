@@ -57,13 +57,28 @@
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="SnykCLI.cs" />
     <Compile Include="SnykCliDownloader.cs" />
+    <Compile Include="SnykGeneralSettingsUserControl.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="SnykGeneralSettingsUserControl.Designer.cs">
+      <DependentUpon>SnykGeneralSettingsUserControl.cs</DependentUpon>
+    </Compile>
+    <Compile Include="SnykProjectOptionsUserControl.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="SnykProjectOptionsUserControl.Designer.cs">
+      <DependentUpon>SnykProjectOptionsUserControl.cs</DependentUpon>
+    </Compile>
+    <Compile Include="SnykProjectSettingsService.cs" />
     <Compile Include="SnykRunScanCommand.cs" />
     <Compile Include="SnykToolWindow.cs" />
     <Compile Include="SnykToolWindowCommand.cs" />
     <Compile Include="SnykToolWindowControl.xaml.cs">
       <DependentUpon>SnykToolWindowControl.xaml</DependentUpon>
     </Compile>
-    <Compile Include="SnykVSPackage.cs" />
+    <Compile Include="SnykVSPackage.cs">
+      <SubType>Component</SubType>
+    </Compile>
   </ItemGroup>
   <ItemGroup>
     <None Include="Key.snk" />
@@ -195,6 +210,12 @@
     <Reference Include="WindowsBase" />
   </ItemGroup>
   <ItemGroup>
+    <EmbeddedResource Include="SnykGeneralSettingsUserControl.resx">
+      <DependentUpon>SnykGeneralSettingsUserControl.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="SnykProjectOptionsUserControl.resx">
+      <DependentUpon>SnykProjectOptionsUserControl.cs</DependentUpon>
+    </EmbeddedResource>
     <EmbeddedResource Include="VSPackage.resx">
       <MergeWithCTO>true</MergeWithCTO>
       <ManifestResourceName>VSPackage</ManifestResourceName>
