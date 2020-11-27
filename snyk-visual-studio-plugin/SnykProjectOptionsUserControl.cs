@@ -43,6 +43,7 @@ namespace snyk_visual_studio_plugin
             }
             catch (Exception exception)
             {
+                additionalOptionsTextBox.Text = "";
             }
         }
 
