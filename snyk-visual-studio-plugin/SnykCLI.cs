@@ -40,7 +40,12 @@ namespace snyk_visual_studio_plugin
             {                
                 commandsStringBuilder.Append(String.Format(" --org=%s ", package.Organization));
             }
-            
+
+            if (!String.IsNullOrEmpty(package.AdditionalOptions))
+            {
+                commandsStringBuilder.Append(String.Format(" %s ", package.AdditionalOptions));
+            }
+
             var cliProcess = new System.Diagnostics.Process
             {
                 StartInfo = new ProcessStartInfo
