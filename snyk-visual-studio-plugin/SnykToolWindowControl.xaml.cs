@@ -4,7 +4,7 @@
 // </copyright>
 //------------------------------------------------------------------------------
 
-namespace Snyk.VisualStudio.Extension
+namespace Snyk.VisualStudio.Extension.UI
 {
     using System.Diagnostics.CodeAnalysis;
     using System.Windows;

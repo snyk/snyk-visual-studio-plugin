@@ -7,7 +7,7 @@ using System.Runtime.Serialization.Json;
 using System.Text;
 using EnvDTE;
 
-namespace Snyk.VisualStudio.Extension
+namespace Snyk.VisualStudio.Extension.CLI
 {
     class SnykCli
     {
@@ -112,14 +112,14 @@ namespace Snyk.VisualStudio.Extension
                     };
                 } else
                 {
-                    // TODO convert to CLIError and return CliResult with error
+                    // TODO convert to CliError and return CliResult with error
 
                     // TODO convert to CliResult
-                    var cliError = new CLIError();
+                    var cliError = new CliError();
                     var memoryStream = new MemoryStream(Encoding.UTF8.GetBytes(rawResultStr));
                     var jsonSerializer = new DataContractJsonSerializer(cliError.GetType());
 
-                    cliError = jsonSerializer.ReadObject(memoryStream) as CLIError;
+                    cliError = jsonSerializer.ReadObject(memoryStream) as CliError;
 
                     memoryStream.Close();
                     
@@ -130,10 +130,10 @@ namespace Snyk.VisualStudio.Extension
                 }
             } else
             {
-                // TODO CliResult with CLIError. CLIError create and add raw result string.
+                // TODO CliResult with CliError. CliError create and add raw result string.
                 return new CliResult
                 {
-                    Error = new CLIError
+                    Error = new CliError
                     {
                         Message = rawResultStr
                     }

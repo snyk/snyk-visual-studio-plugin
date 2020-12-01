@@ -1,9 +1,9 @@
 ﻿using System.Runtime.Serialization;
 
-namespace Snyk.VisualStudio.Extension
+namespace Snyk.VisualStudio.Extension.CLI
 {
     [DataContract]
-    class CLIError
+    class CliError
     {
         [DataMember(Name = "ok")]
         internal bool IsSuccess;

@@ -10,6 +10,9 @@ using System.Runtime.InteropServices;
 using Microsoft.VisualStudio.Shell;
 using Microsoft.VisualStudio.Shell.Interop;
 using System.Windows.Forms;
+using Snyk.VisualStudio.Extension.UI;
+using Snyk.VisualStudio.Extension.Settings;
+using Snyk.VisualStudio.Extension.CLI;
 
 namespace Snyk.VisualStudio.Extension
 {
@@ -20,7 +23,7 @@ namespace Snyk.VisualStudio.Extension
         {
             get
             {
-                SnykProjectOptionsUserControl optionsUserControl = new SnykProjectOptionsUserControl(SnykVSPackage.GetInstance());
+                var optionsUserControl = new SnykProjectOptionsUserControl(SnykVSPackage.GetInstance());
                 optionsUserControl.projectOptionsPage = this;
                 optionsUserControl.Initialize();
 
@@ -65,7 +68,7 @@ namespace Snyk.VisualStudio.Extension
         {
             get
             {
-                SnykGeneralSettingsUserControl generalSettingsUserControl = new SnykGeneralSettingsUserControl();
+                var generalSettingsUserControl = new SnykGeneralSettingsUserControl();
 
                 generalSettingsUserControl.optionsDialogPage = this;
                 generalSettingsUserControl.Initialize();
@@ -182,7 +185,7 @@ namespace Snyk.VisualStudio.Extension
         {
             base.Initialize();
 
-            SnykCliDownloader cliDownloader = new SnykCliDownloader();
+            var cliDownloader = new SnykCliDownloader();
 
             cliDownloader.Download();
             SnykRunScanCommand.Initialize(this);
