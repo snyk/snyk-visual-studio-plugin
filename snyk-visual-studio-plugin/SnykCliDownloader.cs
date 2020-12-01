@@ -8,28 +8,28 @@ using System.Runtime.Serialization.Json;
 
 namespace snyk_visual_studio_plugin
 {
+    [DataContract]
+    internal class LatestReleaseInfo
+    {
+        [DataMember]
+        internal string Url;
+
+        [DataMember]
+        internal int Id;
+
+        [DataMember(Name = "tag_name")]
+        internal string TagName;
+
+        [DataMember]
+        internal string Name;
+    }
+
     class SnykCliDownloader
     {        
         private const string LatestReleasesUrl = "https://api.github.com/repos/snyk/snyk/releases/latest";
         private const string LatestReleaseDownloadUrl = "https://github.com/snyk/snyk/releases/download/{0}/{1}";
-
-        [DataContract]
-        internal class LatestReleaseInfo
-        {
-            [DataMember]
-            internal string Url;
-
-            [DataMember]
-            internal int Id;
-
-            [DataMember(Name = "tag_name")]
-            internal string TagName;
-
-            [DataMember]
-            internal string Name;
-        }
-
-        private LatestReleaseInfo getLatestReleaseInfo(WebClient webClient)
+        
+        public LatestReleaseInfo GetLatestReleaseInfo(WebClient webClient)
         {
             string json = webClient.DownloadString(LatestReleasesUrl);
 
@@ -55,7 +55,7 @@ namespace snyk_visual_studio_plugin
                     ServicePointManager.Expect100Continue = true;
                     ServicePointManager.SecurityProtocol = SecurityProtocolType.Tls12;
 
-                    LatestReleaseInfo latestReleaseInfo = getLatestReleaseInfo(webClient);
+                    LatestReleaseInfo latestReleaseInfo = GetLatestReleaseInfo(webClient);
 
                     string cliVersion = latestReleaseInfo.TagName;
 
