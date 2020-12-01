@@ -4,7 +4,7 @@
 // </copyright>
 //------------------------------------------------------------------------------
 
-namespace snyk_visual_studio_plugin
+namespace Snyk.VisualStudio.Extension
 {
     using System;
     using System.Runtime.InteropServices;

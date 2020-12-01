@@ -7,7 +7,7 @@ using System;
 using System.Windows;
 using System.Xml;
 
-namespace snyk_visual_studio_plugin
+namespace Snyk.VisualStudio.Extension
 {
     class SnykProjectSettingsService
     {

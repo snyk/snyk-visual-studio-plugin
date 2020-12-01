@@ -7,24 +7,24 @@ using System.Runtime.Serialization.Json;
 using System.Text;
 using EnvDTE;
 
-namespace snyk_visual_studio_plugin
+namespace Snyk.VisualStudio.Extension
 {
     class SnykCli
     {
         public const string CliFileName = "snyk-win.exe";
 
-        private IServiceProvider ServiceProvider;
+        private IServiceProvider serviceProvider;
         private SnykVSPackage package;
 
-        public SnykCli(SnykVSPackage snykPackage, IServiceProvider ServiceProvider)
+        public SnykCli(SnykVSPackage package, IServiceProvider serviceProvider)
         {
-            this.ServiceProvider = ServiceProvider;
-            this.package = snykPackage;
+            this.serviceProvider = serviceProvider;
+            this.package = package;
         }
 
         public CliResult Scan()
         {
-            StringBuilder commandsStringBuilder = new StringBuilder("--json test ");
+            var commandsStringBuilder = new StringBuilder("--json test ");
 
             if (!String.IsNullOrEmpty(package.CustomEndpoint))
             {
@@ -148,7 +148,7 @@ namespace snyk_visual_studio_plugin
 
         public string GetProjectDirectory()
         {
-            DTE dte = (DTE) this.ServiceProvider.GetService(typeof(DTE));
+            DTE dte = (DTE) this.serviceProvider.GetService(typeof(DTE));
             Projects projects = dte.Solution.Projects;
 
             if (projects.Count == 0)   // no project is open

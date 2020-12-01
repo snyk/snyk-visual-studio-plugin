@@ -11,7 +11,7 @@ using Microsoft.VisualStudio.Shell;
 using Microsoft.VisualStudio.Shell.Interop;
 using System.Windows.Forms;
 
-namespace snyk_visual_studio_plugin
+namespace Snyk.VisualStudio.Extension
 {
     [Guid("6558dc66-aad3-41d6-84ed-8bea01fc852d")]
     public class SnykProjectOptionsDialogPage : DialogPage

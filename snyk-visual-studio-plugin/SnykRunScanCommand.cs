@@ -11,7 +11,7 @@ using Microsoft.VisualStudio.Shell.Interop;
 using System.Windows.Controls;
 using System.Windows.Data;
 
-namespace snyk_visual_studio_plugin
+namespace Snyk.VisualStudio.Extension
 {
     /// <summary>
     /// Command handler
