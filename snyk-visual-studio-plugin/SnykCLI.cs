@@ -9,20 +9,20 @@ using EnvDTE;
 
 namespace snyk_visual_studio_plugin
 {
-    class SnykCLI
+    class SnykCli
     {
         public const string CliFileName = "snyk-win.exe";
 
         private IServiceProvider ServiceProvider;
         private SnykVSPackage package;
 
-        public SnykCLI(SnykVSPackage snykPackage, IServiceProvider ServiceProvider)
+        public SnykCli(SnykVSPackage snykPackage, IServiceProvider ServiceProvider)
         {
             this.ServiceProvider = ServiceProvider;
             this.package = snykPackage;
         }
 
-        public CLIResult Scan()
+        public CliResult Scan()
         {
             StringBuilder commandsStringBuilder = new StringBuilder("--json test ");
 
@@ -73,20 +73,20 @@ namespace snyk_visual_studio_plugin
             return ConvertRawCliStringToCliResult(stringBuilder.ToString());
         }
 
-        public CLIResult ConvertRawCliStringToCliResult(String rawResultStr)
+        public CliResult ConvertRawCliStringToCliResult(String rawResultStr)
         {
             if (rawResultStr.First() == '[')
             {
-                // TODO convert to CLIResult
-                var cliVulnerabilitiesList = new List<CLIVulnerabilities>();
+                // TODO convert to CliResult
+                var cliVulnerabilitiesList = new List<CliVulnerabilities>();
                 var memoryStream = new MemoryStream(Encoding.UTF8.GetBytes(rawResultStr));
                 var jsonSerializer = new DataContractJsonSerializer(cliVulnerabilitiesList.GetType());
 
-                cliVulnerabilitiesList = jsonSerializer.ReadObject(memoryStream) as List<CLIVulnerabilities>;
+                cliVulnerabilitiesList = jsonSerializer.ReadObject(memoryStream) as List<CliVulnerabilities>;
 
                 memoryStream.Close();                
 
-                return new CLIResult
+                return new CliResult
                 {
                     CLIVulnerabilities = cliVulnerabilitiesList
                 };
@@ -94,27 +94,27 @@ namespace snyk_visual_studio_plugin
             {
                 if (IsSuccessCliJsonString(rawResultStr))
                 {
-                    // TODO convert to CLIResult
-                    var cliVulnerabilities = new CLIVulnerabilities();
+                    // TODO convert to CliResult
+                    var cliVulnerabilities = new CliVulnerabilities();
                     var memoryStream = new MemoryStream(Encoding.UTF8.GetBytes(rawResultStr));
                     var jsonSerializer = new DataContractJsonSerializer(cliVulnerabilities.GetType());
 
-                    cliVulnerabilities = jsonSerializer.ReadObject(memoryStream) as CLIVulnerabilities;
+                    cliVulnerabilities = jsonSerializer.ReadObject(memoryStream) as CliVulnerabilities;
 
                     memoryStream.Close();
 
-                    var cliVulnerabilitiesList = new List<CLIVulnerabilities>();
+                    var cliVulnerabilitiesList = new List<CliVulnerabilities>();
                     cliVulnerabilitiesList.Add(cliVulnerabilities);
 
-                    return new CLIResult
+                    return new CliResult
                     {
                         CLIVulnerabilities = cliVulnerabilitiesList
                     };
                 } else
                 {
-                    // TODO convert to CLIError and return CLIResult with error
+                    // TODO convert to CLIError and return CliResult with error
 
-                    // TODO convert to CLIResult
+                    // TODO convert to CliResult
                     var cliError = new CLIError();
                     var memoryStream = new MemoryStream(Encoding.UTF8.GetBytes(rawResultStr));
                     var jsonSerializer = new DataContractJsonSerializer(cliError.GetType());
@@ -123,15 +123,15 @@ namespace snyk_visual_studio_plugin
 
                     memoryStream.Close();
                     
-                    return new CLIResult
+                    return new CliResult
                     {
                         Error = cliError
                     };
                 }
             } else
             {
-                // TODO CLIResult with CLIError. CLIError create and add raw result string.
-                return new CLIResult
+                // TODO CliResult with CLIError. CLIError create and add raw result string.
+                return new CliResult
                 {
                     Error = new CLIError
                     {

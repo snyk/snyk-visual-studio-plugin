@@ -8,6 +8,7 @@ namespace snyk_visual_studio_plugin_tests
         [TestMethod]
         public void GetLatestReleaseInfo()
         {
+
         }
     }
 }

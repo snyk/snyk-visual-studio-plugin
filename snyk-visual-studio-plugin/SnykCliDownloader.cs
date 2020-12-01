@@ -46,7 +46,7 @@ namespace snyk_visual_studio_plugin
 
         public void Download()
         {
-            if (!File.Exists(SnykCLI.GetSnykCliPath()))
+            if (!File.Exists(SnykCli.GetSnykCliPath()))
             {
                 using (var webClient = new WebClient())
                 {
@@ -59,13 +59,13 @@ namespace snyk_visual_studio_plugin
 
                     string cliVersion = latestReleaseInfo.TagName;
 
-                    string cliDownloadUrl = String.Format(LatestReleaseDownloadUrl, cliVersion, SnykCLI.CliFileName);
+                    string cliDownloadUrl = String.Format(LatestReleaseDownloadUrl, cliVersion, SnykCli.CliFileName);
 
-                    string snykDirectoryPath = SnykCLI.GetSnykDirectoryPath();
+                    string snykDirectoryPath = SnykCli.GetSnykDirectoryPath();
 
                     Directory.CreateDirectory(snykDirectoryPath);
 
-                    string cliFileDestinationPath = SnykCLI.GetSnykCliPath();
+                    string cliFileDestinationPath = SnykCli.GetSnykCliPath();
 
                     webClient.DownloadFile(cliDownloadUrl, cliFileDestinationPath);
                 }
