@@ -1,4 +1,4 @@
-﻿namespace snyk_visual_studio_plugin
+﻿namespace Snyk.VisualStudio.Extension
 {
     partial class SnykGeneralSettingsUserControl
     {

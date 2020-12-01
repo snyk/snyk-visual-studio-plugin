@@ -1,4 +1,4 @@
-﻿namespace snyk_visual_studio_plugin
+﻿namespace Snyk.VisualStudio.Extension
 {
     partial class SnykProjectOptionsUserControl
     {
@@ -39,7 +39,7 @@
             this.additionalOptionsTextBox.Multiline = true;
             this.additionalOptionsTextBox.Name = "additionalOptionsTextBox";
             this.additionalOptionsTextBox.ScrollBars = System.Windows.Forms.ScrollBars.Both;
-            this.additionalOptionsTextBox.Size = new System.Drawing.Size(97, 179);
+            this.additionalOptionsTextBox.Size = new System.Drawing.Size(27, 179);
             this.additionalOptionsTextBox.TabIndex = 0;
             this.additionalOptionsTextBox.TextChanged += new System.EventHandler(this.additionalOptionsTextBox_TextChanged);
             // 
@@ -52,7 +52,7 @@
             this.Controls.Add(this.additionalOptionsTextBox);
             this.Name = "SnykProjectOptionsUserControl";
             this.Padding = new System.Windows.Forms.Padding(5);
-            this.Size = new System.Drawing.Size(115, 205);
+            this.Size = new System.Drawing.Size(45, 205);
             this.ResumeLayout(false);
             this.PerformLayout();
 
