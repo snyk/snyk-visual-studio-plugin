@@ -3,9 +3,9 @@ using System.Collections.Generic;
 
 namespace snyk_visual_studio_plugin
 {
-    class CLIResult
+    class CliResult
     {
-        public List<CLIVulnerabilities> CLIVulnerabilities { get; set; }
+        public List<CliVulnerabilities> CLIVulnerabilities { get; set; }
 
         public CLIError Error { get; set; }
 
@@ -15,7 +15,7 @@ namespace snyk_visual_studio_plugin
         }
     }
 
-    public class CLIVulnerabilities
+    public class CliVulnerabilities
     {
         public Vulnerability[] vulnerabilities { get; set; }
         public bool ok { get; set; }

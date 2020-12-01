@@ -96,8 +96,8 @@ namespace snyk_visual_studio_plugin
         {
             SnykVSPackage snykPackage = (SnykVSPackage)package;
 
-            SnykCLI cli = new SnykCLI(snykPackage, this.ServiceProvider);
-            CLIResult cliResult = cli.Scan();            
+            SnykCli cli = new SnykCli(snykPackage, this.ServiceProvider);
+            CliResult cliResult = cli.Scan();            
 
             if (!cliResult.IsSuccessful())
             {
@@ -157,7 +157,7 @@ namespace snyk_visual_studio_plugin
                 //resultsDataGrid.Columns.Add(fixedInTextColumn);
                 resultsDataGrid.Columns.Add(descriptionTextColumn);
 
-                foreach (CLIVulnerabilities cliVulnerabilities in cliResult.CLIVulnerabilities)
+                foreach (CliVulnerabilities cliVulnerabilities in cliResult.CLIVulnerabilities)
                 {
                     foreach (Vulnerability vulnerability in cliVulnerabilities.vulnerabilities)
                     {
