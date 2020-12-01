@@ -1,4 +1,4 @@
-﻿namespace Snyk.VisualStudio.Extension
+﻿namespace Snyk.VisualStudio.Extension.UI
 {
     partial class SnykGeneralSettingsUserControl
     {

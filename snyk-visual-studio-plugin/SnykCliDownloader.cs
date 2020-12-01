@@ -6,7 +6,7 @@ using System.Net;
 using System.Runtime.Serialization;
 using System.Runtime.Serialization.Json;
 
-namespace Snyk.VisualStudio.Extension
+namespace Snyk.VisualStudio.Extension.CLI
 {
     [DataContract]
     internal class LatestReleaseInfo

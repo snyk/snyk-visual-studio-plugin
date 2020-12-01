@@ -6,7 +6,7 @@ using System.IO;
 using System.Runtime.Serialization.Json;
 using System.Net;
 
-namespace Snyk.VisualStudio.Extension
+namespace Snyk.VisualStudio.Extension.UI
 {
     [DataContract]
     internal class SnykVerifyRequest

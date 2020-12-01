@@ -10,8 +10,9 @@ using Microsoft.VisualStudio.Shell;
 using Microsoft.VisualStudio.Shell.Interop;
 using System.Windows.Controls;
 using System.Windows.Data;
+using Snyk.VisualStudio.Extension.CLI;
 
-namespace Snyk.VisualStudio.Extension
+namespace Snyk.VisualStudio.Extension.UI
 {
     /// <summary>
     /// Command handler
@@ -96,7 +97,7 @@ namespace Snyk.VisualStudio.Extension
         {
             SnykVSPackage snykPackage = (SnykVSPackage)package;
 
-            SnykCli cli = new SnykCli(snykPackage, this.ServiceProvider);
+            var cli = new SnykCli(snykPackage, this.ServiceProvider);
             CliResult cliResult = cli.Scan();            
 
             if (!cliResult.IsSuccessful())

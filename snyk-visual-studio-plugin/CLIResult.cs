@@ -1,12 +1,12 @@
 ﻿using System.Collections.Generic;
 
-namespace Snyk.VisualStudio.Extension
+namespace Snyk.VisualStudio.Extension.CLI
 {
     class CliResult
     {
         public List<CliVulnerabilities> CLIVulnerabilities { get; set; }
 
-        public CLIError Error { get; set; }
+        public CliError Error { get; set; }
 
         public bool IsSuccessful()
         {

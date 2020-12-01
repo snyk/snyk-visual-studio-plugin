@@ -1,13 +1,9 @@
 ﻿using EnvDTE;
 using Microsoft.VisualStudio.Settings;
-using Microsoft.VisualStudio.Shell;
-using Microsoft.VisualStudio.Shell.Interop;
 using Microsoft.VisualStudio.Shell.Settings;
 using System;
-using System.Windows;
-using System.Xml;
 
-namespace Snyk.VisualStudio.Extension
+namespace Snyk.VisualStudio.Extension.Settings
 {
     class SnykProjectSettingsService
     {
@@ -82,43 +78,6 @@ namespace Snyk.VisualStudio.Extension
             SettingsManager settingsManager = new ShellSettingsManager(serviceProvider);
 
             return settingsManager.GetWritableSettingsStore(SettingsScope.UserSettings);
-        }                             
-
-        public void SetProjectAuthor()
-        {
-            EnvDTE.DTE dte = (EnvDTE.DTE)Package.GetGlobalService(typeof(EnvDTE.DTE));
-            EnvDTE.Project project = dte.Solution.Projects.Item(1);
-
-            string uniqueName = project.UniqueName;
-
-            IVsSolution solution = (IVsSolution)Package.GetGlobalService(typeof(SVsSolution));
-            IVsHierarchy hierarchy;
-
-            solution.GetProjectOfUniqueName(uniqueName, out hierarchy);
-            IVsBuildPropertyStorage buildPropertyStorage = hierarchy as IVsBuildPropertyStorage;
-
-            if (buildPropertyStorage != null)
-            {
-                uint itemId;
-                string fullPath = (string) project.ProjectItems.Item("Program.cs").Properties.Item("FullPath").Value;
-                hierarchy.ParseCanonicalName(fullPath, out itemId);
-                buildPropertyStorage.SetItemAttribute(itemId, "MyAttribute", "MyValue");
-            }
-
-
-            //string uniqueName = project.UniqueName;
-
-            //IVsSolution solution = (IVsSolution) Package.GetGlobalService(typeof(SVsSolution));
-            //IVsHierarchy hierarchy;
-
-            //solution.GetProjectOfUniqueName(uniqueName, out hierarchy);
-
-            //uint itemId;
-            //string fullPath = (string)project.ProjectItems.Item("VsPkg.cs").Properties.Item("FullPath").Value;
-
-            //hierarchy.ParseCanonicalName(fullPath, out itemId);
-
-            //hierarchy.SetProperty(itemId, (int)__VSHPROPID.VSHPROPID_EditLabel, "Tom");        
-        }        
+        }                                     
     }
 }

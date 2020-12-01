@@ -9,7 +9,7 @@ using System.ComponentModel.Design;
 using Microsoft.VisualStudio.Shell;
 using Microsoft.VisualStudio.Shell.Interop;
 
-namespace Snyk.VisualStudio.Extension
+namespace Snyk.VisualStudio.Extension.UI
 {
     /// <summary>
     /// Command handler

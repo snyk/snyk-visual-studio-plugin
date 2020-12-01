@@ -1,7 +1,8 @@
-﻿using System;
+﻿using Snyk.VisualStudio.Extension.Settings;
+using System;
 using System.Windows.Forms;
 
-namespace Snyk.VisualStudio.Extension
+namespace Snyk.VisualStudio.Extension.UI
 {
     public partial class SnykProjectOptionsUserControl : UserControl
     {       
