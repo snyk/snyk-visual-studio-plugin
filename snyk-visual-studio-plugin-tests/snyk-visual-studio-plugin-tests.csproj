@@ -7,7 +7,7 @@
     <ProjectGuid>{53C9C77D-82A1-42E9-B7DB-4422A5B4A568}</ProjectGuid>
     <OutputType>Library</OutputType>
     <AppDesignerFolder>Properties</AppDesignerFolder>
-    <RootNamespace>snyk_visual_studio_plugin_tests</RootNamespace>
+    <RootNamespace>Snyk.VisualStudio.Extension.Tests</RootNamespace>
     <AssemblyName>snyk-visual-studio-plugin-tests</AssemblyName>
     <TargetFrameworkVersion>v4.6</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>

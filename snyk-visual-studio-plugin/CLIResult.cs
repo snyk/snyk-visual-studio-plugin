@@ -2,7 +2,7 @@
 
 namespace Snyk.VisualStudio.Extension.CLI
 {
-    class CliResult
+    public class CliResult
     {
         public List<CliVulnerabilities> CLIVulnerabilities { get; set; }
 

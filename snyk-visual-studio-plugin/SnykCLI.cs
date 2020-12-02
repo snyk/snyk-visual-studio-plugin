@@ -9,7 +9,7 @@ using EnvDTE;
 
 namespace Snyk.VisualStudio.Extension.CLI
 {
-    class SnykCli
+    public class SnykCli
     {
         public const string CliFileName = "snyk-win.exe";
 

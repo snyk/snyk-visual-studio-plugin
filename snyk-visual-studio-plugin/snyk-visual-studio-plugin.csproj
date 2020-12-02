@@ -54,6 +54,7 @@
   <ItemGroup>
     <Compile Include="CLIError.cs" />
     <Compile Include="CLIResult.cs" />
+    <Compile Include="LatestReleaseInfo.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="SnykCli.cs" />
     <Compile Include="SnykCliDownloader.cs" />
