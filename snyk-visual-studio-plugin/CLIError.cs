@@ -3,7 +3,7 @@
 namespace Snyk.VisualStudio.Extension.CLI
 {
     [DataContract]
-    class CliError
+    public class CliError
     {
         [DataMember(Name = "ok")]
         internal bool IsSuccess;

@@ -3,28 +3,11 @@ using System.Text;
 
 using System.IO;
 using System.Net;
-using System.Runtime.Serialization;
 using System.Runtime.Serialization.Json;
 
 namespace Snyk.VisualStudio.Extension.CLI
-{
-    [DataContract]
-    internal class LatestReleaseInfo
-    {
-        [DataMember]
-        internal string Url;
-
-        [DataMember]
-        internal int Id;
-
-        [DataMember(Name = "tag_name")]
-        internal string TagName;
-
-        [DataMember]
-        internal string Name;
-    }
-
-    class SnykCliDownloader
+{   
+    public class SnykCliDownloader
     {        
         private const string LatestReleasesUrl = "https://api.github.com/repos/snyk/snyk/releases/latest";
         private const string LatestReleaseDownloadUrl = "https://github.com/snyk/snyk/releases/download/{0}/{1}";
@@ -44,17 +27,17 @@ namespace Snyk.VisualStudio.Extension.CLI
             return latestReleaseInfo;
         }
 
-        public void Download()
+        public void Download(string cliFileDestinationPath = null)
         {
-            if (!File.Exists(SnykCli.GetSnykCliPath()))
+            if (cliFileDestinationPath == null)
             {
-                using (var webClient = new WebClient())
-                {
-                    webClient.Headers.Add("user-agent", "VisualStudioSnykExtension");
-
-                    ServicePointManager.Expect100Continue = true;
-                    ServicePointManager.SecurityProtocol = SecurityProtocolType.Tls12;
-
+                cliFileDestinationPath = SnykCli.GetSnykCliPath();
+            }
+        
+            if (!File.Exists(cliFileDestinationPath))
+            {
+                using (var webClient = BuildWebClient())
+                {                    
                     LatestReleaseInfo latestReleaseInfo = GetLatestReleaseInfo(webClient);
 
                     string cliVersion = latestReleaseInfo.TagName;
@@ -65,11 +48,21 @@ namespace Snyk.VisualStudio.Extension.CLI
 
                     Directory.CreateDirectory(snykDirectoryPath);
 
-                    string cliFileDestinationPath = SnykCli.GetSnykCliPath();
-
                     webClient.DownloadFile(cliDownloadUrl, cliFileDestinationPath);
                 }
             }
-        }        
+        }    
+        
+        public WebClient BuildWebClient()
+        {
+            var webClient = new WebClient();
+
+            webClient.Headers.Add("user-agent", "SnykVisualStudioExtension");
+
+            ServicePointManager.Expect100Continue = true;
+            ServicePointManager.SecurityProtocol = SecurityProtocolType.Tls12;
+
+            return webClient;
+        }    
     }
 }
