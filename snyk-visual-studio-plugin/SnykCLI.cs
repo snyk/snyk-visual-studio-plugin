@@ -42,10 +42,14 @@ namespace Snyk.VisualStudio.Extension.CLI
                 }
             };
 
-            cliProcess.StartInfo.EnvironmentVariables["SNYK_TOKEN"] = Options.ApiToken;
+            if (!String.IsNullOrEmpty(Options.ApiToken))
+            {
+                cliProcess.StartInfo.EnvironmentVariables["SNYK_TOKEN"] = Options.ApiToken;
+            }
+            
             cliProcess.StartInfo.WorkingDirectory = GetProjectDirectory();
 
-            StringBuilder stringBuilder = new StringBuilder();
+            var stringBuilder = new StringBuilder();
 
             cliProcess.Start();
 
@@ -91,11 +95,9 @@ namespace Snyk.VisualStudio.Extension.CLI
         {
             if (rawResult.First() == '[')
             {
-                var cliVulnerabilitiesList = Json.Deserialize(rawResult, typeof(List<CliVulnerabilities>)) as List<CliVulnerabilities>;
-                
                 return new CliResult
                 {
-                    CLIVulnerabilities = cliVulnerabilitiesList
+                    CLIVulnerabilities = Json.Deserialize(rawResult, typeof(List<CliVulnerabilities>)) as List<CliVulnerabilities>
                 };
             } else if (rawResult.First() == '{')
             {
