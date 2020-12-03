@@ -1,6 +1,7 @@
 ﻿using EnvDTE;
 using Microsoft.VisualStudio.Settings;
 using Microsoft.VisualStudio.Shell.Settings;
+using Snyk.VisualStudio.Extension.Services;
 using System;
 
 namespace Snyk.VisualStudio.Extension.Settings
@@ -9,16 +10,16 @@ namespace Snyk.VisualStudio.Extension.Settings
     {
         public const string SnykProjectSettingsCollectionName = "Snyk";
 
-        private IServiceProvider serviceProvider;
+        private SnykSolutionService solutionService;
 
-        public SnykProjectSettingsService(IServiceProvider serviceProvider)
+        public SnykProjectSettingsService(SnykSolutionService solutionService)
         {
-            this.serviceProvider = serviceProvider;
+            this.solutionService = solutionService;
         }
 
-        public static SnykProjectSettingsService NewInstance(IServiceProvider serviceProvider)
+        public static SnykProjectSettingsService NewInstance(SnykSolutionService solutionService)
         {
-            return new SnykProjectSettingsService(serviceProvider);
+            return new SnykProjectSettingsService(solutionService);
         }
 
         public bool IsProjectOpened()
@@ -59,14 +60,7 @@ namespace Snyk.VisualStudio.Extension.Settings
 
         public string GetProjectUniqueName()
         {
-            DTE dte = (DTE)this.serviceProvider.GetService(typeof(DTE));
-
-            if (dte == null)
-            {
-                return "";
-            }
-
-            Projects projects = dte.Solution.Projects;
+            Projects projects = solutionService.GetProjects();
 
             if (projects.Count == 0)
             {
@@ -80,7 +74,7 @@ namespace Snyk.VisualStudio.Extension.Settings
 
         private WritableSettingsStore GetUserSettingsStore()
         {
-            SettingsManager settingsManager = new ShellSettingsManager(serviceProvider);
+            SettingsManager settingsManager = new ShellSettingsManager(solutionService.ServiceProvider);
 
             var settingsStore = settingsManager.GetWritableSettingsStore(SettingsScope.UserSettings);
 

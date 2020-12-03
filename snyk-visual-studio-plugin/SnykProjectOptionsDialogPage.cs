@@ -1,4 +1,5 @@
 ﻿using Microsoft.VisualStudio.Shell;
+using Snyk.VisualStudio.Extension.Services;
 using Snyk.VisualStudio.Extension.UI;
 using System;
 using System.Runtime.InteropServices;
@@ -13,7 +14,7 @@ namespace Snyk.VisualStudio.Extension.Settings
         {
             get
             {
-                var optionsUserControl = new SnykProjectOptionsUserControl(SnykVSPackage.GetInstance());
+                var optionsUserControl = new SnykProjectOptionsUserControl(SnykSolutionService.Instance);
                 optionsUserControl.projectOptionsPage = this;
                 optionsUserControl.Initialize();
 

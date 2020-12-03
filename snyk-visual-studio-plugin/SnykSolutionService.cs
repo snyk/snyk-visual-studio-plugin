@@ -13,7 +13,7 @@ namespace Snyk.VisualStudio.Extension.Services
 
         private SnykSolutionService(IServiceProvider serviceProvider)
         {
-            this.serviceProvider = serviceProvider;
+            this.ServiceProvider = serviceProvider;
         }
 
         public static SnykSolutionService NewInstance(IServiceProvider serviceProvider)
@@ -33,12 +33,25 @@ namespace Snyk.VisualStudio.Extension.Services
                 return instance;
             }
         }
-
+        
         public Projects GetProjects()
         {
-            DTE dte = (DTE) this.serviceProvider.GetService(typeof(DTE));
+            DTE dte = (DTE) this.ServiceProvider.GetService(typeof(DTE));
 
             return dte.Solution.Projects;
+        }
+
+        public IServiceProvider ServiceProvider
+        {
+            get
+            {
+                return serviceProvider;
+            }
+
+            set
+            {
+                serviceProvider = value;
+            }
         }
     }
 }

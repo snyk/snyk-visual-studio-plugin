@@ -1,4 +1,5 @@
-﻿using Snyk.VisualStudio.Extension.Settings;
+﻿using Snyk.VisualStudio.Extension.Services;
+using Snyk.VisualStudio.Extension.Settings;
 using System;
 using System.Windows.Forms;
 
@@ -10,11 +11,11 @@ namespace Snyk.VisualStudio.Extension.UI
 
         private SnykProjectSettingsService projectSettingsService;
 
-        public SnykProjectOptionsUserControl(IServiceProvider serviceProvider)
+        public SnykProjectOptionsUserControl(SnykSolutionService solutionService)
         {
             InitializeComponent();
 
-            this.projectSettingsService = new SnykProjectSettingsService(serviceProvider);
+            this.projectSettingsService = new SnykProjectSettingsService(solutionService);
         }
 
         protected override void OnVisibleChanged(EventArgs e)
