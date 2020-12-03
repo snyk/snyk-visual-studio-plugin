@@ -95,9 +95,14 @@ namespace Snyk.VisualStudio.Extension.UI
         /// <param name="e">Event args.</param>
         private void MenuItemCallback(object sender, EventArgs e)
         {
-            SnykVSPackage snykPackage = (SnykVSPackage)package;
+            SnykVSPackage snykPackage = (SnykVSPackage) package;
 
-            var cli = new SnykCli(snykPackage.Options, this.ServiceProvider);
+            var cli = new SnykCli
+            {
+                Options = snykPackage.Options,
+                SolutionService = snykPackage.SolutionService
+            };
+
             CliResult cliResult = cli.Scan();            
 
             if (!cliResult.IsSuccessful())

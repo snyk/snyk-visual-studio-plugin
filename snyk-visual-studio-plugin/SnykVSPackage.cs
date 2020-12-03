@@ -12,6 +12,7 @@ using Microsoft.VisualStudio.Shell.Interop;
 using Snyk.VisualStudio.Extension.UI;
 using Snyk.VisualStudio.Extension.Settings;
 using Snyk.VisualStudio.Extension.CLI;
+using Snyk.VisualStudio.Extension.Services;
 
 namespace Snyk.VisualStudio.Extension
 {
@@ -60,6 +61,8 @@ namespace Snyk.VisualStudio.Extension
             // not sited yet inside Visual Studio environment. The place to do all the other
             // initialization is the Initialize method.
             instance = this;
+
+            SnykSolutionService.NewInstance(this);
         }        
 
         public static SnykVSPackage GetInstance()
@@ -104,6 +107,14 @@ namespace Snyk.VisualStudio.Extension
             get
             {
                 return SnykProjectSettingsService.NewInstance(this).GetAdditionalOptions();
+            }
+        }
+
+        public SnykSolutionService SolutionService
+        {
+            get
+            {
+                return SnykSolutionService.Instance;
             }
         }
 
