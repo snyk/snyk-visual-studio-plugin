@@ -97,7 +97,7 @@ namespace Snyk.VisualStudio.Extension.UI
         {
             SnykVSPackage snykPackage = (SnykVSPackage)package;
 
-            var cli = new SnykCli(snykPackage, this.ServiceProvider);
+            var cli = new SnykCli(snykPackage.Options, this.ServiceProvider);
             CliResult cliResult = cli.Scan();            
 
             if (!cliResult.IsSuccessful())

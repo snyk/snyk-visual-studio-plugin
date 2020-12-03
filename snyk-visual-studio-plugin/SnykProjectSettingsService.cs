@@ -29,6 +29,12 @@ namespace Snyk.VisualStudio.Extension.Settings
         public string GetAdditionalOptions()
         {
             string projectUniqueName = GetProjectUniqueName();
+
+            if (String.IsNullOrEmpty(projectUniqueName))
+            {
+                return "";
+            }
+
             WritableSettingsStore settingsStore = GetUserSettingsStore();
 
             bool isProjectOpened = !String.IsNullOrEmpty(projectUniqueName);            
@@ -41,26 +47,25 @@ namespace Snyk.VisualStudio.Extension.Settings
             return settingsStore.GetString(SnykProjectSettingsCollectionName, projectUniqueName);
         }
 
-        public void saveAdditionalOptions(string additionalOptions)
+        public void SaveAdditionalOptions(string additionalOptions)
         {
             string projectUniqueName = GetProjectUniqueName();
 
             if (!String.IsNullOrEmpty(projectUniqueName))
             {
-                WritableSettingsStore settingsStore = GetUserSettingsStore();
-
-                if (!settingsStore.CollectionExists(SnykProjectSettingsCollectionName))
-                {
-                    settingsStore.CreateCollection(SnykProjectSettingsCollectionName);
-                }
-
-                settingsStore.SetString(SnykProjectSettingsCollectionName, projectUniqueName, additionalOptions);
+                GetUserSettingsStore().SetString(SnykProjectSettingsCollectionName, projectUniqueName, additionalOptions);
             }
         }
 
         public string GetProjectUniqueName()
         {
             DTE dte = (DTE)this.serviceProvider.GetService(typeof(DTE));
+
+            if (dte == null)
+            {
+                return "";
+            }
+
             Projects projects = dte.Solution.Projects;
 
             if (projects.Count == 0)
@@ -77,7 +82,14 @@ namespace Snyk.VisualStudio.Extension.Settings
         {
             SettingsManager settingsManager = new ShellSettingsManager(serviceProvider);
 
-            return settingsManager.GetWritableSettingsStore(SettingsScope.UserSettings);
+            var settingsStore = settingsManager.GetWritableSettingsStore(SettingsScope.UserSettings);
+
+            if (!settingsStore.CollectionExists(SnykProjectSettingsCollectionName))
+            {
+                settingsStore.CreateCollection(SnykProjectSettingsCollectionName);
+            }
+
+            return settingsStore;
         }                                     
     }
 }

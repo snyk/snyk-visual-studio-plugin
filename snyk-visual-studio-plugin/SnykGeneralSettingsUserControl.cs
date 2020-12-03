@@ -5,6 +5,7 @@ using System.Runtime.Serialization;
 using System.IO;
 using System.Runtime.Serialization.Json;
 using System.Net;
+using Snyk.VisualStudio.Extension.Settings;
 
 namespace Snyk.VisualStudio.Extension.UI
 {
@@ -44,13 +45,8 @@ namespace Snyk.VisualStudio.Extension.UI
         
         private void authenticateButton_Click(object sender, EventArgs e)
         {
-            using (var webClient = new WebClient())
-            {
-                ServicePointManager.Expect100Continue = true;
-                ServicePointManager.SecurityProtocol = SecurityProtocolType.Tls12;
-
-                webClient.Headers.Add("user-agent", "VisualStudioSnykExtension");
-
+            using (var webClient = new SnykWebClient())
+            {               
                 string endpointUri = "http://snyk.io";
                 Guid newToken = Guid.NewGuid();
 

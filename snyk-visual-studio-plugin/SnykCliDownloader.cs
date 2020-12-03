@@ -36,7 +36,7 @@ namespace Snyk.VisualStudio.Extension.CLI
         
             if (!File.Exists(cliFileDestinationPath))
             {
-                using (var webClient = BuildWebClient())
+                using (var webClient = new SnykWebClient())
                 {                    
                     LatestReleaseInfo latestReleaseInfo = GetLatestReleaseInfo(webClient);
 
@@ -51,18 +51,6 @@ namespace Snyk.VisualStudio.Extension.CLI
                     webClient.DownloadFile(cliDownloadUrl, cliFileDestinationPath);
                 }
             }
-        }    
-        
-        public WebClient BuildWebClient()
-        {
-            var webClient = new WebClient();
-
-            webClient.Headers.Add("user-agent", "SnykVisualStudioExtension");
-
-            ServicePointManager.Expect100Continue = true;
-            ServicePointManager.SecurityProtocol = SecurityProtocolType.Tls12;
-
-            return webClient;
-        }    
+        }             
     }
 }
