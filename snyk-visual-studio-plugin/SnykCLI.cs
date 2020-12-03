@@ -6,59 +6,41 @@ using System.Linq;
 using System.Runtime.Serialization.Json;
 using System.Text;
 using EnvDTE;
+using Snyk.VisualStudio.Extension.Settings;
 
 namespace Snyk.VisualStudio.Extension.CLI
 {
     public class SnykCli
     {
         public const string CliFileName = "snyk-win.exe";
+        public const string SnykConfigurationDirectoryName = "Snyk";
 
         private IServiceProvider serviceProvider;
-        private SnykVSPackage package;
+        ISnykOptions options;
+            
+        public SnykCli() { }
 
-        public SnykCli(SnykVSPackage package, IServiceProvider serviceProvider)
+        public SnykCli(ISnykOptions options, IServiceProvider serviceProvider)
         {
-            this.serviceProvider = serviceProvider;
-            this.package = package;
+            Options = options;
+            ServiceProvider = serviceProvider;            
         }
 
         public CliResult Scan()
-        {
-            var commandsStringBuilder = new StringBuilder("--json test ");
-
-            if (!String.IsNullOrEmpty(package.CustomEndpoint))
-            {
-                commandsStringBuilder.Append(String.Format(" --api=%s ", package.CustomEndpoint));
-            }
-
-            if (package.IgnoreUnknownCA)
-            {
-                commandsStringBuilder.Append(" --insecure ");
-            }
-
-            if (!String.IsNullOrEmpty(package.Organization))
-            {                
-                commandsStringBuilder.Append(String.Format(" --org=%s ", package.Organization));
-            }
-
-            if (!String.IsNullOrEmpty(package.AdditionalOptions))
-            {
-                commandsStringBuilder.Append(String.Format(" %s ", package.AdditionalOptions));
-            }
-
+        {           
             var cliProcess = new System.Diagnostics.Process
             {
                 StartInfo = new ProcessStartInfo
                 {
                     FileName = GetSnykCliPath(),
-                    Arguments = commandsStringBuilder.ToString(),
+                    Arguments = BuildArguments(),
                     UseShellExecute = false,
                     RedirectStandardOutput = true,
                     CreateNoWindow = true,
                 }
             };
 
-            cliProcess.StartInfo.EnvironmentVariables["SNYK_TOKEN"] = package.ApiToken;
+            cliProcess.StartInfo.EnvironmentVariables["SNYK_TOKEN"] = Options.ApiToken;
             cliProcess.StartInfo.WorkingDirectory = GetProjectDirectory();
 
             StringBuilder stringBuilder = new StringBuilder();
@@ -73,11 +55,40 @@ namespace Snyk.VisualStudio.Extension.CLI
             return ConvertRawCliStringToCliResult(stringBuilder.ToString());
         }
 
+        public string BuildArguments()
+        {
+            var arguments = new List<string>();
+
+            arguments.Add("--json");
+            arguments.Add("test");
+
+            if (!String.IsNullOrEmpty(Options.CustomEndpoint))
+            {
+                arguments.Add($"--api={Options.CustomEndpoint}");
+            }
+
+            if (Options.IgnoreUnknownCA)
+            {
+                arguments.Add("--insecure");
+            }
+
+            if (!String.IsNullOrEmpty(Options.Organization))
+            {
+                arguments.Add($"--org={Options.Organization}");
+            }
+
+            if (!String.IsNullOrEmpty(Options.AdditionalOptions))
+            {
+                arguments.Add($"{Options.AdditionalOptions}");
+            }
+
+            return String.Join(" ", arguments.ToArray());
+        }
+
         public CliResult ConvertRawCliStringToCliResult(String rawResultStr)
         {
             if (rawResultStr.First() == '[')
             {
-                // TODO convert to CliResult
                 var cliVulnerabilitiesList = new List<CliVulnerabilities>();
                 var memoryStream = new MemoryStream(Encoding.UTF8.GetBytes(rawResultStr));
                 var jsonSerializer = new DataContractJsonSerializer(cliVulnerabilitiesList.GetType());
@@ -94,7 +105,6 @@ namespace Snyk.VisualStudio.Extension.CLI
             {
                 if (IsSuccessCliJsonString(rawResultStr))
                 {
-                    // TODO convert to CliResult
                     var cliVulnerabilities = new CliVulnerabilities();
                     var memoryStream = new MemoryStream(Encoding.UTF8.GetBytes(rawResultStr));
                     var jsonSerializer = new DataContractJsonSerializer(cliVulnerabilities.GetType());
@@ -112,9 +122,6 @@ namespace Snyk.VisualStudio.Extension.CLI
                     };
                 } else
                 {
-                    // TODO convert to CliError and return CliResult with error
-
-                    // TODO convert to CliResult
                     var cliError = new CliError();
                     var memoryStream = new MemoryStream(Encoding.UTF8.GetBytes(rawResultStr));
                     var jsonSerializer = new DataContractJsonSerializer(cliError.GetType());
@@ -130,7 +137,6 @@ namespace Snyk.VisualStudio.Extension.CLI
                 }
             } else
             {
-                // TODO CliResult with CliError. CliError create and add raw result string.
                 return new CliResult
                 {
                     Error = new CliError
@@ -148,12 +154,12 @@ namespace Snyk.VisualStudio.Extension.CLI
 
         public string GetProjectDirectory()
         {
-            DTE dte = (DTE) this.serviceProvider.GetService(typeof(DTE));
+            DTE dte = (DTE) this.ServiceProvider.GetService(typeof(DTE));
             Projects projects = dte.Solution.Projects;
 
-            if (projects.Count == 0)   // no project is open
+            if (projects.Count == 0)
             {
-                Console.WriteLine("Process case if no projects.");
+                throw new ArgumentException("No open projects.");
             }
 
             Project project = projects.Item(1);
@@ -163,14 +169,40 @@ namespace Snyk.VisualStudio.Extension.CLI
 
         public static string GetSnykDirectoryPath()
         {
-            string appDataPath = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData);
+            string appDataDirectoryPath = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData);
 
-            return appDataPath + Path.DirectorySeparatorChar + "Snyk";
+            return Path.Combine(appDataDirectoryPath, SnykConfigurationDirectoryName);
         }
 
         public static string GetSnykCliPath()
         {
-            return GetSnykDirectoryPath() + Path.DirectorySeparatorChar + CliFileName;
+            return Path.Combine(GetSnykDirectoryPath(), CliFileName);
+        }
+
+        public IServiceProvider ServiceProvider
+        {
+            get
+            {
+                return serviceProvider;
+            }
+
+            set
+            {
+                serviceProvider = value;
+            }
+        }
+
+        public ISnykOptions Options
+        {
+            get
+            {
+                return options;
+            }
+
+            set
+            {
+                options = value;
+            }
         }
     }   
 }

@@ -12,7 +12,7 @@ namespace Snyk.VisualStudio.Extension.Tests
         {
             var cliDownloader = new SnykCliDownloader();
 
-            LatestReleaseInfo latestReleaseInfo = cliDownloader.GetLatestReleaseInfo(cliDownloader.BuildWebClient());
+            LatestReleaseInfo latestReleaseInfo = cliDownloader.GetLatestReleaseInfo(new SnykWebClient());
             
             Assert.IsFalse(string.IsNullOrWhiteSpace(latestReleaseInfo.TagName));
         }

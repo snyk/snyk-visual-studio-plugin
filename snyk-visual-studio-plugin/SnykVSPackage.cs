@@ -9,75 +9,12 @@ using System.Diagnostics.CodeAnalysis;
 using System.Runtime.InteropServices;
 using Microsoft.VisualStudio.Shell;
 using Microsoft.VisualStudio.Shell.Interop;
-using System.Windows.Forms;
 using Snyk.VisualStudio.Extension.UI;
 using Snyk.VisualStudio.Extension.Settings;
 using Snyk.VisualStudio.Extension.CLI;
 
 namespace Snyk.VisualStudio.Extension
 {
-    [Guid("6558dc66-aad3-41d6-84ed-8bea01fc852d")]
-    public class SnykProjectOptionsDialogPage : DialogPage
-    {        
-        protected override IWin32Window Window
-        {
-            get
-            {
-                var optionsUserControl = new SnykProjectOptionsUserControl(SnykVSPackage.GetInstance());
-                optionsUserControl.projectOptionsPage = this;
-                optionsUserControl.Initialize();
-
-                return optionsUserControl;
-            }
-        }
-    }
-
-    [Guid("d45468c1-33d2-4dca-9780-68abaedf95e7")]
-    public class SnykGeneralOptionsDialogPage : DialogPage
-    {
-        private string apiToken = "";
-        private string customEndpoint = "";
-        private string organization = "";
-        private bool ignoreUnknownCA = false;
-
-        public string ApiToken
-        {
-            get { return apiToken; }
-            set { apiToken = value; }
-        }
-
-        public string CustomEndpoint
-        {
-            get { return customEndpoint; }
-            set { customEndpoint = value; }
-        }
-
-        public string Organization
-        {
-            get { return organization; }
-            set { organization = value; }
-        }
-
-        public bool IgnoreUnknownCA
-        {
-            get { return ignoreUnknownCA; }
-            set { ignoreUnknownCA = value; }
-        }
-
-        protected override IWin32Window Window
-        {
-            get
-            {
-                var generalSettingsUserControl = new SnykGeneralSettingsUserControl();
-
-                generalSettingsUserControl.optionsDialogPage = this;
-                generalSettingsUserControl.Initialize();
-
-                return generalSettingsUserControl;
-            }
-        }
-    }
-
     /// <summary>
     /// This is the class that implements the package exposed by this assembly.
     /// </summary>
@@ -170,6 +107,14 @@ namespace Snyk.VisualStudio.Extension
             }
         }
 
+        public ISnykOptions Options
+        {
+            get
+            {
+                return GetSnykGeneralOptionsDialogPage();
+            }
+        }
+        
         private SnykGeneralOptionsDialogPage GetSnykGeneralOptionsDialogPage()
         {
             return (SnykGeneralOptionsDialogPage) GetDialogPage(typeof(SnykGeneralOptionsDialogPage));

@@ -80,7 +80,7 @@ namespace Snyk.VisualStudio.Extension.UI
         {
             if (projectSettingsService.IsProjectOpened())
             {
-                projectSettingsService.saveAdditionalOptions(additionalOptionsTextBox.Text.ToString());
+                projectSettingsService.SaveAdditionalOptions(additionalOptionsTextBox.Text.ToString());
             }
         }
     }
