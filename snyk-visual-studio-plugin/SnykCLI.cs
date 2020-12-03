@@ -7,6 +7,7 @@ using System.Runtime.Serialization.Json;
 using System.Text;
 using EnvDTE;
 using Snyk.VisualStudio.Extension.Settings;
+using Snyk.VisualStudio.Extension.Services;
 
 namespace Snyk.VisualStudio.Extension.CLI
 {
@@ -15,15 +16,15 @@ namespace Snyk.VisualStudio.Extension.CLI
         public const string CliFileName = "snyk-win.exe";
         public const string SnykConfigurationDirectoryName = "Snyk";
 
-        private IServiceProvider serviceProvider;
-        ISnykOptions options;
-            
+        private ISnykOptions options;
+        private SnykSolutionService solutionService;
+
         public SnykCli() { }
 
-        public SnykCli(ISnykOptions options, IServiceProvider serviceProvider)
+        public SnykCli(IServiceProvider serviceProvider, SnykSolutionService solutionService)
         {
             Options = options;
-            ServiceProvider = serviceProvider;            
+            SolutionService = solutionService;            
         }
 
         public CliResult Scan()
@@ -154,8 +155,7 @@ namespace Snyk.VisualStudio.Extension.CLI
 
         public string GetProjectDirectory()
         {
-            DTE dte = (DTE) this.ServiceProvider.GetService(typeof(DTE));
-            Projects projects = dte.Solution.Projects;
+            Projects projects = SolutionService.GetProjects();
 
             if (projects.Count == 0)
             {
@@ -177,20 +177,7 @@ namespace Snyk.VisualStudio.Extension.CLI
         public static string GetSnykCliPath()
         {
             return Path.Combine(GetSnykDirectoryPath(), CliFileName);
-        }
-
-        public IServiceProvider ServiceProvider
-        {
-            get
-            {
-                return serviceProvider;
-            }
-
-            set
-            {
-                serviceProvider = value;
-            }
-        }
+        }        
 
         public ISnykOptions Options
         {
@@ -202,6 +189,19 @@ namespace Snyk.VisualStudio.Extension.CLI
             set
             {
                 options = value;
+            }
+        }
+
+        public SnykSolutionService SolutionService
+        {
+            get
+            {
+                return solutionService;
+            }
+
+            set
+            {
+                solutionService = value;
             }
         }
     }   

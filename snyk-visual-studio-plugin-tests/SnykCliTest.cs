@@ -1,20 +1,27 @@
 ﻿using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Snyk.VisualStudio.Extension.CLI;
+using Snyk.VisualStudio.Extension.Services;
 using Snyk.VisualStudio.Extension.Settings;
 using System;
 
 namespace Snyk.VisualStudio.Extension.Tests
-{
+{   
     [TestClass]
     public class SnykCliTest
     {
+        [AssemblyInitialize]
+        public static void AssemblyInit(TestContext context)
+        {
+            SnykSolutionService.NewInstance(new DummyServiceProvider());
+        }
+
         [TestMethod]
         public void BuildArguments_WithoutOptions()
         {
             var cli = new SnykCli
             {
                 Options = new DummySnykOptions(),
-                ServiceProvider = new DummyServiceProvider(),
+                SolutionService = SnykSolutionService.Instance
             };
 
             Assert.AreEqual("--json test", cli.BuildArguments());
@@ -32,7 +39,7 @@ namespace Snyk.VisualStudio.Extension.Tests
                 {
                     CustomEndpoint = "https://github.com/snyk/"
                 },
-                ServiceProvider = new DummyServiceProvider(),
+                SolutionService = SnykSolutionService.Instance
             };
 
             Assert.AreEqual("--json test --api=https://github.com/snyk/", cli.BuildArguments());
@@ -50,7 +57,7 @@ namespace Snyk.VisualStudio.Extension.Tests
                 {
                     IgnoreUnknownCA = true
                 },
-                ServiceProvider = new DummyServiceProvider(),
+                SolutionService = SnykSolutionService.Instance
             };
 
             Assert.AreEqual("--json test --insecure", cli.BuildArguments());
@@ -68,7 +75,7 @@ namespace Snyk.VisualStudio.Extension.Tests
                 {
                     Organization = "test-snyk-organization"
                 },
-                ServiceProvider = new DummyServiceProvider(),
+                SolutionService = SnykSolutionService.Instance
             };
 
             Assert.AreEqual("--json test --org=test-snyk-organization", cli.BuildArguments());
@@ -86,7 +93,7 @@ namespace Snyk.VisualStudio.Extension.Tests
                 {
                     AdditionalOptions = "--file=C:\build.pom"
                 },
-                ServiceProvider = new DummyServiceProvider(),
+                SolutionService = SnykSolutionService.Instance
             };
 
             Assert.AreEqual("--json test --file=C:\build.pom", cli.BuildArguments());
@@ -107,14 +114,14 @@ namespace Snyk.VisualStudio.Extension.Tests
                     Organization = "test-snyk-organization",
                     AdditionalOptions = "--file=C:\build.pom"
                 },
-                ServiceProvider = new DummyServiceProvider(),
+                SolutionService = SnykSolutionService.Instance
             };
 
             Assert.AreEqual("--json test --api=https://github.com/snyk/ --insecure --org=test-snyk-organization --file=C:\build.pom", cli.BuildArguments());
         }
 
     }
-
+    
     class DummyServiceProvider : IServiceProvider
     {
         public object GetService(Type serviceType)

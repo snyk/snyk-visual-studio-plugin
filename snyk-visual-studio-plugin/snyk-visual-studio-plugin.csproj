@@ -78,6 +78,7 @@
     </Compile>
     <Compile Include="SnykProjectSettingsService.cs" />
     <Compile Include="SnykRunScanCommand.cs" />
+    <Compile Include="SnykSolutionService.cs" />
     <Compile Include="SnykToolWindow.cs" />
     <Compile Include="SnykToolWindowCommand.cs" />
     <Compile Include="SnykToolWindowControl.xaml.cs">
