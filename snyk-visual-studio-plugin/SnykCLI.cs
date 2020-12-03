@@ -8,6 +8,7 @@ using System.Text;
 using EnvDTE;
 using Snyk.VisualStudio.Extension.Settings;
 using Snyk.VisualStudio.Extension.Services;
+using Snyk.VisualStudio.Extension.Util;
 
 namespace Snyk.VisualStudio.Extension.CLI
 {
@@ -90,14 +91,8 @@ namespace Snyk.VisualStudio.Extension.CLI
         {
             if (rawResult.First() == '[')
             {
-                var cliVulnerabilitiesList = new List<CliVulnerabilities>();
-                var memoryStream = new MemoryStream(Encoding.UTF8.GetBytes(rawResult));
-                var jsonSerializer = new DataContractJsonSerializer(cliVulnerabilitiesList.GetType());
-
-                cliVulnerabilitiesList = jsonSerializer.ReadObject(memoryStream) as List<CliVulnerabilities>;
-
-                memoryStream.Close();                
-
+                var cliVulnerabilitiesList = Json.Deserialize(rawResult, typeof(List<CliVulnerabilities>)) as List<CliVulnerabilities>;
+                
                 return new CliResult
                 {
                     CLIVulnerabilities = cliVulnerabilitiesList
@@ -106,14 +101,8 @@ namespace Snyk.VisualStudio.Extension.CLI
             {
                 if (IsSuccessCliJsonString(rawResult))
                 {
-                    var cliVulnerabilities = new CliVulnerabilities();
-                    var memoryStream = new MemoryStream(Encoding.UTF8.GetBytes(rawResult));
-                    var jsonSerializer = new DataContractJsonSerializer(cliVulnerabilities.GetType());
-
-                    cliVulnerabilities = jsonSerializer.ReadObject(memoryStream) as CliVulnerabilities;
-
-                    memoryStream.Close();
-
+                    var cliVulnerabilities = Json.Deserialize(rawResult, typeof(CliVulnerabilities)) as CliVulnerabilities;
+                    
                     var cliVulnerabilitiesList = new List<CliVulnerabilities>();
                     cliVulnerabilitiesList.Add(cliVulnerabilities);
 
@@ -123,17 +112,9 @@ namespace Snyk.VisualStudio.Extension.CLI
                     };
                 } else
                 {
-                    var cliError = new CliError();
-                    var memoryStream = new MemoryStream(Encoding.UTF8.GetBytes(rawResult));
-                    var jsonSerializer = new DataContractJsonSerializer(cliError.GetType());
-
-                    cliError = jsonSerializer.ReadObject(memoryStream) as CliError;
-
-                    memoryStream.Close();
-                    
                     return new CliResult
                     {
-                        Error = cliError
+                        Error = Json.Deserialize(rawResult, typeof(CliError)) as CliError
                     };
                 }
             } else
@@ -148,7 +129,7 @@ namespace Snyk.VisualStudio.Extension.CLI
                     }
                 };
             }
-        }
+        }        
 
         public bool IsSuccessCliJsonString(string JsonStr)
         {
