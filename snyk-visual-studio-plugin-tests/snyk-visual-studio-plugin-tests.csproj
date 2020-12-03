@@ -58,6 +58,11 @@
     <Otherwise />
   </Choose>
   <ItemGroup>
+    <Compile Include="Properties\Resources.Designer.cs">
+      <AutoGen>True</AutoGen>
+      <DesignTime>True</DesignTime>
+      <DependentUpon>Resources.resx</DependentUpon>
+    </Compile>
     <Compile Include="SnykCliDownloaderTest.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="SnykCliTest.cs" />
@@ -70,6 +75,16 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />
+    <EmbeddedResource Include="Resources\ErrorJsonObject.json" />
+    <EmbeddedResource Include="Resources\VulnerabilitiesArray.json" />
+    <EmbeddedResource Include="Resources\ErrorPlainText.json" />
+    <EmbeddedResource Include="Resources\VulnerabilitiesSingleObject.json" />
+  </ItemGroup>
+  <ItemGroup>
+    <EmbeddedResource Include="Properties\Resources.resx">
+      <Generator>ResXFileCodeGenerator</Generator>
+      <LastGenOutput>Resources.Designer.cs</LastGenOutput>
+    </EmbeddedResource>
   </ItemGroup>
   <Choose>
     <When Condition="'$(VisualStudioVersion)' == '10.0' And '$(IsCodedUITest)' == 'True'">

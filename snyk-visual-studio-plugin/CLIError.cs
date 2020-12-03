@@ -6,12 +6,51 @@ namespace Snyk.VisualStudio.Extension.CLI
     public class CliError
     {
         [DataMember(Name = "ok")]
-        internal bool IsSuccess;
+        private bool isSuccess;
         
         [DataMember(Name = "error")]
-        internal string Message;
+        private string message;
 
         [DataMember]
-        internal string Path;
+        private string path;
+
+        public bool IsSuccess
+        {
+            get
+            {
+                return isSuccess;
+            }
+
+            set
+            {
+                isSuccess = value;
+            }
+        }
+
+        public string Message
+        {
+            get
+            {
+                return message;
+            }
+
+            set
+            {
+                message = value;
+            }
+        }
+
+        public string Path
+        {
+            get
+            {
+                return path;
+            }
+
+            set
+            {
+                path = value;
+            }
+        }
     }
 }
