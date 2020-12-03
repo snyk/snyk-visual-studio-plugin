@@ -3,6 +3,8 @@ using Snyk.VisualStudio.Extension.CLI;
 using Snyk.VisualStudio.Extension.Services;
 using Snyk.VisualStudio.Extension.Settings;
 using System;
+using System.IO;
+using System.Reflection;
 
 namespace Snyk.VisualStudio.Extension.Tests
 {   
@@ -30,9 +32,6 @@ namespace Snyk.VisualStudio.Extension.Tests
         [TestMethod]
         public void BuildArguments_WithCustomEndpointOption()
         {
-            var dummyPackage = new SnykVSPackage();            
-            var dummyServiceProvider = new DummyServiceProvider();
-
             var cli = new SnykCli
             {
                 Options = new DummySnykOptions()
@@ -48,9 +47,6 @@ namespace Snyk.VisualStudio.Extension.Tests
         [TestMethod]
         public void BuildArguments_WithInsecureOption()
         {
-            var dummyPackage = new SnykVSPackage();
-            var dummyServiceProvider = new DummyServiceProvider();
-
             var cli = new SnykCli
             {
                 Options = new DummySnykOptions()
@@ -66,9 +62,6 @@ namespace Snyk.VisualStudio.Extension.Tests
         [TestMethod]
         public void BuildArguments_WithOrganizationOption()
         {
-            var dummyPackage = new SnykVSPackage();
-            var dummyServiceProvider = new DummyServiceProvider();
-
             var cli = new SnykCli
             {
                 Options = new DummySnykOptions()
@@ -84,9 +77,6 @@ namespace Snyk.VisualStudio.Extension.Tests
         [TestMethod]
         public void BuildArguments_WithAdditionalOptions()
         {
-            var dummyPackage = new SnykVSPackage();
-            var dummyServiceProvider = new DummyServiceProvider();
-
             var cli = new SnykCli
             {
                 Options = new DummySnykOptions()
@@ -102,9 +92,6 @@ namespace Snyk.VisualStudio.Extension.Tests
         [TestMethod]
         public void BuildArguments_WithAllOptions()
         {
-            var dummyPackage = new SnykVSPackage();
-            var dummyServiceProvider = new DummyServiceProvider();
-
             var cli = new SnykCli
             {
                 Options = new DummySnykOptions()
@@ -120,6 +107,109 @@ namespace Snyk.VisualStudio.Extension.Tests
             Assert.AreEqual("--json test --api=https://github.com/snyk/ --insecure --org=test-snyk-organization --file=C:\build.pom", cli.BuildArguments());
         }
 
+        [TestMethod]
+        public void IsSuccessCliJsonString_True()
+        {
+            var cli = new SnykCli
+            {
+                Options = new DummySnykOptions(),
+                SolutionService = SnykSolutionService.Instance
+            };
+
+            Assert.IsTrue(cli.IsSuccessCliJsonString("{\"vulnerabilities\": []}"));
+        }
+
+        [TestMethod]
+        public void IsSuccessCliJsonString_False()
+        {
+            var cli = new SnykCli
+            {
+                Options = new DummySnykOptions(),
+                SolutionService = SnykSolutionService.Instance
+            };
+
+            Assert.IsFalse(cli.IsSuccessCliJsonString("{\"error\": \"Error details.\"}"));
+        }
+
+        [TestMethod]
+        public void ConvertRawCliStringToCliResult_VulnerabilitiesArrayJson()
+        {
+            var cli = new SnykCli
+            {
+                Options = new DummySnykOptions(),
+                SolutionService = SnykSolutionService.Instance
+            };
+
+            var cliResult = cli.ConvertRawCliStringToCliResult(GetFileContents("VulnerabilitiesArray.json"));
+
+            Assert.AreEqual(2, cliResult.CLIVulnerabilities.Count);
+        }
+
+        [TestMethod]
+        public void ConvertRawCliStringToCliResult_VulnerabilitiesSingleJson()
+        {
+            var cli = new SnykCli
+            {
+                Options = new DummySnykOptions(),
+                SolutionService = SnykSolutionService.Instance
+            };
+
+            var cliResult = cli.ConvertRawCliStringToCliResult(GetFileContents("VulnerabilitiesSingleObject.json"));
+
+            Assert.AreEqual(1, cliResult.CLIVulnerabilities.Count);
+        }
+
+        [TestMethod]
+        public void ConvertRawCliStringToCliResult_ErrorJson()
+        {
+            var cli = new SnykCli
+            {
+                Options = new DummySnykOptions(),
+                SolutionService = SnykSolutionService.Instance
+            };
+
+            var cliResult = cli.ConvertRawCliStringToCliResult(GetFileContents("ErrorJsonObject.json"));
+
+            Assert.IsNotNull(cliResult.Error);
+            Assert.IsFalse(cliResult.Error.IsSuccess);
+            Assert.IsTrue(cliResult.Error.Message.Contains("Could not detect supported target files in C:\\Users\\Test\\Documents\\MultiProjectConsoleApplication."));
+            Assert.AreEqual("C:\\Users\\Test\\Documents\\MultiProjectConsoleApplication", cliResult.Error.Path);
+        }
+
+        [TestMethod]
+        public void ConvertRawCliStringToCliResult_PlainTextError()
+        {
+            var cli = new SnykCli
+            {
+                Options = new DummySnykOptions(),
+                SolutionService = SnykSolutionService.Instance
+            };
+
+            var cliResult = cli.ConvertRawCliStringToCliResult(GetFileContents("ErrorPlainText.json"));
+
+            Assert.IsNotNull(cliResult.Error);
+            Assert.IsFalse(cliResult.Error.IsSuccess);
+            Assert.IsTrue(cliResult.Error.Message.Contains("Please see our documentation for supported languages and target files:"));
+            Assert.AreEqual("", cliResult.Error.Path);
+        }
+
+        private string GetFileContents(string resourceFileName)
+        {
+            var assembly = Assembly.GetExecutingAssembly();
+            var resourceFilePath = $"Snyk.VisualStudio.Extension.Tests.Resources.{resourceFileName}";
+
+            using (var inputStream = assembly.GetManifestResourceStream(resourceFilePath))
+            {
+                if (inputStream != null)
+                {
+                    var streamReader = new StreamReader(inputStream);
+
+                    return streamReader.ReadToEnd();
+                }
+            }
+
+            return String.Empty;
+        }
     }
     
     class DummyServiceProvider : IServiceProvider

@@ -1,0 +1,5 @@
+{
+  "ok": false,
+  "error": "Could not detect supported target files in C:\\Users\\Test\\Documents\\MultiProjectConsoleApplication.\nPlease see our documentation for supported languages and target files: https://support.snyk.io/hc/en-us/articles/360000911957-Language-support and make sure you are in the right directory.",
+  "path": "C:\\Users\\Test\\Documents\\MultiProjectConsoleApplication"
+}

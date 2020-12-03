@@ -86,12 +86,12 @@ namespace Snyk.VisualStudio.Extension.CLI
             return String.Join(" ", arguments.ToArray());
         }
 
-        public CliResult ConvertRawCliStringToCliResult(String rawResultStr)
+        public CliResult ConvertRawCliStringToCliResult(String rawResult)
         {
-            if (rawResultStr.First() == '[')
+            if (rawResult.First() == '[')
             {
                 var cliVulnerabilitiesList = new List<CliVulnerabilities>();
-                var memoryStream = new MemoryStream(Encoding.UTF8.GetBytes(rawResultStr));
+                var memoryStream = new MemoryStream(Encoding.UTF8.GetBytes(rawResult));
                 var jsonSerializer = new DataContractJsonSerializer(cliVulnerabilitiesList.GetType());
 
                 cliVulnerabilitiesList = jsonSerializer.ReadObject(memoryStream) as List<CliVulnerabilities>;
@@ -102,12 +102,12 @@ namespace Snyk.VisualStudio.Extension.CLI
                 {
                     CLIVulnerabilities = cliVulnerabilitiesList
                 };
-            } else if (rawResultStr.First() == '{')
+            } else if (rawResult.First() == '{')
             {
-                if (IsSuccessCliJsonString(rawResultStr))
+                if (IsSuccessCliJsonString(rawResult))
                 {
                     var cliVulnerabilities = new CliVulnerabilities();
-                    var memoryStream = new MemoryStream(Encoding.UTF8.GetBytes(rawResultStr));
+                    var memoryStream = new MemoryStream(Encoding.UTF8.GetBytes(rawResult));
                     var jsonSerializer = new DataContractJsonSerializer(cliVulnerabilities.GetType());
 
                     cliVulnerabilities = jsonSerializer.ReadObject(memoryStream) as CliVulnerabilities;
@@ -124,7 +124,7 @@ namespace Snyk.VisualStudio.Extension.CLI
                 } else
                 {
                     var cliError = new CliError();
-                    var memoryStream = new MemoryStream(Encoding.UTF8.GetBytes(rawResultStr));
+                    var memoryStream = new MemoryStream(Encoding.UTF8.GetBytes(rawResult));
                     var jsonSerializer = new DataContractJsonSerializer(cliError.GetType());
 
                     cliError = jsonSerializer.ReadObject(memoryStream) as CliError;
@@ -142,7 +142,9 @@ namespace Snyk.VisualStudio.Extension.CLI
                 {
                     Error = new CliError
                     {
-                        Message = rawResultStr
+                        IsSuccess = false,
+                        Message = rawResult,
+                        Path = ""
                     }
                 };
             }
