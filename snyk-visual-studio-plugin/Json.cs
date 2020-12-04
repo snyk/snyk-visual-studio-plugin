@@ -18,5 +18,17 @@ namespace Snyk.VisualStudio.Extension.Util
 
             return result;
         }
+
+        public static string Serialize(object source)
+        {
+            var memoryStream = new MemoryStream();
+            var jsonSerializer = new DataContractJsonSerializer(source.GetType());
+            jsonSerializer.WriteObject(memoryStream, source);
+            memoryStream.Position = 0;
+
+            var streamReader = new StreamReader(memoryStream);
+
+            return streamReader.ReadToEnd();
+        }
     }
 }
