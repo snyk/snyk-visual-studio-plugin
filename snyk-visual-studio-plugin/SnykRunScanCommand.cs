@@ -123,54 +123,64 @@ namespace Snyk.VisualStudio.Extension.UI
                     throw new NotSupportedException("Cannot create window.");
                 }
 
-                IVsWindowFrame windowFrame = (IVsWindowFrame)toolWindowPane.Frame;
+                IVsWindowFrame windowFrame = (IVsWindowFrame) toolWindowPane.Frame;
                 Microsoft.VisualStudio.ErrorHandler.ThrowOnFailure(windowFrame.Show());
                 
-                SnykToolWindowControl toolWindowControl = (SnykToolWindowControl)toolWindowPane.Content;
+                SnykToolWindowControl toolWindowControl = (SnykToolWindowControl) toolWindowPane.Content;
                 DataGrid resultsDataGrid = toolWindowControl.resultsDataGrid;
 
-                resultsDataGrid.Columns.Clear();
-                resultsDataGrid.Items.Clear();                
+                InitializeDataGridColumns(resultsDataGrid);
 
-                DataGridTextColumn titleTextColumn = new DataGridTextColumn();
-                titleTextColumn.Header = "Title";
-                titleTextColumn.Binding = new Binding("title");
-
-                DataGridTextColumn versionTextColumn = new DataGridTextColumn();
-                versionTextColumn.Header = "Version";
-                versionTextColumn.Binding = new Binding("version");
-
-                DataGridTextColumn descriptionTextColumn = new DataGridTextColumn();
-                descriptionTextColumn.Header = "Description";
-                descriptionTextColumn.Binding = new Binding("description");
-
-                DataGridTextColumn severityTextColumn = new DataGridTextColumn();
-                severityTextColumn.Header = "Severity";
-                severityTextColumn.Binding = new Binding("severity");
-
-                DataGridTextColumn fixedInTextColumn = new DataGridTextColumn();
-                fixedInTextColumn.Header = "Fixed In";
-                fixedInTextColumn.Binding = new Binding("fixedIn");
-
-                DataGridTextColumn moduleNameTextColumn = new DataGridTextColumn();
-                moduleNameTextColumn.Header = "Module Name";
-                moduleNameTextColumn.Binding = new Binding("moduleName");
-               
-                resultsDataGrid.Columns.Add(titleTextColumn);
-                resultsDataGrid.Columns.Add(moduleNameTextColumn);
-                resultsDataGrid.Columns.Add(versionTextColumn);
-                resultsDataGrid.Columns.Add(severityTextColumn);
-                //resultsDataGrid.Columns.Add(fixedInTextColumn);
-                resultsDataGrid.Columns.Add(descriptionTextColumn);
-
-                foreach (CliVulnerabilities cliVulnerabilities in cliResult.CLIVulnerabilities)
-                {
-                    foreach (Vulnerability vulnerability in cliVulnerabilities.vulnerabilities)
-                    {
-                        resultsDataGrid.Items.Add(vulnerability);
-                    }
-                }                
+                FillDataGrid(cliResult, resultsDataGrid);                              
             }            
+        }
+
+        private void FillDataGrid(CliResult cliResult, DataGrid resultsDataGrid)
+        {
+            foreach (CliVulnerabilities cliVulnerabilities in cliResult.CLIVulnerabilities)
+            {
+                foreach (Vulnerability vulnerability in cliVulnerabilities.vulnerabilities)
+                {
+                    resultsDataGrid.Items.Add(vulnerability);
+                }
+            }
+        }
+
+        private void InitializeDataGridColumns(DataGrid dataGrid)
+        {
+            dataGrid.Columns.Clear();
+            dataGrid.Items.Clear();
+
+            DataGridTextColumn titleTextColumn = new DataGridTextColumn();
+            titleTextColumn.Header = "Title";
+            titleTextColumn.Binding = new Binding("title");
+
+            DataGridTextColumn versionTextColumn = new DataGridTextColumn();
+            versionTextColumn.Header = "Version";
+            versionTextColumn.Binding = new Binding("version");
+
+            DataGridTextColumn descriptionTextColumn = new DataGridTextColumn();
+            descriptionTextColumn.Header = "Description";
+            descriptionTextColumn.Binding = new Binding("description");
+
+            DataGridTextColumn severityTextColumn = new DataGridTextColumn();
+            severityTextColumn.Header = "Severity";
+            severityTextColumn.Binding = new Binding("severity");
+
+            DataGridTextColumn fixedInTextColumn = new DataGridTextColumn();
+            fixedInTextColumn.Header = "Fixed In";
+            fixedInTextColumn.Binding = new Binding("fixedIn");
+
+            DataGridTextColumn moduleNameTextColumn = new DataGridTextColumn();
+            moduleNameTextColumn.Header = "Module Name";
+            moduleNameTextColumn.Binding = new Binding("moduleName");
+
+            dataGrid.Columns.Add(titleTextColumn);
+            dataGrid.Columns.Add(moduleNameTextColumn);
+            dataGrid.Columns.Add(versionTextColumn);
+            dataGrid.Columns.Add(severityTextColumn);
+            //resultsDataGrid.Columns.Add(fixedInTextColumn);
+            dataGrid.Columns.Add(descriptionTextColumn);
         }
     }
 }
