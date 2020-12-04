@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
-using System.Runtime.Serialization.Json;
 using System.Text;
 using EnvDTE;
 using Snyk.VisualStudio.Extension.Settings;
@@ -133,9 +132,9 @@ namespace Snyk.VisualStudio.Extension.CLI
             }
         }        
 
-        public bool IsSuccessCliJsonString(string JsonStr)
+        public bool IsSuccessCliJsonString(string json)
         {
-            return JsonStr.Contains("\"vulnerabilities\":") && !JsonStr.Contains("\"error\":");
+            return json.Contains("\"vulnerabilities\":") && !json.Contains("\"error\":");
         }
 
         public string GetProjectDirectory()
