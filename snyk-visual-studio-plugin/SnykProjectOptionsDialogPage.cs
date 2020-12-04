@@ -14,11 +14,7 @@ namespace Snyk.VisualStudio.Extension.Settings
         {
             get
             {
-                var optionsUserControl = new SnykProjectOptionsUserControl(SnykSolutionService.Instance);
-                optionsUserControl.projectOptionsPage = this;
-                optionsUserControl.Initialize();
-
-                return optionsUserControl;
+                return new SnykProjectOptionsUserControl(SnykSolutionService.Instance);
             }
         }
     }
