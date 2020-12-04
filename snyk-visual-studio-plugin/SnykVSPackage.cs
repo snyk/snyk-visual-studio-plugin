@@ -63,52 +63,7 @@ namespace Snyk.VisualStudio.Extension
             instance = this;
 
             SnykSolutionService.NewInstance(this);
-        }        
-
-        public static SnykVSPackage GetInstance()
-        {
-            return instance;
-        }
-
-        public string ApiToken
-        {
-            get
-            {
-                return GetSnykGeneralOptionsDialogPage().ApiToken;
-            }
-        }
-
-        public string Organization
-        {
-            get
-            {
-                return GetSnykGeneralOptionsDialogPage().Organization;
-            }
-        }
-
-        public bool IgnoreUnknownCA
-        {
-            get
-            {
-                return GetSnykGeneralOptionsDialogPage().IgnoreUnknownCA;
-            }
-        }
-
-        public string CustomEndpoint
-        {
-            get
-            {
-                return GetSnykGeneralOptionsDialogPage().CustomEndpoint;
-            }
-        }
-
-        public string AdditionalOptions
-        {
-            get
-            {
-                return SnykProjectSettingsService.NewInstance(this).GetAdditionalOptions();
-            }
-        }
+        }             
 
         public SnykSolutionService SolutionService
         {

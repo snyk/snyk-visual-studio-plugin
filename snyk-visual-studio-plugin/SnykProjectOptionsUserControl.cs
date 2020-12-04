@@ -51,30 +51,30 @@ namespace Snyk.VisualStudio.Extension.UI
 
         public void Initialize()
         {            
-            additionalOptionsTextBox.Text = "";
+            //additionalOptionsTextBox.Text = "";
 
-            bool isProjectOpened = projectSettingsService.IsProjectOpened();
+            //bool isProjectOpened = projectSettingsService.IsProjectOpened();
 
-            additionalOptionsTextBox.Enabled = isProjectOpened;
+            //additionalOptionsTextBox.Enabled = isProjectOpened;
 
-            if (!isProjectOpened)
-            {
-                return;
-            }
+            //if (!isProjectOpened)
+            //{
+            //    return;
+            //}
 
-            try
-            {
-                string additionalOptions = projectSettingsService.GetAdditionalOptions();
+            //try
+            //{
+            //    string additionalOptions = projectSettingsService.GetAdditionalOptions();
 
-                if (!String.IsNullOrEmpty(additionalOptions))
-                {
-                    additionalOptionsTextBox.Text = additionalOptions;
-                }
-            }
-            catch (Exception exception)
-            {
-                MessageBox.Show(exception.ToString());
-            }
+            //    if (!String.IsNullOrEmpty(additionalOptions))
+            //    {
+            //        additionalOptionsTextBox.Text = additionalOptions;
+            //    }
+            //}
+            //catch (Exception exception)
+            //{
+            //    MessageBox.Show(exception.ToString());
+            //}
         }
 
         private void additionalOptionsTextBox_TextChanged(object sender, EventArgs e)
