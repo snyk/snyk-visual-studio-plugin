@@ -7,8 +7,6 @@ namespace Snyk.VisualStudio.Extension.UI
 {
     public partial class SnykProjectOptionsUserControl : UserControl
     {       
-        internal SnykProjectOptionsDialogPage projectOptionsPage;
-
         private SnykProjectSettingsService projectSettingsService;
 
         public SnykProjectOptionsUserControl(SnykSolutionService solutionService)
@@ -47,35 +45,7 @@ namespace Snyk.VisualStudio.Extension.UI
             {
                 additionalOptionsTextBox.Text = "";
             }
-        }
-
-        public void Initialize()
-        {            
-            //additionalOptionsTextBox.Text = "";
-
-            //bool isProjectOpened = projectSettingsService.IsProjectOpened();
-
-            //additionalOptionsTextBox.Enabled = isProjectOpened;
-
-            //if (!isProjectOpened)
-            //{
-            //    return;
-            //}
-
-            //try
-            //{
-            //    string additionalOptions = projectSettingsService.GetAdditionalOptions();
-
-            //    if (!String.IsNullOrEmpty(additionalOptions))
-            //    {
-            //        additionalOptionsTextBox.Text = additionalOptions;
-            //    }
-            //}
-            //catch (Exception exception)
-            //{
-            //    MessageBox.Show(exception.ToString());
-            //}
-        }
+        }        
 
         private void additionalOptionsTextBox_TextChanged(object sender, EventArgs e)
         {
