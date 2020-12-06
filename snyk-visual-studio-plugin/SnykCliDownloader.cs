@@ -10,7 +10,9 @@ namespace Snyk.VisualStudio.Extension.CLI
         private const string LatestReleasesUrl = "https://api.github.com/repos/snyk/snyk/releases/latest";
 
         private const string LatestReleaseDownloadUrl = "https://github.com/snyk/snyk/releases/download/{0}/{1}";
-        
+
+        public static SnykCliDownloader NewInstance() => new SnykCliDownloader();
+
         public LatestReleaseInfo GetLatestReleaseInfo(WebClient webClient)
         {
             string latestReleasesInfoJson = webClient.DownloadString(LatestReleasesUrl);

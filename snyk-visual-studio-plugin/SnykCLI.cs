@@ -27,37 +27,34 @@ namespace Snyk.VisualStudio.Extension.CLI
             SolutionService = solutionService;            
         }
 
+        public string GetApiToken()
+        {
+            var consoleProcess = CreateConsoleProcess(GetSnykCliPath(), "config get api");
+            
+            return RunConsoleProcessResult(consoleProcess);
+        }
+
+        public string Authenticate()
+        {
+            var consoleProcess = CreateConsoleProcess(GetSnykCliPath(), "auth");
+
+            return RunConsoleProcessResult(consoleProcess);
+        }
+
         public CliResult Scan()
-        {           
-            var cliProcess = new System.Diagnostics.Process
-            {
-                StartInfo = new ProcessStartInfo
-                {
-                    FileName = GetSnykCliPath(),
-                    Arguments = BuildArguments(),
-                    UseShellExecute = false,
-                    RedirectStandardOutput = true,
-                    CreateNoWindow = true,
-                }
-            };
+        {
+            var consoleProcess = CreateConsoleProcess(GetSnykCliPath(), BuildArguments());            
 
             if (!String.IsNullOrEmpty(Options.ApiToken))
             {
-                cliProcess.StartInfo.EnvironmentVariables["SNYK_TOKEN"] = Options.ApiToken;
+                consoleProcess.StartInfo.EnvironmentVariables["SNYK_TOKEN"] = Options.ApiToken;
             }
             
-            cliProcess.StartInfo.WorkingDirectory = GetProjectDirectory();
+            consoleProcess.StartInfo.WorkingDirectory = GetProjectDirectory();
 
-            var stringBuilder = new StringBuilder();
-
-            cliProcess.Start();
-
-            while (!cliProcess.StandardOutput.EndOfStream)
-            {
-                stringBuilder.AppendLine(cliProcess.StandardOutput.ReadLine());
-            }
+            string consoleResult = RunConsoleProcessResult(consoleProcess);
             
-            return ConvertRawCliStringToCliResult(stringBuilder.ToString());
+            return ConvertRawCliStringToCliResult(consoleResult);
         }
 
         public string BuildArguments()
@@ -187,6 +184,35 @@ namespace Snyk.VisualStudio.Extension.CLI
             {
                 solutionService = value;
             }
+        }
+
+        private System.Diagnostics.Process CreateConsoleProcess(string fileName, string arguments)
+        {
+            return new System.Diagnostics.Process
+            {
+                StartInfo = new ProcessStartInfo
+                {
+                    FileName = fileName,
+                    Arguments = arguments,
+                    UseShellExecute = false,
+                    RedirectStandardOutput = true,
+                    CreateNoWindow = true,
+                }
+            };            
+        }
+
+        private string RunConsoleProcessResult(System.Diagnostics.Process consoleProcess)
+        {           
+            var stringBuilder = new StringBuilder();
+
+            consoleProcess.Start();
+
+            while (!consoleProcess.StandardOutput.EndOfStream)
+            {
+                stringBuilder.AppendLine(consoleProcess.StandardOutput.ReadLine());
+            }
+
+            return stringBuilder.ToString().Replace("\n", "").Replace("\r", "");
         }
     }   
 }

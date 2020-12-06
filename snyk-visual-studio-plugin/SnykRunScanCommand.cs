@@ -129,7 +129,7 @@ namespace Snyk.VisualStudio.Extension.UI
                 SnykToolWindowControl toolWindowControl = (SnykToolWindowControl) toolWindowPane.Content;
                 DataGrid resultsDataGrid = toolWindowControl.resultsDataGrid;
 
-                InitializeDataGridColumns(resultsDataGrid);
+                //InitializeDataGridColumns(resultsDataGrid);
 
                 FillDataGrid(cliResult, resultsDataGrid);                              
             }            

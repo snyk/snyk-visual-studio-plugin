@@ -20,7 +20,7 @@ namespace Snyk.VisualStudio.Extension.Settings
             get
             {
                 var generalSettingsUserControl = new SnykGeneralSettingsUserControl();
-
+                
                 generalSettingsUserControl.optionsDialogPage = this;
                 generalSettingsUserControl.Initialize();
 
@@ -88,5 +88,7 @@ namespace Snyk.VisualStudio.Extension.Settings
                 additionalOptions = value;
             }
         }
+
+        public SnykVSPackage Package { get; internal set; }
     }
 }
