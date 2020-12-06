@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Windows.Forms;
 using Snyk.VisualStudio.Extension.Settings;
+using Snyk.VisualStudio.Extension.CLI;
 
 namespace Snyk.VisualStudio.Extension.UI
 {   
@@ -23,7 +24,22 @@ namespace Snyk.VisualStudio.Extension.UI
         
         private void authenticateButton_Click(object sender, EventArgs e)
         {
-            tokenTextBox.Text = SnykAuthenticationService.NewInstance().RequestApiToken();
+            var cli = new SnykCli
+            {
+                Options = optionsDialogPage,
+                SolutionService = optionsDialogPage.Package.SolutionService
+            };
+
+            string apiToken = cli.GetApiToken();
+
+            if (String.IsNullOrEmpty(apiToken))
+            {
+                cli.Authenticate();
+
+                apiToken = cli.GetApiToken();
+            }
+
+            tokenTextBox.Text = apiToken;
         }
 
         private void tokenTextBox_TextChanged(object sender, EventArgs e)

@@ -60,9 +60,7 @@ namespace Snyk.VisualStudio.Extension
             // any Visual Studio service because at this point the package object is created but
             // not sited yet inside Visual Studio environment. The place to do all the other
             // initialization is the Initialize method.
-            instance = this;
-
-            SnykSolutionService.NewInstance(this);
+            instance = this;           
         }             
 
         public SnykSolutionService SolutionService
@@ -96,9 +94,12 @@ namespace Snyk.VisualStudio.Extension
         {
             base.Initialize();
 
-            var cliDownloader = new SnykCliDownloader();
+            GetSnykGeneralOptionsDialogPage().Package = this;
 
-            cliDownloader.Download();
+            SnykSolutionService.NewInstance(this);
+
+            SnykCliDownloader.NewInstance().Download();
+
             SnykRunScanCommand.Initialize(this);
             SnykToolWindowCommand.Initialize(this);
         }
