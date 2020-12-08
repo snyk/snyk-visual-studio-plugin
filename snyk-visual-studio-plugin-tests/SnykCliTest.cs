@@ -14,7 +14,7 @@ namespace Snyk.VisualStudio.Extension.Tests
         [AssemblyInitialize]
         public static void AssemblyInit(TestContext context)
         {
-            SnykSolutionService.NewInstance(new DummyServiceProvider());
+            SnykSolutionService.Initialize(new DummyServiceProvider());
         }
 
         [TestMethod]
