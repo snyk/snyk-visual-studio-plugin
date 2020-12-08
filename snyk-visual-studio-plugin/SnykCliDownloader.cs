@@ -2,6 +2,7 @@
 using System.IO;
 using System.Net;
 using Snyk.VisualStudio.Extension.Util;
+using Snyk.VisualStudio.Extension.UI;
 
 namespace Snyk.VisualStudio.Extension.CLI
 {   
@@ -20,7 +21,7 @@ namespace Snyk.VisualStudio.Extension.CLI
             return (LatestReleaseInfo) Json.Deserialize(latestReleasesInfoJson, typeof(LatestReleaseInfo));
         }
 
-        public void Download(string cliFileDestinationPath = null)
+        public void Download(string cliFileDestinationPath = null, ISnykProgressBarManager progressManager = null)
         {
             if (cliFileDestinationPath == null)
             {
@@ -41,7 +42,25 @@ namespace Snyk.VisualStudio.Extension.CLI
 
                     Directory.CreateDirectory(snykDirectoryPath);
 
-                    webClient.DownloadFile(cliDownloadUrl, cliFileDestinationPath);
+                    if (progressManager != null)
+                    {
+                        progressManager.Show("Downloading latest Snyk CLI release...");
+
+                        webClient.DownloadProgressChanged += (source, progressChangedEvent) =>
+                        {
+                            progressManager.Update(progressChangedEvent.ProgressPercentage);
+                        };
+
+                        webClient.DownloadFileCompleted += (source, downloadCompletedEvent) =>
+                        {
+                            progressManager.Hide();
+                        };
+
+                        webClient.DownloadFileAsync(new Uri(cliDownloadUrl), cliFileDestinationPath);
+                    } else
+                    {
+                        webClient.DownloadFile(cliDownloadUrl, cliFileDestinationPath);
+                    }                    
                 }
             }
         }             

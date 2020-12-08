@@ -16,7 +16,7 @@ namespace Snyk.VisualStudio.Extension.Services
             this.ServiceProvider = serviceProvider;
         }
 
-        public static SnykSolutionService NewInstance(IServiceProvider serviceProvider)
+        public static SnykSolutionService Initialize(IServiceProvider serviceProvider)
         {
             if (instance == null)
             {

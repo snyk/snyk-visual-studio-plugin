@@ -13,6 +13,7 @@ using Snyk.VisualStudio.Extension.UI;
 using Snyk.VisualStudio.Extension.Settings;
 using Snyk.VisualStudio.Extension.CLI;
 using Snyk.VisualStudio.Extension.Services;
+using Microsoft.VisualStudio;
 
 namespace Snyk.VisualStudio.Extension
 {
@@ -60,7 +61,7 @@ namespace Snyk.VisualStudio.Extension
             // any Visual Studio service because at this point the package object is created but
             // not sited yet inside Visual Studio environment. The place to do all the other
             // initialization is the Initialize method.
-            instance = this;           
+            instance = this;
         }             
 
         public SnykSolutionService SolutionService
@@ -77,13 +78,38 @@ namespace Snyk.VisualStudio.Extension
             {
                 return GetSnykGeneralOptionsDialogPage();
             }
+        }               
+
+        public void ShowToolWindow()
+        {
+            ToolWindowPane toolWindowPane = FindToolWindow(typeof(SnykToolWindow), 0, true);
+
+            if ((null == toolWindowPane) || (null == toolWindowPane.Frame))
+            {
+                throw new NotSupportedException("Cannot create window.");
+            }
+
+            IVsWindowFrame windowFrame = (IVsWindowFrame)toolWindowPane.Frame;
+            ErrorHandler.ThrowOnFailure(windowFrame.Show());
         }
-        
+
         private SnykGeneralOptionsDialogPage GetSnykGeneralOptionsDialogPage()
         {
-            return (SnykGeneralOptionsDialogPage) GetDialogPage(typeof(SnykGeneralOptionsDialogPage));
+            return (SnykGeneralOptionsDialogPage)GetDialogPage(typeof(SnykGeneralOptionsDialogPage));
+        }       
+
+        private SnykToolWindowControl GetToolWindow()
+        {
+            ToolWindowPane toolWindowPane = FindToolWindow(typeof(SnykToolWindow), 0, true);
+
+            if ((null == toolWindowPane) || (null == toolWindowPane.Frame))
+            {
+                throw new NotSupportedException("Cannot find Snyk tool window.");
+            }
+
+            return (SnykToolWindowControl)toolWindowPane.Content;
         }
-        
+
         #region Package Members
 
         /// <summary>
@@ -94,14 +120,20 @@ namespace Snyk.VisualStudio.Extension
         {
             base.Initialize();
 
-            GetSnykGeneralOptionsDialogPage().Package = this;
-
-            SnykSolutionService.NewInstance(this);
-
-            SnykCliDownloader.NewInstance().Download();
-
+            SnykSolutionService.Initialize(this);
             SnykRunScanCommand.Initialize(this);
             SnykToolWindowCommand.Initialize(this);
+
+            GetSnykGeneralOptionsDialogPage().Package = this;
+
+            SnykToolWindowControl toolWindow = GetToolWindow();
+
+            System.Threading.Tasks.Task.Run(() =>
+            {
+                ShowToolWindow();
+
+                SnykCliDownloader.NewInstance().Download(progressManager: toolWindow);
+            });
         }
 
         #endregion

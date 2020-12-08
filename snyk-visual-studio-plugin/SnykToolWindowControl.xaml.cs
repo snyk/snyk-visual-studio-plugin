@@ -6,6 +6,7 @@
 
 namespace Snyk.VisualStudio.Extension.UI
 {
+    using System;
     using System.Diagnostics.CodeAnalysis;
     using System.Windows;
     using System.Windows.Controls;
@@ -13,7 +14,7 @@ namespace Snyk.VisualStudio.Extension.UI
     /// <summary>
     /// Interaction logic for SnykToolWindowControl.
     /// </summary>
-    public partial class SnykToolWindowControl : UserControl
+    public partial class SnykToolWindowControl : UserControl, ISnykProgressBarManager
     {
         /// <summary>
         /// Initializes a new instance of the <see cref="SnykToolWindowControl"/> class.
@@ -22,6 +23,52 @@ namespace Snyk.VisualStudio.Extension.UI
         {
             this.InitializeComponent();
         }
+
+        public SnykVSPackage Package { get; internal set; }
+
+        public void Hide()
+        {
+            this.Dispatcher.Invoke(() =>
+            {
+                this.progressBarPanel.Visibility = Visibility.Hidden;
+
+                this.progressBarTitle.Text = "";
+            });
+        }
+
+        public void SetTitle(string title)
+        {
+            this.Dispatcher.Invoke(() =>
+            {
+                this.progressBarTitle.Text = title;
+            });
+        }
+
+        public void Show()
+        {
+            this.Dispatcher.Invoke(() =>
+            {
+                this.progressBarPanel.Visibility = Visibility.Visible;
+            });
+        }
+
+        public void Show(string title)
+        {
+            this.Dispatcher.Invoke(() =>
+            {
+                this.progressBarPanel.Visibility = Visibility.Visible;
+
+                this.progressBarTitle.Text = title;
+            });
+        }
+
+        public void Update(int value)
+        {
+            this.Dispatcher.Invoke(() =>
+            {
+                this.progressBar.Value = value;
+            });            
+        }        
 
         /// <summary>
         /// Handles click on the button by displaying a message box.

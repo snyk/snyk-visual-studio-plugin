@@ -9,8 +9,15 @@
              d:DesignHeight="300" d:DesignWidth="300"
              Name="SnykToolWindow">
     <Grid>
-        <StackPanel Orientation="Vertical" Margin="1" ScrollViewer.HorizontalScrollBarVisibility="Auto" ScrollViewer.VerticalScrollBarVisibility="Auto" UseLayoutRounding="False" ScrollViewer.CanContentScroll="True" CanHorizontallyScroll="True" CanVerticallyScroll="True">
-            <DataGrid x:Name="resultsDataGrid" ItemsSource="{Binding}" UseLayoutRounding="False" Padding="1" HorizontalContentAlignment="Stretch" VerticalContentAlignment="Stretch" Margin="5,5,3,5" RenderTransformOrigin="0,0.5">
+        <StackPanel Orientation="Vertical" Margin="1" UseLayoutRounding="False">
+            <StackPanel Name="progressBarPanel" Visibility="Hidden" Orientation="Vertical" Margin="1" UseLayoutRounding="False">
+                <Grid>
+                    <ProgressBar x:Name="progressBar" Minimum="0" Maximum="100" Height="10"/>
+                    <TextBlock Text="{Binding ElementName=progressBar, Path=Value, StringFormat={}{0:0}%}" HorizontalAlignment="Center" VerticalAlignment="Center" FontSize="10"/>
+                </Grid>
+                <TextBlock Name="progressBarTitle" Text="" HorizontalAlignment="Center" VerticalAlignment="Center" FontSize="12"/>
+            </StackPanel>
+            <DataGrid x:Name="resultsDataGrid" Visibility="Hidden" ItemsSource="{Binding}" UseLayoutRounding="False" Padding="1" ScrollViewer.HorizontalScrollBarVisibility="Auto" ScrollViewer.VerticalScrollBarVisibility="Auto" HorizontalContentAlignment="Stretch" VerticalContentAlignment="Stretch" Margin="5,5,3,5" RenderTransformOrigin="0,0.5" ScrollViewer.CanContentScroll="True">
                 <DataGrid.Columns>
                     <DataGridTextColumn Header="Title" Binding="{Binding title}"/>
                     <DataGridTextColumn Header="Version" Binding="{Binding version}"/>
