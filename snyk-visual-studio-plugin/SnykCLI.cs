@@ -45,11 +45,6 @@ namespace Snyk.VisualStudio.Extension.CLI
 
         public CliResult Scan(ISnykProgressBarManager progressManager = null)
         {
-            if (progressManager != null)
-            {
-                progressManager.ShowIndeterminate("Scanning...");
-            }
-
             var consoleProcess = CreateConsoleProcess(GetSnykCliPath(), BuildArguments());
 
             if (!String.IsNullOrEmpty(Options.ApiToken))
@@ -61,14 +56,7 @@ namespace Snyk.VisualStudio.Extension.CLI
 
             string consoleResult = RunConsoleProcessResult(consoleProcess);
 
-            var cliResult = ConvertRawCliStringToCliResult(consoleResult);
-
-            if (progressManager != null)
-            {
-                progressManager.Hide();
-            }
-
-            return cliResult;
+            return ConvertRawCliStringToCliResult(consoleResult);
         }
 
         public string BuildArguments()
