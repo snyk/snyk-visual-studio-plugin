@@ -100,6 +100,8 @@ namespace Snyk.VisualStudio.Extension.UI
                 var snykPackage = (SnykVSPackage)package;
                 var toolWindow = snykPackage.GetToolWindow();
 
+                toolWindow.ShowIndeterminate("Scanning...");
+
                 var cli = new SnykCli
                 {
                     Options = snykPackage.Options,
@@ -122,6 +124,8 @@ namespace Snyk.VisualStudio.Extension.UI
                 {
                     toolWindow.DisplayCliResult(cliResult);
                 }
+
+                toolWindow.Hide();
             });                        
         }                
     }
