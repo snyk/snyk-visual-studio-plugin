@@ -2,6 +2,9 @@
 using System.Windows.Forms;
 using Snyk.VisualStudio.Extension.Settings;
 using Snyk.VisualStudio.Extension.CLI;
+using System.Threading.Tasks;
+using System.Reflection;
+using System.Linq.Expressions;
 
 namespace Snyk.VisualStudio.Extension.UI
 {   
@@ -22,10 +25,22 @@ namespace Snyk.VisualStudio.Extension.UI
             ignoreUnknownCACheckBox.Checked = optionsDialogPage.IgnoreUnknownCA;
         }
         
-        private void authenticateButton_Click(object sender, EventArgs e)
+        private void authenticateButton_Click(object sender, EventArgs eventArgs)
+        {
+            authProgressBar.Visible = true;
+
+            Task.Run(() => GetApiToken()).ContinueWith(task => 
+            {                
+                this.authProgressBar.Invoke((MethodInvoker)delegate {
+                    this.authProgressBar.Visible = false;
+                });
+            });            
+        }        
+
+        private void GetApiToken()
         {
             var package = optionsDialogPage.Package;
-            
+
             var cli = new SnykCli
             {
                 Options = optionsDialogPage,
@@ -41,7 +56,10 @@ namespace Snyk.VisualStudio.Extension.UI
                 apiToken = cli.GetApiToken();
             }
 
-            tokenTextBox.Text = apiToken;
+            tokenTextBox.Invoke((MethodInvoker)delegate
+            {
+                tokenTextBox.Text = apiToken;
+            });            
         }
 
         private void tokenTextBox_TextChanged(object sender, EventArgs e)
