@@ -76,7 +76,7 @@ namespace Snyk.VisualStudio.Extension
         {
             get
             {
-                return GetSnykGeneralOptionsDialogPage();
+                return SnykGeneralOptionsDialogPage;
             }
         }               
 
@@ -105,9 +105,12 @@ namespace Snyk.VisualStudio.Extension
             return (SnykToolWindowControl)toolWindowPane.Content;
         }
 
-        private SnykGeneralOptionsDialogPage GetSnykGeneralOptionsDialogPage()
+        private SnykGeneralOptionsDialogPage SnykGeneralOptionsDialogPage
         {
-            return (SnykGeneralOptionsDialogPage)GetDialogPage(typeof(SnykGeneralOptionsDialogPage));
+            get
+            {
+                return (SnykGeneralOptionsDialogPage)GetDialogPage(typeof(SnykGeneralOptionsDialogPage));
+            }            
         }               
 
         #region Package Members
@@ -123,8 +126,7 @@ namespace Snyk.VisualStudio.Extension
             SnykSolutionService.Initialize(this);
             SnykRunScanCommand.Initialize(this);
             SnykToolWindowCommand.Initialize(this);
-
-            GetSnykGeneralOptionsDialogPage().Package = this;
+            SnykGeneralOptionsDialogPage.Initialize(this);
 
             SnykToolWindowControl toolWindow = GetToolWindow();
 

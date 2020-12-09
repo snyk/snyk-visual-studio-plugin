@@ -24,10 +24,12 @@ namespace Snyk.VisualStudio.Extension.UI
         
         private void authenticateButton_Click(object sender, EventArgs e)
         {
+            var package = optionsDialogPage.Package;
+            
             var cli = new SnykCli
             {
                 Options = optionsDialogPage,
-                SolutionService = optionsDialogPage.Package.SolutionService
+                SolutionService = package.SolutionService
             };
 
             string apiToken = cli.GetApiToken();

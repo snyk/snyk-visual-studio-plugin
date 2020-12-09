@@ -15,6 +15,8 @@ namespace Snyk.VisualStudio.Extension.Settings
         private bool ignoreUnknownCA = false;
         private string additionalOptions = "";
 
+        private SnykVSPackage package;
+
         protected override IWin32Window Window
         {
             get
@@ -25,6 +27,19 @@ namespace Snyk.VisualStudio.Extension.Settings
                 generalSettingsUserControl.Initialize();
 
                 return generalSettingsUserControl;
+            }
+        }
+
+        public void Initialize(SnykVSPackage package)
+        {
+            this.package = package;
+        }
+
+        public SnykVSPackage Package
+        {
+            get
+            {
+                return package;
             }
         }
 
@@ -87,8 +102,6 @@ namespace Snyk.VisualStudio.Extension.Settings
             {
                 additionalOptions = value;
             }
-        }
-
-        public SnykVSPackage Package { get; internal set; }
+        }        
     }
 }
