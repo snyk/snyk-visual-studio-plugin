@@ -9,7 +9,6 @@ using Snyk.VisualStudio.Extension.Settings;
 using Snyk.VisualStudio.Extension.Services;
 using Snyk.VisualStudio.Extension.Util;
 using Snyk.VisualStudio.Extension.UI;
-using System.Threading.Tasks;
 
 namespace Snyk.VisualStudio.Extension.CLI
 {
