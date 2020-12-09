@@ -95,92 +95,34 @@ namespace Snyk.VisualStudio.Extension.UI
         /// <param name="e">Event args.</param>
         private void MenuItemCallback(object sender, EventArgs e)
         {
-            SnykVSPackage snykPackage = (SnykVSPackage) package;
-
-            var cli = new SnykCli
+            System.Threading.Tasks.Task.Run(() =>
             {
-                Options = snykPackage.Options,
-                SolutionService = snykPackage.SolutionService
-            };
+                var snykPackage = (SnykVSPackage)package;
+                var toolWindow = snykPackage.GetToolWindow();
 
-            CliResult cliResult = cli.Scan();            
-
-            if (!cliResult.IsSuccessful())
-            {
-                VsShellUtilities.ShowMessageBox(
-                    this.ServiceProvider,
-                    cliResult.Error.Message,
-                    "Snyk",
-                    OLEMSGICON.OLEMSGICON_WARNING,
-                    OLEMSGBUTTON.OLEMSGBUTTON_OK,
-                    OLEMSGDEFBUTTON.OLEMSGDEFBUTTON_FIRST);
-            } else
-            {
-                ToolWindowPane toolWindowPane = this.package.FindToolWindow(typeof(SnykToolWindow), 0, true);
-
-                if ((null == toolWindowPane) || (null == toolWindowPane.Frame))
+                var cli = new SnykCli
                 {
-                    throw new NotSupportedException("Cannot create window.");
-                }
+                    Options = snykPackage.Options,
+                    SolutionService = snykPackage.SolutionService
+                };
 
-                IVsWindowFrame windowFrame = (IVsWindowFrame) toolWindowPane.Frame;
-                Microsoft.VisualStudio.ErrorHandler.ThrowOnFailure(windowFrame.Show());
-                
-                SnykToolWindowControl toolWindowControl = (SnykToolWindowControl) toolWindowPane.Content;
-                DataGrid resultsDataGrid = toolWindowControl.resultsDataGrid;
+                CliResult cliResult = cli.Scan(toolWindow);
 
-                //InitializeDataGridColumns(resultsDataGrid);
-
-                FillDataGrid(cliResult, resultsDataGrid);                              
-            }            
-        }
-
-        private void FillDataGrid(CliResult cliResult, DataGrid resultsDataGrid)
-        {
-            foreach (CliVulnerabilities cliVulnerabilities in cliResult.CLIVulnerabilities)
-            {
-                foreach (Vulnerability vulnerability in cliVulnerabilities.vulnerabilities)
+                if (!cliResult.IsSuccessful())
                 {
-                    resultsDataGrid.Items.Add(vulnerability);
+                    VsShellUtilities.ShowMessageBox(
+                        this.ServiceProvider,
+                        cliResult.Error.Message,
+                        "Snyk",
+                        OLEMSGICON.OLEMSGICON_WARNING,
+                        OLEMSGBUTTON.OLEMSGBUTTON_OK,
+                        OLEMSGDEFBUTTON.OLEMSGDEFBUTTON_FIRST);
                 }
-            }
-        }
-
-        private void InitializeDataGridColumns(DataGrid dataGrid)
-        {
-            dataGrid.Columns.Clear();
-            dataGrid.Items.Clear();
-
-            DataGridTextColumn titleTextColumn = new DataGridTextColumn();
-            titleTextColumn.Header = "Title";
-            titleTextColumn.Binding = new Binding("title");
-
-            DataGridTextColumn versionTextColumn = new DataGridTextColumn();
-            versionTextColumn.Header = "Version";
-            versionTextColumn.Binding = new Binding("version");
-
-            DataGridTextColumn descriptionTextColumn = new DataGridTextColumn();
-            descriptionTextColumn.Header = "Description";
-            descriptionTextColumn.Binding = new Binding("description");
-
-            DataGridTextColumn severityTextColumn = new DataGridTextColumn();
-            severityTextColumn.Header = "Severity";
-            severityTextColumn.Binding = new Binding("severity");
-
-            DataGridTextColumn fixedInTextColumn = new DataGridTextColumn();
-            fixedInTextColumn.Header = "Fixed In";
-            fixedInTextColumn.Binding = new Binding("fixedIn");
-
-            DataGridTextColumn moduleNameTextColumn = new DataGridTextColumn();
-            moduleNameTextColumn.Header = "Module Name";
-            moduleNameTextColumn.Binding = new Binding("moduleName");
-
-            dataGrid.Columns.Add(titleTextColumn);
-            dataGrid.Columns.Add(moduleNameTextColumn);
-            dataGrid.Columns.Add(versionTextColumn);
-            dataGrid.Columns.Add(severityTextColumn);
-            //resultsDataGrid.Columns.Add(fixedInTextColumn);
-            dataGrid.Columns.Add(descriptionTextColumn);
-        }
+                else
+                {
+                    toolWindow.DisplayCliResult(cliResult);
+                }
+            });                        
+        }                
     }
 }

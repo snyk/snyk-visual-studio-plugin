@@ -6,7 +6,7 @@
 
 namespace Snyk.VisualStudio.Extension.UI
 {
-    using System;
+    using CLI;
     using System.Diagnostics.CodeAnalysis;
     using System.Windows;
     using System.Windows.Controls;
@@ -26,6 +26,22 @@ namespace Snyk.VisualStudio.Extension.UI
 
         public SnykVSPackage Package { get; internal set; }
 
+        public void DisplayCliResult(CliResult cliResult)
+        {
+            this.Dispatcher.Invoke(() =>
+            {
+                resultsDataGrid.Visibility = Visibility.Visible;
+
+                foreach (CliVulnerabilities cliVulnerabilities in cliResult.CLIVulnerabilities)
+                {
+                    foreach (Vulnerability vulnerability in cliVulnerabilities.vulnerabilities)
+                    {
+                        resultsDataGrid.Items.Add(vulnerability);
+                    }
+                }
+            });            
+        }
+
         public void Hide()
         {
             this.Dispatcher.Invoke(() =>
@@ -33,6 +49,9 @@ namespace Snyk.VisualStudio.Extension.UI
                 this.progressBarPanel.Visibility = Visibility.Hidden;
 
                 this.progressBarTitle.Text = "";
+
+                this.progressBar.IsIndeterminate = false;
+                this.progressBarPercent.Visibility = Visibility.Visible;
             });
         }
 
@@ -47,7 +66,7 @@ namespace Snyk.VisualStudio.Extension.UI
         public void Show()
         {
             this.Dispatcher.Invoke(() =>
-            {
+            {               
                 this.progressBarPanel.Visibility = Visibility.Visible;
             });
         }
@@ -59,6 +78,24 @@ namespace Snyk.VisualStudio.Extension.UI
                 this.progressBarPanel.Visibility = Visibility.Visible;
 
                 this.progressBarTitle.Text = title;
+
+                this.resultsDataGrid.Visibility = Visibility.Hidden;
+            });
+        }
+
+        public void ShowIndeterminate(string title)
+        {
+            this.Dispatcher.Invoke(() =>
+            {
+                this.progressBarPanel.Visibility = Visibility.Visible;
+
+                this.progressBarTitle.Text = title;
+
+                this.progressBar.IsIndeterminate = true;
+
+                this.progressBarPercent.Visibility = Visibility.Hidden;
+
+                this.resultsDataGrid.Visibility = Visibility.Hidden;
             });
         }
 

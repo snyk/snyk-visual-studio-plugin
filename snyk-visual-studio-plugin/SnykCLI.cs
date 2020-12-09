@@ -8,6 +8,8 @@ using EnvDTE;
 using Snyk.VisualStudio.Extension.Settings;
 using Snyk.VisualStudio.Extension.Services;
 using Snyk.VisualStudio.Extension.Util;
+using Snyk.VisualStudio.Extension.UI;
+using System.Threading.Tasks;
 
 namespace Snyk.VisualStudio.Extension.CLI
 {
@@ -41,20 +43,32 @@ namespace Snyk.VisualStudio.Extension.CLI
             return RunConsoleProcessResult(consoleProcess);
         }
 
-        public CliResult Scan()
+        public CliResult Scan(ISnykProgressBarManager progressManager = null)
         {
-            var consoleProcess = CreateConsoleProcess(GetSnykCliPath(), BuildArguments());            
+            if (progressManager != null)
+            {
+                progressManager.ShowIndeterminate("Scanning...");
+            }
+
+            var consoleProcess = CreateConsoleProcess(GetSnykCliPath(), BuildArguments());
 
             if (!String.IsNullOrEmpty(Options.ApiToken))
             {
                 consoleProcess.StartInfo.EnvironmentVariables["SNYK_TOKEN"] = Options.ApiToken;
             }
-            
+
             consoleProcess.StartInfo.WorkingDirectory = GetProjectDirectory();
 
             string consoleResult = RunConsoleProcessResult(consoleProcess);
-            
-            return ConvertRawCliStringToCliResult(consoleResult);
+
+            var cliResult = ConvertRawCliStringToCliResult(consoleResult);
+
+            if (progressManager != null)
+            {
+                progressManager.Hide();
+            }
+
+            return cliResult;
         }
 
         public string BuildArguments()
