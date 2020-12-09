@@ -10,6 +10,8 @@
 
         void Show(string title);
 
+        void ShowIndeterminate(string title);
+
         void SetTitle(string title);
     }
 }

@@ -93,12 +93,7 @@ namespace Snyk.VisualStudio.Extension
             ErrorHandler.ThrowOnFailure(windowFrame.Show());
         }
 
-        private SnykGeneralOptionsDialogPage GetSnykGeneralOptionsDialogPage()
-        {
-            return (SnykGeneralOptionsDialogPage)GetDialogPage(typeof(SnykGeneralOptionsDialogPage));
-        }       
-
-        private SnykToolWindowControl GetToolWindow()
+        public SnykToolWindowControl GetToolWindow()
         {
             ToolWindowPane toolWindowPane = FindToolWindow(typeof(SnykToolWindow), 0, true);
 
@@ -109,6 +104,11 @@ namespace Snyk.VisualStudio.Extension
 
             return (SnykToolWindowControl)toolWindowPane.Content;
         }
+
+        private SnykGeneralOptionsDialogPage GetSnykGeneralOptionsDialogPage()
+        {
+            return (SnykGeneralOptionsDialogPage)GetDialogPage(typeof(SnykGeneralOptionsDialogPage));
+        }               
 
         #region Package Members
 
