@@ -32,14 +32,14 @@ namespace Snyk.VisualStudio.Extension.CLI
         {
             var consoleProcess = CreateConsoleProcess(GetSnykCliPath(), "config get api");
             
-            return RunConsoleProcessResult(consoleProcess);
+            return RunConsoleProcess(consoleProcess);
         }
 
         public void Authenticate()
         {            
             var consoleProcess = CreateConsoleProcess(GetSnykCliPath(), "auth");
 
-            RunConsoleProcessResult(consoleProcess);            
+            RunConsoleProcess(consoleProcess);            
         }
 
         public CliResult Scan(ISnykProgressBarManager progressManager = null)
@@ -53,7 +53,7 @@ namespace Snyk.VisualStudio.Extension.CLI
 
             consoleProcess.StartInfo.WorkingDirectory = GetProjectDirectory();
 
-            string consoleResult = RunConsoleProcessResult(consoleProcess);
+            string consoleResult = RunConsoleProcess(consoleProcess);
 
             return ConvertRawCliStringToCliResult(consoleResult);
         }
@@ -202,7 +202,7 @@ namespace Snyk.VisualStudio.Extension.CLI
             };            
         }
 
-        private string RunConsoleProcessResult(System.Diagnostics.Process consoleProcess)
+        private string RunConsoleProcess(System.Diagnostics.Process consoleProcess)
         {           
             var stringBuilder = new StringBuilder();
 
