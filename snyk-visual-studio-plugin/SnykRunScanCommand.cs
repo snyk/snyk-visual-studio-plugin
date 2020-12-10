@@ -11,6 +11,7 @@ using Microsoft.VisualStudio.Shell.Interop;
 using System.Windows.Controls;
 using System.Windows.Data;
 using Snyk.VisualStudio.Extension.CLI;
+using EnvDTE;
 
 namespace Snyk.VisualStudio.Extension.UI
 {
@@ -98,32 +99,59 @@ namespace Snyk.VisualStudio.Extension.UI
             System.Threading.Tasks.Task.Run(() =>
             {
                 var snykPackage = (SnykVSPackage)package;
+
+                Projects projects = snykPackage.SolutionService.GetProjects();
+
+                if (projects.Count == 0)
+                {
+                    VsShellUtilities.ShowMessageBox(
+                            this.ServiceProvider,
+                            "No open solution",
+                            "Snyk",
+                            OLEMSGICON.OLEMSGICON_WARNING,
+                            OLEMSGBUTTON.OLEMSGBUTTON_OK,
+                            OLEMSGDEFBUTTON.OLEMSGDEFBUTTON_FIRST);
+
+                    return;
+                }
+                
                 var toolWindow = snykPackage.GetToolWindow();
 
                 toolWindow.ShowIndeterminate("Scanning...");
+
+                toolWindow.ClearDataGrid();
 
                 var cli = new SnykCli
                 {
                     Options = snykPackage.Options,
                     SolutionService = snykPackage.SolutionService
-                };
+                };                
 
-                CliResult cliResult = cli.Scan();
+                for (int index = 1; index <= projects.Count; index++)
+                {
+                    Project project = projects.Item(index);
 
-                if (!cliResult.IsSuccessful())
-                {
-                    VsShellUtilities.ShowMessageBox(
-                        this.ServiceProvider,
-                        cliResult.Error.Message,
-                        "Snyk",
-                        OLEMSGICON.OLEMSGICON_WARNING,
-                        OLEMSGBUTTON.OLEMSGBUTTON_OK,
-                        OLEMSGDEFBUTTON.OLEMSGDEFBUTTON_FIRST);
-                }
-                else
-                {
-                    toolWindow.DisplayCliResult(cliResult);
-                }
+                    string projectPath = project.Properties.Item("LocalPath").Value.ToString();
+
+                    CliResult cliResult = cli.Scan(projectPath);
+
+                    if (!cliResult.IsSuccessful())
+                    {
+                        VsShellUtilities.ShowMessageBox(
+                            this.ServiceProvider,
+                            cliResult.Error.Message,
+                            "Snyk",
+                            OLEMSGICON.OLEMSGICON_WARNING,
+                            OLEMSGBUTTON.OLEMSGBUTTON_OK,
+                            OLEMSGDEFBUTTON.OLEMSGDEFBUTTON_FIRST);
+                    }
+                    else
+                    {
+                        toolWindow.DisplayDataGrid();
+
+                        toolWindow.AddCliResultToDataGrid(cliResult);
+                    }
+                }                                   
 
                 toolWindow.Hide();
             });                        

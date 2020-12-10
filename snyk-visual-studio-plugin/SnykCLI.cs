@@ -42,7 +42,7 @@ namespace Snyk.VisualStudio.Extension.CLI
             RunConsoleProcess(consoleProcess);            
         }
 
-        public CliResult Scan()
+        public CliResult Scan(string projectPath = null)
         {
             var consoleProcess = CreateConsoleProcess(GetSnykCliPath(), BuildArguments());
 
@@ -51,7 +51,7 @@ namespace Snyk.VisualStudio.Extension.CLI
                 consoleProcess.StartInfo.EnvironmentVariables["SNYK_TOKEN"] = Options.ApiToken;
             }
 
-            consoleProcess.StartInfo.WorkingDirectory = GetProjectDirectory();
+            consoleProcess.StartInfo.WorkingDirectory = projectPath;
 
             string consoleResult = RunConsoleProcess(consoleProcess);
 
@@ -133,20 +133,6 @@ namespace Snyk.VisualStudio.Extension.CLI
         public bool IsSuccessCliJsonString(string json)
         {
             return json.Contains("\"vulnerabilities\":") && !json.Contains("\"error\":");
-        }
-
-        public string GetProjectDirectory()
-        {
-            Projects projects = SolutionService.GetProjects();
-
-            if (projects.Count == 0)
-            {
-                throw new ArgumentException("No open projects.");
-            }
-
-            Project project = projects.Item(1);
-
-            return project.Properties.Item("LocalPath").Value.ToString();            
         }
 
         public static string GetSnykDirectoryPath()
