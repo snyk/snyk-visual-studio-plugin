@@ -42,7 +42,7 @@ namespace Snyk.VisualStudio.Extension.CLI
             RunConsoleProcess(consoleProcess);            
         }
 
-        public CliResult Scan(ISnykProgressBarManager progressManager = null)
+        public CliResult Scan()
         {
             var consoleProcess = CreateConsoleProcess(GetSnykCliPath(), BuildArguments());
 
