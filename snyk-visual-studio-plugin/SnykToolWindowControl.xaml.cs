@@ -34,6 +34,8 @@ namespace Snyk.VisualStudio.Extension.UI
             {
                 resultsDataGrid.Visibility = Visibility.Visible;
 
+                resultsDataGrid.Items.Clear();
+
                 foreach (CliVulnerabilities cliVulnerabilities in cliResult.CLIVulnerabilities)
                 {
                     foreach (Vulnerability vulnerability in cliVulnerabilities.vulnerabilities)
