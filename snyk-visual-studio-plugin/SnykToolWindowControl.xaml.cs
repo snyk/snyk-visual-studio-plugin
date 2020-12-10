@@ -7,9 +7,11 @@
 namespace Snyk.VisualStudio.Extension.UI
 {
     using CLI;
+    using System.Diagnostics;
     using System.Diagnostics.CodeAnalysis;
     using System.Windows;
     using System.Windows.Controls;
+    using System.Windows.Documents;
 
     /// <summary>
     /// Interaction logic for SnykToolWindowControl.
@@ -39,7 +41,7 @@ namespace Snyk.VisualStudio.Extension.UI
                         resultsDataGrid.Items.Add(vulnerability);
                     }
                 }
-            });            
+            });
         }
 
         public void Hide()
@@ -66,7 +68,7 @@ namespace Snyk.VisualStudio.Extension.UI
         public void Show()
         {
             this.Dispatcher.Invoke(() =>
-            {               
+            {
                 this.progressBarPanel.Visibility = Visibility.Visible;
             });
         }
@@ -104,8 +106,8 @@ namespace Snyk.VisualStudio.Extension.UI
             this.Dispatcher.Invoke(() =>
             {
                 this.progressBar.Value = value;
-            });            
-        }        
+            });
+        }
 
         /// <summary>
         /// Handles click on the button by displaying a message box.
@@ -119,6 +121,23 @@ namespace Snyk.VisualStudio.Extension.UI
             MessageBox.Show(
                 string.Format(System.Globalization.CultureInfo.CurrentUICulture, "Invoked '{0}'", this.ToString()),
                 "SnykToolWindow");
+        }
+
+        private void OnHyperlinkClick(object sender, RoutedEventArgs e)
+        {
+            var destination = ((Hyperlink) e.OriginalSource).NavigateUri;
+            
+            using (Process browser = new Process())
+            {
+                browser.StartInfo = new ProcessStartInfo
+                {
+                    FileName = destination.ToString(),
+                    UseShellExecute = true,
+                    ErrorDialog = true
+                };
+
+                browser.Start();
+            }
         }
     }
 }

@@ -20,13 +20,19 @@
                           Padding="1" 
                           ScrollViewer.HorizontalScrollBarVisibility="Visible" ScrollViewer.VerticalScrollBarVisibility="Visible"
                           HorizontalContentAlignment="Stretch" VerticalContentAlignment="Stretch" Margin="3,3,3,3" RenderTransformOrigin="0,0.5">
-                <DataGrid.Columns>
-                    <DataGridTextColumn Header="Title" Binding="{Binding title}"/>
-                    <DataGridTextColumn Header="Version" Binding="{Binding version}"/>
-                    <DataGridTextColumn Header="Severity" Binding="{Binding severity}"/>
-                    <DataGridTextColumn Header="Module Name" Binding="{Binding moduleName}"/>
-                    <DataGridTextColumn Header="Description" Binding="{Binding description}"/>
-                </DataGrid.Columns>
-            </DataGrid>
-        </Grid>
+            <DataGrid.Columns>
+                <DataGridHyperlinkColumn Header="Title" Binding="{Binding url}" ContentBinding="{Binding title}" IsReadOnly="True" Width="3*">
+                    <DataGridHyperlinkColumn.ElementStyle>
+                        <Style TargetType="TextBlock">
+                            <EventSetter Event="Hyperlink.Click" Handler="OnHyperlinkClick" />
+                        </Style>
+                    </DataGridHyperlinkColumn.ElementStyle>
+                </DataGridHyperlinkColumn>
+                <DataGridTextColumn Header="Module" Binding="{Binding name}" Width="1*"/>
+                <DataGridTextColumn Header="Introduced through" Binding="{Binding IntroducedThrough}" Width="3*"/>
+                <DataGridTextColumn Header="Exploit maturity" Binding="{Binding exploit}" Width="1*"/>
+                <DataGridTextColumn Header="Fixed in" Binding="{Binding Remediation}" Width="2*"/>
+            </DataGrid.Columns>
+        </DataGrid>
+    </Grid>
 </UserControl>
