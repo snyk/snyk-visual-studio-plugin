@@ -3,8 +3,6 @@ using System.Windows.Forms;
 using Snyk.VisualStudio.Extension.Settings;
 using Snyk.VisualStudio.Extension.CLI;
 using System.Threading.Tasks;
-using System.Reflection;
-using System.Linq.Expressions;
 
 namespace Snyk.VisualStudio.Extension.UI
 {   
@@ -43,8 +41,7 @@ namespace Snyk.VisualStudio.Extension.UI
 
             var cli = new SnykCli
             {
-                Options = optionsDialogPage,
-                SolutionService = package.SolutionService
+                Options = optionsDialogPage
             };
 
             string apiToken = cli.GetApiToken();

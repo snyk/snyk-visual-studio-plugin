@@ -4,11 +4,8 @@ using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Text;
-using EnvDTE;
 using Snyk.VisualStudio.Extension.Settings;
-using Snyk.VisualStudio.Extension.Services;
 using Snyk.VisualStudio.Extension.Util;
-using Snyk.VisualStudio.Extension.UI;
 
 namespace Snyk.VisualStudio.Extension.CLI
 {
@@ -18,14 +15,12 @@ namespace Snyk.VisualStudio.Extension.CLI
         public const string SnykConfigurationDirectoryName = "Snyk";
 
         private ISnykOptions options;
-        private SnykSolutionService solutionService;
 
         public SnykCli() { }
 
-        public SnykCli(IServiceProvider serviceProvider, SnykSolutionService solutionService)
+        public SnykCli(IServiceProvider serviceProvider)
         {
             Options = options;
-            SolutionService = solutionService;            
         }
 
         public string GetApiToken()
@@ -42,7 +37,7 @@ namespace Snyk.VisualStudio.Extension.CLI
             RunConsoleProcess(consoleProcess);            
         }
 
-        public CliResult Scan(string projectPath = null)
+        public CliResult Scan(string projectPath)
         {
             var consoleProcess = CreateConsoleProcess(GetSnykCliPath(), BuildArguments());
 
@@ -160,19 +155,6 @@ namespace Snyk.VisualStudio.Extension.CLI
             }
         }
 
-        public SnykSolutionService SolutionService
-        {
-            get
-            {
-                return solutionService;
-            }
-
-            set
-            {
-                solutionService = value;
-            }
-        }
-
         private System.Diagnostics.Process CreateConsoleProcess(string fileName, string arguments)
         {
             return new System.Diagnostics.Process
@@ -188,7 +170,7 @@ namespace Snyk.VisualStudio.Extension.CLI
             };            
         }
 
-        private string RunConsoleProcess(System.Diagnostics.Process consoleProcess)
+        private string RunConsoleProcess(Process consoleProcess)
         {           
             var stringBuilder = new StringBuilder();
 

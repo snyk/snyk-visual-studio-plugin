@@ -8,8 +8,6 @@ using System;
 using System.ComponentModel.Design;
 using Microsoft.VisualStudio.Shell;
 using Microsoft.VisualStudio.Shell.Interop;
-using System.Windows.Controls;
-using System.Windows.Data;
 using Snyk.VisualStudio.Extension.CLI;
 using EnvDTE;
 
@@ -104,13 +102,7 @@ namespace Snyk.VisualStudio.Extension.UI
 
                 if (projects.Count == 0)
                 {
-                    VsShellUtilities.ShowMessageBox(
-                            this.ServiceProvider,
-                            "No open solution",
-                            "Snyk",
-                            OLEMSGICON.OLEMSGICON_WARNING,
-                            OLEMSGBUTTON.OLEMSGBUTTON_OK,
-                            OLEMSGDEFBUTTON.OLEMSGDEFBUTTON_FIRST);
+                    ShowErrorMessage("No open solution");
 
                     return;
                 }
@@ -123,8 +115,7 @@ namespace Snyk.VisualStudio.Extension.UI
 
                 var cli = new SnykCli
                 {
-                    Options = snykPackage.Options,
-                    SolutionService = snykPackage.SolutionService
+                    Options = snykPackage.Options
                 };                
 
                 for (int index = 1; index <= projects.Count; index++)
@@ -137,13 +128,7 @@ namespace Snyk.VisualStudio.Extension.UI
 
                     if (!cliResult.IsSuccessful())
                     {
-                        VsShellUtilities.ShowMessageBox(
-                            this.ServiceProvider,
-                            cliResult.Error.Message,
-                            "Snyk",
-                            OLEMSGICON.OLEMSGICON_WARNING,
-                            OLEMSGBUTTON.OLEMSGBUTTON_OK,
-                            OLEMSGDEFBUTTON.OLEMSGDEFBUTTON_FIRST);
+                        ShowErrorMessage(cliResult.Error.Message);
                     }
                     else
                     {
@@ -155,6 +140,17 @@ namespace Snyk.VisualStudio.Extension.UI
 
                 toolWindow.Hide();
             });                        
+        }
+        
+        private void ShowErrorMessage(string message)
+        {
+            VsShellUtilities.ShowMessageBox(
+                            this.ServiceProvider,
+                            message,
+                            "Snyk",
+                            OLEMSGICON.OLEMSGICON_WARNING,
+                            OLEMSGBUTTON.OLEMSGBUTTON_OK,
+                            OLEMSGDEFBUTTON.OLEMSGDEFBUTTON_FIRST);
         }                
     }
 }
