@@ -28,14 +28,26 @@ namespace Snyk.VisualStudio.Extension.UI
 
         public SnykVSPackage Package { get; internal set; }
 
-        public void DisplayCliResult(CliResult cliResult)
+        public void ClearDataGrid()
+        {
+            this.Dispatcher.Invoke(() =>
+            {
+                resultsDataGrid.Items.Clear();
+            });            
+        }
+
+        public void DisplayDataGrid()
         {
             this.Dispatcher.Invoke(() =>
             {
                 resultsDataGrid.Visibility = Visibility.Visible;
+            });
+        }
 
-                resultsDataGrid.Items.Clear();
-
+        public void AddCliResultToDataGrid(CliResult cliResult)
+        {
+            this.Dispatcher.Invoke(() =>
+            {                              
                 foreach (CliVulnerabilities cliVulnerabilities in cliResult.CLIVulnerabilities)
                 {
                     foreach (Vulnerability vulnerability in cliVulnerabilities.vulnerabilities)
