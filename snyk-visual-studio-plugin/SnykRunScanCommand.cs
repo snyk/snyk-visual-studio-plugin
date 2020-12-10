@@ -108,7 +108,7 @@ namespace Snyk.VisualStudio.Extension.UI
                     SolutionService = snykPackage.SolutionService
                 };
 
-                CliResult cliResult = cli.Scan(toolWindow);
+                CliResult cliResult = cli.Scan();
 
                 if (!cliResult.IsSuccessful())
                 {
