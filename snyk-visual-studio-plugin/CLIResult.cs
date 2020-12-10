@@ -217,6 +217,30 @@ namespace Snyk.VisualStudio.Extension.CLI
         public bool isPatchable { get; set; }
         public string name { get; set; }
         public string version { get; set; }
+
+        public string IntroducedThrough
+        {
+            get
+            {
+                return string.Join(" > ", from);
+            }
+        }
+
+        public string Remediation
+        {
+            get
+            {
+                return string.Join(", ", fixedIn);
+            }
+        }
+
+        public string url
+        {
+            get
+            {
+                return "https://snyk.io/vuln/" + id;
+            }
+        }
     }
 
     public class Identifiers
