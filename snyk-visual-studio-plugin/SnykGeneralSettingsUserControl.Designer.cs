@@ -53,7 +53,7 @@
             this.customEndpointLabel.AutoSize = true;
             this.customEndpointLabel.Location = new System.Drawing.Point(3, 61);
             this.customEndpointLabel.Name = "customEndpointLabel";
-            this.customEndpointLabel.Size = new System.Drawing.Size(118, 17);
+            this.customEndpointLabel.Size = new System.Drawing.Size(111, 16);
             this.customEndpointLabel.TabIndex = 1;
             this.customEndpointLabel.Text = "Custom endpoint:";
             // 
@@ -62,7 +62,7 @@
             this.organizationLabel.AutoSize = true;
             this.organizationLabel.Location = new System.Drawing.Point(3, 106);
             this.organizationLabel.Name = "organizationLabel";
-            this.organizationLabel.Size = new System.Drawing.Size(93, 17);
+            this.organizationLabel.Size = new System.Drawing.Size(86, 16);
             this.organizationLabel.TabIndex = 2;
             this.organizationLabel.Text = "Organization:";
             // 
@@ -80,14 +80,14 @@
             this.tokenLabel.AutoSize = true;
             this.tokenLabel.Location = new System.Drawing.Point(3, 19);
             this.tokenLabel.Name = "tokenLabel";
-            this.tokenLabel.Size = new System.Drawing.Size(52, 17);
+            this.tokenLabel.Size = new System.Drawing.Size(50, 16);
             this.tokenLabel.TabIndex = 4;
             this.tokenLabel.Text = "Token:";
             // 
             // tokenTextBox
             // 
             this.tokenTextBox.Location = new System.Drawing.Point(159, 14);
-            this.tokenTextBox.Margin = new System.Windows.Forms.Padding(4, 4, 4, 4);
+            this.tokenTextBox.Margin = new System.Windows.Forms.Padding(4);
             this.tokenTextBox.Name = "tokenTextBox";
             this.tokenTextBox.Size = new System.Drawing.Size(622, 22);
             this.tokenTextBox.TabIndex = 5;
@@ -99,7 +99,7 @@
             this.ignoreUnknownCACheckBox.Location = new System.Drawing.Point(159, 82);
             this.ignoreUnknownCACheckBox.Margin = new System.Windows.Forms.Padding(3, 2, 3, 2);
             this.ignoreUnknownCACheckBox.Name = "ignoreUnknownCACheckBox";
-            this.ignoreUnknownCACheckBox.Size = new System.Drawing.Size(152, 21);
+            this.ignoreUnknownCACheckBox.Size = new System.Drawing.Size(144, 20);
             this.ignoreUnknownCACheckBox.TabIndex = 6;
             this.ignoreUnknownCACheckBox.Text = "Ignore unknown CA";
             this.ignoreUnknownCACheckBox.UseVisualStyleBackColor = true;
@@ -108,7 +108,7 @@
             // authenticateButton
             // 
             this.authenticateButton.Location = new System.Drawing.Point(786, 13);
-            this.authenticateButton.Margin = new System.Windows.Forms.Padding(4, 4, 4, 4);
+            this.authenticateButton.Margin = new System.Windows.Forms.Padding(4);
             this.authenticateButton.Name = "authenticateButton";
             this.authenticateButton.Size = new System.Drawing.Size(110, 25);
             this.authenticateButton.TabIndex = 7;
@@ -120,7 +120,6 @@
             // 
             this.authProgressBar.Location = new System.Drawing.Point(159, 41);
             this.authProgressBar.Margin = new System.Windows.Forms.Padding(3, 2, 3, 2);
-            this.authProgressBar.MarqueeAnimationSpeed = 80;
             this.authProgressBar.Name = "authProgressBar";
             this.authProgressBar.Size = new System.Drawing.Size(621, 10);
             this.authProgressBar.Style = System.Windows.Forms.ProgressBarStyle.Marquee;
