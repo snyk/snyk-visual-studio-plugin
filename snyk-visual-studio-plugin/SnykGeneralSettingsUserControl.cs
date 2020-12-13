@@ -3,11 +3,14 @@ using System.Windows.Forms;
 using Snyk.VisualStudio.Extension.Settings;
 using Snyk.VisualStudio.Extension.CLI;
 using System.Threading.Tasks;
+using System.Text.RegularExpressions;
 
 namespace Snyk.VisualStudio.Extension.UI
 {   
     public partial class SnykGeneralSettingsUserControl : UserControl
     {
+        private static Regex GuidRegex = new Regex(@"^(\{){0,1}[0-9a-fA-F]{8}\-[0-9a-fA-F]{4}\-[0-9a-fA-F]{4}\-[0-9a-fA-F]{4}\-[0-9a-fA-F]{12}(\}){0,1}$", RegexOptions.Compiled);
+
         internal SnykGeneralOptionsDialogPage optionsDialogPage;
 
         public SnykGeneralSettingsUserControl()
@@ -33,7 +36,23 @@ namespace Snyk.VisualStudio.Extension.UI
                     this.authProgressBar.Visible = false;
                 });
             });            
-        }        
+        }
+
+        private bool IsValidGuid(string guid)
+        {
+            if (guid != null)
+            {
+
+                if (GuidRegex.IsMatch(guid))
+                {
+                    new Guid(guid);
+
+                    return true;
+                }
+            }
+
+            return false;
+        }
 
         private void GetApiToken()
         {
@@ -44,19 +63,41 @@ namespace Snyk.VisualStudio.Extension.UI
                 Options = optionsDialogPage
             };
 
-            string apiToken = cli.GetApiToken();
+            string apiToken = "";
 
-            if (String.IsNullOrEmpty(apiToken))
+            try
             {
-                cli.Authenticate();
-
                 apiToken = cli.GetApiToken();
-            }
 
-            tokenTextBox.Invoke((MethodInvoker)delegate
+                if (String.IsNullOrEmpty(apiToken))
+                {                    
+                    cli.Authenticate();
+
+                    apiToken = cli.GetApiToken();                    
+                }
+
+                if (!IsValidGuid(apiToken))
+                {
+                    throw new Exception("Invalid GUID.");
+                }
+
+                tokenTextBox.Invoke((MethodInvoker)delegate
+                {
+                    tokenTextBox.Text = apiToken;
+                });
+            } catch (Exception exception)
             {
-                tokenTextBox.Text = apiToken;
-            });            
+
+                CliError cliError = new CliError
+                {
+                    IsSuccess = false,
+                    Message = exception.Message,
+                    Path = ""
+                };
+
+                package.ShowToolWindow();
+                package.GetToolWindow().DisplayError(cliError);
+            }                                    
         }
 
         private void tokenTextBox_TextChanged(object sender, EventArgs e)

@@ -22,8 +22,7 @@ namespace Snyk.VisualStudio.Extension.Tests
         {
             var cli = new SnykCli
             {
-                Options = new DummySnykOptions(),
-                SolutionService = SnykSolutionService.Instance
+                Options = new DummySnykOptions()
             };
 
             Assert.AreEqual("--json test", cli.BuildArguments());
@@ -37,8 +36,7 @@ namespace Snyk.VisualStudio.Extension.Tests
                 Options = new DummySnykOptions()
                 {
                     CustomEndpoint = "https://github.com/snyk/"
-                },
-                SolutionService = SnykSolutionService.Instance
+                }
             };
 
             Assert.AreEqual("--json test --api=https://github.com/snyk/", cli.BuildArguments());
@@ -52,8 +50,7 @@ namespace Snyk.VisualStudio.Extension.Tests
                 Options = new DummySnykOptions()
                 {
                     IgnoreUnknownCA = true
-                },
-                SolutionService = SnykSolutionService.Instance
+                }
             };
 
             Assert.AreEqual("--json test --insecure", cli.BuildArguments());
@@ -67,8 +64,7 @@ namespace Snyk.VisualStudio.Extension.Tests
                 Options = new DummySnykOptions()
                 {
                     Organization = "test-snyk-organization"
-                },
-                SolutionService = SnykSolutionService.Instance
+                }
             };
 
             Assert.AreEqual("--json test --org=test-snyk-organization", cli.BuildArguments());
@@ -82,8 +78,7 @@ namespace Snyk.VisualStudio.Extension.Tests
                 Options = new DummySnykOptions()
                 {
                     AdditionalOptions = "--file=C:\build.pom"
-                },
-                SolutionService = SnykSolutionService.Instance
+                }
             };
 
             Assert.AreEqual("--json test --file=C:\build.pom", cli.BuildArguments());
@@ -100,8 +95,7 @@ namespace Snyk.VisualStudio.Extension.Tests
                     IgnoreUnknownCA = true,
                     Organization = "test-snyk-organization",
                     AdditionalOptions = "--file=C:\build.pom"
-                },
-                SolutionService = SnykSolutionService.Instance
+                }               
             };
 
             Assert.AreEqual("--json test --api=https://github.com/snyk/ --insecure --org=test-snyk-organization --file=C:\build.pom", cli.BuildArguments());
@@ -112,8 +106,7 @@ namespace Snyk.VisualStudio.Extension.Tests
         {
             var cli = new SnykCli
             {
-                Options = new DummySnykOptions(),
-                SolutionService = SnykSolutionService.Instance
+                Options = new DummySnykOptions()
             };
 
             Assert.IsTrue(cli.IsSuccessCliJsonString("{\"vulnerabilities\": []}"));
@@ -124,8 +117,7 @@ namespace Snyk.VisualStudio.Extension.Tests
         {
             var cli = new SnykCli
             {
-                Options = new DummySnykOptions(),
-                SolutionService = SnykSolutionService.Instance
+                Options = new DummySnykOptions()
             };
 
             Assert.IsFalse(cli.IsSuccessCliJsonString("{\"error\": \"Error details.\"}"));
@@ -136,8 +128,7 @@ namespace Snyk.VisualStudio.Extension.Tests
         {
             var cli = new SnykCli
             {
-                Options = new DummySnykOptions(),
-                SolutionService = SnykSolutionService.Instance
+                Options = new DummySnykOptions()
             };
 
             var cliResult = cli.ConvertRawCliStringToCliResult(GetFileContents("VulnerabilitiesArray.json"));
@@ -150,8 +141,7 @@ namespace Snyk.VisualStudio.Extension.Tests
         {
             var cli = new SnykCli
             {
-                Options = new DummySnykOptions(),
-                SolutionService = SnykSolutionService.Instance
+                Options = new DummySnykOptions()
             };
 
             var cliResult = cli.ConvertRawCliStringToCliResult(GetFileContents("VulnerabilitiesSingleObject.json"));
@@ -164,8 +154,7 @@ namespace Snyk.VisualStudio.Extension.Tests
         {
             var cli = new SnykCli
             {
-                Options = new DummySnykOptions(),
-                SolutionService = SnykSolutionService.Instance
+                Options = new DummySnykOptions()
             };
 
             var cliResult = cli.ConvertRawCliStringToCliResult(GetFileContents("ErrorJsonObject.json"));
@@ -181,8 +170,7 @@ namespace Snyk.VisualStudio.Extension.Tests
         {
             var cli = new SnykCli
             {
-                Options = new DummySnykOptions(),
-                SolutionService = SnykSolutionService.Instance
+                Options = new DummySnykOptions()
             };
 
             var cliResult = cli.ConvertRawCliStringToCliResult(GetFileContents("ErrorPlainText.json"));

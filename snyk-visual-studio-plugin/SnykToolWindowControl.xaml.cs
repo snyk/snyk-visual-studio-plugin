@@ -12,6 +12,7 @@ namespace Snyk.VisualStudio.Extension.UI
     using System.Windows;
     using System.Windows.Controls;
     using System.Windows.Documents;
+    using System;
 
     /// <summary>
     /// Interaction logic for SnykToolWindowControl.
@@ -135,6 +136,28 @@ namespace Snyk.VisualStudio.Extension.UI
             MessageBox.Show(
                 string.Format(System.Globalization.CultureInfo.CurrentUICulture, "Invoked '{0}'", this.ToString()),
                 "SnykToolWindow");
+        }
+
+        public void DisplayError(CliError cliError)
+        {
+            this.Dispatcher.Invoke(() =>
+            {
+                progressBarPanel.Visibility = Visibility.Hidden;
+                resultsDataGrid.Visibility = Visibility.Hidden;
+
+                errorPanel.Visibility = Visibility.Visible;
+
+                errorMessage.Text = cliError.Message;
+                errorPath.Text = cliError.Path;
+            });
+        }
+
+        public void HideError()
+        {
+            this.Dispatcher.Invoke(() =>
+            {
+                errorPanel.Visibility = Visibility.Hidden;
+            });        
         }
 
         private void OnHyperlinkClick(object sender, RoutedEventArgs e)

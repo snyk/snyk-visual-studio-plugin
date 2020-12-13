@@ -6,6 +6,7 @@ using System.Linq;
 using System.Text;
 using Snyk.VisualStudio.Extension.Settings;
 using Snyk.VisualStudio.Extension.Util;
+using System.Text.RegularExpressions;
 
 namespace Snyk.VisualStudio.Extension.CLI
 {
@@ -14,7 +15,7 @@ namespace Snyk.VisualStudio.Extension.CLI
         public const string CliFileName = "snyk-win.exe";
         public const string SnykConfigurationDirectoryName = "Snyk";
 
-        private ISnykOptions options;
+        private ISnykOptions options;        
 
         public SnykCli() { }
 
@@ -155,9 +156,9 @@ namespace Snyk.VisualStudio.Extension.CLI
             }
         }
 
-        private System.Diagnostics.Process CreateConsoleProcess(string fileName, string arguments)
+        private Process CreateConsoleProcess(string fileName, string arguments)
         {
-            return new System.Diagnostics.Process
+            return new Process
             {
                 StartInfo = new ProcessStartInfo
                 {
@@ -168,17 +169,23 @@ namespace Snyk.VisualStudio.Extension.CLI
                     CreateNoWindow = true,
                 }
             };            
-        }
+        }       
 
         private string RunConsoleProcess(Process consoleProcess)
         {           
             var stringBuilder = new StringBuilder();
 
-            consoleProcess.Start();
-
-            while (!consoleProcess.StandardOutput.EndOfStream)
+            try
             {
-                stringBuilder.AppendLine(consoleProcess.StandardOutput.ReadLine());
+                consoleProcess.Start();
+
+                while (!consoleProcess.StandardOutput.EndOfStream)
+                {
+                    stringBuilder.AppendLine(consoleProcess.StandardOutput.ReadLine());
+                }
+            } catch (Exception exception)
+            {
+                stringBuilder.Append(exception.Message);
             }
 
             return stringBuilder.ToString().Replace("\n", "").Replace("\r", "");

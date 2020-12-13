@@ -34,5 +34,19 @@
                 <DataGridTextColumn Header="Fixed in" Binding="{Binding Remediation}" Width="2*"/>
             </DataGrid.Columns>
         </DataGrid>
+        <StackPanel Name="errorPanel" Orientation="Vertical" Margin="1" UseLayoutRounding="False" Visibility="Hidden">
+            <Border Margin="0,15" Padding="5" BorderThickness="0" BorderBrush="#CC666E" CornerRadius="0, 5, 5, 0" Background="#CC666E" 
+                                  VerticalAlignment="Center" HorizontalAlignment="Left">
+                <TextBlock Text="Error" Width="100" HorizontalAlignment="Left" VerticalAlignment="Center" FontSize="20" Background="#CC666E"/>
+            </Border>
+            <StackPanel Orientation="Horizontal">
+                <Label Content="Message:" FontWeight="Bold"></Label>
+                <TextBlock x:Name="errorMessage" Text="" HorizontalAlignment="Left" VerticalAlignment="Center" FontSize="12" Margin="5, 5, 5, 5" TextWrapping="Wrap" MaxWidth="1000"/>
+            </StackPanel>
+            <StackPanel Orientation="Horizontal">
+                <Label Content="Path:" FontWeight="Bold"></Label>
+                <TextBlock x:Name="errorPath" Text="" HorizontalAlignment="Left" VerticalAlignment="Center" FontSize="12" Margin="5, 5, 5, 5" TextWrapping="Wrap" MaxWidth="1000"/>
+            </StackPanel>
+        </StackPanel>
     </Grid>
 </UserControl>
