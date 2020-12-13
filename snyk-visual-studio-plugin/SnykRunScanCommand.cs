@@ -97,18 +97,23 @@ namespace Snyk.VisualStudio.Extension.UI
             System.Threading.Tasks.Task.Run(() =>
             {
                 var snykPackage = (SnykVSPackage)package;
+                var toolWindow = snykPackage.GetToolWindow();
 
                 Projects projects = snykPackage.SolutionService.GetProjects();
 
                 if (projects.Count == 0)
                 {
-                    ShowErrorMessage("No open solution");
+                    var error = new CliError
+                    {
+                        Message = "No open solution"
+                    };
+
+                    toolWindow.DisplayError(error);
 
                     return;
-                }
-                
-                var toolWindow = snykPackage.GetToolWindow();
+                }                
 
+                toolWindow.HideError();
                 toolWindow.ShowIndeterminate("Scanning...");
 
                 toolWindow.ClearDataGrid();
@@ -128,7 +133,7 @@ namespace Snyk.VisualStudio.Extension.UI
 
                     if (!cliResult.IsSuccessful())
                     {
-                        ShowErrorMessage(cliResult.Error.Message);
+                        toolWindow.DisplayError(cliResult.Error);
                     }
                     else
                     {
