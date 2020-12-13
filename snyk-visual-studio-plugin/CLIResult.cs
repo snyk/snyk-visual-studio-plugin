@@ -222,7 +222,7 @@ namespace Snyk.VisualStudio.Extension.CLI
         {
             get
             {
-                return string.Join(" > ", from);
+                return from == null ? "" : string.Join(" > ", from);
             }
         }
 
@@ -230,7 +230,7 @@ namespace Snyk.VisualStudio.Extension.CLI
         {
             get
             {
-                return string.Join(", ", fixedIn);
+                return fixedIn == null ? "" : string.Join(", ", fixedIn);
             }
         }
 
