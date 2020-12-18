@@ -293,6 +293,18 @@ namespace Snyk.VisualStudio.Extension.CLI
                 return "https://snyk.io/vuln/" + id;
             }
         }
+
+        public string Overview
+        {
+            get
+            {
+                string temp = description.Substring("## Overview".Length);
+
+                int endIndex = temp.IndexOf("## ");
+
+                return endIndex > 0 ? temp.Substring(0, endIndex) : "";              
+            }
+        }
     }
 
     public class Identifiers

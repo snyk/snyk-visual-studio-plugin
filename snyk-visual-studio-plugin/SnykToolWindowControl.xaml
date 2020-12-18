@@ -49,16 +49,16 @@
                 <TextBlock x:Name="errorPath" Text="" HorizontalAlignment="Left" VerticalAlignment="Center" FontSize="12" Margin="5, 5, 5, 5" TextWrapping="Wrap" MaxWidth="1000"/>
             </StackPanel>
         </StackPanel>
-        <Grid>
+        <Grid Name="resultsGrid" Visibility="Hidden">
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="3*" />
                 <ColumnDefinition Width="5" />
                 <ColumnDefinition Width="6*" />
             </Grid.ColumnDefinitions>
-            <TreeView Name="vulnerabilitiesTree">
+            <TreeView Name="vulnerabilitiesTree" SelectedItemChanged="vulnerabilitiesTree_SelectedItemChanged">
                 <TreeView.ItemTemplate>
                     <HierarchicalDataTemplate DataType="{x:Type local:TreeNode}" ItemsSource="{Binding Items}">
-                        <TextBlock Text="{Binding Title}" />
+                        <TextBlock Text="{Binding Title}"/>
                     </HierarchicalDataTemplate>
                 </TreeView.ItemTemplate>
             </TreeView>
@@ -70,10 +70,44 @@
                     </LinearGradientBrush>
                 </GridSplitter.Foreground>
             </GridSplitter>
-            <StackPanel Grid.Column="2">
-                <TextBlock  FontSize="12" HorizontalAlignment="Center" VerticalAlignment="Center" TextWrapping="Wrap">Right side</TextBlock>
-                <TextBlock  FontSize="12" HorizontalAlignment="Center" VerticalAlignment="Center" TextWrapping="Wrap">Right side</TextBlock>
-                <TextBlock  FontSize="12" HorizontalAlignment="Center" VerticalAlignment="Center" TextWrapping="Wrap">Right side</TextBlock>
+            <StackPanel Grid.Column="2" Name="vulnerabilityDetailsPanel">
+                <Border Margin="0,15" Padding="5" BorderThickness="0" BorderBrush="Gray" CornerRadius="0, 5, 5, 0" Background="Gray" 
+                                  VerticalAlignment="Center" HorizontalAlignment="Left">
+                    <TextBlock Text="Severity" Width="100" HorizontalAlignment="Left" VerticalAlignment="Center" FontSize="20" Background="Gray"/>
+                </Border>
+                <TextBlock Text="Information Exposure" FontWeight="Bold" HorizontalAlignment="Left" VerticalAlignment="Center" FontSize="16" Margin="5, 10, 5, 5"/>
+                <StackPanel Orientation="Horizontal">
+                    <TextBlock Text="Vulnerable module:" FontWeight="Bold" HorizontalAlignment="Left" VerticalAlignment="Center" FontSize="12" Margin="5, 5, 5, 5"/>
+                    <TextBlock Name="vulnerableModule" Text="" HorizontalAlignment="Left" VerticalAlignment="Center" FontSize="12" Margin="5, 5, 5, 5" TextWrapping="Wrap" MaxWidth="1000"/>
+                </StackPanel>
+                <StackPanel Orientation="Horizontal">
+                    <TextBlock Text="Introduced through:" FontWeight="Bold" HorizontalAlignment="Left" VerticalAlignment="Center" FontSize="12" Margin="5, 5, 5, 5"/>
+                    <TextBlock Name="introducedThrough" Text="" HorizontalAlignment="Left" VerticalAlignment="Center" FontSize="12" Margin="5, 5, 5, 5" TextWrapping="Wrap" MaxWidth="1000"/>
+                </StackPanel>
+                <StackPanel Orientation="Horizontal">
+                    <TextBlock Text="Exploit maturity:" FontWeight="Bold" HorizontalAlignment="Left" VerticalAlignment="Center" FontSize="12" Margin="5, 5, 5, 5"/>
+                    <TextBlock Name="exploitMaturity" Text="" HorizontalAlignment="Left" VerticalAlignment="Center" FontSize="12" Margin="5, 5, 5, 5" TextWrapping="Wrap" MaxWidth="1000"/>
+                </StackPanel>
+                <StackPanel Orientation="Horizontal">
+                    <TextBlock Text="Fixed in:" FontWeight="Bold" HorizontalAlignment="Left" VerticalAlignment="Center" FontSize="12" Margin="5, 5, 5, 5"/>
+                    <TextBlock Name="fixedIn" Text="" HorizontalAlignment="Left" VerticalAlignment="Center" FontSize="12" Margin="5, 5, 5, 5" TextWrapping="Wrap" MaxWidth="1000"/>
+                </StackPanel>
+                <TextBlock Text="Detailed paths and remediation" FontWeight="Bold" HorizontalAlignment="Left" VerticalAlignment="Center" FontSize="16" Margin="5, 10, 5, 5"/>
+                <StackPanel Orientation="Horizontal">
+                    <TextBlock Text="Introduced through:" FontWeight="Bold" HorizontalAlignment="Left" VerticalAlignment="Center" FontSize="12" Margin="5, 5, 5, 5"/>
+                    <TextBlock Name="detaiedIntroducedThrough" Text="" HorizontalAlignment="Left" VerticalAlignment="Center" FontSize="12" Margin="5, 5, 5, 5" TextWrapping="Wrap" MaxWidth="1000"/>
+                </StackPanel>
+                <StackPanel Orientation="Horizontal">
+                    <TextBlock Text="Remediation:" FontWeight="Bold" HorizontalAlignment="Left" VerticalAlignment="Center" FontSize="12" Margin="5, 5, 5, 5"/>
+                    <TextBlock Name="remediation" Text="" HorizontalAlignment="Left" VerticalAlignment="Center" FontSize="12" Margin="5, 5, 5, 5" TextWrapping="Wrap" MaxWidth="1000"/>
+                </StackPanel>
+                <TextBlock Text="Overview" FontWeight="Bold" HorizontalAlignment="Left" VerticalAlignment="Center" FontSize="16" Margin="5, 10, 5, 5"/>
+                <StackPanel Orientation="Horizontal">
+                    <TextBlock Name="overview" Text="" HorizontalAlignment="Left" VerticalAlignment="Center" FontSize="12" Margin="5, 5, 5, 5" TextWrapping="Wrap" MaxWidth="1000"/>
+                </StackPanel>
+                <TextBlock Text="" HorizontalAlignment="Left" VerticalAlignment="Center" FontSize="12" Margin="5, 5, 5, 5" TextWrapping="Wrap" MaxWidth="1000">
+                    <Hyperlink Name="moreAboutThisIssue" RequestNavigate="moreAboutThisIssue_RequestNavigate">More about this issue</Hyperlink >
+                </TextBlock>
             </StackPanel>
         </Grid>
     </Grid>

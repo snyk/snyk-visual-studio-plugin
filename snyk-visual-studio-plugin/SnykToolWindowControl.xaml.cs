@@ -12,6 +12,8 @@ namespace Snyk.VisualStudio.Extension.UI
     using System.Windows.Controls;
     using System.Windows.Documents;
     using System.Collections.ObjectModel;
+    using System.Windows.Threading;
+    using System.Threading;
 
     /// <summary>
     /// Interaction logic for SnykToolWindowControl.
@@ -40,7 +42,7 @@ namespace Snyk.VisualStudio.Extension.UI
         {
             this.Dispatcher.Invoke(() =>
             {
-                vulnerabilitiesTree.Visibility = Visibility.Visible;
+                resultsGrid.Visibility = Visibility.Visible;
             });
         }
 
@@ -59,7 +61,8 @@ namespace Snyk.VisualStudio.Extension.UI
                     {
                         var node = new TreeNode
                         {
-                            Title = vulnerability.GetPackageNameTitle()
+                            Title = vulnerability.GetPackageNameTitle(),
+                            Vulnerability = vulnerability
                         };
 
                         rootNode.Items.Add(node);
@@ -107,7 +110,7 @@ namespace Snyk.VisualStudio.Extension.UI
 
                 this.progressBarTitle.Text = title;
 
-                this.vulnerabilitiesTree.Visibility = Visibility.Hidden;
+                this.resultsGrid.Visibility = Visibility.Hidden;
             });
         }
 
@@ -123,7 +126,7 @@ namespace Snyk.VisualStudio.Extension.UI
 
                 this.progressBarPercent.Visibility = Visibility.Hidden;
 
-                this.vulnerabilitiesTree.Visibility = Visibility.Hidden;
+                this.resultsGrid.Visibility = Visibility.Hidden;
             });
         }
 
@@ -140,7 +143,7 @@ namespace Snyk.VisualStudio.Extension.UI
             this.Dispatcher.Invoke(() =>
             {
                 progressBarPanel.Visibility = Visibility.Hidden;
-                vulnerabilitiesTree.Visibility = Visibility.Hidden;
+                resultsGrid.Visibility = Visibility.Hidden;
 
                 errorPanel.Visibility = Visibility.Visible;
 
@@ -173,6 +176,67 @@ namespace Snyk.VisualStudio.Extension.UI
                 browser.Start();
             }
         }
+
+        private void vulnerabilitiesTree_SelectedItemChanged(object sender, RoutedPropertyChangedEventArgs<object> args)
+        {            
+            this.Dispatcher.BeginInvoke(DispatcherPriority.Normal, (ThreadStart)delegate ()
+                {
+                    var treeNode = vulnerabilitiesTree.SelectedItem as TreeNode;
+
+                    if (treeNode == null)
+                    {
+                        return;
+                    }
+
+                    if (treeNode.Vulnerability != null)
+                    {
+                        var vulnerability = treeNode.Vulnerability;
+
+                        vulnerableModule.Text = vulnerability.name;
+
+                        string introducedThroughText = vulnerability.from != null && vulnerability.from.Length != 0 
+                                    ? string.Join(", ", vulnerability.from) : "";
+
+                        introducedThrough.Text = introducedThroughText;
+                        exploitMaturity.Text = vulnerability.exploit;
+                        fixedIn.Text = vulnerability.Remediation;
+
+                        string detaiedIntroducedThroughText = vulnerability.from != null && vulnerability.from.Length != 0
+                                    ? string.Join(" > ", vulnerability.from) : "";
+
+                        detaiedIntroducedThrough.Text = detaiedIntroducedThroughText;
+
+                        string remediationText = vulnerability.fixedIn != null && vulnerability.fixedIn.Length != 0
+                                                 ? string.Join(" > ", vulnerability.fixedIn) : "";
+
+                        remediation.Text = "Upgrade to " + remediationText;
+
+                        overview.Text = vulnerability.Overview;
+
+                        moreAboutThisIssue.NavigateUri = new System.Uri(vulnerability.url);
+                    }
+                    else
+                    {
+                        // Group name
+                        vulnerableModule.Text = "";
+                        introducedThrough.Text = "";
+                        exploitMaturity.Text = "";
+                        fixedIn.Text = "";
+                        detaiedIntroducedThrough.Text = "";
+                        remediation.Text = "";
+                        overview.Text = "";
+                        moreAboutThisIssue.NavigateUri = null;
+                    }                    
+                }
+            ); 
+        }
+
+        private void moreAboutThisIssue_RequestNavigate(object sender, System.Windows.Navigation.RequestNavigateEventArgs args)
+        {
+            Process.Start(new ProcessStartInfo(args.Uri.AbsoluteUri));
+
+            args.Handled = true;
+        }
     }
 
     public class TreeNode
@@ -181,6 +245,8 @@ namespace Snyk.VisualStudio.Extension.UI
         {
             this.Items = new ObservableCollection<TreeNode>();
         }
+
+        public Vulnerability Vulnerability { get; set; }
 
         public string Title { get; set; }
 
