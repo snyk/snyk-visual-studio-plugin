@@ -11,8 +11,18 @@ namespace Snyk.VisualStudio.Extension.CLI
         public bool IsSuccessful()
         {
             return Error == null;
-        }
+        }        
     }
+
+    public class CliGroupedResult
+    {
+        public Dictionary<string, List<Vulnerability>> vulnerabilitiesMap { get; set; }
+        public int uniqueCount { get; set; }
+        public int pathsCount { get; set; }
+        public string projectName { get; set; }
+        public string displayTargetFile { get; set; }
+        public string path { get; set; }
+    }    
 
     public class CliVulnerabilities
     {
@@ -33,6 +43,46 @@ namespace Snyk.VisualStudio.Extension.CLI
         public string projectName { get; set; }
         public string displayTargetFile { get; set; }
         public string path { get; set; }
+
+        public CliGroupedResult ToCliGroupedResult()
+        {
+            var vulnerabilitiesDictionary = new Dictionary<string, List<Vulnerability>>();
+            int uniqueCount = 0;
+            int pathsCount = 0;
+
+            foreach (Vulnerability vulnerability in vulnerabilities)
+            {
+                var key = vulnerability.GetPackageNameTitle();
+
+                if (vulnerabilitiesDictionary.ContainsKey(key))
+                {
+                    var list = vulnerabilitiesDictionary[key];
+
+                    list.Add(vulnerability);
+
+                    pathsCount++;
+                }
+                else
+                {
+                    var list = new List<Vulnerability>();
+
+                    pathsCount++;
+                    uniqueCount++;
+                }
+            }
+
+            var cliGroupedResult = new CliGroupedResult
+            {
+                vulnerabilitiesMap = vulnerabilitiesDictionary,
+                uniqueCount = uniqueCount,
+                pathsCount = pathsCount,
+                projectName = projectName,
+                displayTargetFile = displayTargetFile,
+                path = path
+            };
+
+            return cliGroupedResult;
+        }
     }
 
     public class Licensespolicy
@@ -217,6 +267,8 @@ namespace Snyk.VisualStudio.Extension.CLI
         public bool isPatchable { get; set; }
         public string name { get; set; }
         public string version { get; set; }
+
+        public string GetPackageNameTitle() => $"{packageName}@{version}: {title}";
 
         public string IntroducedThrough
         {

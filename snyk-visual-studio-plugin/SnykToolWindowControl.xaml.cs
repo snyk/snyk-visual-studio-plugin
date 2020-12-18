@@ -8,11 +8,10 @@ namespace Snyk.VisualStudio.Extension.UI
 {
     using CLI;
     using System.Diagnostics;
-    using System.Diagnostics.CodeAnalysis;
     using System.Windows;
     using System.Windows.Controls;
     using System.Windows.Documents;
-    using System;
+    using System.Collections.ObjectModel;
 
     /// <summary>
     /// Interaction logic for SnykToolWindowControl.
@@ -33,7 +32,7 @@ namespace Snyk.VisualStudio.Extension.UI
         {
             this.Dispatcher.Invoke(() =>
             {
-                resultsDataGrid.Items.Clear();
+                vulnerabilitiesTree.Items.Clear();
             });            
         }
 
@@ -41,20 +40,32 @@ namespace Snyk.VisualStudio.Extension.UI
         {
             this.Dispatcher.Invoke(() =>
             {
-                resultsDataGrid.Visibility = Visibility.Visible;
+                vulnerabilitiesTree.Visibility = Visibility.Visible;
             });
         }
 
         public void AddCliResultToDataGrid(CliResult cliResult)
         {
             this.Dispatcher.Invoke(() =>
-            {                              
+            {                                              
                 foreach (CliVulnerabilities cliVulnerabilities in cliResult.CLIVulnerabilities)
                 {
+                    var rootNode = new TreeNode
+                    {
+                        Title = cliVulnerabilities.projectName + "\\" + cliVulnerabilities.displayTargetFile
+                    };
+
                     foreach (Vulnerability vulnerability in cliVulnerabilities.vulnerabilities)
                     {
-                        resultsDataGrid.Items.Add(vulnerability);
+                        var node = new TreeNode
+                        {
+                            Title = vulnerability.GetPackageNameTitle()
+                        };
+
+                        rootNode.Items.Add(node);
                     }
+
+                    vulnerabilitiesTree.Items.Add(rootNode);
                 }
             });
         }
@@ -96,7 +107,7 @@ namespace Snyk.VisualStudio.Extension.UI
 
                 this.progressBarTitle.Text = title;
 
-                this.resultsDataGrid.Visibility = Visibility.Hidden;
+                this.vulnerabilitiesTree.Visibility = Visibility.Hidden;
             });
         }
 
@@ -112,7 +123,7 @@ namespace Snyk.VisualStudio.Extension.UI
 
                 this.progressBarPercent.Visibility = Visibility.Hidden;
 
-                this.resultsDataGrid.Visibility = Visibility.Hidden;
+                this.vulnerabilitiesTree.Visibility = Visibility.Hidden;
             });
         }
 
@@ -122,28 +133,14 @@ namespace Snyk.VisualStudio.Extension.UI
             {
                 this.progressBar.Value = value;
             });
-        }
-
-        /// <summary>
-        /// Handles click on the button by displaying a message box.
-        /// </summary>
-        /// <param name="sender">The event sender.</param>
-        /// <param name="e">The event args.</param>
-        [SuppressMessage("Microsoft.Globalization", "CA1300:SpecifyMessageBoxOptions", Justification = "Sample code")]
-        [SuppressMessage("StyleCop.CSharp.NamingRules", "SA1300:ElementMustBeginWithUpperCaseLetter", Justification = "Default event handler naming pattern")]
-        private void button1_Click(object sender, RoutedEventArgs e)
-        {
-            MessageBox.Show(
-                string.Format(System.Globalization.CultureInfo.CurrentUICulture, "Invoked '{0}'", this.ToString()),
-                "SnykToolWindow");
-        }
+        }        
 
         public void DisplayError(CliError cliError)
         {
             this.Dispatcher.Invoke(() =>
             {
                 progressBarPanel.Visibility = Visibility.Hidden;
-                resultsDataGrid.Visibility = Visibility.Hidden;
+                vulnerabilitiesTree.Visibility = Visibility.Hidden;
 
                 errorPanel.Visibility = Visibility.Visible;
 
@@ -176,5 +173,17 @@ namespace Snyk.VisualStudio.Extension.UI
                 browser.Start();
             }
         }
+    }
+
+    public class TreeNode
+    {
+        public TreeNode()
+        {
+            this.Items = new ObservableCollection<TreeNode>();
+        }
+
+        public string Title { get; set; }
+
+        public ObservableCollection<TreeNode> Items { get; set; }
     }
 }
