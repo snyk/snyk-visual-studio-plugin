@@ -14,6 +14,8 @@ namespace Snyk.VisualStudio.Extension.UI
     using System.Collections.ObjectModel;
     using System.Windows.Threading;
     using System.Threading;
+    using System.Drawing;
+    using System.Windows.Media;
 
     /// <summary>
     /// Interaction logic for SnykToolWindowControl.
@@ -189,8 +191,12 @@ namespace Snyk.VisualStudio.Extension.UI
                     }
 
                     if (treeNode.Vulnerability != null)
-                    {
+                    {                        
+                        vulnerabilityDetailsPanel.Visibility = Visibility.Visible;
+
                         var vulnerability = treeNode.Vulnerability;
+
+                        SetupSeverity(vulnerability);
 
                         vulnerableModule.Text = vulnerability.name;
 
@@ -217,7 +223,8 @@ namespace Snyk.VisualStudio.Extension.UI
                     }
                     else
                     {
-                        // Group name
+                        vulnerabilityDetailsPanel.Visibility = Visibility.Hidden;
+
                         vulnerableModule.Text = "";
                         introducedThrough.Text = "";
                         exploitMaturity.Text = "";
@@ -229,6 +236,42 @@ namespace Snyk.VisualStudio.Extension.UI
                     }                    
                 }
             ); 
+        }
+
+        private void SetupSeverity(Vulnerability vulnerability)
+        {
+            System.Windows.Media.Color severityColor;
+            string severityText;
+
+            switch (vulnerability.severity)
+            {
+                case "high":
+                    severityColor = (System.Windows.Media.Color)System.Windows.Media.ColorConverter.ConvertFromString("#C75450");
+                    severityText = "High severity";
+
+                    break;
+                case "medium":
+                    severityColor = (System.Windows.Media.Color)System.Windows.Media.ColorConverter.ConvertFromString("#EDA200");
+                    severityText = "Medium severity";
+
+                    break;
+                case "low":
+                    severityColor = (System.Windows.Media.Color)System.Windows.Media.ColorConverter.ConvertFromString("#6E6E6E");
+                    severityText = "Low severity";
+
+                    break;
+                default:
+                    severityColor = Colors.Transparent;
+                    severityText = "";
+
+                    break;
+            }
+
+            severityBorder.Background = new SolidColorBrush(severityColor);
+            severityBorder.BorderBrush = new SolidColorBrush(severityColor);
+
+            severity.Background = new SolidColorBrush(severityColor);
+            severity.Text = severityText;
         }
 
         private void moreAboutThisIssue_RequestNavigate(object sender, System.Windows.Navigation.RequestNavigateEventArgs args)
