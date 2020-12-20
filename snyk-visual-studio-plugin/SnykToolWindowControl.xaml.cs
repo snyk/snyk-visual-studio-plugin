@@ -16,6 +16,12 @@ namespace Snyk.VisualStudio.Extension.UI
     using System.Threading;
     using System.Drawing;
     using System.Windows.Media;
+    using System.Windows.Data;
+    using System;
+    using System.Globalization;
+    using System.Windows.Media.Imaging;
+    using System.Reflection;
+    using System.IO;
 
     /// <summary>
     /// Interaction logic for SnykToolWindowControl.
@@ -54,16 +60,15 @@ namespace Snyk.VisualStudio.Extension.UI
             {                                              
                 foreach (CliVulnerabilities cliVulnerabilities in cliResult.CLIVulnerabilities)
                 {
-                    var rootNode = new TreeNode
+                    var rootNode = new VulnerabilityTreeNode
                     {
-                        Title = cliVulnerabilities.projectName + "\\" + cliVulnerabilities.displayTargetFile
+                        CliVulnerabilities = cliVulnerabilities
                     };
 
                     foreach (Vulnerability vulnerability in cliVulnerabilities.vulnerabilities)
                     {
-                        var node = new TreeNode
+                        var node = new VulnerabilityTreeNode
                         {
-                            Title = vulnerability.GetPackageNameTitle(),
                             Vulnerability = vulnerability
                         };
 
@@ -183,7 +188,7 @@ namespace Snyk.VisualStudio.Extension.UI
         {            
             this.Dispatcher.BeginInvoke(DispatcherPriority.Normal, (ThreadStart)delegate ()
                 {
-                    var treeNode = vulnerabilitiesTree.SelectedItem as TreeNode;
+                    var treeNode = vulnerabilitiesTree.SelectedItem as VulnerabilityTreeNode;
 
                     if (treeNode == null)
                     {
@@ -282,17 +287,89 @@ namespace Snyk.VisualStudio.Extension.UI
         }
     }
 
-    public class TreeNode
+    public class VulnerabilityTreeNode
     {
-        public TreeNode()
+        public VulnerabilityTreeNode()
         {
-            this.Items = new ObservableCollection<TreeNode>();
+            this.Items = new ObservableCollection<VulnerabilityTreeNode>();
         }
 
         public Vulnerability Vulnerability { get; set; }
 
-        public string Title { get; set; }
+        public CliVulnerabilities CliVulnerabilities { get; set; }
 
-        public ObservableCollection<TreeNode> Items { get; set; }
+        public string Title
+        {
+            get
+            {
+                if (CliVulnerabilities != null)
+                {
+                    return CliVulnerabilities.projectName + "\\" + CliVulnerabilities.displayTargetFile;
+                }
+
+                if (Vulnerability != null)
+                {
+                    return Vulnerability.GetPackageNameTitle();
+                }
+
+                return "";
+            }
+        }
+
+        public ImageSource Icon
+        {
+            get
+            {
+                if (Vulnerability != null)
+                {
+                    Bitmap severityBitmap;
+
+                    switch (Vulnerability.severity)
+                    {
+                        case "high":
+                            severityBitmap = SnykIcons.SeverityHigh;
+
+                            break;
+                        case "medium":
+                            severityBitmap = SnykIcons.SeverityMedium;
+
+                            break;
+                        case "low":
+                            severityBitmap = SnykIcons.SeverityLow;
+
+                            break;
+                        default:
+                            severityBitmap = SnykIcons.Nuget;
+
+                            break;
+                    }
+
+                    return GetImageSource(severityBitmap);
+                }
+
+                return GetImageSource(SnykIcons.Nuget);
+            }
+        }
+
+        public ObservableCollection<VulnerabilityTreeNode> Items { get; set; }
+
+        private ImageSource GetImageSource(Bitmap bitmap)
+        {
+            return System.Windows.Interop.Imaging
+                .CreateBitmapSourceFromHBitmap(bitmap.GetHbitmap(), IntPtr.Zero, Int32Rect.Empty, BitmapSizeOptions.FromWidthAndHeight(16, 16));
+        }
     }
+
+    public class ImageConverter : IValueConverter
+    {
+        public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
+        {
+            return value;
+        }
+
+        public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture)
+        {
+            return "";
+        }
+    }    
 }

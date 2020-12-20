@@ -81,6 +81,11 @@
       <DependentUpon>SnykProjectOptionsUserControl.cs</DependentUpon>
     </Compile>
     <Compile Include="SnykProjectSettingsService.cs" />
+    <Compile Include="SnykIcons.Designer.cs">
+      <AutoGen>True</AutoGen>
+      <DesignTime>True</DesignTime>
+      <DependentUpon>SnykIcons.resx</DependentUpon>
+    </Compile>
     <Compile Include="SnykRunScanCommand.cs" />
     <Compile Include="SnykSolutionService.cs" />
     <Compile Include="SnykToolWindow.cs" />
@@ -102,6 +107,10 @@
   </ItemGroup>
   <ItemGroup>
     <Content Include="index.html" />
+    <Resource Include="Resources\nuget.png" />
+    <EmbeddedResource Include="Resources\severity_high.png" />
+    <EmbeddedResource Include="Resources\severity_low.png" />
+    <EmbeddedResource Include="Resources\severity_medium.png" />
     <Content Include="Resources\SnykRunScanCommand.png" />
     <Content Include="Resources\SnykToolWindowCommand.png" />
     <Content Include="Resources\SnykVSPackage.ico" />
@@ -228,6 +237,10 @@
     </EmbeddedResource>
     <EmbeddedResource Include="SnykProjectOptionsUserControl.resx">
       <DependentUpon>SnykProjectOptionsUserControl.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="SnykIcons.resx">
+      <Generator>ResXFileCodeGenerator</Generator>
+      <LastGenOutput>SnykIcons.Designer.cs</LastGenOutput>
     </EmbeddedResource>
     <EmbeddedResource Include="VSPackage.resx">
       <MergeWithCTO>true</MergeWithCTO>

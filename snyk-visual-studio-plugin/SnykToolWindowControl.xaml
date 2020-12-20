@@ -8,7 +8,7 @@
              Foreground="{DynamicResource VsBrush.WindowText}"
              mc:Ignorable="d"
              d:DesignHeight="300" d:DesignWidth="300"
-             Name="SnykToolWindow">    
+             Name="SnykToolWindow">
     <Grid>
         <!--<ToolBarTray DockPanel.Dock="Top">
             <ToolBar>
@@ -69,8 +69,11 @@
             </Grid.ColumnDefinitions>
             <TreeView Name="vulnerabilitiesTree" SelectedItemChanged="vulnerabilitiesTree_SelectedItemChanged">
                 <TreeView.ItemTemplate>
-                    <HierarchicalDataTemplate DataType="{x:Type local:TreeNode}" ItemsSource="{Binding Items}">
-                        <TextBlock Text="{Binding Title}"/>
+                    <HierarchicalDataTemplate DataType="{x:Type local:VulnerabilityTreeNode}" ItemsSource="{Binding Items}">
+                        <StackPanel Orientation="Horizontal">
+                            <Image x:Name="icon" SnapsToDevicePixels="True" Stretch="None" Margin="0, 0, 5, 0" Source="{Binding Icon}"/>
+                            <TextBlock Text="{Binding Title}"/>
+                        </StackPanel>
                     </HierarchicalDataTemplate>
                 </TreeView.ItemTemplate>
             </TreeView>
