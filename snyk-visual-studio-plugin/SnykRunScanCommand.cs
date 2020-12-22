@@ -125,22 +125,33 @@ namespace Snyk.VisualStudio.Extension.UI
 
                 for (int index = 1; index <= projects.Count; index++)
                 {
-                    Project project = projects.Item(index);
-
-                    string projectPath = project.Properties.Item("LocalPath").Value.ToString();
-
-                    CliResult cliResult = cli.Scan(projectPath);
-
-                    if (!cliResult.IsSuccessful())
+                    try
                     {
-                        toolWindow.DisplayError(cliResult.Error);
-                    }
-                    else
-                    {
-                        toolWindow.DisplayDataGrid();
+                        Project project = projects.Item(index);
 
-                        toolWindow.AddCliResultToDataGrid(cliResult);
-                    }
+                        string projectPath = project.Properties.Item("LocalPath").Value.ToString();
+
+                        CliResult cliResult = cli.Scan(projectPath);
+
+                        if (!cliResult.IsSuccessful())
+                        {
+                            toolWindow.DisplayError(cliResult.Error);
+                        }
+                        else
+                        {
+                            toolWindow.DisplayDataGrid();
+
+                            toolWindow.AddCliResultToDataGrid(cliResult);
+                        }
+                    } catch (Exception exception)
+                    {
+                        var error = new CliError
+                        {
+                            Message = exception.Message
+                        };
+
+                        toolWindow.DisplayError(error);
+                    }                    
                 }                                   
 
                 toolWindow.Hide();

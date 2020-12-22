@@ -4,50 +4,29 @@
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:local="clr-namespace:Snyk.VisualStudio.Extension.UI"          
+             xmlns:icons="clr-namespace:Snyk.VisualStudio.Extension" 
              Background="{DynamicResource VsBrush.Window}"
              Foreground="{DynamicResource VsBrush.WindowText}"
              mc:Ignorable="d"
              d:DesignHeight="300" d:DesignWidth="300"
              Name="SnykToolWindow">
     <Grid>
-        <!--<ToolBarTray DockPanel.Dock="Top">
-            <ToolBar>
-                <Button Command="New" Content="New" />
-                <Button Command="Open" Content="Open" />
-                <Button Command="Save" Content="Save" />
-            </ToolBar>
-            <ToolBar>
-                <Button Command="Cut" Content="Cut" />
-                <Button Command="Copy" Content="Copy" />
-                <Button Command="Paste" Content="Paste" />
-            </ToolBar>
-        </ToolBarTray>-->
-        <StackPanel Name="progressBarPanel" Visibility="Hidden" Orientation="Vertical" Margin="1" UseLayoutRounding="False">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="10*"/>
+        </Grid.RowDefinitions>
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition></ColumnDefinition>
+        </Grid.ColumnDefinitions>
+        <StackPanel Grid.Row="0" Grid.Column="0" Name="progressBarPanel" Visibility="Collapsed" Orientation="Vertical" Margin="1" UseLayoutRounding="False">
             <Grid>
                 <ProgressBar x:Name="progressBar" Minimum="0" Maximum="100" Height="12"/>
                 <TextBlock Name="progressBarPercent" Text="{Binding ElementName=progressBar, Path=Value, StringFormat={}{0:0}%}" HorizontalAlignment="Center" VerticalAlignment="Center" FontSize="10"/>
             </Grid>
             <TextBlock Name="progressBarTitle" Text="" HorizontalAlignment="Center" VerticalAlignment="Center" FontSize="12"/>
         </StackPanel>
-        <DataGrid x:Name="resultsDataGrid" Visibility="Hidden" ItemsSource="{Binding}" UseLayoutRounding="False" 
-                          Padding="1" 
-                          ScrollViewer.HorizontalScrollBarVisibility="Visible" ScrollViewer.VerticalScrollBarVisibility="Visible"
-                          HorizontalContentAlignment="Stretch" VerticalContentAlignment="Stretch" Margin="3,3,3,3" RenderTransformOrigin="0,0.5">
-            <DataGrid.Columns>
-                <DataGridHyperlinkColumn Header="Title" Binding="{Binding url}" ContentBinding="{Binding title}" IsReadOnly="True" Width="3*">
-                    <DataGridHyperlinkColumn.ElementStyle>
-                        <Style TargetType="TextBlock">
-                            <EventSetter Event="Hyperlink.Click" Handler="OnHyperlinkClick" />
-                        </Style>
-                    </DataGridHyperlinkColumn.ElementStyle>
-                </DataGridHyperlinkColumn>
-                <DataGridTextColumn Header="Module" Binding="{Binding name}" Width="1*"/>
-                <DataGridTextColumn Header="Introduced through" Binding="{Binding IntroducedThrough}" Width="3*"/>
-                <DataGridTextColumn Header="Exploit maturity" Binding="{Binding exploit}" Width="1*"/>
-                <DataGridTextColumn Header="Fixed in" Binding="{Binding Remediation}" Width="2*"/>
-            </DataGrid.Columns>
-        </DataGrid>
-        <StackPanel Name="errorPanel" Orientation="Vertical" Margin="1" UseLayoutRounding="False" Visibility="Hidden">
+        <StackPanel Grid.Row="1" Grid.Column="0" Name="errorPanel" Orientation="Vertical" Margin="1" UseLayoutRounding="False" Visibility="Collapsed">
             <Border Margin="0,15" Padding="5" BorderThickness="0" BorderBrush="#CC666E" CornerRadius="0, 5, 5, 0" Background="#CC666E" 
                                   VerticalAlignment="Center" HorizontalAlignment="Left">
                 <TextBlock Text="Error" Width="100" HorizontalAlignment="Left" VerticalAlignment="Center" FontSize="20" Background="#CC666E"/>
@@ -61,13 +40,16 @@
                 <TextBlock x:Name="errorPath" Text="" HorizontalAlignment="Left" VerticalAlignment="Center" FontSize="12" Margin="5, 5, 5, 5" TextWrapping="Wrap" MaxWidth="1000"/>
             </StackPanel>
         </StackPanel>
-        <Grid Name="resultsGrid" Visibility="Hidden">
+        <Grid Grid.Row="2" Grid.Column="0" Name="resultsGrid" Visibility="Collapsed">
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="3*" />
                 <ColumnDefinition Width="5" />
                 <ColumnDefinition Width="6*" />
             </Grid.ColumnDefinitions>
-            <TreeView Name="vulnerabilitiesTree" SelectedItemChanged="vulnerabilitiesTree_SelectedItemChanged">
+            <TreeView Name="vulnerabilitiesTree" SelectedItemChanged="vulnerabilitiesTree_SelectedItemChanged"
+                      Background="{DynamicResource VsBrush.Window}" Foreground="{DynamicResource VsBrush.WindowText}" 
+                      HorizontalAlignment="Stretch" VerticalAlignment="Stretch" 
+                      ScrollViewer.VerticalScrollBarVisibility="Auto" ScrollViewer.HorizontalScrollBarVisibility="Auto" VerticalContentAlignment="Stretch" ScrollViewer.CanContentScroll="True" UseLayoutRounding="False">
                 <TreeView.ItemTemplate>
                     <HierarchicalDataTemplate DataType="{x:Type local:VulnerabilityTreeNode}" ItemsSource="{Binding Items}">
                         <StackPanel Orientation="Horizontal">

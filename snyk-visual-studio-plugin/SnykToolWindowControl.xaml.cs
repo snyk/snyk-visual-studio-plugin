@@ -20,8 +20,6 @@ namespace Snyk.VisualStudio.Extension.UI
     using System;
     using System.Globalization;
     using System.Windows.Media.Imaging;
-    using System.Reflection;
-    using System.IO;
 
     /// <summary>
     /// Interaction logic for SnykToolWindowControl.
@@ -84,7 +82,7 @@ namespace Snyk.VisualStudio.Extension.UI
         {
             this.Dispatcher.Invoke(() =>
             {
-                this.progressBarPanel.Visibility = Visibility.Hidden;
+                this.progressBarPanel.Visibility = Visibility.Collapsed;
 
                 this.progressBarTitle.Text = "";
 
@@ -105,7 +103,7 @@ namespace Snyk.VisualStudio.Extension.UI
         {
             this.Dispatcher.Invoke(() =>
             {
-                this.progressBarPanel.Visibility = Visibility.Visible;
+                this.progressBarPanel.Visibility = Visibility.Collapsed;
             });
         }
 
@@ -117,7 +115,7 @@ namespace Snyk.VisualStudio.Extension.UI
 
                 this.progressBarTitle.Text = title;
 
-                this.resultsGrid.Visibility = Visibility.Hidden;
+                this.resultsGrid.Visibility = Visibility.Collapsed;
             });
         }
 
@@ -131,9 +129,9 @@ namespace Snyk.VisualStudio.Extension.UI
 
                 this.progressBar.IsIndeterminate = true;
 
-                this.progressBarPercent.Visibility = Visibility.Hidden;
+                this.progressBarPercent.Visibility = Visibility.Collapsed;
 
-                this.resultsGrid.Visibility = Visibility.Hidden;
+                this.resultsGrid.Visibility = Visibility.Collapsed;
             });
         }
 
@@ -149,8 +147,8 @@ namespace Snyk.VisualStudio.Extension.UI
         {
             this.Dispatcher.Invoke(() =>
             {
-                progressBarPanel.Visibility = Visibility.Hidden;
-                resultsGrid.Visibility = Visibility.Hidden;
+                progressBarPanel.Visibility = Visibility.Collapsed;
+                resultsGrid.Visibility = Visibility.Collapsed;
 
                 errorPanel.Visibility = Visibility.Visible;
 
@@ -163,7 +161,7 @@ namespace Snyk.VisualStudio.Extension.UI
         {
             this.Dispatcher.Invoke(() =>
             {
-                errorPanel.Visibility = Visibility.Hidden;
+                errorPanel.Visibility = Visibility.Collapsed;
             });        
         }
 
@@ -217,11 +215,9 @@ namespace Snyk.VisualStudio.Extension.UI
 
                         detaiedIntroducedThrough.Text = detaiedIntroducedThroughText;
 
-                        string remediationText = vulnerability.fixedIn != null && vulnerability.fixedIn.Length != 0
-                                                 ? string.Join(" > ", vulnerability.fixedIn) : "";
-
-                        remediation.Text = "Upgrade to " + remediationText;
-
+                        remediation.Text = vulnerability.fixedIn != null && vulnerability.fixedIn.Length != 0
+                                                 ? "Upgrade to " + string.Join(" > ", vulnerability.fixedIn) : "";
+                      
                         overview.Text = vulnerability.Overview;
 
                         moreAboutThisIssue.NavigateUri = new System.Uri(vulnerability.url);
