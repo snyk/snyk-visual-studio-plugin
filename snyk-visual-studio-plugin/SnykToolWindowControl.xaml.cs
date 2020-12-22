@@ -13,8 +13,7 @@ namespace Snyk.VisualStudio.Extension.UI
     using System.Windows.Documents;
     using System.Collections.ObjectModel;
     using System.Windows.Threading;
-    using System.Threading;
-    using System.Drawing;
+    using System.Threading;   
     using System.Windows.Media;
     using System.Windows.Data;
     using System;
@@ -26,12 +25,16 @@ namespace Snyk.VisualStudio.Extension.UI
     /// </summary>
     public partial class SnykToolWindowControl : UserControl, ISnykProgressBarManager
     {
+        private static SnykToolWindowControl instance;
+        
         /// <summary>
         /// Initializes a new instance of the <see cref="SnykToolWindowControl"/> class.
         /// </summary>
         public SnykToolWindowControl()
         {
             this.InitializeComponent();
+
+            instance = this;
         }
 
         public SnykVSPackage Package { get; internal set; }
@@ -168,7 +171,7 @@ namespace Snyk.VisualStudio.Extension.UI
         private void OnHyperlinkClick(object sender, RoutedEventArgs e)
         {
             var destination = ((Hyperlink) e.OriginalSource).NavigateUri;
-            
+
             using (Process browser = new Process())
             {
                 browser.StartInfo = new ProcessStartInfo
@@ -241,23 +244,23 @@ namespace Snyk.VisualStudio.Extension.UI
 
         private void SetupSeverity(Vulnerability vulnerability)
         {
-            System.Windows.Media.Color severityColor;
+            Color severityColor;
             string severityText;
 
             switch (vulnerability.severity)
             {
                 case "high":
-                    severityColor = (System.Windows.Media.Color)System.Windows.Media.ColorConverter.ConvertFromString("#C75450");
+                    severityColor = (Color)ColorConverter.ConvertFromString("#C75450");
                     severityText = "High severity";
 
                     break;
                 case "medium":
-                    severityColor = (System.Windows.Media.Color)System.Windows.Media.ColorConverter.ConvertFromString("#EDA200");
+                    severityColor = (Color)ColorConverter.ConvertFromString("#EDA200");
                     severityText = "Medium severity";
 
                     break;
                 case "low":
-                    severityColor = (System.Windows.Media.Color)System.Windows.Media.ColorConverter.ConvertFromString("#6E6E6E");
+                    severityColor = (Color)ColorConverter.ConvertFromString("#6E6E6E");
                     severityText = "Low severity";
 
                     break;
@@ -281,10 +284,17 @@ namespace Snyk.VisualStudio.Extension.UI
 
             args.Handled = true;
         }
+
+        public static object GetToolWindowResource(object resourceKey) => instance.FindResource(resourceKey);
     }
 
     public class VulnerabilityTreeNode
     {
+        private const string SeverityHighIcon = "SeverityHighIcon";
+        private const string SeverityMediumIcon = "SeverityMediumIcon";
+        private const string SeverityLowIcon = "SeverityLowIcon";
+        private const string NugetIcon = "NugetIcon";
+
         public VulnerabilityTreeNode()
         {
             this.Items = new ObservableCollection<VulnerabilityTreeNode>();
@@ -312,60 +322,48 @@ namespace Snyk.VisualStudio.Extension.UI
             }
         }
 
-        public ImageSource Icon
+        public string Icon
         {
             get
             {
                 if (Vulnerability != null)
                 {
-                    Bitmap severityBitmap;
+                    string severityBitmap;
 
                     switch (Vulnerability.severity)
                     {
                         case "high":
-                            severityBitmap = SnykIcons.SeverityHigh;
+                            severityBitmap = SeverityHighIcon;
 
                             break;
                         case "medium":
-                            severityBitmap = SnykIcons.SeverityMedium;
+                            severityBitmap = SeverityMediumIcon;
 
                             break;
                         case "low":
-                            severityBitmap = SnykIcons.SeverityLow;
+                            severityBitmap = SeverityLowIcon;
 
                             break;
                         default:
-                            severityBitmap = SnykIcons.Nuget;
+                            severityBitmap = NugetIcon;
 
                             break;
                     }
 
-                    return GetImageSource(severityBitmap);
+                    return severityBitmap;
                 }
 
-                return GetImageSource(SnykIcons.Nuget);
+                return NugetIcon;
             }
         }
 
         public ObservableCollection<VulnerabilityTreeNode> Items { get; set; }
-
-        private ImageSource GetImageSource(Bitmap bitmap)
-        {
-            return System.Windows.Interop.Imaging
-                .CreateBitmapSourceFromHBitmap(bitmap.GetHbitmap(), IntPtr.Zero, Int32Rect.Empty, BitmapSizeOptions.FromWidthAndHeight(16, 16));
-        }
     }
 
     public class ImageConverter : IValueConverter
     {
-        public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
-        {
-            return value;
-        }
+        public object Convert(object value, Type targetType, object parameter, CultureInfo culture) => SnykToolWindowControl.GetToolWindowResource(value) as BitmapImage;
 
-        public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture)
-        {
-            return "";
-        }
+        public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture) => "";
     }    
 }

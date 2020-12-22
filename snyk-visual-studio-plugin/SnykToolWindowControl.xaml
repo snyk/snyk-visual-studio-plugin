@@ -10,6 +10,14 @@
              mc:Ignorable="d"
              d:DesignHeight="300" d:DesignWidth="300"
              Name="SnykToolWindow">
+    <UserControl.Resources>
+        <BitmapImage x:Key="NugetIcon" UriSource="./Resources/nuget.png" DecodePixelWidth="16" DecodePixelHeight="16"/>
+        <BitmapImage x:Key="SeverityHighIcon" UriSource="./Resources/severity_high.png" DecodePixelWidth="16" DecodePixelHeight="16"/>
+        <BitmapImage x:Key="SeverityMediumIcon" UriSource="./Resources/severity_medium.png" DecodePixelWidth="16" DecodePixelHeight="16"/>
+        <BitmapImage x:Key="SeverityLowIcon" UriSource="./Resources/severity_low.png" DecodePixelWidth="16" DecodePixelHeight="16"/>
+
+        <local:ImageConverter x:Key="ImageConverter"/>
+    </UserControl.Resources>
     <Grid>
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto"/>
@@ -53,7 +61,7 @@
                 <TreeView.ItemTemplate>
                     <HierarchicalDataTemplate DataType="{x:Type local:VulnerabilityTreeNode}" ItemsSource="{Binding Items}">
                         <StackPanel Orientation="Horizontal">
-                            <Image x:Name="icon" SnapsToDevicePixels="True" Stretch="None" Margin="0, 0, 5, 0" Source="{Binding Icon}"/>
+                            <Image x:Name="icon" SnapsToDevicePixels="True" Stretch="None" Margin="0, 0, 5, 0"  Source="{Binding Icon, Converter={StaticResource ImageConverter}}"/>
                             <TextBlock Text="{Binding Title}"/>
                         </StackPanel>
                     </HierarchicalDataTemplate>

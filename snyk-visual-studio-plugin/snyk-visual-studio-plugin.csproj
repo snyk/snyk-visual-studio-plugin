@@ -108,19 +108,18 @@
   <ItemGroup>
     <Content Include="index.html" />
     <Resource Include="Resources\nuget.png" />
-    <EmbeddedResource Include="Resources\severity_high.png" />
-    <EmbeddedResource Include="Resources\severity_low.png" />
-    <EmbeddedResource Include="Resources\severity_medium.png" />
+    <Resource Include="Resources\severity_high.png" />
+    <Resource Include="Resources\severity_low.png" />
+    <Resource Include="Resources\severity_medium.png" />
     <Content Include="Resources\SnykRunScanCommand.png" />
     <Content Include="Resources\SnykToolWindowCommand.png" />
     <Content Include="Resources\SnykVSPackage.ico" />
     <VSCTCompile Include="SnykVSPackage.vsct">
       <ResourceName>Menus.ctmenu</ResourceName>
     </VSCTCompile>
-    <Content Include="Resources\SnykIcon.png">
+    <Resource Include="Resources\SnykIcon.png">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-      <IncludeInVSIX>true</IncludeInVSIX>
-    </Content>
+    </Resource>
     <Content Include="stylesheet.css" />
   </ItemGroup>
   <ItemGroup>
