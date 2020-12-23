@@ -123,19 +123,15 @@ namespace Snyk.VisualStudio.Extension
         {
             base.Initialize();
 
+            SnykTaskExecuteService.Initialize(this);
             SnykSolutionService.Initialize(this);
             SnykRunScanCommand.Initialize(this);
             SnykToolWindowCommand.Initialize(this);
             SnykGeneralOptionsDialogPage.Initialize(this);
 
-            SnykToolWindowControl toolWindow = GetToolWindow();
+            GetToolWindow().Package = this;
 
-            System.Threading.Tasks.Task.Run(() =>
-            {
-                ShowToolWindow();
-
-                SnykCliDownloader.NewInstance().Download(progressManager: toolWindow);
-            });
+            SnykTaskExecuteService.Instance().Download();
         }
 
         #endregion

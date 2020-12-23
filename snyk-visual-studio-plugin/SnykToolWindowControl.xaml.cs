@@ -13,7 +13,7 @@ namespace Snyk.VisualStudio.Extension.UI
     using System.Windows.Documents;
     using System.Collections.ObjectModel;
     using System.Windows.Threading;
-    using System.Threading;   
+    using System.Threading;
     using System.Windows.Media;
     using System.Windows.Data;
     using System;
@@ -45,6 +45,14 @@ namespace Snyk.VisualStudio.Extension.UI
             {
                 vulnerabilitiesTree.Items.Clear();
             });            
+        }
+
+        public void CancelIfCancellationRequested(CancellationToken token)
+        {
+            if (token.IsCancellationRequested)
+            {
+                token.ThrowIfCancellationRequested();
+            }
         }
 
         public void DisplayDataGrid()
@@ -106,6 +114,8 @@ namespace Snyk.VisualStudio.Extension.UI
         {
             this.Dispatcher.Invoke(() =>
             {
+                Package.ShowToolWindow();
+
                 this.progressBarPanel.Visibility = Visibility.Collapsed;
             });
         }
@@ -114,6 +124,8 @@ namespace Snyk.VisualStudio.Extension.UI
         {
             this.Dispatcher.Invoke(() =>
             {
+                Package.ShowToolWindow();
+
                 this.progressBarPanel.Visibility = Visibility.Visible;
 
                 this.progressBarTitle.Text = title;
@@ -157,6 +169,19 @@ namespace Snyk.VisualStudio.Extension.UI
 
                 errorMessage.Text = cliError.Message;
                 errorPath.Text = cliError.Path;
+            });
+        }
+
+        public void HideAll()
+        {
+            this.Dispatcher.Invoke(() =>
+            {
+                progressBarPanel.Visibility = Visibility.Collapsed;
+                resultsGrid.Visibility = Visibility.Collapsed;
+
+                errorPanel.Visibility = Visibility.Visible;
+
+                HideError();
             });
         }
 
@@ -286,6 +311,16 @@ namespace Snyk.VisualStudio.Extension.UI
         }
 
         public static object GetToolWindowResource(object resourceKey) => instance.FindResource(resourceKey);
+
+        private void RunButton_Click(object sender, RoutedEventArgs e)
+        {
+            SnykTaskExecuteService.Instance().Scan();
+        }
+
+        private void StopButton_Click(object sender, RoutedEventArgs e)
+        {
+            SnykTaskExecuteService.Instance().CancelCurrentTask();
+        }
     }
 
     public class VulnerabilityTreeNode

@@ -21,7 +21,7 @@ namespace Snyk.VisualStudio.Extension.CLI
             return (LatestReleaseInfo) Json.Deserialize(latestReleasesInfoJson, typeof(LatestReleaseInfo));
         }
 
-        public void Download(string cliFileDestinationPath = null, ISnykProgressBarManager progressManager = null)
+        public void Download(string cliFileDestinationPath = null, ISnykProgressBarManager progressManager = null, CancellationTokenChecker tokenChecker = null)
         {
             if (cliFileDestinationPath == null)
             {
@@ -31,7 +31,9 @@ namespace Snyk.VisualStudio.Extension.CLI
             if (!File.Exists(cliFileDestinationPath))
             {
                 using (var webClient = new SnykWebClient())
-                {                    
+                {
+                    tokenChecker.CancelIfCancellationRequested();
+
                     LatestReleaseInfo latestReleaseInfo = GetLatestReleaseInfo(webClient);
 
                     string cliVersion = latestReleaseInfo.TagName;
@@ -39,6 +41,8 @@ namespace Snyk.VisualStudio.Extension.CLI
                     string cliDownloadUrl = String.Format(LatestReleaseDownloadUrl, cliVersion, SnykCli.CliFileName);
 
                     string snykDirectoryPath = SnykCli.GetSnykDirectoryPath();
+
+                    tokenChecker.CancelIfCancellationRequested();
 
                     Directory.CreateDirectory(snykDirectoryPath);
 
@@ -48,21 +52,35 @@ namespace Snyk.VisualStudio.Extension.CLI
 
                         webClient.DownloadProgressChanged += (source, progressChangedEvent) =>
                         {
-                            progressManager.Update(progressChangedEvent.ProgressPercentage);
+                            try
+                            {
+                                progressManager.Update(progressChangedEvent.ProgressPercentage);
+
+                                tokenChecker.CancelIfCancellationRequested();
+                            } catch (Exception exception) {                               
+                                webClient.CancelAsync();
+                            }
                         };
 
                         webClient.DownloadFileCompleted += (source, downloadCompletedEvent) =>
                         {
-                            progressManager.Hide();
+                            if (downloadCompletedEvent.Cancelled)
+                            {
+                                File.Delete(cliFileDestinationPath);
+                            }
+
+                            progressManager.HideAll();
                         };
 
                         webClient.DownloadFileAsync(new Uri(cliDownloadUrl), cliFileDestinationPath);
+
+                        tokenChecker.CancelIfCancellationRequested();
                     } else
                     {
                         webClient.DownloadFile(cliDownloadUrl, cliFileDestinationPath);
                     }                    
                 }
             }
-        }             
+        }                     
     }
 }

@@ -13,5 +13,7 @@
         void ShowIndeterminate(string title);
 
         void SetTitle(string title);
+
+        void HideAll();
     }
 }
