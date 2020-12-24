@@ -5,6 +5,11 @@ using System.Threading.Tasks;
 
 namespace Snyk.VisualStudio.Extension.UI
 {
+    public class SnykCliScanEventArgs : EventArgs
+    {
+        public CliError Error { get; set; }
+    }    
+
     public class SnykTaskExecuteService
     {
         private static SnykTaskExecuteService instance;
@@ -30,6 +35,37 @@ namespace Snyk.VisualStudio.Extension.UI
 
             instance.package = vsPackage;
         }
+
+        public event EventHandler<SnykCliScanEventArgs> ScanningStarted;
+
+        public event EventHandler<SnykCliScanEventArgs> ScanningFinished;
+
+        public event EventHandler<SnykCliScanEventArgs> ScanError;
+
+        public event EventHandler<SnykCliScanEventArgs> ScanningCancelled;
+
+
+
+
+
+
+        protected virtual void OnScanningCancelled(string message)
+        {
+            SnykCliScanEventArgs eventArgs = new SnykCliScanEventArgs
+            {
+                Error = new CliError
+                {
+                    Message = message
+                }
+            };
+
+            ScanError?.Invoke(this, eventArgs);
+        }
+
+
+
+
+
 
         public void CancelCurrentTask()
         {
@@ -59,12 +95,7 @@ namespace Snyk.VisualStudio.Extension.UI
 
                     if (projects.Count == 0)
                     {
-                        var error = new CliError
-                        {
-                            Message = "No open solution."
-                        };
-
-                        toolWindow.DisplayError(error);
+                        OnScanningCancelled("No open solution.");
 
                         return;
                     }
@@ -108,13 +139,8 @@ namespace Snyk.VisualStudio.Extension.UI
                                 toolWindow.AddCliResultToDataGrid(cliResult);
                             }
                         } catch(Exception scanException)
-                        {
-                            var error = new CliError
-                            {
-                                Message = scanException.Message
-                            };
-
-                            toolWindow.DisplayError(error);
+                        {                           
+                            OnScanningCancelled(scanException.Message);
                         }                       
                     }
 

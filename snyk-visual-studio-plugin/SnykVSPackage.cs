@@ -131,7 +131,14 @@ namespace Snyk.VisualStudio.Extension
 
             GetToolWindow().Package = this;
 
+            InitializeEventListeners();
+
             SnykTaskExecuteService.Instance().Download();
+        }
+
+        private void InitializeEventListeners()
+        {
+            SnykTaskExecuteService.Instance().ScanError += GetToolWindow().OnDisplayError;
         }
 
         #endregion

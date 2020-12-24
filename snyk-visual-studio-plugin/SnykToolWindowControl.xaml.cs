@@ -19,7 +19,7 @@ namespace Snyk.VisualStudio.Extension.UI
     using System;
     using System.Globalization;
     using System.Windows.Media.Imaging;
-
+    
     /// <summary>
     /// Interaction logic for SnykToolWindowControl.
     /// </summary>
@@ -35,7 +35,22 @@ namespace Snyk.VisualStudio.Extension.UI
             this.InitializeComponent();
 
             instance = this;
+
+            SnykTaskExecuteService.Instance().ScanError += OnDisplayError;
         }
+
+
+
+
+        public void OnDisplayError(object sender, SnykCliScanEventArgs eventArgs)
+        {
+            DisplayError(eventArgs.Error);
+        }
+
+
+
+
+
 
         public SnykVSPackage Package { get; internal set; }
 
