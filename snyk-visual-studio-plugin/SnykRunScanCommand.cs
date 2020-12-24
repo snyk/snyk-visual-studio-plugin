@@ -114,7 +114,7 @@ namespace Snyk.VisualStudio.Extension.UI
                 }                
 
                 toolWindow.HideError();
-                toolWindow.ShowIndeterminate("Scanning...");
+                toolWindow.ShowIndeterminateProgressBar("Scanning...");
 
                 toolWindow.ClearDataGrid();
 
@@ -154,7 +154,7 @@ namespace Snyk.VisualStudio.Extension.UI
                     }                    
                 }                                   
 
-                toolWindow.Hide();
+                toolWindow.HideProgressBar();
             });                        
         }
         

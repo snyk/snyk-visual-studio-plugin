@@ -72,7 +72,7 @@ namespace Snyk.VisualStudio.Extension.UI
                     tokenChecker.CancelIfCancellationRequested();
 
                     toolWindow.HideError();
-                    toolWindow.ShowIndeterminate("Scanning...");
+                    toolWindow.ShowIndeterminateProgressBar("Scanning...");
 
                     toolWindow.ClearDataGrid();
 
@@ -118,13 +118,13 @@ namespace Snyk.VisualStudio.Extension.UI
                         }                       
                     }
 
-                    toolWindow.Hide();
+                    toolWindow.HideProgressBar();
 
                     tokenSource = null;
                 }
                 catch (Exception exception)
                 {
-                    toolWindow.HideAll();
+                    toolWindow.HideAllControls();
 
                     tokenSource = null;
                 }
@@ -147,7 +147,7 @@ namespace Snyk.VisualStudio.Extension.UI
                 }
                 catch (Exception exception)
                 {
-                    toolWindow.HideAll();
+                    toolWindow.HideAllControls();
 
                     tokenSource = null;
                 }

@@ -48,13 +48,13 @@ namespace Snyk.VisualStudio.Extension.CLI
 
                     if (progressManager != null)
                     {
-                        progressManager.Show("Downloading latest Snyk CLI release...");
+                        progressManager.ShowProgressBar("Downloading latest Snyk CLI release...");
 
                         webClient.DownloadProgressChanged += (source, progressChangedEvent) =>
                         {
                             try
                             {
-                                progressManager.Update(progressChangedEvent.ProgressPercentage);
+                                progressManager.UpdateProgressBar(progressChangedEvent.ProgressPercentage);
 
                                 tokenChecker.CancelIfCancellationRequested();
                             } catch (Exception exception) {                               
@@ -69,7 +69,7 @@ namespace Snyk.VisualStudio.Extension.CLI
                                 File.Delete(cliFileDestinationPath);
                             }
 
-                            progressManager.HideAll();
+                            progressManager.HideAllControls();
                         };
 
                         webClient.DownloadFileAsync(new Uri(cliDownloadUrl), cliFileDestinationPath);

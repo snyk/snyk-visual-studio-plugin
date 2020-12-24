@@ -2,18 +2,18 @@
 {
     public interface ISnykProgressBarManager
     {
-        void Update(int value);
+        void UpdateProgressBar(int value);
 
-        void Hide();
+        void HideProgressBar();
 
-        void Show();
+        void ShowProgressBar();
 
-        void Show(string title);
+        void ShowProgressBar(string title);
 
-        void ShowIndeterminate(string title);
+        void ShowIndeterminateProgressBar(string title);
 
-        void SetTitle(string title);
+        void SetProgressBarTitle(string title);
 
-        void HideAll();
+        void HideAllControls(); // TODO: This method must be placed not here or interface must be renamed...
     }
 }

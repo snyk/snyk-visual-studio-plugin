@@ -89,7 +89,7 @@ namespace Snyk.VisualStudio.Extension.UI
             });
         }
 
-        public void Hide()
+        public void HideProgressBar()
         {
             this.Dispatcher.Invoke(() =>
             {
@@ -102,7 +102,7 @@ namespace Snyk.VisualStudio.Extension.UI
             });
         }
 
-        public void SetTitle(string title)
+        public void SetProgressBarTitle(string title)
         {
             this.Dispatcher.Invoke(() =>
             {
@@ -110,7 +110,7 @@ namespace Snyk.VisualStudio.Extension.UI
             });
         }
 
-        public void Show()
+        public void ShowProgressBar()
         {
             this.Dispatcher.Invoke(() =>
             {
@@ -120,7 +120,7 @@ namespace Snyk.VisualStudio.Extension.UI
             });
         }
 
-        public void Show(string title)
+        public void ShowProgressBar(string title)
         {
             this.Dispatcher.Invoke(() =>
             {
@@ -134,7 +134,7 @@ namespace Snyk.VisualStudio.Extension.UI
             });
         }
 
-        public void ShowIndeterminate(string title)
+        public void ShowIndeterminateProgressBar(string title)
         {
             this.Dispatcher.Invoke(() =>
             {
@@ -150,7 +150,7 @@ namespace Snyk.VisualStudio.Extension.UI
             });
         }
 
-        public void Update(int value)
+        public void UpdateProgressBar(int value)
         {
             this.Dispatcher.Invoke(() =>
             {
@@ -172,7 +172,7 @@ namespace Snyk.VisualStudio.Extension.UI
             });
         }
 
-        public void HideAll()
+        public void HideAllControls()
         {
             this.Dispatcher.Invoke(() =>
             {
