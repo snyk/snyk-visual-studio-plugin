@@ -50,37 +50,51 @@ namespace Snyk.VisualStudio.Extension.CLI
 
                     if (progressWorker != null)
                     {
-                        webClient.DownloadProgressChanged += (source, progressChangedEvent) =>
-                        {
-                            try
-                            {
-                                progressWorker.UpdateProgress(progressChangedEvent.ProgressPercentage);
-
-                                progressWorker.CancelIfCancellationRequested();
-                            } catch (Exception exception) {                               
-                                webClient.CancelAsync();
-                            }
-                        };
-
-                        webClient.DownloadFileCompleted += (source, downloadCompletedEvent) =>
-                        {
-                            if (downloadCompletedEvent.Cancelled)
-                            {
-                                File.Delete(cliFileDestinationPath);
-                            }
-
-                            progressWorker.DownloadFinished();
-                        };
-
-                        webClient.DownloadFileAsync(new Uri(cliDownloadUrl), cliFileDestinationPath);
-
-                        progressWorker.CancelIfCancellationRequested();
-                    } else
+                        AsynchronousDownload(webClient, progressWorker, cliFileDestinationPath, cliDownloadUrl);   
+                    }
+                    else
                     {
-                        webClient.DownloadFile(cliDownloadUrl, cliFileDestinationPath);
+                        SynchronousDownload(webClient, cliFileDestinationPath, cliDownloadUrl);
                     }                    
                 }
             }
+        }
+
+        private void SynchronousDownload(WebClient webClient, string cliFileDestinationPath, string cliDownloadUrl) => 
+            webClient.DownloadFile(cliDownloadUrl, cliFileDestinationPath);
+
+        private void AsynchronousDownload(WebClient webClient, 
+            IProgressWorker progressWorker, 
+            string cliFileDestinationPath, 
+            string cliDownloadUrl)
+        {
+            webClient.DownloadProgressChanged += (source, progressChangedEvent) =>
+            {
+                try
+                {
+                    progressWorker.UpdateProgress(progressChangedEvent.ProgressPercentage);
+
+                    progressWorker.CancelIfCancellationRequested();
+                }
+                catch (Exception exception)
+                {
+                    webClient.CancelAsync();
+                }
+            };
+
+            webClient.DownloadFileCompleted += (source, downloadCompletedEvent) =>
+            {
+                if (downloadCompletedEvent.Cancelled)
+                {
+                    File.Delete(cliFileDestinationPath);
+                }
+
+                progressWorker.DownloadFinished();
+            };
+
+            webClient.DownloadFileAsync(new Uri(cliDownloadUrl), cliFileDestinationPath);
+
+            progressWorker.CancelIfCancellationRequested();
         }                     
     }
 }
