@@ -98,6 +98,8 @@ namespace Snyk.VisualStudio.Extension.UI
                         CliVulnerabilities = cliVulnerabilities
                     };
 
+                    Array.Sort(cliVulnerabilities.vulnerabilities);
+
                     foreach (Vulnerability vulnerability in cliVulnerabilities.vulnerabilities)
                     {
                         var node = new VulnerabilityTreeNode

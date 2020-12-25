@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 
 namespace Snyk.VisualStudio.Extension.CLI
 {
@@ -82,7 +83,7 @@ namespace Snyk.VisualStudio.Extension.CLI
             };
 
             return cliGroupedResult;
-        }
+        }        
     }
 
     public class Licensespolicy
@@ -233,7 +234,7 @@ namespace Snyk.VisualStudio.Extension.CLI
         public object[] patch { get; set; }
     }
 
-    public class Vulnerability
+    public class Vulnerability : IComparable<Vulnerability>
     {
         public string CVSSv3 { get; set; }
         public object[] alternativeIds { get; set; }
@@ -269,6 +270,26 @@ namespace Snyk.VisualStudio.Extension.CLI
         public string version { get; set; }
 
         public string GetPackageNameTitle() => $"{packageName}@{version}: {title}";
+
+        public int CompareTo(Vulnerability otherVulnerability)
+        {
+            if (this.severity == otherVulnerability.severity)
+            {
+                return 0;
+            }
+
+            if (this.severity == "low" && otherVulnerability.severity != "low")
+            {
+                return 1;
+            }
+            
+            if (this.severity == "medium" && otherVulnerability.severity == "high")
+            {
+                return 1;
+            }
+
+            return -1;
+        }
 
         public string IntroducedThrough
         {
