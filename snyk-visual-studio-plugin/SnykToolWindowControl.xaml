@@ -17,6 +17,7 @@
         <BitmapImage x:Key="SeverityLowIcon" UriSource="./Resources/severity_low.png" DecodePixelWidth="16" DecodePixelHeight="16"/>
         <BitmapImage x:Key="RunIcon" UriSource="./Resources/Run.png" DecodePixelWidth="16" DecodePixelHeight="16"/>
         <BitmapImage x:Key="StopIcon" UriSource="./Resources/Stop.png" DecodePixelWidth="16" DecodePixelHeight="16"/>
+        <BitmapImage x:Key="CleanIcon" UriSource="./Resources/CleanData.png" DecodePixelWidth="16" DecodePixelHeight="16"/>
         <local:ImageConverter x:Key="ImageConverter"/>
     </UserControl.Resources>
     <Grid>
@@ -33,8 +34,12 @@
             <Button Name="runButton" Click="RunButton_Click">
                 <Image Source="{StaticResource RunIcon}"/>
             </Button>
-            <Button Name="stopButton" Click="StopButton_Click" >
+            <Button Name="stopButton" Click="StopButton_Click">
                 <Image Source="{StaticResource StopIcon}"/>
+            </Button>
+            <Separator/>
+            <Button Name="cleanButton" Click="cleanButton_Click">
+                <Image Source="{StaticResource CleanIcon}"/>
             </Button>
         </ToolBar>
         <StackPanel Grid.Row="1" Grid.Column="0" Name="progressBarPanel" Visibility="Collapsed" Orientation="Vertical" Margin="1" UseLayoutRounding="False">

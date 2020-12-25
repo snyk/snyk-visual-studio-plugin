@@ -112,6 +112,7 @@
     <Resource Include="Resources\severity_medium.png" />
     <Resource Include="Resources\Run.png" />
     <Resource Include="Resources\NugetLogo.png" />
+    <Resource Include="Resources\CleanData.png" />
     <Content Include="Resources\SnykRunScanCommand.png" />
     <Content Include="Resources\SnykToolWindowCommand.png" />
     <Content Include="Resources\SnykVSPackage.ico" />

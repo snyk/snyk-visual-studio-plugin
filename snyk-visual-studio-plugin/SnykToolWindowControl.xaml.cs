@@ -44,11 +44,8 @@ namespace Snyk.VisualStudio.Extension.UI
             HideError();
             ShowIndeterminateProgressBar("Scanning...");
 
-            this.Dispatcher.Invoke(() =>
-            {
-                vulnerabilitiesTree.Items.Clear();
-            });
-        }
+            CleanVulnerabilitiesTree();
+        }        
 
         public void OnOnScanningFinished(object sender, SnykCliScanEventArgs eventArgs) => HideProgressBar();
 
@@ -177,6 +174,7 @@ namespace Snyk.VisualStudio.Extension.UI
                 errorPanel.Visibility = Visibility.Visible;
 
                 HideError();
+                CleanAndHideVulnerabilityDetailsPanel();
             });
         }
 
@@ -188,6 +186,14 @@ namespace Snyk.VisualStudio.Extension.UI
             {
                 errorPanel.Visibility = Visibility.Collapsed;
             });        
+        }
+
+        private void CleanVulnerabilitiesTree()
+        {
+            this.Dispatcher.Invoke(() =>
+            {
+                vulnerabilitiesTree.Items.Clear();
+            });
         }
 
         private void OnHyperlinkClick(object sender, RoutedEventArgs e)
@@ -248,20 +254,25 @@ namespace Snyk.VisualStudio.Extension.UI
                         moreAboutThisIssue.NavigateUri = new System.Uri(vulnerability.url);
                     }
                     else
-                    {
-                        vulnerabilityDetailsPanel.Visibility = Visibility.Hidden;
-
-                        vulnerableModule.Text = "";
-                        introducedThrough.Text = "";
-                        exploitMaturity.Text = "";
-                        fixedIn.Text = "";
-                        detaiedIntroducedThrough.Text = "";
-                        remediation.Text = "";
-                        overview.Text = "";
-                        moreAboutThisIssue.NavigateUri = null;
+                    {                        
+                        CleanAndHideVulnerabilityDetailsPanel();
                     }                    
                 }
             ); 
+        }
+
+        private void CleanAndHideVulnerabilityDetailsPanel()
+        {
+            vulnerabilityDetailsPanel.Visibility = Visibility.Hidden;
+
+            vulnerableModule.Text = "";
+            introducedThrough.Text = "";
+            exploitMaturity.Text = "";
+            fixedIn.Text = "";
+            detaiedIntroducedThrough.Text = "";
+            remediation.Text = "";
+            overview.Text = "";
+            moreAboutThisIssue.NavigateUri = null;
         }
 
         private void SetupSeverity(Vulnerability vulnerability)
@@ -317,6 +328,13 @@ namespace Snyk.VisualStudio.Extension.UI
         private void StopButton_Click(object sender, RoutedEventArgs e)
         {
             SnykTasksService.Instance().CancelCurrentTask();
+        }
+
+        private void cleanButton_Click(object sender, RoutedEventArgs e)
+        {
+            CleanVulnerabilitiesTree();
+
+            HideAllControls();
         }
     }
 
