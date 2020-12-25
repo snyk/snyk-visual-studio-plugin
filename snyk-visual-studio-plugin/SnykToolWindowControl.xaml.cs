@@ -23,7 +23,7 @@ namespace Snyk.VisualStudio.Extension.UI
     /// <summary>
     /// Interaction logic for SnykToolWindowControl.
     /// </summary>
-    public partial class SnykToolWindowControl : UserControl, ISnykProgressBarManager
+    public partial class SnykToolWindowControl : UserControl
     {
         private static SnykToolWindowControl instance;
         
@@ -35,32 +35,36 @@ namespace Snyk.VisualStudio.Extension.UI
             this.InitializeComponent();
 
             instance = this;
-
-            SnykTaskExecuteService.Instance().ScanError += OnDisplayError;
         }
 
+        public void OnScanningUpdate(object sender, SnykCliScanEventArgs eventArgs) => AppendCliResultToTree(eventArgs.Result);
 
-
-
-        public void OnDisplayError(object sender, SnykCliScanEventArgs eventArgs)
+        public void OnScanningStarted(object sender, SnykCliScanEventArgs eventArgs)
         {
-            DisplayError(eventArgs.Error);
-        }
+            HideError();
+            ShowIndeterminateProgressBar("Scanning...");
 
-
-
-
-
-
-        public SnykVSPackage Package { get; internal set; }
-
-        public void ClearDataGrid()
-        {
             this.Dispatcher.Invoke(() =>
             {
                 vulnerabilitiesTree.Items.Clear();
-            });            
+            });
         }
+
+        public void OnOnScanningFinished(object sender, SnykCliScanEventArgs eventArgs) => HideProgressBar();
+
+        public void OnDisplayError(object sender, SnykCliScanEventArgs eventArgs) => DisplayError(eventArgs.Error);
+
+        public void OnScanningCancelled(object sender, SnykCliScanEventArgs eventArgs) => HideAllControls();
+
+        public void OnDownloadStarted(object sender, SnykCliDownloadEventArgs eventArgs) => ShowProgressBar("Downloading latest Snyk CLI release...");
+
+        public void OnDownloadFinished(object sender, SnykCliDownloadEventArgs eventArgs) => HideAllControls();
+
+        public void OnDownloadUpdate(object sender, SnykCliDownloadEventArgs eventArgs) => UpdateProgressBar(eventArgs.Progress);
+
+        public void OnDownloadCancelled(object sender, SnykCliDownloadEventArgs eventArgs) => HideAllControls();
+        
+        public SnykVSPackage Package { get; internal set; }        
 
         public void CancelIfCancellationRequested(CancellationToken token)
         {
@@ -70,18 +74,26 @@ namespace Snyk.VisualStudio.Extension.UI
             }
         }
 
-        public void DisplayDataGrid()
+        public void DisplayError(CliError cliError)
         {
             this.Dispatcher.Invoke(() =>
             {
-                resultsGrid.Visibility = Visibility.Visible;
+                progressBarPanel.Visibility = Visibility.Collapsed;
+                resultsGrid.Visibility = Visibility.Collapsed;
+
+                errorPanel.Visibility = Visibility.Visible;
+
+                errorMessage.Text = cliError.Message;
+                errorPath.Text = cliError.Path;
             });
         }
 
-        public void AddCliResultToDataGrid(CliResult cliResult)
+        private void AppendCliResultToTree(CliResult cliResult)
         {
             this.Dispatcher.Invoke(() =>
-            {                                              
+            {
+                DisplayResultsGrid();
+
                 foreach (CliVulnerabilities cliVulnerabilities in cliResult.CLIVulnerabilities)
                 {
                     var rootNode = new VulnerabilityTreeNode
@@ -104,7 +116,7 @@ namespace Snyk.VisualStudio.Extension.UI
             });
         }
 
-        public void HideProgressBar()
+        private void HideProgressBar()
         {
             this.Dispatcher.Invoke(() =>
             {
@@ -117,25 +129,7 @@ namespace Snyk.VisualStudio.Extension.UI
             });
         }
 
-        public void SetProgressBarTitle(string title)
-        {
-            this.Dispatcher.Invoke(() =>
-            {
-                this.progressBarTitle.Text = title;
-            });
-        }
-
-        public void ShowProgressBar()
-        {
-            this.Dispatcher.Invoke(() =>
-            {
-                Package.ShowToolWindow();
-
-                this.progressBarPanel.Visibility = Visibility.Collapsed;
-            });
-        }
-
-        public void ShowProgressBar(string title)
+        private void ShowProgressBar(string title)
         {
             this.Dispatcher.Invoke(() =>
             {
@@ -149,7 +143,7 @@ namespace Snyk.VisualStudio.Extension.UI
             });
         }
 
-        public void ShowIndeterminateProgressBar(string title)
+        private void ShowIndeterminateProgressBar(string title)
         {
             this.Dispatcher.Invoke(() =>
             {
@@ -165,29 +159,15 @@ namespace Snyk.VisualStudio.Extension.UI
             });
         }
 
-        public void UpdateProgressBar(int value)
+        private void UpdateProgressBar(int value)
         {
             this.Dispatcher.Invoke(() =>
             {
                 this.progressBar.Value = value;
             });
-        }        
+        }                
 
-        public void DisplayError(CliError cliError)
-        {
-            this.Dispatcher.Invoke(() =>
-            {
-                progressBarPanel.Visibility = Visibility.Collapsed;
-                resultsGrid.Visibility = Visibility.Collapsed;
-
-                errorPanel.Visibility = Visibility.Visible;
-
-                errorMessage.Text = cliError.Message;
-                errorPath.Text = cliError.Path;
-            });
-        }
-
-        public void HideAllControls()
+        private void HideAllControls()
         {
             this.Dispatcher.Invoke(() =>
             {
@@ -200,7 +180,9 @@ namespace Snyk.VisualStudio.Extension.UI
             });
         }
 
-        public void HideError()
+        private void DisplayResultsGrid() => resultsGrid.Visibility = Visibility.Visible;
+
+        private void HideError()
         {
             this.Dispatcher.Invoke(() =>
             {
@@ -329,12 +311,12 @@ namespace Snyk.VisualStudio.Extension.UI
 
         private void RunButton_Click(object sender, RoutedEventArgs e)
         {
-            SnykTaskExecuteService.Instance().Scan();
+            SnykTasksService.Instance().Scan();
         }
 
         private void StopButton_Click(object sender, RoutedEventArgs e)
         {
-            SnykTaskExecuteService.Instance().CancelCurrentTask();
+            SnykTasksService.Instance().CancelCurrentTask();
         }
     }
 

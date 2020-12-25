@@ -14,6 +14,13 @@ namespace Snyk.VisualStudio.Extension.CLI
         [DataMember]
         private string path;
 
+        public CliError() { }
+
+        public CliError(string message)
+        {
+            this.Message = message;
+        }
+
         public bool IsSuccess
         {
             get

@@ -52,7 +52,6 @@
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
   <ItemGroup>
-    <Compile Include="ISnykProgressBarManager.cs" />
     <Compile Include="SnykAuthenticationService.cs" />
     <Compile Include="CLIError.cs" />
     <Compile Include="CLIResult.cs" />

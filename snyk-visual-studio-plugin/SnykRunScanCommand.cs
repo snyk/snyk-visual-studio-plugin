@@ -8,8 +8,6 @@ using System;
 using System.ComponentModel.Design;
 using Microsoft.VisualStudio.Shell;
 using Microsoft.VisualStudio.Shell.Interop;
-using Snyk.VisualStudio.Extension.CLI;
-using EnvDTE;
 
 namespace Snyk.VisualStudio.Extension.UI
 {
@@ -94,68 +92,7 @@ namespace Snyk.VisualStudio.Extension.UI
         /// <param name="e">Event args.</param>
         private void MenuItemCallback(object sender, EventArgs e)
         {
-            System.Threading.Tasks.Task.Run(() =>
-            {
-                var snykPackage = (SnykVSPackage)package;
-                var toolWindow = snykPackage.GetToolWindow();
-
-                Projects projects = snykPackage.SolutionService.GetProjects();
-
-                if (projects.Count == 0)
-                {
-                    var error = new CliError
-                    {
-                        Message = "No open solution"
-                    };
-
-                    toolWindow.DisplayError(error);
-
-                    return;
-                }                
-
-                toolWindow.HideError();
-                toolWindow.ShowIndeterminateProgressBar("Scanning...");
-
-                toolWindow.ClearDataGrid();
-
-                var cli = new SnykCli
-                {
-                    Options = snykPackage.Options
-                };                
-
-                for (int index = 1; index <= projects.Count; index++)
-                {
-                    try
-                    {
-                        Project project = projects.Item(index);
-
-                        string projectPath = project.Properties.Item("LocalPath").Value.ToString();
-
-                        CliResult cliResult = cli.Scan(projectPath);
-
-                        if (!cliResult.IsSuccessful())
-                        {
-                            toolWindow.DisplayError(cliResult.Error);
-                        }
-                        else
-                        {
-                            toolWindow.DisplayDataGrid();
-
-                            toolWindow.AddCliResultToDataGrid(cliResult);
-                        }
-                    } catch (Exception exception)
-                    {
-                        var error = new CliError
-                        {
-                            Message = exception.Message
-                        };
-
-                        toolWindow.DisplayError(error);
-                    }                    
-                }                                   
-
-                toolWindow.HideProgressBar();
-            });                        
+            SnykTasksService.Instance().Scan();
         }
         
         private void ShowErrorMessage(string message)

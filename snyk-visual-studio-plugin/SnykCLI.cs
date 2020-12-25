@@ -6,7 +6,6 @@ using System.Linq;
 using System.Text;
 using Snyk.VisualStudio.Extension.Settings;
 using Snyk.VisualStudio.Extension.Util;
-using System.Text.RegularExpressions;
 
 namespace Snyk.VisualStudio.Extension.CLI
 {

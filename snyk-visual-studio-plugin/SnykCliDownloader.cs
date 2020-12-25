@@ -21,7 +21,7 @@ namespace Snyk.VisualStudio.Extension.CLI
             return (LatestReleaseInfo) Json.Deserialize(latestReleasesInfoJson, typeof(LatestReleaseInfo));
         }
 
-        public void Download(string cliFileDestinationPath = null, ISnykProgressBarManager progressManager = null, CancellationTokenChecker tokenChecker = null)
+        public void Download(string cliFileDestinationPath = null, IProgressWorker progressWorker = null)
         {
             if (cliFileDestinationPath == null)
             {
@@ -32,7 +32,9 @@ namespace Snyk.VisualStudio.Extension.CLI
             {
                 using (var webClient = new SnykWebClient())
                 {
-                    tokenChecker.CancelIfCancellationRequested();
+                    progressWorker.DownloadStarted();
+
+                    progressWorker.CancelIfCancellationRequested();
 
                     LatestReleaseInfo latestReleaseInfo = GetLatestReleaseInfo(webClient);
 
@@ -42,21 +44,19 @@ namespace Snyk.VisualStudio.Extension.CLI
 
                     string snykDirectoryPath = SnykCli.GetSnykDirectoryPath();
 
-                    tokenChecker.CancelIfCancellationRequested();
+                    progressWorker.CancelIfCancellationRequested();
 
                     Directory.CreateDirectory(snykDirectoryPath);
 
-                    if (progressManager != null)
+                    if (progressWorker != null)
                     {
-                        progressManager.ShowProgressBar("Downloading latest Snyk CLI release...");
-
                         webClient.DownloadProgressChanged += (source, progressChangedEvent) =>
                         {
                             try
                             {
-                                progressManager.UpdateProgressBar(progressChangedEvent.ProgressPercentage);
+                                progressWorker.UpdateProgress(progressChangedEvent.ProgressPercentage);
 
-                                tokenChecker.CancelIfCancellationRequested();
+                                progressWorker.CancelIfCancellationRequested();
                             } catch (Exception exception) {                               
                                 webClient.CancelAsync();
                             }
@@ -69,12 +69,12 @@ namespace Snyk.VisualStudio.Extension.CLI
                                 File.Delete(cliFileDestinationPath);
                             }
 
-                            progressManager.HideAllControls();
+                            progressWorker.DownloadFinished();
                         };
 
                         webClient.DownloadFileAsync(new Uri(cliDownloadUrl), cliFileDestinationPath);
 
-                        tokenChecker.CancelIfCancellationRequested();
+                        progressWorker.CancelIfCancellationRequested();
                     } else
                     {
                         webClient.DownloadFile(cliDownloadUrl, cliFileDestinationPath);

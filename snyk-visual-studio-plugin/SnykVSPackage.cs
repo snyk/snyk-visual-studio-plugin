@@ -11,7 +11,6 @@ using Microsoft.VisualStudio.Shell;
 using Microsoft.VisualStudio.Shell.Interop;
 using Snyk.VisualStudio.Extension.UI;
 using Snyk.VisualStudio.Extension.Settings;
-using Snyk.VisualStudio.Extension.CLI;
 using Snyk.VisualStudio.Extension.Services;
 using Microsoft.VisualStudio;
 
@@ -123,7 +122,7 @@ namespace Snyk.VisualStudio.Extension
         {
             base.Initialize();
 
-            SnykTaskExecuteService.Initialize(this);
+            SnykTasksService.Initialize(this);
             SnykSolutionService.Initialize(this);
             SnykRunScanCommand.Initialize(this);
             SnykToolWindowCommand.Initialize(this);
@@ -133,12 +132,24 @@ namespace Snyk.VisualStudio.Extension
 
             InitializeEventListeners();
 
-            SnykTaskExecuteService.Instance().Download();
+            SnykTasksService.Instance().Download();
         }
 
         private void InitializeEventListeners()
         {
-            SnykTaskExecuteService.Instance().ScanError += GetToolWindow().OnDisplayError;
+            var toolWindow = GetToolWindow();
+            var tasksService = SnykTasksService.Instance();
+
+            tasksService.ScanError += toolWindow.OnDisplayError;
+            tasksService.ScanningCancelled += toolWindow.OnScanningCancelled;
+            tasksService.ScanningStarted += toolWindow.OnScanningStarted;
+            tasksService.ScanningUpdate += toolWindow.OnScanningUpdate;
+            tasksService.ScanningFinished += toolWindow.OnOnScanningFinished;
+
+            tasksService.DownloadStarted += toolWindow.OnDownloadStarted;
+            tasksService.DownloadFinished += toolWindow.OnDownloadFinished;
+            tasksService.DownloadUpdate += toolWindow.OnDownloadUpdate;
+            tasksService.DownloadCancelled += toolWindow.OnDownloadCancelled;
         }
 
         #endregion
