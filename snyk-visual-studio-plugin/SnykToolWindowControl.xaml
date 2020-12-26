@@ -11,10 +11,6 @@
              d:DesignHeight="300" d:DesignWidth="300"
              Name="SnykToolWindow">
     <UserControl.Resources>
-        <BitmapImage x:Key="NugetIcon" UriSource="./Resources/NugetLogo.png" DecodePixelWidth="16" DecodePixelHeight="16"/>
-        <BitmapImage x:Key="SeverityHighIcon" UriSource="./Resources/severity_high.png" DecodePixelWidth="16" DecodePixelHeight="16"/>
-        <BitmapImage x:Key="SeverityMediumIcon" UriSource="./Resources/severity_medium.png" DecodePixelWidth="16" DecodePixelHeight="16"/>
-        <BitmapImage x:Key="SeverityLowIcon" UriSource="./Resources/severity_low.png" DecodePixelWidth="16" DecodePixelHeight="16"/>
         <BitmapImage x:Key="RunIcon" UriSource="./Resources/Run.png" DecodePixelWidth="16" DecodePixelHeight="16"/>
         <BitmapImage x:Key="StopIcon" UriSource="./Resources/Stop.png" DecodePixelWidth="16" DecodePixelHeight="16"/>
         <BitmapImage x:Key="CleanIcon" UriSource="./Resources/CleanData.png" DecodePixelWidth="16" DecodePixelHeight="16"/>
@@ -69,19 +65,7 @@
                 <ColumnDefinition Width="5" />
                 <ColumnDefinition Width="6*" />
             </Grid.ColumnDefinitions>
-            <TreeView Name="vulnerabilitiesTree" SelectedItemChanged="vulnerabilitiesTree_SelectedItemChanged"
-                      Background="{DynamicResource VsBrush.Window}" Foreground="{DynamicResource VsBrush.WindowText}" 
-                      HorizontalAlignment="Stretch" VerticalAlignment="Stretch" 
-                      ScrollViewer.VerticalScrollBarVisibility="Auto" ScrollViewer.HorizontalScrollBarVisibility="Auto" VerticalContentAlignment="Stretch" ScrollViewer.CanContentScroll="True" UseLayoutRounding="False">
-                <TreeView.ItemTemplate>
-                    <HierarchicalDataTemplate DataType="{x:Type local:VulnerabilityTreeNode}" ItemsSource="{Binding Items}">
-                        <StackPanel Orientation="Horizontal">
-                            <Image x:Name="icon" SnapsToDevicePixels="True" Stretch="None" Margin="0, 0, 5, 0"  Source="{Binding Icon, Converter={StaticResource ImageConverter}}"/>
-                            <TextBlock Text="{Binding Title}"/>
-                        </StackPanel>
-                    </HierarchicalDataTemplate>
-                </TreeView.ItemTemplate>
-            </TreeView>
+            <local:SnykFilterableTree x:Name="vulnerabilitiesTree" SelectedVulnerabilityChanged="vulnerabilitiesTree_SelectetVulnerabilityChanged"/>
             <GridSplitter Grid.Column="1" Width="5" HorizontalAlignment="Stretch" Background="{x:Null}">
                 <GridSplitter.Foreground>
                     <LinearGradientBrush EndPoint="0.5,1" StartPoint="0.5,0">

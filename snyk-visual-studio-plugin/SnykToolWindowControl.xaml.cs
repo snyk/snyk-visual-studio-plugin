@@ -215,7 +215,7 @@ namespace Snyk.VisualStudio.Extension.UI
             }
         }
 
-        private void vulnerabilitiesTree_SelectedItemChanged(object sender, RoutedPropertyChangedEventArgs<object> args)
+        private void vulnerabilitiesTree_SelectetVulnerabilityChanged(object sender, RoutedEventArgs args)
         {            
             this.Dispatcher.BeginInvoke(DispatcherPriority.Normal, (ThreadStart)delegate ()
                 {
@@ -318,9 +318,7 @@ namespace Snyk.VisualStudio.Extension.UI
             Process.Start(new ProcessStartInfo(args.Uri.AbsoluteUri));
 
             args.Handled = true;
-        }
-
-        public static object GetToolWindowResource(object resourceKey) => instance.FindResource(resourceKey);
+        }        
 
         private void RunButton_Click(object sender, RoutedEventArgs e)
         {
@@ -410,12 +408,5 @@ namespace Snyk.VisualStudio.Extension.UI
         }
 
         public ObservableCollection<VulnerabilityTreeNode> Items { get; set; }
-    }
-
-    public class ImageConverter : IValueConverter
-    {
-        public object Convert(object value, Type targetType, object parameter, CultureInfo culture) => SnykToolWindowControl.GetToolWindowResource(value) as BitmapImage;
-
-        public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture) => "";
-    }    
+    }        
 }
