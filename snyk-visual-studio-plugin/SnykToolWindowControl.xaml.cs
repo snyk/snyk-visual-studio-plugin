@@ -15,26 +15,19 @@ namespace Snyk.VisualStudio.Extension.UI
     using System.Windows.Threading;
     using System.Threading;
     using System.Windows.Media;
-    using System.Windows.Data;
-    using System;
-    using System.Globalization;
-    using System.Windows.Media.Imaging;
+    using System;   
     
     /// <summary>
     /// Interaction logic for SnykToolWindowControl.
     /// </summary>
     public partial class SnykToolWindowControl : UserControl
-    {
-        private static SnykToolWindowControl instance;
-        
+    {        
         /// <summary>
         /// Initializes a new instance of the <see cref="SnykToolWindowControl"/> class.
         /// </summary>
         public SnykToolWindowControl()
         {
             this.InitializeComponent();
-
-            instance = this;
         }
 
         public void OnScanningUpdate(object sender, SnykCliScanEventArgs eventArgs) => AppendCliResultToTree(eventArgs.Result);
