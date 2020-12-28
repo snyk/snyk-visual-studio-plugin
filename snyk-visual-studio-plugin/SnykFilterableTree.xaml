@@ -15,24 +15,24 @@
     </UserControl.Resources>
     <Grid>
         <Grid.RowDefinitions>
-            <RowDefinition Height="Auto"/>
+            <!--<RowDefinition Height="Auto"/>-->
             <RowDefinition Height="10*"/>
         </Grid.RowDefinitions>
         <Grid.ColumnDefinitions>
             <ColumnDefinition Width="*"/>
         </Grid.ColumnDefinitions>
-        <ComboBox Grid.Row="0" IsEditable="True">
+        <!--<ComboBox Grid.Row="0" IsEditable="True">
             <CheckBox x:Name="cb1" Content="High" IsChecked="True"/>
             <CheckBox x:Name="cb2" Content="Medium" IsChecked="True"/>
             <CheckBox x:Name="cb3" Content="Low" IsChecked="True"/>
-        </ComboBox>
+        </ComboBox>-->
         <TreeView Grid.Row="1" Name="vulnerabilitiesTree"  SelectedItemChanged="vulnerabilitiesTree_SelectedItemChanged"
-                      Background="{DynamicResource VsBrush.Window}" Foreground="{DynamicResource VsBrush.WindowText}" 
-                      HorizontalAlignment="Stretch" VerticalAlignment="Stretch" 
-                      ScrollViewer.VerticalScrollBarVisibility="Auto" 
-                      ScrollViewer.HorizontalScrollBarVisibility="Auto" 
-                      VerticalContentAlignment="Stretch" 
-                      ScrollViewer.CanContentScroll="True" UseLayoutRounding="False">
+                  Background="{DynamicResource VsBrush.Window}" Foreground="{DynamicResource VsBrush.WindowText}" 
+                  HorizontalAlignment="Stretch" VerticalAlignment="Stretch" 
+                  ScrollViewer.VerticalScrollBarVisibility="Auto" 
+                  ScrollViewer.HorizontalScrollBarVisibility="Auto" 
+                  VerticalContentAlignment="Stretch" 
+                  ScrollViewer.CanContentScroll="True" UseLayoutRounding="False">
             <TreeView.ItemTemplate>
                 <HierarchicalDataTemplate DataType="{x:Type local:VulnerabilityTreeNode}" ItemsSource="{Binding Items}">
                     <StackPanel Orientation="Horizontal">

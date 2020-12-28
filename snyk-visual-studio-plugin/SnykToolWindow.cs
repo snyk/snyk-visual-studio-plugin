@@ -7,8 +7,10 @@
 namespace Snyk.VisualStudio.Extension.UI
 {
     using System;
-    using System.Runtime.InteropServices;
+    using System.Runtime.InteropServices;    
+    using Microsoft.VisualStudio;   
     using Microsoft.VisualStudio.Shell;
+    using Microsoft.VisualStudio.Shell.Interop;
 
     /// <summary>
     /// This class implements the tool window exposed by this package and hosts a user control.
@@ -35,6 +37,64 @@ namespace Snyk.VisualStudio.Extension.UI
             // we are not calling Dispose on this object. This is because ToolWindowPane calls Dispose on
             // the object returned by the Content property.
             this.Content = new SnykToolWindowControl();
+        }
+
+        public override bool SearchEnabled
+        {
+            get { return true; }
+        }
+
+        public override IVsSearchTask CreateSearch(uint dwCookie, IVsSearchQuery pSearchQuery, IVsSearchCallback pSearchCallback)
+        {
+            if (pSearchQuery == null || pSearchCallback == null)
+            {
+                return null;
+            }
+
+            return new TestSearchTask(dwCookie, pSearchQuery, pSearchCallback, this);
+        }
+
+        public override void ClearSearch()
+        {
+            SnykToolWindowControl toolWindowControl = (SnykToolWindowControl) this.Content;
+
+            toolWindowControl.VulnerabilitiesTree.DisplayAllVulnerabilities();
+        }
+
+        internal class TestSearchTask : VsSearchTask
+        {
+            private SnykToolWindow m_toolWindow;
+
+            public TestSearchTask(uint dwCookie, IVsSearchQuery pSearchQuery, IVsSearchCallback pSearchCallback, SnykToolWindow toolwindow)
+                : base(dwCookie, pSearchQuery, pSearchCallback)
+            {
+                m_toolWindow = toolwindow;
+            }
+
+            protected override void OnStartSearch()
+            {                
+                SnykToolWindowControl toolWindowControl = (SnykToolWindowControl)m_toolWindow.Content;
+                
+                this.ErrorCode = VSConstants.S_OK;
+
+                try
+                {
+                    string searchString = this.SearchQuery.SearchString;
+
+                    toolWindowControl.VulnerabilitiesTree.FilterBy(searchString);                    
+                }
+                catch (Exception exception)
+                {
+                    this.ErrorCode = VSConstants.E_FAIL;
+                }
+
+                base.OnStartSearch();
+            }
+
+            protected override void OnStopSearch()
+            {
+                this.SearchResults = 0;
+            }
         }
     }
 }

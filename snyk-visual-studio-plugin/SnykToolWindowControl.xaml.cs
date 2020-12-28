@@ -11,12 +11,10 @@ namespace Snyk.VisualStudio.Extension.UI
     using System.Windows;
     using System.Windows.Controls;
     using System.Windows.Documents;
-    using System.Collections.ObjectModel;
     using System.Windows.Threading;
     using System.Threading;
     using System.Windows.Media;
-    using System;   
-    
+
     /// <summary>
     /// Interaction logic for SnykToolWindowControl.
     /// </summary>
@@ -28,7 +26,7 @@ namespace Snyk.VisualStudio.Extension.UI
         public SnykToolWindowControl()
         {
             this.InitializeComponent();
-        }
+        }        
 
         public void OnScanningUpdate(object sender, SnykCliScanEventArgs eventArgs) => AppendCliResultToTree(eventArgs.Result);
 
@@ -55,6 +53,14 @@ namespace Snyk.VisualStudio.Extension.UI
         public void OnDownloadCancelled(object sender, SnykCliDownloadEventArgs eventArgs) => HideAllControls();
         
         public SnykVSPackage Package { get; internal set; }        
+
+        public SnykFilterableTree VulnerabilitiesTree
+        {
+            get
+            {
+                return vulnerabilitiesTree;
+            }
+        }
 
         public void CancelIfCancellationRequested(CancellationToken token)
         {
@@ -84,27 +90,7 @@ namespace Snyk.VisualStudio.Extension.UI
             {
                 DisplayResultsGrid();
 
-                foreach (CliVulnerabilities cliVulnerabilities in cliResult.CLIVulnerabilities)
-                {
-                    var rootNode = new VulnerabilityTreeNode
-                    {
-                        CliVulnerabilities = cliVulnerabilities
-                    };
-
-                    Array.Sort(cliVulnerabilities.vulnerabilities);
-
-                    foreach (Vulnerability vulnerability in cliVulnerabilities.vulnerabilities)
-                    {
-                        var node = new VulnerabilityTreeNode
-                        {
-                            Vulnerability = vulnerability
-                        };
-
-                        rootNode.Items.Add(node);
-                    }
-
-                    vulnerabilitiesTree.Items.Add(rootNode);
-                }
+                vulnerabilitiesTree.AppendVulnerabilities(cliResult.CLIVulnerabilities);
             });
         }
 
@@ -187,7 +173,7 @@ namespace Snyk.VisualStudio.Extension.UI
         {
             this.Dispatcher.Invoke(() =>
             {
-                vulnerabilitiesTree.Items.Clear();
+                vulnerabilitiesTree.Clear();
             });
         }
 
@@ -329,77 +315,5 @@ namespace Snyk.VisualStudio.Extension.UI
 
             HideAllControls();
         }
-    }
-
-    public class VulnerabilityTreeNode
-    {
-        private const string SeverityHighIcon = "SeverityHighIcon";
-        private const string SeverityMediumIcon = "SeverityMediumIcon";
-        private const string SeverityLowIcon = "SeverityLowIcon";
-        private const string NugetIcon = "NugetIcon";
-
-        public VulnerabilityTreeNode()
-        {
-            this.Items = new ObservableCollection<VulnerabilityTreeNode>();
-        }
-
-        public Vulnerability Vulnerability { get; set; }
-
-        public CliVulnerabilities CliVulnerabilities { get; set; }
-
-        public string Title
-        {
-            get
-            {
-                if (CliVulnerabilities != null)
-                {
-                    return CliVulnerabilities.projectName + "\\" + CliVulnerabilities.displayTargetFile;
-                }
-
-                if (Vulnerability != null)
-                {
-                    return Vulnerability.GetPackageNameTitle();
-                }
-
-                return "";
-            }
-        }
-
-        public string Icon
-        {
-            get
-            {
-                if (Vulnerability != null)
-                {
-                    string severityBitmap;
-
-                    switch (Vulnerability.severity)
-                    {
-                        case "high":
-                            severityBitmap = SeverityHighIcon;
-
-                            break;
-                        case "medium":
-                            severityBitmap = SeverityMediumIcon;
-
-                            break;
-                        case "low":
-                            severityBitmap = SeverityLowIcon;
-
-                            break;
-                        default:
-                            severityBitmap = NugetIcon;
-
-                            break;
-                    }
-
-                    return severityBitmap;
-                }
-
-                return NugetIcon;
-            }
-        }
-
-        public ObservableCollection<VulnerabilityTreeNode> Items { get; set; }
     }        
 }
