@@ -56,7 +56,7 @@ namespace Snyk.VisualStudio.Extension.UI
                 return null;
             }
 
-            return new SnykSearchTask(dwCookie, pSearchQuery, pSearchCallback, this);
+            return new VulnerabilitySearchTask(dwCookie, pSearchQuery, pSearchCallback, this);
         }
 
         public override void ClearSearch()
@@ -85,7 +85,7 @@ namespace Snyk.VisualStudio.Extension.UI
             }
         }
 
-        internal class SnykSearchTask : VsSearchTask
+        internal class VulnerabilitySearchTask : VsSearchTask
         {
             private const string SeverityHighFilter = "severity:\"high\"";
             private const string SeverityMediumFilter = "severity:\"medium\"";
@@ -93,7 +93,7 @@ namespace Snyk.VisualStudio.Extension.UI
 
             private readonly SnykToolWindow toolWindow;
 
-            public SnykSearchTask(uint dwCookie, IVsSearchQuery pSearchQuery, IVsSearchCallback pSearchCallback, SnykToolWindow toolwindow)
+            public VulnerabilitySearchTask(uint dwCookie, IVsSearchQuery pSearchQuery, IVsSearchCallback pSearchCallback, SnykToolWindow toolwindow)
                 : base(dwCookie, pSearchQuery, pSearchCallback)
             {
                 toolWindow = toolwindow;
