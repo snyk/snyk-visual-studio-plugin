@@ -87,7 +87,7 @@ namespace Snyk.VisualStudio.Extension.UI
             });
         }        
 
-        internal void FilterBy(string filterString)
+        internal void FilterBy(string filterString, SeverityCaseOptions severityOptions)
         {
             this.Dispatcher.Invoke(() =>
             {               
@@ -99,12 +99,36 @@ namespace Snyk.VisualStudio.Extension.UI
                         var filterTreeNode = filterObj as VulnerabilityTreeNode;
                         var vulnerability = filterTreeNode.Vulnerability;
 
-                        if (vulnerability != null && vulnerability.GetPackageNameTitle().Contains(filterString))
-                        {
-                            return true;
-                        }                        
+                        bool isIncluded = true;
 
-                        return false;
+                        if (severityOptions != null)
+                        {
+                            switch (vulnerability.severity)
+                            {
+                                case Severity.High:
+                                    isIncluded = severityOptions.IsHighIncluded;
+
+                                    break;
+                                case Severity.Medium:
+                                    isIncluded = severityOptions.IsMediumIncluded;
+
+                                    break;
+                                case Severity.Low:
+                                    isIncluded = severityOptions.IsLowIncluded;
+                                    break;
+                                default:
+                                    isIncluded = false;
+
+                                    break;
+                            }
+                        }
+
+                        if (filterString != null && filterString != "")
+                        {
+                            isIncluded = isIncluded && vulnerability.GetPackageNameTitle().Contains(filterString);
+                        }
+
+                        return isIncluded;
                     };
                 }
             });
@@ -155,15 +179,15 @@ namespace Snyk.VisualStudio.Extension.UI
 
                     switch (Vulnerability.severity)
                     {
-                        case "high":
+                        case Severity.High:
                             severityBitmap = SeverityHighIcon;
 
                             break;
-                        case "medium":
+                        case Severity.Medium:
                             severityBitmap = SeverityMediumIcon;
 
                             break;
-                        case "low":
+                        case Severity.Low:
                             severityBitmap = SeverityLowIcon;
 
                             break;

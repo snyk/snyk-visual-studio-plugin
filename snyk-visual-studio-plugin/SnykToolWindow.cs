@@ -7,10 +7,15 @@
 namespace Snyk.VisualStudio.Extension.UI
 {
     using System;
-    using System.Runtime.InteropServices;    
-    using Microsoft.VisualStudio;   
+    using System.Runtime.InteropServices;
+    using Microsoft.VisualStudio;
     using Microsoft.VisualStudio.Shell;
     using Microsoft.VisualStudio.Shell.Interop;
+    using Microsoft.Internal.VisualStudio.PlatformUI;
+    using Microsoft.VisualStudio.PlatformUI;
+    using System.Collections.Generic;
+    using CLI;
+    using System.Text;
 
     /// <summary>
     /// This class implements the tool window exposed by this package and hosts a user control.
@@ -61,19 +66,42 @@ namespace Snyk.VisualStudio.Extension.UI
             toolWindowControl.VulnerabilitiesTree.DisplayAllVulnerabilities();
         }
 
+        public override void ProvideSearchSettings(IVsUIDataSource pSearchSettings)
+        {
+            Utilities.SetValue(pSearchSettings, SearchSettingsDataSource.SearchStartTypeProperty.Name, (uint)VSSEARCHSTARTTYPE.SST_INSTANT);
+        }
+
+        public override IVsEnumWindowSearchFilters SearchFiltersEnum
+        {
+            get
+            {
+                List<IVsWindowSearchFilter> list = new List<IVsWindowSearchFilter>();
+
+                list.Add(new WindowSearchSimpleFilter("High severity", "High severity", "severity", Severity.High));
+                list.Add(new WindowSearchSimpleFilter("Medium severity", "Medium severity", "severity", Severity.Medium));
+                list.Add(new WindowSearchSimpleFilter("Low severity", "Low severity", "severity", Severity.Low));
+
+                return new WindowSearchFilterEnumerator(list) as IVsEnumWindowSearchFilters;
+            }
+        }
+
         internal class TestSearchTask : VsSearchTask
         {
-            private SnykToolWindow m_toolWindow;
+            private const string SeverityHighFilter = "severity:\"high\"";
+            private const string SeverityMediumFilter = "severity:\"medium\"";
+            private const string SeverityLowFilter = "severity:\"low\"";
+
+            private readonly SnykToolWindow toolWindow;
 
             public TestSearchTask(uint dwCookie, IVsSearchQuery pSearchQuery, IVsSearchCallback pSearchCallback, SnykToolWindow toolwindow)
                 : base(dwCookie, pSearchQuery, pSearchCallback)
             {
-                m_toolWindow = toolwindow;
+                toolWindow = toolwindow;
             }
 
             protected override void OnStartSearch()
             {                
-                SnykToolWindowControl toolWindowControl = (SnykToolWindowControl)m_toolWindow.Content;
+                SnykToolWindowControl toolWindowControl = (SnykToolWindowControl)toolWindow.Content;
                 
                 this.ErrorCode = VSConstants.S_OK;
 
@@ -81,7 +109,28 @@ namespace Snyk.VisualStudio.Extension.UI
                 {
                     string searchString = this.SearchQuery.SearchString;
 
-                    toolWindowControl.VulnerabilitiesTree.FilterBy(searchString);                    
+                    SeverityCaseOptions severityOptions = null;
+
+                    if (searchString.Contains(SeverityHighFilter) 
+                        || searchString.Contains(SeverityMediumFilter) 
+                        || searchString.Contains(SeverityLowFilter)) 
+                    {
+                        severityOptions = new SeverityCaseOptions
+                        {
+                            IsHighIncluded = searchString.Contains(SeverityHighFilter),
+                            IsMediumIncluded = searchString.Contains(SeverityMediumFilter),
+                            IsLowIncluded = searchString.Contains(SeverityLowFilter)
+                        };
+
+                        StringBuilder stringBuilder = new StringBuilder(searchString);
+                        stringBuilder.Replace(SeverityHighFilter, "");
+                        stringBuilder.Replace(SeverityMediumFilter, "");
+                        stringBuilder.Replace(SeverityLowFilter, "");
+
+                        searchString = stringBuilder.ToString().Trim();
+                    }
+
+                    toolWindowControl.VulnerabilitiesTree.FilterBy(searchString, severityOptions);
                 }
                 catch (Exception exception)
                 {
@@ -95,6 +144,13 @@ namespace Snyk.VisualStudio.Extension.UI
             {
                 this.SearchResults = 0;
             }
-        }
+        }        
+    }
+
+    public class SeverityCaseOptions
+    {
+        public bool IsHighIncluded { get; set; }
+        public bool IsMediumIncluded { get; set; }
+        public bool IsLowIncluded { get; set; }
     }
 }

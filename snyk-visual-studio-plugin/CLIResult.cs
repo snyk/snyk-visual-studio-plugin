@@ -234,6 +234,13 @@ namespace Snyk.VisualStudio.Extension.CLI
         public object[] patch { get; set; }
     }
 
+    public class Severity
+    {
+        public const string High = "high";
+        public const string Medium = "medium";
+        public const string Low = "low";
+    }
+
     public class Vulnerability : IComparable<Vulnerability>
     {
         public string CVSSv3 { get; set; }
@@ -278,12 +285,12 @@ namespace Snyk.VisualStudio.Extension.CLI
                 return 0;
             }
 
-            if (this.severity == "low" && otherVulnerability.severity != "low")
+            if (this.severity == Severity.Low && otherVulnerability.severity != Severity.Low)
             {
                 return 1;
             }
             
-            if (this.severity == "medium" && otherVulnerability.severity == "high")
+            if (this.severity == Severity.Medium && otherVulnerability.severity == Severity.High)
             {
                 return 1;
             }

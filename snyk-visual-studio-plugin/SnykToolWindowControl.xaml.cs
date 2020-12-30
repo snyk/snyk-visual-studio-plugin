@@ -263,17 +263,17 @@ namespace Snyk.VisualStudio.Extension.UI
 
             switch (vulnerability.severity)
             {
-                case "high":
+                case Severity.High:
                     severityColor = (Color)ColorConverter.ConvertFromString("#C75450");
                     severityText = "High severity";
 
                     break;
-                case "medium":
+                case Severity.Medium:
                     severityColor = (Color)ColorConverter.ConvertFromString("#EDA200");
                     severityText = "Medium severity";
 
                     break;
-                case "low":
+                case Severity.Low:
                     severityColor = (Color)ColorConverter.ConvertFromString("#6E6E6E");
                     severityText = "Low severity";
 
