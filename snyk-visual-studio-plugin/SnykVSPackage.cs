@@ -139,10 +139,10 @@ namespace Snyk.VisualStudio.Extension
         {
             var toolWindow = GetToolWindow();
             var tasksService = SnykTasksService.Instance();
+            var solutionEvents = SnykSolutionService.Instance.SolutionEvents;
 
-            SnykSolutionService.Instance.SolutionEvents.AfterBackgroundSolutionLoadComplete += toolWindow.OnAfterBackgroundSolutionLoadComplete;
-
-            tasksService.ScanError += toolWindow.OnDisplayError;
+            solutionEvents.AfterBackgroundSolutionLoadComplete += toolWindow.OnAfterBackgroundSolutionLoadComplete;
+            solutionEvents.AfterCloseSolution += toolWindow.OnAfterCloseSolution;            
 
             tasksService.ScanError += toolWindow.OnDisplayError;
             tasksService.ScanningCancelled += toolWindow.OnScanningCancelled;

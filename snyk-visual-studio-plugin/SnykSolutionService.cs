@@ -77,6 +77,7 @@ namespace Snyk.VisualStudio.Extension.Services
     public class SnykVsSolutionLoadEvents : IVsSolutionLoadEvents, IVsSolutionEvents
     {
         public event EventHandler<EventArgs> AfterBackgroundSolutionLoadComplete;
+        public event EventHandler<EventArgs> AfterCloseSolution;
 
         public int OnAfterBackgroundSolutionLoadComplete()
         {
@@ -85,7 +86,12 @@ namespace Snyk.VisualStudio.Extension.Services
             return VSConstants.S_OK;
         }
 
-        public int OnAfterCloseSolution(object pUnkReserved) => VSConstants.S_OK;
+        public int OnAfterCloseSolution(object pUnkReserved)
+        {
+            AfterCloseSolution?.Invoke(this, EventArgs.Empty);
+
+            return VSConstants.S_OK;
+        }
 
         public int OnAfterLoadProject(IVsHierarchy pStubHierarchy, IVsHierarchy pRealHierarchy) => VSConstants.S_OK;
 

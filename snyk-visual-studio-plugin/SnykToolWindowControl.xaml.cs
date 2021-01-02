@@ -31,7 +31,19 @@ namespace Snyk.VisualStudio.Extension.UI
             DisableAllActions();
         }
 
-        public void OnAfterBackgroundSolutionLoadComplete(object sender, EventArgs eventArgs) => EnableExecuteActions();
+        public void OnAfterBackgroundSolutionLoadComplete(object sender, EventArgs eventArgs)
+        {
+            HideAllControls();
+
+            EnableExecuteActions();
+        }
+
+        public void OnAfterCloseSolution(object sender, EventArgs eventArgs)
+        {
+            HideAllControls();
+
+            DisableAllActions();
+        }
 
         public void OnScanningUpdate(object sender, SnykCliScanEventArgs eventArgs) => AppendCliResultToTree(eventArgs.Result);
 
