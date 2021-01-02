@@ -54,18 +54,11 @@
               <CommandFlag>DefaultInvisible</CommandFlag>
               <CommandFlag>DynamicVisibility</CommandFlag>
           If you do not want an image next to your command, remove the Icon node /> -->
-      <Button guid="guidSnykVSPackageCmdSet" id="SnykRunScanCommandId" priority="0x0100" type="Button">
-        <Parent guid="guidSnykVSPackageCmdSet" id="MyMenuGroup" />
-        <Icon guid="guidImages" id="bmpPic1" />
-        <Strings>
-          <ButtonText>Snyk scan</ButtonText>
-        </Strings>
-      </Button>
       <Button guid="guidSnykVSPackageCmdSet" id="cmdidSnykToolWindowCommand" priority="0x0100" type="Button">
         <Parent guid="guidSHLMainMenu" id="IDG_VS_WNDO_OTRWNDWS1" />
-        <Icon guid="guidImages1" id="bmpPic1" />
+        <Icon guid="snykIcon" id="snykIconID" />
         <Strings>
-          <ButtonText>SnykToolWindow</ButtonText>
+          <ButtonText>Snyk</ButtonText>
         </Strings>
       </Button>
     </Buttons>
@@ -77,8 +70,8 @@
             bitmap strip containing the bitmaps and then there are the numeric ids of the elements used
             inside a button definition. An important aspect of this declaration is that the element id
             must be the actual index (1-based) of the bitmap inside the bitmap strip. -->
-      <Bitmap guid="guidImages" href="Resources\SnykRunScanCommand.png" usedList="bmpPic1, bmpPic2, bmpPicSearch, bmpPicX, bmpPicArrows, bmpPicStrikethrough" />
       <Bitmap guid="guidImages1" href="Resources\SnykToolWindowCommand.png" usedList="bmpPic1, bmpPic2, bmpPicSearch, bmpPicX, bmpPicArrows, bmpPicStrikethrough" />
+      <Bitmap guid="snykIcon" href="Resources\SnykToolWindow.ico" usedList="snykIconID"/>    
     </Bitmaps>
   </Commands>
 
@@ -109,6 +102,10 @@
       <IDSymbol name="bmpPicX" value="4" />
       <IDSymbol name="bmpPicArrows" value="5" />
       <IDSymbol name="bmpPicStrikethrough" value="6" />
+    </GuidSymbol>
+
+    <GuidSymbol name="snykIcon" value="{4058E265-7834-46E0-91E3-49109DB11EF9}">
+      <IDSymbol name="snykIconID" value="1" />
     </GuidSymbol>
   </Symbols>
 </CommandTable>

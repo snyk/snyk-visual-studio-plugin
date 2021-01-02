@@ -124,7 +124,6 @@ namespace Snyk.VisualStudio.Extension
 
             SnykTasksService.Initialize(this);
             SnykSolutionService.Initialize(this);
-            SnykRunScanCommand.Initialize(this);
             SnykToolWindowCommand.Initialize(this);
             SnykGeneralOptionsDialogPage.Initialize(this);
 
