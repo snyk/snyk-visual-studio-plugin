@@ -14,6 +14,7 @@ namespace Snyk.VisualStudio.Extension.UI
     using System.Windows.Threading;
     using System.Threading;
     using System.Windows.Media;
+    using System;
 
     /// <summary>
     /// Interaction logic for SnykToolWindowControl.
@@ -26,31 +27,68 @@ namespace Snyk.VisualStudio.Extension.UI
         public SnykToolWindowControl()
         {
             this.InitializeComponent();
-        }        
+
+            DisableAllActions();
+        }
+
+        public void OnAfterBackgroundSolutionLoadComplete(object sender, EventArgs eventArgs) => EnableExecuteActions();
 
         public void OnScanningUpdate(object sender, SnykCliScanEventArgs eventArgs) => AppendCliResultToTree(eventArgs.Result);
 
         public void OnScanningStarted(object sender, SnykCliScanEventArgs eventArgs)
         {
+            EnableStopActions();
+
             HideError();
+
             ShowIndeterminateProgressBar("Scanning...");
 
-            CleanVulnerabilitiesTree();
-        }        
+            CleanVulnerabilitiesTree();            
+        }
 
-        public void OnOnScanningFinished(object sender, SnykCliScanEventArgs eventArgs) => HideProgressBar();
+        public void OnOnScanningFinished(object sender, SnykCliScanEventArgs eventArgs)
+        {
+            EnableExecuteActions();
 
-        public void OnDisplayError(object sender, SnykCliScanEventArgs eventArgs) => DisplayError(eventArgs.Error);
+            HideProgressBar();            
+        }
 
-        public void OnScanningCancelled(object sender, SnykCliScanEventArgs eventArgs) => HideAllControls();
+        public void OnDisplayError(object sender, SnykCliScanEventArgs eventArgs)
+        {
+            EnableExecuteActions();
 
-        public void OnDownloadStarted(object sender, SnykCliDownloadEventArgs eventArgs) => ShowProgressBar("Downloading latest Snyk CLI release...");
+            DisplayError(eventArgs.Error);            
+        }
 
-        public void OnDownloadFinished(object sender, SnykCliDownloadEventArgs eventArgs) => HideAllControls();
+        public void OnScanningCancelled(object sender, SnykCliScanEventArgs eventArgs)
+        {
+            EnableExecuteActions();
+
+            HideAllControls();            
+        }
+
+        public void OnDownloadStarted(object sender, SnykCliDownloadEventArgs eventArgs)
+        {
+            EnableStopActions();
+
+            ShowProgressBar("Downloading latest Snyk CLI release...");            
+        }
+
+        public void OnDownloadFinished(object sender, SnykCliDownloadEventArgs eventArgs)
+        {
+            DisableAllActions();
+
+            HideAllControls();
+        }
 
         public void OnDownloadUpdate(object sender, SnykCliDownloadEventArgs eventArgs) => UpdateProgressBar(eventArgs.Progress);
 
-        public void OnDownloadCancelled(object sender, SnykCliDownloadEventArgs eventArgs) => HideAllControls();
+        public void OnDownloadCancelled(object sender, SnykCliDownloadEventArgs eventArgs)
+        {
+            DisableAllActions();
+
+            HideAllControls();            
+        }
         
         public SnykVSPackage Package { get; internal set; }        
 
@@ -81,6 +119,36 @@ namespace Snyk.VisualStudio.Extension.UI
 
                 errorMessage.Text = cliError.Message;
                 errorPath.Text = cliError.Path;
+            });
+        }
+
+        private void EnableExecuteActions()
+        {
+            this.Dispatcher.Invoke(() =>
+            {
+                runButton.IsEnabled = true;
+                cleanButton.IsEnabled = true;
+                stopButton.IsEnabled = false;
+            });
+        }
+
+        private void DisableAllActions()
+        {
+            this.Dispatcher.Invoke(() =>
+            {
+                runButton.IsEnabled = false;
+                cleanButton.IsEnabled = false;
+                stopButton.IsEnabled = false;
+            });
+        }
+
+        private void EnableStopActions()
+        {
+            this.Dispatcher.Invoke(() =>
+            {
+                runButton.IsEnabled = false;
+                cleanButton.IsEnabled = false;
+                stopButton.IsEnabled = true;
             });
         }
 

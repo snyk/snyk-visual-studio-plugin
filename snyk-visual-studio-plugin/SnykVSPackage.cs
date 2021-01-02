@@ -39,7 +39,7 @@ namespace Snyk.VisualStudio.Extension
     [SuppressMessage("StyleCop.CSharp.DocumentationRules", "SA1650:ElementDocumentationMustBeSpelledCorrectly", Justification = "pkgdef, VS and vsixmanifest are valid VS terms")]
     [ProvideAutoLoad(UIContextGuids80.SolutionExists)]
     [ProvideMenuResource("Menus.ctmenu", 1)]
-    [ProvideToolWindow(typeof(SnykToolWindow))]
+    [ProvideToolWindow(typeof(SnykToolWindow), Style = VsDockStyle.Tabbed)]
     [ProvideOptionPage(typeof(SnykGeneralOptionsDialogPage), "Snyk", "General settings", 1000, 1001, true)]
     [ProvideOptionPage(typeof(SnykProjectOptionsDialogPage), "Snyk", "Project settings", 1000, 1002, true)]
     public sealed class SnykVSPackage : Package
@@ -140,6 +140,10 @@ namespace Snyk.VisualStudio.Extension
             var toolWindow = GetToolWindow();
             var tasksService = SnykTasksService.Instance();
 
+            SnykSolutionService.Instance.SolutionEvents.AfterBackgroundSolutionLoadComplete += toolWindow.OnAfterBackgroundSolutionLoadComplete;
+
+            tasksService.ScanError += toolWindow.OnDisplayError;
+
             tasksService.ScanError += toolWindow.OnDisplayError;
             tasksService.ScanningCancelled += toolWindow.OnScanningCancelled;
             tasksService.ScanningStarted += toolWindow.OnScanningStarted;
@@ -150,8 +154,7 @@ namespace Snyk.VisualStudio.Extension
             tasksService.DownloadFinished += toolWindow.OnDownloadFinished;
             tasksService.DownloadUpdate += toolWindow.OnDownloadUpdate;
             tasksService.DownloadCancelled += toolWindow.OnDownloadCancelled;
-        }
-
+        }      
         #endregion
-    }
+    }            
 }

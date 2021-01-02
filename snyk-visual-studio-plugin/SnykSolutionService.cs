@@ -1,19 +1,29 @@
 ﻿using EnvDTE;
 using System;
+using Microsoft.VisualStudio;
+using Microsoft.VisualStudio.Shell.Interop;
 
 namespace Snyk.VisualStudio.Extension.Services
 {
-    public class SnykSolutionService
+    public class SnykSolutionService : IVsSolutionLoadManager
     {
         private static SnykSolutionService instance;
 
-        private IServiceProvider serviceProvider;
+        private IServiceProvider serviceProvider;        
 
         private SnykSolutionService() { }
 
         private SnykSolutionService(IServiceProvider serviceProvider)
         {
             this.ServiceProvider = serviceProvider;
+
+            IVsSolution vsSolution = serviceProvider.GetService(typeof(SVsSolution)) as IVsSolution;
+            vsSolution.SetProperty((int)__VSPROPID4.VSPROPID_ActiveSolutionLoadManager, this);
+
+            SolutionEvents = new SnykVsSolutionLoadEvents();
+
+            uint pdwCookie;
+            vsSolution.AdviseSolutionEvents(SolutionEvents, out pdwCookie);
         }
 
         public static SnykSolutionService Initialize(IServiceProvider serviceProvider)
@@ -33,7 +43,9 @@ namespace Snyk.VisualStudio.Extension.Services
                 return instance;
             }
         }
-        
+
+        public SnykVsSolutionLoadEvents SolutionEvents { get; }
+
         public Projects GetProjects()
         {
             DTE dte = (DTE) this.ServiceProvider.GetService(typeof(DTE));
@@ -53,5 +65,59 @@ namespace Snyk.VisualStudio.Extension.Services
                 serviceProvider = value;
             }
         }
+
+        public int OnBeforeOpenProject(ref Guid guidProjectID,
+            ref Guid guidProjectType,
+            string pszFileName,
+            IVsSolutionLoadManagerSupport pSLMgrSupport) => VSConstants.S_OK;
+
+        public int OnDisconnect() => VSConstants.S_OK;
+    }
+    
+    public class SnykVsSolutionLoadEvents : IVsSolutionLoadEvents, IVsSolutionEvents
+    {
+        public event EventHandler<EventArgs> AfterBackgroundSolutionLoadComplete;
+
+        public int OnAfterBackgroundSolutionLoadComplete()
+        {
+            AfterBackgroundSolutionLoadComplete?.Invoke(this, EventArgs.Empty);
+
+            return VSConstants.S_OK;
+        }
+
+        public int OnAfterCloseSolution(object pUnkReserved) => VSConstants.S_OK;
+
+        public int OnAfterLoadProject(IVsHierarchy pStubHierarchy, IVsHierarchy pRealHierarchy) => VSConstants.S_OK;
+
+        public int OnAfterLoadProjectBatch(bool fIsBackgroundIdleBatch) => VSConstants.S_OK;
+
+        public int OnAfterOpenProject(IVsHierarchy pHierarchy, int fAdded) => VSConstants.S_OK;
+
+        public int OnAfterOpenSolution(object pUnkReserved, int fNewSolution) => VSConstants.S_OK;
+
+        public int OnBeforeBackgroundSolutionLoadBegins() => VSConstants.S_OK;
+
+        public int OnBeforeCloseProject(IVsHierarchy pHierarchy, int fRemoved) => VSConstants.S_OK;
+
+        public int OnBeforeCloseSolution(object pUnkReserved) => VSConstants.S_OK;
+
+        public int OnBeforeLoadProjectBatch(bool fIsBackgroundIdleBatch) => VSConstants.S_OK;
+
+        public int OnBeforeOpenSolution(string pszSolutionFilename) => VSConstants.S_OK;
+
+        public int OnBeforeUnloadProject(IVsHierarchy pRealHierarchy, IVsHierarchy pStubHierarchy) => VSConstants.S_OK;
+
+        public int OnQueryBackgroundLoadProjectBatch(out bool pfShouldDelayLoadToNextIdle)
+        {
+            pfShouldDelayLoadToNextIdle = false;
+
+            return VSConstants.S_OK;
+        }
+
+        public int OnQueryCloseProject(IVsHierarchy pHierarchy, int fRemoving, ref int pfCancel) => VSConstants.S_OK;
+
+        public int OnQueryCloseSolution(object pUnkReserved, ref int pfCancel) => VSConstants.S_OK;
+
+        public int OnQueryUnloadProject(IVsHierarchy pRealHierarchy, ref int pfCancel) => VSConstants.S_OK;
     }
 }

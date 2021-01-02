@@ -116,6 +116,7 @@
     <Resource Include="Resources\Run.png" />
     <Resource Include="Resources\NugetLogo.png" />
     <Resource Include="Resources\CleanData.png" />
+    <Resource Include="Resources\RunGrey.png" />
     <Content Include="Resources\SnykRunScanCommand.png" />
     <Content Include="Resources\SnykToolWindowCommand.png" />
     <Content Include="Resources\SnykVSPackage.ico" />
@@ -126,6 +127,7 @@
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Resource>
     <Resource Include="Resources\Stop.png" />
+    <Resource Include="Resources\StopDisabled.png" />
     <Content Include="stylesheet.css" />
   </ItemGroup>
   <ItemGroup>
