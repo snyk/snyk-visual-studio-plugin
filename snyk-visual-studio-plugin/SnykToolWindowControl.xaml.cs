@@ -20,7 +20,9 @@ namespace Snyk.VisualStudio.Extension.UI
     /// Interaction logic for SnykToolWindowControl.
     /// </summary>
     public partial class SnykToolWindowControl : UserControl
-    {        
+    {
+        private bool isSolutionLoaded;
+
         /// <summary>
         /// Initializes a new instance of the <see cref="SnykToolWindowControl"/> class.
         /// </summary>
@@ -36,6 +38,8 @@ namespace Snyk.VisualStudio.Extension.UI
             HideAllControls();
 
             EnableExecuteActions();
+
+            isSolutionLoaded = true;
         }
 
         public void OnAfterCloseSolution(object sender, EventArgs eventArgs)
@@ -43,6 +47,8 @@ namespace Snyk.VisualStudio.Extension.UI
             HideAllControls();
 
             DisableAllActions();
+
+            isSolutionLoaded = false;
         }
 
         public void OnScanningUpdate(object sender, SnykCliScanEventArgs eventArgs) => AppendCliResultToTree(eventArgs.Result);
@@ -53,7 +59,7 @@ namespace Snyk.VisualStudio.Extension.UI
 
             HideError();
 
-            ShowIndeterminateProgressBar("Scanning...");
+            ShowIndeterminateProgressBar(null);
 
             CleanVulnerabilitiesTree();            
         }
@@ -88,8 +94,8 @@ namespace Snyk.VisualStudio.Extension.UI
 
         public void OnDownloadFinished(object sender, SnykCliDownloadEventArgs eventArgs)
         {
-            DisableAllActions();
-
+            ManageActions();
+                        
             HideAllControls();
         }
 
@@ -132,6 +138,18 @@ namespace Snyk.VisualStudio.Extension.UI
                 errorMessage.Text = cliError.Message;
                 errorPath.Text = cliError.Path;
             });
+        }
+
+        private void ManageActions()
+        {
+            if (isSolutionLoaded)
+            {
+                EnableExecuteActions();
+            }
+            else
+            {
+                DisableAllActions();
+            }
         }
 
         private void EnableExecuteActions()
@@ -197,7 +215,9 @@ namespace Snyk.VisualStudio.Extension.UI
 
                 this.progressBarTitle.Text = title;
 
-                this.resultsGrid.Visibility = Visibility.Collapsed;
+                this.progressBarTitle.Visibility = Visibility.Visible;
+
+                this.resultsGrid.Visibility = Visibility.Collapsed;                
             });
         }
 
@@ -206,14 +226,23 @@ namespace Snyk.VisualStudio.Extension.UI
             this.Dispatcher.Invoke(() =>
             {
                 this.progressBarPanel.Visibility = Visibility.Visible;
-
-                this.progressBarTitle.Text = title;
-
+                                
                 this.progressBar.IsIndeterminate = true;
 
                 this.progressBarPercent.Visibility = Visibility.Collapsed;
 
                 this.resultsGrid.Visibility = Visibility.Collapsed;
+
+                if (title != null)
+                {
+                    this.progressBarTitle.Text = title;
+                    this.progressBarTitle.Visibility = Visibility.Visible;
+                }
+                else
+                {
+                    this.progressBarTitle.Text = "";
+                    this.progressBarTitle.Visibility = Visibility.Collapsed;
+                }
             });
         }
 
