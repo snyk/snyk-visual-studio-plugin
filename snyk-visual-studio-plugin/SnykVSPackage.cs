@@ -13,6 +13,8 @@ using Snyk.VisualStudio.Extension.UI;
 using Snyk.VisualStudio.Extension.Settings;
 using Snyk.VisualStudio.Extension.Services;
 using Microsoft.VisualStudio;
+using EnvDTE80;
+using EnvDTE;
 
 namespace Snyk.VisualStudio.Extension
 {
@@ -129,9 +131,7 @@ namespace Snyk.VisualStudio.Extension
 
             GetToolWindow().Package = this;
 
-            InitializeEventListeners();
-
-            SnykTasksService.Instance().Download();
+            InitializeEventListeners();            
         }
 
         private void InitializeEventListeners()
@@ -153,7 +153,20 @@ namespace Snyk.VisualStudio.Extension
             tasksService.DownloadFinished += toolWindow.OnDownloadFinished;
             tasksService.DownloadUpdate += toolWindow.OnDownloadUpdate;
             tasksService.DownloadCancelled += toolWindow.OnDownloadCancelled;
+
+
+
+            DTE dte = (DTE)this.GetService(typeof(DTE));
+
+            WindowVisibilityEvents visibilityEvents = (dte?.Events as Events2)?.WindowVisibilityEvents;
+
+            if (visibilityEvents != null)
+            {
+                visibilityEvents.WindowShowing += VisibilityEvents_ToolWindowShowing;
+            }
         }      
+
+        private void VisibilityEvents_ToolWindowShowing(Window window) => SnykTasksService.Instance().Download();
         #endregion
     }            
 }
