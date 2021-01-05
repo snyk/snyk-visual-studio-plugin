@@ -137,10 +137,9 @@ namespace Snyk.VisualStudio.Extension.CLI
             return Path.Combine(appDataDirectoryPath, SnykConfigurationDirectoryName);
         }
 
-        public static string GetSnykCliPath()
-        {
-            return Path.Combine(GetSnykDirectoryPath(), CliFileName);
-        }        
+        public static string GetSnykCliPath() => Path.Combine(GetSnykDirectoryPath(), CliFileName);
+
+        public static bool IsCliExists() => File.Exists(GetSnykCliPath());
 
         public ISnykOptions Options
         {

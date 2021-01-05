@@ -1,6 +1,5 @@
 ﻿using Microsoft.VisualStudio.Shell;
 using Snyk.VisualStudio.Extension.UI;
-using System;
 using System.Runtime.InteropServices;
 using System.Windows.Forms;
 

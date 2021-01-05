@@ -59,7 +59,7 @@ namespace Snyk.VisualStudio.Extension.UI
 
             HideError();
 
-            ShowIndeterminateProgressBar(null);
+            ShowIndeterminateProgressBar();
 
             CleanVulnerabilitiesTree();            
         }
@@ -89,12 +89,12 @@ namespace Snyk.VisualStudio.Extension.UI
         {
             EnableStopActions();
 
-            ShowProgressBar("Downloading latest Snyk CLI release...");            
+            ShowProgressBar();            
         }
 
         public void OnDownloadFinished(object sender, SnykCliDownloadEventArgs eventArgs)
         {
-            ManageActions();
+            SetupAvailableActions();
                         
             HideAllControls();
         }
@@ -140,7 +140,7 @@ namespace Snyk.VisualStudio.Extension.UI
             });
         }
 
-        private void ManageActions()
+        private void SetupAvailableActions()
         {
             if (isSolutionLoaded)
             {
@@ -201,27 +201,24 @@ namespace Snyk.VisualStudio.Extension.UI
                 this.progressBarTitle.Text = "";
 
                 this.progressBar.IsIndeterminate = false;
-                this.progressBarPercent.Visibility = Visibility.Visible;
             });
         }
 
-        private void ShowProgressBar(string title)
+        private void ShowProgressBar()
         {
             this.Dispatcher.Invoke(() =>
             {
-                Package.ShowToolWindow();
-
                 this.progressBarPanel.Visibility = Visibility.Visible;
-
-                this.progressBarTitle.Text = title;
 
                 this.progressBarTitle.Visibility = Visibility.Visible;
 
-                this.resultsGrid.Visibility = Visibility.Collapsed;                
+                this.resultsGrid.Visibility = Visibility.Collapsed;
+
+                Package.ShowToolWindow();                
             });
         }
 
-        private void ShowIndeterminateProgressBar(string title)
+        private void ShowIndeterminateProgressBar()
         {
             this.Dispatcher.Invoke(() =>
             {
@@ -229,20 +226,10 @@ namespace Snyk.VisualStudio.Extension.UI
                                 
                 this.progressBar.IsIndeterminate = true;
 
-                this.progressBarPercent.Visibility = Visibility.Collapsed;
-
                 this.resultsGrid.Visibility = Visibility.Collapsed;
 
-                if (title != null)
-                {
-                    this.progressBarTitle.Text = title;
-                    this.progressBarTitle.Visibility = Visibility.Visible;
-                }
-                else
-                {
-                    this.progressBarTitle.Text = "";
-                    this.progressBarTitle.Visibility = Visibility.Collapsed;
-                }
+                this.progressBarTitle.Text = "";
+                this.progressBarTitle.Visibility = Visibility.Collapsed;
             });
         }
 
@@ -251,6 +238,7 @@ namespace Snyk.VisualStudio.Extension.UI
             this.Dispatcher.Invoke(() =>
             {
                 this.progressBar.Value = value;
+                this.progressBarTitle.Text = $"Downloading latest Snyk CLI release {value}%...";
             });
         }                
 

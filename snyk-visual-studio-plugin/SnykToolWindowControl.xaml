@@ -80,8 +80,7 @@
         </ToolBar>
         <StackPanel Grid.Row="1" Grid.Column="0" Name="progressBarPanel" Visibility="Collapsed" Orientation="Vertical" Margin="1" UseLayoutRounding="False">
             <Grid>
-                <ProgressBar x:Name="progressBar" Minimum="0" Maximum="100" Height="12"/>
-                <TextBlock Name="progressBarPercent" Text="{Binding ElementName=progressBar, Path=Value, StringFormat={}{0:0}%}" HorizontalAlignment="Center" VerticalAlignment="Center" FontSize="10"/>
+                <ProgressBar x:Name="progressBar" Minimum="0" Maximum="100" Height="3"/>
             </Grid>
             <TextBlock Name="progressBarTitle" Text="" HorizontalAlignment="Center" VerticalAlignment="Center" FontSize="12"/>
         </StackPanel>

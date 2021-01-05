@@ -73,6 +73,22 @@ namespace Snyk.VisualStudio.Extension
             }
         }
 
+        public SnykTasksService TasksService
+        {
+            get
+            {
+                return SnykTasksService.Instance();
+            }
+        }
+
+        public DTE DTE
+        {
+            get
+            {
+                return (DTE)this.GetService(typeof(DTE));
+            }
+        }
+
         public ISnykOptions Options
         {
             get
@@ -138,7 +154,7 @@ namespace Snyk.VisualStudio.Extension
         {
             var toolWindow = GetToolWindow();
             var tasksService = SnykTasksService.Instance();
-            var solutionEvents = SnykSolutionService.Instance.SolutionEvents;
+            var solutionEvents = SnykSolutionService.Instance.SolutionEvents;            
 
             solutionEvents.AfterBackgroundSolutionLoadComplete += toolWindow.OnAfterBackgroundSolutionLoadComplete;
             solutionEvents.AfterCloseSolution += toolWindow.OnAfterCloseSolution;            
@@ -154,19 +170,13 @@ namespace Snyk.VisualStudio.Extension
             tasksService.DownloadUpdate += toolWindow.OnDownloadUpdate;
             tasksService.DownloadCancelled += toolWindow.OnDownloadCancelled;
 
-
-
-            DTE dte = (DTE)this.GetService(typeof(DTE));
-
-            WindowVisibilityEvents visibilityEvents = (dte?.Events as Events2)?.WindowVisibilityEvents;
+            WindowVisibilityEvents visibilityEvents = (DTE?.Events as Events2)?.WindowVisibilityEvents;
 
             if (visibilityEvents != null)
             {
-                visibilityEvents.WindowShowing += VisibilityEvents_ToolWindowShowing;
+                visibilityEvents.WindowShowing += (window) => SnykTasksService.Instance().Download();                
             }
-        }      
-
-        private void VisibilityEvents_ToolWindowShowing(Window window) => SnykTasksService.Instance().Download();
+        }
         #endregion
     }            
 }

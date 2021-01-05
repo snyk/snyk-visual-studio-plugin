@@ -147,9 +147,7 @@ namespace Snyk.VisualStudio.Extension.UI
             Task.Run(() =>
             {                
                 try
-                {
-                    
-
+                {                   
                     SnykCliDownloader.NewInstance().Download(progressWorker: tokenChecker);
                 }
                 catch (Exception exception)
@@ -236,10 +234,7 @@ namespace Snyk.VisualStudio.Extension.UI
 
         public SnykTasksService TasksService { get; set; }
 
-        public void UpdateProgress(int progress)
-        {
-            TasksService.OnDownloadUpdate(progress);
-        }        
+        public void UpdateProgress(int progress) => TasksService.OnDownloadUpdate(progress);
 
         public void DownloadFinished()
         {
@@ -254,9 +249,6 @@ namespace Snyk.VisualStudio.Extension.UI
             }
         }
 
-        public void DownloadStarted()
-        {
-            TasksService.OnDownloadStarted();
-        }
+        public void DownloadStarted() => TasksService.OnDownloadStarted();
     }
 }

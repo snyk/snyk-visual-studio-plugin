@@ -14,11 +14,14 @@ namespace Snyk.VisualStudio.Extension.CLI
 
         public static SnykCliDownloader NewInstance() => new SnykCliDownloader();
 
-        public LatestReleaseInfo GetLatestReleaseInfo(WebClient webClient)
+        public LatestReleaseInfo GetLatestReleaseInfo()
         {
-            string latestReleasesInfoJson = webClient.DownloadString(LatestReleasesUrl);
-            
-            return (LatestReleaseInfo) Json.Deserialize(latestReleasesInfoJson, typeof(LatestReleaseInfo));
+            using (var webClient = new SnykWebClient())
+            {
+                string latestReleasesInfoJson = webClient.DownloadString(LatestReleasesUrl);
+
+                return (LatestReleaseInfo)Json.Deserialize(latestReleasesInfoJson, typeof(LatestReleaseInfo));
+            }            
         }
 
         public void Download(string cliFileDestinationPath = null, IProgressWorker progressWorker = null)
@@ -30,14 +33,14 @@ namespace Snyk.VisualStudio.Extension.CLI
         
             if (!File.Exists(cliFileDestinationPath))
             {
+                progressWorker.DownloadStarted();
+
+                progressWorker.CancelIfCancellationRequested();
+
+                LatestReleaseInfo latestReleaseInfo = GetLatestReleaseInfo();
+
                 using (var webClient = new SnykWebClient())
-                {
-                    progressWorker.DownloadStarted();
-
-                    progressWorker.CancelIfCancellationRequested();
-
-                    LatestReleaseInfo latestReleaseInfo = GetLatestReleaseInfo(webClient);
-
+                {                   
                     string cliVersion = latestReleaseInfo.TagName;
 
                     string cliDownloadUrl = String.Format(LatestReleaseDownloadUrl, cliVersion, SnykCli.CliFileName);
@@ -68,21 +71,7 @@ namespace Snyk.VisualStudio.Extension.CLI
             string cliFileDestinationPath, 
             string cliDownloadUrl)
         {
-            webClient.DownloadProgressChanged += (source, progressChangedEvent) =>
-            {
-                try
-                {
-                    progressWorker.UpdateProgress(progressChangedEvent.ProgressPercentage);
-
-                    progressWorker.CancelIfCancellationRequested();
-                }
-                catch (Exception exception)
-                {
-                    webClient.CancelAsync();
-                }
-            };
-
-            webClient.DownloadFileCompleted += (source, downloadCompletedEvent) =>
+            /*webClient.DownloadFileCompleted += (source, downloadCompletedEvent) =>
             {
                 if (downloadCompletedEvent.Cancelled)
                 {
@@ -90,7 +79,26 @@ namespace Snyk.VisualStudio.Extension.CLI
                 }
 
                 progressWorker.DownloadFinished();
-            };
+            };*/
+            
+            webClient.DownloadProgressChanged += (source, progressChangedEvent) =>
+            {
+                try
+                {
+                    progressWorker.UpdateProgress(progressChangedEvent.ProgressPercentage);
+
+                    progressWorker.CancelIfCancellationRequested();
+
+                    if (progressChangedEvent.ProgressPercentage == 100)
+                    {
+                        progressWorker.DownloadFinished();
+                    }
+                }
+                catch (Exception exception)
+                {
+                    webClient.CancelAsync();
+                }
+            };            
 
             webClient.DownloadFileAsync(new Uri(cliDownloadUrl), cliFileDestinationPath);
 

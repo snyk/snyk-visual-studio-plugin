@@ -2,7 +2,6 @@
 using System.Windows.Forms;
 using Snyk.VisualStudio.Extension.Settings;
 using Snyk.VisualStudio.Extension.CLI;
-using System.Threading.Tasks;
 using System.Text.RegularExpressions;
 
 namespace Snyk.VisualStudio.Extension.UI
@@ -26,38 +25,64 @@ namespace Snyk.VisualStudio.Extension.UI
             ignoreUnknownCACheckBox.Checked = optionsDialogPage.IgnoreUnknownCA;
         }
         
-        private void authenticateButton_Click(object sender, EventArgs eventArgs)
+        private void authenticateButton_Click(object sender, EventArgs eventArgs)            
         {
-            authProgressBar.Visible = true;
+            this.authProgressBar.Visible = true;
+            this.tokenTextBox.Enabled = false;
+            this.authenticateButton.Enabled = false;
 
-            Task.Run(() => GetApiToken()).ContinueWith(task => 
-            {                
-                this.authProgressBar.Invoke((MethodInvoker)delegate {
+            var package = optionsDialogPage.Package;
+            var tasksService = package.TasksService;
+
+            Action<string> successCallback = (apiToken) =>
+            {
+                this.authProgressBar.Invoke((MethodInvoker)delegate
+                {
                     this.authProgressBar.Visible = false;
                 });
-            });            
-        }
 
-        private bool IsValidGuid(string guid)
-        {
-            if (guid != null)
-            {
-
-                if (GuidRegex.IsMatch(guid))
+                this.tokenTextBox.Invoke((MethodInvoker)delegate
                 {
-                    new Guid(guid);
+                    this.tokenTextBox.Text = apiToken;
+                    this.tokenTextBox.Enabled = true;
+                });
 
-                    return true;
-                }
+                this.authenticateButton.Invoke((MethodInvoker)delegate
+                {
+                    this.authenticateButton.Enabled = true;
+                });
+            };
+
+            Action<string> errorCallback = (errorMessage) =>
+            {
+                CliError cliError = new CliError
+                {
+                    IsSuccess = false,
+                    Message = errorMessage,
+                    Path = ""
+                };
+
+                package.ShowToolWindow();
+                package.GetToolWindow().DisplayError(cliError);
+            };
+
+            if (SnykCli.IsCliExists())
+            {
+                SetupApiToken(successCallback, errorCallback);
             }
+            else
+            {
+                tasksService.DownloadFinished += (obj, args) =>
+                {
+                    SetupApiToken(successCallback, errorCallback);
+                };
 
-            return false;
-        }
-
-        private void GetApiToken()
-        {
-            var package = optionsDialogPage.Package;
-
+                package.TasksService.Download();
+            }        
+        }                
+        
+        private void SetupApiToken(Action<string> successCallback, Action<string> errorCallback)
+        {           
             var cli = new SnykCli
             {
                 Options = optionsDialogPage
@@ -78,26 +103,32 @@ namespace Snyk.VisualStudio.Extension.UI
 
                 if (!IsValidGuid(apiToken))
                 {
-                    throw new Exception("Invalid GUID.");
+                    errorCallback("Invalid GUID.");
+
+                    return;
                 }
 
-                tokenTextBox.Invoke((MethodInvoker)delegate
-                {
-                    tokenTextBox.Text = apiToken;
-                });
+                successCallback(apiToken);
             } catch (Exception exception)
             {
-
-                CliError cliError = new CliError
-                {
-                    IsSuccess = false,
-                    Message = exception.Message,
-                    Path = ""
-                };
-
-                package.ShowToolWindow();
-                package.GetToolWindow().DisplayError(cliError);
+                errorCallback(exception.Message);
             }                                    
+        }
+
+        private bool IsValidGuid(string guid)
+        {
+            if (guid != null)
+            {
+
+                if (GuidRegex.IsMatch(guid))
+                {
+                    new Guid(guid);
+
+                    return true;
+                }
+            }
+
+            return false;
         }
 
         private void tokenTextBox_TextChanged(object sender, EventArgs e)
