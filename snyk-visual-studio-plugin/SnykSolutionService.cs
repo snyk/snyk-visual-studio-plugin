@@ -2,6 +2,9 @@
 using System;
 using Microsoft.VisualStudio;
 using Microsoft.VisualStudio.Shell.Interop;
+using System.IO;
+using Snyk.VisualStudio.Extension.Settings;
+using System.Windows;
 
 namespace Snyk.VisualStudio.Extension.Services
 {
@@ -9,7 +12,7 @@ namespace Snyk.VisualStudio.Extension.Services
     {
         private static SnykSolutionService instance;
 
-        private IServiceProvider serviceProvider;        
+        private SnykSolutionSettingsService solutionSettingsService;
 
         private SnykSolutionService() { }
 
@@ -32,7 +35,7 @@ namespace Snyk.VisualStudio.Extension.Services
             {
                 instance = new SnykSolutionService(serviceProvider);
             }
-            
+
             return instance;
         }
 
@@ -44,27 +47,41 @@ namespace Snyk.VisualStudio.Extension.Services
             }
         }
 
-        public SnykVsSolutionLoadEvents SolutionEvents { get; }
-
-        public Projects GetProjects()
-        {
-            DTE dte = (DTE) this.ServiceProvider.GetService(typeof(DTE));
-
-            return dte.Solution.Projects;
-        }
-
-        public IServiceProvider ServiceProvider
+        public SnykSolutionSettingsService SolutionSettingsService
         {
             get
             {
-                return serviceProvider;
-            }
+                if (solutionSettingsService == null)
+                {
+                    solutionSettingsService = new SnykSolutionSettingsService(this);
+                }
 
-            set
-            {
-                serviceProvider = value;
+                return solutionSettingsService;
             }
         }
+
+        public SnykVsSolutionLoadEvents SolutionEvents { get; }
+
+        public Projects GetProjects() => GetDTE().Solution.Projects;
+
+        public bool IsSolutionOpen() => GetDTE().Solution.IsOpen;
+
+        public String GetSolutionPath()
+        {
+            DTE dte = GetDTE();
+            var dteSolution = dte.Solution;
+
+            if (dteSolution.IsDirty)
+            {
+                return dteSolution.Projects.Item(1).FullName;
+            }
+            else
+            {
+                return Directory.GetParent(dteSolution.FullName).FullName;
+            }            
+        }
+
+        public IServiceProvider ServiceProvider { get; set; }
 
         public int OnBeforeOpenProject(ref Guid guidProjectID,
             ref Guid guidProjectType,
@@ -72,6 +89,8 @@ namespace Snyk.VisualStudio.Extension.Services
             IVsSolutionLoadManagerSupport pSLMgrSupport) => VSConstants.S_OK;
 
         public int OnDisconnect() => VSConstants.S_OK;
+
+        private DTE GetDTE() => (DTE) this.ServiceProvider.GetService(typeof(DTE));
     }
     
     public class SnykVsSolutionLoadEvents : IVsSolutionLoadEvents, IVsSolutionEvents

@@ -6,20 +6,20 @@ using System;
 
 namespace Snyk.VisualStudio.Extension.Settings
 {
-    class SnykProjectSettingsService
+    public class SnykSolutionSettingsService
     {
         public const string SnykProjectSettingsCollectionName = "Snyk";
 
         private SnykSolutionService solutionService;
 
-        public SnykProjectSettingsService(SnykSolutionService solutionService)
+        public SnykSolutionSettingsService(SnykSolutionService solutionService)
         {
             this.solutionService = solutionService;
         }
 
-        public static SnykProjectSettingsService NewInstance(SnykSolutionService solutionService)
+        public static SnykSolutionSettingsService NewInstance(SnykSolutionService solutionService)
         {
-            return new SnykProjectSettingsService(solutionService);
+            return new SnykSolutionSettingsService(solutionService);
         }
 
         public bool IsProjectOpened()
@@ -54,6 +54,11 @@ namespace Snyk.VisualStudio.Extension.Settings
 
             if (!String.IsNullOrEmpty(projectUniqueName))
             {
+                if (String.IsNullOrEmpty(additionalOptions))
+                {
+                    additionalOptions = "";
+                }
+
                 GetUserSettingsStore().SetString(SnykProjectSettingsCollectionName, projectUniqueName, additionalOptions);
             }
         }

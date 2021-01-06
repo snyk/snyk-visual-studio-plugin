@@ -1,7 +1,9 @@
 ﻿using Snyk.VisualStudio.Extension.CLI;
 using System;
+using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
+using System.Windows;
 
 namespace Snyk.VisualStudio.Extension.UI
 {   
@@ -77,9 +79,7 @@ namespace Snyk.VisualStudio.Extension.UI
                 {
                     tokenChecker.CancelIfCancellationRequested();
 
-                    EnvDTE.Projects projects = package.SolutionService.GetProjects();
-
-                    if (projects.Count == 0)
+                    if (!package.SolutionService.IsSolutionOpen())
                     {
                         OnScanError("No open solution.");
 
@@ -95,30 +95,24 @@ namespace Snyk.VisualStudio.Extension.UI
 
                     tokenChecker.CancelIfCancellationRequested();
 
-                    for (int index = 1; index <= projects.Count; index++)
+                    try
                     {
-                        tokenChecker.CancelIfCancellationRequested();
+                        string solutionPath = package.SolutionService.GetSolutionPath();
 
-                        try
+                        CliResult cliResult = cli.Scan(solutionPath);
+
+                        if (!cliResult.IsSuccessful())
                         {
-                            EnvDTE.Project project = projects.Item(index);
-
-                            string projectPath = project.Properties.Item("LocalPath").Value.ToString();
-
-                            CliResult cliResult = cli.Scan(projectPath);
-
-                            if (!cliResult.IsSuccessful())
-                            {
-                                OnScanError(cliResult.Error);
-                            }
-                            else
-                            {
-                                OnScanningUpdate(cliResult);
-                            }
-                        } catch(Exception scanException)
-                        {                           
-                            OnScanError(scanException.Message);
-                        }                       
+                            OnScanError(cliResult.Error);
+                        }
+                        else
+                        {
+                            OnScanningUpdate(cliResult);
+                        }
+                    }
+                    catch (Exception scanException)
+                    {
+                        OnScanError(scanException.Message);
                     }
 
                     OnScanningFinished();

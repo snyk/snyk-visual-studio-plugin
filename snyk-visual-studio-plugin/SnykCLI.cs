@@ -37,7 +37,7 @@ namespace Snyk.VisualStudio.Extension.CLI
             RunConsoleProcess(consoleProcess);            
         }
 
-        public CliResult Scan(string projectPath)
+        public CliResult Scan(string basePath)
         {
             var consoleProcess = CreateConsoleProcess(GetSnykCliPath(), BuildArguments());
 
@@ -46,7 +46,7 @@ namespace Snyk.VisualStudio.Extension.CLI
                 consoleProcess.StartInfo.EnvironmentVariables["SNYK_TOKEN"] = Options.ApiToken;
             }
 
-            consoleProcess.StartInfo.WorkingDirectory = projectPath;
+            consoleProcess.StartInfo.WorkingDirectory = basePath;
 
             string consoleResult = RunConsoleProcess(consoleProcess);
 

@@ -86,7 +86,7 @@
     <Compile Include="SnykProjectOptionsUserControl.Designer.cs">
       <DependentUpon>SnykProjectOptionsUserControl.cs</DependentUpon>
     </Compile>
-    <Compile Include="SnykProjectSettingsService.cs" />
+    <Compile Include="SnykSolutionSettingsService.cs" />
     <Compile Include="SnykIcons.Designer.cs">
       <AutoGen>True</AutoGen>
       <DesignTime>True</DesignTime>

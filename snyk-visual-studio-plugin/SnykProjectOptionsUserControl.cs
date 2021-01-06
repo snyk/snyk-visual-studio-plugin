@@ -1,26 +1,25 @@
 ﻿using Snyk.VisualStudio.Extension.Services;
-using Snyk.VisualStudio.Extension.Settings;
 using System;
 using System.Windows.Forms;
 
 namespace Snyk.VisualStudio.Extension.UI
 {
     public partial class SnykProjectOptionsUserControl : UserControl
-    {       
-        private SnykProjectSettingsService projectSettingsService;
+    {
+        private SnykSolutionService solutionService;
 
         public SnykProjectOptionsUserControl(SnykSolutionService solutionService)
         {
             InitializeComponent();
 
-            this.projectSettingsService = new SnykProjectSettingsService(solutionService);
+            this.solutionService = solutionService;
         }
 
         protected override void OnVisibleChanged(EventArgs e)
         {
             base.OnVisibleChanged(e);
 
-            bool isProjectOpened = projectSettingsService.IsProjectOpened();
+            bool isProjectOpened = solutionService.SolutionSettingsService.IsProjectOpened();
 
             additionalOptionsTextBox.Enabled = isProjectOpened;
 
@@ -31,7 +30,7 @@ namespace Snyk.VisualStudio.Extension.UI
 
             try
             {
-                string additionalOptions = projectSettingsService.GetAdditionalOptions();
+                string additionalOptions = solutionService.SolutionSettingsService.GetAdditionalOptions();
 
                 if (!String.IsNullOrEmpty(additionalOptions))
                 {
@@ -49,9 +48,9 @@ namespace Snyk.VisualStudio.Extension.UI
 
         private void additionalOptionsTextBox_TextChanged(object sender, EventArgs e)
         {
-            if (projectSettingsService.IsProjectOpened())
+            if (solutionService.SolutionSettingsService.IsProjectOpened())
             {
-                projectSettingsService.SaveAdditionalOptions(additionalOptionsTextBox.Text.ToString());
+                solutionService.SolutionSettingsService.SaveAdditionalOptions(additionalOptionsTextBox.Text.ToString());
             }
         }
     }

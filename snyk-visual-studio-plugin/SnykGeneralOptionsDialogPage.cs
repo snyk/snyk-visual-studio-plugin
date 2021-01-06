@@ -8,12 +8,6 @@ namespace Snyk.VisualStudio.Extension.Settings
     [Guid("d45468c1-33d2-4dca-9780-68abaedf95e7")]
     public class SnykGeneralOptionsDialogPage : DialogPage, ISnykOptions
     {
-        private string apiToken = "";
-        private string customEndpoint = "";
-        private string organization = "";
-        private bool ignoreUnknownCA = false;
-        private string additionalOptions = "";
-
         private SnykVSPackage package;
 
         protected override IWin32Window Window
@@ -42,64 +36,21 @@ namespace Snyk.VisualStudio.Extension.Settings
             }
         }
 
-        public string ApiToken
-        {
-            get
-            {
-                return apiToken;
-            }
-            set
-            {
-                apiToken = value;
-            }
-        }
+        public string ApiToken { get; set; }
 
-        public string CustomEndpoint
-        {
-            get
-            {
-                return customEndpoint;
-            }
-            set
-            {
-                customEndpoint = value;
-            }
-        }
+        public string CustomEndpoint { get; set; }
 
-        public string Organization
-        {
-            get
-            {
-                return organization;
-            }
-            set
-            {
-                organization = value;
-            }
-        }
+        public string Organization { get; set; }
 
-        public bool IgnoreUnknownCA
-        {
-            get
-            {
-                return ignoreUnknownCA;
-            }
-            set
-            {
-                ignoreUnknownCA = value;
-            }
-        }        
+        public bool IgnoreUnknownCA { get; set; }     
 
         public string AdditionalOptions
         {
             get
             {
-                return additionalOptions;
-            }
+                var settingsService = package.SolutionService.SolutionSettingsService;
 
-            set
-            {
-                additionalOptions = value;
+                return settingsService.GetAdditionalOptions();
             }
         }        
     }

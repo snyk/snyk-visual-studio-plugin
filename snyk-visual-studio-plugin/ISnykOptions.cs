@@ -29,7 +29,6 @@
         string AdditionalOptions
         {
             get;
-            set;
         }
     }
 }
