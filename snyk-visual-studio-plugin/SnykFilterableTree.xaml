@@ -8,9 +8,16 @@
              d:DesignHeight="300" d:DesignWidth="300">
     <UserControl.Resources>
         <BitmapImage x:Key="NugetIcon" UriSource="./Resources/NugetLogo.png" DecodePixelWidth="16" DecodePixelHeight="16"/>
+        <BitmapImage x:Key="NpmIcon" UriSource="./Resources/NpmLogo.png" DecodePixelWidth="16" DecodePixelHeight="16"/>
+        <BitmapImage x:Key="JsIcon" UriSource="./Resources/JsLogo.png" DecodePixelWidth="16" DecodePixelHeight="16"/>
+        <BitmapImage x:Key="JavaIcon" UriSource="./Resources/JavaLogo.png" DecodePixelWidth="16" DecodePixelHeight="16"/>
+        <BitmapImage x:Key="PythonIcon" UriSource="./Resources/PythonLogo.png" DecodePixelWidth="16" DecodePixelHeight="16"/>
+        <BitmapImage x:Key="DefaultIcon" UriSource="./Resources/DefaultFileIcon.png" DecodePixelWidth="16" DecodePixelHeight="16"/>
+
         <BitmapImage x:Key="SeverityHighIcon" UriSource="./Resources/severity_high.png" DecodePixelWidth="16" DecodePixelHeight="16"/>
         <BitmapImage x:Key="SeverityMediumIcon" UriSource="./Resources/severity_medium.png" DecodePixelWidth="16" DecodePixelHeight="16"/>
         <BitmapImage x:Key="SeverityLowIcon" UriSource="./Resources/severity_low.png" DecodePixelWidth="16" DecodePixelHeight="16"/>
+
         <local:ImageConverter x:Key="ImageConverter"/>
     </UserControl.Resources>
     <Grid>

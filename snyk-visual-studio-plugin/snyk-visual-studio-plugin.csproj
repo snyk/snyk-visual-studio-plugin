@@ -120,6 +120,11 @@
     <Resource Include="Resources\CleanData.png" />
     <Resource Include="Resources\RunGrey.png" />
     <Resource Include="Resources\SnykLogo.ico" />
+    <Resource Include="Resources\DefaultFileIcon.png" />
+    <Resource Include="Resources\JavaLogo.png" />
+    <Resource Include="Resources\JsLogo.png" />
+    <Resource Include="Resources\NpmLogo.png" />
+    <Resource Include="Resources\PythonLogo.png" />
     <Content Include="Resources\SnykRunScanCommand.png" />
     <Content Include="Resources\SnykToolWindow.ico" />
     <Content Include="Resources\SnykToolWindowCommand.png" />

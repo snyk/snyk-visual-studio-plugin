@@ -136,12 +136,7 @@ namespace Snyk.VisualStudio.Extension.UI
     }
 
     public class VulnerabilityTreeNode
-    {
-        private const string SeverityHighIcon = "SeverityHighIcon";
-        private const string SeverityMediumIcon = "SeverityMediumIcon";
-        private const string SeverityLowIcon = "SeverityLowIcon";
-        private const string NugetIcon = "NugetIcon";
-
+    {           
         public VulnerabilityTreeNode()
         {
             this.Items = new ObservableCollection<VulnerabilityTreeNode>();
@@ -175,32 +170,10 @@ namespace Snyk.VisualStudio.Extension.UI
             {
                 if (Vulnerability != null)
                 {
-                    string severityBitmap;
-
-                    switch (Vulnerability.severity)
-                    {
-                        case Severity.High:
-                            severityBitmap = SeverityHighIcon;
-
-                            break;
-                        case Severity.Medium:
-                            severityBitmap = SeverityMediumIcon;
-
-                            break;
-                        case Severity.Low:
-                            severityBitmap = SeverityLowIcon;
-
-                            break;
-                        default:
-                            severityBitmap = NugetIcon;
-
-                            break;
-                    }
-
-                    return severityBitmap;
+                    return SnykIconProvider.GetSeverityIcon(Vulnerability.severity);
                 }
 
-                return NugetIcon;
+                return SnykIconProvider.GetPackageManagerIcon(CliVulnerabilities.packageManager);
             }
         }
 
@@ -213,5 +186,84 @@ namespace Snyk.VisualStudio.Extension.UI
             SnykFilterableTree.GetControlResource(value) as BitmapImage;
 
         public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture) => "";
+    }
+
+    class SnykIconProvider
+    {
+        private const string NugetIcon = "NugetIcon";
+        private const string NpmIcon = "NpmIcon";
+        private const string JsIcon = "JsIcon";
+        private const string JavaIcon = "JavaIcon";
+        private const string PythonIcon = "PythonIcon";
+        private const string DefaultIcon = "DefaultIcon";
+
+        private const string SeverityHighIcon = "SeverityHighIcon";
+        private const string SeverityMediumIcon = "SeverityMediumIcon";
+        private const string SeverityLowIcon = "SeverityLowIcon";
+
+        public static string GetPackageManagerIcon(string packageManager)
+        {
+            string icon = "";
+
+            switch (packageManager)
+            {
+                case "nuget":
+                    icon = NugetIcon;
+                    break;
+                case "paket":
+                    icon = NugetIcon;
+                    break;
+                case "npm":
+                    icon = NpmIcon;
+                    break;
+                case "yarn":
+                    icon = JsIcon;
+                    break;
+                case "pip":
+                    icon = PythonIcon;
+                    break;
+                case "yarn-workspace":
+                    icon = JsIcon;
+                    break;
+                case "maven":
+                    icon = JavaIcon;
+                    break;
+                case "gradle":
+                    icon = JavaIcon;
+                    break;
+                default:
+                    icon = DefaultIcon;
+                    break;
+            }
+
+            return icon;
+        }
+
+        public static string GetSeverityIcon(string severity)
+        {
+            string icon;
+
+            switch (severity)
+            {
+                case Severity.High:
+                    icon = SeverityHighIcon;
+
+                    break;
+                case Severity.Medium:
+                    icon = SeverityMediumIcon;
+
+                    break;
+                case Severity.Low:
+                    icon = SeverityLowIcon;
+
+                    break;
+                default:
+                    icon = DefaultIcon;
+
+                    break;
+            }
+
+            return icon;
+        }
     }
 }
