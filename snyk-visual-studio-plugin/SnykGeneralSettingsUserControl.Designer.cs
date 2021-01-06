@@ -119,9 +119,9 @@
             // authProgressBar
             // 
             this.authProgressBar.Location = new System.Drawing.Point(159, 41);
-            this.authProgressBar.Margin = new System.Windows.Forms.Padding(3, 2, 3, 2);
+            this.authProgressBar.MarqueeAnimationSpeed = 10;
             this.authProgressBar.Name = "authProgressBar";
-            this.authProgressBar.Size = new System.Drawing.Size(621, 3);
+            this.authProgressBar.Size = new System.Drawing.Size(622, 3);
             this.authProgressBar.Style = System.Windows.Forms.ProgressBarStyle.Marquee;
             this.authProgressBar.TabIndex = 8;
             this.authProgressBar.Visible = false;

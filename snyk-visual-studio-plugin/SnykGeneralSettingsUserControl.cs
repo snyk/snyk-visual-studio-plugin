@@ -3,6 +3,7 @@ using System.Windows.Forms;
 using Snyk.VisualStudio.Extension.Settings;
 using Snyk.VisualStudio.Extension.CLI;
 using System.Text.RegularExpressions;
+using System.Threading.Tasks;
 
 namespace Snyk.VisualStudio.Extension.UI
 {   
@@ -26,74 +27,77 @@ namespace Snyk.VisualStudio.Extension.UI
         }
         
         private void authenticateButton_Click(object sender, EventArgs eventArgs)            
-        {
+        {            
             this.authProgressBar.Visible = true;
             this.tokenTextBox.Enabled = false;
             this.authenticateButton.Enabled = false;
 
-            var package = optionsDialogPage.Package;
-            var tasksService = package.TasksService;
-
-            Action<string> successCallback = (apiToken) =>
+            Task.Run(() =>
             {
-                this.authProgressBar.Invoke((MethodInvoker)delegate
-                {
-                    this.authProgressBar.Visible = false;
-                });
+                var package = optionsDialogPage.Package;
+                var tasksService = package.TasksService;
 
-                this.tokenTextBox.Invoke((MethodInvoker)delegate
+                Action<string> successCallback = (apiToken) =>
                 {
-                    this.tokenTextBox.Text = apiToken;
-                    this.tokenTextBox.Enabled = true;
-                });
+                    this.authProgressBar.Invoke((MethodInvoker)delegate
+                    {
+                        this.authProgressBar.Visible = false;
+                    });
 
-                this.authenticateButton.Invoke((MethodInvoker)delegate
-                {
-                    this.authenticateButton.Enabled = true;
-                });
-            };
+                    this.tokenTextBox.Invoke((MethodInvoker)delegate
+                    {
+                        this.tokenTextBox.Text = apiToken;
+                        this.tokenTextBox.Enabled = true;
+                    });
 
-            Action<string> errorCallback = (errorMessage) =>
-            {
-                this.authProgressBar.Invoke((MethodInvoker)delegate
-                {
-                    this.authProgressBar.Visible = false;
-                });
-
-                this.tokenTextBox.Invoke((MethodInvoker)delegate
-                {
-                    this.tokenTextBox.Enabled = true;
-                });
-
-                this.authenticateButton.Invoke((MethodInvoker)delegate
-                {
-                    this.authenticateButton.Enabled = true;
-                });
-
-                CliError cliError = new CliError
-                {
-                    IsSuccess = false,
-                    Message = errorMessage,
-                    Path = ""
+                    this.authenticateButton.Invoke((MethodInvoker)delegate
+                    {
+                        this.authenticateButton.Enabled = true;
+                    });
                 };
 
-                package.ShowToolWindow();
-                package.GetToolWindow().DisplayError(cliError);
-            };
+                Action<string> errorCallback = (errorMessage) =>
+                {
+                    this.authProgressBar.Invoke((MethodInvoker)delegate
+                    {
+                        this.authProgressBar.Visible = false;
+                    });
 
-            if (SnykCli.IsCliExists())
-            {
-                SetupApiToken(successCallback, errorCallback);
-            }
-            else
-            {
-                tasksService.DownloadFinished += (obj, args) =>
+                    this.tokenTextBox.Invoke((MethodInvoker)delegate
+                    {
+                        this.tokenTextBox.Enabled = true;
+                    });
+
+                    this.authenticateButton.Invoke((MethodInvoker)delegate
+                    {
+                        this.authenticateButton.Enabled = true;
+                    });
+
+                    CliError cliError = new CliError
+                    {
+                        IsSuccess = false,
+                        Message = errorMessage,
+                        Path = ""
+                    };
+
+                    package.ShowToolWindow();
+                    package.GetToolWindow().DisplayError(cliError);
+                };
+
+                if (SnykCli.IsCliExists())
                 {
                     SetupApiToken(successCallback, errorCallback);
-                };
+                }
+                else
+                {
+                    tasksService.DownloadFinished += (obj, args) =>
+                    {
+                        SetupApiToken(successCallback, errorCallback);
+                    };
 
-                package.TasksService.Download();
-            }        
+                    package.TasksService.Download();
+                }
+            });            
         }                
         
         private void SetupApiToken(Action<string> successCallback, Action<string> errorCallback)
