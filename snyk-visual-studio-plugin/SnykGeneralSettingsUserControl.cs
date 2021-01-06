@@ -55,6 +55,21 @@ namespace Snyk.VisualStudio.Extension.UI
 
             Action<string> errorCallback = (errorMessage) =>
             {
+                this.authProgressBar.Invoke((MethodInvoker)delegate
+                {
+                    this.authProgressBar.Visible = false;
+                });
+
+                this.tokenTextBox.Invoke((MethodInvoker)delegate
+                {
+                    this.tokenTextBox.Enabled = true;
+                });
+
+                this.authenticateButton.Invoke((MethodInvoker)delegate
+                {
+                    this.authenticateButton.Enabled = true;
+                });
+
                 CliError cliError = new CliError
                 {
                     IsSuccess = false,
@@ -96,9 +111,18 @@ namespace Snyk.VisualStudio.Extension.UI
 
                 if (String.IsNullOrEmpty(apiToken))
                 {                    
-                    cli.Authenticate();
+                    string authResultMessage = cli.Authenticate();
 
-                    apiToken = cli.GetApiToken();                    
+                    if (authResultMessage.Contains("Your account has been authenticated. Snyk is now ready to be used."))
+                    {
+                        apiToken = cli.GetApiToken();
+                    }
+                    else
+                    {
+                        errorCallback(authResultMessage);
+
+                        return;
+                    }
                 }
 
                 if (!IsValidGuid(apiToken))

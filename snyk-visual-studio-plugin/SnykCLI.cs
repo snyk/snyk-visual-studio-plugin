@@ -30,11 +30,11 @@ namespace Snyk.VisualStudio.Extension.CLI
             return RunConsoleProcess(consoleProcess);
         }
 
-        public void Authenticate()
+        public string Authenticate()
         {            
             var consoleProcess = CreateConsoleProcess(GetSnykCliPath(), "auth");
 
-            RunConsoleProcess(consoleProcess);            
+            return RunConsoleProcess(consoleProcess);            
         }
 
         public CliResult Scan(string basePath)
