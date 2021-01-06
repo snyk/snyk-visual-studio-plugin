@@ -4,7 +4,6 @@ using Microsoft.VisualStudio;
 using Microsoft.VisualStudio.Shell.Interop;
 using System.IO;
 using Snyk.VisualStudio.Extension.Settings;
-using System.Windows;
 
 namespace Snyk.VisualStudio.Extension.Services
 {

@@ -10,7 +10,7 @@ namespace Snyk.VisualStudio.Extension.Settings
     {
         public const string SnykProjectSettingsCollectionName = "Snyk";
 
-        private SnykSolutionService solutionService;
+        private readonly SnykSolutionService solutionService;
 
         public SnykSolutionSettingsService(SnykSolutionService solutionService)
         {
@@ -37,15 +37,24 @@ namespace Snyk.VisualStudio.Extension.Settings
             }
 
             WritableSettingsStore settingsStore = GetUserSettingsStore();
-
-            bool isProjectOpened = !String.IsNullOrEmpty(projectUniqueName);            
-
-            if (!isProjectOpened || !settingsStore.CollectionExists(SnykProjectSettingsCollectionName))
+                       
+            if (!solutionService.IsSolutionOpen() || !settingsStore.CollectionExists(SnykProjectSettingsCollectionName))
             {
                 return "";
             }
 
-            return settingsStore.GetString(SnykProjectSettingsCollectionName, projectUniqueName);
+            string additionalOptions = "";
+
+            try
+            {
+                additionalOptions = settingsStore.GetString(SnykProjectSettingsCollectionName, projectUniqueName);
+            }
+            catch (Exception exception)
+            {
+                Console.WriteLine(exception.Message);
+            }
+
+            return additionalOptions;
         }
 
         public void SaveAdditionalOptions(string additionalOptions)
