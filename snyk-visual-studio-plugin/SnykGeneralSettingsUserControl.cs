@@ -188,11 +188,11 @@ namespace Snyk.VisualStudio.Extension.UI
             }
         }
 
-        private void customEndpointTextBox_Validating(object sender, System.ComponentModel.CancelEventArgs e)
+        private void customEndpointTextBox_Validating(object sender, System.ComponentModel.CancelEventArgs cancelEventArgs)
         {
             if (!string.IsNullOrWhiteSpace(customEndpointTextBox.Text) && !IsValidUrl(customEndpointTextBox.Text))
             {
-                e.Cancel = true;
+                cancelEventArgs.Cancel = true;
 
                 customEndpointTextBox.Focus();
 
@@ -200,7 +200,8 @@ namespace Snyk.VisualStudio.Extension.UI
             }
             else
             {
-                e.Cancel = false;
+                cancelEventArgs.Cancel = false;
+
                 errorProvider.SetError(customEndpointTextBox, "");
             }
         }
