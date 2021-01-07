@@ -143,29 +143,21 @@ namespace Snyk.VisualStudio.Extension.UI
             }                                    
         }
 
-        private bool IsValidGuid(string guid)
-        {
-            if (guid != null)
-            {
+        private bool IsValidGuid(string guid) => guid != null && GuidRegex.IsMatch(guid);
 
-                if (GuidRegex.IsMatch(guid))
-                {
-                    new Guid(guid);
-
-                    return true;
-                }
-            }
-
-            return false;
-        }
+        private bool IsValidUrl(string url) => Uri.IsWellFormedUriString(url, UriKind.RelativeOrAbsolute);
 
         private void tokenTextBox_TextChanged(object sender, EventArgs e)
         {
+            ValidateChildren(ValidationConstraints.Enabled);
+
             optionsDialogPage.ApiToken = tokenTextBox.Text;
         }
 
         private void customEndpointTextBox_TextChanged(object sender, EventArgs e)
         {
+            ValidateChildren(ValidationConstraints.Enabled);
+
             optionsDialogPage.CustomEndpoint = customEndpointTextBox.Text;
         }
 
@@ -177,6 +169,40 @@ namespace Snyk.VisualStudio.Extension.UI
         private void ignoreUnknownCACheckBox_CheckedChanged(object sender, EventArgs e)
         {
             optionsDialogPage.IgnoreUnknownCA = ignoreUnknownCACheckBox.Checked;
-        }        
+        }
+
+        private void tokenTextBox_Validating(object sender, System.ComponentModel.CancelEventArgs e)
+        {
+            if (string.IsNullOrWhiteSpace(tokenTextBox.Text) || !IsValidGuid(tokenTextBox.Text))
+            {
+                e.Cancel = true;
+
+                tokenTextBox.Focus();
+
+                errorProvider.SetError(tokenTextBox, "Not valid GUID.");
+            }
+            else
+            {
+                e.Cancel = false;
+                errorProvider.SetError(tokenTextBox, "");
+            }
+        }
+
+        private void customEndpointTextBox_Validating(object sender, System.ComponentModel.CancelEventArgs e)
+        {
+            if (!string.IsNullOrWhiteSpace(customEndpointTextBox.Text) && !IsValidUrl(customEndpointTextBox.Text))
+            {
+                e.Cancel = true;
+
+                customEndpointTextBox.Focus();
+
+                errorProvider.SetError(customEndpointTextBox, "Not valid URL.");
+            }
+            else
+            {
+                e.Cancel = false;
+                errorProvider.SetError(customEndpointTextBox, "");
+            }
+        }
     }  
 }

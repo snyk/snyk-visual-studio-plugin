@@ -28,6 +28,7 @@
         /// </summary>
         private void InitializeComponent()
         {
+            this.components = new System.ComponentModel.Container();
             this.customEndpointTextBox = new System.Windows.Forms.TextBox();
             this.customEndpointLabel = new System.Windows.Forms.Label();
             this.organizationLabel = new System.Windows.Forms.Label();
@@ -37,6 +38,8 @@
             this.ignoreUnknownCACheckBox = new System.Windows.Forms.CheckBox();
             this.authenticateButton = new System.Windows.Forms.Button();
             this.authProgressBar = new System.Windows.Forms.ProgressBar();
+            this.errorProvider = new System.Windows.Forms.ErrorProvider(this.components);
+            ((System.ComponentModel.ISupportInitialize)(this.errorProvider)).BeginInit();
             this.SuspendLayout();
             // 
             // customEndpointTextBox
@@ -47,6 +50,7 @@
             this.customEndpointTextBox.Size = new System.Drawing.Size(622, 22);
             this.customEndpointTextBox.TabIndex = 0;
             this.customEndpointTextBox.TextChanged += new System.EventHandler(this.customEndpointTextBox_TextChanged);
+            this.customEndpointTextBox.Validating += new System.ComponentModel.CancelEventHandler(this.customEndpointTextBox_Validating);
             // 
             // customEndpointLabel
             // 
@@ -92,6 +96,7 @@
             this.tokenTextBox.Size = new System.Drawing.Size(622, 22);
             this.tokenTextBox.TabIndex = 5;
             this.tokenTextBox.TextChanged += new System.EventHandler(this.tokenTextBox_TextChanged);
+            this.tokenTextBox.Validating += new System.ComponentModel.CancelEventHandler(this.tokenTextBox_Validating);
             // 
             // ignoreUnknownCACheckBox
             // 
@@ -107,7 +112,7 @@
             // 
             // authenticateButton
             // 
-            this.authenticateButton.Location = new System.Drawing.Point(786, 13);
+            this.authenticateButton.Location = new System.Drawing.Point(798, 14);
             this.authenticateButton.Margin = new System.Windows.Forms.Padding(4);
             this.authenticateButton.Name = "authenticateButton";
             this.authenticateButton.Size = new System.Drawing.Size(110, 25);
@@ -126,6 +131,10 @@
             this.authProgressBar.TabIndex = 8;
             this.authProgressBar.Visible = false;
             // 
+            // errorProvider
+            // 
+            this.errorProvider.ContainerControl = this;
+            // 
             // SnykGeneralSettingsUserControl
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(8F, 16F);
@@ -142,6 +151,7 @@
             this.Margin = new System.Windows.Forms.Padding(3, 2, 3, 2);
             this.Name = "SnykGeneralSettingsUserControl";
             this.Size = new System.Drawing.Size(912, 375);
+            ((System.ComponentModel.ISupportInitialize)(this.errorProvider)).EndInit();
             this.ResumeLayout(false);
             this.PerformLayout();
 
@@ -158,5 +168,6 @@
         private System.Windows.Forms.CheckBox ignoreUnknownCACheckBox;
         private System.Windows.Forms.Button authenticateButton;
         private System.Windows.Forms.ProgressBar authProgressBar;
+        private System.Windows.Forms.ErrorProvider errorProvider;
     }
 }
