@@ -246,10 +246,12 @@ namespace Snyk.VisualStudio.Extension.UI
         {
             this.Dispatcher.Invoke(() =>
             {
+                progressBarTitle.Text = "";
+
                 progressBarPanel.Visibility = Visibility.Collapsed;
                 resultsGrid.Visibility = Visibility.Collapsed;
 
-                errorPanel.Visibility = Visibility.Visible;
+                errorPanel.Visibility = Visibility.Collapsed;
 
                 HideError();
                 CleanAndHideVulnerabilityDetailsPanel();

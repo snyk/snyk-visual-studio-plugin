@@ -9,7 +9,28 @@ namespace Snyk.VisualStudio.Extension.UI
     {
         private static SnykTasksService instance;
 
+        public event EventHandler<SnykCliScanEventArgs> ScanningStarted;
+
+        public event EventHandler<SnykCliScanEventArgs> ScanningFinished;
+
+        public event EventHandler<SnykCliScanEventArgs> ScanningUpdate;
+
+        public event EventHandler<SnykCliScanEventArgs> ScanError;
+
+        public event EventHandler<SnykCliScanEventArgs> ScanningCancelled;
+
+        public event EventHandler<SnykCliDownloadEventArgs> DownloadStarted;
+
+        public event EventHandler<SnykCliDownloadEventArgs> DownloadFinished;
+
+        public event EventHandler<SnykCliDownloadEventArgs> DownloadUpdate;
+
+        public event EventHandler<SnykCliDownloadEventArgs> DownloadCancelled;
+
         private CancellationTokenSource tokenSource;
+
+        private Task currentTask;
+
         private SnykVSPackage package;
 
         private SnykTasksService() { }
@@ -29,53 +50,38 @@ namespace Snyk.VisualStudio.Extension.UI
             instance = new SnykTasksService();
 
             instance.package = vsPackage;
-        }
-
-        public event EventHandler<SnykCliScanEventArgs> ScanningStarted;
-
-        public event EventHandler<SnykCliScanEventArgs> ScanningFinished;
-
-        public event EventHandler<SnykCliScanEventArgs> ScanningUpdate;
-
-        public event EventHandler<SnykCliScanEventArgs> ScanError;
-
-        public event EventHandler<SnykCliScanEventArgs> ScanningCancelled;
-
-        public event EventHandler<SnykCliDownloadEventArgs> DownloadStarted;
-
-        public event EventHandler<SnykCliDownloadEventArgs> DownloadFinished;
-
-        public event EventHandler<SnykCliDownloadEventArgs> DownloadUpdate;
-
-        public event EventHandler<SnykCliDownloadEventArgs> DownloadCancelled;
+        }        
 
         public void CancelCurrentTask()
         {
             if (tokenSource != null)
             {
                 tokenSource.Cancel();
-
-                tokenSource = null;
             }            
-        }        
+        }
 
         public void Scan()
-        {
+        {            
+            if (currentTask != null && currentTask.Status == TaskStatus.Running)
+            {
+                return;
+            }
+
             tokenSource = new CancellationTokenSource();
 
-            var tokenChecker = new ProgressWorker
+            var progressWorker = new ProgressWorker
             {
-                Token = tokenSource.Token,
-                TasksService = this
+                TasksService = this,
+                TokenSource = tokenSource
             };
 
-            Task.Run(() =>
+            currentTask = Task.Run(() =>
             {
                 OnScanningStarted();
 
                 try
                 {
-                    tokenChecker.CancelIfCancellationRequested();
+                    progressWorker.CancelIfCancellationRequested();
 
                     if (!package.SolutionService.IsSolutionOpen())
                     {
@@ -84,20 +90,22 @@ namespace Snyk.VisualStudio.Extension.UI
                         return;
                     }
 
-                    tokenChecker.CancelIfCancellationRequested();                    
+                    progressWorker.CancelIfCancellationRequested();                    
 
                     var cli = new SnykCli
                     {
                         Options = package.Options
                     };
 
-                    tokenChecker.CancelIfCancellationRequested();
+                    progressWorker.CancelIfCancellationRequested();
 
                     try
                     {
                         string solutionPath = package.SolutionService.GetSolutionPath();
 
                         CliResult cliResult = cli.Scan(solutionPath);
+
+                        progressWorker.CancelIfCancellationRequested();
 
                         if (!cliResult.IsSuccessful())
                         {
@@ -107,6 +115,12 @@ namespace Snyk.VisualStudio.Extension.UI
                         {
                             OnScanningUpdate(cliResult);
                         }
+
+                        progressWorker.CancelIfCancellationRequested();
+                    }
+                    catch (OperationCanceledException e)
+                    {
+                        OnScanningCancelled();
                     }
                     catch (Exception scanException)
                     {
@@ -114,41 +128,44 @@ namespace Snyk.VisualStudio.Extension.UI
                     }
 
                     OnScanningFinished();
-
-                    tokenSource = null;
+                }
+                catch (OperationCanceledException e)
+                {
+                    OnScanningCancelled();
                 }
                 catch (Exception exception)
                 {
-                    OnScanningCancelled();
-
-                    tokenSource = null;
+                    OnScanningCancelled();                    
                 }
-            }, tokenChecker.Token);            
+            }, progressWorker.TokenSource.Token);   
         }
         
         public void Download()
         {
+            if (currentTask != null && currentTask.Status == TaskStatus.Running)
+            {
+                return;
+            }
+
             tokenSource = new CancellationTokenSource();
 
-            var tokenChecker = new ProgressWorker
+            var progressWorker = new ProgressWorker
             {
-                Token = tokenSource.Token,
-                TasksService = this
+                TasksService = this,
+                TokenSource = tokenSource
             };
 
-            Task.Run(() =>
+            currentTask = Task.Run(() =>
             {                
                 try
                 {                   
-                    SnykCliDownloader.NewInstance().Download(progressWorker: tokenChecker);
+                    SnykCliDownloader.NewInstance().Download(progressWorker: progressWorker);
                 }
                 catch (Exception exception)
                 {
                     OnDownloadCancelled(exception.Message);
-                       
-                    tokenSource = null;
                 }
-            }, tokenChecker.Token);
+            }, progressWorker.TokenSource.Token);
         }
 
         protected internal void OnDownloadStarted() => DownloadStarted?.Invoke(this, new SnykCliDownloadEventArgs());
@@ -169,7 +186,7 @@ namespace Snyk.VisualStudio.Extension.UI
 
         private void OnScanError(string message) => OnScanError(new CliError(message));
 
-        private void OnScanError(CliError error) => ScanError?.Invoke(this, new SnykCliScanEventArgs(error));        
+        private void OnScanError(CliError error) => ScanError?.Invoke(this, new SnykCliScanEventArgs(error));
     }
 
     public class SnykCliScanEventArgs : EventArgs
@@ -218,29 +235,30 @@ namespace Snyk.VisualStudio.Extension.UI
         void DownloadFinished();
 
         void CancelIfCancellationRequested();
+
+        void DownloadCancelled(string message);
     }
 
    class ProgressWorker : IProgressWorker
     {
-        public CancellationToken Token { get; set; }
+        public CancellationTokenSource TokenSource { get; set; }        
 
         public SnykTasksService TasksService { get; set; }
 
         public void UpdateProgress(int progress) => TasksService.OnDownloadUpdate(progress);
 
-        public void DownloadFinished()
-        {
-            TasksService.OnDownloadFinished();
-        }
+        public void DownloadFinished() => TasksService.OnDownloadFinished();
 
         public void CancelIfCancellationRequested()
         {
-            if (Token.IsCancellationRequested)
+            if (TokenSource.Token.IsCancellationRequested)
             {
-                Token.ThrowIfCancellationRequested();
+                TokenSource.Token.ThrowIfCancellationRequested();
             }
         }
 
         public void DownloadStarted() => TasksService.OnDownloadStarted();
+
+        public void DownloadCancelled(string message) => TasksService.OnDownloadCancelled(message);
     }
 }

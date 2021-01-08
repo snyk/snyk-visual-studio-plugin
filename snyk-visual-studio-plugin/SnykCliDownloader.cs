@@ -3,6 +3,7 @@ using System.IO;
 using System.Net;
 using Snyk.VisualStudio.Extension.Util;
 using Snyk.VisualStudio.Extension.UI;
+using System.Windows;
 
 namespace Snyk.VisualStudio.Extension.CLI
 {   
@@ -97,6 +98,21 @@ namespace Snyk.VisualStudio.Extension.CLI
                 catch (Exception exception)
                 {
                     webClient.CancelAsync();
+
+                    progressWorker.DownloadCancelled(exception.Message);
+
+                    try
+                    {
+                        if (File.Exists(cliFileDestinationPath))
+                        {
+                            File.Delete(cliFileDestinationPath);
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        // FIXME: Move this to proper class.
+                        MessageBox.Show("Error: Can't delete temp CLI file. Message: " + ex.Message);
+                    }
                 }
             };            
 
