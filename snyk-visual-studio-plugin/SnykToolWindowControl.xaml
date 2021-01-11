@@ -3,6 +3,7 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:vsfx="clr-namespace:Microsoft.VisualStudio.Shell;assembly=Microsoft.VisualStudio.Shell.14.0"
              xmlns:local="clr-namespace:Snyk.VisualStudio.Extension.UI"          
              xmlns:icons="clr-namespace:Snyk.VisualStudio.Extension" 
              Background="{DynamicResource VsBrush.Window}"
@@ -105,13 +106,7 @@
                 <ColumnDefinition Width="6*" />
             </Grid.ColumnDefinitions>
             <local:SnykFilterableTree x:Name="vulnerabilitiesTree" SelectedVulnerabilityChanged="vulnerabilitiesTree_SelectetVulnerabilityChanged"/>
-            <GridSplitter Grid.Column="1" Width="5" HorizontalAlignment="Stretch" Background="{x:Null}">
-                <GridSplitter.Foreground>
-                    <LinearGradientBrush EndPoint="0.5,1" StartPoint="0.5,0">
-                        <GradientStop Color="Black" Offset="0"/>
-                        <GradientStop Color="White" Offset="1"/>
-                    </LinearGradientBrush>
-                </GridSplitter.Foreground>
+            <GridSplitter Grid.Column="1" Width="5" HorizontalAlignment="Stretch" Background="{DynamicResource VsBrush.Window}" Foreground="{DynamicResource VsBrush.WindowText}">
             </GridSplitter>
             <StackPanel Grid.Column="2" Name="vulnerabilityDetailsPanel" Visibility="Hidden">
                 <Border Name="severityBorder" Margin="0,15" Padding="5" BorderThickness="0" CornerRadius="0, 5, 5, 0" VerticalAlignment="Center" HorizontalAlignment="Left">
