@@ -3,6 +3,7 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
+             xmlns:vsfx="clr-namespace:Microsoft.VisualStudio.Shell;assembly=Microsoft.VisualStudio.Shell.14.0"
              xmlns:local="clr-namespace:Snyk.VisualStudio.Extension.UI"
              mc:Ignorable="d" 
              d:DesignHeight="300" d:DesignWidth="300">
@@ -22,19 +23,13 @@
     </UserControl.Resources>
     <Grid>
         <Grid.RowDefinitions>
-            <!--<RowDefinition Height="Auto"/>-->
             <RowDefinition Height="10*"/>
         </Grid.RowDefinitions>
         <Grid.ColumnDefinitions>
             <ColumnDefinition Width="*"/>
         </Grid.ColumnDefinitions>
-        <!--<ComboBox Grid.Row="0" IsEditable="True">
-            <CheckBox x:Name="cb1" Content="High" IsChecked="True"/>
-            <CheckBox x:Name="cb2" Content="Medium" IsChecked="True"/>
-            <CheckBox x:Name="cb3" Content="Low" IsChecked="True"/>
-        </ComboBox>-->
         <TreeView Grid.Row="1" Name="vulnerabilitiesTree"  SelectedItemChanged="vulnerabilitiesTree_SelectedItemChanged"
-                  Background="{DynamicResource VsBrush.Window}" Foreground="{DynamicResource VsBrush.WindowText}" 
+                  Style="{DynamicResource {x:Static vsfx:VsResourceKeys.ThemedDialogTreeViewStyleKey}}"
                   HorizontalAlignment="Stretch" VerticalAlignment="Stretch" 
                   ScrollViewer.VerticalScrollBarVisibility="Auto" 
                   ScrollViewer.HorizontalScrollBarVisibility="Auto" 
@@ -45,7 +40,7 @@
                     <StackPanel Orientation="Horizontal">
                         <Image x:Name="icon" SnapsToDevicePixels="True" Stretch="None" Margin="0, 0, 5, 0"  
                                Source="{Binding Icon, Converter={StaticResource ImageConverter}}"/>
-                        <TextBlock Text="{Binding Title}"/>
+                        <TextBlock Text="{Binding Title}" Foreground="{DynamicResource VsBrush.WindowText}"/>
                     </StackPanel>
                 </HierarchicalDataTemplate>
             </TreeView.ItemTemplate>

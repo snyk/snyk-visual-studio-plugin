@@ -133,6 +133,11 @@ namespace Snyk.VisualStudio.Extension.UI
                 }
             });
         }
+
+        private void TreeViewItem_Selected(object sender, RoutedEventArgs e)
+        {
+            MessageBox.Show(e.ToString());
+        }
     }
 
     public class VulnerabilityTreeNode
