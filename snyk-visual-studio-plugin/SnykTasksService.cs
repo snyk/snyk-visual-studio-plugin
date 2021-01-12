@@ -202,8 +202,10 @@ namespace Snyk.VisualStudio.Extension.UI
             currentTask = Task.Run(() =>
             {                
                 try
-                {                   
-                    SnykCliDownloader.NewInstance().Download(progressWorker: progressWorker);
+                {
+                    var cliDownloader = new SnykCliDownloader(package.ActivityLogger);
+
+                    cliDownloader.Download(progressWorker: progressWorker);
                 }
                 catch (Exception exception)
                 {
