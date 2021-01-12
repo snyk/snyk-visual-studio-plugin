@@ -53,6 +53,8 @@ namespace Snyk.VisualStudio.Extension
 
         private static SnykVSPackage instance;
 
+        private SnykActivityLogger activityLogger;
+
         /// <summary>
         /// Initializes a new instance of the <see cref="SnykVSPackage"/> class.
         /// </summary>
@@ -95,7 +97,15 @@ namespace Snyk.VisualStudio.Extension
             {
                 return SnykGeneralOptionsDialogPage;
             }
-        }               
+        }    
+        
+        public SnykActivityLogger ActivityLogger
+        {
+            get
+            {
+                return activityLogger;
+            }
+        }
 
         public void ShowToolWindow()
         {
@@ -140,24 +150,34 @@ namespace Snyk.VisualStudio.Extension
         {
             base.Initialize();
 
+            activityLogger = new SnykActivityLogger(this);
+
+            activityLogger.LogInformation("Initialize Snyk services");
+            
             SnykTasksService.Initialize(this);
             SnykSolutionService.Initialize(this);
             SnykToolWindowCommand.Initialize(this);
             SnykGeneralOptionsDialogPage.Initialize(this);
 
-            GetToolWindow().Package = this;
+            GetToolWindow().Package = this;            
 
             InitializeEventListeners();            
         }
 
         private void InitializeEventListeners()
         {
+            activityLogger.LogInformation("InitializeEventListeners method");
+
             var toolWindow = GetToolWindow();
             var tasksService = SnykTasksService.Instance();
-            var solutionEvents = SnykSolutionService.Instance.SolutionEvents;            
+            var solutionEvents = SnykSolutionService.Instance.SolutionEvents;
+
+            activityLogger.LogInformation("Initialize Solultion Event Listeners");
 
             solutionEvents.AfterBackgroundSolutionLoadComplete += toolWindow.OnAfterBackgroundSolutionLoadComplete;
-            solutionEvents.AfterCloseSolution += toolWindow.OnAfterCloseSolution;            
+            solutionEvents.AfterCloseSolution += toolWindow.OnAfterCloseSolution;
+
+            activityLogger.LogInformation("Initialize CLI Event Listeners");
 
             tasksService.ScanError += toolWindow.OnDisplayError;
             tasksService.ScanningCancelled += toolWindow.OnScanningCancelled;
@@ -165,10 +185,14 @@ namespace Snyk.VisualStudio.Extension
             tasksService.ScanningUpdate += toolWindow.OnScanningUpdate;
             tasksService.ScanningFinished += toolWindow.OnOnScanningFinished;
 
+            activityLogger.LogInformation("Initialize Download Event Listeners");
+
             tasksService.DownloadStarted += toolWindow.OnDownloadStarted;
             tasksService.DownloadFinished += toolWindow.OnDownloadFinished;
             tasksService.DownloadUpdate += toolWindow.OnDownloadUpdate;
             tasksService.DownloadCancelled += toolWindow.OnDownloadCancelled;
+
+            activityLogger.LogInformation("Initialize ToolWindow Display Event Listeners");
 
             WindowVisibilityEvents visibilityEvents = (DTE?.Events as Events2)?.WindowVisibilityEvents;
 

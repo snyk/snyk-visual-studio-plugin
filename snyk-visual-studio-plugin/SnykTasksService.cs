@@ -50,20 +50,28 @@ namespace Snyk.VisualStudio.Extension.UI
             instance = new SnykTasksService();
 
             instance.package = vsPackage;
+
+            instance.Logger.LogInformation("SnykTasksService initialized");
         }        
 
         public void CancelCurrentTask()
         {
             if (tokenSource != null)
             {
+                Logger.LogInformation("Cancel current task");
+
                 tokenSource.Cancel();
             }            
         }
 
         public void Scan()
-        {            
+        {
+            Logger.LogInformation("Enter Scan method");
+
             if (currentTask != null && currentTask.Status == TaskStatus.Running)
             {
+                Logger.LogInformation("There is already a task in progress");
+
                 return;
             }
 
@@ -74,6 +82,8 @@ namespace Snyk.VisualStudio.Extension.UI
                 TasksService = this,
                 TokenSource = tokenSource
             };
+
+            Logger.LogInformation("Start scan task");
 
             currentTask = Task.Run(() =>
             {
@@ -87,15 +97,26 @@ namespace Snyk.VisualStudio.Extension.UI
                     {
                         OnScanError("No open solution.");
 
+                        Logger.LogInformation("Solution not opened");
+
                         return;
                     }
 
-                    progressWorker.CancelIfCancellationRequested();                    
+                    progressWorker.CancelIfCancellationRequested();
+
+                    var options = package.Options;
 
                     var cli = new SnykCli
                     {
-                        Options = package.Options
+                        Options = options
                     };
+
+                    Logger.LogInformation($"Snyk Extension options");
+                    Logger.LogInformation($"API token = {options.ApiToken}");
+                    Logger.LogInformation($"Custom Endpoint = {options.CustomEndpoint}");
+                    Logger.LogInformation($"Organization = {options.Organization}");
+                    Logger.LogInformation($"Ignore Unknown CA = {options.IgnoreUnknownCA}");
+                    Logger.LogInformation($"Additional Options = {options.AdditionalOptions}");
 
                     progressWorker.CancelIfCancellationRequested();
 
@@ -103,38 +124,55 @@ namespace Snyk.VisualStudio.Extension.UI
                     {
                         string solutionPath = package.SolutionService.GetSolutionPath();
 
+                        Logger.LogInformation($"Solution path = {solutionPath}");
+                        Logger.LogInformation("Start scan");
+
                         CliResult cliResult = cli.Scan(solutionPath);
 
                         progressWorker.CancelIfCancellationRequested();
 
                         if (!cliResult.IsSuccessful())
                         {
+                            Logger.LogInformation("Scan is successful");
+
                             OnScanError(cliResult.Error);
                         }
                         else
                         {
+                            Logger.LogInformation("Scan update");
+
                             OnScanningUpdate(cliResult);
-                        }
+                        }                        
 
                         progressWorker.CancelIfCancellationRequested();
+
+                        Logger.LogInformation("Scan finished");
                     }
-                    catch (OperationCanceledException e)
+                    catch (OperationCanceledException operatioException)
                     {
-                        OnScanningCancelled();
+                        Logger.LogError(operatioException.Message);
+
+                        OnScanningCancelled();                        
                     }
                     catch (Exception scanException)
                     {
-                        OnScanError(scanException.Message);
+                        Logger.LogError(scanException.Message);
+
+                        OnScanError(scanException.Message);                        
                     }
 
                     OnScanningFinished();
                 }
                 catch (OperationCanceledException e)
                 {
-                    OnScanningCancelled();
+                    Logger.LogError(e.Message);
+
+                    OnScanningCancelled();                    
                 }
                 catch (Exception exception)
                 {
+                    Logger.LogError(exception.Message);
+
                     OnScanningCancelled();                    
                 }
             }, progressWorker.TokenSource.Token);   
@@ -142,8 +180,12 @@ namespace Snyk.VisualStudio.Extension.UI
         
         public void Download()
         {
+            Logger.LogInformation("Enter Download method");
+
             if (currentTask != null && currentTask.Status == TaskStatus.Running)
             {
+                Logger.LogInformation("There is already a task in progress");
+
                 return;
             }
 
@@ -155,6 +197,8 @@ namespace Snyk.VisualStudio.Extension.UI
                 TokenSource = tokenSource
             };
 
+            Logger.LogInformation("Start run task");
+
             currentTask = Task.Run(() =>
             {                
                 try
@@ -163,7 +207,9 @@ namespace Snyk.VisualStudio.Extension.UI
                 }
                 catch (Exception exception)
                 {
-                    OnDownloadCancelled(exception.Message);
+                    Logger.LogInformation(exception.Message);
+
+                    OnDownloadCancelled(exception.Message);                    
                 }
             }, progressWorker.TokenSource.Token);
         }
@@ -187,6 +233,14 @@ namespace Snyk.VisualStudio.Extension.UI
         private void OnScanError(string message) => OnScanError(new CliError(message));
 
         private void OnScanError(CliError error) => ScanError?.Invoke(this, new SnykCliScanEventArgs(error));
+
+        private SnykActivityLogger Logger
+        {
+            get
+            {
+                return package.ActivityLogger;
+            }
+        }        
     }
 
     public class SnykCliScanEventArgs : EventArgs
