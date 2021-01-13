@@ -14,7 +14,7 @@ namespace Snyk.VisualStudio.Extension.Settings
         {
             get
             {
-                var generalSettingsUserControl = new SnykGeneralSettingsUserControl();
+                var generalSettingsUserControl = new SnykGeneralSettingsUserControl(package.ActivityLogger);
                 
                 generalSettingsUserControl.optionsDialogPage = this;
                 generalSettingsUserControl.Initialize();

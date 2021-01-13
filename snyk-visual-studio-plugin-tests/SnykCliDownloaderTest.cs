@@ -10,7 +10,7 @@ namespace Snyk.VisualStudio.Extension.Tests
         [TestMethod]
         public void GetLatestReleaseInfo()
         {
-            var cliDownloader = new SnykCliDownloader();
+            var cliDownloader = new SnykCliDownloader(null);
 
             LatestReleaseInfo latestReleaseInfo = cliDownloader.GetLatestReleaseInfo();
             
@@ -20,7 +20,7 @@ namespace Snyk.VisualStudio.Extension.Tests
         [TestMethod]
         public void Download()
         {
-            var cliDownloader = new SnykCliDownloader();
+            var cliDownloader = new SnykCliDownloader(null);
 
             string tempCliPath = Path.Combine(Path.GetTempPath(), SnykCli.CliFileName);
 
