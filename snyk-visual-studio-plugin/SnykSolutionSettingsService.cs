@@ -12,9 +12,13 @@ namespace Snyk.VisualStudio.Extension.Settings
 
         private readonly SnykSolutionService solutionService;
 
+        private readonly SnykActivityLogger logger;
+
         public SnykSolutionSettingsService(SnykSolutionService solutionService)
         {
             this.solutionService = solutionService;
+
+            this.logger = solutionService.Logger;
         }
 
         public static SnykSolutionSettingsService NewInstance(SnykSolutionService solutionService)
@@ -29,10 +33,16 @@ namespace Snyk.VisualStudio.Extension.Settings
 
         public string GetAdditionalOptions()
         {
+            logger.LogInformation("Enter GetAdditionalOptions method");
+
             string projectUniqueName = GetProjectUniqueName();
+
+            logger.LogInformation($"Project unique name: {projectUniqueName}");
 
             if (String.IsNullOrEmpty(projectUniqueName))
             {
+                logger.LogInformation("Project unique name is empty. Return from method");
+
                 return "";
             }
 
@@ -40,6 +50,8 @@ namespace Snyk.VisualStudio.Extension.Settings
                        
             if (!solutionService.IsSolutionOpen() || !settingsStore.CollectionExists(SnykProjectSettingsCollectionName))
             {
+                logger.LogInformation($"Solution not open or {SnykProjectSettingsCollectionName} collection not exists. Return from method.");
+
                 return "";
             }
 
@@ -47,11 +59,13 @@ namespace Snyk.VisualStudio.Extension.Settings
 
             try
             {
+                logger.LogInformation("Try get additional options for project");
+
                 additionalOptions = settingsStore.GetString(SnykProjectSettingsCollectionName, projectUniqueName);
             }
             catch (Exception exception)
             {
-                Console.WriteLine(exception.Message);
+                logger.LogError(exception.Message);
             }
 
             return additionalOptions;
@@ -59,7 +73,11 @@ namespace Snyk.VisualStudio.Extension.Settings
 
         public void SaveAdditionalOptions(string additionalOptions)
         {
+            logger.LogInformation("Enter SaveAdditionalOptions method");
+
             string projectUniqueName = GetProjectUniqueName();
+
+            logger.LogInformation($"Project unique name: {projectUniqueName}");
 
             if (!String.IsNullOrEmpty(projectUniqueName))
             {
@@ -68,12 +86,18 @@ namespace Snyk.VisualStudio.Extension.Settings
                     additionalOptions = "";
                 }
 
+                logger.LogInformation($"Save additional options for : {SnykProjectSettingsCollectionName} collection");
+
                 GetUserSettingsStore().SetString(SnykProjectSettingsCollectionName, projectUniqueName, additionalOptions);
             }
+
+            logger.LogInformation("Leave SaveAdditionalOptions method");
         }
 
         public string GetProjectUniqueName()
         {
+            logger.LogInformation("Enter GetProjectUniqueName method");
+
             Projects projects = solutionService.GetProjects();
 
             if (projects.Count == 0)
@@ -83,11 +107,15 @@ namespace Snyk.VisualStudio.Extension.Settings
 
             Project project = projects.Item(1);
 
+            logger.LogInformation($"Leave GetProjectUniqueName method. Project unique name: {project.UniqueName}");
+
             return project.UniqueName;
         }
 
         private WritableSettingsStore GetUserSettingsStore()
         {
+            logger.LogInformation("Enter GetUserSettingsStore method");
+
             SettingsManager settingsManager = new ShellSettingsManager(solutionService.ServiceProvider);
 
             var settingsStore = settingsManager.GetWritableSettingsStore(SettingsScope.UserSettings);
@@ -96,6 +124,8 @@ namespace Snyk.VisualStudio.Extension.Settings
             {
                 settingsStore.CreateCollection(SnykProjectSettingsCollectionName);
             }
+
+            logger.LogInformation("Leave GetUserSettingsStore method");
 
             return settingsStore;
         }                                     

@@ -52,6 +52,14 @@ namespace Snyk.VisualStudio.Extension.Services
             }
         }
 
+        public SnykActivityLogger Logger
+        {
+            get
+            {
+                return logger;
+            }
+        }
+
         public SnykSolutionSettingsService SolutionSettingsService
         {
             get
