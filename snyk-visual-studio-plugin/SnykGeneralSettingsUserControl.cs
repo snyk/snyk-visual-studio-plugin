@@ -13,24 +13,36 @@ namespace Snyk.VisualStudio.Extension.UI
 
         internal SnykGeneralOptionsDialogPage optionsDialogPage;
 
-        public SnykGeneralSettingsUserControl()
+        private SnykActivityLogger logger;
+
+        public SnykGeneralSettingsUserControl(SnykActivityLogger logger)
         {
             InitializeComponent();
+
+            this.logger = logger;
         }
         
         public void Initialize()
         {
+            logger.LogInformation("Enter Initialize method");
+
             tokenTextBox.Text = optionsDialogPage.ApiToken;
             customEndpointTextBox.Text = optionsDialogPage.CustomEndpoint;
             organizationTextBox.Text = optionsDialogPage.Organization;
             ignoreUnknownCACheckBox.Checked = optionsDialogPage.IgnoreUnknownCA;
+
+            logger.LogInformation("Leave Initialize method");
         }
         
         private void authenticateButton_Click(object sender, EventArgs eventArgs)            
-        {            
+        {
+            logger.LogInformation("Enter authenticateButton_Click method");
+
             this.authProgressBar.Visible = true;
             this.tokenTextBox.Enabled = false;
             this.authenticateButton.Enabled = false;
+
+            logger.LogInformation("Start run task");
 
             Task.Run(() =>
             {
@@ -39,6 +51,8 @@ namespace Snyk.VisualStudio.Extension.UI
 
                 Action<string> successCallback = (apiToken) =>
                 {
+                    logger.LogInformation("Enter authenticate successCallback");
+
                     this.authProgressBar.Invoke((MethodInvoker)delegate
                     {
                         this.authProgressBar.Visible = false;
@@ -58,6 +72,8 @@ namespace Snyk.VisualStudio.Extension.UI
 
                 Action<string> errorCallback = (errorMessage) =>
                 {
+                    logger.LogInformation("Enter authenticate errorCallback");
+
                     this.authProgressBar.Invoke((MethodInvoker)delegate
                     {
                         this.authProgressBar.Visible = false;
@@ -86,12 +102,18 @@ namespace Snyk.VisualStudio.Extension.UI
 
                 if (SnykCli.IsCliExists())
                 {
+                    logger.LogInformation("CLI exists. Calling SetupApiToken method");
+
                     SetupApiToken(successCallback, errorCallback);
                 }
                 else
                 {
+                    logger.LogInformation("CLI not exists. Download CLI before get Api token");
+
                     tasksService.DownloadFinished += (obj, args) =>
                     {
+                        logger.LogInformation("CLI downloaded. Calling SetupApiToken method");
+
                         SetupApiToken(successCallback, errorCallback);
                     };
 
@@ -101,7 +123,9 @@ namespace Snyk.VisualStudio.Extension.UI
         }                
         
         private void SetupApiToken(Action<string> successCallback, Action<string> errorCallback)
-        {           
+        {
+            logger.LogInformation("Enter SetupApiToken method");
+
             var cli = new SnykCli
             {
                 Options = optionsDialogPage
@@ -111,23 +135,33 @@ namespace Snyk.VisualStudio.Extension.UI
 
             try
             {
+                logger.LogInformation("Try get Api toke");
+
                 apiToken = cli.GetApiToken();
 
                 if (String.IsNullOrEmpty(apiToken))
-                {                    
+                {
+                    logger.LogInformation("Api toke is null or empty. Try to authenticate via snyk auth");
+
                     string authResultMessage = cli.Authenticate();
 
                     if (authResultMessage.Contains("Your account has been authenticated. Snyk is now ready to be used."))
                     {
+                        logger.LogInformation("Snyk auth executed successfully. Try to get Api token");
+
                         apiToken = cli.GetApiToken();
                     }
                     else
                     {
+                        logger.LogInformation($"Snyk auth executed with error: {authResultMessage}");
+
                         errorCallback(authResultMessage);
 
                         return;
                     }
                 }
+
+                logger.LogInformation("Validate Api token GUID");
 
                 if (!IsValidGuid(apiToken))
                 {
@@ -137,8 +171,12 @@ namespace Snyk.VisualStudio.Extension.UI
                 }
 
                 successCallback(apiToken);
+
+                logger.LogInformation("Leave SetupApiToken method");
             } catch (Exception exception)
             {
+                logger.LogError(exception.Message);
+
                 errorCallback(exception.Message);
             }                                    
         }
