@@ -13,13 +13,19 @@ namespace Snyk.VisualStudio.Extension.Services
 
         private SnykSolutionSettingsService solutionSettingsService;
 
+        private SnykActivityLogger logger;
+
         private SnykSolutionService() { }
 
-        private SnykSolutionService(IServiceProvider serviceProvider)
+        private SnykSolutionService(SnykVSPackage package)
         {
-            this.ServiceProvider = serviceProvider;
+            this.ServiceProvider = (IServiceProvider) package;
 
-            IVsSolution vsSolution = serviceProvider.GetService(typeof(SVsSolution)) as IVsSolution;
+            this.logger = package.ActivityLogger;
+
+            logger.LogInformation("Initialize solution events");
+
+            IVsSolution vsSolution = ServiceProvider.GetService(typeof(SVsSolution)) as IVsSolution;
             vsSolution.SetProperty((int)__VSPROPID4.VSPROPID_ActiveSolutionLoadManager, this);
 
             SolutionEvents = new SnykVsSolutionLoadEvents();
@@ -28,11 +34,11 @@ namespace Snyk.VisualStudio.Extension.Services
             vsSolution.AdviseSolutionEvents(SolutionEvents, out pdwCookie);
         }
 
-        public static SnykSolutionService Initialize(IServiceProvider serviceProvider)
+        public static SnykSolutionService Initialize(SnykVSPackage package)
         {
             if (instance == null)
             {
-                instance = new SnykSolutionService(serviceProvider);
+                instance = new SnykSolutionService(package);
             }
 
             return instance;
@@ -67,15 +73,21 @@ namespace Snyk.VisualStudio.Extension.Services
 
         public String GetSolutionPath()
         {
+            logger.LogInformation("Enter GetSolutionPath method");
+
             DTE dte = GetDTE();
             var dteSolution = dte.Solution;
 
             if (dteSolution.IsDirty)
             {
+                logger.LogInformation("Solution is 'dirty'. Get solution path from first project full name");
+
                 return dteSolution.Projects.Item(1).FullName;
             }
             else
             {
+                logger.LogInformation("Get solution path from solution full name");
+
                 return Directory.GetParent(dteSolution.FullName).FullName;
             }            
         }
