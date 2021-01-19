@@ -1,10 +1,10 @@
 ﻿using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Snyk.VisualStudio.Extension.CLI;
-using Snyk.VisualStudio.Extension.Services;
 using Snyk.VisualStudio.Extension.Settings;
 using System;
 using System.IO;
 using System.Reflection;
+using System.Text.RegularExpressions;
 
 namespace Snyk.VisualStudio.Extension.Tests
 {   
@@ -13,8 +13,7 @@ namespace Snyk.VisualStudio.Extension.Tests
     {
         [AssemblyInitialize]
         public static void AssemblyInit(TestContext context)
-        {
-            SnykSolutionService.Initialize(new SnykVSPackage());
+        {           
         }
 
         [TestMethod]
@@ -22,7 +21,7 @@ namespace Snyk.VisualStudio.Extension.Tests
         {
             var cli = new SnykCli
             {
-                Options = new DummySnykOptions()
+                Options = new SnykDummyOptions()
             };
 
             Assert.AreEqual("--json test", cli.BuildArguments());
@@ -33,7 +32,7 @@ namespace Snyk.VisualStudio.Extension.Tests
         {
             var cli = new SnykCli
             {
-                Options = new DummySnykOptions()
+                Options = new SnykDummyOptions()
                 {
                     CustomEndpoint = "https://github.com/snyk/"
                 }
@@ -47,7 +46,7 @@ namespace Snyk.VisualStudio.Extension.Tests
         {
             var cli = new SnykCli
             {
-                Options = new DummySnykOptions()
+                Options = new SnykDummyOptions()
                 {
                     IgnoreUnknownCA = true
                 }
@@ -61,7 +60,7 @@ namespace Snyk.VisualStudio.Extension.Tests
         {
             var cli = new SnykCli
             {
-                Options = new DummySnykOptions()
+                Options = new SnykDummyOptions()
                 {
                     Organization = "test-snyk-organization"
                 }
@@ -75,7 +74,7 @@ namespace Snyk.VisualStudio.Extension.Tests
         {
             var cli = new SnykCli
             {
-                Options = new DummySnykOptions()
+                Options = new SnykDummyOptions()
                 {
                     AdditionalOptions = "--file=C:\build.pom"
                 }
@@ -89,13 +88,13 @@ namespace Snyk.VisualStudio.Extension.Tests
         {
             var cli = new SnykCli
             {
-                Options = new DummySnykOptions()
+                Options = new SnykDummyOptions()
                 {
                     CustomEndpoint = "https://github.com/snyk/",
                     IgnoreUnknownCA = true,
                     Organization = "test-snyk-organization",
                     AdditionalOptions = "--file=C:\build.pom"
-                }               
+                }
             };
 
             Assert.AreEqual("--json test --api=https://github.com/snyk/ --insecure --org=test-snyk-organization --file=C:\build.pom", cli.BuildArguments());
@@ -106,7 +105,7 @@ namespace Snyk.VisualStudio.Extension.Tests
         {
             var cli = new SnykCli
             {
-                Options = new DummySnykOptions()
+                Options = new SnykDummyOptions()
             };
 
             Assert.IsTrue(cli.IsSuccessCliJsonString("{\"vulnerabilities\": []}"));
@@ -117,7 +116,7 @@ namespace Snyk.VisualStudio.Extension.Tests
         {
             var cli = new SnykCli
             {
-                Options = new DummySnykOptions()
+                Options = new SnykDummyOptions()
             };
 
             Assert.IsFalse(cli.IsSuccessCliJsonString("{\"error\": \"Error details.\"}"));
@@ -128,7 +127,7 @@ namespace Snyk.VisualStudio.Extension.Tests
         {
             var cli = new SnykCli
             {
-                Options = new DummySnykOptions()
+                Options = new SnykDummyOptions()
             };
 
             var cliResult = cli.ConvertRawCliStringToCliResult(GetFileContents("VulnerabilitiesArray.json"));
@@ -141,7 +140,7 @@ namespace Snyk.VisualStudio.Extension.Tests
         {
             var cli = new SnykCli
             {
-                Options = new DummySnykOptions()
+                Options = new SnykDummyOptions()
             };
 
             var cliResult = cli.ConvertRawCliStringToCliResult(GetFileContents("VulnerabilitiesSingleObject.json"));
@@ -154,7 +153,7 @@ namespace Snyk.VisualStudio.Extension.Tests
         {
             var cli = new SnykCli
             {
-                Options = new DummySnykOptions()
+                Options = new SnykDummyOptions()
             };
 
             var cliResult = cli.ConvertRawCliStringToCliResult(GetFileContents("ErrorJsonObject.json"));
@@ -170,7 +169,7 @@ namespace Snyk.VisualStudio.Extension.Tests
         {
             var cli = new SnykCli
             {
-                Options = new DummySnykOptions()
+                Options = new SnykDummyOptions()
             };
 
             var cliResult = cli.ConvertRawCliStringToCliResult(GetFileContents("ErrorPlainText.json"));
@@ -184,9 +183,9 @@ namespace Snyk.VisualStudio.Extension.Tests
         private string GetFileContents(string resourceFileName)
         {
             var assembly = Assembly.GetExecutingAssembly();
-            var resourceFilePath = $"Snyk.VisualStudio.Extension.Tests.Resources.{resourceFileName}";
+            var resourceFilePath = $"Resources.{resourceFileName}";
 
-            using (var inputStream = assembly.GetManifestResourceStream(resourceFilePath))
+            using (var inputStream = assembly.GetEmbeddedResourceStream(resourceFilePath))
             {
                 if (inputStream != null)
                 {
@@ -197,9 +196,33 @@ namespace Snyk.VisualStudio.Extension.Tests
             }
 
             return String.Empty;
+        }        
+    }    
+
+    static class AssemblyExtensions
+    {
+        public static Stream GetEmbeddedResourceStream(this Assembly assembly, string relativeResourcePath)
+        {
+            if (string.IsNullOrEmpty(relativeResourcePath))
+            {
+                throw new ArgumentNullException("relativeResourcePath");
+            }
+
+            var resourcePath = String.Format("{0}.{1}",
+                Regex.Replace(assembly.ManifestModule.Name, @"\.(exe|dll)$",
+                      string.Empty, RegexOptions.IgnoreCase), relativeResourcePath);
+
+            var stream = assembly.GetManifestResourceStream(resourcePath);
+
+            if (stream == null)
+            {
+                throw new ArgumentException(String.Format("The specified embedded resource \"{0}\" is not found.", relativeResourcePath));
+            }
+
+            return stream;
         }
     }
-    
+
     class DummyServiceProvider : IServiceProvider
     {
         public object GetService(Type serviceType)
@@ -208,7 +231,7 @@ namespace Snyk.VisualStudio.Extension.Tests
         }
     }
 
-    class DummySnykOptions : ISnykOptions
+    class SnykDummyOptions : ISnykOptions
     {
         private string apiToken = "";
         private string customEndpoint = "";
@@ -216,9 +239,9 @@ namespace Snyk.VisualStudio.Extension.Tests
         private bool ignoreUnknownCA = false;
         private string additionalOptions = "";
 
-        public DummySnykOptions() { }
+        public SnykDummyOptions() { }
 
-        public DummySnykOptions(string apiToken = "", 
+        public SnykDummyOptions(string apiToken = "", 
             string customEndpoint = "", 
             string organization = "", 
             string additionalOptions = "", 

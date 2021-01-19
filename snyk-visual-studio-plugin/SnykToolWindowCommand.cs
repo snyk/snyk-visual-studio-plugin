@@ -78,7 +78,7 @@ namespace Snyk.VisualStudio.Extension.UI
         {
             get
             {
-                return (this.package as SnykVSPackage).ActivityLogger;
+                return (this.package as ISnykServiceProvider).ActivityLogger;
             }
         }
 

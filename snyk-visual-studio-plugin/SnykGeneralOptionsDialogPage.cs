@@ -8,13 +8,13 @@ namespace Snyk.VisualStudio.Extension.Settings
     [Guid("d45468c1-33d2-4dca-9780-68abaedf95e7")]
     public class SnykGeneralOptionsDialogPage : DialogPage, ISnykOptions
     {
-        private SnykVSPackage package;
+        private ISnykServiceProvider serviceProvider;
 
         protected override IWin32Window Window
         {
             get
             {
-                var generalSettingsUserControl = new SnykGeneralSettingsUserControl(package.ActivityLogger);
+                var generalSettingsUserControl = new SnykGeneralSettingsUserControl(serviceProvider.ActivityLogger);
                 
                 generalSettingsUserControl.optionsDialogPage = this;
                 generalSettingsUserControl.Initialize();
@@ -23,16 +23,16 @@ namespace Snyk.VisualStudio.Extension.Settings
             }
         }
 
-        public void Initialize(SnykVSPackage package)
+        public void Initialize(ISnykServiceProvider provider)
         {
-            this.package = package;
+            this.serviceProvider = provider;
         }
 
-        public SnykVSPackage Package
+        public ISnykServiceProvider ServiceProvider
         {
             get
             {
-                return package;
+                return serviceProvider;
             }
         }
 
@@ -48,7 +48,7 @@ namespace Snyk.VisualStudio.Extension.Settings
         {
             get
             {
-                var settingsService = package.SolutionService.SolutionSettingsService;
+                var settingsService = serviceProvider.SolutionService.SolutionSettingsService;
 
                 return settingsService.GetAdditionalOptions();
             }

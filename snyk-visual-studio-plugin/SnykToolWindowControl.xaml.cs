@@ -108,7 +108,7 @@ namespace Snyk.VisualStudio.Extension.UI
             HideAllControls();            
         }
         
-        public SnykVSPackage Package { get; internal set; }        
+        public ISnykServiceProvider ServiceProvider { get; internal set; }        
 
         public SnykFilterableTree VulnerabilitiesTree
         {
@@ -214,7 +214,7 @@ namespace Snyk.VisualStudio.Extension.UI
 
                 this.resultsGrid.Visibility = Visibility.Collapsed;
 
-                Package.ShowToolWindow();                
+                ServiceProvider.ShowToolWindow();                
             });
         }
 

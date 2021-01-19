@@ -15,13 +15,13 @@ namespace Snyk.VisualStudio.Extension
             this.serviceProvider = serviceProvider;
         }        
 
-        public void LogInformation(string message) => 
+        public virtual void LogInformation(string message) => 
             GetActivityLog()?.LogEntry((UInt32)__ACTIVITYLOG_ENTRYTYPE.ALE_INFORMATION,
                 this.ToString(),
                 string.Format(CultureInfo.CurrentCulture,
                 LogMessageTemplate, message));
 
-        public void LogError(string message) =>
+        public virtual void LogError(string message) =>
             GetActivityLog()?.LogEntry((UInt32)__ACTIVITYLOG_ENTRYTYPE.ALE_ERROR,
                 this.ToString(),
                 string.Format(CultureInfo.CurrentCulture,

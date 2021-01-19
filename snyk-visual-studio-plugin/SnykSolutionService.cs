@@ -17,28 +17,20 @@ namespace Snyk.VisualStudio.Extension.Services
 
         private SnykSolutionService() { }
 
-        private SnykSolutionService(SnykVSPackage package)
+        private SnykSolutionService(ISnykServiceProvider serviceProvider)
         {
-            this.ServiceProvider = (IServiceProvider) package;
+            this.ServiceProvider = serviceProvider;
 
-            this.logger = package.ActivityLogger;
-
-            logger.LogInformation("Initialize solution events");
-
-            IVsSolution vsSolution = ServiceProvider.GetService(typeof(SVsSolution)) as IVsSolution;
-            vsSolution.SetProperty((int)__VSPROPID4.VSPROPID_ActiveSolutionLoadManager, this);
-
-            SolutionEvents = new SnykVsSolutionLoadEvents();
-
-            uint pdwCookie;
-            vsSolution.AdviseSolutionEvents(SolutionEvents, out pdwCookie);
+            this.logger = serviceProvider.ActivityLogger;            
         }
 
-        public static SnykSolutionService Initialize(SnykVSPackage package)
+        public static SnykSolutionService Initialize(ISnykServiceProvider serviceProvider)
         {
             if (instance == null)
             {
-                instance = new SnykSolutionService(package);
+                instance = new SnykSolutionService(serviceProvider);
+
+                instance.InitializeSolutionEvents();
             }
 
             return instance;
@@ -73,7 +65,7 @@ namespace Snyk.VisualStudio.Extension.Services
             }
         }
 
-        public SnykVsSolutionLoadEvents SolutionEvents { get; }
+        public SnykVsSolutionLoadEvents SolutionEvents { get; set; }
 
         public Projects GetProjects() => GetDTE().Solution.Projects;
 
@@ -100,7 +92,7 @@ namespace Snyk.VisualStudio.Extension.Services
             }            
         }
 
-        public IServiceProvider ServiceProvider { get; set; }
+        public ISnykServiceProvider ServiceProvider { get; set; }
 
         public int OnBeforeOpenProject(ref Guid guidProjectID,
             ref Guid guidProjectType,
@@ -110,6 +102,21 @@ namespace Snyk.VisualStudio.Extension.Services
         public int OnDisconnect() => VSConstants.S_OK;
 
         private DTE GetDTE() => (DTE) this.ServiceProvider.GetService(typeof(DTE));
+
+        private void InitializeSolutionEvents()
+        {
+            logger.LogInformation("Enter InitializeSolutionEvents method");
+
+            IVsSolution vsSolution = ServiceProvider.GetService(typeof(SVsSolution)) as IVsSolution;
+            vsSolution.SetProperty((int)__VSPROPID4.VSPROPID_ActiveSolutionLoadManager, this);
+
+            SolutionEvents = new SnykVsSolutionLoadEvents();
+
+            uint pdwCookie;
+            vsSolution.AdviseSolutionEvents(SolutionEvents, out pdwCookie);
+
+            logger.LogInformation("Leave InitializeSolutionEvents method");
+        }
     }
     
     public class SnykVsSolutionLoadEvents : IVsSolutionLoadEvents, IVsSolutionEvents

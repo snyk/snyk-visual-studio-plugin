@@ -46,8 +46,8 @@ namespace Snyk.VisualStudio.Extension.UI
 
             Task.Run(() =>
             {
-                var package = optionsDialogPage.Package;
-                var tasksService = package.TasksService;
+                var serviceProvider = optionsDialogPage.ServiceProvider;
+                var tasksService = serviceProvider.TasksService;
 
                 Action<string> successCallback = (apiToken) =>
                 {
@@ -96,8 +96,8 @@ namespace Snyk.VisualStudio.Extension.UI
                         Path = ""
                     };
 
-                    package.ShowToolWindow();
-                    package.GetToolWindow().DisplayError(cliError);
+                    serviceProvider.ShowToolWindow();
+                    serviceProvider.GetToolWindow().DisplayError(cliError);
                 };
 
                 if (SnykCli.IsCliExists())
@@ -117,7 +117,7 @@ namespace Snyk.VisualStudio.Extension.UI
                         SetupApiToken(successCallback, errorCallback);
                     };
 
-                    package.TasksService.Download();
+                    serviceProvider.TasksService.Download();
                 }
             });            
         }                

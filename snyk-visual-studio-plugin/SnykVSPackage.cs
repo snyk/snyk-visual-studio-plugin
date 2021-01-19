@@ -44,7 +44,7 @@ namespace Snyk.VisualStudio.Extension
     [ProvideToolWindow(typeof(SnykToolWindow), Style = VsDockStyle.Tabbed)]
     [ProvideOptionPage(typeof(SnykGeneralOptionsDialogPage), "Snyk", "General settings", 1000, 1001, true)]
     [ProvideOptionPage(typeof(SnykProjectOptionsDialogPage), "Snyk", "Project settings", 1000, 1002, true)]
-    public sealed class SnykVSPackage : Package
+    public sealed class SnykVSPackage : Package, ISnykServiceProvider
     {
         /// <summary>
         /// SnykVSPackage GUID string.
@@ -81,15 +81,7 @@ namespace Snyk.VisualStudio.Extension
             {
                 return SnykTasksService.Instance();
             }
-        }
-
-        public DTE DTE
-        {
-            get
-            {
-                return (DTE)this.GetService(typeof(DTE));
-            }
-        }
+        }               
 
         public ISnykOptions Options
         {
@@ -132,13 +124,15 @@ namespace Snyk.VisualStudio.Extension
             return (SnykToolWindowControl)toolWindowPane.Content;
         }
 
+        private DTE GetDTE() => (DTE)this.GetService(typeof(DTE));
+
         private SnykGeneralOptionsDialogPage SnykGeneralOptionsDialogPage
         {
             get
             {
                 return (SnykGeneralOptionsDialogPage)GetDialogPage(typeof(SnykGeneralOptionsDialogPage));
             }            
-        }               
+        }        
 
         #region Package Members
 
@@ -159,7 +153,7 @@ namespace Snyk.VisualStudio.Extension
             SnykToolWindowCommand.Initialize(this);
             SnykGeneralOptionsDialogPage.Initialize(this);
 
-            GetToolWindow().Package = this;            
+            GetToolWindow().ServiceProvider = this;            
 
             InitializeEventListeners();            
         }
@@ -194,7 +188,7 @@ namespace Snyk.VisualStudio.Extension
 
             activityLogger.LogInformation("Initialize ToolWindow Display Event Listeners");
 
-            WindowVisibilityEvents visibilityEvents = (DTE?.Events as Events2)?.WindowVisibilityEvents;
+            WindowVisibilityEvents visibilityEvents = (GetDTE()?.Events as Events2)?.WindowVisibilityEvents;
 
             if (visibilityEvents != null)
             {

@@ -31,7 +31,7 @@ namespace Snyk.VisualStudio.Extension.UI
 
         private Task currentTask;
 
-        private SnykVSPackage package;
+        private ISnykServiceProvider serviceProvider;
 
         private SnykTasksService() { }
 
@@ -45,11 +45,11 @@ namespace Snyk.VisualStudio.Extension.UI
             return instance;
         }
 
-        public static void Initialize(SnykVSPackage vsPackage)
+        public static void Initialize(ISnykServiceProvider serviceProvider)
         {
             instance = new SnykTasksService();
 
-            instance.package = vsPackage;
+            instance.serviceProvider = serviceProvider;
 
             instance.Logger.LogInformation("SnykTasksService initialized");
         }        
@@ -93,7 +93,7 @@ namespace Snyk.VisualStudio.Extension.UI
                 {
                     progressWorker.CancelIfCancellationRequested();
 
-                    if (!package.SolutionService.IsSolutionOpen())
+                    if (!serviceProvider.SolutionService.IsSolutionOpen())
                     {
                         OnScanError("No open solution.");
 
@@ -104,7 +104,7 @@ namespace Snyk.VisualStudio.Extension.UI
 
                     progressWorker.CancelIfCancellationRequested();
 
-                    var options = package.Options;
+                    var options = serviceProvider.Options;
 
                     var cli = new SnykCli
                     {
@@ -122,7 +122,7 @@ namespace Snyk.VisualStudio.Extension.UI
 
                     try
                     {
-                        string solutionPath = package.SolutionService.GetSolutionPath();
+                        string solutionPath = serviceProvider.SolutionService.GetSolutionPath();
 
                         Logger.LogInformation($"Solution path = {solutionPath}");
                         Logger.LogInformation("Start scan");
@@ -203,7 +203,7 @@ namespace Snyk.VisualStudio.Extension.UI
             {                
                 try
                 {
-                    var cliDownloader = new SnykCliDownloader(package.ActivityLogger);
+                    var cliDownloader = new SnykCliDownloader(serviceProvider.ActivityLogger);
 
                     cliDownloader.Download(progressWorker: progressWorker);
                 }
@@ -240,7 +240,7 @@ namespace Snyk.VisualStudio.Extension.UI
         {
             get
             {
-                return package.ActivityLogger;
+                return serviceProvider.ActivityLogger;
             }
         }        
     }
