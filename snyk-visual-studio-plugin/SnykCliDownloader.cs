@@ -37,22 +37,22 @@ namespace Snyk.VisualStudio.Extension.CLI
 
         public void Download(string cliFileDestinationPath = null, IProgressWorker progressWorker = null)
         {
-            logger?.LogError("Enter Download method");
+            logger?.LogInformation("Enter Download method");
 
             if (cliFileDestinationPath == null)
             {
                 cliFileDestinationPath = SnykCli.GetSnykCliPath();
             }
 
-            logger?.LogError($"CLI File Destination Path: {cliFileDestinationPath}");
+            logger?.LogInformation($"CLI File Destination Path: {cliFileDestinationPath}");
 
             if (!File.Exists(cliFileDestinationPath))
             {
-                logger?.LogError("CLI file not exists. Starting download");
+                logger?.LogInformation("CLI file not exists. Starting download");
 
-                progressWorker.DownloadStarted();
+                progressWorker?.DownloadStarted();
 
-                progressWorker.CancelIfCancellationRequested();
+                progressWorker?.CancelIfCancellationRequested();
 
                 LatestReleaseInfo latestReleaseInfo = GetLatestReleaseInfo();
 
@@ -70,7 +70,7 @@ namespace Snyk.VisualStudio.Extension.CLI
 
                     string snykDirectoryPath = SnykCli.GetSnykDirectoryPath();
 
-                    progressWorker.CancelIfCancellationRequested();
+                    progressWorker?.CancelIfCancellationRequested();
 
                     Directory.CreateDirectory(snykDirectoryPath);
 
