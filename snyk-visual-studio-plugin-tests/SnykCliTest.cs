@@ -5,6 +5,7 @@ using System;
 using System.IO;
 using System.Reflection;
 using System.Text.RegularExpressions;
+using System.Diagnostics;
 
 namespace Snyk.VisualStudio.Extension.Tests
 {   
@@ -17,11 +18,49 @@ namespace Snyk.VisualStudio.Extension.Tests
         }
 
         [TestMethod]
+        public void Scan()
+        {
+            var cli = new SnykCli
+            {
+                Options = new SnykMockOptions(),
+                ConsoleRunner = new SnykMockConsoleRunner(GetFileContents("VulnerabilitiesSingleObject.json"))
+            };
+
+            var cliResult = cli.Scan("");
+
+            Assert.AreEqual(1, cliResult.CLIVulnerabilities.Count);
+        }
+
+        [TestMethod]
+        public void GetApiToken()
+        {
+            var cli = new SnykCli
+            {
+                Options = new SnykMockOptions(),
+                ConsoleRunner = new SnykMockConsoleRunner("1111-0000-2222-3333-4444")
+            };
+
+            Assert.AreEqual("1111-0000-2222-3333-4444", cli.GetApiToken());
+        }
+
+        [TestMethod]
+        public void Authenticate()
+        {
+            var cli = new SnykCli
+            {
+                Options = new SnykMockOptions(),
+                ConsoleRunner = new SnykMockConsoleRunner("Your account has been authenticated. Snyk is now ready to be used.")
+            };
+
+            Assert.AreEqual("Your account has been authenticated. Snyk is now ready to be used.", cli.Authenticate());
+        }
+
+        [TestMethod]
         public void BuildArguments_WithoutOptions()
         {
             var cli = new SnykCli
             {
-                Options = new SnykDummyOptions()
+                Options = new SnykMockOptions()
             };
 
             Assert.AreEqual("--json test", cli.BuildArguments());
@@ -32,7 +71,7 @@ namespace Snyk.VisualStudio.Extension.Tests
         {
             var cli = new SnykCli
             {
-                Options = new SnykDummyOptions()
+                Options = new SnykMockOptions()
                 {
                     CustomEndpoint = "https://github.com/snyk/"
                 }
@@ -46,7 +85,7 @@ namespace Snyk.VisualStudio.Extension.Tests
         {
             var cli = new SnykCli
             {
-                Options = new SnykDummyOptions()
+                Options = new SnykMockOptions()
                 {
                     IgnoreUnknownCA = true
                 }
@@ -60,7 +99,7 @@ namespace Snyk.VisualStudio.Extension.Tests
         {
             var cli = new SnykCli
             {
-                Options = new SnykDummyOptions()
+                Options = new SnykMockOptions()
                 {
                     Organization = "test-snyk-organization"
                 }
@@ -74,7 +113,7 @@ namespace Snyk.VisualStudio.Extension.Tests
         {
             var cli = new SnykCli
             {
-                Options = new SnykDummyOptions()
+                Options = new SnykMockOptions()
                 {
                     AdditionalOptions = "--file=C:\build.pom"
                 }
@@ -88,7 +127,7 @@ namespace Snyk.VisualStudio.Extension.Tests
         {
             var cli = new SnykCli
             {
-                Options = new SnykDummyOptions()
+                Options = new SnykMockOptions()
                 {
                     CustomEndpoint = "https://github.com/snyk/",
                     IgnoreUnknownCA = true,
@@ -105,7 +144,7 @@ namespace Snyk.VisualStudio.Extension.Tests
         {
             var cli = new SnykCli
             {
-                Options = new SnykDummyOptions()
+                Options = new SnykMockOptions()
             };
 
             Assert.IsTrue(cli.IsSuccessCliJsonString("{\"vulnerabilities\": []}"));
@@ -116,7 +155,7 @@ namespace Snyk.VisualStudio.Extension.Tests
         {
             var cli = new SnykCli
             {
-                Options = new SnykDummyOptions()
+                Options = new SnykMockOptions()
             };
 
             Assert.IsFalse(cli.IsSuccessCliJsonString("{\"error\": \"Error details.\"}"));
@@ -127,7 +166,7 @@ namespace Snyk.VisualStudio.Extension.Tests
         {
             var cli = new SnykCli
             {
-                Options = new SnykDummyOptions()
+                Options = new SnykMockOptions()
             };
 
             var cliResult = cli.ConvertRawCliStringToCliResult(GetFileContents("VulnerabilitiesArray.json"));
@@ -140,7 +179,7 @@ namespace Snyk.VisualStudio.Extension.Tests
         {
             var cli = new SnykCli
             {
-                Options = new SnykDummyOptions()
+                Options = new SnykMockOptions()
             };
 
             var cliResult = cli.ConvertRawCliStringToCliResult(GetFileContents("VulnerabilitiesSingleObject.json"));
@@ -153,7 +192,7 @@ namespace Snyk.VisualStudio.Extension.Tests
         {
             var cli = new SnykCli
             {
-                Options = new SnykDummyOptions()
+                Options = new SnykMockOptions()
             };
 
             var cliResult = cli.ConvertRawCliStringToCliResult(GetFileContents("ErrorJsonObject.json"));
@@ -169,7 +208,7 @@ namespace Snyk.VisualStudio.Extension.Tests
         {
             var cli = new SnykCli
             {
-                Options = new SnykDummyOptions()
+                Options = new SnykMockOptions()
             };
 
             var cliResult = cli.ConvertRawCliStringToCliResult(GetFileContents("ErrorPlainText.json"));
@@ -223,7 +262,7 @@ namespace Snyk.VisualStudio.Extension.Tests
         }
     }
 
-    class DummyServiceProvider : IServiceProvider
+    class MockServiceProvider : IServiceProvider
     {
         public object GetService(Type serviceType)
         {
@@ -231,7 +270,27 @@ namespace Snyk.VisualStudio.Extension.Tests
         }
     }
 
-    class SnykDummyOptions : ISnykOptions
+    class SnykMockConsoleRunner: SnykConsoleRunner
+    {
+        private string consoleResult;
+
+        public SnykMockConsoleRunner(string result)
+        {
+            this.consoleResult = result;
+        }
+
+        public override string RunConsoleProcess(string fileName, string arguments)
+        {
+            return consoleResult;
+        }
+
+        public override string RunConsoleProcess(Process consoleProcess)
+        {
+            return consoleResult;
+        }
+    }
+
+    class SnykMockOptions : ISnykOptions
     {
         private string apiToken = "";
         private string customEndpoint = "";
@@ -239,9 +298,9 @@ namespace Snyk.VisualStudio.Extension.Tests
         private bool ignoreUnknownCA = false;
         private string additionalOptions = "";
 
-        public SnykDummyOptions() { }
+        public SnykMockOptions() { }
 
-        public SnykDummyOptions(string apiToken = "", 
+        public SnykMockOptions(string apiToken = "", 
             string customEndpoint = "", 
             string organization = "", 
             string additionalOptions = "", 

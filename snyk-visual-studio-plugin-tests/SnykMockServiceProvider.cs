@@ -6,13 +6,13 @@ using Microsoft.VisualStudio.Shell.Interop;
 
 namespace Snyk.VisualStudio.Extension.Tests
 {
-    class SnykDummyServiceProvider : ISnykServiceProvider
+    class SnykMockServiceProvider : ISnykServiceProvider
     {
         public SnykActivityLogger ActivityLogger
         {
             get
             {
-                return new SnykDummyActivityLogger();
+                return new SnykMockActivityLogger();
             }
         }
 
@@ -44,7 +44,7 @@ namespace Snyk.VisualStudio.Extension.Tests
         {
             if (serviceType == typeof(SVsSolution))
             {
-                return new SnykDummyVsSolution();
+                return new SnykMockVsSolution();
             }
 
             return null;
@@ -60,9 +60,9 @@ namespace Snyk.VisualStudio.Extension.Tests
         }
     }
 
-    public class SnykDummyActivityLogger : SnykActivityLogger
+    public class SnykMockActivityLogger : SnykActivityLogger
     {
-        public SnykDummyActivityLogger() : base(null)
+        public SnykMockActivityLogger() : base(null)
         {
         }
 
@@ -71,7 +71,7 @@ namespace Snyk.VisualStudio.Extension.Tests
         public override void LogError(string message) => Console.WriteLine(message);
     }
 
-    public class SnykDummyVsSolution : IVsSolution
+    public class SnykMockVsSolution : IVsSolution
     {
         public int AddVirtualProject(IVsHierarchy pHierarchy, uint grfAddVPFlags)
         {

@@ -58,7 +58,7 @@
   <ItemGroup>
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="SnykCliTest.cs" />
-    <Compile Include="SnykDummyServiceProvider.cs" />
+    <Compile Include="SnykMockServiceProvider.cs" />
     <EmbeddedResource Include="Resources\ErrorJsonObject.json">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
       <IncludeInVSIX>true</IncludeInVSIX>

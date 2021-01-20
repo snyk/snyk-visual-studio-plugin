@@ -58,7 +58,6 @@
   <ItemGroup>
     <Compile Include="ISnykServiceProvider.cs" />
     <Compile Include="SnykActivityLogger.cs" />
-    <Compile Include="SnykAuthenticationService.cs" />
     <Compile Include="CLIError.cs" />
     <Compile Include="CLIResult.cs" />
     <Compile Include="ISnykOptions.cs" />
@@ -67,6 +66,7 @@
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="SnykCli.cs" />
     <Compile Include="SnykCliDownloader.cs" />
+    <Compile Include="SnykConsoleRunner.cs" />
     <Compile Include="SnykFilterableTree.xaml.cs">
       <DependentUpon>SnykFilterableTree.xaml</DependentUpon>
     </Compile>
