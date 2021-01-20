@@ -185,7 +185,7 @@ namespace Snyk.VisualStudio.Extension.UI
         public ObservableCollection<VulnerabilityTreeNode> Items { get; set; }
     }
 
-    public class ImageConverter : IValueConverter
+    public class SnykImageConverter : IValueConverter
     {
         public object Convert(object value, Type targetType, object parameter, CultureInfo culture) => 
             SnykFilterableTree.GetControlResource(value) as BitmapImage;

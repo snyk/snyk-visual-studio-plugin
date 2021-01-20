@@ -19,7 +19,7 @@
         <BitmapImage x:Key="SeverityMediumIcon" UriSource="./Resources/severity_medium.png" DecodePixelWidth="16" DecodePixelHeight="16"/>
         <BitmapImage x:Key="SeverityLowIcon" UriSource="./Resources/severity_low.png" DecodePixelWidth="16" DecodePixelHeight="16"/>
 
-        <local:ImageConverter x:Key="ImageConverter"/>
+        <local:SnykImageConverter x:Key="ImageConverter"/>
     </UserControl.Resources>
     <Grid>
         <Grid.RowDefinitions>

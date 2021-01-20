@@ -35,7 +35,7 @@ namespace Snyk.VisualStudio.Extension.CLI
             }            
         }
 
-        public void Download(string cliFileDestinationPath = null, IProgressWorker progressWorker = null)
+        public void Download(string cliFileDestinationPath = null, ISnykProgressWorker progressWorker = null)
         {
             logger?.LogInformation("Enter Download method");
 
@@ -94,7 +94,7 @@ namespace Snyk.VisualStudio.Extension.CLI
         } 
             
         private void AsynchronousDownload(WebClient webClient, 
-            IProgressWorker progressWorker, 
+            ISnykProgressWorker progressWorker, 
             string cliFileDestinationPath, 
             string cliDownloadUrl)
         {

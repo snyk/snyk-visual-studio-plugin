@@ -17,7 +17,7 @@
         <BitmapImage x:Key="StopIcon" UriSource="./Resources/Stop.png" DecodePixelWidth="16" DecodePixelHeight="16"/>
         <BitmapImage x:Key="StopDisabledIcon" UriSource="./Resources/StopDisabled.png" DecodePixelWidth="16" DecodePixelHeight="16"/>
         <BitmapImage x:Key="CleanIcon" UriSource="./Resources/CleanData.png" DecodePixelWidth="16" DecodePixelHeight="16"/>
-        <local:ImageConverter x:Key="ImageConverter"/>
+        <local:SnykImageConverter x:Key="ImageConverter"/>
     </UserControl.Resources>
     <Grid>
         <Grid.RowDefinitions>

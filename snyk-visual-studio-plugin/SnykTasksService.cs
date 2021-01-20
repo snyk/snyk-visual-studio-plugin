@@ -77,7 +77,7 @@ namespace Snyk.VisualStudio.Extension.UI
 
             tokenSource = new CancellationTokenSource();
 
-            var progressWorker = new ProgressWorker
+            var progressWorker = new SnykProgressWorker
             {
                 TasksService = this,
                 TokenSource = tokenSource
@@ -191,7 +191,7 @@ namespace Snyk.VisualStudio.Extension.UI
 
             tokenSource = new CancellationTokenSource();
 
-            var progressWorker = new ProgressWorker
+            var progressWorker = new SnykProgressWorker
             {
                 TasksService = this,
                 TokenSource = tokenSource
@@ -282,7 +282,7 @@ namespace Snyk.VisualStudio.Extension.UI
         public string Message { get; set; }
     }
 
-    public interface IProgressWorker
+    public interface ISnykProgressWorker
     {
         void DownloadStarted();
 
@@ -295,7 +295,7 @@ namespace Snyk.VisualStudio.Extension.UI
         void DownloadCancelled(string message);
     }
 
-   class ProgressWorker : IProgressWorker
+   class SnykProgressWorker : ISnykProgressWorker
     {
         public CancellationTokenSource TokenSource { get; set; }        
 
