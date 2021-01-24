@@ -17,7 +17,7 @@
     <IsCodedUITest>False</IsCodedUITest>
     <TestProjectType>UnitTest</TestProjectType>
     <TargetFrameworkProfile />
-    <MSBuidPath>mstest</MSBuidPath>
+    <MSBuidPath>$(MSBuildExtensionsPath32)\Microsoft\VisualStudio\$(VisualStudioVersion)\Enterprise\Common7\IDE\mstest</MSBuidPath>
     <BuildDirectoryPath>.\bin</BuildDirectoryPath>
     <TestResultsPath>.\TestResults</TestResultsPath>
   </PropertyGroup>
