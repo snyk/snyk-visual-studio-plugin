@@ -2,6 +2,7 @@
 <Project ToolsVersion="14.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <PropertyGroup>
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
+    <GithubVisualStudioVersion>2019</GithubVisualStudioVersion>
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
     <ProjectGuid>{EFB35F94-39AE-4A43-9634-4D1C0AD03999}</ProjectGuid>
     <OutputType>Library</OutputType>
@@ -17,7 +18,7 @@
     <IsCodedUITest>False</IsCodedUITest>
     <TestProjectType>UnitTest</TestProjectType>
     <TargetFrameworkProfile />
-    <MSBuidPath>$(ProgramFiles)\"Microsoft Visual Studio"\$(VisualStudioVersion)\Enterprise\Common7\IDE\MSTest</MSBuidPath>
+    <MSBuidPath>$(ProgramFiles)\"Microsoft Visual Studio"\$(GithubVisualStudioVersion)\Enterprise\Common7\IDE\MSTest</MSBuidPath>
     <BuildDirectoryPath>.\bin</BuildDirectoryPath>
     <TestResultsPath>.\TestResults</TestResultsPath>
   </PropertyGroup>
