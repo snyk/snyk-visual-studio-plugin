@@ -44,10 +44,10 @@
             // 
             // customEndpointTextBox
             // 
-            this.customEndpointTextBox.Location = new System.Drawing.Point(159, 56);
-            this.customEndpointTextBox.Margin = new System.Windows.Forms.Padding(3, 2, 3, 2);
+            this.customEndpointTextBox.Location = new System.Drawing.Point(238, 88);
+            this.customEndpointTextBox.Margin = new System.Windows.Forms.Padding(4, 3, 4, 3);
             this.customEndpointTextBox.Name = "customEndpointTextBox";
-            this.customEndpointTextBox.Size = new System.Drawing.Size(622, 22);
+            this.customEndpointTextBox.Size = new System.Drawing.Size(931, 31);
             this.customEndpointTextBox.TabIndex = 0;
             this.customEndpointTextBox.TextChanged += new System.EventHandler(this.customEndpointTextBox_TextChanged);
             this.customEndpointTextBox.Validating += new System.ComponentModel.CancelEventHandler(this.customEndpointTextBox_Validating);
@@ -55,45 +55,49 @@
             // customEndpointLabel
             // 
             this.customEndpointLabel.AutoSize = true;
-            this.customEndpointLabel.Location = new System.Drawing.Point(3, 61);
+            this.customEndpointLabel.Location = new System.Drawing.Point(4, 95);
+            this.customEndpointLabel.Margin = new System.Windows.Forms.Padding(4, 0, 4, 0);
             this.customEndpointLabel.Name = "customEndpointLabel";
-            this.customEndpointLabel.Size = new System.Drawing.Size(111, 16);
+            this.customEndpointLabel.Size = new System.Drawing.Size(180, 25);
             this.customEndpointLabel.TabIndex = 1;
             this.customEndpointLabel.Text = "Custom endpoint:";
             // 
             // organizationLabel
             // 
             this.organizationLabel.AutoSize = true;
-            this.organizationLabel.Location = new System.Drawing.Point(3, 106);
+            this.organizationLabel.Location = new System.Drawing.Point(4, 166);
+            this.organizationLabel.Margin = new System.Windows.Forms.Padding(4, 0, 4, 0);
             this.organizationLabel.Name = "organizationLabel";
-            this.organizationLabel.Size = new System.Drawing.Size(86, 16);
+            this.organizationLabel.Size = new System.Drawing.Size(140, 25);
             this.organizationLabel.TabIndex = 2;
             this.organizationLabel.Text = "Organization:";
             // 
             // organizationTextBox
             // 
-            this.organizationTextBox.Location = new System.Drawing.Point(159, 106);
-            this.organizationTextBox.Margin = new System.Windows.Forms.Padding(3, 2, 3, 2);
+            this.organizationTextBox.Location = new System.Drawing.Point(238, 166);
+            this.organizationTextBox.Margin = new System.Windows.Forms.Padding(4, 3, 4, 3);
             this.organizationTextBox.Name = "organizationTextBox";
-            this.organizationTextBox.Size = new System.Drawing.Size(622, 22);
+            this.organizationTextBox.Size = new System.Drawing.Size(931, 31);
             this.organizationTextBox.TabIndex = 3;
             this.organizationTextBox.TextChanged += new System.EventHandler(this.organizationTextBox_TextChanged);
             // 
             // tokenLabel
             // 
             this.tokenLabel.AutoSize = true;
-            this.tokenLabel.Location = new System.Drawing.Point(3, 19);
+            this.tokenLabel.Location = new System.Drawing.Point(4, 30);
+            this.tokenLabel.Margin = new System.Windows.Forms.Padding(4, 0, 4, 0);
             this.tokenLabel.Name = "tokenLabel";
-            this.tokenLabel.Size = new System.Drawing.Size(50, 16);
+            this.tokenLabel.Size = new System.Drawing.Size(78, 25);
             this.tokenLabel.TabIndex = 4;
             this.tokenLabel.Text = "Token:";
             // 
             // tokenTextBox
             // 
-            this.tokenTextBox.Location = new System.Drawing.Point(159, 14);
-            this.tokenTextBox.Margin = new System.Windows.Forms.Padding(4);
+            this.tokenTextBox.Location = new System.Drawing.Point(238, 22);
+            this.tokenTextBox.Margin = new System.Windows.Forms.Padding(6, 6, 6, 6);
             this.tokenTextBox.Name = "tokenTextBox";
-            this.tokenTextBox.Size = new System.Drawing.Size(622, 22);
+            this.tokenTextBox.PasswordChar = '*';
+            this.tokenTextBox.Size = new System.Drawing.Size(931, 31);
             this.tokenTextBox.TabIndex = 5;
             this.tokenTextBox.TextChanged += new System.EventHandler(this.tokenTextBox_TextChanged);
             this.tokenTextBox.Validating += new System.ComponentModel.CancelEventHandler(this.tokenTextBox_Validating);
@@ -101,10 +105,10 @@
             // ignoreUnknownCACheckBox
             // 
             this.ignoreUnknownCACheckBox.AutoSize = true;
-            this.ignoreUnknownCACheckBox.Location = new System.Drawing.Point(159, 82);
-            this.ignoreUnknownCACheckBox.Margin = new System.Windows.Forms.Padding(3, 2, 3, 2);
+            this.ignoreUnknownCACheckBox.Location = new System.Drawing.Point(238, 128);
+            this.ignoreUnknownCACheckBox.Margin = new System.Windows.Forms.Padding(4, 3, 4, 3);
             this.ignoreUnknownCACheckBox.Name = "ignoreUnknownCACheckBox";
-            this.ignoreUnknownCACheckBox.Size = new System.Drawing.Size(144, 20);
+            this.ignoreUnknownCACheckBox.Size = new System.Drawing.Size(231, 29);
             this.ignoreUnknownCACheckBox.TabIndex = 6;
             this.ignoreUnknownCACheckBox.Text = "Ignore unknown CA";
             this.ignoreUnknownCACheckBox.UseVisualStyleBackColor = true;
@@ -112,10 +116,10 @@
             // 
             // authenticateButton
             // 
-            this.authenticateButton.Location = new System.Drawing.Point(798, 14);
-            this.authenticateButton.Margin = new System.Windows.Forms.Padding(4);
+            this.authenticateButton.Location = new System.Drawing.Point(1197, 22);
+            this.authenticateButton.Margin = new System.Windows.Forms.Padding(6, 6, 6, 6);
             this.authenticateButton.Name = "authenticateButton";
-            this.authenticateButton.Size = new System.Drawing.Size(110, 25);
+            this.authenticateButton.Size = new System.Drawing.Size(165, 39);
             this.authenticateButton.TabIndex = 7;
             this.authenticateButton.Text = "Authenticate";
             this.authenticateButton.UseVisualStyleBackColor = true;
@@ -123,10 +127,11 @@
             // 
             // authProgressBar
             // 
-            this.authProgressBar.Location = new System.Drawing.Point(159, 41);
+            this.authProgressBar.Location = new System.Drawing.Point(238, 64);
+            this.authProgressBar.Margin = new System.Windows.Forms.Padding(4, 5, 4, 5);
             this.authProgressBar.MarqueeAnimationSpeed = 10;
             this.authProgressBar.Name = "authProgressBar";
-            this.authProgressBar.Size = new System.Drawing.Size(622, 3);
+            this.authProgressBar.Size = new System.Drawing.Size(933, 5);
             this.authProgressBar.Style = System.Windows.Forms.ProgressBarStyle.Marquee;
             this.authProgressBar.TabIndex = 8;
             this.authProgressBar.Visible = false;
@@ -137,7 +142,7 @@
             // 
             // SnykGeneralSettingsUserControl
             // 
-            this.AutoScaleDimensions = new System.Drawing.SizeF(8F, 16F);
+            this.AutoScaleDimensions = new System.Drawing.SizeF(12F, 25F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.Controls.Add(this.authProgressBar);
             this.Controls.Add(this.authenticateButton);
@@ -148,9 +153,9 @@
             this.Controls.Add(this.organizationLabel);
             this.Controls.Add(this.customEndpointLabel);
             this.Controls.Add(this.customEndpointTextBox);
-            this.Margin = new System.Windows.Forms.Padding(3, 2, 3, 2);
+            this.Margin = new System.Windows.Forms.Padding(4, 3, 4, 3);
             this.Name = "SnykGeneralSettingsUserControl";
-            this.Size = new System.Drawing.Size(912, 375);
+            this.Size = new System.Drawing.Size(1368, 586);
             ((System.ComponentModel.ISupportInitialize)(this.errorProvider)).EndInit();
             this.ResumeLayout(false);
             this.PerformLayout();
