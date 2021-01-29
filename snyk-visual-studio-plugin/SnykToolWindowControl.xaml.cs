@@ -297,6 +297,8 @@ namespace Snyk.VisualStudio.Extension.UI
         {            
             this.Dispatcher.BeginInvoke(DispatcherPriority.Normal, (ThreadStart)delegate ()
                 {
+                    HideIssueMessages();
+
                     var treeNode = vulnerabilitiesTree.SelectedItem as VulnerabilityTreeNode;
 
                     if (treeNode == null)
@@ -334,8 +336,17 @@ namespace Snyk.VisualStudio.Extension.UI
                         moreAboutThisIssue.NavigateUri = new System.Uri(vulnerability.url);
                     }
                     else
-                    {                        
-                        CleanAndHideVulnerabilityDetailsPanel();
+                    {
+                        CleanAndHideVulnerabilityDetailsPanel();                        
+
+                        if (treeNode.Items.Count > 0)
+                        {
+                            selectIssueMessageGrid.Visibility = Visibility.Visible;
+                        }
+                        else
+                        {
+                            noIssuesMessageGrid.Visibility = Visibility.Visible;
+                        }                                      
                     }                    
                 }
             ); 
@@ -352,7 +363,13 @@ namespace Snyk.VisualStudio.Extension.UI
             detaiedIntroducedThrough.Text = "";
             remediation.Text = "";
             overview.Text = "";
-            moreAboutThisIssue.NavigateUri = null;
+            moreAboutThisIssue.NavigateUri = null;            
+        }
+
+        private void HideIssueMessages()
+        {
+            selectIssueMessageGrid.Visibility = Visibility.Collapsed;
+            noIssuesMessageGrid.Visibility = Visibility.Collapsed;
         }
 
         private void SetupSeverity(Vulnerability vulnerability)

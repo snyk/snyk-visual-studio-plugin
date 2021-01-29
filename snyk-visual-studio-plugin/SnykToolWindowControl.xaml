@@ -146,6 +146,16 @@
                     <Hyperlink Name="moreAboutThisIssue" RequestNavigate="moreAboutThisIssue_RequestNavigate">More about this issue</Hyperlink >
                 </TextBlock>
             </StackPanel>
+            <Grid Grid.Column="3" Name="selectIssueMessageGrid" VerticalAlignment="Center" Visibility="Collapsed">
+                <StackPanel HorizontalAlignment="Center">
+                    <TextBlock>Please, select issue to view details.</TextBlock>
+                </StackPanel>
+            </Grid>
+            <Grid Grid.Column="4" Name="noIssuesMessageGrid" VerticalAlignment="Center" Visibility="Collapsed">
+                <StackPanel HorizontalAlignment="Center">
+                    <TextBlock>No issues for this project.</TextBlock>
+                </StackPanel>
+            </Grid>
         </Grid>
     </Grid>
 </UserControl>
