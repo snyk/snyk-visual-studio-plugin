@@ -135,8 +135,8 @@ namespace Snyk.VisualStudio.Extension.UI
 
                 errorPanel.Visibility = Visibility.Visible;
 
-                errorMessage.Text = cliError.Message;
-                errorPath.Text = cliError.Path;
+                errorMessage.RichText = cliError.Message;
+                errorPath.RichText = cliError.Path;
             });
         }
 
