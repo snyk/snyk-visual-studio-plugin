@@ -173,5 +173,10 @@
                 </StackPanel>
             </Grid>
         </Grid>
+        <Grid Grid.Row="4" Name="messageGrid" VerticalAlignment="Center" Visibility="Collapsed">
+            <StackPanel HorizontalAlignment="Center">
+                <TextBlock Name="message"></TextBlock>
+            </StackPanel>
+        </Grid>
     </Grid>
 </UserControl>

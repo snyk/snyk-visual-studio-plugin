@@ -55,6 +55,8 @@ namespace Snyk.VisualStudio.Extension.UI
 
         public void OnScanningStarted(object sender, SnykCliScanEventArgs eventArgs)
         {
+            DisplayMainPanelMessage("Scanning project for vulnerabilities...");
+
             EnableStopActions();
 
             HideError();
@@ -68,14 +70,18 @@ namespace Snyk.VisualStudio.Extension.UI
         {
             EnableExecuteActions();
 
-            HideProgressBar();            
+            HideProgressBar();
+
+            HideMainPanelMessage();
         }
 
         public void OnDisplayError(object sender, SnykCliScanEventArgs eventArgs)
         {
             EnableExecuteActions();
 
-            DisplayError(eventArgs.Error);            
+            DisplayError(eventArgs.Error);
+
+            HideMainPanelMessage();
         }
 
         public void OnScanningCancelled(object sender, SnykCliScanEventArgs eventArgs)
@@ -124,6 +130,26 @@ namespace Snyk.VisualStudio.Extension.UI
             {
                 token.ThrowIfCancellationRequested();
             }
+        }
+
+        private void DisplayMainPanelMessage(string text)
+        {
+            this.Dispatcher.Invoke(() =>
+            {
+                message.Text = text;
+
+                messageGrid.Visibility = Visibility.Visible;
+            });            
+        }
+
+        private void HideMainPanelMessage()
+        {
+            this.Dispatcher.Invoke(() =>
+            {
+                message.Text = "";
+
+                messageGrid.Visibility = Visibility.Visible;
+            });
         }
 
         public void DisplayError(CliError cliError)
