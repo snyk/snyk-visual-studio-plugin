@@ -63,10 +63,12 @@ namespace Snyk.VisualStudio.Extension.UI
 
             ShowIndeterminateProgressBar();
 
-            CleanVulnerabilitiesTree();            
+            CleanVulnerabilitiesTree();
+
+            HideRunScanMessage();
         }
 
-        public void OnOnScanningFinished(object sender, SnykCliScanEventArgs eventArgs)
+        public void OnScanningFinished(object sender, SnykCliScanEventArgs eventArgs)
         {
             EnableExecuteActions();
 
@@ -88,7 +90,9 @@ namespace Snyk.VisualStudio.Extension.UI
         {
             EnableExecuteActions();
 
-            HideAllControls();            
+            HideAllControls();
+
+            DisplayRunScanMessage();
         }
 
         public void OnDownloadStarted(object sender, SnykCliDownloadEventArgs eventArgs)
@@ -103,6 +107,8 @@ namespace Snyk.VisualStudio.Extension.UI
             SetupAvailableActions();
                         
             HideAllControls();
+
+            DisplayRunScanMessage();
         }
 
         public void OnDownloadUpdate(object sender, SnykCliDownloadEventArgs eventArgs) => UpdateProgressBar(eventArgs.Progress);
@@ -130,6 +136,22 @@ namespace Snyk.VisualStudio.Extension.UI
             {
                 token.ThrowIfCancellationRequested();
             }
+        }
+
+        private void HideRunScanMessage()
+        {
+            this.Dispatcher.Invoke(() =>
+            {
+                noVulnerabilitiesAddedMessageGrid.Visibility = Visibility.Collapsed;
+            });
+        }
+
+        private void DisplayRunScanMessage()
+        {
+            this.Dispatcher.Invoke(() =>
+            {
+                noVulnerabilitiesAddedMessageGrid.Visibility = Visibility.Visible;
+            });
         }
 
         private void DisplayMainPanelMessage(string text)
@@ -185,6 +207,8 @@ namespace Snyk.VisualStudio.Extension.UI
                 runButton.IsEnabled = true;
                 cleanButton.IsEnabled = true;
                 stopButton.IsEnabled = false;
+
+                runScanLink.IsEnabled = true;
             });
         }
 
@@ -195,6 +219,8 @@ namespace Snyk.VisualStudio.Extension.UI
                 runButton.IsEnabled = false;
                 cleanButton.IsEnabled = false;
                 stopButton.IsEnabled = false;
+
+                runScanLink.IsEnabled = false;
             });
         }
 
@@ -205,6 +231,8 @@ namespace Snyk.VisualStudio.Extension.UI
                 runButton.IsEnabled = false;
                 cleanButton.IsEnabled = false;
                 stopButton.IsEnabled = true;
+
+                runScanLink.IsEnabled = false;
             });
         }
 
@@ -456,6 +484,8 @@ namespace Snyk.VisualStudio.Extension.UI
             CleanVulnerabilitiesTree();
 
             HideAllControls();
+
+            DisplayRunScanMessage();
         }
     }        
 }

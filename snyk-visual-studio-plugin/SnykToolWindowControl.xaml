@@ -178,5 +178,15 @@
                 <TextBlock Name="message"></TextBlock>
             </StackPanel>
         </Grid>
+        <Grid Grid.Row="5" Name="noVulnerabilitiesAddedMessageGrid" VerticalAlignment="Center">
+            <StackPanel HorizontalAlignment="Center">
+                <TextBlock>
+                    No vulnerabilities added.
+                    <Hyperlink Name="runScanLink" Click="RunButton_Click" IsEnabled="False">
+                        Run scan
+                    </Hyperlink>
+                </TextBlock>
+            </StackPanel>
+        </Grid>
     </Grid>
 </UserControl>

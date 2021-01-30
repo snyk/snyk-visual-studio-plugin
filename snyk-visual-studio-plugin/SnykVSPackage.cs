@@ -177,7 +177,7 @@ namespace Snyk.VisualStudio.Extension
             tasksService.ScanningCancelled += toolWindow.OnScanningCancelled;
             tasksService.ScanningStarted += toolWindow.OnScanningStarted;
             tasksService.ScanningUpdate += toolWindow.OnScanningUpdate;
-            tasksService.ScanningFinished += toolWindow.OnOnScanningFinished;
+            tasksService.ScanningFinished += toolWindow.OnScanningFinished;
 
             activityLogger.LogInformation("Initialize Download Event Listeners");
 
