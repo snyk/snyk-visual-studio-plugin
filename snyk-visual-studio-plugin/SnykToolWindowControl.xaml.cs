@@ -375,7 +375,8 @@ namespace Snyk.VisualStudio.Extension.UI
 
                         introducedThrough.Text = introducedThroughText;
                         exploitMaturity.Text = vulnerability.exploit;
-                        fixedIn.Text = vulnerability.Remediation;
+                        fixedIn.Text = String.IsNullOrWhiteSpace(vulnerability.Remediation) 
+                            ? $"There is no fixed version for {vulnerability.name}" : vulnerability.Remediation;
 
                         string detaiedIntroducedThroughText = vulnerability.from != null && vulnerability.from.Length != 0
                                     ? string.Join(" > ", vulnerability.from) : "";
