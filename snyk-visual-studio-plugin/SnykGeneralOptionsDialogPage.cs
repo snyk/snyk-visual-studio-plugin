@@ -52,6 +52,14 @@ namespace Snyk.VisualStudio.Extension.Settings
 
                 return settingsService.GetAdditionalOptions();
             }
-        }        
+        }      
+        
+        public bool IsScanAllProjects
+        {
+            get
+            {
+                return serviceProvider.SolutionService.SolutionSettingsService.GetIsAllProjectsEnabled();
+            }
+        }              
     }
 }

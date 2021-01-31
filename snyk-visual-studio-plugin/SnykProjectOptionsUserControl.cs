@@ -22,6 +22,7 @@ namespace Snyk.VisualStudio.Extension.UI
             bool isProjectOpened = solutionService.SolutionSettingsService.IsProjectOpened();
 
             additionalOptionsTextBox.Enabled = isProjectOpened;
+            allProjectsCheckBox.Enabled = isProjectOpened;
 
             if (!isProjectOpened)
             {
@@ -42,7 +43,22 @@ namespace Snyk.VisualStudio.Extension.UI
             }
             catch (Exception exception)
             {
+                solutionService.Logger.LogError(exception.Message);
+
                 additionalOptionsTextBox.Text = "";
+            }
+
+            try
+            {
+                allProjectsCheckBox.Checked = solutionService.SolutionSettingsService.GetIsAllProjectsEnabled();
+            }
+            catch (Exception exception)
+            {
+                solutionService.Logger.LogError(exception.Message);
+
+                allProjectsCheckBox.Checked = true;
+
+                solutionService.SolutionSettingsService.SaveIsAllProjectsScanEnabled(true);
             }
         }        
 
@@ -51,6 +67,14 @@ namespace Snyk.VisualStudio.Extension.UI
             if (solutionService.SolutionSettingsService.IsProjectOpened())
             {
                 solutionService.SolutionSettingsService.SaveAdditionalOptions(additionalOptionsTextBox.Text.ToString());
+            }
+        }
+
+        private void allProjectsCheckBox_CheckedChanged(object sender, EventArgs e)
+        {
+            if (solutionService.SolutionSettingsService.IsProjectOpened())
+            {
+                solutionService.SolutionSettingsService.SaveIsAllProjectsScanEnabled(allProjectsCheckBox.Checked);
             }
         }
     }

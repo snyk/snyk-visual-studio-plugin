@@ -73,6 +73,11 @@ namespace Snyk.VisualStudio.Extension.CLI
                 arguments.Add($"{Options.AdditionalOptions}");
             }
 
+            if (Options.IsScanAllProjects) 
+            {
+                arguments.Add("--all-projects");
+            }
+
             return String.Join(" ", arguments.ToArray());
         }
 

@@ -71,6 +71,46 @@ namespace Snyk.VisualStudio.Extension.Settings
             return additionalOptions;
         }
 
+        public bool GetIsAllProjectsEnabled()
+        {
+            logger.LogInformation("Enter GetIsAllProjectsEnabled method");
+
+            bool isAllProjectsEnabled = true;
+
+            string projectUniqueName = GetProjectUniqueName();
+
+            logger.LogInformation($"Project unique name: {projectUniqueName}");
+
+            if (String.IsNullOrEmpty(projectUniqueName))
+            {
+                logger.LogInformation("Project unique name is empty. Return from method");
+
+                return isAllProjectsEnabled;
+            }
+
+            WritableSettingsStore settingsStore = GetUserSettingsStore();
+
+            if (!solutionService.IsSolutionOpen() || !settingsStore.CollectionExists(SnykProjectSettingsCollectionName))
+            {
+                logger.LogInformation($"Solution not open or {SnykProjectSettingsCollectionName} collection not exists. Return from method.");
+
+                return isAllProjectsEnabled;
+            }            
+
+            try
+            {
+                logger.LogInformation("Try get additional options for project");
+
+                return settingsStore.GetBoolean(SnykProjectSettingsCollectionName, projectUniqueName);
+            }
+            catch (Exception exception)
+            {
+                logger.LogError(exception.Message);
+            }
+
+            return isAllProjectsEnabled;
+        }
+
         public void SaveAdditionalOptions(string additionalOptions)
         {
             logger.LogInformation("Enter SaveAdditionalOptions method");
@@ -92,6 +132,25 @@ namespace Snyk.VisualStudio.Extension.Settings
             }
 
             logger.LogInformation("Leave SaveAdditionalOptions method");
+        }
+
+        public void SaveIsAllProjectsScanEnabled(bool isAllProjectsEnabled)
+        {
+            logger.LogInformation("Enter SaveIsAllProjectsScan method");
+
+            string projectUniqueName = GetProjectUniqueName();
+
+            logger.LogInformation($"Project unique name: {projectUniqueName}");
+
+            if (!String.IsNullOrEmpty(projectUniqueName))
+            {                
+
+                logger.LogInformation($"Save is all projects enabled for : {SnykProjectSettingsCollectionName} collection");
+
+                GetUserSettingsStore().SetBoolean(SnykProjectSettingsCollectionName, projectUniqueName, isAllProjectsEnabled);
+            }
+
+            logger.LogInformation("Leave SaveIsAllProjectsScan method");
         }
 
         public string GetProjectUniqueName()

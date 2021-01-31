@@ -30,5 +30,10 @@
         {
             get;
         }
+
+        bool IsScanAllProjects
+        {
+            get;
+        }
     }
 }

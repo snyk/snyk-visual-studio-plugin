@@ -123,6 +123,20 @@ namespace Snyk.VisualStudio.Extension.Tests
         }
 
         [TestMethod]
+        public void BuildArguments_WithScanAllProjects()
+        {
+            var cli = new SnykCli
+            {
+                Options = new SnykMockOptions()
+                {
+                    IsScanAllProjects = true
+                }
+            };
+
+            Assert.AreEqual("--json test --all-projects", cli.BuildArguments());
+        }
+
+        [TestMethod]
         public void BuildArguments_WithAllOptions()
         {
             var cli = new SnykCli
@@ -132,11 +146,12 @@ namespace Snyk.VisualStudio.Extension.Tests
                     CustomEndpoint = "https://github.com/snyk/",
                     IgnoreUnknownCA = true,
                     Organization = "test-snyk-organization",
-                    AdditionalOptions = "--file=C:\build.pom"
+                    AdditionalOptions = "--ignore-policy",
+                    IsScanAllProjects = true
                 }
             };
 
-            Assert.AreEqual("--json test --api=https://github.com/snyk/ --insecure --org=test-snyk-organization --file=C:\build.pom", cli.BuildArguments());
+            Assert.AreEqual("--json test --api=https://github.com/snyk/ --insecure --org=test-snyk-organization --ignore-policy --all-projects", cli.BuildArguments());
         }
 
         [TestMethod]
@@ -297,6 +312,7 @@ namespace Snyk.VisualStudio.Extension.Tests
         private string organization = "";
         private bool ignoreUnknownCA = false;
         private string additionalOptions = "";
+        private bool isScanAllProjects = false;
 
         public SnykMockOptions() { }
 
@@ -304,13 +320,15 @@ namespace Snyk.VisualStudio.Extension.Tests
             string customEndpoint = "", 
             string organization = "", 
             string additionalOptions = "", 
-            bool ignoreUnknownCA = false)
+            bool ignoreUnknownCA = false,
+            bool isScanAllProjects = false)
         {
             CustomEndpoint = customEndpoint;
             ApiToken = apiToken;
             Organization = organization;
             IgnoreUnknownCA = ignoreUnknownCA;
             AdditionalOptions = additionalOptions;
+            IsScanAllProjects = isScanAllProjects;
         }
         
         public string ApiToken
@@ -371,6 +389,19 @@ namespace Snyk.VisualStudio.Extension.Tests
             set
             {
                 additionalOptions = value;
+            }
+        }
+
+        public bool IsScanAllProjects
+        {
+            set
+            {
+                isScanAllProjects = value;
+            }
+
+            get
+            {
+                return isScanAllProjects;
             }
         }
     }

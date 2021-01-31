@@ -117,6 +117,7 @@ namespace Snyk.VisualStudio.Extension.UI
                     Logger.LogInformation($"Organization = {options.Organization}");
                     Logger.LogInformation($"Ignore Unknown CA = {options.IgnoreUnknownCA}");
                     Logger.LogInformation($"Additional Options = {options.AdditionalOptions}");
+                    Logger.LogInformation($"Is Scan All Projects = {options.IsScanAllProjects}");
 
                     progressWorker.CancelIfCancellationRequested();
 
