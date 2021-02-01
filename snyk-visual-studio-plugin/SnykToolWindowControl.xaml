@@ -83,7 +83,6 @@
             <Grid>
                 <ProgressBar x:Name="progressBar" Minimum="0" Maximum="100" Height="3"/>
             </Grid>
-            <TextBlock Name="progressBarTitle" Text="" HorizontalAlignment="Center" VerticalAlignment="Center" FontSize="12"/>
         </StackPanel>
         <StackPanel Grid.Row="2" Grid.Column="0" Name="errorPanel" Orientation="Vertical" Margin="1" UseLayoutRounding="False" Visibility="Collapsed">
             <Border Margin="0,15" Padding="5" BorderThickness="0" BorderBrush="#CC666E" CornerRadius="0, 5, 5, 0" Background="#CC666E" 

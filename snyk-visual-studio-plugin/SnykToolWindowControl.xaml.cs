@@ -97,6 +97,8 @@ namespace Snyk.VisualStudio.Extension.UI
 
         public void OnDownloadStarted(object sender, SnykCliDownloadEventArgs eventArgs)
         {
+            HideRunScanMessage();
+
             EnableStopActions();
 
             ShowProgressBar();            
@@ -108,6 +110,8 @@ namespace Snyk.VisualStudio.Extension.UI
                         
             HideAllControls();
 
+            HideMainPanelMessage();
+
             DisplayRunScanMessage();
         }
 
@@ -117,7 +121,9 @@ namespace Snyk.VisualStudio.Extension.UI
         {
             DisableAllActions();
 
-            HideAllControls();            
+            HideAllControls();
+
+            HideMainPanelMessage();
         }
         
         public ISnykServiceProvider ServiceProvider { get; internal set; }        
@@ -252,8 +258,6 @@ namespace Snyk.VisualStudio.Extension.UI
             {
                 this.progressBarPanel.Visibility = Visibility.Collapsed;
 
-                this.progressBarTitle.Text = "";
-
                 this.progressBar.IsIndeterminate = false;
             });
         }
@@ -263,8 +267,6 @@ namespace Snyk.VisualStudio.Extension.UI
             this.Dispatcher.Invoke(() =>
             {
                 this.progressBarPanel.Visibility = Visibility.Visible;
-
-                this.progressBarTitle.Visibility = Visibility.Visible;
 
                 this.resultsGrid.Visibility = Visibility.Collapsed;
 
@@ -281,9 +283,6 @@ namespace Snyk.VisualStudio.Extension.UI
                 this.progressBar.IsIndeterminate = true;
 
                 this.resultsGrid.Visibility = Visibility.Collapsed;
-
-                this.progressBarTitle.Text = "";
-                this.progressBarTitle.Visibility = Visibility.Collapsed;
             });
         }
 
@@ -292,7 +291,8 @@ namespace Snyk.VisualStudio.Extension.UI
             this.Dispatcher.Invoke(() =>
             {
                 this.progressBar.Value = value;
-                this.progressBarTitle.Text = $"Downloading latest Snyk CLI release {value}%...";
+
+                DisplayMainPanelMessage($"Downloading latest Snyk CLI release {value}%...");
             });
         }                
 
@@ -300,8 +300,6 @@ namespace Snyk.VisualStudio.Extension.UI
         {
             this.Dispatcher.Invoke(() =>
             {
-                progressBarTitle.Text = "";
-
                 progressBarPanel.Visibility = Visibility.Collapsed;
                 resultsGrid.Visibility = Visibility.Collapsed;
 
