@@ -19,11 +19,6 @@ namespace Snyk.VisualStudio.Extension.CLI
             ConsoleRunner = new SnykConsoleRunner();
         }
 
-        public SnykCli(IServiceProvider serviceProvider): base()
-        {
-            Options = options;            
-        }
-
         public SnykConsoleRunner ConsoleRunner { get; set; }
 
         public string GetApiToken() => ConsoleRunner.RunConsoleProcess(GetSnykCliPath(), "config get api");
@@ -32,22 +27,39 @@ namespace Snyk.VisualStudio.Extension.CLI
 
         public CliResult Scan(string basePath)
         {
-            var consoleProcess = ConsoleRunner.CreateConsoleProcess(GetSnykCliPath(), BuildArguments());
+            Logger?.LogInformation("Enter Scan() method");
+            Logger?.LogInformation($"Base path is {basePath}");
+
+            string cliPath = GetSnykCliPath();
+
+            Logger?.LogInformation($"CLI path is {cliPath}");
+
+            var consoleProcess = ConsoleRunner.CreateConsoleProcess(cliPath, BuildArguments());
+
+            Logger?.LogInformation("Adding token");
 
             if (!String.IsNullOrEmpty(Options.ApiToken))
             {
+                Logger?.LogInformation("Token added from Options");
+
                 consoleProcess.StartInfo.EnvironmentVariables["SNYK_TOKEN"] = Options.ApiToken;
-            }
+            }            
 
             consoleProcess.StartInfo.WorkingDirectory = basePath;
 
+            Logger?.LogInformation("Start run console process");
+
             string consoleResult = ConsoleRunner.RunConsoleProcess(consoleProcess);
+
+            Logger?.LogInformation("Leave Scan() method");
 
             return ConvertRawCliStringToCliResult(consoleResult);
         }
 
         public string BuildArguments()
         {
+            Logger?.LogInformation("Enter BuildArguments method");
+
             var arguments = new List<string>();
 
             arguments.Add("--json");
@@ -78,7 +90,12 @@ namespace Snyk.VisualStudio.Extension.CLI
                 arguments.Add("--all-projects");
             }
 
-            return String.Join(" ", arguments.ToArray());
+            string cliArguments = String.Join(" ", arguments.ToArray());
+
+            Logger?.LogInformation($"Result CLI arguments {cliArguments}");
+            Logger?.LogInformation("L:eave BuildArguments method");
+
+            return cliArguments;
         }
 
         public CliResult ConvertRawCliStringToCliResult(String rawResult)
@@ -136,8 +153,13 @@ namespace Snyk.VisualStudio.Extension.CLI
         }
 
         public static string GetSnykCliPath() => Path.Combine(GetSnykDirectoryPath(), CliFileName);
-
+        
         public static bool IsCliExists() => File.Exists(GetSnykCliPath());
+
+        public SnykActivityLogger Logger
+        {
+            get; set;
+        }
 
         public ISnykOptions Options
         {

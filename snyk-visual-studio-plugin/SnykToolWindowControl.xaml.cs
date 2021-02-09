@@ -92,6 +92,8 @@ namespace Snyk.VisualStudio.Extension.UI
 
             HideAllControls();
 
+            HideMainPanelMessage();
+
             DisplayRunScanMessage();
         }
 
@@ -384,7 +386,7 @@ namespace Snyk.VisualStudio.Extension.UI
                         remediation.Text = vulnerability.fixedIn != null && vulnerability.fixedIn.Length != 0
                                                  ? "Upgrade to " + string.Join(" > ", vulnerability.fixedIn) : "";
                       
-                        overview.Text = vulnerability.Overview;
+                        overview.RichText = vulnerability.Overview;
 
                         moreAboutThisIssue.NavigateUri = new System.Uri(vulnerability.url);
                     }
@@ -415,7 +417,7 @@ namespace Snyk.VisualStudio.Extension.UI
             fixedIn.Text = "";
             detaiedIntroducedThrough.Text = "";
             remediation.Text = "";
-            overview.Text = "";
+            overview.RichText = "";
             moreAboutThisIssue.NavigateUri = null;            
         }
 

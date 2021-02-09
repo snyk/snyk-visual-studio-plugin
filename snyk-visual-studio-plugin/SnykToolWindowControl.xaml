@@ -123,7 +123,8 @@
             <local:SnykFilterableTree x:Name="vulnerabilitiesTree" SelectedVulnerabilityChanged="vulnerabilitiesTree_SelectetVulnerabilityChanged"/>
             <GridSplitter Grid.Column="1" Width="5" HorizontalAlignment="Stretch" Background="{DynamicResource VsBrush.Window}" Foreground="{DynamicResource VsBrush.WindowText}">
             </GridSplitter>
-            <StackPanel Grid.Column="2" Name="vulnerabilityDetailsPanel" Visibility="Hidden">
+            <ScrollViewer Grid.Column="2" Name="vulnerabilityDetailsPanel" Visibility="Hidden" HorizontalContentAlignment="Stretch" VerticalContentAlignment="Stretch">
+            <StackPanel>
                 <Border Name="severityBorder" Margin="0,15" Padding="5" BorderThickness="0" CornerRadius="0, 5, 5, 0" VerticalAlignment="Center" HorizontalAlignment="Left">
                     <TextBlock Name="severity" Text="Severity" Width="150" HorizontalAlignment="Center" VerticalAlignment="Center" FontSize="20" TextAlignment="Center"/>
                 </Border>
@@ -155,12 +156,22 @@
                 </StackPanel>
                 <TextBlock Text="Overview" FontWeight="Bold" HorizontalAlignment="Left" VerticalAlignment="Center" FontSize="16" Margin="5, 10, 5, 5"/>
                 <StackPanel Orientation="Horizontal">
-                    <TextBlock Name="overview" Text="" HorizontalAlignment="Left" VerticalAlignment="Center" FontSize="12" Margin="5, 5, 5, 5" TextWrapping="Wrap" MaxWidth="1000"/>
-                </StackPanel>
+                        <local:LinksRichTextBox x:Name="overview" IsDocumentEnabled="True" 
+                                        IsReadOnly="True" 
+                                        VerticalAlignment="Center" 
+                                        FontSize="12" 
+                                        Margin="5, 5, 5, 5" 
+                                        MinWidth="400"
+                                        MaxWidth="700"
+                                        BorderThickness="0, 0, 0, 0"
+                                        Background="{DynamicResource VsBrush.Window}" 
+                                        HorizontalContentAlignment="Stretch" VerticalContentAlignment="Stretch"/>
+                    </StackPanel>
                 <TextBlock Text="" HorizontalAlignment="Left" VerticalAlignment="Center" FontSize="12" Margin="5, 5, 5, 5" TextWrapping="Wrap" MaxWidth="1000">
                     <Hyperlink Name="moreAboutThisIssue" RequestNavigate="moreAboutThisIssue_RequestNavigate">More about this issue</Hyperlink >
                 </TextBlock>
             </StackPanel>
+            </ScrollViewer>
             <Grid Grid.Column="3" Name="selectIssueMessageGrid" VerticalAlignment="Center" Visibility="Collapsed">
                 <StackPanel HorizontalAlignment="Center">
                     <TextBlock>Please, select issue to view details.</TextBlock>

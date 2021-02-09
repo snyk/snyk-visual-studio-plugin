@@ -67,6 +67,7 @@
             this.Name = "SnykProjectOptionsUserControl";
             this.Padding = new System.Windows.Forms.Padding(7, 6, 7, 6);
             this.Size = new System.Drawing.Size(1274, 509);
+            this.Load += new System.EventHandler(this.SnykProjectOptionsUserControl_Load);
             this.ResumeLayout(false);
             this.PerformLayout();
 

@@ -4,6 +4,7 @@ using Microsoft.VisualStudio;
 using Microsoft.VisualStudio.Shell.Interop;
 using System.IO;
 using Snyk.VisualStudio.Extension.Settings;
+using Task = System.Threading.Tasks.Task;
 
 namespace Snyk.VisualStudio.Extension.Services
 {
@@ -24,16 +25,14 @@ namespace Snyk.VisualStudio.Extension.Services
             this.logger = serviceProvider.ActivityLogger;            
         }
 
-        public static SnykSolutionService Initialize(ISnykServiceProvider serviceProvider)
+        public async static Task InitializeAsync(ISnykServiceProvider serviceProvider)
         {
             if (instance == null)
             {
                 instance = new SnykSolutionService(serviceProvider);
 
-                instance.InitializeSolutionEvents();
-            }
-
-            return instance;
+                await instance.InitializeSolutionEventsAsync();
+            }  
         }
 
         public static SnykSolutionService Instance
@@ -67,29 +66,49 @@ namespace Snyk.VisualStudio.Extension.Services
 
         public SnykVsSolutionLoadEvents SolutionEvents { get; set; }
 
-        public Projects GetProjects() => GetDTE().Solution.Projects;
+        public Projects GetProjects()
+        {           
+            return ServiceProvider.DTE.Solution.Projects;
+        }
 
-        public bool IsSolutionOpen() => GetDTE().Solution.IsOpen;
+        public bool IsSolutionOpen()
+        {
+            return ServiceProvider.DTE.Solution.IsOpen;
+        }
 
         public String GetSolutionPath()
         {
             logger.LogInformation("Enter GetSolutionPath method");
 
-            DTE dte = GetDTE();
-            var dteSolution = dte.Solution;
+            var dteSolution = ServiceProvider.DTE.Solution;
+
+            var solutionPath = "";
 
             if (dteSolution.IsDirty)
             {
                 logger.LogInformation("Solution is 'dirty'. Get solution path from first project full name");
 
-                return dteSolution.Projects.Item(1).FullName;
+                solutionPath = dteSolution.Projects.Item(1).FullName;
             }
             else
             {
                 logger.LogInformation("Get solution path from solution full name");
 
-                return Directory.GetParent(dteSolution.FullName).FullName;
-            }            
+                solutionPath = Directory.GetParent(dteSolution.FullName).FullName;
+            }
+            
+            FileAttributes fileAttributes = File.GetAttributes(solutionPath);
+
+            if (!fileAttributes.HasFlag(FileAttributes.Directory))
+            {
+                logger.LogInformation("Solution path referene to project file name, getting solution directory path.");
+
+                solutionPath = Directory.GetParent(solutionPath).FullName;
+            }
+
+            logger.LogInformation($"Result solution path {solutionPath}");
+
+            return solutionPath;
         }
 
         public ISnykServiceProvider ServiceProvider { get; set; }
@@ -101,13 +120,12 @@ namespace Snyk.VisualStudio.Extension.Services
 
         public int OnDisconnect() => VSConstants.S_OK;
 
-        private DTE GetDTE() => (DTE) this.ServiceProvider.GetService(typeof(DTE));
-
-        private void InitializeSolutionEvents()
+        private async Task InitializeSolutionEventsAsync()
         {
             logger.LogInformation("Enter InitializeSolutionEvents method");
 
-            IVsSolution vsSolution = ServiceProvider.GetService(typeof(SVsSolution)) as IVsSolution;
+            IVsSolution vsSolution = await ServiceProvider.GetServiceAsync(typeof(SVsSolution)) as IVsSolution;
+
             vsSolution.SetProperty((int)__VSPROPID4.VSPROPID_ActiveSolutionLoadManager, this);
 
             SolutionEvents = new SnykVsSolutionLoadEvents();

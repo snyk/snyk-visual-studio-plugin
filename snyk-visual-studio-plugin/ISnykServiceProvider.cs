@@ -1,12 +1,32 @@
-﻿using Snyk.VisualStudio.Extension.Services;
+﻿using EnvDTE;
+using Microsoft.VisualStudio.Settings;
+using Microsoft.VisualStudio.Shell;
+using Snyk.VisualStudio.Extension.Services;
 using Snyk.VisualStudio.Extension.Settings;
 using Snyk.VisualStudio.Extension.UI;
 using System;
+using System.Threading.Tasks;
 
 namespace Snyk.VisualStudio.Extension
 {
-    public interface ISnykServiceProvider : IServiceProvider
+    public interface ISnykServiceProvider //: IServiceProvider
     {
+        DTE DTE
+        {
+            get;
+        }
+
+        SnykVSPackage Package
+        {
+            get;
+        }
+
+        Task<object> GetServiceAsync(Type serviceType);
+
+        IAsyncServiceProvider AsyncServiceProvider
+        {
+            get;
+        }
 
         SnykSolutionService SolutionService
         {
@@ -28,8 +48,13 @@ namespace Snyk.VisualStudio.Extension
             get;
         }
 
+        SettingsManager SettingsManager
+        {
+            get;
+        }
+
         SnykToolWindowControl GetToolWindow();
 
-        void ShowToolWindow();
+        void ShowToolWindow();        
     }
 }

@@ -7,7 +7,9 @@
 using System;
 using System.ComponentModel.Design;
 using Microsoft.VisualStudio.Shell;
+using Task = System.Threading.Tasks.Task;
 using Microsoft.VisualStudio.Shell.Interop;
+using Microsoft.VisualStudio;
 
 namespace Snyk.VisualStudio.Extension.UI
 {
@@ -26,32 +28,16 @@ namespace Snyk.VisualStudio.Extension.UI
         /// </summary>
         public static readonly Guid CommandSet = new Guid("31b6f1bd-8317-4d93-b023-b60f667b9e76");
 
-        /// <summary>
-        /// VS Package that provides this command, not null.
-        /// </summary>
-        private readonly Package package;
+        private ISnykServiceProvider serviceProvider;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="SnykToolWindowCommand"/> class.
         /// Adds our command handlers for menu (commands must exist in the command table file)
         /// </summary>
         /// <param name="package">Owner package, not null.</param>
-        private SnykToolWindowCommand(Package package)
+        private SnykToolWindowCommand(ISnykServiceProvider serviceProvider)
         {
-            if (package == null)
-            {
-                throw new ArgumentNullException("package");
-            }
-
-            this.package = package;
-
-            OleMenuCommandService commandService = this.ServiceProvider.GetService(typeof(IMenuCommandService)) as OleMenuCommandService;
-            if (commandService != null)
-            {
-                var menuCommandID = new CommandID(CommandSet, CommandId);
-                var menuItem = new MenuCommand(this.ShowToolWindow, menuCommandID);
-                commandService.AddCommand(menuItem);
-            }
+            this.serviceProvider = serviceProvider;  
         }
 
         /// <summary>
@@ -61,24 +47,13 @@ namespace Snyk.VisualStudio.Extension.UI
         {
             get;
             private set;
-        }
-
-        /// <summary>
-        /// Gets the service provider from the owner package.
-        /// </summary>
-        private IServiceProvider ServiceProvider
-        {
-            get
-            {
-                return this.package;
-            }
-        }
+        }        
 
         private SnykActivityLogger Logger
         {
             get
             {
-                return (this.package as ISnykServiceProvider).ActivityLogger;
+                return serviceProvider.ActivityLogger;
             }
         }
 
@@ -86,10 +61,21 @@ namespace Snyk.VisualStudio.Extension.UI
         /// Initializes the singleton instance of the command.
         /// </summary>
         /// <param name="package">Owner package, not null.</param>
-        public static void Initialize(Package package)
+        public static async Task InitializeAsync(ISnykServiceProvider serviceProvider)
         {
-            Instance = new SnykToolWindowCommand(package);
-        }
+            await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
+
+            Instance = new SnykToolWindowCommand(serviceProvider);
+
+            OleMenuCommandService commandService = await serviceProvider.GetServiceAsync(typeof(IMenuCommandService)) as OleMenuCommandService;
+
+            if (commandService != null)
+            {
+                var menuCommandID = new CommandID(CommandSet, CommandId);
+                var menuItem = new MenuCommand(Instance.ShowToolWindow, menuCommandID);
+                commandService.AddCommand(menuItem);
+            }
+        }        
 
         /// <summary>
         /// Shows the tool window when the menu item is clicked.
@@ -100,18 +86,7 @@ namespace Snyk.VisualStudio.Extension.UI
         {
             Logger.LogInformation("Enter ShowToolWindow method");
 
-            // Get the instance number 0 of this tool window. This window is single instance so this instance
-            // is actually the only one.
-            // The last flag is set to true so that if the tool window does not exists it will be created.
-            ToolWindowPane window = this.package.FindToolWindow(typeof(SnykToolWindow), 0, true);
-
-            if ((null == window) || (null == window.Frame))
-            {
-                throw new NotSupportedException("Cannot create tool window");
-            }
-
-            IVsWindowFrame windowFrame = (IVsWindowFrame)window.Frame;
-            Microsoft.VisualStudio.ErrorHandler.ThrowOnFailure(windowFrame.Show());
+            serviceProvider.ShowToolWindow();
         }
     }
 }

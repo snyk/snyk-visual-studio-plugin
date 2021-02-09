@@ -3,6 +3,9 @@ using Snyk.VisualStudio.Extension.Services;
 using Snyk.VisualStudio.Extension.Settings;
 using Snyk.VisualStudio.Extension.UI;
 using Microsoft.VisualStudio.Shell.Interop;
+using System.Threading.Tasks;
+using Microsoft.VisualStudio.Settings;
+using EnvDTE;
 
 namespace Snyk.VisualStudio.Extension.Tests
 {
@@ -16,7 +19,39 @@ namespace Snyk.VisualStudio.Extension.Tests
             }
         }
 
+        public IAsyncServiceProvider AsyncServiceProvider
+        {
+            get
+            {
+                throw new NotImplementedException();
+            }
+        }
+
+        public DTE DTE
+        {
+            get
+            {
+                throw new NotImplementedException();
+            }
+        }
+
         public ISnykOptions Options
+        {
+            get
+            {
+                throw new NotImplementedException();
+            }
+        }
+
+        public SnykVSPackage Package
+        {
+            get
+            {
+                throw new NotImplementedException();
+            }
+        }
+
+        public SettingsManager SettingsManager
         {
             get
             {
@@ -40,6 +75,14 @@ namespace Snyk.VisualStudio.Extension.Tests
             }
         }
 
+        Microsoft.VisualStudio.Shell.IAsyncServiceProvider ISnykServiceProvider.AsyncServiceProvider
+        {
+            get
+            {
+                throw new NotImplementedException();
+            }
+        }
+
         public object GetService(Type serviceType)
         {
             if (serviceType == typeof(SVsSolution))
@@ -48,6 +91,11 @@ namespace Snyk.VisualStudio.Extension.Tests
             }
 
             return null;
+        }
+
+        public Task<object> GetServiceAsync(Type serviceType)
+        {
+            throw new NotImplementedException();
         }
 
         public SnykToolWindowControl GetToolWindow()

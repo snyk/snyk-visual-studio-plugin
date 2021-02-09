@@ -13,11 +13,27 @@ namespace Snyk.VisualStudio.Extension.UI
             InitializeComponent();
 
             this.solutionService = solutionService;
+        }    
+
+        private void additionalOptionsTextBox_TextChanged(object sender, EventArgs e)
+        {
+            if (solutionService.SolutionSettingsService.IsProjectOpened())
+            {
+                solutionService.SolutionSettingsService.SaveAdditionalOptions(additionalOptionsTextBox.Text.ToString());
+            }
         }
 
-        protected override void OnVisibleChanged(EventArgs e)
+        private void allProjectsCheckBox_CheckedChanged(object sender, EventArgs e)
         {
-            base.OnVisibleChanged(e);
+            if (solutionService.SolutionSettingsService.IsProjectOpened())
+            {
+                solutionService.SolutionSettingsService.SaveIsAllProjectsScanEnabled(allProjectsCheckBox.Checked);
+            }
+        }
+
+        private void SnykProjectOptionsUserControl_Load(object sender, EventArgs eventArgs)
+        {
+            base.OnVisibleChanged(eventArgs);
 
             bool isProjectOpened = solutionService.SolutionSettingsService.IsProjectOpened();
 
@@ -36,7 +52,8 @@ namespace Snyk.VisualStudio.Extension.UI
                 if (!String.IsNullOrEmpty(additionalOptions))
                 {
                     additionalOptionsTextBox.Text = additionalOptions;
-                } else
+                }
+                else
                 {
                     additionalOptionsTextBox.Text = "";
                 }
@@ -56,25 +73,9 @@ namespace Snyk.VisualStudio.Extension.UI
             {
                 solutionService.Logger.LogError(exception.Message);
 
-                allProjectsCheckBox.Checked = true;
+                allProjectsCheckBox.Checked = false;
 
-                solutionService.SolutionSettingsService.SaveIsAllProjectsScanEnabled(true);
-            }
-        }        
-
-        private void additionalOptionsTextBox_TextChanged(object sender, EventArgs e)
-        {
-            if (solutionService.SolutionSettingsService.IsProjectOpened())
-            {
-                solutionService.SolutionSettingsService.SaveAdditionalOptions(additionalOptionsTextBox.Text.ToString());
-            }
-        }
-
-        private void allProjectsCheckBox_CheckedChanged(object sender, EventArgs e)
-        {
-            if (solutionService.SolutionSettingsService.IsProjectOpened())
-            {
-                solutionService.SolutionSettingsService.SaveIsAllProjectsScanEnabled(allProjectsCheckBox.Checked);
+                solutionService.SolutionSettingsService.SaveIsAllProjectsScanEnabled(false);
             }
         }
     }

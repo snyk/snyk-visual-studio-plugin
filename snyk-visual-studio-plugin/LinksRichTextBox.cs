@@ -51,15 +51,27 @@ namespace Snyk.VisualStudio.Extension.UI
             foreach (string word in text.Split(' ').ToList())
             {
                 Uri uriResult;
-                bool isUrlWord = Uri.TryCreate(word, UriKind.Absolute, out uriResult) && (uriResult.Scheme == Uri.UriSchemeHttp || uriResult.Scheme == Uri.UriSchemeHttps);
+
+                string urlWord = word;
+
+                if (word.Contains("(") && word.Contains(")"))
+                {
+                    int startIndex = word.IndexOf("(") + 1;
+                    int lastIndex = word.IndexOf(")");
+                    
+                    urlWord = word.Substring(startIndex, lastIndex - startIndex);
+                }
+
+                bool isUrlWord = Uri.TryCreate(urlWord, UriKind.Absolute, out uriResult) 
+                    && (uriResult.Scheme == Uri.UriSchemeHttp || uriResult.Scheme == Uri.UriSchemeHttps);
 
                 if (isUrlWord)
                 {
                     Hyperlink link = new Hyperlink();
 
                     link.IsEnabled = true;
-                    link.Inlines.Add(word);
-                    link.NavigateUri = new Uri(word);
+                    link.Inlines.Add(urlWord);
+                    link.NavigateUri = new Uri(urlWord);
                     link.RequestNavigate += (sender, args) => Process.Start(args.Uri.ToString());
 
                     paragraph.Inlines.Add(link);

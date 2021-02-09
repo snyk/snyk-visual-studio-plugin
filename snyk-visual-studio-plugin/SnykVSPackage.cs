@@ -15,6 +15,13 @@ using Snyk.VisualStudio.Extension.Services;
 using Microsoft.VisualStudio;
 using EnvDTE80;
 using EnvDTE;
+using System.Threading;
+using System.Threading.Tasks;
+using IAsyncServiceProvider = Microsoft.VisualStudio.Shell.IAsyncServiceProvider;
+using Task = System.Threading.Tasks.Task;
+using Microsoft.VisualStudio.Threading;
+using Microsoft.VisualStudio.Settings;
+using Microsoft.VisualStudio.Shell.Settings;
 
 namespace Snyk.VisualStudio.Extension
 {
@@ -35,25 +42,28 @@ namespace Snyk.VisualStudio.Extension
     /// To get loaded into VS, the package must be referred by &lt;Asset Type="Microsoft.VisualStudio.VsPackage" ...&gt; in .vsixmanifest file.
     /// </para>
     /// </remarks>
-    [PackageRegistration(UseManagedResourcesOnly = true)]
+    [PackageRegistration(UseManagedResourcesOnly = true, AllowsBackgroundLoading = true)]
     [InstalledProductRegistration("#110", "#112", "1.0", IconResourceID = 400)] // Info on this package for Help/About
     [Guid(SnykVSPackage.PackageGuidString)]
     [SuppressMessage("StyleCop.CSharp.DocumentationRules", "SA1650:ElementDocumentationMustBeSpelledCorrectly", Justification = "pkgdef, VS and vsixmanifest are valid VS terms")]
-    [ProvideAutoLoad(UIContextGuids80.SolutionExists)]
+    [ProvideService(typeof(ISnykService), IsAsyncQueryable = true)]
+    [ProvideAutoLoad(VSConstants.UICONTEXT.SolutionExistsAndFullyLoaded_string, PackageAutoLoadFlags.BackgroundLoad)]
     [ProvideMenuResource("Menus.ctmenu", 1)]
     [ProvideToolWindow(typeof(SnykToolWindow), Style = VsDockStyle.Tabbed)]
     [ProvideOptionPage(typeof(SnykGeneralOptionsDialogPage), "Snyk", "General settings", 1000, 1001, true)]
     [ProvideOptionPage(typeof(SnykProjectOptionsDialogPage), "Snyk", "Project settings", 1000, 1002, true)]
-    public sealed class SnykVSPackage : Package, ISnykServiceProvider
+    public sealed class SnykVSPackage : AsyncPackage
     {
         /// <summary>
         /// SnykVSPackage GUID string.
         /// </summary>
         public const string PackageGuidString = "5ddf9abb-42ec-49b9-b201-b3e2fc2f8f89";
 
-        private static SnykVSPackage instance;
+        private static SnykVSPackage instance;        
 
-        private SnykActivityLogger activityLogger;
+        private ISnykServiceProvider snykServiceProvider;
+
+        private SnykGeneralOptionsDialogPage generalOptionsDialogPage;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="SnykVSPackage"/> class.
@@ -65,7 +75,27 @@ namespace Snyk.VisualStudio.Extension
             // not sited yet inside Visual Studio environment. The place to do all the other
             // initialization is the Initialize method.
             instance = this;
-        }             
+        }
+
+        protected override async Task InitializeAsync(CancellationToken cancellationToken, IProgress<ServiceProgressData> progress)
+        {
+            this.AddService(typeof(SnykService), CreateSnykService, true);            
+
+            ISnykService snykService = await this.GetServiceAsync(typeof(SnykService)) as ISnykService;
+
+            Console.WriteLine(snykService.ToString());
+
+            await Task.FromResult<object>(null);            
+        }       
+
+        public async Task<object> CreateSnykService(IAsyncServiceContainer container, CancellationToken cancellationToken, Type serviceType)
+        {
+            var service = new SnykService(this);
+
+            await service.InitializeAsync(cancellationToken);
+
+            return service;
+        }
 
         public SnykSolutionService SolutionService
         {
@@ -87,7 +117,7 @@ namespace Snyk.VisualStudio.Extension
         {
             get
             {
-                return SnykGeneralOptionsDialogPage;
+                return GetGeneralOptionsDialogPage();
             }
         }    
         
@@ -95,7 +125,7 @@ namespace Snyk.VisualStudio.Extension
         {
             get
             {
-                return activityLogger;
+                return snykServiceProvider.ActivityLogger;
             }
         }
 
@@ -124,14 +154,16 @@ namespace Snyk.VisualStudio.Extension
             return (SnykToolWindowControl)toolWindowPane.Content;
         }
 
-        private DTE GetDTE() => (DTE)this.GetService(typeof(DTE));
-
-        private SnykGeneralOptionsDialogPage SnykGeneralOptionsDialogPage
+        public SnykGeneralOptionsDialogPage GetGeneralOptionsDialogPage()
         {
-            get
+            JoinableTaskFactory.SwitchToMainThreadAsync();
+
+            if (generalOptionsDialogPage == null)
             {
-                return (SnykGeneralOptionsDialogPage)GetDialogPage(typeof(SnykGeneralOptionsDialogPage));
+                generalOptionsDialogPage = (SnykGeneralOptionsDialogPage)GetDialogPage(typeof(SnykGeneralOptionsDialogPage));
             }            
+
+            return generalOptionsDialogPage;
         }        
 
         #region Package Members
@@ -139,26 +171,108 @@ namespace Snyk.VisualStudio.Extension
         /// <summary>
         /// Initialization of the package; this method is called right after the package is sited, so this is the place
         /// where you can put all the initialization code that rely on services provided by VisualStudio.
-        /// </summary>
-        protected override void Initialize()
+        /// </summary>        
+        #endregion
+    }            
+
+    public interface ISnykService
+    {
+    }
+
+    public class SnykService : ISnykServiceProvider, ISnykService
+    {
+        private IAsyncServiceProvider serviceProvider;
+
+        private SnykActivityLogger activityLogger;
+
+        private SettingsManager settingsManager;
+
+        private DTE dte;
+
+        public SnykService(IAsyncServiceProvider serviceProvider)
         {
-            base.Initialize();
-
-            activityLogger = new SnykActivityLogger(this);
-
-            activityLogger.LogInformation("Initialize Snyk services");
-            
-            SnykTasksService.Initialize(this);
-            SnykSolutionService.Initialize(this);
-            SnykToolWindowCommand.Initialize(this);
-            SnykGeneralOptionsDialogPage.Initialize(this);
-
-            GetToolWindow().ServiceProvider = this;            
-
-            InitializeEventListeners();            
+            this.serviceProvider = serviceProvider;
         }
 
-        private void InitializeEventListeners()
+        public SnykActivityLogger ActivityLogger
+        {
+            get
+            {
+                return activityLogger;
+            }
+        }
+
+        public ISnykOptions Options
+        {
+            get
+            {
+                return Package.GetGeneralOptionsDialogPage();
+            }
+        }
+
+        public SnykSolutionService SolutionService
+        {
+            get
+            {
+                return Package.SolutionService;
+            }
+        }
+
+        public SnykTasksService TasksService
+        {
+            get
+            {
+                return Package.TasksService;
+            }
+        }    
+        
+        public SettingsManager SettingsManager
+        {
+            get
+            {
+                return settingsManager;
+            }
+        }
+
+        public SnykToolWindowControl GetToolWindow()
+        {
+            return Package.GetToolWindow();
+        }
+
+        public DTE DTE
+        {
+            get
+            {
+                return dte;
+            }
+        }
+
+        public async Task InitializeAsync(CancellationToken cancellationToken)
+        {            
+            IVsActivityLog activityLog = await serviceProvider.GetServiceAsync(typeof(SVsActivityLog)) as IVsActivityLog;
+
+            activityLogger = new SnykActivityLogger(activityLog);
+
+            activityLogger.LogInformation("Initialize Snyk services");
+
+            this.settingsManager = new ShellSettingsManager(Package);
+
+            await SnykToolWindowCommand.InitializeAsync(this);            
+
+            await SnykTasksService.InitializeAsync(this);
+
+            await SnykSolutionService.InitializeAsync(this);
+            
+            Package.GetGeneralOptionsDialogPage().Initialize(this);
+
+            GetToolWindow().ServiceProvider = this;
+
+            await InitializeEventListeners();
+
+            activityLogger.LogInformation("After....");
+        }
+
+        private async Task InitializeEventListeners()
         {
             activityLogger.LogInformation("InitializeEventListeners method");
 
@@ -188,13 +302,45 @@ namespace Snyk.VisualStudio.Extension
 
             activityLogger.LogInformation("Initialize ToolWindow Display Event Listeners");
 
-            WindowVisibilityEvents visibilityEvents = (GetDTE()?.Events as Events2)?.WindowVisibilityEvents;
+            this.dte = await serviceProvider.GetServiceAsync(typeof(DTE)) as DTE;
+
+            WindowVisibilityEvents visibilityEvents = (dte.Events as Events2)?.WindowVisibilityEvents;
 
             if (visibilityEvents != null)
             {
-                visibilityEvents.WindowShowing += (window) => SnykTasksService.Instance().Download();                
+                visibilityEvents.WindowShowing += (window) => SnykTasksService.Instance().Download();
             }
         }
-        #endregion
-    }            
+
+        public void ShowToolWindow()
+        {
+            Package.ShowToolWindow();
+        }
+
+        public async Task<object> GetServiceAsync(Type serviceType)
+        {
+            return await serviceProvider.GetServiceAsync(serviceType);
+        }
+
+        public object GetService(Type serviceType)
+        {
+            return null;
+        }
+
+        public SnykVSPackage Package
+        {
+            get
+            {
+                return serviceProvider as SnykVSPackage;
+            }
+        }
+
+        public IAsyncServiceProvider AsyncServiceProvider
+        {
+            get
+            {
+                return serviceProvider;
+            }
+        }        
+    }
 }

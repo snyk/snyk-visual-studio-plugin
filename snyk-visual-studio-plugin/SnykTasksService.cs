@@ -1,7 +1,9 @@
-﻿using Snyk.VisualStudio.Extension.CLI;
+﻿using Microsoft.VisualStudio.Shell;
+using Snyk.VisualStudio.Extension.CLI;
 using System;
 using System.Threading;
 using System.Threading.Tasks;
+using Task = System.Threading.Tasks.Task;
 
 namespace Snyk.VisualStudio.Extension.UI
 {   
@@ -45,8 +47,10 @@ namespace Snyk.VisualStudio.Extension.UI
             return instance;
         }
 
-        public static void Initialize(ISnykServiceProvider serviceProvider)
+        public static async Task InitializeAsync(ISnykServiceProvider serviceProvider)
         {
+            await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
+
             instance = new SnykTasksService();
 
             instance.serviceProvider = serviceProvider;
@@ -108,7 +112,8 @@ namespace Snyk.VisualStudio.Extension.UI
 
                     var cli = new SnykCli
                     {
-                        Options = options
+                        Options = options,
+                        Logger = Logger
                     };
 
                     Logger.LogInformation($"Snyk Extension options");

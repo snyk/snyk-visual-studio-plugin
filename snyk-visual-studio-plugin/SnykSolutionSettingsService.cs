@@ -1,8 +1,12 @@
 ﻿using EnvDTE;
 using Microsoft.VisualStudio.Settings;
+using Microsoft.VisualStudio.Shell;
+using Microsoft.VisualStudio.Shell.Interop;
 using Microsoft.VisualStudio.Shell.Settings;
+using Microsoft.VisualStudio.Threading;
 using Snyk.VisualStudio.Extension.Services;
 using System;
+using System.Threading.Tasks;
 
 namespace Snyk.VisualStudio.Extension.Settings
 {
@@ -75,7 +79,7 @@ namespace Snyk.VisualStudio.Extension.Settings
         {
             logger.LogInformation("Enter GetIsAllProjectsEnabled method");
 
-            bool isAllProjectsEnabled = true;
+            bool isAllProjectsEnabled = false;
 
             string projectUniqueName = GetProjectUniqueName();
 
@@ -171,13 +175,20 @@ namespace Snyk.VisualStudio.Extension.Settings
             return project.UniqueName;
         }
 
+        private static AsyncLazy<ShellSettingsManager> settingsManager = new AsyncLazy<ShellSettingsManager>(GetSettingsManagerAsync, ThreadHelper.JoinableTaskFactory);
+
+        private static async Task<ShellSettingsManager> GetSettingsManagerAsync()
+        {
+            IServiceProvider serviceProvider = await AsyncServiceProvider.GlobalProvider.GetServiceAsync(typeof(SVsSettingsManager)) as IServiceProvider;
+
+            return new ShellSettingsManager(serviceProvider);
+        }
+
         private WritableSettingsStore GetUserSettingsStore()
         {
             logger.LogInformation("Enter GetUserSettingsStore method");
-
-            SettingsManager settingsManager = new ShellSettingsManager(solutionService.ServiceProvider);
-
-            var settingsStore = settingsManager.GetWritableSettingsStore(SettingsScope.UserSettings);
+            
+            var settingsStore = solutionService.ServiceProvider.SettingsManager.GetWritableSettingsStore(SettingsScope.UserSettings);
 
             if (!settingsStore.CollectionExists(SnykProjectSettingsCollectionName))
             {
@@ -187,6 +198,6 @@ namespace Snyk.VisualStudio.Extension.Settings
             logger.LogInformation("Leave GetUserSettingsStore method");
 
             return settingsStore;
-        }                                     
-    }
+        }        
+    }    
 }
