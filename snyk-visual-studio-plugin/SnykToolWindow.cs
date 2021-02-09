@@ -134,6 +134,8 @@ namespace Snyk.VisualStudio.Extension.UI
                 }
                 catch (Exception exception)
                 {
+                    toolWindowControl.ServiceProvider.ActivityLogger.LogError(exception.Message);
+
                     this.ErrorCode = VSConstants.E_FAIL;
                 }
 

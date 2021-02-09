@@ -61,8 +61,6 @@ namespace Snyk.VisualStudio.Extension
 
         private static SnykVSPackage instance;        
 
-        private ISnykServiceProvider snykServiceProvider;
-
         private SnykGeneralOptionsDialogPage generalOptionsDialogPage;
 
         /// <summary>
@@ -119,15 +117,7 @@ namespace Snyk.VisualStudio.Extension
             {
                 return GetGeneralOptionsDialogPage();
             }
-        }    
-        
-        public SnykActivityLogger ActivityLogger
-        {
-            get
-            {
-                return snykServiceProvider.ActivityLogger;
-            }
-        }
+        }           
 
         public void ShowToolWindow()
         {
