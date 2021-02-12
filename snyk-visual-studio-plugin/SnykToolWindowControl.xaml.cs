@@ -14,7 +14,8 @@ namespace Snyk.VisualStudio.Extension.UI
     using System.Windows.Threading;
     using System.Threading;
     using System.Windows.Media;
-    using System;
+    using System;   
+    using Services;
 
     /// <summary>
     /// Interaction logic for SnykToolWindowControl.
@@ -23,14 +24,26 @@ namespace Snyk.VisualStudio.Extension.UI
     {
         private bool isSolutionLoaded;
 
+        private static SnykToolWindowControl instance;
+
         /// <summary>
         /// Initializes a new instance of the <see cref="SnykToolWindowControl"/> class.
         /// </summary>
         public SnykToolWindowControl()
         {
+            instance = this;
+
             this.InitializeComponent();
 
             DisableAllActions();
+        }
+
+        public static SnykToolWindowControl Instance
+        {
+            get
+            {
+                return instance;
+            }
         }
 
         public void OnAfterBackgroundSolutionLoadComplete(object sender, EventArgs eventArgs)
@@ -127,7 +140,14 @@ namespace Snyk.VisualStudio.Extension.UI
 
             HideMainPanelMessage();
         }
-        
+
+        public void OnVsThemeChanged(object sender, SnykVsThemeChangedEventArgs eventArgs)
+        {
+            errorMessage.SetupForeground();
+            errorPath.SetupForeground();
+            overview.SetupForeground();
+        }        
+
         public ISnykServiceProvider ServiceProvider { get; internal set; }        
 
         public SnykFilterableTree VulnerabilitiesTree
@@ -488,5 +508,5 @@ namespace Snyk.VisualStudio.Extension.UI
 
             DisplayRunScanMessage();
         }
-    }        
+    }
 }

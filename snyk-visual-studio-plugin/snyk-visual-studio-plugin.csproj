@@ -57,6 +57,7 @@
   <ItemGroup>
     <Compile Include="ISnykServiceProvider.cs" />
     <Compile Include="LinksRichTextBox.cs" />
+    <Compile Include="Services\SnykVsThemeService.cs" />
     <Compile Include="SnykActivityLogger.cs" />
     <Compile Include="CLIError.cs" />
     <Compile Include="CLIResult.cs" />

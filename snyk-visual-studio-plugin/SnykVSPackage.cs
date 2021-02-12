@@ -177,6 +177,8 @@ namespace Snyk.VisualStudio.Extension
 
         private SettingsManager settingsManager;
 
+        private SnykVsThemeService vsThemeService;
+
         private DTE dte;
 
         public SnykService(IAsyncServiceProvider serviceProvider)
@@ -257,9 +259,13 @@ namespace Snyk.VisualStudio.Extension
 
             GetToolWindow().ServiceProvider = this;
 
-            await InitializeEventListeners();
+            this.vsThemeService = new SnykVsThemeService(this);
 
-            activityLogger.LogInformation("After....");
+            await this.vsThemeService.InitializeAsync();
+
+            await InitializeEventListeners();           
+
+            activityLogger.LogInformation("Leave InitializeAsync");
         }
 
         private async Task InitializeEventListeners()
@@ -300,6 +306,8 @@ namespace Snyk.VisualStudio.Extension
             {
                 visibilityEvents.WindowShowing += (window) => SnykTasksService.Instance().Download();
             }
+
+            this.vsThemeService.ThemeChanged += toolWindow.OnVsThemeChanged;
         }
 
         public void ShowToolWindow()
@@ -332,5 +340,5 @@ namespace Snyk.VisualStudio.Extension
                 return serviceProvider;
             }
         }        
-    }
+    }            
 }

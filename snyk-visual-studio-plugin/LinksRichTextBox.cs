@@ -4,6 +4,7 @@ using System.Diagnostics;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Documents;
+using System.Windows.Media;
 
 namespace Snyk.VisualStudio.Extension.UI
 {
@@ -39,7 +40,39 @@ namespace Snyk.VisualStudio.Extension.UI
 
         #endregion
 
-        public LinksRichTextBox() { }
+        public LinksRichTextBox()
+        {
+            this.Loaded += OnInitialized;
+        }
+
+        public void OnInitialized(object source, RoutedEventArgs eventArgs)
+        {
+            base.OnInitialized(eventArgs);
+
+            SetupForeground();
+        }        
+
+        public void SetupForeground()
+        {
+            SolidColorBrush backgroundBrush = this.Background as SolidColorBrush;
+
+            var resultBrushColor = new SolidColorBrush(Colors.Black); ;
+
+            if (backgroundBrush != null)
+            {
+                Color mediaBackgroundColor = backgroundBrush.Color;
+
+                var backgroundColor = System.Drawing.Color
+                    .FromArgb(mediaBackgroundColor.A, mediaBackgroundColor.R, mediaBackgroundColor.G, mediaBackgroundColor.B);
+
+                if (backgroundColor.GetBrightness() < 0.5)
+                {
+                    resultBrushColor = new SolidColorBrush(Colors.White);
+                }
+            }
+
+            this.Foreground = resultBrushColor;
+        }
 
         private static FlowDocument GetCustomDocument(string text)
         {

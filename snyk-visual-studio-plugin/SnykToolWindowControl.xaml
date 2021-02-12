@@ -90,27 +90,24 @@
                 <TextBlock Text="Error" Width="100" HorizontalAlignment="Left" VerticalAlignment="Center" FontSize="20" Background="#CC666E"/>
             </Border>
             <StackPanel Orientation="Horizontal">
-                <TextBlock Text="Message:" FontWeight="Bold" HorizontalAlignment="Left" VerticalAlignment="Center" FontSize="12" Margin="5, 5, 5, 5"/>
+                <TextBlock Text="Message:" FontWeight="Bold" FontSize="12" Margin="5, 5, 5, 5"/>
                 <local:LinksRichTextBox x:Name="errorMessage" IsDocumentEnabled="True" 
                                         IsReadOnly="True" 
-                                        HorizontalAlignment="Left" 
-                                        VerticalAlignment="Center" 
                                         FontSize="12" 
                                         Margin="5, 5, 5, 5" 
                                         MaxWidth="1000"
                                         BorderThickness="0, 0, 0, 0"
-                                        Background="{DynamicResource VsBrush.Window}"/>
+                                        Background="{DynamicResource VsBrush.Window}"
+                                        HorizontalContentAlignment="Stretch" VerticalContentAlignment="Stretch"/>
             </StackPanel>
             <StackPanel Orientation="Horizontal">
-                <TextBlock Text="Path:" FontWeight="Bold" HorizontalAlignment="Left" VerticalAlignment="Center" FontSize="12" Margin="5, 5, 5, 5"/>
+                <TextBlock Text="Path:" FontWeight="Bold" FontSize="12" Margin="5, 5, 30, 5"/>
                 <local:LinksRichTextBox x:Name="errorPath" IsDocumentEnabled="True" 
                                         IsReadOnly="True" 
-                                        HorizontalAlignment="Left" 
-                                        VerticalAlignment="Center" 
                                         FontSize="12" 
                                         Margin="5, 5, 5, 5" 
                                         MaxWidth="1000"
-                                        BorderThickness="0, 0, 0, 0"
+                                        BorderThickness="0, 0, 0, 0"                                        
                                         Background="{DynamicResource VsBrush.Window}"/>
             </StackPanel>
         </StackPanel>
@@ -158,12 +155,12 @@
                 <StackPanel Orientation="Horizontal">
                         <local:LinksRichTextBox x:Name="overview" IsDocumentEnabled="True" 
                                         IsReadOnly="True" 
-                                        VerticalAlignment="Center" 
+                                        VerticalAlignment="Top" 
                                         FontSize="12" 
                                         Margin="5, 5, 5, 5" 
                                         MinWidth="400"
                                         MaxWidth="700"
-                                        BorderThickness="0, 0, 0, 0"
+                                        BorderThickness="0, 0, 0, 0"                                        
                                         Background="{DynamicResource VsBrush.Window}" 
                                         HorizontalContentAlignment="Stretch" VerticalContentAlignment="Stretch"/>
                     </StackPanel>
