@@ -44,10 +44,12 @@
             // 
             // customEndpointTextBox
             // 
+            this.customEndpointTextBox.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left) 
+            | System.Windows.Forms.AnchorStyles.Right)));
             this.customEndpointTextBox.Location = new System.Drawing.Point(238, 88);
             this.customEndpointTextBox.Margin = new System.Windows.Forms.Padding(4, 3, 4, 3);
             this.customEndpointTextBox.Name = "customEndpointTextBox";
-            this.customEndpointTextBox.Size = new System.Drawing.Size(931, 31);
+            this.customEndpointTextBox.Size = new System.Drawing.Size(899, 31);
             this.customEndpointTextBox.TabIndex = 0;
             this.customEndpointTextBox.TextChanged += new System.EventHandler(this.customEndpointTextBox_TextChanged);
             this.customEndpointTextBox.Validating += new System.ComponentModel.CancelEventHandler(this.customEndpointTextBox_Validating);
@@ -74,10 +76,12 @@
             // 
             // organizationTextBox
             // 
+            this.organizationTextBox.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left) 
+            | System.Windows.Forms.AnchorStyles.Right)));
             this.organizationTextBox.Location = new System.Drawing.Point(238, 166);
             this.organizationTextBox.Margin = new System.Windows.Forms.Padding(4, 3, 4, 3);
             this.organizationTextBox.Name = "organizationTextBox";
-            this.organizationTextBox.Size = new System.Drawing.Size(931, 31);
+            this.organizationTextBox.Size = new System.Drawing.Size(899, 31);
             this.organizationTextBox.TabIndex = 3;
             this.organizationTextBox.TextChanged += new System.EventHandler(this.organizationTextBox_TextChanged);
             // 
@@ -93,11 +97,13 @@
             // 
             // tokenTextBox
             // 
+            this.tokenTextBox.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left) 
+            | System.Windows.Forms.AnchorStyles.Right)));
             this.tokenTextBox.Location = new System.Drawing.Point(238, 22);
-            this.tokenTextBox.Margin = new System.Windows.Forms.Padding(6, 6, 6, 6);
+            this.tokenTextBox.Margin = new System.Windows.Forms.Padding(6);
             this.tokenTextBox.Name = "tokenTextBox";
             this.tokenTextBox.PasswordChar = '*';
-            this.tokenTextBox.Size = new System.Drawing.Size(931, 31);
+            this.tokenTextBox.Size = new System.Drawing.Size(899, 31);
             this.tokenTextBox.TabIndex = 5;
             this.tokenTextBox.TextChanged += new System.EventHandler(this.tokenTextBox_TextChanged);
             this.tokenTextBox.Validating += new System.ComponentModel.CancelEventHandler(this.tokenTextBox_Validating);
@@ -116,8 +122,9 @@
             // 
             // authenticateButton
             // 
-            this.authenticateButton.Location = new System.Drawing.Point(1197, 22);
-            this.authenticateButton.Margin = new System.Windows.Forms.Padding(6, 6, 6, 6);
+            this.authenticateButton.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
+            this.authenticateButton.Location = new System.Drawing.Point(1183, 18);
+            this.authenticateButton.Margin = new System.Windows.Forms.Padding(6);
             this.authenticateButton.Name = "authenticateButton";
             this.authenticateButton.Size = new System.Drawing.Size(165, 39);
             this.authenticateButton.TabIndex = 7;
@@ -127,11 +134,13 @@
             // 
             // authProgressBar
             // 
-            this.authProgressBar.Location = new System.Drawing.Point(238, 64);
+            this.authProgressBar.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left) 
+            | System.Windows.Forms.AnchorStyles.Right)));
+            this.authProgressBar.Location = new System.Drawing.Point(238, 59);
             this.authProgressBar.Margin = new System.Windows.Forms.Padding(4, 5, 4, 5);
             this.authProgressBar.MarqueeAnimationSpeed = 10;
             this.authProgressBar.Name = "authProgressBar";
-            this.authProgressBar.Size = new System.Drawing.Size(933, 5);
+            this.authProgressBar.Size = new System.Drawing.Size(900, 10);
             this.authProgressBar.Style = System.Windows.Forms.ProgressBarStyle.Marquee;
             this.authProgressBar.TabIndex = 8;
             this.authProgressBar.Visible = false;
