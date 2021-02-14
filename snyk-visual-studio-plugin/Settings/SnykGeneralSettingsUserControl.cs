@@ -1,11 +1,10 @@
 ﻿using System;
 using System.Windows.Forms;
-using Snyk.VisualStudio.Extension.Settings;
 using Snyk.VisualStudio.Extension.CLI;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 
-namespace Snyk.VisualStudio.Extension.UI
+namespace Snyk.VisualStudio.Extension.Settings
 {   
     public partial class SnykGeneralSettingsUserControl : UserControl
     {

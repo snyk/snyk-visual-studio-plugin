@@ -4,7 +4,7 @@ using System;
 using System.Runtime.InteropServices;
 using System.Threading.Tasks;
 
-namespace Snyk.VisualStudio.Extension.Services
+namespace Snyk.VisualStudio.Extension.Theme
 {
     public class SnykVsThemeService
     {

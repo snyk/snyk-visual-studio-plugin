@@ -4,7 +4,7 @@ using Microsoft.VisualStudio.Shell;
 using Microsoft.VisualStudio.Shell.Interop;
 using Microsoft.VisualStudio.Shell.Settings;
 using Microsoft.VisualStudio.Threading;
-using Snyk.VisualStudio.Extension.Services;
+using Snyk.VisualStudio.Extension.CLI;
 using System;
 using System.Threading.Tasks;
 

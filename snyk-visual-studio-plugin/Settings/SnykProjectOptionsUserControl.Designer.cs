@@ -1,4 +1,4 @@
-﻿namespace Snyk.VisualStudio.Extension.UI
+﻿namespace Snyk.VisualStudio.Extension.Settings
 {
     partial class SnykProjectOptionsUserControl
     {
@@ -34,7 +34,7 @@
             // 
             // additionalOptionsTextBox
             // 
-            this.additionalOptionsTextBox.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left) 
+            this.additionalOptionsTextBox.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left)
             | System.Windows.Forms.AnchorStyles.Right)));
             this.additionalOptionsTextBox.Location = new System.Drawing.Point(13, 22);
             this.additionalOptionsTextBox.Margin = new System.Windows.Forms.Padding(4);

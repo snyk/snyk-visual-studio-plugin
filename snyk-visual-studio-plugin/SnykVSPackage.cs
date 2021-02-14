@@ -11,7 +11,6 @@ using Microsoft.VisualStudio.Shell;
 using Microsoft.VisualStudio.Shell.Interop;
 using Snyk.VisualStudio.Extension.UI;
 using Snyk.VisualStudio.Extension.Settings;
-using Snyk.VisualStudio.Extension.Services;
 using Microsoft.VisualStudio;
 using EnvDTE80;
 using EnvDTE;
@@ -22,6 +21,8 @@ using Task = System.Threading.Tasks.Task;
 using Microsoft.VisualStudio.Threading;
 using Microsoft.VisualStudio.Settings;
 using Microsoft.VisualStudio.Shell.Settings;
+using Snyk.VisualStudio.Extension.CLI;
+using Snyk.VisualStudio.Extension.Theme;
 
 namespace Snyk.VisualStudio.Extension
 {

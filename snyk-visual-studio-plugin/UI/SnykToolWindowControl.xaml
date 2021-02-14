@@ -12,11 +12,11 @@
              d:DesignHeight="300" d:DesignWidth="300"
              Name="SnykToolWindow">
     <UserControl.Resources>
-        <BitmapImage x:Key="RunIcon" UriSource="./Resources/Run.png" DecodePixelWidth="16" DecodePixelHeight="16"/>
-        <BitmapImage x:Key="RunDisabledIcon" UriSource="./Resources/RunGrey.png" DecodePixelWidth="16" DecodePixelHeight="16"/>
-        <BitmapImage x:Key="StopIcon" UriSource="./Resources/Stop.png" DecodePixelWidth="16" DecodePixelHeight="16"/>
-        <BitmapImage x:Key="StopDisabledIcon" UriSource="./Resources/StopDisabled.png" DecodePixelWidth="16" DecodePixelHeight="16"/>
-        <BitmapImage x:Key="CleanIcon" UriSource="./Resources/CleanData.png" DecodePixelWidth="16" DecodePixelHeight="16"/>
+        <BitmapImage x:Key="RunIcon" UriSource="../Resources/Run.png" DecodePixelWidth="16" DecodePixelHeight="16"/>
+        <BitmapImage x:Key="RunDisabledIcon" UriSource="../Resources/RunGrey.png" DecodePixelWidth="16" DecodePixelHeight="16"/>
+        <BitmapImage x:Key="StopIcon" UriSource="../Resources/Stop.png" DecodePixelWidth="16" DecodePixelHeight="16"/>
+        <BitmapImage x:Key="StopDisabledIcon" UriSource="../Resources/StopDisabled.png" DecodePixelWidth="16" DecodePixelHeight="16"/>
+        <BitmapImage x:Key="CleanIcon" UriSource="../Resources/CleanData.png" DecodePixelWidth="16" DecodePixelHeight="16"/>
         <local:SnykImageConverter x:Key="ImageConverter"/>
     </UserControl.Resources>
     <Grid>

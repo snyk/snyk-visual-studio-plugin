@@ -3,7 +3,7 @@ using System.IO;
 using System.Runtime.Serialization.Json;
 using System.Text;
 
-namespace Snyk.VisualStudio.Extension.Util
+namespace Snyk.VisualStudio.Extension.CLI
 {
     class Json
     {

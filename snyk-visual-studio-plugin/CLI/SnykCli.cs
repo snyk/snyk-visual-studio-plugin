@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using Snyk.VisualStudio.Extension.Settings;
-using Snyk.VisualStudio.Extension.Util;
 
 namespace Snyk.VisualStudio.Extension.CLI
 {

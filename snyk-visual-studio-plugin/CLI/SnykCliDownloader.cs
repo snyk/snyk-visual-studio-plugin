@@ -1,8 +1,6 @@
 ﻿using System;
 using System.IO;
 using System.Net;
-using Snyk.VisualStudio.Extension.Util;
-using Snyk.VisualStudio.Extension.UI;
 
 namespace Snyk.VisualStudio.Extension.CLI
 {   

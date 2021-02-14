@@ -1,11 +1,11 @@
 ﻿using System;
-using Snyk.VisualStudio.Extension.Services;
 using Snyk.VisualStudio.Extension.Settings;
 using Snyk.VisualStudio.Extension.UI;
 using Microsoft.VisualStudio.Shell.Interop;
 using System.Threading.Tasks;
 using Microsoft.VisualStudio.Settings;
 using EnvDTE;
+using Snyk.VisualStudio.Extension.CLI;
 
 namespace Snyk.VisualStudio.Extension.Tests
 {

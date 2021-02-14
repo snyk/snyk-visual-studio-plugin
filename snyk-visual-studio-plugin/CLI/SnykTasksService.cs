@@ -5,7 +5,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Task = System.Threading.Tasks.Task;
 
-namespace Snyk.VisualStudio.Extension.UI
+namespace Snyk.VisualStudio.Extension.CLI
 {   
     public class SnykTasksService
     {

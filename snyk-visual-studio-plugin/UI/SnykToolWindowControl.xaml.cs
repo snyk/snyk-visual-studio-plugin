@@ -14,8 +14,8 @@ namespace Snyk.VisualStudio.Extension.UI
     using System.Windows.Threading;
     using System.Threading;
     using System.Windows.Media;
-    using System;   
-    using Services;
+    using System;
+    using Theme;
 
     /// <summary>
     /// Interaction logic for SnykToolWindowControl.

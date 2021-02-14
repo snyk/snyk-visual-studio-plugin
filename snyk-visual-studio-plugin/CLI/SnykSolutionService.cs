@@ -6,7 +6,7 @@ using System.IO;
 using Snyk.VisualStudio.Extension.Settings;
 using Task = System.Threading.Tasks.Task;
 
-namespace Snyk.VisualStudio.Extension.Services
+namespace Snyk.VisualStudio.Extension.CLI
 {
     public class SnykSolutionService : IVsSolutionLoadManager
     {
