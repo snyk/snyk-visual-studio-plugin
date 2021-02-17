@@ -95,8 +95,9 @@ namespace Snyk.VisualStudio.Extension.Settings
                         Path = ""
                     };
 
-                    serviceProvider.ShowToolWindow();
-                    serviceProvider.GetToolWindow().DisplayError(cliError);
+                    serviceProvider.TasksService.OnError(cliError);
+
+                    serviceProvider.ShowToolWindow();                    
                 };
 
                 if (SnykCli.IsCliExists())

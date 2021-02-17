@@ -15,7 +15,10 @@ namespace Snyk.VisualStudio.Extension.UI
     using System.Threading;
     using System.Windows.Media;
     using System;
-    using Theme;
+    using Theme;    
+    using Microsoft.VisualStudio.Shell.Interop;
+    using Microsoft.VisualStudio;
+    using Task = System.Threading.Tasks.Task;
 
     /// <summary>
     /// Interaction logic for SnykToolWindowControl.
@@ -24,26 +27,47 @@ namespace Snyk.VisualStudio.Extension.UI
     {
         private bool isSolutionLoaded;
 
-        private static SnykToolWindowControl instance;
+        private SnykToolWindow toolWindow;        
 
         /// <summary>
         /// Initializes a new instance of the <see cref="SnykToolWindowControl"/> class.
         /// </summary>
-        public SnykToolWindowControl()
+        public SnykToolWindowControl(SnykToolWindow toolWindow)
         {
-            instance = this;
+            this.toolWindow = toolWindow;
 
             this.InitializeComponent();
 
             DisableAllActions();
         }
 
-        public static SnykToolWindowControl Instance
+        public async Task InitializeEventListenersAsync(
+            SnykSolutionService solutionService, 
+            SnykTasksService tasksService, 
+            SnykVsThemeService vsThemeService, 
+            SnykActivityLogger logger)
         {
-            get
-            {
-                return instance;
-            }
+            logger.LogInformation("Initialize Solultion Event Listeners");
+
+            solutionService.SolutionEvents.AfterBackgroundSolutionLoadComplete += OnAfterBackgroundSolutionLoadComplete;
+            solutionService.SolutionEvents.AfterCloseSolution += OnAfterCloseSolution;
+
+            logger.LogInformation("Initialize CLI Event Listeners");
+
+            tasksService.ScanError += OnDisplayError;
+            tasksService.ScanningCancelled += OnScanningCancelled;
+            tasksService.ScanningStarted += OnScanningStarted;
+            tasksService.ScanningUpdate += OnScanningUpdate;
+            tasksService.ScanningFinished += OnScanningFinished;
+
+            logger.LogInformation("Initialize Download Event Listeners");
+
+            tasksService.DownloadStarted += OnDownloadStarted;
+            tasksService.DownloadFinished += OnDownloadFinished;
+            tasksService.DownloadUpdate += OnDownloadUpdate;
+            tasksService.DownloadCancelled += OnDownloadCancelled;
+
+            vsThemeService.ThemeChanged += OnVsThemeChanged;
         }
 
         public void OnAfterBackgroundSolutionLoadComplete(object sender, EventArgs eventArgs)
@@ -146,9 +170,14 @@ namespace Snyk.VisualStudio.Extension.UI
             errorMessage.SetupForeground();
             errorPath.SetupForeground();
             overview.SetupForeground();
-        }        
+        }
 
-        public ISnykServiceProvider ServiceProvider { get; internal set; }        
+        public void ShowToolWindow()
+        {
+            IVsWindowFrame windowFrame = (IVsWindowFrame)toolWindow.Frame;
+
+            ErrorHandler.ThrowOnFailure(windowFrame.Show());
+        }
 
         public SnykFilterableTree VulnerabilitiesTree
         {
@@ -292,9 +321,9 @@ namespace Snyk.VisualStudio.Extension.UI
 
                 this.resultsGrid.Visibility = Visibility.Collapsed;
 
-                ServiceProvider.ShowToolWindow();                
+                ShowToolWindow();                
             });
-        }
+        }        
 
         private void ShowIndeterminateProgressBar()
         {
@@ -492,12 +521,12 @@ namespace Snyk.VisualStudio.Extension.UI
 
         private void RunButton_Click(object sender, RoutedEventArgs e)
         {
-            SnykTasksService.Instance().Scan();
+            SnykTasksService.Instance.Scan();
         }
 
         private void StopButton_Click(object sender, RoutedEventArgs e)
         {
-            SnykTasksService.Instance().CancelCurrentTask();
+            SnykTasksService.Instance.CancelCurrentTask();
         }
 
         private void cleanButton_Click(object sender, RoutedEventArgs e)

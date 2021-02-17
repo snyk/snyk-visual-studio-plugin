@@ -64,6 +64,10 @@ namespace Snyk.VisualStudio.Extension
 
         private SnykGeneralOptionsDialogPage generalOptionsDialogPage;
 
+        private ISnykServiceProvider serviceProvider;
+
+        private SnykToolWindow toolWindow;
+
         /// <summary>
         /// Initializes a new instance of the <see cref="SnykVSPackage"/> class.
         /// </summary>
@@ -78,13 +82,21 @@ namespace Snyk.VisualStudio.Extension
 
         protected override async Task InitializeAsync(CancellationToken cancellationToken, IProgress<ServiceProgressData> progress)
         {
-            this.AddService(typeof(SnykService), CreateSnykService, true);            
+            this.AddService(typeof(SnykService), CreateSnykService, true);
 
-            ISnykService snykService = await this.GetServiceAsync(typeof(SnykService)) as ISnykService;
+            serviceProvider = await this.GetServiceAsync(typeof(SnykService)) as SnykService;
 
-            Console.WriteLine(snykService.ToString());
+            await InitializeGeneralOptionsAsync();
 
-            await Task.FromResult<object>(null);            
+            var toolWindowControl = GetToolWindowControl();
+
+            await toolWindowControl.InitializeEventListenersAsync(
+                serviceProvider.SolutionService, 
+                serviceProvider.TasksService, 
+                serviceProvider.VsThemeService, 
+                serviceProvider.ActivityLogger);
+           
+            await Task.FromResult<object>(null);        
         }       
 
         public async Task<object> CreateSnykService(IAsyncServiceContainer container, CancellationToken cancellationToken, Type serviceType)
@@ -94,68 +106,52 @@ namespace Snyk.VisualStudio.Extension
             await service.InitializeAsync(cancellationToken);
 
             return service;
-        }
-
-        public SnykSolutionService SolutionService
+        }        
+        
+        public ISnykServiceProvider ServiceProvider
         {
             get
             {
-                return SnykSolutionService.Instance;
+                return serviceProvider;
             }
+        }                
+
+        public SnykToolWindow GetToolWindow()
+        {
+            if (toolWindow == null)
+            {
+                toolWindow = FindToolWindow(typeof(SnykToolWindow), 0, true) as SnykToolWindow;
+
+                if ((null == toolWindow) || (null == toolWindow.Frame))
+                {
+                    throw new NotSupportedException("Cannot find Snyk tool window.");
+                }
+            }
+
+            return toolWindow;
         }
 
-        public SnykTasksService TasksService
+        public SnykToolWindowControl GetToolWindowControl() => (SnykToolWindowControl)GetToolWindow().Content;
+
+        public void ShowToolWindow() => GetToolWindowControl().ShowToolWindow();
+
+        public SnykGeneralOptionsDialogPage GeneralOptionsDialogPage
         {
             get
             {
-                return SnykTasksService.Instance();
+                return generalOptionsDialogPage;
             }
-        }               
-
-        public ISnykOptions Options
-        {
-            get
-            {
-                return GetGeneralOptionsDialogPage();
-            }
-        }           
-
-        public void ShowToolWindow()
-        {
-            ToolWindowPane toolWindowPane = FindToolWindow(typeof(SnykToolWindow), 0, true);
-
-            if ((null == toolWindowPane) || (null == toolWindowPane.Frame))
-            {
-                throw new NotSupportedException("Cannot create window.");
-            }
-
-            IVsWindowFrame windowFrame = (IVsWindowFrame)toolWindowPane.Frame;
-            ErrorHandler.ThrowOnFailure(windowFrame.Show());
         }
 
-        public SnykToolWindowControl GetToolWindow()
+        private async Task InitializeGeneralOptionsAsync()
         {
-            ToolWindowPane toolWindowPane = FindToolWindow(typeof(SnykToolWindow), 0, true);
-
-            if ((null == toolWindowPane) || (null == toolWindowPane.Frame))
-            {
-                throw new NotSupportedException("Cannot find Snyk tool window.");
-            }
-
-            return (SnykToolWindowControl)toolWindowPane.Content;
-        }
-
-        public SnykGeneralOptionsDialogPage GetGeneralOptionsDialogPage()
-        {
-            JoinableTaskFactory.SwitchToMainThreadAsync();
-
             if (generalOptionsDialogPage == null)
             {
                 generalOptionsDialogPage = (SnykGeneralOptionsDialogPage)GetDialogPage(typeof(SnykGeneralOptionsDialogPage));
-            }            
 
-            return generalOptionsDialogPage;
-        }        
+                generalOptionsDialogPage.Initialize(serviceProvider);
+            }
+        }
 
         #region Package Members
 
@@ -180,6 +176,10 @@ namespace Snyk.VisualStudio.Extension
 
         private SnykVsThemeService vsThemeService;
 
+        private SnykTasksService tasksService;
+
+        private SnykSolutionService solutionService;
+
         private DTE dte;
 
         public SnykService(IAsyncServiceProvider serviceProvider)
@@ -199,7 +199,7 @@ namespace Snyk.VisualStudio.Extension
         {
             get
             {
-                return Package.GetGeneralOptionsDialogPage();
+                return Package.GeneralOptionsDialogPage;
             }
         }
 
@@ -207,7 +207,7 @@ namespace Snyk.VisualStudio.Extension
         {
             get
             {
-                return Package.SolutionService;
+                return solutionService;
             }
         }
 
@@ -215,7 +215,7 @@ namespace Snyk.VisualStudio.Extension
         {
             get
             {
-                return Package.TasksService;
+                return tasksService;
             }
         }    
         
@@ -227,88 +227,12 @@ namespace Snyk.VisualStudio.Extension
             }
         }
 
-        public SnykToolWindowControl GetToolWindow()
-        {
-            return Package.GetToolWindow();
-        }
-
         public DTE DTE
         {
             get
             {
                 return dte;
             }
-        }
-
-        public async Task InitializeAsync(CancellationToken cancellationToken)
-        {            
-            IVsActivityLog activityLog = await serviceProvider.GetServiceAsync(typeof(SVsActivityLog)) as IVsActivityLog;
-
-            activityLogger = new SnykActivityLogger(activityLog);
-
-            activityLogger.LogInformation("Initialize Snyk services");
-
-            this.settingsManager = new ShellSettingsManager(Package);
-
-            await SnykToolWindowCommand.InitializeAsync(this);            
-
-            await SnykTasksService.InitializeAsync(this);
-
-            await SnykSolutionService.InitializeAsync(this);
-            
-            Package.GetGeneralOptionsDialogPage().Initialize(this);
-
-            GetToolWindow().ServiceProvider = this;
-
-            this.vsThemeService = new SnykVsThemeService(this);
-
-            await this.vsThemeService.InitializeAsync();
-
-            await InitializeEventListeners();           
-
-            activityLogger.LogInformation("Leave InitializeAsync");
-        }
-
-        private async Task InitializeEventListeners()
-        {
-            activityLogger.LogInformation("InitializeEventListeners method");
-
-            var toolWindow = GetToolWindow();
-            var tasksService = SnykTasksService.Instance();
-            var solutionEvents = SnykSolutionService.Instance.SolutionEvents;
-
-            activityLogger.LogInformation("Initialize Solultion Event Listeners");
-
-            solutionEvents.AfterBackgroundSolutionLoadComplete += toolWindow.OnAfterBackgroundSolutionLoadComplete;
-            solutionEvents.AfterCloseSolution += toolWindow.OnAfterCloseSolution;
-
-            activityLogger.LogInformation("Initialize CLI Event Listeners");
-
-            tasksService.ScanError += toolWindow.OnDisplayError;
-            tasksService.ScanningCancelled += toolWindow.OnScanningCancelled;
-            tasksService.ScanningStarted += toolWindow.OnScanningStarted;
-            tasksService.ScanningUpdate += toolWindow.OnScanningUpdate;
-            tasksService.ScanningFinished += toolWindow.OnScanningFinished;
-
-            activityLogger.LogInformation("Initialize Download Event Listeners");
-
-            tasksService.DownloadStarted += toolWindow.OnDownloadStarted;
-            tasksService.DownloadFinished += toolWindow.OnDownloadFinished;
-            tasksService.DownloadUpdate += toolWindow.OnDownloadUpdate;
-            tasksService.DownloadCancelled += toolWindow.OnDownloadCancelled;
-
-            activityLogger.LogInformation("Initialize ToolWindow Display Event Listeners");
-
-            this.dte = await serviceProvider.GetServiceAsync(typeof(DTE)) as DTE;
-
-            WindowVisibilityEvents visibilityEvents = (dte.Events as Events2)?.WindowVisibilityEvents;
-
-            if (visibilityEvents != null)
-            {
-                visibilityEvents.WindowShowing += (window) => SnykTasksService.Instance().Download();
-            }
-
-            this.vsThemeService.ThemeChanged += toolWindow.OnVsThemeChanged;
         }
 
         public void ShowToolWindow()
@@ -340,6 +264,52 @@ namespace Snyk.VisualStudio.Extension
             {
                 return serviceProvider;
             }
-        }        
+        }
+
+        public SnykVsThemeService VsThemeService
+        {
+            get
+            {
+                return vsThemeService;
+            }
+        }
+
+        public async Task InitializeAsync(CancellationToken cancellationToken)
+        {            
+            IVsActivityLog activityLog = await serviceProvider.GetServiceAsync(typeof(SVsActivityLog)) as IVsActivityLog;
+
+            activityLogger = new SnykActivityLogger(activityLog);            
+
+            activityLogger.LogInformation("Initialize Snyk services");
+            
+            await Package.JoinableTaskFactory.SwitchToMainThreadAsync(cancellationToken);
+
+            this.settingsManager = new ShellSettingsManager(Package);
+
+            this.vsThemeService = new SnykVsThemeService(this);
+            await this.vsThemeService.InitializeAsync();
+
+            await SnykToolWindowCommand.InitializeAsync(this);            
+
+            await SnykTasksService.InitializeAsync(this);
+
+            await SnykSolutionService.InitializeAsync(this);
+
+            this.dte = await serviceProvider.GetServiceAsync(typeof(DTE)) as DTE;
+
+            tasksService = SnykTasksService.Instance;
+            solutionService = SnykSolutionService.Instance;
+
+            activityLogger.LogInformation("Initialize ToolWindow Display Event Listeners");
+
+            WindowVisibilityEvents visibilityEvents = (dte.Events as Events2)?.WindowVisibilityEvents;
+
+            if (visibilityEvents != null)
+            {
+                visibilityEvents.WindowShowing += (window) => tasksService.Download();
+            }
+
+            activityLogger.LogInformation("Leave InitializeAsync");
+        }   
     }            
 }

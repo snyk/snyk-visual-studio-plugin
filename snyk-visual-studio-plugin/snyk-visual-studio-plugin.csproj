@@ -52,7 +52,7 @@
     <DefineConstants>DEBUG;TRACE</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
-    <DeployExtension>False</DeployExtension>
+    <DeployExtension>True</DeployExtension>
     <CopyVsixExtensionFiles>False</CopyVsixExtensionFiles>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
@@ -304,7 +304,7 @@
   <Target Name="EnsureNuGetPackageBuildImports" BeforeTargets="PrepareForBuild">
     <PropertyGroup>
       <ErrorText>This project references NuGet package(s) that are missing on this computer. Use NuGet Package Restore to download them.  For more information, see http://go.microsoft.com/fwlink/?LinkID=322105. The missing file is {0}.</ErrorText>
-    </PropertyGroup>    
+    </PropertyGroup>
     <Error Condition="!Exists('..\packages\Microsoft.VisualStudio.Threading.Analyzers.15.8.122\build\Microsoft.VisualStudio.Threading.Analyzers.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\packages\Microsoft.VisualStudio.Threading.Analyzers.15.8.122\build\Microsoft.VisualStudio.Threading.Analyzers.targets'))" />
     <Error Condition="!Exists('..\packages\Microsoft.VisualStudio.SDK.Analyzers.15.8.33\build\Microsoft.VisualStudio.SDK.Analyzers.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\packages\Microsoft.VisualStudio.SDK.Analyzers.15.8.33\build\Microsoft.VisualStudio.SDK.Analyzers.targets'))" />
     <Error Condition="'$(VisualStudioVersion)' == '14.0' And !Exists('..\packages\Microsoft.VisualStudio.Sdk.BuildTasks.14.0.14.9.23\build\Microsoft.VisualStudio.Sdk.BuildTasks.14.0.props')" Text="$([System.String]::Format('$(ErrorText)', '..\packages\Microsoft.VisualStudio.Sdk.BuildTasks.14.0.14.9.23\build\Microsoft.VisualStudio.Sdk.BuildTasks.14.0.props'))" />

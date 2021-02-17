@@ -3,7 +3,7 @@ using Microsoft.VisualStudio.Settings;
 using Microsoft.VisualStudio.Shell;
 using Snyk.VisualStudio.Extension.CLI;
 using Snyk.VisualStudio.Extension.Settings;
-using Snyk.VisualStudio.Extension.UI;
+using Snyk.VisualStudio.Extension.Theme;
 using System;
 using System.Threading.Tasks;
 
@@ -53,7 +53,10 @@ namespace Snyk.VisualStudio.Extension
             get;
         }
 
-        SnykToolWindowControl GetToolWindow();
+        SnykVsThemeService VsThemeService
+        {
+            get;
+        }
 
         void ShowToolWindow();        
     }

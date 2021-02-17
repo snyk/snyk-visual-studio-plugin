@@ -37,14 +37,17 @@ namespace Snyk.VisualStudio.Extension.CLI
 
         private SnykTasksService() { }
 
-        public static SnykTasksService Instance()
+        public static SnykTasksService Instance
         {
-            if (instance == null)
+            get
             {
-                instance = new SnykTasksService();
-            }
-                
-            return instance;
+                if (instance == null)
+                {
+                    instance = new SnykTasksService();
+                }
+
+                return instance;
+            }            
         }
 
         public static async Task InitializeAsync(ISnykServiceProvider serviceProvider)
@@ -99,7 +102,7 @@ namespace Snyk.VisualStudio.Extension.CLI
 
                     if (!serviceProvider.SolutionService.IsSolutionOpen())
                     {
-                        OnScanError("No open solution.");
+                        OnError("No open solution.");
 
                         Logger.LogInformation("Solution not opened");
 
@@ -141,7 +144,7 @@ namespace Snyk.VisualStudio.Extension.CLI
                         {
                             Logger.LogInformation("Scan is successful");
 
-                            OnScanError(cliResult.Error);
+                            OnError(cliResult.Error);
                         }
                         else
                         {
@@ -164,7 +167,7 @@ namespace Snyk.VisualStudio.Extension.CLI
                     {
                         Logger.LogError(scanException.Message);
 
-                        OnScanError(scanException.Message);                        
+                        OnError(scanException.Message);                        
                     }
 
                     OnScanningFinished();
@@ -222,6 +225,10 @@ namespace Snyk.VisualStudio.Extension.CLI
             }, progressWorker.TokenSource.Token);
         }
 
+        public void OnError(string message) => OnError(new CliError(message));
+
+        public void OnError(CliError error) => ScanError?.Invoke(this, new SnykCliScanEventArgs(error));
+
         protected internal void OnDownloadStarted() => DownloadStarted?.Invoke(this, new SnykCliDownloadEventArgs());
 
         protected internal void OnDownloadFinished() => DownloadFinished?.Invoke(this, new SnykCliDownloadEventArgs());
@@ -236,11 +243,7 @@ namespace Snyk.VisualStudio.Extension.CLI
 
         private void OnScanningFinished() => ScanningFinished?.Invoke(this, new SnykCliScanEventArgs());
 
-        private void OnScanningCancelled() => ScanningCancelled?.Invoke(this, new SnykCliScanEventArgs());
-
-        private void OnScanError(string message) => OnScanError(new CliError(message));
-
-        private void OnScanError(CliError error) => ScanError?.Invoke(this, new SnykCliScanEventArgs(error));
+        private void OnScanningCancelled() => ScanningCancelled?.Invoke(this, new SnykCliScanEventArgs());        
 
         private SnykActivityLogger Logger
         {

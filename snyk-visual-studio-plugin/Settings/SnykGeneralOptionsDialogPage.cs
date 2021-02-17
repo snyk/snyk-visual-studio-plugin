@@ -1,5 +1,4 @@
 ﻿using Microsoft.VisualStudio.Shell;
-using Snyk.VisualStudio.Extension.UI;
 using System.Runtime.InteropServices;
 using System.Windows.Forms;
 
@@ -21,12 +20,7 @@ namespace Snyk.VisualStudio.Extension.Settings
 
                 return generalSettingsUserControl;
             }
-        }
-
-        public void Initialize(ISnykServiceProvider provider)
-        {
-            this.serviceProvider = provider;
-        }
+        }        
 
         public ISnykServiceProvider ServiceProvider
         {
@@ -34,6 +28,11 @@ namespace Snyk.VisualStudio.Extension.Settings
             {
                 return serviceProvider;
             }
+        }
+
+        public void Initialize(ISnykServiceProvider provider)
+        {
+            this.serviceProvider = provider;
         }
 
         public string ApiToken { get; set; }
