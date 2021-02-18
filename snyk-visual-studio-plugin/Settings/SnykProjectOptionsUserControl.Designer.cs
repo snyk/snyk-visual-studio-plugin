@@ -34,7 +34,7 @@
             // 
             // additionalOptionsTextBox
             // 
-            this.additionalOptionsTextBox.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left)
+            this.additionalOptionsTextBox.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left) 
             | System.Windows.Forms.AnchorStyles.Right)));
             this.additionalOptionsTextBox.Location = new System.Drawing.Point(13, 22);
             this.additionalOptionsTextBox.Margin = new System.Windows.Forms.Padding(4);
@@ -48,6 +48,8 @@
             // allProjectsCheckBox
             // 
             this.allProjectsCheckBox.AutoSize = true;
+            this.allProjectsCheckBox.Checked = true;
+            this.allProjectsCheckBox.CheckState = System.Windows.Forms.CheckState.Checked;
             this.allProjectsCheckBox.Location = new System.Drawing.Point(13, 253);
             this.allProjectsCheckBox.Name = "allProjectsCheckBox";
             this.allProjectsCheckBox.Size = new System.Drawing.Size(407, 29);

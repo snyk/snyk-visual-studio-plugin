@@ -69,7 +69,7 @@ namespace Snyk.VisualStudio.Extension.Settings
         {
             logger.LogInformation("Enter GetIsAllProjectsEnabled method");
 
-            bool isAllProjectsEnabled = false;
+            bool isAllProjectsEnabled = true;
 
             string projectUniqueName = GetProjectUniqueName();
 
