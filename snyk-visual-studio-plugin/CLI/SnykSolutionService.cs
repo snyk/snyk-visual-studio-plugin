@@ -18,6 +18,14 @@ namespace Snyk.VisualStudio.Extension.CLI
 
         private SnykSolutionService() { }
 
+        public bool IsSolutionOpen
+        {
+            get
+            {
+                return ServiceProvider.DTE.Solution.IsOpen;
+            }            
+        }
+
         private SnykSolutionService(ISnykServiceProvider serviceProvider)
         {
             this.ServiceProvider = serviceProvider;
@@ -71,43 +79,48 @@ namespace Snyk.VisualStudio.Extension.CLI
             return ServiceProvider.DTE.Solution.Projects;
         }
 
-        public bool IsSolutionOpen()
-        {
-            return ServiceProvider.DTE.Solution.IsOpen;
-        }
-
         public String GetSolutionPath()
         {
             logger.LogInformation("Enter GetSolutionPath method");
 
             var dteSolution = ServiceProvider.DTE.Solution;
+            var projects = GetProjects();
 
-            var solutionPath = "";
-
-            if (dteSolution.IsDirty)
+            string solutionPath = "";
+            
+            // 1 case: Solution with projects.
+            if (!dteSolution.IsDirty && projects.Count > 0)
             {
-                logger.LogInformation("Solution is 'dirty'. Get solution path from first project full name");
+                logger.LogInformation("Get solution path from solution full name in case solution with projects.");
 
-                solutionPath = dteSolution.Projects.Item(1).FullName;
-            }
-            else
-            {
-                logger.LogInformation("Get solution path from solution full name");
+                string fullName = dteSolution.FullName;
 
                 solutionPath = Directory.GetParent(dteSolution.FullName).FullName;
             }
-            
-            FileAttributes fileAttributes = File.GetAttributes(solutionPath);
 
-            if (!fileAttributes.HasFlag(FileAttributes.Directory))
+            // 2 case: Flat project without solution.
+            // 4 case: Web site (in 2015)
+            if (dteSolution.IsDirty && projects.Count > 0)
             {
-                logger.LogInformation("Solution path referene to project file name, getting solution directory path.");
+                logger.LogInformation("Solution is 'dirty'. Get solution path from first project full name");
 
-                solutionPath = Directory.GetParent(solutionPath).FullName;
+                string projectPath = dteSolution.Projects.Item(1).FullName;
+
+                logger.LogInformation($"Project path {projectPath}. Get solution path as project directory.");
+
+                solutionPath = Directory.GetParent(projectPath).FullName;
             }
 
-            logger.LogInformation($"Result solution path {solutionPath}");
+            // 3 case: Any Folder (in 2019).
+            if (!dteSolution.IsDirty && projects.Count == 0)
+            {
+                logger.LogInformation("Solution is not 'dirty' and projects count is 0. Get solution path from dte solution full name.");
 
+                solutionPath = dteSolution.FullName;
+            }
+            
+            logger.LogInformation($"Result solution path is {solutionPath}.");
+            
             return solutionPath;
         }
 
@@ -135,18 +148,24 @@ namespace Snyk.VisualStudio.Extension.CLI
 
             logger.LogInformation("Leave InitializeSolutionEvents method");
         }
+
+        private bool isFilePath(string path) => !File.GetAttributes(path).HasFlag(FileAttributes.Directory);
     }
     
-    public class SnykVsSolutionLoadEvents : IVsSolutionLoadEvents, IVsSolutionEvents
+    public class SnykVsSolutionLoadEvents : IVsSolutionLoadEvents, IVsSolutionEvents, IVsSolutionEvents7
     {
         public event EventHandler<EventArgs> AfterBackgroundSolutionLoadComplete;
         public event EventHandler<EventArgs> AfterCloseSolution;
-
         public int OnAfterBackgroundSolutionLoadComplete()
         {
             AfterBackgroundSolutionLoadComplete?.Invoke(this, EventArgs.Empty);
 
             return VSConstants.S_OK;
+        }
+
+        public void OnAfterCloseFolder(string folderPath)
+        {
+            AfterCloseSolution?.Invoke(this, EventArgs.Empty);
         }
 
         public int OnAfterCloseSolution(object pUnkReserved)
@@ -156,15 +175,24 @@ namespace Snyk.VisualStudio.Extension.CLI
             return VSConstants.S_OK;
         }
 
+        public void OnAfterLoadAllDeferredProjects() { }
+
         public int OnAfterLoadProject(IVsHierarchy pStubHierarchy, IVsHierarchy pRealHierarchy) => VSConstants.S_OK;
 
         public int OnAfterLoadProjectBatch(bool fIsBackgroundIdleBatch) => VSConstants.S_OK;
+
+        public void OnAfterOpenFolder(string folderPath)
+        {
+            AfterBackgroundSolutionLoadComplete?.Invoke(this, EventArgs.Empty);
+        }
 
         public int OnAfterOpenProject(IVsHierarchy pHierarchy, int fAdded) => VSConstants.S_OK;
 
         public int OnAfterOpenSolution(object pUnkReserved, int fNewSolution) => VSConstants.S_OK;
 
         public int OnBeforeBackgroundSolutionLoadBegins() => VSConstants.S_OK;
+
+        public void OnBeforeCloseFolder(string folderPath) { }
 
         public int OnBeforeCloseProject(IVsHierarchy pHierarchy, int fRemoved) => VSConstants.S_OK;
 
@@ -182,6 +210,8 @@ namespace Snyk.VisualStudio.Extension.CLI
 
             return VSConstants.S_OK;
         }
+
+        public void OnQueryCloseFolder(string folderPath, ref int pfCancel) { }
 
         public int OnQueryCloseProject(IVsHierarchy pHierarchy, int fRemoving, ref int pfCancel) => VSConstants.S_OK;
 

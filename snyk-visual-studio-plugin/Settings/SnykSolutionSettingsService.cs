@@ -25,16 +25,6 @@ namespace Snyk.VisualStudio.Extension.Settings
             this.logger = solutionService.Logger;
         }
 
-        public static SnykSolutionSettingsService NewInstance(SnykSolutionService solutionService)
-        {
-            return new SnykSolutionSettingsService(solutionService);
-        }
-
-        public bool IsProjectOpened()
-        {
-            return !String.IsNullOrEmpty(GetProjectUniqueName());
-        }
-
         public string GetAdditionalOptions()
         {
             logger.LogInformation("Enter GetAdditionalOptions method");
@@ -52,7 +42,7 @@ namespace Snyk.VisualStudio.Extension.Settings
 
             WritableSettingsStore settingsStore = GetUserSettingsStore();
                        
-            if (!solutionService.IsSolutionOpen() || !settingsStore.CollectionExists(SnykProjectSettingsCollectionName))
+            if (!solutionService.IsSolutionOpen || !settingsStore.CollectionExists(SnykProjectSettingsCollectionName))
             {
                 logger.LogInformation($"Solution not open or {SnykProjectSettingsCollectionName} collection not exists. Return from method.");
 
@@ -94,7 +84,7 @@ namespace Snyk.VisualStudio.Extension.Settings
 
             WritableSettingsStore settingsStore = GetUserSettingsStore();
 
-            if (!solutionService.IsSolutionOpen() || !settingsStore.CollectionExists(SnykProjectSettingsCollectionName))
+            if (!solutionService.IsSolutionOpen || !settingsStore.CollectionExists(SnykProjectSettingsCollectionName))
             {
                 logger.LogInformation($"Solution not open or {SnykProjectSettingsCollectionName} collection not exists. Return from method.");
 
@@ -148,7 +138,6 @@ namespace Snyk.VisualStudio.Extension.Settings
 
             if (!String.IsNullOrEmpty(projectUniqueName))
             {                
-
                 logger.LogInformation($"Save is all projects enabled for : {SnykProjectSettingsCollectionName} collection");
 
                 GetUserSettingsStore().SetBoolean(SnykProjectSettingsCollectionName, projectUniqueName, isAllProjectsEnabled);

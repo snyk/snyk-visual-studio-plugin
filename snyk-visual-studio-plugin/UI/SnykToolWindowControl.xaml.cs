@@ -38,7 +38,7 @@ namespace Snyk.VisualStudio.Extension.UI
 
             this.InitializeComponent();
 
-            DisableAllActions();
+            //DisableAllActions();
         }
 
         public async Task InitializeEventListenersAsync(
@@ -83,7 +83,7 @@ namespace Snyk.VisualStudio.Extension.UI
         {
             HideAllControls();
 
-            DisableAllActions();
+            //DisableAllActions();
 
             isSolutionLoaded = false;
         }
@@ -158,7 +158,7 @@ namespace Snyk.VisualStudio.Extension.UI
 
         public void OnDownloadCancelled(object sender, SnykCliDownloadEventArgs eventArgs)
         {
-            DisableAllActions();
+            //DisableAllActions();
 
             HideAllControls();
 
@@ -253,7 +253,7 @@ namespace Snyk.VisualStudio.Extension.UI
             }
             else
             {
-                DisableAllActions();
+                //DisableAllActions();
             }
         }
 

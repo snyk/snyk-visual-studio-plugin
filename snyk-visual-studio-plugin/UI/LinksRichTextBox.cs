@@ -91,6 +91,11 @@ namespace Snyk.VisualStudio.Extension.UI
                 {
                     int startIndex = word.IndexOf("(") + 1;
                     int lastIndex = word.IndexOf(")");
+
+                    if (lastIndex < startIndex)
+                    {
+                        lastIndex = word.LastIndexOf(")");
+                    }
                     
                     urlWord = word.Substring(startIndex, lastIndex - startIndex);
                 }

@@ -100,7 +100,7 @@ namespace Snyk.VisualStudio.Extension.CLI
                 {
                     progressWorker.CancelIfCancellationRequested();
 
-                    if (!serviceProvider.SolutionService.IsSolutionOpen())
+                    if (!serviceProvider.SolutionService.IsSolutionOpen)
                     {
                         OnError("No open solution.");
 

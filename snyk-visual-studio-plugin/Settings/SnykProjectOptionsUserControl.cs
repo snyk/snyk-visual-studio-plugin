@@ -17,7 +17,7 @@ namespace Snyk.VisualStudio.Extension.Settings
 
         private void additionalOptionsTextBox_TextChanged(object sender, EventArgs e)
         {
-            if (solutionService.SolutionSettingsService.IsProjectOpened())
+            if (solutionService.IsSolutionOpen)
             {
                 solutionService.SolutionSettingsService.SaveAdditionalOptions(additionalOptionsTextBox.Text.ToString());
             }
@@ -25,7 +25,7 @@ namespace Snyk.VisualStudio.Extension.Settings
 
         private void allProjectsCheckBox_CheckedChanged(object sender, EventArgs e)
         {
-            if (solutionService.SolutionSettingsService.IsProjectOpened())
+            if (solutionService.IsSolutionOpen)
             {
                 solutionService.SolutionSettingsService.SaveIsAllProjectsScanEnabled(allProjectsCheckBox.Checked);
             }
@@ -35,7 +35,7 @@ namespace Snyk.VisualStudio.Extension.Settings
         {
             base.OnVisibleChanged(eventArgs);
 
-            bool isProjectOpened = solutionService.SolutionSettingsService.IsProjectOpened();
+            bool isProjectOpened = solutionService.IsSolutionOpen;
 
             additionalOptionsTextBox.Enabled = isProjectOpened;
             allProjectsCheckBox.Enabled = isProjectOpened;
