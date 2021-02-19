@@ -5,6 +5,7 @@ using Microsoft.VisualStudio.Shell.Interop;
 using System.IO;
 using Snyk.VisualStudio.Extension.Settings;
 using Task = System.Threading.Tasks.Task;
+using Snyk.VisualStudio.Extension.Service;
 
 namespace Snyk.VisualStudio.Extension.CLI
 {

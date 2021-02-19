@@ -1,5 +1,5 @@
 ﻿using Microsoft.VisualStudio.Shell;
-using Snyk.VisualStudio.Extension.CLI;
+using Snyk.VisualStudio.Extension.Service;
 using System;
 using System.Threading;
 using System.Threading.Tasks;

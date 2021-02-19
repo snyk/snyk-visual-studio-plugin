@@ -1,5 +1,6 @@
 ﻿using Microsoft.VisualStudio;
 using Microsoft.VisualStudio.Shell.Interop;
+using Snyk.VisualStudio.Extension.Service;
 using System;
 using System.Runtime.InteropServices;
 using System.Threading.Tasks;
@@ -10,8 +11,7 @@ namespace Snyk.VisualStudio.Extension.Theme
     {
         public event EventHandler<SnykVsThemeChangedEventArgs> ThemeChanged;
 
-        private readonly ISnykServiceProvider serviceProvider;
-        private bool advised;
+        private readonly ISnykServiceProvider serviceProvider;        
 
         public SnykVsThemeService(ISnykServiceProvider serviceProvider)
         {

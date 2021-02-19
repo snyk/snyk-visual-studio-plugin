@@ -64,7 +64,8 @@
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
   <ItemGroup>
-    <Compile Include="ISnykServiceProvider.cs" />
+    <Compile Include="Service\ISnykServiceProvider.cs" />
+    <Compile Include="Service\SnykService.cs" />
     <Compile Include="UI\LinksRichTextBox.cs" />
     <Compile Include="Theme\SnykVsThemeService.cs" />
     <Compile Include="SnykActivityLogger.cs" />

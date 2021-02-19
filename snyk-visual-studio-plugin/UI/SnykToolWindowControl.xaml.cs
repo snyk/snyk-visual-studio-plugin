@@ -15,10 +15,11 @@ namespace Snyk.VisualStudio.Extension.UI
     using System.Threading;
     using System.Windows.Media;
     using System;
-    using Theme;    
+    using Theme;
     using Microsoft.VisualStudio.Shell.Interop;
     using Microsoft.VisualStudio;
     using Task = System.Threading.Tasks.Task;
+    using Snyk.VisualStudio.Extension.Service;
 
     /// <summary>
     /// Interaction logic for SnykToolWindowControl.
@@ -41,18 +42,24 @@ namespace Snyk.VisualStudio.Extension.UI
             //DisableAllActions();
         }
 
-        public async Task InitializeEventListenersAsync(
-            SnykSolutionService solutionService, 
-            SnykTasksService tasksService, 
-            SnykVsThemeService vsThemeService, 
-            SnykActivityLogger logger)
+        public async Task InitializeEventListenersAsync(ISnykServiceProvider serviceProvider)
         {
+            SnykActivityLogger logger = serviceProvider.ActivityLogger;
+
+            logger.LogInformation("Enter InitializeEventListenersAsync() method.");
+
             logger.LogInformation("Initialize Solultion Event Listeners");
+
+            await serviceProvider.Package.JoinableTaskFactory.SwitchToMainThreadAsync();
+
+            SnykSolutionService solutionService = serviceProvider.SolutionService;
 
             solutionService.SolutionEvents.AfterBackgroundSolutionLoadComplete += OnAfterBackgroundSolutionLoadComplete;
             solutionService.SolutionEvents.AfterCloseSolution += OnAfterCloseSolution;
 
             logger.LogInformation("Initialize CLI Event Listeners");
+
+            SnykTasksService tasksService = serviceProvider.TasksService;
 
             tasksService.ScanError += OnDisplayError;
             tasksService.ScanningCancelled += OnScanningCancelled;
@@ -67,7 +74,9 @@ namespace Snyk.VisualStudio.Extension.UI
             tasksService.DownloadUpdate += OnDownloadUpdate;
             tasksService.DownloadCancelled += OnDownloadCancelled;
 
-            vsThemeService.ThemeChanged += OnVsThemeChanged;
+            serviceProvider.VsThemeService.ThemeChanged += OnVsThemeChanged;
+
+            logger.LogInformation("Leave InitializeEventListenersAsync() method.");
         }
 
         public void OnAfterBackgroundSolutionLoadComplete(object sender, EventArgs eventArgs)

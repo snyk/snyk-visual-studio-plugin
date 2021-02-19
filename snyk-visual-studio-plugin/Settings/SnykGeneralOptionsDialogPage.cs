@@ -1,4 +1,5 @@
 ﻿using Microsoft.VisualStudio.Shell;
+using Snyk.VisualStudio.Extension.Service;
 using System.Runtime.InteropServices;
 using System.Windows.Forms;
 

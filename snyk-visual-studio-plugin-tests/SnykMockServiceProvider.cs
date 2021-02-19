@@ -6,6 +6,7 @@ using Microsoft.VisualStudio.Settings;
 using EnvDTE;
 using Snyk.VisualStudio.Extension.CLI;
 using Snyk.VisualStudio.Extension.Theme;
+using Snyk.VisualStudio.Extension.Service;
 
 namespace Snyk.VisualStudio.Extension.Tests
 {

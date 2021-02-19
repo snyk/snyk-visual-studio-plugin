@@ -7,7 +7,7 @@ using Snyk.VisualStudio.Extension.Theme;
 using System;
 using System.Threading.Tasks;
 
-namespace Snyk.VisualStudio.Extension
+namespace Snyk.VisualStudio.Extension.Service
 {
     public interface ISnykServiceProvider //: IServiceProvider
     {

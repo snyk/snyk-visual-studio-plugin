@@ -7,6 +7,7 @@
 using System;
 using System.ComponentModel.Design;
 using Microsoft.VisualStudio.Shell;
+using Snyk.VisualStudio.Extension.Service;
 using Task = System.Threading.Tasks.Task;
 
 namespace Snyk.VisualStudio.Extension.UI
