@@ -26,9 +26,11 @@ namespace Snyk.VisualStudio.Extension.UI
     /// </summary>
     public partial class SnykToolWindowControl : UserControl
     {
-        private bool isSolutionLoaded;
+        private bool isSolutionLoaded = true;
 
-        private SnykToolWindow toolWindow;        
+        private SnykToolWindow toolWindow;
+
+        private ISnykServiceProvider serviceProvider;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="SnykToolWindowControl"/> class.
@@ -44,6 +46,8 @@ namespace Snyk.VisualStudio.Extension.UI
 
         public async Task InitializeEventListenersAsync(ISnykServiceProvider serviceProvider)
         {
+            this.serviceProvider = serviceProvider;
+
             SnykActivityLogger logger = serviceProvider.ActivityLogger;
 
             logger.LogInformation("Enter InitializeEventListenersAsync() method.");
@@ -54,7 +58,7 @@ namespace Snyk.VisualStudio.Extension.UI
 
             SnykSolutionService solutionService = serviceProvider.SolutionService;
 
-            solutionService.SolutionEvents.AfterBackgroundSolutionLoadComplete += OnAfterBackgroundSolutionLoadComplete;
+            //solutionService.SolutionEvents.AfterBackgroundSolutionLoadComplete += OnAfterBackgroundSolutionLoadComplete;
             solutionService.SolutionEvents.AfterCloseSolution += OnAfterCloseSolution;
 
             logger.LogInformation("Initialize CLI Event Listeners");
@@ -149,7 +153,7 @@ namespace Snyk.VisualStudio.Extension.UI
 
             EnableStopActions();
 
-            ShowProgressBar();            
+            ShowProgressBar();
         }
 
         public void OnDownloadFinished(object sender, SnykCliDownloadEventArgs eventArgs)
@@ -183,9 +187,12 @@ namespace Snyk.VisualStudio.Extension.UI
 
         public void ShowToolWindow()
         {
-            IVsWindowFrame windowFrame = (IVsWindowFrame)toolWindow.Frame;
+            this.Dispatcher.Invoke(() =>
+            {
+                IVsWindowFrame windowFrame = (IVsWindowFrame)toolWindow.Frame;
 
-            ErrorHandler.ThrowOnFailure(windowFrame.Show());
+                ErrorHandler.ThrowOnFailure(windowFrame.Show());
+            });            
         }
 
         public SnykFilterableTree VulnerabilitiesTree
@@ -204,21 +211,9 @@ namespace Snyk.VisualStudio.Extension.UI
             }
         }
 
-        private void HideRunScanMessage()
-        {
-            this.Dispatcher.Invoke(() =>
-            {
-                noVulnerabilitiesAddedMessageGrid.Visibility = Visibility.Collapsed;
-            });
-        }
+        private void HideRunScanMessage() => this.Dispatcher.Invoke(() => noVulnerabilitiesAddedMessageGrid.Visibility = Visibility.Collapsed);
 
-        private void DisplayRunScanMessage()
-        {
-            this.Dispatcher.Invoke(() =>
-            {
-                noVulnerabilitiesAddedMessageGrid.Visibility = Visibility.Visible;
-            });
-        }
+        private void DisplayRunScanMessage() => this.Dispatcher.Invoke(() => noVulnerabilitiesAddedMessageGrid.Visibility = Visibility.Visible);
 
         private void DisplayMainPanelMessage(string text)
         {
@@ -227,7 +222,7 @@ namespace Snyk.VisualStudio.Extension.UI
                 message.Text = text;
 
                 messageGrid.Visibility = Visibility.Visible;
-            });            
+            });
         }
 
         private void HideMainPanelMessage()
@@ -329,8 +324,6 @@ namespace Snyk.VisualStudio.Extension.UI
                 this.progressBarPanel.Visibility = Visibility.Visible;
 
                 this.resultsGrid.Visibility = Visibility.Collapsed;
-
-                ShowToolWindow();                
             });
         }        
 
@@ -348,13 +341,13 @@ namespace Snyk.VisualStudio.Extension.UI
 
         private void UpdateProgressBar(int value)
         {
-            this.Dispatcher.Invoke(() =>
+            this.Dispatcher.BeginInvoke((Action) (() =>
             {
-                this.progressBar.Value = value;
+                progressBar.Value = value;
 
                 DisplayMainPanelMessage($"Downloading latest Snyk CLI release {value}%...");
-            });
-        }                
+            }));
+        }
 
         private void HideAllControls()
         {
@@ -372,21 +365,9 @@ namespace Snyk.VisualStudio.Extension.UI
 
         private void DisplayResultsGrid() => resultsGrid.Visibility = Visibility.Visible;
 
-        private void HideError()
-        {
-            this.Dispatcher.Invoke(() =>
-            {
-                errorPanel.Visibility = Visibility.Collapsed;
-            });        
-        }
+        private void HideError() => this.Dispatcher.Invoke(() => errorPanel.Visibility = Visibility.Collapsed);
 
-        private void CleanVulnerabilitiesTree()
-        {
-            this.Dispatcher.Invoke(() =>
-            {
-                vulnerabilitiesTree.Clear();
-            });
-        }
+        private void CleanVulnerabilitiesTree() => this.Dispatcher.Invoke(() => vulnerabilitiesTree.Clear());
 
         private void OnHyperlinkClick(object sender, RoutedEventArgs e)
         {
@@ -545,6 +526,11 @@ namespace Snyk.VisualStudio.Extension.UI
             HideAllControls();
 
             DisplayRunScanMessage();
+        }
+
+        private void SnykToolWindow_Loaded(object sender, RoutedEventArgs e)
+        {
+            serviceProvider.TasksService.Download();
         }
     }
 }

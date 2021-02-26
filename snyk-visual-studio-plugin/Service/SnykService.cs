@@ -1,5 +1,4 @@
 ﻿using EnvDTE;
-using EnvDTE80;
 using Microsoft.VisualStudio.Settings;
 using Microsoft.VisualStudio.Shell.Interop;
 using Microsoft.VisualStudio.Shell.Settings;
@@ -154,14 +153,6 @@ namespace Snyk.VisualStudio.Extension.Service
             solutionService = SnykSolutionService.Instance;
 
             activityLogger.LogInformation("Initialize ToolWindow Display Event Listeners");
-
-            WindowVisibilityEvents visibilityEvents = (dte.Events as Events2)?.WindowVisibilityEvents;
-
-            if (visibilityEvents != null)
-            {
-                visibilityEvents.WindowShowing += (window) => tasksService.Download();
-            }
-
             activityLogger.LogInformation("Leave SnykService.InitializeAsync");
         }
     }    

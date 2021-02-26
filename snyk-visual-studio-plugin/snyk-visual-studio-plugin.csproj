@@ -52,7 +52,7 @@
     <DefineConstants>DEBUG;TRACE</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
-    <DeployExtension>True</DeployExtension>
+    <DeployExtension>False</DeployExtension>
     <CopyVsixExtensionFiles>False</CopyVsixExtensionFiles>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
@@ -328,4 +328,10 @@
   <Target Name="AfterBuild">
   </Target>
   -->
+  <Target Name="StartVisualStudio" DependsOnTargets="Clean;Build">
+    <Message Text="Start Visual Studio with Snyk Extension" />
+    <Exec Command="$([System.IO.Path]::GetTempPath())..\Microsoft\VisualStudio\$(VSSDKTargetPlatformVersion)$(VSSDKTargetPlatformRegRootSuffix)\devenv.exe">
+      <Output TaskParameter="ExitCode" PropertyName="SuccessOrNot" />
+    </Exec>
+  </Target>
 </Project>
