@@ -10,7 +10,9 @@ namespace Snyk.VisualStudio.Extension.CLI
 
         private const string LatestReleaseDownloadUrl = "https://github.com/snyk/snyk/releases/download/{0}/{1}";
 
-        private SnykActivityLogger logger = null;
+        public delegate void CliDownloadFinishedCallback();
+
+        private SnykActivityLogger logger = null;        
 
         public SnykCliDownloader(SnykActivityLogger logger)
         {
@@ -33,7 +35,9 @@ namespace Snyk.VisualStudio.Extension.CLI
             }            
         }
 
-        public void Download(string cliFileDestinationPath = null, ISnykProgressWorker progressWorker = null)
+        public void Download(string cliFileDestinationPath = null, 
+            ISnykProgressWorker progressWorker = null, 
+            CliDownloadFinishedCallback downloadFinishedCallback = null)
         {
             logger?.LogInformation("Enter Download method");
 
@@ -74,7 +78,7 @@ namespace Snyk.VisualStudio.Extension.CLI
 
                     if (progressWorker != null)
                     {                        
-                        AsynchronousDownload(webClient, progressWorker, cliFileDestinationPath, cliDownloadUrl);   
+                        AsynchronousDownload(webClient, progressWorker, cliFileDestinationPath, cliDownloadUrl, downloadFinishedCallback);   
                     }
                     else
                     {
@@ -84,17 +88,26 @@ namespace Snyk.VisualStudio.Extension.CLI
             }
         }
 
-        private void SynchronousDownload(WebClient webClient, string cliFileDestinationPath, string cliDownloadUrl)
+        private void SynchronousDownload(WebClient webClient, 
+            string cliFileDestinationPath, 
+            string cliDownloadUrl, 
+            CliDownloadFinishedCallback downloadFinishedCallback = null)
         {
             logger?.LogInformation("Enter SynchronousDownload method");
 
             webClient.DownloadFile(cliDownloadUrl, cliFileDestinationPath);
+
+            if (downloadFinishedCallback != null)
+            {
+                downloadFinishedCallback();
+            }
         } 
             
         private void AsynchronousDownload(WebClient webClient, 
             ISnykProgressWorker progressWorker, 
             string cliFileDestinationPath, 
-            string cliDownloadUrl)
+            string cliDownloadUrl,
+            CliDownloadFinishedCallback downloadFinishedCallback = null)
         {
             logger?.LogInformation("Enter AsynchronousDownload method");
 
@@ -105,13 +118,6 @@ namespace Snyk.VisualStudio.Extension.CLI
                     progressWorker.UpdateProgress(progressChangedEvent.ProgressPercentage);
 
                     progressWorker.CancelIfCancellationRequested();
-
-                    if (progressChangedEvent.ProgressPercentage == 100)
-                    {
-                        logger?.LogInformation("Fire DownloadFinished event");
-
-                        progressWorker.DownloadFinished();
-                    }
                 }
                 catch (Exception exception)
                 {
@@ -133,7 +139,19 @@ namespace Snyk.VisualStudio.Extension.CLI
                         logger?.LogError($"Error: Can't delete temp CLI file. Message: {ex.Message}");
                     }
                 }
-            };            
+            };
+
+            webClient.DownloadFileCompleted += (sender, completedEventArgs) =>
+            {
+                logger?.LogInformation("Fire DownloadFinished event");
+
+                progressWorker.DownloadFinished();
+
+                if (downloadFinishedCallback != null)
+                {
+                    downloadFinishedCallback();
+                }
+            };
 
             webClient.DownloadFileAsync(new Uri(cliDownloadUrl), cliFileDestinationPath);
 

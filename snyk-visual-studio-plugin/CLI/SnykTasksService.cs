@@ -3,6 +3,7 @@ using Snyk.VisualStudio.Extension.Service;
 using System;
 using System.Threading;
 using System.Threading.Tasks;
+using static Snyk.VisualStudio.Extension.CLI.SnykCliDownloader;
 using Task = System.Threading.Tasks.Task;
 
 namespace Snyk.VisualStudio.Extension.CLI
@@ -187,7 +188,7 @@ namespace Snyk.VisualStudio.Extension.CLI
             }, progressWorker.TokenSource.Token);   
         }
         
-        public void Download()
+        public void Download(CliDownloadFinishedCallback downloadFinishedCallback = null)
         {
             Logger.LogInformation("Enter Download method");
 
@@ -214,7 +215,7 @@ namespace Snyk.VisualStudio.Extension.CLI
                 {
                     var cliDownloader = new SnykCliDownloader(serviceProvider.ActivityLogger);
 
-                    cliDownloader.Download(progressWorker: progressWorker);
+                    cliDownloader.Download(progressWorker: progressWorker, downloadFinishedCallback: downloadFinishedCallback);
                 }
                 catch (Exception exception)
                 {

@@ -3,6 +3,7 @@ using System.Windows.Forms;
 using Snyk.VisualStudio.Extension.CLI;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
+using static Snyk.VisualStudio.Extension.CLI.SnykCliDownloader;
 
 namespace Snyk.VisualStudio.Extension.Settings
 {   
@@ -13,6 +14,10 @@ namespace Snyk.VisualStudio.Extension.Settings
         internal SnykGeneralOptionsDialogPage optionsDialogPage;
 
         private SnykActivityLogger logger;
+
+        private Action<string> successCallbackAction;
+        
+        private Action<string> errorCallbackAction;
 
         public SnykGeneralSettingsUserControl(SnykActivityLogger logger)
         {
@@ -30,6 +35,58 @@ namespace Snyk.VisualStudio.Extension.Settings
             organizationTextBox.Text = optionsDialogPage.Organization;
             ignoreUnknownCACheckBox.Checked = optionsDialogPage.IgnoreUnknownCA;
 
+            successCallbackAction = (apiToken) =>
+            {
+                logger.LogInformation("Enter authenticate successCallback");
+
+                this.authProgressBar.Invoke((MethodInvoker)delegate
+                {
+                    this.authProgressBar.Visible = false;
+                });
+
+                this.tokenTextBox.Invoke((MethodInvoker)delegate
+                {
+                    this.tokenTextBox.Text = apiToken;
+                    this.tokenTextBox.Enabled = true;
+                });
+
+                this.authenticateButton.Invoke((MethodInvoker)delegate
+                {
+                    this.authenticateButton.Enabled = true;
+                });
+            };
+
+            errorCallbackAction = (errorMessage) =>
+            {
+                logger.LogInformation("Enter authenticate errorCallback");
+
+                this.authProgressBar.Invoke((MethodInvoker)delegate
+                {
+                    this.authProgressBar.Visible = false;
+                });
+
+                this.tokenTextBox.Invoke((MethodInvoker)delegate
+                {
+                    this.tokenTextBox.Enabled = true;
+                });
+
+                this.authenticateButton.Invoke((MethodInvoker)delegate
+                {
+                    this.authenticateButton.Enabled = true;
+                });
+
+                CliError cliError = new CliError
+                {
+                    IsSuccess = false,
+                    Message = errorMessage,
+                    Path = ""
+                };
+
+                optionsDialogPage.ServiceProvider.TasksService.OnError(cliError);
+
+                optionsDialogPage.ServiceProvider.ShowToolWindow();
+            };
+
             logger.LogInformation("Leave Initialize method");
         }
         
@@ -46,82 +103,30 @@ namespace Snyk.VisualStudio.Extension.Settings
             Task.Run(() =>
             {
                 var serviceProvider = optionsDialogPage.ServiceProvider;
-                var tasksService = serviceProvider.TasksService;
-
-                Action<string> successCallback = (apiToken) =>
-                {
-                    logger.LogInformation("Enter authenticate successCallback");
-
-                    this.authProgressBar.Invoke((MethodInvoker)delegate
-                    {
-                        this.authProgressBar.Visible = false;
-                    });
-
-                    this.tokenTextBox.Invoke((MethodInvoker)delegate
-                    {
-                        this.tokenTextBox.Text = apiToken;
-                        this.tokenTextBox.Enabled = true;
-                    });
-
-                    this.authenticateButton.Invoke((MethodInvoker)delegate
-                    {
-                        this.authenticateButton.Enabled = true;
-                    });
-                };
-
-                Action<string> errorCallback = (errorMessage) =>
-                {
-                    logger.LogInformation("Enter authenticate errorCallback");
-
-                    this.authProgressBar.Invoke((MethodInvoker)delegate
-                    {
-                        this.authProgressBar.Visible = false;
-                    });
-
-                    this.tokenTextBox.Invoke((MethodInvoker)delegate
-                    {
-                        this.tokenTextBox.Enabled = true;
-                    });
-
-                    this.authenticateButton.Invoke((MethodInvoker)delegate
-                    {
-                        this.authenticateButton.Enabled = true;
-                    });
-
-                    CliError cliError = new CliError
-                    {
-                        IsSuccess = false,
-                        Message = errorMessage,
-                        Path = ""
-                    };
-
-                    serviceProvider.TasksService.OnError(cliError);
-
-                    serviceProvider.ShowToolWindow();                    
-                };
+                var tasksService = serviceProvider.TasksService;                
 
                 if (SnykCli.IsCliExists())
                 {
                     logger.LogInformation("CLI exists. Calling SetupApiToken method");
 
-                    SetupApiToken(successCallback, errorCallback);
+                    SetupApiToken(successCallbackAction, errorCallbackAction);
                 }
                 else
                 {
                     logger.LogInformation("CLI not exists. Download CLI before get Api token");
 
-                    tasksService.DownloadFinished += (obj, args) =>
-                    {
-                        logger.LogInformation("CLI downloaded. Calling SetupApiToken method");
-
-                        SetupApiToken(successCallback, errorCallback);
-                    };
-
-                    serviceProvider.TasksService.Download();
+                    serviceProvider.TasksService.Download(new CliDownloadFinishedCallback(OnCliDownloadFinishedCallback));
                 }
             });            
-        }                
-        
+        }
+
+        private void OnCliDownloadFinishedCallback()
+        {
+            logger.LogInformation("CLI downloaded. Calling SetupApiToken method");
+
+            SetupApiToken(successCallbackAction, errorCallbackAction);
+        }
+
         private void SetupApiToken(Action<string> successCallback, Action<string> errorCallback)
         {
             logger.LogInformation("Enter SetupApiToken method");
@@ -165,7 +170,7 @@ namespace Snyk.VisualStudio.Extension.Settings
 
                 if (!IsValidGuid(apiToken))
                 {
-                    errorCallback("Invalid GUID.");
+                    errorCallback($"Invalid GUID: {apiToken}");
 
                     return;
                 }
