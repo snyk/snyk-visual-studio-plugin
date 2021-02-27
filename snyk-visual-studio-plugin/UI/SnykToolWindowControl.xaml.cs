@@ -314,6 +314,8 @@ namespace Snyk.VisualStudio.Extension.UI
                 this.progressBarPanel.Visibility = Visibility.Collapsed;
 
                 this.progressBar.IsIndeterminate = false;
+
+                this.progressBar.Value = 0;
             });
         }
 
@@ -321,6 +323,8 @@ namespace Snyk.VisualStudio.Extension.UI
         {
             this.Dispatcher.Invoke(() =>
             {
+                this.progressBar.Value = 0;
+
                 this.progressBarPanel.Visibility = Visibility.Visible;
 
                 this.resultsGrid.Visibility = Visibility.Collapsed;
@@ -331,6 +335,8 @@ namespace Snyk.VisualStudio.Extension.UI
         {
             this.Dispatcher.Invoke(() =>
             {
+                this.progressBar.Value = 0;
+
                 this.progressBarPanel.Visibility = Visibility.Visible;
                                 
                 this.progressBar.IsIndeterminate = true;
