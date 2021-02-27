@@ -54,6 +54,11 @@ namespace Snyk.VisualStudio.Extension.Settings
                 {
                     this.authenticateButton.Enabled = true;
                 });
+
+                this.authenticateButton.Invoke((MethodInvoker)delegate
+                {
+                    errorProvider.SetError(tokenTextBox, "");
+                });                
             };
 
             errorCallbackAction = (errorMessage) =>
@@ -214,11 +219,18 @@ namespace Snyk.VisualStudio.Extension.Settings
             optionsDialogPage.IgnoreUnknownCA = ignoreUnknownCACheckBox.Checked;
         }
 
-        private void tokenTextBox_Validating(object sender, System.ComponentModel.CancelEventArgs e)
+        private void tokenTextBox_Validating(object sender, System.ComponentModel.CancelEventArgs cancelEventArgs)
         {
+            if (string.IsNullOrEmpty(tokenTextBox.Text))
+            {
+                errorProvider.SetError(tokenTextBox, "");
+
+                return;
+            }
+
             if (string.IsNullOrWhiteSpace(tokenTextBox.Text) || !IsValidGuid(tokenTextBox.Text))
             {
-                e.Cancel = true;
+                cancelEventArgs.Cancel = true;
 
                 tokenTextBox.Focus();
 
@@ -226,13 +238,20 @@ namespace Snyk.VisualStudio.Extension.Settings
             }
             else
             {
-                e.Cancel = false;
+                cancelEventArgs.Cancel = false;
                 errorProvider.SetError(tokenTextBox, "");
             }
         }
 
         private void customEndpointTextBox_Validating(object sender, System.ComponentModel.CancelEventArgs cancelEventArgs)
         {
+            if (string.IsNullOrEmpty(tokenTextBox.Text))
+            {
+                errorProvider.SetError(tokenTextBox, "");
+
+                return;
+            }
+
             if (!string.IsNullOrWhiteSpace(customEndpointTextBox.Text) && !IsValidUrl(customEndpointTextBox.Text))
             {
                 cancelEventArgs.Cancel = true;
