@@ -28,8 +28,11 @@
         /// </summary>
         private void InitializeComponent()
         {
+            this.components = new System.ComponentModel.Container();
             this.additionalOptionsTextBox = new System.Windows.Forms.TextBox();
             this.allProjectsCheckBox = new System.Windows.Forms.CheckBox();
+            this.errorProvider = new System.Windows.Forms.ErrorProvider(this.components);
+            ((System.ComponentModel.ISupportInitialize)(this.errorProvider)).BeginInit();
             this.SuspendLayout();
             // 
             // additionalOptionsTextBox
@@ -41,7 +44,7 @@
             this.additionalOptionsTextBox.Multiline = true;
             this.additionalOptionsTextBox.Name = "additionalOptionsTextBox";
             this.additionalOptionsTextBox.ScrollBars = System.Windows.Forms.ScrollBars.Both;
-            this.additionalOptionsTextBox.Size = new System.Drawing.Size(1260, 223);
+            this.additionalOptionsTextBox.Size = new System.Drawing.Size(1242, 223);
             this.additionalOptionsTextBox.TabIndex = 0;
             this.additionalOptionsTextBox.TextChanged += new System.EventHandler(this.additionalOptionsTextBox_TextChanged);
             // 
@@ -58,6 +61,10 @@
             this.allProjectsCheckBox.UseVisualStyleBackColor = true;
             this.allProjectsCheckBox.CheckedChanged += new System.EventHandler(this.allProjectsCheckBox_CheckedChanged);
             // 
+            // errorProvider
+            // 
+            this.errorProvider.ContainerControl = this;
+            // 
             // SnykProjectOptionsUserControl
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(12F, 25F);
@@ -70,6 +77,7 @@
             this.Padding = new System.Windows.Forms.Padding(7, 6, 7, 6);
             this.Size = new System.Drawing.Size(1274, 509);
             this.Load += new System.EventHandler(this.SnykProjectOptionsUserControl_Load);
+            ((System.ComponentModel.ISupportInitialize)(this.errorProvider)).EndInit();
             this.ResumeLayout(false);
             this.PerformLayout();
 
@@ -79,5 +87,6 @@
 
         private System.Windows.Forms.TextBox additionalOptionsTextBox;
         private System.Windows.Forms.CheckBox allProjectsCheckBox;
+        private System.Windows.Forms.ErrorProvider errorProvider;
     }
 }

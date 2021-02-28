@@ -15,11 +15,26 @@ namespace Snyk.VisualStudio.Extension.Settings
             this.solutionService = solutionService;
         }    
 
+        private void checkOptionConflicts()
+        {
+            if (allProjectsCheckBox.Checked && additionalOptionsTextBox.Text.Contains("--file="))
+            {
+                errorProvider.SetError(additionalOptionsTextBox, 
+                    "The following option combination is not currently supported: file + all-projects");
+            } 
+            else
+            {
+                errorProvider.SetError(additionalOptionsTextBox, "");
+            }
+        }
+
         private void additionalOptionsTextBox_TextChanged(object sender, EventArgs e)
         {
             if (solutionService.IsSolutionOpen)
-            {
+            {                
                 solutionService.SolutionSettingsService.SaveAdditionalOptions(additionalOptionsTextBox.Text.ToString());
+
+                checkOptionConflicts();
             }
         }
 
@@ -28,6 +43,8 @@ namespace Snyk.VisualStudio.Extension.Settings
             if (solutionService.IsSolutionOpen)
             {
                 solutionService.SolutionSettingsService.SaveIsAllProjectsScanEnabled(allProjectsCheckBox.Checked);
+
+                checkOptionConflicts();
             }
         }
 
@@ -77,6 +94,8 @@ namespace Snyk.VisualStudio.Extension.Settings
 
                 solutionService.SolutionSettingsService.SaveIsAllProjectsScanEnabled(false);
             }
+
+            checkOptionConflicts();
         }
     }
 }
