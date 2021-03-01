@@ -34,7 +34,7 @@ namespace Snyk.VisualStudio.Extension.UI
             }
             set
             {
-                SetValue(RichTextProperty, value);
+                SetValue(RichTextProperty, value == null ? "" : value);
             }
         }
 

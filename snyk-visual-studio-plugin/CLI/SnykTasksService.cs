@@ -146,6 +146,8 @@ namespace Snyk.VisualStudio.Extension.CLI
                             Logger.LogInformation("Scan is successful");
 
                             OnError(cliResult.Error);
+
+                            return;
                         }
                         else
                         {
@@ -162,14 +164,20 @@ namespace Snyk.VisualStudio.Extension.CLI
                     {
                         Logger.LogError(operatioException.Message);
 
-                        OnScanningCancelled();                        
+                        OnScanningCancelled();
+
+                        return;
                     }
                     catch (Exception scanException)
                     {
                         Logger.LogError(scanException.Message);
 
-                        OnError(scanException.Message);                        
+                        OnError(scanException.Message);
+
+                        return;
                     }
+
+                    progressWorker.CancelIfCancellationRequested();
 
                     OnScanningFinished();
                 }

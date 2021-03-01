@@ -185,7 +185,7 @@
                 <TextBlock Name="message"></TextBlock>
             </StackPanel>
         </Grid>
-        <Grid Grid.Row="5" Name="noVulnerabilitiesAddedMessageGrid" VerticalAlignment="Center">
+        <Grid Grid.Row="5" Name="noVulnerabilitiesAddedMessageGrid" VerticalAlignment="Center" Visibility="Collapsed">
             <StackPanel HorizontalAlignment="Center">
                 <TextBlock>
                     No vulnerabilities added.

@@ -32,6 +32,8 @@ namespace Snyk.VisualStudio.Extension.UI
 
         private ISnykServiceProvider serviceProvider;
 
+        private ToolWindowContext context;
+
         /// <summary>
         /// Initializes a new instance of the <see cref="SnykToolWindowControl"/> class.
         /// </summary>
@@ -41,6 +43,7 @@ namespace Snyk.VisualStudio.Extension.UI
 
             this.InitializeComponent();
 
+            this.context = new ToolWindowContext(this, RunScanState.Instance);
             //DisableAllActions();
         }
 
@@ -85,97 +88,51 @@ namespace Snyk.VisualStudio.Extension.UI
 
         public void OnAfterBackgroundSolutionLoadComplete(object sender, EventArgs eventArgs)
         {
-            HideAllControls();
-
-            EnableExecuteActions();
-
-            isSolutionLoaded = true;
+            context.TransitionTo(RunScanState.Instance);
         }
-
+         
         public void OnAfterCloseSolution(object sender, EventArgs eventArgs)
         {
-            HideAllControls();
-
-            //DisableAllActions();
-
-            isSolutionLoaded = false;
+            context.TransitionTo(RunScanState.Instance);
         }
 
         public void OnScanningUpdate(object sender, SnykCliScanEventArgs eventArgs) => AppendCliResultToTree(eventArgs.Result);
 
         public void OnScanningStarted(object sender, SnykCliScanEventArgs eventArgs)
         {
-            DisplayMainPanelMessage("Scanning project for vulnerabilities...");
-
-            EnableStopActions();
-
-            HideError();
-
-            ShowIndeterminateProgressBar();
-
-            CleanVulnerabilitiesTree();
-
-            HideRunScanMessage();
+            context.TransitionTo(ScanningState.Instance);
         }
 
         public void OnScanningFinished(object sender, SnykCliScanEventArgs eventArgs)
         {
-            EnableExecuteActions();
-
-            HideProgressBar();
-
-            HideMainPanelMessage();
+            context.TransitionTo(ScanResultsState.Instance);
         }
 
         public void OnDisplayError(object sender, SnykCliScanEventArgs eventArgs)
         {
-            EnableExecuteActions();
-
-            DisplayError(eventArgs.Error);
-
-            HideMainPanelMessage();
+            context.TransitionTo(ErrorState.Instance(eventArgs.Error));            
         }
 
         public void OnScanningCancelled(object sender, SnykCliScanEventArgs eventArgs)
         {
-            EnableExecuteActions();
-
-            HideAllControls();
-
-            HideMainPanelMessage();
-
-            DisplayRunScanMessage();
+            context.TransitionTo(RunScanState.Instance);
         }
 
         public void OnDownloadStarted(object sender, SnykCliDownloadEventArgs eventArgs)
         {
-            HideRunScanMessage();
-
-            EnableStopActions();
-
-            ShowProgressBar();
+            context.TransitionTo(DownloadState.Instance);
         }
 
         public void OnDownloadFinished(object sender, SnykCliDownloadEventArgs eventArgs)
         {
-            SetupAvailableActions();
-                        
-            HideAllControls();
-
-            HideMainPanelMessage();
-
-            DisplayRunScanMessage();
+            context.TransitionTo(RunScanState.Instance);
         }
 
-        public void OnDownloadUpdate(object sender, SnykCliDownloadEventArgs eventArgs) => UpdateProgressBar(eventArgs.Progress);
+        public void OnDownloadUpdate(object sender, SnykCliDownloadEventArgs eventArgs) => UpdateDownloadProgress(eventArgs.Progress);
 
         public void OnDownloadCancelled(object sender, SnykCliDownloadEventArgs eventArgs)
         {
-            //DisableAllActions();
-
-            HideAllControls();
-
-            HideMainPanelMessage();
+            context.TransitionTo(RunScanState.Instance);
         }
 
         public void OnVsThemeChanged(object sender, SnykVsThemeChangedEventArgs eventArgs)
@@ -211,11 +168,11 @@ namespace Snyk.VisualStudio.Extension.UI
             }
         }
 
-        private void HideRunScanMessage() => this.Dispatcher.Invoke(() => noVulnerabilitiesAddedMessageGrid.Visibility = Visibility.Collapsed);
+        public void HideRunScanMessage() => this.Dispatcher.Invoke(() => noVulnerabilitiesAddedMessageGrid.Visibility = Visibility.Collapsed);
 
-        private void DisplayRunScanMessage() => this.Dispatcher.Invoke(() => noVulnerabilitiesAddedMessageGrid.Visibility = Visibility.Visible);
+        public void DisplayRunScanMessage() => this.Dispatcher.Invoke(() => noVulnerabilitiesAddedMessageGrid.Visibility = Visibility.Visible);
 
-        private void DisplayMainPanelMessage(string text)
+        public void DisplayMainMessage(string text)
         {
             this.Dispatcher.Invoke(() =>
             {
@@ -225,13 +182,13 @@ namespace Snyk.VisualStudio.Extension.UI
             });
         }
 
-        private void HideMainPanelMessage()
+        public void HideMainMessage()
         {
             this.Dispatcher.Invoke(() =>
             {
                 message.Text = "";
 
-                messageGrid.Visibility = Visibility.Visible;
+                messageGrid.Visibility = Visibility.Collapsed;
             });
         }
 
@@ -239,9 +196,6 @@ namespace Snyk.VisualStudio.Extension.UI
         {
             this.Dispatcher.Invoke(() =>
             {
-                progressBarPanel.Visibility = Visibility.Collapsed;
-                resultsGrid.Visibility = Visibility.Collapsed;
-
                 errorPanel.Visibility = Visibility.Visible;
 
                 errorMessage.RichText = cliError.Message;
@@ -249,19 +203,7 @@ namespace Snyk.VisualStudio.Extension.UI
             });
         }
 
-        private void SetupAvailableActions()
-        {
-            if (isSolutionLoaded)
-            {
-                EnableExecuteActions();
-            }
-            else
-            {
-                //DisableAllActions();
-            }
-        }
-
-        private void EnableExecuteActions()
+        public void EnableExecuteActions()
         {
             this.Dispatcher.Invoke(() =>
             {
@@ -273,19 +215,7 @@ namespace Snyk.VisualStudio.Extension.UI
             });
         }
 
-        private void DisableAllActions()
-        {
-            this.Dispatcher.Invoke(() =>
-            {
-                runButton.IsEnabled = false;
-                cleanButton.IsEnabled = false;
-                stopButton.IsEnabled = false;
-
-                runScanLink.IsEnabled = false;
-            });
-        }
-
-        private void EnableStopActions()
+        public void EnableStopActions()
         {
             this.Dispatcher.Invoke(() =>
             {
@@ -301,79 +231,21 @@ namespace Snyk.VisualStudio.Extension.UI
         {
             this.Dispatcher.Invoke(() =>
             {
-                DisplayResultsGrid();
-
                 vulnerabilitiesTree.AppendVulnerabilities(cliResult.CLIVulnerabilities);
             });
         }
 
-        private void HideProgressBar()
-        {
-            this.Dispatcher.Invoke(() =>
-            {
-                this.progressBarPanel.Visibility = Visibility.Collapsed;
-
-                this.progressBar.IsIndeterminate = false;
-
-                this.progressBar.Value = 0;
-            });
-        }
-
-        private void ShowProgressBar()
-        {
-            this.Dispatcher.Invoke(() =>
-            {
-                this.progressBar.Value = 0;
-
-                this.progressBarPanel.Visibility = Visibility.Visible;
-
-                this.resultsGrid.Visibility = Visibility.Collapsed;
-            });
-        }        
-
-        private void ShowIndeterminateProgressBar()
-        {
-            this.Dispatcher.Invoke(() =>
-            {
-                this.progressBar.Value = 0;
-
-                this.progressBarPanel.Visibility = Visibility.Visible;
-                                
-                this.progressBar.IsIndeterminate = true;
-
-                this.resultsGrid.Visibility = Visibility.Collapsed;
-            });
-        }
-
-        private void UpdateProgressBar(int value)
+        private void UpdateDownloadProgress(int value)
         {
             this.Dispatcher.BeginInvoke((Action) (() =>
             {
                 progressBar.Value = value;
 
-                DisplayMainPanelMessage($"Downloading latest Snyk CLI release {value}%...");
+                message.Text = $"Downloading latest Snyk CLI release {value}%...";
             }));
-        }
+        }        
 
-        private void HideAllControls()
-        {
-            this.Dispatcher.Invoke(() =>
-            {
-                progressBarPanel.Visibility = Visibility.Collapsed;
-                resultsGrid.Visibility = Visibility.Collapsed;
-
-                errorPanel.Visibility = Visibility.Collapsed;
-
-                HideError();
-                CleanAndHideVulnerabilityDetailsPanel();
-            });
-        }
-
-        private void DisplayResultsGrid() => resultsGrid.Visibility = Visibility.Visible;
-
-        private void HideError() => this.Dispatcher.Invoke(() => errorPanel.Visibility = Visibility.Collapsed);
-
-        private void CleanVulnerabilitiesTree() => this.Dispatcher.Invoke(() => vulnerabilitiesTree.Clear());
+        public void CleanVulnerabilitiesTree() => this.Dispatcher.Invoke(() => vulnerabilitiesTree.Clear());
 
         private void OnHyperlinkClick(object sender, RoutedEventArgs e)
         {
@@ -452,7 +324,7 @@ namespace Snyk.VisualStudio.Extension.UI
             ); 
         }
 
-        private void CleanAndHideVulnerabilityDetailsPanel()
+        public void CleanAndHideVulnerabilityDetailsPanel()
         {
             vulnerabilityDetailsPanel.Visibility = Visibility.Hidden;
 
@@ -466,7 +338,7 @@ namespace Snyk.VisualStudio.Extension.UI
             moreAboutThisIssue.NavigateUri = null;            
         }
 
-        private void HideIssueMessages()
+        public void HideIssueMessages()
         {
             selectIssueMessageGrid.Visibility = Visibility.Collapsed;
             noIssuesMessageGrid.Visibility = Visibility.Collapsed;
@@ -527,16 +399,247 @@ namespace Snyk.VisualStudio.Extension.UI
 
         private void cleanButton_Click(object sender, RoutedEventArgs e)
         {
-            CleanVulnerabilitiesTree();
-
-            HideAllControls();
-
-            DisplayRunScanMessage();
+            context.TransitionTo(RunScanState.Instance);
         }
 
         private void SnykToolWindow_Loaded(object sender, RoutedEventArgs e)
         {
             serviceProvider.TasksService.Download();
+        }
+    }
+
+    class ToolWindowContext
+    {
+        private SnykToolWindowControl toolWindowControl;
+
+        private ToolWindowState state = EmptyState.Instance;
+
+        public ToolWindowContext(SnykToolWindowControl control, ToolWindowState state)
+        {
+            this.toolWindowControl = control;
+
+            this.TransitionTo(state);
+        }
+
+        public SnykToolWindowControl ToolWindowControl
+        {
+            get
+            {
+                return toolWindowControl;
+            }
+        }
+
+        public void TransitionTo(ToolWindowState state)
+        {
+            this.state.HideComponents();
+
+            this.state = state;
+
+            this.state.Context = this;
+
+            this.state.DisplayComponents();
+        }
+
+        public void RequestUpdateUI()
+        {
+            this.state.DisplayComponents();
+        }
+    }
+
+    abstract class ToolWindowState
+    {
+        public ToolWindowContext Context { get; set; }
+
+        public SnykToolWindowControl ToolWindowControl
+        {
+            get
+            {
+                return Context.ToolWindowControl;
+            }
+        }
+
+        public abstract void HideComponents();
+
+        public abstract void DisplayComponents();
+    }
+
+    class RunScanState : ToolWindowState
+    {
+        public static RunScanState Instance
+        {
+            get
+            {
+                return new RunScanState();
+            }
+        }
+
+        public override void HideComponents()
+        {
+            ToolWindowControl.HideRunScanMessage();
+
+            ToolWindowControl.EnableStopActions();
+        }
+
+        public override void DisplayComponents()
+        {
+            ToolWindowControl.DisplayRunScanMessage();            
+
+            ToolWindowControl.EnableExecuteActions();
+        }
+    }
+
+    class ErrorState : ToolWindowState
+    {
+        private CliError cliError;
+        public static ErrorState Instance(CliError cliError) => new ErrorState(cliError);
+
+        public ErrorState(CliError cliError)
+        {
+            this.cliError = cliError;
+        }
+
+        public override void HideComponents()
+        {
+            ToolWindowControl.Dispatcher.Invoke(() => ToolWindowControl.errorPanel.Visibility = Visibility.Collapsed);
+        }
+
+        public override void DisplayComponents()
+        {
+            ToolWindowControl.EnableExecuteActions();
+
+            ToolWindowControl.DisplayError(cliError);
+        }
+    }
+
+    class DownloadState : ToolWindowState
+    {
+        public static DownloadState Instance
+        {
+            get
+            {
+                return new DownloadState();
+            }
+        }
+
+        public override void HideComponents()
+        {
+            ToolWindowControl.HideMainMessage();
+
+            ToolWindowControl.Dispatcher.Invoke(() =>
+            {
+                ToolWindowControl.progressBar.Value = 0;
+
+                ToolWindowControl.progressBarPanel.Visibility = Visibility.Collapsed;                
+            });
+        }
+
+        public override void DisplayComponents()
+        {
+            ToolWindowControl.Dispatcher.Invoke(() =>
+            {
+                ToolWindowControl.progressBar.Value = 0;
+
+                ToolWindowControl.progressBarPanel.Visibility = Visibility.Visible;                
+            });
+
+            ToolWindowControl.DisplayMainMessage("Downloading latest Snyk CLI release 0%...");
+        }
+    }
+
+    class ScanningState : ToolWindowState
+    {
+        public static ScanningState Instance
+        {
+            get
+            {
+                return new ScanningState();
+            }
+        }
+
+        public override void HideComponents()
+        {
+            ToolWindowControl.HideMainMessage();
+
+            ToolWindowControl.Dispatcher.Invoke(() =>
+            {               
+                ToolWindowControl.progressBar.Value = 0;
+                ToolWindowControl.progressBar.IsIndeterminate = false;
+
+                ToolWindowControl.progressBarPanel.Visibility = Visibility.Collapsed;
+
+                ToolWindowControl.stopButton.IsEnabled = false;
+            });
+        }
+
+        public override void DisplayComponents()
+        {
+            ToolWindowControl.DisplayMainMessage("Scanning project for vulnerabilities...");
+
+            ToolWindowControl.Dispatcher.Invoke(() =>
+            {               
+                ToolWindowControl.progressBar.Value = 0;
+                ToolWindowControl.progressBar.IsIndeterminate = true;
+
+                ToolWindowControl.progressBarPanel.Visibility = Visibility.Visible;
+
+                ToolWindowControl.stopButton.IsEnabled = true;
+            });
+        }
+    }
+
+    class ScanResultsState : ToolWindowState
+    {
+        public static ScanResultsState Instance
+        {
+            get
+            {
+                return new ScanResultsState();
+            }
+        }
+
+        public override void DisplayComponents()
+        {            
+            ToolWindowControl.Dispatcher.Invoke(() =>
+            {
+                ToolWindowControl.EnableExecuteActions();
+
+                ToolWindowControl.selectIssueMessageGrid.Visibility = Visibility.Visible;
+
+                ToolWindowControl.resultsGrid.Visibility = Visibility.Visible;
+            });            
+        }
+
+        public override void HideComponents()
+        {
+            ToolWindowControl.CleanVulnerabilitiesTree();
+
+            ToolWindowControl.Dispatcher.Invoke(() =>
+            {
+                ToolWindowControl.resultsGrid.Visibility = Visibility.Collapsed;
+
+                ToolWindowControl.HideIssueMessages();
+
+                ToolWindowControl.CleanAndHideVulnerabilityDetailsPanel();                
+            });
+        }
+    }
+
+    class EmptyState : ToolWindowState
+    {
+        public static EmptyState Instance
+        {
+            get
+            {
+                return new EmptyState();
+            }
+        }
+
+        public override void DisplayComponents()
+        {            
+        }
+
+        public override void HideComponents()
+        {
         }
     }
 }
