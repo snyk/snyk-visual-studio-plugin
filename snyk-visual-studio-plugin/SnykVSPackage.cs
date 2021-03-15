@@ -36,12 +36,13 @@ namespace Snyk.VisualStudio.Extension
     /// To get loaded into VS, the package must be referred by &lt;Asset Type="Microsoft.VisualStudio.VsPackage" ...&gt; in .vsixmanifest file.
     /// </para>
     /// </remarks>
+    /// [PackageRegistration(UseManagedResourcesOnly = true)]    
     [PackageRegistration(UseManagedResourcesOnly = true, AllowsBackgroundLoading = true)]
     [InstalledProductRegistration("#110", "#112", "1.0", IconResourceID = 400)] // Info on this package for Help/About
     [Guid(SnykVSPackage.PackageGuidString)]
     [SuppressMessage("StyleCop.CSharp.DocumentationRules", "SA1650:ElementDocumentationMustBeSpelledCorrectly", Justification = "pkgdef, VS and vsixmanifest are valid VS terms")]
     [ProvideService(typeof(ISnykService), IsAsyncQueryable = true)]
-    [ProvideAutoLoad(VSConstants.UICONTEXT.SolutionExistsAndFullyLoaded_string, PackageAutoLoadFlags.BackgroundLoad)]
+    //[ProvideAutoLoad(VSConstants.UICONTEXT.SolutionExistsAndFullyLoaded_string, PackageAutoLoadFlags.BackgroundLoad)]
     [ProvideMenuResource("Menus.ctmenu", 1)]
     [ProvideToolWindow(typeof(SnykToolWindow), Style = VsDockStyle.Tabbed)]
     [ProvideOptionPage(typeof(SnykGeneralOptionsDialogPage), "Snyk", "General settings", 1000, 1001, true)]
@@ -90,7 +91,6 @@ namespace Snyk.VisualStudio.Extension
             logger.LogInformation("Start Initialize tool window. Before call GetToolWindowControl() method.");
 
             await InitializeToolWindowAsync();
-            await InitializeToolWindowControlAsync();
 
             logger.LogInformation("Before call toolWindowControl.InitializeEventListenersAsync() method.");
 
@@ -142,22 +142,19 @@ namespace Snyk.VisualStudio.Extension
 
                     throw new NotSupportedException("Cannot find Snyk tool window.");
                 }
+
+                logger.LogInformation("Initialize ToolWindow.Content. Call await JoinableTaskFactory.SwitchToMainThreadAsync().");
+
+                await JoinableTaskFactory.SwitchToMainThreadAsync();
+
+                logger.LogInformation("Call ToolWindow.Content.");
+
+                this.toolWindowControl = (SnykToolWindowControl)toolWindow.Content;
+
+                logger.LogInformation("Leave InitializeToolWindowControlAsync() method");
             }
 
             logger.LogInformation("Leave InitializeToolWindowAsync() method");
-        }
-
-        public async Task InitializeToolWindowControlAsync()
-        {
-            logger.LogInformation("Enter InitializeToolWindowControlAsync() method. Call await JoinableTaskFactory.SwitchToMainThreadAsync().");
-
-            await JoinableTaskFactory.SwitchToMainThreadAsync();
-
-            logger.LogInformation("Call ToolWindow.Content.");
-
-            this.toolWindowControl = (SnykToolWindowControl)toolWindow.Content;
-
-            logger.LogInformation("Leave InitializeToolWindowControlAsync() method");
         }
 
         public void ShowToolWindow() => toolWindowControl.ShowToolWindow();
