@@ -137,7 +137,7 @@ namespace Snyk.VisualStudio.Extension.CLI
                     }
                 };
             }
-        }        
+        }               
 
         public bool IsSuccessCliJsonString(string json)
         {
@@ -171,6 +171,6 @@ namespace Snyk.VisualStudio.Extension.CLI
             {
                 options = value;
             }
-        }        
+        }                      
     }   
 }

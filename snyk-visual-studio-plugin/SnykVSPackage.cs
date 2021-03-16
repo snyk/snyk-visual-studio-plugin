@@ -10,7 +10,6 @@ using System.Runtime.InteropServices;
 using Microsoft.VisualStudio.Shell;
 using Snyk.VisualStudio.Extension.UI;
 using Snyk.VisualStudio.Extension.Settings;
-using Microsoft.VisualStudio;
 using System.Threading;
 using System.Threading.Tasks;
 using Task = System.Threading.Tasks.Task;
@@ -42,7 +41,6 @@ namespace Snyk.VisualStudio.Extension
     [Guid(SnykVSPackage.PackageGuidString)]
     [SuppressMessage("StyleCop.CSharp.DocumentationRules", "SA1650:ElementDocumentationMustBeSpelledCorrectly", Justification = "pkgdef, VS and vsixmanifest are valid VS terms")]
     [ProvideService(typeof(ISnykService), IsAsyncQueryable = true)]
-    //[ProvideAutoLoad(VSConstants.UICONTEXT.SolutionExistsAndFullyLoaded_string, PackageAutoLoadFlags.BackgroundLoad)]
     [ProvideMenuResource("Menus.ctmenu", 1)]
     [ProvideToolWindow(typeof(SnykToolWindow), Style = VsDockStyle.Tabbed)]
     [ProvideOptionPage(typeof(SnykGeneralOptionsDialogPage), "Snyk", "General settings", 1000, 1001, true)]
@@ -118,7 +116,7 @@ namespace Snyk.VisualStudio.Extension
             {
                 return serviceProvider;
             }
-        }                
+        }      
 
         public async Task InitializeToolWindowAsync()
         {
@@ -165,7 +163,7 @@ namespace Snyk.VisualStudio.Extension
             {
                 return generalOptionsDialogPage;
             }
-        }
+        }        
 
         private async Task InitializeGeneralOptionsAsync()
         {
