@@ -171,7 +171,7 @@
             </ScrollViewer>
             <Grid Grid.Column="3" Name="selectIssueMessageGrid" VerticalAlignment="Center" Visibility="Collapsed">
                 <StackPanel HorizontalAlignment="Center">
-                    <TextBlock>Please, select issue to view details.</TextBlock>
+                    <TextBlock>Select an issue and start improving your project.</TextBlock>
                 </StackPanel>
             </Grid>
             <Grid Grid.Column="4" Name="noIssuesMessageGrid" VerticalAlignment="Center" Visibility="Collapsed">
@@ -188,7 +188,7 @@
         <Grid Grid.Row="5" Name="noVulnerabilitiesAddedMessageGrid" VerticalAlignment="Center" Visibility="Collapsed">
             <StackPanel HorizontalAlignment="Center">
                 <TextBlock>
-                    No vulnerabilities added.
+                    Scan your project for security vulnerabilities.
                     <Hyperlink Name="runScanLink" Click="RunButton_Click" IsEnabled="False">
                         Run scan
                     </Hyperlink>
