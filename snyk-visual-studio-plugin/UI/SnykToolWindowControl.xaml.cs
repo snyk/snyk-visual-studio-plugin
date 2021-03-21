@@ -231,7 +231,7 @@ namespace Snyk.VisualStudio.Extension.UI
         {
             this.Dispatcher.Invoke(() =>
             {
-                vulnerabilitiesTree.AppendVulnerabilities(cliResult.CLIVulnerabilities);
+                vulnerabilitiesTree.AppendVulnerabilities(cliResult);
             });
         }
 

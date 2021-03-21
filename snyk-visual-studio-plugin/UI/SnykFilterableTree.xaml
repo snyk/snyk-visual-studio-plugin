@@ -19,6 +19,9 @@
         <BitmapImage x:Key="SeverityMediumIcon" UriSource="../Resources/severity_medium.png" DecodePixelWidth="16" DecodePixelHeight="16"/>
         <BitmapImage x:Key="SeverityLowIcon" UriSource="../Resources/severity_low.png" DecodePixelWidth="16" DecodePixelHeight="16"/>
 
+        <BitmapImage x:Key="OpenSourceSecurityDark" UriSource="../Resources/OpenSourceSecurityDark.png" DecodePixelWidth="16" DecodePixelHeight="16"/>
+        <BitmapImage x:Key="OpenSourceSecurity" UriSource="../Resources/OpenSourceSecurity.png" DecodePixelWidth="16" DecodePixelHeight="16"/>
+
         <local:SnykImageConverter x:Key="ImageConverter"/>
     </UserControl.Resources>
     <Grid>
@@ -175,6 +178,7 @@
                             </ControlTemplate>
                         </Setter.Value>
                     </Setter>
+                    <Setter Property="TreeViewItem.IsExpanded" Value="True"/>
                 </Style>
             </TreeView.ItemContainerStyle>
             <TreeView.ItemTemplate>

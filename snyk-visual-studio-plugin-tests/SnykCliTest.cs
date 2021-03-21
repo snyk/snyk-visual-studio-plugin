@@ -28,7 +28,7 @@ namespace Snyk.VisualStudio.Extension.Tests
 
             var cliResult = cli.Scan("");
 
-            Assert.AreEqual(1, cliResult.CLIVulnerabilities.Count);
+            Assert.AreEqual(1, cliResult.CliVulnerabilitiesList.Count);
         }
 
         [TestMethod]
@@ -186,7 +186,7 @@ namespace Snyk.VisualStudio.Extension.Tests
 
             var cliResult = cli.ConvertRawCliStringToCliResult(GetFileContents("VulnerabilitiesArray.json"));
 
-            Assert.AreEqual(2, cliResult.CLIVulnerabilities.Count);
+            Assert.AreEqual(2, cliResult.CliVulnerabilitiesList.Count);
         }
 
         [TestMethod]
@@ -199,7 +199,7 @@ namespace Snyk.VisualStudio.Extension.Tests
 
             var cliResult = cli.ConvertRawCliStringToCliResult(GetFileContents("VulnerabilitiesSingleObject.json"));
 
-            Assert.AreEqual(1, cliResult.CLIVulnerabilities.Count);
+            Assert.AreEqual(1, cliResult.CliVulnerabilitiesList.Count);
         }
 
         [TestMethod]

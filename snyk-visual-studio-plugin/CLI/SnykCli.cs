@@ -103,7 +103,7 @@ namespace Snyk.VisualStudio.Extension.CLI
             {
                 return new CliResult
                 {
-                    CLIVulnerabilities = Json.Deserialize(rawResult, typeof(List<CliVulnerabilities>)) as List<CliVulnerabilities>
+                    CliVulnerabilitiesList = Json.Deserialize(rawResult, typeof(List<CliVulnerabilities>)) as List<CliVulnerabilities>
                 };
             } else if (rawResult.First() == '{')
             {
@@ -116,7 +116,7 @@ namespace Snyk.VisualStudio.Extension.CLI
 
                     return new CliResult
                     {
-                        CLIVulnerabilities = cliVulnerabilitiesList
+                        CliVulnerabilitiesList = cliVulnerabilitiesList
                     };
                 } else
                 {

@@ -5,7 +5,19 @@ namespace Snyk.VisualStudio.Extension.CLI
 {
     public class CliResult
     {
-        public List<CliVulnerabilities> CLIVulnerabilities { get; set; }
+        public List<CliVulnerabilities> CliVulnerabilitiesList { get; set; }
+
+        public List<CliGroupedVulnerabilities> GroupVulnerabilities()
+        {
+            var groupedVulnerabilities = new List<CliGroupedVulnerabilities>();
+
+            foreach (CliVulnerabilities cliVulnerabilities in CliVulnerabilitiesList)
+            {
+                groupedVulnerabilities.Add(cliVulnerabilities.ToGroupedVulnerabilities());
+            }
+
+            return groupedVulnerabilities;
+        }
 
         public CliError Error { get; set; }
 
@@ -15,14 +27,20 @@ namespace Snyk.VisualStudio.Extension.CLI
         }        
     }
 
-    public class CliGroupedResult
+    public class CliGroupedVulnerabilities
     {
-        public Dictionary<string, List<Vulnerability>> vulnerabilitiesMap { get; set; }
-        public int uniqueCount { get; set; }
-        public int pathsCount { get; set; }
-        public string projectName { get; set; }
-        public string displayTargetFile { get; set; }
-        public string path { get; set; }
+        public Dictionary<string, List<Vulnerability>> VulnerabilitiesMap { get; set; }
+        public int UniqueCount { get; set; }
+        public int PathsCount { get; set; }
+        public string ProjectName { get; set; }
+        public string DisplayTargetFile { get; set; }
+        public string Path { get; set; }
+
+        public string PackageManager { get; set; }
+
+        public int HighVulnerabilitiesCount { get; set; }
+        public int MediumVulnerabilitiesCount { get; set; }
+        public int LowVulnerabilitiesCount { get; set; }
     }    
 
     public class CliVulnerabilities
@@ -45,15 +63,21 @@ namespace Snyk.VisualStudio.Extension.CLI
         public string displayTargetFile { get; set; }
         public string path { get; set; }
 
-        public CliGroupedResult ToCliGroupedResult()
+        public CliGroupedVulnerabilities ToGroupedVulnerabilities()
         {
             var vulnerabilitiesDictionary = new Dictionary<string, List<Vulnerability>>();
             int uniqueCount = 0;
             int pathsCount = 0;
 
+            int highVulnsCount = 0;
+            int mediumVulnsCount = 0;
+            int lowVulnsCount = 0;
+
+            Array.Sort(vulnerabilities);
+
             foreach (Vulnerability vulnerability in vulnerabilities)
             {
-                var key = vulnerability.GetPackageNameTitle();
+                var key = vulnerability.id;
 
                 if (vulnerabilitiesDictionary.ContainsKey(key))
                 {
@@ -67,22 +91,43 @@ namespace Snyk.VisualStudio.Extension.CLI
                 {
                     var list = new List<Vulnerability>();
 
+                    vulnerabilitiesDictionary[key] = list;
+
+                    list.Add(vulnerability);
+
                     pathsCount++;
                     uniqueCount++;
+
+                    if (vulnerability.severity == Severity.High)
+                    {
+                        highVulnsCount++;
+                    }
+
+                    if (vulnerability.severity == Severity.Medium)
+                    {
+                        mediumVulnsCount++;
+                    }
+
+                    if (vulnerability.severity == Severity.Low)
+                    {
+                        lowVulnsCount++;
+                    }
                 }
             }
 
-            var cliGroupedResult = new CliGroupedResult
+            return new CliGroupedVulnerabilities
             {
-                vulnerabilitiesMap = vulnerabilitiesDictionary,
-                uniqueCount = uniqueCount,
-                pathsCount = pathsCount,
-                projectName = projectName,
-                displayTargetFile = displayTargetFile,
-                path = path
+                VulnerabilitiesMap = vulnerabilitiesDictionary,
+                UniqueCount = uniqueCount,
+                PathsCount = pathsCount,
+                ProjectName = projectName,
+                DisplayTargetFile = displayTargetFile,
+                Path = path,
+                HighVulnerabilitiesCount = highVulnsCount,
+                MediumVulnerabilitiesCount = mediumVulnsCount,
+                LowVulnerabilitiesCount = lowVulnsCount,
+                PackageManager = this.packageManager
             };
-
-            return cliGroupedResult;
         }        
     }
 

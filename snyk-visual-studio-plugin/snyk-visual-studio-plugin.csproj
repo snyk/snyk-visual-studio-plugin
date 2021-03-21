@@ -144,6 +144,8 @@
     <Resource Include="Resources\JsLogo.png" />
     <Resource Include="Resources\NpmLogo.png" />
     <Resource Include="Resources\PythonLogo.png" />
+    <Resource Include="Resources\OpenSourceSecurity.png" />
+    <Resource Include="Resources\OpenSourceSecurityDark.png" />
     <Content Include="Resources\SnykRunScanCommand.png" />
     <Content Include="Resources\SnykToolWindow.ico" />
     <Content Include="Resources\SnykToolWindowCommand.png" />

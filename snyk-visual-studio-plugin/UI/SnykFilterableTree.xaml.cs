@@ -1,6 +1,5 @@
 ﻿using Snyk.VisualStudio.Extension.CLI;
 using System;
-using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Globalization;
@@ -21,11 +20,15 @@ namespace Snyk.VisualStudio.Extension.UI
 
         private static SnykFilterableTree instance;
 
+        private RootVulnerabilityTreeNode rootNode = new RootVulnerabilityTreeNode();
+
         public SnykFilterableTree()
         {
-            InitializeComponent();
-            
-            instance = this;
+            InitializeComponent();            
+
+            instance = this;            
+
+            vulnerabilitiesTree.Items.Add(rootNode);
         }
 
         public ItemCollection Items
@@ -33,41 +36,48 @@ namespace Snyk.VisualStudio.Extension.UI
             get { return vulnerabilitiesTree.Items; }
         }
 
-        public void AppendVulnerabilities(List<CliVulnerabilities> cliVulnerabilitiesList)
+        public void AppendVulnerabilities(CliResult cliResult)
         {
-            foreach (CliVulnerabilities cliVulnerabilities in cliVulnerabilitiesList)
+            int highSeverityCount = 0;
+            int mediumSeverityCount = 0;
+            int lowSeverityCount = 0;
+            int vulnerabilitiesCount = 0;
+
+            cliResult.GroupVulnerabilities().ForEach(delegate (CliGroupedVulnerabilities groupedVulnerabilities)
             {
-                var rootNode = new VulnerabilityTreeNode
+                var fileNode = new VulnerabilityTreeNode
                 {
-                    CliVulnerabilities = cliVulnerabilities
+                    Vulnerabilities = groupedVulnerabilities
                 };
 
-                Array.Sort(cliVulnerabilities.vulnerabilities);
-
-                foreach (Vulnerability vulnerability in cliVulnerabilities.vulnerabilities)
+                foreach (string key in groupedVulnerabilities.VulnerabilitiesMap.Keys)
                 {
                     var node = new VulnerabilityTreeNode
                     {
-                        Vulnerability = vulnerability
+                        Vulnerability = groupedVulnerabilities.VulnerabilitiesMap[key][0]
                     };
 
-                    rootNode.Items.Add(node);                    
-                }                
+                    fileNode.Items.Add(node);
+                }
 
-                vulnerabilitiesTree.Items.Add(rootNode);
-            }
+                highSeverityCount += groupedVulnerabilities.HighVulnerabilitiesCount;
+                mediumSeverityCount += groupedVulnerabilities.MediumVulnerabilitiesCount;
+                lowSeverityCount += groupedVulnerabilities.LowVulnerabilitiesCount;
+
+                vulnerabilitiesCount = highSeverityCount + mediumSeverityCount + lowSeverityCount;
+
+                rootNode.Items.Add(fileNode);
+            });
+
+            rootNode.SetDetailsTitle(vulnerabilitiesCount, highSeverityCount, mediumSeverityCount, lowSeverityCount);
+
+            vulnerabilitiesTree.Items.Refresh();
         }
 
-        public void Clear() => vulnerabilitiesTree.Items.Clear();
+        public void Clear() => rootNode.Clean();
 
-        public object SelectedItem
-        {
-            get
-            {
-                return vulnerabilitiesTree.SelectedItem;
-            }
-        }        
-        
+        public object SelectedItem => vulnerabilitiesTree.SelectedItem;
+
         private void vulnerabilitiesTree_SelectedItemChanged(object sender, RoutedEventArgs eventArgs)
         {
             SelectedVulnerabilityChanged?.Invoke(this, eventArgs);
@@ -79,7 +89,7 @@ namespace Snyk.VisualStudio.Extension.UI
         {
             this.Dispatcher.Invoke(() =>
             {
-                foreach (VulnerabilityTreeNode treeNode in this.vulnerabilitiesTree.Items)
+                foreach (VulnerabilityTreeNode treeNode in this.rootNode.Items)
                 {
                     ICollectionView collectionView = CollectionViewSource.GetDefaultView(treeNode.Items);
 
@@ -92,7 +102,7 @@ namespace Snyk.VisualStudio.Extension.UI
         {
             this.Dispatcher.Invoke(() =>
             {               
-                foreach (VulnerabilityTreeNode treeNode in this.vulnerabilitiesTree.Items)
+                foreach (VulnerabilityTreeNode treeNode in rootNode.Items)
                 {
                     ICollectionView collectionView = CollectionViewSource.GetDefaultView(treeNode.Items);
                     collectionView.Filter = filterObj =>
@@ -135,14 +145,32 @@ namespace Snyk.VisualStudio.Extension.UI
             });
         }
 
-        private void TreeViewItem_Selected(object sender, RoutedEventArgs e)
+        private void TreeViewItem_Selected(object sender, RoutedEventArgs eventArgs)
         {
-            MessageBox.Show(e.ToString());
+            MessageBox.Show(eventArgs.ToString());
         }
     }
 
-    public class VulnerabilityTreeNode
-    {           
+    public class TreeNode
+    {
+        protected string title;
+
+        public virtual string Title
+        {
+            get 
+            { 
+                return title; 
+            }
+            
+            set 
+            { 
+                title = value; 
+            }
+        }        
+    }
+
+    public class VulnerabilityTreeNode : TreeNode
+    {        
         public VulnerabilityTreeNode()
         {
             this.Items = new ObservableCollection<VulnerabilityTreeNode>();
@@ -150,27 +178,27 @@ namespace Snyk.VisualStudio.Extension.UI
 
         public Vulnerability Vulnerability { get; set; }
         
-        public CliVulnerabilities CliVulnerabilities { get; set; }
-
-        public string Title
+        public CliGroupedVulnerabilities Vulnerabilities { get; set; }
+        
+        public override string Title 
         {
             get
             {
-                if (CliVulnerabilities != null)
+                if (Vulnerabilities != null)
                 {
-                    return CliVulnerabilities.projectName + "\\" + CliVulnerabilities.displayTargetFile;
+                    title = Vulnerabilities.ProjectName + "\\" + Vulnerabilities.DisplayTargetFile;
                 }
 
                 if (Vulnerability != null)
                 {
-                    return Vulnerability.GetPackageNameTitle();
+                    title = Vulnerability.GetPackageNameTitle();
                 }
 
-                return "";
+                return title;
             }
         }
 
-        public string Icon
+        public virtual string Icon
         {
             get
             {
@@ -179,11 +207,37 @@ namespace Snyk.VisualStudio.Extension.UI
                     return SnykIconProvider.GetSeverityIcon(Vulnerability.severity);
                 }
 
-                return SnykIconProvider.GetPackageManagerIcon(CliVulnerabilities.packageManager);
+                return SnykIconProvider.GetPackageManagerIcon(Vulnerabilities.PackageManager);
             }
         }
 
         public ObservableCollection<VulnerabilityTreeNode> Items { get; set; }
+    }
+
+    public class RootVulnerabilityTreeNode : VulnerabilityTreeNode
+    {
+        public const string OpenSourceSecurityTitle = "Open Source Security";
+
+        public const string OpenSourceSecurityDetailsTitle = "Open Source Security - {0} vulnerabilities: {1} high | {2} medium | {3} low";
+
+        public RootVulnerabilityTreeNode()
+        {
+            Title = OpenSourceSecurityTitle;
+        }
+
+        public void SetDetailsTitle(int vulnerabilitiesCount, int highSeverityCount, int mediumSeverityCount, int lowSeverityCount)
+        {            
+            Title = String.Format(OpenSourceSecurityDetailsTitle, vulnerabilitiesCount, highSeverityCount, mediumSeverityCount, lowSeverityCount);
+        }
+
+        public void Clean()
+        {
+            Items.Clear();
+
+            Title = OpenSourceSecurityTitle;
+        }
+
+        public override string Icon => SnykIconProvider.OpenSourceSecurity;
     }
 
     public class SnykImageConverter : IValueConverter
@@ -196,6 +250,9 @@ namespace Snyk.VisualStudio.Extension.UI
 
     class SnykIconProvider
     {
+        public const string OpenSourceSecurity = "OpenSourceSecurity";
+        public const string OpenSourceSecurityDark = "OpenSourceSecurityDark";        
+
         private const string NugetIcon = "NugetIcon";
         private const string NpmIcon = "NpmIcon";
         private const string JsIcon = "JsIcon";
@@ -205,7 +262,7 @@ namespace Snyk.VisualStudio.Extension.UI
 
         private const string SeverityHighIcon = "SeverityHighIcon";
         private const string SeverityMediumIcon = "SeverityMediumIcon";
-        private const string SeverityLowIcon = "SeverityLowIcon";
+        private const string SeverityLowIcon = "SeverityLowIcon";        
 
         public static string GetPackageManagerIcon(string packageManager)
         {
