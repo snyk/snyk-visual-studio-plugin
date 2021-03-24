@@ -26,8 +26,6 @@ namespace Snyk.VisualStudio.Extension.UI
     /// </summary>
     public partial class SnykToolWindowControl : UserControl
     {
-        private bool isSolutionLoaded = true;
-
         private SnykToolWindow toolWindow;
 
         private ISnykServiceProvider serviceProvider;
@@ -302,10 +300,10 @@ namespace Snyk.VisualStudio.Extension.UI
 
                         remediation.Text = vulnerability.fixedIn != null && vulnerability.fixedIn.Length != 0
                                                  ? "Upgrade to " + string.Join(" > ", vulnerability.fixedIn) : "";
-                      
-                        overview.RichText = vulnerability.Overview;
 
-                        moreAboutThisIssue.NavigateUri = new System.Uri(vulnerability.url);
+                        overview.RichText = Markdig.Markdown.ToHtml(vulnerability.description);
+
+                        moreAboutThisIssue.NavigateUri = new Uri(vulnerability.url);
                     }
                     else
                     {

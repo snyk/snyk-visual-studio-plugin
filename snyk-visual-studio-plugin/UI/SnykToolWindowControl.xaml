@@ -4,6 +4,7 @@
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:vsfx="clr-namespace:Microsoft.VisualStudio.Shell;assembly=Microsoft.VisualStudio.Shell.14.0"
+             xmlns:mui="clr-namespace:Microsoft.UI"
              xmlns:local="clr-namespace:Snyk.VisualStudio.Extension.UI"          
              xmlns:icons="clr-namespace:Snyk.VisualStudio.Extension" 
              Background="{DynamicResource VsBrush.Window}"
@@ -121,53 +122,46 @@
             <GridSplitter Grid.Column="1" Width="5" HorizontalAlignment="Stretch" Background="{DynamicResource VsBrush.Window}" Foreground="{DynamicResource VsBrush.WindowText}">
             </GridSplitter>
             <ScrollViewer Grid.Column="2" Name="vulnerabilityDetailsPanel" Visibility="Hidden" HorizontalContentAlignment="Stretch" VerticalContentAlignment="Stretch">
-            <StackPanel>
-                <Border Name="severityBorder" Margin="0,15" Padding="5" BorderThickness="0" CornerRadius="0, 5, 5, 0" VerticalAlignment="Center" HorizontalAlignment="Left">
-                    <TextBlock Name="severity" Text="Severity" Width="150" HorizontalAlignment="Center" VerticalAlignment="Center" FontSize="20" TextAlignment="Center"/>
-                </Border>
-                <TextBlock Text="Information Exposure" FontWeight="Bold" HorizontalAlignment="Left" VerticalAlignment="Center" FontSize="16" Margin="5, 10, 5, 5"/>
-                <StackPanel Orientation="Horizontal">
-                    <TextBlock Text="Vulnerable module:" FontWeight="Bold" HorizontalAlignment="Left" VerticalAlignment="Center" FontSize="12" Margin="5, 5, 5, 5"/>
-                    <TextBlock Name="vulnerableModule" Text="" HorizontalAlignment="Left" VerticalAlignment="Center" FontSize="12" Margin="5, 5, 5, 5" TextWrapping="Wrap" MaxWidth="1000"/>
-                </StackPanel>
-                <StackPanel Orientation="Horizontal">
-                    <TextBlock Text="Introduced through:" FontWeight="Bold" HorizontalAlignment="Left" VerticalAlignment="Center" FontSize="12" Margin="5, 5, 5, 5"/>
-                    <TextBlock Name="introducedThrough" Text="" HorizontalAlignment="Left" VerticalAlignment="Center" FontSize="12" Margin="5, 5, 5, 5" TextWrapping="Wrap" MaxWidth="1000"/>
-                </StackPanel>
-                <StackPanel Orientation="Horizontal">
-                    <TextBlock Text="Exploit maturity:" FontWeight="Bold" HorizontalAlignment="Left" VerticalAlignment="Center" FontSize="12" Margin="5, 5, 5, 5"/>
-                    <TextBlock Name="exploitMaturity" Text="" HorizontalAlignment="Left" VerticalAlignment="Center" FontSize="12" Margin="5, 5, 5, 5" TextWrapping="Wrap" MaxWidth="1000"/>
-                </StackPanel>
-                <StackPanel Orientation="Horizontal">
-                    <TextBlock Text="Fixed in:" FontWeight="Bold" HorizontalAlignment="Left" VerticalAlignment="Center" FontSize="12" Margin="5, 5, 5, 5"/>
-                    <TextBlock Name="fixedIn" Text="" HorizontalAlignment="Left" VerticalAlignment="Center" FontSize="12" Margin="5, 5, 5, 5" TextWrapping="Wrap" MaxWidth="1000"/>
-                </StackPanel>
-                <TextBlock Text="Detailed paths and remediation" FontWeight="Bold" HorizontalAlignment="Left" VerticalAlignment="Center" FontSize="16" Margin="5, 10, 5, 5"/>
-                <StackPanel Orientation="Horizontal">
-                    <TextBlock Text="Introduced through:" FontWeight="Bold" HorizontalAlignment="Left" VerticalAlignment="Center" FontSize="12" Margin="5, 5, 5, 5"/>
-                    <TextBlock Name="detaiedIntroducedThrough" Text="" HorizontalAlignment="Left" VerticalAlignment="Center" FontSize="12" Margin="5, 5, 5, 5" TextWrapping="Wrap" MaxWidth="1000"/>
-                </StackPanel>
-                <StackPanel Orientation="Horizontal">
-                    <TextBlock Text="Remediation:" FontWeight="Bold" HorizontalAlignment="Left" VerticalAlignment="Center" FontSize="12" Margin="5, 5, 5, 5"/>
-                    <TextBlock Name="remediation" Text="" HorizontalAlignment="Left" VerticalAlignment="Center" FontSize="12" Margin="5, 5, 5, 5" TextWrapping="Wrap" MaxWidth="1000"/>
-                </StackPanel>
-                <TextBlock Text="Overview" FontWeight="Bold" HorizontalAlignment="Left" VerticalAlignment="Center" FontSize="16" Margin="5, 10, 5, 5"/>
-                <StackPanel Orientation="Horizontal">
-                        <local:LinksRichTextBox x:Name="overview" IsDocumentEnabled="True" 
-                                        IsReadOnly="True" 
-                                        VerticalAlignment="Top" 
-                                        FontSize="12" 
-                                        Margin="5, 5, 5, 5" 
-                                        MinWidth="400"
-                                        MaxWidth="700"
+                <StackPanel>
+                    <Border Name="severityBorder" Margin="0,15" Padding="5" BorderThickness="0" CornerRadius="0, 5, 5, 0" VerticalAlignment="Center" HorizontalAlignment="Left">
+                        <TextBlock Name="severity" Text="Severity" Width="150" HorizontalAlignment="Center" VerticalAlignment="Center" FontSize="20" TextAlignment="Center"/>
+                    </Border>
+                    <TextBlock Text="Information Exposure" FontWeight="Bold" HorizontalAlignment="Left" VerticalAlignment="Center" FontSize="16" Margin="5, 10, 5, 5"/>
+                    <StackPanel Orientation="Horizontal">
+                        <TextBlock Text="Vulnerable module:" FontWeight="Bold" HorizontalAlignment="Left" VerticalAlignment="Center" FontSize="12" Margin="5, 5, 5, 5"/>
+                        <TextBlock Name="vulnerableModule" Text="" HorizontalAlignment="Left" VerticalAlignment="Center" FontSize="12" Margin="5, 5, 5, 5" TextWrapping="Wrap" MaxWidth="1000"/>
+                    </StackPanel>
+                    <StackPanel Orientation="Horizontal">
+                        <TextBlock Text="Introduced through:" FontWeight="Bold" HorizontalAlignment="Left" VerticalAlignment="Center" FontSize="12" Margin="5, 5, 5, 5"/>
+                        <TextBlock Name="introducedThrough" Text="" HorizontalAlignment="Left" VerticalAlignment="Center" FontSize="12" Margin="5, 5, 5, 5" TextWrapping="Wrap" MaxWidth="1000"/>
+                    </StackPanel>
+                    <StackPanel Orientation="Horizontal">
+                        <TextBlock Text="Exploit maturity:" FontWeight="Bold" HorizontalAlignment="Left" VerticalAlignment="Center" FontSize="12" Margin="5, 5, 5, 5"/>
+                        <TextBlock Name="exploitMaturity" Text="" HorizontalAlignment="Left" VerticalAlignment="Center" FontSize="12" Margin="5, 5, 5, 5" TextWrapping="Wrap" MaxWidth="1000"/>
+                    </StackPanel>
+                    <StackPanel Orientation="Horizontal">
+                        <TextBlock Text="Fixed in:" FontWeight="Bold" HorizontalAlignment="Left" VerticalAlignment="Center" FontSize="12" Margin="5, 5, 5, 5"/>
+                        <TextBlock Name="fixedIn" Text="" HorizontalAlignment="Left" VerticalAlignment="Center" FontSize="12" Margin="5, 5, 5, 5" TextWrapping="Wrap" MaxWidth="1000"/>
+                    </StackPanel>
+                    <TextBlock Text="Detailed paths and remediation" FontWeight="Bold" HorizontalAlignment="Left" VerticalAlignment="Center" FontSize="16" Margin="5, 10, 5, 5"/>
+                    <StackPanel Orientation="Horizontal">
+                        <TextBlock Text="Introduced through:" FontWeight="Bold" HorizontalAlignment="Left" VerticalAlignment="Center" FontSize="12" Margin="5, 5, 5, 5"/>
+                        <TextBlock Name="detaiedIntroducedThrough" Text="" HorizontalAlignment="Left" VerticalAlignment="Center" FontSize="12" Margin="5, 5, 5, 5" TextWrapping="Wrap" MaxWidth="1000"/>
+                    </StackPanel>
+                    <StackPanel Orientation="Horizontal">
+                        <TextBlock Text="Remediation:" FontWeight="Bold" HorizontalAlignment="Left" VerticalAlignment="Center" FontSize="12" Margin="5, 5, 5, 5"/>
+                        <TextBlock Name="remediation" Text="" HorizontalAlignment="Left" VerticalAlignment="Center" FontSize="12" Margin="5, 5, 5, 5" TextWrapping="Wrap" MaxWidth="1000"/>
+                    </StackPanel>
+                    <local:LinksRichTextBox x:Name="overview" IsDocumentEnabled="True" 
+                                        mui:HtmlRichTextBoxBehavior.Text="{Binding ElementName=overview, Path=RichText}"
+                                        IsReadOnly="True"
                                         BorderThickness="0, 0, 0, 0"                                        
                                         Background="{DynamicResource VsBrush.Window}" 
-                                        HorizontalContentAlignment="Stretch" VerticalContentAlignment="Stretch"/>
-                    </StackPanel>
-                <TextBlock Text="" HorizontalAlignment="Left" VerticalAlignment="Center" FontSize="12" Margin="5, 5, 5, 5" TextWrapping="Wrap" MaxWidth="1000">
-                    <Hyperlink Name="moreAboutThisIssue" RequestNavigate="moreAboutThisIssue_RequestNavigate">More about this issue</Hyperlink >
-                </TextBlock>
-            </StackPanel>
+                                        HorizontalContentAlignment="Stretch" VerticalContentAlignment="Stretch" Margin="0,25,0,0"/>
+                    <TextBlock Text="" HorizontalAlignment="Left" VerticalAlignment="Center" FontSize="12" Margin="5, 20, 5, 5" TextWrapping="Wrap" MaxWidth="1000">
+                        <Hyperlink Name="moreAboutThisIssue" RequestNavigate="moreAboutThisIssue_RequestNavigate">More about this issue</Hyperlink >
+                    </TextBlock>
+                </StackPanel>
             </ScrollViewer>
             <Grid Grid.Column="3" Name="selectIssueMessageGrid" VerticalAlignment="Center" Visibility="Collapsed">
                 <StackPanel HorizontalAlignment="Center">
