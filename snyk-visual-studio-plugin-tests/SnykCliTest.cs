@@ -294,12 +294,12 @@ namespace Snyk.VisualStudio.Extension.Tests
             this.consoleResult = result;
         }
 
-        public override string RunConsoleProcess(string fileName, string arguments)
+        public override string Run(string fileName, string arguments)
         {
             return consoleResult;
         }
 
-        public override string RunConsoleProcess(Process consoleProcess)
+        public override string Run(Process consoleProcess)
         {
             return consoleResult;
         }

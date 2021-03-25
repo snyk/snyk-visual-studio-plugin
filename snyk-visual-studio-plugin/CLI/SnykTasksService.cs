@@ -10,7 +10,7 @@ namespace Snyk.VisualStudio.Extension.CLI
 {   
     public class SnykTasksService
     {
-        private static SnykTasksService instance;
+        private static SnykTasksService instance;        
 
         public event EventHandler<SnykCliScanEventArgs> ScanningStarted;
 
@@ -35,6 +35,8 @@ namespace Snyk.VisualStudio.Extension.CLI
         private Task currentTask;
 
         private ISnykServiceProvider serviceProvider;
+
+        private SnykCli cli;
 
         private SnykTasksService() { }
 
@@ -69,7 +71,9 @@ namespace Snyk.VisualStudio.Extension.CLI
                 Logger.LogInformation("Cancel current task");
 
                 tokenSource.Cancel();
-            }            
+
+                cli?.ConsoleRunner?.Stop();
+            }         
         }
 
         public void Scan()
@@ -114,7 +118,7 @@ namespace Snyk.VisualStudio.Extension.CLI
 
                     var options = serviceProvider.Options;
 
-                    var cli = new SnykCli
+                    cli = new SnykCli
                     {
                         Options = options,
                         Logger = Logger
@@ -160,19 +164,20 @@ namespace Snyk.VisualStudio.Extension.CLI
 
                         Logger.LogInformation("Scan finished");
                     }
-                    catch (OperationCanceledException operatioException)
-                    {
-                        Logger.LogError(operatioException.Message);
-
-                        OnScanningCancelled();
-
-                        return;
-                    }
                     catch (Exception scanException)
                     {
                         Logger.LogError(scanException.Message);
 
-                        OnError(scanException.Message);
+                        if ((bool)(cli?.ConsoleRunner?.IsStopped))
+                        {
+                            OnScanningCancelled();
+                        } 
+                        else
+                        {
+                            OnError(scanException.Message);
+                        }
+                        
+                        cli = null;
 
                         return;
                     }
@@ -180,18 +185,16 @@ namespace Snyk.VisualStudio.Extension.CLI
                     progressWorker.CancelIfCancellationRequested();
 
                     OnScanningFinished();
-                }
-                catch (OperationCanceledException e)
-                {
-                    Logger.LogError(e.Message);
 
-                    OnScanningCancelled();                    
+                    cli = null;
                 }
                 catch (Exception exception)
                 {
                     Logger.LogError(exception.Message);
 
-                    OnScanningCancelled();                    
+                    OnScanningCancelled();
+
+                    cli = null;
                 }
             }, progressWorker.TokenSource.Token);   
         }

@@ -6,14 +6,18 @@ namespace Snyk.VisualStudio.Extension.CLI
 {
     public class SnykConsoleRunner
     {
-        public virtual string RunConsoleProcess(string fileName, string arguments)
-        {
-            var consoleProcess = CreateConsoleProcess(fileName, arguments);
+        private bool isStopped = false;
 
-            return RunConsoleProcess(consoleProcess);
+        public Process Process { get; set; }
+
+        public virtual string Run(string fileName, string arguments)
+        {
+            CreateProcess(fileName, arguments);
+
+            return Execute();
         }
 
-        public virtual Process CreateConsoleProcess(string fileName, string arguments)
+        public virtual Process CreateProcess(string fileName, string arguments)
         {
             var processStartInfo = new ProcessStartInfo
             {
@@ -27,23 +31,25 @@ namespace Snyk.VisualStudio.Extension.CLI
             processStartInfo.EnvironmentVariables["SNYK_INTEGRATION_NAME"] = SnykExtension.IntegrationName;
             processStartInfo.EnvironmentVariables["SNYK_INTEGRATION_VERSION"] = SnykExtension.GetIntegrationVersion();
 
-            return new Process
+            Process = new Process
             {
                 StartInfo = processStartInfo
             };
+
+            return Process;
         }
 
-        public virtual string RunConsoleProcess(Process consoleProcess)
+        public virtual string Execute()
         {
             var stringBuilder = new StringBuilder();
 
             try
             {
-                consoleProcess.Start();
+                Process.Start();
 
-                while (!consoleProcess.StandardOutput.EndOfStream)
+                while (!Process.StandardOutput.EndOfStream)
                 {
-                    stringBuilder.AppendLine(consoleProcess.StandardOutput.ReadLine());
+                    stringBuilder.AppendLine(Process.StandardOutput.ReadLine());
                 }
             }
             catch (Exception exception)
@@ -51,7 +57,24 @@ namespace Snyk.VisualStudio.Extension.CLI
                 stringBuilder.Append(exception.Message);
             }
 
+            Process = null;
+
             return stringBuilder.ToString().Replace("\n", "").Replace("\r", "");
+        }
+
+        public void Stop()
+        {
+            Process?.Kill();
+
+            this.isStopped = true;
+        }
+
+        public bool IsStopped
+        {
+            get
+            {
+                return isStopped;
+            }
         }
     }
 }

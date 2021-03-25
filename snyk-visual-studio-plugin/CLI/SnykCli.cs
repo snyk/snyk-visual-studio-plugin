@@ -20,9 +20,9 @@ namespace Snyk.VisualStudio.Extension.CLI
 
         public SnykConsoleRunner ConsoleRunner { get; set; }
 
-        public string GetApiToken() => ConsoleRunner.RunConsoleProcess(GetSnykCliPath(), "config get api");
+        public string GetApiToken() => ConsoleRunner.Run(GetSnykCliPath(), "config get api");
 
-        public string Authenticate() => ConsoleRunner.RunConsoleProcess(GetSnykCliPath(), "auth");
+        public string Authenticate() => ConsoleRunner.Run(GetSnykCliPath(), "auth");
 
         public CliResult Scan(string basePath)
         {
@@ -33,7 +33,7 @@ namespace Snyk.VisualStudio.Extension.CLI
 
             Logger?.LogInformation($"CLI path is {cliPath}");
 
-            var consoleProcess = ConsoleRunner.CreateConsoleProcess(cliPath, BuildArguments());
+            ConsoleRunner.CreateProcess(cliPath, BuildArguments());
 
             Logger?.LogInformation("Adding token");
 
@@ -41,14 +41,14 @@ namespace Snyk.VisualStudio.Extension.CLI
             {
                 Logger?.LogInformation("Token added from Options");
 
-                consoleProcess.StartInfo.EnvironmentVariables["SNYK_TOKEN"] = Options.ApiToken;
+                ConsoleRunner.Process.StartInfo.EnvironmentVariables["SNYK_TOKEN"] = Options.ApiToken;
             }            
 
-            consoleProcess.StartInfo.WorkingDirectory = basePath;
-
+            ConsoleRunner.Process.StartInfo.WorkingDirectory = basePath;
+            
             Logger?.LogInformation("Start run console process");
 
-            string consoleResult = ConsoleRunner.RunConsoleProcess(consoleProcess);
+            string consoleResult = ConsoleRunner.Execute();
 
             Logger?.LogInformation("Leave Scan() method");
 
