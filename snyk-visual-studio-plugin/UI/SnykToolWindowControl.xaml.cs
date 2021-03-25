@@ -135,9 +135,9 @@ namespace Snyk.VisualStudio.Extension.UI
 
         public void OnVsThemeChanged(object sender, SnykVsThemeChangedEventArgs eventArgs)
         {
-            errorMessage.SetupForeground();
-            errorPath.SetupForeground();
-            overview.SetupForeground();
+            errorMessage.AdaptForeground();
+            errorPath.AdaptForeground();
+            overview.AdaptForeground();
         }
 
         public void ShowToolWindow()
@@ -196,8 +196,8 @@ namespace Snyk.VisualStudio.Extension.UI
             {
                 errorPanel.Visibility = Visibility.Visible;
 
-                errorMessage.RichText = cliError.Message;
-                errorPath.RichText = cliError.Path;
+                errorMessage.Html = cliError.Message;
+                errorPath.Html = cliError.Path;
             });
         }
 
@@ -301,7 +301,7 @@ namespace Snyk.VisualStudio.Extension.UI
                         remediation.Text = vulnerability.fixedIn != null && vulnerability.fixedIn.Length != 0
                                                  ? "Upgrade to " + string.Join(" > ", vulnerability.fixedIn) : "";
 
-                        overview.RichText = Markdig.Markdown.ToHtml(vulnerability.description);
+                        overview.Html = Markdig.Markdown.ToHtml(vulnerability.description);
 
                         moreAboutThisIssue.NavigateUri = new Uri(vulnerability.url);
                     }
@@ -332,7 +332,7 @@ namespace Snyk.VisualStudio.Extension.UI
             fixedIn.Text = "";
             detaiedIntroducedThrough.Text = "";
             remediation.Text = "";
-            overview.RichText = "";
+            overview.Html = "";
             moreAboutThisIssue.NavigateUri = null;            
         }
 

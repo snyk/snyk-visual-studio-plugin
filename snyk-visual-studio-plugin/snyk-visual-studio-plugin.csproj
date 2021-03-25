@@ -75,7 +75,7 @@
     <Compile Include="Service\ISnykServiceProvider.cs" />
     <Compile Include="Service\SnykService.cs" />
     <Compile Include="SnykExtension.cs" />
-    <Compile Include="UI\LinksRichTextBox.cs" />
+    <Compile Include="UI\HtmlRichTextBox.cs" />
     <Compile Include="Theme\SnykVsThemeService.cs" />
     <Compile Include="SnykActivityLogger.cs" />
     <Compile Include="CLI\CLIError.cs" />

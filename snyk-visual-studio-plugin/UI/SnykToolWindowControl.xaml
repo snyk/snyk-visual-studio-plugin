@@ -4,8 +4,7 @@
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:vsfx="clr-namespace:Microsoft.VisualStudio.Shell;assembly=Microsoft.VisualStudio.Shell.14.0"
-             xmlns:mui="clr-namespace:Microsoft.UI"
-             xmlns:local="clr-namespace:Snyk.VisualStudio.Extension.UI"          
+             xmlns:extui="clr-namespace:Snyk.VisualStudio.Extension.UI"          
              xmlns:icons="clr-namespace:Snyk.VisualStudio.Extension" 
              Background="{DynamicResource VsBrush.Window}"
              Foreground="{DynamicResource VsBrush.WindowText}"
@@ -18,7 +17,7 @@
         <BitmapImage x:Key="StopIcon" UriSource="../Resources/Stop.png" DecodePixelWidth="16" DecodePixelHeight="16"/>
         <BitmapImage x:Key="StopDisabledIcon" UriSource="../Resources/StopDisabled.png" DecodePixelWidth="16" DecodePixelHeight="16"/>
         <BitmapImage x:Key="CleanIcon" UriSource="../Resources/CleanData.png" DecodePixelWidth="16" DecodePixelHeight="16"/>
-        <local:SnykImageConverter x:Key="ImageConverter"/>
+        <extui:SnykImageConverter x:Key="ImageConverter"/>
     </UserControl.Resources>
     <Grid>
         <Grid.RowDefinitions>
@@ -92,7 +91,7 @@
             </Border>
             <StackPanel Orientation="Horizontal">
                 <TextBlock Text="Message:" FontWeight="Bold" FontSize="12" Margin="5, 5, 5, 5"/>
-                <local:LinksRichTextBox x:Name="errorMessage" IsDocumentEnabled="True" 
+                <extui:HtmlRichTextBox x:Name="errorMessage" IsDocumentEnabled="True" 
                                         IsReadOnly="True" 
                                         FontSize="12" 
                                         Margin="5, 5, 5, 5" 
@@ -103,7 +102,7 @@
             </StackPanel>
             <StackPanel Orientation="Horizontal">
                 <TextBlock Text="Path:" FontWeight="Bold" FontSize="12" Margin="5, 5, 30, 5"/>
-                <local:LinksRichTextBox x:Name="errorPath" IsDocumentEnabled="True" 
+                <extui:HtmlRichTextBox x:Name="errorPath" IsDocumentEnabled="True" 
                                         IsReadOnly="True" 
                                         FontSize="12" 
                                         Margin="5, 5, 5, 5" 
@@ -118,7 +117,7 @@
                 <ColumnDefinition Width="5" />
                 <ColumnDefinition Width="6*" />
             </Grid.ColumnDefinitions>
-            <local:SnykFilterableTree x:Name="vulnerabilitiesTree" SelectedVulnerabilityChanged="vulnerabilitiesTree_SelectetVulnerabilityChanged"/>
+            <extui:SnykFilterableTree x:Name="vulnerabilitiesTree" SelectedVulnerabilityChanged="vulnerabilitiesTree_SelectetVulnerabilityChanged"/>
             <GridSplitter Grid.Column="1" Width="5" HorizontalAlignment="Stretch" Background="{DynamicResource VsBrush.Window}" Foreground="{DynamicResource VsBrush.WindowText}">
             </GridSplitter>
             <ScrollViewer Grid.Column="2" Name="vulnerabilityDetailsPanel" Visibility="Hidden" HorizontalContentAlignment="Stretch" VerticalContentAlignment="Stretch">
@@ -152,8 +151,7 @@
                         <TextBlock Text="Remediation:" FontWeight="Bold" HorizontalAlignment="Left" VerticalAlignment="Center" FontSize="12" Margin="5, 5, 5, 5"/>
                         <TextBlock Name="remediation" Text="" HorizontalAlignment="Left" VerticalAlignment="Center" FontSize="12" Margin="5, 5, 5, 5" TextWrapping="Wrap" MaxWidth="1000"/>
                     </StackPanel>
-                    <local:LinksRichTextBox x:Name="overview" IsDocumentEnabled="True" 
-                                        mui:HtmlRichTextBoxBehavior.Text="{Binding ElementName=overview, Path=RichText}"
+                    <extui:HtmlRichTextBox x:Name="overview" IsDocumentEnabled="True" 
                                         IsReadOnly="True"
                                         BorderThickness="0, 0, 0, 0"                                        
                                         Background="{DynamicResource VsBrush.Window}" 
