@@ -1,5 +1,6 @@
 ﻿using Microsoft.VisualStudio.Shell;
 using Snyk.VisualStudio.Extension.Service;
+using System;
 using System.Runtime.InteropServices;
 using System.Windows.Forms;
 
@@ -10,18 +11,9 @@ namespace Snyk.VisualStudio.Extension.Settings
     {
         private ISnykServiceProvider serviceProvider;
 
-        protected override IWin32Window Window
-        {
-            get
-            {
-                var generalSettingsUserControl = new SnykGeneralSettingsUserControl(serviceProvider.ActivityLogger);
-                
-                generalSettingsUserControl.optionsDialogPage = this;
-                generalSettingsUserControl.Initialize();
+        private SnykGeneralSettingsUserControl generalSettingsUserControl;
 
-                return generalSettingsUserControl;
-            }
-        }        
+        protected override IWin32Window Window => GeneralSettingsUserControl;     
 
         public ISnykServiceProvider ServiceProvider
         {
@@ -35,6 +27,9 @@ namespace Snyk.VisualStudio.Extension.Settings
         {
             this.serviceProvider = provider;
         }
+
+        public void Authenticate(Action<string> successCallbackAction, Action<string> errorCallbackAction)
+            => GeneralSettingsUserControl.Authenticate(successCallbackAction, errorCallbackAction);
 
         public string ApiToken { get; set; }
 
@@ -60,6 +55,24 @@ namespace Snyk.VisualStudio.Extension.Settings
             {
                 return serviceProvider.SolutionService.SolutionSettingsService.GetIsAllProjectsEnabled();
             }
-        }              
+        }
+
+        private SnykGeneralSettingsUserControl GeneralSettingsUserControl
+        {
+            get
+            {
+                if (generalSettingsUserControl == null)
+                {
+                    generalSettingsUserControl = new SnykGeneralSettingsUserControl(serviceProvider.ActivityLogger)
+                    {
+                        optionsDialogPage = this
+                    };
+
+                    generalSettingsUserControl.Initialize();
+                }
+
+                return generalSettingsUserControl;
+            }
+        }
     }
 }

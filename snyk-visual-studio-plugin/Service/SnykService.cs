@@ -155,5 +155,11 @@ namespace Snyk.VisualStudio.Extension.Service
             activityLogger.LogInformation("Initialize ToolWindow Display Event Listeners");
             activityLogger.LogInformation("Leave SnykService.InitializeAsync");
         }
+
+        public SnykCli NewCli() => new SnykCli
+        {
+            Options = Options,
+            Logger = ActivityLogger
+        };
     }    
 }

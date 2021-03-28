@@ -165,6 +165,7 @@
             this.Margin = new System.Windows.Forms.Padding(4, 3, 4, 3);
             this.Name = "SnykGeneralSettingsUserControl";
             this.Size = new System.Drawing.Size(1368, 586);
+            this.Load += new System.EventHandler(this.SnykGeneralSettingsUserControl_Load);
             ((System.ComponentModel.ISupportInitialize)(this.errorProvider)).EndInit();
             this.ResumeLayout(false);
             this.PerformLayout();

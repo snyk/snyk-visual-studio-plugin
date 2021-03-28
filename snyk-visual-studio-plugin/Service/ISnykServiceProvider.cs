@@ -9,7 +9,7 @@ using System.Threading.Tasks;
 
 namespace Snyk.VisualStudio.Extension.Service
 {
-    public interface ISnykServiceProvider //: IServiceProvider
+    public interface ISnykServiceProvider
     {
         DTE DTE
         {
@@ -57,6 +57,8 @@ namespace Snyk.VisualStudio.Extension.Service
         {
             get;
         }
+
+        SnykCli NewCli();
 
         void ShowToolWindow();        
     }

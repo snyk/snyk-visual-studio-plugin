@@ -30,7 +30,8 @@ namespace Snyk.VisualStudio.Extension.Settings
         {
             logger.LogInformation("Enter Initialize method");
 
-            tokenTextBox.Text = optionsDialogPage.ApiToken;
+            InitializeApiToken();
+
             customEndpointTextBox.Text = optionsDialogPage.CustomEndpoint;
             organizationTextBox.Text = optionsDialogPage.Organization;
             ignoreUnknownCACheckBox.Checked = optionsDialogPage.IgnoreUnknownCA;
@@ -58,7 +59,7 @@ namespace Snyk.VisualStudio.Extension.Settings
                 this.authenticateButton.Invoke((MethodInvoker)delegate
                 {
                     errorProvider.SetError(tokenTextBox, "");
-                });                
+                });
             };
 
             errorCallbackAction = (errorMessage) =>
@@ -93,8 +94,54 @@ namespace Snyk.VisualStudio.Extension.Settings
             };
 
             logger.LogInformation("Leave Initialize method");
+        }        
+
+        public void Authenticate(Action<string> successCallbackAction, Action<string> errorCallbackAction)
+        {
+            logger.LogInformation("Enter Authenticate method");
+
+            Task.Run(() =>
+            {
+                var serviceProvider = optionsDialogPage.ServiceProvider;
+                var tasksService = serviceProvider.TasksService;
+
+                if (SnykCli.IsCliExists())
+                {
+                    logger.LogInformation("CLI exists. Calling SetupApiToken method");
+
+                    SetupApiToken(successCallbackAction, errorCallbackAction);
+                }
+                else
+                {
+                    logger.LogInformation("CLI not exists. Download CLI before get Api token");
+
+                    serviceProvider.TasksService.Download(new CliDownloadFinishedCallback(OnCliDownloadFinishedCallback));
+                }
+            });
+
+            logger.LogInformation("Leave Authenticate method");
         }
-        
+
+        private void InitializeApiToken()
+        {            
+            if (String.IsNullOrEmpty(optionsDialogPage.ApiToken))
+            {
+                string apiToken = NewCli().GetApiToken();
+                
+                if (IsValidGuid(apiToken))
+                {
+                    optionsDialogPage.ApiToken = apiToken;
+                }                               
+            }
+
+            tokenTextBox.Text = optionsDialogPage.ApiToken;
+        }
+
+        private SnykCli NewCli() => new SnykCli 
+        {
+            Options = optionsDialogPage
+        };
+
         private void authenticateButton_Click(object sender, EventArgs eventArgs)            
         {
             logger.LogInformation("Enter authenticateButton_Click method");
@@ -136,10 +183,7 @@ namespace Snyk.VisualStudio.Extension.Settings
         {
             logger.LogInformation("Enter SetupApiToken method");
 
-            var cli = new SnykCli
-            {
-                Options = optionsDialogPage
-            };
+            var cli = NewCli();
 
             string apiToken = "";
 
@@ -266,6 +310,11 @@ namespace Snyk.VisualStudio.Extension.Settings
 
                 errorProvider.SetError(customEndpointTextBox, "");
             }
+        }
+
+        private void SnykGeneralSettingsUserControl_Load(object sender, EventArgs e)
+        {
+            InitializeApiToken();
         }
     }  
 }

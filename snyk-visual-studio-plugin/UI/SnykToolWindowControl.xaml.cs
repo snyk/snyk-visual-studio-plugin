@@ -96,42 +96,21 @@ namespace Snyk.VisualStudio.Extension.UI
 
         public void OnScanningUpdate(object sender, SnykCliScanEventArgs eventArgs) => AppendCliResultToTree(eventArgs.Result);
 
-        public void OnScanningStarted(object sender, SnykCliScanEventArgs eventArgs)
-        {
-            context.TransitionTo(ScanningState.Instance);
-        }
+        public void OnScanningStarted(object sender, SnykCliScanEventArgs eventArgs) => context.TransitionTo(ScanningState.Instance);
 
-        public void OnScanningFinished(object sender, SnykCliScanEventArgs eventArgs)
-        {
-            context.TransitionTo(ScanResultsState.Instance);
-        }
+        public void OnScanningFinished(object sender, SnykCliScanEventArgs eventArgs) => context.TransitionTo(ScanResultsState.Instance);
 
-        public void OnDisplayError(object sender, SnykCliScanEventArgs eventArgs)
-        {
-            context.TransitionTo(ErrorState.Instance(eventArgs.Error));            
-        }
+        public void OnDisplayError(object sender, SnykCliScanEventArgs eventArgs) => context.TransitionTo(ErrorState.Instance(eventArgs.Error));
 
-        public void OnScanningCancelled(object sender, SnykCliScanEventArgs eventArgs)
-        {
-            context.TransitionTo(RunScanState.Instance);
-        }
+        public void OnScanningCancelled(object sender, SnykCliScanEventArgs eventArgs) => context.TransitionTo(RunScanState.Instance);
 
-        public void OnDownloadStarted(object sender, SnykCliDownloadEventArgs eventArgs)
-        {
-            context.TransitionTo(DownloadState.Instance);
-        }
+        public void OnDownloadStarted(object sender, SnykCliDownloadEventArgs eventArgs) => context.TransitionTo(DownloadState.Instance);
 
-        public void OnDownloadFinished(object sender, SnykCliDownloadEventArgs eventArgs)
-        {
-            context.TransitionTo(RunScanState.Instance);
-        }
+        public void OnDownloadFinished(object sender, SnykCliDownloadEventArgs eventArgs) => SetInitialState();
 
         public void OnDownloadUpdate(object sender, SnykCliDownloadEventArgs eventArgs) => UpdateDownloadProgress(eventArgs.Progress);
 
-        public void OnDownloadCancelled(object sender, SnykCliDownloadEventArgs eventArgs)
-        {
-            context.TransitionTo(RunScanState.Instance);
-        }
+        public void OnDownloadCancelled(object sender, SnykCliDownloadEventArgs eventArgs) => SetInitialState();
 
         public void OnVsThemeChanged(object sender, SnykVsThemeChangedEventArgs eventArgs)
         {
@@ -220,6 +199,18 @@ namespace Snyk.VisualStudio.Extension.UI
                 runButton.IsEnabled = false;
                 cleanButton.IsEnabled = false;
                 stopButton.IsEnabled = true;
+
+                runScanLink.IsEnabled = false;
+            });
+        }
+
+        public void DisableAllActions()
+        {
+            this.Dispatcher.Invoke(() =>
+            {
+                runButton.IsEnabled = false;
+                cleanButton.IsEnabled = false;
+                stopButton.IsEnabled = false;
 
                 runScanLink.IsEnabled = false;
             });
@@ -403,6 +394,64 @@ namespace Snyk.VisualStudio.Extension.UI
         private void SnykToolWindow_Loaded(object sender, RoutedEventArgs e)
         {
             serviceProvider.TasksService.Download();
+            
+            SetInitialState();
+        }
+
+        private void SetInitialState()
+        {
+            if (string.IsNullOrEmpty(serviceProvider.Options.ApiToken)
+                            && string.IsNullOrEmpty(serviceProvider.NewCli().GetApiToken()))
+            {
+                context.TransitionTo(OverviewState.Instance);
+            }
+            else
+            {
+                context.TransitionTo(RunScanState.Instance);
+            }
+        }
+
+        private void connectToSnykLink_Click(object sender, RoutedEventArgs e)
+        {
+            Action<string> successCallbackAction = (apiToken) =>
+            {
+                Dispatcher.Invoke(() =>
+                {
+                    connectVSToSnykLink.IsEnabled = true;
+
+                    connectVSToSnykProgressBar.Visibility = Visibility.Collapsed;
+                });
+
+                serviceProvider.Options.ApiToken = apiToken;
+
+                context.TransitionTo(RunScanState.Instance);
+            };
+
+            Action<string> errorCallbackAction = (error) =>
+            {
+                Dispatcher.Invoke(() =>
+                {
+                    connectVSToSnykLink.IsEnabled = true;
+
+                    connectVSToSnykProgressBar.Visibility = Visibility.Collapsed;
+                });
+
+                var cliError = new CliError()
+                {
+                    Message = error
+                };
+
+                context.TransitionTo(ErrorState.Instance(cliError));
+            };
+
+            Dispatcher.Invoke(() =>
+            {
+                connectVSToSnykLink.IsEnabled = false;
+
+                connectVSToSnykProgressBar.Visibility = Visibility.Visible;
+            });
+
+            serviceProvider.Options.Authenticate(successCallbackAction, errorCallbackAction);
         }
     }
 
@@ -622,6 +671,34 @@ namespace Snyk.VisualStudio.Extension.UI
         }
     }
 
+    class OverviewState : ToolWindowState
+    {
+        public static OverviewState Instance
+        {
+            get
+            {
+                return new OverviewState();
+            }
+        }
+
+        public override void DisplayComponents()
+        {
+            ToolWindowControl.Dispatcher.Invoke(() =>
+            {
+                ToolWindowControl.overviewGrid.Visibility = Visibility.Visible;
+            });
+
+            ToolWindowControl.DisableAllActions();
+        }
+
+        public override void HideComponents()
+        {
+            ToolWindowControl.Dispatcher.Invoke(() =>
+            {
+                ToolWindowControl.overviewGrid.Visibility = Visibility.Collapsed;
+            });
+        }
+    }
     class EmptyState : ToolWindowState
     {
         public static EmptyState Instance

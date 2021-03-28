@@ -22,8 +22,6 @@
     <Grid>
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto"/>
-            <RowDefinition Height="Auto"/>
-            <RowDefinition Height="Auto"/>
             <RowDefinition Height="10*"/>
         </Grid.RowDefinitions>
         <Grid.ColumnDefinitions>
@@ -201,6 +199,23 @@
                         Run scan
                     </Hyperlink>
                 </TextBlock>
+            </StackPanel>
+        </Grid>
+        <Grid Grid.Row="6" Name="overviewGrid" VerticalAlignment="Center" Visibility="Collapsed">
+            <StackPanel HorizontalAlignment="Center">
+                <Image Source="/snyk-visual-studio-plugin;component/Resources/SnykLogo.png" Width="128" Height="128"/>
+                <TextBlock FontWeight="Bold" TextAlignment="Center" Padding="0,5">
+                    Welcome to Snyk for Visual Studio
+                </TextBlock>
+                <TextBlock FontWeight="Bold" TextAlignment="Center" Padding="0,5">
+                    Please authenticate to Snyk and connect your IDE
+                </TextBlock>
+                <TextBlock FontWeight="Bold" TextAlignment="Center" Padding="0,5">
+                    <Hyperlink Name="connectVSToSnykLink" Click="connectToSnykLink_Click">
+                        Connect Visual Studio to Snyk
+                    </Hyperlink>
+                </TextBlock>
+                <ProgressBar Name="connectVSToSnykProgressBar" Visibility="Collapsed" IsIndeterminate="True" Height="3" Padding="0,2"/>
             </StackPanel>
         </Grid>
     </Grid>
