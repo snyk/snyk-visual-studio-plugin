@@ -105,7 +105,12 @@ namespace Snyk.VisualStudio.Extension.Tests
         public Task<object> GetServiceAsync(Type serviceType)
         {
             throw new NotImplementedException();
-        }        
+        }
+
+        public SnykCli NewCli()
+        {
+            throw new NotImplementedException();
+        }
 
         public void ShowToolWindow()
         {

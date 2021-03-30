@@ -299,7 +299,7 @@ namespace Snyk.VisualStudio.Extension.Tests
             return consoleResult;
         }
 
-        public override string Run(Process consoleProcess)
+        public override string Execute()
         {
             return consoleResult;
         }
@@ -403,6 +403,16 @@ namespace Snyk.VisualStudio.Extension.Tests
             {
                 return isScanAllProjects;
             }
+        }
+
+        public void Authenticate(Action<string> successCallbackAction, Action<string> errorCallbackAction)
+        {
+            throw new NotImplementedException();
+        }
+
+        public void LoadSettingsFromStorage()
+        {
+            throw new NotImplementedException();
         }
     }
 }
