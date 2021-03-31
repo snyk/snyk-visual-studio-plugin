@@ -75,6 +75,7 @@
     <Compile Include="Microsoft\HtmlParser\HtmlToXamlConverter.cs" />
     <Compile Include="Service\ISnykServiceProvider.cs" />
     <Compile Include="Service\SnykService.cs" />
+    <Compile Include="Settings\SnykAppSettings.cs" />
     <Compile Include="SnykExtension.cs" />
     <Compile Include="UI\HtmlRichTextBox.cs" />
     <Compile Include="Theme\SnykVsThemeService.cs" />
@@ -128,6 +129,7 @@
     </Compile>
   </ItemGroup>
   <ItemGroup>
+    <None Include="appsettings.json" />
     <None Include="Key.snk" />
     <Content Include="LICENSE.txt">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>

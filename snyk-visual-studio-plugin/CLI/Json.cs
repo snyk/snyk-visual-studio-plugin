@@ -19,6 +19,9 @@ namespace Snyk.VisualStudio.Extension.CLI
             return result;
         }
 
+        public static object DeserializeFromFile(string filePath, Type resultType) 
+            => Deserialize(File.ReadAllText(filePath, Encoding.UTF8), resultType);
+
         public static string Serialize(object source)
         {
             var memoryStream = new MemoryStream();
