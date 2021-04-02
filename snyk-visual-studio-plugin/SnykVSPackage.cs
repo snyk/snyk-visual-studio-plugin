@@ -63,8 +63,6 @@ namespace Snyk.VisualStudio.Extension
 
         private SnykActivityLogger logger;
 
-        private SnykAnalyticsService analyticsService;
-
         /// <summary>
         /// Initializes a new instance of the <see cref="SnykVSPackage"/> class.
         /// </summary>
@@ -78,45 +76,42 @@ namespace Snyk.VisualStudio.Extension
 
         protected override async Task InitializeAsync(CancellationToken cancellationToken, IProgress<ServiceProgressData> progress)
         {
+            await base.InitializeAsync(cancellationToken, progress);
+
             this.AddService(typeof(SnykService), CreateSnykService, true);
 
             serviceProvider = await this.GetServiceAsync(typeof(SnykService)) as SnykService;
 
             logger = serviceProvider.ActivityLogger;
 
-            logger.LogInformation("Get SnykService as ServiceProvider.");
-
-            logger.LogInformation("Initialize Snyk Segment Analytics Service.");
-
-            analyticsService = new SnykAnalyticsService
-            {
-                Logger = logger
-            };
-
-            analyticsService.Initialize();
+            logger.LogInformation("Get SnykService as ServiceProvider.");            
 
             logger.LogInformation("Start InitializeGeneralOptionsAsync.");
 
             await InitializeGeneralOptionsAsync();
 
+            new Task(() => 
+            { 
+                serviceProvider.AnalyticsService.ObtainUser(serviceProvider.GetApiToken()); 
+            }).Start();            
+
             logger.LogInformation("Start Initialize tool window. Before call GetToolWindowControl() method.");
 
             await InitializeToolWindowAsync();
 
-            logger.LogInformation("Before call toolWindowControl.InitializeEventListenersAsync() method.");
+            logger.LogInformation("Before call toolWindowControl.InitializeEventListeners() method.");
 
-            await toolWindowControl.InitializeEventListenersAsync(serviceProvider);
-
-            logger.LogInformation("Call await base.InitializeAsync() method");
-
-            await base.InitializeAsync(cancellationToken, progress);
+            new Task(() =>
+            {
+                toolWindowControl.InitializeEventListeners(serviceProvider);
+            }).Start();            
 
             logger.LogInformation("Leave SnykVSPackage.InitializeAsync()");
         }
 
         protected override void Dispose(bool disposing)
         {
-            analyticsService?.Dispose();
+            serviceProvider.AnalyticsService?.Dispose();
 
             base.Dispose(disposing);
         }
@@ -198,6 +193,8 @@ namespace Snyk.VisualStudio.Extension
                 serviceProvider.ActivityLogger.LogInformation("GeneralOptionsDialogPage not created yet. Call GetDialogPage to create.");
 
                 generalOptionsDialogPage = (SnykGeneralOptionsDialogPage)GetDialogPage(typeof(SnykGeneralOptionsDialogPage));
+
+                generalOptionsDialogPage.LoadSettingsFromStorage();
 
                 serviceProvider.ActivityLogger.LogInformation("Call generalOptionsDialogPage.Initialize()");
 

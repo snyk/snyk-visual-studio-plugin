@@ -6,7 +6,7 @@ namespace Snyk.VisualStudio.Extension
     {        
         public SnykWebClient() : base()
         {
-            this.Headers.Add("user-agent", "SnykVisualStudioExtension");
+            this.Headers.Add("User-Agent", "snyk-visual-studio-plugin");
 
             ServicePointManager.Expect100Continue = true;
             ServicePointManager.SecurityProtocol = SecurityProtocolType.Tls12;

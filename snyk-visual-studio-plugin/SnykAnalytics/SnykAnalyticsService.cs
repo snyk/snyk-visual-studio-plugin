@@ -10,6 +10,8 @@ namespace Snyk.VisualStudio.Extension.SnykAnalytics
 {
     public class SnykAnalyticsService
     {
+        private const string SnykUserMeUrl = "https://snyk.io/api/user/me/";
+
         public const string OpenSourceAnalysisReady = "Snyk Open Source Analysis Ready";
         public const string UserLandedOnTheWelcomePage = "User Landed On The Welcome Page";
         public const string UserSeesAnIssue = "User Sees An Issue";
@@ -21,13 +23,13 @@ namespace Snyk.VisualStudio.Extension.SnykAnalytics
 
         public string UserId { get; set; }
 
-        public bool AnalyticEnabled { get; set; }
+        public bool AnalyticsEnabled { get; set; }
 
         public SnykActivityLogger Logger { get; set; }
 
         public SnykAnalyticsService()
         {
-            AnalyticEnabled = true;
+            AnalyticsEnabled = true;
         }
 
         public void Initialize()
@@ -43,27 +45,42 @@ namespace Snyk.VisualStudio.Extension.SnykAnalytics
 
                 if (String.IsNullOrEmpty(writeKey))
                 {
-                    AnalyticEnabled = false;
+                    AnalyticsEnabled = false;
 
                     Logger.LogInformation("Segment analytics collection is disabled because write key is empty!");
                 } else
                 {                    
                     Analytics.Initialize(appSettings.SegmentAnalyticsWriteKey, new Config()
-                    .SetAsync(true)
-                    .SetTimeout(TimeSpan.FromSeconds(10))
-                    .SetMaxQueueSize(5));
+                            .SetAsync(true)
+                            .SetTimeout(TimeSpan.FromSeconds(10))
+                            .SetMaxQueueSize(5));
 
                     analyticsClient = Analytics.Client;
                 }                
             }
             catch (Exception exception)
             {
-                AnalyticEnabled = false;
+                AnalyticsEnabled = false;
 
                 Logger.LogError(exception.Message);
             }
 
             Logger.LogInformation("Leave Initialize.");
+        }
+
+        public void ObtainUser(string token)
+        {
+            Logger.LogInformation("Enter ObtainUser");
+
+            if (!AnalyticsEnabled) return;
+
+            if (string.IsNullOrEmpty(token)) return;
+
+            SnykUser user = GetSnykUser(token);
+
+            if (user != null) Alias(user.Id);
+
+            Logger.LogInformation("Leave ObtainUser");
         }
 
         public void Dispose()
@@ -82,9 +99,17 @@ namespace Snyk.VisualStudio.Extension.SnykAnalytics
         {
             Logger.LogInformation("Enter Identify.");
 
-            if (!AnalyticEnabled) return;
+            if (!AnalyticsEnabled) return;
 
-            analyticsClient?.Identify(anonymousUserId, new Traits());
+            try
+            {
+                analyticsClient?.Identify(anonymousUserId, new Traits());
+            } 
+            catch(Exception exception)
+            {
+                Logger.LogError(exception.Message);
+            }
+            
 
             Logger.LogInformation("Leave Identify.");
         }
@@ -93,7 +118,7 @@ namespace Snyk.VisualStudio.Extension.SnykAnalytics
         {
             Logger.LogInformation("Enter Alias.");
 
-            if (!AnalyticEnabled) return;
+            if (!AnalyticsEnabled) return;
 
             if (String.IsNullOrEmpty(userId))
             {
@@ -104,8 +129,17 @@ namespace Snyk.VisualStudio.Extension.SnykAnalytics
 
             UserId = userId;
 
-            analyticsClient?.Alias(anonymousUserId, userId);
+            try
+            {
+                analyticsClient?.Alias(anonymousUserId, userId);
+            }
+            catch (Exception exception)
+            {
+                UserId = "";
 
+                Logger.LogError(exception.Message);
+            }
+            
             Logger.LogInformation("Leave Alias.");
         }
 
@@ -113,15 +147,45 @@ namespace Snyk.VisualStudio.Extension.SnykAnalytics
         {
             Logger.LogInformation("Enter LogEvent.");
 
-            if (!AnalyticEnabled) return;
+            if (!AnalyticsEnabled) return;
 
-            string userId = String.IsNullOrEmpty(UserId) ? anonymousUserId : UserId;
+            try
+            {
+                string userId = String.IsNullOrEmpty(UserId) ? anonymousUserId : UserId;
 
-            Logger.LogInformation($"Analytics client track event {eventName}.");
+                Logger.LogInformation($"Analytics client track event {eventName}.");
 
-            analyticsClient?.Track(userId, eventName, properties);
+                analyticsClient?.Track(userId, eventName, properties);
+            }
+            catch (Exception exception)
+            {                
+                Logger.LogError(exception.Message);
+            }
 
             Logger.LogInformation("Leave LogEvent.");
         }
+
+        public SnykUser GetSnykUser(string token)
+        {
+            Logger.LogInformation("Enter GetSnykUser.");
+
+            using (var webClient = new SnykWebClient())
+            {
+                webClient.Headers.Add("Authorization", $"token {token}");
+                webClient.Headers.Add("Accept", "application/json");
+                webClient.Headers.Add("Content-Type", "application/json");
+
+                string userInfoJson = webClient.DownloadString(SnykUserMeUrl);
+
+                Logger.LogInformation("Leave GetSnykUser and convert to SnykUser.");
+
+                return JsonConvert.DeserializeObject<SnykUser>(userInfoJson);
+            }
+        }
+    }
+
+    public class SnykUser
+    {
+        public string Id { get; set; }
     }
 }

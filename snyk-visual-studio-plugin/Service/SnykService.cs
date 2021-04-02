@@ -4,6 +4,7 @@ using Microsoft.VisualStudio.Shell.Interop;
 using Microsoft.VisualStudio.Shell.Settings;
 using Snyk.VisualStudio.Extension.CLI;
 using Snyk.VisualStudio.Extension.Settings;
+using Snyk.VisualStudio.Extension.SnykAnalytics;
 using Snyk.VisualStudio.Extension.Theme;
 using Snyk.VisualStudio.Extension.UI;
 using System;
@@ -34,97 +35,38 @@ namespace Snyk.VisualStudio.Extension.Service
 
         private DTE dte;
 
+        private SnykAnalyticsService analyticsService;
+
         public SnykService(IAsyncServiceProvider serviceProvider)
         {
             this.serviceProvider = serviceProvider;
         }
 
-        public SnykActivityLogger ActivityLogger
-        {
-            get
-            {
-                return activityLogger;
-            }
-        }
+        public SnykActivityLogger ActivityLogger => activityLogger;
 
-        public ISnykOptions Options
-        {
-            get
-            {
-                return Package.GeneralOptionsDialogPage;
-            }
-        }
+        public ISnykOptions Options => Package.GeneralOptionsDialogPage;
 
-        public SnykSolutionService SolutionService
-        {
-            get
-            {
-                return solutionService;
-            }
-        }
+        public SnykSolutionService SolutionService => solutionService;
 
-        public SnykTasksService TasksService
-        {
-            get
-            {
-                return tasksService;
-            }
-        }
+        public SnykTasksService TasksService => tasksService;
 
-        public SettingsManager SettingsManager
-        {
-            get
-            {
-                return settingsManager;
-            }
-        }
+        public SettingsManager SettingsManager => settingsManager;
 
-        public DTE DTE
-        {
-            get
-            {
-                return dte;
-            }
-        }
+        public DTE DTE => dte;
 
-        public void ShowToolWindow()
-        {
-            Package.ShowToolWindow();
-        }
+        public void ShowToolWindow() => Package.ShowToolWindow();
 
-        public async Task<object> GetServiceAsync(Type serviceType)
-        {
-            return await serviceProvider.GetServiceAsync(serviceType);
-        }
+        public async Task<object> GetServiceAsync(Type serviceType) => await serviceProvider.GetServiceAsync(serviceType);
 
-        public object GetService(Type serviceType)
-        {
-            return null;
-        }
+        public object GetService(Type serviceType) => null;
 
-        public SnykVSPackage Package
-        {
-            get
-            {
-                return serviceProvider as SnykVSPackage;
-            }
-        }
+        public SnykVSPackage Package => serviceProvider as SnykVSPackage;
 
-        public IAsyncServiceProvider AsyncServiceProvider
-        {
-            get
-            {
-                return serviceProvider;
-            }
-        }
+        public IAsyncServiceProvider AsyncServiceProvider => serviceProvider;
 
-        public SnykVsThemeService VsThemeService
-        {
-            get
-            {
-                return vsThemeService;
-            }
-        }
+        public SnykVsThemeService VsThemeService => vsThemeService;
+
+        public SnykAnalyticsService AnalyticsService => analyticsService;
 
         public async Task InitializeAsync(CancellationToken cancellationToken)
         {
@@ -152,7 +94,16 @@ namespace Snyk.VisualStudio.Extension.Service
             tasksService = SnykTasksService.Instance;
             solutionService = SnykSolutionService.Instance;
 
-            activityLogger.LogInformation("Initialize ToolWindow Display Event Listeners");
+            activityLogger.LogInformation("Initialize Snyk Segment Analytics Service.");
+
+            analyticsService = new SnykAnalyticsService
+            {
+                Logger = activityLogger
+            };
+
+            analyticsService.Initialize();
+
+
             activityLogger.LogInformation("Leave SnykService.InitializeAsync");
         }
 
@@ -161,5 +112,12 @@ namespace Snyk.VisualStudio.Extension.Service
             Options = Options,
             Logger = ActivityLogger
         };
+
+        public string GetApiToken()
+        {
+            if (!string.IsNullOrEmpty(Options.ApiToken)) return Options.ApiToken;
+
+            return NewCli().GetApiToken();
+        }
     }    
 }

@@ -3,6 +3,7 @@ using Microsoft.VisualStudio.Settings;
 using Microsoft.VisualStudio.Shell;
 using Snyk.VisualStudio.Extension.CLI;
 using Snyk.VisualStudio.Extension.Settings;
+using Snyk.VisualStudio.Extension.SnykAnalytics;
 using Snyk.VisualStudio.Extension.Theme;
 using System;
 using System.Threading.Tasks;
@@ -11,6 +12,8 @@ namespace Snyk.VisualStudio.Extension.Service
 {
     public interface ISnykServiceProvider
     {
+        string GetApiToken();
+
         DTE DTE
         {
             get;
@@ -54,6 +57,11 @@ namespace Snyk.VisualStudio.Extension.Service
         }
 
         SnykVsThemeService VsThemeService
+        {
+            get;
+        }
+
+        SnykAnalyticsService AnalyticsService
         {
             get;
         }
