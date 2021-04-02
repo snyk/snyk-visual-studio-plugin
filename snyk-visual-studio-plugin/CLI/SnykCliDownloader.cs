@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Newtonsoft.Json;
+using System;
 using System.IO;
 using System.Net;
 
@@ -31,7 +32,7 @@ namespace Snyk.VisualStudio.Extension.CLI
 
                 logger?.LogError("Deserialize latest CLI release info");
 
-                return (LatestReleaseInfo)Json.Deserialize(latestReleasesInfoJson, typeof(LatestReleaseInfo));
+                return JsonConvert.DeserializeObject<LatestReleaseInfo>(latestReleasesInfoJson);
             }            
         }
 

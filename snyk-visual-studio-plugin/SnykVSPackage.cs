@@ -15,6 +15,7 @@ using System.Threading.Tasks;
 using Task = System.Threading.Tasks.Task;
 using Microsoft.VisualStudio.Threading;
 using Snyk.VisualStudio.Extension.Service;
+using Snyk.VisualStudio.Extension.SnykAnalytics;
 
 namespace Snyk.VisualStudio.Extension
 {
@@ -62,6 +63,8 @@ namespace Snyk.VisualStudio.Extension
 
         private SnykActivityLogger logger;
 
+        private SnykAnalyticsService analyticsService;
+
         /// <summary>
         /// Initializes a new instance of the <see cref="SnykVSPackage"/> class.
         /// </summary>
@@ -82,6 +85,16 @@ namespace Snyk.VisualStudio.Extension
             logger = serviceProvider.ActivityLogger;
 
             logger.LogInformation("Get SnykService as ServiceProvider.");
+
+            logger.LogInformation("Initialize Snyk Segment Analytics Service.");
+
+            analyticsService = new SnykAnalyticsService
+            {
+                Logger = logger
+            };
+
+            analyticsService.Initialize();
+
             logger.LogInformation("Start InitializeGeneralOptionsAsync.");
 
             await InitializeGeneralOptionsAsync();
@@ -99,7 +112,14 @@ namespace Snyk.VisualStudio.Extension
             await base.InitializeAsync(cancellationToken, progress);
 
             logger.LogInformation("Leave SnykVSPackage.InitializeAsync()");
-        }       
+        }
+
+        protected override void Dispose(bool disposing)
+        {
+            analyticsService?.Dispose();
+
+            base.Dispose(disposing);
+        }
 
         public async Task<object> CreateSnykService(IAsyncServiceContainer container, CancellationToken cancellationToken, Type serviceType)
         {

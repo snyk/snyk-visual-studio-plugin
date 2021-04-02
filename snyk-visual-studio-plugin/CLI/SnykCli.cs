@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using Newtonsoft.Json;
 using Snyk.VisualStudio.Extension.Settings;
 
 namespace Snyk.VisualStudio.Extension.CLI
@@ -103,14 +104,14 @@ namespace Snyk.VisualStudio.Extension.CLI
             {
                 return new CliResult
                 {
-                    CliVulnerabilitiesList = Json.Deserialize(rawResult, typeof(List<CliVulnerabilities>)) as List<CliVulnerabilities>
+                    CliVulnerabilitiesList = JsonConvert.DeserializeObject<List<CliVulnerabilities>>(rawResult)                
                 };
             } else if (rawResult.First() == '{')
             {
                 if (IsSuccessCliJsonString(rawResult))
                 {
-                    var cliVulnerabilities = Json.Deserialize(rawResult, typeof(CliVulnerabilities)) as CliVulnerabilities;
-                    
+                    var cliVulnerabilities = JsonConvert.DeserializeObject<CliVulnerabilities>(rawResult);
+
                     var cliVulnerabilitiesList = new List<CliVulnerabilities>();
                     cliVulnerabilitiesList.Add(cliVulnerabilities);
 
@@ -122,7 +123,7 @@ namespace Snyk.VisualStudio.Extension.CLI
                 {
                     return new CliResult
                     {
-                        Error = Json.Deserialize(rawResult, typeof(CliError)) as CliError
+                        Error = JsonConvert.DeserializeObject<CliError>(rawResult)
                     };
                 }
             } else
