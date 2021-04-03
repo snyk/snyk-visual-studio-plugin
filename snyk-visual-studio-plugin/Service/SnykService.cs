@@ -103,7 +103,6 @@ namespace Snyk.VisualStudio.Extension.Service
 
             analyticsService.Initialize();
 
-
             activityLogger.LogInformation("Leave SnykService.InitializeAsync");
         }
 

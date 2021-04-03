@@ -7,16 +7,40 @@ namespace Snyk.VisualStudio.Extension.CLI
     {
         public List<CliVulnerabilities> CliVulnerabilitiesList { get; set; }
 
-        public List<CliGroupedVulnerabilities> GroupVulnerabilities()
+        private int highSeverityCount = 0;
+        private int mediumSeverityCount = 0;
+        private int lowSeverityCount = 0;
+
+        private List<CliGroupedVulnerabilities> groupedVulnerabilities;
+
+        public int HighSeverityCount => highSeverityCount;
+        public int MediumSeverityCount => mediumSeverityCount;        
+        public int LowSeverityCount => lowSeverityCount;
+
+        public int Count => HighSeverityCount + MediumSeverityCount + LowSeverityCount;
+
+        public List<CliGroupedVulnerabilities> GroupVulnerabilities
         {
-            var groupedVulnerabilities = new List<CliGroupedVulnerabilities>();
-
-            foreach (CliVulnerabilities cliVulnerabilities in CliVulnerabilitiesList)
+            get
             {
-                groupedVulnerabilities.Add(cliVulnerabilities.ToGroupedVulnerabilities());
-            }
+                if (groupedVulnerabilities == null)
+                {
+                    groupedVulnerabilities = new List<CliGroupedVulnerabilities>();
 
-            return groupedVulnerabilities;
+                    foreach (CliVulnerabilities cliVulnerabilities in CliVulnerabilitiesList)
+                    {
+                        CliGroupedVulnerabilities groupedVulns = cliVulnerabilities.ToGroupedVulnerabilities();
+
+                        highSeverityCount += groupedVulns.HighVulnerabilitiesCount;
+                        mediumSeverityCount += groupedVulns.MediumVulnerabilitiesCount;
+                        lowSeverityCount += groupedVulns.LowVulnerabilitiesCount;
+
+                        groupedVulnerabilities.Add(groupedVulns);
+                    }
+                }
+
+                return groupedVulnerabilities;
+            }
         }
 
         public CliError Error { get; set; }
@@ -24,7 +48,7 @@ namespace Snyk.VisualStudio.Extension.CLI
         public bool IsSuccessful()
         {
             return Error == null;
-        }        
+        }
     }
 
     public class CliGroupedVulnerabilities

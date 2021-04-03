@@ -5,6 +5,7 @@ using Snyk.VisualStudio.Extension.Settings;
 using System;
 using System.IO;
 using System.Text;
+using System.Threading.Tasks;
 
 namespace Snyk.VisualStudio.Extension.SnykAnalytics
 {
@@ -72,13 +73,16 @@ namespace Snyk.VisualStudio.Extension.SnykAnalytics
         {
             Logger.LogInformation("Enter ObtainUser");
 
-            if (!AnalyticsEnabled) return;
+            Execute(() =>
+            {
+                if (!AnalyticsEnabled) return;
 
-            if (string.IsNullOrEmpty(token)) return;
+                if (string.IsNullOrEmpty(token)) return;
 
-            SnykUser user = GetSnykUser(token);
+                SnykUser user = GetSnykUser(token);
 
-            if (user != null) Alias(user.Id);
+                if (user != null) Alias(user.Id);
+            });
 
             Logger.LogInformation("Leave ObtainUser");
         }
@@ -99,73 +103,58 @@ namespace Snyk.VisualStudio.Extension.SnykAnalytics
         {
             Logger.LogInformation("Enter Identify.");
 
-            if (!AnalyticsEnabled) return;
+            Execute(() =>
+            {
+                if (!AnalyticsEnabled) return;
 
-            try
-            {
                 analyticsClient?.Identify(anonymousUserId, new Traits());
-            } 
-            catch(Exception exception)
-            {
-                Logger.LogError(exception.Message);
-            }
-            
+            });
 
             Logger.LogInformation("Leave Identify.");
         }
 
         public void Alias(string userId)
         {
-            Logger.LogInformation("Enter Alias.");
+            Logger.LogInformation("Enter Alias.");            
 
-            if (!AnalyticsEnabled) return;
-
-            if (String.IsNullOrEmpty(userId))
+            Execute(() =>
             {
-                Logger.LogInformation("Alias event cannot be executed because userId is empty");
+                if (!AnalyticsEnabled) return;
 
-                return;
-            }
+                if (String.IsNullOrEmpty(userId))
+                {
+                    Logger.LogInformation("Alias event cannot be executed because userId is empty");
 
-            UserId = userId;
+                    return;
+                }
 
-            try
-            {
+                UserId = userId;
+
                 analyticsClient?.Alias(anonymousUserId, userId);
-            }
-            catch (Exception exception)
-            {
-                UserId = "";
+            });
 
-                Logger.LogError(exception.Message);
-            }
-            
             Logger.LogInformation("Leave Alias.");
         }
 
         public void LogEvent(string eventName, Properties properties)
         {
-            Logger.LogInformation("Enter LogEvent.");
+            Logger.LogInformation("Enter LogEvent.");            
 
-            if (!AnalyticsEnabled) return;
-
-            try
+            Execute(() =>
             {
+                if (!AnalyticsEnabled) return;
+
                 string userId = String.IsNullOrEmpty(UserId) ? anonymousUserId : UserId;
 
                 Logger.LogInformation($"Analytics client track event {eventName}.");
 
                 analyticsClient?.Track(userId, eventName, properties);
-            }
-            catch (Exception exception)
-            {                
-                Logger.LogError(exception.Message);
-            }
+            });
 
             Logger.LogInformation("Leave LogEvent.");
         }
 
-        public SnykUser GetSnykUser(string token)
+        private SnykUser GetSnykUser(string token)
         {
             Logger.LogInformation("Enter GetSnykUser.");
 
@@ -181,6 +170,21 @@ namespace Snyk.VisualStudio.Extension.SnykAnalytics
 
                 return JsonConvert.DeserializeObject<SnykUser>(userInfoJson);
             }
+        }
+
+        private void Execute(Action method)
+        {
+            new Task(() =>
+            {
+                try
+                {
+                    method();
+                }
+                catch (Exception exception)
+                {
+                    Logger.LogError(exception.Message);
+                }
+            }).Start();
         }
     }
 

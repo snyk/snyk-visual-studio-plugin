@@ -20,6 +20,8 @@ namespace Snyk.VisualStudio.Extension.UI
     using Microsoft.VisualStudio;
     using Task = System.Threading.Tasks.Task;
     using Snyk.VisualStudio.Extension.Service;
+    using Snyk.VisualStudio.Extension.SnykAnalytics;
+    using Segment.Model;
 
     /// <summary>
     /// Interaction logic for SnykToolWindowControl.
@@ -135,8 +137,8 @@ namespace Snyk.VisualStudio.Extension.UI
 
         public void OnScanningStarted(object sender, SnykCliScanEventArgs eventArgs) => context.TransitionTo(ScanningState.Instance);
 
-        public void OnScanningFinished(object sender, SnykCliScanEventArgs eventArgs) => context.TransitionTo(ScanResultsState.Instance);
-
+        public void OnScanningFinished(object sender, SnykCliScanEventArgs eventArgs) => context.TransitionTo(ScanResultsState.Instance);            
+        
         public void OnDisplayError(object sender, SnykCliScanEventArgs eventArgs) => context.TransitionTo(ErrorState.Instance(eventArgs.Error));
 
         public void OnScanningCancelled(object sender, SnykCliScanEventArgs eventArgs) => context.TransitionTo(RunScanState.Instance);
@@ -258,6 +260,12 @@ namespace Snyk.VisualStudio.Extension.UI
             this.Dispatcher.Invoke(() =>
             {
                 vulnerabilitiesTree.AppendVulnerabilities(cliResult);
+
+                serviceProvider.AnalyticsService.LogEvent(SnykAnalyticsService.OpenSourceAnalysisReady, new Properties() {
+                        { "highSeverityIssuesCount", cliResult.HighSeverityCount },
+                        { "mediumSeverityIssuesCount", cliResult.MediumSeverityCount },
+                        { "lowSeverityIssuesCount", cliResult.LowSeverityCount }
+                });
             });
         }
 

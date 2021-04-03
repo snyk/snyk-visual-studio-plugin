@@ -38,12 +38,9 @@ namespace Snyk.VisualStudio.Extension.UI
 
         public void AppendVulnerabilities(CliResult cliResult)
         {
-            int highSeverityCount = 0;
-            int mediumSeverityCount = 0;
-            int lowSeverityCount = 0;
-            int vulnerabilitiesCount = 0;
+            var groupVulnerabilities = cliResult.GroupVulnerabilities;
 
-            cliResult.GroupVulnerabilities().ForEach(delegate (CliGroupedVulnerabilities groupedVulnerabilities)
+            groupVulnerabilities.ForEach(delegate (CliGroupedVulnerabilities groupedVulnerabilities)
             {
                 var fileNode = new VulnerabilityTreeNode
                 {
@@ -60,18 +57,16 @@ namespace Snyk.VisualStudio.Extension.UI
                     fileNode.Items.Add(node);
                 }
 
-                highSeverityCount += groupedVulnerabilities.HighVulnerabilitiesCount;
-                mediumSeverityCount += groupedVulnerabilities.MediumVulnerabilitiesCount;
-                lowSeverityCount += groupedVulnerabilities.LowVulnerabilitiesCount;
-
-                vulnerabilitiesCount = highSeverityCount + mediumSeverityCount + lowSeverityCount;
-
                 rootNode.Items.Add(fileNode);
             });
 
-            rootNode.SetDetailsTitle(vulnerabilitiesCount, highSeverityCount, mediumSeverityCount, lowSeverityCount);
+            rootNode.SetDetailsTitle(
+                cliResult.Count, 
+                cliResult.HighSeverityCount, 
+                cliResult.MediumSeverityCount, 
+                cliResult.LowSeverityCount);
 
-            vulnerabilitiesTree.Items.Refresh();
+            vulnerabilitiesTree.Items.Refresh();            
         }
 
         public void Clear() => rootNode.Clean();

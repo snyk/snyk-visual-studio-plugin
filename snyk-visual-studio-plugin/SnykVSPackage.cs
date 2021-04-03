@@ -91,7 +91,7 @@ namespace Snyk.VisualStudio.Extension
             await InitializeGeneralOptionsAsync();
 
             new Task(() => 
-            { 
+            {
                 serviceProvider.AnalyticsService.ObtainUser(serviceProvider.GetApiToken()); 
             }).Start();            
 
