@@ -261,11 +261,10 @@ namespace Snyk.VisualStudio.Extension.UI
             {
                 vulnerabilitiesTree.AppendVulnerabilities(cliResult);
 
-                serviceProvider.AnalyticsService.LogEvent(SnykAnalyticsService.OpenSourceAnalysisReady, new Properties() {
-                        { "highSeverityIssuesCount", cliResult.HighSeverityCount },
-                        { "mediumSeverityIssuesCount", cliResult.MediumSeverityCount },
-                        { "lowSeverityIssuesCount", cliResult.LowSeverityCount }
-                });
+                serviceProvider.AnalyticsService.LogOpenSourceAnalysisReadyEvent(
+                    cliResult.HighSeverityCount, 
+                    cliResult.MediumSeverityCount, 
+                    cliResult.LowSeverityCount);
             });
         }
 
@@ -312,7 +311,7 @@ namespace Snyk.VisualStudio.Extension.UI
                     }
 
                     if (treeNode.Vulnerability != null)
-                    {                        
+                    {
                         vulnerabilityDetailsPanel.Visibility = Visibility.Visible;
 
                         var vulnerability = treeNode.Vulnerability;
@@ -321,12 +320,12 @@ namespace Snyk.VisualStudio.Extension.UI
 
                         vulnerableModule.Text = vulnerability.name;
 
-                        string introducedThroughText = vulnerability.from != null && vulnerability.from.Length != 0 
+                        string introducedThroughText = vulnerability.from != null && vulnerability.from.Length != 0
                                     ? string.Join(", ", vulnerability.from) : "";
 
                         introducedThrough.Text = introducedThroughText;
                         exploitMaturity.Text = vulnerability.exploit;
-                        fixedIn.Text = String.IsNullOrWhiteSpace(vulnerability.Remediation) 
+                        fixedIn.Text = String.IsNullOrWhiteSpace(vulnerability.Remediation)
                             ? $"There is no fixed version for {vulnerability.name}" : vulnerability.Remediation;
 
                         string detaiedIntroducedThroughText = vulnerability.from != null && vulnerability.from.Length != 0
@@ -340,10 +339,13 @@ namespace Snyk.VisualStudio.Extension.UI
                         overview.Html = Markdig.Markdown.ToHtml(vulnerability.description);
 
                         moreAboutThisIssue.NavigateUri = new Uri(vulnerability.url);
+
+
+                        serviceProvider.AnalyticsService.LogUserSeesAnIssueEvent(vulnerability.id, vulnerability.severity);
                     }
                     else
                     {
-                        CleanAndHideVulnerabilityDetailsPanel();                        
+                        CleanAndHideVulnerabilityDetailsPanel();
 
                         if (treeNode.Items.Count > 0)
                         {
@@ -352,7 +354,7 @@ namespace Snyk.VisualStudio.Extension.UI
                         else
                         {
                             noIssuesMessageGrid.Visibility = Visibility.Visible;
-                        }                                      
+                        }
                     }                    
                 }
             ); 
@@ -448,6 +450,8 @@ namespace Snyk.VisualStudio.Extension.UI
             if (string.IsNullOrEmpty(serviceProvider.GetApiToken()))
             {
                 context.TransitionTo(OverviewState.Instance);
+
+                serviceProvider.AnalyticsService.LogUserLandedOnTheWelcomePageEvent();
             }
             else
             {

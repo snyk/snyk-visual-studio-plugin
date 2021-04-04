@@ -1,5 +1,7 @@
 ﻿using Microsoft.VisualStudio.Shell;
+using Segment.Model;
 using Snyk.VisualStudio.Extension.Service;
+using Snyk.VisualStudio.Extension.SnykAnalytics;
 using System;
 using System.Threading;
 using System.Threading.Tasks;
@@ -197,6 +199,9 @@ namespace Snyk.VisualStudio.Extension.CLI
                     cli = null;
                 }
             }, progressWorker.TokenSource.Token);   
+
+
+            serviceProvider.AnalyticsService.LogUserTriggersAnAnalysisEvent();
         }
         
         public void Download(CliDownloadFinishedCallback downloadFinishedCallback = null)

@@ -17,7 +17,6 @@ namespace Snyk.VisualStudio.Extension.SnykAnalytics
         public const string UserLandedOnTheWelcomePage = "User Landed On The Welcome Page";
         public const string UserSeesAnIssue = "User Sees An Issue";
         public const string UserTriggersAnAnalysis = "User Triggers An Analysis";
-        public const string UserTriggersItsFirstAnalysis = "User Triggers Its First Analysis";        
 
         private Client analyticsClient;
         private string anonymousUserId = Guid.NewGuid().ToString();
@@ -136,7 +135,43 @@ namespace Snyk.VisualStudio.Extension.SnykAnalytics
             Logger.LogInformation("Leave Alias.");
         }
 
-        public void LogEvent(string eventName, Properties properties)
+        public void LogOpenSourceAnalysisReadyEvent(int highSeverityCount, int mediumSeverityCount, int lowSeverityCount)
+        {
+            LogEvent(SnykAnalyticsService.OpenSourceAnalysisReady, new Properties() 
+            {
+                { "highSeverityIssuesCount", highSeverityCount },
+                { "mediumSeverityIssuesCount", mediumSeverityCount },
+                { "lowSeverityIssuesCount", lowSeverityCount }
+            });
+        }
+
+        public void LogUserLandedOnTheWelcomePageEvent()
+        {
+            LogEvent(SnykAnalyticsService.UserLandedOnTheWelcomePage, new Properties());
+        }
+
+        public void LogUserTriggersAnAnalysisEvent()
+        {
+            LogEvent(SnykAnalyticsService.UserTriggersAnAnalysis, new Properties() {
+                { "selectedProducts", "Snyk Open Source" }
+            });
+        }
+
+        public void LogUserSeesAnIssueEvent(string id, string severity)
+        {
+            LogEvent(SnykAnalyticsService.UserSeesAnIssue, new Properties()
+            {
+                {
+                    "issueDetails", new Properties()
+                    {
+                        { "id", id},
+                        { "severity", severity }
+                    }
+                }
+            });
+        }
+
+        private void LogEvent(string eventName, Properties properties)
         {
             Logger.LogInformation("Enter LogEvent.");            
 
