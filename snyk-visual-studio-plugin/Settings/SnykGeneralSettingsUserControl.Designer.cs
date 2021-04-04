@@ -39,6 +39,7 @@
             this.authenticateButton = new System.Windows.Forms.Button();
             this.authProgressBar = new System.Windows.Forms.ProgressBar();
             this.errorProvider = new System.Windows.Forms.ErrorProvider(this.components);
+            this.usageAnalyticsCheckBox = new System.Windows.Forms.CheckBox();
             ((System.ComponentModel.ISupportInitialize)(this.errorProvider)).BeginInit();
             this.SuspendLayout();
             // 
@@ -149,10 +150,24 @@
             // 
             this.errorProvider.ContainerControl = this;
             // 
+            // usageAnalyticsCheckBox
+            // 
+            this.usageAnalyticsCheckBox.AutoSize = true;
+            this.usageAnalyticsCheckBox.Checked = true;
+            this.usageAnalyticsCheckBox.CheckState = System.Windows.Forms.CheckState.Checked;
+            this.usageAnalyticsCheckBox.Location = new System.Drawing.Point(238, 250);
+            this.usageAnalyticsCheckBox.Name = "usageAnalyticsCheckBox";
+            this.usageAnalyticsCheckBox.Size = new System.Drawing.Size(250, 29);
+            this.usageAnalyticsCheckBox.TabIndex = 9;
+            this.usageAnalyticsCheckBox.Text = "Send usage analytics";
+            this.usageAnalyticsCheckBox.UseVisualStyleBackColor = true;
+            this.usageAnalyticsCheckBox.CheckedChanged += new System.EventHandler(this.usageAnalyticsCheckBox_CheckedChanged);
+            // 
             // SnykGeneralSettingsUserControl
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(12F, 25F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
+            this.Controls.Add(this.usageAnalyticsCheckBox);
             this.Controls.Add(this.authProgressBar);
             this.Controls.Add(this.authenticateButton);
             this.Controls.Add(this.ignoreUnknownCACheckBox);
@@ -184,5 +199,6 @@
         private System.Windows.Forms.Button authenticateButton;
         private System.Windows.Forms.ProgressBar authProgressBar;
         private System.Windows.Forms.ErrorProvider errorProvider;
+        private System.Windows.Forms.CheckBox usageAnalyticsCheckBox;
     }
 }

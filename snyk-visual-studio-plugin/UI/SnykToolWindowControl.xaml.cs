@@ -442,11 +442,13 @@ namespace Snyk.VisualStudio.Extension.UI
         {            
             serviceProvider.TasksService.Download();
             
-            SetInitialState();
+            SetInitialState();                        
         }
 
         private void SetInitialState()
         {
+            serviceProvider.AnalyticsService.AnalyticsEnabled = serviceProvider.Options.UsageAnalyticsEnabled;
+
             if (string.IsNullOrEmpty(serviceProvider.GetApiToken()))
             {
                 context.TransitionTo(OverviewState.Instance);

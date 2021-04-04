@@ -35,6 +35,7 @@ namespace Snyk.VisualStudio.Extension.Settings
             customEndpointTextBox.Text = optionsDialogPage.CustomEndpoint;
             organizationTextBox.Text = optionsDialogPage.Organization;
             ignoreUnknownCACheckBox.Checked = optionsDialogPage.IgnoreUnknownCA;
+            usageAnalyticsCheckBox.Checked = optionsDialogPage.UsageAnalyticsEnabled;
 
             successCallbackAction = (apiToken) =>
             {
@@ -315,6 +316,15 @@ namespace Snyk.VisualStudio.Extension.Settings
         private void SnykGeneralSettingsUserControl_Load(object sender, EventArgs e)
         {
             InitializeApiToken();
+        }
+
+        private void usageAnalyticsCheckBox_CheckedChanged(object sender, EventArgs e)
+        {
+            optionsDialogPage.UsageAnalyticsEnabled = ignoreUnknownCACheckBox.Checked;
+
+            optionsDialogPage.ServiceProvider.AnalyticsService.AnalyticsEnabled = usageAnalyticsCheckBox.Checked;
+
+            optionsDialogPage.ServiceProvider.AnalyticsService.ObtainUser(optionsDialogPage.ServiceProvider.GetApiToken());
         }
     }  
 }

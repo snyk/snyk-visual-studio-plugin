@@ -90,10 +90,10 @@ namespace Snyk.VisualStudio.Extension
 
             await InitializeGeneralOptionsAsync();
 
-            new Task(() => 
+            new Task(() =>
             {
-                serviceProvider.AnalyticsService.ObtainUser(serviceProvider.GetApiToken()); 
-            }).Start();            
+                serviceProvider.AnalyticsService.ObtainUser(serviceProvider.GetApiToken());
+            }).Start();
 
             logger.LogInformation("Start Initialize tool window. Before call GetToolWindowControl() method.");
 

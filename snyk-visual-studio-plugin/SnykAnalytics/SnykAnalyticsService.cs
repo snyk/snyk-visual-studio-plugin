@@ -56,6 +56,8 @@ namespace Snyk.VisualStudio.Extension.SnykAnalytics
                             .SetMaxQueueSize(5));
 
                     analyticsClient = Analytics.Client;
+
+                    Identify();
                 }                
             }
             catch (Exception exception)
@@ -78,6 +80,8 @@ namespace Snyk.VisualStudio.Extension.SnykAnalytics
 
                 if (string.IsNullOrEmpty(token)) return;
 
+                if (!string.IsNullOrEmpty(UserId)) return;
+
                 SnykUser user = GetSnykUser(token);
 
                 if (user != null) Alias(user.Id);
@@ -96,44 +100,7 @@ namespace Snyk.VisualStudio.Extension.SnykAnalytics
             analyticsClient?.Dispose();
 
             Logger.LogInformation("Leave Dispose.");
-        }
-
-        public void Identify()
-        {
-            Logger.LogInformation("Enter Identify.");
-
-            Execute(() =>
-            {
-                if (!AnalyticsEnabled) return;
-
-                analyticsClient?.Identify(anonymousUserId, new Traits());
-            });
-
-            Logger.LogInformation("Leave Identify.");
-        }
-
-        public void Alias(string userId)
-        {
-            Logger.LogInformation("Enter Alias.");            
-
-            Execute(() =>
-            {
-                if (!AnalyticsEnabled) return;
-
-                if (String.IsNullOrEmpty(userId))
-                {
-                    Logger.LogInformation("Alias event cannot be executed because userId is empty");
-
-                    return;
-                }
-
-                UserId = userId;
-
-                analyticsClient?.Alias(anonymousUserId, userId);
-            });
-
-            Logger.LogInformation("Leave Alias.");
-        }
+        }        
 
         public void LogOpenSourceAnalysisReadyEvent(int highSeverityCount, int mediumSeverityCount, int lowSeverityCount)
         {
@@ -169,6 +136,43 @@ namespace Snyk.VisualStudio.Extension.SnykAnalytics
                     }
                 }
             });
+        }
+
+        private void Identify()
+        {
+            Logger.LogInformation("Enter Identify.");
+
+            Execute(() =>
+            {
+                if (!AnalyticsEnabled) return;
+
+                analyticsClient?.Identify(anonymousUserId, new Traits());
+            });
+
+            Logger.LogInformation("Leave Identify.");
+        }
+
+        private void Alias(string userId)
+        {
+            Logger.LogInformation("Enter Alias.");
+
+            Execute(() =>
+            {
+                if (!AnalyticsEnabled) return;
+
+                if (String.IsNullOrEmpty(userId))
+                {
+                    Logger.LogInformation("Alias event cannot be executed because userId is empty");
+
+                    return;
+                }
+
+                UserId = userId;
+
+                analyticsClient?.Alias(anonymousUserId, userId);
+            });
+
+            Logger.LogInformation("Leave Alias.");
         }
 
         private void LogEvent(string eventName, Properties properties)

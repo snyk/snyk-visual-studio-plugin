@@ -13,7 +13,7 @@ namespace Snyk.VisualStudio.Extension.Settings
 
         private SnykGeneralSettingsUserControl generalSettingsUserControl;
 
-        protected override IWin32Window Window => GeneralSettingsUserControl;     
+        protected override IWin32Window Window => GeneralSettingsUserControl;
 
         public ISnykServiceProvider ServiceProvider
         {
@@ -37,7 +37,9 @@ namespace Snyk.VisualStudio.Extension.Settings
 
         public string Organization { get; set; }
 
-        public bool IgnoreUnknownCA { get; set; }     
+        public bool IgnoreUnknownCA { get; set; }
+
+        public bool UsageAnalyticsEnabled { get; set; }
 
         public string AdditionalOptions
         {
@@ -47,8 +49,8 @@ namespace Snyk.VisualStudio.Extension.Settings
 
                 return settingsService.GetAdditionalOptions();
             }
-        }      
-        
+        }
+
         public bool IsScanAllProjects
         {
             get

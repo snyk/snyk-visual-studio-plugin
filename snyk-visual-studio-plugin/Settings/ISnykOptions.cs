@@ -41,5 +41,10 @@ namespace Snyk.VisualStudio.Extension.Settings
         {
             get;
         }
+
+        bool UsageAnalyticsEnabled
+        {
+            get;
+        }
     }
 }

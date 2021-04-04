@@ -66,7 +66,25 @@ namespace Snyk.VisualStudio.Extension.Service
 
         public SnykVsThemeService VsThemeService => vsThemeService;
 
-        public SnykAnalyticsService AnalyticsService => analyticsService;
+        public SnykAnalyticsService AnalyticsService 
+        {
+            get
+            {
+                if (analyticsService == null)
+                {
+                    activityLogger.LogInformation("Initialize Snyk Segment Analytics Service.");
+
+                    analyticsService = new SnykAnalyticsService
+                    {
+                        Logger = activityLogger
+                    };
+
+                    analyticsService.Initialize();
+                }
+
+                return analyticsService;
+            }
+        }
 
         public async Task InitializeAsync(CancellationToken cancellationToken)
         {
@@ -92,16 +110,7 @@ namespace Snyk.VisualStudio.Extension.Service
             this.dte = await serviceProvider.GetServiceAsync(typeof(DTE)) as DTE;
 
             tasksService = SnykTasksService.Instance;
-            solutionService = SnykSolutionService.Instance;
-
-            activityLogger.LogInformation("Initialize Snyk Segment Analytics Service.");
-
-            analyticsService = new SnykAnalyticsService
-            {
-                Logger = activityLogger
-            };
-
-            analyticsService.Initialize();
+            solutionService = SnykSolutionService.Instance;                  
 
             activityLogger.LogInformation("Leave SnykService.InitializeAsync");
         }

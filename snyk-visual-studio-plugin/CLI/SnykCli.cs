@@ -90,6 +90,11 @@ namespace Snyk.VisualStudio.Extension.CLI
                 arguments.Add("--all-projects");
             }
 
+            if (!Options.UsageAnalyticsEnabled)
+            {
+                arguments.Add("--DISABLE_ANALYTICS");
+            }
+
             string cliArguments = String.Join(" ", arguments.ToArray());
 
             Logger?.LogInformation($"Result CLI arguments {cliArguments}");
