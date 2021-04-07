@@ -7,6 +7,7 @@ using EnvDTE;
 using Snyk.VisualStudio.Extension.CLI;
 using Snyk.VisualStudio.Extension.Theme;
 using Snyk.VisualStudio.Extension.Service;
+using Snyk.VisualStudio.Extension.SnykAnalytics;
 
 namespace Snyk.VisualStudio.Extension.Tests
 {
@@ -84,12 +85,19 @@ namespace Snyk.VisualStudio.Extension.Tests
             }
         }
 
+        public SnykAnalyticsService AnalyticsService => new SnykAnalyticsService();
+
         Microsoft.VisualStudio.Shell.IAsyncServiceProvider ISnykServiceProvider.AsyncServiceProvider
         {
             get
             {
-                throw new NotImplementedException();
+                return null;
             }
+        }
+
+        public string GetApiToken()
+        {
+            throw new NotImplementedException();
         }
 
         public object GetService(Type serviceType)

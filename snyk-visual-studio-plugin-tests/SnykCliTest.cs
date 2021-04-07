@@ -405,6 +405,8 @@ namespace Snyk.VisualStudio.Extension.Tests
             }
         }
 
+        public bool UsageAnalyticsEnabled => false;
+
         public void Authenticate(Action<string> successCallbackAction, Action<string> errorCallbackAction)
         {
             throw new NotImplementedException();
