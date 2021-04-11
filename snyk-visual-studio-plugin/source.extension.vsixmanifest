@@ -1,25 +1,27 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <PackageManifest Version="2.0.0" xmlns="http://schemas.microsoft.com/developer/vsx-schema/2011" xmlns:d="http://schemas.microsoft.com/developer/vsx-schema-design/2011">
-    <Metadata>
-        <Identity Id="snyk_visual_studio_plugin.154948da-e3ba-45ce-9bee-9688a7e30462" Version="0.0.7" Language="en-US" Publisher="Snyk" />
-        <DisplayName>Snyk Vulnerability Scanner</DisplayName>
-        <Description xml:space="preserve">Snyk Vulnerability Scanner</Description>
-        <MoreInfo>https://github.com/snyk/snyk-visual-studio-plugin</MoreInfo>
-        <License>LICENSE.txt</License>
-        <Icon>SnykPackage.ico</Icon>
-        <PreviewImage>SnykLogo.ico</PreviewImage>
-    </Metadata>
-    <Installation>
-        <InstallationTarget Id="Microsoft.VisualStudio.Community" Version="[14.0,]" />
-    </Installation>
-    <Dependencies>
-        <Dependency Id="Microsoft.Framework.NDP" DisplayName="Microsoft .NET Framework" d:Source="Manual" Version="[4.5,)" />
-        <Dependency Id="Microsoft.VisualStudio.MPF.14.0" DisplayName="Visual Studio MPF 14.0" d:Source="Installed" Version="[14.0]" />
-    </Dependencies>
-    <Assets>
-        <Asset Type="Microsoft.VisualStudio.VsPackage" d:Source="Project" d:ProjectName="%CurrentProject%" Path="|%CurrentProject%;PkgdefProjectOutputGroup|" />
-    </Assets>
-    <Prerequisites>
-        <Prerequisite Id="Microsoft.VisualStudio.Component.CoreEditor" Version="[15.0,]" DisplayName="Visual Studio core editor" />
-    </Prerequisites>
+  <Metadata>
+    <Identity Id="snyk_visual_studio_plugin.154948da-e3ba-45ce-9bee-9688a7e30462" Version="0.0.8" Language="en-US" Publisher="Snyk" />
+    <DisplayName>Snyk Vulnerability Scanner</DisplayName>
+    <Description xml:space="preserve">Snyk Vulnerability Scanner</Description>
+    <MoreInfo>https://github.com/snyk/snyk-visual-studio-plugin</MoreInfo>
+    <License>LICENSE.txt</License>
+    <Icon>SnykPackage.ico</Icon>
+    <PreviewImage>SnykLogo.ico</PreviewImage>
+  </Metadata>
+  <Installation>
+    <InstallationTarget Id="Microsoft.VisualStudio.Community" Version="[14.0,]" />
+  </Installation>
+  <Dependencies>
+    <Dependency Id="Microsoft.Framework.NDP" DisplayName="Microsoft .NET Framework" d:Source="Manual" Version="[4.5,)" />
+    <Dependency Id="Microsoft.VisualStudio.MPF.14.0" DisplayName="Visual Studio MPF 14.0" d:Source="Installed" Version="[14.0]" />
+  </Dependencies>
+  <Assets>
+    <Asset Type="Microsoft.VisualStudio.VsPackage" d:Source="Project" d:ProjectName="%CurrentProject%" Path="|%CurrentProject%;PkgdefProjectOutputGroup|" />
+    <Asset Type="Microsoft.VisualStudio.Assembly" d:Source="File" Path="Analytics.dll" AssemblyName="Analytics, Version=3.7.0.0, Culture=neutral, PublicKeyToken=null" />
+    <Asset Type="Microsoft.VisualStudio.Assembly" d:Source="File" Path="Newtonsoft.Json.dll" AssemblyName="Newtonsoft.Json, Version=12.0.0.0, Culture=neutral, PublicKeyToken=30ad4fe6b2a6aeed" />
+  </Assets>
+  <Prerequisites>
+    <Prerequisite Id="Microsoft.VisualStudio.Component.CoreEditor" Version="[15.0,]" DisplayName="Visual Studio core editor" />
+  </Prerequisites>
 </PackageManifest>

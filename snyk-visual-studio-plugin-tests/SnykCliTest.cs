@@ -405,7 +405,7 @@ namespace Snyk.VisualStudio.Extension.Tests
             }
         }
 
-        public bool UsageAnalyticsEnabled => false;
+        public bool UsageAnalyticsEnabled { get; set; }
 
         public void Authenticate(Action<string> successCallbackAction, Action<string> errorCallbackAction)
         {

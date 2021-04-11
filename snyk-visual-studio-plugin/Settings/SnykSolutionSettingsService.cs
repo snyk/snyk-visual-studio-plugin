@@ -12,7 +12,9 @@ namespace Snyk.VisualStudio.Extension.Settings
 {
     public class SnykSolutionSettingsService
     {
-        public const string SnykProjectSettingsCollectionName = "Snyk";
+        public const string SnykSettingsCollectionName = "Snyk";
+
+        public const string UsageAnalyticsEnabledName = "UsageAnalyticsEnabled";
 
         private readonly SnykSolutionService solutionService;
 
@@ -42,9 +44,9 @@ namespace Snyk.VisualStudio.Extension.Settings
 
             WritableSettingsStore settingsStore = GetUserSettingsStore();
                        
-            if (!solutionService.IsSolutionOpen || !settingsStore.CollectionExists(SnykProjectSettingsCollectionName))
+            if (!solutionService.IsSolutionOpen || !settingsStore.CollectionExists(SnykSettingsCollectionName))
             {
-                logger.LogInformation($"Solution not open or {SnykProjectSettingsCollectionName} collection not exists. Return from method.");
+                logger.LogInformation($"Solution not open or {SnykSettingsCollectionName} collection not exists. Return from method.");
 
                 return "";
             }
@@ -55,7 +57,7 @@ namespace Snyk.VisualStudio.Extension.Settings
             {
                 logger.LogInformation("Try get additional options for project");
 
-                additionalOptions = settingsStore.GetString(SnykProjectSettingsCollectionName, projectUniqueName);
+                additionalOptions = settingsStore.GetString(SnykSettingsCollectionName, projectUniqueName);
             }
             catch (Exception exception)
             {
@@ -84,9 +86,9 @@ namespace Snyk.VisualStudio.Extension.Settings
 
             WritableSettingsStore settingsStore = GetUserSettingsStore();
 
-            if (!solutionService.IsSolutionOpen || !settingsStore.CollectionExists(SnykProjectSettingsCollectionName))
+            if (!solutionService.IsSolutionOpen || !settingsStore.CollectionExists(SnykSettingsCollectionName))
             {
-                logger.LogInformation($"Solution not open or {SnykProjectSettingsCollectionName} collection not exists. Return from method.");
+                logger.LogInformation($"Solution not open or {SnykSettingsCollectionName} collection not exists. Return from method.");
 
                 return isAllProjectsEnabled;
             }            
@@ -95,7 +97,7 @@ namespace Snyk.VisualStudio.Extension.Settings
             {
                 logger.LogInformation("Try get additional options for project");
 
-                return settingsStore.GetBoolean(SnykProjectSettingsCollectionName, projectUniqueName);
+                return settingsStore.GetBoolean(SnykSettingsCollectionName, projectUniqueName);
             }
             catch (Exception exception)
             {
@@ -104,6 +106,27 @@ namespace Snyk.VisualStudio.Extension.Settings
 
             return isAllProjectsEnabled;
         }
+
+        public bool GetUsageAnalyticsEnabled()
+        {
+            bool usageAnalyticsEnabled = true;            
+
+            WritableSettingsStore settingsStore = GetUserSettingsStore();
+
+            try
+            {
+                return settingsStore.GetBoolean(SnykSettingsCollectionName, UsageAnalyticsEnabledName);
+            }
+            catch (Exception exception)
+            {
+                logger.LogError(exception.Message);
+            }
+
+            return usageAnalyticsEnabled;
+        }
+
+        public void SaveUsageAnalyticsEnabled(bool usageAnalyticsEnabled) => GetUserSettingsStore()
+            .SetBoolean(SnykSettingsCollectionName, UsageAnalyticsEnabledName, usageAnalyticsEnabled);
 
         public void SaveAdditionalOptions(string additionalOptions)
         {
@@ -120,9 +143,9 @@ namespace Snyk.VisualStudio.Extension.Settings
                     additionalOptions = "";
                 }
 
-                logger.LogInformation($"Save additional options for : {SnykProjectSettingsCollectionName} collection");
+                logger.LogInformation($"Save additional options for : {SnykSettingsCollectionName} collection");
 
-                GetUserSettingsStore().SetString(SnykProjectSettingsCollectionName, projectUniqueName, additionalOptions);
+                GetUserSettingsStore().SetString(SnykSettingsCollectionName, projectUniqueName, additionalOptions);
             }
 
             logger.LogInformation("Leave SaveAdditionalOptions method");
@@ -138,9 +161,9 @@ namespace Snyk.VisualStudio.Extension.Settings
 
             if (!String.IsNullOrEmpty(projectUniqueName))
             {                
-                logger.LogInformation($"Save is all projects enabled for : {SnykProjectSettingsCollectionName} collection");
+                logger.LogInformation($"Save is all projects enabled for : {SnykSettingsCollectionName} collection");
 
-                GetUserSettingsStore().SetBoolean(SnykProjectSettingsCollectionName, projectUniqueName, isAllProjectsEnabled);
+                GetUserSettingsStore().SetBoolean(SnykSettingsCollectionName, projectUniqueName, isAllProjectsEnabled);
             }
 
             logger.LogInformation("Leave SaveIsAllProjectsScan method");
@@ -179,9 +202,9 @@ namespace Snyk.VisualStudio.Extension.Settings
             
             var settingsStore = solutionService.ServiceProvider.SettingsManager.GetWritableSettingsStore(SettingsScope.UserSettings);
 
-            if (!settingsStore.CollectionExists(SnykProjectSettingsCollectionName))
+            if (!settingsStore.CollectionExists(SnykSettingsCollectionName))
             {
-                settingsStore.CreateCollection(SnykProjectSettingsCollectionName);
+                settingsStore.CreateCollection(SnykSettingsCollectionName);
             }
 
             logger.LogInformation("Leave GetUserSettingsStore method");

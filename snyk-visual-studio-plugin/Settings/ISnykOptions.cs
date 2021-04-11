@@ -45,6 +45,7 @@ namespace Snyk.VisualStudio.Extension.Settings
         bool UsageAnalyticsEnabled
         {
             get;
+            set;
         }
     }
 }

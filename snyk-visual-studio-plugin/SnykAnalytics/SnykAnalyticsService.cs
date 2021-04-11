@@ -19,7 +19,10 @@ namespace Snyk.VisualStudio.Extension.SnykAnalytics
         public const string UserTriggersAnAnalysis = "User Triggers An Analysis";
 
         private Client analyticsClient;
+
         private string anonymousUserId = Guid.NewGuid().ToString();
+
+        private bool analyticsInitialized = true;
 
         public string UserId { get; set; }
 
@@ -34,8 +37,6 @@ namespace Snyk.VisualStudio.Extension.SnykAnalytics
 
         public void Initialize()
         {
-            Logger.LogInformation("Enter Initialize.");            
-
             try
             {                
                 SnykAppSettings appSettings = JsonConvert
@@ -45,7 +46,7 @@ namespace Snyk.VisualStudio.Extension.SnykAnalytics
 
                 if (String.IsNullOrEmpty(writeKey))
                 {
-                    AnalyticsEnabled = false;
+                    analyticsInitialized = false;
 
                     Logger.LogInformation("Segment analytics collection is disabled because write key is empty!");
                 } else
@@ -62,21 +63,16 @@ namespace Snyk.VisualStudio.Extension.SnykAnalytics
             }
             catch (Exception exception)
             {
-                AnalyticsEnabled = false;
+                analyticsInitialized = false;
 
                 Logger.LogError(exception.Message);
             }
-
-            Logger.LogInformation("Leave Initialize.");
         }
 
-        public void ObtainUser(string token)
-        {
-            Logger.LogInformation("Enter ObtainUser");
-
-            Execute(() =>
+        public void ObtainUser(string token) 
+            => Execute(() =>
             {
-                if (!AnalyticsEnabled) return;
+                if (Disabled) return;
 
                 if (string.IsNullOrEmpty(token)) return;
 
@@ -87,46 +83,33 @@ namespace Snyk.VisualStudio.Extension.SnykAnalytics
                 if (user != null) Alias(user.Id);
             });
 
-            Logger.LogInformation("Leave ObtainUser");
-        }
-
         public void Dispose()
         {
-            Logger.LogInformation("Enter Dispose.");
-
             Logger.LogInformation("Flush events in the message queue and stop this segment instance.");
 
             analyticsClient?.Flush();
             analyticsClient?.Dispose();
-
-            Logger.LogInformation("Leave Dispose.");
         }        
 
-        public void LogOpenSourceAnalysisReadyEvent(int highSeverityCount, int mediumSeverityCount, int lowSeverityCount)
-        {
-            LogEvent(SnykAnalyticsService.OpenSourceAnalysisReady, new Properties() 
+        public void LogOpenSourceAnalysisReadyEvent(int highSeverityCount, int mediumSeverityCount, int lowSeverityCount) 
+            => LogEvent(SnykAnalyticsService.OpenSourceAnalysisReady, new Properties()
             {
                 { "highSeverityIssuesCount", highSeverityCount },
                 { "mediumSeverityIssuesCount", mediumSeverityCount },
                 { "lowSeverityIssuesCount", lowSeverityCount }
             });
-        }
 
-        public void LogUserLandedOnTheWelcomePageEvent()
-        {
-            LogEvent(SnykAnalyticsService.UserLandedOnTheWelcomePage, new Properties());
-        }
+        public void LogUserLandedOnTheWelcomePageEvent() 
+            => LogEvent(SnykAnalyticsService.UserLandedOnTheWelcomePage, new Properties());
 
-        public void LogUserTriggersAnAnalysisEvent()
-        {
-            LogEvent(SnykAnalyticsService.UserTriggersAnAnalysis, new Properties() {
+        public void LogUserTriggersAnAnalysisEvent() 
+            => LogEvent(SnykAnalyticsService.UserTriggersAnAnalysis, new Properties()
+            {
                 { "selectedProducts", "Snyk Open Source" }
             });
-        }
 
-        public void LogUserSeesAnIssueEvent(string id, string severity)
-        {
-            LogEvent(SnykAnalyticsService.UserSeesAnIssue, new Properties()
+        public void LogUserSeesAnIssueEvent(string id, string severity) 
+            => LogEvent(SnykAnalyticsService.UserSeesAnIssue, new Properties()
             {
                 {
                     "issueDetails", new Properties()
@@ -136,29 +119,18 @@ namespace Snyk.VisualStudio.Extension.SnykAnalytics
                     }
                 }
             });
-        }
 
         private void Identify()
         {
-            Logger.LogInformation("Enter Identify.");
+            if (Disabled) return;
 
-            Execute(() =>
-            {
-                if (!AnalyticsEnabled) return;
-
-                analyticsClient?.Identify(anonymousUserId, new Traits());
-            });
-
-            Logger.LogInformation("Leave Identify.");
+            analyticsClient?.Identify(anonymousUserId, new Traits());
         }
 
         private void Alias(string userId)
-        {
-            Logger.LogInformation("Enter Alias.");
-
-            Execute(() =>
+            => Execute(() =>
             {
-                if (!AnalyticsEnabled) return;
+                if (Disabled) return;
 
                 if (String.IsNullOrEmpty(userId))
                 {
@@ -172,16 +144,10 @@ namespace Snyk.VisualStudio.Extension.SnykAnalytics
                 analyticsClient?.Alias(anonymousUserId, userId);
             });
 
-            Logger.LogInformation("Leave Alias.");
-        }
-
         private void LogEvent(string eventName, Properties properties)
-        {
-            Logger.LogInformation("Enter LogEvent.");            
-
-            Execute(() =>
+            => Execute(() =>
             {
-                if (!AnalyticsEnabled) return;
+                if (Disabled) return;
 
                 string userId = String.IsNullOrEmpty(UserId) ? anonymousUserId : UserId;
 
@@ -190,13 +156,8 @@ namespace Snyk.VisualStudio.Extension.SnykAnalytics
                 analyticsClient?.Track(userId, eventName, properties);
             });
 
-            Logger.LogInformation("Leave LogEvent.");
-        }
-
         private SnykUser GetSnykUser(string token)
         {
-            Logger.LogInformation("Enter GetSnykUser.");
-
             using (var webClient = new SnykWebClient())
             {
                 webClient.Headers.Add("Authorization", $"token {token}");
@@ -205,11 +166,13 @@ namespace Snyk.VisualStudio.Extension.SnykAnalytics
 
                 string userInfoJson = webClient.DownloadString(SnykUserMeUrl);
 
-                Logger.LogInformation("Leave GetSnykUser and convert to SnykUser.");
-
                 return JsonConvert.DeserializeObject<SnykUser>(userInfoJson);
             }
         }
+
+        private bool Enabled => AnalyticsEnabled && analyticsInitialized;
+
+        private bool Disabled => !Enabled;
 
         private void Execute(Action method)
         {

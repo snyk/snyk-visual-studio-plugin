@@ -12,7 +12,7 @@ namespace Snyk.VisualStudio.Extension.Settings
         private ISnykServiceProvider serviceProvider;
 
         private SnykGeneralSettingsUserControl generalSettingsUserControl;
-
+        
         protected override IWin32Window Window => GeneralSettingsUserControl;
 
         public ISnykServiceProvider ServiceProvider
@@ -26,6 +26,8 @@ namespace Snyk.VisualStudio.Extension.Settings
         public void Initialize(ISnykServiceProvider provider)
         {
             this.serviceProvider = provider;
+
+            var settingsService = serviceProvider.SolutionService.SolutionSettingsService;
         }
 
         public void Authenticate(Action<string> successCallbackAction, Action<string> errorCallbackAction)
@@ -39,7 +41,29 @@ namespace Snyk.VisualStudio.Extension.Settings
 
         public bool IgnoreUnknownCA { get; set; }
 
-        public bool UsageAnalyticsEnabled { get; set; }
+        public bool UsageAnalyticsEnabled
+        {
+            get
+            {
+                var settingsService = serviceProvider.SolutionService.SolutionSettingsService;
+
+                return settingsService.GetUsageAnalyticsEnabled();
+            }
+
+            set
+            {
+                try
+                {
+                    var settingsService = serviceProvider.SolutionService.SolutionSettingsService;
+
+                    settingsService.SaveUsageAnalyticsEnabled(value);
+                }
+                catch (Exception exception)
+                {
+                    serviceProvider?.ActivityLogger?.LogError(exception.Message);    
+                }
+            }
+        }
 
         public string AdditionalOptions
         {

@@ -320,7 +320,7 @@ namespace Snyk.VisualStudio.Extension.Settings
 
         private void usageAnalyticsCheckBox_CheckedChanged(object sender, EventArgs e)
         {
-            optionsDialogPage.UsageAnalyticsEnabled = ignoreUnknownCACheckBox.Checked;
+            optionsDialogPage.UsageAnalyticsEnabled = usageAnalyticsCheckBox.Checked;
 
             optionsDialogPage.ServiceProvider.AnalyticsService.AnalyticsEnabled = usageAnalyticsCheckBox.Checked;
 
