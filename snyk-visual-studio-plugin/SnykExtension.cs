@@ -15,22 +15,29 @@ namespace Snyk.VisualStudio.Extension
         {
             if (version == null)
             {
-                string extensionPath = GetExtensionDirectoryPath();
-                
-                string manifestPath = Path.Combine(extensionPath, "extension.vsixmanifest");
-
-                var xmlDocument = new XmlDocument();
-                xmlDocument.Load(manifestPath);
-
-                if (xmlDocument.DocumentElement == null || xmlDocument.DocumentElement.Name != "PackageManifest")
+                try
                 {
-                    return "UNKNOWN";
+                    string extensionPath = GetExtensionDirectoryPath();
+
+                    string manifestPath = Path.Combine(extensionPath, "extension.vsixmanifest");
+
+                    var xmlDocument = new XmlDocument();
+                    xmlDocument.Load(manifestPath);
+
+                    if (xmlDocument.DocumentElement == null || xmlDocument.DocumentElement.Name != "PackageManifest")
+                    {
+                        return "UNKNOWN";
+                    }
+
+                    var metaData = xmlDocument.DocumentElement.ChildNodes.Cast<XmlElement>().First(x => x.Name == "Metadata");
+                    var identity = metaData.ChildNodes.Cast<XmlElement>().First(x => x.Name == "Identity");
+
+                    version = identity.GetAttribute("Version");
                 }
-
-                var metaData = xmlDocument.DocumentElement.ChildNodes.Cast<XmlElement>().First(x => x.Name == "Metadata");
-                var identity = metaData.ChildNodes.Cast<XmlElement>().First(x => x.Name == "Identity");
-
-                version = identity.GetAttribute("Version");
+                catch (Exception exception)
+                {
+                    Console.WriteLine(exception.Message);
+                }                
             }            
 
             return version;

@@ -147,11 +147,26 @@ namespace Snyk.VisualStudio.Extension.Tests
                     IgnoreUnknownCA = true,
                     Organization = "test-snyk-organization",
                     AdditionalOptions = "--ignore-policy",
-                    IsScanAllProjects = true
+                    IsScanAllProjects = true,
+                    UsageAnalyticsEnabled = false
                 }
             };
 
-            Assert.AreEqual("--json test --api=https://github.com/snyk/ --insecure --org=test-snyk-organization --ignore-policy --all-projects", cli.BuildArguments());
+            Assert.AreEqual("--json test --api=https://github.com/snyk/ --insecure --org=test-snyk-organization --ignore-policy --all-projects --DISABLE_ANALYTICS", cli.BuildArguments());
+        }
+
+        [TestMethod]
+        public void BuildArguments_WithDisableAnalytics()
+        {
+            var cli = new SnykCli
+            {
+                Options = new SnykMockOptions()
+                {
+                    UsageAnalyticsEnabled = false
+                }
+            };
+
+            Assert.AreEqual("--json test --DISABLE_ANALYTICS", cli.BuildArguments());
         }
 
         [TestMethod]
@@ -313,6 +328,7 @@ namespace Snyk.VisualStudio.Extension.Tests
         private bool ignoreUnknownCA = false;
         private string additionalOptions = "";
         private bool isScanAllProjects = false;
+        private bool usageAnalyticsEnabled = true;
 
         public SnykMockOptions() { }
 
@@ -405,7 +421,18 @@ namespace Snyk.VisualStudio.Extension.Tests
             }
         }
 
-        public bool UsageAnalyticsEnabled { get; set; }
+        public bool UsageAnalyticsEnabled
+        {
+            get
+            {
+                return usageAnalyticsEnabled;
+            }
+
+            set
+            {
+                usageAnalyticsEnabled = value;
+            }
+        }
 
         public void Authenticate(Action<string> successCallbackAction, Action<string> errorCallbackAction)
         {
