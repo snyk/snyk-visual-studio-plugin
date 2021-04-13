@@ -20,8 +20,6 @@ namespace Snyk.VisualStudio.Extension.UI
     using Microsoft.VisualStudio;
     using Task = System.Threading.Tasks.Task;
     using Snyk.VisualStudio.Extension.Service;
-    using Snyk.VisualStudio.Extension.SnykAnalytics;
-    using Segment.Model;
 
     /// <summary>
     /// Interaction logic for SnykToolWindowControl.
@@ -44,7 +42,6 @@ namespace Snyk.VisualStudio.Extension.UI
             this.InitializeComponent();
 
             this.context = new ToolWindowContext(this, RunScanState.Instance);
-            //DisableAllActions();
         }
 
         public async Task InitializeEventListenersAsync(ISnykServiceProvider serviceProvider)
