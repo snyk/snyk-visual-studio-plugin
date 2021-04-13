@@ -436,7 +436,7 @@ namespace Snyk.VisualStudio.Extension.UI
 
             Action<string> errorCallbackAction = (error) =>
             {
-                Dispatcher.Invoke(() =>
+                /**Dispatcher.Invoke(() =>
                 {
                     connectVSToSnykLink.IsEnabled = true;
 
@@ -447,8 +447,17 @@ namespace Snyk.VisualStudio.Extension.UI
                 {
                     Message = error
                 };
+                
+                context.TransitionTo(ErrorState.Instance(cliError));**/
 
-                context.TransitionTo(ErrorState.Instance(cliError));
+                Dispatcher.Invoke(() =>
+                {
+                    connectVSToSnykLink.IsEnabled = true;
+
+                    connectVSToSnykProgressBar.Visibility = Visibility.Collapsed;
+                });
+
+                context.TransitionTo(OverviewState.Instance);
             };
 
             Dispatcher.Invoke(() =>
