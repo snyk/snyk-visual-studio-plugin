@@ -42,46 +42,7 @@ namespace Snyk.VisualStudio.Extension.UI
             this.InitializeComponent();
 
             this.context = new ToolWindowContext(this, RunScanState.Instance);
-        }
-
-        public async Task InitializeEventListenersAsync(ISnykServiceProvider serviceProvider)
-        {
-            this.serviceProvider = serviceProvider;
-
-            SnykActivityLogger logger = serviceProvider.ActivityLogger;
-
-            logger.LogInformation("Enter InitializeEventListenersAsync() method.");
-
-            logger.LogInformation("Initialize Solultion Event Listeners");
-
-            await serviceProvider.Package.JoinableTaskFactory.SwitchToMainThreadAsync();
-
-            SnykSolutionService solutionService = serviceProvider.SolutionService;
-
-            //solutionService.SolutionEvents.AfterBackgroundSolutionLoadComplete += OnAfterBackgroundSolutionLoadComplete;
-            solutionService.SolutionEvents.AfterCloseSolution += OnAfterCloseSolution;
-
-            logger.LogInformation("Initialize CLI Event Listeners");
-
-            SnykTasksService tasksService = serviceProvider.TasksService;
-
-            tasksService.ScanError += OnDisplayError;
-            tasksService.ScanningCancelled += OnScanningCancelled;
-            tasksService.ScanningStarted += OnScanningStarted;
-            tasksService.ScanningUpdate += OnScanningUpdate;
-            tasksService.ScanningFinished += OnScanningFinished;
-
-            logger.LogInformation("Initialize Download Event Listeners");
-
-            tasksService.DownloadStarted += OnDownloadStarted;
-            tasksService.DownloadFinished += OnDownloadFinished;
-            tasksService.DownloadUpdate += OnDownloadUpdate;
-            tasksService.DownloadCancelled += OnDownloadCancelled;
-
-            serviceProvider.VsThemeService.ThemeChanged += OnVsThemeChanged;
-
-            logger.LogInformation("Leave InitializeEventListenersAsync() method.");
-        }
+        }        
 
         public void InitializeEventListeners(ISnykServiceProvider serviceProvider)
         {
@@ -95,7 +56,6 @@ namespace Snyk.VisualStudio.Extension.UI
 
             SnykSolutionService solutionService = serviceProvider.SolutionService;
 
-            //solutionService.SolutionEvents.AfterBackgroundSolutionLoadComplete += OnAfterBackgroundSolutionLoadComplete;
             solutionService.SolutionEvents.AfterCloseSolution += OnAfterCloseSolution;
 
             logger.LogInformation("Initialize CLI Event Listeners");
