@@ -38,9 +38,13 @@ namespace Snyk.VisualStudio.Extension.SnykAnalytics
         public void Initialize()
         {
             try
-            {                
+            {
+                string extensionPath = SnykExtension.GetExtensionDirectoryPath();
+
+                string appsettingsPath = Path.Combine(extensionPath, "appsettings.json");
+
                 SnykAppSettings appSettings = JsonConvert
-                    .DeserializeObject<SnykAppSettings>(File.ReadAllText("appsettings.json", Encoding.UTF8));
+                    .DeserializeObject<SnykAppSettings>(File.ReadAllText(appsettingsPath, Encoding.UTF8));
 
                 string writeKey = appSettings.SegmentAnalyticsWriteKey;
 

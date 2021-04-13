@@ -1,7 +1,5 @@
 ﻿using Microsoft.VisualStudio.Shell;
-using Segment.Model;
 using Snyk.VisualStudio.Extension.Service;
-using Snyk.VisualStudio.Extension.SnykAnalytics;
 using System;
 using System.Threading;
 using System.Threading.Tasks;

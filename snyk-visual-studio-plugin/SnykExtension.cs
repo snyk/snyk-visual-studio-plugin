@@ -43,7 +43,7 @@ namespace Snyk.VisualStudio.Extension
             return version;
         }
 
-        private static string GetExtensionDirectoryPath()
+        public static string GetExtensionDirectoryPath()
         {
             string codebase = typeof(SnykVSPackage).Assembly.CodeBase;
 
