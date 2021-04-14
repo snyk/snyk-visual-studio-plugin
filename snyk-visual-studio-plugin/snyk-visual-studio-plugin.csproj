@@ -12,6 +12,9 @@
     <TargetFrameworkProfile />
   </PropertyGroup>
   <PropertyGroup>
+    <AppSettingsFile>appsettings.json</AppSettingsFile>
+  </PropertyGroup>
+  <PropertyGroup>
     <StartAction>Program</StartAction>
     <StartProgram>$(DevEnvDir)devenv.exe</StartProgram>
     <StartArguments>/rootsuffix Exp</StartArguments>
@@ -395,6 +398,11 @@
   <ItemGroup />
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <Import Project="$(VSToolsPath)\VSSDK\Microsoft.VsSDK.targets" Condition="'$(VSToolsPath)' != ''" />
+  <Target Name="WriteAppSettingsFile" BeforeTargets="PreBuildEvent">
+    <WriteLinesToFile File="$(AppSettingsFile)" Overwrite="true" Lines="{" />
+    <WriteLinesToFile File="$(AppSettingsFile)" Lines="'SegmentAnalyticsWriteKey':'$(SEGMENT_ANALYTICS_WRITE_KEY)'" />
+    <WriteLinesToFile File="$(AppSettingsFile)" Lines="}" />
+  </Target>
   <Target Name="EnsureNuGetPackageBuildImports" BeforeTargets="PrepareForBuild">
     <PropertyGroup>
       <ErrorText>This project references NuGet package(s) that are missing on this computer. Use NuGet Package Restore to download them.  For more information, see http://go.microsoft.com/fwlink/?LinkID=322105. The missing file is {0}.</ErrorText>
