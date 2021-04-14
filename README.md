@@ -1,0 +1,1 @@
+# snyk-visual-studio-plugin
