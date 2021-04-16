@@ -32,23 +32,23 @@ Snyk’s Vulnerability Scanner helps you find and fix security vulnerabilities i
 
 **Step 2.4.2.** Or open Visual Studio Options to go to the General Settings of the Snyk extension. 
 
-![Authenticate from Options](./doc/images/readme_image_2_5.PNG "Authenticate from Options")
+![Authenticate from Options](https://github.com/snyk/snyk-visual-studio-plugin/blob/feat/tree-view/doc/images/readme_image_2_5.png "Authenticate from Options")
 
 **Step 2.5.** Authentication can be triggered by pressing the “Authenticate” button. If for some reason the automated way doesn’t work or input user API token by hand.
 
 * If, however, the automated authentication doesn’t work for some reason, please reach out to us. We would be happy to investigate!
 
-![Authenticate button or enter API token](./doc/images/readme_image_2_6.PNG "Authenticate button or enter API token")
+![Authenticate button or enter API token](https://github.com/snyk/snyk-visual-studio-plugin/blob/feat/tree-view/doc/images/readme_image_2_6.png "Authenticate button or enter API token")
 
 **Step 2.6.** You will be taken to the website to verify your identity and connect the IDE extension.  Click the Authenticate button.
 
-![Authenticate on webseite](./doc/images/readme_image_2_7.PNG "Authenticate on webseite")
+![Authenticate on webseite](https://github.com/snyk/snyk-visual-studio-plugin/blob/feat/tree-view/doc/images/readme_image_2_7.png "Authenticate on webseite")
 
 **Step 2.7.** You will be taken to the website to verify your identity and connect the IDE extension.  Click the **Authenticate** button.
 
 * Once the authentication has been confirmed, please feel free to close the browser and go back to the IDE extension. The Token field should have been populated with the authentication token. With that the authentication part should be done!
 
-![Authentication finished](./doc/images/readme_image_2_8.PNG "Authentication finished")
+![Authentication finished](https://github.com/snyk/snyk-visual-studio-plugin/blob/feat/tree-view/doc/images/readme_image_2_8.png "Authentication finished")
 
 #### 3. How to use the extension?
 
@@ -60,25 +60,25 @@ Snyk’s Vulnerability Scanner helps you find and fix security vulnerabilities i
 * Note that your solution will have to successfully build in order to allow the CLI to pick up the dependencies (and find the vulnerabilities).
 * If you see only NPM vulnerabilities or vulnerabilities that are not related to your C#/.NET projects, that might mean your project is not built successfully and wasn’t detected by the CLI. Feel free to reach out to us (contacts at the end of the document) if you think something is not as expected, we are happy to help or clarify something for you.
 
-![Run scan](./doc/images/readme_image_3_1_1.PNG "Run scan")
+![Run scan](https://github.com/snyk/snyk-visual-studio-plugin/blob/feat/tree-view/doc/images/readme_image_3_1_1.png "Run scan")
 
-![Scan results](./doc/images/readme_image_3_1_2.PNG "Scan results")
+![Scan results](https://github.com/snyk/snyk-visual-studio-plugin/blob/feat/tree-view/doc/images/readme_image_3_1_2.png "Scan results")
 
 **Step 3.2.** You could filter vulnerabilities by name or by severity.
 
 * Filter by name by typing the name of the vulnerability in the search bar.
 
-![Filter by name](./doc/images/readme_image_3_2_1.PNG "Filter by name")
+![Filter by name](https://github.com/snyk/snyk-visual-studio-plugin/blob/feat/tree-view/doc/images/readme_image_3_2_1.png "Filter by name")
  
 * Filter by severity by selecting one or more of the the severities when you open the search bar filter.
 
-![Scan results](./doc/images/readme_image_3_2_2.PNG "Scan results")
+![Scan results](https://github.com/snyk/snyk-visual-studio-plugin/blob/feat/tree-view/doc/images/readme_image_3_2_2.png "Scan results")
 
 **Step 3.3.** Users could configure Snyk extension by Project settings. 
 
 * Note that the “Scan all projects” option is enabled  by default. It adds --all-projects option for Snyk CLI. This option scans all projects by default.
 
-![Project additional configuraton options](./doc/images/readme_image_3_3.PNG "Project additional configuraton options")
+![Project additional configuraton options](https://github.com/snyk/snyk-visual-studio-plugin/blob/feat/tree-view/doc/images/readme_image_3_3.png "Project additional configuraton options")
 
 #### 4. Known Caveats
 
@@ -86,7 +86,7 @@ Snyk’s Vulnerability Scanner helps you find and fix security vulnerabilities i
 
 **Solution** Open Visual Studio Options to go to the Project Settings of the Snyk extension and check Scan all projects. 
 
-![Scan all projects option](./doc/images/readme_image_4_1.PNG "Scan all projects option")
+![Scan all projects option](https://github.com/snyk/snyk-visual-studio-plugin/blob/feat/tree-view/doc/images/readme_image_4_1.png "Scan all projects option")
 
 #### 5. Contacts
 
