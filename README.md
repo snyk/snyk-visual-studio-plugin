@@ -20,15 +20,15 @@ Snyk’s Vulnerability Scanner helps you find and fix security vulnerabilities i
 
 **Step 2.2.** Once installed, open the Snyk tool window by going to View > Other Windows as shown in the screenshot below.
 
-![Snyk Toolwindow menu item](./doc/images/readme_image_2_2.PNG "Snyk Toolwindow menu item")
+![Snyk Toolwindow menu item](https://github.com/snyk/snyk-visual-studio-plugin/blob/feat/tree-view/doc/images/readme_image_2_2.png "Snyk Toolwindow menu item")
 
 **Step 2.3.** Once the tool window appears, wait while Snyk extension downloads the latest Snyk CLI version.
 
-![Snyk CLI download](./doc/images/readme_image_2_3.PNG "Snyk CLI download")
+![Snyk CLI download](https://github.com/snyk/snyk-visual-studio-plugin/blob/feat/tree-view/doc/images/readme_image_2_3.png "Snyk CLI download")
 
 **Step 2.4.1.** By now you should have the extension installed and the Snyk CLI downloaded. Time to authenticate. The first way is to click "Connect Visual Studio to Snyk" link.
 
-![Authenticate from overview panel](./doc/images/readme_image_2_4.PNG "Authenticate from overview panel")
+![Authenticate from overview panel](https://github.com/snyk/snyk-visual-studio-plugin/blob/feat/tree-view/doc/images/readme_image_2_4.png "Authenticate from overview panel")
 
 **Step 2.4.2.** Or open Visual Studio Options to go to the General Settings of the Snyk extension. 
 
