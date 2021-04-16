@@ -16,7 +16,7 @@ Snyk’s Vulnerability Scanner helps you find and fix security vulnerabilities i
 
 **Step 2.1.** Double click on VSIX file and install the extension on the Visual Studio of choice. Select all the versions of Visual Studio on which you want to install Snyk extension (Extension can be installed on all Visual Studio versions at once). 
 
-![Vsix install](/doc/images/readme_image_2_1.PNG "Vsix install")
+![Vsix install](https://github.com/snyk/snyk-visual-studio-plugin/blob/feat/tree-view/doc/images/readme_image_2_1.png "Vsix install")
 
 **Step 2.2.** Once installed, open the Snyk tool window by going to View > Other Windows as shown in the screenshot below.
 
