@@ -1,4 +1,4 @@
-name: MSBuild
+name: nightly-build 
 
 on: [push, pull_request]
 
@@ -9,7 +9,7 @@ env:
   # Configuration type to build.
   # You can convert this to a build matrix if you need coverage of multiple configuration types.
   # https://docs.github.com/actions/learn-github-actions/managing-complex-workflows#using-a-build-matrix
-  DEFAULT_BRANCH: feat/tree-view
+  DEFAULT_BRANCH: feat/nightly-build
 
 jobs:
   build:
@@ -27,11 +27,28 @@ jobs:
       working-directory: ${{env.GITHUB_WORKSPACE}}
       run: nuget restore ${{env.SOLUTION_FILE_PATH}}
 
+    - name: Download ExtensionScripts
+      run: (new-object Net.WebClient).DownloadString("https://raw.github.com/madskristensen/ExtensionScripts/master/AppVeyor/vsix.ps1") | iex
+      shell: powershell
+      
+    - name: Update Vsix version
+      run: Vsix-IncrementVsixVersion | Vsix-UpdateBuildVersion
+      shell: powershell
+
+    - name: Vsix-TokenReplacement
+      run: Vsix-TokenReplacement src\source.extension.cs 'Version = "([0-9\\.]+)"' 'Version = "{version}"'
+      shell: powershell
+
     - name: Build
       working-directory: ${{env.GITHUB_WORKSPACE}}
       # Add additional options to the MSBuild command line here (like platform or verbosity level).
       # See https://docs.microsoft.com/visualstudio/msbuild/msbuild-command-line-reference
-      run: msbuild ${{env.SOLUTION_FILE_PATH}} /p:DeployExtension=false
-    #- name: Tests
+      run: msbuild ${{env.SOLUTION_FILE_PATH}} /p:configuration=Release /p:DeployExtension=false /p:ZipPackageCompressionLevel=normal /v:m
+      
+    - name: Publish Vsix to gallery
+      run: Vsix-PushArtifacts | Vsix-PublishToGallery
+      shell: powershell
+  
+  #- name: Tests
       #working-directory: ${{env.GITHUB_WORKSPACE}}      
       #run: msbuild ${{env.SOLUTION_FILE_PATH}}\snyk-visual-studio-plugin-tests\snyk-visual-studio-plugin-tests.csproj -t:Tests
