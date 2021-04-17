@@ -22,7 +22,7 @@ jobs:
       working-directory: ${{env.GITHUB_WORKSPACE}}
       run: nuget restore ${{env.SOLUTION_FILE_PATH}}
 
-    - name: Build Vsix
+    - name: Build
       working-directory: ${{env.GITHUB_WORKSPACE}}
       run: |
         (new-object Net.WebClient).DownloadString("https://raw.github.com/madskristensen/ExtensionScripts/master/AppVeyor/vsix.ps1") | iex
