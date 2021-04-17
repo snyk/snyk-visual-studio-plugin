@@ -27,12 +27,10 @@ jobs:
       working-directory: ${{env.GITHUB_WORKSPACE}}
       run: nuget restore ${{env.SOLUTION_FILE_PATH}}
 
-    - name: Download ExtensionScripts
-      run: (new-object Net.WebClient).DownloadString("https://raw.github.com/madskristensen/ExtensionScripts/master/AppVeyor/vsix.ps1") | iex
-      shell: powershell
-      
-    - name: Update Vsix version
-      run: Vsix-IncrementVsixVersion | Vsix-UpdateBuildVersion
+    - name: Download ExtensionScripts and execute Vsix-IncrementVsixVersion
+      run: |
+        (new-object Net.WebClient).DownloadString("https://raw.github.com/madskristensen/ExtensionScripts/master/AppVeyor/vsix.ps1") | iex
+        Vsix-IncrementVsixVersion | Vsix-UpdateBuildVersion
       shell: powershell
 
     - name: Vsix-TokenReplacement
