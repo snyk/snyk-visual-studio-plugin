@@ -136,7 +136,7 @@
   <Target Name="BeforeBuild" DependsOnTargets="Clean">
     <MakeDir Directories="$(BuildDirectoryPath)" Condition="!Exists('$(BuildDirectoryPath)')" />
   </Target>
-  <Target Name="Tests" DependsOnTargets="Clean;Build">
+  <Target Name="Tests" DependsOnTargets="AfterBuild">
     <PropertyGroup>
       <TestSuccessOrNot>1</TestSuccessOrNot>
     </PropertyGroup>
