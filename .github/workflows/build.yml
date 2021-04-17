@@ -3,12 +3,7 @@ name: nightly-build
 on: [push, pull_request]
 
 env:
-  # Path to the solution file relative to the root of the project.
   SOLUTION_FILE_PATH: .
-
-  # Configuration type to build.
-  # You can convert this to a build matrix if you need coverage of multiple configuration types.
-  # https://docs.github.com/actions/learn-github-actions/managing-complex-workflows#using-a-build-matrix
   DEFAULT_BRANCH: feat/nightly-build
 
 jobs:
@@ -27,26 +22,12 @@ jobs:
       working-directory: ${{env.GITHUB_WORKSPACE}}
       run: nuget restore ${{env.SOLUTION_FILE_PATH}}
 
-    - name: Download ExtensionScripts and execute Vsix-IncrementVsixVersion
+    - name: Build Vsix
+      working-directory: ${{env.GITHUB_WORKSPACE}}
       run: |
         (new-object Net.WebClient).DownloadString("https://raw.github.com/madskristensen/ExtensionScripts/master/AppVeyor/vsix.ps1") | iex
         Vsix-IncrementVsixVersion | Vsix-UpdateBuildVersion
+        Vsix-TokenReplacement src\source.extension.cs 'Version = "([0-9\\.]+)"' 'Version = "{version}"'
+        msbuild ${{env.SOLUTION_FILE_PATH}} /p:configuration=Release /p:DeployExtension=false /p:ZipPackageCompressionLevel=normal /v:m
+        Vsix-PushArtifacts | Vsix-PublishToGallery
       shell: powershell
-
-    - name: Vsix-TokenReplacement
-      run: Vsix-TokenReplacement src\source.extension.cs 'Version = "([0-9\\.]+)"' 'Version = "{version}"'
-      shell: powershell
-
-    - name: Build
-      working-directory: ${{env.GITHUB_WORKSPACE}}
-      # Add additional options to the MSBuild command line here (like platform or verbosity level).
-      # See https://docs.microsoft.com/visualstudio/msbuild/msbuild-command-line-reference
-      run: msbuild ${{env.SOLUTION_FILE_PATH}} /p:configuration=Release /p:DeployExtension=false /p:ZipPackageCompressionLevel=normal /v:m
-      
-    - name: Publish Vsix to gallery
-      run: Vsix-PushArtifacts | Vsix-PublishToGallery
-      shell: powershell
-  
-  #- name: Tests
-      #working-directory: ${{env.GITHUB_WORKSPACE}}      
-      #run: msbuild ${{env.SOLUTION_FILE_PATH}}\snyk-visual-studio-plugin-tests\snyk-visual-studio-plugin-tests.csproj -t:Tests
