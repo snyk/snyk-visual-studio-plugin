@@ -4,7 +4,7 @@
         <Identity Id="snyk_visual_studio_plugin.154948da-e3ba-45ce-9bee-9688a7e30462" Version="0.1.1" Language="en-US" Publisher="Snyk" />
         <DisplayName>Snyk Vulnerability Scanner</DisplayName>
         <Description xml:space="preserve">Snyk Vulnerability Scanner</Description>
-        <MoreInfo>https://github.com/snyk/snyk-visual-studio-plugin/</MoreInfo>
+        <MoreInfo>https://github.com/aldanchenko/snyk-visual-studio-description/</MoreInfo>
         <License>LICENSE.txt</License>
         <Icon>Resources\SnykDogLogo.png</Icon>
         <PreviewImage>Resources\SnykDogLogo.png</PreviewImage>
