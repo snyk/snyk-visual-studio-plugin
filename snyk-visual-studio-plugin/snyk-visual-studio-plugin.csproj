@@ -26,7 +26,8 @@
     <AssemblyOriginatorKeyFile>Key.snk</AssemblyOriginatorKeyFile>
   </PropertyGroup>
   <PropertyGroup>
-    <ApplicationIcon>SnykPackage.ico</ApplicationIcon>
+    <ApplicationIcon>
+    </ApplicationIcon>
   </PropertyGroup>
   <PropertyGroup>
     <DelaySign>false</DelaySign>
@@ -181,6 +182,10 @@
     <Resource Include="Resources\OpenSourceSecurity.png" />
     <Resource Include="Resources\OpenSourceSecurityDark.png" />
     <Resource Include="Resources\SnykLogo.png" />
+    <Content Include="Resources\SnykDogLogo.png">
+      <IncludeInVSIX>true</IncludeInVSIX>
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
     <Content Include="Resources\SnykRunScanCommand.png" />
     <Content Include="Resources\SnykToolWindow.ico" />
     <Content Include="Resources\SnykToolWindowCommand.png" />
@@ -194,14 +199,6 @@
     </Content>
     <Resource Include="Resources\Stop.png" />
     <Resource Include="Resources\StopDisabled.png" />
-    <Content Include="SnykLogo.ico">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-      <IncludeInVSIX>true</IncludeInVSIX>
-    </Content>
-    <Content Include="SnykPackage.ico">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-      <IncludeInVSIX>true</IncludeInVSIX>
-    </Content>
     <Content Include="stylesheet.css" />
   </ItemGroup>
   <ItemGroup>
