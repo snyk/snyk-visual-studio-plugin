@@ -8,21 +8,6 @@
              mc:Ignorable="d" 
              d:DesignHeight="300" d:DesignWidth="300">
     <UserControl.Resources>
-        <BitmapImage x:Key="NugetIcon" UriSource="../Resources/NugetLogo.png" DecodePixelWidth="16" DecodePixelHeight="16"/>
-        <BitmapImage x:Key="NpmIcon" UriSource="../Resources/NpmLogo.png" DecodePixelWidth="16" DecodePixelHeight="16"/>
-        <BitmapImage x:Key="JsIcon" UriSource="../Resources/JsLogo.png" DecodePixelWidth="16" DecodePixelHeight="16"/>
-        <BitmapImage x:Key="JavaIcon" UriSource="../Resources/JavaLogo.png" DecodePixelWidth="16" DecodePixelHeight="16"/>
-        <BitmapImage x:Key="PythonIcon" UriSource="../Resources/PythonLogo.png" DecodePixelWidth="16" DecodePixelHeight="16"/>
-        <BitmapImage x:Key="DefaultIcon" UriSource="../Resources/DefaultFileIcon.png" DecodePixelWidth="16" DecodePixelHeight="16"/>
-
-        <BitmapImage x:Key="SeverityHighIcon" UriSource="../Resources/severity_high.png" DecodePixelWidth="16" DecodePixelHeight="16"/>
-        <BitmapImage x:Key="SeverityMediumIcon" UriSource="../Resources/severity_medium.png" DecodePixelWidth="16" DecodePixelHeight="16"/>
-        <BitmapImage x:Key="SeverityLowIcon" UriSource="../Resources/severity_low.png" DecodePixelWidth="16" DecodePixelHeight="16"/>
-
-        <BitmapImage x:Key="OpenSourceSecurityDark" UriSource="../Resources/OpenSourceSecurityDark.png" DecodePixelWidth="16" DecodePixelHeight="16"/>
-        <BitmapImage x:Key="OpenSourceSecurity" UriSource="../Resources/OpenSourceSecurity.png" DecodePixelWidth="16" DecodePixelHeight="16"/>
-
-        <local:SnykImageConverter x:Key="ImageConverter"/>
     </UserControl.Resources>
     <Grid>
         <Grid.RowDefinitions>
@@ -50,7 +35,7 @@
                                         <ColumnDefinition Width="*"/>
                                     </Grid.ColumnDefinitions>
                                     <Grid.RowDefinitions>
-                                        <RowDefinition Height="Auto"/>
+                                        <RowDefinition Height="19"/>
                                         <RowDefinition/>
                                     </Grid.RowDefinitions>
                                     <ToggleButton IsChecked="{Binding IsExpanded, RelativeSource={RelativeSource TemplatedParent}}" ClickMode="Press" Name="Expander">
@@ -183,9 +168,10 @@
             </TreeView.ItemContainerStyle>
             <TreeView.ItemTemplate>
                 <HierarchicalDataTemplate DataType="{x:Type local:VulnerabilityTreeNode}" ItemsSource="{Binding Items}">
-                    <StackPanel Orientation="Horizontal">
-                        <Image x:Name="icon" SnapsToDevicePixels="True" Stretch="None" Margin="0, 0, 5, 0"  
-                               Source="{Binding Icon, Converter={StaticResource ImageConverter}}"/>
+                    <StackPanel Orientation="Horizontal" Height="19">
+                        <Image x:Name="icon" SnapsToDevicePixels="True" Margin="0, 0, 5, 0"  
+                               Width="16" Height="16"
+                               Source="{Binding Icon}"/>
                         <TextBlock Text="{Binding Title}" Foreground="{DynamicResource VsBrush.WindowText}"/>
                     </StackPanel>
                 </HierarchicalDataTemplate>

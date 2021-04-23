@@ -54,9 +54,9 @@ namespace Snyk.VisualStudio.Extension.Settings
             {
                 try
                 {
-                    var settingsService = serviceProvider.SolutionService.SolutionSettingsService;
+                    var settingsService = serviceProvider?.SolutionService.SolutionSettingsService;
 
-                    settingsService.SaveUsageAnalyticsEnabled(value);
+                    settingsService?.SaveUsageAnalyticsEnabled(value);
                 }
                 catch (Exception exception)
                 {

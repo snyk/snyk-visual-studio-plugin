@@ -170,9 +170,6 @@
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
       <IncludeInVSIX>true</IncludeInVSIX>
     </Content>
-    <Resource Include="Resources\severity_high.png" />
-    <Resource Include="Resources\severity_low.png" />
-    <Resource Include="Resources\severity_medium.png" />
     <Resource Include="Resources\Run.png" />
     <Resource Include="Resources\NugetLogo.png" />
     <Resource Include="Resources\CleanData.png" />
@@ -186,10 +183,14 @@
     <Resource Include="Resources\OpenSourceSecurity.png" />
     <Resource Include="Resources\OpenSourceSecurityDark.png" />
     <Resource Include="Resources\SnykLogo.png" />
+    <Resource Include="Resources\SeverityHigh.png" />
+    <Resource Include="Resources\SeverityLow.png" />
+    <Resource Include="Resources\SeverityMedium.png" />
     <Content Include="Resources\SnykDogLogo.png">
       <IncludeInVSIX>true</IncludeInVSIX>
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>
+    <Resource Include="Resources\SnykDogLogoFullSize.png" />
     <Content Include="Resources\SnykRunScanCommand.png" />
     <Content Include="Resources\SnykToolWindow.ico" />
     <Content Include="Resources\SnykToolWindowCommand.png" />

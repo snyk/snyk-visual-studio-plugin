@@ -232,7 +232,7 @@ namespace Snyk.VisualStudio.Extension.UI
             Title = OpenSourceSecurityTitle;
         }
 
-        public override string Icon => SnykIconProvider.OpenSourceSecurity;
+        public override string Icon => SnykIconProvider.OpenSourceSecurityIconPath;
     }
 
     public class SnykImageConverter : IValueConverter
@@ -245,56 +245,56 @@ namespace Snyk.VisualStudio.Extension.UI
 
     class SnykIconProvider
     {
-        public const string OpenSourceSecurity = "OpenSourceSecurity";
-        public const string OpenSourceSecurityDark = "OpenSourceSecurityDark";        
+        public const string OpenSourceSecurityIconPath = "../Resources/OpenSourceSecurity.png";
+        public const string OpenSourceSecurityDarkIconPath = "../Resources/OpenSourceSecurityDark.png";        
 
-        private const string NugetIcon = "NugetIcon";
-        private const string NpmIcon = "NpmIcon";
-        private const string JsIcon = "JsIcon";
-        private const string JavaIcon = "JavaIcon";
-        private const string PythonIcon = "PythonIcon";
-        private const string DefaultIcon = "DefaultIcon";
+        private const string NugetIconPath = "../Resources/NugetLogo.png";
+        private const string NpmIconPath = "../Resources/NpmLogo.png";
+        private const string JsIconPath = "../Resources/JsLogo.png";
+        private const string JavaIconPath = "../Resources/JavaLogo.png";
+        private const string PythonIconPath = "../Resources/PythonLogo.png";
+        private const string DefaultIconPath = "../Resources/DefaultFileIcon.png";
 
-        private const string SeverityHighIcon = "SeverityHighIcon";
-        private const string SeverityMediumIcon = "SeverityMediumIcon";
-        private const string SeverityLowIcon = "SeverityLowIcon";        
+        private const string SeverityHighIconPath = "../Resources/SeverityHigh.png";
+        private const string SeverityMediumIconPath = "../Resources/SeverityMedium.png";
+        private const string SeverityLowIconPath = "../Resources/SeverityLow.png";        
 
         public static string GetPackageManagerIcon(string packageManager)
         {
-            string icon = "";
+            string iconPath = "";
 
             switch (packageManager)
             {
                 case "nuget":
-                    icon = NugetIcon;
+                    iconPath = NugetIconPath;
                     break;
                 case "paket":
-                    icon = NugetIcon;
+                    iconPath = NugetIconPath;
                     break;
                 case "npm":
-                    icon = NpmIcon;
+                    iconPath = NpmIconPath;
                     break;
                 case "yarn":
-                    icon = JsIcon;
+                    iconPath = JsIconPath;
                     break;
                 case "pip":
-                    icon = PythonIcon;
+                    iconPath = PythonIconPath;
                     break;
                 case "yarn-workspace":
-                    icon = JsIcon;
+                    iconPath = JsIconPath;
                     break;
                 case "maven":
-                    icon = JavaIcon;
+                    iconPath = JavaIconPath;
                     break;
                 case "gradle":
-                    icon = JavaIcon;
+                    iconPath = JavaIconPath;
                     break;
                 default:
-                    icon = DefaultIcon;
+                    iconPath = DefaultIconPath;
                     break;
             }
 
-            return icon;
+            return iconPath;
         }
 
         public static string GetSeverityIcon(string severity)
@@ -304,19 +304,19 @@ namespace Snyk.VisualStudio.Extension.UI
             switch (severity)
             {
                 case Severity.High:
-                    icon = SeverityHighIcon;
+                    icon = SeverityHighIconPath;
 
                     break;
                 case Severity.Medium:
-                    icon = SeverityMediumIcon;
+                    icon = SeverityMediumIconPath;
 
                     break;
                 case Severity.Low:
-                    icon = SeverityLowIcon;
+                    icon = SeverityLowIconPath;
 
                     break;
                 default:
-                    icon = DefaultIcon;
+                    icon = DefaultIconPath;
 
                     break;
             }
