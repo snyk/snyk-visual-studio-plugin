@@ -3,9 +3,7 @@
 
 ### Introduction
 
-Snyk’s Vulnerability Scanner helps you find and fix security vulnerabilities in your projects. Within a few seconds, the extension will provide a list of all the different types of issues identified, bucketed into categories, together with actionable fix advice:
-
-* Open Source Security - known vulnerabilities in both the direct and in-direct (transitive) open source dependencies you are pulling into the project.
+Snyk’s Vulnerability Scanner helps you find and fix security vulnerabilities in your projects. Within a few seconds, the extension will provide a list of all the different types of security vulnerabilities identified together with actionable fix advice. Using the engine behind Snyk Open Source Security, we find known vulnerabilities in both the direct and in-direct (transitive) open source dependencies you are pulling into the project.
 
 #### 1. Software requirements
 
