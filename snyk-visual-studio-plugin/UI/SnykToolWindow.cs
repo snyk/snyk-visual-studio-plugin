@@ -16,6 +16,7 @@ namespace Snyk.VisualStudio.Extension.UI
     using System.Collections.Generic;
     using CLI;
     using System.Text;
+    using System.ComponentModel.Design;
 
     /// <summary>
     /// This class implements the tool window exposed by this package and hosts a user control.
@@ -42,6 +43,10 @@ namespace Snyk.VisualStudio.Extension.UI
             // we are not calling Dispose on this object. This is because ToolWindowPane calls Dispose on
             // the object returned by the Content property.
             this.Content = new SnykToolWindowControl(this);
+
+            ToolBar = new CommandID(SnykExtension.Guids.SnykVSPackageCommandSet, SnykExtension.Guids.SnykToolbarId);
+
+            ToolBarLocation = (int)VSTWT_LOCATION.VSTWT_TOP;
         }
         
         public override bool SearchEnabled

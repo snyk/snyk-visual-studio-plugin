@@ -27,56 +27,6 @@
         <Grid.ColumnDefinitions>
             <ColumnDefinition></ColumnDefinition>
         </Grid.ColumnDefinitions>
-        <ToolBar Grid.Row="0" Grid.Column="0" Background="{DynamicResource VsBrush.Window}" Foreground="{DynamicResource VsBrush.WindowText}">
-            <Button Name="runButton" Click="RunButton_Click">
-                <Image>
-                    <Image.Style>
-                        <Style TargetType="{x:Type Image}">
-                            <Style.Triggers>
-                                <Trigger Property="IsEnabled" Value="False">
-                                    <Setter Property="Source" Value="{StaticResource RunDisabledIcon}"/>
-                                    <Setter Property="Opacity" Value="0.5"/>
-                                </Trigger>
-                                <Trigger Property="IsEnabled" Value="True">
-                                    <Setter Property="Source" Value="{StaticResource RunIcon}"/>
-                                </Trigger>
-                            </Style.Triggers>
-                        </Style>
-                    </Image.Style>
-                </Image>
-            </Button>
-            <Button Name="stopButton" Click="StopButton_Click">
-                <Image>
-                    <Image.Style>
-                        <Style TargetType="{x:Type Image}">
-                            <Style.Triggers>
-                                <Trigger Property="IsEnabled" Value="False">
-                                    <Setter Property="Source" Value="{StaticResource StopDisabledIcon}"/>
-                                    <Setter Property="Opacity" Value="0.5"/>
-                                </Trigger>
-                                <Trigger Property="IsEnabled" Value="True">
-                                    <Setter Property="Source" Value="{StaticResource StopIcon}"/>
-                                </Trigger>
-                            </Style.Triggers>
-                        </Style>
-                    </Image.Style>
-                </Image>
-            </Button>
-            <Separator/>
-            <Button Name="cleanButton" Click="cleanButton_Click">
-                <Image Source="{StaticResource CleanIcon}">
-                    <Image.Style>
-                        <Style TargetType="{x:Type Image}">
-                            <Style.Triggers>
-                                <Trigger Property="IsEnabled" Value="False">
-                                    <Setter Property="Opacity" Value="0.5"/>
-                                </Trigger>
-                            </Style.Triggers>
-                        </Style>
-                    </Image.Style>
-                </Image>
-            </Button>
-        </ToolBar>
         <StackPanel Grid.Row="1" Grid.Column="0" Name="progressBarPanel" Visibility="Collapsed" Orientation="Vertical" Margin="1" UseLayoutRounding="False">
             <Grid>
                 <ProgressBar x:Name="progressBar" Minimum="0" Maximum="100" Height="3"/>

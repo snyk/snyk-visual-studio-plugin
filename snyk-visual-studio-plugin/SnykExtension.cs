@@ -51,5 +51,16 @@ namespace Snyk.VisualStudio.Extension
                         
             return Directory.GetParent(uri.LocalPath).FullName;
         }
+
+        public class Guids
+        {
+            public static readonly Guid SnykVSPackageCommandSet = new Guid("{31b6f1bd-8317-4d93-b023-b60f667b9e76}");
+            
+            public const int SnykToolbarId = 0x501;
+            public const int RunScanCommandId = 0x503;
+            public const int StopCommandId = 0x504;
+            public const int CleanCommandId = 0x505;
+            public const int OptionsCommandId = 0x506;
+        }
     }
 }

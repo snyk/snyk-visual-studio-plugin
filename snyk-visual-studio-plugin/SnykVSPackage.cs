@@ -104,9 +104,16 @@ namespace Snyk.VisualStudio.Extension
             new Task(() =>
             {
                 toolWindowControl.InitializeEventListeners(serviceProvider);
-            }).Start();            
+            }).Start();
 
-            logger.LogInformation("Leave SnykVSPackage.InitializeAsync()");
+            logger.LogInformation("Initialize Commands()");
+
+            await Commands.SnykScanCommand.InitializeAsync(this);
+            await Commands.SnykStopCurrentTaskCommand.InitializeAsync(this);
+            await Commands.SnykCleanPanelCommand.InitializeAsync(this);
+
+            logger.LogInformation("Leave SnykVSPackage.InitializeAsync()");                                    
+            await Snyk.VisualStudio.Extension.Commands.SnykOpenSettingsCommand.InitializeAsync(this);
         }
 
         protected override void Dispose(bool disposing)
@@ -131,7 +138,9 @@ namespace Snyk.VisualStudio.Extension
             {
                 return serviceProvider;
             }
-        }      
+        }     
+        
+        public void ShowOptionPage() => ShowOptionPage(typeof(SnykGeneralOptionsDialogPage));
 
         public async Task InitializeToolWindowAsync()
         {
@@ -178,7 +187,9 @@ namespace Snyk.VisualStudio.Extension
             {
                 return generalOptionsDialogPage;
             }
-        }        
+        }
+
+        public SnykToolWindowControl ToolWindowControl => toolWindowControl;
 
         private async Task InitializeGeneralOptionsAsync()
         {
@@ -193,7 +204,7 @@ namespace Snyk.VisualStudio.Extension
                 serviceProvider.ActivityLogger.LogInformation("GeneralOptionsDialogPage not created yet. Call GetDialogPage to create.");
 
                 generalOptionsDialogPage = (SnykGeneralOptionsDialogPage)GetDialogPage(typeof(SnykGeneralOptionsDialogPage));
-
+                
                 generalOptionsDialogPage.LoadSettingsFromStorage();
 
                 serviceProvider.ActivityLogger.LogInformation("Call generalOptionsDialogPage.Initialize()");

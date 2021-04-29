@@ -180,9 +180,9 @@ namespace Snyk.VisualStudio.Extension.UI
         {
             this.Dispatcher.Invoke(() =>
             {
-                runButton.IsEnabled = true;
-                cleanButton.IsEnabled = true;
-                stopButton.IsEnabled = false;
+                //runButton.IsEnabled = true;
+                //cleanButton.IsEnabled = true;
+                //stopButton.IsEnabled = false;
 
                 runScanLink.IsEnabled = true;
             });
@@ -192,9 +192,9 @@ namespace Snyk.VisualStudio.Extension.UI
         {
             this.Dispatcher.Invoke(() =>
             {
-                runButton.IsEnabled = false;
-                cleanButton.IsEnabled = false;
-                stopButton.IsEnabled = true;
+                //runButton.IsEnabled = false;
+                //cleanButton.IsEnabled = false;
+                //stopButton.IsEnabled = true;
 
                 runScanLink.IsEnabled = false;
             });
@@ -204,9 +204,9 @@ namespace Snyk.VisualStudio.Extension.UI
         {
             this.Dispatcher.Invoke(() =>
             {
-                runButton.IsEnabled = false;
-                cleanButton.IsEnabled = false;
-                stopButton.IsEnabled = false;
+                //runButton.IsEnabled = false;
+                //cleanButton.IsEnabled = false;
+                //stopButton.IsEnabled = false;
 
                 runScanLink.IsEnabled = false;
             });
@@ -335,6 +335,14 @@ namespace Snyk.VisualStudio.Extension.UI
         {
             selectIssueMessageGrid.Visibility = Visibility.Collapsed;
             noIssuesMessageGrid.Visibility = Visibility.Collapsed;
+        }
+
+        public void Clean()
+        {
+            Dispatcher.Invoke(() =>
+            {
+                context.TransitionTo(RunScanState.Instance);
+            });            
         }
 
         private void SetupSeverity(Vulnerability vulnerability)
@@ -630,7 +638,7 @@ namespace Snyk.VisualStudio.Extension.UI
 
                 ToolWindowControl.progressBarPanel.Visibility = Visibility.Collapsed;
 
-                ToolWindowControl.stopButton.IsEnabled = false;
+                //ToolWindowControl.stopButton.IsEnabled = false;
             });
         }
 
@@ -645,7 +653,7 @@ namespace Snyk.VisualStudio.Extension.UI
 
                 ToolWindowControl.progressBarPanel.Visibility = Visibility.Visible;
 
-                ToolWindowControl.stopButton.IsEnabled = true;
+                //ToolWindowControl.stopButton.IsEnabled = true;
             });
         }
     }

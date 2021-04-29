@@ -72,6 +72,10 @@
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
   <ItemGroup>
+    <Compile Include="Commands\SnykCleanPanelCommand.cs" />
+    <Compile Include="Commands\SnykOpenSettingsCommand.cs" />
+    <Compile Include="Commands\SnykScanCommand.cs" />
+    <Compile Include="Commands\SnykStopCurrentTaskCommand.cs" />
     <Compile Include="SnykAnalytics\SnykAnalyticsService.cs" />
     <Compile Include="Microsoft\UI\HtmlRichTextBoxBehavior.cs" />
     <Compile Include="Microsoft\HtmlParser\HtmlCssParser.cs" />
@@ -170,7 +174,9 @@
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
       <IncludeInVSIX>true</IncludeInVSIX>
     </Content>
-    <Resource Include="Resources\Run.png" />
+    <Resource Include="Resources\Run.png">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Resource>
     <Resource Include="Resources\NugetLogo.png" />
     <Resource Include="Resources\CleanData.png" />
     <Resource Include="Resources\RunGrey.png" />
@@ -186,6 +192,7 @@
     <Resource Include="Resources\SeverityHigh.png" />
     <Resource Include="Resources\SeverityLow.png" />
     <Resource Include="Resources\SeverityMedium.png" />
+    <Resource Include="Resources\Settings.png" />
     <Content Include="Resources\SnykDogLogo.png">
       <IncludeInVSIX>true</IncludeInVSIX>
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
