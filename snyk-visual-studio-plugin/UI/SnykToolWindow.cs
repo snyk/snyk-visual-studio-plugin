@@ -48,7 +48,7 @@ namespace Snyk.VisualStudio.Extension.UI
 
             ToolBarLocation = (int)VSTWT_LOCATION.VSTWT_TOP;
         }
-        
+
         public override bool SearchEnabled
         {
             get { return true; }

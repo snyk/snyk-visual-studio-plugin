@@ -41,7 +41,7 @@ namespace Snyk.VisualStudio.Extension.UI
 
             this.InitializeComponent();
 
-            this.context = new ToolWindowContext(this, RunScanState.Instance);
+            this.context = new ToolWindowContext(this);
         }        
 
         public void InitializeEventListeners(ISnykServiceProvider serviceProvider)
@@ -74,6 +74,8 @@ namespace Snyk.VisualStudio.Extension.UI
             tasksService.DownloadFinished += OnDownloadFinished;
             tasksService.DownloadUpdate += OnDownloadUpdate;
             tasksService.DownloadCancelled += OnDownloadCancelled;
+
+            this.Loaded += tasksService.OnUiLoaded;
 
             serviceProvider.VsThemeService.ThemeChanged += OnVsThemeChanged;
 
@@ -341,6 +343,8 @@ namespace Snyk.VisualStudio.Extension.UI
         {
             Dispatcher.Invoke(() =>
             {
+                vulnerabilitiesTree.Clear();
+
                 context.TransitionTo(RunScanState.Instance);
             });            
         }
@@ -388,26 +392,18 @@ namespace Snyk.VisualStudio.Extension.UI
             args.Handled = true;
         }        
 
-        private void RunButton_Click(object sender, RoutedEventArgs e)
-        {
-            SnykTasksService.Instance.Scan();
-        }
+        private void RunButton_Click(object sender, RoutedEventArgs eventArgs) => SnykTasksService.Instance.Scan();
 
-        private void StopButton_Click(object sender, RoutedEventArgs e)
-        {
-            SnykTasksService.Instance.CancelCurrentTask();
-        }
+        private void StopButton_Click(object sender, RoutedEventArgs eventArgs) => SnykTasksService.Instance.CancelCurrentTask();
 
-        private void cleanButton_Click(object sender, RoutedEventArgs e)
-        {
-            context.TransitionTo(RunScanState.Instance);
-        }
+        private void cleanButton_Click(object sender, RoutedEventArgs eventArgs) => context.TransitionTo(RunScanState.Instance);
 
-        private void SnykToolWindow_Loaded(object sender, RoutedEventArgs e)
-        {            
-            serviceProvider.TasksService.Download();
-            
-            SetInitialState();                        
+        private void SnykToolWindow_Loaded(object sender, RoutedEventArgs eventArgs)
+        {
+            if (context.IsEmptyState())
+            {
+                SetInitialState();
+            }            
         }
 
         private void SetInitialState()
@@ -444,20 +440,6 @@ namespace Snyk.VisualStudio.Extension.UI
 
             Action<string> errorCallbackAction = (error) =>
             {
-                /**Dispatcher.Invoke(() =>
-                {
-                    connectVSToSnykLink.IsEnabled = true;
-
-                    connectVSToSnykProgressBar.Visibility = Visibility.Collapsed;
-                });
-
-                var cliError = new CliError()
-                {
-                    Message = error
-                };
-                
-                context.TransitionTo(ErrorState.Instance(cliError));**/
-
                 Dispatcher.Invoke(() =>
                 {
                     connectVSToSnykLink.IsEnabled = true;
@@ -485,11 +467,9 @@ namespace Snyk.VisualStudio.Extension.UI
 
         private ToolWindowState state = EmptyState.Instance;
 
-        public ToolWindowContext(SnykToolWindowControl control, ToolWindowState state)
+        public ToolWindowContext(SnykToolWindowControl control)
         {
             this.toolWindowControl = control;
-
-            this.TransitionTo(state);
         }
 
         public SnykToolWindowControl ToolWindowControl
@@ -515,6 +495,8 @@ namespace Snyk.VisualStudio.Extension.UI
         {
             this.state.DisplayComponents();
         }
+
+        public bool IsEmptyState() => state.GetType() == typeof(EmptyState);
     }
 
     abstract class ToolWindowState

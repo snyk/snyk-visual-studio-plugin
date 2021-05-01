@@ -111,9 +111,9 @@ namespace Snyk.VisualStudio.Extension
             await Commands.SnykScanCommand.InitializeAsync(this);
             await Commands.SnykStopCurrentTaskCommand.InitializeAsync(this);
             await Commands.SnykCleanPanelCommand.InitializeAsync(this);
+            await Commands.SnykOpenSettingsCommand.InitializeAsync(this);
 
-            logger.LogInformation("Leave SnykVSPackage.InitializeAsync()");                                    
-            await Snyk.VisualStudio.Extension.Commands.SnykOpenSettingsCommand.InitializeAsync(this);
+            logger.LogInformation("Leave SnykVSPackage.InitializeAsync()");                                                
         }
 
         protected override void Dispose(bool disposing)

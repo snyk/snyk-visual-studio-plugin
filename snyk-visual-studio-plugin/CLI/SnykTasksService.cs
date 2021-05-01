@@ -3,6 +3,7 @@ using Snyk.VisualStudio.Extension.Service;
 using System;
 using System.Threading;
 using System.Threading.Tasks;
+using System.Windows;
 using static Snyk.VisualStudio.Extension.CLI.SnykCliDownloader;
 using Task = System.Threading.Tasks.Task;
 
@@ -75,6 +76,8 @@ namespace Snyk.VisualStudio.Extension.CLI
                 cli?.ConsoleRunner?.Stop();
             }         
         }
+
+        public void OnUiLoaded(object sender, RoutedEventArgs eventArgs) => Download();
 
         public void Scan()
         {
