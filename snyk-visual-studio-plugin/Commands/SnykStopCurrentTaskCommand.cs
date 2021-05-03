@@ -9,12 +9,9 @@ namespace Snyk.VisualStudio.Extension.Commands
     /// <summary>
     /// Command handler
     /// </summary>
-    internal sealed class SnykStopCurrentTaskCommand
+    internal sealed class SnykStopCurrentTaskCommand : AbstractSnykCommand
     {
-        /// <summary>
-        /// VS Package that provides this command, not null.
-        /// </summary>
-        private readonly AsyncPackage package;
+
 
         /// <summary>
         /// Initializes a new instance of the <see cref="SnykStopCurrentTaskCommand"/> class.
@@ -22,14 +19,8 @@ namespace Snyk.VisualStudio.Extension.Commands
         /// </summary>
         /// <param name="package">Owner package, not null.</param>
         /// <param name="commandService">Command service to add command to, not null.</param>
-        private SnykStopCurrentTaskCommand(AsyncPackage package, OleMenuCommandService commandService)
-        {
-            this.package = package ?? throw new ArgumentNullException(nameof(package));
-            commandService = commandService ?? throw new ArgumentNullException(nameof(commandService));
-
-            var menuCommandID = new CommandID(SnykExtension.Guids.SnykVSPackageCommandSet, SnykExtension.Guids.StopCommandId);
-            var menuItem = new MenuCommand(this.Execute, menuCommandID);
-            commandService.AddCommand(menuItem);
+        private SnykStopCurrentTaskCommand(AsyncPackage package, OleMenuCommandService commandService) : base(package, commandService)
+        {            
         }
 
         /// <summary>
@@ -55,13 +46,8 @@ namespace Snyk.VisualStudio.Extension.Commands
             Instance = new SnykStopCurrentTaskCommand(package, commandService);
         }
 
-        /// <summary>
-        /// This function is the callback used to execute the command when the menu item is clicked.
-        /// See the constructor to see how the menu item is associated with this function using
-        /// OleMenuCommandService service and MenuCommand class.
-        /// </summary>
-        /// <param name="sender">Event sender.</param>
-        /// <param name="e">Event args.</param>
-        private void Execute(object sender, EventArgs e) => SnykTasksService.Instance.CancelCurrentTask();
+        protected override void Execute(object sender, EventArgs eventArgs) => SnykTasksService.Instance.CancelCurrentTask();
+
+        protected override int GetCommandId() => SnykExtension.Guids.StopCommandId;
     }
 }

@@ -72,6 +72,7 @@
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
   <ItemGroup>
+    <Compile Include="Commands\AbstractSnykCommand.cs" />
     <Compile Include="Commands\SnykCleanPanelCommand.cs" />
     <Compile Include="Commands\SnykOpenSettingsCommand.cs" />
     <Compile Include="Commands\SnykScanCommand.cs" />
