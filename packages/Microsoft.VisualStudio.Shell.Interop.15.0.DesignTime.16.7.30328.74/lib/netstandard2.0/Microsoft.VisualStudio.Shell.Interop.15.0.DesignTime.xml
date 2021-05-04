@@ -1,0 +1,543 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<doc>
+  <assembly>
+    <name>Microsoft.VisualStudio.Shell.Interop.15.0.DesignTime</name>
+  </assembly>
+  <members>
+    <member name="M:Microsoft.VisualStudio.Shell.Interop.IComWrapperFactory2.CreateFreeThreadedAggregatedObject(System.Object)">
+      <summary />
+      <param name="managedObject" />
+    </member>
+    <member name="M:Microsoft.VisualStudio.Shell.Interop.IVsDebugger6.IsWindowRegisteredAsFocusPreserving(System.Guid,System.Boolean@)">
+      <summary />
+      <param name="id" />
+      <param name="registered" />
+    </member>
+    <member name="M:Microsoft.VisualStudio.Shell.Interop.IVsDebugger6.RegisterFocusPreservingWindow(System.Guid)">
+      <summary>When the debugger allows the debuggee to resume running the currently focused window is recorded. If the window is registered as focus preserving, it will receive focus when break state is next entered. Otherwise, the text editor receives focus.</summary>
+      <param name="id" />
+    </member>
+    <member name="M:Microsoft.VisualStudio.Shell.Interop.IVsDebugger6.RunToText(Microsoft.VisualStudio.Shell.Interop.VsTextPos[])">
+      <summary />
+      <param name="pTextPos" />
+    </member>
+    <member name="M:Microsoft.VisualStudio.Shell.Interop.IVsDebugger6.UnregisterFocusPreservingWindow(System.Guid)">
+      <summary />
+      <param name="id" />
+    </member>
+    <member name="M:Microsoft.VisualStudio.Shell.Interop.IVsDebugger7.IsENCEnabled(System.Boolean@)">
+      <summary />
+      <param name="pOptionSet" />
+    </member>
+    <member name="M:Microsoft.VisualStudio.Shell.Interop.IVsDebugger7.IsJavaScriptDebuggingOnLaunchEnabled(System.Boolean@)">
+      <summary />
+      <param name="pOptionSet" />
+    </member>
+    <member name="M:Microsoft.VisualStudio.Shell.Interop.IVsEditorFactory3.IsProjectLoadRequired">
+      <summary>Called before creating an instance of the editor factory. Informs the caller if the editor factory requires that the document's project be loaded.</summary>
+      <returns>true if the project needs to be loaded</returns>
+    </member>
+    <member name="M:Microsoft.VisualStudio.Shell.Interop.IVsFileChangeEx2.IgnoreDir(System.String,System.Boolean)">
+      <summary>Ignores or un-ignores changes in a directory and its subdirectories.</summary>
+      <param name="directory">The directory to ignore.</param>
+      <param name="ignore">If true, the directory is ignored; if false, the directory is unignored.</param>
+    </member>
+    <member name="M:Microsoft.VisualStudio.Shell.Interop.IVsFreeThreadedFileChangeEvents.DirectoryChanged(System.String)">
+      <summary />
+      <param name="pszDirectory" />
+    </member>
+    <member name="M:Microsoft.VisualStudio.Shell.Interop.IVsFreeThreadedFileChangeEvents.DirectoryChangedEx(System.String,System.String)">
+      <summary />
+      <param name="pszDirectory">The directory that changed.</param>
+      <param name="pszFile">The file that changed, if known; NULL if unknown.</param>
+    </member>
+    <member name="M:Microsoft.VisualStudio.Shell.Interop.IVsFreeThreadedFileChangeEvents.FilesChanged(System.UInt32,System.String[],System.UInt32[])">
+      <summary />
+      <param name="cChanges" />
+      <param name="rgpszFile" />
+      <param name="rggrfChange" />
+    </member>
+    <member name="M:Microsoft.VisualStudio.Shell.Interop.IVsNavigateToService.ActivateShortcut(System.String,System.Boolean,System.Boolean)">
+      <summary />
+      <param name="wszShortcutName" />
+      <param name="fActivate" />
+      <param name="fClearSearchValue" />
+    </member>
+    <member name="M:Microsoft.VisualStudio.Shell.Interop.IVsNavigateToService.HideWindow">
+      <summary />
+    </member>
+    <member name="M:Microsoft.VisualStudio.Shell.Interop.IVsNavigateToService.IsShortcutActive(System.String)">
+      <summary />
+      <param name="wszShortcutName" />
+    </member>
+    <member name="M:Microsoft.VisualStudio.Shell.Interop.IVsNavigateToService.IsShortcutInstalled(System.String)">
+      <summary />
+      <param name="wszShortcutName" />
+    </member>
+    <member name="M:Microsoft.VisualStudio.Shell.Interop.IVsNavigateToService.IsWindowVisible">
+      <summary />
+    </member>
+    <member name="M:Microsoft.VisualStudio.Shell.Interop.IVsNavigateToService.OnFilterChanged">
+      <summary />
+    </member>
+    <member name="M:Microsoft.VisualStudio.Shell.Interop.IVsNavigateToService.ShowWindowWithShortcut(System.String)">
+      <summary />
+      <param name="wszShortcutName" />
+    </member>
+    <member name="M:Microsoft.VisualStudio.Shell.Interop.IVsProjectClassifierInfo.GetMatcherData(System.UInt32,Microsoft.VisualStudio.Shell.Interop.IVsMatcherDataInfo[],System.UInt32@)">
+      <summary>Return the list of subcategories for the tasks you provide. The task itself will return an index into this list when asked for a subcategory. If cbstr is passed in as zero and rgbstr as NULL, then the provider should set *pcActual to the actual number of BSTRs that need to be returned.</summary>
+      <param name="cbstr" />
+      <param name="bstrMatcherData" />
+      <param name="pcActual" />
+    </member>
+    <member name="M:Microsoft.VisualStudio.Shell.Interop.IVsProjectClassifierInfo.GetPackagesSelectedData(System.UInt32,Microsoft.VisualStudio.Shell.Interop.IVsPackageSelectedInfo[],System.UInt32@)">
+      <summary>Return the list of subcategories for the tasks you provide. The task itself will return an index into this list when asked for a subcategory. If cbstr is passed in as zero and rgbstr as NULL, then the provider should set *pcActual to the actual number of BSTRs that need to be returned.</summary>
+      <param name="cbstr" />
+      <param name="bstrPackageSelectedData" />
+      <param name="pcActual" />
+    </member>
+    <member name="M:Microsoft.VisualStudio.Shell.Interop.IVsProjectSelector.GetProjectFactoryGuid(System.Guid,System.String,System.Guid@)">
+      <summary />
+      <param name="guidProjectType" />
+      <param name="pszFilename" />
+      <param name="guidProjectFactory" />
+    </member>
+    <member name="M:Microsoft.VisualStudio.Shell.Interop.IVsRegisterProjectSelector.RegisterProjectSelector(System.Guid@,Microsoft.VisualStudio.Shell.Interop.IVsProjectSelector,System.UInt32@)">
+      <summary />
+      <param name="rguidProjType" />
+      <param name="pProjectSelector" />
+      <param name="pdwCookie" />
+    </member>
+    <member name="M:Microsoft.VisualStudio.Shell.Interop.IVsRegisterProjectSelector.UnregisterProjectSelector(System.UInt32)">
+      <summary />
+      <param name="dwCookie" />
+    </member>
+    <member name="M:Microsoft.VisualStudio.Shell.Interop.IVsRunningDocumentTable5.HandsOffDocument(System.UInt32,System.String)">
+      <summary>This method is typically called prior to an operation that will change the document on disk. When the operation is complete, HandsOnDocument should be called.It performs the following actions:  - IVsFileChangeEx.IgnoreFile(true)	- IVsTrackProjectDocuments3.HandsOffFilesIf the document's docdata supports it:  - IVsPersistDocData3.HandsOffDocDataStorage  - IVsDocDataFileChangeControl.IgnoreFileChangesIf the document's hierarchy supports it:	- IVsPersistHierarchyItem2.IgnoreItemFileChanges</summary>
+      <param name="cookie">(optional) The cookie for the document (if VSCOOKIE_NIL is used, the moniker parameter identifies the document).</param>
+      <param name="moniker">(optional) The moniker for the document (only used if cookie == VSCOOKIE_NIL).</param>
+    </member>
+    <member name="M:Microsoft.VisualStudio.Shell.Interop.IVsRunningDocumentTable5.HandsOnDocument(System.UInt32,System.String)">
+      <summary>Undoes the actions performed by HandsOffDocument.</summary>
+      <param name="cookie">(optional) The cookie for the document (if VSCOOKIE_NIL is used, the moniker parameter identifies the document).</param>
+      <param name="moniker">(optional) The moniker for the document (only used if cookie == VSCOOKIE_NIL).</param>
+    </member>
+    <member name="M:Microsoft.VisualStudio.Shell.Interop.IVsSetupCompositionService.Advise(Microsoft.VisualStudio.Shell.Interop.IVsSetupManifestEvents)">
+      <summary />
+      <param name="pSync" />
+    </member>
+    <member name="M:Microsoft.VisualStudio.Shell.Interop.IVsSetupCompositionService.GetProjectClassifierInfo(System.UInt32,Microsoft.VisualStudio.Shell.Interop.IVsProjectClassifierInfo[],System.UInt32@)">
+      <summary />
+      <param name="cProjectGuids" />
+      <param name="ppProjectGuidInfo" />
+      <param name="pcActual" />
+    </member>
+    <member name="M:Microsoft.VisualStudio.Shell.Interop.IVsSetupCompositionService.GetSetupPackageInfo(System.String)">
+      <summary />
+      <param name="packageName" />
+    </member>
+    <member name="M:Microsoft.VisualStudio.Shell.Interop.IVsSetupCompositionService.GetSetupPackagesInfo(System.UInt32,Microsoft.VisualStudio.Shell.Interop.IVsSetupPackageInfo[],System.UInt32@)">
+      <summary />
+      <param name="cPackages" />
+      <param name="ppPackageInfo" />
+      <param name="pcActual" />
+    </member>
+    <member name="M:Microsoft.VisualStudio.Shell.Interop.IVsSetupCompositionService.GetTemplateInfo(System.UInt32,Microsoft.VisualStudio.Shell.Interop.IVsTemplateInfo[],System.UInt32@)">
+      <summary />
+      <param name="cTemplates" />
+      <param name="ppTemplateInfo" />
+      <param name="pcActual" />
+    </member>
+    <member name="M:Microsoft.VisualStudio.Shell.Interop.IVsSetupCompositionService.IsPackageInstalled(System.String)">
+      <summary>Determine if the package is currently install. Return false if the package is not defined or not installed.</summary>
+      <param name="packageName" />
+    </member>
+    <member name="M:Microsoft.VisualStudio.Shell.Interop.IVsSetupCompositionService.NotifyManifestChanged">
+      <summary />
+    </member>
+    <member name="M:Microsoft.VisualStudio.Shell.Interop.IVsSetupCompositionService.RefreshManifest">
+      <summary>In session mechanism to notify the interested components that we are switching to a new feed file.</summary>
+    </member>
+    <member name="M:Microsoft.VisualStudio.Shell.Interop.IVsSetupCompositionService.Unadvise(System.UInt32)">
+      <summary />
+      <param name="cookie" />
+    </member>
+    <member name="M:Microsoft.VisualStudio.Shell.Interop.IVsSetupManifestEvents.OnManifestChanged">
+      <summary />
+    </member>
+    <member name="M:Microsoft.VisualStudio.Shell.Interop.IVsSetupPackageInfo.GetKeywords(System.UInt32,System.String[],System.UInt32@)">
+      <summary>Return the list of subcategories for the tasks you provide. The task itself will return an index into this list when asked for a subcategory. If cbstr is passed in as zero and rgbstr as NULL, then the provider should set *pcActual to the actual number of BSTRs that need to be returned.</summary>
+      <param name="cbstr" />
+      <param name="bstrKeyword" />
+      <param name="pcActual" />
+    </member>
+    <member name="M:Microsoft.VisualStudio.Shell.Interop.IVsSolution7.CloseFolder(System.String)">
+      <summary>Closes a currently open folder pointed to by the path.</summary>
+      <param name="folderPath">Full path to the folder.</param>
+    </member>
+    <member name="M:Microsoft.VisualStudio.Shell.Interop.IVsSolution7.IsDeferredProjectLoadAllowed(System.String)">
+      <summary>Checks if the project allows deferred load.</summary>
+      <param name="projectFullPath">Full path to the project.</param>
+      <returns>true if the project is allowed deferred load, false otherwise.</returns>
+    </member>
+    <member name="M:Microsoft.VisualStudio.Shell.Interop.IVsSolution7.IsSolutionLoadDeferred">
+      <summary>Checks if the solution is in deferred load mode.</summary>
+      <returns>true if the solution is loaded in deferred mode, false otherwise.</returns>
+    </member>
+    <member name="M:Microsoft.VisualStudio.Shell.Interop.IVsSolution7.OpenFolder(System.String)">
+      <summary>Opens a folder pointed to by the path.</summary>
+      <param name="folderPath">Full path to the folder.</param>
+    </member>
+    <member name="M:Microsoft.VisualStudio.Shell.Interop.IVsSolutionEvents7.OnAfterCloseFolder(System.String)">
+      <summary>Notifies listening clients that the folder has been closed.</summary>
+      <param name="folderPath">Full path to the folder closed.</param>
+    </member>
+    <member name="M:Microsoft.VisualStudio.Shell.Interop.IVsSolutionEvents7.OnAfterLoadAllDeferredProjects">
+      <summary>Notifies listening clients that all projects in deferred mode have been loaded.</summary>
+    </member>
+    <member name="M:Microsoft.VisualStudio.Shell.Interop.IVsSolutionEvents7.OnAfterOpenFolder(System.String)">
+      <summary>Notifies listening clients that the folder has been opened.</summary>
+      <param name="folderPath">Full path to the folder opened.</param>
+    </member>
+    <member name="M:Microsoft.VisualStudio.Shell.Interop.IVsSolutionEvents7.OnBeforeCloseFolder(System.String)">
+      <summary>Notifies listening clients that the folder is being closed.</summary>
+      <param name="folderPath">Full path to the folder that will be closed.</param>
+    </member>
+    <member name="M:Microsoft.VisualStudio.Shell.Interop.IVsSolutionEvents7.OnQueryCloseFolder(System.String,System.Int32@)">
+      <summary>Queries listening clients as to whether the folder can be closed.</summary>
+      <param name="folderPath">Full path to the folder to be closed.</param>
+      <param name="pfCancel">true if the client vetoed the closing of the folder. false if the client approved the closing of the folder.</param>
+    </member>
+    <member name="M:Microsoft.VisualStudio.Shell.Interop.IVsTemplateInfo.GetPackagesSelectedData(System.UInt32,Microsoft.VisualStudio.Shell.Interop.IVsPackageSelectedInfo[],System.UInt32@)">
+      <summary>Return the list of subcategories for the tasks you provide. The task itself will return an index into this list when asked for a subcategory. If cbstr is passed in as zero and rgbstr as NULL, then the provider should set *pcActual to the actual number of BSTRs that need to be returned.</summary>
+      <param name="cbstr" />
+      <param name="bstrPackageSelectedData" />
+      <param name="pcActual" />
+    </member>
+    <member name="M:Microsoft.VisualStudio.Shell.Interop.IVsXMLMemberData6.GetAssociatedCapabilities">
+      <summary />
+    </member>
+    <member name="M:Microsoft.VisualStudio.Shell.Interop.IVsXMLMemberData6.GetCompletionListText(System.String@)">
+      <summary />
+      <param name="pbstrCompletionList" />
+    </member>
+    <member name="M:Microsoft.VisualStudio.Shell.Interop.IVsXMLMemberData6.GetCompletionListTextAt(System.Int32,System.String@)">
+      <summary />
+      <param name="iParam" />
+      <param name="pbstrCompletionList" />
+    </member>
+    <member name="M:Microsoft.VisualStudio.Shell.Interop.IVsXMLMemberData6.GetDeprecation">
+      <summary />
+    </member>
+    <member name="M:Microsoft.VisualStudio.Shell.Interop.IVsXMLMemberData6.GetExceptionCount(System.Int32@)">
+      <summary />
+      <param name="piExceptions" />
+    </member>
+    <member name="M:Microsoft.VisualStudio.Shell.Interop.IVsXMLMemberData6.GetExceptionTextAt(System.Int32,System.String@,System.String@)">
+      <summary />
+      <param name="iException" />
+      <param name="pbstrType" />
+      <param name="pbstrText" />
+    </member>
+    <member name="M:Microsoft.VisualStudio.Shell.Interop.IVsXMLMemberData6.GetExperimental(System.String@)">
+      <summary>Get the experimental tag from the xml documentation. If the tag doesn't exist, returns S_FALSE. If the tag does exist, but has no content pbstrDescription = "" (empty string).</summary>
+      <param name="pbstrDescription" />
+    </member>
+    <member name="M:Microsoft.VisualStudio.Shell.Interop.IVsXMLMemberData6.GetFilterPriority(System.Int32@)">
+      <summary />
+      <param name="piFilterPriority" />
+    </member>
+    <member name="M:Microsoft.VisualStudio.Shell.Interop.IVsXMLMemberData6.GetParamCount(System.Int32@)">
+      <summary />
+      <param name="piParams" />
+    </member>
+    <member name="M:Microsoft.VisualStudio.Shell.Interop.IVsXMLMemberData6.GetParamTextAt(System.Int32,System.String@,System.String@)">
+      <summary />
+      <param name="iParam" />
+      <param name="pbstrName" />
+      <param name="pbstrText" />
+    </member>
+    <member name="M:Microsoft.VisualStudio.Shell.Interop.IVsXMLMemberData6.GetPermissionSet(System.String@)">
+      <summary />
+      <param name="pbstrPermissionSetXML" />
+    </member>
+    <member name="M:Microsoft.VisualStudio.Shell.Interop.IVsXMLMemberData6.GetRemarksText(System.String@)">
+      <summary />
+      <param name="pbstrRemarks" />
+    </member>
+    <member name="M:Microsoft.VisualStudio.Shell.Interop.IVsXMLMemberData6.GetReturnsText(System.String@)">
+      <summary />
+      <param name="pbstrReturns" />
+    </member>
+    <member name="M:Microsoft.VisualStudio.Shell.Interop.IVsXMLMemberData6.GetSummaryText(System.String@)">
+      <summary />
+      <param name="pbstrSummary" />
+    </member>
+    <member name="M:Microsoft.VisualStudio.Shell.Interop.IVsXMLMemberData6.GetTypeParamCount(System.Int32@)">
+      <summary />
+      <param name="piTypeParams" />
+    </member>
+    <member name="M:Microsoft.VisualStudio.Shell.Interop.IVsXMLMemberData6.GetTypeParamTextAt(System.Int32,System.String@,System.String@)">
+      <summary />
+      <param name="iTypeParam" />
+      <param name="pbstrName" />
+      <param name="pbstrText" />
+    </member>
+    <member name="M:Microsoft.VisualStudio.Shell.Interop.IVsXMLMemberData6.SetOptions(System.UInt32)">
+      <summary />
+      <param name="options" />
+    </member>
+    <member name="P:Microsoft.VisualStudio.Shell.Interop.IVsMatcherDataInfo.CapabilityType">
+      <summary />
+    </member>
+    <member name="P:Microsoft.VisualStudio.Shell.Interop.IVsMatcherDataInfo.ProjectPropertyId">
+      <summary />
+    </member>
+    <member name="P:Microsoft.VisualStudio.Shell.Interop.IVsMatcherDataInfo.RegExMatchSource">
+      <summary />
+    </member>
+    <member name="P:Microsoft.VisualStudio.Shell.Interop.IVsMatcherDataInfo.Type">
+      <summary />
+    </member>
+    <member name="P:Microsoft.VisualStudio.Shell.Interop.IVsPackageSelectedInfo.id">
+      <summary />
+    </member>
+    <member name="P:Microsoft.VisualStudio.Shell.Interop.IVsProjectClassifierInfo.AppliesTo">
+      <summary />
+    </member>
+    <member name="P:Microsoft.VisualStudio.Shell.Interop.IVsProjectClassifierInfo.Extension">
+      <summary />
+    </member>
+    <member name="P:Microsoft.VisualStudio.Shell.Interop.IVsProjectClassifierInfo.FactoryGuid">
+      <summary />
+    </member>
+    <member name="P:Microsoft.VisualStudio.Shell.Interop.IVsProjectClassifierInfo.id">
+      <summary />
+    </member>
+    <member name="P:Microsoft.VisualStudio.Shell.Interop.IVsProjectClassifierInfo.MatcherId">
+      <summary />
+    </member>
+    <member name="P:Microsoft.VisualStudio.Shell.Interop.IVsProjectClassifierInfo.PackageId">
+      <summary />
+    </member>
+    <member name="P:Microsoft.VisualStudio.Shell.Interop.IVsProjectClassifierInfo.Priority">
+      <summary />
+    </member>
+    <member name="P:Microsoft.VisualStudio.Shell.Interop.IVsSetupCompositionService.ChannelProductVersion">
+      <summary>Get the Product version from the channel manifest.</summary>
+    </member>
+    <member name="P:Microsoft.VisualStudio.Shell.Interop.IVsSetupCompositionService.ChannelReleaseNoteUrl">
+      <summary>Get the release note URL information from the channel manifest.</summary>
+    </member>
+    <member name="P:Microsoft.VisualStudio.Shell.Interop.IVsSetupCompositionService.InstallationPath">
+      <summary>Get devenv installation path.</summary>
+    </member>
+    <member name="P:Microsoft.VisualStudio.Shell.Interop.IVsSetupCompositionService.InstallerPath">
+      <summary>Get the lightweight installer installation path.</summary>
+    </member>
+    <member name="P:Microsoft.VisualStudio.Shell.Interop.IVsSetupCompositionService.IsManifestRefreshedAndUpdateAvailable">
+      <summary>Determine if the manifest has been refresh and an update is available.</summary>
+    </member>
+    <member name="P:Microsoft.VisualStudio.Shell.Interop.IVsSetupCompositionService.ProductVersion">
+      <summary>Get the version of the installed product.</summary>
+    </member>
+    <member name="P:Microsoft.VisualStudio.Shell.Interop.IVsSetupPackageInfo.CurrentState">
+      <summary />
+    </member>
+    <member name="P:Microsoft.VisualStudio.Shell.Interop.IVsSetupPackageInfo.Description">
+      <summary />
+    </member>
+    <member name="P:Microsoft.VisualStudio.Shell.Interop.IVsSetupPackageInfo.IsUIGroup">
+      <summary />
+    </member>
+    <member name="P:Microsoft.VisualStudio.Shell.Interop.IVsSetupPackageInfo.PackageId">
+      <summary />
+    </member>
+    <member name="P:Microsoft.VisualStudio.Shell.Interop.IVsSetupPackageInfo.Title">
+      <summary />
+    </member>
+    <member name="P:Microsoft.VisualStudio.Shell.Interop.IVsSetupPackageInfo.Type">
+      <summary />
+    </member>
+    <member name="P:Microsoft.VisualStudio.Shell.Interop.IVsSetupPackageInfo.Version">
+      <summary />
+    </member>
+    <member name="P:Microsoft.VisualStudio.Shell.Interop.IVsTemplateInfo.AppIdFilter">
+      <summary />
+    </member>
+    <member name="P:Microsoft.VisualStudio.Shell.Interop.IVsTemplateInfo.Description">
+      <summary />
+    </member>
+    <member name="P:Microsoft.VisualStudio.Shell.Interop.IVsTemplateInfo.PackageId">
+      <summary />
+    </member>
+    <member name="P:Microsoft.VisualStudio.Shell.Interop.IVsTemplateInfo.ProjectSortOrder">
+      <summary />
+    </member>
+    <member name="P:Microsoft.VisualStudio.Shell.Interop.IVsTemplateInfo.ProjectSubType">
+      <summary />
+    </member>
+    <member name="P:Microsoft.VisualStudio.Shell.Interop.IVsTemplateInfo.ProjectSubTypeDisplayName">
+      <summary />
+    </member>
+    <member name="P:Microsoft.VisualStudio.Shell.Interop.IVsTemplateInfo.ProjectSubTypeSortOrder">
+      <summary />
+    </member>
+    <member name="P:Microsoft.VisualStudio.Shell.Interop.IVsTemplateInfo.ProjectType">
+      <summary />
+    </member>
+    <member name="P:Microsoft.VisualStudio.Shell.Interop.IVsTemplateInfo.ProjectTypeDisplayName">
+      <summary />
+    </member>
+    <member name="P:Microsoft.VisualStudio.Shell.Interop.IVsTemplateInfo.TemplateId">
+      <summary />
+    </member>
+    <member name="P:Microsoft.VisualStudio.Shell.Interop.IVsTemplateInfo.Title">
+      <summary />
+    </member>
+    <member name="T:Microsoft.VisualStudio.Shell.Interop.__FRAMESHOW4">
+      <summary />
+    </member>
+    <member name="F:Microsoft.VisualStudio.Shell.Interop.__FRAMESHOW4.FRAMESHOW_WinContentGotFocus">
+      <summary>The window's inner content received keyboard focus.</summary>
+    </member>
+    <member name="F:Microsoft.VisualStudio.Shell.Interop.__FRAMESHOW4.FRAMESHOW_WinContentLostFocus">
+      <summary>The window's inner content lost keyboard focus.</summary>
+    </member>
+    <member name="T:Microsoft.VisualStudio.Shell.Interop.__VSENUMPROJFLAGS3">
+      <summary>Extended flags for IVsSolution::GetProjectEnum.</summary>
+    </member>
+    <member name="F:Microsoft.VisualStudio.Shell.Interop.__VSENUMPROJFLAGS3.EPF_DEFERRED">
+      <summary>Enumerate only deferred projects.</summary>
+    </member>
+    <member name="F:Microsoft.VisualStudio.Shell.Interop.__VSENUMPROJFLAGS3.EPF_NOTDEFERRED">
+      <summary>Enumerate only the not deferred projects.</summary>
+    </member>
+    <member name="T:Microsoft.VisualStudio.Shell.Interop.__VSGETPROJFILESFLAGS2">
+      <summary>Extended flags for IVsSolution::GetProjectFilesInSolution.</summary>
+    </member>
+    <member name="F:Microsoft.VisualStudio.Shell.Interop.__VSGETPROJFILESFLAGS2.GPFF_LOADORDER">
+      <summary>Set of projects in hierarchical order (matches load order).</summary>
+    </member>
+    <member name="T:Microsoft.VisualStudio.Shell.Interop.__VSHPROPID9">
+      <summary />
+    </member>
+    <member name="F:Microsoft.VisualStudio.Shell.Interop.__VSHPROPID9.VSHPROPID_IsDeferred">
+      <summary>(optional) Gets whether or not the hierarchy is in deferred load mode.</summary>
+    </member>
+    <member name="F:Microsoft.VisualStudio.Shell.Interop.__VSHPROPID9.VSHPROPID_HasRunningOperation">
+      <summary>(optional) Whether or not the item has running operations requested by the user. Used to provide the user with a UI hint of ongoing work for the associated item.</summary>
+    </member>
+    <member name="T:Microsoft.VisualStudio.Shell.Interop.__VSPROPID7">
+      <summary />
+    </member>
+    <member name="F:Microsoft.VisualStudio.Shell.Interop.__VSPROPID7.VSPROPID_IsInOpenFolderMode">
+      <summary>VARIANT_TRUE when solution is in open folder mode (as opposed to open solution/project file mode).</summary>
+    </member>
+    <member name="F:Microsoft.VisualStudio.Shell.Interop.__VSPROPID7.VSPROPID_DeferredProjectCount">
+      <summary>Count of projects currently in deferred mode.</summary>
+    </member>
+    <member name="F:Microsoft.VisualStudio.Shell.Interop.__VSPROPID7.VSPROPID_DeferredLoadOption">
+      <summary>Deferred load option for the solution.</summary>
+    </member>
+    <member name="F:Microsoft.VisualStudio.Shell.Interop.__VSPROPID7.VSPROPID_DeferOptOutProjectCount">
+      <summary>Count of projects that have opted out of Deferred Project Load.</summary>
+    </member>
+    <member name="T:Microsoft.VisualStudio.Shell.Interop.__VsSetupPackageState">
+      <summary />
+    </member>
+    <member name="F:Microsoft.VisualStudio.Shell.Interop.__VsSetupPackageState.INSTALL_PACKAGE_UNKNOWN">
+      <summary>The package has no install state.</summary>
+    </member>
+    <member name="F:Microsoft.VisualStudio.Shell.Interop.__VsSetupPackageState.INSTALL_PACKAGE_NOT_INSTALLED">
+      <summary>The package is or should be absent (not installed).</summary>
+    </member>
+    <member name="F:Microsoft.VisualStudio.Shell.Interop.__VsSetupPackageState.INSTALL_PACKAGE_SUPERSEDED">
+      <summary>The package is present but a newer package is available.</summary>
+    </member>
+    <member name="F:Microsoft.VisualStudio.Shell.Interop.__VsSetupPackageState.INSTALL_PACKAGE_PRESENT">
+      <summary>The package is or should be present (installed).</summary>
+    </member>
+    <member name="T:Microsoft.VisualStudio.Shell.Interop.__VSSOLUTIONDEFERREDLOADOPTION">
+      <summary>Extended flags for IVsSolution::GetProjectEnum.</summary>
+    </member>
+    <member name="F:Microsoft.VisualStudio.Shell.Interop.__VSSOLUTIONDEFERREDLOADOPTION.DLO_NONE">
+      <summary>Deferred load mode is not set for the solution.</summary>
+    </member>
+    <member name="F:Microsoft.VisualStudio.Shell.Interop.__VSSOLUTIONDEFERREDLOADOPTION.DLO_DEFERRED">
+      <summary>Solution is set to load in deferred mode.</summary>
+    </member>
+    <member name="F:Microsoft.VisualStudio.Shell.Interop.__VSSOLUTIONDEFERREDLOADOPTION.DLO_NOTDEFERRED">
+      <summary>Solution is set to not load in deferred mode.</summary>
+    </member>
+    <member name="T:Microsoft.VisualStudio.Shell.Interop.IComWrapperFactory2">
+      <summary />
+    </member>
+    <member name="T:Microsoft.VisualStudio.Shell.Interop.IFreeThreadedComWrapper">
+      <summary />
+    </member>
+    <member name="T:Microsoft.VisualStudio.Shell.Interop.IVsDebugger6">
+      <summary />
+    </member>
+    <member name="T:Microsoft.VisualStudio.Shell.Interop.IVsDebugger7">
+      <summary />
+    </member>
+    <member name="T:Microsoft.VisualStudio.Shell.Interop.IVsEditorFactory3">
+      <summary />
+    </member>
+    <member name="T:Microsoft.VisualStudio.Shell.Interop.IVsFileChangeEx2">
+      <summary />
+    </member>
+    <member name="T:Microsoft.VisualStudio.Shell.Interop.IVsFreeThreadedFileChangeEvents">
+      <summary />
+    </member>
+    <member name="T:Microsoft.VisualStudio.Shell.Interop.IVsMatcherDataInfo">
+      <summary />
+    </member>
+    <member name="T:Microsoft.VisualStudio.Shell.Interop.IVsNavigateToService">
+      <summary />
+    </member>
+    <member name="T:Microsoft.VisualStudio.Shell.Interop.IVsPackageSelectedInfo">
+      <summary />
+    </member>
+    <member name="T:Microsoft.VisualStudio.Shell.Interop.IVsProjectClassifierInfo">
+      <summary />
+    </member>
+    <member name="T:Microsoft.VisualStudio.Shell.Interop.IVsProjectSelector">
+      <summary>Allows scenarios to dynamically take ownership between more than one project system. Solution loader will first try to match the project type to the registered ProjectSelectors and if there is one, will call GetProjectFactoryGuid which in turn looks into the pszFilename and look for condition to redirect the project load using either Legacy Project System or New Project System.</summary>
+    </member>
+    <member name="T:Microsoft.VisualStudio.Shell.Interop.IVsRegisterProjectSelector">
+      <summary>Implemented by the Environment. To obtain this interface, one can QI on IVsProjectSelector or directly by QueryService(IID_IVsProjectSelector). Used by packages that implement a project selectors.RegisterProjectSelector is usually called in IVsPackage::SetSite; UnregisterProjectGenerator is called in IVsPackage::Close.Note: For the registered selectors (under VSKEYROOT\ProjectSelectors), the solution loaded will ensure that selector package is loaded in time when it is needed, so it is not required to preload the packages.</summary>
+    </member>
+    <member name="T:Microsoft.VisualStudio.Shell.Interop.IVsRunningDocumentTable5">
+      <summary />
+    </member>
+    <member name="T:Microsoft.VisualStudio.Shell.Interop.IVsSetupCompositionService">
+      <summary>Provides a way to get composition information about packages in VS. The acqusition service for determining package state, project classifier, and breadcrumb template. Implementation must be free-threaded.</summary>
+    </member>
+    <member name="T:Microsoft.VisualStudio.Shell.Interop.IVsSetupManifestEvents">
+      <summary />
+    </member>
+    <member name="T:Microsoft.VisualStudio.Shell.Interop.IVsSetupPackageInfo">
+      <summary />
+    </member>
+    <member name="T:Microsoft.VisualStudio.Shell.Interop.IVsSolution7">
+      <summary>Implemented by the Visual Studio Environment. Available via QueryService(SVsSolution).</summary>
+    </member>
+    <member name="T:Microsoft.VisualStudio.Shell.Interop.IVsSolutionEvents7">
+      <summary />
+    </member>
+    <member name="T:Microsoft.VisualStudio.Shell.Interop.IVsTemplateInfo">
+      <summary />
+    </member>
+    <member name="T:Microsoft.VisualStudio.Shell.Interop.IVsXMLMemberData6">
+      <summary />
+    </member>
+    <member name="T:Microsoft.VisualStudio.Shell.Interop.SVsNavigateToService">
+      <summary />
+    </member>
+    <member name="T:Microsoft.VisualStudio.Shell.Interop.SVsSetupCompositionService">
+      <summary>The service for the IVsSetupCompositionQueryService service.</summary>
+    </member>
+  </members>
+</doc>

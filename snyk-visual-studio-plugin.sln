@@ -1,11 +1,20 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio 14
-VisualStudioVersion = 14.0.25420.1
+# Visual Studio Version 16
+VisualStudioVersion = 16.0.31105.61
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "snyk-visual-studio-plugin", "snyk-visual-studio-plugin\snyk-visual-studio-plugin.csproj", "{910098F4-EC69-40F2-8CF1-B2E86E30D2F8}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "snyk-visual-studio-plugin-tests", "snyk-visual-studio-plugin-tests\snyk-visual-studio-plugin-tests.csproj", "{53C9C77D-82A1-42E9-B7DB-4422A5B4A568}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "snyk-visual-studio-plugin-tests", "snyk-visual-studio-plugin-tests\snyk-visual-studio-plugin-tests.csproj", "{EFB35F94-39AE-4A43-9634-4D1C0AD03999}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{D96E849F-BE0B-475D-873B-A0C0C6CC3D47}"
+	ProjectSection(SolutionItems) = preProject
+		README.md = README.md
+	EndProjectSection
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "doc", "doc", "{9AAC9A90-42B0-464D-B4D5-4E30E148954C}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "images", "images", "{99BED51B-0DEF-4CF8-9029-CFB41C24B43F}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -17,12 +26,18 @@ Global
 		{910098F4-EC69-40F2-8CF1-B2E86E30D2F8}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{910098F4-EC69-40F2-8CF1-B2E86E30D2F8}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{910098F4-EC69-40F2-8CF1-B2E86E30D2F8}.Release|Any CPU.Build.0 = Release|Any CPU
-		{53C9C77D-82A1-42E9-B7DB-4422A5B4A568}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{53C9C77D-82A1-42E9-B7DB-4422A5B4A568}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{53C9C77D-82A1-42E9-B7DB-4422A5B4A568}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{53C9C77D-82A1-42E9-B7DB-4422A5B4A568}.Release|Any CPU.Build.0 = Release|Any CPU
+		{EFB35F94-39AE-4A43-9634-4D1C0AD03999}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{EFB35F94-39AE-4A43-9634-4D1C0AD03999}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{EFB35F94-39AE-4A43-9634-4D1C0AD03999}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{EFB35F94-39AE-4A43-9634-4D1C0AD03999}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(NestedProjects) = preSolution
+		{99BED51B-0DEF-4CF8-9029-CFB41C24B43F} = {9AAC9A90-42B0-464D-B4D5-4E30E148954C}
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {A0587AA6-C5A0-421C-B01F-ED9D91CF8AB6}
 	EndGlobalSection
 EndGlobal

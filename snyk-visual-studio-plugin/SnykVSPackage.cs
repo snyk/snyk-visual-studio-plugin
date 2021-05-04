@@ -8,12 +8,14 @@ using System;
 using System.Diagnostics.CodeAnalysis;
 using System.Runtime.InteropServices;
 using Microsoft.VisualStudio.Shell;
-using Microsoft.VisualStudio.Shell.Interop;
 using Snyk.VisualStudio.Extension.UI;
 using Snyk.VisualStudio.Extension.Settings;
-using Snyk.VisualStudio.Extension.CLI;
-using Snyk.VisualStudio.Extension.Services;
-using Microsoft.VisualStudio;
+using System.Threading;
+using System.Threading.Tasks;
+using Task = System.Threading.Tasks.Task;
+using Microsoft.VisualStudio.Threading;
+using Snyk.VisualStudio.Extension.Service;
+using Snyk.VisualStudio.Extension.SnykAnalytics;
 
 namespace Snyk.VisualStudio.Extension
 {
@@ -34,23 +36,42 @@ namespace Snyk.VisualStudio.Extension
     /// To get loaded into VS, the package must be referred by &lt;Asset Type="Microsoft.VisualStudio.VsPackage" ...&gt; in .vsixmanifest file.
     /// </para>
     /// </remarks>
-    [PackageRegistration(UseManagedResourcesOnly = true)]
+    /// [PackageRegistration(UseManagedResourcesOnly = true)]    
+    [PackageRegistration(UseManagedResourcesOnly = true, AllowsBackgroundLoading = true)]
     [InstalledProductRegistration("#110", "#112", "1.0", IconResourceID = 400)] // Info on this package for Help/About
     [Guid(SnykVSPackage.PackageGuidString)]
     [SuppressMessage("StyleCop.CSharp.DocumentationRules", "SA1650:ElementDocumentationMustBeSpelledCorrectly", Justification = "pkgdef, VS and vsixmanifest are valid VS terms")]
-    [ProvideAutoLoad(UIContextGuids80.SolutionExists)]
+    [ProvideService(typeof(ISnykService), IsAsyncQueryable = true)]
     [ProvideMenuResource("Menus.ctmenu", 1)]
-    [ProvideToolWindow(typeof(SnykToolWindow))]
+    [ProvideToolWindow(typeof(SnykToolWindow), Style = VsDockStyle.Tabbed)]
     [ProvideOptionPage(typeof(SnykGeneralOptionsDialogPage), "Snyk", "General settings", 1000, 1001, true)]
     [ProvideOptionPage(typeof(SnykProjectOptionsDialogPage), "Snyk", "Project settings", 1000, 1002, true)]
-    public sealed class SnykVSPackage : Package
+    public sealed class SnykVSPackage : AsyncPackage
     {
         /// <summary>
         /// SnykVSPackage GUID string.
         /// </summary>
         public const string PackageGuidString = "5ddf9abb-42ec-49b9-b201-b3e2fc2f8f89";
 
-        private static SnykVSPackage instance;
+        private SnykGeneralOptionsDialogPage generalOptionsDialogPage;
+
+        private ISnykServiceProvider serviceProvider;
+
+        private SnykToolWindow toolWindow;
+
+        private SnykToolWindowControl toolWindowControl;
+
+        private SnykActivityLogger logger;
+
+        private SnykGeneralOptionsDialogPage generalOptionsDialogPage;
+
+        private ISnykServiceProvider serviceProvider;
+
+        private SnykToolWindow toolWindow;
+
+        private SnykToolWindowControl toolWindowControl;
+
+        private SnykActivityLogger logger;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="SnykVSPackage"/> class.
@@ -61,83 +82,159 @@ namespace Snyk.VisualStudio.Extension
             // any Visual Studio service because at this point the package object is created but
             // not sited yet inside Visual Studio environment. The place to do all the other
             // initialization is the Initialize method.
-            instance = this;
-        }             
+        }
 
-        public SnykSolutionService SolutionService
+        protected override async Task InitializeAsync(CancellationToken cancellationToken, IProgress<ServiceProgressData> progress)
+        {
+            await base.InitializeAsync(cancellationToken, progress);
+
+            this.AddService(typeof(SnykService), CreateSnykService, true);
+
+            serviceProvider = await this.GetServiceAsync(typeof(SnykService)) as SnykService;
+
+            logger = serviceProvider.ActivityLogger;
+
+            logger.LogInformation("Get SnykService as ServiceProvider.");            
+
+            logger.LogInformation("Start InitializeGeneralOptionsAsync.");
+
+            await InitializeGeneralOptionsAsync();
+
+            new Task(() =>
+            {
+                serviceProvider.AnalyticsService.ObtainUser(serviceProvider.GetApiToken());
+            }).Start();
+
+            logger.LogInformation("Start Initialize tool window. Before call GetToolWindowControl() method.");
+
+            await InitializeToolWindowAsync();
+
+            logger.LogInformation("Before call toolWindowControl.InitializeEventListeners() method.");
+
+            new Task(() =>
+            {
+                toolWindowControl.InitializeEventListeners(serviceProvider);
+            }).Start();
+
+            logger.LogInformation("Initialize Commands()");
+
+            await Commands.SnykScanCommand.InitializeAsync(this);
+            await Commands.SnykStopCurrentTaskCommand.InitializeAsync(this);
+            await Commands.SnykCleanPanelCommand.InitializeAsync(this);
+            await Commands.SnykOpenSettingsCommand.InitializeAsync(this);
+
+            logger.LogInformation("Leave SnykVSPackage.InitializeAsync()");                                                
+        }
+
+        protected override void Dispose(bool disposing)
+        {
+            serviceProvider.AnalyticsService?.Dispose();
+
+            base.Dispose(disposing);
+        }
+
+        public async Task<object> CreateSnykService(IAsyncServiceContainer container, CancellationToken cancellationToken, Type serviceType)
+        {
+            var service = new SnykService(this);
+
+            await service.InitializeAsync(cancellationToken);
+
+            return service;
+        }        
+        
+        public ISnykServiceProvider ServiceProvider
         {
             get
             {
-                return SnykSolutionService.Instance;
+                return serviceProvider;
             }
+        }     
+        
+        public void ShowOptionPage() => ShowOptionPage(typeof(SnykGeneralOptionsDialogPage));
+
+        public async Task InitializeToolWindowAsync()
+        {
+            logger.LogInformation("Enter InitializeToolWindowAsync() method");
+
+            if (toolWindow == null)
+            {
+                logger.LogInformation("ToolWindow is not initialized. Call await JoinableTaskFactory.SwitchToMainThreadAsync().");
+
+                await JoinableTaskFactory.SwitchToMainThreadAsync();
+
+                logger.LogInformation("Call FindToolWindow().");
+
+                toolWindow = FindToolWindow(typeof(SnykToolWindow), 0, true) as SnykToolWindow;
+
+                logger.LogInformation($"Check ToolWindow is not null {toolWindow}.");
+
+                if ((null == toolWindow) || (null == toolWindow.Frame))
+                {
+                    logger.LogError("Exception: Cannot find Snyk tool window.");
+
+                    throw new NotSupportedException("Cannot find Snyk tool window.");
+                }
+
+                logger.LogInformation("Initialize ToolWindow.Content. Call await JoinableTaskFactory.SwitchToMainThreadAsync().");
+
+                await JoinableTaskFactory.SwitchToMainThreadAsync();
+
+                logger.LogInformation("Call ToolWindow.Content.");
+
+                this.toolWindowControl = (SnykToolWindowControl)toolWindow.Content;
+
+                logger.LogInformation("Leave InitializeToolWindowControlAsync() method");
+            }
+
+            logger.LogInformation("Leave InitializeToolWindowAsync() method");
         }
 
-        public ISnykOptions Options
+        public void ShowToolWindow() => toolWindowControl.ShowToolWindow();
+
+        public SnykGeneralOptionsDialogPage GeneralOptionsDialogPage
         {
             get
             {
-                return SnykGeneralOptionsDialogPage;
+                return generalOptionsDialogPage;
             }
-        }               
-
-        public void ShowToolWindow()
-        {
-            ToolWindowPane toolWindowPane = FindToolWindow(typeof(SnykToolWindow), 0, true);
-
-            if ((null == toolWindowPane) || (null == toolWindowPane.Frame))
-            {
-                throw new NotSupportedException("Cannot create window.");
-            }
-
-            IVsWindowFrame windowFrame = (IVsWindowFrame)toolWindowPane.Frame;
-            ErrorHandler.ThrowOnFailure(windowFrame.Show());
         }
 
-        public SnykToolWindowControl GetToolWindow()
-        {
-            ToolWindowPane toolWindowPane = FindToolWindow(typeof(SnykToolWindow), 0, true);
+        public SnykToolWindowControl ToolWindowControl => toolWindowControl;
 
-            if ((null == toolWindowPane) || (null == toolWindowPane.Frame))
+        public SnykToolWindowControl ToolWindowControl => toolWindowControl;
+
+        private async Task InitializeGeneralOptionsAsync()
+        {
+            serviceProvider.ActivityLogger.LogInformation("Enter InitializeGeneralOptionsAsync() method.");
+
+            if (generalOptionsDialogPage == null)
             {
-                throw new NotSupportedException("Cannot find Snyk tool window.");
+                serviceProvider.ActivityLogger.LogInformation("Call GetDialogPage to create. await JoinableTaskFactory.SwitchToMainThreadAsync().");
+
+                await JoinableTaskFactory.SwitchToMainThreadAsync();
+
+                serviceProvider.ActivityLogger.LogInformation("GeneralOptionsDialogPage not created yet. Call GetDialogPage to create.");
+
+                generalOptionsDialogPage = (SnykGeneralOptionsDialogPage)GetDialogPage(typeof(SnykGeneralOptionsDialogPage));
+                
+                generalOptionsDialogPage.LoadSettingsFromStorage();
+
+                generalOptionsDialogPage.LoadSettingsFromStorage();
+
+                serviceProvider.ActivityLogger.LogInformation("Call generalOptionsDialogPage.Initialize()");
+
+                generalOptionsDialogPage.Initialize(serviceProvider);
             }
 
-            return (SnykToolWindowControl)toolWindowPane.Content;
+            serviceProvider.ActivityLogger.LogInformation("Leave InitializeGeneralOptionsAsync() method.");
         }
-
-        private SnykGeneralOptionsDialogPage SnykGeneralOptionsDialogPage
-        {
-            get
-            {
-                return (SnykGeneralOptionsDialogPage)GetDialogPage(typeof(SnykGeneralOptionsDialogPage));
-            }            
-        }               
 
         #region Package Members
 
         /// <summary>
         /// Initialization of the package; this method is called right after the package is sited, so this is the place
         /// where you can put all the initialization code that rely on services provided by VisualStudio.
-        /// </summary>
-        protected override void Initialize()
-        {
-            base.Initialize();
-
-            SnykSolutionService.Initialize(this);
-            SnykRunScanCommand.Initialize(this);
-            SnykToolWindowCommand.Initialize(this);
-            SnykGeneralOptionsDialogPage.Initialize(this);
-
-            SnykToolWindowControl toolWindow = GetToolWindow();
-
-            System.Threading.Tasks.Task.Run(() =>
-            {
-                ShowToolWindow();
-
-                SnykCliDownloader.NewInstance().Download(progressManager: toolWindow);
-            });
-        }
-
+        /// </summary>        
         #endregion
-    }
+    }                    
 }
