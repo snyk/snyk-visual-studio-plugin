@@ -18,6 +18,29 @@ namespace Snyk.VisualStudio.Extension.Tests
         }
 
         [TestMethod]
+        public void ConvertRawCliStringToCliResultWithCriticalSeverity()
+        {
+            var cli = new SnykCli
+            {
+                Options = new SnykMockOptions()
+            };
+
+            var cliResult = cli.ConvertRawCliStringToCliResult(GetFileContents("CriticalSeverityObject.json"));
+
+            bool isCriticalSeverityVulnExists = false;
+
+            foreach (Vulnerability vulnerability in cliResult.CliVulnerabilitiesList[0].Vulnerabilities)
+            {
+                if (Severity.Critical == vulnerability.Severity)
+                {
+                    isCriticalSeverityVulnExists = true;
+                }
+            }
+           
+            Assert.IsTrue(isCriticalSeverityVulnExists);
+        }
+
+        [TestMethod]
         public void Scan()
         {
             var cli = new SnykCli
