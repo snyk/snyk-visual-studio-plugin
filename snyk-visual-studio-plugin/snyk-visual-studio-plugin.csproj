@@ -1,7 +1,7 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="14.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
-  <Import Project="..\packages\Microsoft.VSSDK.BuildTools.15.0.26201\build\Microsoft.VSSDK.BuildTools.props" Condition="'$(VisualStudioVersion)' != '14.0' And Exists('..\packages\Microsoft.VSSDK.BuildTools.15.0.26201\build\Microsoft.VSSDK.BuildTools.props')" />
-  <Import Project="..\packages\Microsoft.VisualStudio.Sdk.BuildTasks.14.0.14.9.23\build\Microsoft.VisualStudio.Sdk.BuildTasks.14.0.props" Condition="'$(VisualStudioVersion)' == '14.0' And Exists('..\packages\Microsoft.VisualStudio.Sdk.BuildTasks.14.0.14.9.23\build\Microsoft.VisualStudio.Sdk.BuildTasks.14.0.props')" />
+  <Import Project="..\packages\Microsoft.VSSDK.BuildTools.15.0.26201\build\Microsoft.VSSDK.BuildTools.props" Condition="Exists('..\packages\Microsoft.VSSDK.BuildTools.15.0.26201\build\Microsoft.VSSDK.BuildTools.props')" />
+  <Import Project="..\packages\Microsoft.CodeAnalysis.NetAnalyzers.5.0.3\build\Microsoft.CodeAnalysis.NetAnalyzers.props" Condition="Exists('..\packages\Microsoft.CodeAnalysis.NetAnalyzers.5.0.3\build\Microsoft.CodeAnalysis.NetAnalyzers.props')" />
   <PropertyGroup>
     <VisualStudioVersion Condition="'$(VisualStudioVersion)' == ''">14.0</VisualStudioVersion>
     <MinimumVisualStudioVersion>$(VisualStudioVersion)</MinimumVisualStudioVersion>
@@ -47,7 +47,7 @@
     <AppDesignerFolder>Properties</AppDesignerFolder>
     <RootNamespace>Snyk.VisualStudio.Extension</RootNamespace>
     <AssemblyName>snyk-visual-studio-plugin</AssemblyName>
-    <TargetFrameworkVersion>v4.6.1</TargetFrameworkVersion>
+    <TargetFrameworkVersion>v4.7.2</TargetFrameworkVersion>
     <GeneratePkgDefFile>true</GeneratePkgDefFile>
     <IncludeAssemblyInVSIXContainer>true</IncludeAssemblyInVSIXContainer>
     <IncludeDebugSymbolsInVSIXContainer>true</IncludeDebugSymbolsInVSIXContainer>
@@ -75,12 +75,20 @@
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
   <ItemGroup>
-    <Compile Include="Commands\AbstractSnykCommand.cs" />
-    <Compile Include="Commands\SnykCleanPanelCommand.cs" />
-    <Compile Include="Commands\SnykOpenSettingsCommand.cs" />
-    <Compile Include="Commands\SnykScanCommand.cs" />
-    <Compile Include="Commands\SnykStopCurrentTaskCommand.cs" />
-    <Compile Include="SnykAnalytics\SnykAnalyticsService.cs" />
+    <Compile Include="Microsoft\HtmlParser\CssStylesheet.cs" />
+    <Compile Include="Snyk\VisualStudio\Extension\CLI\CliGroupedVulnerabilities.cs" />
+    <Compile Include="Snyk\VisualStudio\Extension\CLI\CliVulnerabilities.cs" />
+    <Compile Include="Snyk\VisualStudio\Extension\CLI\Severity.cs" />
+    <Compile Include="Snyk\VisualStudio\Extension\CLI\Vulnerability.cs" />
+    <Compile Include="Snyk\VisualStudio\Extension\Commands\AbstractSnykCommand.cs" />
+    <Compile Include="Snyk\VisualStudio\Extension\Commands\SnykCleanPanelCommand.cs" />
+    <Compile Include="Snyk\VisualStudio\Extension\Commands\SnykOpenSettingsCommand.cs" />
+    <Compile Include="Snyk\VisualStudio\Extension\Commands\SnykScanCommand.cs" />
+    <Compile Include="Snyk\VisualStudio\Extension\Commands\SnykStopCurrentTaskCommand.cs" />
+    <Compile Include="Snyk\VisualStudio\Extension\SnykGuids.cs" />
+    <Compile Include="Snyk\VisualStudio\Extension\Service\ISnykProgressWorker.cs" />
+    <Compile Include="Snyk\VisualStudio\Extension\Service\ISnykService.cs" />
+    <Compile Include="Snyk\VisualStudio\Extension\SnykAnalytics\SnykAnalyticsService.cs" />
     <Compile Include="Microsoft\UI\HtmlRichTextBoxBehavior.cs" />
     <Compile Include="Microsoft\HtmlParser\HtmlCssParser.cs" />
     <Compile Include="Microsoft\HtmlParser\HtmlFromXamlConverter.cs" />
@@ -89,65 +97,82 @@
     <Compile Include="Microsoft\HtmlParser\HtmlSchema.cs" />
     <Compile Include="Microsoft\HtmlParser\HtmlTokenType.cs" />
     <Compile Include="Microsoft\HtmlParser\HtmlToXamlConverter.cs" />
-    <Compile Include="Service\ISnykServiceProvider.cs" />
-    <Compile Include="Service\SnykService.cs" />
-    <Compile Include="Settings\SnykAppSettings.cs" />
-    <Compile Include="SnykExtension.cs" />
-    <Compile Include="UI\HtmlRichTextBox.cs" />
-    <Compile Include="Theme\SnykVsThemeService.cs" />
-    <Compile Include="SnykActivityLogger.cs" />
-    <Compile Include="CLI\CLIError.cs" />
-    <Compile Include="CLI\CLIResult.cs" />
-    <Compile Include="Settings\ISnykOptions.cs" />
-    <Compile Include="CLI\LatestReleaseInfo.cs" />
+    <Compile Include="Snyk\VisualStudio\Extension\Service\ISnykServiceProvider.cs" />
+    <Compile Include="Snyk\VisualStudio\Extension\Service\SnykCliDownloadEventArgs.cs" />
+    <Compile Include="Snyk\VisualStudio\Extension\Service\SnykCliScanEventArgs.cs" />
+    <Compile Include="Snyk\VisualStudio\Extension\Service\SnykProgressWorker.cs" />
+    <Compile Include="Snyk\VisualStudio\Extension\Service\SnykService.cs" />
+    <Compile Include="Snyk\VisualStudio\Extension\Settings\SnykAppSettings.cs" />
+    <Compile Include="Snyk\VisualStudio\Extension\SnykAnalytics\SnykUser.cs" />
+    <Compile Include="Snyk\VisualStudio\Extension\SnykExtension.cs" />
+    <Compile Include="Snyk\VisualStudio\Extension\Service\SnykVsSolutionLoadEvents.cs" />
+    <Compile Include="Snyk\VisualStudio\Extension\SnykWebClient.cs">
+      <SubType>Component</SubType>
+    </Compile>
+    <Compile Include="Snyk\VisualStudio\Extension\Theme\ThemeInfo.cs" />
+    <Compile Include="Snyk\VisualStudio\Extension\Theme\VsBroadcastMessageEvents.cs" />
+    <Compile Include="Snyk\VisualStudio\Extension\UI\Tree\RootVulnerabilityTreeNode.cs" />
+    <Compile Include="Snyk\VisualStudio\Extension\UI\SnykIconProvider.cs" />
+    <Compile Include="Snyk\VisualStudio\Extension\UI\Toolwindow\DownloadState.cs" />
+    <Compile Include="Snyk\VisualStudio\Extension\UI\Toolwindow\EmptyState.cs" />
+    <Compile Include="Snyk\VisualStudio\Extension\UI\Toolwindow\ErrorState.cs" />
+    <Compile Include="Snyk\VisualStudio\Extension\UI\HtmlRichTextBox.cs" />
+    <Compile Include="Snyk\VisualStudio\Extension\Theme\SnykVsThemeService.cs" />
+    <Compile Include="Snyk\VisualStudio\Extension\SnykActivityLogger.cs" />
+    <Compile Include="Snyk\VisualStudio\Extension\CLI\CLIError.cs" />
+    <Compile Include="Snyk\VisualStudio\Extension\CLI\CLIResult.cs" />
+    <Compile Include="Snyk\VisualStudio\Extension\Settings\ISnykOptions.cs" />
+    <Compile Include="Snyk\VisualStudio\Extension\CLI\Download\LatestReleaseInfo.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
-    <Compile Include="CLI\SnykCli.cs" />
-    <Compile Include="CLI\SnykCliDownloader.cs" />
-    <Compile Include="CLI\SnykConsoleRunner.cs" />
-    <Compile Include="UI\SnykFilterableTree.xaml.cs">
+    <Compile Include="Snyk\VisualStudio\Extension\CLI\SnykCli.cs" />
+    <Compile Include="Snyk\VisualStudio\Extension\CLI\Download\SnykCliDownloader.cs" />
+    <Compile Include="Snyk\VisualStudio\Extension\CLI\SnykConsoleRunner.cs" />
+    <Compile Include="Snyk\VisualStudio\Extension\UI\Toolwindow\OverviewState.cs" />
+    <Compile Include="Snyk\VisualStudio\Extension\UI\Toolwindow\RunScanState.cs" />
+    <Compile Include="Snyk\VisualStudio\Extension\UI\Toolwindow\ScanningState.cs" />
+    <Compile Include="Snyk\VisualStudio\Extension\UI\Toolwindow\ScanResultsState.cs" />
+    <Compile Include="Snyk\VisualStudio\Extension\UI\SeverityFilter.cs" />
+    <Compile Include="Snyk\VisualStudio\Extension\UI\Tree\SnykFilterableTree.xaml.cs">
       <DependentUpon>SnykFilterableTree.xaml</DependentUpon>
     </Compile>
-    <Compile Include="CLI\SnykTasksService.cs" />
-    <Compile Include="Settings\SnykGeneralOptionsDialogPage.cs">
+    <Compile Include="Snyk\VisualStudio\Extension\Service\SnykTasksService.cs" />
+    <Compile Include="Snyk\VisualStudio\Extension\Settings\SnykGeneralOptionsDialogPage.cs">
       <SubType>Component</SubType>
     </Compile>
-    <Compile Include="Settings\SnykGeneralSettingsUserControl.cs">
+    <Compile Include="Snyk\VisualStudio\Extension\Settings\SnykGeneralSettingsUserControl.cs">
       <SubType>UserControl</SubType>
     </Compile>
-    <Compile Include="Settings\SnykGeneralSettingsUserControl.Designer.cs">
+    <Compile Include="Snyk\VisualStudio\Extension\Settings\SnykGeneralSettingsUserControl.Designer.cs">
       <DependentUpon>SnykGeneralSettingsUserControl.cs</DependentUpon>
     </Compile>
-    <Compile Include="Settings\SnykProjectOptionsDialogPage.cs">
+    <Compile Include="Snyk\VisualStudio\Extension\Settings\SnykProjectOptionsDialogPage.cs">
       <SubType>Component</SubType>
     </Compile>
-    <Compile Include="Settings\SnykProjectOptionsUserControl.cs">
+    <Compile Include="Snyk\VisualStudio\Extension\Settings\SnykProjectOptionsUserControl.cs">
       <SubType>UserControl</SubType>
     </Compile>
-    <Compile Include="Settings\SnykProjectOptionsUserControl.Designer.cs">
+    <Compile Include="Snyk\VisualStudio\Extension\Settings\SnykProjectOptionsUserControl.Designer.cs">
       <DependentUpon>SnykProjectOptionsUserControl.cs</DependentUpon>
     </Compile>
-    <Compile Include="Settings\SnykSolutionSettingsService.cs" />
+    <Compile Include="Snyk\VisualStudio\Extension\Settings\SnykSolutionSettingsService.cs" />
     <Compile Include="SnykIcons.Designer.cs">
       <AutoGen>True</AutoGen>
       <DesignTime>True</DesignTime>
       <DependentUpon>SnykIcons.resx</DependentUpon>
     </Compile>
-    <Compile Include="CLI\SnykSolutionService.cs" />
-    <Compile Include="UI\SnykToolWindow.cs" />
-    <Compile Include="UI\SnykToolWindowCommand.cs" />
-    <Compile Include="UI\SnykToolWindowControl.xaml.cs">
+    <Compile Include="Snyk\VisualStudio\Extension\Service\SnykSolutionService.cs" />
+    <Compile Include="Snyk\VisualStudio\Extension\UI\Toolwindow\SnykToolWindow.cs" />
+    <Compile Include="Snyk\VisualStudio\Extension\UI\Toolwindow\SnykToolWindowCommand.cs" />
+    <Compile Include="Snyk\VisualStudio\Extension\UI\Toolwindow\SnykToolWindowControl.xaml.cs">
       <DependentUpon>SnykToolWindowControl.xaml</DependentUpon>
     </Compile>
-    <Compile Include="SnykVSPackage.cs" />
-    <Compile Include="CLI\SnykWebClient.cs">
-      <SubType>Component</SubType>
-    </Compile>
+    <Compile Include="Snyk\VisualStudio\Extension\SnykVSPackage.cs" />
+    <Compile Include="Snyk\VisualStudio\Extension\UI\Toolwindow\ToolWindowContext.cs" />
+    <Compile Include="Snyk\VisualStudio\Extension\UI\Toolwindow\ToolWindowState.cs" />
+    <Compile Include="Snyk\VisualStudio\Extension\UI\Tree\TreeNode.cs" />
+    <Compile Include="Snyk\VisualStudio\Extension\UI\Tree\VulnerabilityTreeNode.cs" />
   </ItemGroup>
   <ItemGroup>
-    <Content Include="Analytics.dll">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-      <IncludeInVSIX>true</IncludeInVSIX>
-    </Content>
     <Content Include="appsettings.json">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
       <IncludeInVSIX>true</IncludeInVSIX>
@@ -160,18 +185,15 @@
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
       <IncludeInVSIX>true</IncludeInVSIX>
     </Content>
-    <None Include="packages.config" />
-    <Content Include="Newtonsoft.Json.dll">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-      <IncludeInVSIX>true</IncludeInVSIX>
-    </Content>
     <Content Include="README.md">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
       <IncludeInVSIX>true</IncludeInVSIX>
     </Content>
+    <None Include="packages.config" />
     <None Include="source.extension.vsixmanifest">
       <SubType>Designer</SubType>
     </None>
+    <None Include="stylecop.json" />
   </ItemGroup>
   <ItemGroup>
     <Content Include="index.html">
@@ -185,18 +207,33 @@
     <Resource Include="Resources\CleanData.png" />
     <Resource Include="Resources\RunGrey.png" />
     <Resource Include="Resources\SnykLogo.ico" />
-    <Resource Include="Resources\DefaultFileIcon.png" />
-    <Resource Include="Resources\JavaLogo.png" />
-    <Resource Include="Resources\JsLogo.png" />
-    <Resource Include="Resources\NpmLogo.png" />
-    <Resource Include="Resources\PythonLogo.png" />
-    <Resource Include="Resources\OpenSourceSecurity.png" />
-    <Resource Include="Resources\OpenSourceSecurityDark.png" />
+    <Resource Include="Resources\DefaultFileIcon.png">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Resource>
+    <Resource Include="Resources\JavaLogo.png">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Resource>
+    <Resource Include="Resources\JsLogo.png">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Resource>
+    <Resource Include="Resources\NpmLogo.png">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Resource>
+    <Resource Include="Resources\PythonLogo.png">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Resource>
+    <Resource Include="Resources\OpenSourceSecurity.png">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Resource>
+    <Resource Include="Resources\OpenSourceSecurityDark.png">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Resource>
     <Resource Include="Resources\SnykLogo.png" />
     <Resource Include="Resources\SeverityHigh.png" />
     <Resource Include="Resources\SeverityLow.png" />
     <Resource Include="Resources\SeverityMedium.png" />
     <Resource Include="Resources\Settings.png" />
+    <Resource Include="Resources\SeverityCritical.png" />
     <Content Include="Resources\SnykDogLogo.png">
       <IncludeInVSIX>true</IncludeInVSIX>
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
@@ -218,8 +255,8 @@
     <Content Include="stylesheet.css" />
   </ItemGroup>
   <ItemGroup>
-    <Reference Include="Analytics, Version=3.7.0.0, Culture=neutral, processorArchitecture=MSIL">
-      <HintPath>..\packages\Analytics.3.7.0\lib\net461\Analytics.dll</HintPath>
+    <Reference Include="Analytics, Version=3.7.1.0, Culture=neutral, processorArchitecture=MSIL">
+      <HintPath>..\packages\Analytics.3.7.1\lib\net461\Analytics.dll</HintPath>
     </Reference>
     <Reference Include="EnvDTE, Version=8.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a">
       <EmbedInteropTypes>False</EmbedInteropTypes>
@@ -238,59 +275,50 @@
     </Reference>
     <Reference Include="Microsoft.Build.Framework" />
     <Reference Include="Microsoft.CSharp, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a, processorArchitecture=MSIL" />
+    <Reference Include="Microsoft.Extensions.DependencyInjection.Abstractions, Version=2.0.0.0, Culture=neutral, PublicKeyToken=adb9793829ddae60, processorArchitecture=MSIL">
+      <HintPath>..\packages\Microsoft.Extensions.DependencyInjection.Abstractions.2.0.0\lib\netstandard2.0\Microsoft.Extensions.DependencyInjection.Abstractions.dll</HintPath>
+    </Reference>
     <Reference Include="Microsoft.VisualStudio.CommandBars, Version=8.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a">
       <EmbedInteropTypes>False</EmbedInteropTypes>
     </Reference>
     <Reference Include="Microsoft.VisualStudio.ExtensionManager, Version=11.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a, processorArchitecture=MSIL">
       <HintPath>..\packages\VSSDK.ExtensionManager.11.0.0\lib\net45\Microsoft.VisualStudio.ExtensionManager.dll</HintPath>
-      <Private>True</Private>
     </Reference>
     <Reference Include="Microsoft.VisualStudio.Imaging, Version=14.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a, processorArchitecture=MSIL">
       <HintPath>..\packages\Microsoft.VisualStudio.Imaging.14.3.25407\lib\net45\Microsoft.VisualStudio.Imaging.dll</HintPath>
-      <Private>True</Private>
     </Reference>
     <Reference Include="Microsoft.VisualStudio.OLE.Interop, Version=7.1.40304.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a">
       <HintPath>..\packages\Microsoft.VisualStudio.OLE.Interop.16.7.30328.74\lib\net45\Microsoft.VisualStudio.OLE.Interop.dll</HintPath>
-      <Private>True</Private>
     </Reference>
     <Reference Include="Microsoft.VisualStudio.Shell.14.0, Version=14.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a, processorArchitecture=MSIL">
       <HintPath>..\packages\Microsoft.VisualStudio.Shell.14.0.14.3.25407\lib\Microsoft.VisualStudio.Shell.14.0.dll</HintPath>
-      <Private>True</Private>
     </Reference>
     <Reference Include="Microsoft.VisualStudio.Shell.Immutable.10.0, Version=10.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a, processorArchitecture=MSIL">
       <HintPath>..\packages\Microsoft.VisualStudio.Shell.Immutable.10.0.10.0.30319\lib\net40\Microsoft.VisualStudio.Shell.Immutable.10.0.dll</HintPath>
-      <Private>True</Private>
     </Reference>
     <Reference Include="Microsoft.VisualStudio.Shell.Immutable.11.0, Version=11.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a, processorArchitecture=MSIL">
       <HintPath>..\packages\Microsoft.VisualStudio.Shell.Immutable.11.0.11.0.50727\lib\net45\Microsoft.VisualStudio.Shell.Immutable.11.0.dll</HintPath>
-      <Private>True</Private>
     </Reference>
     <Reference Include="Microsoft.VisualStudio.Shell.Immutable.12.0, Version=12.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a, processorArchitecture=MSIL">
       <HintPath>..\packages\Microsoft.VisualStudio.Shell.Immutable.12.0.12.0.21003\lib\net45\Microsoft.VisualStudio.Shell.Immutable.12.0.dll</HintPath>
-      <Private>True</Private>
     </Reference>
     <Reference Include="Microsoft.VisualStudio.Shell.Immutable.14.0, Version=14.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a, processorArchitecture=MSIL">
       <HintPath>..\packages\Microsoft.VisualStudio.Shell.Immutable.14.0.14.3.25407\lib\net45\Microsoft.VisualStudio.Shell.Immutable.14.0.dll</HintPath>
-      <Private>True</Private>
     </Reference>
     <Reference Include="Microsoft.VisualStudio.Shell.Interop, Version=7.1.40304.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a">
       <HintPath>..\packages\Microsoft.VisualStudio.Shell.Interop.16.7.30328.74\lib\net45\Microsoft.VisualStudio.Shell.Interop.dll</HintPath>
-      <Private>True</Private>
     </Reference>
     <Reference Include="Microsoft.VisualStudio.Shell.Interop.10.0, Version=10.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a, processorArchitecture=MSIL">
-      <EmbedInteropTypes>True</EmbedInteropTypes>
       <HintPath>..\packages\Microsoft.VisualStudio.Shell.Interop.10.0.16.7.30328.74\lib\net45\Microsoft.VisualStudio.Shell.Interop.10.0.dll</HintPath>
-      <Private>True</Private>
+      <EmbedInteropTypes>True</EmbedInteropTypes>
     </Reference>
     <Reference Include="Microsoft.VisualStudio.Shell.Interop.11.0, Version=11.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a, processorArchitecture=MSIL">
-      <EmbedInteropTypes>True</EmbedInteropTypes>
       <HintPath>..\packages\Microsoft.VisualStudio.Shell.Interop.11.0.16.7.30328.74\lib\net45\Microsoft.VisualStudio.Shell.Interop.11.0.dll</HintPath>
-      <Private>True</Private>
+      <EmbedInteropTypes>True</EmbedInteropTypes>
     </Reference>
     <Reference Include="Microsoft.VisualStudio.Shell.Interop.12.0, Version=12.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a, processorArchitecture=MSIL">
-      <EmbedInteropTypes>True</EmbedInteropTypes>
       <HintPath>..\packages\Microsoft.VisualStudio.Shell.Interop.12.0.16.7.30328.74\lib\net45\Microsoft.VisualStudio.Shell.Interop.12.0.dll</HintPath>
-      <Private>True</Private>
+      <EmbedInteropTypes>True</EmbedInteropTypes>
     </Reference>
     <Reference Include="Microsoft.VisualStudio.Shell.Interop.14.0.DesignTime, Version=14.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a, processorArchitecture=MSIL">
       <EmbedInteropTypes>True</EmbedInteropTypes>
@@ -301,34 +329,26 @@
     </Reference>
     <Reference Include="Microsoft.VisualStudio.Shell.Interop.8.0, Version=8.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a">
       <HintPath>..\packages\Microsoft.VisualStudio.Shell.Interop.8.0.16.7.30328.74\lib\net45\Microsoft.VisualStudio.Shell.Interop.8.0.dll</HintPath>
-      <Private>True</Private>
     </Reference>
     <Reference Include="Microsoft.VisualStudio.Shell.Interop.9.0, Version=9.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a">
       <HintPath>..\packages\Microsoft.VisualStudio.Shell.Interop.9.0.9.0.30729\lib\Microsoft.VisualStudio.Shell.Interop.9.0.dll</HintPath>
-      <Private>True</Private>
     </Reference>
     <Reference Include="Microsoft.VisualStudio.TextManager.Interop, Version=7.1.40304.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a">
       <HintPath>..\packages\Microsoft.VisualStudio.TextManager.Interop.16.7.30328.74\lib\net45\Microsoft.VisualStudio.TextManager.Interop.dll</HintPath>
-      <Private>True</Private>
     </Reference>
     <Reference Include="Microsoft.VisualStudio.TextManager.Interop.8.0, Version=8.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a">
       <HintPath>..\packages\Microsoft.VisualStudio.TextManager.Interop.8.0.16.7.30328.74\lib\net45\Microsoft.VisualStudio.TextManager.Interop.8.0.dll</HintPath>
-      <Private>True</Private>
     </Reference>
     <Reference Include="Microsoft.VisualStudio.Threading, Version=14.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a, processorArchitecture=MSIL">
       <HintPath>..\packages\Microsoft.VisualStudio.Threading.14.1.111\lib\net45\Microsoft.VisualStudio.Threading.dll</HintPath>
-      <Private>True</Private>
     </Reference>
     <Reference Include="Microsoft.VisualStudio.Utilities, Version=14.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a, processorArchitecture=MSIL">
       <HintPath>..\packages\Microsoft.VisualStudio.Utilities.14.3.25407\lib\net45\Microsoft.VisualStudio.Utilities.dll</HintPath>
-      <Private>True</Private>
     </Reference>
     <Reference Include="Microsoft.VisualStudio.Validation, Version=14.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a, processorArchitecture=MSIL">
       <HintPath>..\packages\Microsoft.VisualStudio.Validation.14.1.111\lib\net45\Microsoft.VisualStudio.Validation.dll</HintPath>
-      <Private>True</Private>
     </Reference>
     <Reference Include="Newtonsoft.Json, Version=12.0.0.0, Culture=neutral, PublicKeyToken=30ad4fe6b2a6aeed, processorArchitecture=MSIL">
-      <SpecificVersion>False</SpecificVersion>
       <HintPath>..\packages\Newtonsoft.Json.12.0.3\lib\net45\Newtonsoft.Json.dll</HintPath>
       <Private>True</Private>
     </Reference>
@@ -336,26 +356,46 @@
     <Reference Include="PresentationFramework" />
     <Reference Include="System" />
     <Reference Include="System.Buffers, Version=4.0.3.0, Culture=neutral, PublicKeyToken=cc7b13ffcd2ddd51, processorArchitecture=MSIL">
-      <HintPath>..\packages\System.Buffers.4.5.1\lib\netstandard1.1\System.Buffers.dll</HintPath>
+      <HintPath>..\packages\System.Buffers.4.5.1\lib\net461\System.Buffers.dll</HintPath>
     </Reference>
+    <Reference Include="System.ComponentModel.Composition" />
     <Reference Include="System.Configuration" />
     <Reference Include="System.Data" />
     <Reference Include="System.Design" />
     <Reference Include="System.Drawing" />
+    <Reference Include="System.IO, Version=4.1.1.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a, processorArchitecture=MSIL">
+      <HintPath>..\packages\System.IO.4.3.0\lib\net462\System.IO.dll</HintPath>
+      <Private>True</Private>
+      <Private>True</Private>
+    </Reference>
     <Reference Include="System.Memory, Version=4.0.1.1, Culture=neutral, PublicKeyToken=cc7b13ffcd2ddd51, processorArchitecture=MSIL">
-      <HintPath>..\packages\System.Memory.4.5.4\lib\netstandard1.1\System.Memory.dll</HintPath>
+      <HintPath>..\packages\System.Memory.4.5.4\lib\net461\System.Memory.dll</HintPath>
     </Reference>
     <Reference Include="System.Net.Http, Version=4.1.1.3, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a, processorArchitecture=MSIL">
       <HintPath>..\packages\System.Net.Http.4.3.4\lib\net46\System.Net.Http.dll</HintPath>
       <Private>True</Private>
       <Private>True</Private>
     </Reference>
+    <Reference Include="System.Numerics" />
+    <Reference Include="System.Numerics.Vectors, Version=4.1.4.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a, processorArchitecture=MSIL">
+      <HintPath>..\packages\System.Numerics.Vectors.4.5.0\lib\net46\System.Numerics.Vectors.dll</HintPath>
+    </Reference>
+    <Reference Include="System.Runtime, Version=4.1.1.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a, processorArchitecture=MSIL">
+      <HintPath>..\packages\System.Runtime.4.3.0\lib\net462\System.Runtime.dll</HintPath>
+      <Private>True</Private>
+      <Private>True</Private>
+    </Reference>
     <Reference Include="System.Runtime.CompilerServices.Unsafe, Version=4.0.4.1, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a, processorArchitecture=MSIL">
-      <HintPath>..\packages\System.Runtime.CompilerServices.Unsafe.4.5.3\lib\netstandard1.0\System.Runtime.CompilerServices.Unsafe.dll</HintPath>
+      <HintPath>..\packages\System.Runtime.CompilerServices.Unsafe.4.5.3\lib\net461\System.Runtime.CompilerServices.Unsafe.dll</HintPath>
+    </Reference>
+    <Reference Include="System.Runtime.InteropServices, Version=4.1.1.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a, processorArchitecture=MSIL">
+      <HintPath>..\packages\System.Runtime.InteropServices.4.3.0\lib\net463\System.Runtime.InteropServices.dll</HintPath>
+      <Private>True</Private>
+      <Private>True</Private>
     </Reference>
     <Reference Include="System.Runtime.Serialization" />
-    <Reference Include="System.Security.Cryptography.Algorithms, Version=4.1.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a, processorArchitecture=MSIL">
-      <HintPath>..\packages\System.Security.Cryptography.Algorithms.4.3.0\lib\net461\System.Security.Cryptography.Algorithms.dll</HintPath>
+    <Reference Include="System.Security.Cryptography.Algorithms, Version=4.2.1.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a, processorArchitecture=MSIL">
+      <HintPath>..\packages\System.Security.Cryptography.Algorithms.4.3.0\lib\net463\System.Security.Cryptography.Algorithms.dll</HintPath>
       <Private>True</Private>
       <Private>True</Private>
     </Reference>
@@ -380,10 +420,10 @@
     <Reference Include="WindowsBase" />
   </ItemGroup>
   <ItemGroup>
-    <EmbeddedResource Include="Settings\SnykGeneralSettingsUserControl.resx">
+    <EmbeddedResource Include="Snyk\VisualStudio\Extension\Settings\SnykGeneralSettingsUserControl.resx">
       <DependentUpon>SnykGeneralSettingsUserControl.cs</DependentUpon>
     </EmbeddedResource>
-    <EmbeddedResource Include="Settings\SnykProjectOptionsUserControl.resx">
+    <EmbeddedResource Include="Snyk\VisualStudio\Extension\Settings\SnykProjectOptionsUserControl.resx">
       <DependentUpon>SnykProjectOptionsUserControl.cs</DependentUpon>
     </EmbeddedResource>
     <EmbeddedResource Include="SnykIcons.resx">
@@ -396,17 +436,25 @@
     </EmbeddedResource>
   </ItemGroup>
   <ItemGroup>
-    <Page Include="UI\SnykFilterableTree.xaml">
+    <Page Include="Snyk\VisualStudio\Extension\UI\Tree\SnykFilterableTree.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>
-    <Page Include="UI\SnykToolWindowControl.xaml">
+    <Page Include="Snyk\VisualStudio\Extension\UI\Toolwindow\SnykToolWindowControl.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>
   </ItemGroup>
   <ItemGroup>
     <WCFMetadata Include="Service References\" />
+  </ItemGroup>
+  <ItemGroup>
+    <Analyzer Include="..\packages\Microsoft.CodeAnalysis.NetAnalyzers.5.0.3\analyzers\dotnet\cs\Microsoft.CodeAnalysis.CSharp.NetAnalyzers.dll" />
+    <Analyzer Include="..\packages\Microsoft.CodeAnalysis.NetAnalyzers.5.0.3\analyzers\dotnet\cs\Microsoft.CodeAnalysis.NetAnalyzers.dll" />
+    <Analyzer Include="..\packages\Microsoft.VisualStudio.SDK.Analyzers.15.8.33\analyzers\cs\Microsoft.VisualStudio.SDK.Analyzers.dll" />
+    <Analyzer Include="..\packages\Microsoft.VisualStudio.Threading.Analyzers.15.8.122\analyzers\cs\Microsoft.VisualStudio.Threading.Analyzers.dll" />
+    <Analyzer Include="..\packages\StyleCop.Analyzers.1.1.118\analyzers\dotnet\cs\StyleCop.Analyzers.CodeFixes.dll" />
+    <Analyzer Include="..\packages\StyleCop.Analyzers.1.1.118\analyzers\dotnet\cs\StyleCop.Analyzers.dll" />
   </ItemGroup>
   <ItemGroup />
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
@@ -420,17 +468,17 @@
     <PropertyGroup>
       <ErrorText>This project references NuGet package(s) that are missing on this computer. Use NuGet Package Restore to download them.  For more information, see http://go.microsoft.com/fwlink/?LinkID=322105. The missing file is {0}.</ErrorText>
     </PropertyGroup>
-    <Error Condition="!Exists('..\packages\Microsoft.VisualStudio.Threading.Analyzers.15.8.122\build\Microsoft.VisualStudio.Threading.Analyzers.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\packages\Microsoft.VisualStudio.Threading.Analyzers.15.8.122\build\Microsoft.VisualStudio.Threading.Analyzers.targets'))" />
-    <Error Condition="!Exists('..\packages\Microsoft.VisualStudio.SDK.Analyzers.15.8.33\build\Microsoft.VisualStudio.SDK.Analyzers.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\packages\Microsoft.VisualStudio.SDK.Analyzers.15.8.33\build\Microsoft.VisualStudio.SDK.Analyzers.targets'))" />
     <Error Condition="'$(VisualStudioVersion)' == '14.0' And !Exists('..\packages\Microsoft.VisualStudio.Sdk.BuildTasks.14.0.14.9.23\build\Microsoft.VisualStudio.Sdk.BuildTasks.14.0.props')" Text="$([System.String]::Format('$(ErrorText)', '..\packages\Microsoft.VisualStudio.Sdk.BuildTasks.14.0.14.9.23\build\Microsoft.VisualStudio.Sdk.BuildTasks.14.0.props'))" />
     <Error Condition="'$(VisualStudioVersion)' == '14.0' And !Exists('..\packages\Microsoft.VisualStudio.Sdk.BuildTasks.14.0.14.9.23\build\Microsoft.VisualStudio.Sdk.BuildTasks.14.0.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\packages\Microsoft.VisualStudio.Sdk.BuildTasks.14.0.14.9.23\build\Microsoft.VisualStudio.Sdk.BuildTasks.14.0.targets'))" />
     <Error Condition="'$(VisualStudioVersion)' != '14.0' And !Exists('..\packages\Microsoft.VSSDK.BuildTools.15.0.26201\build\Microsoft.VSSDK.BuildTools.props')" Text="$([System.String]::Format('$(ErrorText)', '..\packages\Microsoft.VSSDK.BuildTools.15.0.26201\build\Microsoft.VSSDK.BuildTools.props'))" />
     <Error Condition="'$(VisualStudioVersion)' != '14.0' And !Exists('..\packages\Microsoft.VSSDK.BuildTools.15.0.26201\build\Microsoft.VSSDK.BuildTools.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\packages\Microsoft.VSSDK.BuildTools.15.0.26201\build\Microsoft.VSSDK.BuildTools.targets'))" />
+    <Error Condition="!Exists('..\packages\Microsoft.CodeAnalysis.NetAnalyzers.5.0.3\build\Microsoft.CodeAnalysis.NetAnalyzers.props')" Text="$([System.String]::Format('$(ErrorText)', '..\packages\Microsoft.CodeAnalysis.NetAnalyzers.5.0.3\build\Microsoft.CodeAnalysis.NetAnalyzers.props'))" />
+    <Error Condition="!Exists('..\packages\Microsoft.CodeAnalysis.NetAnalyzers.5.0.3\build\Microsoft.CodeAnalysis.NetAnalyzers.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\packages\Microsoft.CodeAnalysis.NetAnalyzers.5.0.3\build\Microsoft.CodeAnalysis.NetAnalyzers.targets'))" />
+    <Error Condition="!Exists('..\packages\Microsoft.VisualStudio.Threading.Analyzers.15.8.122\build\Microsoft.VisualStudio.Threading.Analyzers.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\packages\Microsoft.VisualStudio.Threading.Analyzers.15.8.122\build\Microsoft.VisualStudio.Threading.Analyzers.targets'))" />
+    <Error Condition="!Exists('..\packages\Microsoft.VisualStudio.SDK.Analyzers.15.8.33\build\Microsoft.VisualStudio.SDK.Analyzers.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\packages\Microsoft.VisualStudio.SDK.Analyzers.15.8.33\build\Microsoft.VisualStudio.SDK.Analyzers.targets'))" />
+    <Error Condition="!Exists('..\packages\Microsoft.VSSDK.BuildTools.15.0.26201\build\Microsoft.VSSDK.BuildTools.props')" Text="$([System.String]::Format('$(ErrorText)', '..\packages\Microsoft.VSSDK.BuildTools.15.0.26201\build\Microsoft.VSSDK.BuildTools.props'))" />
+    <Error Condition="!Exists('..\packages\Microsoft.VSSDK.BuildTools.15.0.26201\build\Microsoft.VSSDK.BuildTools.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\packages\Microsoft.VSSDK.BuildTools.15.0.26201\build\Microsoft.VSSDK.BuildTools.targets'))" />
   </Target>
-  <Import Project="..\packages\Microsoft.VisualStudio.Threading.Analyzers.15.8.122\build\Microsoft.VisualStudio.Threading.Analyzers.targets" Condition="Exists('..\packages\Microsoft.VisualStudio.Threading.Analyzers.15.8.122\build\Microsoft.VisualStudio.Threading.Analyzers.targets')" />
-  <Import Project="..\packages\Microsoft.VisualStudio.SDK.Analyzers.15.8.33\build\Microsoft.VisualStudio.SDK.Analyzers.targets" Condition="Exists('..\packages\Microsoft.VisualStudio.SDK.Analyzers.15.8.33\build\Microsoft.VisualStudio.SDK.Analyzers.targets')" />
-  <Import Project="..\packages\Microsoft.VisualStudio.Sdk.BuildTasks.14.0.14.9.23\build\Microsoft.VisualStudio.Sdk.BuildTasks.14.0.targets" Condition="'$(VisualStudioVersion)' == '14.0' And Exists('..\packages\Microsoft.VisualStudio.Sdk.BuildTasks.14.0.14.9.23\build\Microsoft.VisualStudio.Sdk.BuildTasks.14.0.targets')" />
-  <Import Project="..\packages\Microsoft.VSSDK.BuildTools.15.0.26201\build\Microsoft.VSSDK.BuildTools.targets" Condition="'$(VisualStudioVersion)' != '14.0' And Exists('..\packages\Microsoft.VSSDK.BuildTools.15.0.26201\build\Microsoft.VSSDK.BuildTools.targets')" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
        Other similar extension points exist, see Microsoft.Common.targets.
   <Target Name="BeforeBuild">
@@ -444,4 +492,8 @@
       <Output TaskParameter="ExitCode" PropertyName="SuccessOrNot" />
     </Exec>
   </Target>
+  <Import Project="..\packages\Microsoft.CodeAnalysis.NetAnalyzers.5.0.3\build\Microsoft.CodeAnalysis.NetAnalyzers.targets" Condition="Exists('..\packages\Microsoft.CodeAnalysis.NetAnalyzers.5.0.3\build\Microsoft.CodeAnalysis.NetAnalyzers.targets')" />
+  <Import Project="..\packages\Microsoft.VisualStudio.Threading.Analyzers.15.8.122\build\Microsoft.VisualStudio.Threading.Analyzers.targets" Condition="Exists('..\packages\Microsoft.VisualStudio.Threading.Analyzers.15.8.122\build\Microsoft.VisualStudio.Threading.Analyzers.targets')" />
+  <Import Project="..\packages\Microsoft.VisualStudio.SDK.Analyzers.15.8.33\build\Microsoft.VisualStudio.SDK.Analyzers.targets" Condition="Exists('..\packages\Microsoft.VisualStudio.SDK.Analyzers.15.8.33\build\Microsoft.VisualStudio.SDK.Analyzers.targets')" />
+  <Import Project="..\packages\Microsoft.VSSDK.BuildTools.15.0.26201\build\Microsoft.VSSDK.BuildTools.targets" Condition="Exists('..\packages\Microsoft.VSSDK.BuildTools.15.0.26201\build\Microsoft.VSSDK.BuildTools.targets')" />
 </Project>
