@@ -243,3 +243,4 @@ ModelManifest.xml
 
 # Private information.
 snyk-visual-studio-plugin/appsettings.json
+SnykCodeLibraryTests/settings.json

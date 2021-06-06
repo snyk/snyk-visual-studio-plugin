@@ -16,6 +16,10 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "doc", "doc", "{9AAC9A90-42B
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "images", "images", "{99BED51B-0DEF-4CF8-9029-CFB41C24B43F}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SnykCodeLibrary", "SnykCodeLibrary\SnykCodeLibrary.csproj", "{73DF907B-A3BC-4176-A4E0-04BBD2FA924C}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SnykCodeLibraryTests", "SnykCodeLibraryTests\SnykCodeLibraryTests.csproj", "{01631B74-705C-46B2-B6FB-DDD8C358F951}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -30,6 +34,14 @@ Global
 		{EFB35F94-39AE-4A43-9634-4D1C0AD03999}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{EFB35F94-39AE-4A43-9634-4D1C0AD03999}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{EFB35F94-39AE-4A43-9634-4D1C0AD03999}.Release|Any CPU.Build.0 = Release|Any CPU
+		{73DF907B-A3BC-4176-A4E0-04BBD2FA924C}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{73DF907B-A3BC-4176-A4E0-04BBD2FA924C}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{73DF907B-A3BC-4176-A4E0-04BBD2FA924C}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{73DF907B-A3BC-4176-A4E0-04BBD2FA924C}.Release|Any CPU.Build.0 = Release|Any CPU
+		{01631B74-705C-46B2-B6FB-DDD8C358F951}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{01631B74-705C-46B2-B6FB-DDD8C358F951}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{01631B74-705C-46B2-B6FB-DDD8C358F951}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{01631B74-705C-46B2-B6FB-DDD8C358F951}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
