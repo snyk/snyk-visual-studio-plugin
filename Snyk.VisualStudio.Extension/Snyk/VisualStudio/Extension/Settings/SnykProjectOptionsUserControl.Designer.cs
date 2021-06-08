@@ -46,7 +46,7 @@
             this.additionalOptionsTextBox.ScrollBars = System.Windows.Forms.ScrollBars.Both;
             this.additionalOptionsTextBox.Size = new System.Drawing.Size(1220, 223);
             this.additionalOptionsTextBox.TabIndex = 0;
-            this.additionalOptionsTextBox.TextChanged += new System.EventHandler(this.additionalOptionsTextBox_TextChanged);
+            this.additionalOptionsTextBox.TextChanged += new System.EventHandler(this.AdditionalOptionsTextBox_TextChanged);
             // 
             // allProjectsCheckBox
             // 
@@ -59,7 +59,7 @@
             this.allProjectsCheckBox.TabIndex = 1;
             this.allProjectsCheckBox.Text = "Scan all projects (--all-projects option)";
             this.allProjectsCheckBox.UseVisualStyleBackColor = true;
-            this.allProjectsCheckBox.CheckedChanged += new System.EventHandler(this.allProjectsCheckBox_CheckedChanged);
+            this.allProjectsCheckBox.CheckedChanged += new System.EventHandler(this.AllProjectsCheckBox_CheckedChanged);
             // 
             // errorProvider
             // 

@@ -12,7 +12,7 @@
     /// <summary>
     /// Service for solution settings.
     /// </summary>
-    public class SnykSolutionSettingsService
+    public class SnykUserStorageSettingsService
     {
         /// <summary>
         /// Main settings entry key name.
@@ -24,20 +24,25 @@
         /// </summary>
         public const string UsageAnalyticsEnabledName = "UsageAnalyticsEnabled";
 
+        /// <summary>
+        /// Current CLI version key name.
+        /// </summary>
+        public const string CurrentCliVersionName = "CurrentCliVersionName";
+
+        /// <summary>
+        /// Last date for check of CLI release.
+        /// </summary>
+        public const string CliReleaseLastCheckDateName = "CliReleaseLastCheckDate";
+
         private readonly SnykSolutionService solutionService;
 
         private readonly SnykActivityLogger logger;
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="SnykSolutionSettingsService"/> class.
+        /// Initializes a new instance of the <see cref="SnykUserStorageSettingsService"/> class.
         /// </summary>
-        /// <param name="solutionService">Solution service intance.</param>
-        public SnykSolutionSettingsService(SnykSolutionService solutionService)
-        {
-            this.solutionService = solutionService;
-
-            this.logger = solutionService.Logger;
-        }
+        /// <param name="logger">Solution service intance.</param>
+        public SnykUserStorageSettingsService(SnykActivityLogger logger) => this.logger = logger;
 
         /// <summary>
         /// Get CLI additional options string.
@@ -155,6 +160,58 @@
         /// <param name="usageAnalyticsEnabled">Bool param.</param>
         public void SaveUsageAnalyticsEnabled(bool usageAnalyticsEnabled) => this.GetUserSettingsStore()
             .SetBoolean(SnykSettingsCollectionName, UsageAnalyticsEnabledName, usageAnalyticsEnabled);
+
+        /// <summary>
+        /// Get current CLI version.
+        /// </summary>
+        /// <returns>String in '1.100.1' format.</returns>
+        public string GetCurrentCliVersion()
+        {
+            string cliVersion = string.Empty;
+
+            try
+            {
+                return this.GetUserSettingsStore().GetString(SnykSettingsCollectionName, CurrentCliVersionName);
+            }
+            catch (Exception exception)
+            {
+                this.logger.LogError(exception.Message);
+            }
+
+            return cliVersion;
+        }
+
+        /// <summary>
+        /// Save CLI version number.
+        /// </summary>
+        /// <param name="cliVersion">CLI version to save.</param>
+        public void SaveCurrentCliVersion(string cliVersion) => this.GetUserSettingsStore()
+            .SetString(SnykSettingsCollectionName, CurrentCliVersionName, cliVersion);
+
+        /// <summary>
+        /// Get current CLI version.
+        /// </summary>
+        /// <returns>String in '1.100.1' format.</returns>
+        public string GetCliReleaseLastCheckDate()
+        {
+            try
+            {
+                return this.GetUserSettingsStore().GetString(SnykSettingsCollectionName, CliReleaseLastCheckDateName);
+            }
+            catch (Exception exception)
+            {
+                this.logger.LogError(exception.Message);
+            }
+
+            return string.Empty;
+        }
+
+        /// <summary>
+        /// Save last check date data.
+        /// </summary>
+        /// <param name="lastCheckDate">Last check date.</param>
+        public void SaveCliReleaseLastCheckDate(string lastCheckDate) => this.GetUserSettingsStore()
+            .SetString(SnykSettingsCollectionName, CliReleaseLastCheckDateName, lastCheckDate);
 
         /// <summary>
         /// Save additional options string.

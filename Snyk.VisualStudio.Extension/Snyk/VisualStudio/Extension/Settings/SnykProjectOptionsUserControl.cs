@@ -1,50 +1,64 @@
-﻿using Snyk.VisualStudio.Extension.CLI;
-using System;
-using System.Windows.Forms;
-
-namespace Snyk.VisualStudio.Extension.Settings
+﻿namespace Snyk.VisualStudio.Extension.Settings
 {
+    using System;
+    using System.Windows.Forms;
+    using Snyk.VisualStudio.Extension.Service;
+
+    /// <summary>
+    /// Project settings control.
+    /// </summary>
     public partial class SnykProjectOptionsUserControl : UserControl
     {
-        private SnykSolutionService solutionService;
+        private ISnykServiceProvider serviceProvider;
 
-        public SnykProjectOptionsUserControl(SnykSolutionService solutionService)
+        private SnykUserStorageSettingsService userStorageSettingsService;
+
+        private SnykActivityLogger logger;
+
+        /// <summary>
+        /// Initializes a new instance of the <see cref="SnykProjectOptionsUserControl"/> class.
+        /// </summary>
+        /// <param name="serviceProvider">Snyk service provider.</param>
+        public SnykProjectOptionsUserControl(ISnykServiceProvider serviceProvider)
         {
-            InitializeComponent();
+            this.InitializeComponent();
 
-            this.solutionService = solutionService;
-        }    
+            this.serviceProvider = serviceProvider;
+            this.userStorageSettingsService = serviceProvider.UserStorageSettingsService;
+            this.logger = serviceProvider.ActivityLogger;
+        }
 
-        private void checkOptionConflicts()
+        private void CheckOptionConflicts()
         {
-            if (allProjectsCheckBox.Checked && additionalOptionsTextBox.Text.Contains("--file="))
+            if (this.allProjectsCheckBox.Checked && this.additionalOptionsTextBox.Text.Contains("--file="))
             {
-                errorProvider.SetError(additionalOptionsTextBox, 
+                this.errorProvider.SetError(
+                    this.additionalOptionsTextBox,
                     "The following option combination is not currently supported: file + all-projects");
-            } 
+            }
             else
             {
-                errorProvider.SetError(additionalOptionsTextBox, "");
+                this.errorProvider.SetError(this.additionalOptionsTextBox, string.Empty);
             }
         }
 
-        private void additionalOptionsTextBox_TextChanged(object sender, EventArgs e)
+        private void AdditionalOptionsTextBox_TextChanged(object sender, EventArgs e)
         {
-            if (solutionService.IsSolutionOpen)
-            {                
-                solutionService.SolutionSettingsService.SaveAdditionalOptions(additionalOptionsTextBox.Text.ToString());
-
-                checkOptionConflicts();
-            }
-        }
-
-        private void allProjectsCheckBox_CheckedChanged(object sender, EventArgs e)
-        {
-            if (solutionService.IsSolutionOpen)
+            if (this.serviceProvider.SolutionService.IsSolutionOpen)
             {
-                solutionService.SolutionSettingsService.SaveIsAllProjectsScanEnabled(allProjectsCheckBox.Checked);
+                this.userStorageSettingsService.SaveAdditionalOptions(this.additionalOptionsTextBox.Text.ToString());
 
-                checkOptionConflicts();
+                this.CheckOptionConflicts();
+            }
+        }
+
+        private void AllProjectsCheckBox_CheckedChanged(object sender, EventArgs e)
+        {
+            if (this.serviceProvider.SolutionService.IsSolutionOpen)
+            {
+                this.userStorageSettingsService.SaveIsAllProjectsScanEnabled(allProjectsCheckBox.Checked);
+
+                this.CheckOptionConflicts();
             }
         }
 
@@ -52,10 +66,10 @@ namespace Snyk.VisualStudio.Extension.Settings
         {
             base.OnVisibleChanged(eventArgs);
 
-            bool isProjectOpened = solutionService.IsSolutionOpen;
+            bool isProjectOpened = this.serviceProvider.SolutionService.IsSolutionOpen;
 
-            additionalOptionsTextBox.Enabled = isProjectOpened;
-            allProjectsCheckBox.Enabled = isProjectOpened;
+            this.additionalOptionsTextBox.Enabled = isProjectOpened;
+            this.allProjectsCheckBox.Enabled = isProjectOpened;
 
             if (!isProjectOpened)
             {
@@ -64,38 +78,38 @@ namespace Snyk.VisualStudio.Extension.Settings
 
             try
             {
-                string additionalOptions = solutionService.SolutionSettingsService.GetAdditionalOptions();
+                string additionalOptions = this.userStorageSettingsService.GetAdditionalOptions();
 
-                if (!String.IsNullOrEmpty(additionalOptions))
+                if (!string.IsNullOrEmpty(additionalOptions))
                 {
-                    additionalOptionsTextBox.Text = additionalOptions;
+                    this.additionalOptionsTextBox.Text = additionalOptions;
                 }
                 else
                 {
-                    additionalOptionsTextBox.Text = "";
+                    this.additionalOptionsTextBox.Text = string.Empty;
                 }
             }
             catch (Exception exception)
             {
-                solutionService.Logger.LogError(exception.Message);
+                this.logger.LogError(exception.Message);
 
-                additionalOptionsTextBox.Text = "";
+                this.additionalOptionsTextBox.Text = string.Empty;
             }
 
             try
             {
-                allProjectsCheckBox.Checked = solutionService.SolutionSettingsService.GetIsAllProjectsEnabled();
+                this.allProjectsCheckBox.Checked = this.userStorageSettingsService.GetIsAllProjectsEnabled();
             }
             catch (Exception exception)
             {
-                solutionService.Logger.LogError(exception.Message);
+                this.logger.LogError(exception.Message);
 
-                allProjectsCheckBox.Checked = false;
+                this.allProjectsCheckBox.Checked = false;
 
-                solutionService.SolutionSettingsService.SaveIsAllProjectsScanEnabled(false);
+                this.userStorageSettingsService.SaveIsAllProjectsScanEnabled(false);
             }
 
-            checkOptionConflicts();
+            this.CheckOptionConflicts();
         }
     }
 }
