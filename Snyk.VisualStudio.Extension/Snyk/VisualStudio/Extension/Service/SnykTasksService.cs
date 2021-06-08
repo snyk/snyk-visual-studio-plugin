@@ -1,6 +1,7 @@
 ﻿namespace Snyk.VisualStudio.Extension.Service
 {
     using System;
+    using System.Collections.Generic;
     using System.Threading;
     using System.Threading.Tasks;
     using System.Windows;
@@ -294,9 +295,32 @@
                 {
                     try
                     {
-                        var cliDownloader = new SnykCliDownloader(this.serviceProvider.ActivityLogger);
+                        var userStorageService = this.serviceProvider.UserStorageSettingsService;
 
-                        cliDownloader.Download(progressWorker: progressWorker, downloadFinishedCallback: downloadFinishedCallback);
+                        string currentCliVersion = userStorageService.GetCurrentCliVersion();
+                        string lastCliReleaseDateStr = userStorageService.GetCliReleaseLastCheckDate();
+
+                        DateTime lastCliReleaseDate = DateTime.Parse(lastCliReleaseDateStr);
+
+                        var cliDownloader = new SnykCliDownloader(currentCliVersion, this.serviceProvider.ActivityLogger);
+
+                        List<CliDownloadFinishedCallback> downloadFinishedCallbacks = new List<CliDownloadFinishedCallback>();
+
+                        if (downloadFinishedCallback != null)
+                        {
+                            downloadFinishedCallbacks.Add(downloadFinishedCallback);
+                        }
+
+                        downloadFinishedCallbacks.Add(new CliDownloadFinishedCallback(() =>
+                        {
+                            userStorageService.SaveCurrentCliVersion(cliDownloader.GetLatestReleaseInfo().CliVersion);
+                            userStorageService.SaveCliReleaseLastCheckDate(DateTime.Now.ToShortDateString());
+                        }));
+
+                        cliDownloader.AutoUpdateCli(
+                            lastCliReleaseDate,
+                            progressWorker: progressWorker,
+                            downloadFinishedCallbacks: downloadFinishedCallbacks);
                     }
                     catch (Exception exception)
                     {

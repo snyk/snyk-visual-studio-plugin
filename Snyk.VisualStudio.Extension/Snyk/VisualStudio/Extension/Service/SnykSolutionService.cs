@@ -4,7 +4,6 @@
     using System.IO;
     using EnvDTE;
     using Service;
-    using Settings;
     using Microsoft.VisualStudio;
     using Microsoft.VisualStudio.Shell.Interop;
     using Task = System.Threading.Tasks.Task;
@@ -15,8 +14,6 @@
     public class SnykSolutionService : IVsSolutionLoadManager
     {
         private static SnykSolutionService instance;
-
-        private SnykSolutionSettingsService solutionSettingsService;
 
         private SnykActivityLogger logger;
 
@@ -49,22 +46,6 @@
         /// Gets a value indicating whether VS logger.
         /// </summary>
         public SnykActivityLogger Logger => this.logger;
-
-        /// <summary>
-        /// Gets a value indicating whether SolutionSettingsService.
-        /// </summary>
-        public SnykSolutionSettingsService SolutionSettingsService
-        {
-            get
-            {
-                if (this.solutionSettingsService == null)
-                {
-                    this.solutionSettingsService = new SnykSolutionSettingsService(this);
-                }
-
-                return this.solutionSettingsService;
-            }
-        }
 
         /// <summary>
         /// Gets or sets a value indicating whether <see cref="ISnykServiceProvider"/> instance.

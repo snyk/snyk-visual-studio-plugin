@@ -87,6 +87,8 @@ namespace Snyk.VisualStudio.Extension.Tests
 
         public SnykAnalyticsService AnalyticsService => new SnykAnalyticsService();
 
+        public SnykUserStorageSettingsService UserStorageSettingsService => throw new NotImplementedException();
+
         Microsoft.VisualStudio.Shell.IAsyncServiceProvider ISnykServiceProvider.AsyncServiceProvider
         {
             get

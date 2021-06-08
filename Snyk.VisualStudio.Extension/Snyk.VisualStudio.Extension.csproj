@@ -154,7 +154,7 @@
     <Compile Include="Snyk\VisualStudio\Extension\Settings\SnykProjectOptionsUserControl.Designer.cs">
       <DependentUpon>SnykProjectOptionsUserControl.cs</DependentUpon>
     </Compile>
-    <Compile Include="Snyk\VisualStudio\Extension\Settings\SnykSolutionSettingsService.cs" />
+    <Compile Include="Snyk\VisualStudio\Extension\Settings\SnykUserStorageSettingsService.cs" />
     <Compile Include="SnykIcons.Designer.cs">
       <AutoGen>True</AutoGen>
       <DesignTime>True</DesignTime>

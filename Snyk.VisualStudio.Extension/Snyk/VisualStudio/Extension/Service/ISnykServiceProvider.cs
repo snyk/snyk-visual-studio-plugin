@@ -66,6 +66,11 @@
         SnykAnalyticsService AnalyticsService { get; }
 
         /// <summary>
+        /// Gets user storage settings service instance.
+        /// </summary>
+        SnykUserStorageSettingsService UserStorageSettingsService { get; }
+
+        /// <summary>
         /// Create new instance of <see cref="SnykCli"/>.
         /// </summary>
         /// <returns>SnykCli.</returns>
