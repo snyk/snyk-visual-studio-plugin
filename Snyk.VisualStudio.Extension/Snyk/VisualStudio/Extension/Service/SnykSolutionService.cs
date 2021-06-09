@@ -90,7 +90,7 @@
             var projects = this.GetProjects();
 
             string solutionPath = string.Empty;
-            
+
             // 1 case: Solution with projects.
             if (!dteSolution.IsDirty && projects.Count > 0)
             {
@@ -121,9 +121,9 @@
 
                 solutionPath = dteSolution.FullName;
             }
-            
+
             this.logger.LogInformation($"Result solution path is {solutionPath}.");
-            
+
             return solutionPath;
         }
 

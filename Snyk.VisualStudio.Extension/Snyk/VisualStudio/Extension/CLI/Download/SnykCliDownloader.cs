@@ -109,28 +109,55 @@
         /// <param name="lastCheckDate">Last check date.</param>
         /// <param name="cliFileDestinationPath">Path to CLI file.</param>
         /// <returns>True if CLI file not exists or new release exists.</returns>
-        public bool IsCliDownloadNeeded(DateTime lastCheckDate, string cliFileDestinationPath = null) => !File.Exists(cliFileDestinationPath)
-                || (this.IsFourDaysPassedAfterLastCheck(lastCheckDate)
-                    && this.IsNewVersionAvailable(this.currentCliVersion, this.GetLatestReleaseInfo().CliVersion));
+        public bool IsCliDownloadNeeded(DateTime lastCheckDate, string cliFileDestinationPath = null) =>
+            !this.IsCliFileExists(cliFileDestinationPath) || this.IsCliUpdateExists(lastCheckDate);
+
+        /// <summary>
+        /// Check is CLI file not exists by provided location.
+        /// </summary>
+        /// <param name="cliFileDestinationPath">CLI location path.</param>
+        /// <returns>True if CLI file not exists.</returns>
+        public bool IsCliFileExists(string cliFileDestinationPath = null) => File.Exists(cliFileDestinationPath);
+
+        /// <summary>
+        /// Is CLI update exists.
+        /// </summary>
+        /// <param name="lastCheckDate">Last check date.</param>
+        /// <returns>True if new version CLI exists</returns>
+        public bool IsCliUpdateExists(DateTime lastCheckDate) => this.IsFourDaysPassedAfterLastCheck(lastCheckDate)
+                    && this.IsNewVersionAvailable(this.currentCliVersion, this.GetLatestReleaseInfo().CliVersion);
 
         /// <summary>
         /// Check is there a new version on the server and if there is, download it.
         /// </summary>
         /// <param name="lastCheckDate">Last date when it check for CLI updates.</param>
-        /// <param name="cliFileDestinationPath">CLI file destination path or null.</param>
+        /// <param name="filePath">CLI file destination path or null.</param>
         /// <param name="progressWorker">Progress worker for update get download progress.</param>
         /// <param name="downloadFinishedCallbacks">List of callback for download finished event.</param>
         public void AutoUpdateCli(
             DateTime lastCheckDate,
-            string cliFileDestinationPath = null,
+            string filePath = null,
             ISnykProgressWorker progressWorker = null,
             List<CliDownloadFinishedCallback> downloadFinishedCallbacks = null)
         {
-            if (this.IsCliDownloadNeeded(lastCheckDate, cliFileDestinationPath))
+            string fileDestinationPath = this.GetCliFilePath(filePath);
+
+            if (this.IsCliDownloadNeeded(lastCheckDate, filePath))
             {
+                if (progressWorker != null)
+                {
+                    progressWorker.IsUpdateDownload =
+                        this.IsCliFileExists(fileDestinationPath) && this.IsCliUpdateExists(lastCheckDate);
+
+                    if (progressWorker.IsUpdateDownload)
+                    {
+                        File.Delete(fileDestinationPath);
+                    }
+                }
+
                 this.Download(
-                    cliFileDestinationPath: cliFileDestinationPath,
-                    progressWorker: progressWorker, 
+                    fileDestinationPath: fileDestinationPath,
+                    progressWorker: progressWorker,
                     downloadFinishedCallbacks: downloadFinishedCallbacks);
             }
         }
@@ -138,20 +165,17 @@
         /// <summary>
         /// Download last CLI instance.
         /// </summary>
-        /// <param name="cliFileDestinationPath">Path to destination cli file.</param>
+        /// <param name="fileDestinationPath">Path to destination cli file.</param>
         /// <param name="progressWorker">Progress worker for update get download progress.</param>
         /// <param name="downloadFinishedCallbacks">List of Callbacks for download finished event.</param>
         public void Download(
-            string cliFileDestinationPath = null,
+            string fileDestinationPath = null,
             ISnykProgressWorker progressWorker = null,
             List<CliDownloadFinishedCallback> downloadFinishedCallbacks = null)
         {
             this.logger?.LogInformation("Enter Download method");
 
-            if (cliFileDestinationPath == null)
-            {
-                cliFileDestinationPath = SnykCli.GetSnykCliPath();
-            }
+            string cliFileDestinationPath = this.GetCliFilePath(fileDestinationPath);
 
             this.logger?.LogInformation($"CLI File Destination Path: {cliFileDestinationPath}");
 
@@ -289,5 +313,7 @@
                 return -1;
             }
         }
+
+        private string GetCliFilePath(string filePath) => string.IsNullOrEmpty(filePath) ? SnykCli.GetSnykCliPath() : filePath;
     }
 }
