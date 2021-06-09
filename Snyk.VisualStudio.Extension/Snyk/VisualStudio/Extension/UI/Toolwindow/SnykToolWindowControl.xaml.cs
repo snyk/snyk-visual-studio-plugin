@@ -141,7 +141,17 @@
         /// </summary>
         /// <param name="sender">Source object.</param>
         /// <param name="eventArgs">Event args.</param>
-        public void OnDownloadStarted(object sender, SnykCliDownloadEventArgs eventArgs) => this.context.TransitionTo(DownloadState.Instance);
+        public void OnDownloadStarted(object sender, SnykCliDownloadEventArgs eventArgs)
+        {
+            if (eventArgs.IsUpdateDownload)
+            {
+                this.context.TransitionTo(UpdateDownloadState.Instance);
+            }
+            else
+            {
+                this.context.TransitionTo(DownloadState.Instance);
+            }
+        }
 
         /// <summary>
         /// DownloadFinished event handler. Call SetInitialState() method.

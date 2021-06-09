@@ -111,6 +111,7 @@
     </Compile>
     <Compile Include="Snyk\VisualStudio\Extension\Theme\ThemeInfo.cs" />
     <Compile Include="Snyk\VisualStudio\Extension\Theme\VsBroadcastMessageEvents.cs" />
+    <Compile Include="Snyk\VisualStudio\Extension\UI\Toolwindow\UpdateDownloadState.cs" />
     <Compile Include="Snyk\VisualStudio\Extension\UI\Tree\RootVulnerabilityTreeNode.cs" />
     <Compile Include="Snyk\VisualStudio\Extension\UI\SnykIconProvider.cs" />
     <Compile Include="Snyk\VisualStudio\Extension\UI\Toolwindow\DownloadState.cs" />

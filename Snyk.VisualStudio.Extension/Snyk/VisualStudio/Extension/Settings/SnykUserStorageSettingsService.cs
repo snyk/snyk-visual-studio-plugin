@@ -8,6 +8,7 @@
     using Microsoft.VisualStudio.Shell;
     using Microsoft.VisualStudio.Shell.Interop;
     using Microsoft.VisualStudio.Shell.Settings;
+    using Snyk.VisualStudio.Extension.Service;
 
     /// <summary>
     /// Service for solution settings.
@@ -34,15 +35,22 @@
         /// </summary>
         public const string CliReleaseLastCheckDateName = "CliReleaseLastCheckDate";
 
-        private readonly SnykSolutionService solutionService;
+        private readonly SettingsManager settingsManager;
 
         private readonly SnykActivityLogger logger;
+
+        private readonly SnykSolutionService solutionService;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="SnykUserStorageSettingsService"/> class.
         /// </summary>
-        /// <param name="logger">Solution service intance.</param>
-        public SnykUserStorageSettingsService(SnykActivityLogger logger) => this.logger = logger;
+        /// <param name="serviceProvider">Snyk service provider.</param>
+        public SnykUserStorageSettingsService(ISnykServiceProvider serviceProvider)
+        {
+            this.solutionService = serviceProvider.SolutionService;
+            this.settingsManager = serviceProvider.SettingsManager;
+            this.logger = serviceProvider.ActivityLogger;
+        }
 
         /// <summary>
         /// Get CLI additional options string.
@@ -171,7 +179,7 @@
 
             try
             {
-                return this.GetUserSettingsStore().GetString(SnykSettingsCollectionName, CurrentCliVersionName);
+                cliVersion = this.GetUserSettingsStore().GetString(SnykSettingsCollectionName, CurrentCliVersionName);
             }
             catch (Exception exception)
             {
@@ -192,26 +200,32 @@
         /// Get current CLI version.
         /// </summary>
         /// <returns>String in '1.100.1' format.</returns>
-        public string GetCliReleaseLastCheckDate()
+        public DateTime GetCliReleaseLastCheckDate()
         {
+            DateTime dateTime;
+
             try
             {
-                return this.GetUserSettingsStore().GetString(SnykSettingsCollectionName, CliReleaseLastCheckDateName);
+                string dateStr = this.GetUserSettingsStore().GetString(SnykSettingsCollectionName, CliReleaseLastCheckDateName);
+
+                dateTime = DateTime.Parse(dateStr);
             }
             catch (Exception exception)
             {
                 this.logger.LogError(exception.Message);
+
+                dateTime = DateTime.MinValue;
             }
 
-            return string.Empty;
+            return dateTime;
         }
 
         /// <summary>
         /// Save last check date data.
         /// </summary>
         /// <param name="lastCheckDate">Last check date.</param>
-        public void SaveCliReleaseLastCheckDate(string lastCheckDate) => this.GetUserSettingsStore()
-            .SetString(SnykSettingsCollectionName, CliReleaseLastCheckDateName, lastCheckDate);
+        public void SaveCliReleaseLastCheckDate(DateTime lastCheckDate) => this.GetUserSettingsStore()
+            .SetString(SnykSettingsCollectionName, CliReleaseLastCheckDateName, lastCheckDate.ToShortDateString());
 
         /// <summary>
         /// Save additional options string.
@@ -295,7 +309,7 @@
         {
             this.logger.LogInformation("Enter GetUserSettingsStore method");
 
-            var settingsStore = this.solutionService.ServiceProvider.SettingsManager.GetWritableSettingsStore(SettingsScope.UserSettings);
+            var settingsStore = this.settingsManager.GetWritableSettingsStore(SettingsScope.UserSettings);
 
             if (!settingsStore.CollectionExists(SnykSettingsCollectionName))
             {

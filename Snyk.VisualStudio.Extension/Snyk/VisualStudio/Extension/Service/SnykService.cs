@@ -121,7 +121,7 @@
             {
                 if (this.userStorageSettingsService == null)
                 {
-                    this.userStorageSettingsService = new SnykUserStorageSettingsService(this.activityLogger);
+                    this.userStorageSettingsService = new SnykUserStorageSettingsService(this);
                 }
 
                 return this.userStorageSettingsService;

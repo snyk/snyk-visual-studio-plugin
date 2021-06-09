@@ -18,6 +18,11 @@
         public SnykTasksService TasksService { get; set; }
 
         /// <summary>
+        /// Gets or sets a value indicating whether is update download.
+        /// </summary>
+        public bool IsUpdateDownload { get; set; }
+
+        /// <summary>
         /// Notify progress update.
         /// </summary>
         /// <param name="progress">Current progress from 1 to 100.</param>
@@ -42,7 +47,17 @@
         /// <summary>
         /// Notify download started.
         /// </summary>
-        public void DownloadStarted() => this.TasksService.OnDownloadStarted();
+        public void DownloadStarted()
+        {
+            if (this.IsUpdateDownload)
+            {
+                this.TasksService.OnUpdateDownloadStarted();
+            }
+            else
+            {
+                this.TasksService.OnDownloadStarted();
+            }
+        }
 
         /// <summary>
         /// Notify donwload cancelled.

@@ -298,9 +298,8 @@
                         var userStorageService = this.serviceProvider.UserStorageSettingsService;
 
                         string currentCliVersion = userStorageService.GetCurrentCliVersion();
-                        string lastCliReleaseDateStr = userStorageService.GetCliReleaseLastCheckDate();
 
-                        DateTime lastCliReleaseDate = DateTime.Parse(lastCliReleaseDateStr);
+                        DateTime lastCliReleaseDate = userStorageService.GetCliReleaseLastCheckDate();
 
                         var cliDownloader = new SnykCliDownloader(currentCliVersion, this.serviceProvider.ActivityLogger);
 
@@ -314,7 +313,7 @@
                         downloadFinishedCallbacks.Add(new CliDownloadFinishedCallback(() =>
                         {
                             userStorageService.SaveCurrentCliVersion(cliDownloader.GetLatestReleaseInfo().CliVersion);
-                            userStorageService.SaveCliReleaseLastCheckDate(DateTime.Now.ToShortDateString());
+                            userStorageService.SaveCliReleaseLastCheckDate(DateTime.Now);
                         }));
 
                         cliDownloader.AutoUpdateCli(
@@ -346,7 +345,14 @@
         /// <summary>
         /// Fire download started.
         /// </summary>
-        protected internal void OnDownloadStarted() => this.DownloadStarted?.Invoke(this, new SnykCliDownloadEventArgs());
+        protected internal void OnDownloadStarted()
+            => this.DownloadStarted?.Invoke(this, new SnykCliDownloadEventArgs());
+
+        /// <summary>
+        /// Fire update download started.
+        /// </summary>
+        protected internal void OnUpdateDownloadStarted()
+            => this.DownloadStarted?.Invoke(this, new SnykCliDownloadEventArgs());
 
         /// <summary>
         /// Fire download finished event.
