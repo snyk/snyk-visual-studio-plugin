@@ -4,7 +4,7 @@
     using System.Collections.Generic;
     using System.IO;
     using System.Linq;
-    using Newtonsoft.Json;
+    using System.Text.Json;
     using Settings;
 
     /// <summary>
@@ -45,6 +45,17 @@
         /// </summary>
         /// <returns>Snyk API token.</returns>
         public string Authenticate() => this.ConsoleRunner.Run(GetSnykCliPath(), "auth");
+
+        /// <summary>
+        /// Get Snyk CLI directory path. By default it's $UserDirectory\.AppData\Snyk.
+        /// </summary>
+        /// <returns>CLI directory path.</returns>
+        public static string GetSnykDirectoryPath()
+        {
+            string appDataDirectoryPath = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData);
+
+            return Path.Combine(appDataDirectoryPath, SnykConfigurationDirectoryName);
+        }
 
         /// <summary>
         /// Run snyk test to scan for vulnerabilities.
@@ -149,13 +160,13 @@
             {
                 return new CliResult
                 {
-                    CliVulnerabilitiesList = JsonConvert.DeserializeObject<List<CliVulnerabilities>>(rawResult),
+                    CliVulnerabilitiesList = JsonSerializer.Deserialize<List<CliVulnerabilities>>(rawResult),
                 };
             } else if (rawResult.First() == '{')
             {
                 if (this.IsSuccessCliJsonString(rawResult))
                 {
-                    var cliVulnerabilities = JsonConvert.DeserializeObject<CliVulnerabilities>(rawResult);
+                    var cliVulnerabilities = JsonSerializer.Deserialize<CliVulnerabilities>(rawResult);
 
                     var cliVulnerabilitiesList = new List<CliVulnerabilities>();
                     cliVulnerabilitiesList.Add(cliVulnerabilities);
@@ -168,7 +179,7 @@
                 {
                     return new CliResult
                     {
-                        Error = JsonConvert.DeserializeObject<CliError>(rawResult),
+                        Error = JsonSerializer.Deserialize<CliError>(rawResult),
                     };
                 }
             } else
@@ -190,18 +201,7 @@
         /// </summary>
         /// <param name="json">Source json string.</param>
         /// <returns>True if json string contains vulnerabilities object(s).</returns>
-        public bool IsSuccessCliJsonString(string json) => json.Contains("\"vulnerabilities\":") && !json.Contains("\"error\":");
-
-        /// <summary>
-        /// Get Snyk CLI directory path. By default it's $UserDirectory\.AppData\Snyk.
-        /// </summary>
-        /// <returns>CLI directory path.</returns>
-        public static string GetSnykDirectoryPath()
-        {
-            string appDataDirectoryPath = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData);
-
-            return Path.Combine(appDataDirectoryPath, SnykConfigurationDirectoryName);
-        }
+        public bool IsSuccessCliJsonString(string json) => json.Contains("\"vulnerabilities\":") && !json.Contains("\"error\":");        
 
         /// <summary>
         /// Get Snyk CLI file path.

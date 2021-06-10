@@ -3,8 +3,8 @@
     using System;
     using System.IO;
     using System.Text;
+    using System.Text.Json;
     using System.Threading.Tasks;
-    using Newtonsoft.Json;
     using Segment;
     using Segment.Model;
     using Settings;
@@ -80,8 +80,8 @@
 
                 string appsettingsPath = Path.Combine(extensionPath, "appsettings.json");
 
-                SnykAppSettings appSettings = JsonConvert
-                    .DeserializeObject<SnykAppSettings>(File.ReadAllText(appsettingsPath, Encoding.UTF8));
+                SnykAppSettings appSettings = JsonSerializer
+                    .Deserialize<SnykAppSettings>(File.ReadAllText(appsettingsPath, Encoding.UTF8));
 
                 string writeKey = appSettings.SegmentAnalyticsWriteKey;
 
@@ -258,7 +258,7 @@
 
                 string userInfoJson = webClient.DownloadString(SnykUserMeUrl);
 
-                return JsonConvert.DeserializeObject<SnykUser>(userInfoJson);
+                return JsonSerializer.Deserialize<SnykUser>(userInfoJson);
             }
         }
 
