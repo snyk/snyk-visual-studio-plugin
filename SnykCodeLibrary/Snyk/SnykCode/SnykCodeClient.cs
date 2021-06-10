@@ -4,7 +4,7 @@
     using System.Net.Http;
     using System.Net.Http.Headers;
     using System.Text;
-    using Newtonsoft.Json;
+    using System.Text.Json;
 
     /// <summary>
     /// Client for SnykCode support.
@@ -41,7 +41,7 @@
 
             string jsonResponse = response.Content.ReadAsStringAsync().Result;
 
-            this.loginResponse = JsonConvert.DeserializeObject<LoginResponse>(jsonResponse);
+            this.loginResponse = JsonSerializer.Deserialize<LoginResponse>(jsonResponse);
 
             return this.loginResponse;
         }
@@ -53,7 +53,7 @@
         /// <returns><see cref="LoginStatus"/> object.</returns>
         public async System.Threading.Tasks.Task<LoginStatus> CheckSessionAsync(string sessionToken)
         {
-            var request = new HttpRequestMessage(HttpMethod.Get, this.loginResponse.loginURL);
+            var request = new HttpRequestMessage(HttpMethod.Get, this.loginResponse.LoginURL);
 
             request.Headers.UserAgent.Add(new ProductInfoHeaderValue("Session-Token", sessionToken));
 

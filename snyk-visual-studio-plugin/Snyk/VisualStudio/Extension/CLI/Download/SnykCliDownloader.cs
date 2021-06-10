@@ -3,7 +3,7 @@
     using System;
     using System.IO;
     using System.Net;
-    using Newtonsoft.Json;
+    using System.Text.Json;
     using Service;
 
     /// <summary>
@@ -47,7 +47,7 @@
 
                 this.logger?.LogError("Deserialize latest CLI release info");
 
-                return JsonConvert.DeserializeObject<LatestReleaseInfo>(latestReleasesInfoJson);
+                return JsonSerializer.Deserialize<LatestReleaseInfo>(latestReleasesInfoJson);
             }
         }
 

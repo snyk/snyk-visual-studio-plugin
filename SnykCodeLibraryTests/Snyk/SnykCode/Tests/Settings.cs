@@ -3,7 +3,7 @@
     using System;
     using System.IO;
     using System.Text;
-    using Newtonsoft.Json;
+    using System.Text.Json;
 
     /// <summary>
     /// Test settings.
@@ -39,9 +39,9 @@
         private static Settings Load()
         {
             string settingsPath = Path.Combine(GetProjectPath(), SettingsFileName);
+            string settingsJson = File.ReadAllText(settingsPath, Encoding.UTF8);
 
-            return JsonConvert
-                .DeserializeObject<Settings>(File.ReadAllText(settingsPath, Encoding.UTF8));
+            return JsonSerializer.Deserialize<Settings>(settingsJson);
         }
 
         private static string GetProjectPath()

@@ -3,9 +3,9 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 16
 VisualStudioVersion = 16.0.31105.61
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "snyk-visual-studio-plugin", "snyk-visual-studio-plugin\snyk-visual-studio-plugin.csproj", "{910098F4-EC69-40F2-8CF1-B2E86E30D2F8}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Snyk.VisualStudio.Extension", "snyk-visual-studio-plugin\Snyk.VisualStudio.Extension.csproj", "{910098F4-EC69-40F2-8CF1-B2E86E30D2F8}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "snyk-visual-studio-plugin-tests", "snyk-visual-studio-plugin-tests\snyk-visual-studio-plugin-tests.csproj", "{EFB35F94-39AE-4A43-9634-4D1C0AD03999}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Snyk.VisualStudio.Extension.Tests", "snyk-visual-studio-plugin-tests\Snyk.VisualStudio.Extension.Tests.csproj", "{EFB35F94-39AE-4A43-9634-4D1C0AD03999}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{D96E849F-BE0B-475D-873B-A0C0C6CC3D47}"
 	ProjectSection(SolutionItems) = preProject
@@ -16,9 +16,9 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "doc", "doc", "{9AAC9A90-42B
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "images", "images", "{99BED51B-0DEF-4CF8-9029-CFB41C24B43F}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SnykCodeLibrary", "SnykCodeLibrary\SnykCodeLibrary.csproj", "{73DF907B-A3BC-4176-A4E0-04BBD2FA924C}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Snyk.Code.Library", "SnykCodeLibrary\Snyk.Code.Library.csproj", "{73DF907B-A3BC-4176-A4E0-04BBD2FA924C}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SnykCodeLibraryTests", "SnykCodeLibraryTests\SnykCodeLibraryTests.csproj", "{01631B74-705C-46B2-B6FB-DDD8C358F951}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Snyk.Code.Library.Tests", "SnykCodeLibraryTests\Snyk.Code.Library.Tests.csproj", "{01631B74-705C-46B2-B6FB-DDD8C358F951}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

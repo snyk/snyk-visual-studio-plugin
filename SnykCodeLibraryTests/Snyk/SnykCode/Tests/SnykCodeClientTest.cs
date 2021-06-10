@@ -15,7 +15,7 @@
             LoginResponse response = snykCodeClient.LoginAsync(TestUserAgent).Result;
 
             Assert.NotNull(response);
-            Assert.NotEmpty(response.sessionToken);
+            Assert.NotEmpty(response.SessionToken);
         }
 
         [Fact]
@@ -28,9 +28,6 @@
             Assert.False(response.IsSuccess);
         }
 
-        // <summary>
-        // Not working right now.
-        // </summary>
         [Fact]
         public void CheckSessionSuccess()
         {

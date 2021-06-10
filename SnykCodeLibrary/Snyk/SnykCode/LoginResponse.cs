@@ -8,19 +8,19 @@
         /// <summary>
         /// Gets or sets a value indicating whether Session token.
         /// </summary>
-        public string sessionToken { get; set; }
+        public string SessionToken { get; set; }
 
         /// <summary>
         /// Gets or sets a value indicating whether login URL.
         /// </summary>
-        public string loginURL { get; set; }
+        public string LoginURL { get; set; }
 
         /// <summary>
         /// Gets a value indicating whether is success login.
         /// Check is error null or empty and session token not null or empty.
         /// </summary>
-        public bool IsSuccess => string.IsNullOrEmpty(error) && !string.IsNullOrEmpty(sessionToken);
+        public bool IsSuccess => string.IsNullOrEmpty(Error) && !string.IsNullOrEmpty(SessionToken);
 
-        private string error { get; set; }
+        private string Error { get; set; }
     }
 }
