@@ -206,9 +206,9 @@
 
             try
             {
-                string dateStr = this.GetUserSettingsStore().GetString(SnykSettingsCollectionName, CliReleaseLastCheckDateName);
+                long tempDate = this.GetUserSettingsStore().GetInt64(SnykSettingsCollectionName, CliReleaseLastCheckDateName);
 
-                dateTime = DateTime.Parse(dateStr);
+                dateTime = new DateTime(tempDate);
             }
             catch (Exception exception)
             {
@@ -225,7 +225,7 @@
         /// </summary>
         /// <param name="lastCheckDate">Last check date.</param>
         public void SaveCliReleaseLastCheckDate(DateTime lastCheckDate) => this.GetUserSettingsStore()
-            .SetString(SnykSettingsCollectionName, CliReleaseLastCheckDateName, lastCheckDate.ToShortDateString());
+            .SetInt64(SnykSettingsCollectionName, CliReleaseLastCheckDateName, lastCheckDate.Ticks);
 
         /// <summary>
         /// Save additional options string.
