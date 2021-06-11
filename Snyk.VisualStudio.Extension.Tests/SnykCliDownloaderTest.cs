@@ -9,7 +9,7 @@
     public class SnykCliDownloaderTest
     {
         [TestMethod]
-        public void GetLatestReleaseInfo()
+        public void SnykCliDownloader_CorrectInformationProvided_LatestReleaseInfoCorrect()
         {
             var cliDownloader = new SnykCliDownloader(new SnykMockActivityLogger());
 
@@ -19,7 +19,7 @@
         }
 
         [TestMethod]
-        public void Download()
+        public void SnykCliDownloader_CorrectInformationProvided_DownloadSuccessful()
         {
             var cliDownloader = new SnykCliDownloader(new SnykMockActivityLogger());
 
@@ -37,35 +37,51 @@
         }
 
         [TestMethod]
-        public void IsNewVersionAvailable()
+        public void SnykCliDownloader_WrongNewVersionProvided_ChecksFail()
         {
             var cliDownloader = new SnykCliDownloader(new SnykMockActivityLogger());
             
-            Assert.IsFalse(cliDownloader.IsNewVersionAvailable("1.342.1", ""));
-            Assert.IsTrue(cliDownloader.IsNewVersionAvailable("", "1.342.1"));
-
+            Assert.IsFalse(cliDownloader.IsNewVersionAvailable("1.342.1", ""));           
             Assert.IsFalse(cliDownloader.IsNewVersionAvailable("", "test"));
-
-            Assert.IsTrue(cliDownloader.IsNewVersionAvailable("1.342.2", "1.345.1"));
-            Assert.IsTrue(cliDownloader.IsNewVersionAvailable("1.342.2", "2.345.1"));
-            Assert.IsTrue(cliDownloader.IsNewVersionAvailable("1.345.2", "1.345.9"));
-
             Assert.IsFalse(cliDownloader.IsNewVersionAvailable("2.342.2", "1.342.1"));
             Assert.IsFalse(cliDownloader.IsNewVersionAvailable("1.345.2", "1.342.9"));
             Assert.IsFalse(cliDownloader.IsNewVersionAvailable("1.345.2", "1.345.1"));
+
+            Assert.IsTrue(cliDownloader.IsNewVersionAvailable("", "1.342.1"));
+            Assert.IsTrue(cliDownloader.IsNewVersionAvailable("1.342.2", "1.345.1"));
+            Assert.IsTrue(cliDownloader.IsNewVersionAvailable("1.342.2", "2.345.1"));
+            Assert.IsTrue(cliDownloader.IsNewVersionAvailable("1.345.2", "1.345.9"));            
         }
 
         [TestMethod]
-        public void IsFourDaysPassedAfterLastCheck()
+        public void SnykCliDownloader_CorrectNewVersionProvided_ChecksPass()
+        {
+            var cliDownloader = new SnykCliDownloader(new SnykMockActivityLogger());            
+
+            Assert.IsTrue(cliDownloader.IsNewVersionAvailable("", "1.342.1"));
+            Assert.IsTrue(cliDownloader.IsNewVersionAvailable("1.342.2", "1.345.1"));
+            Assert.IsTrue(cliDownloader.IsNewVersionAvailable("1.342.2", "2.345.1"));
+            Assert.IsTrue(cliDownloader.IsNewVersionAvailable("1.345.2", "1.345.9"));
+        }
+
+        [TestMethod]
+        public void SnykCliDownloader_CorrectLastCheckDatePassed_CheckPass()
         {
             var cliDownloader = new SnykCliDownloader(new SnykMockActivityLogger());
 
             Assert.IsTrue(cliDownloader.IsFourDaysPassedAfterLastCheck(DateTime.Now.AddDays(-5)));
+        }
+
+        [TestMethod]
+        public void SnykCliDownloader_WrongLastCheckDatePassed_CheckFail()
+        {
+            var cliDownloader = new SnykCliDownloader(new SnykMockActivityLogger());
+
             Assert.IsFalse(cliDownloader.IsFourDaysPassedAfterLastCheck(DateTime.Now.AddDays(-3)));
         }
 
         [TestMethod]
-        public void CliSilentAutoUpdateIfNoPreviousFile()
+        public void SnykCliDownloader_CliFileNotExists_CliDownloadSuccessful()
         {
             string tempCliPath = Path.Combine(Path.GetTempPath(), SnykCli.CliFileName);
 
@@ -85,7 +101,7 @@
         }
 
         [TestMethod]
-        public void CliSilentAutoUpdateIfNoPreviousVersion()
+        public void SnykCliDownloader_WrongPreviousVersionProvided_CliDownloadSuccessful()
         {
             string tempCliPath = Path.Combine(Path.GetTempPath(), SnykCli.CliFileName);
 
@@ -108,7 +124,7 @@
         }
 
         [TestMethod]
-        public void CliSilentAutoUpdateIfPreviousVersionOlder()
+        public void SnykCliDownloader_PreviousVersionOlderProvided_CliDownloadSuccessful()
         {
             string tempCliPath = Path.Combine(Path.GetTempPath(), SnykCli.CliFileName);
 
@@ -132,7 +148,7 @@
         }
 
         [TestMethod]
-        public void CliSilentAutoUpdateIfPreviousVersionOlderAndFourDaysPassed()
+        public void SnykCliDownloader_PreviousVersionOlderAndFourDaysPassedProvided_CliDownloadSuccessful()
         {
             string tempCliPath = Path.Combine(Path.GetTempPath(), SnykCli.CliFileName);
 
