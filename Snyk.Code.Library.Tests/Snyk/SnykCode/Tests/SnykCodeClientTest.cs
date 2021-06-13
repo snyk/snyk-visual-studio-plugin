@@ -9,6 +9,18 @@
         private const string TestUserAgent = "Test-VisualStudio";
 
         [Fact]
+        public void SnykCodeClient_GetFilters_ChecksPass()
+        {
+            var snykCodeClient = new SnykCodeClient(TestSettings.SnykCodeApiUrl, TestSettings.Instance.ApiToken);
+
+            Filters filters = snykCodeClient.GetFilters().Result;
+
+            Assert.NotNull(filters);
+            Assert.NotNull(filters.Extensions);
+            Assert.NotNull(filters.ConfigFiles);
+        }
+
+        [Fact]
         public void SnykCodeClient_ProperLoginDataProvided_ChecksPass()
         {
             var snykCodeClient = new SnykCodeClient(TestSettings.SnykCodeApiUrl, TestSettings.Instance.ApiToken);
