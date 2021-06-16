@@ -313,7 +313,7 @@
                         downloadFinishedCallbacks.Add(new CliDownloadFinishedCallback(() =>
                         {
                             userStorageService.SaveCurrentCliVersion(cliDownloader.GetLatestReleaseInfo().CliVersion);
-                            userStorageService.SaveCliReleaseLastCheckDate(DateTime.Now);
+                            userStorageService.SaveCliReleaseLastCheckDate(DateTime.UtcNow);
                         }));
 
                         cliDownloader.AutoUpdateCli(
