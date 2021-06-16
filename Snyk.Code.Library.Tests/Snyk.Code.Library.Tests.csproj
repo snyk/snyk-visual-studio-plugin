@@ -25,7 +25,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\SnykCodeLibrary\Snyk.Code.Library.csproj" />
+    <ProjectReference Include="..\Snyk.Code.Library\Snyk.Code.Library.csproj" />
   </ItemGroup>
 
   <Target Name="WriteSettingsFile" BeforeTargets="PreBuildEvent">

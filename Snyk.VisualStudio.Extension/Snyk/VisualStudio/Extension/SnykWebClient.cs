@@ -13,7 +13,7 @@
         public SnykWebClient()
             : base()
         {
-            this.Headers.Add("User-Agent", "SnykVisualStudioExtension");
+            this.Headers.Add("User-Agent", "Snyk.VisualStudio.Extension");
 
             ServicePointManager.Expect100Continue = true;
             ServicePointManager.SecurityProtocol = SecurityProtocolType.Tls12;
