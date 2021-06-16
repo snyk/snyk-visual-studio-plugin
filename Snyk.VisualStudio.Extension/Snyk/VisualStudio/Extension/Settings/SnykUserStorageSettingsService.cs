@@ -208,7 +208,7 @@
             {
                 long tempDate = this.GetUserSettingsStore().GetInt64(SnykSettingsCollectionName, CliReleaseLastCheckDateName);
 
-                dateTime = new DateTime(tempDate);
+                dateTime = new DateTime(tempDate, DateTimeKind.Utc);
             }
             catch (Exception exception)
             {
