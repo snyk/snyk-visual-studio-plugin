@@ -8,7 +8,7 @@
     <OutputType>Library</OutputType>
     <AppDesignerFolder>Properties</AppDesignerFolder>
     <RootNamespace>Snyk.VisualStudio.Extension.Tests</RootNamespace>
-    <AssemblyName>snyk-visual-studio-plugin-tests</AssemblyName>
+    <AssemblyName>Snyk.VisualStudio.Extension.Tests</AssemblyName>
     <TargetFrameworkVersion>v4.7.2</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
     <ProjectTypeGuids>{3AC096D0-A1C2-E12C-1390-A8335801FDAB};{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}</ProjectTypeGuids>
@@ -89,7 +89,7 @@
     </EmbeddedResource>
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\snyk-visual-studio-plugin\Snyk.VisualStudio.Extension.csproj">
+    <ProjectReference Include="..\SnykVisualStudioExtension\Snyk.VisualStudio.Extension.csproj">
       <Project>{910098f4-ec69-40f2-8cf1-b2e86e30d2f8}</Project>
       <Name>Snyk.VisualStudio.Extension</Name>
     </ProjectReference>
@@ -99,7 +99,6 @@
     <EmbeddedResource Include="Resources\CriticalSeverityObject.json">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </EmbeddedResource>
-    <None Include="packages.config" />
   </ItemGroup>
   <Choose>
     <When Condition="'$(VisualStudioVersion)' == '10.0' And '$(IsCodedUITest)' == 'True'">
@@ -139,7 +138,7 @@
     <PropertyGroup>
       <TestSuccessOrNot>1</TestSuccessOrNot>
     </PropertyGroup>
-    <Exec Command="$(MSBuidPath) /testcontainer:.\bin\Debug\snyk-visual-studio-plugin-tests.dll">
+    <Exec Command="$(MSBuidPath) /testcontainer:.\bin\Debug\SnykVisualStudioExtensionTests.dll">
       <Output TaskParameter="ExitCode" PropertyName="TestSuccessOrNot" />
     </Exec>
   </Target>

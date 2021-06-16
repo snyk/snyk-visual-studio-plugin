@@ -73,6 +73,7 @@
     <Compile Include="Snyk\SnykCode\LoginResponse.cs" />
     <Compile Include="Snyk\SnykCode\SnykCodeClient.cs" />
     <Compile Include="Snyk\SnykCode\LoginStatus.cs" />
+    <Compile Include="Snyk\SnykCode\SnykCodeException.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />

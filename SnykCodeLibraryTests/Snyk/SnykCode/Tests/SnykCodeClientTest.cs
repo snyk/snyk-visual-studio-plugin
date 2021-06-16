@@ -1,6 +1,7 @@
 ﻿namespace Snyk.SnykCode.Tests
 {
-    using SnykCode;
+    using System;
+    using SnykCode;    
     using Xunit;
 
     public class SnykCodeClientTest
@@ -8,10 +9,10 @@
         private const string TestUserAgent = "Test-VisualStudio";
 
         [Fact]
-        public void LoginSuccess()
+        public void SnykCodeClient_ProperLoginDataProvided_ChecksPass()
         {
-            var snykCodeClient = new SnykCodeClient();
-
+            var snykCodeClient = new SnykCodeClient(TestSettings.SnykCodeApiUrl, TestSettings.Instance.ApiToken);
+            
             LoginResponse response = snykCodeClient.LoginAsync(TestUserAgent).Result;
 
             Assert.NotNull(response);
@@ -19,23 +20,21 @@
         }
 
         [Fact]
-        public void LoginFailed()
+        public void SnykCodeClient_WrongPayloadProvided_ChecksFailed()
         {
-            var snykCodeClient = new SnykCodeClient();
+            var snykCodeClient = new SnykCodeClient(TestSettings.SnykCodeApiUrl, string.Empty);
 
-            LoginResponse response = snykCodeClient.LoginAsync("\\{").Result;
-
-            Assert.False(response.IsSuccess);
+            Assert.Throws<AggregateException>(() => snykCodeClient.LoginAsync("\\{").Result);            
         }
 
         [Fact]
-        public void CheckSessionSuccess()
+        public void SnykCodeClient_ChessSessionProperApiTokenProvided_CheckPass()
         {
-            var snykCodeClient = new SnykCodeClient();
+            var snykCodeClient = new SnykCodeClient(TestSettings.SnykCodeApiUrl, TestSettings.Instance.ApiToken);
 
             _ = snykCodeClient.LoginAsync(TestUserAgent).Result;
 
-            LoginStatus status = snykCodeClient.CheckSessionAsync(Settings.Instance.ApiToken).Result;
+            LoginStatus status = snykCodeClient.CheckSessionAsync().Result;
 
             Assert.True(status.IsSucccess);
         }
