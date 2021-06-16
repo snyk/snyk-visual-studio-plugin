@@ -89,7 +89,7 @@
     </EmbeddedResource>
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\SnykVisualStudioExtension\Snyk.VisualStudio.Extension.csproj">
+    <ProjectReference Include="..\Snyk.VisualStudio.Extension\Snyk.VisualStudio.Extension.csproj">
       <Project>{910098f4-ec69-40f2-8cf1-b2e86e30d2f8}</Project>
       <Name>Snyk.VisualStudio.Extension</Name>
     </ProjectReference>
@@ -138,7 +138,7 @@
     <PropertyGroup>
       <TestSuccessOrNot>1</TestSuccessOrNot>
     </PropertyGroup>
-    <Exec Command="$(MSBuidPath) /testcontainer:.\bin\Debug\SnykVisualStudioExtensionTests.dll">
+    <Exec Command="$(MSBuidPath) /testcontainer:.\bin\Debug\Snyk.VisualStudio.Extension.Tests.dll">
       <Output TaskParameter="ExitCode" PropertyName="TestSuccessOrNot" />
     </Exec>
   </Target>
