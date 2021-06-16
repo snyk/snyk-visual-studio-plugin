@@ -35,6 +35,17 @@
         public SnykConsoleRunner ConsoleRunner { get; set; }
 
         /// <summary>
+        /// Get Snyk CLI directory path. By default it's $UserDirectory\.AppData\Snyk.
+        /// </summary>
+        /// <returns>CLI directory path.</returns>
+        public static string GetSnykDirectoryPath()
+        {
+            string appDataDirectoryPath = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData);
+
+            return Path.Combine(appDataDirectoryPath, SnykConfigurationDirectoryName);
+        }
+
+        /// <summary>
         /// Get Snyk API token from settings.
         /// </summary>
         /// <returns>API token string.</returns>
@@ -45,17 +56,6 @@
         /// </summary>
         /// <returns>Snyk API token.</returns>
         public string Authenticate() => this.ConsoleRunner.Run(GetSnykCliPath(), "auth");
-
-        /// <summary>
-        /// Get Snyk CLI directory path. By default it's $UserDirectory\.AppData\Snyk.
-        /// </summary>
-        /// <returns>CLI directory path.</returns>
-        public static string GetSnykDirectoryPath()
-        {
-            string appDataDirectoryPath = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData);
-
-            return Path.Combine(appDataDirectoryPath, SnykConfigurationDirectoryName);
-        }
 
         /// <summary>
         /// Run snyk test to scan for vulnerabilities.

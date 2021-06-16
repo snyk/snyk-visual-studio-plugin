@@ -1,14 +1,14 @@
-﻿using Microsoft.VisualStudio.TestTools.UnitTesting;
-using Snyk.VisualStudio.Extension.CLI;
-using Snyk.VisualStudio.Extension.Settings;
-using System;
-using System.IO;
-using System.Reflection;
-using System.Text.RegularExpressions;
-using System.Diagnostics;
-
-namespace Snyk.VisualStudio.Extension.Tests
-{   
+﻿namespace Snyk.VisualStudio.Extension.Tests
+{
+    using System;
+    using System.IO;
+    using System.Reflection;
+    using System.Resources;
+    using System.Text.RegularExpressions;
+    using Microsoft.VisualStudio.TestTools.UnitTesting;
+    using Snyk.VisualStudio.Extension.CLI;
+    using Snyk.VisualStudio.Extension.Settings;
+    
     [TestClass]
     public class SnykCliTest
     {
@@ -222,6 +222,8 @@ namespace Snyk.VisualStudio.Extension.Tests
                 Options = new SnykMockOptions()
             };
 
+            
+
             var cliResult = cli.ConvertRawCliStringToCliResult(GetFileContents("VulnerabilitiesArray.json"));
 
             Assert.AreEqual(2, cliResult.CliVulnerabilitiesList.Count);
@@ -300,7 +302,7 @@ namespace Snyk.VisualStudio.Extension.Tests
                 throw new ArgumentNullException("relativeResourcePath");
             }
 
-            var resourcePath = String.Format("{0}.{1}",
+            var resourcePath = string.Format("{0}.{1}",
                 Regex.Replace(assembly.ManifestModule.Name, @"\.(exe|dll)$",
                       string.Empty, RegexOptions.IgnoreCase), relativeResourcePath);
 

@@ -153,7 +153,7 @@
         </Grid>
         <Grid Grid.Row="6" Name="overviewGrid" VerticalAlignment="Center" Visibility="Collapsed">
             <StackPanel HorizontalAlignment="Center">
-                <Image Source="/snyk-visual-studio-plugin;component/Resources/SnykDogLogoFullSize.png" Width="128"/>
+                <Image Source="/SnykVisualStudioExtension;component/Resources/SnykDogLogoFullSize.png" Width="128"/>
                 <TextBlock FontWeight="Bold" TextAlignment="Center" Padding="0,5">
                     Welcome to Snyk for Visual Studio
                 </TextBlock>

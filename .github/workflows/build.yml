@@ -28,7 +28,7 @@ jobs:
         (new-object Net.WebClient).DownloadString("https://raw.github.com/madskristensen/ExtensionScripts/master/AppVeyor/vsix.ps1") | iex
         #Vsix-IncrementVsixVersion | Vsix-UpdateBuildVersion
         #echo {version}
-        #Vsix-TokenReplacement snyk-visual-studio-plugin\source.extension.vsixmanifest 'Version="([0-9\\.]+)"' 'Version="{version}"'
+        #Vsix-TokenReplacement SnykVisualStudioExtension\source.extension.vsixmanifest 'Version="([0-9\\.]+)"' 'Version="{version}"'
         msbuild ${{env.SOLUTION_FILE_PATH}} /p:configuration=Release /p:DeployExtension=false /p:ZipPackageCompressionLevel=normal /v:m
         #Vsix-PushArtifacts | Vsix-PublishToGallery
       shell: powershell

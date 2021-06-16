@@ -30,7 +30,7 @@
 
   <Target Name="WriteSettingsFile" BeforeTargets="PreBuildEvent">
     <WriteLinesToFile File="$(SettingsFile)" Overwrite="true" Lines="{" />
-    <WriteLinesToFile File="$(SettingsFile)" Lines="'ApiToken':'$(TEST_API_TOKEN)'" />
+    <WriteLinesToFile File="$(SettingsFile)" Lines="&quot;ApiToken&quot;:&quot;$(TEST_API_TOKEN)&quot;" />
     <WriteLinesToFile File="$(SettingsFile)" Lines="}" />
   </Target>
 </Project>
