@@ -1,0 +1,88 @@
+﻿namespace Snyk.SnykCode
+{
+    using System;
+    using System.Net.Http;
+    using System.Net.Http.Headers;
+    using System.Text;
+    using System.Text.Json;
+
+    /// <summary>
+    /// Client for SnykCode support.
+    /// </summary>
+    public class SnykCodeClient
+    {
+        private const string LoginApiUrl = "publicapi/login";
+
+        private const string CheckSessionApiUrl = "publicapi/session";
+
+        private readonly HttpClient httpClient = new HttpClient();
+
+        private LoginResponse loginResponse;
+
+        private string snykCodeBaseUrl;
+
+        private string apiToken;
+
+        public SnykCodeClient(string baseUrl, string token)
+        {
+            this.snykCodeBaseUrl = baseUrl;
+            this.apiToken = token;
+        }
+
+        /// <summary>
+        /// Requests the creation of a new login session.
+        /// <param name="userAgent">Represents requested client. For example, VisualStudio or VisualStudio code or other IDE.</param>
+        /// /// <returns><see cref="LoginResponse"/> object.</returns>
+        /// </summary>
+        public async System.Threading.Tasks.Task<LoginResponse> LoginAsync(string userAgent)
+        {
+            if (string.IsNullOrEmpty(userAgent))
+            {
+                throw new ArgumentException("User agent is null or empty");
+            }
+
+            var request = new HttpRequestMessage(HttpMethod.Post, this.snykCodeBaseUrl + LoginApiUrl);
+
+            //request.Headers.UserAgent.Add(new ProductInfoHeaderValue("Session-Token", apiToken));
+
+            //request.Content = new StringContent(
+            //    "{\"source\": \"" + userAgent + "\"}", 
+            //    Encoding.UTF8, "application/json");
+
+            request.Headers.Add("Session-Token", apiToken);
+
+            var response = await httpClient.SendAsync(request);
+
+            string responseText = response.Content.ReadAsStringAsync().Result;
+
+            if (response.IsSuccessStatusCode)
+            {
+                this.loginResponse = JsonSerializer.Deserialize<LoginResponse>(responseText);
+
+                return this.loginResponse;
+            } 
+            else
+            {
+                throw new SnykCodeException(((int)response.StatusCode), responseText);
+            }
+        }
+
+        /// <summary>
+        /// Check current session status with user token.
+        /// </summary>
+        /// <param name="sessionToken">User API token.</param>
+        /// <returns><see cref="LoginStatus"/> object.</returns>
+        public async System.Threading.Tasks.Task<LoginStatus> CheckSessionAsync()
+        {
+            var request = new HttpRequestMessage(HttpMethod.Get, this.snykCodeBaseUrl + CheckSessionApiUrl);
+
+            //request.Headers.UserAgent.Add(new ProductInfoHeaderValue("Session-Token", sessionToken));
+
+            request.Headers.Add("Session-Token", apiToken);
+
+            HttpResponseMessage httpResponse = await httpClient.SendAsync(request);
+
+            return new LoginStatus((int)httpResponse.StatusCode);
+        }        
+    }      
+}
