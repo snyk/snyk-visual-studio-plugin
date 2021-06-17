@@ -61,7 +61,7 @@
 
                     this.logger?.LogError("Deserialize latest CLI release info");
 
-                    this.latestReleaseInfo = JsonConvert.DeserializeObject<LatestReleaseInfo>(latestReleasesInfoJson);
+                    this.latestReleaseInfo = JsonSerializer.Deserialize<LatestReleaseInfo>(latestReleasesInfoJson);
                 }
             }
 
