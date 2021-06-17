@@ -15,6 +15,6 @@
         /// <summary>
         /// Gets a value indicating whether <see cref="SnykProjectOptionsUserControl"/>.
         /// </summary>
-        protected override IWin32Window Window => new SnykProjectOptionsUserControl(SnykSolutionService.Instance);
+        protected override IWin32Window Window => new SnykProjectOptionsUserControl(SnykVSPackage.ServiceProvider);
     }
 }

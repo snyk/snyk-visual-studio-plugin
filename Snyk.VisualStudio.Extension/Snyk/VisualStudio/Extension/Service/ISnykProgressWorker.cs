@@ -6,6 +6,11 @@
     public interface ISnykProgressWorker
     {
         /// <summary>
+        /// Gets or sets a value indicating whether is update download.
+        /// </summary>
+        bool IsUpdateDownload { get; set; }
+
+        /// <summary>
         /// Notify download started.
         /// </summary>
         void DownloadStarted();

@@ -32,5 +32,10 @@
         /// </summary>
         [JsonPropertyName("name")]
         public string Name { get; set; }
+
+        /// <summary>
+        /// Gets a value indicating whether version from TagName by removing 'v' char.
+        /// </summary>
+        public string CliVersion => this.TagName?.Replace("v", string.Empty);
     }
 }

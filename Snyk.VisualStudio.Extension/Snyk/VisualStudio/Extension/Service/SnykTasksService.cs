@@ -1,6 +1,7 @@
 ﻿namespace Snyk.VisualStudio.Extension.Service
 {
     using System;
+    using System.Collections.Generic;
     using System.Threading;
     using System.Threading.Tasks;
     using System.Windows;
@@ -294,9 +295,31 @@
                 {
                     try
                     {
-                        var cliDownloader = new SnykCliDownloader(this.serviceProvider.ActivityLogger);
+                        var userStorageService = this.serviceProvider.UserStorageSettingsService;
 
-                        cliDownloader.Download(progressWorker: progressWorker, downloadFinishedCallback: downloadFinishedCallback);
+                        string currentCliVersion = userStorageService.GetCurrentCliVersion();
+
+                        DateTime lastCliReleaseDate = userStorageService.GetCliReleaseLastCheckDate();
+
+                        var cliDownloader = new SnykCliDownloader(currentCliVersion, this.serviceProvider.ActivityLogger);
+
+                        List<CliDownloadFinishedCallback> downloadFinishedCallbacks = new List<CliDownloadFinishedCallback>();
+
+                        if (downloadFinishedCallback != null)
+                        {
+                            downloadFinishedCallbacks.Add(downloadFinishedCallback);
+                        }
+
+                        downloadFinishedCallbacks.Add(new CliDownloadFinishedCallback(() =>
+                        {
+                            userStorageService.SaveCurrentCliVersion(cliDownloader.GetLatestReleaseInfo().CliVersion);
+                            userStorageService.SaveCliReleaseLastCheckDate(DateTime.UtcNow);
+                        }));
+
+                        cliDownloader.AutoUpdateCli(
+                            lastCliReleaseDate,
+                            progressWorker: progressWorker,
+                            downloadFinishedCallbacks: downloadFinishedCallbacks);
                     }
                     catch (Exception exception)
                     {
@@ -322,7 +345,14 @@
         /// <summary>
         /// Fire download started.
         /// </summary>
-        protected internal void OnDownloadStarted() => this.DownloadStarted?.Invoke(this, new SnykCliDownloadEventArgs());
+        protected internal void OnDownloadStarted()
+            => this.DownloadStarted?.Invoke(this, new SnykCliDownloadEventArgs());
+
+        /// <summary>
+        /// Fire update download started.
+        /// </summary>
+        protected internal void OnUpdateDownloadStarted()
+            => this.DownloadStarted?.Invoke(this, new SnykCliDownloadEventArgs());
 
         /// <summary>
         /// Fire download finished event.
