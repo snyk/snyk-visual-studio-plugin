@@ -14,7 +14,6 @@
         /// <summary>
         /// Gets or sets a value indicating whether files dictionary.
         /// </summary>
-        [JsonPropertyName("files")]
         public Dictionary<string, string> Files { get; set; }
 
         /// <summary>
@@ -26,13 +25,11 @@
         /// <summary>
         /// Gets or sets a value indicating whether missing files.
         /// </summary>
-        [JsonPropertyName("missingFiles")]
         public Dictionary<string, string> MissingFiles { get; set; }
 
         /// <summary>
         /// Gets or sets a value indicating whether upload url for files.
         /// </summary>
-        [JsonPropertyName("uploadURL")]
         public string UploadURL { get; set; }
     }
 }

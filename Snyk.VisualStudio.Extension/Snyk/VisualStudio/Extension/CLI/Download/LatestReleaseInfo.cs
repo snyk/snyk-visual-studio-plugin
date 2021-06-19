@@ -12,13 +12,11 @@
         /// <summary>
         /// Gets or sets a value indicating whether Url.
         /// </summary>
-        [JsonPropertyName("url")]
         public string Url { get; set; }
 
         /// <summary>
         /// Gets or sets a value indicating whether Id.
         /// </summary>
-        [JsonPropertyName("id")]
         public int Id { get; set; }
 
         /// <summary>
@@ -30,7 +28,6 @@
         /// <summary>
         /// Gets or sets a value indicating whether name.
         /// </summary>
-        [JsonPropertyName("name")]
         public string Name { get; set; }
     }
 }

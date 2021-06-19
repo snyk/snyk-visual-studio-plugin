@@ -10,13 +10,11 @@
         /// <summary>
         /// Gets or sets a value indicating whether Session token.
         /// </summary>
-        [JsonPropertyName("sessionToken")]
         public string SessionToken { get; set; }
 
         /// <summary>
         /// Gets or sets a value indicating whether login URL.
         /// </summary>
-        [JsonPropertyName("loginURL")]
         public string LoginURL { get; set; }
 
         /// <summary>

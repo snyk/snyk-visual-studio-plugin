@@ -13,13 +13,11 @@
         /// <summary>
         /// Gets a value indicating whether file extensions.
         /// </summary>
-        [JsonPropertyName("extensions")]
         public List<string> Extensions { get; set; }
 
         /// <summary>
         /// Gets a value indicating whether configuration files.
         /// </summary>
-        [JsonPropertyName("configFiles")]
         public List<string> ConfigFiles { get; set; }
     }
 }
