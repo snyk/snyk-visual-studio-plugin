@@ -12,31 +12,26 @@
         /// <summary>
         /// Gets or sets a value indicating whether vulnerabilities array.
         /// </summary>
-        [JsonPropertyName("vulnerabilities")]
         public Vulnerability[] Vulnerabilities { get; set; }
 
         /// <summary>
         /// Gets or sets a value indicating whether package manager name.
         /// </summary>
-        [JsonPropertyName("packageManager")]
         public string PackageManager { get; set; }
 
         /// <summary>
         /// Gets or sets a value indicating whether project name.
         /// </summary>
-        [JsonPropertyName("projectName")]
         public string ProjectName { get; set; }
 
         /// <summary>
         /// Gets or sets a value indicating whether display target file.
         /// </summary>
-        [JsonPropertyName("displayTargetFile")]
         public string DisplayTargetFile { get; set; }
 
         /// <summary>
         /// Gets or sets a value indicating whether path.
         /// </summary>
-        [JsonPropertyName("path")]
         public string Path { get; set; }
 
         /// <summary>

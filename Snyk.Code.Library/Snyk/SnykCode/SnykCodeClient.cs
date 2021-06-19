@@ -1,8 +1,8 @@
 ﻿namespace Snyk.SnykCode
-{
+{    
     using System;
     using System.Net.Http;
-    using System.Text.Json;
+    using Snyk.Common;
 
     /// <summary>
     /// Client for SnykCode support.
@@ -66,7 +66,7 @@
 
             if (response.IsSuccessStatusCode)
             {
-                return JsonSerializer.Deserialize<Filters>(responseText);
+                return Json.Deserialize<Filters>(responseText);
             }
             else
             {
@@ -96,7 +96,7 @@
 
             if (response.IsSuccessStatusCode)
             {
-                this.loginResponse = JsonSerializer.Deserialize<LoginResponse>(responseText);
+                this.loginResponse = Json.Deserialize<LoginResponse>(responseText);
 
                 return this.loginResponse;
             } 

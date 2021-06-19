@@ -35,7 +35,6 @@
         /// <summary>
         /// Gets or sets a value indicating whether error path.
         /// </summary>
-        [JsonPropertyName("path")]
         public string Path { get; set; }
     }
 }

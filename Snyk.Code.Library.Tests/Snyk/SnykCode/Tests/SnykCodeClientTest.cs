@@ -1,6 +1,7 @@
 ﻿namespace Snyk.SnykCode.Tests
 {
     using System;
+    using System.Threading.Tasks;
     using SnykCode;    
     using Xunit;
 
@@ -9,11 +10,11 @@
         private const string TestUserAgent = "Test-VisualStudio";
 
         [Fact]
-        public void SnykCodeClient_GetFilters_ChecksPass()
+        public async Task SnykCodeClient_GetFilters_ChecksPassAsync()
         {
             var snykCodeClient = new SnykCodeClient(TestSettings.SnykCodeApiUrl, TestSettings.Instance.ApiToken);
 
-            Filters filters = snykCodeClient.GetFilters().Result;
+            Filters filters = await snykCodeClient.GetFilters();
 
             Assert.NotNull(filters);
             Assert.NotNull(filters.Extensions);
@@ -21,11 +22,11 @@
         }
 
         [Fact]
-        public void SnykCodeClient_ProperLoginDataProvided_ChecksPass()
+        public async Task SnykCodeClient_ProperLoginDataProvided_ChecksPassAsync()
         {
             var snykCodeClient = new SnykCodeClient(TestSettings.SnykCodeApiUrl, TestSettings.Instance.ApiToken);
             
-            LoginResponse response = snykCodeClient.LoginAsync(TestUserAgent).Result;
+            LoginResponse response = await snykCodeClient.LoginAsync(TestUserAgent);
 
             Assert.NotNull(response);
             Assert.NotEmpty(response.SessionToken);
@@ -36,17 +37,17 @@
         {
             var snykCodeClient = new SnykCodeClient(TestSettings.SnykCodeApiUrl, string.Empty);
 
-            Assert.Throws<AggregateException>(() => snykCodeClient.LoginAsync("\\{").Result);            
+            Assert.ThrowsAsync<AggregateException>(() => snykCodeClient.LoginAsync("\\{"));            
         }
 
         [Fact]
-        public void SnykCodeClient_ChessSessionProperApiTokenProvided_CheckPass()
+        public async Task SnykCodeClient_ChessSessionProperApiTokenProvided_CheckPassAsync()
         {
             var snykCodeClient = new SnykCodeClient(TestSettings.SnykCodeApiUrl, TestSettings.Instance.ApiToken);
 
-            _ = snykCodeClient.LoginAsync(TestUserAgent).Result;
+            _ = await snykCodeClient.LoginAsync(TestUserAgent);
 
-            LoginStatus status = snykCodeClient.CheckSessionAsync().Result;
+            LoginStatus status = await snykCodeClient.CheckSessionAsync();
 
             Assert.True(status.IsSucccess);
         }
