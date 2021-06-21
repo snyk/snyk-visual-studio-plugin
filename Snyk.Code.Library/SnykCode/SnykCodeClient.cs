@@ -1,8 +1,8 @@
-﻿namespace Snyk.SnykCode
+﻿namespace Snyk.Code.Library.SnykCode
 {    
     using System;
     using System.Net.Http;
-    using Snyk.Common;
+    using Snyk.Code.Library.Common;
 
     /// <summary>
     /// Client for SnykCode support.

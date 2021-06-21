@@ -1,7 +1,5 @@
-﻿namespace Snyk.SnykCode
+﻿namespace Snyk.Code.Library.SnykCode
 {
-    using System.Text.Json.Serialization;
-
     /// <summary>
     /// SnykCode login response result.
     /// </summary>

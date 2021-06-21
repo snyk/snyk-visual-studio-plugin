@@ -1,8 +1,10 @@
-﻿using System;
-using System.Text.Json;
-
-namespace Snyk.Common
+﻿namespace Snyk.Code.Library.Common
 {
+    using System.Text.Json;
+
+    /// <summary>
+    /// Json util for serialize and deserialize objects with Json serialization parameters.
+    /// </summary>
     public static class Json
     {
         public static T Deserialize<T>(string json) => JsonSerializer.Deserialize<T>(json, SerializerOptions);

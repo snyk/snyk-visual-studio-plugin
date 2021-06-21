@@ -4,7 +4,7 @@
     using System.IO;
     using System.Net;
     using Service;
-    using Snyk.Common;
+    using Snyk.Code.Library.Common;
 
     /// <summary>
     /// Donwnload last Snyk CLI version.
