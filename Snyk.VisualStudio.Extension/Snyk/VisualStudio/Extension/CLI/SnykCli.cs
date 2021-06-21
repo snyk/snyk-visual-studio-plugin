@@ -5,7 +5,7 @@
     using System.IO;
     using System.Linq;
     using Settings;
-    using Snyk.Common;
+    using Snyk.Code.Library.Common;
 
     /// <summary>
     /// Incapsulate work logic with Snyk CLI.

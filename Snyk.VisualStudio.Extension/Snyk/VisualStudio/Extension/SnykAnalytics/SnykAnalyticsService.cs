@@ -7,7 +7,7 @@
     using Segment;
     using Segment.Model;
     using Settings;
-    using Snyk.Common;
+    using Snyk.Code.Library.Common;
 
     /// <summary>
     /// Analytics service.

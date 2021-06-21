@@ -1,8 +1,8 @@
-﻿namespace Snyk.SnykCode.Tests
+﻿namespace Snyk.Code.Library.SnykCode.Tests
 {
     using System;
     using System.Threading.Tasks;
-    using SnykCode;    
+    using Snyk.Code.Library.SnykCode;    
     using Xunit;
 
     public class SnykCodeClientTest

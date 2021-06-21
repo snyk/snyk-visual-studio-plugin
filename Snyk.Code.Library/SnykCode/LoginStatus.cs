@@ -1,4 +1,4 @@
-﻿namespace Snyk.SnykCode
+﻿namespace Snyk.Code.Library.SnykCode
 {
     using System.Net;
 
