@@ -3,11 +3,11 @@
     using System;
     using System.IO;
     using System.Text;
-    using System.Text.Json;
     using System.Threading.Tasks;
     using Segment;
     using Segment.Model;
     using Settings;
+    using Snyk.Code.Library.Common;
 
     /// <summary>
     /// Analytics service.
@@ -80,7 +80,7 @@
 
                 string appsettingsPath = Path.Combine(extensionPath, "appsettings.json");
 
-                SnykAppSettings appSettings = JsonSerializer
+                SnykAppSettings appSettings = Json
                     .Deserialize<SnykAppSettings>(File.ReadAllText(appsettingsPath, Encoding.UTF8));
 
                 string writeKey = appSettings.SegmentAnalyticsWriteKey;
@@ -258,7 +258,7 @@
 
                 string userInfoJson = webClient.DownloadString(SnykUserMeUrl);
 
-                return JsonSerializer.Deserialize<SnykUser>(userInfoJson);
+                return Json.Deserialize<SnykUser>(userInfoJson);
             }
         }
 

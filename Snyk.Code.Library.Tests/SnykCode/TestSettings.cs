@@ -1,4 +1,4 @@
-﻿namespace Snyk.SnykCode.Tests
+﻿namespace Snyk.Code.Library.Tests.SnykCode
 {    
     using System;   
 

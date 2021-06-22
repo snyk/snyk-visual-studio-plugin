@@ -4,8 +4,8 @@
     using System.Collections.Generic;
     using System.IO;
     using System.Net;
-    using System.Text.Json;
     using Service;
+    using Snyk.Code.Library.Common;
 
     /// <summary>
     /// Donwnload last Snyk CLI version.
@@ -61,7 +61,7 @@
 
                     this.logger?.LogError("Deserialize latest CLI release info");
 
-                    this.latestReleaseInfo = JsonSerializer.Deserialize<LatestReleaseInfo>(latestReleasesInfoJson);
+                    return Json.Deserialize<LatestReleaseInfo>(latestReleasesInfoJson);
                 }
             }
 

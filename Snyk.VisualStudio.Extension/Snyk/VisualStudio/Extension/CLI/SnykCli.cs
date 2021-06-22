@@ -4,8 +4,8 @@
     using System.Collections.Generic;
     using System.IO;
     using System.Linq;
-    using System.Text.Json;
     using Settings;
+    using Snyk.Code.Library.Common;
 
     /// <summary>
     /// Incapsulate work logic with Snyk CLI.
@@ -160,13 +160,13 @@
             {
                 return new CliResult
                 {
-                    CliVulnerabilitiesList = JsonSerializer.Deserialize<List<CliVulnerabilities>>(rawResult),
+                    CliVulnerabilitiesList = Json.Deserialize<List<CliVulnerabilities>>(rawResult),
                 };
             } else if (rawResult.First() == '{')
             {
                 if (this.IsSuccessCliJsonString(rawResult))
                 {
-                    var cliVulnerabilities = JsonSerializer.Deserialize<CliVulnerabilities>(rawResult);
+                    var cliVulnerabilities = Json.Deserialize<CliVulnerabilities>(rawResult);
 
                     var cliVulnerabilitiesList = new List<CliVulnerabilities>();
                     cliVulnerabilitiesList.Add(cliVulnerabilities);
@@ -179,7 +179,7 @@
                 {
                     return new CliResult
                     {
-                        Error = JsonSerializer.Deserialize<CliError>(rawResult),
+                        Error = Json.Deserialize<CliError>(rawResult),
                     };
                 }
             } else
