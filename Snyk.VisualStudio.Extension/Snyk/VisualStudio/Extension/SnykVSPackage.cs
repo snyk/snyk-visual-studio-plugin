@@ -45,6 +45,8 @@
         /// </summary>
         public const string PackageGuidString = "5ddf9abb-42ec-49b9-b201-b3e2fc2f8f89";
 
+        private static SnykVSPackage instance;
+
         private SnykGeneralOptionsDialogPage generalOptionsDialogPage;
 
         private ISnykServiceProvider serviceProvider;
@@ -56,9 +58,14 @@
         private SnykActivityLogger logger;
 
         /// <summary>
+        /// Initializes a new instance of the <see cref="SnykVSPackage"/> class.
+        /// </summary>
+        public SnykVSPackage() => instance = this;
+
+        /// <summary>
         /// Gets a value indicating whether ServiceProvider.
         /// </summary>
-        public ISnykServiceProvider ServiceProvider => this.serviceProvider;
+        public static ISnykServiceProvider ServiceProvider => instance.serviceProvider;
 
         /// <summary>
         /// Gets a value indicating whether ToolWindow Control.
@@ -69,17 +76,6 @@
         /// Gets a value indicating whether general Options dialog.
         /// </summary>
         public SnykGeneralOptionsDialogPage GeneralOptionsDialogPage => this.generalOptionsDialogPage;
-
-        /// <summary>
-        /// Initializes a new instance of the <see cref="SnykVSPackage"/> class.
-        /// </summary>
-        public SnykVSPackage()
-        {
-            // Inside this method you can place any initialization code that does not require
-            // any Visual Studio service because at this point the package object is created but
-            // not sited yet inside Visual Studio environment. The place to do all the other
-            // initialization is the Initialize method.
-        }
 
         /// <summary>
         /// Show Options dialog.

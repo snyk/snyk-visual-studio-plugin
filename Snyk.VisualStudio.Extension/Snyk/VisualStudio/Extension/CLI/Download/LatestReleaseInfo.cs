@@ -29,5 +29,10 @@
         /// Gets or sets a value indicating whether name.
         /// </summary>
         public string Name { get; set; }
+
+        /// <summary>
+        /// Gets a value indicating whether version from TagName by removing 'v' char.
+        /// </summary>
+        public string CliVersion => this.TagName?.Replace("v", string.Empty);
     }
 }

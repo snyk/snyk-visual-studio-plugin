@@ -8,10 +8,10 @@
     using Microsoft.VisualStudio.Shell.Interop;
     using Microsoft.VisualStudio.Shell.Settings;
     using CLI;
+    using UI;
     using Settings;
     using SnykAnalytics;
-    using Theme;
-    using UI;
+    using Theme;    
     using IAsyncServiceProvider = Microsoft.VisualStudio.Shell.IAsyncServiceProvider;
     using Task = System.Threading.Tasks.Task;
 
@@ -35,6 +35,8 @@
         private DTE dte;
 
         private SnykAnalyticsService analyticsService;
+
+        private SnykUserStorageSettingsService userStorageSettingsService;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="SnykService"/> class.
@@ -107,6 +109,22 @@
                 }
 
                 return this.analyticsService;
+            }
+        }
+
+        /// <summary>
+        /// Gets user storage settings service instance.
+        /// </summary>
+        public SnykUserStorageSettingsService UserStorageSettingsService
+        {
+            get
+            {
+                if (this.userStorageSettingsService == null)
+                {
+                    this.userStorageSettingsService = new SnykUserStorageSettingsService(this);
+                }
+
+                return this.userStorageSettingsService;
             }
         }
 
