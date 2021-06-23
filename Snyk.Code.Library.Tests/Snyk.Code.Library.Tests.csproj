@@ -23,7 +23,6 @@
       <PrivateAssets>all</PrivateAssets>
     </PackageReference>
   </ItemGroup>
-
   <ItemGroup>
     <ProjectReference Include="..\Snyk.Code.Library\Snyk.Code.Library.csproj" />
   </ItemGroup>
