@@ -1,7 +1,6 @@
 ﻿namespace Snyk.Code.Library.SnykCode
 {
     using System.Collections.Generic;
-    using System.Text.Json.Serialization;
 
     /// <summary>
     /// Returns the list of allowed extensions and configuration files for uploaded bundles. 
@@ -13,13 +12,11 @@
         /// <summary>
         /// Gets a value indicating whether file extensions.
         /// </summary>
-        [JsonPropertyName("bundleId")]
         public List<string> Extensions { get; set; }
 
         /// <summary>
         /// Gets a value indicating whether configuration files.
         /// </summary>
-        [JsonPropertyName("bundleId")]
         public List<string> ConfigFiles { get; set; }
     }
 }
