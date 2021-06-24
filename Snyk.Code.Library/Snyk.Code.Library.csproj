@@ -78,6 +78,7 @@
     <Compile Include="SnykCode\SnykCodeClient.cs" />
     <Compile Include="SnykCode\LoginStatus.cs" />
     <Compile Include="SnykCode\SnykCodeException.cs" />
+    <Compile Include="SnykCode\SnykCodeService.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />
