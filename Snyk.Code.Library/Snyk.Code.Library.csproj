@@ -71,6 +71,7 @@
   <ItemGroup>
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="SnykCode\Bundle.cs" />
+    <Compile Include="SnykCode\CodeFile.cs" />
     <Compile Include="SnykCode\Filters.cs" />
     <Compile Include="Common\Json.cs" />
     <Compile Include="SnykCode\LoginResponse.cs" />

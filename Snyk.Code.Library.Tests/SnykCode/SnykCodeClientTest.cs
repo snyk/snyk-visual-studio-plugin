@@ -2,6 +2,9 @@
 {
     using System;
     using System.Collections.Generic;
+    using System.IO;
+    using System.Reflection;
+    using System.Text.RegularExpressions;
     using System.Threading.Tasks;
     using Snyk.Code.Library.SnykCode;    
     using Xunit;
@@ -9,6 +12,34 @@
     public class SnykCodeClientTest
     {
         private const string TestUserAgent = "Test-VisualStudio";
+
+        [Fact]
+        public async Task SnykCodeClient_UploadFileProvided_ChecksPassAsync()
+        {
+            var snykCodeClient = new SnykCodeClient(TestSettings.SnykCodeApiUrl, TestSettings.Instance.ApiToken);
+
+            Bundle initialBundle = new Bundle();
+
+            string fileName = "/Snyk/Code/Tests/SnykCodeBigBundleTest1.cs";
+
+            initialBundle.Files.Add(fileName, fileName.GetHashCode().ToString());
+
+            Bundle resultBundle = await snykCodeClient.CreateBundle(initialBundle);
+            
+            Assert.NotNull(resultBundle);            
+            Assert.NotEmpty(resultBundle.Id);
+            Assert.Single(resultBundle.MissingFiles);
+
+            List<CodeFile> codeFiles = new List<CodeFile>();
+
+            codeFiles.Add(new CodeFile
+            {
+                Hash = fileName.GetHashCode().ToString(),
+                Content = this.GetFileContents("HelloWorld.cs.txt"),
+            });
+
+            _ = await snykCodeClient.UploadFiles(resultBundle, codeFiles);
+        }
 
         [Fact]
         public async Task SnykCodeClient_ExtendBundleAddTwoFilesAndRemoveOneFileProvided_ChecksPassAsync()
@@ -500,6 +531,48 @@
             LoginStatus status = await snykCodeClient.CheckSessionAsync();
 
             Assert.True(status.IsSucccess);
+        }
+
+        private string GetFileContents(string resourceFileName)
+        {
+            var assembly = Assembly.GetExecutingAssembly();
+            var resourceFilePath = $"Resources.{resourceFileName}";
+
+            using (var inputStream = assembly.GetEmbeddedResourceStream(resourceFilePath))
+            {
+                if (inputStream != null)
+                {
+                    var streamReader = new StreamReader(inputStream);
+
+                    return streamReader.ReadToEnd();
+                }
+            }
+
+            return String.Empty;
+        }
+    }
+
+    static class AssemblyExtensions
+    {
+        public static Stream GetEmbeddedResourceStream(this Assembly assembly, string relativeResourcePath)
+        {
+            if (string.IsNullOrEmpty(relativeResourcePath))
+            {
+                throw new ArgumentNullException("relativeResourcePath");
+            }
+
+            var resourcePath = string.Format("{0}.{1}",
+                Regex.Replace(assembly.ManifestModule.Name, @"\.(exe|dll)$",
+                      string.Empty, RegexOptions.IgnoreCase), relativeResourcePath);
+
+            var stream = assembly.GetManifestResourceStream(resourcePath);
+
+            if (stream == null)
+            {
+                throw new ArgumentException(String.Format("The specified embedded resource \"{0}\" is not found.", relativeResourcePath));
+            }
+
+            return stream;
         }
     }
 }

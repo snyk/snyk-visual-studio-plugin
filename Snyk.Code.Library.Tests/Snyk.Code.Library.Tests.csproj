@@ -7,6 +7,7 @@
     <SettingsFile>settings.json</SettingsFile>
   </PropertyGroup>
   <ItemGroup>
+    <None Remove="Resources\HelloWorld.cs.txt" />
     <None Remove="settings.json" />
   </ItemGroup>
   <ItemGroup>
@@ -25,6 +26,11 @@
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\Snyk.Code.Library\Snyk.Code.Library.csproj" />
+  </ItemGroup>
+  <ItemGroup>
+    <EmbeddedResource Include="Resources\HelloWorld.cs.txt">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </EmbeddedResource>
   </ItemGroup>
 
   <Target Name="WriteSettingsFile" BeforeTargets="PreBuildEvent">

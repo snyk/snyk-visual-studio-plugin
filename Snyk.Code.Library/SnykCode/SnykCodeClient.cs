@@ -5,6 +5,7 @@
     using System.Net;
     using System.Net.Http;
     using System.Text;
+    using System.Threading.Tasks;
     using Snyk.Code.Library.Common;
 
     /// <summary>
@@ -19,6 +20,8 @@
         private const string FiltersApiUrl = "publicapi/filters";
 
         private const string BundleApiUrl = "publicapi/bundle";
+
+        private const string FileApiUrl = "publicapi/file";
 
         /// <summary>
         /// Maxium bundle size per one upload is 4 Mb. 4 Mb in bytes.
@@ -44,6 +47,41 @@
             this.apiToken = token;
 
             this.httpClient.Timeout = TimeSpan.FromMinutes(10);
+        }
+
+        public async System.Threading.Tasks.Task<Bundle> UploadFiles(Bundle bundle, List<CodeFile> codeFiles)
+        {
+            if (bundle == null || string.IsNullOrEmpty(bundle.Id))
+            {
+                throw new ArgumentException("Bundle is null or empty.");
+            }
+
+            if (codeFiles == null)
+            {
+                throw new ArgumentException("Code files to upload is null.");
+            }
+
+            HttpRequestMessage httpRequest = new HttpRequestMessage(HttpMethod.Post,
+                this.snykCodeBaseUrl + FileApiUrl + "/" + bundle.Id);
+
+            httpRequest.Version = HttpVersion.Version10;
+            httpRequest.Headers.Add("Session-Token", apiToken);
+
+            string payload = Json.Serialize<List<CodeFile>>(codeFiles);
+            httpRequest.Content = new StringContent(payload, Encoding.UTF8, "application/json");
+
+            var response = await httpClient.SendAsync(httpRequest);
+
+            string responseTest = await response.Content.ReadAsStringAsync();
+
+            if (response.IsSuccessStatusCode)
+            {
+                return Json.Deserialize<Bundle>(responseTest);
+            }
+            else
+            {
+                throw new SnykCodeException(((int)response.StatusCode), responseTest);
+            }
         }
 
         /// <summary>
