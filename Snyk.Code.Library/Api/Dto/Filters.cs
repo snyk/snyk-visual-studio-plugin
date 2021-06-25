@@ -1,4 +1,4 @@
-﻿namespace Snyk.Code.Library.SnykCode
+﻿namespace Snyk.Code.Library.Api
 {
     using System.Collections.Generic;
 
@@ -10,12 +10,12 @@
     public class Filters
     {
         /// <summary>
-        /// Gets a value indicating whether file extensions.
+        /// Gets or sets a value indicating whether file extensions.
         /// </summary>
         public List<string> Extensions { get; set; }
 
         /// <summary>
-        /// Gets a value indicating whether configuration files.
+        /// Gets or sets a value indicating whether configuration files.
         /// </summary>
         public List<string> ConfigFiles { get; set; }
     }

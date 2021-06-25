@@ -70,18 +70,22 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Properties\AssemblyInfo.cs" />
-    <Compile Include="SnykCode\Bundle.cs" />
-    <Compile Include="SnykCode\CodeFile.cs" />
-    <Compile Include="SnykCode\Filters.cs" />
+    <Compile Include="Api\Dto\Bundle.cs" />
+    <Compile Include="Api\Dto\CodeFile.cs" />
+    <Compile Include="Api\Dto\Filters.cs" />
     <Compile Include="Common\Json.cs" />
-    <Compile Include="SnykCode\LoginResponse.cs" />
-    <Compile Include="SnykCode\SnykCodeClient.cs" />
-    <Compile Include="SnykCode\LoginStatus.cs" />
-    <Compile Include="SnykCode\SnykCodeException.cs" />
-    <Compile Include="SnykCode\SnykCodeService.cs" />
+    <Compile Include="Api\Dto\LoginResponse.cs" />
+    <Compile Include="Api\SnykCodeClient.cs" />
+    <Compile Include="Api\LoginStatus.cs" />
+    <Compile Include="Api\SnykCodeException.cs" />
+    <Compile Include="Api\SnykCodeService.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />
+  </ItemGroup>
+  <ItemGroup>
+    <Analyzer Include="..\packages\StyleCop.Analyzers.1.1.118\analyzers\dotnet\cs\StyleCop.Analyzers.CodeFixes.dll" />
+    <Analyzer Include="..\packages\StyleCop.Analyzers.1.1.118\analyzers\dotnet\cs\StyleCop.Analyzers.dll" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>

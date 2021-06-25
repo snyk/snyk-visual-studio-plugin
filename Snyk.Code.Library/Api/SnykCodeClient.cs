@@ -1,7 +1,6 @@
-﻿namespace Snyk.Code.Library.SnykCode
-{    
+﻿namespace Snyk.Code.Library.Api
+{
     using System;
-    using System.Collections.Generic;
     using System.Net.Http;
     using System.Text;
     using Snyk.Code.Library.Common;
@@ -28,7 +27,7 @@
 
         private readonly HttpClient httpClient;
 
-        private LoginResponse loginResponse;       
+        private LoginResponse loginResponse;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="SnykCodeClient"/> class.
@@ -45,37 +44,6 @@
 
             this.httpClient.DefaultRequestHeaders.Add("Session-Token", token);
         }
-
-        public async System.Threading.Tasks.Task<Bundle> UploadFiles(Bundle bundle, List<CodeFile> codeFiles)
-        {
-            if (bundle == null || string.IsNullOrEmpty(bundle.Id))
-            {
-                throw new ArgumentException("Bundle is null or empty.");
-            }
-
-            if (codeFiles == null)
-            {
-                throw new ArgumentException("Code files to upload is null.");
-            }
-
-            HttpRequestMessage httpRequest = new HttpRequestMessage(HttpMethod.Post, FileApiUrl + "/" + bundle.Id);
-
-            string payload = Json.Serialize<List<CodeFile>>(codeFiles);
-            httpRequest.Content = new StringContent(payload, Encoding.UTF8, "application/json");
-
-            var response = await httpClient.SendAsync(httpRequest);
-
-            string responseTest = await response.Content.ReadAsStringAsync();
-
-            if (response.IsSuccessStatusCode)
-            {
-                return Json.Deserialize<Bundle>(responseTest);
-            }
-            else
-            {
-                throw new SnykCodeException(((int)response.StatusCode), responseTest);
-            }
-        }        
 
         /// <summary>
         /// Creates a new bundle based on a previously uploaded one.
@@ -105,7 +73,7 @@
 
             httpRequest.Content = new StringContent(Json.Serialize<Bundle>(extendBundle), Encoding.UTF8, "application/json");
 
-            var response = await httpClient.SendAsync(httpRequest);
+            var response = await this.httpClient.SendAsync(httpRequest);
 
             string responseText = await response.Content.ReadAsStringAsync();
 
@@ -115,17 +83,19 @@
             }
             else
             {
-                throw new SnykCodeException(((int)response.StatusCode), responseText);
+                throw new SnykCodeException((int)response.StatusCode, responseText);
             }
         }
 
         /// <summary>
         /// Checks the status of a bundle.
         /// </summary>
-        /// <param name="uploadedBundle"></param>
-        /// <returns>Returns the bundleId and, in case of uploaded bundles, the current missingFiles and the uploadURL. 
+        /// <param name="uploadedBundle">Bundle to check.</param>
+        /// <returns
+        /// >Returns the bundleId and, in case of uploaded bundles, the current missingFiles and the uploadURL.
         /// This API can be used to check if an old uploaded bundle has expired (status code 404), 
-        /// or to check if there are still missing files after uploading ("Upload Files").</returns>
+        /// or to check if there are still missing files after uploading ("Upload Files").
+        /// </returns>
         public async System.Threading.Tasks.Task<Bundle> CheckBundle(Bundle uploadedBundle)
         {
             if (uploadedBundle == null || string.IsNullOrEmpty(uploadedBundle.Id))
@@ -135,20 +105,20 @@
 
             HttpRequestMessage httpRequest = new HttpRequestMessage(HttpMethod.Get, BundleApiUrl + "/" + uploadedBundle.Id);
 
-            var response = await httpClient.SendAsync(httpRequest);
+            var response = await this.httpClient.SendAsync(httpRequest);
 
-            string responseTest = await response.Content.ReadAsStringAsync();
+            string responseText = await response.Content.ReadAsStringAsync();
 
             if (response.IsSuccessStatusCode)
             {
-                return Json.Deserialize<Bundle>(responseTest);
+                return Json.Deserialize<Bundle>(responseText);
             }
             else
             {
-                throw new SnykCodeException(((int)response.StatusCode), responseTest);
+                throw new SnykCodeException((int)response.StatusCode, responseText);
             }
         }
-                    
+
         /// <summary>
         /// Create new <see cref="Bundle"/> and get result <see cref="Bundle"/> object.
         /// </summary>
@@ -165,17 +135,17 @@
 
             httpRequest.Content = new StringContent(Json.Serialize<Bundle>(newBundle), Encoding.UTF8, "application/json");
 
-            var response = await httpClient.SendAsync(httpRequest);
+            var response = await this.httpClient.SendAsync(httpRequest);
 
-            string responseTest = await response.Content.ReadAsStringAsync();
+            string responseText = await response.Content.ReadAsStringAsync();
 
             if (response.IsSuccessStatusCode)
             {
-                return Json.Deserialize<Bundle>(responseTest);
+                return Json.Deserialize<Bundle>(responseText);
             }
             else
             {
-                throw new SnykCodeException(((int)response.StatusCode), responseTest);
+                throw new SnykCodeException((int)response.StatusCode, responseText);
             }
         }
 
@@ -184,10 +154,10 @@
         /// </summary>
         /// <returns><see cref="Filters"/></returns>
         public async System.Threading.Tasks.Task<Filters> GetFilters()
-        {                        
+        {
             var request = new HttpRequestMessage(HttpMethod.Get, FiltersApiUrl);
 
-            var response = await httpClient.SendAsync(request);
+            var response = await this.httpClient.SendAsync(request);
 
             string responseText = response.Content.ReadAsStringAsync().Result;
 
@@ -197,16 +167,18 @@
             }
             else
             {
-                throw new SnykCodeException(((int)response.StatusCode), responseText);
+                throw new SnykCodeException((int)response.StatusCode, responseText);
             }
-        }        
+        }
 
         /// <summary>
         /// Requests the creation of a new login session.
         /// <param name="userAgent">Represents requested client. For example, VisualStudio or VisualStudio code or other IDE.</param>
         /// /// <returns><see cref="LoginResponse"/> object.</returns>
         /// </summary>
-        public async System.Threading.Tasks.Task<LoginResponse> LoginAsync(string userAgent)
+        /// <param name="userAgent">Optional parameter with again (VisualStudio for example).</param>
+        /// <returns><see cref="loginResponse"/> object.</returns>
+        public async System.Threading.Tasks.Task<LoginResponse> LoginAsync(string userAgent = "")
         {
             if (string.IsNullOrEmpty(userAgent))
             {
@@ -215,7 +187,7 @@
 
             var request = new HttpRequestMessage(HttpMethod.Post, LoginApiUrl);
 
-            var response = await httpClient.SendAsync(request);
+            var response = await this.httpClient.SendAsync(request);
 
             string responseText = response.Content.ReadAsStringAsync().Result;
 
@@ -224,10 +196,10 @@
                 this.loginResponse = Json.Deserialize<LoginResponse>(responseText);
 
                 return this.loginResponse;
-            } 
+            }
             else
             {
-                throw new SnykCodeException(((int)response.StatusCode), responseText);
+                throw new SnykCodeException((int)response.StatusCode, responseText);
             }
         }
 
@@ -240,9 +212,9 @@
         {
             var request = new HttpRequestMessage(HttpMethod.Get, CheckSessionApiUrl);
 
-            HttpResponseMessage httpResponse = await httpClient.SendAsync(request);
+            HttpResponseMessage httpResponse = await this.httpClient.SendAsync(request);
 
             return new LoginStatus((int)httpResponse.StatusCode);
-        }        
-    }      
+        }
+    }
 }

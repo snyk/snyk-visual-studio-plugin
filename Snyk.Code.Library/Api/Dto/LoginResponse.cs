@@ -1,4 +1,4 @@
-﻿namespace Snyk.Code.Library.SnykCode
+﻿namespace Snyk.Code.Library.Api
 {
     /// <summary>
     /// SnykCode login response result.
@@ -19,7 +19,7 @@
         /// Gets a value indicating whether is success login.
         /// Check is error null or empty and session token not null or empty.
         /// </summary>
-        public bool IsSuccess => string.IsNullOrEmpty(Error) && !string.IsNullOrEmpty(SessionToken);
+        public bool IsSuccess => string.IsNullOrEmpty(this.Error) && !string.IsNullOrEmpty(this.SessionToken);
 
         private string Error { get; set; }
     }

@@ -1,4 +1,4 @@
-﻿namespace Snyk.Code.Library.SnykCode
+﻿namespace Snyk.Code.Library.Api
 {
     using System.Net;
 
@@ -22,26 +22,26 @@
         /// <summary>
         /// Gets a value indicating whether status code.
         /// </summary>
-        public int StatusCode => statusCode;
+        public int StatusCode => this.statusCode;
 
         /// <summary>
         /// Gets a value indicating whether is login successful.
         /// </summary>
-        public bool IsSucccess => Succcess == statusCode;
+        public bool IsSucccess => this.statusCode == Succcess;
 
         /// <summary>
         /// Gets a value indicating whether is login process has not been completed yet.
         /// </summary>
-        public bool IsLoginProcessHasNotBeenCompletedYet => LoginProcessHasNotBeenCompletedYet == statusCode;
+        public bool IsLoginProcessHasNotBeenCompletedYet => this.statusCode == LoginProcessHasNotBeenCompletedYet;
 
         /// <summary>
         /// Gets a value indicating whether is missing or ivalid session token.
         /// </summary>
-        public bool IsMissingOrInvalidSessionToken => MissingOrInvalidSessionToken == statusCode;
+        public bool IsMissingOrInvalidSessionToken => this.statusCode == MissingOrInvalidSessionToken;
 
         /// <summary>
         /// Gets a value indicating whether is unauthorized.
         /// </summary>
-        public bool IsUnauthorized => (int)HttpStatusCode.Unauthorized == statusCode;
+        public bool IsUnauthorized => this.statusCode == (int)HttpStatusCode.Unauthorized;
     }
 }

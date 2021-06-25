@@ -1,16 +1,19 @@
-﻿namespace Snyk.Code.Library.Tests.SnykCode
+﻿namespace Snyk.Code.Library.Tests.Api
 {
     using System;
     using System.IO;
     using System.Reflection;
     using System.Text.RegularExpressions;
     using System.Threading.Tasks;
-    using Snyk.Code.Library.SnykCode;    
+    using Snyk.Code.Library.Api;
     using Xunit;
 
+    /// <summary>
+    /// Tests for <see cref="SnykCodeClient"/>.
+    /// </summary>
     public class SnykCodeClientTest
     {
-        private const string TestUserAgent = "Test-VisualStudio";             
+        private const string TestUserAgent = "Test-VisualStudio";
 
         [Fact]
         public async Task SnykCodeClient_CreateBundleSmallPayloadProvided_ChecksPassAsync()
