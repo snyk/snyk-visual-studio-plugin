@@ -1,4 +1,4 @@
-﻿namespace Snyk.Code.Library.SnykCode
+﻿namespace Snyk.Code.Library.Api
 {
     using System.Collections.Generic;
     using System.Text.Json.Serialization;

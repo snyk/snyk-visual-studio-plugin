@@ -7,12 +7,15 @@
     <SettingsFile>settings.json</SettingsFile>
   </PropertyGroup>
   <ItemGroup>
-    <None Remove="Resources\HelloWorld.cs.txt" />
     <None Remove="settings.json" />
   </ItemGroup>
   <ItemGroup>
     <PackageReference Include="Microsoft.NET.Test.Sdk" Version="16.7.1" />
     <PackageReference Include="Newtonsoft.Json" Version="13.0.1" />
+    <PackageReference Include="StyleCop.Analyzers" Version="1.1.118">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+    </PackageReference>
     <PackageReference Include="System.Text.Json" Version="5.0.2" />
     <PackageReference Include="xunit" Version="2.4.1" />
     <PackageReference Include="xunit.runner.visualstudio" Version="2.4.3">
@@ -26,11 +29,6 @@
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\Snyk.Code.Library\Snyk.Code.Library.csproj" />
-  </ItemGroup>
-  <ItemGroup>
-    <EmbeddedResource Include="Resources\HelloWorld.cs.txt">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </EmbeddedResource>
   </ItemGroup>
 
   <Target Name="WriteSettingsFile" BeforeTargets="PreBuildEvent">

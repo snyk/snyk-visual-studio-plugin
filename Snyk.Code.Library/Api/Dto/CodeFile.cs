@@ -1,7 +1,7 @@
-﻿using System.Text.Json.Serialization;
-
-namespace Snyk.Code.Library.SnykCode
+﻿namespace Snyk.Code.Library.Api
 {
+    using System.Text.Json.Serialization;
+
     /// <summary>
     /// Data transfer object for file content pair: file path hash - file content.
     /// </summary>
