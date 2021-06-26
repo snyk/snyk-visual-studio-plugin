@@ -3,6 +3,7 @@
     using System;
     using System.Collections.Generic;
     using System.Text;
+    using Snyk.Code.Library.Api.Dto;
     using Snyk.Code.Library.Common;
 
     /// <summary>

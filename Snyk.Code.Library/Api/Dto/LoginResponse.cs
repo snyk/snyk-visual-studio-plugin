@@ -1,4 +1,4 @@
-﻿namespace Snyk.Code.Library.Api
+﻿namespace Snyk.Code.Library.Api.Dto
 {
     /// <summary>
     /// SnykCode login response result.

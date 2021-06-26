@@ -3,6 +3,7 @@
     using System;
     using System.Net.Http;
     using System.Text;
+    using Snyk.Code.Library.Api.Dto;
     using Snyk.Code.Library.Common;
 
     /// <summary>
