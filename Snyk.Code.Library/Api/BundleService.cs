@@ -6,18 +6,18 @@
     using Snyk.Code.Library.Common;
 
     /// <summary>
-    /// SnykCodeService contains logic on top of <see cref="SnykCodeClient"/> class for SnykCode functionality.
+    /// BundleService contains logic on top of <see cref="SnykCodeClient"/> class for SnykCode functionality.
     /// </summary>
-    public class SnykCodeService
+    public class BundleService
     {
         private readonly SnykCodeClient codeClient;
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="SnykCodeService"/> class.
+        /// Initializes a new instance of the <see cref="BundleService"/> class.
         /// </summary>
         /// <param name="baseUrl">Base URL for deproxy.</param>
         /// <param name="token">User token.</param>
-        public SnykCodeService(string baseUrl, string token) => this.codeClient = new SnykCodeClient(baseUrl, token);
+        public BundleService(string baseUrl, string token) => this.codeClient = new SnykCodeClient(baseUrl, token);
 
         /// <summary>
         /// Create new <see cref="Bundle"/> and get result <see cref="Bundle"/> object.

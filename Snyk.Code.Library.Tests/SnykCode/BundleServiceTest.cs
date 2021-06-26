@@ -8,12 +8,12 @@
     /// <summary>
     /// Tests for <see cref="SnykCodeService"/>.
     /// </summary>
-    public class SnykCodeServiceTest
+    public class BundleServiceTest
     {
         [Fact]
         public async Task SnykCodeClient_ExtendBundleAddTwoFilesAndRemoveOneFileProvided_ChecksPassAsync()
         {
-            var snykCodeService = new SnykCodeService(TestSettings.SnykCodeApiUrl, TestSettings.Instance.ApiToken);
+            var bundleService = new BundleService(TestSettings.SnykCodeApiUrl, TestSettings.Instance.ApiToken);
 
             Bundle initialBundle = new Bundle();
 
@@ -23,7 +23,7 @@
             initialBundle.Files.Add(fileName1, fileName1.GetHashCode().ToString());
             initialBundle.Files.Add(fileName2, fileName2.GetHashCode().ToString());
 
-            Bundle firstBundle = await snykCodeService.CreateBundle(initialBundle);
+            Bundle firstBundle = await bundleService.CreateBundle(initialBundle);
 
             Bundle extendBundle = new Bundle();
 
@@ -35,7 +35,7 @@
 
             extendBundle.RemovedFiles.Add(fileName1);
 
-            var uploadedBundle = await snykCodeService.ExtendBundle(firstBundle, extendBundle, 200);
+            var uploadedBundle = await bundleService.ExtendBundle(firstBundle, extendBundle, 200);
 
             Assert.NotNull(uploadedBundle);
             Assert.NotEmpty(uploadedBundle.Id);
@@ -45,14 +45,14 @@
         [Fact]
         public async Task SnykCodeClient_ExtendBundleFourFilesProvided_ChecksPassAsync()
         {
-            var snykCodeService = new SnykCodeService(TestSettings.SnykCodeApiUrl, TestSettings.Instance.ApiToken);
+            var bundleService = new BundleService(TestSettings.SnykCodeApiUrl, TestSettings.Instance.ApiToken);
 
             Bundle initialBundle = new Bundle();
 
             string fileName = "/Snyk/Code/Tests/SnykCodeBigBundleTest.cs";
             initialBundle.Files.Add(fileName, fileName.GetHashCode().ToString());
 
-            Bundle firstBundle = await snykCodeService.CreateBundle(initialBundle);
+            Bundle firstBundle = await bundleService.CreateBundle(initialBundle);
 
             Bundle extendBundle = new Bundle();
 
@@ -68,7 +68,7 @@
             extendBundle.Files.Add(fileName4, fileName4.GetHashCode().ToString());
             extendBundle.Files.Add(fileName5, fileName5.GetHashCode().ToString());
 
-            var uploadedBundle = await snykCodeService.ExtendBundle(firstBundle, extendBundle, 150);
+            var uploadedBundle = await bundleService.ExtendBundle(firstBundle, extendBundle, 150);
 
             Assert.NotNull(uploadedBundle);
             Assert.True(!string.IsNullOrEmpty(uploadedBundle.Id));
@@ -78,14 +78,14 @@
         [Fact]
         public async Task SnykCodeClient_ExtendMultiChunkBundleFiveFilesProvided_ChecksPassAsync()
         {
-            var snykCodeService = new SnykCodeService(TestSettings.SnykCodeApiUrl, TestSettings.Instance.ApiToken);
+            var bundleService = new BundleService(TestSettings.SnykCodeApiUrl, TestSettings.Instance.ApiToken);
 
             Bundle initialBundle = new Bundle();
 
             string fileName = "/Snyk/Code/Tests/SnykCodeBigBundleTest.cs";
             initialBundle.Files.Add(fileName, fileName.GetHashCode().ToString());
 
-            Bundle firstBundle = await snykCodeService.CreateBundle(initialBundle);
+            Bundle firstBundle = await bundleService.CreateBundle(initialBundle);
 
             Bundle extendBundle = new Bundle();
 
@@ -101,7 +101,7 @@
             extendBundle.Files.Add(fileName4, fileName4.GetHashCode().ToString());
             extendBundle.Files.Add(fileName5, fileName5.GetHashCode().ToString());
 
-            var uploadedBundle = await snykCodeService.ProcessExtendLargeBundle(firstBundle, extendBundle, 150);
+            var uploadedBundle = await bundleService.ProcessExtendLargeBundle(firstBundle, extendBundle, 150);
 
             Assert.NotNull(uploadedBundle);
             Assert.True(!string.IsNullOrEmpty(uploadedBundle.Id));
@@ -111,7 +111,7 @@
         [Fact]
         public async Task SnykCodeClient_CreateBundleBigPayloadProvided_ChecksPassAsync()
         {
-            var snykCodeService = new SnykCodeService(TestSettings.SnykCodeApiUrl, TestSettings.Instance.ApiToken);
+            var bundleService = new BundleService(TestSettings.SnykCodeApiUrl, TestSettings.Instance.ApiToken);
 
             Bundle newBundle = new Bundle();
 
@@ -122,7 +122,7 @@
                 newBundle.Files.Add(fileName, fileName.GetHashCode().ToString());
             }
 
-            var uploadedBundle = await snykCodeService.CreateBundle(newBundle, 150);
+            var uploadedBundle = await bundleService.CreateBundle(newBundle, 150);
 
             Assert.NotNull(uploadedBundle);
             Assert.True(!string.IsNullOrEmpty(uploadedBundle.Id));
@@ -132,7 +132,7 @@
         [Fact]
         public async Task SnykCodeClient_CreateMultiBundleThreeFilesProvided_ChecksPassAsync()
         {
-            var snykCodeService = new SnykCodeService(TestSettings.SnykCodeApiUrl, TestSettings.Instance.ApiToken);
+            var bundleService = new BundleService(TestSettings.SnykCodeApiUrl, TestSettings.Instance.ApiToken);
 
             Bundle newBundle = new Bundle();
 
@@ -144,7 +144,7 @@
             newBundle.Files.Add(fileName2, fileName2.GetHashCode().ToString());
             newBundle.Files.Add(fileName3, fileName3.GetHashCode().ToString());
 
-            var uploadedBundle = await snykCodeService.ProcessCreateLargeBundle(newBundle, 175);
+            var uploadedBundle = await bundleService.ProcessCreateLargeBundle(newBundle, 175);
 
             Assert.NotNull(uploadedBundle);
             Assert.True(!string.IsNullOrEmpty(uploadedBundle.Id));
@@ -154,7 +154,7 @@
         [Fact]
         public void SnykCodeClient_SplitBundleToChunksBySizeFourFilesAndSixForRemoveFilesProvided_CheckPass()
         {
-            var snykCodeService = new SnykCodeService(TestSettings.SnykCodeApiUrl, TestSettings.Instance.ApiToken);
+            var bundleService = new BundleService(TestSettings.SnykCodeApiUrl, TestSettings.Instance.ApiToken);
 
             Bundle newBundle = new Bundle();
 
@@ -176,7 +176,7 @@
             newBundle.RemovedFiles.Add("/Snyk/Code/Tests/SnykCodeBigBundleTest10.cs");
 
             // 150 is max bundle size (chunk size).
-            List<Bundle> bundles = snykCodeService.SplitBundleToChunksBySize(newBundle, 100);
+            List<Bundle> bundles = bundleService.SplitBundleToChunksBySize(newBundle, 100);
 
             Assert.NotNull(bundles);
             Assert.Equal(7, bundles.Count);
@@ -185,7 +185,7 @@
         [Fact]
         public void SnykCodeClient_SplitBundleToChunksBySizeOneFileAndOneForRemoveFilesProvided_CheckPass()
         {
-            var snykCodeService = new SnykCodeService(TestSettings.SnykCodeApiUrl, TestSettings.Instance.ApiToken);
+            var bundleService = new BundleService(TestSettings.SnykCodeApiUrl, TestSettings.Instance.ApiToken);
 
             Bundle newBundle = new Bundle();
 
@@ -196,7 +196,7 @@
             newBundle.RemovedFiles.Add("/Snyk/Code/Tests/SnykCodeBigBundleTest2.cs");
 
             // 300 is max bundle size (chunk size).
-            List<Bundle> bundles = snykCodeService.SplitBundleToChunksBySize(newBundle, 300);
+            List<Bundle> bundles = bundleService.SplitBundleToChunksBySize(newBundle, 300);
 
             Assert.NotNull(bundles);
             Assert.Single(bundles);
@@ -207,7 +207,7 @@
         [Fact]
         public void SnykCodeClient_SplitBundleToChunksBySizeOneFileAndFiveForRemoveFilesProvided_CheckPass()
         {
-            var snykCodeService = new SnykCodeService(TestSettings.SnykCodeApiUrl, TestSettings.Instance.ApiToken);
+            var bundleService = new BundleService(TestSettings.SnykCodeApiUrl, TestSettings.Instance.ApiToken);
 
             Bundle newBundle = new Bundle();
 
@@ -222,7 +222,7 @@
             newBundle.RemovedFiles.Add("/Snyk/Code/Tests/SnykCodeBigBundleTest6.cs");
 
             // 250 is max bundle size (chunk size).
-            List<Bundle> bundles = snykCodeService.SplitBundleToChunksBySize(newBundle, 100);
+            List<Bundle> bundles = bundleService.SplitBundleToChunksBySize(newBundle, 100);
 
             Assert.NotNull(bundles);
             Assert.Equal(4, bundles.Count);
@@ -243,7 +243,7 @@
         [Fact]
         public void SnykCodeClient_SplitBundleToChunksBySizeTwoFilesAndOneForRemoveFilesProvided_CheckPass()
         {
-            var snykCodeService = new SnykCodeService(TestSettings.SnykCodeApiUrl, TestSettings.Instance.ApiToken);
+            var bundleService = new BundleService(TestSettings.SnykCodeApiUrl, TestSettings.Instance.ApiToken);
 
             Bundle newBundle = new Bundle();
 
@@ -256,7 +256,7 @@
             newBundle.RemovedFiles.Add("/Snyk/Code/Tests/SnykCodeBigBundleTest3.cs");
 
             // 280 is max bundle size (chunk size).
-            List<Bundle> bundles = snykCodeService.SplitBundleToChunksBySize(newBundle, 150);
+            List<Bundle> bundles = bundleService.SplitBundleToChunksBySize(newBundle, 150);
 
             Assert.NotNull(bundles);
 
@@ -270,7 +270,7 @@
         [Fact]
         public void SnykCodeClient_SplitBundleToChunksBySizeFourFilesProvided_CheckPass()
         {
-            var snykCodeService = new SnykCodeService(TestSettings.SnykCodeApiUrl, TestSettings.Instance.ApiToken);
+            var bundleService = new BundleService(TestSettings.SnykCodeApiUrl, TestSettings.Instance.ApiToken);
 
             Bundle newBundle = new Bundle();
 
@@ -285,7 +285,7 @@
             newBundle.Files.Add(fileName4, fileName3.GetHashCode().ToString());
 
             // 150 is max bundle size (chunk size).
-            List<Bundle> bundles = snykCodeService.SplitBundleToChunksBySize(newBundle, 100);
+            List<Bundle> bundles = bundleService.SplitBundleToChunksBySize(newBundle, 100);
 
             Assert.NotNull(bundles);
             Assert.Equal(4, bundles.Count);
@@ -294,7 +294,7 @@
         [Fact]
         public void SnykCodeClient_SplitBundleToChunksBySizeThreeFilesProvided_CheckPass()
         {
-            var snykCodeService = new SnykCodeService(TestSettings.SnykCodeApiUrl, TestSettings.Instance.ApiToken);
+            var bundleService = new BundleService(TestSettings.SnykCodeApiUrl, TestSettings.Instance.ApiToken);
 
             Bundle newBundle = new Bundle();
 
@@ -307,7 +307,7 @@
             newBundle.Files.Add(fileName3, fileName3.GetHashCode().ToString());
 
             // 150 is max bundle size (chunk size).
-            List<Bundle> bundles = snykCodeService.SplitBundleToChunksBySize(newBundle, 100);
+            List<Bundle> bundles = bundleService.SplitBundleToChunksBySize(newBundle, 100);
 
             Assert.NotNull(bundles);
             Assert.Equal(3, bundles.Count);
