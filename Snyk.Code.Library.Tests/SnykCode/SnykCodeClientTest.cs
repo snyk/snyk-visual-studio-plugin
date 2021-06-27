@@ -7,6 +7,7 @@
     using System.Threading.Tasks;
     using Snyk.Code.Library.Api;
     using Snyk.Code.Library.Api.Dto;
+    using Snyk.Code.Library.Common;
     using Xunit;
 
     /// <summary>
@@ -27,7 +28,7 @@
             {
                 string fileName = "/Snyk/Code/Tests/SnykCodeBigBundleTest" + i + ".cs";
 
-                newBundle.Files.Add(fileName, fileName.GetHashCode().ToString());
+                newBundle.Files.Add(fileName, Sha256.ComputeHash(fileName));
             }
 
             var uploadedBundle = await snykCodeClient.CreateBundle(newBundle);
@@ -44,9 +45,9 @@
 
             Bundle newBundle = new Bundle();
 
-            newBundle.Files.Add("/Test1.cs", "/Test1.cs".GetHashCode().ToString());
-            newBundle.Files.Add("/Test2.cs", "/Test2.cs".GetHashCode().ToString());
-            newBundle.Files.Add("/Test3.cs", "/Test3.cs".GetHashCode().ToString());
+            newBundle.Files.Add("/Test1.cs", Sha256.ComputeHash("/Test1.cs"));
+            newBundle.Files.Add("/Test2.cs", Sha256.ComputeHash("/Test2.cs"));
+            newBundle.Files.Add("/Test3.cs", Sha256.ComputeHash("/Test3.cs"));
 
             Bundle resultBundle = await snykCodeClient.CreateBundle(newBundle);
 
@@ -55,9 +56,9 @@
 
             Bundle extendBundle = new Bundle();
 
-            extendBundle.Files.Add("/Test4.cs", "/Test4.cs".GetHashCode().ToString());
-            extendBundle.Files.Add("/Test5.cs", "/Test5.cs".GetHashCode().ToString());
-            extendBundle.Files.Add("/Test6.cs", "/Test6.cs".GetHashCode().ToString());
+            extendBundle.Files.Add("/Test4.cs", Sha256.ComputeHash("/Test4.cs"));
+            extendBundle.Files.Add("/Test5.cs", Sha256.ComputeHash("/Test5.cs"));
+            extendBundle.Files.Add("/Test6.cs", Sha256.ComputeHash("/Test6.cs"));
 
             Bundle extendedBundle = await snykCodeClient.ExtendBundle(resultBundle, extendBundle);
 
@@ -74,9 +75,9 @@
 
             Bundle newBundle = new Bundle();
 
-            newBundle.Files.Add("/Test1.cs", "/Test1.cs".GetHashCode().ToString());
-            newBundle.Files.Add("/Test2.cs", "/Test2.cs".GetHashCode().ToString());
-            newBundle.Files.Add("/Test3.cs", "/Test3.cs".GetHashCode().ToString());
+            newBundle.Files.Add("/Test1.cs", Sha256.ComputeHash("/Test1.cs"));
+            newBundle.Files.Add("/Test2.cs", Sha256.ComputeHash("/Test2.cs"));
+            newBundle.Files.Add("/Test3.cs", Sha256.ComputeHash("/Test3.cs"));
 
             Bundle resultBundle = await snykCodeClient.CreateBundle(newBundle);
 
@@ -85,9 +86,9 @@
 
             Bundle extendBundle = new Bundle();
 
-            extendBundle.Files.Add("/Test4.cs", "/Test4.cs".GetHashCode().ToString());
-            extendBundle.Files.Add("/Test5.cs", "/Test5.cs".GetHashCode().ToString());
-            extendBundle.Files.Add("/Test6.cs", "/Test6.cs".GetHashCode().ToString());
+            extendBundle.Files.Add("/Test4.cs", Sha256.ComputeHash("/Test4.cs"));
+            extendBundle.Files.Add("/Test5.cs", Sha256.ComputeHash("/Test5.cs"));
+            extendBundle.Files.Add("/Test6.cs", Sha256.ComputeHash("/Test6.cs"));
 
             extendBundle.RemovedFiles.Add("/Test1.cs");
             extendBundle.RemovedFiles.Add("/Test2.cs");
@@ -107,7 +108,7 @@
 
             Bundle newBundle = new Bundle();
 
-            newBundle.Files.Add("/Test.cs", "/Test.cs".GetHashCode().ToString());
+            newBundle.Files.Add("/Test.cs", Sha256.ComputeHash("/Test.cs"));
 
             Bundle uploadedBundle = await snykCodeClient.CreateBundle(newBundle);
 
@@ -154,7 +155,7 @@
 
             Bundle newBundle = new Bundle();
 
-            newBundle.Files.Add("/Test.cs", "/Test.cs".GetHashCode().ToString());
+            newBundle.Files.Add("/Test.cs", Sha256.ComputeHash("/Test.cs"));
 
             var uploadedBundle = await snykCodeClient.CreateBundle(newBundle);
 
