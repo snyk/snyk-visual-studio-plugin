@@ -1,6 +1,7 @@
 ﻿namespace Snyk.Code.Library.Api
 {
     using System;
+    using System.Collections.Generic;
     using System.Net.Http;
     using System.Text;
     using Snyk.Code.Library.Api.Dto;
@@ -44,6 +45,68 @@
             };
 
             this.httpClient.DefaultRequestHeaders.Add("Session-Token", token);
+        }
+
+        /// <summary>
+        /// Uploads missing files to a bundle.
+        /// Small files should be uploaded in batches to avoid excessive overhead due to too many requests. 
+        /// The file contents must be utf-8 parsed strings and the file hashes must be computed over these strings, matching the "Create Bundle" request.
+        /// </summary>
+        /// <param name="bundleId">Bundle id to file upload.</param>
+        /// <param name="codeFiles">Code files list with file path and file content.</param>
+        /// <returns>True if upload success.</returns>
+        public async System.Threading.Tasks.Task<bool> UploadFiles(string bundleId, List<CodeFile> codeFiles)
+        {
+            if (string.IsNullOrEmpty(bundleId))
+            {
+                throw new ArgumentException("Bundle id is null or empty.");
+            }
+
+            if (codeFiles == null)
+            {
+                throw new ArgumentException("Code files to upload is null.");
+            }
+
+            HttpRequestMessage httpRequest = new HttpRequestMessage(HttpMethod.Post, FileApiUrl + "/" + bundleId);
+
+            string payload = Json.Serialize<List<CodeFile>>(codeFiles);
+
+            httpRequest.Content = new StringContent(payload, Encoding.UTF8, "application/json");
+
+            var response = await this.httpClient.SendAsync(httpRequest);
+
+            return response.IsSuccessStatusCode;
+        }
+
+        /// <summary>
+        /// Uploads missing files to a bundle.
+        /// Small files should be uploaded in batches to avoid excessive overhead due to too many requests. 
+        /// The file contents must be utf-8 parsed strings and the file hashes must be computed over these strings, matching the "Create Bundle" request.
+        /// </summary>
+        /// <param name="bundleId">Bundle id to file upload.</param>
+        /// <param name="codeFile">Code file with file path and file content.</param>
+        /// <returns>True if upload success.</returns>
+        public async System.Threading.Tasks.Task<bool> UploadFile(string bundleId, CodeFile codeFile)
+        {
+            if (string.IsNullOrEmpty(bundleId))
+            {
+                throw new ArgumentException("Bundle is null or empty.");
+            }
+
+            if (codeFile == null)
+            {
+                throw new ArgumentException("Code file to upload is null.");
+            }
+
+            HttpRequestMessage httpRequest = new HttpRequestMessage(HttpMethod.Post, FileApiUrl + "/" + bundleId);
+
+            string payload = Json.Serialize<CodeFile>(codeFile);
+
+            httpRequest.Content = new StringContent(payload, Encoding.UTF8, "application/json");
+
+            var response = await this.httpClient.SendAsync(httpRequest);
+
+            return response.IsSuccessStatusCode;
         }
 
         /// <summary>

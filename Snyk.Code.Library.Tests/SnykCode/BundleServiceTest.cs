@@ -13,6 +13,100 @@
     public class BundleServiceTest
     {
         [Fact]
+        public async Task BundleService_UploadFilesProvided_ChecksPassAsync()
+        {
+            var bundleService = new BundleService(TestSettings.SnykCodeApiUrl, TestSettings.Instance.ApiToken);
+
+            Bundle newBundle = new Bundle();
+
+            string fileContent1 = "namespace HelloWorld {public class HelloWorld {}}";
+            string filePath1 = "/HelloWorld.cs";
+            string fileHash1 = Sha256.ComputeHash(fileContent1);
+
+            newBundle.Files.Add(filePath1, fileHash1);
+
+            string fileContent2 = "namespace HelloWorld {public class HelloWorldTest {}}";
+            string filePath2 = "/HelloWorldTest.cs";
+            string fileHash2 = Sha256.ComputeHash(fileContent2);
+
+            newBundle.Files.Add(filePath2, fileHash2);
+
+            string fileContent3 = "namespace HelloWorld {public class HelloWorldService {}}";
+            string filePath3 = "/HelloWorldService.cs";
+            string fileHash3 = Sha256.ComputeHash(fileContent3);
+
+            newBundle.Files.Add(filePath3, fileHash3);
+
+            var createdBundle = await bundleService.CreateBundle(newBundle);
+
+            Assert.NotNull(createdBundle);
+            Assert.True(!string.IsNullOrEmpty(createdBundle.Id));
+
+            List<CodeFile> codeFiles = new List<CodeFile>();
+
+            codeFiles.Add(new CodeFile
+            {
+                Hash = fileHash1,
+                Content = fileContent1,
+            });
+
+            codeFiles.Add(new CodeFile
+            {
+                Hash = fileHash2,
+                Content = fileContent2,
+            });
+
+            codeFiles.Add(new CodeFile
+            {
+                Hash = fileHash3,
+                Content = fileContent3,
+            });
+
+            bool isSuccess = await bundleService.UploadFiles(createdBundle.Id, codeFiles, 100);
+
+            Assert.True(isSuccess);
+        }
+
+        [Fact]
+        public async Task BundleService_SplitBigCodeFilesProvided_ChecksPassAsync()
+        {
+            string fileContent1 = "namespace HelloWorld {public class HelloWorld {}}";
+            string fileHash1 = Sha256.ComputeHash(fileContent1);
+
+            string fileContent2 = "namespace HelloWorld {public class HelloWorldTest {}}";
+            string fileHash2 = Sha256.ComputeHash(fileContent2);
+
+            string fileContent3 = "namespace HelloWorld {public class HelloWorldService {}}";
+            string fileHash3 = Sha256.ComputeHash(fileContent3);
+
+            List<CodeFile> codeFiles = new List<CodeFile>();
+
+            codeFiles.Add(new CodeFile
+            {
+                Hash = fileHash1,
+                Content = fileContent1,
+            });
+
+            codeFiles.Add(new CodeFile
+            {
+                Hash = fileHash2,
+                Content = fileContent2,
+            });
+
+            codeFiles.Add(new CodeFile
+            {
+                Hash = fileHash3,
+                Content = fileContent3,
+            });
+
+            var bundleService = new BundleService(TestSettings.SnykCodeApiUrl, TestSettings.Instance.ApiToken);
+
+            List<List<CodeFile>> codeFileLists = bundleService.SplitCodeFilesToLists(codeFiles, 160);
+
+            Assert.Equal(3, codeFileLists.Count);
+        }
+
+        [Fact]
         public async Task SnykCodeClient_ExtendBundleAddTwoFilesAndRemoveOneFileProvided_ChecksPassAsync()
         {
             var bundleService = new BundleService(TestSettings.SnykCodeApiUrl, TestSettings.Instance.ApiToken);

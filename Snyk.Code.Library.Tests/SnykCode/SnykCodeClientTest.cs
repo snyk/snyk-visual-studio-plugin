@@ -1,6 +1,7 @@
 ﻿namespace Snyk.Code.Library.Tests.Api
 {
     using System;
+    using System.Collections.Generic;
     using System.IO;
     using System.Reflection;
     using System.Text.RegularExpressions;
@@ -16,6 +17,91 @@
     public class SnykCodeClientTest
     {
         private const string TestUserAgent = "Test-VisualStudio";
+
+        [Fact]
+        public async Task UploadFilesProvided_ChecksPassAsync()
+        {
+            var snykCodeClient = new SnykCodeClient(TestSettings.SnykCodeApiUrl, TestSettings.Instance.ApiToken);
+
+            Bundle newBundle = new Bundle();
+
+            string fileContent1 = "namespace HelloWorld {public class HelloWorld {}}";
+            string filePath1 = "/HelloWorld.cs";
+            string fileHash1 = Sha256.ComputeHash(fileContent1);
+
+            newBundle.Files.Add(filePath1, fileHash1);
+
+            string fileContent2 = "namespace HelloWorld {public class HelloWorldTest {}}";
+            string filePath2 = "/HelloWorldTest.cs";
+            string fileHash2 = Sha256.ComputeHash(fileContent2);
+
+            newBundle.Files.Add(filePath2, fileHash2);
+
+            string fileContent3 = "namespace HelloWorld {public class HelloWorldService {}}";
+            string filePath3 = "/HelloWorldService.cs";
+            string fileHash3 = Sha256.ComputeHash(fileContent3);
+
+            newBundle.Files.Add(filePath3, fileHash3);
+
+            var createdBundle = await snykCodeClient.CreateBundle(newBundle);
+
+            Assert.NotNull(createdBundle);
+            Assert.True(!string.IsNullOrEmpty(createdBundle.Id));
+
+            List<CodeFile> codeFiles = new List<CodeFile>();
+
+            codeFiles.Add(new CodeFile
+            {
+                Hash = fileHash1,
+                Content = fileContent1,
+            });
+
+            codeFiles.Add(new CodeFile
+            {
+                Hash = fileHash2,
+                Content = fileContent2,
+            });
+
+            codeFiles.Add(new CodeFile
+            {
+                Hash = fileHash3,
+                Content = fileContent3,
+            });
+
+            bool isSuccess = await snykCodeClient.UploadFiles(createdBundle.Id, codeFiles);
+
+            Assert.True(isSuccess);
+        }
+
+        [Fact]
+        public async Task UploadFileProvided_ChecksPassAsync()
+        {
+            var snykCodeClient = new SnykCodeClient(TestSettings.SnykCodeApiUrl, TestSettings.Instance.ApiToken);
+
+            Bundle newBundle = new Bundle();
+
+            string fileContent = "namespace HelloWorld {public class HelloWorld {}}";
+
+            string filePath = "/HelloWorld.cs";
+            string fileHash = Sha256.ComputeHash(fileContent);
+
+            newBundle.Files.Add(filePath, fileHash);
+
+            var createdBundle = await snykCodeClient.CreateBundle(newBundle);
+
+            Assert.NotNull(createdBundle);
+            Assert.True(!string.IsNullOrEmpty(createdBundle.Id));
+
+            CodeFile codeFile = new CodeFile
+            {
+                Hash = fileHash,
+                Content = fileContent,
+            };
+
+            bool isSuccess = await snykCodeClient.UploadFile(createdBundle.Id, codeFile);
+
+            Assert.True(isSuccess);
+        }
 
         [Fact]
         public async Task SnykCodeClient_CreateBundleSmallPayloadProvided_ChecksPassAsync()
