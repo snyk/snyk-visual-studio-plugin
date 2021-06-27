@@ -4,6 +4,7 @@
     using System.Threading.Tasks;
     using Snyk.Code.Library.Api;
     using Snyk.Code.Library.Api.Dto;
+    using Snyk.Code.Library.Common;
     using Xunit;
 
     /// <summary>
@@ -21,8 +22,8 @@
             string fileName1 = "/Snyk/Code/Tests/SnykCodeBigBundleTest1.cs";
             string fileName2 = "/Snyk/Code/Tests/SnykCodeBigBundleTest2.cs";
 
-            initialBundle.Files.Add(fileName1, fileName1.GetHashCode().ToString());
-            initialBundle.Files.Add(fileName2, fileName2.GetHashCode().ToString());
+            initialBundle.Files.Add(fileName1, Sha256.ComputeHash(fileName1));
+            initialBundle.Files.Add(fileName2, Sha256.ComputeHash(fileName2));
 
             Bundle firstBundle = await bundleService.CreateBundle(initialBundle);
 
@@ -31,8 +32,8 @@
             string fileName3 = "/Snyk/Code/Tests/SnykCodeBigBundleTest3.cs";
             string fileName4 = "/Snyk/Code/Tests/SnykCodeBigBundleTest4.cs";
 
-            extendBundle.Files.Add(fileName3, fileName3.GetHashCode().ToString());
-            extendBundle.Files.Add(fileName4, fileName4.GetHashCode().ToString());
+            extendBundle.Files.Add(fileName3, Sha256.ComputeHash(fileName3));
+            extendBundle.Files.Add(fileName4, Sha256.ComputeHash(fileName4));
 
             extendBundle.RemovedFiles.Add(fileName1);
 
@@ -51,7 +52,7 @@
             Bundle initialBundle = new Bundle();
 
             string fileName = "/Snyk/Code/Tests/SnykCodeBigBundleTest.cs";
-            initialBundle.Files.Add(fileName, fileName.GetHashCode().ToString());
+            initialBundle.Files.Add(fileName, Sha256.ComputeHash(fileName));
 
             Bundle firstBundle = await bundleService.CreateBundle(initialBundle);
 
@@ -63,11 +64,11 @@
             string fileName4 = "/Snyk/Code/Tests/SnykCodeBigBundleTest4.cs";
             string fileName5 = "/Snyk/Code/Tests/SnykCodeBigBundleTest5.cs";
 
-            extendBundle.Files.Add(fileName1, fileName1.GetHashCode().ToString());
-            extendBundle.Files.Add(fileName2, fileName2.GetHashCode().ToString());
-            extendBundle.Files.Add(fileName3, fileName3.GetHashCode().ToString());
-            extendBundle.Files.Add(fileName4, fileName4.GetHashCode().ToString());
-            extendBundle.Files.Add(fileName5, fileName5.GetHashCode().ToString());
+            extendBundle.Files.Add(fileName1, Sha256.ComputeHash(fileName1));
+            extendBundle.Files.Add(fileName2, Sha256.ComputeHash(fileName2));
+            extendBundle.Files.Add(fileName3, Sha256.ComputeHash(fileName3));
+            extendBundle.Files.Add(fileName4, Sha256.ComputeHash(fileName4));
+            extendBundle.Files.Add(fileName5, Sha256.ComputeHash(fileName5));
 
             var uploadedBundle = await bundleService.ExtendBundle(firstBundle, extendBundle, 150);
 
@@ -84,7 +85,7 @@
             Bundle initialBundle = new Bundle();
 
             string fileName = "/Snyk/Code/Tests/SnykCodeBigBundleTest.cs";
-            initialBundle.Files.Add(fileName, fileName.GetHashCode().ToString());
+            initialBundle.Files.Add(fileName, Sha256.ComputeHash(fileName));
 
             Bundle firstBundle = await bundleService.CreateBundle(initialBundle);
 
@@ -96,11 +97,11 @@
             string fileName4 = "/Snyk/Code/Tests/SnykCodeBigBundleTest4.cs";
             string fileName5 = "/Snyk/Code/Tests/SnykCodeBigBundleTest5.cs";
 
-            extendBundle.Files.Add(fileName1, fileName1.GetHashCode().ToString());
-            extendBundle.Files.Add(fileName2, fileName2.GetHashCode().ToString());
-            extendBundle.Files.Add(fileName3, fileName3.GetHashCode().ToString());
-            extendBundle.Files.Add(fileName4, fileName4.GetHashCode().ToString());
-            extendBundle.Files.Add(fileName5, fileName5.GetHashCode().ToString());
+            extendBundle.Files.Add(fileName1, Sha256.ComputeHash(fileName1));
+            extendBundle.Files.Add(fileName2, Sha256.ComputeHash(fileName2));
+            extendBundle.Files.Add(fileName3, Sha256.ComputeHash(fileName3));
+            extendBundle.Files.Add(fileName4, Sha256.ComputeHash(fileName4));
+            extendBundle.Files.Add(fileName5, Sha256.ComputeHash(fileName5));
 
             var uploadedBundle = await bundleService.ProcessExtendLargeBundle(firstBundle, extendBundle, 150);
 
@@ -120,7 +121,7 @@
             {
                 string fileName = "/Snyk/Code/Tests/SnykCodeBigBundleTest" + i + ".cs";
 
-                newBundle.Files.Add(fileName, fileName.GetHashCode().ToString());
+                newBundle.Files.Add(fileName, Sha256.ComputeHash(fileName));
             }
 
             var uploadedBundle = await bundleService.CreateBundle(newBundle, 150);
@@ -141,9 +142,9 @@
             string fileName2 = "/Snyk/Code/Tests/SnykCodeBigBundleTest2.cs";
             string fileName3 = "/Snyk/Code/Tests/SnykCodeBigBundleTest3.cs";
 
-            newBundle.Files.Add(fileName1, fileName1.GetHashCode().ToString());
-            newBundle.Files.Add(fileName2, fileName2.GetHashCode().ToString());
-            newBundle.Files.Add(fileName3, fileName3.GetHashCode().ToString());
+            newBundle.Files.Add(fileName1, Sha256.ComputeHash(fileName1));
+            newBundle.Files.Add(fileName2, Sha256.ComputeHash(fileName2));
+            newBundle.Files.Add(fileName3, Sha256.ComputeHash(fileName3));
 
             var uploadedBundle = await bundleService.ProcessCreateLargeBundle(newBundle, 175);
 
@@ -164,10 +165,10 @@
             string fileName3 = "/Snyk/Code/Tests/SnykCodeBigBundleTest3.cs";
             string fileName4 = "/Snyk/Code/Tests/SnykCodeBigBundleTest4.cs";
 
-            newBundle.Files.Add(fileName1, fileName1.GetHashCode().ToString());
-            newBundle.Files.Add(fileName2, fileName2.GetHashCode().ToString());
-            newBundle.Files.Add(fileName3, fileName3.GetHashCode().ToString());
-            newBundle.Files.Add(fileName4, fileName3.GetHashCode().ToString());
+            newBundle.Files.Add(fileName1, Sha256.ComputeHash(fileName1));
+            newBundle.Files.Add(fileName2, Sha256.ComputeHash(fileName2));
+            newBundle.Files.Add(fileName3, Sha256.ComputeHash(fileName3));
+            newBundle.Files.Add(fileName4, Sha256.ComputeHash(fileName4));
 
             newBundle.RemovedFiles.Add("/Snyk/Code/Tests/SnykCodeBigBundleTest5.cs");
             newBundle.RemovedFiles.Add("/Snyk/Code/Tests/SnykCodeBigBundleTest6.cs");
@@ -192,7 +193,7 @@
 
             string fileName1 = "/Snyk/Code/Tests/SnykCodeBigBundleTest1.cs";
 
-            newBundle.Files.Add(fileName1, fileName1.GetHashCode().ToString());
+            newBundle.Files.Add(fileName1, Sha256.ComputeHash(fileName1));
 
             newBundle.RemovedFiles.Add("/Snyk/Code/Tests/SnykCodeBigBundleTest2.cs");
 
@@ -214,7 +215,7 @@
 
             string fileName = "/Snyk/Code/Tests/SnykCodeBigBundleTest1.cs";
 
-            newBundle.Files.Add(fileName, fileName.GetHashCode().ToString());
+            newBundle.Files.Add(fileName, Sha256.ComputeHash(fileName));
 
             newBundle.RemovedFiles.Add("/Snyk/Code/Tests/SnykCodeBigBundleTest2.cs");
             newBundle.RemovedFiles.Add("/Snyk/Code/Tests/SnykCodeBigBundleTest3.cs");
@@ -251,13 +252,12 @@
             string fileName1 = "/Snyk/Code/Tests/SnykCodeBigBundleTest1.cs";
             string fileName2 = "/Snyk/Code/Tests/SnykCodeBigBundleTest2.cs";
 
-            newBundle.Files.Add(fileName1, fileName1.GetHashCode().ToString());
-            newBundle.Files.Add(fileName2, fileName2.GetHashCode().ToString());
+            newBundle.Files.Add(fileName1, Sha256.ComputeHash(fileName1));
+            newBundle.Files.Add(fileName2, Sha256.ComputeHash(fileName2));
 
             newBundle.RemovedFiles.Add("/Snyk/Code/Tests/SnykCodeBigBundleTest3.cs");
 
-            // 280 is max bundle size (chunk size).
-            List<Bundle> bundles = bundleService.SplitBundleToChunksBySize(newBundle, 150);
+            List<Bundle> bundles = bundleService.SplitBundleToChunksBySize(newBundle, 200);
 
             Assert.NotNull(bundles);
 
@@ -280,13 +280,13 @@
             string fileName3 = "/Snyk/Code/Tests/SnykCodeBigBundleTest3.cs";
             string fileName4 = "/Snyk/Code/Tests/SnykCodeBigBundleTest4.cs";
 
-            newBundle.Files.Add(fileName1, fileName1.GetHashCode().ToString());
-            newBundle.Files.Add(fileName2, fileName2.GetHashCode().ToString());
-            newBundle.Files.Add(fileName3, fileName3.GetHashCode().ToString());
-            newBundle.Files.Add(fileName4, fileName3.GetHashCode().ToString());
+            newBundle.Files.Add(fileName1, Sha256.ComputeHash(fileName1));
+            newBundle.Files.Add(fileName2, Sha256.ComputeHash(fileName2));
+            newBundle.Files.Add(fileName3, Sha256.ComputeHash(fileName3));
+            newBundle.Files.Add(fileName4, Sha256.ComputeHash(fileName4));
 
             // 150 is max bundle size (chunk size).
-            List<Bundle> bundles = bundleService.SplitBundleToChunksBySize(newBundle, 100);
+            List<Bundle> bundles = bundleService.SplitBundleToChunksBySize(newBundle, 145);
 
             Assert.NotNull(bundles);
             Assert.Equal(4, bundles.Count);
@@ -303,12 +303,12 @@
             string fileName2 = "/Snyk/Code/Tests/SnykCodeBigBundleTest2.cs";
             string fileName3 = "/Snyk/Code/Tests/SnykCodeBigBundleTest3.cs";
 
-            newBundle.Files.Add(fileName1, fileName1.GetHashCode().ToString());
-            newBundle.Files.Add(fileName2, fileName2.GetHashCode().ToString());
-            newBundle.Files.Add(fileName3, fileName3.GetHashCode().ToString());
+            newBundle.Files.Add(fileName1, Sha256.ComputeHash(fileName1));
+            newBundle.Files.Add(fileName2, Sha256.ComputeHash(fileName2));
+            newBundle.Files.Add(fileName3, Sha256.ComputeHash(fileName3));
 
             // 150 is max bundle size (chunk size).
-            List<Bundle> bundles = bundleService.SplitBundleToChunksBySize(newBundle, 100);
+            List<Bundle> bundles = bundleService.SplitBundleToChunksBySize(newBundle, 145);
 
             Assert.NotNull(bundles);
             Assert.Equal(3, bundles.Count);
