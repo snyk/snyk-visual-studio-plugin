@@ -29,7 +29,7 @@
 
         private readonly HttpClient httpClient;
 
-        private LoginResponse loginResponse;
+        private LoginResponseDto loginResponse;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="SnykCodeClient"/> class.
@@ -55,7 +55,7 @@
         /// <param name="bundleId">Bundle id to file upload.</param>
         /// <param name="codeFiles">Code files list with file path and file content.</param>
         /// <returns>True if upload success.</returns>
-        public async System.Threading.Tasks.Task<bool> UploadFiles(string bundleId, List<CodeFile> codeFiles)
+        public async System.Threading.Tasks.Task<bool> UploadFiles(string bundleId, Dictionary<string, string> codeFiles)
         {
             if (string.IsNullOrEmpty(bundleId))
             {
@@ -69,7 +69,9 @@
 
             HttpRequestMessage httpRequest = new HttpRequestMessage(HttpMethod.Post, FileApiUrl + "/" + bundleId);
 
-            string payload = Json.Serialize<List<CodeFile>>(codeFiles);
+            var codeFileDtos = this.BuildCodeFileDtoList(codeFiles);
+
+            string payload = Json.Serialize<List<CodeFileDto>>(codeFileDtos);
 
             httpRequest.Content = new StringContent(payload, Encoding.UTF8, "application/json");
 
@@ -84,23 +86,35 @@
         /// The file contents must be utf-8 parsed strings and the file hashes must be computed over these strings, matching the "Create Bundle" request.
         /// </summary>
         /// <param name="bundleId">Bundle id to file upload.</param>
-        /// <param name="codeFile">Code file with file path and file content.</param>
+        /// <param name="fileHash">Code file hash.</param>
+        /// <param name="fileContent">File content string.</param>
         /// <returns>True if upload success.</returns>
-        public async System.Threading.Tasks.Task<bool> UploadFile(string bundleId, CodeFile codeFile)
+        public async System.Threading.Tasks.Task<bool> UploadFile(string bundleId, string fileHash, string fileContent)
         {
             if (string.IsNullOrEmpty(bundleId))
             {
                 throw new ArgumentException("Bundle is null or empty.");
             }
 
-            if (codeFile == null)
+            if (string.IsNullOrEmpty(fileHash))
             {
-                throw new ArgumentException("Code file to upload is null.");
+                throw new ArgumentException("Code file hash is null or empty.");
+            }
+
+            if (string.IsNullOrEmpty(fileContent))
+            {
+                throw new ArgumentException("Code file content is null or empty.");
             }
 
             HttpRequestMessage httpRequest = new HttpRequestMessage(HttpMethod.Post, FileApiUrl + "/" + bundleId);
 
-            string payload = Json.Serialize<CodeFile>(codeFile);
+            var codeFileDto = new CodeFileDto
+            {
+                Hash = fileHash,
+                Content = fileContent,
+            };
+
+            string payload = Json.Serialize<CodeFileDto>(codeFileDto);
 
             httpRequest.Content = new StringContent(payload, Encoding.UTF8, "application/json");
 
@@ -118,24 +132,36 @@
         /// As per the "Create Bundle" API, it is possible to pass either an object or an array in the file parameter, with the same semantics as previously described.
         /// Extending a bundle by removing all the parent bundle's files is not allowed.
         /// </summary>
-        /// <param name="previousBundle">Already created bundle with valid bundle id.</param>
-        /// <param name="extendBundle">Bundle to extend with new or removed files.</param>
+        /// <param name="bundleId">Already created bundle id.</param>
+        /// <param name="files">Files to add in bundle.</param>
+        /// <param name="removedFiles">Files to remove in bundle.</param>
         /// <returns>Extended bundle object.</returns>
-        public async System.Threading.Tasks.Task<Bundle> ExtendBundle(Bundle previousBundle, Bundle extendBundle)
+        public async System.Threading.Tasks.Task<BundleResponseDto> ExtendBundle(string bundleId, Dictionary<string, string> files, List<string> removedFiles)
         {
-            if (previousBundle == null || string.IsNullOrEmpty(previousBundle.Id))
+            if (string.IsNullOrEmpty(bundleId))
             {
                 throw new ArgumentException("Previous Bundle is null or empty.");
             }
 
-            if (extendBundle == null)
+            if (files == null || removedFiles == null)
             {
-                throw new ArgumentException("Extend Bundle is null or empty.");
+                throw new ArgumentException("Files or removed files are null.");
             }
 
-            HttpRequestMessage httpRequest = new HttpRequestMessage(HttpMethod.Put, BundleApiUrl + "/" + previousBundle.Id);
+            if (files.IsNullOrEmpty() && removedFiles.IsNullOrEmpty())
+            {
+                throw new ArgumentException("On Extend Bundle files or removed files are empty.");
+            }
 
-            httpRequest.Content = new StringContent(Json.Serialize<Bundle>(extendBundle), Encoding.UTF8, "application/json");
+            HttpRequestMessage httpRequest = new HttpRequestMessage(HttpMethod.Put, BundleApiUrl + "/" + bundleId);
+
+            string payload = Json.Serialize<ExtendBundleRequestDto>(new ExtendBundleRequestDto
+            {
+                Files = files,
+                RemovedFiles = removedFiles,
+            });
+
+            httpRequest.Content = new StringContent(payload, Encoding.UTF8, "application/json");
 
             var response = await this.httpClient.SendAsync(httpRequest);
 
@@ -143,7 +169,7 @@
 
             if (response.IsSuccessStatusCode)
             {
-                return Json.Deserialize<Bundle>(responseText);
+                return Json.Deserialize<BundleResponseDto>(responseText);
             }
             else
             {
@@ -154,20 +180,20 @@
         /// <summary>
         /// Checks the status of a bundle.
         /// </summary>
-        /// <param name="uploadedBundle">Bundle to check.</param>
+        /// <param name="bundleId">Bundle id to check.</param>
         /// <returns
         /// >Returns the bundleId and, in case of uploaded bundles, the current missingFiles and the uploadURL.
-        /// This API can be used to check if an old uploaded bundle has expired (status code 404), 
+        /// This API can be used to check if an old uploaded bundle has expired (status code 404),
         /// or to check if there are still missing files after uploading ("Upload Files").
         /// </returns>
-        public async System.Threading.Tasks.Task<Bundle> CheckBundle(Bundle uploadedBundle)
+        public async System.Threading.Tasks.Task<BundleResponseDto> CheckBundle(string bundleId)
         {
-            if (uploadedBundle == null || string.IsNullOrEmpty(uploadedBundle.Id))
+            if (string.IsNullOrEmpty(bundleId))
             {
-                throw new ArgumentException("Bundle is null or empty.");
+                throw new ArgumentException("Bundle id is null or empty.");
             }
 
-            HttpRequestMessage httpRequest = new HttpRequestMessage(HttpMethod.Get, BundleApiUrl + "/" + uploadedBundle.Id);
+            HttpRequestMessage httpRequest = new HttpRequestMessage(HttpMethod.Get, BundleApiUrl + "/" + bundleId);
 
             var response = await this.httpClient.SendAsync(httpRequest);
 
@@ -175,7 +201,7 @@
 
             if (response.IsSuccessStatusCode)
             {
-                return Json.Deserialize<Bundle>(responseText);
+                return Json.Deserialize<BundleResponseDto>(responseText);
             }
             else
             {
@@ -184,20 +210,25 @@
         }
 
         /// <summary>
-        /// Create new <see cref="Bundle"/> and get result <see cref="Bundle"/> object.
+        /// Create new <see cref="BundleResponseDto"/> and get result <see cref="BundleResponseDto"/> object.
         /// </summary>
-        /// <param name="newBundle">Bundle object with files data.</param>
+        /// <param name="bundleFiles">Bundle files.</param>
         /// <returns>Bundle object with bundle id, missing files and upload url.</returns>
-        public async System.Threading.Tasks.Task<Bundle> CreateBundle(Bundle newBundle)
+        public async System.Threading.Tasks.Task<BundleResponseDto> CreateBundle(Dictionary<string, string> bundleFiles)
         {
-            if (newBundle == null)
+            if (bundleFiles == null)
             {
-                throw new ArgumentException("Bundle is null or empty.");
+                throw new ArgumentException("Bundle files is null.");
             }
 
-            HttpRequestMessage httpRequest = new HttpRequestMessage(HttpMethod.Post, BundleApiUrl);
+            var httpRequest = new HttpRequestMessage(HttpMethod.Post, BundleApiUrl);
 
-            httpRequest.Content = new StringContent(Json.Serialize<Bundle>(newBundle), Encoding.UTF8, "application/json");
+            string payload= Json.Serialize<CreateBundleRequestDto>(new CreateBundleRequestDto
+            {
+                Files = bundleFiles,
+            });
+
+            httpRequest.Content = new StringContent(payload, Encoding.UTF8, "application/json");
 
             var response = await this.httpClient.SendAsync(httpRequest);
 
@@ -205,7 +236,7 @@
 
             if (response.IsSuccessStatusCode)
             {
-                return Json.Deserialize<Bundle>(responseText);
+                return Json.Deserialize<BundleResponseDto>(responseText);
             }
             else
             {
@@ -216,8 +247,8 @@
         /// <summary>
         /// Returns the list of allowed extensions and configuration files for uploaded bundles.
         /// </summary>
-        /// <returns><see cref="Filters"/></returns>
-        public async System.Threading.Tasks.Task<Filters> GetFilters()
+        /// <returns><see cref="FiltersDto"/></returns>
+        public async System.Threading.Tasks.Task<FiltersDto> GetFilters()
         {
             var request = new HttpRequestMessage(HttpMethod.Get, FiltersApiUrl);
 
@@ -227,7 +258,7 @@
 
             if (response.IsSuccessStatusCode)
             {
-                return Json.Deserialize<Filters>(responseText);
+                return Json.Deserialize<FiltersDto>(responseText);
             }
             else
             {
@@ -238,11 +269,11 @@
         /// <summary>
         /// Requests the creation of a new login session.
         /// <param name="userAgent">Represents requested client. For example, VisualStudio or VisualStudio code or other IDE.</param>
-        /// /// <returns><see cref="LoginResponse"/> object.</returns>
+        /// /// <returns><see cref="LoginResponseDto"/> object.</returns>
         /// </summary>
         /// <param name="userAgent">Optional parameter with again (VisualStudio for example).</param>
         /// <returns><see cref="loginResponse"/> object.</returns>
-        public async System.Threading.Tasks.Task<LoginResponse> LoginAsync(string userAgent = "")
+        public async System.Threading.Tasks.Task<LoginResponseDto> LoginAsync(string userAgent = "")
         {
             if (string.IsNullOrEmpty(userAgent))
             {
@@ -257,7 +288,7 @@
 
             if (response.IsSuccessStatusCode)
             {
-                this.loginResponse = Json.Deserialize<LoginResponse>(responseText);
+                this.loginResponse = Json.Deserialize<LoginResponseDto>(responseText);
 
                 return this.loginResponse;
             }
@@ -279,6 +310,22 @@
             HttpResponseMessage httpResponse = await this.httpClient.SendAsync(request);
 
             return new LoginStatus((int)httpResponse.StatusCode);
+        }
+
+        private List<CodeFileDto> BuildCodeFileDtoList(Dictionary<string, string> codeFiles)
+        {
+            var codeFileDtos = new List<CodeFileDto>();
+
+            foreach (var filePair in codeFiles)
+            {
+                codeFileDtos.Add(new CodeFileDto
+                {
+                    Hash = filePair.Key,
+                    Content = filePair.Value,
+                });
+            }
+
+            return codeFileDtos;
         }
     }
 }

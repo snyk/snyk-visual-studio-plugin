@@ -7,7 +7,7 @@
     /// This information can be used to reduce the payload size of the Create Bundle (see below) request. 
     /// Extensions begin with a dot (e.g. ".js") and config files begin with a slash (e.g. "/.eslintrc.js").
     /// </summary>
-    public class Filters
+    public class FiltersDto
     {
         /// <summary>
         /// Gets or sets a value indicating whether file extensions.
