@@ -5,7 +5,7 @@
     /// <summary>
     /// Data transfer object for file content pair: file path hash - file content.
     /// </summary>
-    public class CodeFile
+    public class CodeFileDto
     {
         /// <summary>
         /// Gets or sets a value indicating whether file path hash.

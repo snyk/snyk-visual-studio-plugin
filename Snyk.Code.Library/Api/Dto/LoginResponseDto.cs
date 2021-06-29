@@ -3,7 +3,7 @@
     /// <summary>
     /// SnykCode login response result.
     /// </summary>
-    public class LoginResponse
+    public class LoginResponseDto
     {
         /// <summary>
         /// Gets or sets a value indicating whether Session token.
