@@ -4,6 +4,7 @@
     using System.Collections.Generic;
     using System.Net.Http;
     using System.Text;
+    using System.Threading.Tasks;
     using Snyk.Code.Library.Api.Dto;
     using Snyk.Code.Library.Common;
 
@@ -24,8 +25,6 @@
         private const string FiltersApiUrl = "publicapi/filters";
 
         private const string BundleApiUrl = "publicapi/bundle";
-
-        private const string FileApiUrl = "publicapi/file";
 
         private readonly HttpClient httpClient;
 
@@ -57,26 +56,26 @@
         /// Extending a bundle by removing all the parent bundle's files is not allowed.
         /// </summary>
         /// <param name="bundleId">Already created bundle id.</param>
-        /// <param name="files">Files to add in bundle.</param>
+        /// <param name="pathToHashFileDict">Files to add in bundle.</param>
         /// <param name="removedFiles">Files to remove in bundle.</param>
         /// <returns>Extended bundle object.</returns>
-        public async System.Threading.Tasks.Task<BundleResponseDto> ExtendBundle(string bundleId, Dictionary<string, string> files, List<string> removedFiles)
+        public async Task<BundleResponseDto> ExtendBundleAsync(string bundleId, Dictionary<string, string> pathToHashFileDict, List<string> removedFiles)
         {
             if (string.IsNullOrEmpty(bundleId))
             {
                 throw new ArgumentException("Previous Bundle is null or empty.");
             }
 
-            if (files == null || removedFiles == null)
+            if (pathToHashFileDict == null || removedFiles == null)
             {
                 throw new ArgumentException("Files or removed files are null.");
             }
 
             HttpRequestMessage httpRequest = new HttpRequestMessage(HttpMethod.Put, BundleApiUrl + "/" + bundleId);
 
-            string payload = Json.Serialize<ExtendBundleRequestDto>(new ExtendBundleRequestDto
+            string payload = Json.Serialize(new ExtendBundleRequestDto
             {
-                Files = files,
+                Files = pathToHashFileDict,
                 RemovedFiles = removedFiles,
             });
 
@@ -105,7 +104,7 @@
         /// This API can be used to check if an old uploaded bundle has expired (status code 404),
         /// or to check if there are still missing files after uploading ("Upload Files").
         /// </returns>
-        public async System.Threading.Tasks.Task<BundleResponseDto> CheckBundle(string bundleId)
+        public async Task<BundleResponseDto> CheckBundleAsync(string bundleId)
         {
             if (string.IsNullOrEmpty(bundleId))
             {
@@ -131,20 +130,20 @@
         /// <summary>
         /// Create new <see cref="BundleResponseDto"/> and get result <see cref="BundleResponseDto"/> object.
         /// </summary>
-        /// <param name="bundleFiles">Bundle files.</param>
+        /// <param name="pathToHashFileDict">Bundle files.</param>
         /// <returns>Bundle object with bundle id, missing files and upload url.</returns>
-        public async System.Threading.Tasks.Task<BundleResponseDto> CreateBundle(Dictionary<string, string> bundleFiles)
+        public async Task<BundleResponseDto> CreateBundleAsync(Dictionary<string, string> pathToHashFileDict)
         {
-            if (bundleFiles == null)
+            if (pathToHashFileDict == null)
             {
                 throw new ArgumentException("Bundle files is null.");
             }
 
             var httpRequest = new HttpRequestMessage(HttpMethod.Post, BundleApiUrl);
 
-            string payload= Json.Serialize<CreateBundleRequestDto>(new CreateBundleRequestDto
+            string payload = Json.Serialize(new CreateBundleRequestDto
             {
-                Files = bundleFiles,
+                Files = pathToHashFileDict,
             });
 
             httpRequest.Content = new StringContent(payload, Encoding.UTF8, "application/json");
@@ -167,13 +166,13 @@
         /// Returns the list of allowed extensions and configuration files for uploaded bundles.
         /// </summary>
         /// <returns><see cref="FiltersDto"/></returns>
-        public async System.Threading.Tasks.Task<FiltersDto> GetFilters()
+        public async Task<FiltersDto> GetFiltersAsync()
         {
             var request = new HttpRequestMessage(HttpMethod.Get, FiltersApiUrl);
 
             var response = await this.httpClient.SendAsync(request);
 
-            string responseText = response.Content.ReadAsStringAsync().Result;
+            string responseText = await response.Content.ReadAsStringAsync();
 
             if (response.IsSuccessStatusCode)
             {
@@ -192,7 +191,7 @@
         /// </summary>
         /// <param name="userAgent">Optional parameter with again (VisualStudio for example).</param>
         /// <returns><see cref="loginResponse"/> object.</returns>
-        public async System.Threading.Tasks.Task<LoginResponseDto> LoginAsync(string userAgent = "")
+        public async Task<LoginResponseDto> LoginAsync(string userAgent = "")
         {
             if (string.IsNullOrEmpty(userAgent))
             {
@@ -203,7 +202,7 @@
 
             var response = await this.httpClient.SendAsync(request);
 
-            string responseText = response.Content.ReadAsStringAsync().Result;
+            string responseText = await response.Content.ReadAsStringAsync();
 
             if (response.IsSuccessStatusCode)
             {
@@ -222,29 +221,13 @@
         /// </summary>
         /// <param name="sessionToken">User API token.</param>
         /// <returns><see cref="LoginStatus"/> object.</returns>
-        public async System.Threading.Tasks.Task<LoginStatus> CheckSessionAsync()
+        public async Task<LoginStatus> CheckSessionAsync()
         {
             var request = new HttpRequestMessage(HttpMethod.Get, CheckSessionApiUrl);
 
             HttpResponseMessage httpResponse = await this.httpClient.SendAsync(request);
 
             return new LoginStatus((int)httpResponse.StatusCode);
-        }
-
-        private List<CodeFileDto> BuildCodeFileDtoList(Dictionary<string, string> codeFiles)
-        {
-            var codeFileDtos = new List<CodeFileDto>();
-
-            foreach (var filePair in codeFiles)
-            {
-                codeFileDtos.Add(new CodeFileDto
-                {
-                    Hash = filePair.Key,
-                    Content = filePair.Value,
-                });
-            }
-
-            return codeFileDtos;
         }
     }
 }
