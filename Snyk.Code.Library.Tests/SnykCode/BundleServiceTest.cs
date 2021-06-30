@@ -11,47 +11,6 @@
     public class BundleServiceTest
     {
         [Fact]
-        public async Task BundleService_UploadFilesProvided_ChecksPassAsync()
-        {
-            var bundleService = new BundleService(TestSettings.SnykCodeApiUrl, TestSettings.Instance.ApiToken);
-
-            var files = new Dictionary<string, string>();
-
-            string fileContent1 = "namespace HelloWorld {public class HelloWorld {}}";
-            string filePath1 = "/HelloWorld.cs";
-            string fileHash1 = Sha256.ComputeHash(fileContent1);
-
-            files.Add(filePath1, fileHash1);
-
-            string fileContent2 = "namespace HelloWorld {public class HelloWorldTest {}}";
-            string filePath2 = "/HelloWorldTest.cs";
-            string fileHash2 = Sha256.ComputeHash(fileContent2);
-
-            files.Add(filePath2, fileHash2);
-
-            string fileContent3 = "namespace HelloWorld {public class HelloWorldService {}}";
-            string filePath3 = "/HelloWorldService.cs";
-            string fileHash3 = Sha256.ComputeHash(fileContent3);
-
-            files.Add(filePath3, fileHash3);
-
-            var createdBundle = await bundleService.CreateBundle(files);
-
-            Assert.NotNull(createdBundle);
-            Assert.True(!string.IsNullOrEmpty(createdBundle.Id));
-
-            var codeFiles = new Dictionary<string, string>();
-
-            codeFiles.Add(fileHash1, fileContent1);
-            codeFiles.Add(fileHash2, fileContent2);
-            codeFiles.Add(fileHash3, fileContent3);
-
-            bool isSuccess = await bundleService.UploadFiles(createdBundle.Id, codeFiles, 100);
-
-            Assert.True(isSuccess);
-        }
-
-        [Fact]
         public async Task BundleService_ExtendBundleAddTwoFilesAndRemoveOneFileProvided_ChecksPassAsync()
         {
             var bundleService = new BundleService(TestSettings.SnykCodeApiUrl, TestSettings.Instance.ApiToken);

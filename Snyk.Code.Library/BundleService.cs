@@ -24,58 +24,6 @@
         public BundleService(string baseUrl, string token) => this.codeClient = new SnykCodeClient(baseUrl, token);
 
         /// <summary>
-        /// Uploads missing files to a bundle.
-        /// Small files should be uploaded in batches to avoid excessive overhead due to too many requests. 
-        /// The file contents must be utf-8 parsed strings and the file hashes must be computed over these strings, matching the "Create Bundle" request.
-        /// </summary>
-        /// <param name="bundleId">Bundle id to file upload.</param>
-        /// <param name="codeFiles">Code files list with file path and file content.</param>
-        /// <param name="maxBundleChunkSize">Maximum allowed upload files size.</param>
-        /// <returns>True if upload success.</returns>
-        public async System.Threading.Tasks.Task<bool> UploadFiles(string bundleId, Dictionary<string, string> codeFiles, int maxBundleChunkSize = SnykCodeClient.MaxBundleSize)
-        {
-            if (string.IsNullOrEmpty(bundleId))
-            {
-                throw new ArgumentException("Bundle id is null or empty.");
-            }
-
-            if (codeFiles == null || codeFiles.Count == 0)
-            {
-                throw new ArgumentException("Code files list is null or empty.");
-            }
-
-            int payloadSize = this.CalculateFilesSize(codeFiles);
-
-            if (payloadSize < maxBundleChunkSize)
-            {
-                return await this.codeClient.UploadFiles(bundleId, codeFiles);
-            }
-            else
-            {
-                return await this.ProcessUploadLargeFiles(bundleId, codeFiles, maxBundleChunkSize);
-            }
-        }
-
-        /// <summary>
-        /// Split code files list to small lists and upload them to server.
-        /// </summary>
-        /// <param name="bundleId">Source bundle id.</param>
-        /// <param name="codeFiles">Code files list.</param>
-        /// <param name="maxBundleChunkSize">Maximum allowed upload files size.</param>
-        /// <returns>True if upload success.</returns>
-        public async System.Threading.Tasks.Task<bool> ProcessUploadLargeFiles(string bundleId, Dictionary<string, string> codeFiles, int maxBundleChunkSize = SnykCodeClient.MaxBundleSize)
-        {
-            var codeFileLists = this.SplitFilesToChunkListsBySize(codeFiles);
-
-            foreach (var codeFileList in codeFileLists)
-            {
-                _ = await this.codeClient.UploadFiles(bundleId, codeFileList);
-            }
-
-            return true;
-        }
-
-        /// <summary>
         /// Create new <see cref="BundleResponseDto"/> and get result <see cref="BundleResponseDto"/> object.
         /// If payload < 4 Mb it just send this bundle and return results.
         /// If payload > 4 Mb it will:
@@ -388,20 +336,6 @@
         /// <param name="sourceStr">Source string.</param>
         /// <returns>Size in bytys.</returns>
         private int CalculatePayloadSize(string sourceStr) => UTF8Encoding.UTF8.GetByteCount(sourceStr);
-
-        /// <summary>
-        /// Calculate size of code files list.
-        /// </summary>
-        /// <param name="codeFiles">Source list of code files.</param>
-        /// <returns>Size in bytes.</returns>
-        private int CalculateCodeFilesSize(List<CodeFileDto> codeFiles) => this.CalculatePayloadSize(Json.Serialize<List<CodeFileDto>>(codeFiles));
-
-        /// <summary>
-        /// Calculate size of code file.
-        /// </summary>
-        /// <param name="codeFile">Source code file.</param>
-        /// <returns>Size in bytes.</returns>
-        private int CalculateCodeFileSize(CodeFileDto codeFile) => this.CalculatePayloadSize(Json.Serialize<CodeFileDto>(codeFile));
 
         /// <summary>
         /// Map <see cref="BundleDto"/> object to domain object <see cref="Bundle"/>.

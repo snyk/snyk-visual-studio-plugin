@@ -48,82 +48,6 @@
         }
 
         /// <summary>
-        /// Uploads missing files to a bundle.
-        /// Small files should be uploaded in batches to avoid excessive overhead due to too many requests. 
-        /// The file contents must be utf-8 parsed strings and the file hashes must be computed over these strings, matching the "Create Bundle" request.
-        /// </summary>
-        /// <param name="bundleId">Bundle id to file upload.</param>
-        /// <param name="codeFiles">Code files list with file path and file content.</param>
-        /// <returns>True if upload success.</returns>
-        public async System.Threading.Tasks.Task<bool> UploadFiles(string bundleId, Dictionary<string, string> codeFiles)
-        {
-            if (string.IsNullOrEmpty(bundleId))
-            {
-                throw new ArgumentException("Bundle id is null or empty.");
-            }
-
-            if (codeFiles == null)
-            {
-                throw new ArgumentException("Code files to upload is null.");
-            }
-
-            HttpRequestMessage httpRequest = new HttpRequestMessage(HttpMethod.Post, FileApiUrl + "/" + bundleId);
-
-            var codeFileDtos = this.BuildCodeFileDtoList(codeFiles);
-
-            string payload = Json.Serialize<List<CodeFileDto>>(codeFileDtos);
-
-            httpRequest.Content = new StringContent(payload, Encoding.UTF8, "application/json");
-
-            var response = await this.httpClient.SendAsync(httpRequest);
-
-            return response.IsSuccessStatusCode;
-        }
-
-        /// <summary>
-        /// Uploads missing files to a bundle.
-        /// Small files should be uploaded in batches to avoid excessive overhead due to too many requests. 
-        /// The file contents must be utf-8 parsed strings and the file hashes must be computed over these strings, matching the "Create Bundle" request.
-        /// </summary>
-        /// <param name="bundleId">Bundle id to file upload.</param>
-        /// <param name="fileHash">Code file hash.</param>
-        /// <param name="fileContent">File content string.</param>
-        /// <returns>True if upload success.</returns>
-        public async System.Threading.Tasks.Task<bool> UploadFile(string bundleId, string fileHash, string fileContent)
-        {
-            if (string.IsNullOrEmpty(bundleId))
-            {
-                throw new ArgumentException("Bundle is null or empty.");
-            }
-
-            if (string.IsNullOrEmpty(fileHash))
-            {
-                throw new ArgumentException("Code file hash is null or empty.");
-            }
-
-            if (string.IsNullOrEmpty(fileContent))
-            {
-                throw new ArgumentException("Code file content is null or empty.");
-            }
-
-            HttpRequestMessage httpRequest = new HttpRequestMessage(HttpMethod.Post, FileApiUrl + "/" + bundleId);
-
-            var codeFileDto = new CodeFileDto
-            {
-                Hash = fileHash,
-                Content = fileContent,
-            };
-
-            string payload = Json.Serialize<CodeFileDto>(codeFileDto);
-
-            httpRequest.Content = new StringContent(payload, Encoding.UTF8, "application/json");
-
-            var response = await this.httpClient.SendAsync(httpRequest);
-
-            return response.IsSuccessStatusCode;
-        }
-
-        /// <summary>
         /// Creates a new bundle based on a previously uploaded one.
         /// The newly created child bundle will have the same files as the parent bundle (identified by the bundleId in the request) except for what is defined in the payload. 
         /// The removedFiles are parsed before the files, therefore if the same filePath appears in both of them it will not be removed. 
@@ -146,11 +70,6 @@
             if (files == null || removedFiles == null)
             {
                 throw new ArgumentException("Files or removed files are null.");
-            }
-
-            if (files.IsNullOrEmpty() && removedFiles.IsNullOrEmpty())
-            {
-                throw new ArgumentException("On Extend Bundle files or removed files are empty.");
             }
 
             HttpRequestMessage httpRequest = new HttpRequestMessage(HttpMethod.Put, BundleApiUrl + "/" + bundleId);
