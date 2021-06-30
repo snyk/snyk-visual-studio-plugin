@@ -1,6 +1,5 @@
-﻿namespace Snyk.Code.Library.SnykCode
+﻿namespace Snyk.Code.Library.Api.Dto
 {
-    using System.Collections.Generic;
     using System.Text.Json.Serialization;
 
     /// <summary>
@@ -9,12 +8,14 @@
     /// performing a SHA-256 on the resulting string and encoding the hash in hexadecimal 
     /// (e.g. *"/.eslintrc.js": "4ed8e2973ddad1fe3eb6bbacd7b967ee8d5ef934763872c160d7cf708cc0c57e"*).
     /// </summary>
-    public class Bundle
+    public class BundleResponseDto
     {
         /// <summary>
-        /// Gets or sets a value indicating whether files dictionary.
+        /// Initializes a new instance of the <see cref="BundleResponseDto"/> class.
         /// </summary>
-        public Dictionary<string, string> Files { get; set; }
+        public BundleResponseDto()
+        {
+        }
 
         /// <summary>
         /// Gets or sets a value indicating whether bundle id.
@@ -24,8 +25,11 @@
 
         /// <summary>
         /// Gets or sets a value indicating whether missing files.
+        /// Returns the bundleId required to access all the following APIs and, in case of uploaded bundles, 
+        /// a list of file paths that still have to be uploaded (missingFiles) and where the missing files should be uploaded to (uploadURL). 
+        /// When creating an uploaded bundle by directly passing the file contents in the array, missingFiles will be an empty array and the uploadURL can therefore be ignored.
         /// </summary>
-        public Dictionary<string, string> MissingFiles { get; set; }
+        public string[] MissingFiles { get; set; }
 
         /// <summary>
         /// Gets or sets a value indicating whether upload url for files.
