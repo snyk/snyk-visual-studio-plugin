@@ -54,25 +54,23 @@
         /// The file contents must be utf-8 parsed strings and the file hashes must be computed over these strings, matching the "Create Bundle" request.
         /// </summary>
         /// <param name="bundleId">Bundle id to file upload.</param>
-        /// <param name="fileHashToContentDict">Dictionary with file hash to file content pairs.</param>
+        /// <param name="codeFiles">List of <see cref="CodeFileDto"/> with file hash and file content.</param>
         /// <returns>True if upload success.</returns>
-        public async Task<bool> UploadFilesAsync(string bundleId, Dictionary<string, string> fileHashToContentDict)
+        public async Task<bool> UploadFilesAsync(string bundleId, IEnumerable<CodeFileDto> codeFiles)
         {
             if (string.IsNullOrEmpty(bundleId))
             {
                 throw new ArgumentException("Bundle id is null or empty.");
             }
 
-            if (fileHashToContentDict == null)
+            if (codeFiles == null)
             {
                 throw new ArgumentException("Code files to upload is null.");
             }
 
             HttpRequestMessage httpRequest = new HttpRequestMessage(HttpMethod.Post, FileApiUrl + "/" + bundleId);
 
-            var codeFileDtos = this.BuildCodeFileDtoList(fileHashToContentDict);
-
-            string payload = Json.Serialize(codeFileDtos);
+            string payload = Json.Serialize(codeFiles);
 
             httpRequest.Content = new StringContent(payload, Encoding.UTF8, "application/json");
 
@@ -263,22 +261,6 @@
             HttpResponseMessage httpResponse = await this.httpClient.SendAsync(request);
 
             return new LoginStatus((int)httpResponse.StatusCode);
-        }
-
-        private List<CodeFileDto> BuildCodeFileDtoList(Dictionary<string, string> fileHashToContentDict)
-        {
-            var codeFileDtos = new List<CodeFileDto>();
-
-            foreach (var filePair in fileHashToContentDict)
-            {
-                codeFileDtos.Add(new CodeFileDto
-                {
-                    Hash = filePair.Key,
-                    Content = filePair.Value,
-                });
-            }
-
-            return codeFileDtos;
         }
     }
 }
