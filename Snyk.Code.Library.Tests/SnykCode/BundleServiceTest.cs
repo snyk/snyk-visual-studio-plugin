@@ -11,7 +11,7 @@
     public class BundleServiceTest
     {
         [Fact]
-        public async Task BundleService_UploadFilesProvided_ChecksPassAsync()
+        public async Task BundleService_ThreeFilesProvided_UploadedSuccessfullyAsync()
         {
             var filePathToHashDict = new Dictionary<string, string>();
 
