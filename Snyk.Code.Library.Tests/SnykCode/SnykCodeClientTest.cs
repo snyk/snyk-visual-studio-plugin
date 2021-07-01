@@ -45,13 +45,13 @@
             Assert.NotNull(createdBundle);
             Assert.NotEmpty(createdBundle.Id);
 
-            var fileHashToContentDict = new Dictionary<string, string>();
+            var codeFiles = new List<CodeFileDto>();
 
-            fileHashToContentDict.Add(fileHash1, fileContent1);
-            fileHashToContentDict.Add(fileHash2, fileContent2);
-            fileHashToContentDict.Add(fileHash3, fileContent3);
+            codeFiles.Add(new CodeFileDto(fileHash1, fileContent1));
+            codeFiles.Add(new CodeFileDto(fileHash2, fileContent2));
+            codeFiles.Add(new CodeFileDto(fileHash3, fileContent3));
 
-            bool isSuccess = await snykCodeClient.UploadFilesAsync(createdBundle.Id, fileHashToContentDict);
+            bool isSuccess = await snykCodeClient.UploadFilesAsync(createdBundle.Id, codeFiles);
 
             Assert.True(isSuccess);
         }
@@ -75,11 +75,11 @@
             Assert.NotNull(createdBundle);
             Assert.True(!string.IsNullOrEmpty(createdBundle.Id));
 
-            var fileHashToContentDict = new Dictionary<string, string>();
+            var codeFiles = new List<CodeFileDto>();
 
-            fileHashToContentDict.Add(fileHash, fileContent);
+            codeFiles.Add(new CodeFileDto(fileHash, fileContent));
 
-            bool isSuccess = await snykCodeClient.UploadFilesAsync(createdBundle.Id, fileHashToContentDict);
+            bool isSuccess = await snykCodeClient.UploadFilesAsync(createdBundle.Id, codeFiles);
 
             Assert.True(isSuccess);
         }

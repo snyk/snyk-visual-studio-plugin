@@ -33,7 +33,7 @@
         /// <param name="fileHashToContentDict">Dictionary with file hash to file content mapping.</param>
         /// <param name="maxChunkSize">Maximum allowed upload files size.</param>
         /// <returns>True if upload success.</returns>
-        public async Task<bool> UploadFilesAsync(string bundleId, Dictionary<string, string> fileHashToContentDict, int maxChunkSize = SnykCodeClient.MaxBundleSize)
+        public Task<bool> UploadFilesAsync(string bundleId, Dictionary<string, string> fileHashToContentDict, int maxChunkSize = SnykCodeClient.MaxBundleSize)
         {
             if (string.IsNullOrEmpty(bundleId))
             {
@@ -49,11 +49,13 @@
 
             if (payloadSize < maxChunkSize)
             {
-                return await this.codeClient.UploadFilesAsync(bundleId, fileHashToContentDict);
+                var codeFiles = this.BuildCodeFileDtoList(fileHashToContentDict);
+
+                return this.codeClient.UploadFilesAsync(bundleId, codeFiles);
             }
             else
             {
-                return await this.ProcessUploadLargeFilesAsync(bundleId, fileHashToContentDict, maxChunkSize);
+                return this.ProcessUploadLargeFilesAsync(bundleId, fileHashToContentDict, maxChunkSize);
             }
         }
 
@@ -68,12 +70,16 @@
         {
             var codeFileLists = this.SplitFilesToChunkListsBySize(fileHashToContentDict);
 
+            bool isAllFilesUploaded = true;
+
             foreach (var codeFileList in codeFileLists)
             {
-                _ = await this.codeClient.UploadFilesAsync(bundleId, codeFileList);
+                var codeFiles = this.BuildCodeFileDtoList(codeFileList);
+
+                isAllFilesUploaded &= await this.codeClient.UploadFilesAsync(bundleId, codeFiles);
             }
 
-            return true;
+            return isAllFilesUploaded;
         }
 
         /// <summary>
@@ -403,6 +409,18 @@
                 UploadURL = bundleDto.UploadURL,
                 MissingFiles = bundleDto.MissingFiles,
             };
+        }
+
+        private List<CodeFileDto> BuildCodeFileDtoList(Dictionary<string, string> fileHashToContentDict)
+        {
+            var codeFileDtos = new List<CodeFileDto>();
+
+            foreach (var filePair in fileHashToContentDict)
+            {
+                codeFileDtos.Add(new CodeFileDto(filePair.Key, filePair.Value));
+            }
+
+            return codeFileDtos;
         }
     }
 }
