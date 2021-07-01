@@ -16,7 +16,7 @@
         private const string TestUserAgent = "Test-VisualStudio";
 
         [Fact]
-        public async Task SnykCodeClient_UploadFilesProvided_ChecksPassAsync()
+        public async Task SnykCodeClient_ThreeFilesProvided_UploadedSuccessfullyAsync()
         {
             var pathToHashFilesDict = new Dictionary<string, string>();
 
@@ -57,7 +57,7 @@
         }
 
         [Fact]
-        public async Task SnykCodeClient_UploadFileProvided_ChecksPassAsync()
+        public async Task SnykCodeClient_UploadFileProvided_UploadedSuccessfullyAsync()
         {
             var filePathToHashDict = new Dictionary<string, string>();
 
