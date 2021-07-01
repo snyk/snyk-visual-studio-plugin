@@ -11,6 +11,47 @@
     public class BundleServiceTest
     {
         [Fact]
+        public async Task BundleService_UploadFilesProvided_ChecksPassAsync()
+        {
+            var filePathToHashDict = new Dictionary<string, string>();
+
+            string fileContent1 = "namespace HelloWorld {public class HelloWorld {}}";
+            string filePath1 = "/HelloWorld.cs";
+            string fileHash1 = Sha256.ComputeHash(fileContent1);
+
+            filePathToHashDict.Add(filePath1, fileHash1);
+
+            string fileContent2 = "namespace HelloWorld {public class HelloWorldTest {}}";
+            string filePath2 = "/HelloWorldTest.cs";
+            string fileHash2 = Sha256.ComputeHash(fileContent2);
+
+            filePathToHashDict.Add(filePath2, fileHash2);
+
+            string fileContent3 = "namespace HelloWorld {public class HelloWorldService {}}";
+            string filePath3 = "/HelloWorldService.cs";
+            string fileHash3 = Sha256.ComputeHash(fileContent3);
+
+            filePathToHashDict.Add(filePath3, fileHash3);
+
+            var bundleService = new BundleService(TestSettings.SnykCodeApiUrl, TestSettings.Instance.ApiToken);
+
+            var createdBundle = await bundleService.CreateBundleAsync(filePathToHashDict);
+
+            Assert.NotNull(createdBundle);
+            Assert.True(!string.IsNullOrEmpty(createdBundle.Id));
+
+            var fileHashToContentDict = new Dictionary<string, string>();
+
+            fileHashToContentDict.Add(fileHash1, fileContent1);
+            fileHashToContentDict.Add(fileHash2, fileContent2);
+            fileHashToContentDict.Add(fileHash3, fileContent3);
+
+            bool isSuccess = await bundleService.UploadFilesAsync(createdBundle.Id, fileHashToContentDict, 100);
+
+            Assert.True(isSuccess);
+        }
+
+        [Fact]
         public async Task BundleService_ExtendBundleAddTwoFilesAndRemoveOneFileProvided_ChecksPassAsync()
         {
             var bundleService = new BundleService(TestSettings.SnykCodeApiUrl, TestSettings.Instance.ApiToken);

@@ -26,6 +26,8 @@
 
         private const string BundleApiUrl = "publicapi/bundle";
 
+        private const string FileApiUrl = "publicapi/file";
+
         private readonly HttpClient httpClient;
 
         private LoginResponseDto loginResponse;
@@ -44,6 +46,39 @@
             };
 
             this.httpClient.DefaultRequestHeaders.Add("Session-Token", token);
+        }
+
+        /// <summary>
+        /// Uploads missing files to a bundle.
+        /// Small files should be uploaded in batches to avoid excessive overhead due to too many requests. 
+        /// The file contents must be utf-8 parsed strings and the file hashes must be computed over these strings, matching the "Create Bundle" request.
+        /// </summary>
+        /// <param name="bundleId">Bundle id to file upload.</param>
+        /// <param name="fileHashToContentDict">Dictionary with file hash to file content pairs.</param>
+        /// <returns>True if upload success.</returns>
+        public async Task<bool> UploadFilesAsync(string bundleId, Dictionary<string, string> fileHashToContentDict)
+        {
+            if (string.IsNullOrEmpty(bundleId))
+            {
+                throw new ArgumentException("Bundle id is null or empty.");
+            }
+
+            if (fileHashToContentDict == null)
+            {
+                throw new ArgumentException("Code files to upload is null.");
+            }
+
+            HttpRequestMessage httpRequest = new HttpRequestMessage(HttpMethod.Post, FileApiUrl + "/" + bundleId);
+
+            var codeFileDtos = this.BuildCodeFileDtoList(fileHashToContentDict);
+
+            string payload = Json.Serialize(codeFileDtos);
+
+            httpRequest.Content = new StringContent(payload, Encoding.UTF8, "application/json");
+
+            var response = await this.httpClient.SendAsync(httpRequest);
+
+            return response.IsSuccessStatusCode;
         }
 
         /// <summary>
@@ -228,6 +263,22 @@
             HttpResponseMessage httpResponse = await this.httpClient.SendAsync(request);
 
             return new LoginStatus((int)httpResponse.StatusCode);
+        }
+
+        private List<CodeFileDto> BuildCodeFileDtoList(Dictionary<string, string> fileHashToContentDict)
+        {
+            var codeFileDtos = new List<CodeFileDto>();
+
+            foreach (var filePair in fileHashToContentDict)
+            {
+                codeFileDtos.Add(new CodeFileDto
+                {
+                    Hash = filePair.Key,
+                    Content = filePair.Value,
+                });
+            }
+
+            return codeFileDtos;
         }
     }
 }

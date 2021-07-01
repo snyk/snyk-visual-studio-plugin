@@ -16,6 +16,75 @@
         private const string TestUserAgent = "Test-VisualStudio";
 
         [Fact]
+        public async Task SnykCodeClient_UploadFilesProvided_ChecksPassAsync()
+        {
+            var pathToHashFilesDict = new Dictionary<string, string>();
+
+            string fileContent1 = "namespace HelloWorld {public class HelloWorld {}}";
+            string filePath1 = "/HelloWorld.cs";
+            string fileHash1 = Sha256.ComputeHash(fileContent1);
+
+            pathToHashFilesDict.Add(filePath1, fileHash1);
+
+            string fileContent2 = "namespace HelloWorld {public class HelloWorldTest {}}";
+            string filePath2 = "/HelloWorldTest.cs";
+            string fileHash2 = Sha256.ComputeHash(fileContent2);
+
+            pathToHashFilesDict.Add(filePath2, fileHash2);
+
+            string fileContent3 = "namespace HelloWorld {public class HelloWorldService {}}";
+            string filePath3 = "/HelloWorldService.cs";
+            string fileHash3 = Sha256.ComputeHash(fileContent3);
+
+            pathToHashFilesDict.Add(filePath3, fileHash3);
+
+            var snykCodeClient = new SnykCodeClient(TestSettings.SnykCodeApiUrl, TestSettings.Instance.ApiToken);
+
+            var createdBundle = await snykCodeClient.CreateBundleAsync(pathToHashFilesDict);
+
+            Assert.NotNull(createdBundle);
+            Assert.NotEmpty(createdBundle.Id);
+
+            var fileHashToContentDict = new Dictionary<string, string>();
+
+            fileHashToContentDict.Add(fileHash1, fileContent1);
+            fileHashToContentDict.Add(fileHash2, fileContent2);
+            fileHashToContentDict.Add(fileHash3, fileContent3);
+
+            bool isSuccess = await snykCodeClient.UploadFilesAsync(createdBundle.Id, fileHashToContentDict);
+
+            Assert.True(isSuccess);
+        }
+
+        [Fact]
+        public async Task SnykCodeClient_UploadFileProvided_ChecksPassAsync()
+        {
+            var filePathToHashDict = new Dictionary<string, string>();
+
+            string fileContent = "namespace HelloWorld {public class HelloWorld {}}";
+
+            string filePath = "/HelloWorld.cs";
+            string fileHash = Sha256.ComputeHash(fileContent);
+
+            filePathToHashDict.Add(filePath, fileHash);
+
+            var snykCodeClient = new SnykCodeClient(TestSettings.SnykCodeApiUrl, TestSettings.Instance.ApiToken);
+
+            var createdBundle = await snykCodeClient.CreateBundleAsync(filePathToHashDict);
+
+            Assert.NotNull(createdBundle);
+            Assert.True(!string.IsNullOrEmpty(createdBundle.Id));
+
+            var fileHashToContentDict = new Dictionary<string, string>();
+
+            fileHashToContentDict.Add(fileHash, fileContent);
+
+            bool isSuccess = await snykCodeClient.UploadFilesAsync(createdBundle.Id, fileHashToContentDict);
+
+            Assert.True(isSuccess);
+        }
+
+        [Fact]
         public async Task SnykCodeClient_CreateBundleSmallPayloadProvided_ChecksPassAsync()
         {
             var filePathToHashDict = new Dictionary<string, string>();
