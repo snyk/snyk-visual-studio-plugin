@@ -8,6 +8,17 @@
     public class CodeFileDto
     {
         /// <summary>
+        /// Initializes a new instance of the <see cref="CodeFileDto"/> class.
+        /// </summary>
+        /// <param name="fileHash">File hash value.</param>
+        /// <param name="fileContent">File content value.</param>
+        public CodeFileDto(string fileHash, string fileContent)
+        {
+            this.Hash = fileHash;
+            this.Content = fileContent;
+        }
+
+        /// <summary>
         /// Gets or sets a value indicating whether file path hash.
         /// </summary>
         [JsonPropertyName("fileHash")]

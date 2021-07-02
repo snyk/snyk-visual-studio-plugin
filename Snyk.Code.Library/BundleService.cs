@@ -25,6 +25,64 @@
         public BundleService(string baseUrl, string token) => this.codeClient = new SnykCodeClient(baseUrl, token);
 
         /// <summary>
+        /// Uploads missing files to a bundle.
+        /// Small files should be uploaded in batches to avoid excessive overhead due to too many requests. 
+        /// The file contents must be utf-8 parsed strings and the file hashes must be computed over these strings, matching the "Create Bundle" request.
+        /// </summary>
+        /// <param name="bundleId">Bundle id to file upload.</param>
+        /// <param name="fileHashToContentDict">Dictionary with file hash to file content mapping.</param>
+        /// <param name="maxChunkSize">Maximum allowed upload files size.</param>
+        /// <returns>True if upload success.</returns>
+        public Task<bool> UploadFilesAsync(string bundleId, Dictionary<string, string> fileHashToContentDict, int maxChunkSize = SnykCodeClient.MaxBundleSize)
+        {
+            if (string.IsNullOrEmpty(bundleId))
+            {
+                throw new ArgumentException("Bundle id is null or empty.");
+            }
+
+            if (fileHashToContentDict == null || fileHashToContentDict.Count == 0)
+            {
+                throw new ArgumentException("Code files list is null or empty.");
+            }
+
+            int payloadSize = this.CalculateFilesSize(fileHashToContentDict);
+
+            if (payloadSize < maxChunkSize)
+            {
+                var codeFiles = this.BuildCodeFileDtoList(fileHashToContentDict);
+
+                return this.codeClient.UploadFilesAsync(bundleId, codeFiles);
+            }
+            else
+            {
+                return this.ProcessUploadLargeFilesAsync(bundleId, fileHashToContentDict, maxChunkSize);
+            }
+        }
+
+        /// <summary>
+        /// Split code files list to small lists and upload them to server.
+        /// </summary>
+        /// <param name="bundleId">Source bundle id.</param>
+        /// <param name="fileHashToContentDict">Dictionary with file hash to file content mapping.</param>
+        /// <param name="maxBundleChunkSize">Maximum allowed upload files size.</param>
+        /// <returns>True if upload success.</returns>
+        public async Task<bool> ProcessUploadLargeFilesAsync(string bundleId, Dictionary<string, string> fileHashToContentDict, int maxBundleChunkSize = SnykCodeClient.MaxBundleSize)
+        {
+            var codeFileLists = this.SplitFilesToChunkListsBySize(fileHashToContentDict);
+
+            bool isAllFilesUploaded = true;
+
+            foreach (var codeFileList in codeFileLists)
+            {
+                var codeFiles = this.BuildCodeFileDtoList(codeFileList);
+
+                isAllFilesUploaded &= await this.codeClient.UploadFilesAsync(bundleId, codeFiles);
+            }
+
+            return isAllFilesUploaded;
+        }
+
+        /// <summary>
         /// Create new <see cref="BundleResponseDto"/> and get result <see cref="BundleResponseDto"/> object.
         /// If payload &lt; 4 Mb it just send this bundle and return results.
         /// If payload &gt; 4 Mb it will:
@@ -351,6 +409,18 @@
                 UploadURL = bundleDto.UploadURL,
                 MissingFiles = bundleDto.MissingFiles,
             };
+        }
+
+        private List<CodeFileDto> BuildCodeFileDtoList(Dictionary<string, string> fileHashToContentDict)
+        {
+            var codeFileDtos = new List<CodeFileDto>();
+
+            foreach (var filePair in fileHashToContentDict)
+            {
+                codeFileDtos.Add(new CodeFileDto(filePair.Key, filePair.Value));
+            }
+
+            return codeFileDtos;
         }
     }
 }

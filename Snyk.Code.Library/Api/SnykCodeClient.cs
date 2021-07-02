@@ -26,6 +26,8 @@
 
         private const string BundleApiUrl = "publicapi/bundle";
 
+        private const string FileApiUrl = "publicapi/file";
+
         private readonly HttpClient httpClient;
 
         private LoginResponseDto loginResponse;
@@ -44,6 +46,37 @@
             };
 
             this.httpClient.DefaultRequestHeaders.Add("Session-Token", token);
+        }
+
+        /// <summary>
+        /// Uploads missing files to a bundle.
+        /// Small files should be uploaded in batches to avoid excessive overhead due to too many requests. 
+        /// The file contents must be utf-8 parsed strings and the file hashes must be computed over these strings, matching the "Create Bundle" request.
+        /// </summary>
+        /// <param name="bundleId">Bundle id to file upload.</param>
+        /// <param name="codeFiles">List of <see cref="CodeFileDto"/> with file hash and file content.</param>
+        /// <returns>True if upload success.</returns>
+        public async Task<bool> UploadFilesAsync(string bundleId, IEnumerable<CodeFileDto> codeFiles)
+        {
+            if (string.IsNullOrEmpty(bundleId))
+            {
+                throw new ArgumentException("Bundle id is null or empty.");
+            }
+
+            if (codeFiles == null)
+            {
+                throw new ArgumentException("Code files to upload is null.");
+            }
+
+            HttpRequestMessage httpRequest = new HttpRequestMessage(HttpMethod.Post, FileApiUrl + "/" + bundleId);
+
+            string payload = Json.Serialize(codeFiles);
+
+            httpRequest.Content = new StringContent(payload, Encoding.UTF8, "application/json");
+
+            var response = await this.httpClient.SendAsync(httpRequest);
+
+            return response.IsSuccessStatusCode;
         }
 
         /// <summary>
