@@ -10,13 +10,6 @@
         /// <summary>
         /// Initializes a new instance of the <see cref="CodeFileDto"/> class.
         /// </summary>
-        public CodeFileDto()
-        {
-        }
-
-        /// <summary>
-        /// Initializes a new instance of the <see cref="CodeFileDto"/> class.
-        /// </summary>
         /// <param name="fileHash">File hash value.</param>
         /// <param name="fileContent">File content value.</param>
         public CodeFileDto(string fileHash, string fileContent)
