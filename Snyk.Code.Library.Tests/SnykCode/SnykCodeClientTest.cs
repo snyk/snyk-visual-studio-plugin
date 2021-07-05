@@ -2,9 +2,11 @@
 {
     using System;
     using System.Collections.Generic;
+    using System.IO;
     using System.Threading.Tasks;
     using Snyk.Code.Library.Api;
     using Snyk.Code.Library.Api.Dto;
+    using Snyk.Code.Library.Api.Dto.Analysis;
     using Snyk.Code.Library.Common;
     using Xunit;
 
@@ -13,7 +15,152 @@
     /// </summary>
     public class SnykCodeClientTest
     {
-        private const string TestUserAgent = "Test-VisualStudio";
+        [Fact]
+        public async Task SnykCodeClient_TwoFilesWithIssuesProvided_GetAnalysisSuccessAsync()
+        {
+            var bundleFiles = new Dictionary<string, string>();
+
+            string fileContent1 = this.GetResourceContent("app1.js");
+            string filePath1 = "/app1.js";
+            string fileHash1 = Sha256.ComputeHash(fileContent1);
+
+            bundleFiles.Add(filePath1, fileHash1);
+
+            string fileContent2 = this.GetResourceContent("app2.js");
+            string filePath2 = "/app2.js";
+            string fileHash2 = Sha256.ComputeHash(fileContent2);
+
+            bundleFiles.Add(filePath2, fileHash2);
+
+            var snykCodeClient = new SnykCodeClient(TestSettings.SnykCodeApiUrl, TestSettings.Instance.ApiToken);
+
+            var createdBundle = await snykCodeClient.CreateBundleAsync(bundleFiles);
+
+            Assert.NotNull(createdBundle);
+            Assert.True(!string.IsNullOrEmpty(createdBundle.Id));
+
+            var codeFiles = new List<CodeFileDto>();
+
+            codeFiles.Add(new CodeFileDto(fileHash1, fileContent1));
+            codeFiles.Add(new CodeFileDto(fileHash2, fileContent2));
+
+            bool isSuccess = await snykCodeClient.UploadFilesAsync(createdBundle.Id, codeFiles);
+
+            Assert.True(isSuccess);
+
+            AnalysisResultDto analysisResult = await snykCodeClient.GetAnalysisAsync(createdBundle.Id);
+
+            Assert.NotNull(analysisResult);
+
+            if (analysisResult.Status == "WAITING")
+            {
+                System.Threading.Thread.Sleep(5000);
+
+                analysisResult = await snykCodeClient.GetAnalysisAsync(createdBundle.Id);
+            }
+
+            Assert.NotNull(analysisResult);
+            Assert.NotNull(analysisResult.AnalysisResults);
+            Assert.NotNull(analysisResult.AnalysisResults.Files);
+            Assert.NotEmpty(analysisResult.AnalysisResults.Files);
+        }
+
+        [Fact]
+        public async Task SnykCodeClient_OneFileWithIssuesProvided_GetAnalysisSuccessAsync()
+        {
+            var bundleFiles = new Dictionary<string, string>();
+
+            string fileContent1 = this.GetResourceContent("app1.js");
+            string filePath1 = "/app.js";
+            string fileHash1 = Sha256.ComputeHash(fileContent1);
+
+            bundleFiles.Add(filePath1, fileHash1);
+
+            var snykCodeClient = new SnykCodeClient(TestSettings.SnykCodeApiUrl, TestSettings.Instance.ApiToken);
+
+            var createdBundle = await snykCodeClient.CreateBundleAsync(bundleFiles);
+
+            Assert.NotNull(createdBundle);
+            Assert.True(!string.IsNullOrEmpty(createdBundle.Id));
+
+            var codeFiles = new List<CodeFileDto>();
+
+            codeFiles.Add(new CodeFileDto(fileHash1, fileContent1));
+
+            bool isSuccess = await snykCodeClient.UploadFilesAsync(createdBundle.Id, codeFiles);
+
+            Assert.True(isSuccess);
+
+            AnalysisResultDto analysisResult = await snykCodeClient.GetAnalysisAsync(createdBundle.Id);
+
+            Assert.NotNull(analysisResult);
+
+            if (analysisResult.Status == "WAITING")
+            {
+                System.Threading.Thread.Sleep(5000);
+
+                analysisResult = await snykCodeClient.GetAnalysisAsync(createdBundle.Id);
+            }
+
+            Assert.NotNull(analysisResult);
+            Assert.NotNull(analysisResult.AnalysisResults);
+            Assert.NotEmpty(analysisResult.AnalysisResults.Files);
+            Assert.NotEmpty(analysisResult.AnalysisResults.Suggestions);
+        }
+
+        [Fact]
+        public async Task SnykCodeClient_SimpleBundleProvided_GetAnalysisPassAsync()
+        {
+            var snykCodeClient = new SnykCodeClient(TestSettings.SnykCodeApiUrl, TestSettings.Instance.ApiToken);
+
+            var bundleFiles = new Dictionary<string, string>();
+
+            string fileContent1 = "namespace HelloWorld {public class HelloWorld {}}";
+            string filePath1 = "/HelloWorld.cs";
+            string fileHash1 = Sha256.ComputeHash(fileContent1);
+
+            bundleFiles.Add(filePath1, fileHash1);
+
+            string fileContent2 = "namespace HelloWorld {public class HelloWorld1Test {}}";
+            string filePath2 = "/HelloWorldTest1.cs";
+            string fileHash2 = Sha256.ComputeHash(fileContent2);
+
+            bundleFiles.Add(filePath2, fileHash2);
+
+            string fileContent3 = "namespace HelloWorld {public class HelloWorldService {}}";
+            string filePath3 = "/HelloWorldService.cs";
+            string fileHash3 = Sha256.ComputeHash(fileContent3);
+
+            bundleFiles.Add(filePath3, fileHash3);
+
+            var createdBundle = await snykCodeClient.CreateBundleAsync(bundleFiles);
+
+            Assert.NotNull(createdBundle);
+            Assert.True(!string.IsNullOrEmpty(createdBundle.Id));
+
+            var codeFiles = new List<CodeFileDto>();
+
+            codeFiles.Add(new CodeFileDto(fileHash1, fileContent1));
+            codeFiles.Add(new CodeFileDto(fileHash2, fileContent2));
+            codeFiles.Add(new CodeFileDto(fileHash3, fileContent3));
+
+            bool isSuccess = await snykCodeClient.UploadFilesAsync(createdBundle.Id, codeFiles);
+
+            Assert.True(isSuccess);
+
+            var analysisResult = await snykCodeClient.GetAnalysisAsync(createdBundle.Id);
+
+            Assert.NotNull(analysisResult);
+
+            if (analysisResult.Status == "WAITING")
+            {
+                System.Threading.Thread.Sleep(5000);
+
+                analysisResult = await snykCodeClient.GetAnalysisAsync(createdBundle.Id);
+            }
+
+            Assert.NotNull(analysisResult);
+        }
 
         [Fact]
         public async Task SnykCodeClient_ThreeFilesProvided_UploadedSuccessfullyAsync()
@@ -243,7 +390,7 @@
         {
             var snykCodeClient = new SnykCodeClient(TestSettings.SnykCodeApiUrl, TestSettings.Instance.ApiToken);
 
-            var response = await snykCodeClient.LoginAsync(TestUserAgent);
+            var response = await snykCodeClient.LoginAsync("Test-VisualStudio");
 
             Assert.NotNull(response);
             Assert.NotEmpty(response.SessionToken);
@@ -262,11 +409,13 @@
         {
             var snykCodeClient = new SnykCodeClient(TestSettings.SnykCodeApiUrl, TestSettings.Instance.ApiToken);
 
-            _ = await snykCodeClient.LoginAsync(TestUserAgent);
+            _ = await snykCodeClient.LoginAsync("Test-VisualStudio");
 
             var status = await snykCodeClient.CheckSessionAsync();
 
             Assert.True(status.IsSucccess);
         }
+
+        private string GetResourceContent(string resourceName) => File.ReadAllText(Directory.GetCurrentDirectory() + "\\Resources\\" + resourceName);
     }
 }
