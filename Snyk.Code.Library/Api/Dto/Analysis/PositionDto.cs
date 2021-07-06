@@ -8,17 +8,17 @@
     public class PositionDto
     {
         /// <summary>
-        /// Gets or sets a value indicating whether issue rows position.
+        /// Gets or sets a value indicating issue rows position.
         /// </summary>
         public List<long> Rows { get; set; }
 
         /// <summary>
-        /// Gets or sets a value indicating whether issue columns position.
+        /// Gets or sets a value indicating issue columns position.
         /// </summary>
         public List<long> Cols { get; set; }
 
         /// <summary>
-        /// Gets or sets a value indicating whether file name.
+        /// Gets or sets a value indicating file name.
         /// </summary>
         public string File { get; set; }
     }

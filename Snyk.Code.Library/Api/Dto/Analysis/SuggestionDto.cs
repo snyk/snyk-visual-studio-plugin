@@ -8,57 +8,57 @@
     public class SuggestionDto
     {
         /// <summary>
-        /// Gets or sets a value indicating whether anaylysis suggestion id. Id for this (local) result.
+        /// Gets or sets a value indicating anaylysis suggestion id. Id for this (local) result.
         /// </summary>
         public string Id { get; set; }
 
         /// <summary>
-        /// Gets or sets a value indicating whether anaylysis rule.
+        /// Gets or sets a value indicating anaylysis rule.
         /// </summary>
         public string Rule { get; set; }
 
         /// <summary>
-        /// Gets or sets a value indicating whether suggestion message.
+        /// Gets or sets a value indicating suggestion message.
         /// </summary>
         public string Message { get; set; }
 
         /// <summary>
-        /// Gets or sets a value indicating whether anaylysis severity value (from 1 to 4).
+        /// Gets or sets a value indicating anaylysis severity value (from 1 to 4).
         /// </summary>
         public int Severity { get; set; }
 
         /// <summary>
-        /// Gets or sets a value indicating whether anaylysis categories.
+        /// Gets or sets a value indicating anaylysis categories.
         /// </summary>
         public IEnumerable<string> Categories { get; set; }
 
         /// <summary>
-        /// Gets or sets a value indicating whether anaylysis tags.
+        /// Gets or sets a value indicating anaylysis tags.
         /// </summary>
         public IEnumerable<string> Tags { get; set; }
 
         /// <summary>
-        /// Gets or sets a value indicating whether suggestion title.
+        /// Gets or sets a value indicating suggestion title.
         /// </summary>
         public string Title { get; set; }
 
         /// <summary>
-        /// Gets or sets a value indicating whether analysis CWE list.
+        /// Gets or sets a value indicating analysis CWE list.
         /// </summary>
         public IEnumerable<string> Cwe { get; set; }
 
         /// <summary>
-        /// Gets or sets a value indicating whether suggestion description.
+        /// Gets or sets a value indicating suggestion description.
         /// </summary>
         public string Text { get; set; }
 
         /// <summary>
-        /// Gets or sets a value indicating whether suggestion examples.
+        /// Gets or sets a value indicating suggestion examples.
         /// </summary>
         public IEnumerable<string> ExampleCommitDescriptions { get; set; }
 
         /// <summary>
-        /// Gets or sets a value indicating whether suggestion fixes.
+        /// Gets or sets a value indicating suggestion fixes.
         /// </summary>
         public IEnumerable<ExampleCommitFixDto> ExampleCommitFixes { get; set; }
     }

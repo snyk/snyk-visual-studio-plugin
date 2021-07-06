@@ -9,13 +9,13 @@
     public class MarkerDto
     {
         /// <summary>
-        /// Gets or sets a value indicating whether anaylysis marker message.
+        /// Gets or sets a value indicating anaylysis marker message.
         /// </summary>
         [JsonPropertyName("msg")]
         public List<long> Message { get; set; }
 
         /// <summary>
-        /// Gets or sets a value indicating whether anaylysis posotion in file or reference files.
+        /// Gets or sets a value indicating anaylysis posotion in file or reference files.
         /// </summary>
         [JsonPropertyName("pos")]
         public List<PositionDto> Position { get; set; }
