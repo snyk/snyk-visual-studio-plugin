@@ -11,7 +11,7 @@
     /// <summary>
     /// Client for SnykCode support.
     /// </summary>
-    public class SnykCodeClient
+    public class SnykCodeClient: ISnykCodeClient
     {
         /// <summary>
         /// Maxium bundle size per one upload is 4 Mb. 4 Mb in bytes.
