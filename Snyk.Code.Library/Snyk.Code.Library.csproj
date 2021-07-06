@@ -74,6 +74,7 @@
   <ItemGroup>
     <Compile Include="Api\Dto\ExtendBundleRequestDto.cs" />
     <Compile Include="Api\Dto\CreateBundleRequestDto.cs" />
+    <Compile Include="Api\ISnykCodeClient.cs" />
     <Compile Include="Common\CollectionExtensionMethods.cs" />
     <Compile Include="Common\Sha256.cs" />
     <Compile Include="Domain\Bundle.cs" />
