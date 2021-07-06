@@ -100,6 +100,20 @@ Thank you for reaching that far :)
 
 It either means you’ve successfully run a scan with the Visual Studio extension or you’ve encountered an issue. Either way we would love to hear about it - so go ahead and use the above contacts. We are looking forward to hearing from you!
 
+#### 7. How to find the log files
+
+Run Visual Studio with ‘/log’ parameter and path where do you want to save log file.
+
+```
+devenv /log "%DIRECTORY_PATH%\MyVSLog.xml"
+```
+
+As an example, for Visual Studio 2019 it could be
+
+```
+C:\Program Files (x86)\Microsoft Visual Studio\2019\Community\Common7\IDE\devenv.exe /log "C:\Temp\MyVSLog.xml"
+```
+
 #### Build process
 
 Close this repository to local machine:
