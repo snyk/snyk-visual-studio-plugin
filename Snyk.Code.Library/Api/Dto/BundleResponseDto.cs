@@ -18,7 +18,7 @@
         }
 
         /// <summary>
-        /// Gets or sets a value indicating whether bundle id.
+        /// Gets or sets a value indicating bundle id.
         /// </summary>
         [JsonPropertyName("bundleId")]
         public string Id { get; set; }
@@ -32,7 +32,7 @@
         public string[] MissingFiles { get; set; }
 
         /// <summary>
-        /// Gets or sets a value indicating whether upload url for files.
+        /// Gets or sets a value indicating upload url for files.
         /// </summary>
         public string UploadURL { get; set; }
     }

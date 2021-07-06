@@ -416,6 +416,7 @@
             Assert.True(status.IsSucccess);
         }
 
-        private string GetResourceContent(string resourceName) => File.ReadAllText(Directory.GetCurrentDirectory() + "\\Resources\\" + resourceName);
+        private string GetResourceContent(string resourceName) 
+            => File.ReadAllText(Path.Combine(Directory.GetCurrentDirectory(), "Resources", resourceName));
     }
 }

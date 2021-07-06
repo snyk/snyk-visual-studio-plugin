@@ -8,17 +8,17 @@
     public class FileDto
     {
         /// <summary>
-        /// Gets or sets a value indicating whether issue rows.
+        /// Gets or sets a value indicating issue rows.
         /// </summary>
         public int[] Rows { get; set; }
 
         /// <summary>
-        /// Gets or sets a value indicating whether issue columns.
+        /// Gets or sets a value indicating issue columns.
         /// </summary>
         public int[] Cols { get; set; }
 
         /// <summary>
-        /// Gets or sets a value indicating whether issue marker in this file or other reference files.
+        /// Gets or sets a value indicating issue marker in this file or other reference files.
         /// </summary>
         public IEnumerable<MarkerDto> Markers { get; set; }
     }

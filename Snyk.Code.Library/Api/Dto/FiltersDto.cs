@@ -10,12 +10,12 @@
     public class FiltersDto
     {
         /// <summary>
-        /// Gets or sets a value indicating whether file extensions.
+        /// Gets or sets a value indicating file extensions.
         /// </summary>
         public List<string> Extensions { get; set; }
 
         /// <summary>
-        /// Gets or sets a value indicating whether configuration files.
+        /// Gets or sets a value indicating configuration files.
         /// </summary>
         public List<string> ConfigFiles { get; set; }
     }

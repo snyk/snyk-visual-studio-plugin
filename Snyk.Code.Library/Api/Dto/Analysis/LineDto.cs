@@ -6,17 +6,17 @@
     public class LineDto
     {
         /// <summary>
-        /// Gets or sets a value indicating whether anaylysis line.
+        /// Gets or sets a value indicating anaylysis line.
         /// </summary>
         public string Line { get; set; }
 
         /// <summary>
-        /// Gets or sets a value indicating whether anaylysis line number.
+        /// Gets or sets a value indicating anaylysis line number.
         /// </summary>
         public int LineNumber { get; set; }
 
         /// <summary>
-        /// Gets or sets a value indicating whether anaylysis line change.
+        /// Gets or sets a value indicating anaylysis line change.
         /// </summary>
         public string LineChange { get; set; }
     }

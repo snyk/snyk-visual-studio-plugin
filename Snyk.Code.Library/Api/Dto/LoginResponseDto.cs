@@ -6,12 +6,12 @@
     public class LoginResponseDto
     {
         /// <summary>
-        /// Gets or sets a value indicating whether Session token.
+        /// Gets or sets a value indicating Session token.
         /// </summary>
         public string SessionToken { get; set; }
 
         /// <summary>
-        /// Gets or sets a value indicating whether login URL.
+        /// Gets or sets a value indicating login URL.
         /// </summary>
         public string LoginURL { get; set; }
 
