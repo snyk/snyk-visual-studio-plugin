@@ -15,14 +15,13 @@
     /// </summary>
     public class BundleService
     {
-        private readonly SnykCodeClient codeClient;
+        private readonly ISnykCodeClient codeClient;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="BundleService"/> class.
         /// </summary>
-        /// <param name="baseUrl">Base URL for deproxy.</param>
-        /// <param name="token">User token.</param>
-        public BundleService(string baseUrl, string token) => this.codeClient = new SnykCodeClient(baseUrl, token);
+        /// <param name="client"><see cref="ISnykCodeClient"/> implementation.</param>
+        public BundleService(ISnykCodeClient client) => this.codeClient = client;
 
         /// <summary>
         /// Uploads missing files to a bundle.
@@ -64,11 +63,11 @@
         /// </summary>
         /// <param name="bundleId">Source bundle id.</param>
         /// <param name="fileHashToContentDict">Dictionary with file hash to file content mapping.</param>
-        /// <param name="maxBundleChunkSize">Maximum allowed upload files size.</param>
+        /// <param name="maxChunkSize">Maximum allowed upload files size.</param>
         /// <returns>True if upload success.</returns>
-        public async Task<bool> ProcessUploadLargeFilesAsync(string bundleId, Dictionary<string, string> fileHashToContentDict, int maxBundleChunkSize = SnykCodeClient.MaxBundleSize)
+        public async Task<bool> ProcessUploadLargeFilesAsync(string bundleId, Dictionary<string, string> fileHashToContentDict, int maxChunkSize = SnykCodeClient.MaxBundleSize)
         {
-            var codeFileLists = this.SplitFilesToChunkListsBySize(fileHashToContentDict);
+            var codeFileLists = this.SplitFilesToChunkListsBySize(fileHashToContentDict, maxChunkSize);
 
             bool isAllFilesUploaded = true;
 
@@ -103,7 +102,7 @@
 
             int payloadSize = this.CalculateFilesSize(pathToHashFileDict);
 
-            Task<BundleResponseDto> bundleDto = null;
+            Task<BundleResponseDto> bundleDto;
 
             if (payloadSize < maxChunkSize)
             {

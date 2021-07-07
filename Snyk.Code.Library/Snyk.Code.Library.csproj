@@ -94,6 +94,7 @@
     <Compile Include="Api\Dto\FiltersDto.cs" />
     <Compile Include="Common\Json.cs" />
     <Compile Include="Api\Dto\LoginResponseDto.cs" />
+    <Compile Include="Api\ISnykCodeClient.cs" />
     <Compile Include="Api\SnykCodeClient.cs" />
     <Compile Include="Api\LoginStatus.cs" />
     <Compile Include="Api\SnykCodeException.cs" />
