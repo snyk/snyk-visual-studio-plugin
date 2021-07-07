@@ -14,7 +14,7 @@
         public CreateBundleRequestDto() => this.Files = new Dictionary<string, string>();
 
         /// <summary>
-        /// Gets or sets a value indicating whether files dictionary.
+        /// Gets or sets a value indicating files dictionary.
         /// For uploaded bundles, the files parameter must contain an object with slash-beginning file paths as keys and file hashes as values. 
         /// An empty object is not allowed. 
         /// The file hash must be computed by parsing the file in utf8, performing a SHA-256 on the resulting string and encoding the hash in hexadecimal.
