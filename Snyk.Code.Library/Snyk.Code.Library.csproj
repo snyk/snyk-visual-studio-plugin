@@ -72,9 +72,19 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Api\Dto\Analysis\AnalysisResultDto.cs" />
+    <Compile Include="Api\Dto\Analysis\AnalysisResultsDto.cs" />
+    <Compile Include="Api\Dto\Analysis\CoverageDto.cs" />
+    <Compile Include="Api\Dto\Analysis\ExampleCommitFixDto.cs" />
     <Compile Include="Api\Dto\ExtendBundleRequestDto.cs" />
     <Compile Include="Api\Dto\CreateBundleRequestDto.cs" />
-    <Compile Include="Api\ISnykCodeClient.cs" />
+    <Compile Include="Api\Dto\Analysis\FileDto.cs" />
+    <Compile Include="Api\Dto\Analysis\LineDto.cs" />
+    <Compile Include="Api\Dto\Analysis\MarkerDto.cs" />
+    <Compile Include="Api\Dto\Analysis\PositionDto.cs" />
+    <Compile Include="Api\Dto\Analysis\SuggestionDto.cs" />
+    <Compile Include="Api\Dto\Analysis\SuggestionIdToFileDto.cs" />
+    <Compile Include="Api\Dto\Analysis\TimingDto.cs" />
     <Compile Include="Common\CollectionExtensionMethods.cs" />
     <Compile Include="Common\Sha256.cs" />
     <Compile Include="Domain\Bundle.cs" />
@@ -84,6 +94,7 @@
     <Compile Include="Api\Dto\FiltersDto.cs" />
     <Compile Include="Common\Json.cs" />
     <Compile Include="Api\Dto\LoginResponseDto.cs" />
+    <Compile Include="Api\ISnykCodeClient.cs" />
     <Compile Include="Api\SnykCodeClient.cs" />
     <Compile Include="Api\LoginStatus.cs" />
     <Compile Include="Api\SnykCodeException.cs" />
