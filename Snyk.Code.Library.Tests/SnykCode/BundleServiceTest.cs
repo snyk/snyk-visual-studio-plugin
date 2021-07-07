@@ -38,7 +38,7 @@
 
             var codeClientMock = new Mock<ISnykCodeClient>();
 
-            var dummyBundleDto = new BundleResponseDto("dummy id");
+            var dummyBundleDto = new BundleResponseDto { Id = "dummy id" };
 
             codeClientMock
                 .Setup(codeClient => codeClient.CreateBundleAsync(It.IsAny<Dictionary<string, string>>()).Result)
@@ -87,7 +87,7 @@
 
             var bundleService = new BundleService(codeClientMock.Object);
 
-            var dummyBundleDto = new BundleResponseDto("dummy id");
+            var dummyBundleDto = new BundleResponseDto { Id = "dummy id" };
 
             codeClientMock
                 .Setup(codeClient => codeClient.CreateBundleAsync(filePathToHashDict).Result)
@@ -143,7 +143,7 @@
 
             var bundleService = new BundleService(codeClientMock.Object);
 
-            var dummyBundleDto = new BundleResponseDto("dummy id");
+            var dummyBundleDto = new BundleResponseDto { Id = "dummy id" };
 
             codeClientMock
                 .Setup(codeClient => codeClient.CreateBundleAsync(filePathToHashDict).Result)
@@ -201,7 +201,7 @@
 
             var bundleService = new BundleService(codeClientMock.Object);
 
-            var dummyBundleDto = new BundleResponseDto("dummy id");
+            var dummyBundleDto = new BundleResponseDto { Id = "dummy id" };
 
             codeClientMock
                 .Setup(codeClient => codeClient.CreateBundleAsync(filePathToHashDict).Result)
@@ -262,7 +262,7 @@
 
             var bundleService = new BundleService(codeClientMock.Object);
 
-            var dummyBundleDto = new BundleResponseDto("dummy id");
+            var dummyBundleDto = new BundleResponseDto { Id = "dummy id" };
 
             codeClientMock
                 .Setup(codeClient => codeClient.CreateBundleAsync(It.IsAny<Dictionary<string, string>>()).Result)
@@ -308,7 +308,7 @@
 
             var bundleService = new BundleService(codeClientMock.Object);
 
-            var dummyBundleDto = new BundleResponseDto("dummy id");
+            var dummyBundleDto = new BundleResponseDto { Id = "dummy id" };
 
             codeClientMock
                 .Setup(codeClient => codeClient.CreateBundleAsync(It.IsAny<Dictionary<string, string>>()).Result)

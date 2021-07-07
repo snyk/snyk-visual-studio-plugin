@@ -8,9 +8,7 @@
     using Snyk.Code.Library.Api.Dto;
     using Snyk.Code.Library.Common;
 
-    /// <summary>
-    /// Client for SnykCode support.
-    /// </summary>
+    /// <inheritdoc />
     public class SnykCodeClient: ISnykCodeClient
     {
         /// <summary>

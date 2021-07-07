@@ -18,12 +18,6 @@
         }
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="BundleResponseDto"/> class.
-        /// </summary>
-        /// <param name="id">Bundle id value.</param>
-        public BundleResponseDto(string id) => this.Id = id;
-
-        /// <summary>
         /// Gets or sets a value indicating whether bundle id.
         /// </summary>
         [JsonPropertyName("bundleId")]
