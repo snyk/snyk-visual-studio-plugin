@@ -12,11 +12,15 @@
     - [Authentication](#authentication)
 - [Run analysis](#run-analysis)
 - [View analysis results](#view-analysis-results)
-    - [Snyk panel](#snyk-panel)
-    - [Editor window](#editor-window)
-    - [Snyk suggestions window](#snyk-suggestions-window)
 - [Extension Configuration](#extension-configuration)
-    - [Create a .dcignore file](#create-a-dcignore-file)
+- [Known Caveats](#known-caveats)
+    - [Could not detect supported target files](#could-not-detect-supported-target-files)
+- [How to](#how-to)
+    - [How to find the log files](#how-to-find-the-log-files)
+    - [Build process](#build-process)
+- [Contacts](#contacts)
+- [Conclusion](#conclusion)
+- [Useful links](#useful-links) 
 
 ## Introduction
 
