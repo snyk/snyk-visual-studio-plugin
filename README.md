@@ -1,18 +1,39 @@
-# Snyk Vulnerability Scanner
+# Snyk for Visaul Studio
 
 
-### Introduction
+**The Visual Studio extension (Snyk’s Vulnerability Scanner) helps you find and fix security vulnerabilities in your projects. Within a few seconds, the extension will provide a list of all the different types of security vulnerabilities identified together with actionable fix advice. Using the engine behind Snyk Open Source Security, we find known vulnerabilities in both the direct and in-direct (transitive) open source dependencies you are pulling into the project.**
 
-Snyk’s Vulnerability Scanner helps you find and fix security vulnerabilities in your projects. Within a few seconds, the extension will provide a list of all the different types of security vulnerabilities identified together with actionable fix advice. Using the engine behind Snyk Open Source Security, we find known vulnerabilities in both the direct and in-direct (transitive) open source dependencies you are pulling into the project.
+# Table of Contents
 
-#### 1. Software requirements
+- [Introduction](#introduction)
+    - [Software requirements](#software-requirements)
+    - [Supported languages](#supported-languages)
+- [Install the extension](#install-the-plugin)
+    - [Authentication](#authentication)
+- [Run analysis](#run-analysis)
+- [View analysis results](#view-analysis-results)
+    - [Snyk panel](#snyk-panel)
+    - [Editor window](#editor-window)
+    - [Snyk suggestions window](#snyk-suggestions-window)
+- [Extension Configuration](#extension-configuration)
+    - [Create a .dcignore file](#create-a-dcignore-file)
+
+## Introduction
+
+Use this documentation to get started with the Visual Studio extension for [Snyk Open Source](https://snyk.io/product/open-source-security-management/).
+
+### Software requirements
 
 * Operating system - Windows. 
 * Supported versions of Visual Studio: 2015, 2017, 2019. Compatible with Community, Professional and Enterprise.
 
-#### 2. How to install the extension?
+### Supported languages
 
-**Step 2.1** The Snyk extension can be installed directly from IDE. To install it open *Extensions > Manage Extensions* menu.
+Currently supported languages for Snyk Open Source are C#, JavaScript, TypeScript, Java, Go, Ruby, Python, PHP, Scala, Swift, Objective-C. See [Snyk Open Source language and framework support](https://support.snyk.io/hc/en-us/articles/360020352437-Language-support-summary)
+
+## Install the extension
+
+- The Snyk extension can be installed directly from IDE. To install it open *Extensions > Manage Extensions* menu.
 
 ![Vsix install via Marketplace](doc/images/readme_image_2_1_1.png)
 
@@ -20,15 +41,17 @@ Search for *Snyk*
 
 ![Vsix install via Marketplace](doc/images/readme_image_2_1_2.png)
 
-**Step 2.2.** Once installed, open the Snyk tool window by going to *View > Other Windows* as shown in the screenshot below.
+- Once installed, open the Snyk tool window by going to *View > Other Windows* as shown in the screenshot below.
 
 ![Snyk Toolwindow menu item](doc/images/readme_image_2_2.png "Snyk Toolwindow menu item")
 
-**Step 2.3.** Once the tool window appears, wait while Snyk extension downloads the latest Snyk CLI version.
+- Once the tool window appears, wait while Snyk extension downloads the latest Snyk CLI version.
 
 ![Snyk CLI download](doc/images/readme_image_2_3.png "Snyk CLI download")
 
-**Step 2.4..** By now you should have the extension installed and the Snyk CLI downloaded. Time to authenticate. The first way is to click "Connect Visual Studio to Snyk" link.
+- By now you should have the extension installed and the Snyk CLI downloaded. Time to authenticate. The first way is to click "Connect Visual Studio to Snyk" link.
+
+## Authentication
 
 * **Authenticate using *"Connect Visual Studio to Snyk"* link on Overview page.**
 
