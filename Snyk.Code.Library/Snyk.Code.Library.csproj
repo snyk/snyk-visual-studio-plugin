@@ -98,6 +98,7 @@
     <Compile Include="Api\LoginStatus.cs" />
     <Compile Include="Api\SnykCodeException.cs" />
     <Compile Include="BundleService.cs" />
+    <Compile Include="SnykCodeService.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />
