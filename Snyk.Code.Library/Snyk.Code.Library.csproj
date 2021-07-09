@@ -72,6 +72,7 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="AnalysisService.cs" />
     <Compile Include="Api\Dto\Analysis\AnalysisResultDto.cs" />
     <Compile Include="Api\Dto\Analysis\AnalysisResultsDto.cs" />
     <Compile Include="Api\Dto\Analysis\CoverageDto.cs" />
@@ -85,9 +86,15 @@
     <Compile Include="Api\Dto\Analysis\SuggestionDto.cs" />
     <Compile Include="Api\Dto\Analysis\SuggestionIdToFileDto.cs" />
     <Compile Include="Api\Dto\Analysis\TimingDto.cs" />
-    <Compile Include="Common\CollectionExtensionMethods.cs" />
+    <Compile Include="Common\ExtensionMethods.cs" />
     <Compile Include="Common\Sha256.cs" />
+    <Compile Include="Domain\AnalysisResult.cs" />
     <Compile Include="Domain\Bundle.cs" />
+    <Compile Include="FiltersService.cs" />
+    <Compile Include="IAnalysisService.cs" />
+    <Compile Include="IBundleService.cs" />
+    <Compile Include="IFiltersService.cs" />
+    <Compile Include="ISnykCodeService.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Api\Dto\BundleResponseDto.cs" />
     <Compile Include="Api\Dto\CodeFileDto.cs" />

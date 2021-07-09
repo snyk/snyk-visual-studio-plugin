@@ -204,7 +204,7 @@
         /// </summary>
         /// <param name="pathToHashFileDict">Bundle files.</param>
         /// <returns>Bundle object with bundle id, missing files and upload url.</returns>
-        public async Task<BundleResponseDto> CreateBundleAsync(Dictionary<string, string> pathToHashFileDict)
+        public async Task<BundleResponseDto> CreateBundleAsync(IDictionary<string, string> pathToHashFileDict)
         {
             if (pathToHashFileDict == null)
             {

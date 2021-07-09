@@ -1,5 +1,7 @@
 ﻿namespace Snyk.Code.Library.Domain
 {
+    using System.Collections.Generic;
+
     /// <summary>
     /// For uploaded bundles, the files parameter contain an object with slash-beginning file paths as keys and file hashes as values. 
     /// An empty object is not allowed. The file hash must be computed by parsing the file in utf8, 
@@ -26,7 +28,7 @@
         /// a list of file paths that still have to be uploaded (missingFiles) and where the missing files should be uploaded to (uploadURL). 
         /// When creating an uploaded bundle by directly passing the file contents in the array, missingFiles will be an empty array and the uploadURL can therefore be ignored.
         /// </summary>
-        public string[] MissingFiles { get; set; }
+        public IList<string> MissingFiles { get; set; }
 
         /// <summary>
         /// Gets or sets a value indicating whether upload url for files.
