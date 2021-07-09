@@ -2,57 +2,88 @@
 {
     using System.Collections.Generic;
     using System.IO;
+    using System.Text;
     using System.Threading.Tasks;
     using Snyk.Code.Library.Api;
-    using Snyk.Code.Library.Api.Dto;
+    using Snyk.Code.Library.Common;
+    using Snyk.Code.Library.Domain;
 
-    /// <summary>
-    /// Contains gigh level busines logic for SnykCode APIs.
-    /// </summary>
-    public class SnykCodeService
+    /// <inheritdoc/>
+    public class SnykCodeService : ISnykCodeService
     {
         private ISnykCodeClient codeClient;
 
-        private FiltersDto filters;
+        private IFiltersService filtersService;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="SnykCodeService"/> class.
         /// </summary>
-        /// <param name="snykCodeClient">SnykCode client implementation.</param>
-        public SnykCodeService(ISnykCodeClient snykCodeClient) => this.codeClient = snykCodeClient;
-
-        /// <summary>
-        /// Get filters information from server if it's not initialized yet and filter file pahts with supported extensions and configuration files.
-        /// </summary>
-        /// <param name="filePaths">Input file paths to filter.</param>
-        /// <returns>Filtered file pahts (only supported by SnykCode files by extension).</returns>
-        public async Task<IList<string>> FilterFilesAsync(IList<string> filePaths)
+        /// <param name="codeClient">SnykCode client implementation.</param>
+        public SnykCodeService(ISnykCodeClient codeClient)
         {
-            var filters = await this.GetFiltersAsync();
-            var extensionFilters = filters.Extensions;
-            var configFileFilters = filters.ConfigFiles;
+            this.codeClient = codeClient;
 
-            var filteredFiles = new List<string>();
+            this.filtersService = new FiltersService(this.codeClient);
+        }
+
+        /// <inheritdoc/>
+        public async Task<AnalysisResult> ScanAsync(IList<string> filePaths)
+        {
+            var filteredFiles = await this.filtersService.FilterFilesAsync(filePaths);
+
+            var filePathToHashDict = this.CreateFilePathToHashDictionary(filteredFiles);
+
+            var bundleService = new BundleService(this.codeClient);
+
+            var resultBundle = await bundleService.CreateBundleAsync(filePathToHashDict);
+
+            _ = await bundleService.UploadFilesAsync(resultBundle.Id, this.CreateFileHashToContentDictionary(resultBundle.MissingFiles));
+
+            resultBundle = await bundleService.CheckBundleAsync(resultBundle.Id);
+
+            if (resultBundle.MissingFiles.Count > 0)
+            {
+                _ = await bundleService.UploadFilesAsync(resultBundle.Id, this.CreateFileHashToContentDictionary(resultBundle.MissingFiles));
+            }
+
+            var analysisService = new AnalysisService(this.codeClient);
+
+            return await analysisService.GetAnalysisAsync(resultBundle.Id);
+        }
+
+        private IDictionary<string, string> CreateFilePathToHashDictionary(IList<string> filePaths)
+        {
+            var filePathToHashDict = new Dictionary<string, string>();
 
             foreach (string filePath in filePaths)
             {
-                if (extensionFilters.Contains(Path.GetExtension(filePath)) || configFileFilters.Contains(Path.GetFileName(filePath)))
-                {
-                    filteredFiles.Add(filePath);
-                }
+                string fileContent = File.ReadAllText(filePath, Encoding.UTF8);
+
+                string fileHash = Sha256.ComputeHash(fileContent);
+
+                filePathToHashDict.Add(filePath, fileHash);
             }
 
-            return filteredFiles;
+            return filePathToHashDict;
         }
 
-        private async Task<FiltersDto> GetFiltersAsync()
+        /// <summary>
+        /// TODO: Add cache.
+        /// </summary>
+        private IDictionary<string, string> CreateFileHashToContentDictionary(IList<string> filePaths)
         {
-            if (this.filters == null)
+            var fileHashToContentDict = new Dictionary<string, string>();
+
+            foreach (string filePath in filePaths)
             {
-                this.filters = await this.codeClient.GetFiltersAsync();
+                string fileContent = File.ReadAllText(filePath, Encoding.UTF8);
+
+                string fileHash = Sha256.ComputeHash(fileContent);
+
+                fileHashToContentDict.Add(fileHash, fileContent);
             }
 
-            return this.filters;
+            return fileHashToContentDict;
         }
     }
 }

@@ -14,6 +14,25 @@
     public class BundleServiceTest
     {
         [Fact]
+        public async Task BundleService_ActiveBundleProvided_CheckBundleSuccessfullAsync()
+        {
+            var codeClientMock = new Mock<ISnykCodeClient>();
+
+            var dummyBundleDto = new BundleResponseDto { Id = "dummy id" };
+
+            codeClientMock
+                .Setup(codeClient => codeClient.CheckBundleAsync(dummyBundleDto.Id).Result)
+                .Returns(dummyBundleDto);
+
+            var bundleService = new BundleService(codeClientMock.Object);
+
+            var bundle = await bundleService.CheckBundleAsync(dummyBundleDto.Id);
+
+            Assert.NotNull(bundle);
+            Assert.Equal(dummyBundleDto.Id, bundle.Id);
+        }
+
+        [Fact]
         public async Task BundleService_ThreeFilesProvided_UploadedSuccessfullyAsync()
         {
             var filePathToHashDict = new Dictionary<string, string>();
@@ -121,7 +140,7 @@
 
             Assert.NotNull(uploadedBundle);
             Assert.NotEmpty(uploadedBundle.Id);
-            Assert.Equal(3, uploadedBundle.MissingFiles.Length);
+            Assert.Equal(3, uploadedBundle.MissingFiles.Count);
 
             codeClientMock
                 .Verify(codeClient => codeClient.CreateBundleAsync(filePathToHashDict));
@@ -179,7 +198,7 @@
 
             Assert.NotNull(extendedBundle);
             Assert.True(!string.IsNullOrEmpty(extendedBundle.Id));
-            Assert.Equal(6, extendedBundle.MissingFiles.Length);
+            Assert.Equal(6, extendedBundle.MissingFiles.Count);
 
             codeClientMock
                 .Verify(codeClient => codeClient.CreateBundleAsync(filePathToHashDict));
@@ -282,7 +301,7 @@
 
             Assert.NotNull(bundleDto);
             Assert.NotEmpty(bundleDto.Id);
-            Assert.Equal(50, bundleDto.MissingFiles.Length);
+            Assert.Equal(50, bundleDto.MissingFiles.Count);
 
             codeClientMock
                 .Verify(codeClient => codeClient.CreateBundleAsync(It.IsAny<Dictionary<string, string>>()));
