@@ -24,7 +24,7 @@
 
 ## Introduction
 
-Use this documentation to get started with the Visual Studio extension for [Snyk Open Source](https://snyk.io/product/open-source-security-management/).
+Use this documentation to get started with the Visual Studio extension for [Snyk Open Source](https://support.snyk.io/hc/en-us/articles/360020073958-Visual-Studio-extension).
 
 ### Software requirements
 
