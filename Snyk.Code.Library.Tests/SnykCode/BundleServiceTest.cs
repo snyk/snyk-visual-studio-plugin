@@ -6,6 +6,7 @@
     using Snyk.Code.Library.Api;
     using Snyk.Code.Library.Api.Dto;
     using Snyk.Code.Library.Common;
+    using Snyk.Code.Library.Service.Impl;
     using Xunit;
 
     /// <summary>

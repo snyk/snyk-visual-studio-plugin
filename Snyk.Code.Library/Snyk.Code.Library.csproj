@@ -72,7 +72,8 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="AnalysisService.cs" />
+    <Compile Include="Domain\Analysis\AnalysisStatus.cs" />
+    <Compile Include="Service\Impl\AnalysisService.cs" />
     <Compile Include="Api\Dto\Analysis\AnalysisResultDto.cs" />
     <Compile Include="Api\Dto\Analysis\AnalysisResultsDto.cs" />
     <Compile Include="Api\Dto\Analysis\CoverageDto.cs" />
@@ -88,13 +89,16 @@
     <Compile Include="Api\Dto\Analysis\TimingDto.cs" />
     <Compile Include="Common\ExtensionMethods.cs" />
     <Compile Include="Common\Sha256.cs" />
-    <Compile Include="Domain\AnalysisResult.cs" />
+    <Compile Include="Domain\Analysis\AnalysisResult.cs" />
+    <Compile Include="Domain\Analysis\FileAnalysis.cs" />
+    <Compile Include="Domain\Analysis\Suggestion.cs" />
+    <Compile Include="Domain\Analysis\SuggestionFix.cs" />
     <Compile Include="Domain\Bundle.cs" />
-    <Compile Include="FiltersService.cs" />
-    <Compile Include="IAnalysisService.cs" />
-    <Compile Include="IBundleService.cs" />
-    <Compile Include="IFiltersService.cs" />
-    <Compile Include="ISnykCodeService.cs" />
+    <Compile Include="Service\Impl\FiltersService.cs" />
+    <Compile Include="Service\IAnalysisService.cs" />
+    <Compile Include="Service\IBundleService.cs" />
+    <Compile Include="Service\IFiltersService.cs" />
+    <Compile Include="Service\ISnykCodeService.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Api\Dto\BundleResponseDto.cs" />
     <Compile Include="Api\Dto\CodeFileDto.cs" />
@@ -105,8 +109,8 @@
     <Compile Include="Api\SnykCodeClient.cs" />
     <Compile Include="Api\LoginStatus.cs" />
     <Compile Include="Api\SnykCodeException.cs" />
-    <Compile Include="BundleService.cs" />
-    <Compile Include="SnykCodeService.cs" />
+    <Compile Include="Service\Impl\BundleService.cs" />
+    <Compile Include="Service\Impl\SnykCodeService.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />

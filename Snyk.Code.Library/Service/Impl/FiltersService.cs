@@ -1,4 +1,4 @@
-﻿namespace Snyk.Code.Library
+﻿namespace Snyk.Code.Library.Service.Impl
 {
     using System.Collections.Generic;
     using System.IO;

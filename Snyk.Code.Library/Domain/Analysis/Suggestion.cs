@@ -1,12 +1,17 @@
-﻿namespace Snyk.Code.Library.Api.Dto.Analysis
+﻿namespace Snyk.Code.Library.Domain.Analysis
 {
     using System.Collections.Generic;
 
     /// <summary>
-    /// Analysis suggestion information.
+    /// Contains suggestion information for improve code issue.
     /// </summary>
-    public class SuggestionDto
+    public class Suggestion
     {
+        /// <summary>
+        /// Initializes a new instance of the <see cref="Suggestion"/> class.
+        /// </summary>
+        public Suggestion() => this.Fixes = new List<SuggestionFix>();
+
         /// <summary>
         /// Gets or sets a value indicating anaylysis suggestion id. Id for this (local) result.
         /// </summary>
@@ -58,8 +63,8 @@
         public IList<string> ExampleCommitDescriptions { get; set; }
 
         /// <summary>
-        /// Gets or sets a value indicating suggestion fixes.
+        /// Gets or sets a value indicating suggestion list of proposed fixes and examples.
         /// </summary>
-        public IList<ExampleCommitFixDto> ExampleCommitFixes { get; set; }
+        public IList<SuggestionFix> Fixes { get; set; }
     }
 }

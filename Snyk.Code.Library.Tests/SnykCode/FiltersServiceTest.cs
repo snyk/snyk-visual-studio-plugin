@@ -1,10 +1,11 @@
-﻿namespace Snyk.Code.Library.Tests
+﻿namespace Snyk.Code.Library.Tests.Api
 {
     using System.Collections.Generic;
     using System.Threading.Tasks;
     using Moq;
     using Snyk.Code.Library.Api;
     using Snyk.Code.Library.Api.Dto;
+    using Snyk.Code.Library.Service.Impl;
     using Xunit;
 
     public class FiltersServiceTest

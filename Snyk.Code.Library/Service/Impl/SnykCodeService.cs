@@ -1,4 +1,4 @@
-﻿namespace Snyk.Code.Library
+﻿namespace Snyk.Code.Library.Service.Impl
 {
     using System.Collections.Generic;
     using System.IO;
@@ -6,7 +6,7 @@
     using System.Threading.Tasks;
     using Snyk.Code.Library.Api;
     using Snyk.Code.Library.Common;
-    using Snyk.Code.Library.Domain;
+    using Snyk.Code.Library.Domain.Analysis;
 
     /// <inheritdoc/>
     public class SnykCodeService : ISnykCodeService

@@ -1,18 +1,13 @@
-﻿namespace Snyk.Code.Library
+﻿namespace Snyk.Code.Library.Service
 {
-    using System;
     using System.Threading.Tasks;
-    using Snyk.Code.Library.Api;
-    using Snyk.Code.Library.Api.Dto.Analysis;
-    using Snyk.Code.Library.Domain;
+    using Snyk.Code.Library.Domain.Analysis;
 
-    /// <inheritdoc/>
-    public class AnalysisService : IAnalysisService
+    /// <summary>
+    /// Contains logic related to SnykCode analysis logic.
+    /// </summary>
+    public interface IAnalysisService
     {
-        private ISnykCodeClient codeClient;
-
-        public AnalysisService(ISnykCodeClient codeClient) => this.codeClient = codeClient;
-
         /// <summary>
         /// Starts a new bundle analysis or checks its current status and available results.
         /// Returns the current analysis status, the relative progress (between 0 and 1) within the current status, the analysisURL that you can access on your browser to see the interactive analysis on DeepCode, and the analysisResults if available. 
@@ -28,38 +23,6 @@
         /// </summary>
         /// <param name="bundleId">Source bundle id to analysy.</param>
         /// <returns>Analysis results with suggestions and the relative positions.</returns>
-        public async Task<AnalysisResult> GetAnalysisAsync(string bundleId)
-        {
-            if (string.IsNullOrEmpty(bundleId))
-            {
-                throw new ArgumentException("Bundle id is null or empty.");
-            }
-
-            AnalysisResultDto analysisResultDto;
-
-            do
-            {
-                analysisResultDto = await this.codeClient.GetAnalysisAsync(bundleId);
-
-                if (analysisResultDto.Status == "WAITING")
-                {
-                    System.Threading.Thread.Sleep(1000);
-                }
-
-                if (analysisResultDto.Status == "FAILED")
-                {
-                    throw new SnykCodeException("SnykCode Analysis failed.");
-                }
-            }
-            while (analysisResultDto.Status != "DONE");
-
-
-            return this.MapDtoAnalysisResultToDomain(analysisResultDto);
-        }
-
-        private AnalysisResult MapDtoAnalysisResultToDomain(AnalysisResultDto analysisResultDto)
-        {
-            throw new NotImplementedException();
-        }
+        Task<AnalysisResult> GetAnalysisAsync(string bundleId);
     }
 }
