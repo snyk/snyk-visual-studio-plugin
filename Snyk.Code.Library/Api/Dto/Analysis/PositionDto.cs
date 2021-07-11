@@ -10,12 +10,12 @@
         /// <summary>
         /// Gets or sets a value indicating issue rows position.
         /// </summary>
-        public List<long> Rows { get; set; }
+        public IList<long> Rows { get; set; }
 
         /// <summary>
         /// Gets or sets a value indicating issue columns position.
         /// </summary>
-        public List<long> Cols { get; set; }
+        public IList<long> Cols { get; set; }
 
         /// <summary>
         /// Gets or sets a value indicating file name.

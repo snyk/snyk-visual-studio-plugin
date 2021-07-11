@@ -1,5 +1,7 @@
 ﻿namespace Snyk.Code.Library.Api.Dto.Analysis
 {
+    using System.Collections.Generic;
+
     /// <summary>
     /// Example commit fix for suggestion.
     /// </summary>
@@ -13,6 +15,6 @@
         /// <summary>
         /// Gets or sets a value indicating anaylysis line information.
         /// </summary>
-        public LineDto[] Lines { get; set; }
+        public IList<LineDto> Lines { get; set; }
     }
 }

@@ -1,8 +1,8 @@
-﻿namespace Snyk.Code.Library
+﻿namespace Snyk.Code.Library.Service
 {
     using System.Collections.Generic;
     using System.Threading.Tasks;
-    using Snyk.Code.Library.Domain;
+    using Snyk.Code.Library.Domain.Analysis;
 
     /// <summary>
     /// Contains high level busines logic for SnykCode APIs.

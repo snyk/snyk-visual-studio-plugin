@@ -12,12 +12,12 @@
         /// Gets or sets a value indicating anaylysis marker message.
         /// </summary>
         [JsonPropertyName("msg")]
-        public List<long> Message { get; set; }
+        public IList<long> MessageIndexes { get; set; }
 
         /// <summary>
         /// Gets or sets a value indicating anaylysis posotion in file or reference files.
         /// </summary>
         [JsonPropertyName("pos")]
-        public List<PositionDto> Position { get; set; }
+        public IList<PositionDto> Positions { get; set; }
     }
 }
