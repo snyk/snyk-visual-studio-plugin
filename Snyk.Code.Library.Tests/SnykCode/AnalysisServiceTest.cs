@@ -1,5 +1,6 @@
 ﻿namespace Snyk.Code.Library.Tests.SnykCode
 {
+    using System;
     using System.Collections.Generic;
     using System.Threading.Tasks;
     using Moq;
@@ -11,6 +12,32 @@
 
     public class AnalysisServiceTest
     {
+        [Fact]
+        public async Task AnalysisService_FailedStatusProvided_GetAnalysisThrowExceptionAsync()
+        {
+            var codeClientMock = new Mock<ISnykCodeClient>();
+
+            var analysisService = new AnalysisService(codeClientMock.Object);
+
+            var analysisResultsDto = new AnalysisResultsDto();
+
+            string dummyBundleId = "dummyId";
+
+            var dummyAnalysisResultDto = new AnalysisResultDto
+            {
+                Status = AnalysisStatus.Failed,
+            };
+
+            codeClientMock
+                .Setup(codeClient => codeClient.GetAnalysisAsync(dummyBundleId).Result)
+                .Returns(dummyAnalysisResultDto);
+
+            _ = Assert.ThrowsAsync<AggregateException>(() => analysisService.GetAnalysisAsync(dummyBundleId));
+
+            codeClientMock
+                .Verify(codeClient => codeClient.GetAnalysisAsync(dummyBundleId), Times.Exactly(1));
+        }
+
         [Fact]
         public async Task AnalysisService_WaitingStatusProvided_GetAnalysisSuccessInTwoAttemptsAsync()
         {
@@ -27,15 +54,20 @@
                 Status = AnalysisStatus.Waiting,
             };
 
-            codeClientMock
-                .Setup(codeClient => codeClient.GetAnalysisAsync(dummyBundleId).Result)
-                .Returns(dummyAnalysisResultDto);
-
-            dummyAnalysisResultDto.Status = AnalysisStatus.Done;
+            var mockMethodCallsCount = 0;
 
             codeClientMock
                 .Setup(codeClient => codeClient.GetAnalysisAsync(dummyBundleId).Result)
-                .Returns(dummyAnalysisResultDto);
+                .Returns(dummyAnalysisResultDto)
+                .Callback<string>((str) =>
+                {
+                    if (mockMethodCallsCount > 0)
+                    {
+                        dummyAnalysisResultDto.Status = AnalysisStatus.Done;
+                    }
+
+                    mockMethodCallsCount++;
+                });
 
             var analysisResult = await analysisService.GetAnalysisAsync(dummyBundleId);
 
