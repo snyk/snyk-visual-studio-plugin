@@ -52,6 +52,9 @@
   <ItemGroup>
     <ProjectReference Include="..\Snyk.Code.Library\Snyk.Code.Library.csproj" />
   </ItemGroup>
+  <ItemGroup>
+    <Reference Include="System.Runtime.Caching" />
+  </ItemGroup>
 
   <Target Name="WriteSettingsFile" BeforeTargets="PreBuildEvent">
     <WriteLinesToFile File="$(SettingsFile)" Overwrite="true" Lines="{" />
