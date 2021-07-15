@@ -74,8 +74,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Domain\Analysis\AnalysisStatus.cs" />
-    <Compile Include="Service\IFileCacheService.cs" />
-    <Compile Include="Service\Impl\AnalysisService.cs" />
+    <Compile Include="Service\AnalysisService.cs" />
     <Compile Include="Api\Dto\Analysis\AnalysisResultDto.cs" />
     <Compile Include="Api\Dto\Analysis\AnalysisResultsDto.cs" />
     <Compile Include="Api\Dto\Analysis\CoverageDto.cs" />
@@ -89,15 +88,14 @@
     <Compile Include="Api\Dto\Analysis\SuggestionDto.cs" />
     <Compile Include="Api\Dto\Analysis\SuggestionIdToFileDto.cs" />
     <Compile Include="Api\Dto\Analysis\TimingDto.cs" />
-    <Compile Include="Common\ExtensionMethods.cs" />
+    <Compile Include="Common\CollectionExtensions.cs" />
     <Compile Include="Common\Sha256.cs" />
     <Compile Include="Domain\Analysis\AnalysisResult.cs" />
     <Compile Include="Domain\Analysis\FileAnalysis.cs" />
     <Compile Include="Domain\Analysis\Suggestion.cs" />
     <Compile Include="Domain\Analysis\SuggestionFix.cs" />
     <Compile Include="Domain\Bundle.cs" />
-    <Compile Include="Service\Impl\FileCacheService.cs" />
-    <Compile Include="Service\Impl\FiltersService.cs" />
+    <Compile Include="Service\FiltersService.cs" />
     <Compile Include="Service\IAnalysisService.cs" />
     <Compile Include="Service\IBundleService.cs" />
     <Compile Include="Service\IFiltersService.cs" />
@@ -111,8 +109,8 @@
     <Compile Include="Api\SnykCodeClient.cs" />
     <Compile Include="Api\LoginStatus.cs" />
     <Compile Include="Api\SnykCodeException.cs" />
-    <Compile Include="Service\Impl\BundleService.cs" />
-    <Compile Include="Service\Impl\SnykCodeService.cs" />
+    <Compile Include="Service\BundleService.cs" />
+    <Compile Include="Service\SnykCodeService.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />
