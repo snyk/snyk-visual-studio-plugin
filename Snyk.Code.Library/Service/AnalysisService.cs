@@ -1,6 +1,7 @@
 ﻿namespace Snyk.Code.Library.Service
 {
     using System;
+    using System.Linq;
     using System.Threading.Tasks;
     using Snyk.Code.Library.Api;
     using Snyk.Code.Library.Api.Dto.Analysis;
@@ -103,13 +104,14 @@
 
                     foreach (var exampleCommitFixes in suggestionDto.ExampleCommitFixes)
                     {
-                        suggestion.Fixes.Add(new SuggestionFix
+                        var suggestionFix = new SuggestionFix
                         {
                             CommitURL = exampleCommitFixes.CommitURL,
-                            Line = exampleCommitFixes.Lines[0].Line,
-                            LineNumber = exampleCommitFixes.Lines[0].LineNumber,
-                            LineChange = exampleCommitFixes.Lines[0].LineChange,
-                        });
+                            Lines = exampleCommitFixes.Lines
+                                .Select(line => new FixLine { Line = line.Line, LineChange = line.LineChange, LineNumber = line.LineNumber }).ToList(),
+                        };
+
+                        suggestion.Fixes.Add(suggestionFix);
                     }
 
                     fileAnalysis.Suggestions.Add(suggestion);
