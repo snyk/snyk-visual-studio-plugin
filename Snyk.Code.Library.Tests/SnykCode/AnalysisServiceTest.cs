@@ -61,12 +61,12 @@
                 .Returns(dummyAnalysisResultDto)
                 .Callback<string>((str) =>
                 {
-                    if (mockMethodCallsCount > 0)
+                    mockMethodCallsCount++;
+
+                    if (mockMethodCallsCount > 23)
                     {
                         dummyAnalysisResultDto.Status = AnalysisStatus.Done;
                     }
-
-                    mockMethodCallsCount++;
                 });
 
             var analysisResult = await analysisService.GetAnalysisAsync(dummyBundleId);
@@ -75,7 +75,36 @@
             Assert.Equal(AnalysisStatus.Done, analysisResult.Status);
 
             codeClientMock
-                .Verify(codeClient => codeClient.GetAnalysisAsync(dummyBundleId), Times.Exactly(2));
+                .Verify(codeClient => codeClient.GetAnalysisAsync(dummyBundleId), Times.Exactly(24));
+        }
+
+        [Fact]
+        public async Task AnalysisService_InfiniteWaitingStatusProvided_GetAnalysisReturnFailedStatusAsync()
+        {
+            var codeClientMock = new Mock<ISnykCodeClient>();
+
+            var analysisService = new AnalysisService(codeClientMock.Object);
+
+            var analysisResultsDto = new AnalysisResultsDto();
+
+            string dummyBundleId = "dummyId";
+
+            var dummyAnalysisResultDto = new AnalysisResultDto
+            {
+                Status = AnalysisStatus.Waiting,
+            };
+
+            codeClientMock
+                .Setup(codeClient => codeClient.GetAnalysisAsync(dummyBundleId).Result)
+                .Returns(dummyAnalysisResultDto);
+
+            var analysisResult = await analysisService.GetAnalysisAsync(dummyBundleId);
+
+            Assert.NotNull(analysisResult);
+            Assert.Equal(AnalysisStatus.Failed, analysisResult.Status);
+
+            codeClientMock
+                .Verify(codeClient => codeClient.GetAnalysisAsync(dummyBundleId), Times.Exactly(100));
         }
 
         [Fact]
