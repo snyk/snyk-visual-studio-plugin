@@ -9,6 +9,10 @@
     /// <inheritdoc/>
     public class AnalysisService : IAnalysisService
     {
+        private const int RequestTimeout = 100;
+
+        private const int RequestAttempts = 100;
+
         private ISnykCodeClient codeClient;
 
         public AnalysisService(ISnykCodeClient codeClient) => this.codeClient = codeClient;
@@ -23,19 +27,33 @@
 
             AnalysisResultDto analysisResultDto;
 
+            int counter = 1;
+
             do
             {
                 analysisResultDto = await this.codeClient.GetAnalysisAsync(bundleId);
 
                 if (analysisResultDto.Status == AnalysisStatus.Waiting)
                 {
-                    System.Threading.Thread.Sleep(3000);
+                    System.Threading.Thread.Sleep(RequestTimeout);
                 }
 
                 if (analysisResultDto.Status == AnalysisStatus.Failed)
                 {
                     throw new SnykCodeException("SnykCode Analysis failed.");
                 }
+
+                if (counter >= RequestAttempts)
+                {
+                    analysisResultDto = new AnalysisResultDto
+                    {
+                        Status = AnalysisStatus.Failed,
+                    };
+
+                    break;
+                }
+
+                counter++;
             }
             while (analysisResultDto.Status != AnalysisStatus.Done);
 
