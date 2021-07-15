@@ -7,7 +7,7 @@
     using Snyk.Code.Library.Api;
     using Snyk.Code.Library.Api.Dto.Analysis;
     using Snyk.Code.Library.Domain.Analysis;
-    using Snyk.Code.Library.Service.Impl;
+    using Snyk.Code.Library.Service;
     using Xunit;
 
     public class AnalysisServiceTest

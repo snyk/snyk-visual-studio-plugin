@@ -1,29 +1,34 @@
-﻿namespace Snyk.Code.Library.Service.Impl
+﻿namespace Snyk.Code.Library.Service
 {
     using System.Collections.Generic;
     using System.IO;
     using System.Text;
     using System.Threading.Tasks;
-    using Snyk.Code.Library.Api;
     using Snyk.Code.Library.Common;
     using Snyk.Code.Library.Domain.Analysis;
 
     /// <inheritdoc/>
     public class SnykCodeService : ISnykCodeService
     {
-        private ISnykCodeClient codeClient;
+        private IBundleService bundleService;
+
+        private IAnalysisService analysisService;
 
         private IFiltersService filtersService;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="SnykCodeService"/> class.
         /// </summary>
-        /// <param name="codeClient">SnykCode client implementation.</param>
-        public SnykCodeService(ISnykCodeClient codeClient)
+        /// <param name="bundleService"><see cref="IBundleService"/> instance.</param>
+        /// <param name="analysisService"><see cref="IAnalysisService"/> instance.</param>
+        /// <param name="filtersService"><see cref="IFiltersService"/> instance.</param>
+        public SnykCodeService(IBundleService bundleService, IAnalysisService analysisService, IFiltersService filtersService)
         {
-            this.codeClient = codeClient;
+            this.filtersService = filtersService;
 
-            this.filtersService = new FiltersService(this.codeClient);
+            this.bundleService = bundleService;
+
+            this.analysisService = analysisService;
         }
 
         /// <inheritdoc/>
@@ -33,22 +38,18 @@
 
             var filePathToHashDict = this.CreateFilePathToHashDictionary(filteredFiles);
 
-            var bundleService = new BundleService(this.codeClient);
+            var resultBundle = await this.bundleService.CreateBundleAsync(filePathToHashDict);
 
-            var resultBundle = await bundleService.CreateBundleAsync(filePathToHashDict);
+            _ = await this.bundleService.UploadFilesAsync(resultBundle.Id, this.CreateFileHashToContentDictionary(resultBundle.MissingFiles));
 
-            _ = await bundleService.UploadFilesAsync(resultBundle.Id, this.CreateFileHashToContentDictionary(resultBundle.MissingFiles));
-
-            resultBundle = await bundleService.CheckBundleAsync(resultBundle.Id);
+            resultBundle = await this.bundleService.CheckBundleAsync(resultBundle.Id);
 
             if (resultBundle.MissingFiles.Count > 0)
             {
-                _ = await bundleService.UploadFilesAsync(resultBundle.Id, this.CreateFileHashToContentDictionary(resultBundle.MissingFiles));
+                _ = await this.bundleService.UploadFilesAsync(resultBundle.Id, this.CreateFileHashToContentDictionary(resultBundle.MissingFiles));
             }
 
-            var analysisService = new AnalysisService(this.codeClient);
-
-            return await analysisService.GetAnalysisAsync(resultBundle.Id);
+            return await this.analysisService.GetAnalysisAsync(resultBundle.Id);
         }
 
         private IDictionary<string, string> CreateFilePathToHashDictionary(IList<string> filePaths)
@@ -67,9 +68,6 @@
             return filePathToHashDict;
         }
 
-        /// <summary>
-        /// TODO: Add cache.
-        /// </summary>
         private IDictionary<string, string> CreateFileHashToContentDictionary(IList<string> filePaths)
         {
             var fileHashToContentDict = new Dictionary<string, string>();
