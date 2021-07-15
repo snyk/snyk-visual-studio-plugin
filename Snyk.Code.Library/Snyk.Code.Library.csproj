@@ -74,6 +74,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Domain\Analysis\AnalysisStatus.cs" />
+    <Compile Include="Domain\Analysis\FixLine.cs" />
     <Compile Include="Service\AnalysisService.cs" />
     <Compile Include="Api\Dto\Analysis\AnalysisResultDto.cs" />
     <Compile Include="Api\Dto\Analysis\AnalysisResultsDto.cs" />

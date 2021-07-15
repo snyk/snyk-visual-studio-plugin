@@ -1,5 +1,7 @@
 ﻿namespace Snyk.Code.Library.Domain.Analysis
 {
+    using System.Collections.Generic;
+
     /// <summary>
     /// Contains suggestion fix information how to improve code quality.
     /// </summary>
@@ -11,18 +13,9 @@
         public string CommitURL { get; set; }
 
         /// <summary>
-        /// Gets or sets a value indicating anaylysis line.
+        /// Gets or sets a value indicating suggestion fix lines.
         /// </summary>
-        public string Line { get; set; }
 
-        /// <summary>
-        /// Gets or sets a value indicating anaylysis line number.
-        /// </summary>
-        public int LineNumber { get; set; }
-
-        /// <summary>
-        /// Gets or sets a value indicating anaylysis line change.
-        /// </summary>
-        public string LineChange { get; set; }
+        public IList<FixLine> Lines { get; set; }
     }
 }
