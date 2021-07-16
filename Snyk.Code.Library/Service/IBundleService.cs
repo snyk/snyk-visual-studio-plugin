@@ -21,6 +21,13 @@
         Task<Bundle> CheckBundleAsync(string bundleId);
 
         /// <summary>
+        /// Upload bundle missing files. If files not uploaded by one call it will try 5 times for upload.
+        /// </summary>
+        /// <param name="bundle">Source bundle with missing files to upload.</param>
+        /// <returns><see cref="Task"/> representing the asynchronous operation.</returns>
+        Task UploadMissingFilesAsync(Bundle bundle);
+
+        /// <summary>
         /// Uploads missing files to a bundle.
         /// Small files should be uploaded in batches to avoid excessive overhead due to too many requests. 
         /// The file contents must be utf-8 parsed strings and the file hashes must be computed over these strings, matching the "Create Bundle" request.
