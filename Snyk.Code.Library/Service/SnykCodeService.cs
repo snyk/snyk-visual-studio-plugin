@@ -40,14 +40,7 @@
 
             var resultBundle = await this.bundleService.CreateBundleAsync(filePathToHashDict);
 
-            _ = await this.bundleService.UploadFilesAsync(resultBundle.Id, this.CreateFileHashToContentDictionary(resultBundle.MissingFiles));
-
-            resultBundle = await this.bundleService.CheckBundleAsync(resultBundle.Id);
-
-            if (resultBundle.MissingFiles.Count > 0)
-            {
-                _ = await this.bundleService.UploadFilesAsync(resultBundle.Id, this.CreateFileHashToContentDictionary(resultBundle.MissingFiles));
-            }
+            await this.bundleService.UploadMissingFilesAsync(resultBundle);
 
             return await this.analysisService.GetAnalysisAsync(resultBundle.Id);
         }
@@ -66,22 +59,6 @@
             }
 
             return filePathToHashDict;
-        }
-
-        private IDictionary<string, string> CreateFileHashToContentDictionary(IList<string> filePaths)
-        {
-            var fileHashToContentDict = new Dictionary<string, string>();
-
-            foreach (string filePath in filePaths)
-            {
-                string fileContent = File.ReadAllText(filePath, Encoding.UTF8);
-
-                string fileHash = Sha256.ComputeHash(fileContent);
-
-                fileHashToContentDict.Add(fileHash, fileContent);
-            }
-
-            return fileHashToContentDict;
         }
     }
 }

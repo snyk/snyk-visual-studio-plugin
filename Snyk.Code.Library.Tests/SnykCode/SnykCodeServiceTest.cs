@@ -34,8 +34,8 @@
                 },
             };
 
-            string filePath1 = Path.Combine(Directory.GetCurrentDirectory(), "Resources", "app1.js");
-            string filePath2 = Path.Combine(Directory.GetCurrentDirectory(), "Resources", "app2.js");
+            string filePath1 = TestResource.GetFileFullPath("app1.js");
+            string filePath2 = TestResource.GetFileFullPath("app2.js");
 
             var filePaths = new List<string> { filePath1, filePath2 };
 
@@ -91,96 +91,7 @@
                 .Verify(bundleService => bundleService.CreateBundleAsync(It.IsAny<Dictionary<string, string>>(), It.IsAny<int>()), Times.Exactly(1));
 
             bundleServiceMock
-                .Verify(bundleService => bundleService.UploadFilesAsync(bundleId, It.IsAny<IDictionary<string, string>>(), It.IsAny<int>()), Times.Exactly(1));
-
-            bundleServiceMock
-                .Verify(bundleService => bundleService.CheckBundleAsync(bundleId), Times.Exactly(1));
-
-            analysisServiceMock
-                .Verify(analysisService => analysisService.GetAnalysisAsync(bundleId), Times.Exactly(1));
-        }
-
-        [Fact]
-        public async Task SnykCodeService_OneMissingFileAfterUploadProvided_ScanSuccessAsync()
-        {
-            var analysisResults = new AnalysisResult
-            {
-                Status = AnalysisStatus.Done,
-                Progress = 1,
-                FileAnalyses = new List<FileAnalysis>
-                {
-                    new FileAnalysis
-                    {
-                        FileName = "app1.js",
-                    },
-                    new FileAnalysis
-                    {
-                        FileName = "app2.js",
-                    },
-                },
-            };
-
-            string filePath1 = Path.Combine(Directory.GetCurrentDirectory(), "Resources", "app1.js");
-            string filePath2 = Path.Combine(Directory.GetCurrentDirectory(), "Resources", "app2.js");
-
-            var filePaths = new List<string> { filePath1, filePath2 };
-
-            var filtersServiceMock = new Mock<IFiltersService>();
-
-            filtersServiceMock
-                .Setup(filtersService => filtersService.FilterFilesAsync(filePaths).Result)
-                .Returns(filePaths);
-
-            string bundleId = "dummyId";
-
-            var bundleServiceMock = new Mock<IBundleService>();
-
-            var bundle = new Bundle
-            {
-                Id = bundleId,
-                MissingFiles = new string[] { filePath1, filePath2 },
-            };
-
-            bundleServiceMock
-                .Setup(bundleService => bundleService.CreateBundleAsync(It.IsAny<Dictionary<string, string>>(), It.IsAny<int>()).Result)
-                .Returns(bundle);
-
-            bundleServiceMock
-                .Setup(bundleService => bundleService.UploadFilesAsync(bundleId, It.IsAny<IDictionary<string, string>>(), It.IsAny<int>()).Result)
-                .Returns(true);
-
-            bundleServiceMock
-                .Setup(bundleService => bundleService.CheckBundleAsync(bundleId).Result)
-                .Callback<string>((id) => bundle.MissingFiles = new string[] { filePath1 })
-                .Returns(bundle);
-
-            var analysisServiceMock = new Mock<IAnalysisService>();
-
-            analysisServiceMock
-                .Setup(analysisService => analysisService.GetAnalysisAsync(bundleId).Result)
-                .Returns(analysisResults);
-
-            var snykCodeService = new SnykCodeService(bundleServiceMock.Object, analysisServiceMock.Object, filtersServiceMock.Object);
-
-            var analysisResult = await snykCodeService.ScanAsync(new List<string> { filePath1, filePath2 });
-
-            Assert.NotNull(analysisResult);
-            Assert.Equal(2, analysisResult.FileAnalyses.Count);
-
-            Assert.Equal("app1.js", analysisResult.FileAnalyses[0].FileName);
-            Assert.Equal("app2.js", analysisResult.FileAnalyses[1].FileName);
-
-            filtersServiceMock
-                .Verify(filterService => filterService.FilterFilesAsync(filePaths), Times.Exactly(1));
-
-            bundleServiceMock
-                .Verify(bundleService => bundleService.CreateBundleAsync(It.IsAny<Dictionary<string, string>>(), It.IsAny<int>()), Times.Exactly(1));
-
-            bundleServiceMock
-                .Verify(bundleService => bundleService.UploadFilesAsync(bundleId, It.IsAny<IDictionary<string, string>>(), It.IsAny<int>()), Times.Exactly(2));
-
-            bundleServiceMock
-                .Verify(bundleService => bundleService.CheckBundleAsync(bundleId), Times.Exactly(1));
+                .Verify(bundleService => bundleService.UploadMissingFilesAsync(It.IsAny<Bundle>()), Times.Exactly(1));
 
             analysisServiceMock
                 .Verify(analysisService => analysisService.GetAnalysisAsync(bundleId), Times.Exactly(1));

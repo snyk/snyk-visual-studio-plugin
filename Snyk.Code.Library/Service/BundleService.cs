@@ -2,6 +2,7 @@
 {
     using System;
     using System.Collections.Generic;
+    using System.IO;
     using System.Linq;
     using System.Text;
     using System.Threading.Tasks;
@@ -13,6 +14,8 @@
     /// <inheritdoc/>
     public class BundleService : IBundleService
     {
+        private const int UploadFileRequestAttempts = 5;
+
         private readonly ISnykCodeClient codeClient;
 
         /// <summary>
@@ -40,6 +43,28 @@
         }
 
         /// <inheritdoc/>
+        public async Task UploadMissingFilesAsync(Bundle bundle)
+        {
+            int counter = 1;
+
+            var resultBundle = bundle;
+
+            while (resultBundle.MissingFiles.Count > 0)
+            {
+                _ = await this.UploadFilesAsync(resultBundle.Id, this.CreateFileHashToContentDictionary(resultBundle.MissingFiles));
+
+                if (counter >= UploadFileRequestAttempts)
+                {
+                    break;
+                }
+
+                counter++;
+
+                resultBundle = await this.CheckBundleAsync(bundle.Id);
+            }
+        }
+
+        /// <inheritdoc/>
         public Task<bool> UploadFilesAsync(string bundleId, IDictionary<string, string> fileHashToContentDict, int maxChunkSize = SnykCodeClient.MaxBundleSize)
         {
             if (string.IsNullOrEmpty(bundleId))
@@ -47,9 +72,9 @@
                 throw new ArgumentException("Bundle id is null or empty.");
             }
 
-            if (fileHashToContentDict == null || fileHashToContentDict.Count == 0)
+            if (fileHashToContentDict == null)
             {
-                throw new ArgumentException("Code files list is null or empty.");
+                throw new ArgumentException("Code files list is null.");
             }
 
             int payloadSize = this.CalculateFilesSize(fileHashToContentDict);
@@ -409,6 +434,22 @@
             }
 
             return codeFileDtos;
+        }
+
+        private IDictionary<string, string> CreateFileHashToContentDictionary(IList<string> filePaths)
+        {
+            var fileHashToContentDict = new Dictionary<string, string>();
+
+            foreach (string filePath in filePaths)
+            {
+                string fileContent = File.ReadAllText(filePath, Encoding.UTF8);
+
+                string fileHash = Sha256.ComputeHash(fileContent);
+
+                fileHashToContentDict.Add(fileHash, fileContent);
+            }
+
+            return fileHashToContentDict;
         }
     }
 }
