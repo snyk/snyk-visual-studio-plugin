@@ -43,25 +43,23 @@
         }
 
         /// <inheritdoc/>
-        public async Task UploadMissingFilesAsync(Bundle bundle)
+        public async Task<bool> UploadMissingFilesAsync(Bundle bundle)
         {
-            int counter = 1;
-
             var resultBundle = bundle;
 
-            while (resultBundle.MissingFiles.Count > 0)
+            for (int counter = 0; counter < UploadFileRequestAttempts; counter++)
             {
-                _ = await this.UploadFilesAsync(resultBundle.Id, this.CreateFileHashToContentDictionary(resultBundle.MissingFiles));
-
-                if (counter >= UploadFileRequestAttempts)
-                {
-                    break;
-                }
-
-                counter++;
+                await this.UploadFilesAsync(resultBundle.Id, this.CreateFileHashToContentDictionary(resultBundle.MissingFiles));
 
                 resultBundle = await this.CheckBundleAsync(bundle.Id);
+
+                if (resultBundle.MissingFiles.IsEmpty())
+                {
+                    return true;
+                }
             }
+
+            return false;
         }
 
         /// <inheritdoc/>
