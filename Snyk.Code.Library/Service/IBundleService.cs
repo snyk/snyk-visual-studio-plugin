@@ -24,8 +24,8 @@
         /// Upload bundle missing files. If files not uploaded by one call it will try 5 times for upload.
         /// </summary>
         /// <param name="bundle">Source bundle with missing files to upload.</param>
-        /// <returns><see cref="Task"/> representing the asynchronous operation.</returns>
-        Task UploadMissingFilesAsync(Bundle bundle);
+        /// <returns>True if upload all files successfully and false if not.</returns>
+        Task<bool> UploadMissingFilesAsync(Bundle bundle);
 
         /// <summary>
         /// Uploads missing files to a bundle.
