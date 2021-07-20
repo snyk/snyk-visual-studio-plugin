@@ -26,39 +26,38 @@
                 throw new ArgumentException("Bundle id is null or empty.");
             }
 
-            AnalysisResultDto analysisResultDto;
-
-            int counter = 1;
-
-            do
-            {
-                analysisResultDto = await this.codeClient.GetAnalysisAsync(bundleId);
-
-                if (analysisResultDto.Status == AnalysisStatus.Waiting)
-                {
-                    System.Threading.Thread.Sleep(RequestTimeout);
-                }
-
-                if (analysisResultDto.Status == AnalysisStatus.Failed)
-                {
-                    throw new SnykCodeException("SnykCode Analysis failed.");
-                }
-
-                if (counter >= RequestAttempts)
-                {
-                    analysisResultDto = new AnalysisResultDto
-                    {
-                        Status = AnalysisStatus.Failed,
-                    };
-
-                    break;
-                }
-
-                counter++;
-            }
-            while (analysisResultDto.Status != AnalysisStatus.Done);
+            var analysisResultDto = await this.TryGetAnalysisDtoAsync(bundleId);
 
             return this.MapDtoAnalysisResultToDomain(analysisResultDto);
+        }
+
+        /// <summary>
+        /// Try get analysis DTO 'RequestAttempts' attempts.
+        /// </summary>
+        /// <param name="bundleId">Source bundle id.</param>
+        /// <returns><see cref="AnalysisResultDto"/> object.</returns>
+        private async Task<AnalysisResultDto> TryGetAnalysisDtoAsync(string bundleId)
+        {
+            for (int counter = 0; counter < RequestAttempts; counter++)
+            {
+                AnalysisResultDto analysisResultDto = await this.codeClient.GetAnalysisAsync(bundleId);
+
+                switch (analysisResultDto.Status)
+                {
+                    case AnalysisStatus.Done:
+                        return analysisResultDto;
+
+                    case AnalysisStatus.Failed:
+                        throw new SnykCodeException("SnykCode Analysis failed.");
+
+                    case AnalysisStatus.Waiting:
+                    default:
+                        System.Threading.Thread.Sleep(RequestTimeout);
+                        break;
+                }
+            }
+
+            return new AnalysisResultDto { Status = AnalysisStatus.Failed, };
         }
 
         private AnalysisResult MapDtoAnalysisResultToDomain(AnalysisResultDto analysisResultDto)
