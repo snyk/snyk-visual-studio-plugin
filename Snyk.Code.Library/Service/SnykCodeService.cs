@@ -4,8 +4,8 @@
     using System.IO;
     using System.Text;
     using System.Threading.Tasks;
-    using Snyk.Code.Library.Common;
     using Snyk.Code.Library.Domain.Analysis;
+    using Snyk.Common;
 
     /// <inheritdoc/>
     public class SnykCodeService : ISnykCodeService

@@ -4,8 +4,8 @@
     using System.Collections.Generic;
     using System.IO;
     using System.Net;
-    using Service;
-    using Snyk.Code.Library.Common;
+    using Snyk.Common;
+    using Snyk.VisualStudio.Extension.Service;
 
     /// <summary>
     /// Donwnload last Snyk CLI version.

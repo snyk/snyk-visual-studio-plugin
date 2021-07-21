@@ -4,8 +4,8 @@
     using System.Collections.Generic;
     using System.IO;
     using System.Linq;
-    using Settings;
-    using Snyk.Code.Library.Common;
+    using Snyk.Common;
+    using Snyk.VisualStudio.Extension.Settings;
 
     /// <summary>
     /// Incapsulate work logic with Snyk CLI.

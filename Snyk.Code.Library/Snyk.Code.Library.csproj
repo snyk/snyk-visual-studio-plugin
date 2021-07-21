@@ -89,8 +89,6 @@
     <Compile Include="Api\Dto\Analysis\SuggestionDto.cs" />
     <Compile Include="Api\Dto\Analysis\SuggestionIdToFileDto.cs" />
     <Compile Include="Api\Dto\Analysis\TimingDto.cs" />
-    <Compile Include="Common\CollectionExtensions.cs" />
-    <Compile Include="Common\Sha256.cs" />
     <Compile Include="Domain\Analysis\AnalysisResult.cs" />
     <Compile Include="Domain\Analysis\FileAnalysis.cs" />
     <Compile Include="Domain\Analysis\Suggestion.cs" />
@@ -105,7 +103,6 @@
     <Compile Include="Api\Dto\BundleResponseDto.cs" />
     <Compile Include="Api\Dto\CodeFileDto.cs" />
     <Compile Include="Api\Dto\FiltersDto.cs" />
-    <Compile Include="Common\Json.cs" />
     <Compile Include="Api\Dto\LoginResponseDto.cs" />
     <Compile Include="Api\SnykCodeClient.cs" />
     <Compile Include="Api\LoginStatus.cs" />
@@ -123,6 +120,12 @@
     <Analyzer Include="..\packages\Microsoft.VisualStudio.Threading.Analyzers.15.8.122\analyzers\cs\Microsoft.VisualStudio.Threading.Analyzers.dll" />
     <Analyzer Include="..\packages\StyleCop.Analyzers.1.1.118\analyzers\dotnet\cs\StyleCop.Analyzers.CodeFixes.dll" />
     <Analyzer Include="..\packages\StyleCop.Analyzers.1.1.118\analyzers\dotnet\cs\StyleCop.Analyzers.dll" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\Snyk.Common\Snyk.Common.csproj">
+      <Project>{7912ad6d-c154-4504-9ab3-8767d3c46e89}</Project>
+      <Name>Snyk.Common</Name>
+    </ProjectReference>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <Target Name="EnsureNuGetPackageBuildImports" BeforeTargets="PrepareForBuild">

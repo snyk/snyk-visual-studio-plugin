@@ -8,8 +8,8 @@
     using System.Threading.Tasks;
     using Snyk.Code.Library.Api;
     using Snyk.Code.Library.Api.Dto;
-    using Snyk.Code.Library.Common;
     using Snyk.Code.Library.Domain;
+    using Snyk.Common;
 
     /// <inheritdoc/>
     public class BundleService : IBundleService

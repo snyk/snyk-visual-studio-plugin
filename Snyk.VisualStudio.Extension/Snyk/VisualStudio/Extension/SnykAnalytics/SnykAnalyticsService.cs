@@ -6,8 +6,8 @@
     using System.Threading.Tasks;
     using Segment;
     using Segment.Model;
-    using Settings;
-    using Snyk.Code.Library.Common;
+    using Snyk.Common;
+    using Snyk.VisualStudio.Extension.Settings;
 
     /// <summary>
     /// Analytics service.

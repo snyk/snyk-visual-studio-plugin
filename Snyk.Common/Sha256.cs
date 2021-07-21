@@ -1,4 +1,4 @@
-﻿namespace Snyk.Code.Library.Common
+﻿namespace Snyk.Common
 {
     using System.Security.Cryptography;
     using System.Text;
