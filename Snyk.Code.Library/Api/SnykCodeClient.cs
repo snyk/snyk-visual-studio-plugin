@@ -5,6 +5,7 @@
     using System.Net.Http;
     using System.Text;
     using System.Threading.Tasks;
+    using Serilog;
     using Snyk.Code.Library.Api.Dto;
     using Snyk.Code.Library.Api.Dto.Analysis;
     using Snyk.Common;
@@ -29,6 +30,8 @@
 
         private const string AnalysisApiUrl = "publicapi/analysis";
 
+        private static readonly ILogger Logger = LogManager.ForContext<SnykCodeClient>();
+
         private readonly HttpClient httpClient;
 
         private LoginResponseDto loginResponse;
@@ -47,6 +50,8 @@
             };
 
             this.httpClient.DefaultRequestHeaders.Add("Session-Token", token);
+
+            Logger.Debug("SnykCodeClient created with url {BaseUrl} and token {Token}.", baseUrl, token);
         }
 
         /// <summary>
@@ -66,6 +71,8 @@
         /// <returns>Analysis results with suggestions and the relative positions.</returns>
         public async Task<AnalysisResultDto> GetAnalysisAsync(string bundleId)
         {
+            Logger.Debug("Request GetAnalysis for bundle id {BundleId}.", bundleId);
+
             if (string.IsNullOrEmpty(bundleId))
             {
                 throw new ArgumentException("Bundle id is null or empty.");
@@ -97,6 +104,8 @@
         /// <returns>True if upload success.</returns>
         public async Task<bool> UploadFilesAsync(string bundleId, IEnumerable<CodeFileDto> codeFiles)
         {
+            Logger.Debug("Request UploadFiles for bundle id {BundleId}.", bundleId);
+
             if (string.IsNullOrEmpty(bundleId))
             {
                 throw new ArgumentException("Bundle id is null or empty.");
@@ -133,6 +142,8 @@
         /// <returns>Extended bundle object.</returns>
         public async Task<BundleResponseDto> ExtendBundleAsync(string bundleId, Dictionary<string, string> pathToHashFileDict, List<string> removedFiles)
         {
+            Logger.Debug("Request ExtendBundle for bundle id {BundleId}.", bundleId);
+
             if (string.IsNullOrEmpty(bundleId))
             {
                 throw new ArgumentException("Previous Bundle is null or empty.");
@@ -178,6 +189,8 @@
         /// </returns>
         public async Task<BundleResponseDto> CheckBundleAsync(string bundleId)
         {
+            Logger.Debug("Request CheckBundle for bundle id {BundleId}.", bundleId);
+
             if (string.IsNullOrEmpty(bundleId))
             {
                 throw new ArgumentException("Bundle id is null or empty.");
@@ -206,6 +219,8 @@
         /// <returns>Bundle object with bundle id, missing files and upload url.</returns>
         public async Task<BundleResponseDto> CreateBundleAsync(IDictionary<string, string> pathToHashFileDict)
         {
+            Logger.Debug("Request CreateBundle for total files count {Count}", pathToHashFileDict.Count);
+
             if (pathToHashFileDict == null)
             {
                 throw new ArgumentException("Bundle files is null.");
@@ -240,6 +255,8 @@
         /// <returns><see cref="FiltersDto"/></returns>
         public async Task<FiltersDto> GetFiltersAsync()
         {
+            Logger.Debug("Request GetFilters");
+
             var request = new HttpRequestMessage(HttpMethod.Get, FiltersApiUrl);
 
             var response = await this.httpClient.SendAsync(request);
@@ -265,6 +282,8 @@
         /// <returns><see cref="loginResponse"/> object.</returns>
         public async Task<LoginResponseDto> LoginAsync(string userAgent = "")
         {
+            Logger.Debug("Request Login.");
+
             if (string.IsNullOrEmpty(userAgent))
             {
                 throw new ArgumentException("User agent is null or empty");
@@ -295,6 +314,8 @@
         /// <returns><see cref="LoginStatus"/> object.</returns>
         public async Task<LoginStatus> CheckSessionAsync()
         {
+            Logger.Debug("Request CheckSession.");
+
             var request = new HttpRequestMessage(HttpMethod.Get, CheckSessionApiUrl);
 
             HttpResponseMessage httpResponse = await this.httpClient.SendAsync(request);
