@@ -6,6 +6,7 @@
     using System.Linq;
     using System.Text;
     using System.Threading.Tasks;
+    using Serilog;
     using Snyk.Code.Library.Api;
     using Snyk.Code.Library.Api.Dto;
     using Snyk.Code.Library.Domain;
@@ -15,6 +16,8 @@
     public class BundleService : IBundleService
     {
         private const int UploadFileRequestAttempts = 5;
+
+        private static readonly ILogger Logger = LogManager.ForContext<BundleService>();
 
         private readonly ISnykCodeClient codeClient;
 
@@ -45,6 +48,8 @@
         /// <inheritdoc/>
         public async Task<bool> UploadMissingFilesAsync(Bundle bundle)
         {
+            Logger.Debug("Start UploadMissingFiles.");
+
             var resultBundle = bundle;
 
             for (int counter = 0; counter < UploadFileRequestAttempts; counter++)
@@ -58,6 +63,8 @@
                     return true;
                 }
             }
+
+            Logger.Debug("Not all files uploadded successfully. Not uploaded files {MissingFiles}", resultBundle.MissingFiles);
 
             return false;
         }
@@ -157,7 +164,6 @@
 
             Task<BundleResponseDto> bundleDto = null;
 
-            // If payload < 4 max bundle chunk size just send this bundle and return results.
             if (payloadSize < maxChunkSize)
             {
                 bundleDto = this.codeClient.ExtendBundleAsync(bundleId, pathToHashFileDict, filesToRemovePaths);

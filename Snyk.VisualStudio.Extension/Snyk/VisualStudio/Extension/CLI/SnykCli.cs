@@ -17,11 +17,6 @@
         /// </summary>
         public const string CliFileName = "snyk-win.exe";
 
-        /// <summary>
-        /// Directory name for store Snyk CLI.
-        /// </summary>
-        public const string SnykConfigurationDirectoryName = "Snyk";
-
         private ISnykOptions options;
 
         /// <summary>
@@ -35,15 +30,37 @@
         public SnykConsoleRunner ConsoleRunner { get; set; }
 
         /// <summary>
-        /// Get Snyk CLI directory path. By default it's $UserDirectory\.AppData\Snyk.
+        /// Gets or sets a value indicating whether logger instance.
         /// </summary>
-        /// <returns>CLI directory path.</returns>
-        public static string GetSnykDirectoryPath()
-        {
-            string appDataDirectoryPath = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData);
+        public SnykActivityLogger Logger { get; set; }
 
-            return Path.Combine(appDataDirectoryPath, SnykConfigurationDirectoryName);
+        /// <summary>
+        /// Gets or sets a value indicating whether <see cref="ISnykOptions"/> (settings).
+        /// </summary>
+        public ISnykOptions Options
+        {
+            get
+            {
+                return this.options;
+            }
+
+            set
+            {
+                this.options = value;
+            }
         }
+
+        /// <summary>
+        /// Get Snyk CLI file path.
+        /// </summary>
+        /// <returns>CLI path string.</returns>
+        public static string GetSnykCliPath() => Path.Combine(SnykDirectory.GetSnykAppDataDirectoryPath(), CliFileName);
+
+        /// <summary>
+        /// Check is CLI file exists in $UserDirectory\.AppData\Snyk.
+        /// </summary>
+        /// <returns>True if CLI file exists.</returns>
+        public static bool IsCliExists() => File.Exists(GetSnykCliPath());
 
         /// <summary>
         /// Get Snyk API token from settings.
@@ -201,39 +218,6 @@
         /// </summary>
         /// <param name="json">Source json string.</param>
         /// <returns>True if json string contains vulnerabilities object(s).</returns>
-        public bool IsSuccessCliJsonString(string json) => json.Contains("\"vulnerabilities\":") && !json.Contains("\"error\":");        
-
-        /// <summary>
-        /// Get Snyk CLI file path.
-        /// </summary>
-        /// <returns>CLI path string.</returns>
-        public static string GetSnykCliPath() => Path.Combine(GetSnykDirectoryPath(), CliFileName);
-
-        /// <summary>
-        /// Check is CLI file exists in $UserDirectory\.AppData\Snyk.
-        /// </summary>
-        /// <returns>True if CLI file exists.</returns>
-        public static bool IsCliExists() => File.Exists(GetSnykCliPath());
-
-        /// <summary>
-        /// Gets or sets a value indicating whether logger instance.
-        /// </summary>
-        public SnykActivityLogger Logger { get; set; }
-
-        /// <summary>
-        /// Gets or sets a value indicating whether <see cref="ISnykOptions"/> (settings).
-        /// </summary>
-        public ISnykOptions Options
-        {
-            get
-            {
-                return this.options;
-            }
-
-            set
-            {
-                this.options = value;
-            }
-        }
+        public bool IsSuccessCliJsonString(string json) => json.Contains("\"vulnerabilities\":") && !json.Contains("\"error\":");
     }
 }
