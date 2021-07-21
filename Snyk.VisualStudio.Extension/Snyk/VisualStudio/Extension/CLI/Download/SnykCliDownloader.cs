@@ -201,7 +201,7 @@
 
                     this.logger?.LogInformation($"CLI download url: {cliDownloadUrl}");
 
-                    string snykDirectoryPath = SnykCli.GetSnykDirectoryPath();
+                    string snykDirectoryPath = SnykDirectory.GetSnykAppDataDirectoryPath();
 
                     progressWorker?.CancelIfCancellationRequested();
 
