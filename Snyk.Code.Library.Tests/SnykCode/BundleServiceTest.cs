@@ -5,9 +5,9 @@
     using Moq;
     using Snyk.Code.Library.Api;
     using Snyk.Code.Library.Api.Dto;
-    using Snyk.Code.Library.Common;
     using Snyk.Code.Library.Domain;
     using Snyk.Code.Library.Service;
+    using Snyk.Common;
     using Xunit;
 
     /// <summary>

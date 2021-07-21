@@ -7,7 +7,7 @@
     using System.Threading.Tasks;
     using Snyk.Code.Library.Api.Dto;
     using Snyk.Code.Library.Api.Dto.Analysis;
-    using Snyk.Code.Library.Common;
+    using Snyk.Common;
 
     /// <inheritdoc />
     public class SnykCodeClient: ISnykCodeClient
