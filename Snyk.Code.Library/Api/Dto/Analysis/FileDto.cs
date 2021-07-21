@@ -20,6 +20,6 @@
         /// <summary>
         /// Gets or sets a value indicating issue marker in this file or other reference files.
         /// </summary>
-        public IEnumerable<MarkerDto> Markers { get; set; }
+        public IList<MarkerDto> Markers { get; set; }
     }
 }

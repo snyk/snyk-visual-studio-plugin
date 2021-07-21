@@ -1,11 +1,11 @@
-﻿namespace Snyk.Code.Library.Api.Dto.Analysis
+﻿namespace Snyk.Code.Library.Domain.Analysis
 {
     using System.Collections.Generic;
 
     /// <summary>
-    /// Example commit fix for suggestion.
+    /// Contains suggestion fix information how to improve code quality.
     /// </summary>
-    public class ExampleCommitFixDto
+    public class SuggestionFix
     {
         /// <summary>
         /// Gets or sets a value indicating commit url.
@@ -13,8 +13,9 @@
         public string CommitURL { get; set; }
 
         /// <summary>
-        /// Gets or sets a value indicating anaylysis line information.
+        /// Gets or sets a value indicating suggestion fix lines.
         /// </summary>
-        public IList<LineDto> Lines { get; set; }
+
+        public IList<FixLine> Lines { get; set; }
     }
 }

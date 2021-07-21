@@ -6,6 +6,8 @@
     using Snyk.Code.Library.Api;
     using Snyk.Code.Library.Api.Dto;
     using Snyk.Code.Library.Common;
+    using Snyk.Code.Library.Domain;
+    using Snyk.Code.Library.Service;
     using Xunit;
 
     /// <summary>
@@ -13,6 +15,84 @@
     /// </summary>
     public class BundleServiceTest
     {
+        [Fact]
+        public async Task BundleService_TwoFilesProvided_UploadSuccessfullAfterTreeAttemptsAsync()
+        {
+            string filePath1 = TestResource.GetFileFullPath("app1.js");
+            string filePath2 = TestResource.GetFileFullPath("app2.js");
+
+            var codeClientMock = new Mock<ISnykCodeClient>();
+
+            var bundle = new Bundle
+            {
+                Id = "testId",
+                MissingFiles = new string[] { filePath1, filePath2 },
+            };
+
+            var bundleDto = new BundleResponseDto
+            {
+                Id = bundle.Id,
+                MissingFiles = new string[] { filePath1, filePath2 },
+            };
+
+            codeClientMock
+                .Setup(codeClient => codeClient.CheckBundleAsync(bundle.Id).Result)
+                .Returns(bundleDto);
+
+            string fileContent1 = TestResource.GetFileContent("app1.js");
+            string fileContent2 = TestResource.GetFileContent("app2.js");
+
+            var codeFileDtos = new List<CodeFileDto>
+            {
+                new CodeFileDto(Sha256.ComputeHash(fileContent1), fileContent1),
+                new CodeFileDto(Sha256.ComputeHash(fileContent2), fileContent2),
+            };
+
+            var mockMethodCallsCount = 1;
+
+            codeClientMock
+                .Setup(codeClient => codeClient.UploadFilesAsync(bundle.Id, It.IsAny<IEnumerable<CodeFileDto>>()).Result)
+                .Returns(true)
+                .Callback<string, IEnumerable<CodeFileDto>>((str, codeFiles) =>
+                {
+                    mockMethodCallsCount++;
+
+                    if (mockMethodCallsCount > 3)
+                    {
+                        bundleDto.MissingFiles = new string[] { };
+                    }
+                });
+
+            var bundleService = new BundleService(codeClientMock.Object);
+
+            await bundleService.UploadMissingFilesAsync(bundle);
+
+            codeClientMock
+                .Verify(codeClient => codeClient.CheckBundleAsync(bundle.Id), Times.Exactly(3));
+
+            codeClientMock
+                .Verify(codeClient => codeClient.UploadFilesAsync(bundle.Id, It.IsAny<IEnumerable<CodeFileDto>>()), Times.Exactly(3));
+        }
+
+        [Fact]
+        public async Task BundleService_ActiveBundleProvided_CheckBundleSuccessfullAsync()
+        {
+            var codeClientMock = new Mock<ISnykCodeClient>();
+
+            var dummyBundleDto = new BundleResponseDto { Id = "dummy id" };
+
+            codeClientMock
+                .Setup(codeClient => codeClient.CheckBundleAsync(dummyBundleDto.Id).Result)
+                .Returns(dummyBundleDto);
+
+            var bundleService = new BundleService(codeClientMock.Object);
+
+            var bundle = await bundleService.CheckBundleAsync(dummyBundleDto.Id);
+
+            Assert.NotNull(bundle);
+            Assert.Equal(dummyBundleDto.Id, bundle.Id);
+        }
+
         [Fact]
         public async Task BundleService_ThreeFilesProvided_UploadedSuccessfullyAsync()
         {
@@ -121,7 +201,7 @@
 
             Assert.NotNull(uploadedBundle);
             Assert.NotEmpty(uploadedBundle.Id);
-            Assert.Equal(3, uploadedBundle.MissingFiles.Length);
+            Assert.Equal(3, uploadedBundle.MissingFiles.Count);
 
             codeClientMock
                 .Verify(codeClient => codeClient.CreateBundleAsync(filePathToHashDict));
@@ -179,7 +259,7 @@
 
             Assert.NotNull(extendedBundle);
             Assert.True(!string.IsNullOrEmpty(extendedBundle.Id));
-            Assert.Equal(6, extendedBundle.MissingFiles.Length);
+            Assert.Equal(6, extendedBundle.MissingFiles.Count);
 
             codeClientMock
                 .Verify(codeClient => codeClient.CreateBundleAsync(filePathToHashDict));
@@ -282,7 +362,7 @@
 
             Assert.NotNull(bundleDto);
             Assert.NotEmpty(bundleDto.Id);
-            Assert.Equal(50, bundleDto.MissingFiles.Length);
+            Assert.Equal(50, bundleDto.MissingFiles.Count);
 
             codeClientMock
                 .Verify(codeClient => codeClient.CreateBundleAsync(It.IsAny<Dictionary<string, string>>()));

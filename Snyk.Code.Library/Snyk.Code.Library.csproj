@@ -49,6 +49,7 @@
     <Reference Include="System.Numerics.Vectors, Version=4.1.4.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a, processorArchitecture=MSIL">
       <HintPath>..\packages\System.Numerics.Vectors.4.5.0\lib\net46\System.Numerics.Vectors.dll</HintPath>
     </Reference>
+    <Reference Include="System.Runtime.Caching" />
     <Reference Include="System.Runtime.CompilerServices.Unsafe, Version=5.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a, processorArchitecture=MSIL">
       <HintPath>..\packages\System.Runtime.CompilerServices.Unsafe.5.0.0\lib\net45\System.Runtime.CompilerServices.Unsafe.dll</HintPath>
     </Reference>
@@ -72,6 +73,9 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Domain\Analysis\AnalysisStatus.cs" />
+    <Compile Include="Domain\Analysis\FixLine.cs" />
+    <Compile Include="Service\AnalysisService.cs" />
     <Compile Include="Api\Dto\Analysis\AnalysisResultDto.cs" />
     <Compile Include="Api\Dto\Analysis\AnalysisResultsDto.cs" />
     <Compile Include="Api\Dto\Analysis\CoverageDto.cs" />
@@ -85,9 +89,18 @@
     <Compile Include="Api\Dto\Analysis\SuggestionDto.cs" />
     <Compile Include="Api\Dto\Analysis\SuggestionIdToFileDto.cs" />
     <Compile Include="Api\Dto\Analysis\TimingDto.cs" />
-    <Compile Include="Common\CollectionExtensionMethods.cs" />
+    <Compile Include="Common\CollectionExtensions.cs" />
     <Compile Include="Common\Sha256.cs" />
+    <Compile Include="Domain\Analysis\AnalysisResult.cs" />
+    <Compile Include="Domain\Analysis\FileAnalysis.cs" />
+    <Compile Include="Domain\Analysis\Suggestion.cs" />
+    <Compile Include="Domain\Analysis\SuggestionFix.cs" />
     <Compile Include="Domain\Bundle.cs" />
+    <Compile Include="Service\FiltersService.cs" />
+    <Compile Include="Service\IAnalysisService.cs" />
+    <Compile Include="Service\IBundleService.cs" />
+    <Compile Include="Service\IFiltersService.cs" />
+    <Compile Include="Service\ISnykCodeService.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Api\Dto\BundleResponseDto.cs" />
     <Compile Include="Api\Dto\CodeFileDto.cs" />
@@ -98,7 +111,8 @@
     <Compile Include="Api\SnykCodeClient.cs" />
     <Compile Include="Api\LoginStatus.cs" />
     <Compile Include="Api\SnykCodeException.cs" />
-    <Compile Include="BundleService.cs" />
+    <Compile Include="Service\BundleService.cs" />
+    <Compile Include="Service\SnykCodeService.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />
