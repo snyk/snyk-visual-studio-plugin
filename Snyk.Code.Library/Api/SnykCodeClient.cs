@@ -51,7 +51,7 @@
 
             this.httpClient.DefaultRequestHeaders.Add("Session-Token", token);
 
-            Logger.Debug("SnykCodeClient created with url {BaseUrl} and token {Token}.", baseUrl, token);
+            Logger.Debug("SnykCodeClient created with url {BaseUrl}.", baseUrl);
         }
 
         /// <summary>
