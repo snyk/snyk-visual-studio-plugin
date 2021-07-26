@@ -1,14 +1,9 @@
 ﻿namespace Snyk.VisualStudio.Extension.UI.Tree
-{    
-    using System;
-    using System.Collections.ObjectModel;
+{
     using System.ComponentModel;
-    using System.Globalization;
     using System.Windows;
     using System.Windows.Controls;
     using System.Windows.Data;
-    using System.Windows.Media;
-    using System.Windows.Media.Imaging;
     using Snyk.Code.Library.Domain.Analysis;
     using Snyk.VisualStudio.Extension.CLI;
 
@@ -24,11 +19,6 @@
         private RootVulnerabilityTreeNode snykCodeRootNode = new RootVulnerabilityTreeNode();
 
         /// <summary>
-        /// Selecteted vulnerability node in tree event handler.
-        /// </summary>
-        public event RoutedEventHandler SelectedVulnerabilityChanged;
-
-        /// <summary>
         /// Initializes a new instance of the <see cref="SnykFilterableTree"/> class.
         /// </summary>
         public SnykFilterableTree()
@@ -42,6 +32,11 @@
         }
 
         /// <summary>
+        /// Selecteted vulnerability node in tree event handler.
+        /// </summary>
+        public event RoutedEventHandler SelectedVulnerabilityChanged;
+
+        /// <summary>
         /// Gets a value indicating whether tree items.
         /// </summary>
         public ItemCollection Items => this.vulnerabilitiesTree.Items;
@@ -50,6 +45,13 @@
         /// Gets a value indicating whether tree selected node.
         /// </summary>
         public object SelectedItem => this.vulnerabilitiesTree.SelectedItem;
+
+        /// <summary>
+        /// Find resource by key.
+        /// </summary>
+        /// <param name="resourceKey">Resource key.</param>
+        /// <returns>object</returns>
+        public static object GetControlResource(object resourceKey) => instance.FindResource(resourceKey);
 
         /// <summary>
         /// Append <see cref="CliResult"/> data to tree.
@@ -114,6 +116,7 @@
                             Id = suggestion.Id,
                             Description = suggestion.Message,
                             Title = suggestion.Rule,
+                            Severity = Severity.FromInt(suggestion.Severity),
                         },
                     };
 
@@ -137,13 +140,6 @@
         /// Clear tree nodes.
         /// </summary>
         public void Clear() => this.snykCodeRootNode.Clean();
-
-        /// <summary>
-        /// Find resource by key.
-        /// </summary>
-        /// <param name="resourceKey">Resource key.</param>
-        /// <returns>object</returns>
-        public static object GetControlResource(object resourceKey) => instance.FindResource(resourceKey);
 
         /// <summary>
         /// Display all tree nodes.
@@ -198,61 +194,4 @@
 
         private void TreeViewItem_Selected(object sender, RoutedEventArgs eventArgs) => MessageBox.Show(eventArgs.ToString());
     }
-
-    //public class SnykImageConverter : IValueConverter
-    //{
-    //    public object Convert(object value, Type targetType, object parameter, CultureInfo culture) => 
-    //        SnykFilterableTree.GetControlResource(value) as BitmapImage;
-
-    //    public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture) => string.Empty;
-    //}
-
-    
-
-    //public class LeftMarginMultiplierConverter : IValueConverter
-    //{
-    //    public double Length { get; set; }
-
-    //    public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
-    //    {
-    //        TreeViewItem item = value as TreeViewItem;
-
-    //        if (item == null)
-    //        {
-    //            return new Thickness(0);
-    //        }
-                
-    //        return new Thickness(Length * item.GetDepth(), 0, 0, 0);
-    //    }
-
-    //    public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture)
-    //    {
-    //        throw new System.NotImplementedException();
-    //    }
-    //}
-
-    //public static class TreeViewItemExtensions
-    //{
-    //    public static int GetDepth(this TreeViewItem item)
-    //    {
-    //        TreeViewItem parent;
-    //        while ((parent = GetParent(item)) != null)
-    //        {
-    //            return GetDepth(parent) + 1;
-    //        }
-    //        return 0;
-    //    }
-
-    //    private static TreeViewItem GetParent(TreeViewItem item)
-    //    {
-    //        DependencyObject parent = item != null ? VisualTreeHelper.GetParent(item) : null;
-
-    //        while (parent != null && !(parent is TreeViewItem || parent is TreeView))
-    //        {
-    //            parent = VisualTreeHelper.GetParent(parent);
-    //        }
-
-    //        return parent as TreeViewItem;
-    //    }
-    //}
 }
