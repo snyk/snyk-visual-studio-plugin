@@ -14,9 +14,9 @@
     {
         private static SnykFilterableTree instance;
 
-        private RootVulnerabilityTreeNode cliRootNode = new RootVulnerabilityTreeNode();
+        private RootTreeNode cliRootNode = new ScaRootTreeNode();
 
-        private RootVulnerabilityTreeNode snykCodeRootNode = new RootVulnerabilityTreeNode();
+        private RootTreeNode snykCodeRootNode = new SnykCodeRootTreeNode();
 
         /// <summary>
         /// Initializes a new instance of the <see cref="SnykFilterableTree"/> class.
@@ -63,14 +63,14 @@
 
             groupVulnerabilities.ForEach(delegate (CliGroupedVulnerabilities groupedVulnerabilities)
             {
-                var fileNode = new VulnerabilityTreeNode
+                var fileNode = new ScaVulnerabilityTreeNode
                 {
                     Vulnerabilities = groupedVulnerabilities,
                 };
 
                 foreach (string key in groupedVulnerabilities.VulnerabilitiesMap.Keys)
                 {
-                    var node = new VulnerabilityTreeNode
+                    var node = new ScaVulnerabilityTreeNode
                     {
                         Vulnerability = groupedVulnerabilities.VulnerabilitiesMap[key][0],
                     };
@@ -81,7 +81,7 @@
                 this.snykCodeRootNode.Items.Add(fileNode);
             });
 
-            this.snykCodeRootNode.SetDetailsTitle(
+            this.snykCodeRootNode.SetDetails(
                 cliResult.Count,
                 cliResult.CriticalSeverityCount,
                 cliResult.HighSeverityCount,
@@ -99,7 +99,7 @@
         {
             foreach (var fileAnalyses in analysisResult.FileAnalyses)
             {
-                var fileNode = new VulnerabilityTreeNode
+                var fileNode = new ScaVulnerabilityTreeNode
                 {
                     Vulnerabilities = new CliGroupedVulnerabilities
                     {
@@ -109,7 +109,7 @@
 
                 foreach (var suggestion in fileAnalyses.Suggestions)
                 {
-                    var node = new VulnerabilityTreeNode
+                    var node = new ScaVulnerabilityTreeNode
                     {
                         Vulnerability = new Vulnerability
                         {
@@ -126,7 +126,7 @@
                 this.snykCodeRootNode.Items.Add(fileNode);
             }
 
-            this.snykCodeRootNode.SetDetailsTitle(
+            this.snykCodeRootNode.SetDetails(
                 analysisResult.FileAnalyses.Count,
                 0,
                 0,
@@ -148,7 +148,7 @@
         {
             this.Dispatcher.Invoke(() =>
             {
-                foreach (VulnerabilityTreeNode treeNode in this.snykCodeRootNode.Items)
+                foreach (TreeNode treeNode in this.snykCodeRootNode.Items)
                 {
                     ICollectionView collectionView = CollectionViewSource.GetDefaultView(treeNode.Items);
 
@@ -169,11 +169,11 @@
 
                 string searchString = severityFilter.GetOnlyQueryString();
 
-                foreach (VulnerabilityTreeNode treeNode in this.snykCodeRootNode.Items)
+                foreach (TreeNode treeNode in this.snykCodeRootNode.Items)
                 {
                     CollectionViewSource.GetDefaultView(treeNode.Items).Filter = filterObject =>
                     {
-                        var filteredTreeNode = filterObject as VulnerabilityTreeNode;
+                        var filteredTreeNode = filterObject as ScaVulnerabilityTreeNode;
                         var vulnerability = filteredTreeNode.Vulnerability;
 
                         bool isVulnIncluded = severityFilter.IsVulnerabilityIncluded(vulnerability.Severity);

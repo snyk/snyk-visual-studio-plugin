@@ -167,7 +167,7 @@
                 </Style>
             </TreeView.ItemContainerStyle>
             <TreeView.ItemTemplate>
-                <HierarchicalDataTemplate DataType="{x:Type local:VulnerabilityTreeNode}" ItemsSource="{Binding Items}">
+                <HierarchicalDataTemplate DataType="{x:Type local:TreeNode}" ItemsSource="{Binding Items}">
                     <StackPanel Orientation="Horizontal" Height="19">
                         <Image x:Name="icon" SnapsToDevicePixels="True" Margin="0, 0, 5, 0"  
                                Width="16" Height="16"
