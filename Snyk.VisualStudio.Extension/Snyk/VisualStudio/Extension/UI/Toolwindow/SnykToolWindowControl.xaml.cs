@@ -416,7 +416,7 @@
             {
                 this.HideIssueMessages();
 
-                var treeNode = this.vulnerabilitiesTree.SelectedItem as VulnerabilityTreeNode;
+                var treeNode = this.vulnerabilitiesTree.SelectedItem as ScaVulnerabilityTreeNode;
 
                 if (treeNode == null)
                 {

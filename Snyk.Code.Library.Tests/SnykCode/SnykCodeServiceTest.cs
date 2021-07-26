@@ -91,7 +91,7 @@
                 .Verify(bundleService => bundleService.CreateBundleAsync(It.IsAny<Dictionary<string, string>>(), It.IsAny<int>()), Times.Exactly(1));
 
             bundleServiceMock
-                .Verify(bundleService => bundleService.UploadMissingFilesAsync(It.IsAny<Bundle>()), Times.Exactly(1));
+                .Verify(bundleService => bundleService.UploadMissingFilesAsync(It.IsAny<Bundle>(), It.IsAny<string>()), Times.Exactly(1));
 
             analysisServiceMock
                 .Verify(analysisService => analysisService.GetAnalysisAsync(bundleId), Times.Exactly(1));

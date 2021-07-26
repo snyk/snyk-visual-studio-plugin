@@ -116,7 +116,8 @@
     <Compile Include="Snyk\VisualStudio\Extension\Theme\ThemeInfo.cs" />
     <Compile Include="Snyk\VisualStudio\Extension\Theme\VsBroadcastMessageEvents.cs" />
     <Compile Include="Snyk\VisualStudio\Extension\UI\Toolwindow\UpdateDownloadState.cs" />
-    <Compile Include="Snyk\VisualStudio\Extension\UI\Tree\RootVulnerabilityTreeNode.cs" />
+    <Compile Include="Snyk\VisualStudio\Extension\UI\Tree\ScaRootTreeNode.cs" />
+    <Compile Include="Snyk\VisualStudio\Extension\UI\Tree\RootTreeNode.cs" />
     <Compile Include="Snyk\VisualStudio\Extension\UI\SnykIconProvider.cs" />
     <Compile Include="Snyk\VisualStudio\Extension\UI\Toolwindow\DownloadState.cs" />
     <Compile Include="Snyk\VisualStudio\Extension\UI\Toolwindow\EmptyState.cs" />
@@ -137,6 +138,8 @@
     <Compile Include="Snyk\VisualStudio\Extension\UI\Toolwindow\ScanningState.cs" />
     <Compile Include="Snyk\VisualStudio\Extension\UI\Toolwindow\ScanResultsState.cs" />
     <Compile Include="Snyk\VisualStudio\Extension\UI\SeverityFilter.cs" />
+    <Compile Include="Snyk\VisualStudio\Extension\UI\Tree\ScaVulnerabilityTreeNode.cs" />
+    <Compile Include="Snyk\VisualStudio\Extension\UI\Tree\SnykCodeRootTreeNode.cs" />
     <Compile Include="Snyk\VisualStudio\Extension\UI\Tree\SnykFilterableTree.xaml.cs">
       <DependentUpon>SnykFilterableTree.xaml</DependentUpon>
     </Compile>
@@ -175,7 +178,6 @@
     <Compile Include="Snyk\VisualStudio\Extension\UI\Toolwindow\ToolWindowContext.cs" />
     <Compile Include="Snyk\VisualStudio\Extension\UI\Toolwindow\ToolWindowState.cs" />
     <Compile Include="Snyk\VisualStudio\Extension\UI\Tree\TreeNode.cs" />
-    <Compile Include="Snyk\VisualStudio\Extension\UI\Tree\VulnerabilityTreeNode.cs" />
   </ItemGroup>
   <ItemGroup>
     <Content Include="appsettings.json">
@@ -242,6 +244,9 @@
     <Resource Include="Resources\SeverityMedium.png" />
     <Resource Include="Resources\Settings.png" />
     <Resource Include="Resources\SeverityCritical.png" />
+    <Resource Include="Resources\SnykCode.png">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Resource>
     <Content Include="Resources\SnykDogLogo.png">
       <IncludeInVSIX>true</IncludeInVSIX>
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>

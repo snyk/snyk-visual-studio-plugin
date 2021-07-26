@@ -13,6 +13,16 @@
         public const string OpenSourceSecurityIconPath = ResourcesDirectoryPath + "OpenSourceSecurity.png";
 
         /// <summary>
+        /// SnykCode icon path.
+        /// </summary>
+        public const string SnykCodeIconPath = ResourcesDirectoryPath + "SnykCode.png";
+
+        /// <summary>
+        /// Default file icon path.
+        /// </summary>
+        public const string DefaultFileIconPath = ResourcesDirectoryPath + "DefaultFileIcon.png";
+
+        /// <summary>
         /// Open source security icon path for dark mode.
         /// </summary>
         public const string OpenSourceSecurityDarkIconPath = ResourcesDirectoryPath + "OpenSourceSecurityDark.png";
