@@ -446,18 +446,24 @@
 
             foreach (string filePath in filePaths)
             {
-                string fullFilePath = filePath;
-
-                if (basePath != string.Empty)
+                try
                 {
-                    fullFilePath = basePath + filePath;
+                    string fullFilePath = filePath;
+
+                    if (basePath != string.Empty)
+                    {
+                        fullFilePath = basePath + filePath;
+                    }
+
+                    string fileContent = File.ReadAllText(fullFilePath, Encoding.UTF8);
+
+                    string fileHash = Sha256.ComputeHash(fileContent);
+
+                    fileHashToContentDict.Add(fileHash, fileContent);
+                } catch (Exception exception)
+                {
+                    Console.WriteLine(exception.Message);
                 }
-
-                string fileContent = File.ReadAllText(fullFilePath, Encoding.UTF8);
-
-                string fileHash = Sha256.ComputeHash(fileContent);
-
-                fileHashToContentDict.Add(fileHash, fileContent);
             }
 
             return fileHashToContentDict;

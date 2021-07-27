@@ -1,5 +1,6 @@
 ﻿namespace Snyk.Code.Library.Service
 {
+    using System;
     using System.Collections.Generic;
     using System.IO;
     using System.Text;
@@ -56,30 +57,36 @@
 
             foreach (string filePath in filePaths)
             {
-                string fullFilePath = filePath;
+                try {
+                    string fullFilePath = filePath;
 
-                if (basePath != string.Empty)
-                {
-                    fullFilePath = basePath + filePath;
+                    if (basePath != string.Empty)
+                    {
+                        fullFilePath = basePath + filePath;
+                    }
+
+                    string fileContent = File.ReadAllText(fullFilePath, Encoding.UTF8);
+
+                    string fileHash = Sha256.ComputeHash(fileContent);
+
+                    string codeFilePath = filePath;
+
+                    if (codeFilePath.IndexOf("\\\\") != -1)
+                    {
+                        codeFilePath = filePath.Replace("\\\\", "/");
+                    }
+
+                    if (codeFilePath.IndexOf("\\") != -1)
+                    {
+                        codeFilePath = filePath.Replace("\\", "/");
+                    }
+
+                    filePathToHashDict.Add(codeFilePath, fileHash);
                 }
-
-                string fileContent = File.ReadAllText(fullFilePath, Encoding.UTF8);
-
-                string fileHash = Sha256.ComputeHash(fileContent);
-
-                string codeFilePath = filePath;
-
-                if (codeFilePath.IndexOf("\\\\") != -1)
+                catch (Exception exception)
                 {
-                    codeFilePath = filePath.Replace("\\\\", "/");
+                    Console.WriteLine(exception.Message);
                 }
-
-                if (codeFilePath.IndexOf("\\") != -1)
-                {
-                    codeFilePath = filePath.Replace("\\", "/");
-                }
-
-                filePathToHashDict.Add(codeFilePath, fileHash);
             }
 
             return filePathToHashDict;
