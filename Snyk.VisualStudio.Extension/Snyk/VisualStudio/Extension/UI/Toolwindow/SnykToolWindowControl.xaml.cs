@@ -416,57 +416,86 @@
             {
                 this.HideIssueMessages();
 
-                var treeNode = this.vulnerabilitiesTree.SelectedItem as ScaVulnerabilityTreeNode;
+                TreeNode treeNode = null;
+
+                if (vulnerabilitiesTree.SelectedItem is ScaVulnerabilityTreeNode)
+                {
+                    vulnerabilityDescriptionGrid.Visibility = Visibility.Visible;
+
+                    var scaTreeNode = this.vulnerabilitiesTree.SelectedItem as ScaVulnerabilityTreeNode;
+
+                    treeNode = scaTreeNode;
+
+                    if (scaTreeNode.Vulnerability != null)
+                    {
+                        this.vulnerabilityDetailsPanel.Visibility = Visibility.Visible;
+
+                        var vulnerability = scaTreeNode.Vulnerability;
+
+                        this.SetupSeverity(vulnerability);
+
+                        this.vulnerableModule.Text = vulnerability.Name;
+
+                        string introducedThroughText = vulnerability.From != null && vulnerability.From.Length != 0
+                                    ? string.Join(", ", vulnerability.From) : "";
+
+                        this.introducedThrough.Text = introducedThroughText;
+                        this.exploitMaturity.Text = vulnerability.Exploit;
+                        this.fixedIn.Text = String.IsNullOrWhiteSpace(vulnerability.Remediation)
+                            ? $"There is no fixed version for {vulnerability.Name}" : vulnerability.Remediation;
+
+                        string detaiedIntroducedThroughText = vulnerability.From != null && vulnerability.From.Length != 0
+                                    ? string.Join(" > ", vulnerability.From) : "";
+
+                        this.detaiedIntroducedThrough.Text = detaiedIntroducedThroughText;
+
+                        this.remediation.Text = vulnerability.FixedIn != null && vulnerability.FixedIn.Length != 0
+                                                 ? "Upgrade to " + string.Join(" > ", vulnerability.FixedIn) : "";
+
+                        this.overview.Html = Markdig.Markdown.ToHtml(vulnerability.Description);
+
+                        this.moreAboutThisIssue.NavigateUri = new Uri(vulnerability.Url);
+
+                        this.serviceProvider.AnalyticsService.LogUserSeesAnIssueEvent(vulnerability.Id, vulnerability.Severity);
+                    }
+                }
+
+                if (vulnerabilitiesTree.SelectedItem is SnykCodeVulnerabilityTreeNode)
+                {
+                    vulnerabilityDescriptionGrid.Visibility = Visibility.Collapsed;
+
+                    this.vulnerabilityDetailsPanel.Visibility = Visibility.Visible;
+
+                    snykCodeDescriptionGrid.Visibility = Visibility.Visible;
+
+                    var snykCodeTreeNode = this.vulnerabilitiesTree.SelectedItem as SnykCodeVulnerabilityTreeNode;
+
+                    treeNode = snykCodeTreeNode;
+
+                    this.SetupSeverity(new Vulnerability { Severity = Severity.FromInt(snykCodeTreeNode.Suggestion.Severity), });
+
+                    this.snykCodeDescription.Text = snykCodeTreeNode.Suggestion.Message;
+                }
 
                 if (treeNode == null)
                 {
-                    return;
-                }
-
-                if (treeNode.Vulnerability != null)
-                {
-                    this.vulnerabilityDetailsPanel.Visibility = Visibility.Visible;
-
-                    var vulnerability = treeNode.Vulnerability;
-
-                    this.SetupSeverity(vulnerability);
-
-                    this.vulnerableModule.Text = vulnerability.Name;
-
-                    string introducedThroughText = vulnerability.From != null && vulnerability.From.Length != 0
-                                ? string.Join(", ", vulnerability.From) : "";
-
-                    this.introducedThrough.Text = introducedThroughText;
-                    this.exploitMaturity.Text = vulnerability.Exploit;
-                    this.fixedIn.Text = String.IsNullOrWhiteSpace(vulnerability.Remediation)
-                        ? $"There is no fixed version for {vulnerability.Name}" : vulnerability.Remediation;
-
-                    string detaiedIntroducedThroughText = vulnerability.From != null && vulnerability.From.Length != 0
-                                ? string.Join(" > ", vulnerability.From) : "";
-
-                    this.detaiedIntroducedThrough.Text = detaiedIntroducedThroughText;
-
-                    this.remediation.Text = vulnerability.FixedIn != null && vulnerability.FixedIn.Length != 0
-                                             ? "Upgrade to " + string.Join(" > ", vulnerability.FixedIn) : "";
-
-                    this.overview.Html = Markdig.Markdown.ToHtml(vulnerability.Description);
-
-                    this.moreAboutThisIssue.NavigateUri = new Uri(vulnerability.Url);
-
-                    this.serviceProvider.AnalyticsService.LogUserSeesAnIssueEvent(vulnerability.Id, vulnerability.Severity);
-                }
-                else
-                {
                     this.CleanAndHideVulnerabilityDetailsPanel();
 
-                    if (treeNode.Items.Count > 0)
-                    {
-                        this.selectIssueMessageGrid.Visibility = Visibility.Visible;
-                    }
-                    else
-                    {
-                        this.noIssuesMessageGrid.Visibility = Visibility.Visible;
-                    }
+                    vulnerabilityDescriptionGrid.Visibility = Visibility.Collapsed;
+                    snykCodeDescriptionGrid.Visibility = Visibility.Collapsed;
+
+                    this.selectIssueMessageGrid.Visibility = Visibility.Visible;
+
+                    //if (treeNode.Items != null && treeNode.Items.Count > 0)
+                    //{
+                    //    this.selectIssueMessageGrid.Visibility = Visibility.Visible;
+                    //}
+                    //else
+                    //{
+                    //    this.noIssuesMessageGrid.Visibility = Visibility.Visible;
+                    //}
+
+                    return;
                 }
             });
         }

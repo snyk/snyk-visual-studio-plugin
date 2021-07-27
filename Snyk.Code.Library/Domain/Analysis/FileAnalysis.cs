@@ -22,10 +22,5 @@
         /// Gets or sets a value indicating list of suggestions for file.
         /// </summary>
         public IList<Suggestion> Suggestions { get; set; }
-
-        /// <summary>
-        /// Gets or sets tuple of rows.
-        /// </summary>
-        public Tuple<int, int> Rows { get; set; }
     }
 }
