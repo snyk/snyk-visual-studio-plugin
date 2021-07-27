@@ -460,7 +460,8 @@
                     string fileHash = Sha256.ComputeHash(fileContent);
 
                     fileHashToContentDict.Add(fileHash, fileContent);
-                } catch (Exception exception)
+                } 
+                catch (Exception exception)
                 {
                     Console.WriteLine(exception.Message);
                 }
