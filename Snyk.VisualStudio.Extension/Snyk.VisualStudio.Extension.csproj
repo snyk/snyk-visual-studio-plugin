@@ -136,7 +136,9 @@
     <Compile Include="Snyk\VisualStudio\Extension\UI\Toolwindow\ScanResultsState.cs" />
     <Compile Include="Snyk\VisualStudio\Extension\UI\SeverityFilter.cs" />
     <Compile Include="Snyk\VisualStudio\Extension\UI\Tree\ScaVulnerabilityTreeNode.cs" />
+    <Compile Include="Snyk\VisualStudio\Extension\UI\Tree\SnykCodeFileTreeNode.cs" />
     <Compile Include="Snyk\VisualStudio\Extension\UI\Tree\SnykCodeRootTreeNode.cs" />
+    <Compile Include="Snyk\VisualStudio\Extension\UI\Tree\SnykCodeVulnerabilityTreeNode.cs" />
     <Compile Include="Snyk\VisualStudio\Extension\UI\Tree\SnykFilterableTree.xaml.cs">
       <DependentUpon>SnykFilterableTree.xaml</DependentUpon>
     </Compile>
@@ -242,6 +244,12 @@
     <Resource Include="Resources\Settings.png" />
     <Resource Include="Resources\SeverityCritical.png" />
     <Resource Include="Resources\SnykCode.png">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Resource>
+    <Resource Include="Resources\JSScript.png">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Resource>
+    <Resource Include="Resources\CSFileNode.png">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Resource>
     <Content Include="Resources\SnykDogLogo.png">
