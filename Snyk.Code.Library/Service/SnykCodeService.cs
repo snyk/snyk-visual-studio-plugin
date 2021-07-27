@@ -4,12 +4,15 @@
     using System.IO;
     using System.Text;
     using System.Threading.Tasks;
-    using Snyk.Code.Library.Common;
+    using Serilog;
     using Snyk.Code.Library.Domain.Analysis;
+    using Snyk.Common;
 
     /// <inheritdoc/>
     public class SnykCodeService : ISnykCodeService
     {
+        private static readonly ILogger Logger = LogManager.ForContext<SnykCodeService>();
+
         private IBundleService bundleService;
 
         private IAnalysisService analysisService;
@@ -34,6 +37,8 @@
         /// <inheritdoc/>
         public async Task<AnalysisResult> ScanAsync(IList<string> filePaths)
         {
+            Logger.Debug("Start Snyk scan");
+
             var filteredFiles = await this.filtersService.FilterFilesAsync(filePaths);
 
             var filePathToHashDict = this.CreateFilePathToHashDictionary(filteredFiles);

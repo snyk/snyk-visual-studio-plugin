@@ -3,12 +3,16 @@
     using System.Collections.Generic;
     using System.IO;
     using System.Threading.Tasks;
+    using Serilog;
     using Snyk.Code.Library.Api;
     using Snyk.Code.Library.Api.Dto;
+    using Snyk.Common;
 
     /// <inheritdoc/>
     public class FiltersService : IFiltersService
     {
+        private static readonly ILogger Logger = LogManager.ForContext<FiltersService>();
+
         private ISnykCodeClient codeClient;
 
         private FiltersDto filters;
@@ -22,6 +26,8 @@
         /// <inheritdoc/>
         public async Task<IList<string>> FilterFilesAsync(IList<string> filePaths)
         {
+            Logger.Debug("Filter Files count {Count}.", filePaths.Count);
+
             var filters = await this.GetFiltersAsync();
             var extensionFilters = filters.Extensions;
             var configFileFilters = filters.ConfigFiles;
@@ -36,6 +42,8 @@
                 }
             }
 
+            Logger.Debug("Filtered Files count {Count}.", filteredFiles.Count);
+
             return filteredFiles;
         }
 
@@ -43,6 +51,8 @@
         {
             if (this.filters == null)
             {
+                Logger.Debug("Request GetFilters.");
+
                 this.filters = await this.codeClient.GetFiltersAsync();
             }
 

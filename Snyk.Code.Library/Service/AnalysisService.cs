@@ -3,9 +3,11 @@
     using System;
     using System.Linq;
     using System.Threading.Tasks;
+    using Serilog;
     using Snyk.Code.Library.Api;
     using Snyk.Code.Library.Api.Dto.Analysis;
     using Snyk.Code.Library.Domain.Analysis;
+    using Snyk.Common;
 
     /// <inheritdoc/>
     public class AnalysisService : IAnalysisService
@@ -13,6 +15,8 @@
         private const int RequestTimeout = 100;
 
         private const int RequestAttempts = 100;
+
+        private static readonly ILogger Logger = LogManager.ForContext<AnalysisService>();
 
         private ISnykCodeClient codeClient;
 
@@ -38,6 +42,8 @@
         /// <returns><see cref="AnalysisResultDto"/> object.</returns>
         private async Task<AnalysisResultDto> TryGetAnalysisDtoAsync(string bundleId)
         {
+            Logger.Debug("Enter TryGetAnalysisDtoAsync()");
+
             for (int counter = 0; counter < RequestAttempts; counter++)
             {
                 AnalysisResultDto analysisResultDto = await this.codeClient.GetAnalysisAsync(bundleId);
@@ -48,20 +54,28 @@
                         return analysisResultDto;
 
                     case AnalysisStatus.Failed:
+                        Logger.Warning("SnykCodeClient.GetAnalysisAsync() return Failed status. Throw SnykCodeException.");
+
                         throw new SnykCodeException("SnykCode Analysis failed.");
 
                     case AnalysisStatus.Waiting:
                     default:
+                        Logger.Warning("SnykCodeClient.GetAnalysisAsync() return {Status}. Sleep for {RequestTimeout}", analysisResultDto.Status, RequestTimeout);
+
                         System.Threading.Thread.Sleep(RequestTimeout);
                         break;
                 }
             }
+
+            Logger.Warning("Can't Get Analysis after few attepts. Return AnalysisResultDto with Failed status.");
 
             return new AnalysisResultDto { Status = AnalysisStatus.Failed, };
         }
 
         private AnalysisResult MapDtoAnalysisResultToDomain(AnalysisResultDto analysisResultDto)
         {
+            Logger.Debug("Start map DTO AnalysisResultDto object to Domain AnalysisResult object.");
+
             var analysisrResult = new AnalysisResult
             {
                 Status = analysisResultDto.Status,

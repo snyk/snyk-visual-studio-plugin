@@ -85,6 +85,7 @@
     <Compile Include="Snyk\VisualStudio\Extension\Commands\SnykOpenSettingsCommand.cs" />
     <Compile Include="Snyk\VisualStudio\Extension\Commands\SnykScanCommand.cs" />
     <Compile Include="Snyk\VisualStudio\Extension\Commands\SnykStopCurrentTaskCommand.cs" />
+    <Compile Include="Snyk\VisualStudio\Extension\SnykExtension.cs" />
     <Compile Include="Snyk\VisualStudio\Extension\SnykGuids.cs" />
     <Compile Include="Snyk\VisualStudio\Extension\Service\ISnykProgressWorker.cs" />
     <Compile Include="Snyk\VisualStudio\Extension\Service\ISnykService.cs" />
@@ -104,7 +105,6 @@
     <Compile Include="Snyk\VisualStudio\Extension\Service\SnykService.cs" />
     <Compile Include="Snyk\VisualStudio\Extension\Settings\SnykAppSettings.cs" />
     <Compile Include="Snyk\VisualStudio\Extension\SnykAnalytics\SnykUser.cs" />
-    <Compile Include="Snyk\VisualStudio\Extension\SnykExtension.cs" />
     <Compile Include="Snyk\VisualStudio\Extension\Service\SnykVsSolutionLoadEvents.cs" />
     <Compile Include="Snyk\VisualStudio\Extension\SnykWebClient.cs">
       <SubType>Component</SubType>
@@ -479,6 +479,10 @@
     <ProjectReference Include="..\Snyk.Code.Library\Snyk.Code.Library.csproj">
       <Project>{73df907b-a3bc-4176-a4e0-04bbd2fa924c}</Project>
       <Name>Snyk.Code.Library</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\Snyk.Common\Snyk.Common.csproj">
+      <Project>{7912ad6d-c154-4504-9ab3-8767d3c46e89}</Project>
+      <Name>Snyk.Common</Name>
     </ProjectReference>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
