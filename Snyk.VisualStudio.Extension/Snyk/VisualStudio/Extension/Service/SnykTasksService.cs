@@ -241,7 +241,14 @@
                         }
                         catch (Exception scanException)
                         {
-                            this.Logger.LogError(scanException.Message);
+                            var exception = scanException;
+
+                            if (scanException is AggregateException)
+                            {
+                                exception = scanException.InnerException;
+                            }
+
+                            this.Logger.LogError(exception.Message);
 
                             if ((bool)this.cli?.ConsoleRunner?.IsStopped)
                             {
@@ -249,7 +256,7 @@
                             }
                             else
                             {
-                                this.OnError(scanException.Message);
+                                this.OnError(exception.Message);
                             }
 
                             this.cli = null;
