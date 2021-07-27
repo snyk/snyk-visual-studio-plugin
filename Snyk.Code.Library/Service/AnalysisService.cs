@@ -83,14 +83,14 @@
                 URL = analysisResultDto.AnalysisURL,
             };
 
-            var analysisResults = analysisResultDto.AnalysisResults;
+            var analysisResultsDto = analysisResultDto.AnalysisResults;
 
-            if (analysisResults == null)
+            if (analysisResultsDto == null)
             {
                 return analysisrResult;
             }
 
-            foreach (var fileKeyPair in analysisResults.Files)
+            foreach (var fileKeyPair in analysisResultsDto.Files)
             {
                 var fileAnalysis = new FileAnalysis { FileName = fileKeyPair.Key, };
 
@@ -99,7 +99,7 @@
                     string suggestionId = suggestionIdToFileKeyPair.Key;
                     var fileDtos = suggestionIdToFileKeyPair.Value;
 
-                    var suggestionDto = analysisResults.Suggestions[suggestionId];
+                    var suggestionDto = analysisResultsDto.Suggestions[suggestionId];
 
                     var suggestion = new Suggestion
                     {
@@ -113,6 +113,7 @@
                         Cwe = suggestionDto.Cwe,
                         Text = suggestionDto.Text,
                         ExampleCommitDescriptions = suggestionDto.ExampleCommitDescriptions,
+                        Rows = Tuple.Create(fileDtos.First().Rows[0], fileDtos.First().Rows[1]),
                     };
 
                     foreach (var exampleCommitFixes in suggestionDto.ExampleCommitFixes)

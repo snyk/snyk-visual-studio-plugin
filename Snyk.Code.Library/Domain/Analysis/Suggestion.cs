@@ -1,5 +1,6 @@
 ﻿namespace Snyk.Code.Library.Domain.Analysis
 {
+    using System;
     using System.Collections.Generic;
 
     /// <summary>
@@ -16,6 +17,11 @@
         /// Gets or sets a value indicating anaylysis suggestion id. Id for this (local) result.
         /// </summary>
         public string Id { get; set; }
+
+        /// <summary>
+        /// Gets or sets tuple of rows.
+        /// </summary>
+        public Tuple<int, int> Rows { get; set; }
 
         /// <summary>
         /// Gets or sets a value indicating anaylysis rule.

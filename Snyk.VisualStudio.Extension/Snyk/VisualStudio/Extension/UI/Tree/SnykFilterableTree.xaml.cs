@@ -97,30 +97,40 @@
         /// <param name="analysisResult"><see cref="AnalysisResult"/> object.</param>
         public void AppendVulnerabilities(AnalysisResult analysisResult)
         {
+            int crititcalSeverityCount = 0; // TODO: move this to proper place.
+            int highSeverityCount = 0;
+            int mediumSeverityCount = 0;
+            int lowSeverityCount = 0;
+
             foreach (var fileAnalyses in analysisResult.FileAnalyses)
             {
-                var fileNode = new ScaVulnerabilityTreeNode
-                {
-                    Vulnerabilities = new CliGroupedVulnerabilities
-                    {
-                        ProjectName = fileAnalyses.FileName,
-                    },
-                };
+                var fileNode = new SnykCodeFileTreeNode{ FileAnalysis = fileAnalyses, };
 
                 foreach (var suggestion in fileAnalyses.Suggestions)
                 {
-                    var node = new ScaVulnerabilityTreeNode
-                    {
-                        Vulnerability = new Vulnerability
-                        {
-                            Id = suggestion.Id,
-                            Description = suggestion.Message,
-                            Title = suggestion.Rule,
-                            Severity = Severity.FromInt(suggestion.Severity),
-                        },
-                    };
+                    fileNode.Items.Add(new SnykCodeVulnerabilityTreeNode { Suggestion = suggestion, });
 
-                    fileNode.Items.Add(node);
+                    string severity = Severity.FromInt(suggestion.Severity);
+
+                    if (severity == Severity.Critical)
+                    {
+                        crititcalSeverityCount++;
+                    }
+
+                    if (severity == Severity.High)
+                    {
+                        highSeverityCount++;
+                    }
+
+                    if (severity == Severity.Medium)
+                    {
+                        mediumSeverityCount++;
+                    }
+
+                    if (severity == Severity.Low)
+                    {
+                        lowSeverityCount++;
+                    }
                 }
 
                 this.snykCodeRootNode.Items.Add(fileNode);
@@ -128,10 +138,10 @@
 
             this.snykCodeRootNode.SetDetails(
                 analysisResult.FileAnalyses.Count,
-                0,
-                0,
-                0,
-                0);
+                crititcalSeverityCount,
+                highSeverityCount,
+                mediumSeverityCount,
+                lowSeverityCount);
 
             this.vulnerabilitiesTree.Items.Refresh();
         }

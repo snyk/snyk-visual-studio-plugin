@@ -44,6 +44,9 @@
         private const string SeverityMediumIconPath = ResourcesDirectoryPath + "SeverityMedium.png";
         private static readonly string SeverityLowIconPath = ResourcesDirectoryPath + "SeverityLow.png";
 
+        private const string JsFileIconPath = ResourcesDirectoryPath + "JSScript.png";
+        private const string CsFileIconPath = ResourcesDirectoryPath + "CSFileNode.png";
+
         /// <summary>
         /// Get package manager icon by name.
         /// </summary>
@@ -86,6 +89,38 @@
 
             return iconPath;
         }
+
+        /// <summary>
+        /// Get file icon by file extension.
+        /// </summary>
+        /// <param name="fileExcention">File extension.</param>
+        /// <returns>Icon path.</returns>
+        public static string GetFileIconByExtension(string fileExcention)
+        {
+            string iconPath = string.Empty;
+
+            switch (fileExcention)
+            {
+                case ".js":
+                    iconPath = JsFileIconPath;
+                    break;
+                case ".cs":
+                    iconPath = CsFileIconPath;
+                    break;
+                default:
+                    iconPath = DefaultFileIconPath;
+                    break;
+            }
+
+            return iconPath;
+        }
+
+        /// <summary>
+        /// Get icon path for int severity.
+        /// </summary>
+        /// <param name="severity">Severity index.</param>
+        /// <returns>Icon path.</returns>
+        public static string GetSeverityIcon(int severity) => GetSeverityIcon(Severity.FromInt(severity));
 
         /// <summary>
         /// Get icon path for severity.
