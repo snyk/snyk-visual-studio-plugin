@@ -25,7 +25,7 @@
         /// </summary>
         /// <param name="bundle">Source bundle with missing files to upload.</param>
         /// <returns>True if upload all files successfully and false if not.</returns>
-        Task<bool> UploadMissingFilesAsync(Bundle bundle);
+        Task<bool> UploadMissingFilesAsync(Bundle bundle, string basePath = "");
 
         /// <summary>
         /// Uploads missing files to a bundle.

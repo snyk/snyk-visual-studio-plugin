@@ -89,6 +89,7 @@
     <Compile Include="Snyk\VisualStudio\Extension\Settings\SnykSettings.cs" />
     <Compile Include="Snyk\VisualStudio\Extension\Settings\SnykSettingsLoader.cs" />
     <Compile Include="Snyk\VisualStudio\Extension\SnykExtension.cs" />
+    <Compile Include="Snyk\VisualStudio\Extension\Service\SnykCodeScanEventArgs.cs" />
     <Compile Include="Snyk\VisualStudio\Extension\SnykGuids.cs" />
     <Compile Include="Snyk\VisualStudio\Extension\Service\ISnykProgressWorker.cs" />
     <Compile Include="Snyk\VisualStudio\Extension\Service\ISnykService.cs" />
@@ -492,7 +493,8 @@
   <Import Project="$(VSToolsPath)\VSSDK\Microsoft.VsSDK.targets" Condition="'$(VSToolsPath)' != ''" />
   <Target Name="WriteAppSettingsFile" BeforeTargets="PreBuildEvent">
     <WriteLinesToFile File="$(AppSettingsFile)" Overwrite="true" Lines="{" />
-    <WriteLinesToFile File="$(AppSettingsFile)" Lines="'SegmentAnalyticsWriteKey':'$(SEGMENT_ANALYTICS_WRITE_KEY)'" />
+    <WriteLinesToFile File="$(AppSettingsFile)" Lines="&quot;SegmentAnalyticsWriteKey&quot;: &quot;$(SEGMENT_ANALYTICS_WRITE_KEY)&quot;," />
+    <WriteLinesToFile File="$(AppSettingsFile)" Lines="&quot;SnykCodeApiEndpoinUrl&quot;: &quot;$(SNYK_CODE_API_ENDPOINT_URL)&quot;" />
     <WriteLinesToFile File="$(AppSettingsFile)" Lines="}" />
   </Target>
   <Target Name="EnsureNuGetPackageBuildImports" BeforeTargets="PrepareForBuild">

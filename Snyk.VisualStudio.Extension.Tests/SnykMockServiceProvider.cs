@@ -8,6 +8,7 @@ using Snyk.VisualStudio.Extension.CLI;
 using Snyk.VisualStudio.Extension.Theme;
 using Snyk.VisualStudio.Extension.Service;
 using Snyk.VisualStudio.Extension.SnykAnalytics;
+using Snyk.Code.Library.Service;
 
 namespace Snyk.VisualStudio.Extension.Tests
 {
@@ -88,6 +89,8 @@ namespace Snyk.VisualStudio.Extension.Tests
         public SnykAnalyticsService AnalyticsService => new SnykAnalyticsService();
 
         public SnykUserStorageSettingsService UserStorageSettingsService => throw new NotImplementedException();
+
+        public ISnykCodeService SnykCodeService => throw new NotImplementedException();
 
         Microsoft.VisualStudio.Shell.IAsyncServiceProvider ISnykServiceProvider.AsyncServiceProvider
         {

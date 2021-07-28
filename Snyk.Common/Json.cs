@@ -14,6 +14,7 @@
         private static JsonSerializerOptions SerializerOptions => new JsonSerializerOptions
         {
             PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
+            PropertyNameCaseInsensitive = true,
             WriteIndented = true,
         };
 

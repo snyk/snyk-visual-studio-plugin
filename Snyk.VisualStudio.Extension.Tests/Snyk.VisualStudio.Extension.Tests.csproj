@@ -89,6 +89,10 @@
     </EmbeddedResource>
   </ItemGroup>
   <ItemGroup>
+    <ProjectReference Include="..\Snyk.Code.Library\Snyk.Code.Library.csproj">
+      <Project>{73df907b-a3bc-4176-a4e0-04bbd2fa924c}</Project>
+      <Name>Snyk.Code.Library</Name>
+    </ProjectReference>
     <ProjectReference Include="..\Snyk.VisualStudio.Extension\Snyk.VisualStudio.Extension.csproj">
       <Project>{910098f4-ec69-40f2-8cf1-b2e86e30d2f8}</Project>
       <Name>Snyk.VisualStudio.Extension</Name>

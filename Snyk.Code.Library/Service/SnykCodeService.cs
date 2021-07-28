@@ -35,32 +35,51 @@
         }
 
         /// <inheritdoc/>
-        public async Task<AnalysisResult> ScanAsync(IList<string> filePaths)
+        public async Task<AnalysisResult> ScanAsync(IList<string> filePaths, string basePath = "")
         {
             Logger.Debug("Start Snyk scan");
 
             var filteredFiles = await this.filtersService.FilterFilesAsync(filePaths);
 
-            var filePathToHashDict = this.CreateFilePathToHashDictionary(filteredFiles);
+            var filePathToHashDict = this.CreateFilePathToHashDictionary(filteredFiles, basePath);
 
             var resultBundle = await this.bundleService.CreateBundleAsync(filePathToHashDict);
 
-            await this.bundleService.UploadMissingFilesAsync(resultBundle);
+            await this.bundleService.UploadMissingFilesAsync(resultBundle, basePath);
 
             return await this.analysisService.GetAnalysisAsync(resultBundle.Id);
         }
 
-        private IDictionary<string, string> CreateFilePathToHashDictionary(IList<string> filePaths)
+        private IDictionary<string, string> CreateFilePathToHashDictionary(IList<string> filePaths, string basePath = "")
         {
             var filePathToHashDict = new Dictionary<string, string>();
 
             foreach (string filePath in filePaths)
             {
-                string fileContent = File.ReadAllText(filePath, Encoding.UTF8);
+                string fullFilePath = filePath;
+
+                if (basePath != string.Empty)
+                {
+                    fullFilePath = basePath + filePath;
+                }
+
+                string fileContent = File.ReadAllText(fullFilePath, Encoding.UTF8);
 
                 string fileHash = Sha256.ComputeHash(fileContent);
 
-                filePathToHashDict.Add(filePath, fileHash);
+                string codeFilePath = filePath;
+
+                if (codeFilePath.IndexOf("\\\\") != -1)
+                {
+                    codeFilePath = filePath.Replace("\\\\", "/");
+                }
+
+                if (codeFilePath.IndexOf("\\") != -1)
+                {
+                    codeFilePath = filePath.Replace("\\", "/");
+                }
+
+                filePathToHashDict.Add(codeFilePath, fileHash);
             }
 
             return filePathToHashDict;

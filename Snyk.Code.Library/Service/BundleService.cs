@@ -46,7 +46,7 @@
         }
 
         /// <inheritdoc/>
-        public async Task<bool> UploadMissingFilesAsync(Bundle bundle)
+        public async Task<bool> UploadMissingFilesAsync(Bundle bundle, string basePath = "")
         {
             Logger.Debug("Start UploadMissingFiles.");
 
@@ -54,7 +54,7 @@
 
             for (int counter = 0; counter < UploadFileRequestAttempts; counter++)
             {
-                await this.UploadFilesAsync(resultBundle.Id, this.CreateFileHashToContentDictionary(resultBundle.MissingFiles));
+                await this.UploadFilesAsync(resultBundle.Id, this.CreateFileHashToContentDictionary(resultBundle.MissingFiles, basePath));
 
                 resultBundle = await this.CheckBundleAsync(bundle.Id);
 
@@ -440,13 +440,20 @@
             return codeFileDtos;
         }
 
-        private IDictionary<string, string> CreateFileHashToContentDictionary(IList<string> filePaths)
+        private IDictionary<string, string> CreateFileHashToContentDictionary(IList<string> filePaths, string basePath = "")
         {
             var fileHashToContentDict = new Dictionary<string, string>();
 
             foreach (string filePath in filePaths)
             {
-                string fileContent = File.ReadAllText(filePath, Encoding.UTF8);
+                string fullFilePath = filePath;
+
+                if (basePath != string.Empty)
+                {
+                    fullFilePath = basePath + filePath;
+                }
+
+                string fileContent = File.ReadAllText(fullFilePath, Encoding.UTF8);
 
                 string fileHash = Sha256.ComputeHash(fileContent);
 

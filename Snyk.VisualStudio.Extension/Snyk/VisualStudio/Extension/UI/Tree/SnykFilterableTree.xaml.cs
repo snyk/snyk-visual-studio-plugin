@@ -9,6 +9,7 @@
     using System.Windows.Data;
     using System.Windows.Media;
     using System.Windows.Media.Imaging;
+    using Snyk.Code.Library.Domain.Analysis;
     using Snyk.VisualStudio.Extension.CLI;
 
     /// <summary>
@@ -18,7 +19,9 @@
     {
         private static SnykFilterableTree instance;
 
-        private RootVulnerabilityTreeNode rootNode = new RootVulnerabilityTreeNode();
+        private RootVulnerabilityTreeNode cliRootNode = new RootVulnerabilityTreeNode();
+
+        private RootVulnerabilityTreeNode snykCodeRootNode = new RootVulnerabilityTreeNode();
 
         /// <summary>
         /// Selecteted vulnerability node in tree event handler.
@@ -34,7 +37,8 @@
 
             instance = this;
 
-            this.vulnerabilitiesTree.Items.Add(this.rootNode);
+            this.vulnerabilitiesTree.Items.Add(this.cliRootNode);
+            this.vulnerabilitiesTree.Items.Add(this.snykCodeRootNode);
         }
 
         /// <summary>
@@ -72,10 +76,10 @@
                     fileNode.Items.Add(node);
                 }
 
-                this.rootNode.Items.Add(fileNode);
+                this.snykCodeRootNode.Items.Add(fileNode);
             });
 
-            this.rootNode.SetDetailsTitle(
+            this.snykCodeRootNode.SetDetailsTitle(
                 cliResult.Count,
                 cliResult.CriticalSeverityCount,
                 cliResult.HighSeverityCount,
@@ -86,9 +90,53 @@
         }
 
         /// <summary>
+        /// Append <see cref="AnalysisResult"/> data to tree.
+        /// </summary>
+        /// <param name="analysisResult"><see cref="AnalysisResult"/> object.</param>
+        public void AppendVulnerabilities(AnalysisResult analysisResult)
+        {
+            foreach (var fileAnalyses in analysisResult.FileAnalyses)
+            {
+                var fileNode = new VulnerabilityTreeNode
+                {
+                    Vulnerabilities = new CliGroupedVulnerabilities
+                    {
+                        ProjectName = fileAnalyses.FileName,
+                    },
+                };
+
+                foreach (var suggestion in fileAnalyses.Suggestions)
+                {
+                    var node = new VulnerabilityTreeNode
+                    {
+                        Vulnerability = new Vulnerability
+                        {
+                            Id = suggestion.Id,
+                            Description = suggestion.Message,
+                            Title = suggestion.Rule,
+                        },
+                    };
+
+                    fileNode.Items.Add(node);
+                }
+
+                this.snykCodeRootNode.Items.Add(fileNode);
+            }
+
+            this.snykCodeRootNode.SetDetailsTitle(
+                analysisResult.FileAnalyses.Count,
+                0,
+                0,
+                0,
+                0);
+
+            this.vulnerabilitiesTree.Items.Refresh();
+        }
+
+        /// <summary>
         /// Clear tree nodes.
         /// </summary>
-        public void Clear() => this.rootNode.Clean();
+        public void Clear() => this.snykCodeRootNode.Clean();
 
         /// <summary>
         /// Find resource by key.
@@ -104,7 +152,7 @@
         {
             this.Dispatcher.Invoke(() =>
             {
-                foreach (VulnerabilityTreeNode treeNode in this.rootNode.Items)
+                foreach (VulnerabilityTreeNode treeNode in this.snykCodeRootNode.Items)
                 {
                     ICollectionView collectionView = CollectionViewSource.GetDefaultView(treeNode.Items);
 
@@ -125,7 +173,7 @@
 
                 string searchString = severityFilter.GetOnlyQueryString();
 
-                foreach (VulnerabilityTreeNode treeNode in this.rootNode.Items)
+                foreach (VulnerabilityTreeNode treeNode in this.snykCodeRootNode.Items)
                 {
                     CollectionViewSource.GetDefaultView(treeNode.Items).Filter = filterObject =>
                     {
