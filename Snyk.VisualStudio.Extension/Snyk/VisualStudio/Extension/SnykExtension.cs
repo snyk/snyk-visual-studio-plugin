@@ -5,7 +5,7 @@
     using System.Linq;
     using System.Text;
     using System.Xml;
-    using Snyk.Code.Library.Common;
+    using Snyk.Common;
     using Snyk.VisualStudio.Extension.Settings;
 
     /// <summary>
