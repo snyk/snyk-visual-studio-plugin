@@ -15,6 +15,7 @@
     using Service;
     using UI.Tree;
     using Task = System.Threading.Tasks.Task;
+    using Snyk.Code.Library.Domain.Analysis;
 
     /// <summary>
     /// Interaction logic for SnykToolWindowControl.
@@ -70,7 +71,8 @@
             tasksService.ScanError += this.OnDisplayError;
             tasksService.ScanningCancelled += this.OnScanningCancelled;
             tasksService.ScanningStarted += this.OnScanningStarted;
-            tasksService.ScanningUpdate += this.OnScanningUpdate;
+            tasksService.CliScanningUpdate += this.OnScanningUpdate;
+            tasksService.SnykCodeScanningUpdate += this.OnSnykCodeScanningUpdate;
             tasksService.ScanningFinished += this.OnScanningFinished;
 
             logger.LogInformation("Initialize Download Event Listeners");
@@ -107,6 +109,13 @@
         /// <param name="sender">Source object.</param>
         /// <param name="eventArgs">Event args.</param>
         public void OnScanningUpdate(object sender, SnykCliScanEventArgs eventArgs) => this.AppendCliResultToTree(eventArgs.Result);
+
+        /// <summary>
+        /// Scanning update event handler. Append CLI results to tree.
+        /// </summary>
+        /// <param name="sender">Source object.</param>
+        /// <param name="eventArgs">Event args.</param>
+        public void OnSnykCodeScanningUpdate(object sender, SnykCodeScanEventArgs eventArgs) => this.AppendSnykCodeResultToTree(eventArgs.Result);
 
         /// <summary>
         /// ScanningStarted event handler. Switch context to ScanningState.
@@ -356,6 +365,11 @@
         /// <param name="cliResult">CLI result.</param>
         private void AppendCliResultToTree(CliResult cliResult)
         {
+            if (cliResult.CliVulnerabilitiesList == null)
+            {
+                return;
+            }
+
             this.Dispatcher.Invoke(() =>
             {
                 this.vulnerabilitiesTree.AppendVulnerabilities(cliResult);
@@ -365,6 +379,20 @@
                     cliResult.HighSeverityCount,
                     cliResult.MediumSeverityCount,
                     cliResult.LowSeverityCount);
+            });
+        }
+
+        private void AppendSnykCodeResultToTree(AnalysisResult analysisResult)
+        {
+            this.Dispatcher.Invoke(() =>
+            {
+                this.vulnerabilitiesTree.AppendVulnerabilities(analysisResult);
+
+                //this.serviceProvider.AnalyticsService.LogOpenSourceAnalysisReadyEvent(
+                //    cliResult.CriticalSeverityCount,
+                //    cliResult.HighSeverityCount,
+                //    cliResult.MediumSeverityCount,
+                //    cliResult.LowSeverityCount);
             });
         }
 

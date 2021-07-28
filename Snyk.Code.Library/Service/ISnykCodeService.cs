@@ -13,7 +13,8 @@
         /// Scan path for code vulnerabilities.
         /// </summary>
         /// <param name="filePaths">Source file paths.</param>
+        /// <param name="basePath">Base path of project.</param>
         /// <returns><see cref="AnalysisResult"/> object.</returns>
-        Task<AnalysisResult> ScanAsync(IList<string> filePaths);
+        Task<AnalysisResult> ScanAsync(IList<string> filePaths, string basePath = "");
     }
 }

@@ -1,8 +1,6 @@
 ﻿namespace Snyk.VisualStudio.Extension.SnykAnalytics
 {
     using System;
-    using System.IO;
-    using System.Text;
     using System.Threading.Tasks;
     using Segment;
     using Segment.Model;
@@ -46,6 +44,11 @@
         private bool analyticsInitialized = true;
 
         /// <summary>
+        /// Initializes a new instance of the <see cref="SnykAnalyticsService"/> class.
+        /// </summary>
+        public SnykAnalyticsService() => this.AnalyticsEnabled = true;
+
+        /// <summary>
         /// Gets or sets a value indicating whether user id.
         /// </summary>
         public string UserId { get; set; }
@@ -65,25 +68,15 @@
         private bool Disabled => !this.Enabled;
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="SnykAnalyticsService"/> class.
-        /// </summary>
-        public SnykAnalyticsService() => this.AnalyticsEnabled = true;
-
-        /// <summary>
         /// Initialize service.
         /// </summary>
         public void Initialize()
         {
             try
             {
-                string extensionPath = SnykExtension.GetExtensionDirectoryPath();
+                SnykAppSettings appSettings = SnykExtension.GetAppSettings();
 
-                string appsettingsPath = Path.Combine(extensionPath, "appsettings.json");
-
-                SnykAppSettings appSettings = Json
-                    .Deserialize<SnykAppSettings>(File.ReadAllText(appsettingsPath, Encoding.UTF8));
-
-                string writeKey = appSettings.SegmentAnalyticsWriteKey;
+                string writeKey = appSettings?.SegmentAnalyticsWriteKey;
 
                 if (string.IsNullOrEmpty(writeKey))
                 {
@@ -93,7 +86,7 @@
                 }
                 else
                 {
-                    Analytics.Initialize(appSettings.SegmentAnalyticsWriteKey, new Config()
+                    Analytics.Initialize(appSettings?.SegmentAnalyticsWriteKey, new Config()
                             .SetAsync(true)
                             .SetTimeout(TimeSpan.FromSeconds(10))
                             .SetMaxQueueSize(5));

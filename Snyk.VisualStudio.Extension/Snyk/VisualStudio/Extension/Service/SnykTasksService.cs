@@ -6,6 +6,7 @@
     using System.Threading.Tasks;
     using System.Windows;
     using Microsoft.VisualStudio.Shell;
+    using Snyk.Code.Library.Domain.Analysis;
     using Snyk.VisualStudio.Extension.CLI;
     using static Snyk.VisualStudio.Extension.CLI.SnykCliDownloader;
     using Task = System.Threading.Tasks.Task;
@@ -43,9 +44,14 @@
         public event EventHandler<SnykCliScanEventArgs> ScanningFinished;
 
         /// <summary>
-        /// Scanning update event handler.
+        /// Cli Scanning update event handler.
         /// </summary>
-        public event EventHandler<SnykCliScanEventArgs> ScanningUpdate;
+        public event EventHandler<SnykCliScanEventArgs> CliScanningUpdate;
+
+        /// <summary>
+        /// SnykCode scanning update event handler.
+        /// </summary>
+        public event EventHandler<SnykCodeScanEventArgs> SnykCodeScanningUpdate;
 
         /// <summary>
         /// Scan error event handler.
@@ -205,11 +211,15 @@
                             this.Logger.LogInformation($"Solution path = {solutionPath}");
                             this.Logger.LogInformation("Start scan");
 
-                            CliResult cliResult = cli.Scan(solutionPath);
+                            var cliResult = this.cli.Scan(solutionPath);
+
+                            var solutionFiles = this.serviceProvider.SolutionService.GetSolutionFiles();
+
+                            var analysisResult = this.serviceProvider.SnykCodeService.ScanAsync(solutionFiles, solutionPath).Result;
 
                             progressWorker.CancelIfCancellationRequested();
 
-                            if (!cliResult.IsSuccessful())
+                            if (!cliResult.IsSuccessful() && analysisResult == null)
                             {
                                 this.Logger.LogInformation("Scan is successful");
 
@@ -222,6 +232,7 @@
                                 this.Logger.LogInformation("Scan update");
 
                                 this.OnScanningUpdate(cliResult);
+                                this.OnScanningUpdate(analysisResult);
                             }
 
                             progressWorker.CancelIfCancellationRequested();
@@ -380,7 +391,13 @@
         /// Fire scanning update with <see cref="SnykCliScanEventArgs"/> object.
         /// </summary>
         /// <param name="cliResult"><see cref="CliResult"/> object with vulnerabilities.</param>
-        private void OnScanningUpdate(CliResult cliResult) => this.ScanningUpdate?.Invoke(this, new SnykCliScanEventArgs(cliResult));
+        private void OnScanningUpdate(CliResult cliResult) => this.CliScanningUpdate?.Invoke(this, new SnykCliScanEventArgs(cliResult));
+
+        /// <summary>
+        /// Fire scanning update with <see cref="SnykCodeScanEventArgs"/> object.
+        /// </summary>
+        /// <param name="analysisResult"><see cref="AnalysisResult"/> object with vulnerabilities.</param>
+        private void OnScanningUpdate(AnalysisResult analysisResult) => this.SnykCodeScanningUpdate?.Invoke(this, new SnykCodeScanEventArgs(analysisResult));
 
         /// <summary>
         /// Fire scanning finished event.

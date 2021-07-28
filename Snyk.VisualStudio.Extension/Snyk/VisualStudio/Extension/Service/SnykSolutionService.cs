@@ -1,11 +1,13 @@
 ﻿namespace Snyk.VisualStudio.Extension.CLI
 {
     using System;
+    using System.Collections.Generic;
     using System.IO;
+    using System.Linq;
     using EnvDTE;
-    using Service;
     using Microsoft.VisualStudio;
     using Microsoft.VisualStudio.Shell.Interop;
+    using Snyk.VisualStudio.Extension.Service;
     using Task = System.Threading.Tasks.Task;
 
     /// <summary>
@@ -77,6 +79,38 @@
         /// </summary>
         /// <returns>Projects instance.</returns>
         public Projects GetProjects() => this.ServiceProvider.DTE.Solution.Projects;
+
+        /// <summary>
+        /// Get all solution files.
+        /// </summary>
+        /// <returns>List of solution files.</returns>
+        public IList<string> GetSolutionFiles()
+        {
+            var solutionFiles = new List<string>();
+
+            var projects = this.GetProjects();
+
+            foreach (Project project in projects)
+            {
+                foreach (ProjectItem projectItem in project.ProjectItems)
+                {
+                    solutionFiles.Add(projectItem.get_FileNames(0));
+                }
+            }
+
+            string solutionPath = this.GetSolutionPath();
+
+            // If Project items are empty. Check is solution (folder) contains files.
+            if (solutionFiles.Count == 0)
+            {
+                string[] files = Directory.GetFileSystemEntries(solutionPath, "*", SearchOption.AllDirectories);
+
+                solutionFiles.AddRange(files);
+            }
+
+            // Replace full path with relative path.
+            return solutionFiles.Select(path => path.Replace(solutionPath, string.Empty)).ToList();
+        }
 
         /// <summary>
         /// Get solution path.
