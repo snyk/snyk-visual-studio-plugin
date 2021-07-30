@@ -8,6 +8,7 @@
     using Microsoft.VisualStudio.Shell;
     using Snyk.Code.Library.Domain.Analysis;
     using Snyk.VisualStudio.Extension.CLI;
+    using Snyk.VisualStudio.Extension.SnykCode;
     using static Snyk.VisualStudio.Extension.CLI.SnykCliDownloader;
     using Task = System.Threading.Tasks.Task;
 
@@ -211,29 +212,13 @@
                             this.Logger.LogInformation($"Solution path = {solutionPath}");
                             this.Logger.LogInformation("Start scan");
 
-                            var cliResult = this.cli.Scan(solutionPath);
+                            var filesProvider = this.serviceProvider.NewFileProvider();
 
-                            var solutionFiles = this.serviceProvider.SolutionService.GetSolutionFiles();
-
-                            var analysisResult = this.serviceProvider.SnykCodeService.ScanAsync(solutionFiles, solutionPath).Result;
+                            var analysisResult = this.serviceProvider.SnykCodeService.ScanAsync(filesProvider).Result;
 
                             progressWorker.CancelIfCancellationRequested();
 
-                            if (!cliResult.IsSuccessful() && analysisResult == null)
-                            {
-                                this.Logger.LogInformation("Scan is successful");
-
-                                this.OnError(cliResult.Error);
-
-                                return;
-                            }
-                            else
-                            {
-                                this.Logger.LogInformation("Scan update");
-
-                                this.OnScanningUpdate(cliResult);
-                                this.OnScanningUpdate(analysisResult);
-                            }
+                            this.OnScanningUpdate(analysisResult);
 
                             progressWorker.CancelIfCancellationRequested();
 

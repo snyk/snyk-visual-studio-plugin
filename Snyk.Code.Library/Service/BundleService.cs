@@ -70,6 +70,32 @@
         }
 
         /// <inheritdoc/>
+        public async Task<bool> UploadMissingFilesAsync(Bundle bundle, IFileProvider fileProvider)
+        {
+            Logger.Debug("Start UploadMissingFiles.");
+
+            var resultBundle = bundle;
+
+            for (int counter = 0; counter < UploadFileRequestAttempts; counter++)
+            {
+                var fileHashToContentDict = fileProvider.CreaateFileHashToContentDictionary(resultBundle.MissingFiles);
+
+                await this.UploadFilesAsync(resultBundle.Id, fileHashToContentDict);
+
+                resultBundle = await this.CheckBundleAsync(bundle.Id);
+
+                if (resultBundle.MissingFiles.IsEmpty())
+                {
+                    return true;
+                }
+            }
+
+            Logger.Debug("Not all files uploadded successfully. Not uploaded files {MissingFiles}", resultBundle.MissingFiles);
+
+            return false;
+        }
+
+        /// <inheritdoc/>
         public Task<bool> UploadFilesAsync(string bundleId, IDictionary<string, string> fileHashToContentDict, int maxChunkSize = SnykCodeClient.MaxBundleSize)
         {
             if (string.IsNullOrEmpty(bundleId))

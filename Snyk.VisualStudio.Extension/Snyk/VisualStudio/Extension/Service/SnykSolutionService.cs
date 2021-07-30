@@ -94,22 +94,18 @@
             {
                 foreach (ProjectItem projectItem in project.ProjectItems)
                 {
-                    solutionFiles.Add(projectItem.get_FileNames(0));
+                    try
+                    {
+                        solutionFiles.Add(projectItem.get_FileNames(0));
+                    }
+                    catch (Exception ex)
+                    {
+                        this.Logger.LogError(ex.Message);
+                    }
                 }
             }
 
-            string solutionPath = this.GetSolutionPath();
-
-            // If Project items are empty. Check is solution (folder) contains files.
-            if (solutionFiles.Count == 0)
-            {
-                string[] files = Directory.GetFileSystemEntries(solutionPath, "*", SearchOption.AllDirectories);
-
-                solutionFiles.AddRange(files);
-            }
-
-            // Replace full path with relative path.
-            return solutionFiles.Select(path => path.Replace(solutionPath, string.Empty)).ToList();
+            return solutionFiles;
         }
 
         /// <summary>
@@ -130,9 +126,10 @@
             {
                 this.logger.LogInformation("Get solution path from solution full name in case solution with projects.");
 
-                string fullName = dteSolution.FullName;
+                solutionPath = dteSolution.FullName;
 
-                solutionPath = Directory.GetParent(dteSolution.FullName).FullName;
+                //CLI string fullName = dteSolution.FullName;
+                //CLI: solutionPath = Directory.GetParent(dteSolution.FullName).FullName;
             }
 
             // 2 case: Flat project without solution.

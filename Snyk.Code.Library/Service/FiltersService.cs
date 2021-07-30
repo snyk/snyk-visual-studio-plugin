@@ -36,6 +36,11 @@
 
             foreach (string filePath in filePaths)
             {
+                if (filePath.Contains("node_modules"))
+                {
+                    continue;
+                }
+
                 if (extensionFilters.Contains(Path.GetExtension(filePath)) || configFileFilters.Contains(Path.GetFileName(filePath)))
                 {
                     filteredFiles.Add(filePath);
