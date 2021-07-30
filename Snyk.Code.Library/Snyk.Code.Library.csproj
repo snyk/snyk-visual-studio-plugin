@@ -98,6 +98,7 @@
     <Compile Include="Service\FiltersService.cs" />
     <Compile Include="Service\IAnalysisService.cs" />
     <Compile Include="Service\IBundleService.cs" />
+    <Compile Include="Service\IFileProvider.cs" />
     <Compile Include="Service\IFiltersService.cs" />
     <Compile Include="Service\ISnykCodeService.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />

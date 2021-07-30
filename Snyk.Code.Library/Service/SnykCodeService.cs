@@ -51,6 +51,22 @@
             return await this.analysisService.GetAnalysisAsync(resultBundle.Id);
         }
 
+        /// <inheritdoc/>
+        public async Task<AnalysisResult> ScanAsync(IFileProvider fileProvider)
+        {
+            Logger.Debug("Start Snyk scan");
+
+            await fileProvider.InitializeAsync();
+
+            var filePathToHashDict = fileProvider.CreateFilePathToHashDictionary();
+
+            var resultBundle = await this.bundleService.CreateBundleAsync(filePathToHashDict);
+
+            await this.bundleService.UploadMissingFilesAsync(resultBundle, fileProvider);
+
+            return await this.analysisService.GetAnalysisAsync(resultBundle.Id);
+        }
+
         private IDictionary<string, string> CreateFilePathToHashDictionary(IList<string> filePaths, string basePath = "")
         {
             var filePathToHashDict = new Dictionary<string, string>();
@@ -64,6 +80,8 @@
                     {
                         fullFilePath = basePath + filePath;
                     }
+
+                    string sgadsf = Directory.GetCurrentDirectory();
 
                     string fileContent = File.ReadAllText(fullFilePath, Encoding.UTF8);
 

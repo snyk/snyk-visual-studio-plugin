@@ -77,6 +77,12 @@
         SnykUserStorageSettingsService UserStorageSettingsService { get; }
 
         /// <summary>
+        /// Create new instance of <see cref="IFileProvider"/>.
+        /// </summary>
+        /// <returns>Create new instance of IFileProvider.</returns>
+        IFileProvider NewFileProvider();
+
+        /// <summary>
         /// Create new instance of <see cref="SnykCli"/>.
         /// </summary>
         /// <returns>SnykCli.</returns>

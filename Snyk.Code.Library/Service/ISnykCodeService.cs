@@ -16,5 +16,12 @@
         /// <param name="basePath">Base path of project.</param>
         /// <returns><see cref="AnalysisResult"/> object.</returns>
         Task<AnalysisResult> ScanAsync(IList<string> filePaths, string basePath = "");
+
+        /// <summary>
+        /// Scan source code provided for code vulnerabilities.
+        /// </summary>
+        /// <param name="fileProvider">Provider for files to scan.</param>
+        /// <returns><see cref="AnalysisResult"/> object.</returns>
+        Task<AnalysisResult> ScanAsync(IFileProvider fileProvider);
     }
 }

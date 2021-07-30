@@ -12,6 +12,7 @@
     using Snyk.VisualStudio.Extension.CLI;
     using Snyk.VisualStudio.Extension.Settings;
     using Snyk.VisualStudio.Extension.SnykAnalytics;
+    using Snyk.VisualStudio.Extension.SnykCode;
     using Snyk.VisualStudio.Extension.Theme;
     using Snyk.VisualStudio.Extension.UI;
     using IAsyncServiceProvider = Microsoft.VisualStudio.Shell.IAsyncServiceProvider;
@@ -41,6 +42,8 @@
         private SnykUserStorageSettingsService userStorageSettingsService;
 
         private SnykCodeService snykCodeService;
+
+        private FiltersService filterService;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="SnykService"/> class.
@@ -141,11 +144,12 @@
                 {
                     var codeClient = new SnykCodeClient(SnykExtension.GetAppSettings().SnykCodeApiEndpoinUrl, this.Options.ApiToken);
 
+                    this.filterService = new FiltersService(codeClient);
+
                     var bundleService = new BundleService(codeClient);
-                    var filterService = new FiltersService(codeClient);
                     var analysisService = new AnalysisService(codeClient);
 
-                    this.snykCodeService = new SnykCodeService(bundleService, analysisService, filterService);
+                    this.snykCodeService = new SnykCodeService(bundleService, analysisService, this.filterService);
                 }
 
                 return this.snykCodeService;
@@ -228,5 +232,8 @@
 
             return this.NewCli().GetApiToken();
         }
+
+        /// <inheritdoc/>
+        public IFileProvider NewFileProvider() => new SnykCodeFileProvider(this.solutionService, this.filterService);
     }
 }
