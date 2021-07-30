@@ -93,6 +93,10 @@
       <Project>{73df907b-a3bc-4176-a4e0-04bbd2fa924c}</Project>
       <Name>Snyk.Code.Library</Name>
     </ProjectReference>
+    <ProjectReference Include="..\Snyk.Common\Snyk.Common.csproj">
+      <Project>{7912ad6d-c154-4504-9ab3-8767d3c46e89}</Project>
+      <Name>Snyk.Common</Name>
+    </ProjectReference>
     <ProjectReference Include="..\Snyk.VisualStudio.Extension\Snyk.VisualStudio.Extension.csproj">
       <Project>{910098f4-ec69-40f2-8cf1-b2e86e30d2f8}</Project>
       <Name>Snyk.VisualStudio.Extension</Name>
