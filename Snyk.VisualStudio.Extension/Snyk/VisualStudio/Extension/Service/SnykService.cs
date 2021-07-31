@@ -232,8 +232,5 @@
 
             return this.NewCli().GetApiToken();
         }
-
-        /// <inheritdoc/>
-        public IFileProvider NewFileProvider() => new SnykCodeFileProvider(this.solutionService, this.filterService);
     }
 }
