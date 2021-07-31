@@ -2,6 +2,7 @@
 {
     using System;
     using System.Collections.Generic;
+    using System.Net;
     using System.Net.Http;
     using System.Text;
     using System.Threading.Tasks;
@@ -117,6 +118,8 @@
             }
 
             HttpRequestMessage httpRequest = new HttpRequestMessage(HttpMethod.Post, FileApiUrl + "/" + bundleId);
+
+            httpRequest.Version = HttpVersion.Version10;
 
             string payload = Json.Serialize(codeFiles);
 

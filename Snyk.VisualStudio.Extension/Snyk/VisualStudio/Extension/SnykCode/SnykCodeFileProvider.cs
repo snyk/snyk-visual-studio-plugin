@@ -24,25 +24,27 @@
 
         private string solutionPath;
 
-        private IFiltersService filtersService;
-
-        private SnykSolutionService solutionService;
+        private IList<string> files;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="SnykCodeFileProvider"/> class.
         /// </summary>
-        /// <param name="filtersService">Snyk code <see cref="IFiltersService"/> service.</param>
-        /// <param name="solutionService"><see cref="SnykSolutionService"/> service.</param>
-        public SnykCodeFileProvider(SnykSolutionService solutionService, IFiltersService filtersService)
+        /// <param name="solutionPath">Solution path service.</param>
+        /// <param name="files"><see cref="IList{T}"/> files.</param>
+        public SnykCodeFileProvider(string solutionPath, IList<string> files)
         {
-            this.solutionService = solutionService;
-            this.filtersService = filtersService;
+            this.solutionPath = solutionPath;
 
-            this.solutionPath = this.solutionService.GetSolutionPath();
+            this.files = files;
         }
 
         public IDictionary<string, string> CreaateFileHashToContentDictionary(IList<string> files)
         {
+            if (this.filePathToContentCache.GetCount() == 0)
+            {
+                this.InitializeCache();
+            }
+
             var fileHashToContentDict = new Dictionary<string, string>();
 
             foreach (var keyValuePair in this.filePathToContentCache)
@@ -53,18 +55,13 @@
             return fileHashToContentDict;
         }
 
-        public async Task InitializeAsync()
-        {
-            var files = await this.GetFilteredFilesAsync();
-
-            foreach (string filePath in files)
-            {
-                this.AddToCache(filePath);
-            }
-        }
-
         public IDictionary<string, string> CreateFilePathToHashDictionary()
         {
+            if (this.filePathToHashCache.GetCount() == 0)
+            {
+                this.InitializeCache();
+            }
+
             var filePathToHashDict = new Dictionary<string, string>();
 
             foreach (var keyValuePair in this.filePathToHashCache)
@@ -75,23 +72,15 @@
             return filePathToHashDict;
         }
 
-        private async Task<IList<string>> GetFilteredFilesAsync() => await this.filtersService.FilterFilesAsync(this.GetSolutionFiles());
+        /// <inheritdoc/>
+        public async Task FilterFilesAsync(IFiltersService filtersService) => this.files = await filtersService.FilterFilesAsync(this.files);
 
-        private IList<string> GetSolutionFiles()
+        private void InitializeCache()
         {
-            var solutionFiles = this.solutionService.GetSolutionFiles();
-
-            string solutionPath = this.solutionService.GetSolutionPath();
-
-            // If Solution files are empty try get files directly from file system.
-            if (solutionFiles.Count == 0)
+            foreach (string filePath in this.files)
             {
-                string[] files = Directory.GetFileSystemEntries(solutionPath, "*", SearchOption.AllDirectories);
-
-                (solutionFiles as List<string>).AddRange(files);
+                this.AddToCache(filePath);
             }
-
-            return solutionFiles;
         }
 
         //private IDictionary<string, string> GetFileHashToContentDictionary() => this.GetFileHashToContentDictionary(this.filePaths);
@@ -122,7 +111,7 @@
             return fileContent;
         }
 
-        public string GetFileHash(string filePathKey)
+        private string GetFileHash(string filePathKey)
         {
             string fileHash = this.filePathToHashCache[filePathKey] as string;
 

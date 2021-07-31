@@ -13,6 +13,8 @@
     {
         private static readonly ILogger Logger = LogManager.ForContext<FiltersService>();
 
+        private readonly string[] defaultIgnoreDirectories = new string[] { "node_modules", ".vs" };
+
         private ISnykCodeClient codeClient;
 
         private FiltersDto filters;
@@ -36,7 +38,7 @@
 
             foreach (string filePath in filePaths)
             {
-                if (filePath.Contains("node_modules"))
+                if (this.IsFileInIgnoredDirectory(filePath))
                 {
                     continue;
                 }
@@ -50,6 +52,19 @@
             Logger.Debug("Filtered Files count {Count}.", filteredFiles.Count);
 
             return filteredFiles;
+        }
+
+        private bool IsFileInIgnoredDirectory(string filePath)
+        {
+            foreach (string defaultIgnoreDirectory in this.defaultIgnoreDirectories)
+            {
+                if (filePath.Contains(defaultIgnoreDirectory))
+                {
+                    return true;
+                }
+            }
+
+            return false;
         }
 
         private async Task<FiltersDto> GetFiltersAsync()

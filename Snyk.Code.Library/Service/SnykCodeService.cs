@@ -56,7 +56,7 @@
         {
             Logger.Debug("Start Snyk scan");
 
-            await fileProvider.InitializeAsync();
+            await fileProvider.FilterFilesAsync(this.filtersService);
 
             var filePathToHashDict = fileProvider.CreateFilePathToHashDictionary();
 

@@ -3,11 +3,12 @@
     using System;
     using System.Collections.Generic;
     using System.IO;
-    using System.Linq;
     using EnvDTE;
     using Microsoft.VisualStudio;
     using Microsoft.VisualStudio.Shell.Interop;
+    using Snyk.Code.Library.Service;
     using Snyk.VisualStudio.Extension.Service;
+    using Snyk.VisualStudio.Extension.SnykCode;
     using Task = System.Threading.Tasks.Task;
 
     /// <summary>
@@ -75,6 +76,12 @@
         }
 
         /// <summary>
+        /// Create new instance of <see cref="IFileProvider"/>.
+        /// </summary>
+        /// <returns>Create new instance of IFileProvider.</returns>
+        public IFileProvider NewFileProvider() => new SnykCodeFileProvider(this.GetSolutionPath(), this.GetSolutionFiles());
+
+        /// <summary>
         /// Get solution projects.
         /// </summary>
         /// <returns>Projects instance.</returns>
@@ -84,7 +91,7 @@
         /// Get all solution files.
         /// </summary>
         /// <returns>List of solution files.</returns>
-        public IList<string> GetSolutionFiles()
+        public IList<string> GetSolutionProjectsFiles()
         {
             var solutionFiles = new List<string>();
 
@@ -195,5 +202,30 @@
         }
 
         private bool IsFilePath(string path) => !File.GetAttributes(path).HasFlag(FileAttributes.Directory);
+
+        private IList<string> GetSolutionFiles()
+        {
+            var solutionProjectsFiles = this.GetSolutionProjectsFiles();
+
+            // If Solution files are empty try get files directly from file system.
+            if (solutionProjectsFiles.Count == 0)
+            {
+                solutionProjectsFiles = this.GetSolutionDirectoryFiles();
+            }
+
+            return solutionProjectsFiles;
+        }
+
+        private IList<string> GetSolutionDirectoryFiles()
+        {
+            string solutionPath = this.GetSolutionPath();
+
+            string[] files = Directory.GetFileSystemEntries(solutionPath, "*", SearchOption.AllDirectories);
+
+            var filesList = new List<string>();
+            filesList.AddRange(files);
+
+            return filesList;
+        }
     }
 }

@@ -212,7 +212,7 @@
                             this.Logger.LogInformation($"Solution path = {solutionPath}");
                             this.Logger.LogInformation("Start scan");
 
-                            var filesProvider = this.serviceProvider.NewFileProvider();
+                            var filesProvider = this.serviceProvider.SolutionService.NewFileProvider();
 
                             var analysisResult = this.serviceProvider.SnykCodeService.ScanAsync(filesProvider).Result;
 
