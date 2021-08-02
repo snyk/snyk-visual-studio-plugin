@@ -71,9 +71,9 @@
             tasksService.ScanError += this.OnDisplayError;
             tasksService.ScanningCancelled += this.OnScanningCancelled;
             tasksService.ScanningStarted += this.OnScanningStarted;
-            tasksService.CliScanningUpdate += this.OnScanningUpdate;
+            tasksService.CliScanningUpdate += this.OnCliScanningUpdate;
             tasksService.SnykCodeScanningUpdate += this.OnSnykCodeScanningUpdate;
-            tasksService.ScanningFinished += this.OnScanningFinished;
+            //tasksService.ScanningFinished += this.OnScanningFinished;
 
             logger.LogInformation("Initialize Download Event Listeners");
 
@@ -108,7 +108,7 @@
         /// </summary>
         /// <param name="sender">Source object.</param>
         /// <param name="eventArgs">Event args.</param>
-        public void OnScanningUpdate(object sender, SnykCliScanEventArgs eventArgs) => this.AppendCliResultToTree(eventArgs.Result);
+        public void OnCliScanningUpdate(object sender, SnykCliScanEventArgs eventArgs) => this.AppendCliResultToTree(eventArgs.Result);
 
         /// <summary>
         /// Scanning update event handler. Append CLI results to tree.
@@ -370,6 +370,8 @@
                 return;
             }
 
+            this.context.TransitionTo(ScanResultsState.Instance);
+
             this.Dispatcher.Invoke(() =>
             {
                 this.vulnerabilitiesTree.AppendVulnerabilities(cliResult);
@@ -384,6 +386,8 @@
 
         private void AppendSnykCodeResultToTree(AnalysisResult analysisResult)
         {
+            this.context.TransitionTo(ScanResultsState.Instance);
+
             this.Dispatcher.Invoke(() =>
             {
                 this.vulnerabilitiesTree.AppendVulnerabilities(analysisResult);
