@@ -12,7 +12,6 @@
     using Snyk.VisualStudio.Extension.CLI;
     using Snyk.VisualStudio.Extension.Settings;
     using Snyk.VisualStudio.Extension.SnykAnalytics;
-    using Snyk.VisualStudio.Extension.SnykCode;
     using Snyk.VisualStudio.Extension.Theme;
     using Snyk.VisualStudio.Extension.UI;
     using IAsyncServiceProvider = Microsoft.VisualStudio.Shell.IAsyncServiceProvider;
@@ -205,6 +204,9 @@
 
             this.tasksService = SnykTasksService.Instance;
             this.solutionService = SnykSolutionService.Instance;
+
+            VsInfoBarService.Initialize(this);
+            VsStatusBar.Initialize(this);
 
             this.activityLogger.LogInformation("Leave SnykService.InitializeAsync");
         }
