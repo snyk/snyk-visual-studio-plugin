@@ -78,10 +78,10 @@
                     fileNode.Items.Add(node);
                 }
 
-                this.snykCodeRootNode.Items.Add(fileNode);
+                this.cliRootNode.Items.Add(fileNode);
             });
 
-            this.snykCodeRootNode.SetDetails(
+            this.cliRootNode.SetDetails(
                 cliResult.Count,
                 cliResult.CriticalSeverityCount,
                 cliResult.HighSeverityCount,

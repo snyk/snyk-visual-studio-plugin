@@ -156,7 +156,7 @@
         {
             this.Logger.LogInformation("Enter Scan method");
 
-            this.ScanCli();
+            //this.ScanCli();
 
             this.ScanSnykCode();
 
@@ -457,11 +457,18 @@
 
                             _ = Task.Run(async () =>
                             {
-                                var filesProvider = this.serviceProvider.SolutionService.NewFileProvider();
+                                try
+                                {
+                                    var filesProvider = this.serviceProvider.SolutionService.NewFileProvider();
 
-                                var analysisResult = await this.serviceProvider.SnykCodeService.ScanAsync(filesProvider);
+                                    var analysisResult = await this.serviceProvider.SnykCodeService.ScanAsync(filesProvider);
 
-                                this.OnScanningUpdate(analysisResult);
+                                    this.OnScanningUpdate(analysisResult);
+                                } 
+                                catch (Exception exception)
+                                {
+                                    VsStatusBar.Instance.ShowMessageBoxAsync("SnykCode", exception.Message);
+                                }
                             });
                         }
                         catch (Exception scanException)
