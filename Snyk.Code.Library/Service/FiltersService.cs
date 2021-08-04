@@ -2,13 +2,20 @@
 {
     using System.Collections.Generic;
     using System.IO;
+    using System.Linq;
     using System.Threading.Tasks;
+    using Serilog;
     using Snyk.Code.Library.Api;
     using Snyk.Code.Library.Api.Dto;
+    using Snyk.Common;
 
     /// <inheritdoc/>
     public class FiltersService : IFiltersService
     {
+        private static readonly ILogger Logger = LogManager.ForContext<FiltersService>();
+
+        private readonly string[] defaultIgnoreDirectories = new string[] { "node_modules", ".vs", ".github" };
+
         private ISnykCodeClient codeClient;
 
         private FiltersDto filters;
@@ -22,21 +29,33 @@
         /// <inheritdoc/>
         public async Task<IList<string>> FilterFilesAsync(IList<string> filePaths)
         {
+            Logger.Information("Filter {Count} files.", filePaths.Count);
+
             var filters = await this.GetFiltersAsync();
             var extensionFilters = filters.Extensions;
             var configFileFilters = filters.ConfigFiles;
 
-            var filteredFiles = new List<string>();
+            return filePaths
+                    .Where(path => !this.IsFileInIgnoredDirectory(path) && (extensionFilters.Contains(Path.GetExtension(path)) || configFileFilters.Contains(Path.GetFileName(path))))
+                    .ToList();
+        }
 
-            foreach (string filePath in filePaths)
+        private bool IsFileInIgnoredDirectory(string filePath)
+        {
+            foreach (string defaultIgnoreDirectory in this.defaultIgnoreDirectories)
             {
-                if (extensionFilters.Contains(Path.GetExtension(filePath)) || configFileFilters.Contains(Path.GetFileName(filePath)))
+                string[] directories = filePath.Split(Path.DirectorySeparatorChar);
+
+                foreach (string directoryName in directories)
                 {
-                    filteredFiles.Add(filePath);
+                    if (defaultIgnoreDirectory == directoryName)
+                    {
+                        return true;
+                    }
                 }
             }
 
-            return filteredFiles;
+            return false;
         }
 
         private async Task<FiltersDto> GetFiltersAsync()

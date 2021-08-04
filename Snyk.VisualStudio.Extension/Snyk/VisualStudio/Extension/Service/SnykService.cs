@@ -7,11 +7,13 @@
     using Microsoft.VisualStudio.Settings;
     using Microsoft.VisualStudio.Shell.Interop;
     using Microsoft.VisualStudio.Shell.Settings;
-    using CLI;
-    using UI;
-    using Settings;
-    using SnykAnalytics;
-    using Theme;    
+    using Snyk.Code.Library.Api;
+    using Snyk.Code.Library.Service;
+    using Snyk.VisualStudio.Extension.CLI;
+    using Snyk.VisualStudio.Extension.Settings;
+    using Snyk.VisualStudio.Extension.SnykAnalytics;
+    using Snyk.VisualStudio.Extension.Theme;
+    using Snyk.VisualStudio.Extension.UI;
     using IAsyncServiceProvider = Microsoft.VisualStudio.Shell.IAsyncServiceProvider;
     using Task = System.Threading.Tasks.Task;
 
@@ -37,6 +39,10 @@
         private SnykAnalyticsService analyticsService;
 
         private SnykUserStorageSettingsService userStorageSettingsService;
+
+        private SnykCodeService snykCodeService;
+
+        private FiltersService filterService;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="SnykService"/> class.
@@ -128,6 +134,27 @@
             }
         }
 
+        /// <inheritdoc/>
+        public ISnykCodeService SnykCodeService
+        {
+            get
+            {
+                if (this.snykCodeService == null)
+                {
+                    var codeClient = new SnykCodeClient(SnykExtension.GetAppSettings().SnykCodeApiEndpoinUrl, this.Options.ApiToken);
+
+                    this.filterService = new FiltersService(codeClient);
+
+                    var bundleService = new BundleService(codeClient);
+                    var analysisService = new AnalysisService(codeClient);
+
+                    this.snykCodeService = new SnykCodeService(bundleService, analysisService, this.filterService);
+                }
+
+                return this.snykCodeService;
+            }
+        }
+
         /// <summary>
         /// Show Snyk tool window.
         /// </summary>
@@ -145,7 +172,7 @@
         /// </summary>
         /// <param name="serviceType">Needed service type.</param>
         /// <returns>Result VS service instance</returns>
-        public object GetService(Type serviceType) => null;        
+        public object GetService(Type serviceType) => null;
 
         /// <summary>
         /// Initialize service.
@@ -177,6 +204,9 @@
 
             this.tasksService = SnykTasksService.Instance;
             this.solutionService = SnykSolutionService.Instance;
+
+            VsInfoBarService.Initialize(this);
+            VsStatusBar.Initialize(this);
 
             this.activityLogger.LogInformation("Leave SnykService.InitializeAsync");
         }

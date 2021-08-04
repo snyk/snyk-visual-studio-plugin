@@ -1,11 +1,13 @@
 ﻿namespace Snyk.VisualStudio.Extension.CLI
 {
     using System;
+    using System.Collections.Generic;
     using System.IO;
     using EnvDTE;
-    using Service;
     using Microsoft.VisualStudio;
     using Microsoft.VisualStudio.Shell.Interop;
+    using Snyk.Code.Library.Service;
+    using Snyk.VisualStudio.Extension.Service;
     using Task = System.Threading.Tasks.Task;
 
     /// <summary>
@@ -73,10 +75,44 @@
         }
 
         /// <summary>
+        /// Create new instance of <see cref="IFileProvider"/>.
+        /// </summary>
+        /// <returns>Create new instance of IFileProvider.</returns>
+        public IFileProvider NewFileProvider() => new SnykCodeFileProvider(this.GetSolutionPath(), this.GetSolutionFiles());
+
+        /// <summary>
         /// Get solution projects.
         /// </summary>
         /// <returns>Projects instance.</returns>
         public Projects GetProjects() => this.ServiceProvider.DTE.Solution.Projects;
+
+        /// <summary>
+        /// Get all solution files.
+        /// </summary>
+        /// <returns>List of solution files.</returns>
+        public IList<string> GetSolutionProjectsFiles()
+        {
+            var solutionFiles = new List<string>();
+
+            var projects = this.GetProjects();
+
+            foreach (Project project in projects)
+            {
+                foreach (ProjectItem projectItem in project.ProjectItems)
+                {
+                    try
+                    {
+                        solutionFiles.Add(projectItem.get_FileNames(0));
+                    }
+                    catch (Exception ex)
+                    {
+                        this.Logger.LogError(ex.Message);
+                    }
+                }
+            }
+
+            return solutionFiles;
+        }
 
         /// <summary>
         /// Get solution path.
@@ -96,9 +132,10 @@
             {
                 this.logger.LogInformation("Get solution path from solution full name in case solution with projects.");
 
-                string fullName = dteSolution.FullName;
+                solutionPath = dteSolution.FullName;
 
-                solutionPath = Directory.GetParent(dteSolution.FullName).FullName;
+                //CLI string fullName = dteSolution.FullName;
+                //CLI: solutionPath = Directory.GetParent(dteSolution.FullName).FullName;
             }
 
             // 2 case: Flat project without solution.
@@ -164,5 +201,30 @@
         }
 
         private bool IsFilePath(string path) => !File.GetAttributes(path).HasFlag(FileAttributes.Directory);
+
+        private IList<string> GetSolutionFiles()
+        {
+            var solutionProjectsFiles = this.GetSolutionProjectsFiles();
+
+            // If Solution files are empty try get files directly from file system.
+            if (solutionProjectsFiles.Count == 0)
+            {
+                solutionProjectsFiles = this.GetSolutionDirectoryFiles();
+            }
+
+            return solutionProjectsFiles;
+        }
+
+        private IList<string> GetSolutionDirectoryFiles()
+        {
+            string solutionPath = this.GetSolutionPath();
+
+            string[] files = Directory.GetFileSystemEntries(solutionPath, "*", SearchOption.AllDirectories);
+
+            var filesList = new List<string>();
+            filesList.AddRange(files);
+
+            return filesList;
+        }
     }
 }

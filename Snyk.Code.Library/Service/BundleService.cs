@@ -2,19 +2,21 @@
 {
     using System;
     using System.Collections.Generic;
-    using System.IO;
     using System.Linq;
     using System.Text;
     using System.Threading.Tasks;
+    using Serilog;
     using Snyk.Code.Library.Api;
     using Snyk.Code.Library.Api.Dto;
-    using Snyk.Code.Library.Common;
     using Snyk.Code.Library.Domain;
+    using Snyk.Common;
 
     /// <inheritdoc/>
     public class BundleService : IBundleService
     {
         private const int UploadFileRequestAttempts = 5;
+
+        private static readonly ILogger Logger = LogManager.ForContext<BundleService>();
 
         private readonly ISnykCodeClient codeClient;
 
@@ -43,13 +45,17 @@
         }
 
         /// <inheritdoc/>
-        public async Task<bool> UploadMissingFilesAsync(Bundle bundle)
+        public async Task<bool> UploadMissingFilesAsync(Bundle bundle, IFileProvider fileProvider)
         {
+            Logger.Information("Uploading missing files for bundle.");
+
             var resultBundle = bundle;
 
             for (int counter = 0; counter < UploadFileRequestAttempts; counter++)
             {
-                await this.UploadFilesAsync(resultBundle.Id, this.CreateFileHashToContentDictionary(resultBundle.MissingFiles));
+                var fileHashToContentDict = fileProvider.CreateFileHashToContentDictionary(resultBundle.MissingFiles);
+
+                await this.UploadFilesAsync(resultBundle.Id, fileHashToContentDict);
 
                 resultBundle = await this.CheckBundleAsync(bundle.Id);
 
@@ -58,6 +64,8 @@
                     return true;
                 }
             }
+
+            Logger.Information("Not all files uploadded successfully. Not uploaded files {MissingFiles}", resultBundle.MissingFiles);
 
             return false;
         }
@@ -157,7 +165,6 @@
 
             Task<BundleResponseDto> bundleDto = null;
 
-            // If payload < 4 max bundle chunk size just send this bundle and return results.
             if (payloadSize < maxChunkSize)
             {
                 bundleDto = this.codeClient.ExtendBundleAsync(bundleId, pathToHashFileDict, filesToRemovePaths);
@@ -432,22 +439,6 @@
             }
 
             return codeFileDtos;
-        }
-
-        private IDictionary<string, string> CreateFileHashToContentDictionary(IList<string> filePaths)
-        {
-            var fileHashToContentDict = new Dictionary<string, string>();
-
-            foreach (string filePath in filePaths)
-            {
-                string fileContent = File.ReadAllText(filePath, Encoding.UTF8);
-
-                string fileHash = Sha256.ComputeHash(fileContent);
-
-                fileHashToContentDict.Add(fileHash, fileContent);
-            }
-
-            return fileHashToContentDict;
         }
     }
 }

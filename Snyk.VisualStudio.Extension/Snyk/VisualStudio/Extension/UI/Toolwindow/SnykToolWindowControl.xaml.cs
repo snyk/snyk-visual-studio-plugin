@@ -15,6 +15,7 @@
     using Service;
     using UI.Tree;
     using Task = System.Threading.Tasks.Task;
+    using Snyk.Code.Library.Domain.Analysis;
 
     /// <summary>
     /// Interaction logic for SnykToolWindowControl.
@@ -70,8 +71,9 @@
             tasksService.ScanError += this.OnDisplayError;
             tasksService.ScanningCancelled += this.OnScanningCancelled;
             tasksService.ScanningStarted += this.OnScanningStarted;
-            tasksService.ScanningUpdate += this.OnScanningUpdate;
-            tasksService.ScanningFinished += this.OnScanningFinished;
+            tasksService.CliScanningUpdate += this.OnCliScanningUpdate;
+            tasksService.SnykCodeScanningUpdate += this.OnSnykCodeScanningUpdate;
+            //tasksService.ScanningFinished += this.OnScanningFinished;
 
             logger.LogInformation("Initialize Download Event Listeners");
 
@@ -106,7 +108,14 @@
         /// </summary>
         /// <param name="sender">Source object.</param>
         /// <param name="eventArgs">Event args.</param>
-        public void OnScanningUpdate(object sender, SnykCliScanEventArgs eventArgs) => this.AppendCliResultToTree(eventArgs.Result);
+        public void OnCliScanningUpdate(object sender, SnykCliScanEventArgs eventArgs) => this.AppendCliResultToTree(eventArgs.Result);
+
+        /// <summary>
+        /// Scanning update event handler. Append CLI results to tree.
+        /// </summary>
+        /// <param name="sender">Source object.</param>
+        /// <param name="eventArgs">Event args.</param>
+        public void OnSnykCodeScanningUpdate(object sender, SnykCodeScanEventArgs eventArgs) => this.AppendSnykCodeResultToTree(eventArgs.Result);
 
         /// <summary>
         /// ScanningStarted event handler. Switch context to ScanningState.
@@ -356,6 +365,13 @@
         /// <param name="cliResult">CLI result.</param>
         private void AppendCliResultToTree(CliResult cliResult)
         {
+            if (cliResult.CliVulnerabilitiesList == null)
+            {
+                return;
+            }
+
+            this.context.TransitionTo(ScanResultsState.Instance);
+
             this.Dispatcher.Invoke(() =>
             {
                 this.vulnerabilitiesTree.AppendVulnerabilities(cliResult);
@@ -365,6 +381,23 @@
                     cliResult.HighSeverityCount,
                     cliResult.MediumSeverityCount,
                     cliResult.LowSeverityCount);
+            });
+        }
+
+        private void AppendSnykCodeResultToTree(AnalysisResult analysisResult)
+        {
+            this.context.TransitionTo(ScanResultsState.Instance);
+
+            this.Dispatcher.Invoke(() =>
+            {
+                this.vulnerabilitiesTree.AppendVulnerabilities(analysisResult);
+
+                // TODO: Add SnykCode analytics event.
+                // this.serviceProvider.AnalyticsService.LogOpenSourceAnalysisReadyEvent(
+                //    cliResult.CriticalSeverityCount,
+                //    cliResult.HighSeverityCount,
+                //    cliResult.MediumSeverityCount,
+                //    cliResult.LowSeverityCount);
             });
         }
 
@@ -388,57 +421,77 @@
             {
                 this.HideIssueMessages();
 
-                var treeNode = this.vulnerabilitiesTree.SelectedItem as VulnerabilityTreeNode;
+                TreeNode treeNode = null;
+
+                if (vulnerabilitiesTree.SelectedItem is OssVulnerabilityTreeNode)
+                {
+                    vulnerabilityDescriptionGrid.Visibility = Visibility.Visible;
+
+                    var scaTreeNode = this.vulnerabilitiesTree.SelectedItem as OssVulnerabilityTreeNode;
+
+                    treeNode = scaTreeNode;
+
+                    if (scaTreeNode.Vulnerability != null)
+                    {
+                        this.vulnerabilityDetailsPanel.Visibility = Visibility.Visible;
+
+                        var vulnerability = scaTreeNode.Vulnerability;
+
+                        this.SetupSeverity(vulnerability);
+
+                        this.vulnerableModule.Text = vulnerability.Name;
+
+                        string introducedThroughText = vulnerability.From != null && vulnerability.From.Length != 0
+                                    ? string.Join(", ", vulnerability.From) : "";
+
+                        this.introducedThrough.Text = introducedThroughText;
+                        this.exploitMaturity.Text = vulnerability.Exploit;
+                        this.fixedIn.Text = String.IsNullOrWhiteSpace(vulnerability.Remediation)
+                            ? $"There is no fixed version for {vulnerability.Name}" : vulnerability.Remediation;
+
+                        string detaiedIntroducedThroughText = vulnerability.From != null && vulnerability.From.Length != 0
+                                    ? string.Join(" > ", vulnerability.From) : "";
+
+                        this.detaiedIntroducedThrough.Text = detaiedIntroducedThroughText;
+
+                        this.remediation.Text = vulnerability.FixedIn != null && vulnerability.FixedIn.Length != 0
+                                                 ? "Upgrade to " + string.Join(" > ", vulnerability.FixedIn) : "";
+
+                        this.overview.Html = Markdig.Markdown.ToHtml(vulnerability.Description);
+
+                        this.moreAboutThisIssue.NavigateUri = new Uri(vulnerability.Url);
+
+                        this.serviceProvider.AnalyticsService.LogUserSeesAnIssueEvent(vulnerability.Id, vulnerability.Severity);
+                    }
+                }
+
+                if (vulnerabilitiesTree.SelectedItem is SnykCodeVulnerabilityTreeNode)
+                {
+                    vulnerabilityDescriptionGrid.Visibility = Visibility.Collapsed;
+
+                    this.vulnerabilityDetailsPanel.Visibility = Visibility.Visible;
+
+                    snykCodeDescriptionGrid.Visibility = Visibility.Visible;
+
+                    var snykCodeTreeNode = this.vulnerabilitiesTree.SelectedItem as SnykCodeVulnerabilityTreeNode;
+
+                    treeNode = snykCodeTreeNode;
+
+                    this.SetupSeverity(new Vulnerability { Severity = Severity.FromInt(snykCodeTreeNode.Suggestion.Severity), });
+
+                    this.snykCodeDescription.Text = snykCodeTreeNode.Suggestion.Message;
+                }
 
                 if (treeNode == null)
                 {
-                    return;
-                }
-
-                if (treeNode.Vulnerability != null)
-                {
-                    this.vulnerabilityDetailsPanel.Visibility = Visibility.Visible;
-
-                    var vulnerability = treeNode.Vulnerability;
-
-                    this.SetupSeverity(vulnerability);
-
-                    this.vulnerableModule.Text = vulnerability.Name;
-
-                    string introducedThroughText = vulnerability.From != null && vulnerability.From.Length != 0
-                                ? string.Join(", ", vulnerability.From) : "";
-
-                    this.introducedThrough.Text = introducedThroughText;
-                    this.exploitMaturity.Text = vulnerability.Exploit;
-                    this.fixedIn.Text = String.IsNullOrWhiteSpace(vulnerability.Remediation)
-                        ? $"There is no fixed version for {vulnerability.Name}" : vulnerability.Remediation;
-
-                    string detaiedIntroducedThroughText = vulnerability.From != null && vulnerability.From.Length != 0
-                                ? string.Join(" > ", vulnerability.From) : "";
-
-                    this.detaiedIntroducedThrough.Text = detaiedIntroducedThroughText;
-
-                    this.remediation.Text = vulnerability.FixedIn != null && vulnerability.FixedIn.Length != 0
-                                             ? "Upgrade to " + string.Join(" > ", vulnerability.FixedIn) : "";
-
-                    this.overview.Html = Markdig.Markdown.ToHtml(vulnerability.Description);
-
-                    this.moreAboutThisIssue.NavigateUri = new Uri(vulnerability.Url);
-
-                    this.serviceProvider.AnalyticsService.LogUserSeesAnIssueEvent(vulnerability.Id, vulnerability.Severity);
-                }
-                else
-                {
                     this.CleanAndHideVulnerabilityDetailsPanel();
 
-                    if (treeNode.Items.Count > 0)
-                    {
-                        this.selectIssueMessageGrid.Visibility = Visibility.Visible;
-                    }
-                    else
-                    {
-                        this.noIssuesMessageGrid.Visibility = Visibility.Visible;
-                    }
+                    vulnerabilityDescriptionGrid.Visibility = Visibility.Collapsed;
+                    snykCodeDescriptionGrid.Visibility = Visibility.Collapsed;
+
+                    this.selectIssueMessageGrid.Visibility = Visibility.Visible;
+
+                    return;
                 }
             });
         }

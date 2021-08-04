@@ -73,7 +73,7 @@
                     <Border Name="severityBorder" Margin="0,15" Padding="5" BorderThickness="0" CornerRadius="0, 5, 5, 0" VerticalAlignment="Center" HorizontalAlignment="Left">
                         <TextBlock Name="severity" Text="Severity" Width="150" HorizontalAlignment="Center" VerticalAlignment="Center" FontSize="20" TextAlignment="Center"/>
                     </Border>
-                    <Grid>
+                    <Grid x:Name="vulnerabilityDescriptionGrid">
                         <Grid.RowDefinitions>
                             <RowDefinition/>
                             <RowDefinition/>
@@ -122,6 +122,19 @@
                         <TextBlock Grid.Row="9" Grid.Column="0" FontSize="12" Margin="5, 20, 5, 5" TextWrapping="Wrap" MaxWidth="1000">
                             <Hyperlink Name="moreAboutThisIssue" RequestNavigate="MoreAboutThisIssue_RequestNavigate">More about this issue</Hyperlink >
                         </TextBlock>
+                    </Grid>
+                    <Grid x:Name="snykCodeDescriptionGrid">
+                        <Grid.RowDefinitions>
+                            <RowDefinition/>
+                            <RowDefinition/>
+                        </Grid.RowDefinitions>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="2*"/>
+                            <ColumnDefinition Width="8*"/>
+                        </Grid.ColumnDefinitions>
+
+                        <TextBlock Grid.Row="0" Grid.Column="0" Text="Description:" FontWeight="Bold" FontSize="12" Margin="5, 5, 5, 5"/>
+                        <TextBlock Grid.Row="0" Grid.Column="1" Name="snykCodeDescription" Text="" FontSize="12" Margin="5, 5, 5, 5" TextWrapping="Wrap"/>
                     </Grid>
                 </StackPanel>
             </ScrollViewer>

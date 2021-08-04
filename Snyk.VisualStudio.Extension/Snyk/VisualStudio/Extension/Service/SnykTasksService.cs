@@ -6,7 +6,9 @@
     using System.Threading.Tasks;
     using System.Windows;
     using Microsoft.VisualStudio.Shell;
+    using Snyk.Code.Library.Domain.Analysis;
     using Snyk.VisualStudio.Extension.CLI;
+    using Snyk.VisualStudio.Extension.UI;
     using static Snyk.VisualStudio.Extension.CLI.SnykCliDownloader;
     using Task = System.Threading.Tasks.Task;
 
@@ -17,9 +19,13 @@
     {
         private static SnykTasksService instance;
 
-        private CancellationTokenSource tokenSource;
+        private CancellationTokenSource cliScanTokenSource;
 
-        private Task currentTask;
+        private CancellationTokenSource snykCodeScanTokenSource;
+
+        private Task cliScanTask;
+
+        private Task snykCodeScanTask;
 
         private ISnykServiceProvider serviceProvider;
 
@@ -43,9 +49,14 @@
         public event EventHandler<SnykCliScanEventArgs> ScanningFinished;
 
         /// <summary>
-        /// Scanning update event handler.
+        /// Cli Scanning update event handler.
         /// </summary>
-        public event EventHandler<SnykCliScanEventArgs> ScanningUpdate;
+        public event EventHandler<SnykCliScanEventArgs> CliScanningUpdate;
+
+        /// <summary>
+        /// SnykCode scanning update event handler.
+        /// </summary>
+        public event EventHandler<SnykCodeScanEventArgs> SnykCodeScanningUpdate;
 
         /// <summary>
         /// Scan error event handler.
@@ -119,11 +130,11 @@
         /// </summary>
         public void CancelCurrentTask()
         {
-            if (this.tokenSource != null)
+            if (this.cliScanTokenSource != null)
             {
                 this.Logger.LogInformation("Cancel current task");
 
-                this.tokenSource.Cancel();
+                this.cliScanTokenSource.Cancel();
 
                 this.cli?.ConsoleRunner?.Stop();
             }
@@ -143,24 +154,141 @@
         {
             this.Logger.LogInformation("Enter Scan method");
 
-            if (this.currentTask != null && this.currentTask.Status == TaskStatus.Running)
+            //this.ScanCli();
+
+            this.ScanSnykCode();
+
+            this.serviceProvider.AnalyticsService.LogUserTriggersAnAnalysisEvent();
+        }
+
+        /// <summary>
+        /// Start download task in background thread.
+        /// </summary>
+        /// <param name="downloadFinishedCallback"><see cref="CliDownloadFinishedCallback"/> callback object.</param>
+        public void Download(CliDownloadFinishedCallback downloadFinishedCallback = null)
+        {
+            this.Logger.LogInformation("Enter Download method");
+
+            if (this.cliScanTask != null && this.cliScanTask.Status == TaskStatus.Running)
             {
                 this.Logger.LogInformation("There is already a task in progress");
 
                 return;
             }
 
-            this.tokenSource = new CancellationTokenSource();
+            this.cliScanTokenSource = new CancellationTokenSource();
 
             var progressWorker = new SnykProgressWorker
             {
                 TasksService = this,
-                TokenSource = this.tokenSource,
+                TokenSource = this.cliScanTokenSource,
+            };
+
+            this.Logger.LogInformation("Start run task");
+
+            this.cliScanTask = Task.Run(
+                () =>
+                {
+                    try
+                    {
+                        var userStorageService = this.serviceProvider.UserStorageSettingsService;
+
+                        string currentCliVersion = userStorageService.GetCurrentCliVersion();
+
+                        DateTime lastCliReleaseDate = userStorageService.GetCliReleaseLastCheckDate();
+
+                        var cliDownloader = new SnykCliDownloader(currentCliVersion, this.serviceProvider.ActivityLogger);
+
+                        List<CliDownloadFinishedCallback> downloadFinishedCallbacks = new List<CliDownloadFinishedCallback>();
+
+                        if (downloadFinishedCallback != null)
+                        {
+                            downloadFinishedCallbacks.Add(downloadFinishedCallback);
+                        }
+
+                        downloadFinishedCallbacks.Add(new CliDownloadFinishedCallback(() =>
+                        {
+                            userStorageService.SaveCurrentCliVersion(cliDownloader.GetLatestReleaseInfo().CliVersion);
+                            userStorageService.SaveCliReleaseLastCheckDate(DateTime.UtcNow);
+                        }));
+
+                        cliDownloader.AutoUpdateCli(
+                            lastCliReleaseDate,
+                            progressWorker: progressWorker,
+                            downloadFinishedCallbacks: downloadFinishedCallbacks);
+                    }
+                    catch (Exception exception)
+                    {
+                        this.Logger.LogInformation(exception.Message);
+
+                        this.OnDownloadCancelled(exception.Message);
+                    }
+                }, progressWorker.TokenSource.Token);
+        }
+
+        /// <summary>
+        /// Fire error event. Create <see cref="CliError"/> instance.
+        /// </summary>
+        /// <param name="message">Error message.</param>
+        public void OnError(string message) => VsInfoBarService.Instance.ShowInfoBarAsync(message);
+
+        /// <summary>
+        /// Fire error event with <see cref="SnykCliScanEventArgs"/>.
+        /// </summary>
+        /// <param name="error"><see cref="CliError"/> object.</param>
+        public void OnError(CliError error) => VsInfoBarService.Instance.ShowInfoBarAsync(error?.Message);
+
+        /// <summary>
+        /// Fire download started.
+        /// </summary>
+        protected internal void OnDownloadStarted()
+            => this.DownloadStarted?.Invoke(this, new SnykCliDownloadEventArgs());
+
+        /// <summary>
+        /// Fire update download started.
+        /// </summary>
+        protected internal void OnUpdateDownloadStarted()
+            => this.DownloadStarted?.Invoke(this, new SnykCliDownloadEventArgs());
+
+        /// <summary>
+        /// Fire download finished event.
+        /// </summary>
+        protected internal void OnDownloadFinished() => this.DownloadFinished?.Invoke(this, new SnykCliDownloadEventArgs());
+
+        /// <summary>
+        /// Fire download cancelled event.
+        /// </summary>
+        /// <param name="message">Cancel message.</param>
+        protected internal void OnDownloadCancelled(string message) => this.DownloadCancelled?.Invoke(this, new SnykCliDownloadEventArgs(message));
+
+        /// <summary>
+        /// Fire download update (on download progress update) event.
+        /// </summary>
+        /// <param name="progress">Donwload progress form 0..100$.</param>
+        protected internal void OnDownloadUpdate(int progress) => this.DownloadUpdate?.Invoke(this, new SnykCliDownloadEventArgs(progress));
+
+        private void ScanCli()
+        {
+            if (this.cliScanTask != null && this.cliScanTask.Status == TaskStatus.Running)
+            {
+                this.Logger.LogInformation("There is already a task in progress");
+
+                return;
+            }
+
+            VsStatusBar.Instance.DisplayMessage("Cli scan started.");
+
+            this.cliScanTokenSource = new CancellationTokenSource();
+
+            var progressWorker = new SnykProgressWorker
+            {
+                TasksService = this,
+                TokenSource = this.cliScanTokenSource,
             };
 
             this.Logger.LogInformation("Start scan task");
 
-            this.currentTask = Task.Run(
+            this.cliScanTask = Task.Run(
                 () =>
                 {
                     this.OnScanningStarted();
@@ -205,7 +333,9 @@
                             this.Logger.LogInformation($"Solution path = {solutionPath}");
                             this.Logger.LogInformation("Start scan");
 
-                            CliResult cliResult = cli.Scan(solutionPath);
+                            VsStatusBar.Instance.DisplayMessage("Cli scanтing...");
+
+                            CliResult cliResult = this.cli.Scan(solutionPath);
 
                             progressWorker.CancelIfCancellationRequested();
 
@@ -214,6 +344,8 @@
                                 this.Logger.LogInformation("Scan is successful");
 
                                 this.OnError(cliResult.Error);
+
+                                VsStatusBar.Instance.ShowMessageBoxAsync("Snyk CLI", cliResult.Error.Message);
 
                                 return;
                             }
@@ -230,7 +362,14 @@
                         }
                         catch (Exception scanException)
                         {
-                            this.Logger.LogError(scanException.Message);
+                            var exception = scanException;
+
+                            if (scanException is AggregateException)
+                            {
+                                exception = scanException.InnerException;
+                            }
+
+                            this.Logger.LogError(exception.Message);
 
                             if ((bool)this.cli?.ConsoleRunner?.IsStopped)
                             {
@@ -238,8 +377,12 @@
                             }
                             else
                             {
-                                this.OnError(scanException.Message);
+                                this.OnError(exception.Message);
                             }
+
+                            VsStatusBar.Instance.ShowMessageBoxAsync("Snyk CLI", exception.Message);
+
+                            VsStatusBar.Instance.DisplayMessage("Scan finished");
 
                             this.cli = null;
 
@@ -249,6 +392,8 @@
                         progressWorker.CancelIfCancellationRequested();
 
                         this.OnScanningFinished();
+
+                        VsStatusBar.Instance.DisplayMessage("Cli scan finished.");
 
                         this.cli = null;
                     }
@@ -261,115 +406,103 @@
                         this.cli = null;
                     }
                 }, progressWorker.TokenSource.Token);
-
-            this.serviceProvider.AnalyticsService.LogUserTriggersAnAnalysisEvent();
         }
 
-        /// <summary>
-        /// Start download task in background thread.
-        /// </summary>
-        /// <param name="downloadFinishedCallback"><see cref="CliDownloadFinishedCallback"/> callback object.</param>
-        public void Download(CliDownloadFinishedCallback downloadFinishedCallback = null)
+        private void ScanSnykCode()
         {
-            this.Logger.LogInformation("Enter Download method");
-
-            if (this.currentTask != null && this.currentTask.Status == TaskStatus.Running)
+            if (this.snykCodeScanTask != null && this.snykCodeScanTask.Status == TaskStatus.Running)
             {
-                this.Logger.LogInformation("There is already a task in progress");
+                this.Logger.LogInformation("There is already a task in progress for SnykCode scan.");
 
                 return;
             }
 
-            this.tokenSource = new CancellationTokenSource();
+            VsStatusBar.Instance.DisplayMessage("Scan started.");
+
+            this.snykCodeScanTokenSource = new CancellationTokenSource();
 
             var progressWorker = new SnykProgressWorker
             {
                 TasksService = this,
-                TokenSource = this.tokenSource,
+                TokenSource = this.snykCodeScanTokenSource,
             };
 
-            this.Logger.LogInformation("Start run task");
+            this.Logger.LogInformation("Start scan task");
 
-            this.currentTask = Task.Run(
+            this.snykCodeScanTask = Task.Run(
                 () =>
                 {
+                    this.OnScanningStarted();
+
                     try
                     {
-                        var userStorageService = this.serviceProvider.UserStorageSettingsService;
+                        progressWorker.CancelIfCancellationRequested();
 
-                        string currentCliVersion = userStorageService.GetCurrentCliVersion();
-
-                        DateTime lastCliReleaseDate = userStorageService.GetCliReleaseLastCheckDate();
-
-                        var cliDownloader = new SnykCliDownloader(currentCliVersion, this.serviceProvider.ActivityLogger);
-
-                        List<CliDownloadFinishedCallback> downloadFinishedCallbacks = new List<CliDownloadFinishedCallback>();
-
-                        if (downloadFinishedCallback != null)
+                        if (!this.serviceProvider.SolutionService.IsSolutionOpen)
                         {
-                            downloadFinishedCallbacks.Add(downloadFinishedCallback);
+                            this.OnError("No open solution.");
+
+                            this.Logger.LogInformation("Solution not opened");
+
+                            return;
                         }
 
-                        downloadFinishedCallbacks.Add(new CliDownloadFinishedCallback(() =>
-                        {
-                            userStorageService.SaveCurrentCliVersion(cliDownloader.GetLatestReleaseInfo().CliVersion);
-                            userStorageService.SaveCliReleaseLastCheckDate(DateTime.UtcNow);
-                        }));
+                        progressWorker.CancelIfCancellationRequested();
 
-                        cliDownloader.AutoUpdateCli(
-                            lastCliReleaseDate,
-                            progressWorker: progressWorker,
-                            downloadFinishedCallbacks: downloadFinishedCallbacks);
+                        try
+                        {
+                            VsStatusBar.Instance.DisplayMessage("SnykCode scanning...");
+
+                            _ = Task.Run(async () =>
+                            {
+                                try
+                                {
+                                    var filesProvider = this.serviceProvider.SolutionService.NewFileProvider();
+
+                                    var analysisResult = await this.serviceProvider.SnykCodeService.ScanAsync(filesProvider);
+
+                                    this.OnScanningUpdate(analysisResult);
+                                } 
+                                catch (Exception exception)
+                                {
+                                    VsStatusBar.Instance.ShowMessageBoxAsync("SnykCode", exception.Message);
+                                }
+                            });
+                        }
+                        catch (Exception scanException)
+                        {
+                            var exception = scanException;
+
+                            if (scanException is AggregateException)
+                            {
+                                exception = scanException.InnerException;
+                            }
+
+                            this.Logger.LogError(exception.Message);
+
+                            this.OnError(exception.Message);
+
+                            VsStatusBar.Instance.ShowMessageBoxAsync("SnykCode", exception.Message);
+
+                            VsStatusBar.Instance.DisplayMessage("Scan finished.");
+
+                            return;
+                        }
+
+                        progressWorker.CancelIfCancellationRequested();
+
+                        VsStatusBar.Instance.DisplayMessage("Scan finished.");
                     }
                     catch (Exception exception)
                     {
-                        this.Logger.LogInformation(exception.Message);
+                        this.Logger.LogError(exception.Message);
 
-                        this.OnDownloadCancelled(exception.Message);
+                        this.OnScanningCancelled();
                     }
                 }, progressWorker.TokenSource.Token);
+
+
         }
-
-        /// <summary>
-        /// Fire error event. Create <see cref="CliError"/> instance.
-        /// </summary>
-        /// <param name="message">Error message.</param>
-        public void OnError(string message) => this.OnError(new CliError(message));
-
-        /// <summary>
-        /// Fire error event with <see cref="SnykCliScanEventArgs"/>.
-        /// </summary>
-        /// <param name="error"><see cref="CliError"/> object.</param>
-        public void OnError(CliError error) => this.ScanError?.Invoke(this, new SnykCliScanEventArgs(error));
-
-        /// <summary>
-        /// Fire download started.
-        /// </summary>
-        protected internal void OnDownloadStarted()
-            => this.DownloadStarted?.Invoke(this, new SnykCliDownloadEventArgs());
-
-        /// <summary>
-        /// Fire update download started.
-        /// </summary>
-        protected internal void OnUpdateDownloadStarted()
-            => this.DownloadStarted?.Invoke(this, new SnykCliDownloadEventArgs());
-
-        /// <summary>
-        /// Fire download finished event.
-        /// </summary>
-        protected internal void OnDownloadFinished() => this.DownloadFinished?.Invoke(this, new SnykCliDownloadEventArgs());
-
-        /// <summary>
-        /// Fire download cancelled event.
-        /// </summary>
-        /// <param name="message">Cancel message.</param>
-        protected internal void OnDownloadCancelled(string message) => this.DownloadCancelled?.Invoke(this, new SnykCliDownloadEventArgs(message));
-
-        /// <summary>
-        /// Fire download update (on download progress update) event.
-        /// </summary>
-        /// <param name="progress">Donwload progress form 0..100$.</param>
-        protected internal void OnDownloadUpdate(int progress) => this.DownloadUpdate?.Invoke(this, new SnykCliDownloadEventArgs(progress));
 
         /// <summary>
         /// Fire scanning started event.
@@ -380,7 +513,13 @@
         /// Fire scanning update with <see cref="SnykCliScanEventArgs"/> object.
         /// </summary>
         /// <param name="cliResult"><see cref="CliResult"/> object with vulnerabilities.</param>
-        private void OnScanningUpdate(CliResult cliResult) => this.ScanningUpdate?.Invoke(this, new SnykCliScanEventArgs(cliResult));
+        private void OnScanningUpdate(CliResult cliResult) => this.CliScanningUpdate?.Invoke(this, new SnykCliScanEventArgs(cliResult));
+
+        /// <summary>
+        /// Fire scanning update with <see cref="SnykCodeScanEventArgs"/> object.
+        /// </summary>
+        /// <param name="analysisResult"><see cref="AnalysisResult"/> object with vulnerabilities.</param>
+        private void OnScanningUpdate(AnalysisResult analysisResult) => this.SnykCodeScanningUpdate?.Invoke(this, new SnykCodeScanEventArgs(analysisResult));
 
         /// <summary>
         /// Fire scanning finished event.

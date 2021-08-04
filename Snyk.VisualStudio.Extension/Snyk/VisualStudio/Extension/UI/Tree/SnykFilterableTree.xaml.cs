@@ -1,14 +1,10 @@
 ﻿namespace Snyk.VisualStudio.Extension.UI.Tree
-{    
-    using System;
-    using System.Collections.ObjectModel;
+{
     using System.ComponentModel;
-    using System.Globalization;
     using System.Windows;
     using System.Windows.Controls;
     using System.Windows.Data;
-    using System.Windows.Media;
-    using System.Windows.Media.Imaging;
+    using Snyk.Code.Library.Domain.Analysis;
     using Snyk.VisualStudio.Extension.CLI;
 
     /// <summary>
@@ -18,12 +14,9 @@
     {
         private static SnykFilterableTree instance;
 
-        private RootVulnerabilityTreeNode rootNode = new RootVulnerabilityTreeNode();
+        private RootTreeNode cliRootNode = new OssRootTreeNode();
 
-        /// <summary>
-        /// Selecteted vulnerability node in tree event handler.
-        /// </summary>
-        public event RoutedEventHandler SelectedVulnerabilityChanged;
+        private RootTreeNode snykCodeRootNode = new SnykCodeRootTreeNode();
 
         /// <summary>
         /// Initializes a new instance of the <see cref="SnykFilterableTree"/> class.
@@ -34,8 +27,14 @@
 
             instance = this;
 
-            this.vulnerabilitiesTree.Items.Add(this.rootNode);
+            this.vulnerabilitiesTree.Items.Add(this.cliRootNode);
+            this.vulnerabilitiesTree.Items.Add(this.snykCodeRootNode);
         }
+
+        /// <summary>
+        /// Selecteted vulnerability node in tree event handler.
+        /// </summary>
+        public event RoutedEventHandler SelectedVulnerabilityChanged;
 
         /// <summary>
         /// Gets a value indicating whether tree items.
@@ -48,6 +47,13 @@
         public object SelectedItem => this.vulnerabilitiesTree.SelectedItem;
 
         /// <summary>
+        /// Find resource by key.
+        /// </summary>
+        /// <param name="resourceKey">Resource key.</param>
+        /// <returns>object</returns>
+        public static object GetControlResource(object resourceKey) => instance.FindResource(resourceKey);
+
+        /// <summary>
         /// Append <see cref="CliResult"/> data to tree.
         /// </summary>
         /// <param name="cliResult"><see cref="CliResult"/> object.</param>
@@ -57,14 +63,14 @@
 
             groupVulnerabilities.ForEach(delegate (CliGroupedVulnerabilities groupedVulnerabilities)
             {
-                var fileNode = new VulnerabilityTreeNode
+                var fileNode = new OssVulnerabilityTreeNode
                 {
                     Vulnerabilities = groupedVulnerabilities,
                 };
 
                 foreach (string key in groupedVulnerabilities.VulnerabilitiesMap.Keys)
                 {
-                    var node = new VulnerabilityTreeNode
+                    var node = new OssVulnerabilityTreeNode
                     {
                         Vulnerability = groupedVulnerabilities.VulnerabilitiesMap[key][0],
                     };
@@ -72,10 +78,10 @@
                     fileNode.Items.Add(node);
                 }
 
-                this.rootNode.Items.Add(fileNode);
+                this.cliRootNode.Items.Add(fileNode);
             });
 
-            this.rootNode.SetDetailsTitle(
+            this.cliRootNode.SetDetails(
                 cliResult.Count,
                 cliResult.CriticalSeverityCount,
                 cliResult.HighSeverityCount,
@@ -86,16 +92,64 @@
         }
 
         /// <summary>
-        /// Clear tree nodes.
+        /// Append <see cref="AnalysisResult"/> data to tree.
         /// </summary>
-        public void Clear() => this.rootNode.Clean();
+        /// <param name="analysisResult"><see cref="AnalysisResult"/> object.</param>
+        public void AppendVulnerabilities(AnalysisResult analysisResult)
+        {
+            int crititcalSeverityCount = 0; // TODO: move this to proper place.
+            int highSeverityCount = 0;
+            int mediumSeverityCount = 0;
+            int lowSeverityCount = 0;
+
+            foreach (var fileAnalyses in analysisResult.FileAnalyses)
+            {
+                var fileNode = new SnykCodeFileTreeNode{ FileAnalysis = fileAnalyses, };
+
+                foreach (var suggestion in fileAnalyses.Suggestions)
+                {
+                    fileNode.Items.Add(new SnykCodeVulnerabilityTreeNode { Suggestion = suggestion, });
+
+                    string severity = Severity.FromInt(suggestion.Severity);
+
+                    if (severity == Severity.Critical)
+                    {
+                        crititcalSeverityCount++;
+                    }
+
+                    if (severity == Severity.High)
+                    {
+                        highSeverityCount++;
+                    }
+
+                    if (severity == Severity.Medium)
+                    {
+                        mediumSeverityCount++;
+                    }
+
+                    if (severity == Severity.Low)
+                    {
+                        lowSeverityCount++;
+                    }
+                }
+
+                this.snykCodeRootNode.Items.Add(fileNode);
+            }
+
+            this.snykCodeRootNode.SetDetails(
+                analysisResult.FileAnalyses.Count,
+                crititcalSeverityCount,
+                highSeverityCount,
+                mediumSeverityCount,
+                lowSeverityCount);
+
+            this.vulnerabilitiesTree.Items.Refresh();
+        }
 
         /// <summary>
-        /// Find resource by key.
+        /// Clear tree nodes.
         /// </summary>
-        /// <param name="resourceKey">Resource key.</param>
-        /// <returns>object</returns>
-        public static object GetControlResource(object resourceKey) => instance.FindResource(resourceKey);
+        public void Clear() => this.snykCodeRootNode.Clean();
 
         /// <summary>
         /// Display all tree nodes.
@@ -104,7 +158,7 @@
         {
             this.Dispatcher.Invoke(() =>
             {
-                foreach (VulnerabilityTreeNode treeNode in this.rootNode.Items)
+                foreach (TreeNode treeNode in this.snykCodeRootNode.Items)
                 {
                     ICollectionView collectionView = CollectionViewSource.GetDefaultView(treeNode.Items);
 
@@ -125,11 +179,11 @@
 
                 string searchString = severityFilter.GetOnlyQueryString();
 
-                foreach (VulnerabilityTreeNode treeNode in this.rootNode.Items)
+                foreach (var treeNode in this.snykCodeRootNode.Items)
                 {
                     CollectionViewSource.GetDefaultView(treeNode.Items).Filter = filterObject =>
                     {
-                        var filteredTreeNode = filterObject as VulnerabilityTreeNode;
+                        var filteredTreeNode = filterObject as OssVulnerabilityTreeNode;
                         var vulnerability = filteredTreeNode.Vulnerability;
 
                         bool isVulnIncluded = severityFilter.IsVulnerabilityIncluded(vulnerability.Severity);
@@ -150,61 +204,4 @@
 
         private void TreeViewItem_Selected(object sender, RoutedEventArgs eventArgs) => MessageBox.Show(eventArgs.ToString());
     }
-
-    //public class SnykImageConverter : IValueConverter
-    //{
-    //    public object Convert(object value, Type targetType, object parameter, CultureInfo culture) => 
-    //        SnykFilterableTree.GetControlResource(value) as BitmapImage;
-
-    //    public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture) => string.Empty;
-    //}
-
-    
-
-    //public class LeftMarginMultiplierConverter : IValueConverter
-    //{
-    //    public double Length { get; set; }
-
-    //    public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
-    //    {
-    //        TreeViewItem item = value as TreeViewItem;
-
-    //        if (item == null)
-    //        {
-    //            return new Thickness(0);
-    //        }
-                
-    //        return new Thickness(Length * item.GetDepth(), 0, 0, 0);
-    //    }
-
-    //    public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture)
-    //    {
-    //        throw new System.NotImplementedException();
-    //    }
-    //}
-
-    //public static class TreeViewItemExtensions
-    //{
-    //    public static int GetDepth(this TreeViewItem item)
-    //    {
-    //        TreeViewItem parent;
-    //        while ((parent = GetParent(item)) != null)
-    //        {
-    //            return GetDepth(parent) + 1;
-    //        }
-    //        return 0;
-    //    }
-
-    //    private static TreeViewItem GetParent(TreeViewItem item)
-    //    {
-    //        DependencyObject parent = item != null ? VisualTreeHelper.GetParent(item) : null;
-
-    //        while (parent != null && !(parent is TreeViewItem || parent is TreeView))
-    //        {
-    //            parent = VisualTreeHelper.GetParent(parent);
-    //        }
-
-    //        return parent as TreeViewItem;
-    //    }
-    //}
 }

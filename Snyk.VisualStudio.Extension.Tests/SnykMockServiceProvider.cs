@@ -1,16 +1,17 @@
-﻿using System;
-using Snyk.VisualStudio.Extension.Settings;
-using Microsoft.VisualStudio.Shell.Interop;
-using System.Threading.Tasks;
-using Microsoft.VisualStudio.Settings;
-using EnvDTE;
-using Snyk.VisualStudio.Extension.CLI;
-using Snyk.VisualStudio.Extension.Theme;
-using Snyk.VisualStudio.Extension.Service;
-using Snyk.VisualStudio.Extension.SnykAnalytics;
-
-namespace Snyk.VisualStudio.Extension.Tests
+﻿namespace Snyk.VisualStudio.Extension.Tests
 {
+    using System;
+    using Snyk.VisualStudio.Extension.Settings;
+    using Microsoft.VisualStudio.Shell.Interop;
+    using System.Threading.Tasks;
+    using Microsoft.VisualStudio.Settings;
+    using EnvDTE;
+    using Snyk.VisualStudio.Extension.CLI;
+    using Snyk.VisualStudio.Extension.Theme;
+    using Snyk.VisualStudio.Extension.Service;
+    using Snyk.VisualStudio.Extension.SnykAnalytics;
+    using Snyk.Code.Library.Service;
+
     class SnykMockServiceProvider : ISnykServiceProvider
     {
         public SnykActivityLogger ActivityLogger
@@ -89,6 +90,8 @@ namespace Snyk.VisualStudio.Extension.Tests
 
         public SnykUserStorageSettingsService UserStorageSettingsService => throw new NotImplementedException();
 
+        public ISnykCodeService SnykCodeService => throw new NotImplementedException();
+
         Microsoft.VisualStudio.Shell.IAsyncServiceProvider ISnykServiceProvider.AsyncServiceProvider
         {
             get
@@ -118,6 +121,11 @@ namespace Snyk.VisualStudio.Extension.Tests
         }
 
         public SnykCli NewCli()
+        {
+            throw new NotImplementedException();
+        }
+
+        public IFileProvider NewFileProvider()
         {
             throw new NotImplementedException();
         }

@@ -1,4 +1,4 @@
-﻿namespace Snyk.Code.Library.Common
+﻿namespace Snyk.Common
 {
     using System.Text.Json;
 
@@ -14,6 +14,7 @@
         private static JsonSerializerOptions SerializerOptions => new JsonSerializerOptions
         {
             PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
+            PropertyNameCaseInsensitive = true,
             WriteIndented = true,
         };
 

@@ -2,12 +2,14 @@
 {
     using System;
     using System.Collections.Generic;
+    using System.Net;
     using System.Net.Http;
     using System.Text;
     using System.Threading.Tasks;
+    using Serilog;
     using Snyk.Code.Library.Api.Dto;
     using Snyk.Code.Library.Api.Dto.Analysis;
-    using Snyk.Code.Library.Common;
+    using Snyk.Common;
 
     /// <inheritdoc />
     public class SnykCodeClient: ISnykCodeClient
@@ -29,6 +31,8 @@
 
         private const string AnalysisApiUrl = "publicapi/analysis";
 
+        private static readonly ILogger Logger = LogManager.ForContext<SnykCodeClient>();
+
         private readonly HttpClient httpClient;
 
         private LoginResponseDto loginResponse;
@@ -47,6 +51,8 @@
             };
 
             this.httpClient.DefaultRequestHeaders.Add("Session-Token", token);
+
+            Logger.Information("Create http client with with url {BaseUrl}.", baseUrl);
         }
 
         /// <summary>
@@ -66,24 +72,27 @@
         /// <returns>Analysis results with suggestions and the relative positions.</returns>
         public async Task<AnalysisResultDto> GetAnalysisAsync(string bundleId)
         {
+            Logger.Information("Get analysis result for bundle id {BundleId}.", bundleId);
+
             if (string.IsNullOrEmpty(bundleId))
             {
                 throw new ArgumentException("Bundle id is null or empty.");
             }
 
-            HttpRequestMessage httpRequest = new HttpRequestMessage(HttpMethod.Get, AnalysisApiUrl + "/" + bundleId);
-
-            var response = await this.httpClient.SendAsync(httpRequest);
-
-            string responseText = await response.Content.ReadAsStringAsync();
-
-            if (response.IsSuccessStatusCode)
+            using (var httpRequest = new HttpRequestMessage(HttpMethod.Get, AnalysisApiUrl + "/" + bundleId))
             {
-                return Json.Deserialize<AnalysisResultDto>(responseText);
-            }
-            else
-            {
-                throw new SnykCodeException((int)response.StatusCode, responseText);
+                var response = await this.httpClient.SendAsync(httpRequest);
+
+                string responseText = await response.Content.ReadAsStringAsync();
+
+                if (response.IsSuccessStatusCode)
+                {
+                    return Json.Deserialize<AnalysisResultDto>(responseText);
+                }
+                else
+                {
+                    throw new SnykCodeException((int)response.StatusCode, responseText);
+                }
             }
         }
 
@@ -97,6 +106,8 @@
         /// <returns>True if upload success.</returns>
         public async Task<bool> UploadFilesAsync(string bundleId, IEnumerable<CodeFileDto> codeFiles)
         {
+            Logger.Information("Upload files for bundle id {BundleId}.", bundleId);
+
             if (string.IsNullOrEmpty(bundleId))
             {
                 throw new ArgumentException("Bundle id is null or empty.");
@@ -107,15 +118,18 @@
                 throw new ArgumentException("Code files to upload is null.");
             }
 
-            HttpRequestMessage httpRequest = new HttpRequestMessage(HttpMethod.Post, FileApiUrl + "/" + bundleId);
+            using (HttpRequestMessage httpRequest = new HttpRequestMessage(HttpMethod.Post, FileApiUrl + "/" + bundleId))
+            {
+                httpRequest.Version = HttpVersion.Version10; // TODO: fix performance and upload issue.
 
-            string payload = Json.Serialize(codeFiles);
+                string payload = Json.Serialize(codeFiles);
 
-            httpRequest.Content = new StringContent(payload, Encoding.UTF8, "application/json");
+                httpRequest.Content = new StringContent(payload, Encoding.UTF8, "application/json");
 
-            var response = await this.httpClient.SendAsync(httpRequest);
+                var response = await this.httpClient.SendAsync(httpRequest);
 
-            return response.IsSuccessStatusCode;
+                return response.IsSuccessStatusCode;
+            }
         }
 
         /// <summary>
@@ -133,6 +147,8 @@
         /// <returns>Extended bundle object.</returns>
         public async Task<BundleResponseDto> ExtendBundleAsync(string bundleId, Dictionary<string, string> pathToHashFileDict, List<string> removedFiles)
         {
+            Logger.Information("Extend bundle for bundle id {BundleId}.", bundleId);
+
             if (string.IsNullOrEmpty(bundleId))
             {
                 throw new ArgumentException("Previous Bundle is null or empty.");
@@ -143,27 +159,29 @@
                 throw new ArgumentException("Files or removed files are null.");
             }
 
-            HttpRequestMessage httpRequest = new HttpRequestMessage(HttpMethod.Put, BundleApiUrl + "/" + bundleId);
-
-            string payload = Json.Serialize(new ExtendBundleRequestDto
+            using (var httpRequest = new HttpRequestMessage(HttpMethod.Put, BundleApiUrl + "/" + bundleId))
             {
-                Files = pathToHashFileDict,
-                RemovedFiles = removedFiles,
-            });
+                string payload = Json.Serialize(new ExtendBundleRequestDto
+                {
+                    Files = pathToHashFileDict,
+                    RemovedFiles = removedFiles,
+                });
 
-            httpRequest.Content = new StringContent(payload, Encoding.UTF8, "application/json");
+                using (httpRequest.Content = new StringContent(payload, Encoding.UTF8, "application/json"))
+                {
+                    var response = await this.httpClient.SendAsync(httpRequest);
 
-            var response = await this.httpClient.SendAsync(httpRequest);
+                    string responseText = await response.Content.ReadAsStringAsync();
 
-            string responseText = await response.Content.ReadAsStringAsync();
-
-            if (response.IsSuccessStatusCode)
-            {
-                return Json.Deserialize<BundleResponseDto>(responseText);
-            }
-            else
-            {
-                throw new SnykCodeException((int)response.StatusCode, responseText);
+                    if (response.IsSuccessStatusCode)
+                    {
+                        return Json.Deserialize<BundleResponseDto>(responseText);
+                    }
+                    else
+                    {
+                        throw new SnykCodeException((int)response.StatusCode, responseText);
+                    }
+                }
             }
         }
 
@@ -178,24 +196,27 @@
         /// </returns>
         public async Task<BundleResponseDto> CheckBundleAsync(string bundleId)
         {
+            Logger.Information("Check bundle status with id {BundleId}.", bundleId);
+
             if (string.IsNullOrEmpty(bundleId))
             {
                 throw new ArgumentException("Bundle id is null or empty.");
             }
 
-            HttpRequestMessage httpRequest = new HttpRequestMessage(HttpMethod.Get, BundleApiUrl + "/" + bundleId);
-
-            var response = await this.httpClient.SendAsync(httpRequest);
-
-            string responseText = await response.Content.ReadAsStringAsync();
-
-            if (response.IsSuccessStatusCode)
+            using (var httpRequest = new HttpRequestMessage(HttpMethod.Get, BundleApiUrl + "/" + bundleId))
             {
-                return Json.Deserialize<BundleResponseDto>(responseText);
-            }
-            else
-            {
-                throw new SnykCodeException((int)response.StatusCode, responseText);
+                var response = await this.httpClient.SendAsync(httpRequest);
+
+                string responseText = await response.Content.ReadAsStringAsync();
+
+                if (response.IsSuccessStatusCode)
+                {
+                    return Json.Deserialize<BundleResponseDto>(responseText);
+                }
+                else
+                {
+                    throw new SnykCodeException((int)response.StatusCode, responseText);
+                }
             }
         }
 
@@ -206,31 +227,35 @@
         /// <returns>Bundle object with bundle id, missing files and upload url.</returns>
         public async Task<BundleResponseDto> CreateBundleAsync(IDictionary<string, string> pathToHashFileDict)
         {
+            Logger.Information("Create bundle files count {Count}", pathToHashFileDict.Count);
+
             if (pathToHashFileDict == null)
             {
                 throw new ArgumentException("Bundle files is null.");
             }
 
-            var httpRequest = new HttpRequestMessage(HttpMethod.Post, BundleApiUrl);
-
-            string payload = Json.Serialize(new CreateBundleRequestDto
+            using (var httpRequest = new HttpRequestMessage(HttpMethod.Post, BundleApiUrl))
             {
-                Files = pathToHashFileDict,
-            });
+                string payload = Json.Serialize(new CreateBundleRequestDto
+                {
+                    Files = pathToHashFileDict,
+                });
 
-            httpRequest.Content = new StringContent(payload, Encoding.UTF8, "application/json");
+                using (httpRequest.Content = new StringContent(payload, Encoding.UTF8, "application/json"))
+                {
+                    var response = await this.httpClient.SendAsync(httpRequest);
 
-            var response = await this.httpClient.SendAsync(httpRequest);
+                    string responseText = await response.Content.ReadAsStringAsync();
 
-            string responseText = await response.Content.ReadAsStringAsync();
-
-            if (response.IsSuccessStatusCode)
-            {
-                return Json.Deserialize<BundleResponseDto>(responseText);
-            }
-            else
-            {
-                throw new SnykCodeException((int)response.StatusCode, responseText);
+                    if (response.IsSuccessStatusCode)
+                    {
+                        return Json.Deserialize<BundleResponseDto>(responseText);
+                    }
+                    else
+                    {
+                        throw new SnykCodeException((int)response.StatusCode, responseText);
+                    }
+                }
             }
         }
 
@@ -240,19 +265,22 @@
         /// <returns><see cref="FiltersDto"/></returns>
         public async Task<FiltersDto> GetFiltersAsync()
         {
-            var request = new HttpRequestMessage(HttpMethod.Get, FiltersApiUrl);
+            Logger.Information("Get SnykCode filters");
 
-            var response = await this.httpClient.SendAsync(request);
-
-            string responseText = await response.Content.ReadAsStringAsync();
-
-            if (response.IsSuccessStatusCode)
+            using (var request = new HttpRequestMessage(HttpMethod.Get, FiltersApiUrl))
             {
-                return Json.Deserialize<FiltersDto>(responseText);
-            }
-            else
-            {
-                throw new SnykCodeException((int)response.StatusCode, responseText);
+                var response = await this.httpClient.SendAsync(request);
+
+                string responseText = await response.Content.ReadAsStringAsync();
+
+                if (response.IsSuccessStatusCode)
+                {
+                    return Json.Deserialize<FiltersDto>(responseText);
+                }
+                else
+                {
+                    throw new SnykCodeException((int)response.StatusCode, responseText);
+                }
             }
         }
 
@@ -270,21 +298,22 @@
                 throw new ArgumentException("User agent is null or empty");
             }
 
-            var request = new HttpRequestMessage(HttpMethod.Post, LoginApiUrl);
-
-            var response = await this.httpClient.SendAsync(request);
-
-            string responseText = await response.Content.ReadAsStringAsync();
-
-            if (response.IsSuccessStatusCode)
+            using (var request = new HttpRequestMessage(HttpMethod.Post, LoginApiUrl))
             {
-                this.loginResponse = Json.Deserialize<LoginResponseDto>(responseText);
+                var response = await this.httpClient.SendAsync(request);
 
-                return this.loginResponse;
-            }
-            else
-            {
-                throw new SnykCodeException((int)response.StatusCode, responseText);
+                string responseText = await response.Content.ReadAsStringAsync();
+
+                if (response.IsSuccessStatusCode)
+                {
+                    this.loginResponse = Json.Deserialize<LoginResponseDto>(responseText);
+
+                    return this.loginResponse;
+                }
+                else
+                {
+                    throw new SnykCodeException((int)response.StatusCode, responseText);
+                }
             }
         }
 
@@ -295,11 +324,12 @@
         /// <returns><see cref="LoginStatus"/> object.</returns>
         public async Task<LoginStatus> CheckSessionAsync()
         {
-            var request = new HttpRequestMessage(HttpMethod.Get, CheckSessionApiUrl);
+            using (var request = new HttpRequestMessage(HttpMethod.Get, CheckSessionApiUrl))
+            {
+                HttpResponseMessage httpResponse = await this.httpClient.SendAsync(request);
 
-            HttpResponseMessage httpResponse = await this.httpClient.SendAsync(request);
-
-            return new LoginStatus((int)httpResponse.StatusCode);
+                return new LoginStatus((int)httpResponse.StatusCode);
+            }
         }
     }
 }

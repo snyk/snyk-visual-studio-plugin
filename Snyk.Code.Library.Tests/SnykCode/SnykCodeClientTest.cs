@@ -7,7 +7,7 @@
     using Snyk.Code.Library.Api;
     using Snyk.Code.Library.Api.Dto;
     using Snyk.Code.Library.Api.Dto.Analysis;
-    using Snyk.Code.Library.Common;
+    using Snyk.Common;
     using Xunit;
 
     /// <summary>

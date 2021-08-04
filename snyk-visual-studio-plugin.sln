@@ -21,6 +21,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Snyk.Code.Library", "Snyk.C
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Snyk.Code.Library.Tests", "Snyk.Code.Library.Tests\Snyk.Code.Library.Tests.csproj", "{01631B74-705C-46B2-B6FB-DDD8C358F951}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Snyk.Common", "Snyk.Common\Snyk.Common.csproj", "{7912AD6D-C154-4504-9AB3-8767D3C46E89}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -43,6 +45,10 @@ Global
 		{01631B74-705C-46B2-B6FB-DDD8C358F951}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{01631B74-705C-46B2-B6FB-DDD8C358F951}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{01631B74-705C-46B2-B6FB-DDD8C358F951}.Release|Any CPU.Build.0 = Release|Any CPU
+		{7912AD6D-C154-4504-9AB3-8767D3C46E89}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{7912AD6D-C154-4504-9AB3-8767D3C46E89}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{7912AD6D-C154-4504-9AB3-8767D3C46E89}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{7912AD6D-C154-4504-9AB3-8767D3C46E89}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

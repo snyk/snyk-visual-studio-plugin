@@ -13,6 +13,16 @@
         public const string OpenSourceSecurityIconPath = ResourcesDirectoryPath + "OpenSourceSecurity.png";
 
         /// <summary>
+        /// SnykCode icon path.
+        /// </summary>
+        public const string SnykCodeIconPath = ResourcesDirectoryPath + "SnykCode.png";
+
+        /// <summary>
+        /// Default file icon path.
+        /// </summary>
+        public const string DefaultFileIconPath = ResourcesDirectoryPath + "DefaultFileIcon.png";
+
+        /// <summary>
         /// Open source security icon path for dark mode.
         /// </summary>
         public const string OpenSourceSecurityDarkIconPath = ResourcesDirectoryPath + "OpenSourceSecurityDark.png";
@@ -33,6 +43,10 @@
         private const string SeverityHighIconPath = ResourcesDirectoryPath + "SeverityHigh.png";
         private const string SeverityMediumIconPath = ResourcesDirectoryPath + "SeverityMedium.png";
         private static readonly string SeverityLowIconPath = ResourcesDirectoryPath + "SeverityLow.png";
+
+        private const string JsFileIconPath = ResourcesDirectoryPath + "JSScript.png";
+        private const string CsFileIconPath = ResourcesDirectoryPath + "CSFileNode.png";
+        private const string TsFileIconPath = ResourcesDirectoryPath + "TSFileNode.png";
 
         /// <summary>
         /// Get package manager icon by name.
@@ -76,6 +90,41 @@
 
             return iconPath;
         }
+
+        /// <summary>
+        /// Get file icon by file extension.
+        /// </summary>
+        /// <param name="fileExtension">File extension.</param>
+        /// <returns>Icon path.</returns>
+        public static string GetFileIconByExtension(string fileExtension)
+        {
+            string iconPath = string.Empty;
+
+            switch (fileExtension)
+            {
+                case ".js":
+                    iconPath = JsFileIconPath;
+                    break;
+                case ".cs":
+                    iconPath = CsFileIconPath;
+                    break;
+                case ".ts":
+                    iconPath = TsFileIconPath;
+                    break;
+                default:
+                    iconPath = DefaultFileIconPath;
+                    break;
+            }
+
+            return iconPath;
+        }
+
+        /// <summary>
+        /// Get icon path for int severity.
+        /// </summary>
+        /// <param name="severity">Severity index.</param>
+        /// <returns>Icon path.</returns>
+        public static string GetSeverityIcon(int severity) => GetSeverityIcon(Severity.FromInt(severity));
 
         /// <summary>
         /// Get icon path for severity.

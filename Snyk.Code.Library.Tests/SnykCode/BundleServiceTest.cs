@@ -5,9 +5,9 @@
     using Moq;
     using Snyk.Code.Library.Api;
     using Snyk.Code.Library.Api.Dto;
-    using Snyk.Code.Library.Common;
     using Snyk.Code.Library.Domain;
     using Snyk.Code.Library.Service;
+    using Snyk.Common;
     using Xunit;
 
     /// <summary>
@@ -65,7 +65,9 @@
 
             var bundleService = new BundleService(codeClientMock.Object);
 
-            await bundleService.UploadMissingFilesAsync(bundle);
+            var fileProvider = new SnykCodeFileProvider(TestResource.GetResourcesPath(), new List<string> { filePath1, filePath2 });
+
+            await bundleService.UploadMissingFilesAsync(bundle, fileProvider);
 
             codeClientMock
                 .Verify(codeClient => codeClient.CheckBundleAsync(bundle.Id), Times.Exactly(3));

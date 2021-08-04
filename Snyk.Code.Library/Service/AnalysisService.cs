@@ -3,9 +3,11 @@
     using System;
     using System.Linq;
     using System.Threading.Tasks;
+    using Serilog;
     using Snyk.Code.Library.Api;
     using Snyk.Code.Library.Api.Dto.Analysis;
     using Snyk.Code.Library.Domain.Analysis;
+    using Snyk.Common;
 
     /// <inheritdoc/>
     public class AnalysisService : IAnalysisService
@@ -13,6 +15,8 @@
         private const int RequestTimeout = 100;
 
         private const int RequestAttempts = 100;
+
+        private static readonly ILogger Logger = LogManager.ForContext<AnalysisService>();
 
         private ISnykCodeClient codeClient;
 
@@ -38,6 +42,8 @@
         /// <returns><see cref="AnalysisResultDto"/> object.</returns>
         private async Task<AnalysisResultDto> TryGetAnalysisDtoAsync(string bundleId)
         {
+            Logger.Information("Try get analysis DTO object {RequestAttempts} times.", RequestAttempts);
+
             for (int counter = 0; counter < RequestAttempts; counter++)
             {
                 AnalysisResultDto analysisResultDto = await this.codeClient.GetAnalysisAsync(bundleId);
@@ -52,10 +58,14 @@
 
                     case AnalysisStatus.Waiting:
                     default:
+                        Logger.Information("SnykCode service return {Status} status. Sleep for {RequestTimeout} timeout.", analysisResultDto.Status, RequestTimeout);
+
                         System.Threading.Thread.Sleep(RequestTimeout);
                         break;
                 }
             }
+
+            Logger.Warning("Can't Get analysis after {RequestAttempts} attepts. Return AnalysisResultDto with Failed status.", RequestAttempts);
 
             return new AnalysisResultDto { Status = AnalysisStatus.Failed, };
         }
@@ -69,14 +79,14 @@
                 URL = analysisResultDto.AnalysisURL,
             };
 
-            var analysisResults = analysisResultDto.AnalysisResults;
+            var analysisResultsDto = analysisResultDto.AnalysisResults;
 
-            if (analysisResults == null)
+            if (analysisResultsDto == null)
             {
                 return analysisrResult;
             }
 
-            foreach (var fileKeyPair in analysisResults.Files)
+            foreach (var fileKeyPair in analysisResultsDto.Files)
             {
                 var fileAnalysis = new FileAnalysis { FileName = fileKeyPair.Key, };
 
@@ -85,7 +95,7 @@
                     string suggestionId = suggestionIdToFileKeyPair.Key;
                     var fileDtos = suggestionIdToFileKeyPair.Value;
 
-                    var suggestionDto = analysisResults.Suggestions[suggestionId];
+                    var suggestionDto = analysisResultsDto.Suggestions[suggestionId];
 
                     var suggestion = new Suggestion
                     {
@@ -99,6 +109,7 @@
                         Cwe = suggestionDto.Cwe,
                         Text = suggestionDto.Text,
                         ExampleCommitDescriptions = suggestionDto.ExampleCommitDescriptions,
+                        Rows = Tuple.Create(fileDtos.First().Rows[0], fileDtos.First().Rows[1]),
                     };
 
                     foreach (var exampleCommitFixes in suggestionDto.ExampleCommitFixes)

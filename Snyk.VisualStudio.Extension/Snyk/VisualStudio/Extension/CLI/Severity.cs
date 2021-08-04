@@ -59,5 +59,40 @@
 
             return intSeverityRepresentation;
         }
+
+        /// <summary>
+        /// Transform int severity representation to string representation.
+        /// 3 => Crititlca.
+        /// 2 => High.
+        /// 1 => Medium.
+        /// 0 => Low.
+        /// </summary>
+        /// <param name="severity">Severity as int.</param>
+        /// <returns>Severity as string.</returns>
+        public static string FromInt(int severity)
+        {
+            string severityRepresentation;
+
+            switch (severity)
+            {
+                case 3:
+                    severityRepresentation = Severity.Critical;
+                    break;
+                case 2:
+                    severityRepresentation = Severity.High;
+                    break;
+                case 1:
+                    severityRepresentation = Severity.Medium;
+                    break;
+                case 0:
+                    severityRepresentation = Severity.Low;
+                    break;
+                default:
+                    severityRepresentation = Severity.Low;
+                    break;
+            }
+
+            return severityRepresentation;
+        }
     }
 }

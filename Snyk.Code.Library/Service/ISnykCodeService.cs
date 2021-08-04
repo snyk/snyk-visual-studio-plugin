@@ -1,6 +1,5 @@
 ﻿namespace Snyk.Code.Library.Service
 {
-    using System.Collections.Generic;
     using System.Threading.Tasks;
     using Snyk.Code.Library.Domain.Analysis;
 
@@ -10,10 +9,10 @@
     public interface ISnykCodeService
     {
         /// <summary>
-        /// Scan path for code vulnerabilities.
+        /// Scan source code provided for code vulnerabilities.
         /// </summary>
-        /// <param name="filePaths">Source file paths.</param>
+        /// <param name="fileProvider">Provider for files to scan.</param>
         /// <returns><see cref="AnalysisResult"/> object.</returns>
-        Task<AnalysisResult> ScanAsync(IList<string> filePaths);
+        Task<AnalysisResult> ScanAsync(IFileProvider fileProvider);
     }
 }

@@ -5,10 +5,11 @@
     using EnvDTE;
     using Microsoft.VisualStudio.Settings;
     using Microsoft.VisualStudio.Shell;
-    using CLI;
-    using Settings;
-    using SnykAnalytics;
-    using Theme;
+    using Snyk.Code.Library.Service;
+    using Snyk.VisualStudio.Extension.CLI;
+    using Snyk.VisualStudio.Extension.Settings;
+    using Snyk.VisualStudio.Extension.SnykAnalytics;
+    using Snyk.VisualStudio.Extension.Theme;
 
     /// <summary>
     /// ServiceProvider interface for Snyk extension. Provide all needed services for this extension.
@@ -59,6 +60,11 @@
         /// Gets Theme service instance.
         /// </summary>
         SnykVsThemeService VsThemeService { get; }
+
+        /// <summary>
+        /// Gets Theme service instance.
+        /// </summary>
+        ISnykCodeService SnykCodeService { get; }
 
         /// <summary>
         /// Gets Analytics service instance.
