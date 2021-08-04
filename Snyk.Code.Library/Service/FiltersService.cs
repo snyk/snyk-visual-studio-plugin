@@ -13,7 +13,7 @@
     {
         private static readonly ILogger Logger = LogManager.ForContext<FiltersService>();
 
-        private readonly string[] defaultIgnoreDirectories = new string[] { "node_modules", ".vs" };
+        private readonly string[] defaultIgnoreDirectories = new string[] { "node_modules", ".vs", ".github" };
 
         private ISnykCodeClient codeClient;
 
