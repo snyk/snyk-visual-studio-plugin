@@ -81,22 +81,6 @@
             }
         }
 
-        private IDictionary<string, string> GetFileHashToContentDictionary(IList<string> filePaths)
-        {
-            var fileHashToContentDict = new Dictionary<string, string>();
-
-            foreach (string filePath in filePaths)
-            {
-                fileHashToContentDict.Add(this.GetFileHash(filePath), this.GetFileContent(filePath));
-            }
-
-            return fileHashToContentDict;
-        }
-
-        private string GetFileContent(string filePathKey) => this.filePathToContentCache[filePathKey] as string;
-
-        private string GetFileHash(string filePathKey) => this.filePathToHashCache[filePathKey] as string;
-
         /// <summary>
         /// Add file hash and content to cache.
         /// </summary>
@@ -128,18 +112,8 @@
             return path.Replace(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar);
         }
 
-        private void AddToFilePathToHashCache(string filePath, string fileHash)
-        {
-            CacheItemPolicy filePathToHashItemPolicy = new CacheItemPolicy();
+        private void AddToFilePathToHashCache(string filePath, string fileHash) => this.filePathToHashCache.Add(filePath, fileHash, new CacheItemPolicy());
 
-            this.filePathToHashCache.Add(filePath, fileHash, filePathToHashItemPolicy);
-        }
-
-        private void AddToFilePathToContentCache(string filePath, string fileContent)
-        {
-            CacheItemPolicy filePathToContentItemPolicy = new CacheItemPolicy();
-
-            this.filePathToContentCache.Add(filePath, fileContent, filePathToContentItemPolicy);
-        }
+        private void AddToFilePathToContentCache(string filePath, string fileContent) => this.filePathToContentCache.Add(filePath, fileContent, new CacheItemPolicy());
     }
 }
