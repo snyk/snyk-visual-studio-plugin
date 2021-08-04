@@ -13,7 +13,7 @@
     public class AnalysisServiceTest
     {
         [Fact]
-        public async Task AnalysisService_FailedStatusProvided_GetAnalysisThrowExceptionAsync()
+        public void AnalysisService_FailedStatusProvided_GetAnalysisThrowException()
         {
             var codeClientMock = new Mock<ISnykCodeClient>();
 

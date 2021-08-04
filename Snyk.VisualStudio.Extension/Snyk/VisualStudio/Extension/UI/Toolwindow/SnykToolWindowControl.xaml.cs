@@ -392,7 +392,8 @@
             {
                 this.vulnerabilitiesTree.AppendVulnerabilities(analysisResult);
 
-                //this.serviceProvider.AnalyticsService.LogOpenSourceAnalysisReadyEvent(
+                // TODO: Add SnykCode analytics event.
+                // this.serviceProvider.AnalyticsService.LogOpenSourceAnalysisReadyEvent(
                 //    cliResult.CriticalSeverityCount,
                 //    cliResult.HighSeverityCount,
                 //    cliResult.MediumSeverityCount,
@@ -422,11 +423,11 @@
 
                 TreeNode treeNode = null;
 
-                if (vulnerabilitiesTree.SelectedItem is ScaVulnerabilityTreeNode)
+                if (vulnerabilitiesTree.SelectedItem is OssVulnerabilityTreeNode)
                 {
                     vulnerabilityDescriptionGrid.Visibility = Visibility.Visible;
 
-                    var scaTreeNode = this.vulnerabilitiesTree.SelectedItem as ScaVulnerabilityTreeNode;
+                    var scaTreeNode = this.vulnerabilitiesTree.SelectedItem as OssVulnerabilityTreeNode;
 
                     treeNode = scaTreeNode;
 
@@ -489,15 +490,6 @@
                     snykCodeDescriptionGrid.Visibility = Visibility.Collapsed;
 
                     this.selectIssueMessageGrid.Visibility = Visibility.Visible;
-
-                    //if (treeNode.Items != null && treeNode.Items.Count > 0)
-                    //{
-                    //    this.selectIssueMessageGrid.Visibility = Visibility.Visible;
-                    //}
-                    //else
-                    //{
-                    //    this.noIssuesMessageGrid.Visibility = Visibility.Visible;
-                    //}
 
                     return;
                 }

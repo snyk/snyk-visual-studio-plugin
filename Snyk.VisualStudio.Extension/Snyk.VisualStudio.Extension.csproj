@@ -85,7 +85,6 @@
     <Compile Include="Snyk\VisualStudio\Extension\Commands\SnykOpenSettingsCommand.cs" />
     <Compile Include="Snyk\VisualStudio\Extension\Commands\SnykScanCommand.cs" />
     <Compile Include="Snyk\VisualStudio\Extension\Commands\SnykStopCurrentTaskCommand.cs" />
-    <Compile Include="Snyk\VisualStudio\Extension\SnykCode\SnykCodeFileProvider.cs" />
     <Compile Include="Snyk\VisualStudio\Extension\SnykExtension.cs" />
     <Compile Include="Snyk\VisualStudio\Extension\Service\SnykCodeScanEventArgs.cs" />
     <Compile Include="Snyk\VisualStudio\Extension\SnykGuids.cs" />
@@ -116,7 +115,7 @@
     <Compile Include="Snyk\VisualStudio\Extension\UI\VsInfoBarService.cs" />
     <Compile Include="Snyk\VisualStudio\Extension\UI\VsStatusBar.cs" />
     <Compile Include="Snyk\VisualStudio\Extension\UI\Toolwindow\UpdateDownloadState.cs" />
-    <Compile Include="Snyk\VisualStudio\Extension\UI\Tree\ScaRootTreeNode.cs" />
+    <Compile Include="Snyk\VisualStudio\Extension\UI\Tree\OssRootTreeNode.cs" />
     <Compile Include="Snyk\VisualStudio\Extension\UI\Tree\RootTreeNode.cs" />
     <Compile Include="Snyk\VisualStudio\Extension\UI\SnykIconProvider.cs" />
     <Compile Include="Snyk\VisualStudio\Extension\UI\Toolwindow\DownloadState.cs" />
@@ -138,7 +137,7 @@
     <Compile Include="Snyk\VisualStudio\Extension\UI\Toolwindow\ScanningState.cs" />
     <Compile Include="Snyk\VisualStudio\Extension\UI\Toolwindow\ScanResultsState.cs" />
     <Compile Include="Snyk\VisualStudio\Extension\UI\SeverityFilter.cs" />
-    <Compile Include="Snyk\VisualStudio\Extension\UI\Tree\ScaVulnerabilityTreeNode.cs" />
+    <Compile Include="Snyk\VisualStudio\Extension\UI\Tree\OssVulnerabilityTreeNode.cs" />
     <Compile Include="Snyk\VisualStudio\Extension\UI\Tree\SnykCodeFileTreeNode.cs" />
     <Compile Include="Snyk\VisualStudio\Extension\UI\Tree\SnykCodeRootTreeNode.cs" />
     <Compile Include="Snyk\VisualStudio\Extension\UI\Tree\SnykCodeVulnerabilityTreeNode.cs" />
@@ -276,6 +275,9 @@
     </Content>
     <Resource Include="Resources\Stop.png" />
     <Resource Include="Resources\StopDisabled.png" />
+    <Resource Include="Resources\TSFileNode.png">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Resource>
     <Content Include="stylesheet.css" />
   </ItemGroup>
   <ItemGroup>
@@ -518,6 +520,9 @@
       <Project>{7912ad6d-c154-4504-9ab3-8767d3c46e89}</Project>
       <Name>Snyk.Common</Name>
     </ProjectReference>
+  </ItemGroup>
+  <ItemGroup>
+    <Folder Include="Snyk\VisualStudio\Extension\SnykCode\" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <Import Project="$(VSToolsPath)\VSSDK\Microsoft.VsSDK.targets" Condition="'$(VSToolsPath)' != ''" />

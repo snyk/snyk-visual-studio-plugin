@@ -8,7 +8,6 @@
     using Microsoft.VisualStudio.Shell.Interop;
     using Snyk.Code.Library.Service;
     using Snyk.VisualStudio.Extension.Service;
-    using Snyk.VisualStudio.Extension.SnykCode;
     using Task = System.Threading.Tasks.Task;
 
     /// <summary>

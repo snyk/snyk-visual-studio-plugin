@@ -46,6 +46,7 @@
 
         private const string JsFileIconPath = ResourcesDirectoryPath + "JSScript.png";
         private const string CsFileIconPath = ResourcesDirectoryPath + "CSFileNode.png";
+        private const string TsFileIconPath = ResourcesDirectoryPath + "TSFileNode.png";
 
         /// <summary>
         /// Get package manager icon by name.
@@ -93,19 +94,22 @@
         /// <summary>
         /// Get file icon by file extension.
         /// </summary>
-        /// <param name="fileExcention">File extension.</param>
+        /// <param name="fileExtension">File extension.</param>
         /// <returns>Icon path.</returns>
-        public static string GetFileIconByExtension(string fileExcention)
+        public static string GetFileIconByExtension(string fileExtension)
         {
             string iconPath = string.Empty;
 
-            switch (fileExcention)
+            switch (fileExtension)
             {
                 case ".js":
                     iconPath = JsFileIconPath;
                     break;
                 case ".cs":
                     iconPath = CsFileIconPath;
+                    break;
+                case ".ts":
+                    iconPath = TsFileIconPath;
                     break;
                 default:
                     iconPath = DefaultFileIconPath;

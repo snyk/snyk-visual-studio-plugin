@@ -54,7 +54,7 @@
                         return analysisResultDto;
 
                     case AnalysisStatus.Failed:
-                        Logger.Warning("SnykCodeClient.GetAnalysisAsync() return Failed status. Throw SnykCodeException.");
+                        Logger.Warning("Analysis has failed.");
 
                         throw new SnykCodeException("SnykCode Analysis failed.");
 

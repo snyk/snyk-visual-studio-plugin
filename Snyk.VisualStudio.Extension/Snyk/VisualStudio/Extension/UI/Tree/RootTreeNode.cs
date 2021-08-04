@@ -47,16 +47,18 @@
             {
                 titleBuilder.Append(": ");
 
-                foreach (var keyValuePair in severityDict)
+                foreach (var severityNameToIntPair in severityDict)
                 {
-                    if (keyValuePair.Value > 0)
+                    if (severityNameToIntPair.Value < 0)
                     {
-                        titleBuilder.Append(string.Format("{0} {1}", keyValuePair.Value, keyValuePair.Key));
+                        continue;
+                    }
 
-                        if (!severityDict[keyValuePair.Key].Equals(severityDict.Last().Value))
-                        {
-                            titleBuilder.Append(string.Format(" | ", keyValuePair.Value, keyValuePair.Key));
-                        }
+                    titleBuilder.Append(string.Format("{0} {1}", severityNameToIntPair.Value, severityNameToIntPair.Key));
+
+                    if (!severityDict[severityNameToIntPair.Key].Equals(severityDict.Last().Value))
+                    {
+                        titleBuilder.Append(string.Format(" | ", severityNameToIntPair.Value, severityNameToIntPair.Key));
                     }
                 }
             }

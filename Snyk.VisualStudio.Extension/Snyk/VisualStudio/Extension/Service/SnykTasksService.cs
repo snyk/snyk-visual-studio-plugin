@@ -6,10 +6,8 @@
     using System.Threading.Tasks;
     using System.Windows;
     using Microsoft.VisualStudio.Shell;
-    using Microsoft.VisualStudio.Shell.Interop;
     using Snyk.Code.Library.Domain.Analysis;
     using Snyk.VisualStudio.Extension.CLI;
-    using Snyk.VisualStudio.Extension.SnykCode;
     using Snyk.VisualStudio.Extension.UI;
     using static Snyk.VisualStudio.Extension.CLI.SnykCliDownloader;
     using Task = System.Threading.Tasks.Task;
