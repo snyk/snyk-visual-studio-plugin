@@ -2,7 +2,6 @@
 {
     using System;
     using System.Collections.Generic;
-    using System.IO;
     using System.Linq;
     using System.Text;
     using System.Threading.Tasks;
@@ -43,30 +42,6 @@
             var bundleResponseDto = this.codeClient.CheckBundleAsync(bundleId);
 
             return this.MapDtoBundleToDomain(await bundleResponseDto);
-        }
-
-        /// <inheritdoc/>
-        public async Task<bool> UploadMissingFilesAsync(Bundle bundle, string basePath = "")
-        {
-            Logger.Debug("Start UploadMissingFiles.");
-
-            var resultBundle = bundle;
-
-            for (int counter = 0; counter < UploadFileRequestAttempts; counter++)
-            {
-                await this.UploadFilesAsync(resultBundle.Id, this.CreateFileHashToContentDictionary(resultBundle.MissingFiles, basePath));
-
-                resultBundle = await this.CheckBundleAsync(bundle.Id);
-
-                if (resultBundle.MissingFiles.IsEmpty())
-                {
-                    return true;
-                }
-            }
-
-            Logger.Debug("Not all files uploadded successfully. Not uploaded files {MissingFiles}", resultBundle.MissingFiles);
-
-            return false;
         }
 
         /// <inheritdoc/>
@@ -464,36 +439,6 @@
             }
 
             return codeFileDtos;
-        }
-
-        private IDictionary<string, string> CreateFileHashToContentDictionary(IList<string> filePaths, string basePath = "")
-        {
-            var fileHashToContentDict = new Dictionary<string, string>();
-
-            foreach (string filePath in filePaths)
-            {
-                try
-                {
-                    string fullFilePath = filePath;
-
-                    if (basePath != string.Empty)
-                    {
-                        fullFilePath = basePath + filePath;
-                    }
-
-                    string fileContent = File.ReadAllText(fullFilePath, Encoding.UTF8);
-
-                    string fileHash = Sha256.ComputeHash(fileContent);
-
-                    fileHashToContentDict.Add(fileHash, fileContent);
-                } 
-                catch (Exception exception)
-                {
-                    Console.WriteLine(exception.Message);
-                }
-            }
-
-            return fileHashToContentDict;
         }
     }
 }

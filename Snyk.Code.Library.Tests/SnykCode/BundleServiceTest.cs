@@ -65,7 +65,9 @@
 
             var bundleService = new BundleService(codeClientMock.Object);
 
-            await bundleService.UploadMissingFilesAsync(bundle);
+            var fileProvider = new SnykCodeFileProvider(TestResource.GetResourcesPath(), new List<string> { filePath1, filePath2 });
+
+            await bundleService.UploadMissingFilesAsync(bundle, fileProvider);
 
             codeClientMock
                 .Verify(codeClient => codeClient.CheckBundleAsync(bundle.Id), Times.Exactly(3));

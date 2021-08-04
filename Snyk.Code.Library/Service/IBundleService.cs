@@ -24,13 +24,6 @@
         /// Upload bundle missing files. If files not uploaded by one call it will try 5 times for upload.
         /// </summary>
         /// <param name="bundle">Source bundle with missing files to upload.</param>
-        /// <returns>True if upload all files successfully and false if not.</returns>
-        Task<bool> UploadMissingFilesAsync(Bundle bundle, string basePath = "");
-
-        /// <summary>
-        /// Upload bundle missing files. If files not uploaded by one call it will try 5 times for upload.
-        /// </summary>
-        /// <param name="bundle">Source bundle with missing files to upload.</param>
         /// <param name="fileProvider">Source file provider.</param>
         /// <returns>True if upload all files successfully and false if not.</returns>
         Task<bool> UploadMissingFilesAsync(Bundle bundle, IFileProvider fileProvider);

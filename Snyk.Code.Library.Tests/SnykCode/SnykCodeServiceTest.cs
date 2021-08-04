@@ -76,7 +76,9 @@
 
             var snykCodeService = new SnykCodeService(bundleServiceMock.Object, analysisServiceMock.Object, filtersServiceMock.Object);
 
-            var analysisResult = await snykCodeService.ScanAsync(new List<string> { filePath1, filePath2 });
+            var fileProvider = new SnykCodeFileProvider(TestResource.GetResourcesPath(), new List<string> { filePath1, filePath2 });
+
+            var analysisResult = await snykCodeService.ScanAsync(fileProvider);
 
             Assert.NotNull(analysisResult);
             Assert.Equal(2, analysisResult.FileAnalyses.Count);
@@ -91,7 +93,7 @@
                 .Verify(bundleService => bundleService.CreateBundleAsync(It.IsAny<Dictionary<string, string>>(), It.IsAny<int>()), Times.Exactly(1));
 
             bundleServiceMock
-                .Verify(bundleService => bundleService.UploadMissingFilesAsync(It.IsAny<Bundle>(), It.IsAny<string>()), Times.Exactly(1));
+                .Verify(bundleService => bundleService.UploadMissingFilesAsync(It.IsAny<Bundle>(), It.IsAny<IFileProvider>()), Times.Exactly(1));
 
             analysisServiceMock
                 .Verify(analysisService => analysisService.GetAnalysisAsync(bundleId), Times.Exactly(1));

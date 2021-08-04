@@ -1,4 +1,4 @@
-﻿namespace Snyk.VisualStudio.Extension.SnykCode
+﻿namespace Snyk.Code.Library.Service
 {
     using System;
     using System.Collections.Generic;
@@ -7,9 +7,7 @@
     using System.Text;
     using System.Threading.Tasks;
     using Serilog;
-    using Snyk.Code.Library.Service;
     using Snyk.Common;
-    using Snyk.VisualStudio.Extension.CLI;
 
     /// <summary>
     /// Implementation of <see cref="IFileProvider"/> for Visual Studio SnykCode.
@@ -83,8 +81,6 @@
             }
         }
 
-        //private IDictionary<string, string> GetFileHashToContentDictionary() => this.GetFileHashToContentDictionary(this.filePaths);
-
         private IDictionary<string, string> GetFileHashToContentDictionary(IList<string> filePaths)
         {
             var fileHashToContentDict = new Dictionary<string, string>();
@@ -97,33 +93,9 @@
             return fileHashToContentDict;
         }
 
-        private string GetFileContent(string filePathKey)
-        {
-            string fileContent = this.filePathToContentCache[filePathKey] as string;
+        private string GetFileContent(string filePathKey) => this.filePathToContentCache[filePathKey] as string;
 
-            //if (fileContent == null)
-            //{
-            //    this.AddToCache(filePathKey);
-
-            //    fileContent = this.filePathToContentCache[filePathKey] as string;
-            //}
-
-            return fileContent;
-        }
-
-        private string GetFileHash(string filePathKey)
-        {
-            string fileHash = this.filePathToHashCache[filePathKey] as string;
-
-            //if (fileHash == null)
-            //{
-            //    this.AddToCache(filePathKey);
-
-            //    fileHash = this.filePathToHashCache[filePathKey] as string;
-            //}
-
-            return fileHash;
-        }
+        private string GetFileHash(string filePathKey) => this.filePathToHashCache[filePathKey] as string;
 
         /// <summary>
         /// Add file hash and content to cache.
@@ -159,7 +131,6 @@
         private void AddToFilePathToHashCache(string filePath, string fileHash)
         {
             CacheItemPolicy filePathToHashItemPolicy = new CacheItemPolicy();
-            //filePathToHashItemPolicy.ChangeMonitors.Add(new HostFileChangeMonitor(new List<string> { filePath }));
 
             this.filePathToHashCache.Add(filePath, fileHash, filePathToHashItemPolicy);
         }
@@ -167,7 +138,6 @@
         private void AddToFilePathToContentCache(string filePath, string fileContent)
         {
             CacheItemPolicy filePathToContentItemPolicy = new CacheItemPolicy();
-            //filePathToContentItemPolicy.ChangeMonitors.Add(new HostFileChangeMonitor(new List<string> { filePath }));
 
             this.filePathToContentCache.Add(filePath, fileContent, filePathToContentItemPolicy);
         }

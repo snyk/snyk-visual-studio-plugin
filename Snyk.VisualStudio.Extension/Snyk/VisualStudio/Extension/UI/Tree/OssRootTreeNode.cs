@@ -3,7 +3,7 @@
     /// <summary>
     /// Open source root node for vulnerability tree.
     /// </summary>
-    public class ScaRootTreeNode : RootTreeNode
+    public class OssRootTreeNode : RootTreeNode
     {
         /// <summary>
         /// Title text for open source root node.

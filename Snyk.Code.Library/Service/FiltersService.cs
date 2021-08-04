@@ -58,9 +58,14 @@
         {
             foreach (string defaultIgnoreDirectory in this.defaultIgnoreDirectories)
             {
-                if (filePath.Contains(defaultIgnoreDirectory))
+                string[] directories = filePath.Split(Path.DirectorySeparatorChar);
+
+                foreach (string directoryName in directories)
                 {
-                    return true;
+                    if (defaultIgnoreDirectory == directoryName)
+                    {
+                        return true;
+                    }
                 }
             }
 
