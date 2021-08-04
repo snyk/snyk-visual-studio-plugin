@@ -47,13 +47,13 @@
         /// <inheritdoc/>
         public async Task<bool> UploadMissingFilesAsync(Bundle bundle, IFileProvider fileProvider)
         {
-            Logger.Debug("Start UploadMissingFiles.");
+            Logger.Information("Uploading missing files for bundle.");
 
             var resultBundle = bundle;
 
             for (int counter = 0; counter < UploadFileRequestAttempts; counter++)
             {
-                var fileHashToContentDict = fileProvider.CreaateFileHashToContentDictionary(resultBundle.MissingFiles);
+                var fileHashToContentDict = fileProvider.CreateFileHashToContentDictionary(resultBundle.MissingFiles);
 
                 await this.UploadFilesAsync(resultBundle.Id, fileHashToContentDict);
 
@@ -65,7 +65,7 @@
                 }
             }
 
-            Logger.Debug("Not all files uploadded successfully. Not uploaded files {MissingFiles}", resultBundle.MissingFiles);
+            Logger.Information("Not all files uploadded successfully. Not uploaded files {MissingFiles}", resultBundle.MissingFiles);
 
             return false;
         }

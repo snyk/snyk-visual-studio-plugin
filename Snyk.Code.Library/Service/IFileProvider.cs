@@ -13,7 +13,7 @@
         /// </summary>
         /// <param name="files">Files list.</param>
         /// <returns>IDictionary.</returns>
-        IDictionary<string, string> CreaateFileHashToContentDictionary(IList<string> files);
+        IDictionary<string, string> CreateFileHashToContentDictionary(IList<string> files);
 
         /// <summary>
         /// Create <see cref="IDictionary{TKey, TValue}"/> with file path to file hash values.

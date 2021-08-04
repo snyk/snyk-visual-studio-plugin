@@ -1,6 +1,5 @@
 ﻿namespace Snyk.VisualStudio.Extension.UI
 {
-    using System;
     using Microsoft.VisualStudio.Imaging;
     using Microsoft.VisualStudio.Shell;
     using Microsoft.VisualStudio.Shell.Interop;
@@ -20,23 +19,39 @@
             this.serviceProvider = serviceProvider;
         }
 
+        /// <summary>
+        /// Gets return single instance of <see cref="VsInfoBarService"/>.
+        /// </summary>
         public static VsInfoBarService Instance { get; private set; }
 
+        /// <summary>
+        /// Initialize <see cref="VsInfoBarService"/> object with SNyk service provider.
+        /// </summary>
+        /// <param name="serviceProvider">Snyk service provider implementation.</param>
         public static void Initialize(ISnykServiceProvider serviceProvider)
         {
             Instance = new VsInfoBarService(serviceProvider);
         }
 
-        public void OnClosed(IVsInfoBarUIElement infoBarUIElement)
-        {
-            infoBarUIElement.Unadvise(this.cookie);
-        }
+        /// <summary>
+        /// Handle on close event.
+        /// </summary>
+        /// <param name="infoBarUIElement">Info bar UI element object.</param>
+        public void OnClosed(IVsInfoBarUIElement infoBarUIElement) => infoBarUIElement.Unadvise(this.cookie);
 
-        public void OnActionItemClicked(IVsInfoBarUIElement infoBarUIElement, IVsInfoBarActionItem actionItem)
-        {
-            System.Diagnostics.Process.Start("https://github.com/snyk/snyk-visual-studio-plugin/");
-        }
+        /// <summary>
+        /// On Action item cliecked handler.
+        /// </summary>
+        /// <param name="infoBarUIElement">UI element object.</param>
+        /// <param name="actionItem">Action item.</param>
+        public void OnActionItemClicked(IVsInfoBarUIElement infoBarUIElement, IVsInfoBarActionItem actionItem) 
+            => System.Diagnostics.Process.Start("https://github.com/snyk/snyk-visual-studio-plugin/");
 
+        /// <summary>
+        /// Show message in info bar.
+        /// </summary>
+        /// <param name="message">Message.</param>
+        /// <returns>Task.</returns>
         public async System.Threading.Tasks.Task ShowInfoBarAsync(string message)
         {
             var shell = await this.serviceProvider.GetServiceAsync(typeof(SVsShell)) as IVsShell;
