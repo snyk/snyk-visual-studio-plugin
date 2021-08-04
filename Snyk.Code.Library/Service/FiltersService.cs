@@ -2,6 +2,7 @@
 {
     using System.Collections.Generic;
     using System.IO;
+    using System.Linq;
     using System.Threading.Tasks;
     using Serilog;
     using Snyk.Code.Library.Api;
@@ -28,30 +29,15 @@
         /// <inheritdoc/>
         public async Task<IList<string>> FilterFilesAsync(IList<string> filePaths)
         {
-            Logger.Debug("Filter Files count {Count}.", filePaths.Count);
+            Logger.Information("Filter {Count} files.", filePaths.Count);
 
             var filters = await this.GetFiltersAsync();
             var extensionFilters = filters.Extensions;
             var configFileFilters = filters.ConfigFiles;
 
-            var filteredFiles = new List<string>();
-
-            foreach (string filePath in filePaths)
-            {
-                if (this.IsFileInIgnoredDirectory(filePath))
-                {
-                    continue;
-                }
-
-                if (extensionFilters.Contains(Path.GetExtension(filePath)) || configFileFilters.Contains(Path.GetFileName(filePath)))
-                {
-                    filteredFiles.Add(filePath);
-                }
-            }
-
-            Logger.Debug("Filtered Files count {Count}.", filteredFiles.Count);
-
-            return filteredFiles;
+            return filePaths
+                    .Where(path => !this.IsFileInIgnoredDirectory(path) && (extensionFilters.Contains(Path.GetExtension(path)) || configFileFilters.Contains(Path.GetFileName(path))))
+                    .ToList();
         }
 
         private bool IsFileInIgnoredDirectory(string filePath)
@@ -76,8 +62,6 @@
         {
             if (this.filters == null)
             {
-                Logger.Debug("Request GetFilters.");
-
                 this.filters = await this.codeClient.GetFiltersAsync();
             }
 

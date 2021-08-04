@@ -42,7 +42,7 @@
         /// <returns><see cref="AnalysisResultDto"/> object.</returns>
         private async Task<AnalysisResultDto> TryGetAnalysisDtoAsync(string bundleId)
         {
-            Logger.Debug("Enter TryGetAnalysisDtoAsync()");
+            Logger.Information("Try get analysis DTO object {RequestAttempts} times.", RequestAttempts);
 
             for (int counter = 0; counter < RequestAttempts; counter++)
             {
@@ -54,28 +54,24 @@
                         return analysisResultDto;
 
                     case AnalysisStatus.Failed:
-                        Logger.Warning("Analysis has failed.");
-
                         throw new SnykCodeException("SnykCode Analysis failed.");
 
                     case AnalysisStatus.Waiting:
                     default:
-                        Logger.Warning("SnykCodeClient.GetAnalysisAsync() return {Status}. Sleep for {RequestTimeout}", analysisResultDto.Status, RequestTimeout);
+                        Logger.Information("SnykCode service return {Status} status. Sleep for {RequestTimeout} timeout.", analysisResultDto.Status, RequestTimeout);
 
                         System.Threading.Thread.Sleep(RequestTimeout);
                         break;
                 }
             }
 
-            Logger.Warning("Can't Get Analysis after few attepts. Return AnalysisResultDto with Failed status.");
+            Logger.Warning("Can't Get analysis after {RequestAttempts} attepts. Return AnalysisResultDto with Failed status.", RequestAttempts);
 
             return new AnalysisResultDto { Status = AnalysisStatus.Failed, };
         }
 
         private AnalysisResult MapDtoAnalysisResultToDomain(AnalysisResultDto analysisResultDto)
         {
-            Logger.Debug("Start map DTO AnalysisResultDto object to Domain AnalysisResult object.");
-
             var analysisrResult = new AnalysisResult
             {
                 Status = analysisResultDto.Status,

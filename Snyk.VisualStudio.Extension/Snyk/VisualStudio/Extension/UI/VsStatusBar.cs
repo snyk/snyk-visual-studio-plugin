@@ -6,27 +6,31 @@
     using Microsoft.VisualStudio.Shell.Interop;
     using Snyk.VisualStudio.Extension.Service;
 
+    /// <summary>
+    /// Wrapper for Visual Studio status bar.
+    /// </summary>
     public class VsStatusBar
     {
         private ISnykServiceProvider serviceProvider;
+
+        private IVsStatusbar bar;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="VsStatusBar"/> class.
         /// </summary>
         /// <param name="serviceProvider">The service provider.</param>
-        private VsStatusBar(ISnykServiceProvider serviceProvider)
-        {
-            this.serviceProvider = serviceProvider;
-        }
+        private VsStatusBar(ISnykServiceProvider serviceProvider) => this.serviceProvider = serviceProvider;
 
+        /// <summary>
+        /// Single instance of <see cref="VsStatusBar"/>.
+        /// </summary>
         public static VsStatusBar Instance { get; private set; }
 
-        public static void Initialize(ISnykServiceProvider serviceProvider)
-        {
-            Instance = new VsStatusBar(serviceProvider);
-        }
-
-        private IVsStatusbar bar;
+        /// <summary>
+        /// Initialize <see cref="VsStatusBar"/>.
+        /// </summary>
+        /// <param name="serviceProvider">Snyk service provider implementation.</param>
+        public static void Initialize(ISnykServiceProvider serviceProvider) => Instance = new VsStatusBar(serviceProvider);
 
         /// <summary>
         /// Gets the status bar.
@@ -45,17 +49,12 @@
             }
         }
 
-        private async System.Threading.Tasks.Task ShowMessageAsync(string message)
-        {
-            //await JoinableTaskFactory.SwitchToMainThreadAsync(serviceProvider.Package.DisposalToken);
-
-            var dte = await this.serviceProvider.GetServiceAsync(typeof(DTE)) as DTE;
-
-            Assumes.Present(dte);
-
-            dte.StatusBar.Text = message;
-        }
-
+        /// <summary>
+        /// Show message box with title and message.
+        /// </summary>
+        /// <param name="title">Message box title.</param>
+        /// <param name="message">Message box message.</param>
+        /// <returns>Task</returns>
         public System.Threading.Tasks.Task ShowMessageBoxAsync(string title, string message)
         {
             MessageBox.Show(message, title);
@@ -69,41 +68,16 @@
         /// <param name="message">The message.</param>
         public void DisplayMessage(string message)
         {
-            ShowMessageAsync(message);
-            //int frozen;
-
-            //this.Bar.IsFrozen(out frozen);
-
-            //if (frozen == 0)
-            //{
-            //    this.Bar.SetText(message);
-            //}
+            this.ShowMessageAsync(message);
         }
 
-        public void DisplayAndShowIcon(string message)
+        private async System.Threading.Tasks.Task ShowMessageAsync(string message)
         {
-            object icon = Microsoft.VisualStudio.Shell.Interop.Constants.SBAI_General;
+            var dte = await this.serviceProvider.GetServiceAsync(typeof(DTE)) as DTE;
 
-            this.Bar.Animation(1, ref icon);
-            this.Bar.SetText(message);
+            Assumes.Present(dte);
 
-            System.Threading.Thread.Sleep(5000);
-
-            this.Bar.Animation(0, ref icon);
-            this.Bar.Clear();
-        }
-
-        public void DisplayAndShowProgress(string message)
-        {
-            object icon = Microsoft.VisualStudio.Shell.Interop.Constants.SBAI_General;
-
-            this.Bar.Animation(1, ref icon);
-            this.Bar.SetText(message);
-
-            System.Threading.Thread.Sleep(5000);
-
-            this.Bar.Animation(0, ref icon);
-            this.Bar.Clear();
+            dte.StatusBar.Text = message;
         }
     }
 }

@@ -2,6 +2,7 @@
 {
     using System;
     using System.Collections.Generic;
+    using System.Net;
     using System.Net.Http;
     using System.Text;
     using System.Threading.Tasks;
@@ -51,7 +52,7 @@
 
             this.httpClient.DefaultRequestHeaders.Add("Session-Token", token);
 
-            Logger.Debug("SnykCodeClient created with url {BaseUrl}.", baseUrl);
+            Logger.Information("Create http client with with url {BaseUrl}.", baseUrl);
         }
 
         /// <summary>
@@ -71,7 +72,7 @@
         /// <returns>Analysis results with suggestions and the relative positions.</returns>
         public async Task<AnalysisResultDto> GetAnalysisAsync(string bundleId)
         {
-            Logger.Debug("Request GetAnalysis for bundle id {BundleId}.", bundleId);
+            Logger.Information("Get analysis result for bundle id {BundleId}.", bundleId);
 
             if (string.IsNullOrEmpty(bundleId))
             {
@@ -105,7 +106,7 @@
         /// <returns>True if upload success.</returns>
         public async Task<bool> UploadFilesAsync(string bundleId, IEnumerable<CodeFileDto> codeFiles)
         {
-            Logger.Debug("Request UploadFiles for bundle id {BundleId}.", bundleId);
+            Logger.Information("Upload files for bundle id {BundleId}.", bundleId);
 
             if (string.IsNullOrEmpty(bundleId))
             {
@@ -119,6 +120,8 @@
 
             using (HttpRequestMessage httpRequest = new HttpRequestMessage(HttpMethod.Post, FileApiUrl + "/" + bundleId))
             {
+                httpRequest.Version = HttpVersion.Version10; // TODO: fix performance and upload issue.
+
                 string payload = Json.Serialize(codeFiles);
 
                 httpRequest.Content = new StringContent(payload, Encoding.UTF8, "application/json");
@@ -144,7 +147,7 @@
         /// <returns>Extended bundle object.</returns>
         public async Task<BundleResponseDto> ExtendBundleAsync(string bundleId, Dictionary<string, string> pathToHashFileDict, List<string> removedFiles)
         {
-            Logger.Debug("Request ExtendBundle for bundle id {BundleId}.", bundleId);
+            Logger.Information("Extend bundle for bundle id {BundleId}.", bundleId);
 
             if (string.IsNullOrEmpty(bundleId))
             {
@@ -193,7 +196,7 @@
         /// </returns>
         public async Task<BundleResponseDto> CheckBundleAsync(string bundleId)
         {
-            Logger.Debug("Request CheckBundle for bundle id {BundleId}.", bundleId);
+            Logger.Information("Check bundle status with id {BundleId}.", bundleId);
 
             if (string.IsNullOrEmpty(bundleId))
             {
@@ -224,7 +227,7 @@
         /// <returns>Bundle object with bundle id, missing files and upload url.</returns>
         public async Task<BundleResponseDto> CreateBundleAsync(IDictionary<string, string> pathToHashFileDict)
         {
-            Logger.Debug("Request CreateBundle for total files count {Count}", pathToHashFileDict.Count);
+            Logger.Information("Create bundle files count {Count}", pathToHashFileDict.Count);
 
             if (pathToHashFileDict == null)
             {
@@ -262,7 +265,7 @@
         /// <returns><see cref="FiltersDto"/></returns>
         public async Task<FiltersDto> GetFiltersAsync()
         {
-            Logger.Debug("Request GetFilters");
+            Logger.Information("Get SnykCode filters");
 
             using (var request = new HttpRequestMessage(HttpMethod.Get, FiltersApiUrl))
             {
@@ -290,8 +293,6 @@
         /// <returns><see cref="loginResponse"/> object.</returns>
         public async Task<LoginResponseDto> LoginAsync(string userAgent = "")
         {
-            Logger.Debug("Request Login.");
-
             if (string.IsNullOrEmpty(userAgent))
             {
                 throw new ArgumentException("User agent is null or empty");
@@ -323,8 +324,6 @@
         /// <returns><see cref="LoginStatus"/> object.</returns>
         public async Task<LoginStatus> CheckSessionAsync()
         {
-            Logger.Debug("Request CheckSession.");
-
             using (var request = new HttpRequestMessage(HttpMethod.Get, CheckSessionApiUrl))
             {
                 HttpResponseMessage httpResponse = await this.httpClient.SendAsync(request);

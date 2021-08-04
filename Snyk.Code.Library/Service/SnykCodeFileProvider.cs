@@ -36,7 +36,7 @@
             this.files = files;
         }
 
-        public IDictionary<string, string> CreaateFileHashToContentDictionary(IList<string> files)
+        public IDictionary<string, string> CreateFileHashToContentDictionary(IList<string> files)
         {
             if (this.filePathToContentCache.GetCount() == 0)
             {

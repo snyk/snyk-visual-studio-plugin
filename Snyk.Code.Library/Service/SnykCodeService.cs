@@ -34,7 +34,7 @@
         /// <inheritdoc/>
         public async Task<AnalysisResult> ScanAsync(IFileProvider fileProvider)
         {
-            Logger.Debug("Start Snyk scan");
+            Logger.Information("Start SnykCode scanning...");
 
             await fileProvider.FilterFilesAsync(this.filtersService);
 
