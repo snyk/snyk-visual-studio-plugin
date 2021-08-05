@@ -122,11 +122,18 @@
 
             using (HttpRequestMessage httpRequest = new HttpRequestMessage(HttpMethod.Post, FileApiUrl + "/" + bundleId))
             {
+                var watch = new System.Diagnostics.Stopwatch();
+                watch.Start();
+
                 string payload = Json.Serialize(codeFiles);
 
                 httpRequest.Content = new StringContent(payload, Encoding.UTF8, "application/json");
 
-                var response = await this.httpClient.SendAsync(httpRequest);
+                var response = await this.httpClient.SendAsync(httpRequest, HttpCompletionOption.ResponseHeadersRead);
+
+                watch.Stop();
+
+                Logger.Information("Execution Time: {ElapsedMilliseconds} ms", watch.ElapsedMilliseconds);
 
                 return response.IsSuccessStatusCode;
             }
