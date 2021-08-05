@@ -202,7 +202,7 @@
 
                 if (fileSize > maxChunkSize)
                 {
-                    throw new SnykCodeException("One file size bigger then max one chunk size.");
+                    continue; // If file too big it skip it and continue to upload other files.
                 }
 
                 if (bundleSize + fileSize > maxChunkSize)
