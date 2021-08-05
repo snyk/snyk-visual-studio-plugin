@@ -462,7 +462,7 @@
                                     var analysisResult = await this.serviceProvider.SnykCodeService.ScanAsync(filesProvider);
 
                                     this.OnScanningUpdate(analysisResult);
-                                } 
+                                }
                                 catch (Exception exception)
                                 {
                                     VsStatusBar.Instance.ShowMessageBoxAsync("SnykCode", exception.Message);
