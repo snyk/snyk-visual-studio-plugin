@@ -44,6 +44,8 @@
         /// <param name="token">User token.</param>
         public SnykCodeClient(string baseUrl, string token)
         {
+            ServicePointManager.Expect100Continue = false; // Fix issue with stream end on file upload.
+
             this.httpClient = new HttpClient
             {
                 Timeout = TimeSpan.FromMinutes(10),
@@ -120,8 +122,6 @@
 
             using (HttpRequestMessage httpRequest = new HttpRequestMessage(HttpMethod.Post, FileApiUrl + "/" + bundleId))
             {
-                httpRequest.Version = HttpVersion.Version10; // TODO: fix performance and upload issue.
-
                 string payload = Json.Serialize(codeFiles);
 
                 httpRequest.Content = new StringContent(payload, Encoding.UTF8, "application/json");
