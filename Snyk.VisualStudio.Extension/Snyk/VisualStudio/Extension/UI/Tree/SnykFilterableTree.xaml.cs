@@ -16,7 +16,9 @@
 
         private RootTreeNode cliRootNode = new OssRootTreeNode();
 
-        private RootTreeNode snykCodeRootNode = new SnykCodeRootTreeNode();
+        private RootTreeNode codeSequrityRootNode = new SnykCodeSecurityRootTreeNode();
+
+        private RootTreeNode codeQualityRootNode = new SnykCodeQualityRootTreeNode();
 
         /// <summary>
         /// Initializes a new instance of the <see cref="SnykFilterableTree"/> class.
@@ -28,7 +30,8 @@
             instance = this;
 
             this.vulnerabilitiesTree.Items.Add(this.cliRootNode);
-            this.vulnerabilitiesTree.Items.Add(this.snykCodeRootNode);
+            this.vulnerabilitiesTree.Items.Add(this.codeSequrityRootNode);
+            this.vulnerabilitiesTree.Items.Add(this.codeQualityRootNode);
         }
 
         /// <summary>
@@ -133,10 +136,10 @@
                     }
                 }
 
-                this.snykCodeRootNode.Items.Add(fileNode);
+                this.codeSequrityRootNode.Items.Add(fileNode);
             }
 
-            this.snykCodeRootNode.SetDetails(
+            this.codeSequrityRootNode.SetDetails(
                 analysisResult.FileAnalyses.Count,
                 crititcalSeverityCount,
                 highSeverityCount,
@@ -149,7 +152,7 @@
         /// <summary>
         /// Clear tree nodes.
         /// </summary>
-        public void Clear() => this.snykCodeRootNode.Clean();
+        public void Clear() => this.codeSequrityRootNode.Clean();
 
         /// <summary>
         /// Display all tree nodes.
@@ -158,7 +161,7 @@
         {
             this.Dispatcher.Invoke(() =>
             {
-                foreach (TreeNode treeNode in this.snykCodeRootNode.Items)
+                foreach (TreeNode treeNode in this.codeSequrityRootNode.Items)
                 {
                     ICollectionView collectionView = CollectionViewSource.GetDefaultView(treeNode.Items);
 
@@ -179,7 +182,7 @@
 
                 string searchString = severityFilter.GetOnlyQueryString();
 
-                foreach (var treeNode in this.snykCodeRootNode.Items)
+                foreach (var treeNode in this.codeSequrityRootNode.Items)
                 {
                     CollectionViewSource.GetDefaultView(treeNode.Items).Filter = filterObject =>
                     {

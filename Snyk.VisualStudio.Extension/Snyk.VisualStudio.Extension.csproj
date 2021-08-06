@@ -112,6 +112,7 @@
     </Compile>
     <Compile Include="Snyk\VisualStudio\Extension\Theme\ThemeInfo.cs" />
     <Compile Include="Snyk\VisualStudio\Extension\Theme\VsBroadcastMessageEvents.cs" />
+    <Compile Include="Snyk\VisualStudio\Extension\UI\Tree\SnykCodeQualityRootTreeNode.cs" />
     <Compile Include="Snyk\VisualStudio\Extension\UI\VsInfoBarService.cs" />
     <Compile Include="Snyk\VisualStudio\Extension\UI\VsStatusBar.cs" />
     <Compile Include="Snyk\VisualStudio\Extension\UI\Toolwindow\UpdateDownloadState.cs" />
@@ -139,7 +140,7 @@
     <Compile Include="Snyk\VisualStudio\Extension\UI\SeverityFilter.cs" />
     <Compile Include="Snyk\VisualStudio\Extension\UI\Tree\OssVulnerabilityTreeNode.cs" />
     <Compile Include="Snyk\VisualStudio\Extension\UI\Tree\SnykCodeFileTreeNode.cs" />
-    <Compile Include="Snyk\VisualStudio\Extension\UI\Tree\SnykCodeRootTreeNode.cs" />
+    <Compile Include="Snyk\VisualStudio\Extension\UI\Tree\SnykCodeSecurityRootTreeNode.cs" />
     <Compile Include="Snyk\VisualStudio\Extension\UI\Tree\SnykCodeVulnerabilityTreeNode.cs" />
     <Compile Include="Snyk\VisualStudio\Extension\UI\Tree\SnykFilterableTree.xaml.cs">
       <DependentUpon>SnykFilterableTree.xaml</DependentUpon>

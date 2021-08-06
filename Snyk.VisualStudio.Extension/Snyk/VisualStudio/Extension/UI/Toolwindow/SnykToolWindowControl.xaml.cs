@@ -228,7 +228,12 @@
         /// <summary>
         /// Display run scan message.
         /// </summary>
-        public void DisplayRunScanMessage() => this.Dispatcher.Invoke(() => this.noVulnerabilitiesAddedMessageGrid.Visibility = Visibility.Visible);
+        public void DisplayRunScanMessage() => this.Dispatcher.Invoke(() =>
+        {
+            this.noVulnerabilitiesAddedMessageGrid.Visibility = Visibility.Visible;
+
+            this.VulnerabilitiesTree.Visibility = Visibility.Visible;
+        });
 
         /// <summary>
         /// Display main message.

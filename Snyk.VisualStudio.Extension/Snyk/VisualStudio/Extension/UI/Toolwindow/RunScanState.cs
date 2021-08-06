@@ -1,5 +1,8 @@
 ﻿namespace Snyk.VisualStudio.Extension.UI.Toolwindow
 {
+    using System.Windows;
+    using Microsoft.VisualStudio.Shell;
+
     /// <summary>
     /// Implement Run scan state for tool window.
     /// </summary>
@@ -15,9 +18,14 @@
         /// </summary>
         public override void HideComponents()
         {
-            this.ToolWindowControl.HideRunScanMessage();
+            ThreadHelper.JoinableTaskFactory.Run(async () =>
+            {
+                await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
 
-            this.ToolWindowControl.EnableStopActions();
+                this.ToolWindowControl.noVulnerabilitiesAddedMessageGrid.Visibility = Visibility.Collapsed;
+
+                this.ToolWindowControl.resultsGrid.Visibility = Visibility.Collapsed;
+            });
         }
 
         /// <summary>
@@ -25,9 +33,14 @@
         /// </summary>
         public override void DisplayComponents()
         {
-            this.ToolWindowControl.DisplayRunScanMessage();
+            ThreadHelper.JoinableTaskFactory.Run(async () =>
+            {
+                await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
 
-            this.ToolWindowControl.EnableExecuteActions();
+                this.ToolWindowControl.noVulnerabilitiesAddedMessageGrid.Visibility = Visibility.Visible;
+
+                this.ToolWindowControl.resultsGrid.Visibility = Visibility.Visible;
+            });
         }
     }
 }

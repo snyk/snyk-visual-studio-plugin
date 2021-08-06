@@ -2,14 +2,14 @@
 {
 
     /// <summary>
-    /// SnykCode root tree node.
+    /// SnykCode Security root tree node.
     /// </summary>
-    public class SnykCodeRootTreeNode : RootTreeNode
+    public class SnykCodeSecurityRootTreeNode : RootTreeNode
     {
         /// <summary>
         /// Title text for open source root node.
         /// </summary>
-        public const string SnykCodeTitle = "SnykCode";
+        public const string SnykCodeTitle = "Code Security";
 
         /// <summary>
         /// Gets a value indicating whether icon for open source node.

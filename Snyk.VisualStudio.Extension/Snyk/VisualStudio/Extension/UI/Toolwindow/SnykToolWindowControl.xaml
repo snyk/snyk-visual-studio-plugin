@@ -148,23 +148,23 @@
                     <TextBlock>No issues for this project.</TextBlock>
                 </StackPanel>
             </Grid>
+            <Grid Grid.Column="5" Name="noVulnerabilitiesAddedMessageGrid" VerticalAlignment="Center" Visibility="Collapsed">
+                <StackPanel HorizontalAlignment="Center">
+                    <TextBlock>
+                    Scan your project for security vulnerabilities.
+                    <Hyperlink Name="runScanLink" Click="RunButton_Click" IsEnabled="True">
+                        Run scan
+                    </Hyperlink>
+                    </TextBlock>
+                </StackPanel>
+            </Grid>
         </Grid>
         <Grid Grid.Row="4" Name="messageGrid" VerticalAlignment="Center" Visibility="Collapsed">
             <StackPanel HorizontalAlignment="Center">
                 <TextBlock Name="message"></TextBlock>
             </StackPanel>
         </Grid>
-        <Grid Grid.Row="5" Name="noVulnerabilitiesAddedMessageGrid" VerticalAlignment="Center" Visibility="Collapsed">
-            <StackPanel HorizontalAlignment="Center">
-                <TextBlock>
-                    Scan your project for security vulnerabilities.
-                    <Hyperlink Name="runScanLink" Click="RunButton_Click" IsEnabled="False">
-                        Run scan
-                    </Hyperlink>
-                </TextBlock>
-            </StackPanel>
-        </Grid>
-        <Grid Grid.Row="6" Name="overviewGrid" VerticalAlignment="Center" Visibility="Collapsed">
+        <Grid Grid.Row="5" Name="overviewGrid" VerticalAlignment="Center" Visibility="Collapsed">
             <StackPanel HorizontalAlignment="Center">
                 <Image Source="/Snyk.VisualStudio.Extension;component/Resources/SnykDogLogoFullSize.png" Width="128"/>
                 <TextBlock FontWeight="Bold" TextAlignment="Center" Padding="0,5">
