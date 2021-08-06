@@ -1,6 +1,7 @@
 ﻿namespace Snyk.VisualStudio.Extension.UI.Toolwindow
 {
     using System.Windows;
+    using Microsoft.VisualStudio.Shell;
 
     /// <summary>
     /// Implements Scanning state for tool window.
@@ -19,12 +20,16 @@
         {
             this.ToolWindowControl.HideMainMessage();
 
-            this.ToolWindowControl.Dispatcher.Invoke(() =>
+            ThreadHelper.JoinableTaskFactory.Run(async () =>
             {
+                await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
+
                 this.ToolWindowControl.progressBar.Value = 0;
                 this.ToolWindowControl.progressBar.IsIndeterminate = false;
 
                 this.ToolWindowControl.progressBarPanel.Visibility = Visibility.Collapsed;
+
+                this.ToolWindowControl.resultsGrid.Visibility = Visibility.Collapsed;
             });
         }
 
@@ -35,12 +40,16 @@
         {
             this.ToolWindowControl.DisplayMainMessage("Scanning project for vulnerabilities...");
 
-            this.ToolWindowControl.Dispatcher.Invoke(() =>
+            ThreadHelper.JoinableTaskFactory.Run(async () =>
             {
+                await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
+
                 this.ToolWindowControl.progressBar.Value = 0;
                 this.ToolWindowControl.progressBar.IsIndeterminate = true;
 
                 this.ToolWindowControl.progressBarPanel.Visibility = Visibility.Visible;
+
+                this.ToolWindowControl.resultsGrid.Visibility = Visibility.Visible;
             });
         }
     }
