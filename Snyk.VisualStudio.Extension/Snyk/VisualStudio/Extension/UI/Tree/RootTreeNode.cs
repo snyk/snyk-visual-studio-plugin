@@ -17,13 +17,11 @@
         /// <summary>
         /// Set detailed title (with information by severity).
         /// </summary>
-        /// <param name="issuesCount">Total issues count.</param>
         /// <param name="criticalSeverityCount">Total issues with critical severity.</param>
         /// <param name="highSeverityCount">Total issues with high severity.</param>
         /// <param name="mediumSeverityCount">Total issues with medium severity.</param>
         /// <param name="lowSeverityCount">Total issues with low severity.</param>
         public void SetDetails(
-            int issuesCount,
             int criticalSeverityCount,
             int highSeverityCount,
             int mediumSeverityCount,
@@ -31,9 +29,11 @@
         {
             var titleBuilder = new StringBuilder(this.GetTitlePrefix());
 
+            int totalIssuesCount = criticalSeverityCount + highSeverityCount + mediumSeverityCount + lowSeverityCount;
+
             titleBuilder
                 .Append(" - ")
-                .Append(string.Format("{0} vulnerabilities", issuesCount));
+                .Append(string.Format("{0} vulnerabilities", totalIssuesCount));
 
             var severityDict = new Dictionary<string, int>
                 {
@@ -45,22 +45,19 @@
 
             if (severityDict.Sum(pair => pair.Value) > 0)
             {
-                titleBuilder.Append(": ");
+                titleBuilder.Append(":");
 
                 foreach (var severityNameToIntPair in severityDict)
                 {
-                    if (severityNameToIntPair.Value < 0)
+                    if (severityNameToIntPair.Value <= 0)
                     {
                         continue;
                     }
 
-                    titleBuilder.Append(string.Format("{0} {1}", severityNameToIntPair.Value, severityNameToIntPair.Key));
-
-                    if (!severityDict[severityNameToIntPair.Key].Equals(severityDict.Last().Value))
-                    {
-                        titleBuilder.Append(string.Format(" | ", severityNameToIntPair.Value, severityNameToIntPair.Key));
-                    }
+                    titleBuilder.Append(string.Format(" {0} {1} |", severityNameToIntPair.Value, severityNameToIntPair.Key));
                 }
+
+                titleBuilder = titleBuilder.Remove(titleBuilder.Length - 2, 2);
             }
 
             this.Title = titleBuilder.ToString();

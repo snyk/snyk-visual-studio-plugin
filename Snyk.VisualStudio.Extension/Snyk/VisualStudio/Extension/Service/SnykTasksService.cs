@@ -154,7 +154,7 @@
         {
             this.Logger.LogInformation("Enter Scan method");
 
-            //this.ScanCli();
+            this.ScanCli();
 
             this.ScanSnykCode();
 

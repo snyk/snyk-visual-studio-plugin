@@ -85,7 +85,6 @@
             });
 
             this.cliRootNode.SetDetails(
-                cliResult.Count,
                 cliResult.CriticalSeverityCount,
                 cliResult.HighSeverityCount,
                 cliResult.MediumSeverityCount,
@@ -140,7 +139,6 @@
             }
 
             this.codeSequrityRootNode.SetDetails(
-                analysisResult.FileAnalyses.Count,
                 crititcalSeverityCount,
                 highSeverityCount,
                 mediumSeverityCount,
