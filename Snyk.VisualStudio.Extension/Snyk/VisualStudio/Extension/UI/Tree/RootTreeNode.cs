@@ -9,10 +9,29 @@
     /// </summary>
     public abstract class RootTreeNode : TreeNode
     {
+        private IRefreshable parent;
+
         /// <summary>
         /// Initializes a new instance of the <see cref="RootTreeNode"/> class.
+        /// <para name="parent">Refreshable reference</para>
         /// </summary>
-        public RootTreeNode() => this.Title = this.GetTitlePrefix();
+        public RootTreeNode(IRefreshable parent)
+        {
+            this.parent = parent;
+
+            this.Title = this.GetTitlePrefix();
+        }
+
+        /// <inheritdoc/>
+        public override string Title
+        {
+            set
+            {
+                base.Title = value;
+
+                this.parent.Refresh();
+            }
+        }
 
         /// <summary>
         /// Set detailed title (with information by severity).
@@ -62,6 +81,21 @@
 
             this.Title = titleBuilder.ToString();
         }
+
+        /// <summary>
+        /// Set node text to {Prefix} + (scanninng...).
+        /// </summary>
+        public void SetScanningTitle() => this.Title = this.GetTitlePrefix() + " (scanning...)";
+
+        /// <summary>
+        /// Set node text to {Prefix} + (error).
+        /// </summary>
+        public void SetErrorTitle() => this.Title = this.GetTitlePrefix() + " (error)";
+
+        /// <summary>
+        /// Set node text to {Prefix} without additional text.
+        /// </summary>
+        public void ResetTitleText() => this.Title = this.GetTitlePrefix();
 
         /// <summary>
         /// Clear all items in this node and title.

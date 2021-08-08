@@ -11,6 +11,11 @@
         /// </summary>
         public const string SnykCodeTitle = "Code Security";
 
+        public SnykCodeSecurityRootTreeNode(IRefreshable parent)
+            : base(parent)
+        {
+        }
+
         /// <summary>
         /// Gets a value indicating whether icon for open source node.
         /// </summary>

@@ -9,13 +9,13 @@
     using System.Windows.Media;
     using System.Windows.Threading;
     using Microsoft.VisualStudio;
+    using Microsoft.VisualStudio.Shell;
     using Microsoft.VisualStudio.Shell.Interop;
-    using Theme;
-    using CLI;
-    using Service;
-    using UI.Tree;
-    using Task = System.Threading.Tasks.Task;
     using Snyk.Code.Library.Domain.Analysis;
+    using Snyk.VisualStudio.Extension.CLI;
+    using Snyk.VisualStudio.Extension.Service;
+    using Snyk.VisualStudio.Extension.Theme;
+    using Snyk.VisualStudio.Extension.UI.Tree;
 
     /// <summary>
     /// Interaction logic for SnykToolWindowControl.
@@ -68,9 +68,11 @@
 
             SnykTasksService tasksService = serviceProvider.TasksService;
 
-            tasksService.ScanError += this.OnDisplayError;
+            tasksService.CliScanError += this.OnCliDisplayError;
+            tasksService.SnykCodeScanError += this.OnSnykCodeDisplayError;
             tasksService.ScanningCancelled += this.OnScanningCancelled;
-            tasksService.ScanningStarted += this.OnScanningStarted;
+            tasksService.CliScanningStarted += this.OnCliScanningStarted;
+            tasksService.SnykCodeScanningStarted += this.OnSnykCodeScanningStarted;
             tasksService.CliScanningUpdate += this.OnCliScanningUpdate;
             tasksService.SnykCodeScanningUpdate += this.OnSnykCodeScanningUpdate;
             //tasksService.ScanningFinished += this.OnScanningFinished;
@@ -118,11 +120,41 @@
         public void OnSnykCodeScanningUpdate(object sender, SnykCodeScanEventArgs eventArgs) => this.AppendSnykCodeResultToTree(eventArgs.Result);
 
         /// <summary>
-        /// ScanningStarted event handler. Switch context to ScanningState.
+        /// Cli ScanningStarted event handler..
         /// </summary>
         /// <param name="sender">Source object.</param>
         /// <param name="eventArgs">Event args.</param>
-        public void OnScanningStarted(object sender, SnykCliScanEventArgs eventArgs) => this.context.TransitionTo(ScanningState.Instance);
+        public void OnCliScanningStarted(object sender, SnykCliScanEventArgs eventArgs)
+        {
+            this.DisplayMainMessage("Scanning project for vulnerabilities...");
+
+            ThreadHelper.JoinableTaskFactory.Run(async () =>
+            {
+                await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
+
+                this.resultsGrid.Visibility = Visibility.Visible;
+
+                this.vulnerabilitiesTree.CliRootNode.SetScanningTitle();
+            });
+        }
+
+        /// <summary>
+        /// SnykCode ScanningStarted event handler. Switch context to ScanningState.
+        /// </summary>
+        /// <param name="sender">Source object.</param>
+        /// <param name="eventArgs">Event args.</param>
+        public void OnSnykCodeScanningStarted(object sender, SnykCodeScanEventArgs eventArgs)
+        {
+            this.DisplayMainMessage("Scanning project for vulnerabilities...");
+
+            ThreadHelper.JoinableTaskFactory.Run(async () =>
+            {
+                await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
+
+                this.vulnerabilitiesTree.CodeSequrityRootNode.SetScanningTitle();
+                this.vulnerabilitiesTree.CodeQualityRootNode.SetScanningTitle();
+            });
+        }
 
         /// <summary>
         /// ScanningFinished event handler. Switch context to ScanResultsState.
@@ -132,11 +164,35 @@
         public void OnScanningFinished(object sender, SnykCliScanEventArgs eventArgs) => this.context.TransitionTo(ScanResultsState.Instance);
 
         /// <summary>
-        /// DisplayError event handler. Switch context to ErrorState.
+        /// Handle Cli error.
         /// </summary>
         /// <param name="sender">Source object.</param>
         /// <param name="eventArgs">Event args.</param>
-        public void OnDisplayError(object sender, SnykCliScanEventArgs eventArgs) => this.context.TransitionTo(ErrorState.Instance(eventArgs.Error));
+        public void OnCliDisplayError(object sender, SnykCliScanEventArgs eventArgs)
+        {
+            ThreadHelper.JoinableTaskFactory.Run(async () =>
+            {
+                await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
+
+                this.vulnerabilitiesTree.CliRootNode.SetErrorTitle();
+            });
+        }
+
+        /// <summary>
+        /// Handle SnykCode error.
+        /// </summary>
+        /// <param name="sender">Source object.</param>
+        /// <param name="eventArgs">Event args.</param>
+        public void OnSnykCodeDisplayError(object sender, SnykCodeScanEventArgs eventArgs)
+        {
+            ThreadHelper.JoinableTaskFactory.Run(async () =>
+            {
+                await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
+
+                this.vulnerabilitiesTree.CodeQualityRootNode.SetErrorTitle();
+                this.vulnerabilitiesTree.CodeSequrityRootNode.SetErrorTitle();
+            });
+        }
 
         /// <summary>
         /// ScanningCancelled event handler. Switch context to ScanResultsState.
@@ -223,13 +279,20 @@
         /// <summary>
         /// Hide run scan message.
         /// </summary>
-        public void HideRunScanMessage() => this.Dispatcher.Invoke(() => this.noVulnerabilitiesAddedMessageGrid.Visibility = Visibility.Collapsed);
+        public void HideRunScanMessage() => ThreadHelper.JoinableTaskFactory.Run(async () =>
+        {
+            await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
+
+            this.noVulnerabilitiesAddedMessageGrid.Visibility = Visibility.Collapsed;
+        });
 
         /// <summary>
         /// Display run scan message.
         /// </summary>
-        public void DisplayRunScanMessage() => this.Dispatcher.Invoke(() =>
+        public void DisplayRunScanMessage() => ThreadHelper.JoinableTaskFactory.Run(async () =>
         {
+            await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
+
             this.noVulnerabilitiesAddedMessageGrid.Visibility = Visibility.Visible;
 
             this.VulnerabilitiesTree.Visibility = Visibility.Visible;
@@ -239,15 +302,14 @@
         /// Display main message.
         /// </summary>
         /// <param name="text">Main message text.</param>
-        public void DisplayMainMessage(string text)
+        public void DisplayMainMessage(string text) => ThreadHelper.JoinableTaskFactory.Run(async () =>
         {
-            this.Dispatcher.Invoke(() =>
-            {
-                this.message.Text = text;
+            await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
 
-                this.messageGrid.Visibility = Visibility.Visible;
-            });
-        }
+            this.message.Text = text;
+
+            this.messageGrid.Visibility = Visibility.Visible;
+        });
 
         /// <summary>
         /// Hide main message.
@@ -278,32 +340,6 @@
         }
 
         /// <summary>
-        /// Enable execute actions.
-        /// </summary>
-        public void EnableExecuteActions()
-        {
-            this.Dispatcher.Invoke(() =>
-            {
-                this.runScanLink.IsEnabled = true;
-            });
-        }
-
-        /// <summary>
-        /// Enable stop action buttons.
-        /// </summary>
-        public void EnableStopActions() => this.Dispatcher.Invoke(() => this.runScanLink.IsEnabled = false);
-
-        /// <summary>
-        /// Disable all action buttons.
-        /// </summary>
-        public void DisableAllActions() => this.Dispatcher.Invoke(() => this.runScanLink.IsEnabled = false);
-
-        /// <summary>
-        /// Clear vulnerability tree elements.
-        /// </summary>
-        public void CleanVulnerabilitiesTree() => this.Dispatcher.Invoke(() => this.vulnerabilitiesTree.Clear());
-
-        /// <summary>
         /// Clean and hide vulnerability details panel.
         /// </summary>
         public void CleanAndHideVulnerabilityDetailsPanel()
@@ -325,8 +361,10 @@
         /// </summary>
         public void Clean()
         {
-            this.Dispatcher.Invoke(() =>
+            ThreadHelper.JoinableTaskFactory.Run(async () =>
             {
+                await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
+
                 this.vulnerabilitiesTree.Clear();
 
                 this.context.TransitionTo(RunScanState.Instance);

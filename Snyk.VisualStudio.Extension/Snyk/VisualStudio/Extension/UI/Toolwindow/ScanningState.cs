@@ -30,6 +30,12 @@
                 this.ToolWindowControl.progressBarPanel.Visibility = Visibility.Collapsed;
 
                 this.ToolWindowControl.resultsGrid.Visibility = Visibility.Collapsed;
+
+                this.ToolWindowControl.resultsGrid.Visibility = Visibility.Collapsed;
+
+                //this.ToolWindowControl.VulnerabilitiesTree.CliRootNode.ResetTitleText();
+                //this.ToolWindowControl.VulnerabilitiesTree.CodeSequrityRootNode.ResetTitleText();
+                //this.ToolWindowControl.VulnerabilitiesTree.CodeQualityRootNode.ResetTitleText();
             });
         }
 
@@ -50,6 +56,12 @@
                 this.ToolWindowControl.progressBarPanel.Visibility = Visibility.Visible;
 
                 this.ToolWindowControl.resultsGrid.Visibility = Visibility.Visible;
+
+                this.ToolWindowControl.VulnerabilitiesTree.Clear();
+
+                this.ToolWindowControl.VulnerabilitiesTree.CliRootNode.SetScanningTitle();
+                this.ToolWindowControl.VulnerabilitiesTree.CodeSequrityRootNode.SetScanningTitle();
+                this.ToolWindowControl.VulnerabilitiesTree.CodeQualityRootNode.SetScanningTitle();
             });
         }
     }

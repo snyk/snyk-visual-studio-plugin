@@ -112,6 +112,7 @@
     </Compile>
     <Compile Include="Snyk\VisualStudio\Extension\Theme\ThemeInfo.cs" />
     <Compile Include="Snyk\VisualStudio\Extension\Theme\VsBroadcastMessageEvents.cs" />
+    <Compile Include="Snyk\VisualStudio\Extension\UI\IRefreshable.cs" />
     <Compile Include="Snyk\VisualStudio\Extension\UI\Tree\SnykCodeQualityRootTreeNode.cs" />
     <Compile Include="Snyk\VisualStudio\Extension\UI\VsInfoBarService.cs" />
     <Compile Include="Snyk\VisualStudio\Extension\UI\VsStatusBar.cs" />
@@ -121,7 +122,7 @@
     <Compile Include="Snyk\VisualStudio\Extension\UI\SnykIconProvider.cs" />
     <Compile Include="Snyk\VisualStudio\Extension\UI\Toolwindow\DownloadState.cs" />
     <Compile Include="Snyk\VisualStudio\Extension\UI\Toolwindow\EmptyState.cs" />
-    <Compile Include="Snyk\VisualStudio\Extension\UI\Toolwindow\ErrorState.cs" />
+    <Compile Include="Snyk\VisualStudio\Extension\UI\Toolwindow\CliErrorState.cs" />
     <Compile Include="Snyk\VisualStudio\Extension\UI\HtmlRichTextBox.cs" />
     <Compile Include="Snyk\VisualStudio\Extension\Theme\SnykVsThemeService.cs" />
     <Compile Include="Snyk\VisualStudio\Extension\SnykActivityLogger.cs" />
