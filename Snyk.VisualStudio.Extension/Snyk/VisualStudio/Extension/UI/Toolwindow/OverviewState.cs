@@ -1,6 +1,7 @@
 ﻿namespace Snyk.VisualStudio.Extension.UI.Toolwindow
 {
     using System.Windows;
+    using Microsoft.VisualStudio.Shell;
 
     /// <summary>
     /// Implements Overview state for tool window.
@@ -15,25 +16,21 @@
         /// <summary>
         /// Display overview grid component.
         /// </summary>
-        public override void DisplayComponents()
+        public override void DisplayComponents() => ThreadHelper.JoinableTaskFactory.Run(async () =>
         {
-            this.ToolWindowControl.Dispatcher.Invoke(() =>
-            {
-                this.ToolWindowControl.overviewGrid.Visibility = Visibility.Visible;
-            });
+            await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
 
-            this.ToolWindowControl.DisableAllActions();
-        }
+            this.ToolWindowControl.overviewGrid.Visibility = Visibility.Visible;
+        });
 
         /// <summary>
         /// Hide overview grid component.
         /// </summary>
-        public override void HideComponents()
+        public override void HideComponents() => ThreadHelper.JoinableTaskFactory.Run(async () =>
         {
-            this.ToolWindowControl.Dispatcher.Invoke(() =>
-            {
-                this.ToolWindowControl.overviewGrid.Visibility = Visibility.Collapsed;
-            });
-        }
+            await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
+
+            this.ToolWindowControl.overviewGrid.Visibility = Visibility.Collapsed;
+        });
     }
 }

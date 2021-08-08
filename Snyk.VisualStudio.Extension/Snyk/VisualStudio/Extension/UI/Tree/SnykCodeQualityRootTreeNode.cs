@@ -11,6 +11,11 @@
         /// </summary>
         public const string SnykCodeTitle = "Code Quality";
 
+        public SnykCodeQualityRootTreeNode(IRefreshable parent)
+            : base(parent)
+        {
+        }
+
         /// <summary>
         /// Gets a value indicating whether icon for open source node.
         /// </summary>

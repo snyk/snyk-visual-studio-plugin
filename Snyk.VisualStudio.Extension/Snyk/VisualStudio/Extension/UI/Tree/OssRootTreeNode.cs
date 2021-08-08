@@ -10,6 +10,11 @@
         /// </summary>
         public const string OpenSourceSecurityTitle = "Open Source Security";
 
+        public OssRootTreeNode(IRefreshable parent)
+            : base(parent)
+        {
+        }
+
         /// <summary>
         /// Gets a value indicating whether icon for open source node.
         /// </summary>

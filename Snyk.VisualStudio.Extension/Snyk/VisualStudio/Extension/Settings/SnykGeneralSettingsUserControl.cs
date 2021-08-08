@@ -104,7 +104,7 @@
                     Path = string.Empty,
                 };
 
-                this.OptionsDialogPage.ServiceProvider.TasksService.OnError(cliError);
+                this.OptionsDialogPage.ServiceProvider.TasksService.OnCliError(cliError);
 
                 this.OptionsDialogPage.ServiceProvider.ShowToolWindow();
             };

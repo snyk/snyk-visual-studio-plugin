@@ -10,15 +10,15 @@
     /// <summary>
     /// Interaction logic for SnykFilterableComboBox.xaml.
     /// </summary>
-    public partial class SnykFilterableTree : UserControl
+    public partial class SnykFilterableTree : UserControl, IRefreshable
     {
         private static SnykFilterableTree instance;
 
-        private RootTreeNode cliRootNode = new OssRootTreeNode();
+        private readonly RootTreeNode cliRootNode;
 
-        private RootTreeNode codeSequrityRootNode = new SnykCodeSecurityRootTreeNode();
+        private readonly RootTreeNode codeSequrityRootNode;
 
-        private RootTreeNode codeQualityRootNode = new SnykCodeQualityRootTreeNode();
+        private readonly RootTreeNode codeQualityRootNode;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="SnykFilterableTree"/> class.
@@ -29,6 +29,10 @@
 
             instance = this;
 
+            this.cliRootNode = new OssRootTreeNode(this);
+            this.codeSequrityRootNode = new SnykCodeSecurityRootTreeNode(this);
+            this.codeQualityRootNode = new SnykCodeQualityRootTreeNode(this);
+
             this.vulnerabilitiesTree.Items.Add(this.cliRootNode);
             this.vulnerabilitiesTree.Items.Add(this.codeSequrityRootNode);
             this.vulnerabilitiesTree.Items.Add(this.codeQualityRootNode);
@@ -38,6 +42,35 @@
         /// Selecteted vulnerability node in tree event handler.
         /// </summary>
         public event RoutedEventHandler SelectedVulnerabilityChanged;
+
+        /// <summary>
+        /// Gets Cli root node.
+        /// </summary>
+        public RootTreeNode CliRootNode => this.cliRootNode;
+
+        /// <summary>
+        /// Gets code sequrity root node.
+        /// </summary>
+        public RootTreeNode CodeSequrityRootNode => this.codeSequrityRootNode;
+
+        /// <summary>
+        /// Gets code quality root node.
+        /// </summary>
+        public RootTreeNode CodeQualityRootNode => this.codeQualityRootNode;
+
+        /// <summary>
+        /// Set cli root node title to error.
+        /// </summary>
+        public void SetCliRootNodeTitleToError() => this.cliRootNode.SetErrorTitle();
+
+        /// <summary>
+        /// Set cli root node title to error.
+        /// </summary>
+        public void SetSnykCodeRootNodesTitleToError()
+        {
+            this.codeQualityRootNode.SetErrorTitle();
+            this.codeSequrityRootNode.SetErrorTitle();
+        }
 
         /// <summary>
         /// Gets a value indicating whether tree items.
@@ -89,8 +122,6 @@
                 cliResult.HighSeverityCount,
                 cliResult.MediumSeverityCount,
                 cliResult.LowSeverityCount);
-
-            this.vulnerabilitiesTree.Items.Refresh();
         }
 
         /// <summary>
@@ -143,14 +174,20 @@
                 highSeverityCount,
                 mediumSeverityCount,
                 lowSeverityCount);
-
-            this.vulnerabilitiesTree.Items.Refresh();
         }
+
+        /// <inheritdoc/>
+        public void Refresh() => this.vulnerabilitiesTree.Items.Refresh();
 
         /// <summary>
         /// Clear tree nodes.
         /// </summary>
-        public void Clear() => this.codeSequrityRootNode.Clean();
+        public void Clear()
+        {
+            this.cliRootNode.Clean();
+            this.codeSequrityRootNode.Clean();
+            this.codeQualityRootNode.Clean();
+        }
 
         /// <summary>
         /// Display all tree nodes.
