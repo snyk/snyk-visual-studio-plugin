@@ -25,6 +25,14 @@
                   ScrollViewer.CanContentScroll="True" UseLayoutRounding="False">
             <TreeView.ItemContainerStyle>
                 <Style TargetType="TreeViewItem">
+                    <Style.Triggers>
+                        <DataTrigger Binding="{Binding Path=IsRoot}" Value="true">
+                            <Setter Property="FontWeight" Value="Bold"></Setter>
+                        </DataTrigger>
+                        <DataTrigger Binding="{Binding Path=IsRoot}" Value="false">
+                            <Setter Property="FontWeight" Value="Normal"></Setter>
+                        </DataTrigger>
+                    </Style.Triggers>
                     <Setter Property="Template">
                         <Setter.Value>
                             <ControlTemplate TargetType="TreeViewItem">
