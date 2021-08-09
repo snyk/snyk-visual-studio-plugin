@@ -33,6 +33,9 @@
             }
         }
 
+        /// <inheritdoc/>
+        public override bool IsRoot => true;
+
         /// <summary>
         /// Set detailed title (with information by severity).
         /// </summary>
