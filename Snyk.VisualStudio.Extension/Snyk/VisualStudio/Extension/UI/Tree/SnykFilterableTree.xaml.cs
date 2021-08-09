@@ -1,6 +1,9 @@
 ﻿namespace Snyk.VisualStudio.Extension.UI.Tree
 {
+    using System;
+    using System.Collections.Generic;
     using System.ComponentModel;
+    using System.Linq;
     using System.Windows;
     using System.Windows.Controls;
     using System.Windows.Data;
@@ -130,50 +133,8 @@
         /// <param name="analysisResult"><see cref="AnalysisResult"/> object.</param>
         public void AppendVulnerabilities(AnalysisResult analysisResult)
         {
-            int crititcalSeverityCount = 0; // TODO: move this to proper place.
-            int highSeverityCount = 0;
-            int mediumSeverityCount = 0;
-            int lowSeverityCount = 0;
-
-            foreach (var fileAnalyses in analysisResult.FileAnalyses)
-            {
-                var fileNode = new SnykCodeFileTreeNode{ FileAnalysis = fileAnalyses, };
-
-                foreach (var suggestion in fileAnalyses.Suggestions)
-                {
-                    fileNode.Items.Add(new SnykCodeVulnerabilityTreeNode { Suggestion = suggestion, });
-
-                    string severity = Severity.FromInt(suggestion.Severity);
-
-                    if (severity == Severity.Critical)
-                    {
-                        crititcalSeverityCount++;
-                    }
-
-                    if (severity == Severity.High)
-                    {
-                        highSeverityCount++;
-                    }
-
-                    if (severity == Severity.Medium)
-                    {
-                        mediumSeverityCount++;
-                    }
-
-                    if (severity == Severity.Low)
-                    {
-                        lowSeverityCount++;
-                    }
-                }
-
-                this.codeSequrityRootNode.Items.Add(fileNode);
-            }
-
-            this.codeSequrityRootNode.SetDetails(
-                crititcalSeverityCount,
-                highSeverityCount,
-                mediumSeverityCount,
-                lowSeverityCount);
+            this.AppendSnykCodeIssues(this.codeSequrityRootNode, analysisResult, suggestion => suggestion.Categories.Contains("Security"));
+            this.AppendSnykCodeIssues(this.codeQualityRootNode, analysisResult, suggestion => !suggestion.Categories.Contains("Security"));
         }
 
         /// <inheritdoc/>
@@ -241,5 +202,38 @@
             this.SelectedVulnerabilityChanged?.Invoke(this, eventArgs);
 
         private void TreeViewItem_Selected(object sender, RoutedEventArgs eventArgs) => MessageBox.Show(eventArgs.ToString());
+
+        private void AppendSnykCodeIssues(RootTreeNode rootNode, AnalysisResult analysisResult, Func<Suggestion, bool> conditionFunction)
+        {
+            int crititcalSeverityCount = 0;
+            int highSeverityCount = 0;
+            int mediumSeverityCount = 0;
+            int lowSeverityCount = 0;
+
+            foreach (var fileAnalyses in analysisResult.FileAnalyses)
+            {
+                var issueNode = new SnykCodeFileTreeNode { FileAnalysis = fileAnalyses, };
+
+                var suggestions = fileAnalyses.Suggestions.Where(conditionFunction).ToList();
+
+                crititcalSeverityCount += suggestions.Count(suggestion => Severity.FromInt(suggestion.Severity) == Severity.Critical);
+                highSeverityCount += suggestions.Count(suggestion => Severity.FromInt(suggestion.Severity) == Severity.High);
+                mediumSeverityCount += suggestions.Count(suggestion => Severity.FromInt(suggestion.Severity) == Severity.Medium);
+                lowSeverityCount += suggestions.Count(suggestion => Severity.FromInt(suggestion.Severity) == Severity.Low);
+
+                foreach (var suggestion in suggestions)
+                {
+                    issueNode.Items.Add(new SnykCodeVulnerabilityTreeNode { Suggestion = suggestion, });
+                }
+
+                rootNode.Items.Add(issueNode);
+            }
+
+            rootNode.SetDetails(
+                crititcalSeverityCount,
+                highSeverityCount,
+                mediumSeverityCount,
+                lowSeverityCount);
+        }
     }
 }
