@@ -415,8 +415,10 @@
 
             this.context.TransitionTo(ScanResultsState.Instance);
 
-            this.Dispatcher.Invoke(() =>
+            ThreadHelper.JoinableTaskFactory.Run(async () =>
             {
+                await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
+
                 this.vulnerabilitiesTree.AppendVulnerabilities(cliResult);
 
                 this.serviceProvider.AnalyticsService.LogOpenSourceAnalysisReadyEvent(
@@ -431,8 +433,10 @@
         {
             this.context.TransitionTo(ScanResultsState.Instance);
 
-            this.Dispatcher.Invoke(() =>
+            ThreadHelper.JoinableTaskFactory.Run(async () =>
             {
+                await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
+
                 this.vulnerabilitiesTree.AppendVulnerabilities(analysisResult);
 
                 // TODO: Add SnykCode analytics event.
@@ -448,15 +452,14 @@
         /// Update progress bar.
         /// </summary>
         /// <param name="value">Progress bar value.</param>
-        private void UpdateDownloadProgress(int value)
+        private void UpdateDownloadProgress(int value) => ThreadHelper.JoinableTaskFactory.Run(async () =>
         {
-            this.Dispatcher.BeginInvoke((Action)(() =>
-            {
-                this.progressBar.Value = value;
+            await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
 
-                this.message.Text = $"Downloading latest Snyk CLI release {value}%...";
-            }));
-        }
+            this.progressBar.Value = value;
+
+            this.message.Text = $"Downloading latest Snyk CLI release {value}%...";
+        });
 
         private void VulnerabilitiesTree_SelectetVulnerabilityChanged(object sender, RoutedEventArgs args)
         {
