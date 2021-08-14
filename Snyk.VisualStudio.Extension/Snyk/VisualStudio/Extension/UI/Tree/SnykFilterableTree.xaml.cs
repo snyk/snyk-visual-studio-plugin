@@ -1,12 +1,12 @@
 ﻿namespace Snyk.VisualStudio.Extension.UI.Tree
 {
     using System;
-    using System.Collections.Generic;
     using System.ComponentModel;
     using System.Linq;
     using System.Windows;
     using System.Windows.Controls;
     using System.Windows.Data;
+    using Microsoft.VisualStudio.Shell;
     using Snyk.Code.Library.Domain.Analysis;
     using Snyk.VisualStudio.Extension.CLI;
 
@@ -153,50 +153,48 @@
         /// <summary>
         /// Display all tree nodes.
         /// </summary>
-        internal void DisplayAllVulnerabilities()
+        internal void DisplayAllVulnerabilities() => ThreadHelper.JoinableTaskFactory.Run(async () =>
         {
-            this.Dispatcher.Invoke(() =>
-            {
-                foreach (TreeNode treeNode in this.codeSequrityRootNode.Items)
-                {
-                    ICollectionView collectionView = CollectionViewSource.GetDefaultView(treeNode.Items);
+            await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
 
-                    collectionView.Filter = null;
-                }
-            });
-        }
+            foreach (TreeNode treeNode in this.codeSequrityRootNode.Items)
+            {
+                ICollectionView collectionView = CollectionViewSource.GetDefaultView(treeNode.Items);
+
+                collectionView.Filter = null;
+            }
+        });
 
         /// <summary>
         /// Filter by string. String can contain severity or vulnerability name or both.
         /// </summary>
         /// <param name="filterString">Source filter string.</param>
-        internal void FilterBy(string filterString)
+        internal void FilterBy(string filterString) => ThreadHelper.JoinableTaskFactory.Run(async () =>
         {
-            this.Dispatcher.Invoke(() =>
+            await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
+
+            var severityFilter = SeverityFilter.ByQueryString(filterString);
+
+            string searchString = severityFilter.GetOnlyQueryString();
+
+            foreach (var treeNode in this.codeSequrityRootNode.Items)
             {
-                var severityFilter = SeverityFilter.ByQueryString(filterString);
-
-                string searchString = severityFilter.GetOnlyQueryString();
-
-                foreach (var treeNode in this.codeSequrityRootNode.Items)
+                CollectionViewSource.GetDefaultView(treeNode.Items).Filter = filterObject =>
                 {
-                    CollectionViewSource.GetDefaultView(treeNode.Items).Filter = filterObject =>
+                    var filteredTreeNode = filterObject as OssVulnerabilityTreeNode;
+                    var vulnerability = filteredTreeNode.Vulnerability;
+
+                    bool isVulnIncluded = severityFilter.IsVulnerabilityIncluded(vulnerability.Severity);
+
+                    if (searchString != null && searchString != string.Empty)
                     {
-                        var filteredTreeNode = filterObject as OssVulnerabilityTreeNode;
-                        var vulnerability = filteredTreeNode.Vulnerability;
+                        isVulnIncluded = isVulnIncluded && vulnerability.GetPackageNameTitle().Contains(searchString);
+                    }
 
-                        bool isVulnIncluded = severityFilter.IsVulnerabilityIncluded(vulnerability.Severity);
-
-                        if (searchString != null && searchString != string.Empty)
-                        {
-                            isVulnIncluded = isVulnIncluded && vulnerability.GetPackageNameTitle().Contains(searchString);
-                        }
-
-                        return isVulnIncluded;
-                    };
-                }
-            });
-        }
+                    return isVulnIncluded;
+                };
+            }
+        });
 
         private void VulnerabilitiesTree_SelectedItemChanged(object sender, RoutedEventArgs eventArgs) =>
             this.SelectedVulnerabilityChanged?.Invoke(this, eventArgs);
