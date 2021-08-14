@@ -9,7 +9,7 @@
     using Microsoft.VisualStudio.Shell;
     using Microsoft.VisualStudio.Shell.Interop;
     using Microsoft.Internal.VisualStudio.PlatformUI;
-    using CLI;
+    using Snyk.VisualStudio.Extension.CLI;
 
     /// <summary>
     /// This class implements the tool window exposed by this package and hosts a user control.
