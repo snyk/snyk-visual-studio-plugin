@@ -177,7 +177,15 @@
 
             string searchString = severityFilter.GetOnlyQueryString();
 
-            foreach (var treeNode in this.codeSequrityRootNode.Items)
+            this.FilterOssItems(this.cliRootNode, severityFilter, searchString);
+
+            this.FilterSnykCodeItems(this.codeQualityRootNode, severityFilter, searchString);
+            this.FilterSnykCodeItems(this.codeSequrityRootNode, severityFilter, searchString);
+        });
+
+        private void FilterOssItems(RootTreeNode rootTreeNode, SeverityFilter severityFilter, string searchString)
+        {
+            foreach (var treeNode in this.cliRootNode.Items)
             {
                 CollectionViewSource.GetDefaultView(treeNode.Items).Filter = filterObject =>
                 {
@@ -194,7 +202,28 @@
                     return isVulnIncluded;
                 };
             }
-        });
+        }
+
+        private void FilterSnykCodeItems(RootTreeNode rootTreeNode, SeverityFilter severityFilter, string searchString)
+        {
+            foreach (var treeNode in rootTreeNode.Items)
+            {
+                CollectionViewSource.GetDefaultView(treeNode.Items).Filter = filterObject =>
+                {
+                    var filteredTreeNode = filterObject as SnykCodeVulnerabilityTreeNode;
+                    var suggestion = filteredTreeNode.Suggestion;
+
+                    bool isVulnIncluded = severityFilter.IsVulnerabilityIncluded(Severity.FromInt(suggestion.Severity));
+
+                    if (searchString != null && searchString != string.Empty)
+                    {
+                        isVulnIncluded = isVulnIncluded && suggestion.GetDisplayTitle().Contains(searchString);
+                    }
+
+                    return isVulnIncluded;
+                };
+            }
+        }
 
         private void VulnerabilitiesTree_SelectedItemChanged(object sender, RoutedEventArgs eventArgs) =>
             this.SelectedVulnerabilityChanged?.Invoke(this, eventArgs);
