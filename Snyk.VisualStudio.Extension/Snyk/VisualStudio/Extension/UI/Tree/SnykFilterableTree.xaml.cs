@@ -260,6 +260,8 @@
                 mediumSeverityCount += suggestions.Count(suggestion => Severity.FromInt(suggestion.Severity) == Severity.Medium);
                 lowSeverityCount += suggestions.Count(suggestion => Severity.FromInt(suggestion.Severity) == Severity.Low);
 
+                suggestions.Sort((suggestion1, suggestion2) => suggestion2.Severity.CompareTo(suggestion1.Severity));
+
                 foreach (var suggestion in suggestions)
                 {
                     issueNode.Items.Add(new SnykCodeVulnerabilityTreeNode { Suggestion = suggestion, });
