@@ -26,6 +26,11 @@
         public const string UsageAnalyticsEnabledName = "UsageAnalyticsEnabled";
 
         /// <summary>
+        /// Usage Oss Enabled key name.
+        /// </summary>
+        public const string ossEnabledName = "ossEnabled";
+
+        /// <summary>
         /// Current CLI version key name.
         /// </summary>
         public const string CurrentCliVersionName = "CurrentCliVersionName";

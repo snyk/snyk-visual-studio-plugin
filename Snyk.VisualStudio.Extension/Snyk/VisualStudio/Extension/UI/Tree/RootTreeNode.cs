@@ -9,6 +9,8 @@
     /// </summary>
     public abstract class RootTreeNode : TreeNode
     {
+        private bool enabled;
+
         private IRefreshable parent;
 
         /// <summary>
@@ -19,7 +21,7 @@
         {
             this.parent = parent;
 
-            this.Title = this.GetTitlePrefix();
+            base.Title = this.GetDefaultDisabledTitle();
         }
 
         /// <inheritdoc/>
@@ -27,7 +29,14 @@
         {
             set
             {
-                base.Title = value;
+                if (this.enabled)
+                {
+                    base.Title = value;
+                }
+                else
+                {
+                    base.Title = this.GetDefaultDisabledTitle();
+                }
 
                 this.parent.Refresh();
             }
@@ -35,6 +44,27 @@
 
         /// <inheritdoc/>
         public override bool IsRoot => true;
+
+        /// <summary>
+        /// Gets or sets a value indicating whether is root node enabled.
+        /// </summary>
+        public bool Enabled
+        {
+            get => this.enabled;
+            set
+            {
+                this.enabled = value;
+
+                if (this.enabled)
+                {
+                    this.Title = this.GetDefaultTitle();
+                } 
+                else
+                {
+                    this.Title = this.GetDefaultDisabledTitle();
+                }
+            }
+        }
 
         /// <summary>
         /// Set detailed title (with information by severity).
@@ -55,7 +85,7 @@
 
             titleBuilder
                 .Append(" - ")
-                .Append(string.Format("{0} vulnerabilities", totalIssuesCount));
+                .Append(string.Format("{0} {1}", totalIssuesCount, this.GetIssuesTypeName()));
 
             var severityDict = new Dictionary<string, int>
                 {
@@ -98,7 +128,7 @@
         /// <summary>
         /// Set node text to {Prefix} without additional text.
         /// </summary>
-        public void ResetTitleText() => this.Title = this.GetTitlePrefix();
+        public void ResetTitleText() => this.Title = this.GetDefaultTitle();
 
         /// <summary>
         /// Clear all items in this node and title.
@@ -115,5 +145,15 @@
         /// </summary>
         /// <returns>Title prefix string.</returns>
         protected abstract string GetTitlePrefix();
+
+        /// <summary>
+        /// Get issues type name (vulnerabilities for OSS or issues for SnykCode).
+        /// </summary>
+        /// <returns>Issues type name.</returns>
+        protected abstract string GetIssuesTypeName();
+
+        private string GetDefaultTitle() => this.GetTitlePrefix();
+
+        private string GetDefaultDisabledTitle() => this.GetTitlePrefix() + " (disabled)";
     }
 }

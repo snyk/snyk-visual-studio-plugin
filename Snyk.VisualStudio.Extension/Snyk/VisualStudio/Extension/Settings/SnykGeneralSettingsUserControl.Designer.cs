@@ -40,6 +40,10 @@
             this.authProgressBar = new System.Windows.Forms.ProgressBar();
             this.errorProvider = new System.Windows.Forms.ErrorProvider(this.components);
             this.usageAnalyticsCheckBox = new System.Windows.Forms.CheckBox();
+            this.label1 = new System.Windows.Forms.Label();
+            this.ossEnabledCheckBox = new System.Windows.Forms.CheckBox();
+            this.codeSecurityEnabledCheckBox = new System.Windows.Forms.CheckBox();
+            this.codeQualityEnabledCheckBox = new System.Windows.Forms.CheckBox();
             ((System.ComponentModel.ISupportInitialize)(this.errorProvider)).BeginInit();
             this.SuspendLayout();
             // 
@@ -52,8 +56,8 @@
             this.customEndpointTextBox.Name = "customEndpointTextBox";
             this.customEndpointTextBox.Size = new System.Drawing.Size(899, 31);
             this.customEndpointTextBox.TabIndex = 0;
-            this.customEndpointTextBox.TextChanged += new System.EventHandler(this.customEndpointTextBox_TextChanged);
-            this.customEndpointTextBox.Validating += new System.ComponentModel.CancelEventHandler(this.customEndpointTextBox_Validating);
+            this.customEndpointTextBox.TextChanged += new System.EventHandler(this.CustomEndpointTextBox_TextChanged);
+            this.customEndpointTextBox.Validating += new System.ComponentModel.CancelEventHandler(this.CustomEndpointTextBox_Validating);
             // 
             // customEndpointLabel
             // 
@@ -84,7 +88,7 @@
             this.organizationTextBox.Name = "organizationTextBox";
             this.organizationTextBox.Size = new System.Drawing.Size(899, 31);
             this.organizationTextBox.TabIndex = 3;
-            this.organizationTextBox.TextChanged += new System.EventHandler(this.organizationTextBox_TextChanged);
+            this.organizationTextBox.TextChanged += new System.EventHandler(this.OrganizationTextBox_TextChanged);
             // 
             // tokenLabel
             // 
@@ -106,8 +110,8 @@
             this.tokenTextBox.PasswordChar = '*';
             this.tokenTextBox.Size = new System.Drawing.Size(899, 31);
             this.tokenTextBox.TabIndex = 5;
-            this.tokenTextBox.TextChanged += new System.EventHandler(this.tokenTextBox_TextChanged);
-            this.tokenTextBox.Validating += new System.ComponentModel.CancelEventHandler(this.tokenTextBox_Validating);
+            this.tokenTextBox.TextChanged += new System.EventHandler(this.TokenTextBox_TextChanged);
+            this.tokenTextBox.Validating += new System.ComponentModel.CancelEventHandler(this.TokenTextBox_Validating);
             // 
             // ignoreUnknownCACheckBox
             // 
@@ -119,7 +123,7 @@
             this.ignoreUnknownCACheckBox.TabIndex = 6;
             this.ignoreUnknownCACheckBox.Text = "Ignore unknown CA";
             this.ignoreUnknownCACheckBox.UseVisualStyleBackColor = true;
-            this.ignoreUnknownCACheckBox.CheckedChanged += new System.EventHandler(this.ignoreUnknownCACheckBox_CheckedChanged);
+            this.ignoreUnknownCACheckBox.CheckedChanged += new System.EventHandler(this.IgnoreUnknownCACheckBox_CheckedChanged);
             // 
             // authenticateButton
             // 
@@ -131,7 +135,7 @@
             this.authenticateButton.TabIndex = 7;
             this.authenticateButton.Text = "Authenticate";
             this.authenticateButton.UseVisualStyleBackColor = true;
-            this.authenticateButton.Click += new System.EventHandler(this.authenticateButton_Click);
+            this.authenticateButton.Click += new System.EventHandler(this.AuthenticateButton_Click);
             // 
             // authProgressBar
             // 
@@ -155,18 +159,67 @@
             this.usageAnalyticsCheckBox.AutoSize = true;
             this.usageAnalyticsCheckBox.Checked = true;
             this.usageAnalyticsCheckBox.CheckState = System.Windows.Forms.CheckState.Checked;
-            this.usageAnalyticsCheckBox.Location = new System.Drawing.Point(238, 250);
+            this.usageAnalyticsCheckBox.Location = new System.Drawing.Point(238, 492);
             this.usageAnalyticsCheckBox.Name = "usageAnalyticsCheckBox";
             this.usageAnalyticsCheckBox.Size = new System.Drawing.Size(250, 29);
             this.usageAnalyticsCheckBox.TabIndex = 9;
             this.usageAnalyticsCheckBox.Text = "Send usage analytics";
             this.usageAnalyticsCheckBox.UseVisualStyleBackColor = true;
-            this.usageAnalyticsCheckBox.CheckedChanged += new System.EventHandler(this.usageAnalyticsCheckBox_CheckedChanged);
+            this.usageAnalyticsCheckBox.CheckedChanged += new System.EventHandler(this.UsageAnalyticsCheckBox_CheckedChanged);
+            // 
+            // label1
+            // 
+            this.label1.BorderStyle = System.Windows.Forms.BorderStyle.Fixed3D;
+            this.label1.Location = new System.Drawing.Point(238, 242);
+            this.label1.Name = "label1";
+            this.label1.Size = new System.Drawing.Size(898, 10);
+            this.label1.TabIndex = 10;
+            // 
+            // ossEnabledCheckBox
+            // 
+            this.ossEnabledCheckBox.AutoSize = true;
+            this.ossEnabledCheckBox.Checked = true;
+            this.ossEnabledCheckBox.CheckState = System.Windows.Forms.CheckState.Checked;
+            this.ossEnabledCheckBox.Location = new System.Drawing.Point(238, 285);
+            this.ossEnabledCheckBox.Name = "ossEnabledCheckBox";
+            this.ossEnabledCheckBox.Size = new System.Drawing.Size(362, 29);
+            this.ossEnabledCheckBox.TabIndex = 11;
+            this.ossEnabledCheckBox.Text = "Snyk Open Source vulnerabilities";
+            this.ossEnabledCheckBox.UseVisualStyleBackColor = true;
+            this.ossEnabledCheckBox.CheckedChanged += new System.EventHandler(this.OssEnabledCheckBox_CheckedChanged);
+            // 
+            // codeSecurityEnabledCheckBox
+            // 
+            this.codeSecurityEnabledCheckBox.AutoSize = true;
+            this.codeSecurityEnabledCheckBox.Checked = true;
+            this.codeSecurityEnabledCheckBox.CheckState = System.Windows.Forms.CheckState.Checked;
+            this.codeSecurityEnabledCheckBox.Location = new System.Drawing.Point(238, 331);
+            this.codeSecurityEnabledCheckBox.Name = "codeSecurityEnabledCheckBox";
+            this.codeSecurityEnabledCheckBox.Size = new System.Drawing.Size(301, 29);
+            this.codeSecurityEnabledCheckBox.TabIndex = 12;
+            this.codeSecurityEnabledCheckBox.Text = "Snyk Code Security issues";
+            this.codeSecurityEnabledCheckBox.UseVisualStyleBackColor = true;
+            this.codeSecurityEnabledCheckBox.CheckedChanged += new System.EventHandler(this.CodeSecurityEnabledCheckBox_CheckedChanged);
+            // 
+            // codeQualityEnabledCheckBox
+            // 
+            this.codeQualityEnabledCheckBox.AutoSize = true;
+            this.codeQualityEnabledCheckBox.Location = new System.Drawing.Point(238, 376);
+            this.codeQualityEnabledCheckBox.Name = "codeQualityEnabledCheckBox";
+            this.codeQualityEnabledCheckBox.Size = new System.Drawing.Size(290, 29);
+            this.codeQualityEnabledCheckBox.TabIndex = 13;
+            this.codeQualityEnabledCheckBox.Text = "Snyk Code Quality issues";
+            this.codeQualityEnabledCheckBox.UseVisualStyleBackColor = true;
+            this.codeQualityEnabledCheckBox.CheckedChanged += new System.EventHandler(this.CodeQualityEnabledCheckBox_CheckedChanged);
             // 
             // SnykGeneralSettingsUserControl
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(12F, 25F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
+            this.Controls.Add(this.codeQualityEnabledCheckBox);
+            this.Controls.Add(this.codeSecurityEnabledCheckBox);
+            this.Controls.Add(this.ossEnabledCheckBox);
+            this.Controls.Add(this.label1);
             this.Controls.Add(this.usageAnalyticsCheckBox);
             this.Controls.Add(this.authProgressBar);
             this.Controls.Add(this.authenticateButton);
@@ -200,5 +253,9 @@
         private System.Windows.Forms.ProgressBar authProgressBar;
         private System.Windows.Forms.ErrorProvider errorProvider;
         private System.Windows.Forms.CheckBox usageAnalyticsCheckBox;
+        private System.Windows.Forms.Label label1;
+        private System.Windows.Forms.CheckBox codeQualityEnabledCheckBox;
+        private System.Windows.Forms.CheckBox codeSecurityEnabledCheckBox;
+        private System.Windows.Forms.CheckBox ossEnabledCheckBox;
     }
 }

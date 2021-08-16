@@ -65,7 +65,7 @@
                 <ColumnDefinition Width="5"/>
                 <ColumnDefinition Width="6*"/>
             </Grid.ColumnDefinitions>
-            <tree:SnykFilterableTree x:Name="vulnerabilitiesTree" SelectedVulnerabilityChanged="VulnerabilitiesTree_SelectetVulnerabilityChanged"/>
+            <tree:SnykFilterableTree x:Name="resultsTree" SelectedVulnerabilityChanged="VulnerabilitiesTree_SelectetVulnerabilityChanged"/>
             <GridSplitter Grid.Column="1" Width="5" HorizontalAlignment="Stretch" Background="{DynamicResource VsBrush.Window}" Foreground="{DynamicResource VsBrush.WindowText}">
             </GridSplitter>
             <ScrollViewer Grid.Column="2" Name="vulnerabilityDetailsPanel" Visibility="Hidden" HorizontalContentAlignment="Stretch" VerticalContentAlignment="Stretch">
