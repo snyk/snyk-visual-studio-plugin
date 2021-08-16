@@ -180,7 +180,10 @@
                         <Image x:Name="icon" SnapsToDevicePixels="True" Margin="0, 0, 5, 0"  
                                Width="16" Height="16"
                                Source="{Binding Icon}"/>
-                        <TextBlock Text="{Binding Title}" ToolTipService.ToolTip="{Binding Title}" Foreground="{DynamicResource VsBrush.WindowText}"/>
+                        <TextBlock Text="{Binding Title}" 
+                                   ToolTipService.ToolTip="{Binding Title}" 
+                                   Foreground="{DynamicResource VsBrush.WindowText}" 
+                                   IsEnabled="{Binding Enabled}"/>
                     </StackPanel>
                 </HierarchicalDataTemplate>
             </TreeView.ItemTemplate>

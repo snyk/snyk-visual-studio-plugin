@@ -21,6 +21,8 @@
         /// </summary>
         public string Icon => SnykIconProvider.SnykCodeIconPath;
 
+        protected override string GetIssuesTypeName() => "issues";
+
         protected override string GetTitlePrefix() => SnykCodeTitle;
     }
 }

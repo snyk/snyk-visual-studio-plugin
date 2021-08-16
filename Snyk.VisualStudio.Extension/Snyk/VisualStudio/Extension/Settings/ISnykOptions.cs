@@ -8,6 +8,11 @@
     public interface ISnykOptions
     {
         /// <summary>
+        /// Settings changed event.
+        /// </summary>
+        event EventHandler<SnykSettingsChangedEventArgs> SettingsChanged;
+
+        /// <summary>
         /// Gets or sets a value indicating whether Snyk user API token.
         /// </summary>
         string ApiToken { get; set; }
@@ -36,6 +41,21 @@
         /// Gets a value indicating whether is CLI --all-projects parameter added by default. By default it's enabled.
         /// </summary>
         bool IsScanAllProjects { get; }
+
+        /// <summary>
+        /// Gets a value indicating whether is Oss scan enabled.
+        /// </summary>
+        bool OssEnabled { get; }
+
+        /// <summary>
+        /// Gets a value indicating whether is Oss scan enabled.
+        /// </summary>
+        bool SnykCodeSecurityEnabled { get; }
+
+        /// <summary>
+        /// Gets a value indicating whether is Oss scan enabled.
+        /// </summary>
+        bool SnykCodeQualityEnabled { get; }
 
         /// <summary>
         /// Gets or sets a value indicating whether Analytics enabled or disabled. By default it's enabled.

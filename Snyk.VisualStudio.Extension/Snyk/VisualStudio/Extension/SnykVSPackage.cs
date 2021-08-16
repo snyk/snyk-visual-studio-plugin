@@ -99,65 +99,6 @@
         }
 
         /// <summary>
-        /// Initialize package.
-        /// </summary>
-        /// <param name="cancellationToken">Cancellation token.</param>
-        /// <param name="progress">Progress.</param>
-        /// <returns>Task.</returns>
-        protected override async Task InitializeAsync(CancellationToken cancellationToken, IProgress<ServiceProgressData> progress)
-        {
-            await base.InitializeAsync(cancellationToken, progress);
-
-            this.AddService(typeof(SnykService), this.CreateSnykServiceAsync, true);
-
-            this.serviceProvider = await this.GetServiceAsync(typeof(SnykService)) as SnykService;
-
-            this.logger = this.serviceProvider.ActivityLogger;
-
-            this.logger.LogInformation("Get SnykService as ServiceProvider.");
-
-            this.logger.LogInformation("Start InitializeGeneralOptionsAsync.");
-
-            await this.InitializeGeneralOptionsAsync();
-
-            new Task(() =>
-            {
-                this.serviceProvider.AnalyticsService.ObtainUser(this.serviceProvider.GetApiToken());
-            }).Start();
-
-            this.logger.LogInformation("Start Initialize tool window. Before call GetToolWindowControl() method.");
-
-            await this.InitializeToolWindowAsync();
-
-            logger.LogInformation("Before call toolWindowControl.InitializeEventListeners() method.");
-
-            new Task(() =>
-            {
-                this.toolWindowControl.InitializeEventListeners(this.serviceProvider);
-            }).Start();
-
-            this.logger.LogInformation("Initialize Commands()");
-
-            await Commands.SnykScanCommand.InitializeAsync(this);
-            await Commands.SnykStopCurrentTaskCommand.InitializeAsync(this);
-            await Commands.SnykCleanPanelCommand.InitializeAsync(this);
-            await Commands.SnykOpenSettingsCommand.InitializeAsync(this);
-
-            this.logger.LogInformation("Leave SnykVSPackage.InitializeAsync()");
-        }
-
-        /// <summary>
-        /// Dispose analytics service and package.
-        /// </summary>
-        /// <param name="disposing">Bool.</param>
-        protected override void Dispose(bool disposing)
-        {
-            this.serviceProvider.AnalyticsService?.Dispose();
-
-            base.Dispose(disposing);
-        }
-
-        /// <summary>
         /// Initialize tool window.
         /// </summary>
         /// <returns>Task.</returns>
@@ -202,6 +143,64 @@
         /// Show tool window panel.
         /// </summary>
         public void ShowToolWindow() => this.toolWindowControl.ShowToolWindow();
+
+        /// <summary>
+        /// Initialize package.
+        /// </summary>
+        /// <param name="cancellationToken">Cancellation token.</param>
+        /// <param name="progress">Progress.</param>
+        /// <returns>Task.</returns>
+        protected override async Task InitializeAsync(CancellationToken cancellationToken, IProgress<ServiceProgressData> progress)
+        {
+            await base.InitializeAsync(cancellationToken, progress);
+
+            this.AddService(typeof(SnykService), this.CreateSnykServiceAsync, true);
+
+            this.serviceProvider = await this.GetServiceAsync(typeof(SnykService)) as SnykService;
+
+            this.logger = this.serviceProvider.ActivityLogger;
+
+            this.logger.LogInformation("Get SnykService as ServiceProvider.");
+
+            this.logger.LogInformation("Start InitializeGeneralOptionsAsync.");
+
+            await this.InitializeGeneralOptionsAsync();
+
+            new Task(() =>
+            {
+                this.serviceProvider.AnalyticsService.ObtainUser(this.serviceProvider.GetApiToken());
+            }).Start();
+
+            this.logger.LogInformation("Start Initialize tool window. Before call GetToolWindowControl() method.");
+
+            await this.InitializeToolWindowAsync();
+
+            this.logger.LogInformation("Before call toolWindowControl.InitializeEventListeners() method.");
+
+            new Task(() => this.toolWindowControl.InitializeEventListeners(this.serviceProvider)).Start();
+
+            this.logger.LogInformation("Initialize Commands()");
+
+            await Commands.SnykScanCommand.InitializeAsync(this);
+            await Commands.SnykStopCurrentTaskCommand.InitializeAsync(this);
+            await Commands.SnykCleanPanelCommand.InitializeAsync(this);
+            await Commands.SnykOpenSettingsCommand.InitializeAsync(this);
+
+            new Task(() => this.toolWindowControl.Initialize(this.serviceProvider)).Start();
+
+            this.logger.LogInformation("Leave SnykVSPackage.InitializeAsync()");
+        }
+
+        /// <summary>
+        /// Dispose analytics service and package.
+        /// </summary>
+        /// <param name="disposing">Bool.</param>
+        protected override void Dispose(bool disposing)
+        {
+            this.serviceProvider.AnalyticsService?.Dispose();
+
+            base.Dispose(disposing);
+        }
 
         private async Task InitializeGeneralOptionsAsync()
         {

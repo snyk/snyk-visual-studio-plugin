@@ -51,6 +51,9 @@
             this.organizationTextBox.Text = this.OptionsDialogPage.Organization;
             this.ignoreUnknownCACheckBox.Checked = this.OptionsDialogPage.IgnoreUnknownCA;
             this.usageAnalyticsCheckBox.Checked = this.OptionsDialogPage.UsageAnalyticsEnabled;
+            this.ossEnabledCheckBox.Checked = this.OptionsDialogPage.OssEnabled;
+            this.codeSecurityEnabledCheckBox.Checked = this.OptionsDialogPage.SnykCodeSecurityEnabled;
+            this.codeQualityEnabledCheckBox.Checked = this.OptionsDialogPage.SnykCodeQualityEnabled;
 
             this.successCallbackAction = (apiToken) =>
             {
@@ -109,7 +112,7 @@
                 this.OptionsDialogPage.ServiceProvider.ShowToolWindow();
             };
 
-            logger.LogInformation("Leave Initialize method");
+            this.logger.LogInformation("Leave Initialize method");
         }
 
         /// <summary>
@@ -163,15 +166,15 @@
             Options = this.OptionsDialogPage,
         };
 
-        private void authenticateButton_Click(object sender, EventArgs eventArgs)
+        private void AuthenticateButton_Click(object sender, EventArgs eventArgs)
         {
-            logger.LogInformation("Enter authenticateButton_Click method");
+            this.logger.LogInformation("Enter authenticateButton_Click method");
 
             this.authProgressBar.Visible = true;
             this.tokenTextBox.Enabled = false;
             this.authenticateButton.Enabled = false;
 
-            logger.LogInformation("Start run task");
+            this.logger.LogInformation("Start run task");
 
             Task.Run(() =>
             {
@@ -180,55 +183,55 @@
 
                 if (SnykCli.IsCliExists())
                 {
-                    logger.LogInformation("CLI exists. Calling SetupApiToken method");
+                    this.logger.LogInformation("CLI exists. Calling SetupApiToken method");
 
-                    SetupApiToken(successCallbackAction, errorCallbackAction);
+                    this.SetupApiToken(this.successCallbackAction, this.errorCallbackAction);
                 }
                 else
                 {
-                    logger.LogInformation("CLI not exists. Download CLI before get Api token");
+                    this.logger.LogInformation("CLI not exists. Download CLI before get Api token");
 
-                    serviceProvider.TasksService.Download(new CliDownloadFinishedCallback(OnCliDownloadFinishedCallback));
+                    serviceProvider.TasksService.Download(new CliDownloadFinishedCallback(this.OnCliDownloadFinishedCallback));
                 }
             });
         }
 
         private void OnCliDownloadFinishedCallback()
         {
-            logger.LogInformation("CLI downloaded. Calling SetupApiToken method");
+            this.logger.LogInformation("CLI downloaded. Calling SetupApiToken method");
 
-            SetupApiToken(successCallbackAction, errorCallbackAction);
+            this.SetupApiToken(this.successCallbackAction, this.errorCallbackAction);
         }
 
         private void SetupApiToken(Action<string> successCallback, Action<string> errorCallback)
         {
-            logger.LogInformation("Enter SetupApiToken method");
+            this.logger.LogInformation("Enter SetupApiToken method");
 
-            var cli = NewCli();
+            var cli = this.NewCli();
 
-            string apiToken = "";
+            string apiToken = string.Empty;
 
             try
             {
-                logger.LogInformation("Try get Api toke");
+                this.logger.LogInformation("Try get Api toke");
 
                 apiToken = cli.GetApiToken();
 
-                if (String.IsNullOrEmpty(apiToken))
+                if (string.IsNullOrEmpty(apiToken))
                 {
-                    logger.LogInformation("Api toke is null or empty. Try to authenticate via snyk auth");
+                    this.logger.LogInformation("Api toke is null or empty. Try to authenticate via snyk auth");
 
                     string authResultMessage = cli.Authenticate();
 
                     if (authResultMessage.Contains("Your account has been authenticated. Snyk is now ready to be used."))
                     {
-                        logger.LogInformation("Snyk auth executed successfully. Try to get Api token");
+                        this.logger.LogInformation("Snyk auth executed successfully. Try to get Api token");
 
                         apiToken = cli.GetApiToken();
                     }
                     else
                     {
-                        logger.LogInformation($"Snyk auth executed with error: {authResultMessage}");
+                        this.logger.LogInformation($"Snyk auth executed with error: {authResultMessage}");
 
                         errorCallback(authResultMessage);
 
@@ -236,9 +239,9 @@
                     }
                 }
 
-                logger.LogInformation("Validate Api token GUID");
+                this.logger.LogInformation("Validate Api token GUID");
 
-                if (!IsValidGuid(apiToken))
+                if (!this.IsValidGuid(apiToken))
                 {
                     errorCallback($"Invalid GUID: {apiToken}");
 
@@ -247,11 +250,11 @@
 
                 successCallback(apiToken);
 
-                logger.LogInformation("Leave SetupApiToken method");
+                this.logger.LogInformation("Leave SetupApiToken method");
             }
             catch (Exception exception)
             {
-                logger.LogError(exception.Message);
+                this.logger.LogError(exception.Message);
 
                 errorCallback(exception.Message);
             }
@@ -261,91 +264,106 @@
 
         private bool IsValidUrl(string url) => Uri.IsWellFormedUriString(url, UriKind.RelativeOrAbsolute);
 
-        private void tokenTextBox_TextChanged(object sender, EventArgs e)
+        private void TokenTextBox_TextChanged(object sender, EventArgs e)
         {
-            ValidateChildren(ValidationConstraints.Enabled);
+            this.ValidateChildren(ValidationConstraints.Enabled);
 
-            OptionsDialogPage.ApiToken = tokenTextBox.Text;
+            this.OptionsDialogPage.ApiToken = this.tokenTextBox.Text;
         }
 
-        private void customEndpointTextBox_TextChanged(object sender, EventArgs e)
+        private void CustomEndpointTextBox_TextChanged(object sender, EventArgs e)
         {
-            ValidateChildren(ValidationConstraints.Enabled);
+            this.ValidateChildren(ValidationConstraints.Enabled);
 
-            OptionsDialogPage.CustomEndpoint = customEndpointTextBox.Text;
+            this.OptionsDialogPage.CustomEndpoint = this.customEndpointTextBox.Text;
         }
 
-        private void organizationTextBox_TextChanged(object sender, EventArgs e)
+        private void OrganizationTextBox_TextChanged(object sender, EventArgs e)
         {
-            OptionsDialogPage.Organization = organizationTextBox.Text;
+            this.OptionsDialogPage.Organization = this.organizationTextBox.Text;
         }
 
-        private void ignoreUnknownCACheckBox_CheckedChanged(object sender, EventArgs e)
+        private void IgnoreUnknownCACheckBox_CheckedChanged(object sender, EventArgs e)
         {
-            OptionsDialogPage.IgnoreUnknownCA = ignoreUnknownCACheckBox.Checked;
+            this.OptionsDialogPage.IgnoreUnknownCA = this.ignoreUnknownCACheckBox.Checked;
         }
 
-        private void tokenTextBox_Validating(object sender, System.ComponentModel.CancelEventArgs cancelEventArgs)
+        private void TokenTextBox_Validating(object sender, System.ComponentModel.CancelEventArgs cancelEventArgs)
         {
-            if (string.IsNullOrEmpty(tokenTextBox.Text))
+            if (string.IsNullOrEmpty(this.tokenTextBox.Text))
             {
-                errorProvider.SetError(tokenTextBox, "");
+                this.errorProvider.SetError(this.tokenTextBox, string.Empty);
 
                 return;
             }
 
-            if (string.IsNullOrWhiteSpace(tokenTextBox.Text) || !IsValidGuid(tokenTextBox.Text))
+            if (string.IsNullOrWhiteSpace(this.tokenTextBox.Text) || !this.IsValidGuid(this.tokenTextBox.Text))
             {
                 cancelEventArgs.Cancel = true;
 
-                tokenTextBox.Focus();
+                this.tokenTextBox.Focus();
 
-                errorProvider.SetError(tokenTextBox, "Not valid GUID.");
+                this.errorProvider.SetError(this.tokenTextBox, "Not valid GUID.");
             }
             else
             {
                 cancelEventArgs.Cancel = false;
-                errorProvider.SetError(tokenTextBox, "");
+                this.errorProvider.SetError(this.tokenTextBox, string.Empty);
             }
         }
 
-        private void customEndpointTextBox_Validating(object sender, System.ComponentModel.CancelEventArgs cancelEventArgs)
+        private void CustomEndpointTextBox_Validating(object sender, System.ComponentModel.CancelEventArgs cancelEventArgs)
         {
-            if (string.IsNullOrEmpty(tokenTextBox.Text))
+            if (string.IsNullOrEmpty(this.tokenTextBox.Text))
             {
-                errorProvider.SetError(tokenTextBox, "");
+                this.errorProvider.SetError(this.tokenTextBox, string.Empty);
 
                 return;
             }
 
-            if (!string.IsNullOrWhiteSpace(customEndpointTextBox.Text) && !IsValidUrl(customEndpointTextBox.Text))
+            if (!string.IsNullOrWhiteSpace(this.customEndpointTextBox.Text) && !this.IsValidUrl(this.customEndpointTextBox.Text))
             {
                 cancelEventArgs.Cancel = true;
 
-                customEndpointTextBox.Focus();
+                this.customEndpointTextBox.Focus();
 
-                errorProvider.SetError(customEndpointTextBox, "Not valid URL.");
+                this.errorProvider.SetError(this.customEndpointTextBox, "Not valid URL.");
             }
             else
             {
                 cancelEventArgs.Cancel = false;
 
-                errorProvider.SetError(customEndpointTextBox, "");
+                this.errorProvider.SetError(this.customEndpointTextBox, string.Empty);
             }
         }
 
         private void SnykGeneralSettingsUserControl_Load(object sender, EventArgs e)
         {
-            InitializeApiToken();
+            this.InitializeApiToken();
         }
 
-        private void usageAnalyticsCheckBox_CheckedChanged(object sender, EventArgs e)
+        private void UsageAnalyticsCheckBox_CheckedChanged(object sender, EventArgs e)
         {
-            OptionsDialogPage.UsageAnalyticsEnabled = usageAnalyticsCheckBox.Checked;
+            this.OptionsDialogPage.UsageAnalyticsEnabled = this.usageAnalyticsCheckBox.Checked;
 
-            OptionsDialogPage.ServiceProvider.AnalyticsService.AnalyticsEnabled = usageAnalyticsCheckBox.Checked;
+            this.OptionsDialogPage.ServiceProvider.AnalyticsService.AnalyticsEnabled = this.usageAnalyticsCheckBox.Checked;
 
-            OptionsDialogPage.ServiceProvider.AnalyticsService.ObtainUser(OptionsDialogPage.ServiceProvider.GetApiToken());
+            this.OptionsDialogPage.ServiceProvider.AnalyticsService.ObtainUser(this.OptionsDialogPage.ServiceProvider.GetApiToken());
+        }
+
+        private void OssEnabledCheckBox_CheckedChanged(object sender, EventArgs e)
+        {
+            this.OptionsDialogPage.OssEnabled = this.ossEnabledCheckBox.Checked;
+        }
+
+        private void CodeSecurityEnabledCheckBox_CheckedChanged(object sender, EventArgs e)
+        {
+            this.OptionsDialogPage.SnykCodeSecurityEnabled = this.codeSecurityEnabledCheckBox.Checked;
+        }
+
+        private void CodeQualityEnabledCheckBox_CheckedChanged(object sender, EventArgs e)
+        {
+            this.OptionsDialogPage.SnykCodeQualityEnabled = this.codeQualityEnabledCheckBox.Checked;
         }
     }
 }

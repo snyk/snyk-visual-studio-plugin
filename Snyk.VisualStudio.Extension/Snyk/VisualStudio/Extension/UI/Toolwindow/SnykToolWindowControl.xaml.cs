@@ -14,6 +14,7 @@
     using Snyk.Code.Library.Domain.Analysis;
     using Snyk.VisualStudio.Extension.CLI;
     using Snyk.VisualStudio.Extension.Service;
+    using Snyk.VisualStudio.Extension.Settings;
     using Snyk.VisualStudio.Extension.Theme;
     using Snyk.VisualStudio.Extension.UI.Tree;
 
@@ -44,7 +45,7 @@
         /// <summary>
         /// Gets a value indicating whether VulnerabilitiesTree.
         /// </summary>
-        public SnykFilterableTree VulnerabilitiesTree => this.vulnerabilitiesTree;
+        public SnykFilterableTree VulnerabilitiesTree => this.resultsTree;
 
         /// <summary>
         /// Initialize event listeners for UI.
@@ -87,6 +88,8 @@
             this.Loaded += tasksService.OnUiLoaded;
 
             serviceProvider.VsThemeService.ThemeChanged += this.OnVsThemeChanged;
+
+            serviceProvider.Options.SettingsChanged += this.OnSettingsChanged;
 
             logger.LogInformation("Leave InitializeEventListenersAsync() method.");
         }
@@ -134,7 +137,7 @@
 
                 this.resultsGrid.Visibility = Visibility.Visible;
 
-                this.vulnerabilitiesTree.CliRootNode.SetScanningTitle();
+                this.resultsTree.CliRootNode.SetScanningTitle();
             });
         }
 
@@ -151,8 +154,8 @@
             {
                 await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
 
-                this.vulnerabilitiesTree.CodeSequrityRootNode.SetScanningTitle();
-                this.vulnerabilitiesTree.CodeQualityRootNode.SetScanningTitle();
+                this.resultsTree.CodeSequrityRootNode.SetScanningTitle();
+                this.resultsTree.CodeQualityRootNode.SetScanningTitle();
             });
         }
 
@@ -174,9 +177,15 @@
             {
                 await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
 
-                this.vulnerabilitiesTree.CliRootNode.SetErrorTitle();
+                this.resultsTree.CliRootNode.SetErrorTitle();
             });
         }
+
+        /// <summary>
+        /// Initialize tool window control.
+        /// </summary>
+        /// <param name="serviceProvider">Snyk service provider instance.</param>
+        public void Initialize(ISnykServiceProvider serviceProvider) => this.UpdateTreeNodeItemsState();
 
         /// <summary>
         /// Handle SnykCode error.
@@ -189,8 +198,8 @@
             {
                 await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
 
-                this.vulnerabilitiesTree.CodeQualityRootNode.SetErrorTitle();
-                this.vulnerabilitiesTree.CodeSequrityRootNode.SetErrorTitle();
+                this.resultsTree.CodeQualityRootNode.SetErrorTitle();
+                this.resultsTree.CodeSequrityRootNode.SetErrorTitle();
             });
         }
 
@@ -365,7 +374,7 @@
             {
                 await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
 
-                this.vulnerabilitiesTree.Clear();
+                this.resultsTree.Clear();
 
                 this.context.TransitionTo(RunScanState.Instance);
             });
@@ -379,6 +388,17 @@
             this.selectIssueMessageGrid.Visibility = Visibility.Collapsed;
             this.noIssuesMessageGrid.Visibility = Visibility.Collapsed;
         }
+
+        private void OnSettingsChanged(object sender, SnykSettingsChangedEventArgs e) => this.UpdateTreeNodeItemsState();
+
+        private void UpdateTreeNodeItemsState() => ThreadHelper.JoinableTaskFactory.Run(async () =>
+        {
+            await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
+
+            this.resultsTree.CliRootNode.Enabled = this.serviceProvider.Options.OssEnabled;
+            this.resultsTree.CodeQualityRootNode.Enabled = this.serviceProvider.Options.SnykCodeQualityEnabled;
+            this.resultsTree.CodeSequrityRootNode.Enabled = this.serviceProvider.Options.SnykCodeSecurityEnabled;
+        });
 
         /// <summary>
         /// On link click handler. It open provided link.
@@ -419,7 +439,7 @@
             {
                 await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
 
-                this.vulnerabilitiesTree.AppendVulnerabilities(cliResult);
+                this.resultsTree.AppendVulnerabilities(cliResult);
 
                 this.serviceProvider.AnalyticsService.LogOpenSourceAnalysisReadyEvent(
                     cliResult.CriticalSeverityCount,
@@ -437,7 +457,7 @@
             {
                 await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
 
-                this.vulnerabilitiesTree.AppendVulnerabilities(analysisResult);
+                this.resultsTree.AppendIssues(analysisResult);
 
                 // TODO: Add SnykCode analytics event.
                 // this.serviceProvider.AnalyticsService.LogOpenSourceAnalysisReadyEvent(
@@ -469,11 +489,11 @@
 
                 TreeNode treeNode = null;
 
-                if (vulnerabilitiesTree.SelectedItem is OssVulnerabilityTreeNode)
+                if (resultsTree.SelectedItem is OssVulnerabilityTreeNode)
                 {
                     vulnerabilityDescriptionGrid.Visibility = Visibility.Visible;
 
-                    var scaTreeNode = this.vulnerabilitiesTree.SelectedItem as OssVulnerabilityTreeNode;
+                    var scaTreeNode = this.resultsTree.SelectedItem as OssVulnerabilityTreeNode;
 
                     treeNode = scaTreeNode;
 
@@ -511,7 +531,7 @@
                     }
                 }
 
-                if (vulnerabilitiesTree.SelectedItem is SnykCodeVulnerabilityTreeNode)
+                if (resultsTree.SelectedItem is SnykCodeVulnerabilityTreeNode)
                 {
                     vulnerabilityDescriptionGrid.Visibility = Visibility.Collapsed;
 
@@ -519,7 +539,7 @@
 
                     snykCodeDescriptionGrid.Visibility = Visibility.Visible;
 
-                    var snykCodeTreeNode = this.vulnerabilitiesTree.SelectedItem as SnykCodeVulnerabilityTreeNode;
+                    var snykCodeTreeNode = this.resultsTree.SelectedItem as SnykCodeVulnerabilityTreeNode;
 
                     treeNode = snykCodeTreeNode;
 

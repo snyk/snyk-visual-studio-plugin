@@ -20,6 +20,8 @@
         /// </summary>
         public override string Icon => SnykIconProvider.OpenSourceSecurityIconPath;
 
+        protected override string GetIssuesTypeName() => "vulnerabilities";
+
         protected override string GetTitlePrefix() => OpenSourceSecurityTitle;
     }
 }

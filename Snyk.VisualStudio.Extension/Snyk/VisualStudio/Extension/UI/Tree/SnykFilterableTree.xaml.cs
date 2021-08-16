@@ -98,6 +98,11 @@
         /// <param name="cliResult"><see cref="CliResult"/> object.</param>
         public void AppendVulnerabilities(CliResult cliResult)
         {
+            if (!this.cliRootNode.Enabled)
+            {
+                return;
+            }
+
             var groupVulnerabilities = cliResult.GroupVulnerabilities;
 
             groupVulnerabilities.ForEach(delegate (CliGroupedVulnerabilities groupedVulnerabilities)
@@ -131,10 +136,17 @@
         /// Append <see cref="AnalysisResult"/> data to tree.
         /// </summary>
         /// <param name="analysisResult"><see cref="AnalysisResult"/> object.</param>
-        public void AppendVulnerabilities(AnalysisResult analysisResult)
+        public void AppendIssues(AnalysisResult analysisResult)
         {
-            this.AppendSnykCodeIssues(this.codeSequrityRootNode, analysisResult, suggestion => suggestion.Categories.Contains("Security"));
-            this.AppendSnykCodeIssues(this.codeQualityRootNode, analysisResult, suggestion => !suggestion.Categories.Contains("Security"));
+            if (this.codeSequrityRootNode.Enabled)
+            {
+                this.AppendSnykCodeIssues(this.codeSequrityRootNode, analysisResult, suggestion => suggestion.Categories.Contains("Security"));
+            }
+
+            if (this.codeQualityRootNode.Enabled)
+            {
+                this.AppendSnykCodeIssues(this.codeQualityRootNode, analysisResult, suggestion => !suggestion.Categories.Contains("Security"));
+            }
         }
 
         /// <inheritdoc/>
