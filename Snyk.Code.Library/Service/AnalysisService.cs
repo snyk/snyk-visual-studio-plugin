@@ -2,6 +2,7 @@
 {
     using System;
     using System.Linq;
+    using System.Threading;
     using System.Threading.Tasks;
     using Serilog;
     using Snyk.Code.Library.Api;
@@ -23,14 +24,14 @@
         public AnalysisService(ISnykCodeClient codeClient) => this.codeClient = codeClient;
 
         /// <inheritdoc/>
-        public async Task<AnalysisResult> GetAnalysisAsync(string bundleId)
+        public async Task<AnalysisResult> GetAnalysisAsync(string bundleId, CancellationToken cancellationToken = default)
         {
             if (string.IsNullOrEmpty(bundleId))
             {
                 throw new ArgumentException("Bundle id is null or empty.");
             }
 
-            var analysisResultDto = await this.TryGetAnalysisDtoAsync(bundleId);
+            var analysisResultDto = await this.TryGetAnalysisDtoAsync(bundleId, cancellationToken);
 
             return this.MapDtoAnalysisResultToDomain(analysisResultDto);
         }
@@ -40,13 +41,13 @@
         /// </summary>
         /// <param name="bundleId">Source bundle id.</param>
         /// <returns><see cref="AnalysisResultDto"/> object.</returns>
-        private async Task<AnalysisResultDto> TryGetAnalysisDtoAsync(string bundleId)
+        private async Task<AnalysisResultDto> TryGetAnalysisDtoAsync(string bundleId, CancellationToken cancellationToken = default)
         {
             Logger.Information("Try get analysis DTO object {RequestAttempts} times.", RequestAttempts);
 
             for (int counter = 0; counter < RequestAttempts; counter++)
             {
-                AnalysisResultDto analysisResultDto = await this.codeClient.GetAnalysisAsync(bundleId);
+                AnalysisResultDto analysisResultDto = await this.codeClient.GetAnalysisAsync(bundleId, cancellationToken);
 
                 switch (analysisResultDto.Status)
                 {

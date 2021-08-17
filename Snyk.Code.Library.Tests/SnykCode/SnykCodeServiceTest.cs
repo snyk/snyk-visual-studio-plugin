@@ -1,7 +1,7 @@
 ﻿namespace Snyk.Code.Library.Tests.Api
 {
     using System.Collections.Generic;
-    using System.IO;
+    using System.Threading;
     using System.Threading.Tasks;
     using Moq;
     using Snyk.Code.Library.Domain;
@@ -56,22 +56,22 @@
             };
 
             bundleServiceMock
-                .Setup(bundleService => bundleService.CreateBundleAsync(It.IsAny<Dictionary<string, string>>(), It.IsAny<int>()).Result)
+                .Setup(bundleService => bundleService.CreateBundleAsync(It.IsAny<Dictionary<string, string>>(), It.IsAny<int>(), It.IsAny<CancellationToken>()).Result)
                 .Returns(bundle);
 
             bundleServiceMock
-                .Setup(bundleService => bundleService.UploadFilesAsync(bundleId, It.IsAny<IDictionary<string, string>>(), It.IsAny<int>()).Result)
+                .Setup(bundleService => bundleService.UploadFilesAsync(bundleId, It.IsAny<IDictionary<string, string>>(), It.IsAny<int>(), It.IsAny<CancellationToken>()).Result)
                 .Returns(true);
 
             bundleServiceMock
-                .Setup(bundleService => bundleService.CheckBundleAsync(bundleId).Result)
-                .Callback<string>((id) => bundle.MissingFiles = new string[] { })
+                .Setup(bundleService => bundleService.CheckBundleAsync(bundleId, It.IsAny<CancellationToken>()).Result)
+                .Callback<string, CancellationToken>((id, cancellationToken) => bundle.MissingFiles = new string[] { })
                 .Returns(bundle);
 
             var analysisServiceMock = new Mock<IAnalysisService>();
 
             analysisServiceMock
-                .Setup(analysisService => analysisService.GetAnalysisAsync(bundleId).Result)
+                .Setup(analysisService => analysisService.GetAnalysisAsync(bundleId, It.IsAny<CancellationToken>()).Result)
                 .Returns(analysisResults);
 
             var snykCodeService = new SnykCodeService(bundleServiceMock.Object, analysisServiceMock.Object, filtersServiceMock.Object);
@@ -90,13 +90,13 @@
                 .Verify(filterService => filterService.FilterFilesAsync(filePaths), Times.Exactly(1));
 
             bundleServiceMock
-                .Verify(bundleService => bundleService.CreateBundleAsync(It.IsAny<Dictionary<string, string>>(), It.IsAny<int>()), Times.Exactly(1));
+                .Verify(bundleService => bundleService.CreateBundleAsync(It.IsAny<Dictionary<string, string>>(), It.IsAny<int>(), It.IsAny<CancellationToken>()), Times.Exactly(1));
 
             bundleServiceMock
-                .Verify(bundleService => bundleService.UploadMissingFilesAsync(It.IsAny<Bundle>(), It.IsAny<IFileProvider>()), Times.Exactly(1));
+                .Verify(bundleService => bundleService.UploadMissingFilesAsync(It.IsAny<Bundle>(), It.IsAny<IFileProvider>(), It.IsAny<CancellationToken>()), Times.Exactly(1));
 
             analysisServiceMock
-                .Verify(analysisService => analysisService.GetAnalysisAsync(bundleId), Times.Exactly(1));
+                .Verify(analysisService => analysisService.GetAnalysisAsync(bundleId, It.IsAny<CancellationToken>()), Times.Exactly(1));
         }
     }
 }

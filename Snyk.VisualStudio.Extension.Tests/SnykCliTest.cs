@@ -100,7 +100,7 @@
                 }
             };
 
-            Assert.AreEqual("--json test --api=https://github.com/snyk/", cli.BuildArguments());
+            Assert.AreEqual("--json test --API=https://github.com/snyk/", cli.BuildArguments());
         }
 
         [TestMethod]
@@ -175,7 +175,7 @@
                 }
             };
 
-            Assert.AreEqual("--json test --api=https://github.com/snyk/ --insecure --org=test-snyk-organization --ignore-policy --all-projects --DISABLE_ANALYTICS", cli.BuildArguments());
+            Assert.AreEqual("--json test --API=https://github.com/snyk/ --insecure --org=test-snyk-organization --ignore-policy --all-projects --DISABLE_ANALYTICS", cli.BuildArguments());
         }
 
         [TestMethod]
@@ -458,6 +458,14 @@
                 usageAnalyticsEnabled = value;
             }
         }
+
+        public bool OssEnabled => throw new NotImplementedException();
+
+        public bool SnykCodeSecurityEnabled => throw new NotImplementedException();
+
+        public bool SnykCodeQualityEnabled => throw new NotImplementedException();
+
+        public event EventHandler<SnykSettingsChangedEventArgs> SettingsChanged;
 
         public void Authenticate(Action<string> successCallbackAction, Action<string> errorCallbackAction)
         {

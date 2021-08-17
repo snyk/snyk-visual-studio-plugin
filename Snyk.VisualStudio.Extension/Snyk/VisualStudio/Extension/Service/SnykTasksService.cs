@@ -168,7 +168,7 @@
 
             if (options.OssEnabled)
             {
-                this.ScanCli();
+                this.ScanOss();
             }
 
             if (options.SnykCodeQualityEnabled || options.SnykCodeSecurityEnabled)
@@ -290,7 +290,7 @@
         /// <param name="progress">Donwload progress form 0..100$.</param>
         protected internal void OnDownloadUpdate(int progress) => this.DownloadUpdate?.Invoke(this, new SnykCliDownloadEventArgs(progress));
 
-        private void ScanCli()
+        private void ScanOss()
         {
             if (this.cliScanTask != null && this.cliScanTask.Status == TaskStatus.Running)
             {
@@ -476,7 +476,7 @@
                             {
                                 var filesProvider = this.serviceProvider.SolutionService.NewFileProvider();
 
-                                var analysisResult = await this.serviceProvider.SnykCodeService.ScanAsync(filesProvider);
+                                var analysisResult = await this.serviceProvider.SnykCodeService.ScanAsync(filesProvider, progressWorker.TokenSource.Token);
 
                                 this.FireScanningUpdateEvent(analysisResult);
                             }

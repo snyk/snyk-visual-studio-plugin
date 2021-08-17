@@ -1,5 +1,6 @@
 ﻿namespace Snyk.Code.Library.Service
 {
+    using System.Threading;
     using System.Threading.Tasks;
     using Serilog;
     using Snyk.Code.Library.Domain.Analysis;
@@ -32,7 +33,7 @@
         }
 
         /// <inheritdoc/>
-        public async Task<AnalysisResult> ScanAsync(IFileProvider fileProvider)
+        public async Task<AnalysisResult> ScanAsync(IFileProvider fileProvider, CancellationToken cancellationToken = default)
         {
             Logger.Information("Start SnykCode scanning...");
 
@@ -40,11 +41,11 @@
 
             var filePathToHashDict = fileProvider.CreateFilePathToHashDictionary();
 
-            var resultBundle = await this.bundleService.CreateBundleAsync(filePathToHashDict);
+            var resultBundle = await this.bundleService.CreateBundleAsync(filePathToHashDict, cancellationToken: cancellationToken);
 
-            await this.bundleService.UploadMissingFilesAsync(resultBundle, fileProvider);
+            await this.bundleService.UploadMissingFilesAsync(resultBundle, fileProvider, cancellationToken);
 
-            return await this.analysisService.GetAnalysisAsync(resultBundle.Id);
+            return await this.analysisService.GetAnalysisAsync(resultBundle.Id, cancellationToken: cancellationToken);
         }
     }
 }

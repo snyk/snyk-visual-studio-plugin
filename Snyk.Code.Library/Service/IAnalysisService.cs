@@ -1,5 +1,6 @@
 ﻿namespace Snyk.Code.Library.Service
 {
+    using System.Threading;
     using System.Threading.Tasks;
     using Snyk.Code.Library.Domain.Analysis;
 
@@ -22,7 +23,8 @@
         /// It contains all the suggestions and the relative positions.
         /// </summary>
         /// <param name="bundleId">Source bundle id to analysy.</param>
+        /// <param name="cancellationToken"><see cref="CancellationToken"/> token to cancel request.</param>
         /// <returns>Analysis results with suggestions and the relative positions.</returns>
-        Task<AnalysisResult> GetAnalysisAsync(string bundleId);
+        Task<AnalysisResult> GetAnalysisAsync(string bundleId, CancellationToken cancellationToken = default);
     }
 }

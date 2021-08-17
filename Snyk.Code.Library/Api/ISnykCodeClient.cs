@@ -1,6 +1,7 @@
 ﻿namespace Snyk.Code.Library.Api
 {
     using System.Collections.Generic;
+    using System.Threading;
     using System.Threading.Tasks;
     using Snyk.Code.Library.Api.Dto;
     using Snyk.Code.Library.Api.Dto.Analysis;
@@ -24,8 +25,9 @@
         /// It contains all the suggestions and the relative positions.
         /// </summary>
         /// <param name="bundleId">Source bundle id to analysy.</param>
+        /// <param name="cancellationToken"><see cref="CancellationToken"/> token to cancel request.</param>
         /// <returns>Analysis results with suggestions and the relative positions.</returns>
-        Task<AnalysisResultDto> GetAnalysisAsync(string bundleId);
+        Task<AnalysisResultDto> GetAnalysisAsync(string bundleId, CancellationToken cancellationToken = default);
 
         /// <summary>
         /// Uploads missing files to a bundle.
@@ -34,8 +36,9 @@
         /// </summary>
         /// <param name="bundleId">Bundle id to file upload.</param>
         /// <param name="codeFiles">List of <see cref="CodeFileDto"/> with file hash and file content.</param>
+        /// <param name="cancellationToken"><see cref="CancellationToken"/> token to cancel request.</param>
         /// <returns>True if upload success.</returns>
-        Task<bool> UploadFilesAsync(string bundleId, IEnumerable<CodeFileDto> codeFiles);
+        Task<bool> UploadFilesAsync(string bundleId, IEnumerable<CodeFileDto> codeFiles, CancellationToken cancellationToken = default);
 
         /// <summary>
         /// Creates a new bundle based on a previously uploaded one.
@@ -49,26 +52,33 @@
         /// <param name="bundleId">Already created bundle id.</param>
         /// <param name="pathToHashFileDict">Files to add in bundle.</param>
         /// <param name="removedFiles">Files to remove in bundle.</param>
+        /// <param name="cancellationToken"><see cref="CancellationToken"/> token to cancel request.</param>
         /// <returns>Extended bundle object.</returns>
-        Task<BundleResponseDto> ExtendBundleAsync(string bundleId, Dictionary<string, string> pathToHashFileDict, List<string> removedFiles);
+        Task<BundleResponseDto> ExtendBundleAsync(
+            string bundleId, 
+            Dictionary<string, string> pathToHashFileDict,
+            List<string> removedFiles, 
+            CancellationToken cancellationToken = default);
 
         /// <summary>
         /// Checks the status of a bundle.
         /// </summary>
         /// <param name="bundleId">Bundle id to check.</param>
+        /// <param name="cancellationToken"><see cref="CancellationToken"/> token to cancel request.</param>
         /// <returns
         /// >Returns the bundleId and, in case of uploaded bundles, the current missingFiles and the uploadURL.
         /// This API can be used to check if an old uploaded bundle has expired (status code 404),
         /// or to check if there are still missing files after uploading ("Upload Files").
         /// </returns>
-        Task<BundleResponseDto> CheckBundleAsync(string bundleId);
+        Task<BundleResponseDto> CheckBundleAsync(string bundleId, CancellationToken cancellationToken = default);
 
         /// <summary>
         /// Create new <see cref="BundleResponseDto"/> and get result <see cref="BundleResponseDto"/> object.
         /// </summary>
         /// <param name="pathToHashFileDict">Bundle files.</param>
+        /// <param name="cancellationToken"><see cref="CancellationToken"/> token to cancel request.</param>
         /// <returns>Bundle object with bundle id, missing files and upload url.</returns>
-        Task<BundleResponseDto> CreateBundleAsync(IDictionary<string, string> pathToHashFileDict);
+        Task<BundleResponseDto> CreateBundleAsync(IDictionary<string, string> pathToHashFileDict, CancellationToken cancellationToken = default);
 
         /// <summary>
         /// Returns the list of allowed extensions and configuration files for uploaded bundles.
