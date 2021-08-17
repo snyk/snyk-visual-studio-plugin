@@ -1,6 +1,7 @@
 ﻿namespace Snyk.Code.Library.Service
 {
     using System.Collections.Generic;
+    using System.Threading;
     using System.Threading.Tasks;
     using Snyk.Code.Library.Api;
     using Snyk.Code.Library.Domain;
@@ -14,19 +15,21 @@
         /// Checks the status of a bundle.
         /// </summary>
         /// <param name="bundleId">Bundle id to check.</param>
+        /// <param name="cancellationToken"><see cref="CancellationToken"/> token to cancel request.</param>
         /// <returns>Returns the bundleId and, in case of uploaded bundles, the current missingFiles and the uploadURL.
         /// This API can be used to check if an old uploaded bundle has expired (status code 404),
         /// or to check if there are still missing files after uploading ("Upload Files").
         /// </returns>
-        Task<Bundle> CheckBundleAsync(string bundleId);
+        Task<Bundle> CheckBundleAsync(string bundleId, CancellationToken cancellationToken = default);
 
         /// <summary>
         /// Upload bundle missing files. If files not uploaded by one call it will try 5 times for upload.
         /// </summary>
         /// <param name="bundle">Source bundle with missing files to upload.</param>
         /// <param name="fileProvider">Source file provider.</param>
+        /// <param name="cancellationToken"><see cref="CancellationToken"/> token to cancel request.</param>
         /// <returns>True if upload all files successfully and false if not.</returns>
-        Task<bool> UploadMissingFilesAsync(Bundle bundle, IFileProvider fileProvider);
+        Task<bool> UploadMissingFilesAsync(Bundle bundle, IFileProvider fileProvider, CancellationToken cancellationToken = default);
 
         /// <summary>
         /// Uploads missing files to a bundle.
@@ -36,8 +39,9 @@
         /// <param name="bundleId">Bundle id to file upload.</param>
         /// <param name="fileHashToContentDict">Dictionary with file hash to file content mapping.</param>
         /// <param name="maxChunkSize">Maximum allowed upload files size.</param>
+        /// <param name="cancellationToken"><see cref="CancellationToken"/> token to cancel request.</param>
         /// <returns>True if upload success.</returns>
-        Task<bool> UploadFilesAsync(string bundleId, IDictionary<string, string> fileHashToContentDict, int maxChunkSize = SnykCodeClient.MaxBundleSize);
+        Task<bool> UploadFilesAsync(string bundleId, IDictionary<string, string> fileHashToContentDict, int maxChunkSize = SnykCodeClient.MaxBundleSize, CancellationToken cancellationToken = default);
 
         /// <summary>
         /// Create new <see cref="BundleResponseDto"/> and get result <see cref="BundleResponseDto"/> object.
@@ -50,8 +54,9 @@
         /// </summary>
         /// <param name="pathToHashFileDict">Files dictionary (file path - file hash) for new bundle.</param>
         /// <param name="maxChunkSize">Maximum allowed bundle size.</param>
+        /// <param name="cancellationToken"><see cref="CancellationToken"/> token to cancel request.</param>
         /// <returns>Bundle object with bundle id, missing files and upload url.</returns>
-        Task<Bundle> CreateBundleAsync(IDictionary<string, string> pathToHashFileDict, int maxChunkSize = SnykCodeClient.MaxBundleSize);
+        Task<Bundle> CreateBundleAsync(IDictionary<string, string> pathToHashFileDict, int maxChunkSize = SnykCodeClient.MaxBundleSize, CancellationToken cancellationToken = default);
 
         /// <summary>
         /// Creates a new bundle based on a previously uploaded one.
@@ -61,11 +66,13 @@
         /// <param name="pathToHashFileDict">Files to add in bundle.</param>
         /// <param name="filesToRemovePaths">Files to remove in bundle.</param>
         /// <param name="maxChunkSize">Maximum bundle chunk size. By default it is 4 Mb.</param>
+        /// <param name="cancellationToken"><see cref="CancellationToken"/> token to cancel request.</param>
         /// <returns>Result extended bundle.</returns>
         Task<Bundle> ExtendBundleAsync(
             string bundleId,
             Dictionary<string, string> pathToHashFileDict,
             List<string> filesToRemovePaths,
-            int maxChunkSize = SnykCodeClient.MaxBundleSize);
+            int maxChunkSize = SnykCodeClient.MaxBundleSize,
+            CancellationToken cancellationToken = default);
     }
 }
