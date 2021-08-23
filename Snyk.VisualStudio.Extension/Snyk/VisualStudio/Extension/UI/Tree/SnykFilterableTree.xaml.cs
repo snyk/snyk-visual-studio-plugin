@@ -229,7 +229,7 @@
 
                     if (searchString != null && searchString != string.Empty)
                     {
-                        isVulnIncluded = isVulnIncluded && suggestion.GetDisplayTitle().Contains(searchString);
+                        isVulnIncluded = isVulnIncluded && suggestion.GetDisplayTitleWithLineNumber().Contains(searchString);
                     }
 
                     return isVulnIncluded;

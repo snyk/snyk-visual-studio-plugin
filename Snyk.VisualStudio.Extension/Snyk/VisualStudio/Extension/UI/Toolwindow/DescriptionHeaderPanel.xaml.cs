@@ -100,14 +100,7 @@
 
                 this.severityImage.Source = SnykIconProvider.GetSeverityIconSource(Severity.FromInt(suggestion.Severity));
 
-                if (string.IsNullOrEmpty(suggestion.Title))
-                {
-                    this.issueTitle.Text = suggestion.Message;
-                }
-                else
-                {
-                    this.issueTitle.Text = suggestion.Title;
-                }
+                this.issueTitle.Text = suggestion.GetDisplayTitle();
 
                 if (suggestion.Categories.Contains("Security"))
                 {
