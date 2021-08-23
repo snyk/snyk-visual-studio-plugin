@@ -383,27 +383,7 @@
                         }
                         catch (Exception scanException)
                         {
-                            var exception = scanException;
-
-                            if (scanException is AggregateException)
-                            {
-                                exception = scanException.InnerException;
-                            }
-
-                            this.Logger.LogError(exception.Message);
-
-                            if ((bool)this.cli?.ConsoleRunner?.IsStopped)
-                            {
-                                this.FireScanningCancelledEvent();
-                            }
-                            else
-                            {
-                                this.OnCliError(exception.Message);
-                            }
-
-                            VsStatusBar.Instance.ShowMessageBoxAsync("Snyk CLI", exception.Message);
-
-                            VsStatusBar.Instance.DisplayMessage("Scan finished");
+                            this.OnCliError(scanException.Message);
 
                             this.cli = null;
 

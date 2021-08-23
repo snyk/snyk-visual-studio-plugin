@@ -213,7 +213,7 @@
 
             try
             {
-                this.logger.LogInformation("Try get Api toke");
+                this.logger.LogInformation("Try get Api token");
 
                 apiToken = cli.GetApiToken();
 
