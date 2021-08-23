@@ -3,11 +3,11 @@
     using System;
     using System.Threading.Tasks;
     using EnvDTE;
-    using CLI;
     using Microsoft.VisualStudio.Settings;
     using Microsoft.VisualStudio.Shell;
     using Microsoft.VisualStudio.Shell.Interop;
     using Microsoft.VisualStudio.Shell.Settings;
+    using Snyk.VisualStudio.Extension.CLI;
     using Snyk.VisualStudio.Extension.Service;
 
     /// <summary>
@@ -24,11 +24,6 @@
         /// Usage Analytics Enabled key name.
         /// </summary>
         public const string UsageAnalyticsEnabledName = "UsageAnalyticsEnabled";
-
-        /// <summary>
-        /// Usage Oss Enabled key name.
-        /// </summary>
-        public const string ossEnabledName = "ossEnabled";
 
         /// <summary>
         /// Current CLI version key name.

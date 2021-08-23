@@ -109,7 +109,7 @@
         {
             string iconPath = string.Empty;
 
-            switch (fileExtension)
+            switch (fileExtension.ToLower())
             {
                 case ".h":
                 case ".hpp":
@@ -134,8 +134,6 @@
                     iconPath = JsFileIconPath;
                     break;
                 case ".cs":
-                case ".Cs":
-                case ".CS":
                     iconPath = CsFileIconPath;
                     break;
                 case ".tsx":
@@ -151,8 +149,6 @@
                 case ".java":
                     iconPath = JavaFileIconPath;
                     break;
-                case ".ASPX":
-                case ".Aspx":
                 case ".aspx":
                     iconPath = AspFileIconPath;
                     break;

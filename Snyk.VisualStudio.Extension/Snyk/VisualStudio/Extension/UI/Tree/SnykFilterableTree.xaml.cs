@@ -197,7 +197,7 @@
 
         private void FilterOssItems(RootTreeNode rootTreeNode, SeverityFilter severityFilter, string searchString)
         {
-            foreach (var treeNode in this.cliRootNode.Items)
+            foreach (var treeNode in rootTreeNode.Items)
             {
                 CollectionViewSource.GetDefaultView(treeNode.Items).Filter = filterObject =>
                 {

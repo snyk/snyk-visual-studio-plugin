@@ -46,17 +46,18 @@
         /// <param name="token">User token.</param>
         public SnykCodeClient(string baseUrl, string token)
         {
-            ServicePointManager.Expect100Continue = false; // Fix issue with stream end on file upload.
-
             this.httpClient = new HttpClient(new HttpClientHandler
             {
                 AutomaticDecompression = DecompressionMethods.GZip,
             });
 
+            this.httpClient.DefaultRequestHeaders.ExpectContinue = false;
+
             this.httpClient.Timeout = TimeSpan.FromMinutes(10);
             this.httpClient.BaseAddress = new Uri(baseUrl);
 
             this.httpClient.DefaultRequestHeaders.Add("Session-Token", token);
+            this.httpClient.DefaultRequestHeaders.AcceptEncoding.Add(new StringWithQualityHeaderValue("gzip"));
 
             Logger.Information("Create http client with with url {BaseUrl}.", baseUrl);
         }
@@ -73,8 +74,6 @@
 
             using (var httpRequest = new HttpRequestMessage(HttpMethod.Get, AnalysisApiUrl + "/" + bundleId))
             {
-                httpRequest.Headers.AcceptEncoding.Add(new StringWithQualityHeaderValue("gzip"));
-
                 var response = await this.httpClient.SendAsync(httpRequest, cancellationToken);
 
                 string responseText = await response.Content.ReadAsStringAsync();
@@ -109,8 +108,6 @@
             {
                 var watch = new System.Diagnostics.Stopwatch();
                 watch.Start();
-
-                httpRequest.Headers.AcceptEncoding.Add(new StringWithQualityHeaderValue("gzip"));
 
                 string payload = Json.Serialize(codeFiles);
 
@@ -155,8 +152,6 @@
 
                 using (httpRequest.Content = new StringContent(payload, Encoding.UTF8, "application/json"))
                 {
-                    httpRequest.Headers.AcceptEncoding.Add(new StringWithQualityHeaderValue("gzip"));
-
                     var response = await this.httpClient.SendAsync(httpRequest);
 
                     string responseText = await response.Content.ReadAsStringAsync();
@@ -185,8 +180,6 @@
 
             using (var httpRequest = new HttpRequestMessage(HttpMethod.Get, BundleApiUrl + "/" + bundleId))
             {
-                httpRequest.Headers.AcceptEncoding.Add(new StringWithQualityHeaderValue("gzip"));
-
                 var response = await this.httpClient.SendAsync(httpRequest);
 
                 string responseText = await response.Content.ReadAsStringAsync();
@@ -214,8 +207,6 @@
 
             using (var httpRequest = new HttpRequestMessage(HttpMethod.Post, BundleApiUrl))
             {
-                httpRequest.Headers.AcceptEncoding.Add(new StringWithQualityHeaderValue("gzip"));
-
                 string payload = Json.Serialize(new CreateBundleRequestDto
                 {
                     Files = pathToHashFileDict,
@@ -249,8 +240,6 @@
 
             using (var request = new HttpRequestMessage(HttpMethod.Get, FiltersApiUrl))
             {
-                request.Headers.AcceptEncoding.Add(new StringWithQualityHeaderValue("gzip"));
-
                 var response = await this.httpClient.SendAsync(request);
 
                 string responseText = await response.Content.ReadAsStringAsync();

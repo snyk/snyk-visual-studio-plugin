@@ -32,10 +32,6 @@
                 this.ToolWindowControl.resultsGrid.Visibility = Visibility.Collapsed;
 
                 this.ToolWindowControl.resultsGrid.Visibility = Visibility.Collapsed;
-
-                //this.ToolWindowControl.VulnerabilitiesTree.CliRootNode.ResetTitleText();
-                //this.ToolWindowControl.VulnerabilitiesTree.CodeSequrityRootNode.ResetTitleText();
-                //this.ToolWindowControl.VulnerabilitiesTree.CodeQualityRootNode.ResetTitleText();
             });
         }
 
