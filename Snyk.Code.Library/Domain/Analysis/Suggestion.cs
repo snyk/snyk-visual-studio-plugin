@@ -72,5 +72,25 @@
         /// Gets or sets a value indicating suggestion list of proposed fixes and examples.
         /// </summary>
         public IList<SuggestionFix> Fixes { get; set; }
+
+        /// <summary>
+        /// Get row line and title (if title is null it use message).
+        /// </summary>
+        /// <returns>Title for display.</returns>
+        public string GetDisplayTitle()
+        {
+            string title = "Line " + this.Rows.Item1 + ": ";
+
+            if (string.IsNullOrEmpty(this.Title))
+            {
+                title += this.Message;
+            }
+            else
+            {
+                title += this.Title;
+            }
+
+            return title;
+        }
     }
 }

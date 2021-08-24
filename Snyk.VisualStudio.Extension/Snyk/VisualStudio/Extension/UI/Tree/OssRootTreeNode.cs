@@ -10,10 +10,17 @@
         /// </summary>
         public const string OpenSourceSecurityTitle = "Open Source Security";
 
+        public OssRootTreeNode(IRefreshable parent)
+            : base(parent)
+        {
+        }
+
         /// <summary>
         /// Gets a value indicating whether icon for open source node.
         /// </summary>
         public override string Icon => SnykIconProvider.OpenSourceSecurityIconPath;
+
+        protected override string GetIssuesTypeName() => "vulnerabilities";
 
         protected override string GetTitlePrefix() => OpenSourceSecurityTitle;
     }

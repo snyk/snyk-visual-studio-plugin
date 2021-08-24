@@ -42,11 +42,20 @@
         private const string SeverityCriticalIconPath = ResourcesDirectoryPath + "SeverityCritical.png";
         private const string SeverityHighIconPath = ResourcesDirectoryPath + "SeverityHigh.png";
         private const string SeverityMediumIconPath = ResourcesDirectoryPath + "SeverityMedium.png";
-        private static readonly string SeverityLowIconPath = ResourcesDirectoryPath + "SeverityLow.png";
+        private const string SeverityLowIconPath = ResourcesDirectoryPath + "SeverityLow.png";
 
         private const string JsFileIconPath = ResourcesDirectoryPath + "JSScript.png";
         private const string CsFileIconPath = ResourcesDirectoryPath + "CSFileNode.png";
         private const string TsFileIconPath = ResourcesDirectoryPath + "TSFileNode.png";
+        private const string AspFileIconPath = ResourcesDirectoryPath + "ASPFile.png";
+        private const string CFileIconPath = ResourcesDirectoryPath + "CFile.png";
+        private const string CppFileIconPath = ResourcesDirectoryPath + "CPPFileNode.png";
+        private const string CppHeaderFileIconPath = ResourcesDirectoryPath + "CPPHeaderFile.png";
+        private const string HtmlFileIconPath = ResourcesDirectoryPath + "HTMLFile.png";
+        private const string JavaFileIconPath = ResourcesDirectoryPath + "JavaSource.png";
+        private const string JsxFileIconPath = ResourcesDirectoryPath + "JSXScript.png";
+        private const string PhpFileIconPath = ResourcesDirectoryPath + "PHPFile.png";
+        private const string PythonFileIconPath = ResourcesDirectoryPath + "PyFileNode.png";
 
         /// <summary>
         /// Get package manager icon by name.
@@ -100,16 +109,48 @@
         {
             string iconPath = string.Empty;
 
-            switch (fileExtension)
+            switch (fileExtension.ToLower())
             {
+                case ".h":
+                case ".hpp":
+                case ".hxx":
+                    iconPath = CppHeaderFileIconPath;
+                    break;
+                case ".c":
+                    iconPath = CFileIconPath;
+                    break;
+                case ".cc":
+                case ".cpp":
+                case ".cxx":
+                    iconPath = CppFileIconPath;
+                    break;
+                case ".htm":
+                case ".html":
+                    iconPath = HtmlFileIconPath;
+                    break;
                 case ".js":
+                case ".jsx":
+                case ".ejs":
                     iconPath = JsFileIconPath;
                     break;
                 case ".cs":
                     iconPath = CsFileIconPath;
                     break;
+                case ".tsx":
                 case ".ts":
                     iconPath = TsFileIconPath;
+                    break;
+                case ".py":
+                    iconPath = PythonFileIconPath;
+                    break;
+                case ".php":
+                    iconPath = PhpFileIconPath;
+                    break;
+                case ".java":
+                    iconPath = JavaFileIconPath;
+                    break;
+                case ".aspx":
+                    iconPath = AspFileIconPath;
                     break;
                 default:
                     iconPath = DefaultFileIconPath;

@@ -2,6 +2,7 @@
 {
     using System;
     using System.Collections.Generic;
+    using System.Threading;
     using System.Threading.Tasks;
     using Moq;
     using Snyk.Code.Library.Api;
@@ -29,13 +30,13 @@
             };
 
             codeClientMock
-                .Setup(codeClient => codeClient.GetAnalysisAsync(dummyBundleId).Result)
+                .Setup(codeClient => codeClient.GetAnalysisAsync(dummyBundleId, It.IsAny<CancellationToken>()).Result)
                 .Returns(dummyAnalysisResultDto);
 
             _ = Assert.ThrowsAsync<AggregateException>(() => analysisService.GetAnalysisAsync(dummyBundleId));
 
             codeClientMock
-                .Verify(codeClient => codeClient.GetAnalysisAsync(dummyBundleId), Times.Exactly(1));
+                .Verify(codeClient => codeClient.GetAnalysisAsync(dummyBundleId, It.IsAny<CancellationToken>()), Times.Exactly(1));
         }
 
         [Fact]
@@ -57,9 +58,9 @@
             var mockMethodCallsCount = 0;
 
             codeClientMock
-                .Setup(codeClient => codeClient.GetAnalysisAsync(dummyBundleId).Result)
+                .Setup(codeClient => codeClient.GetAnalysisAsync(dummyBundleId, It.IsAny<CancellationToken>()).Result)
                 .Returns(dummyAnalysisResultDto)
-                .Callback<string>((str) =>
+                .Callback<string, CancellationToken>((str, cancellationToken) =>
                 {
                     mockMethodCallsCount++;
 
@@ -75,7 +76,7 @@
             Assert.Equal(AnalysisStatus.Done, analysisResult.Status);
 
             codeClientMock
-                .Verify(codeClient => codeClient.GetAnalysisAsync(dummyBundleId), Times.Exactly(24));
+                .Verify(codeClient => codeClient.GetAnalysisAsync(dummyBundleId, It.IsAny<CancellationToken>()), Times.Exactly(24));
         }
 
         [Fact]
@@ -95,7 +96,7 @@
             };
 
             codeClientMock
-                .Setup(codeClient => codeClient.GetAnalysisAsync(dummyBundleId).Result)
+                .Setup(codeClient => codeClient.GetAnalysisAsync(dummyBundleId, It.IsAny<CancellationToken>()).Result)
                 .Returns(dummyAnalysisResultDto);
 
             var analysisResult = await analysisService.GetAnalysisAsync(dummyBundleId);
@@ -104,7 +105,7 @@
             Assert.Equal(AnalysisStatus.Failed, analysisResult.Status);
 
             codeClientMock
-                .Verify(codeClient => codeClient.GetAnalysisAsync(dummyBundleId), Times.Exactly(100));
+                .Verify(codeClient => codeClient.GetAnalysisAsync(dummyBundleId, It.IsAny<CancellationToken>()), Times.Exactly(100));
         }
 
         [Fact]
@@ -277,10 +278,10 @@
             };
 
             codeClientMock
-                .Setup(codeClient => codeClient.GetAnalysisAsync(dummyBundleId).Result)
+                .Setup(codeClient => codeClient.GetAnalysisAsync(dummyBundleId, It.IsAny<CancellationToken>()).Result)
                 .Returns(dummyAnalysisResultDto);
 
-            var analysisResult = await analysisService.GetAnalysisAsync(dummyBundleId);
+            var analysisResult = await analysisService.GetAnalysisAsync(dummyBundleId, It.IsAny<CancellationToken>());
 
             Assert.NotNull(analysisResult);
             Assert.Equal(2, analysisResult.FileAnalyses.Count);
@@ -292,7 +293,7 @@
             Assert.Equal("db.js", analysisResult.FileAnalyses[1].FileName);
 
             codeClientMock
-                .Verify(codeClient => codeClient.GetAnalysisAsync(dummyBundleId), Times.Exactly(1));
+                .Verify(codeClient => codeClient.GetAnalysisAsync(dummyBundleId, It.IsAny<CancellationToken>()), Times.Exactly(1));
         }
     }
 }

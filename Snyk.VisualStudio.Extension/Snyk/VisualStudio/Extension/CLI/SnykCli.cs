@@ -127,7 +127,7 @@
 
             if (!string.IsNullOrEmpty(this.Options.CustomEndpoint))
             {
-                arguments.Add($"--api={this.Options.CustomEndpoint}");
+                arguments.Add($"--API={this.Options.CustomEndpoint}");
             }
 
             if (this.Options.IgnoreUnknownCA)

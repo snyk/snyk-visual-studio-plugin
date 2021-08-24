@@ -39,9 +39,14 @@
         }
 
         /// <summary>
-        /// Scanning started event handler.
+        /// Cli scanning started event handler.
         /// </summary>
-        public event EventHandler<SnykCliScanEventArgs> ScanningStarted;
+        public event EventHandler<SnykCliScanEventArgs> CliScanningStarted;
+
+        /// <summary>
+        /// SnykCode scanning started event handler.
+        /// </summary>
+        public event EventHandler<SnykCodeScanEventArgs> SnykCodeScanningStarted;
 
         /// <summary>
         /// Scanning finished event handler.
@@ -59,9 +64,14 @@
         public event EventHandler<SnykCodeScanEventArgs> SnykCodeScanningUpdate;
 
         /// <summary>
-        /// Scan error event handler.
+        /// Sli scan error event handler.
         /// </summary>
-        public event EventHandler<SnykCliScanEventArgs> ScanError;
+        public event EventHandler<SnykCliScanEventArgs> CliScanError;
+
+        /// <summary>
+        /// SnykCode scan error event handler.
+        /// </summary>
+        public event EventHandler<SnykCodeScanEventArgs> SnykCodeScanError;
 
         /// <summary>
         /// Scanning cancelled event handler.
@@ -154,9 +164,17 @@
         {
             this.Logger.LogInformation("Enter Scan method");
 
-            //this.ScanCli();
+            var options = this.serviceProvider.Options;
 
-            this.ScanSnykCode();
+            if (options.OssEnabled)
+            {
+                this.ScanOss();
+            }
+
+            if (options.SnykCodeQualityEnabled || options.SnykCodeSecurityEnabled)
+            {
+                this.ScanSnykCode();
+            }
 
             this.serviceProvider.AnalyticsService.LogUserTriggersAnAnalysisEvent();
         }
@@ -230,13 +248,18 @@
         /// Fire error event. Create <see cref="CliError"/> instance.
         /// </summary>
         /// <param name="message">Error message.</param>
-        public void OnError(string message) => VsInfoBarService.Instance.ShowInfoBarAsync(message);
+        public void OnCliError(string message) => this.OnCliError(new CliError(message));
 
         /// <summary>
         /// Fire error event with <see cref="SnykCliScanEventArgs"/>.
         /// </summary>
         /// <param name="error"><see cref="CliError"/> object.</param>
-        public void OnError(CliError error) => VsInfoBarService.Instance.ShowInfoBarAsync(error?.Message);
+        public void OnCliError(CliError error) => this.CliScanError?.Invoke(this, new SnykCliScanEventArgs(error));
+
+        /// <summary>
+        /// Fire error event with <see cref="SnykCodeScanEventArgs"/>.
+        /// </summary>
+        public void OnSnykCodeError() => this.SnykCodeScanError?.Invoke(this, new SnykCodeScanEventArgs());
 
         /// <summary>
         /// Fire download started.
@@ -267,7 +290,7 @@
         /// <param name="progress">Donwload progress form 0..100$.</param>
         protected internal void OnDownloadUpdate(int progress) => this.DownloadUpdate?.Invoke(this, new SnykCliDownloadEventArgs(progress));
 
-        private void ScanCli()
+        private void ScanOss()
         {
             if (this.cliScanTask != null && this.cliScanTask.Status == TaskStatus.Running)
             {
@@ -291,7 +314,7 @@
             this.cliScanTask = Task.Run(
                 () =>
                 {
-                    this.OnScanningStarted();
+                    this.FireCliScanningStartedEvent();
 
                     try
                     {
@@ -299,7 +322,7 @@
 
                         if (!this.serviceProvider.SolutionService.IsSolutionOpen)
                         {
-                            this.OnError("No open solution.");
+                            MessageBox.Show("No open solution", "Snyk");
 
                             this.Logger.LogInformation("Solution not opened");
 
@@ -343,9 +366,7 @@
                             {
                                 this.Logger.LogInformation("Scan is successful");
 
-                                this.OnError(cliResult.Error);
-
-                                VsStatusBar.Instance.ShowMessageBoxAsync("Snyk CLI", cliResult.Error.Message);
+                                this.OnCliError(cliResult.Error);
 
                                 return;
                             }
@@ -353,7 +374,7 @@
                             {
                                 this.Logger.LogInformation("Scan update");
 
-                                this.OnScanningUpdate(cliResult);
+                                this.FireScanningUpdateEvent(cliResult);
                             }
 
                             progressWorker.CancelIfCancellationRequested();
@@ -362,27 +383,7 @@
                         }
                         catch (Exception scanException)
                         {
-                            var exception = scanException;
-
-                            if (scanException is AggregateException)
-                            {
-                                exception = scanException.InnerException;
-                            }
-
-                            this.Logger.LogError(exception.Message);
-
-                            if ((bool)this.cli?.ConsoleRunner?.IsStopped)
-                            {
-                                this.OnScanningCancelled();
-                            }
-                            else
-                            {
-                                this.OnError(exception.Message);
-                            }
-
-                            VsStatusBar.Instance.ShowMessageBoxAsync("Snyk CLI", exception.Message);
-
-                            VsStatusBar.Instance.DisplayMessage("Scan finished");
+                            this.OnCliError(scanException.Message);
 
                             this.cli = null;
 
@@ -391,7 +392,7 @@
 
                         progressWorker.CancelIfCancellationRequested();
 
-                        this.OnScanningFinished();
+                        this.FireScanningFinishedEvent();
 
                         VsStatusBar.Instance.DisplayMessage("Cli scan finished.");
 
@@ -401,7 +402,7 @@
                     {
                         this.Logger.LogError(exception.Message);
 
-                        this.OnScanningCancelled();
+                        this.FireScanningCancelledEvent();
 
                         this.cli = null;
                     }
@@ -430,9 +431,9 @@
             this.Logger.LogInformation("Start scan task");
 
             this.snykCodeScanTask = Task.Run(
-                () =>
+                async () =>
                 {
-                    this.OnScanningStarted();
+                    this.FireSnykCodeScanningStartedEvent();
 
                     try
                     {
@@ -440,7 +441,7 @@
 
                         if (!this.serviceProvider.SolutionService.IsSolutionOpen)
                         {
-                            this.OnError("No open solution.");
+                            MessageBox.Show("No open solution", "Snyk");
 
                             this.Logger.LogInformation("Solution not opened");
 
@@ -449,86 +450,63 @@
 
                         progressWorker.CancelIfCancellationRequested();
 
-                        try
+                        await Task.Run(async () =>
                         {
-                            VsStatusBar.Instance.DisplayMessage("SnykCode scanning...");
-
-                            _ = Task.Run(async () =>
+                            try
                             {
-                                try
-                                {
-                                    var filesProvider = this.serviceProvider.SolutionService.NewFileProvider();
+                                var filesProvider = this.serviceProvider.SolutionService.NewFileProvider();
 
-                                    var analysisResult = await this.serviceProvider.SnykCodeService.ScanAsync(filesProvider);
+                                var analysisResult = await this.serviceProvider.SnykCodeService.ScanAsync(filesProvider, progressWorker.TokenSource.Token);
 
-                                    this.OnScanningUpdate(analysisResult);
-                                } 
-                                catch (Exception exception)
-                                {
-                                    VsStatusBar.Instance.ShowMessageBoxAsync("SnykCode", exception.Message);
-                                }
-                            });
-                        }
-                        catch (Exception scanException)
-                        {
-                            var exception = scanException;
-
-                            if (scanException is AggregateException)
-                            {
-                                exception = scanException.InnerException;
+                                this.FireScanningUpdateEvent(analysisResult);
                             }
-
-                            this.Logger.LogError(exception.Message);
-
-                            this.OnError(exception.Message);
-
-                            VsStatusBar.Instance.ShowMessageBoxAsync("SnykCode", exception.Message);
-
-                            VsStatusBar.Instance.DisplayMessage("Scan finished.");
-
-                            return;
-                        }
+                            catch (Exception exception)
+                            {
+                                this.OnSnykCodeError();
+                            }
+                        });
 
                         progressWorker.CancelIfCancellationRequested();
-
-                        VsStatusBar.Instance.DisplayMessage("Scan finished.");
                     }
                     catch (Exception exception)
                     {
                         this.Logger.LogError(exception.Message);
 
-                        this.OnScanningCancelled();
+                        this.FireScanningCancelledEvent();
                     }
                 }, progressWorker.TokenSource.Token);
-
-
         }
 
         /// <summary>
-        /// Fire scanning started event.
+        /// Fire Cli scanning started event.
         /// </summary>
-        private void OnScanningStarted() => this.ScanningStarted?.Invoke(this, new SnykCliScanEventArgs());
+        private void FireCliScanningStartedEvent() => this.CliScanningStarted?.Invoke(this, new SnykCliScanEventArgs());
+
+        /// <summary>
+        /// Fire SnykCode scanning started event.
+        /// </summary>
+        private void FireSnykCodeScanningStartedEvent() => this.SnykCodeScanningStarted?.Invoke(this, new SnykCodeScanEventArgs());
 
         /// <summary>
         /// Fire scanning update with <see cref="SnykCliScanEventArgs"/> object.
         /// </summary>
         /// <param name="cliResult"><see cref="CliResult"/> object with vulnerabilities.</param>
-        private void OnScanningUpdate(CliResult cliResult) => this.CliScanningUpdate?.Invoke(this, new SnykCliScanEventArgs(cliResult));
+        private void FireScanningUpdateEvent(CliResult cliResult) => this.CliScanningUpdate?.Invoke(this, new SnykCliScanEventArgs(cliResult));
 
         /// <summary>
         /// Fire scanning update with <see cref="SnykCodeScanEventArgs"/> object.
         /// </summary>
         /// <param name="analysisResult"><see cref="AnalysisResult"/> object with vulnerabilities.</param>
-        private void OnScanningUpdate(AnalysisResult analysisResult) => this.SnykCodeScanningUpdate?.Invoke(this, new SnykCodeScanEventArgs(analysisResult));
+        private void FireScanningUpdateEvent(AnalysisResult analysisResult) => this.SnykCodeScanningUpdate?.Invoke(this, new SnykCodeScanEventArgs(analysisResult));
 
         /// <summary>
         /// Fire scanning finished event.
         /// </summary>
-        private void OnScanningFinished() => this.ScanningFinished?.Invoke(this, new SnykCliScanEventArgs());
+        private void FireScanningFinishedEvent() => this.ScanningFinished?.Invoke(this, new SnykCliScanEventArgs());
 
         /// <summary>
         /// Fire scanning cancelled event.
         /// </summary>
-        private void OnScanningCancelled() => this.ScanningCancelled?.Invoke(this, new SnykCliScanEventArgs());
+        private void FireScanningCancelledEvent() => this.ScanningCancelled?.Invoke(this, new SnykCliScanEventArgs());
     }
 }

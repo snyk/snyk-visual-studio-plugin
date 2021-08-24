@@ -25,6 +25,11 @@
         public virtual string Icon => SnykIconProvider.DefaultFileIconPath;
 
         /// <summary>
+        /// Gets a value indicating whether a node is root node or not.
+        /// </summary>
+        public virtual bool IsRoot => false;
+
+        /// <summary>
         /// Gets or sets a value indicating whether items.
         /// </summary>
         public ObservableCollection<TreeNode> Items { get; set; }

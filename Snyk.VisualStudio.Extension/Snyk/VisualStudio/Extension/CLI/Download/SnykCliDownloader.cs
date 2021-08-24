@@ -18,11 +18,11 @@
 
         private const int FourDays = 4;
 
+        private readonly LatestReleaseInfo latestReleaseInfo;
+
         private readonly SnykActivityLogger logger = null;
 
         private string currentCliVersion;
-
-        private LatestReleaseInfo latestReleaseInfo;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="SnykCliDownloader"/> class.

@@ -25,6 +25,14 @@
                   ScrollViewer.CanContentScroll="True" UseLayoutRounding="False">
             <TreeView.ItemContainerStyle>
                 <Style TargetType="TreeViewItem">
+                    <Style.Triggers>
+                        <DataTrigger Binding="{Binding Path=IsRoot}" Value="true">
+                            <Setter Property="FontWeight" Value="Bold"></Setter>
+                        </DataTrigger>
+                        <DataTrigger Binding="{Binding Path=IsRoot}" Value="false">
+                            <Setter Property="FontWeight" Value="Normal"></Setter>
+                        </DataTrigger>
+                    </Style.Triggers>
                     <Setter Property="Template">
                         <Setter.Value>
                             <ControlTemplate TargetType="TreeViewItem">
@@ -172,7 +180,10 @@
                         <Image x:Name="icon" SnapsToDevicePixels="True" Margin="0, 0, 5, 0"  
                                Width="16" Height="16"
                                Source="{Binding Icon}"/>
-                        <TextBlock Text="{Binding Title}" Foreground="{DynamicResource VsBrush.WindowText}"/>
+                        <TextBlock Text="{Binding Title}" 
+                                   ToolTipService.ToolTip="{Binding Title}" 
+                                   Foreground="{DynamicResource VsBrush.WindowText}" 
+                                   IsEnabled="{Binding Enabled}"/>
                     </StackPanel>
                 </HierarchicalDataTemplate>
             </TreeView.ItemTemplate>
