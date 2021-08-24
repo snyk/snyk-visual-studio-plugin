@@ -1,15 +1,19 @@
-﻿namespace Snyk.VisualStudio.Extension
+﻿using Microsoft;
+using Snyk.VisualStudio.Extension.Commands;
+using System.Threading.Tasks;
+
+namespace Snyk.VisualStudio.Extension
 {
     using System;
     using System.Diagnostics.CodeAnalysis;
     using System.Runtime.InteropServices;
     using System.Threading;
     using System.Threading.Tasks;
-    using UI.Toolwindow;
-    using Settings;
-    using Service;
     using Microsoft.VisualStudio.Shell;
-    using Task = System.Threading.Tasks.Task;
+    using Snyk.VisualStudio.Extension.Service;
+    using Snyk.VisualStudio.Extension.Settings;
+    using Snyk.VisualStudio.Extension.UI.Toolwindow;
+    using Task = Task;
 
     /// <summary>
     /// This is the class that implements the package exposed by this assembly.
@@ -76,6 +80,11 @@
         /// Gets a value indicating whether general Options dialog.
         /// </summary>
         public SnykGeneralOptionsDialogPage GeneralOptionsDialogPage => this.generalOptionsDialogPage;
+
+        /// <summary>
+        /// Gets <see cref="SnykToolWindow"/> instance.
+        /// </summary>
+        public SnykToolWindow ToolWindow => this.toolWindow;
 
         /// <summary>
         /// Show Options dialog.
@@ -181,10 +190,10 @@
 
             this.logger.LogInformation("Initialize Commands()");
 
-            await Commands.SnykScanCommand.InitializeAsync(this);
-            await Commands.SnykStopCurrentTaskCommand.InitializeAsync(this);
-            await Commands.SnykCleanPanelCommand.InitializeAsync(this);
-            await Commands.SnykOpenSettingsCommand.InitializeAsync(this);
+            await SnykScanCommand.InitializeAsync(this);
+            await SnykStopCurrentTaskCommand.InitializeAsync(this);
+            await SnykCleanPanelCommand.InitializeAsync(this);
+            await SnykOpenSettingsCommand.InitializeAsync(this);
 
             new Task(() => this.toolWindowControl.Initialize(this.serviceProvider)).Start();
 

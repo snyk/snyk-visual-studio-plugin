@@ -66,7 +66,7 @@
         /// <summary>
         /// Sli scan error event handler.
         /// </summary>
-        public event EventHandler<SnykCliScanEventArgs> CliScanError;
+        public event EventHandler<SnykCliScanEventArgs> OssScanError;
 
         /// <summary>
         /// SnykCode scan error event handler.
@@ -248,18 +248,19 @@
         /// Fire error event. Create <see cref="CliError"/> instance.
         /// </summary>
         /// <param name="message">Error message.</param>
-        public void OnCliError(string message) => this.OnCliError(new CliError(message));
+        public void FireOssError(string message) => this.FireOssError(new CliError(message));
 
         /// <summary>
         /// Fire error event with <see cref="SnykCliScanEventArgs"/>.
         /// </summary>
         /// <param name="error"><see cref="CliError"/> object.</param>
-        public void OnCliError(CliError error) => this.CliScanError?.Invoke(this, new SnykCliScanEventArgs(error));
+        public void FireOssError(CliError error) => this.OssScanError?.Invoke(this, new SnykCliScanEventArgs(error));
 
         /// <summary>
         /// Fire error event with <see cref="SnykCodeScanEventArgs"/>.
         /// </summary>
-        public void OnSnykCodeError() => this.SnykCodeScanError?.Invoke(this, new SnykCodeScanEventArgs());
+        /// <param name="message">Error message</param>
+        public void OnSnykCodeError(string message) => this.SnykCodeScanError?.Invoke(this, new SnykCodeScanEventArgs(message));
 
         /// <summary>
         /// Fire download started.
@@ -322,7 +323,7 @@
 
                         if (!this.serviceProvider.SolutionService.IsSolutionOpen)
                         {
-                            MessageBox.Show("No open solution", "Snyk");
+                            this.FireOssError("No open solution");
 
                             this.Logger.LogInformation("Solution not opened");
 
@@ -356,8 +357,6 @@
                             this.Logger.LogInformation($"Solution path = {solutionPath}");
                             this.Logger.LogInformation("Start scan");
 
-                            VsStatusBar.Instance.DisplayMessage("Cli scanтing...");
-
                             CliResult cliResult = this.cli.Scan(solutionPath);
 
                             progressWorker.CancelIfCancellationRequested();
@@ -366,7 +365,7 @@
                             {
                                 this.Logger.LogInformation("Scan is successful");
 
-                                this.OnCliError(cliResult.Error);
+                                this.FireOssError(cliResult.Error);
 
                                 return;
                             }
@@ -383,7 +382,7 @@
                         }
                         catch (Exception scanException)
                         {
-                            this.OnCliError(scanException.Message);
+                            this.FireOssError(scanException.Message);
 
                             this.cli = null;
 
@@ -441,7 +440,7 @@
 
                         if (!this.serviceProvider.SolutionService.IsSolutionOpen)
                         {
-                            MessageBox.Show("No open solution", "Snyk");
+                            this.FireOssError("No open solution");
 
                             this.Logger.LogInformation("Solution not opened");
 
@@ -462,7 +461,7 @@
                             }
                             catch (Exception exception)
                             {
-                                this.OnSnykCodeError();
+                                this.OnSnykCodeError(exception.Message);
                             }
                         });
 
