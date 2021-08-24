@@ -431,7 +431,7 @@
             this.Logger.LogInformation("Start scan task");
 
             this.snykCodeScanTask = Task.Run(
-                () =>
+                async () =>
                 {
                     this.FireSnykCodeScanningStartedEvent();
 
@@ -450,7 +450,7 @@
 
                         progressWorker.CancelIfCancellationRequested();
 
-                        _ = Task.Run(async () =>
+                        await Task.Run(async () =>
                         {
                             try
                             {
