@@ -78,6 +78,7 @@
     <Compile Include="Microsoft\HtmlParser\CssStylesheet.cs" />
     <Compile Include="Snyk\VisualStudio\Extension\CLI\CliGroupedVulnerabilities.cs" />
     <Compile Include="Snyk\VisualStudio\Extension\CLI\CliVulnerabilities.cs" />
+    <Compile Include="Snyk\VisualStudio\Extension\CLI\Dto\Identifiers.cs" />
     <Compile Include="Snyk\VisualStudio\Extension\CLI\Severity.cs" />
     <Compile Include="Snyk\VisualStudio\Extension\CLI\Vulnerability.cs" />
     <Compile Include="Snyk\VisualStudio\Extension\Commands\AbstractSnykCommand.cs" />
@@ -114,9 +115,13 @@
     <Compile Include="Snyk\VisualStudio\Extension\Theme\ThemeInfo.cs" />
     <Compile Include="Snyk\VisualStudio\Extension\Theme\VsBroadcastMessageEvents.cs" />
     <Compile Include="Snyk\VisualStudio\Extension\UI\IRefreshable.cs" />
+    <Compile Include="Snyk\VisualStudio\Extension\UI\Notifications\NotificationService.cs" />
+    <Compile Include="Snyk\VisualStudio\Extension\UI\Toolwindow\DescriptionHeaderPanel.xaml.cs">
+      <DependentUpon>DescriptionHeaderPanel.xaml</DependentUpon>
+    </Compile>
     <Compile Include="Snyk\VisualStudio\Extension\UI\Tree\SnykCodeQualityRootTreeNode.cs" />
-    <Compile Include="Snyk\VisualStudio\Extension\UI\VsInfoBarService.cs" />
-    <Compile Include="Snyk\VisualStudio\Extension\UI\VsStatusBar.cs" />
+    <Compile Include="Snyk\VisualStudio\Extension\UI\Notifications\VsInfoBarService.cs" />
+    <Compile Include="Snyk\VisualStudio\Extension\UI\Notifications\VsStatusBar.cs" />
     <Compile Include="Snyk\VisualStudio\Extension\UI\Toolwindow\UpdateDownloadState.cs" />
     <Compile Include="Snyk\VisualStudio\Extension\UI\Tree\OssRootTreeNode.cs" />
     <Compile Include="Snyk\VisualStudio\Extension\UI\Tree\RootTreeNode.cs" />
@@ -312,6 +317,18 @@
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Resource>
     <Resource Include="Resources\PYFileNodeDark.png">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Resource>
+    <Resource Include="Resources\SeverityCritical24.png">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Resource>
+    <Resource Include="Resources\SeverityHigh24.png">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Resource>
+    <Resource Include="Resources\SeverityLow24.png">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Resource>
+    <Resource Include="Resources\SeverityMedium24.png">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Resource>
     <Content Include="Resources\SnykDogLogo.png">
@@ -551,6 +568,10 @@
     </EmbeddedResource>
   </ItemGroup>
   <ItemGroup>
+    <Page Include="Snyk\VisualStudio\Extension\UI\Toolwindow\DescriptionHeaderPanel.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
     <Page Include="Snyk\VisualStudio\Extension\UI\Tree\SnykFilterableTree.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>

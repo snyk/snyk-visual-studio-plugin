@@ -1,5 +1,8 @@
 ﻿namespace Snyk.VisualStudio.Extension.UI
 {
+    using System;
+    using System.Windows.Media;
+    using System.Windows.Media.Imaging;
     using Snyk.VisualStudio.Extension.CLI;
 
     /// <summary>
@@ -43,6 +46,11 @@
         private const string SeverityHighIconPath = ResourcesDirectoryPath + "SeverityHigh.png";
         private const string SeverityMediumIconPath = ResourcesDirectoryPath + "SeverityMedium.png";
         private const string SeverityLowIconPath = ResourcesDirectoryPath + "SeverityLow.png";
+
+        private const string SeverityCritical24IconName = "SeverityCritical24.png";
+        private const string SeverityHigh24IconName = "SeverityHigh24.png";
+        private const string SeverityMedium24IconName = "SeverityMedium24.png";
+        private const string SeverityLow24IconName = "SeverityLow24.png";
 
         private const string JsFileIconPath = ResourcesDirectoryPath + "JSScript.png";
         private const string CsFileIconPath = ResourcesDirectoryPath + "CSFileNode.png";
@@ -129,9 +137,11 @@
                     iconPath = HtmlFileIconPath;
                     break;
                 case ".js":
-                case ".jsx":
                 case ".ejs":
                     iconPath = JsFileIconPath;
+                    break;
+                case ".jsx":
+                    iconPath = JsxFileIconPath;
                     break;
                 case ".cs":
                     iconPath = CsFileIconPath;
@@ -201,6 +211,48 @@
             }
 
             return icon;
+        }
+
+        /// <summary>
+        /// Get icon path for severity.
+        /// </summary>
+        /// <param name="severity">Severity name.</param>
+        /// <returns>Icon path.</returns>
+        public static ImageSource GetSeverityIconSource(string severity)
+        {
+            string iconPath = @"/Snyk.VisualStudio.Extension;component/Resources/";
+
+            switch (severity)
+            {
+                case Severity.Critical:
+                    iconPath += SeverityCritical24IconName;
+
+                    break;
+                case Severity.High:
+                    iconPath += SeverityHigh24IconName;
+
+                    break;
+                case Severity.Medium:
+                    iconPath += SeverityMedium24IconName;
+
+                    break;
+                case Severity.Low:
+                    iconPath += SeverityLow24IconName;
+
+                    break;
+                default:
+                    iconPath = DefaultIconPath;
+
+                    break;
+            }
+
+            BitmapImage bitmapImage = new BitmapImage();
+
+            bitmapImage.BeginInit();
+            bitmapImage.UriSource = new Uri(iconPath, UriKind.RelativeOrAbsolute);
+            bitmapImage.EndInit();
+
+            return bitmapImage;
         }
     }
 }
