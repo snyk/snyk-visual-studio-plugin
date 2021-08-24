@@ -35,8 +35,6 @@
             this.ToolWindowControl.resultsGrid.Visibility = Visibility.Collapsed;
 
             this.ToolWindowControl.HideIssueMessages();
-
-            this.ToolWindowControl.CleanAndHideVulnerabilityDetailsPanel();
         });
     }
 }
