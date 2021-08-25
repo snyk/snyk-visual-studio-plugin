@@ -137,26 +137,26 @@
             }
 
             foreach (var linkData in linkIds)
-            {
+                {
                 var textBlock = new TextBlock();
                 var link = new Hyperlink();
 
-                link.NavigateUri = new Uri(string.Format(urlPatter, linkData.Replace(namePrefix, string.Empty)));
-                link.Inlines.Add(linkData);
+                    link.NavigateUri = new Uri(string.Format(urlPatter, linkData.Replace(namePrefix, string.Empty)));
+                    link.Inlines.Add(linkData);
                 link.Click += new RoutedEventHandler(delegate (object obj, RoutedEventArgs args)
-                {
-                    if (obj is Hyperlink)
                     {
-                        var hyperlink = obj as Hyperlink;
+                        if (obj is Hyperlink)
+                        {
+                            var hyperlink = obj as Hyperlink;
 
-                        Process.Start(new ProcessStartInfo(hyperlink.NavigateUri.AbsoluteUri));
-                    }
-                });
+                            Process.Start(new ProcessStartInfo(hyperlink.NavigateUri.AbsoluteUri));
+                        }
+                    });
 
-                textBlock.Inlines.Add(link);
+                    textBlock.Inlines.Add(link);
 
-                panel.Children.Add(textBlock);
+                    panel.Children.Add(textBlock);
+                }
             }
-        }
     }
 }

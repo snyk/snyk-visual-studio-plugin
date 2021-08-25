@@ -122,39 +122,41 @@
         {
             this.logger.LogInformation("Enter GetSolutionPath method");
 
-            var dte = this.ServiceProvider.DTE;
-            var solution = dte.Solution;
+            var dteSolution = this.ServiceProvider.DTE.Solution;
             var projects = this.GetProjects();
 
             string solutionPath = string.Empty;
 
             // 1 case: Solution with projects.
-            // 2 case: Solution is folder.
-            if (this.IsSolutionWithProjects(solution, projects) || this.IsFolder(solution, projects))
+            if (!dteSolution.IsDirty && projects.Count > 0)
             {
-                this.logger.LogInformation("Path is solution with projects or folder.");
+                this.logger.LogInformation("Get solution path from solution full name in case solution with projects.");
 
-                solutionPath = solution.FullName;
+                //solutionPath = dteSolution.FullName;
 
-                if (!File.GetAttributes(solutionPath).HasFlag(FileAttributes.Directory))
-                {
-                    this.logger.LogInformation("Remove solution file name from path.");
-
-                    solutionPath = Directory.GetParent(solutionPath).FullName;
-                }
+                string fullName = dteSolution.FullName;
+                solutionPath = Directory.GetParent(dteSolution.FullName).FullName;
             }
 
-            // 3 case: Flat project without solution.
+            // 2 case: Flat project without solution.
             // 4 case: Web site (in 2015)
-            if (this.IsFlatProjectOrWebSite(solution, projects))
+            if (dteSolution.IsDirty && projects.Count > 0)
             {
                 this.logger.LogInformation("Solution is 'dirty'. Get solution path from first project full name");
 
-                string projectPath = solution.Projects.Item(1).FullName;
+                string projectPath = dteSolution.Projects.Item(1).FullName;
 
                 this.logger.LogInformation($"Project path {projectPath}. Get solution path as project directory.");
 
                 solutionPath = Directory.GetParent(projectPath).FullName;
+            }
+
+            // 3 case: Any Folder (in 2019).
+            if (!dteSolution.IsDirty && projects.Count == 0)
+            {
+                this.logger.LogInformation("Solution is not 'dirty' and projects count is 0. Get solution path from dte solution full name.");
+
+                solutionPath = dteSolution.FullName;
             }
 
             this.logger.LogInformation($"Result solution path is {solutionPath}.");
@@ -224,11 +226,5 @@
 
             return filesList;
         }
-
-        private bool IsFlatProjectOrWebSite(Solution solution, Projects projects) => solution.IsDirty && projects.Count > 0;
-
-        private bool IsSolutionWithProjects(Solution solution, Projects projects) => !solution.IsDirty && projects.Count > 0;
-
-        private bool IsFolder(Solution solution, Projects projects) => !solution.IsDirty && projects.Count == 0;
     }
 }

@@ -254,8 +254,7 @@
         {
             this.errorMessage.AdaptForeground();
             this.errorPath.AdaptForeground();
-
-            //this.overview.AdaptForeground(); todo: fix theme cheged for description panel.
+            this.overview.AdaptForeground();
         }
 
         /// <summary>
@@ -342,6 +341,23 @@
             this.errorMessage.Html = cliError.Message;
             this.errorPath.Html = cliError.Path;
         });
+
+        /// <summary>
+        /// Clean and hide vulnerability details panel.
+        /// </summary>
+        public void CleanAndHideVulnerabilityDetailsPanel()
+        {
+            this.vulnerabilityDetailsPanel.Visibility = Visibility.Hidden;
+
+            this.vulnerableModule.Text = string.Empty;
+            this.introducedThrough.Text = string.Empty;
+            this.exploitMaturity.Text = string.Empty;
+            this.fixedIn.Text = string.Empty;
+            this.detaiedIntroducedThrough.Text = string.Empty;
+            this.remediation.Text = string.Empty;
+            this.overview.Html = string.Empty;
+            this.moreAboutThisIssue.NavigateUri = null;
+        }
 
         /// <summary>
         /// Clean vulnerability tree and transition state to RunScanState.
@@ -471,46 +487,83 @@
 
                 if (this.resultsTree.SelectedItem is OssVulnerabilityTreeNode)
                 {
+                    this.vulnerabilityDescriptionGrid.Visibility = Visibility.Visible;
+
                     var ossTreeNode = this.resultsTree.SelectedItem as OssVulnerabilityTreeNode;
 
                     treeNode = ossTreeNode;
 
-                    var vulnerability = ossTreeNode.Vulnerability;
-
-                    if (vulnerability != null)
+                    if (ossTreeNode.Vulnerability != null)
                     {
-                        this.descriptionPanel.Visibility = Visibility.Visible;
 
-                        this.descriptionPanel.Vulnerability = vulnerability;
+                        this.descriptionHeaderPanel.Vulnerability = ossTreeNode.Vulnerability;
+
+                        this.vulnerabilityDetailsPanel.Visibility = Visibility.Visible;
+
+                        var vulnerability = ossTreeNode.Vulnerability;
+
+                        this.vulnerableModule.Text = vulnerability.Name;
+
+                        string introducedThroughText = vulnerability.From != null && vulnerability.From.Length != 0
+                                    ? string.Join(", ", vulnerability.From) : string.Empty;
+
+                        this.introducedThrough.Text = introducedThroughText;
+                        this.exploitMaturity.Text = vulnerability.Exploit;
+                        this.fixedIn.Text = string.IsNullOrWhiteSpace(vulnerability.FixedInRemediation)
+                            ? $"There is no fixed version for {vulnerability.Name}" : vulnerability.FixedInRemediation;
+
+                        string detaiedIntroducedThroughText = vulnerability.From != null && vulnerability.From.Length != 0
+                                    ? string.Join(" > ", vulnerability.From) : string.Empty;
+
+                        this.detaiedIntroducedThrough.Text = detaiedIntroducedThroughText;
+
+                        this.remediation.Text = vulnerability.FixedIn != null && vulnerability.FixedIn.Length != 0
+                                                 ? "Upgrade to " + string.Join(" > ", vulnerability.FixedIn) : string.Empty;
+
+                        this.overview.Html = Markdig.Markdown.ToHtml(vulnerability.Description);
+
+                        this.moreAboutThisIssue.NavigateUri = new Uri(vulnerability.Url);
 
                         this.serviceProvider.AnalyticsService.LogUserSeesAnIssueEvent(vulnerability.Id, vulnerability.Severity);
-                    }
-                    else
-                    {
-                        this.descriptionPanel.Visibility = Visibility.Collapsed;
                     }
                 }
 
                 if (this.resultsTree.SelectedItem is SnykCodeVulnerabilityTreeNode)
                 {
-                    this.descriptionPanel.Visibility = Visibility.Visible;
-
                     var snykCodeTreeNode = this.resultsTree.SelectedItem as SnykCodeVulnerabilityTreeNode;
 
-                    this.descriptionPanel.Suggestion = snykCodeTreeNode.Suggestion;
+                    this.descriptionHeaderPanel.Suggestion = snykCodeTreeNode.Suggestion;
+
+                    this.vulnerabilityDescriptionGrid.Visibility = Visibility.Collapsed;
+
+                    this.vulnerabilityDetailsPanel.Visibility = Visibility.Visible;
+
+                    this.snykCodeDescriptionGrid.Visibility = Visibility.Visible;
 
                     treeNode = snykCodeTreeNode;
+
+                    this.snykCodeDescription.Text = snykCodeTreeNode.Suggestion.Message;
                 }
 
                 if (treeNode == null)
                 {
-                    this.descriptionPanel.Visibility = Visibility.Collapsed;
+                    this.CleanAndHideVulnerabilityDetailsPanel();
+
+                    this.vulnerabilityDescriptionGrid.Visibility = Visibility.Collapsed;
+                    this.snykCodeDescriptionGrid.Visibility = Visibility.Collapsed;
 
                     this.selectIssueMessageGrid.Visibility = Visibility.Visible;
 
                     return;
                 }
             });
+        }
+
+        private void MoreAboutThisIssue_RequestNavigate(object sender, System.Windows.Navigation.RequestNavigateEventArgs args)
+        {
+            Process.Start(new ProcessStartInfo(args.Uri.AbsoluteUri));
+
+            args.Handled = true;
         }
 
         private void RunButton_Click(object sender, RoutedEventArgs e) => SnykTasksService.Instance.Scan();

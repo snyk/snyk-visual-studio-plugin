@@ -124,6 +124,10 @@
     <Compile Include="Snyk\VisualStudio\Extension\UI\Toolwindow\DescriptionHeaderPanel.xaml.cs">
       <DependentUpon>DescriptionHeaderPanel.xaml</DependentUpon>
     </Compile>
+    <Compile Include="Snyk\VisualStudio\Extension\UI\Notifications\NotificationService.cs" />
+    <Compile Include="Snyk\VisualStudio\Extension\UI\Toolwindow\DescriptionHeaderPanel.xaml.cs">
+      <DependentUpon>DescriptionHeaderPanel.xaml</DependentUpon>
+    </Compile>
     <Compile Include="Snyk\VisualStudio\Extension\UI\Toolwindow\DescriptionPanel.xaml.cs">
       <DependentUpon>DescriptionPanel.xaml</DependentUpon>
     </Compile>
