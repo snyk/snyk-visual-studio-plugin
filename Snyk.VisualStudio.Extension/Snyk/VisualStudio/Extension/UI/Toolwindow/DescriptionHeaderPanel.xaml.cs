@@ -42,23 +42,21 @@
 
                 if (identifiers != null)
                 {
-                    this.AddLinksAndDisplayPanel(
+                    this.AddLinksToPanel(
                             this.cwePanel,
                             identifiers.CWE,
                             "CWE-",
                             "https://cwe.mitre.org/data/definitions/{0}.html");
 
-                    this.AddLinksAndDisplayPanel(
+                    this.AddLinksToPanel(
                             this.cvePanel,
                             identifiers.CVE,
                             "CVE-",
                             "https://cve.mitre.org/cgi-bin/cvename.cgi?name={0}");
                 }
-                else
-                {
-                    this.cwePanel.Visibility = Visibility.Collapsed;
-                    this.cvePanel.Visibility = Visibility.Collapsed;
-                }
+
+                this.cwePanel.Visibility = this.cwePanel.Children.Count > 0 ? Visibility.Visible : Visibility.Collapsed;
+                this.cvePanel.Visibility = this.cvePanel.Children.Count > 0 ? Visibility.Visible : Visibility.Collapsed;
 
                 if (!string.IsNullOrEmpty(vulnerability.CVSSv3) && vulnerability.CvssScore > -1)
                 {
@@ -113,48 +111,46 @@
 
                 if (suggestion.Cwe != null && suggestion.Cwe.Count > 0)
                 {
-                    this.AddLinksAndDisplayPanel(
+                    this.AddLinksToPanel(
                             this.cwePanel,
                             suggestion.Cwe.ToArray(),
                             "CWE-",
                             "https://cwe.mitre.org/data/definitions/{0}.html");
                 }
+
+                this.cwePanel.Visibility = this.cwePanel.Children.Count > 0 ? Visibility.Visible : Visibility.Collapsed;
             }
         }
 
-        private void AddLinksAndDisplayPanel(StackPanel panel, string[] linksData, string namePrefix, string urlPatter)
+        private void AddLinksToPanel(StackPanel panel, string[] linkIds, string namePrefix, string urlPatter)
         {
             panel.Children.Clear();
 
-            if (linksData != null && linksData.Length > 0)
+            if (linkIds == null || linkIds.Length == 0)
             {
-                panel.Visibility = Visibility.Visible;
-
-                foreach (string linkData in linksData)
-                {
-                    TextBlock textBlock = new TextBlock();
-                    Hyperlink link = new Hyperlink();
-
-                    link.NavigateUri = new Uri(string.Format(urlPatter, linkData.Replace(namePrefix, string.Empty)));
-                    link.Inlines.Add(linkData);
-                    link.Click += new RoutedEventHandler(delegate(object obj, RoutedEventArgs args)
-                    {
-                        if (obj is Hyperlink)
-                        {
-                            var hyperlink = obj as Hyperlink;
-
-                            Process.Start(new ProcessStartInfo(hyperlink.NavigateUri.AbsoluteUri));
-                        }
-                    });
-
-                    textBlock.Inlines.Add(link);
-
-                    panel.Children.Add(textBlock);
-                }
+                return;
             }
-            else
+
+            foreach (var linkData in linkIds)
             {
-                panel.Visibility = Visibility.Collapsed;
+                TextBlock textBlock = new TextBlock();
+                Hyperlink link = new Hyperlink();
+
+                link.NavigateUri = new Uri(string.Format(urlPatter, linkData.Replace(namePrefix, string.Empty)));
+                link.Inlines.Add(linkData);
+                link.Click += new RoutedEventHandler(delegate (object obj, RoutedEventArgs args)
+                {
+                    if (obj is Hyperlink)
+                    {
+                        var hyperlink = obj as Hyperlink;
+
+                        Process.Start(new ProcessStartInfo(hyperlink.NavigateUri.AbsoluteUri));
+                    }
+                });
+
+                textBlock.Inlines.Add(link);
+
+                panel.Children.Add(textBlock);
             }
         }
     }

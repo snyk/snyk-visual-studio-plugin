@@ -83,20 +83,6 @@
         /// Get title. If title is null or empty it will return message as title.
         /// </summary>
         /// <returns>Title for display.</returns>
-        public string GetDisplayTitle()
-        {
-            string title = string.Empty;
-
-            if (string.IsNullOrEmpty(this.Title))
-            {
-                title += this.Message;
-            }
-            else
-            {
-                title += this.Title;
-            }
-
-            return title;
-        }
+        public string GetDisplayTitle() => string.IsNullOrEmpty(this.Title) ? this.Message : this.Title;
     }
 }

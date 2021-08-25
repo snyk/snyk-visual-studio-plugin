@@ -55,17 +55,17 @@
         {
             await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
 
-            InfoBarTextSpan text = new InfoBarTextSpan(message);
-            InfoBarHyperlink submitIssueLink = new InfoBarHyperlink("Submit an issue", "submitIssue");
-            InfoBarHyperlink knownCaveatsLink = new InfoBarHyperlink("Known Caveats", "knownCaveats");
+            var text = new InfoBarTextSpan(message);
+            var submitIssueLink = new InfoBarHyperlink("Submit an issue", "submitIssue");
+            var knownCaveatsLink = new InfoBarHyperlink("Known Caveats", "knownCaveats");
 
-            InfoBarTextSpan[] spans = new InfoBarTextSpan[] { text };
-            InfoBarActionItem[] actions = new InfoBarActionItem[] { knownCaveatsLink, submitIssueLink, };
-            InfoBarModel infoBarModel = new InfoBarModel(spans, actions, KnownMonikers.StatusWarning, isCloseButtonVisible: true);
+            var spans = new InfoBarTextSpan[] { text };
+            var actions = new InfoBarActionItem[] { knownCaveatsLink, submitIssueLink, };
+            var infoBarModel = new InfoBarModel(spans, actions, KnownMonikers.StatusWarning, isCloseButtonVisible: true);
 
             var factory = await this.serviceProvider.GetServiceAsync(typeof(SVsInfoBarUIFactory)) as IVsInfoBarUIFactory;
 
-            IVsInfoBarUIElement element = factory.CreateInfoBar(infoBarModel);
+            var element = factory.CreateInfoBar(infoBarModel);
 
             element.Advise(this, out this.cookie);
 
