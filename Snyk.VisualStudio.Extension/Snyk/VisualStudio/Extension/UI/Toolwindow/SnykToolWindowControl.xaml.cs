@@ -16,6 +16,7 @@
     using Snyk.VisualStudio.Extension.Service;
     using Snyk.VisualStudio.Extension.Settings;
     using Snyk.VisualStudio.Extension.Theme;
+    using Snyk.VisualStudio.Extension.UI.Notifications;
     using Snyk.VisualStudio.Extension.UI.Tree;
 
     /// <summary>
@@ -69,7 +70,7 @@
 
             SnykTasksService tasksService = serviceProvider.TasksService;
 
-            tasksService.CliScanError += this.OnCliDisplayError;
+            tasksService.OssScanError += this.OnCliDisplayError;
             tasksService.SnykCodeScanError += this.OnSnykCodeDisplayError;
             tasksService.ScanningCancelled += this.OnScanningCancelled;
             tasksService.CliScanningStarted += this.OnCliScanningStarted;
@@ -171,15 +172,14 @@
         /// </summary>
         /// <param name="sender">Source object.</param>
         /// <param name="eventArgs">Event args.</param>
-        public void OnCliDisplayError(object sender, SnykCliScanEventArgs eventArgs)
+        public void OnCliDisplayError(object sender, SnykCliScanEventArgs eventArgs) => ThreadHelper.JoinableTaskFactory.Run(async () =>
         {
-            ThreadHelper.JoinableTaskFactory.Run(async () =>
-            {
-                await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
+            await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
 
-                this.resultsTree.CliRootNode.SetErrorTitle();
-            });
-        }
+            this.resultsTree.CliRootNode.SetErrorTitle();
+
+            NotificationService.Instance.ShowWarningInfoBar("Snyk Open Source error: " + eventArgs.Error.Message);
+        });
 
         /// <summary>
         /// Initialize tool window control.
@@ -192,16 +192,15 @@
         /// </summary>
         /// <param name="sender">Source object.</param>
         /// <param name="eventArgs">Event args.</param>
-        public void OnSnykCodeDisplayError(object sender, SnykCodeScanEventArgs eventArgs)
+        public void OnSnykCodeDisplayError(object sender, SnykCodeScanEventArgs eventArgs) => ThreadHelper.JoinableTaskFactory.Run(async () =>
         {
-            ThreadHelper.JoinableTaskFactory.Run(async () =>
-            {
-                await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
+            await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
 
-                this.resultsTree.CodeQualityRootNode.SetErrorTitle();
-                this.resultsTree.CodeSequrityRootNode.SetErrorTitle();
-            });
-        }
+            this.resultsTree.CodeQualityRootNode.SetErrorTitle();
+            this.resultsTree.CodeSequrityRootNode.SetErrorTitle();
+
+            NotificationService.Instance.ShowWarningInfoBar("SnykCode error: " + eventArgs.Error);
+        });
 
         /// <summary>
         /// ScanningCancelled event handler. Switch context to ScanResultsState.
@@ -263,15 +262,14 @@
         /// <summary>
         /// Show tool window.
         /// </summary>
-        public void ShowToolWindow()
+        public void ShowToolWindow() => ThreadHelper.JoinableTaskFactory.Run(async () =>
         {
-            this.Dispatcher.Invoke(() =>
-            {
-                IVsWindowFrame windowFrame = (IVsWindowFrame)toolWindow.Frame;
+            await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
 
-                ErrorHandler.ThrowOnFailure(windowFrame.Show());
-            });
-        }
+            IVsWindowFrame windowFrame = (IVsWindowFrame)toolWindow.Frame;
+
+            ErrorHandler.ThrowOnFailure(windowFrame.Show());
+        });
 
         /// <summary>
         /// Cancel current task by user request.
@@ -323,30 +321,28 @@
         /// <summary>
         /// Hide main message.
         /// </summary>
-        public void HideMainMessage()
+        public void HideMainMessage() => ThreadHelper.JoinableTaskFactory.Run(async () =>
         {
-            this.Dispatcher.Invoke(() =>
-            {
-                this.message.Text = string.Empty;
+            await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
 
-                this.messageGrid.Visibility = Visibility.Collapsed;
-            });
-        }
+            this.message.Text = string.Empty;
+
+            this.messageGrid.Visibility = Visibility.Collapsed;
+        });
 
         /// <summary>
         /// Display error message.
         /// </summary>
         /// <param name="cliError"><see cref="CliError"/> object.</param>
-        public void DisplayError(CliError cliError)
+        public void DisplayError(CliError cliError) => ThreadHelper.JoinableTaskFactory.Run(async () =>
         {
-            this.Dispatcher.Invoke(() =>
-            {
-                this.errorPanel.Visibility = Visibility.Visible;
+            await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
 
-                this.errorMessage.Html = cliError.Message;
-                this.errorPath.Html = cliError.Path;
-            });
-        }
+            this.errorPanel.Visibility = Visibility.Visible;
+
+            this.errorMessage.Html = cliError.Message;
+            this.errorPath.Html = cliError.Path;
+        });
 
         /// <summary>
         /// Clean and hide vulnerability details panel.
@@ -483,45 +479,48 @@
 
         private void VulnerabilitiesTree_SelectetVulnerabilityChanged(object sender, RoutedEventArgs args)
         {
-            this.Dispatcher.BeginInvoke(DispatcherPriority.Normal, (ThreadStart)delegate ()
+            ThreadHelper.JoinableTaskFactory.Run(async () =>
             {
+                await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
+
                 this.HideIssueMessages();
 
                 TreeNode treeNode = null;
 
-                if (resultsTree.SelectedItem is OssVulnerabilityTreeNode)
+                if (this.resultsTree.SelectedItem is OssVulnerabilityTreeNode)
                 {
-                    vulnerabilityDescriptionGrid.Visibility = Visibility.Visible;
+                    this.vulnerabilityDescriptionGrid.Visibility = Visibility.Visible;
 
-                    var scaTreeNode = this.resultsTree.SelectedItem as OssVulnerabilityTreeNode;
+                    var ossTreeNode = this.resultsTree.SelectedItem as OssVulnerabilityTreeNode;
 
-                    treeNode = scaTreeNode;
+                    treeNode = ossTreeNode;
 
-                    if (scaTreeNode.Vulnerability != null)
+                    if (ossTreeNode.Vulnerability != null)
                     {
+
+                        this.descriptionHeaderPanel.Vulnerability = ossTreeNode.Vulnerability;
+
                         this.vulnerabilityDetailsPanel.Visibility = Visibility.Visible;
 
-                        var vulnerability = scaTreeNode.Vulnerability;
-
-                        this.SetupSeverity(vulnerability);
+                        var vulnerability = ossTreeNode.Vulnerability;
 
                         this.vulnerableModule.Text = vulnerability.Name;
 
                         string introducedThroughText = vulnerability.From != null && vulnerability.From.Length != 0
-                                    ? string.Join(", ", vulnerability.From) : "";
+                                    ? string.Join(", ", vulnerability.From) : string.Empty;
 
                         this.introducedThrough.Text = introducedThroughText;
                         this.exploitMaturity.Text = vulnerability.Exploit;
-                        this.fixedIn.Text = String.IsNullOrWhiteSpace(vulnerability.Remediation)
-                            ? $"There is no fixed version for {vulnerability.Name}" : vulnerability.Remediation;
+                        this.fixedIn.Text = string.IsNullOrWhiteSpace(vulnerability.FixedInRemediation)
+                            ? $"There is no fixed version for {vulnerability.Name}" : vulnerability.FixedInRemediation;
 
                         string detaiedIntroducedThroughText = vulnerability.From != null && vulnerability.From.Length != 0
-                                    ? string.Join(" > ", vulnerability.From) : "";
+                                    ? string.Join(" > ", vulnerability.From) : string.Empty;
 
                         this.detaiedIntroducedThrough.Text = detaiedIntroducedThroughText;
 
                         this.remediation.Text = vulnerability.FixedIn != null && vulnerability.FixedIn.Length != 0
-                                                 ? "Upgrade to " + string.Join(" > ", vulnerability.FixedIn) : "";
+                                                 ? "Upgrade to " + string.Join(" > ", vulnerability.FixedIn) : string.Empty;
 
                         this.overview.Html = Markdig.Markdown.ToHtml(vulnerability.Description);
 
@@ -531,19 +530,19 @@
                     }
                 }
 
-                if (resultsTree.SelectedItem is SnykCodeVulnerabilityTreeNode)
+                if (this.resultsTree.SelectedItem is SnykCodeVulnerabilityTreeNode)
                 {
-                    vulnerabilityDescriptionGrid.Visibility = Visibility.Collapsed;
+                    var snykCodeTreeNode = this.resultsTree.SelectedItem as SnykCodeVulnerabilityTreeNode;
+
+                    this.descriptionHeaderPanel.Suggestion = snykCodeTreeNode.Suggestion;
+
+                    this.vulnerabilityDescriptionGrid.Visibility = Visibility.Collapsed;
 
                     this.vulnerabilityDetailsPanel.Visibility = Visibility.Visible;
 
-                    snykCodeDescriptionGrid.Visibility = Visibility.Visible;
-
-                    var snykCodeTreeNode = this.resultsTree.SelectedItem as SnykCodeVulnerabilityTreeNode;
+                    this.snykCodeDescriptionGrid.Visibility = Visibility.Visible;
 
                     treeNode = snykCodeTreeNode;
-
-                    this.SetupSeverity(new Vulnerability { Severity = Severity.FromInt(snykCodeTreeNode.Suggestion.Severity), });
 
                     this.snykCodeDescription.Text = snykCodeTreeNode.Suggestion.Message;
                 }
@@ -552,28 +551,14 @@
                 {
                     this.CleanAndHideVulnerabilityDetailsPanel();
 
-                    vulnerabilityDescriptionGrid.Visibility = Visibility.Collapsed;
-                    snykCodeDescriptionGrid.Visibility = Visibility.Collapsed;
+                    this.vulnerabilityDescriptionGrid.Visibility = Visibility.Collapsed;
+                    this.snykCodeDescriptionGrid.Visibility = Visibility.Collapsed;
 
                     this.selectIssueMessageGrid.Visibility = Visibility.Visible;
 
                     return;
                 }
             });
-        }
-
-        private void SetupSeverity(Vulnerability vulnerability)
-        {
-            var severityFilter = SeverityFilter.ByName(vulnerability.Severity);
-
-            string severityText = severityFilter.Title;
-            Color severityColor = severityFilter.Color;
-
-            this.severityBorder.Background = new SolidColorBrush(severityColor);
-            this.severityBorder.BorderBrush = new SolidColorBrush(severityColor);
-
-            this.severity.Background = new SolidColorBrush(severityColor);
-            this.severity.Text = severityText;
         }
 
         private void MoreAboutThisIssue_RequestNavigate(object sender, System.Windows.Navigation.RequestNavigateEventArgs args)
@@ -617,8 +602,10 @@
         {
             Action<string> successCallbackAction = (apiToken) =>
             {
-                this.Dispatcher.Invoke(() =>
+                ThreadHelper.JoinableTaskFactory.Run(async () =>
                 {
+                    await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
+
                     this.connectVSToSnykLink.IsEnabled = true;
 
                     this.connectVSToSnykProgressBar.Visibility = Visibility.Collapsed;
@@ -631,8 +618,10 @@
 
             Action<string> errorCallbackAction = (error) =>
             {
-                this.Dispatcher.Invoke(() =>
+                ThreadHelper.JoinableTaskFactory.Run(async () =>
                 {
+                    await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
+
                     this.connectVSToSnykLink.IsEnabled = true;
 
                     this.connectVSToSnykProgressBar.Visibility = Visibility.Collapsed;
@@ -641,8 +630,10 @@
                 this.context.TransitionTo(OverviewState.Instance);
             };
 
-            this.Dispatcher.Invoke(() =>
+            ThreadHelper.JoinableTaskFactory.Run(async () =>
             {
+                await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
+
                 this.connectVSToSnykLink.IsEnabled = false;
 
                 this.connectVSToSnykProgressBar.Visibility = Visibility.Visible;

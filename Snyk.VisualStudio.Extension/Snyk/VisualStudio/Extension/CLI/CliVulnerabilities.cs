@@ -2,7 +2,6 @@
 {
     using System;
     using System.Collections.Generic;
-    using System.Text.Json.Serialization;
 
     /// <summary>
     /// Cli vulnerabilities array.

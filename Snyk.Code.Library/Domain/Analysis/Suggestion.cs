@@ -77,20 +77,12 @@
         /// Get row line and title (if title is null it use message).
         /// </summary>
         /// <returns>Title for display.</returns>
-        public string GetDisplayTitle()
-        {
-            string title = "Line " + this.Rows.Item1 + ": ";
+        public string GetDisplayTitleWithLineNumber() => "Line " + this.Rows.Item1 + ": " + this.GetDisplayTitle();
 
-            if (string.IsNullOrEmpty(this.Title))
-            {
-                title += this.Message;
-            }
-            else
-            {
-                title += this.Title;
-            }
-
-            return title;
-        }
+        /// <summary>
+        /// Get title. If title is null or empty it will return message as title.
+        /// </summary>
+        /// <returns>Title for display.</returns>
+        public string GetDisplayTitle() => string.IsNullOrEmpty(this.Title) ? this.Message : this.Title;
     }
 }
