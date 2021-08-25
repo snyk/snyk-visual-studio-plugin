@@ -11,6 +11,7 @@
     using Snyk.VisualStudio.Extension.Service;
     using Snyk.VisualStudio.Extension.SnykAnalytics;
     using Snyk.Code.Library.Service;
+    using Snyk.VisualStudio.Extension.UI.Toolwindow;
 
     class SnykMockServiceProvider : ISnykServiceProvider
     {
@@ -91,6 +92,8 @@
         public SnykUserStorageSettingsService UserStorageSettingsService => throw new NotImplementedException();
 
         public ISnykCodeService SnykCodeService => throw new NotImplementedException();
+
+        public SnykToolWindow ToolWindow { get => throw new NotImplementedException(); set => throw new NotImplementedException(); }
 
         Microsoft.VisualStudio.Shell.IAsyncServiceProvider ISnykServiceProvider.AsyncServiceProvider
         {

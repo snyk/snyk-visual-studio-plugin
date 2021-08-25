@@ -132,10 +132,10 @@
             {
                 this.logger.LogInformation("Get solution path from solution full name in case solution with projects.");
 
-                solutionPath = dteSolution.FullName;
+                //solutionPath = dteSolution.FullName;
 
-                //CLI string fullName = dteSolution.FullName;
-                //CLI: solutionPath = Directory.GetParent(dteSolution.FullName).FullName;
+                string fullName = dteSolution.FullName;
+                solutionPath = Directory.GetParent(dteSolution.FullName).FullName;
             }
 
             // 2 case: Flat project without solution.

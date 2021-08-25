@@ -10,6 +10,7 @@
     using Snyk.VisualStudio.Extension.Settings;
     using Snyk.VisualStudio.Extension.SnykAnalytics;
     using Snyk.VisualStudio.Extension.Theme;
+    using Snyk.VisualStudio.Extension.UI.Toolwindow;
 
     /// <summary>
     /// ServiceProvider interface for Snyk extension. Provide all needed services for this extension.
