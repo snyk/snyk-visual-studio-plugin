@@ -119,6 +119,9 @@
     <Compile Include="Snyk\VisualStudio\Extension\UI\Toolwindow\DescriptionHeaderPanel.xaml.cs">
       <DependentUpon>DescriptionHeaderPanel.xaml</DependentUpon>
     </Compile>
+    <Compile Include="Snyk\VisualStudio\Extension\UI\Toolwindow\DescriptionPanel.xaml.cs">
+      <DependentUpon>DescriptionPanel.xaml</DependentUpon>
+    </Compile>
     <Compile Include="Snyk\VisualStudio\Extension\UI\Tree\SnykCodeQualityRootTreeNode.cs" />
     <Compile Include="Snyk\VisualStudio\Extension\UI\Notifications\VsInfoBarService.cs" />
     <Compile Include="Snyk\VisualStudio\Extension\UI\Notifications\VsStatusBar.cs" />
@@ -569,6 +572,10 @@
   </ItemGroup>
   <ItemGroup>
     <Page Include="Snyk\VisualStudio\Extension\UI\Toolwindow\DescriptionHeaderPanel.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="Snyk\VisualStudio\Extension\UI\Toolwindow\DescriptionPanel.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>
