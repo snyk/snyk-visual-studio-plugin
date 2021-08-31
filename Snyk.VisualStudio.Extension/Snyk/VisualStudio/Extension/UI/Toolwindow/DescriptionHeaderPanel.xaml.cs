@@ -130,8 +130,6 @@
         private void AddLinksToPanel(StackPanel panel, string[] linkIds, string namePrefix, string urlPatter)
         {
             panel.Children.Clear();
-
-            if (linkIds == null || linkIds.Length == 0)
             {
                 return;
             }
