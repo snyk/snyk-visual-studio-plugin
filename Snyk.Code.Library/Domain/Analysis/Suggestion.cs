@@ -24,6 +24,11 @@
         public Tuple<int, int> Rows { get; set; }
 
         /// <summary>
+        /// Gets or sets tuple of columns.
+        /// </summary>
+        public Tuple<int, int> Columns { get; set; }
+
+        /// <summary>
         /// Gets or sets a value indicating anaylysis rule.
         /// </summary>
         public string Rule { get; set; }
@@ -37,6 +42,11 @@
         /// Gets or sets a value indicating anaylysis severity value (from 1 to 4).
         /// </summary>
         public int Severity { get; set; }
+
+        /// <summary>
+        /// Gets or sets position markers.
+        /// </summary>
+        public IList<Marker> Markers { get; set; }
 
         /// <summary>
         /// Gets or sets a value indicating anaylysis categories.
