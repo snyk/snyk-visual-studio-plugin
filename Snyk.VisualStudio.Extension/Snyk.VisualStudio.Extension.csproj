@@ -87,6 +87,7 @@
     <Compile Include="Snyk\VisualStudio\Extension\Commands\SnykScanCommand.cs" />
     <Compile Include="Snyk\VisualStudio\Extension\Commands\SnykStopCurrentTaskCommand.cs" />
     <Compile Include="Snyk\VisualStudio\Extension\Service\VsCodeService.cs" />
+    <Compile Include="Snyk\VisualStudio\Extension\Service\VsCodeService.cs" />
     <Compile Include="Snyk\VisualStudio\Extension\SnykCode\SnykCodeFileProvider.cs" />
     <Compile Include="Snyk\VisualStudio\Extension\Settings\SnykProjectSettings.cs" />
     <Compile Include="Snyk\VisualStudio\Extension\Settings\SnykSettings.cs" />

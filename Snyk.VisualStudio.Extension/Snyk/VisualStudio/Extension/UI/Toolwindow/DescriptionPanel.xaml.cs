@@ -113,8 +113,8 @@
                         index++;
 
                         this.dataFlowStepsControl.AddStep(dataFlowStep);
-            }
-        }
+                    }
+                }
             }
         }
 
