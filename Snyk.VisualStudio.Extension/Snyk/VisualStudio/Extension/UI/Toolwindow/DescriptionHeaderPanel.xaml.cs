@@ -54,6 +54,11 @@
                             "CVE-",
                             "https://cve.mitre.org/cgi-bin/cvename.cgi?name={0}");
                 }
+                else
+                {
+                    this.cwePanel.Visibility = Visibility.Collapsed;
+                    this.cvePanel.Visibility = Visibility.Collapsed;
+                }
 
                 this.cwePanel.Visibility = this.cwePanel.Children.Count > 0 ? Visibility.Visible : Visibility.Collapsed;
                 this.cvePanel.Visibility = this.cvePanel.Children.Count > 0 ? Visibility.Visible : Visibility.Collapsed;
@@ -133,8 +138,8 @@
 
             foreach (var linkData in linkIds)
             {
-                TextBlock textBlock = new TextBlock();
-                Hyperlink link = new Hyperlink();
+                var textBlock = new TextBlock();
+                var link = new Hyperlink();
 
                 link.NavigateUri = new Uri(string.Format(urlPatter, linkData.Replace(namePrefix, string.Empty)));
                 link.Inlines.Add(linkData);
