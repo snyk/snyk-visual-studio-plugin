@@ -81,9 +81,7 @@
 
                 IVsTextManager textManager = Package.GetGlobalService(typeof(VsTextManagerClass)) as IVsTextManager;
 
-                var documentViewType = default(Guid);
-
-                textManager.NavigateToLineAndColumn(textBuffer, ref documentViewType, startLine, startColumn - 1, endLine, endColumn);
+                textManager.NavigateToLineAndColumn(textBuffer, VSConstants.LOGVIEWID_TextView, startLine, startColumn, endLine, endColumn);
             });
         }
     }

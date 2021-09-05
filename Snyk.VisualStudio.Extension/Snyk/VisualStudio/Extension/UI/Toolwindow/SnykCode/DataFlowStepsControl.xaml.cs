@@ -58,7 +58,12 @@
             string startColumn = navigationInformation[3];
             string endColumn = navigationInformation[4];
 
-            VsCodeService.Instance.OpenAndNavigate(filePath, int.Parse(startLine), int.Parse(startColumn), int.Parse(endLine), int.Parse(endColumn));
+            VsCodeService.Instance.OpenAndNavigate(
+                filePath, 
+                int.Parse(startLine),
+                int.Parse(startColumn) - 1,
+                int.Parse(endLine),
+                int.Parse(endColumn));
         }
     }
 }
