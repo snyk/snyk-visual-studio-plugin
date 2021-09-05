@@ -123,11 +123,17 @@
     <Compile Include="Snyk\VisualStudio\Extension\UI\Toolwindow\DescriptionPanel.xaml.cs">
       <DependentUpon>DescriptionPanel.xaml</DependentUpon>
     </Compile>
+    <Compile Include="Snyk\VisualStudio\Extension\UI\Toolwindow\OssDescriptionControl.xaml.cs">
+      <DependentUpon>OssDescriptionControl.xaml</DependentUpon>
+    </Compile>
     <Compile Include="Snyk\VisualStudio\Extension\UI\Toolwindow\SnykCode\DataFlowStep.cs" />
     <Compile Include="Snyk\VisualStudio\Extension\UI\Toolwindow\SnykCode\DataFlowStepsControl.xaml.cs">
       <DependentUpon>DataFlowStepsControl.xaml</DependentUpon>
     </Compile>
     <Compile Include="Snyk\VisualStudio\Extension\UI\Toolwindow\SnykCode\DataFlowStepsViewModel.cs" />
+    <Compile Include="Snyk\VisualStudio\Extension\UI\Toolwindow\SnykCode\SnykCodeDescriptionControl.xaml.cs">
+      <DependentUpon>SnykCodeDescriptionControl.xaml</DependentUpon>
+    </Compile>
     <Compile Include="Snyk\VisualStudio\Extension\UI\Tree\SnykCodeQualityRootTreeNode.cs" />
     <Compile Include="Snyk\VisualStudio\Extension\UI\Notifications\VsInfoBarService.cs" />
     <Compile Include="Snyk\VisualStudio\Extension\UI\Notifications\VsStatusBar.cs" />
@@ -585,7 +591,15 @@
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>
+    <Page Include="Snyk\VisualStudio\Extension\UI\Toolwindow\OssDescriptionControl.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
     <Page Include="Snyk\VisualStudio\Extension\UI\Toolwindow\SnykCode\DataFlowStepsControl.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="Snyk\VisualStudio\Extension\UI\Toolwindow\SnykCode\SnykCodeDescriptionControl.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>

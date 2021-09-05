@@ -35,7 +35,7 @@
                                 BorderThickness="0"/>
 
                             <TextBlock Grid.Column="1" HorizontalAlignment="Left">
-                                <Hyperlink Click="Hyperlink_Click" NavigateUri="{Binding NabigationInformation}">
+                                <Hyperlink Click="Hyperlink_Click" Command="{Binding Path=NavigateCommand}">
                                     <TextBlock Text="{Binding FileName}"/>
                                 </Hyperlink>
                             </TextBlock>

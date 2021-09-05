@@ -30,7 +30,7 @@
         }
 
         /// <summary>
-        /// Generate Hash code for <see cref="Marker"/>
+        /// Generate Hash code for <see cref="Marker"/>.
         /// </summary>
         /// <param name="marker">Source marker object.</param>
         /// <returns>Hash code for marker.</returns>
@@ -42,7 +42,6 @@
             }
 
             return marker.Positions[0].Rows.ElementAt(0).GetHashCode();
-
         }
     }
 }
