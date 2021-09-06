@@ -45,25 +45,5 @@
 
             this.stepsCountHeader.Text = $"Data Flow - {stepsCount} step" + (stepsCount > 1 ? "s" : string.Empty);
         }
-
-        private void Hyperlink_Click(object sender, System.Windows.RoutedEventArgs e)
-        {
-            var hyperlink = sender as Hyperlink;
-            var navigationInformation = hyperlink.NavigateUri.ToString().Split('|');
-
-            string filePath = navigationInformation[0].Substring(8, navigationInformation[0].Length - 8);
-
-            string startLine = navigationInformation[1];
-            string endLine = navigationInformation[2];
-            string startColumn = navigationInformation[3];
-            string endColumn = navigationInformation[4];
-
-            VsCodeService.Instance.OpenAndNavigate(
-                filePath, 
-                int.Parse(startLine),
-                int.Parse(startColumn) - 1,
-                int.Parse(endLine),
-                int.Parse(endColumn));
-        }
     }
 }

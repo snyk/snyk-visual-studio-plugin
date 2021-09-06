@@ -27,6 +27,8 @@
             {
                 this.snykCodeDescriptionControl.Visibility = Visibility.Collapsed;
 
+                this.descriptionHeaderPanel.Vulnerability = value;
+
                 this.ossDescriptionControl.Vulnerability = value;
             }
         }
@@ -39,6 +41,8 @@
             set
             {
                 this.ossDescriptionControl.Visibility = Visibility.Collapsed;
+
+                this.descriptionHeaderPanel.Suggestion = value;
 
                 this.snykCodeDescriptionControl.Suggestion = value;
             }

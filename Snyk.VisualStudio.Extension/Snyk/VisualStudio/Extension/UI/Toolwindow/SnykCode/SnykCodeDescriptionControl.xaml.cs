@@ -4,10 +4,12 @@
     using System.IO;
     using System.Linq;
     using System.Windows.Controls;
+    using Microsoft.VisualStudio.PlatformUI;
     using Serilog;
     using Snyk.Code.Library.Domain.Analysis;
     using Snyk.Common;
     using Snyk.VisualStudio.Extension.CLI;
+    using Snyk.VisualStudio.Extension.Service;
 
     /// <summary>
     /// Interaction logic for SnykCodeDescriptionControl.xaml.
@@ -53,16 +55,20 @@
 
                         filePosition = filePosition + ":" + startLineNumber;
 
+                        var startLine = (int)position.Rows.ElementAt(0) - 1;
+                        var endLine = (int)position.Rows.ElementAt(1) - 1;
+                        var startColumn = (int)position.Columns.ElementAt(0) - 1;
+                        var endColumn = (int)position.Columns.ElementAt(1);
+
                         var dataFlowStep = new DataFlowStep
                         {
                             FileName = filePosition,
                             RowNumber = index.ToString(),
                             LineContent = this.GetLineContent(position.FileName, startLineNumber),
-                            FilePath = this.GetFullPath(filePosition),
-                            StartLine = (int)(position.Rows.ElementAt(0) - 1),
-                            EndLine = (int)(position.Rows.ElementAt(1) - 1),
-                            StartColumn = (int)(position.Columns.ElementAt(0)),
-                            EndColumn = (int)(position.Columns.ElementAt(1)),
+                            NavigateCommand = new DelegateCommand(new Action<object>(delegate (object o)
+                            {
+                                VsCodeService.Instance.OpenAndNavigate(this.GetFullPath(position.FileName), startLine, startColumn, endLine, endColumn);
+                            })),
                         };
 
                         index++;
