@@ -98,6 +98,8 @@
 
                     var suggestionDto = analysisResultsDto.Suggestions[suggestionId];
 
+                    var fileDto = fileDtos.First();
+
                     var suggestion = new Suggestion
                     {
                         Id = suggestionDto.Id,
@@ -110,7 +112,18 @@
                         Cwe = suggestionDto.Cwe,
                         Text = suggestionDto.Text,
                         ExampleCommitDescriptions = suggestionDto.ExampleCommitDescriptions,
-                        Rows = Tuple.Create(fileDtos.First().Rows[0], fileDtos.First().Rows[1]),
+                        Rows = Tuple.Create(fileDto.Rows[0], fileDto.Rows[1]),
+                        Columns = Tuple.Create(fileDto.Cols[0], fileDto.Cols[1]),
+                        Markers = fileDto.Markers.Select(markerDto => new Marker
+                        {
+                            MessageIndexes = markerDto.MessageIndexes,
+                            Positions = markerDto.Positions.Select(positionDto => new Position
+                            {
+                                Columns = positionDto.Cols,
+                                Rows = positionDto.Rows,
+                                FileName = positionDto.File,
+                            }).ToList(),
+                        }).ToList(),
                     };
 
                     foreach (var exampleCommitFixes in suggestionDto.ExampleCommitFixes)
