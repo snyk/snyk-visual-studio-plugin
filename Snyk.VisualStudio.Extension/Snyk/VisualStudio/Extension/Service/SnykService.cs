@@ -210,7 +210,7 @@
 
             VsStatusBar.Initialize(this);
 
-            VsCodeService.Initialize();
+            VsCodeService.Initialize(this);
 
             this.activityLogger.LogInformation("Leave SnykService.InitializeAsync");
         }

@@ -115,6 +115,22 @@
         }
 
         /// <summary>
+        /// Get full file path by relative file path.
+        /// </summary>
+        /// <param name="file">Relative file path.</param>
+        /// <returns>Full file path.</returns>
+        public string GetFileFullPath(string file)
+        {
+            string relativePath = file
+                .Replace("/", "\\")
+                .Substring(1, file.Length - 1);
+
+            string baseDirPath = this.GetSolutionPath();
+
+            return Path.Combine(baseDirPath, relativePath);
+        }
+
+        /// <summary>
         /// Get solution path.
         /// </summary>
         /// <returns>Path string.</returns>

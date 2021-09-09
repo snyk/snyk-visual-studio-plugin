@@ -22,6 +22,8 @@
 
         private DataFlowStepsViewModel model;
 
+        private SnykSolutionService solutionService;
+
         /// <summary>
         /// Initializes a new instance of the <see cref="DataFlowStepsControl"/> class.
         /// </summary>
@@ -32,6 +34,8 @@
             this.model = new DataFlowStepsViewModel();
 
             this.DataContext = this.model;
+
+            this.solutionService = SnykSolutionService.Instance;
         }
 
         /// <summary>
@@ -93,7 +97,12 @@
                         LineContent = this.GetLineContent(position.FileName, startLineNumber),
                         NavigateCommand = new DelegateCommand(new Action<object>(delegate (object o)
                         {
-                            VsCodeService.Instance.OpenAndNavigate(this.GetFullPath(position.FileName), startLine, startColumn, endLine, endColumn);
+                            VsCodeService.Instance.OpenAndNavigate(
+                                this.solutionService.GetFileFullPath(position.FileName),
+                                startLine,
+                                startColumn,
+                                endLine,
+                                endColumn);
                         })),
                     };
 
@@ -106,7 +115,7 @@
 
         private string GetLineContent(string file, long lineNumber)
         {
-            string filePath = this.GetFullPath(file);
+            string filePath = this.solutionService.GetFileFullPath(file);
 
             string line = string.Empty;
 
@@ -133,15 +142,6 @@
             }
 
             return line;
-        }
-
-        private string GetFullPath(string file)
-        {
-            string partialPath = file.Substring(1, file.Length - 1);
-
-            string solutionPath = SnykSolutionService.Instance.GetSolutionPath();
-
-            return Path.Combine(solutionPath, partialPath);
         }
     }
 }
