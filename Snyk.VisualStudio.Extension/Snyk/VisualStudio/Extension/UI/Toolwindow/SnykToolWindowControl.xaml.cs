@@ -500,6 +500,10 @@
                     this.descriptionPanel.Suggestion = snykCodeTreeNode.Suggestion;
 
                     treeNode = snykCodeTreeNode;
+
+                    var filePath = this.serviceProvider.SolutionService.GetFileFullPath(snykCodeTreeNode.Suggestion.FileName);
+
+                    VsCodeService.Instance.OpenFile(filePath);
                 }
 
                 if (treeNode == null)

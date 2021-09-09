@@ -39,6 +39,11 @@
         public string Message { get; set; }
 
         /// <summary>
+        /// Gets or sets file name (relative path).
+        /// </summary>
+        public string FileName { get; set; }
+
+        /// <summary>
         /// Gets or sets a value indicating anaylysis severity value (from 1 to 4).
         /// </summary>
         public int Severity { get; set; }

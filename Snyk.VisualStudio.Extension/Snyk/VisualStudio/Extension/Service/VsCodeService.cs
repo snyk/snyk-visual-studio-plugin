@@ -11,6 +11,14 @@
     /// </summary>
     public class VsCodeService
     {
+        private ISnykServiceProvider serviceProvider;
+
+        /// <summary>
+        /// Initializes a new instance of the <see cref="VsCodeService"/> class.
+        /// </summary>
+        /// <param name="serviceProvider">Service provider.</param>
+        private VsCodeService(ISnykServiceProvider serviceProvider) => this.serviceProvider = serviceProvider;
+
         /// <summary>
         /// Gets instance of this class.
         /// </summary>
@@ -19,9 +27,26 @@
         /// <summary>
         /// Initialize <see cref="VsCodeService"/> instance.
         /// </summary>
-        public static void Initialize()
+        /// <param name="serviceProvider">Service provider.</param>
+        public static void Initialize(ISnykServiceProvider serviceProvider)
         {
-            Instance = new VsCodeService();
+            Instance = new VsCodeService(serviceProvider);
+        }
+
+        /// <summary>
+        /// Open file by path.
+        /// </summary>
+        /// <param name="documentFullPath">Full document path.</param>
+        public void OpenFile(string documentFullPath)
+        {
+            ThreadHelper.JoinableTaskFactory.Run(async () =>
+            {
+                await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
+
+                var itemOperations = this.serviceProvider.DTE.ItemOperations;
+
+                itemOperations.OpenFile(documentFullPath, "{" + VSConstants.LOGVIEWID_Code + "}");
+            });
         }
 
         /// <summary>
