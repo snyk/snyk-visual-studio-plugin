@@ -64,6 +64,11 @@
         public string Title { get; set; }
 
         /// <summary>
+        /// Gets or sets repo dataset size.
+        /// </summary>
+        public int RepoDatasetSize { get; set; }
+
+        /// <summary>
         /// Gets or sets a value indicating analysis CWE list.
         /// </summary>
         public IList<string> Cwe { get; set; }
