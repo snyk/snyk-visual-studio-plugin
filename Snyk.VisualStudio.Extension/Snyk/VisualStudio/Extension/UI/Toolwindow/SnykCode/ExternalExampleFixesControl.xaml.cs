@@ -13,6 +13,8 @@
     /// </summary>
     public partial class ExternalExampleFixesControl : UserControl
     {
+        private const int ShowExamplesCount = 3;
+
         /// <summary>
         /// Initializes a new instance of the <see cref="ExternalExampleFixesControl"/> class.
         /// </summary>
@@ -24,10 +26,13 @@
         /// <summary>
         /// Display fixes in tabs.
         /// </summary>
+        /// <param name="repoDatasetSize">Count of repositories with fixed this issue.</param>
         /// <param name="fixes">Suggestion fixes.</param>
-        internal void DisplayFixes(IList<SuggestionFix> fixes)
+        internal void Display(int repoDatasetSize, IList<SuggestionFix> fixes)
         {
             this.externalExampleFixesTab.Items.Clear();
+
+            this.Visibility = fixes != null && fixes.Count > 0 ? Visibility.Visible : Visibility.Collapsed;
 
             if (fixes == null || fixes.Count == 0)
             {
@@ -36,32 +41,32 @@
                 return;
             }
 
-            var examplesCount = fixes.Count > 3 ? 3 : fixes.Count;
+            var examplesCount = fixes.Count > ShowExamplesCount ? ShowExamplesCount : fixes.Count;
 
-            this.shortDescription.Text = $"This issue was fixed by {fixes.Count} projects. Here are {examplesCount} example fixes.";
+            this.shortDescription.Text = $"This issue was fixed by {repoDatasetSize} projects. Here are {examplesCount} example fixes.";
 
             for (int i = 0; i < examplesCount; i++)
             {
                 var fix = fixes.ElementAt(i);
 
-                var exampleLinesTextBox = new RichTextBox();
+                var exampleLinesTextBox = new HtmlRichTextBox();
                 exampleLinesTextBox.IsReadOnly = true;
                 exampleLinesTextBox.Document.Blocks.Clear();
 
                 foreach (var fixLine in fix.Lines)
                 {
-                    string lineChange = string.Empty;
+                    string lineChangeSymbol = string.Empty;
                     SolidColorBrush backgroundBrush = null;
 
                     switch (fixLine.LineChange)
                     {
                         case "added":
-                            lineChange = "+";
+                            lineChangeSymbol = "+";
                             backgroundBrush = Brushes.LightGreen;
 
                             break;
                         case "removed":
-                            lineChange = "-";
+                            lineChangeSymbol = "-";
                             backgroundBrush = Brushes.LightCoral;
 
                             break;
@@ -69,9 +74,7 @@
                             break;
                     }
 
-                    var lineText = $"   {fixLine.LineNumber} {lineChange}    {fixLine.Line}";
-
-                    lineText = lineText + new string(' ', 300 - lineText.Length);
+                    var lineText = $"   {fixLine.LineNumber} {lineChangeSymbol}    {fixLine.Line}";
 
                     var document = exampleLinesTextBox.Document;
 
@@ -80,15 +83,14 @@
                     paragraph.Margin = new Thickness(0);
                     paragraph.Padding = new Thickness(0);
 
-                    paragraph.Inlines.Add(lineText);
-                    document.Blocks.Add(paragraph);
-
                     if (backgroundBrush != null)
                     {
-                        var textRange = new TextRange(paragraph.ContentStart, paragraph.ContentEnd);
-
-                        textRange.ApplyPropertyValue(TextElement.BackgroundProperty, backgroundBrush);
+                        paragraph.Background = backgroundBrush;
                     }
+
+                    paragraph.Inlines.Add(lineText);
+
+                    document.Blocks.Add(paragraph);
                 }
 
                 this.externalExampleFixesTab.Items.Add(new TabItem
