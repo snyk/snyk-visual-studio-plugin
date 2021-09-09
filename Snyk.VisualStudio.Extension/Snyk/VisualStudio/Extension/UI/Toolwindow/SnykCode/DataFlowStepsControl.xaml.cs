@@ -1,8 +1,6 @@
 ﻿namespace Snyk.VisualStudio.Extension.UI.Toolwindow.SnykCode
 {
     using System.Windows.Controls;
-    using System.Windows.Documents;
-    using Snyk.VisualStudio.Extension.Service;
 
     /// <summary>
     /// Interaction logic for DataFlowStepsControl.xaml.

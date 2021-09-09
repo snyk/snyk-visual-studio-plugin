@@ -76,6 +76,8 @@
                         this.dataFlowStepsControl.AddStep(dataFlowStep);
                     }
                 }
+
+                this.externalExampleFixesControl.DisplayFixes(suggestion.Fixes);
             }
         }
 
