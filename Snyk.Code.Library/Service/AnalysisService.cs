@@ -111,6 +111,7 @@
                         Title = suggestionDto.Title,
                         Cwe = suggestionDto.Cwe,
                         Text = suggestionDto.Text,
+                        RepoDatasetSize = suggestionDto.RepoDatasetSize,
                         ExampleCommitDescriptions = suggestionDto.ExampleCommitDescriptions,
                         Rows = Tuple.Create(fileDto.Rows[0], fileDto.Rows[1]),
                         Columns = Tuple.Create(fileDto.Cols[0], fileDto.Cols[1]),

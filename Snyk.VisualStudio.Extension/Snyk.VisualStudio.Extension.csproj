@@ -131,6 +131,9 @@
       <DependentUpon>DataFlowStepsControl.xaml</DependentUpon>
     </Compile>
     <Compile Include="Snyk\VisualStudio\Extension\UI\Toolwindow\SnykCode\DataFlowStepsViewModel.cs" />
+    <Compile Include="Snyk\VisualStudio\Extension\UI\Toolwindow\SnykCode\ExternalExampleFixesControl.xaml.cs">
+      <DependentUpon>ExternalExampleFixesControl.xaml</DependentUpon>
+    </Compile>
     <Compile Include="Snyk\VisualStudio\Extension\UI\Toolwindow\SnykCode\SnykCodeDescriptionControl.xaml.cs">
       <DependentUpon>SnykCodeDescriptionControl.xaml</DependentUpon>
     </Compile>
@@ -595,6 +598,10 @@
       <Generator>MSBuild:Compile</Generator>
     </Page>
     <Page Include="Snyk\VisualStudio\Extension\UI\Toolwindow\SnykCode\DataFlowStepsControl.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="Snyk\VisualStudio\Extension\UI\Toolwindow\SnykCode\ExternalExampleFixesControl.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>
