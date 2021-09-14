@@ -33,6 +33,7 @@
                             <Setter Property="FontWeight" Value="Normal"></Setter>
                         </DataTrigger>
                     </Style.Triggers>
+                    <Setter Property="IsEnabled" Value="{Binding IsEnabled}"/>
                     <Setter Property="Template">
                         <Setter.Value>
                             <ControlTemplate TargetType="TreeViewItem">
