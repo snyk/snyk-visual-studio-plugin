@@ -501,9 +501,14 @@
 
                     treeNode = snykCodeTreeNode;
 
-                    var filePath = this.serviceProvider.SolutionService.GetFileFullPath(snykCodeTreeNode.Suggestion.FileName);
+                    var suggestion = snykCodeTreeNode.Suggestion;
 
-                    VsCodeService.Instance.OpenFile(filePath);
+                    VsCodeService.Instance.OpenAndNavigate(
+                        this.serviceProvider.SolutionService.GetFileFullPath(suggestion.FileName),
+                        suggestion.Rows.Item1 - 1,
+                        suggestion.Columns.Item1 - 1,
+                        suggestion.Rows.Item2 - 1,
+                        suggestion.Columns.Item2);
                 }
 
                 if (treeNode == null)
