@@ -32,8 +32,6 @@
 
         private SnykActivityLogger logger;
 
-        private static readonly int MaxSastRequestAttempts = 20;
-
         private SnykApiService apiService;
 
         private Timer snykCodeEnableTimer = new Timer();
@@ -190,7 +188,7 @@
             {
                 var serviceProvider = this.OptionsDialogPage.ServiceProvider;
                 var tasksService = serviceProvider.TasksService;
-
+                
                 if (SnykCli.IsCliExists())
                 {
                     Logger.Information("CLI exists. Calling SetupApiToken method");
