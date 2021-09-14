@@ -19,9 +19,9 @@
 
         private readonly RootTreeNode cliRootNode;
 
-        private readonly RootTreeNode codeSequrityRootNode;
+        private readonly SnykCodeSecurityRootTreeNode codeSequrityRootNode;
 
-        private readonly RootTreeNode codeQualityRootNode;
+        private readonly SnykCodeQualityRootTreeNode codeQualityRootNode;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="SnykFilterableTree"/> class.
@@ -54,26 +54,17 @@
         /// <summary>
         /// Gets code sequrity root node.
         /// </summary>
-        public RootTreeNode CodeSequrityRootNode => this.codeSequrityRootNode;
+        public SnykCodeSecurityRootTreeNode CodeSequrityRootNode => this.codeSequrityRootNode;
 
         /// <summary>
         /// Gets code quality root node.
         /// </summary>
-        public RootTreeNode CodeQualityRootNode => this.codeQualityRootNode;
+        public SnykCodeQualityRootTreeNode CodeQualityRootNode => this.codeQualityRootNode;
 
         /// <summary>
         /// Set cli root node title to error.
         /// </summary>
         public void SetCliRootNodeTitleToError() => this.cliRootNode.SetErrorTitle();
-
-        /// <summary>
-        /// Set cli root node title to error.
-        /// </summary>
-        public void SetSnykCodeRootNodesTitleToError()
-        {
-            this.codeQualityRootNode.SetErrorTitle();
-            this.codeSequrityRootNode.SetErrorTitle();
-        }
 
         /// <summary>
         /// Gets a value indicating whether tree items.

@@ -86,6 +86,8 @@
     <Compile Include="Snyk\VisualStudio\Extension\Commands\SnykOpenSettingsCommand.cs" />
     <Compile Include="Snyk\VisualStudio\Extension\Commands\SnykScanCommand.cs" />
     <Compile Include="Snyk\VisualStudio\Extension\Commands\SnykStopCurrentTaskCommand.cs" />
+    <Compile Include="Snyk\VisualStudio\Extension\Service\SastSettings.cs" />
+    <Compile Include="Snyk\VisualStudio\Extension\Service\SnykApiService.cs" />
     <Compile Include="Snyk\VisualStudio\Extension\Service\VsCodeService.cs" />
     <Compile Include="Snyk\VisualStudio\Extension\Settings\SnykSettingsChangedEventArgs.cs" />
     <Compile Include="Snyk\VisualStudio\Extension\SnykExtension.cs" />
@@ -137,6 +139,7 @@
     <Compile Include="Snyk\VisualStudio\Extension\UI\Toolwindow\SnykCode\SnykCodeDescriptionControl.xaml.cs">
       <DependentUpon>SnykCodeDescriptionControl.xaml</DependentUpon>
     </Compile>
+    <Compile Include="Snyk\VisualStudio\Extension\UI\Tree\RootTreeNodeState.cs" />
     <Compile Include="Snyk\VisualStudio\Extension\UI\Tree\SnykCodeQualityRootTreeNode.cs" />
     <Compile Include="Snyk\VisualStudio\Extension\UI\Notifications\VsInfoBarService.cs" />
     <Compile Include="Snyk\VisualStudio\Extension\UI\Notifications\VsStatusBar.cs" />
@@ -205,6 +208,11 @@
     <Compile Include="Snyk\VisualStudio\Extension\UI\Toolwindow\ToolWindowContext.cs" />
     <Compile Include="Snyk\VisualStudio\Extension\UI\Toolwindow\ToolWindowState.cs" />
     <Compile Include="Snyk\VisualStudio\Extension\UI\Tree\TreeNode.cs" />
+    <Compile Include="VSPackage.Designer.cs">
+      <AutoGen>True</AutoGen>
+      <DesignTime>True</DesignTime>
+      <DependentUpon>VSPackage.resx</DependentUpon>
+    </Compile>
   </ItemGroup>
   <ItemGroup>
     <Content Include="appsettings.json">
@@ -372,6 +380,10 @@
     <Resource Include="Resources\TSFileNodeDark.png">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Resource>
+    <EmbeddedResource Include="Resources\StatusInformationNoColor.png">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </EmbeddedResource>
+    <Content Include="Resources\StatusInformationNoColor_32.png" />
     <Content Include="stylesheet.css" />
   </ItemGroup>
   <ItemGroup>
@@ -582,6 +594,8 @@
     <EmbeddedResource Include="VSPackage.resx">
       <MergeWithCTO>true</MergeWithCTO>
       <ManifestResourceName>VSPackage</ManifestResourceName>
+      <Generator>ResXFileCodeGenerator</Generator>
+      <LastGenOutput>VSPackage.Designer.cs</LastGenOutput>
     </EmbeddedResource>
   </ItemGroup>
   <ItemGroup>
