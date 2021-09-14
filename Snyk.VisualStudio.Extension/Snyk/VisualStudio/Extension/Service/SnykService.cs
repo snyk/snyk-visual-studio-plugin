@@ -47,6 +47,8 @@
 
         private FiltersService filterService;
 
+        private SnykApiService apiService;
+
         /// <summary>
         /// Initializes a new instance of the <see cref="SnykService"/> class.
         /// </summary>
@@ -155,6 +157,20 @@
                 }
 
                 return this.snykCodeService;
+            }
+        }
+
+        /// <inheritdoc/>
+        public SnykApiService ApiService
+        {
+            get
+            {
+                if (this.apiService == null)
+                {
+                    this.apiService = new SnykApiService(this.Options);
+                }
+
+                return this.apiService;
             }
         }
 

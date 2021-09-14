@@ -6,6 +6,7 @@
     using System.Threading.Tasks;
     using System.Windows.Forms;
     using Snyk.VisualStudio.Extension.CLI;
+    using Snyk.VisualStudio.Extension.Service;
     using static Snyk.VisualStudio.Extension.CLI.SnykCliDownloader;
 
     /// <summary>
@@ -23,6 +24,8 @@
 
         private SnykActivityLogger logger;
 
+        private SnykApiService apiService;
+
         private Action<string> successCallbackAction;
 
         private Action<string> errorCallbackAction;
@@ -30,12 +33,15 @@
         /// <summary>
         /// Initializes a new instance of the <see cref="SnykGeneralSettingsUserControl"/> class.
         /// </summary>
+        /// <param name="apiService">Snyk API service instance.</param>
         /// <param name="logger">ActivityLogger parameter.</param>
-        public SnykGeneralSettingsUserControl(SnykActivityLogger logger)
+        public SnykGeneralSettingsUserControl(SnykApiService apiService, SnykActivityLogger logger)
         {
             this.InitializeComponent();
 
             this.logger = logger;
+
+            this.apiService = apiService;
         }
 
         /// <summary>
@@ -52,8 +58,6 @@
             this.ignoreUnknownCACheckBox.Checked = this.OptionsDialogPage.IgnoreUnknownCA;
             this.usageAnalyticsCheckBox.Checked = this.OptionsDialogPage.UsageAnalyticsEnabled;
             this.ossEnabledCheckBox.Checked = this.OptionsDialogPage.OssEnabled;
-            this.codeSecurityEnabledCheckBox.Checked = this.OptionsDialogPage.SnykCodeSecurityEnabled;
-            this.codeQualityEnabledCheckBox.Checked = this.OptionsDialogPage.SnykCodeQualityEnabled;
 
             this.successCallbackAction = (apiToken) =>
             {
@@ -180,7 +184,7 @@
             {
                 var serviceProvider = OptionsDialogPage.ServiceProvider;
                 var tasksService = serviceProvider.TasksService;
-
+                
                 if (SnykCli.IsCliExists())
                 {
                     this.logger.LogInformation("CLI exists. Calling SetupApiToken method");
@@ -340,6 +344,23 @@
         private void SnykGeneralSettingsUserControl_Load(object sender, EventArgs e)
         {
             this.InitializeApiToken();
+
+            _ = this.InitializeSnykCodeElementsStateAsync();
+        }
+
+        private async Task InitializeSnykCodeElementsStateAsync()
+        {
+            bool snykCodeEnabled = await this.apiService.IsSnyCodeEnabledAsync();
+
+            this.codeSecurityEnabledCheckBox.Checked = snykCodeEnabled;
+            this.codeQualityEnabledCheckBox.Checked = snykCodeEnabled;
+
+            this.codeSecurityEnabledCheckBox.Enabled = snykCodeEnabled;
+            this.codeQualityEnabledCheckBox.Enabled = snykCodeEnabled;
+
+            this.snykCodeDisabledInfoLabel.Visible = !snykCodeEnabled;
+            this.snykCodeSettingsLinkLabel.Visible = !snykCodeEnabled;
+            this.checkAgainLinkLabel.Visible = !snykCodeEnabled;
         }
 
         private void UsageAnalyticsCheckBox_CheckedChanged(object sender, EventArgs e)
@@ -364,6 +385,28 @@
         private void CodeQualityEnabledCheckBox_CheckedChanged(object sender, EventArgs e)
         {
             this.OptionsDialogPage.SnykCodeQualityEnabled = this.codeQualityEnabledCheckBox.Checked;
+        }
+
+        private void SnykCodeSettingsLinkLabel_LinkClicked(object sender, LinkLabelLinkClickedEventArgs e)
+            => System.Diagnostics.Process.Start(this.GetSnykCodeSettingsUrl());
+
+        private string GetSnykCodeSettingsUrl()
+        {
+            string endpoint = this.customEndpointTextBox.Text;
+
+            if (string.IsNullOrEmpty(endpoint))
+            {
+                endpoint = "https://app.snyk.io";
+            }
+
+            endpoint.Replace("https://", "https://app.");
+
+            return $"{endpoint}/manage/snyk-code";
+        }
+
+        private void CheckAgainLinkLabel_LinkClicked(object sender, LinkLabelLinkClickedEventArgs e)
+        {
+            _ = this.InitializeSnykCodeElementsStateAsync();
         }
     }
 }
