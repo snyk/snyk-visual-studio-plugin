@@ -9,36 +9,43 @@
     /// </summary>
     public abstract class RootTreeNode : TreeNode
     {
-        private bool enabled;
+        private RootTreeNodeState state;
 
         private IRefreshable parent;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="RootTreeNode"/> class.
-        /// <para name="parent">Refreshable reference</para>
         /// </summary>
+        /// <param name="parent">Refreshable reference.</param>
         public RootTreeNode(IRefreshable parent)
         {
             this.parent = parent;
 
-            base.Title = this.GetDefaultDisabledTitle();
+            this.State = RootTreeNodeState.Disabled;
         }
 
         /// <inheritdoc/>
         public override string Title
         {
-            set
+            get
             {
-                if (this.enabled)
+                string title = string.Empty;
+
+                switch (this.state)
                 {
-                    base.Title = value;
-                }
-                else
-                {
-                    base.Title = this.GetDefaultDisabledTitle();
+                    case RootTreeNodeState.Enabled:
+                        title = this.GetDefaultTitle();
+                        break;
+                    case RootTreeNodeState.DisabledForOrganization:
+                        title = this.GetDisabledForOrganizationTitle();
+                        break;
+                    case RootTreeNodeState.Disabled:
+                    default:
+                        title = this.GetDefaultDisabledTitle();
+                        break;
                 }
 
-                this.parent.Refresh();
+                return title;
             }
         }
 
@@ -46,23 +53,21 @@
         public override bool IsRoot => true;
 
         /// <summary>
-        /// Gets or sets a value indicating whether is root node enabled.
+        /// Gets a value indicating whether is root node enabled.
         /// </summary>
-        public bool Enabled
+        public bool Enabled => this.State == RootTreeNodeState.Enabled;
+
+        /// <summary>
+        /// Gets or sets node state.
+        /// </summary>
+        public RootTreeNodeState State
         {
-            get => this.enabled;
+            get => this.state;
             set
             {
-                this.enabled = value;
+                this.state = value;
 
-                if (this.enabled)
-                {
-                    this.Title = this.GetDefaultTitle();
-                } 
-                else
-                {
-                    this.Title = this.GetDefaultDisabledTitle();
-                }
+                this.parent.Refresh();
             }
         }
 
@@ -155,5 +160,7 @@
         private string GetDefaultTitle() => this.GetTitlePrefix();
 
         private string GetDefaultDisabledTitle() => this.GetTitlePrefix() + " (disabled)";
+
+        private string GetDisabledForOrganizationTitle() => this.GetTitlePrefix() + " (disabled for organization)";
     }
 }
