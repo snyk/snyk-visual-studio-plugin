@@ -13,7 +13,7 @@
         /// <summary>
         /// Gets or sets a value indicating anaylysis progress (from 0 to 1).
         /// </summary>
-        public long Progress { get; set; }
+        public float Progress { get; set; }
 
         /// <summary>
         /// Gets or sets a value indicating anaylysis url.

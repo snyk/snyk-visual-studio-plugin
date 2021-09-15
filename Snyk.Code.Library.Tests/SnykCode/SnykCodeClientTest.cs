@@ -416,6 +416,14 @@
             Assert.True(status.IsSucccess);
         }
 
+        [Fact]
+        public void SnykCodeClient_WaitingAnalysisResultJsonProvided_DeserialisationAnalysisJsonSuccess()
+        {
+            var analysisResultDto = Json.Deserialize<AnalysisResultDto>("{\"status\":\"ANALYZING\",\"progress\":0.5,\"complete\":false}");
+
+            Assert.NotNull(analysisResultDto);
+        }
+
         private string GetResourceContent(string resourceName) 
             => File.ReadAllText(Path.Combine(Directory.GetCurrentDirectory(), "Resources", resourceName));
     }
