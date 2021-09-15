@@ -144,7 +144,7 @@
             {
                 if (this.snykCodeService == null)
                 {
-                    var codeClient = new SnykCodeClient("https://deeproxy.snyk.io/", this.Options.ApiToken);
+                    var codeClient = new SnykCodeClient(SnykExtension.GetAppSettings().SnykCodeApiEndpoinUrl, this.Options.ApiToken);
 
                     this.filterService = new FiltersService(codeClient);
 
