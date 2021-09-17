@@ -356,6 +356,9 @@
 
         private void UpdateSnykCodeEnablementSettings(bool snykCodeEnabled)
         {
+            this.codeSecurityEnabledCheckBox.Checked = snykCodeEnabled;
+            this.codeQualityEnabledCheckBox.Checked = snykCodeEnabled;
+
             this.codeSecurityEnabledCheckBox.Enabled = snykCodeEnabled;
             this.codeQualityEnabledCheckBox.Enabled = snykCodeEnabled;
 
