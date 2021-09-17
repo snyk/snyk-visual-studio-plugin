@@ -390,12 +390,10 @@
 
             this.resultsTree.CliRootNode.State = options.OssEnabled? RootTreeNodeState.Enabled : RootTreeNodeState.Disabled;
 
-            if (!await this.serviceProvider.ApiService.IsSnyCodeEnabledAsync())
+            if (!await this.serviceProvider.ApiService.IsSnykCodeEnabledAsync())
             {
                 this.resultsTree.CodeQualityRootNode.State = RootTreeNodeState.DisabledForOrganization;
                 this.resultsTree.CodeSequrityRootNode.State = RootTreeNodeState.DisabledForOrganization;
-
-                this.resultsTree.Refresh();
             }
             else
             {

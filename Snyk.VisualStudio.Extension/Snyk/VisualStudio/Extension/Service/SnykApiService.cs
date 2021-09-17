@@ -70,7 +70,7 @@
         /// Request server and return SastEnabled or if some error occure return false.
         /// </summary>
         /// <returns>SnykCode enabled or disabled value.</returns>
-        public async Task<bool> IsSnyCodeEnabledAsync()
+        public async Task<bool> IsSnykCodeEnabledAsync()
         {
             bool isSnykCodeEnabled;
 
