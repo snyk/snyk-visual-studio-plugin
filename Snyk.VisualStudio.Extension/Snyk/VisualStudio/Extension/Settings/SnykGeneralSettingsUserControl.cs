@@ -352,6 +352,8 @@
 
         private void UpdateSnykCodeEnablementSettings(bool snykCodeEnabled)
         {
+            bool snykCodeEnabled = await this.apiService.IsSnyCodeEnabledAsync();
+
             this.codeSecurityEnabledCheckBox.Enabled = snykCodeEnabled;
             this.codeQualityEnabledCheckBox.Enabled = snykCodeEnabled;
 
