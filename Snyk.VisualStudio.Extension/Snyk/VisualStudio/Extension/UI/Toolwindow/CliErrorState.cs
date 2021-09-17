@@ -46,7 +46,7 @@
             {
                 await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
 
-                this.ToolWindowControl.VulnerabilitiesTree.CliRootNode.SetErrorTitle();
+                this.ToolWindowControl.VulnerabilitiesTree.CliRootNode.State = Tree.RootTreeNodeState.Error;
             });
         }
     }

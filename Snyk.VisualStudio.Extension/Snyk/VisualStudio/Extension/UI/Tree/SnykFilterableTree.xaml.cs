@@ -62,11 +62,6 @@
         public SnykCodeQualityRootTreeNode CodeQualityRootNode => this.codeQualityRootNode;
 
         /// <summary>
-        /// Set cli root node title to error.
-        /// </summary>
-        public void SetCliRootNodeTitleToError() => this.cliRootNode.SetErrorTitle();
-
-        /// <summary>
         /// Gets a value indicating whether tree items.
         /// </summary>
         public ItemCollection Items => this.vulnerabilitiesTree.Items;
@@ -116,11 +111,12 @@
                 this.cliRootNode.Items.Add(fileNode);
             });
 
-            this.cliRootNode.SetDetails(
-                cliResult.CriticalSeverityCount,
-                cliResult.HighSeverityCount,
-                cliResult.MediumSeverityCount,
-                cliResult.LowSeverityCount);
+            this.cliRootNode.CriticalSeverityCount = cliResult.CriticalSeverityCount;
+            this.cliRootNode.HighSeverityCount = cliResult.HighSeverityCount;
+            this.cliRootNode.MediumSeverityCount = cliResult.MediumSeverityCount;
+            this.cliRootNode.LowSeverityCount = cliResult.LowSeverityCount;
+
+            this.CliRootNode.State = RootTreeNodeState.ResultDetails;
         }
 
         /// <summary>
@@ -261,11 +257,12 @@
                 rootNode.Items.Add(issueNode);
             }
 
-            rootNode.SetDetails(
-                crititcalSeverityCount,
-                highSeverityCount,
-                mediumSeverityCount,
-                lowSeverityCount);
+            rootNode.CriticalSeverityCount = crititcalSeverityCount;
+            rootNode.HighSeverityCount = highSeverityCount;
+            rootNode.MediumSeverityCount = mediumSeverityCount;
+            rootNode.LowSeverityCount = lowSeverityCount;
+
+            rootNode.State = RootTreeNodeState.ResultDetails;
         }
     }
 }
