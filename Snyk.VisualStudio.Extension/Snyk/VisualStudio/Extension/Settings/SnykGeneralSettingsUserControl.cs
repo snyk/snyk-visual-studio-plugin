@@ -34,6 +34,8 @@
 
         private Timer snykCodeEnableTimer = new Timer();
 
+        private Timer snykCodeEnableTimer = new Timer();
+
         private Action<string> successCallbackAction;
 
         private Action<string> errorCallbackAction;
@@ -186,7 +188,7 @@
             {
                 var serviceProvider = this.OptionsDialogPage.ServiceProvider;
                 var tasksService = serviceProvider.TasksService;
-                
+
                 if (SnykCli.IsCliExists())
                 {
                     Logger.Information("CLI exists. Calling SetupApiToken method");
