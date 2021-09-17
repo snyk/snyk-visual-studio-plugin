@@ -137,7 +137,7 @@
 
                 this.resultsGrid.Visibility = Visibility.Visible;
 
-                this.resultsTree.CliRootNode.SetScanningTitle();
+                this.resultsTree.CliRootNode.State = RootTreeNodeState.Scanning;
             });
         }
 
@@ -154,8 +154,8 @@
             {
                 await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
 
-                this.resultsTree.CodeSequrityRootNode.SetScanningTitle();
-                this.resultsTree.CodeQualityRootNode.SetScanningTitle();
+                this.resultsTree.CodeSequrityRootNode.State = RootTreeNodeState.Scanning;
+                this.resultsTree.CodeQualityRootNode.State = RootTreeNodeState.Scanning;
             });
         }
 
@@ -175,7 +175,7 @@
         {
             await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
 
-            this.resultsTree.CliRootNode.SetErrorTitle();
+            this.resultsTree.CliRootNode.State = RootTreeNodeState.Error;
 
             NotificationService.Instance.ShowWarningInfoBar("Snyk Open Source error: " + eventArgs.Error.Message);
         });
@@ -195,8 +195,8 @@
         {
             await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
 
-            this.resultsTree.CodeQualityRootNode.SetErrorTitle();
-            this.resultsTree.CodeSequrityRootNode.SetErrorTitle();
+            this.resultsTree.CodeQualityRootNode.State = RootTreeNodeState.Error;
+            this.resultsTree.CodeSequrityRootNode.State = RootTreeNodeState.Error;
 
             NotificationService.Instance.ShowWarningInfoBar("SnykCode error: " + eventArgs.Error);
         });

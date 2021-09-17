@@ -20,5 +20,20 @@
         /// Disabled for organization state.
         /// </summary>
         DisabledForOrganization,
+
+        /// <summary>
+        /// Scanning node state.
+        /// </summary>
+        Scanning,
+
+        /// <summary>
+        /// Show result details for node.
+        /// </summary>
+        ResultDetails,
+
+        /// <summary>
+        /// Scan error state.
+        /// </summary>
+        Error,
     }
 }

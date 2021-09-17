@@ -14,7 +14,7 @@
     [Guid("d45468c1-33d2-4dca-9780-68abaedf95e7")]
     public class SnykGeneralOptionsDialogPage : DialogPage, ISnykOptions
     {
-        private static readonly ILogger logger = LogManager.ForContext<SnykGeneralOptionsDialogPage>();
+        private static readonly ILogger Logger = LogManager.ForContext<SnykGeneralOptionsDialogPage>();
 
         private ISnykServiceProvider serviceProvider;
 
@@ -114,7 +114,7 @@
                 }
                 catch (Exception exception)
                 {
-                    logger.Error(exception.Message);
+                    Logger.Error(exception.Message);
                 }
             }
         }

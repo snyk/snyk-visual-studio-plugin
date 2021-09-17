@@ -352,9 +352,6 @@
         {
             bool snykCodeEnabled = await this.apiService.IsSnyCodeEnabledAsync();
 
-            this.codeSecurityEnabledCheckBox.Checked = snykCodeEnabled;
-            this.codeQualityEnabledCheckBox.Checked = snykCodeEnabled;
-
             this.codeSecurityEnabledCheckBox.Enabled = snykCodeEnabled;
             this.codeQualityEnabledCheckBox.Enabled = snykCodeEnabled;
 
