@@ -186,7 +186,7 @@
             {
                 var serviceProvider = this.OptionsDialogPage.ServiceProvider;
                 var tasksService = serviceProvider.TasksService;
-                
+
                 if (SnykCli.IsCliExists())
                 {
                     Logger.Information("CLI exists. Calling SetupApiToken method");
@@ -359,6 +359,45 @@
             this.snykCodeSettingsLinkLabel.Visible = !snykCodeEnabled;
             this.checkAgainLinkLabel.Visible = !snykCodeEnabled;
         }
+
+        private async Task StartSastEnablementCheckLoopAsync()
+        {
+            if (this.snykCodeEnableTimer.Enabled)
+            {
+                this.snykCodeEnableTimer.Stop();
+            }
+
+            bool onServerSnykCodeEnabled = await this.apiService.IsSnykCodeEnabledAsync();
+
+            this.UpdateSnykCodeEnablementSettings(onServerSnykCodeEnabled);
+
+            if (!onServerSnykCodeEnabled)
+            {
+                int currentRequestAttempt = 1;
+
+                this.snykCodeEnableTimer.Interval = TwoSecondsDelay;
+
+                this.snykCodeEnableTimer.Tick += async (sender, eventArgs) =>
+                {
+                    bool snykCodeEnabled = await this.apiService.IsSnykCodeEnabledAsync();
+
+                    this.UpdateSnykCodeEnablementSettings(snykCodeEnabled);
+
+                    if (snykCodeEnabled)
+                    {
+                        this.snykCodeEnableTimer.Stop();
+                    }
+                    else if (currentRequestAttempt < MaxSastRequestAttempts)
+                    {
+                        currentRequestAttempt++;
+
+                        this.snykCodeEnableTimer.Interval = TwoSecondsDelay * currentRequestAttempt;
+                    }
+                    else
+                    {
+                        this.snykCodeEnableTimer.Stop();
+                    }
+                };
 
         private async Task StartSastEnablementCheckLoopAsync()
         {
