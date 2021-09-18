@@ -17,6 +17,8 @@
     /// </summary>
     public class SnykUserStorageSettingsService
     {
+        private static readonly ILogger Logger = LogManager.ForContext<SnykUserStorageSettingsService>();
+
         /// <summary>
         /// Last date for check of CLI release.
         /// </summary>
