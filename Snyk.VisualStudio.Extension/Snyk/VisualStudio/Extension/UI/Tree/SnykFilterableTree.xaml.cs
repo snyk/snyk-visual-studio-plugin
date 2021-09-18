@@ -72,69 +72,78 @@
         public object SelectedItem => this.vulnerabilitiesTree.SelectedItem;
 
         /// <summary>
+        /// Sets <see cref="OssResult"/> instance.
+        /// </summary>
+        public CliResult OssResult
+        {
+            set
+            {
+                if (!this.ossRootNode.Enabled)
+                {
+                    return;
+                }
+
+                this.ossRootNode.Items.Clear();
+
+                var cliResult = value;
+
+                var groupVulnerabilities = cliResult.GroupVulnerabilities;
+
+                groupVulnerabilities.ForEach(delegate (CliGroupedVulnerabilities groupedVulnerabilities)
+                {
+                    var fileNode = new OssVulnerabilityTreeNode
+                    {
+                        Vulnerabilities = groupedVulnerabilities,
+                    };
+
+                    foreach (string key in groupedVulnerabilities.VulnerabilitiesMap.Keys)
+                    {
+                        var node = new OssVulnerabilityTreeNode
+                        {
+                            Vulnerability = groupedVulnerabilities.VulnerabilitiesMap[key][0],
+                        };
+
+                        fileNode.Items.Add(node);
+                    }
+
+                    this.ossRootNode.Items.Add(fileNode);
+                });
+
+                this.ossRootNode.CriticalSeverityCount = cliResult.CriticalSeverityCount;
+                this.ossRootNode.HighSeverityCount = cliResult.HighSeverityCount;
+                this.ossRootNode.MediumSeverityCount = cliResult.MediumSeverityCount;
+                this.ossRootNode.LowSeverityCount = cliResult.LowSeverityCount;
+
+                this.CliRootNode.State = RootTreeNodeState.ResultDetails;
+            }
+        }
+
+        /// <summary>
+        /// Sets <see cref="AnalysisResult"/> data to tree.
+        /// </summary>
+        /// <param name="analysisResult"><see cref="AnalysisResult"/> object.</param>
+        public AnalysisResult AnalysisResults
+        {
+            set
+            {
+                if (this.codeSequrityRootNode.Enabled)
+                {
+                    this.AppendSnykCodeIssues(this.codeSequrityRootNode, value, suggestion => suggestion.Categories.Contains("Security"));
+                }
+
+                if (this.codeQualityRootNode.Enabled)
+                {
+                    this.AppendSnykCodeIssues(this.codeQualityRootNode, value, suggestion => !suggestion.Categories.Contains("Security"));
+                }
+            }
+        }
+
+        /// <summary>
         /// Find resource by key.
         /// </summary>
         /// <param name="resourceKey">Resource key.</param>
         /// <returns>object</returns>
         public static object GetControlResource(object resourceKey) => instance.FindResource(resourceKey);
-
-        /// <summary>
-        /// Append <see cref="CliResult"/> data to tree.
-        /// </summary>
-        /// <param name="cliResult"><see cref="CliResult"/> object.</param>
-        public void AppendVulnerabilities(CliResult cliResult)
-        {
-            if (!this.ossRootNode.Enabled)
-            {
-                return;
-            }
-
-            var groupVulnerabilities = cliResult.GroupVulnerabilities;
-
-            groupVulnerabilities.ForEach(delegate (CliGroupedVulnerabilities groupedVulnerabilities)
-            {
-                var fileNode = new OssVulnerabilityTreeNode
-                {
-                    Vulnerabilities = groupedVulnerabilities,
-                };
-
-                foreach (string key in groupedVulnerabilities.VulnerabilitiesMap.Keys)
-                {
-                    var node = new OssVulnerabilityTreeNode
-                    {
-                        Vulnerability = groupedVulnerabilities.VulnerabilitiesMap[key][0],
-                    };
-
-                    fileNode.Items.Add(node);
-                }
-
-                this.ossRootNode.Items.Add(fileNode);
-            });
-
-            this.ossRootNode.CriticalSeverityCount = cliResult.CriticalSeverityCount;
-            this.ossRootNode.HighSeverityCount = cliResult.HighSeverityCount;
-            this.ossRootNode.MediumSeverityCount = cliResult.MediumSeverityCount;
-            this.ossRootNode.LowSeverityCount = cliResult.LowSeverityCount;
-
-            this.CliRootNode.State = RootTreeNodeState.ResultDetails;
-        }
-
-        /// <summary>
-        /// Append <see cref="AnalysisResult"/> data to tree.
-        /// </summary>
-        /// <param name="analysisResult"><see cref="AnalysisResult"/> object.</param>
-        public void AppendIssues(AnalysisResult analysisResult)
-        {
-            if (this.codeSequrityRootNode.Enabled)
-            {
-                this.AppendSnykCodeIssues(this.codeSequrityRootNode, analysisResult, suggestion => suggestion.Categories.Contains("Security"));
-            }
-
-            if (this.codeQualityRootNode.Enabled)
-            {
-                this.AppendSnykCodeIssues(this.codeQualityRootNode, analysisResult, suggestion => !suggestion.Categories.Contains("Security"));
-            }
-        }
 
         /// <inheritdoc/>
         public void Refresh() => this.vulnerabilitiesTree.Items.Refresh();
