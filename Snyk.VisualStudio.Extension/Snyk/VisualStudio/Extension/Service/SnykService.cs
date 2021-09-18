@@ -7,8 +7,10 @@
     using Microsoft.VisualStudio.Settings;
     using Microsoft.VisualStudio.Shell.Interop;
     using Microsoft.VisualStudio.Shell.Settings;
+    using Serilog;
     using Snyk.Code.Library.Api;
     using Snyk.Code.Library.Service;
+    using Snyk.Common;
     using Snyk.VisualStudio.Extension.CLI;
     using Snyk.VisualStudio.Extension.Settings;
     using Snyk.VisualStudio.Extension.SnykAnalytics;
@@ -23,6 +25,8 @@
     /// </summary>
     public class SnykService : ISnykServiceProvider, ISnykService
     {
+        private static readonly ILogger Logger = LogManager.ForContext<SnykService>();
+
         private readonly IAsyncServiceProvider serviceProvider;
 
         private SnykActivityLogger activityLogger;
@@ -144,14 +148,7 @@
             {
                 if (this.snykCodeService == null)
                 {
-                    var codeClient = new SnykCodeClient(SnykExtension.GetAppSettings().SnykCodeApiEndpoinUrl, this.Options.ApiToken);
-
-                    this.filterService = new FiltersService(codeClient);
-
-                    var bundleService = new BundleService(codeClient);
-                    var analysisService = new AnalysisService(codeClient);
-
-                    this.snykCodeService = new SnykCodeService(bundleService, analysisService, this.filterService);
+                    this.SetupSnykCodeService();
                 }
 
                 return this.snykCodeService;
@@ -166,6 +163,8 @@
                 if (this.apiService == null)
                 {
                     this.apiService = new SnykApiService(this.Options);
+
+                    this.Options.SettingsChanged += this.OnSettingsChanged;
                 }
 
                 return this.apiService;
@@ -253,6 +252,32 @@
             }
 
             return this.NewCli().GetApiToken();
+        }
+
+        private void OnSettingsChanged(object sender, SnykSettingsChangedEventArgs e) => this.SetupSnykCodeService();
+
+        private void SetupSnykCodeService()
+        {
+            try
+            {
+                var options = this.Options;
+
+                string endpoint = string.IsNullOrEmpty(options.CustomEndpoint)
+                    ? SnykExtension.GetAppSettings().SnykCodeApiEndpoinUrl : options.CustomEndpoint;
+
+                var codeClient = new SnykCodeClient(endpoint, this.Options.ApiToken);
+
+                this.filterService = new FiltersService(codeClient);
+
+                var bundleService = new BundleService(codeClient);
+                var analysisService = new AnalysisService(codeClient);
+
+                this.snykCodeService = new SnykCodeService(bundleService, analysisService, this.filterService);
+            }
+            catch (Exception e)
+            {
+                Logger.Error(e, string.Empty);
+            }
         }
     }
 }
