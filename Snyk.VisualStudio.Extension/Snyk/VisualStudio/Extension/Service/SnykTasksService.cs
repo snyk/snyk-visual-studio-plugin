@@ -479,9 +479,11 @@
 
                                 this.FireScanningUpdateEvent(analysisResult);
                             }
-                            catch (Exception exception)
+                            catch (Exception e)
                             {
-                                this.OnSnykCodeError(exception.Message);
+                                string errorMessage = this.serviceProvider.SnykCodeService.GetSnykCodeErrorMessage(e);
+
+                                this.OnSnykCodeError(errorMessage);
                             }
                         });
 
