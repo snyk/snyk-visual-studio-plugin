@@ -1,5 +1,6 @@
 ﻿namespace Snyk.Code.Library.Tests.Api
 {
+    using System;
     using System.Collections.Generic;
     using System.Threading;
     using System.Threading.Tasks;
@@ -14,6 +15,20 @@
     /// </summary>
     public class SnykCodeServiceTest
     {
+        [Fact]
+        public void SnykCodeService_JsonErrorProvided_GetSnykCodeErrorMessage()
+        {
+            var bundleServiceMock = new Mock<IBundleService>();
+            var filtersServiceMock = new Mock<IFiltersService>();
+            var analysisServiceMock = new Mock<IAnalysisService>();
+
+            var snykCodeService = new SnykCodeService(bundleServiceMock.Object, analysisServiceMock.Object, filtersServiceMock.Object);
+
+            string error = snykCodeService.GetSnykCodeErrorMessage(new Exception("{\"code\": 401, \"message\": \"Not authorised\"}"));
+
+            Assert.NotNull(error);
+        }
+
         [Fact]
         public async Task SnykCodeService_TwoFilesWithIssuesProvided_ScanSuccessAsync()
         {
