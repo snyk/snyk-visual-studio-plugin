@@ -5,7 +5,9 @@
     using System.Threading.Tasks;
     using Microsoft.VisualStudio;
     using Microsoft.VisualStudio.Shell.Interop;
-    using Service;
+    using Serilog;
+    using Snyk.Common;
+    using Snyk.VisualStudio.Extension.Service;
 
     /// <summary>
     /// Add support for light and dark Visual Studio themes.
@@ -16,6 +18,8 @@
         /// Event handler for VS theme changed.
         /// </summary>
         public event EventHandler<SnykVsThemeChangedEventArgs> ThemeChanged;
+
+        private static readonly ILogger Logger = LogManager.ForContext<SnykVsThemeService>();
 
         private readonly ISnykServiceProvider serviceProvider;
 
@@ -43,11 +47,11 @@
             }
             catch (COMException comException)
             {
-                this.serviceProvider.ActivityLogger.LogError(comException.Message);
+                Logger.Error(comException.Message);
             }
             catch (InvalidComObjectException comObjectException)
             {
-                this.serviceProvider.ActivityLogger.LogError(comObjectException.Message);
+                Logger.Error(comObjectException.Message);
             }
         }
 
@@ -57,7 +61,5 @@
         public void OnThemeChanged() => this.ThemeChanged?.Invoke(this, new SnykVsThemeChangedEventArgs());
     }
 
-    
-
-    public class SnykVsThemeChangedEventArgs : EventArgs { }    
+    public class SnykVsThemeChangedEventArgs : EventArgs { }
 }
