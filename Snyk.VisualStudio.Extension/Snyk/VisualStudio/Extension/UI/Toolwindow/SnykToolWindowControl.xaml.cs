@@ -39,6 +39,8 @@
             this.InitializeComponent();
 
             this.context = new ToolWindowContext(this);
+
+            this.messagePanel.Context = this.context;
         }
 
         /// <summary>
@@ -53,6 +55,7 @@
         public void InitializeEventListeners(ISnykServiceProvider serviceProvider)
         {
             this.serviceProvider = serviceProvider;
+            this.messagePanel.ServiceProvider = serviceProvider;
 
             SnykActivityLogger logger = serviceProvider.ActivityLogger;
 
@@ -80,10 +83,10 @@
 
             logger.LogInformation("Initialize Download Event Listeners");
 
-            //tasksService.DownloadStarted += this.OnDownloadStarted;
-            //tasksService.DownloadFinished += this.OnDownloadFinished;
-            //tasksService.DownloadUpdate += this.OnDownloadUpdate;
-            //tasksService.DownloadCancelled += this.OnDownloadCancelled;
+            tasksService.DownloadStarted += this.OnDownloadStarted;
+            tasksService.DownloadFinished += this.OnDownloadFinished;
+            tasksService.DownloadUpdate += this.OnDownloadUpdate;
+            tasksService.DownloadCancelled += this.OnDownloadCancelled;
 
             this.Loaded += tasksService.OnUiLoaded;
 
@@ -135,7 +138,7 @@
             {
                 await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
 
-                this.resultsGrid.Visibility = Visibility.Visible;
+                this.mainGrid.Visibility = Visibility.Visible;
 
                 this.resultsTree.CliRootNode.State = RootTreeNodeState.Scanning;
             });
@@ -177,7 +180,7 @@
 
             this.resultsTree.CliRootNode.State = RootTreeNodeState.Error;
 
-            NotificationService.Instance.ShowWarningInfoBar("Snyk Open Source error: " + eventArgs.Error.Message);
+            NotificationService.Instance.ShowWarningInfoBar(eventArgs.Error.Message);
         });
 
         /// <summary>
@@ -198,7 +201,7 @@
             this.resultsTree.CodeQualityRootNode.State = RootTreeNodeState.Error;
             this.resultsTree.CodeSequrityRootNode.State = RootTreeNodeState.Error;
 
-            NotificationService.Instance.ShowWarningInfoBar("SnykCode error: " + eventArgs.Error);
+            NotificationService.Instance.ShowWarningInfoBar(eventArgs.Error);
         });
 
         /// <summary>
@@ -266,9 +269,6 @@
         /// <param name="eventArgs">Event args.</param>
         public void OnVsThemeChanged(object sender, SnykVsThemeChangedEventArgs eventArgs)
         {
-            this.errorMessage.AdaptForeground();
-            this.errorPath.AdaptForeground();
-
             //this.overview.AdaptForeground(); todo: fix theme cheged for description panel.
         }
 
@@ -297,28 +297,6 @@
         }
 
         /// <summary>
-        /// Hide run scan message.
-        /// </summary>
-        public void HideRunScanMessage() => ThreadHelper.JoinableTaskFactory.Run(async () =>
-        {
-            await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
-
-            this.noVulnerabilitiesAddedMessageGrid.Visibility = Visibility.Collapsed;
-        });
-
-        /// <summary>
-        /// Display run scan message.
-        /// </summary>
-        public void DisplayRunScanMessage() => ThreadHelper.JoinableTaskFactory.Run(async () =>
-        {
-            await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
-
-            this.noVulnerabilitiesAddedMessageGrid.Visibility = Visibility.Visible;
-
-            this.VulnerabilitiesTree.Visibility = Visibility.Visible;
-        });
-
-        /// <summary>
         /// Display main message.
         /// </summary>
         /// <param name="text">Main message text.</param>
@@ -326,9 +304,10 @@
         {
             await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
 
-            this.message.Text = text;
+            this.messagePanel.Text = text;
 
-            this.messageGrid.Visibility = Visibility.Visible;
+            this.messagePanel.Visibility = Visibility.Visible;
+            this.descriptionPanel.Visibility = Visibility.Collapsed;
         });
 
         /// <summary>
@@ -338,23 +317,9 @@
         {
             await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
 
-            this.message.Text = string.Empty;
+            this.messagePanel.Text = string.Empty;
 
-            this.messageGrid.Visibility = Visibility.Collapsed;
-        });
-
-        /// <summary>
-        /// Display error message.
-        /// </summary>
-        /// <param name="cliError"><see cref="CliError"/> object.</param>
-        public void DisplayError(CliError cliError) => ThreadHelper.JoinableTaskFactory.Run(async () =>
-        {
-            await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
-
-            this.errorPanel.Visibility = Visibility.Visible;
-
-            this.errorMessage.Html = cliError.Message;
-            this.errorPath.Html = cliError.Path;
+            this.messagePanel.Visibility = Visibility.Collapsed;
         });
 
         /// <summary>
@@ -366,19 +331,10 @@
 
             this.resultsTree.Clear();
 
-            this.context.TransitionTo(RunScanState.Instance);
-
             this.UpdateTreeNodeItemsState();
-        });
 
-        /// <summary>
-        /// Hide issues messages.
-        /// </summary>
-        public void HideIssueMessages()
-        {
-            this.selectIssueMessageGrid.Visibility = Visibility.Collapsed;
-            this.noIssuesMessageGrid.Visibility = Visibility.Collapsed;
-        }
+            this.context.TransitionTo(RunScanState.Instance);
+        });
 
         private void OnSettingsChanged(object sender, SnykSettingsChangedEventArgs e) => this.UpdateTreeNodeItemsState();
 
@@ -480,7 +436,10 @@
 
             this.progressBar.Value = value;
 
-            this.message.Text = $"Downloading latest Snyk CLI release {value}%...";
+            this.messagePanel.Text = $"Downloading latest Snyk CLI release {value}%...";
+
+            this.messagePanel.Visibility = Visibility.Visible;
+            this.descriptionPanel.Visibility = Visibility.Collapsed;
         });
 
         private void VulnerabilitiesTree_SelectetVulnerabilityChanged(object sender, RoutedEventArgs args)
@@ -489,7 +448,7 @@
             {
                 await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
 
-                this.HideIssueMessages();
+                this.messagePanel.Visibility = Visibility.Collapsed;
 
                 TreeNode treeNode = null;
 
@@ -497,12 +456,12 @@
                 {
                     var ossTreeNode = this.resultsTree.SelectedItem as OssVulnerabilityTreeNode;
 
-                    treeNode = ossTreeNode;
-
                     var vulnerability = ossTreeNode.Vulnerability;
 
                     if (vulnerability != null)
                     {
+                        treeNode = ossTreeNode;
+
                         this.descriptionPanel.Visibility = Visibility.Visible;
 
                         this.descriptionPanel.Vulnerability = vulnerability;
@@ -539,14 +498,13 @@
                 {
                     this.descriptionPanel.Visibility = Visibility.Collapsed;
 
-                    this.selectIssueMessageGrid.Visibility = Visibility.Visible;
+                    this.messagePanel.Visibility = Visibility.Visible;
+                    this.messagePanel.SelectIssueMessage();
 
                     return;
                 }
             });
         }
-
-        private void RunButton_Click(object sender, RoutedEventArgs e) => SnykTasksService.Instance.Scan();
 
         private void StopButton_Click(object sender, RoutedEventArgs e) => SnykTasksService.Instance.CancelCurrentTask();
 
@@ -576,50 +534,6 @@
             {
                 this.context.TransitionTo(RunScanState.Instance);
             }
-        }
-
-        private void ConnectToSnykLink_Click(object sender, RoutedEventArgs e)
-        {
-            Action<string> successCallbackAction = (apiToken) =>
-            {
-                ThreadHelper.JoinableTaskFactory.Run(async () =>
-                {
-                    await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
-
-                    this.connectVSToSnykLink.IsEnabled = true;
-
-                    this.connectVSToSnykProgressBar.Visibility = Visibility.Collapsed;
-                });
-
-                this.serviceProvider.Options.ApiToken = apiToken;
-
-                this.context.TransitionTo(RunScanState.Instance);
-            };
-
-            Action<string> errorCallbackAction = (error) =>
-            {
-                ThreadHelper.JoinableTaskFactory.Run(async () =>
-                {
-                    await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
-
-                    this.connectVSToSnykLink.IsEnabled = true;
-
-                    this.connectVSToSnykProgressBar.Visibility = Visibility.Collapsed;
-                });
-
-                this.context.TransitionTo(OverviewState.Instance);
-            };
-
-            ThreadHelper.JoinableTaskFactory.Run(async () =>
-            {
-                await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
-
-                this.connectVSToSnykLink.IsEnabled = false;
-
-                this.connectVSToSnykProgressBar.Visibility = Visibility.Visible;
-            });
-
-            this.serviceProvider.Options.Authenticate(successCallbackAction, errorCallbackAction);
         }
     }
 }

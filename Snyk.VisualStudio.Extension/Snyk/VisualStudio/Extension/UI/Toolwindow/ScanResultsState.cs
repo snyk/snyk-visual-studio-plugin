@@ -20,9 +20,9 @@
         {
             await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
 
-            this.ToolWindowControl.selectIssueMessageGrid.Visibility = Visibility.Visible;
+            this.ToolWindowControl.messagePanel.SelectIssueMessage();
 
-            this.ToolWindowControl.resultsGrid.Visibility = Visibility.Visible;
+            this.ToolWindowControl.messagePanel.Visibility = Visibility.Visible;
         });
 
         /// <summary>
@@ -32,9 +32,7 @@
         {
             await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
 
-            this.ToolWindowControl.resultsGrid.Visibility = Visibility.Collapsed;
-
-            this.ToolWindowControl.HideIssueMessages();
+            this.ToolWindowControl.messagePanel.Visibility = Visibility.Collapsed;
         });
     }
 }

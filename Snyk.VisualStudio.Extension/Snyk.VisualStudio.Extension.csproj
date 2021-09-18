@@ -134,6 +134,9 @@
     <Compile Include="Snyk\VisualStudio\Extension\UI\Toolwindow\DescriptionPanel.xaml.cs">
       <DependentUpon>DescriptionPanel.xaml</DependentUpon>
     </Compile>
+    <Compile Include="Snyk\VisualStudio\Extension\UI\Toolwindow\MessagePanel.xaml.cs">
+      <DependentUpon>MessagePanel.xaml</DependentUpon>
+    </Compile>
     <Compile Include="Snyk\VisualStudio\Extension\UI\Toolwindow\OssDescriptionControl.xaml.cs">
       <DependentUpon>OssDescriptionControl.xaml</DependentUpon>
     </Compile>
@@ -158,7 +161,6 @@
     <Compile Include="Snyk\VisualStudio\Extension\UI\SnykIconProvider.cs" />
     <Compile Include="Snyk\VisualStudio\Extension\UI\Toolwindow\DownloadState.cs" />
     <Compile Include="Snyk\VisualStudio\Extension\UI\Toolwindow\EmptyState.cs" />
-    <Compile Include="Snyk\VisualStudio\Extension\UI\Toolwindow\CliErrorState.cs" />
     <Compile Include="Snyk\VisualStudio\Extension\UI\HtmlRichTextBox.cs" />
     <Compile Include="Snyk\VisualStudio\Extension\Theme\SnykVsThemeService.cs" />
     <Compile Include="Snyk\VisualStudio\Extension\SnykActivityLogger.cs" />
@@ -613,6 +615,10 @@
       <Generator>MSBuild:Compile</Generator>
     </Page>
     <Page Include="Snyk\VisualStudio\Extension\UI\Toolwindow\DescriptionPanel.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="Snyk\VisualStudio\Extension\UI\Toolwindow\MessagePanel.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>
