@@ -34,8 +34,6 @@
 
         private Timer snykCodeEnableTimer = new Timer();
 
-        private Timer snykCodeEnableTimer = new Timer();
-
         private Action<string> successCallbackAction;
 
         private Action<string> errorCallbackAction;
