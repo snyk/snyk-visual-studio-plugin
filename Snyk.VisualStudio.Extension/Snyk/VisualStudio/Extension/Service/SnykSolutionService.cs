@@ -6,7 +6,9 @@
     using EnvDTE;
     using Microsoft.VisualStudio;
     using Microsoft.VisualStudio.Shell.Interop;
+    using Serilog;
     using Snyk.Code.Library.Service;
+    using Snyk.Common;
     using Snyk.VisualStudio.Extension.Service;
     using Task = System.Threading.Tasks.Task;
 
@@ -15,24 +17,17 @@
     /// </summary>
     public class SnykSolutionService : IVsSolutionLoadManager
     {
+        private static readonly ILogger Logger = LogManager.ForContext<SnykSolutionService>();
+
         private static SnykSolutionService instance;
 
-        private SnykActivityLogger logger;
-
-        private SnykSolutionService()
-        {
-        }
+        private SnykSolutionService() { }
 
         /// <summary>
         /// Initializes a new instance of the <see cref="SnykSolutionService"/> class.
         /// </summary>
         /// <param name="serviceProvider">Service provider implementation.</param>
-        private SnykSolutionService(ISnykServiceProvider serviceProvider)
-        {
-            this.ServiceProvider = serviceProvider;
-
-            this.logger = serviceProvider.ActivityLogger;
-        }
+        private SnykSolutionService(ISnykServiceProvider serviceProvider) => this.ServiceProvider = serviceProvider;
 
         /// <summary>
         /// Gets a value indicating whether <see cref="SnykSolutionService"/> singleton instance.
@@ -43,11 +38,6 @@
         /// Gets a value indicating whether is solution open.
         /// </summary>
         public bool IsSolutionOpen => this.ServiceProvider.DTE.Solution.IsOpen;
-
-        /// <summary>
-        /// Gets a value indicating whether VS logger.
-        /// </summary>
-        public SnykActivityLogger Logger => this.logger;
 
         /// <summary>
         /// Gets or sets a value indicating whether <see cref="ISnykServiceProvider"/> instance.
@@ -106,7 +96,7 @@
                     }
                     catch (Exception ex)
                     {
-                        this.Logger.LogError(ex.Message);
+                        Logger.Error(ex.Message);
                     }
                 }
             }
@@ -136,46 +126,44 @@
         /// <returns>Path string.</returns>
         public string GetSolutionPath()
         {
-            this.logger.LogInformation("Enter GetSolutionPath method");
+            Logger.Information("Enter GetSolutionPath method");
 
-            var dteSolution = this.ServiceProvider.DTE.Solution;
+            var dte = this.ServiceProvider.DTE;
+            var solution = dte.Solution;
             var projects = this.GetProjects();
 
             string solutionPath = string.Empty;
 
             // 1 case: Solution with projects.
-            if (!dteSolution.IsDirty && projects.Count > 0)
+            // 2 case: Solution is folder.
+            if (this.IsSolutionWithProjects(solution, projects) || this.IsFolder(solution, projects))
             {
-                this.logger.LogInformation("Get solution path from solution full name in case solution with projects.");
+                Logger.Information("Path is solution with projects or folder.");
 
-                //solutionPath = dteSolution.FullName;
+                solutionPath = solution.FullName;
 
-                string fullName = dteSolution.FullName;
-                solutionPath = Directory.GetParent(dteSolution.FullName).FullName;
+                if (!File.GetAttributes(solutionPath).HasFlag(FileAttributes.Directory))
+                {
+                    Logger.Information("Remove solution file name from path.");
+
+                    solutionPath = Directory.GetParent(solutionPath).FullName;
+                }
             }
 
-            // 2 case: Flat project without solution.
+            // 3 case: Flat project without solution.
             // 4 case: Web site (in 2015)
-            if (dteSolution.IsDirty && projects.Count > 0)
+            if (this.IsFlatProjectOrWebSite(solution, projects))
             {
-                this.logger.LogInformation("Solution is 'dirty'. Get solution path from first project full name");
+                Logger.Information("Solution is 'dirty'. Get solution path from first project full name");
 
-                string projectPath = dteSolution.Projects.Item(1).FullName;
+                string projectPath = solution.Projects.Item(1).FullName;
 
-                this.logger.LogInformation($"Project path {projectPath}. Get solution path as project directory.");
+                Logger.Information($"Project path {projectPath}. Get solution path as project directory.");
 
                 solutionPath = Directory.GetParent(projectPath).FullName;
             }
 
-            // 3 case: Any Folder (in 2019).
-            if (!dteSolution.IsDirty && projects.Count == 0)
-            {
-                this.logger.LogInformation("Solution is not 'dirty' and projects count is 0. Get solution path from dte solution full name.");
-
-                solutionPath = dteSolution.FullName;
-            }
-
-            this.logger.LogInformation($"Result solution path is {solutionPath}.");
+            Logger.Information($"Result solution path is {solutionPath}.");
 
             return solutionPath;
         }
@@ -202,7 +190,7 @@
 
         private async Task InitializeSolutionEventsAsync()
         {
-            this.logger.LogInformation("Enter InitializeSolutionEvents method");
+            Logger.Information("Enter InitializeSolutionEvents method");
 
             IVsSolution vsSolution = await this.ServiceProvider.GetServiceAsync(typeof(SVsSolution)) as IVsSolution;
 
@@ -213,7 +201,7 @@
             uint pdwCookie;
             vsSolution.AdviseSolutionEvents(this.SolutionEvents, out pdwCookie);
 
-            this.logger.LogInformation("Leave InitializeSolutionEvents method");
+            Logger.Information("Leave InitializeSolutionEvents method");
         }
 
         private bool IsFilePath(string path) => !File.GetAttributes(path).HasFlag(FileAttributes.Directory);

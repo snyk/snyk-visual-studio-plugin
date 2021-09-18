@@ -33,15 +33,15 @@
         /// <returns>string.</returns>
         public string GetAdditionalOptions()
         {
-            this.logger.LogInformation("Enter GetAdditionalOptions method");
+            Logger.Information("Enter GetAdditionalOptions method");
 
             string projectUniqueName = this.GetProjectUniqueName();
 
-            this.logger.LogInformation($"Project unique name: {projectUniqueName}");
+            Logger.Information($"Project unique name: {projectUniqueName}");
 
             if (string.IsNullOrEmpty(projectUniqueName))
             {
-                this.logger.LogInformation("Project unique name is empty. Return from method");
+                Logger.Information("Project unique name is empty. Return from method");
 
                 return string.Empty;
             }
@@ -64,15 +64,15 @@
         /// <returns>Bool.</returns>
         public bool GetIsAllProjectsEnabled()
         {
-            this.logger.LogInformation("Enter GetIsAllProjectsEnabled method");
+            Logger.Information("Enter GetIsAllProjectsEnabled method");
 
             string projectUniqueName = this.GetProjectUniqueName();
 
-            this.logger.LogInformation($"Project unique name: {projectUniqueName}");
+            Logger.Information($"Project unique name: {projectUniqueName}");
 
             if (string.IsNullOrEmpty(projectUniqueName))
             {
-                this.logger.LogInformation("Project unique name is empty. Return from method");
+                Logger.Information("Project unique name is empty. Return from method");
 
                 return true;
             }
@@ -177,11 +177,11 @@
         /// <param name="additionalOptions">CLI options string.</param>
         public void SaveAdditionalOptions(string additionalOptions)
         {
-            this.logger.LogInformation("Enter SaveAdditionalOptions method");
+            Logger.Information("Enter SaveAdditionalOptions method");
 
             string projectUniqueName = this.GetProjectUniqueName();
 
-            this.logger.LogInformation($"Project unique name: {projectUniqueName}");
+            Logger.Information($"Project unique name: {projectUniqueName}");
 
             if (string.IsNullOrEmpty(projectUniqueName))
             {
@@ -221,11 +221,11 @@
         /// <param name="isAllProjectsEnabled">Bool param.</param>
         public void SaveIsAllProjectsScanEnabled(bool isAllProjectsEnabled)
         {
-            this.logger.LogInformation("Enter SaveIsAllProjectsScan method");
+            Logger.Information("Enter SaveIsAllProjectsScan method");
 
             string projectUniqueName = this.GetProjectUniqueName();
 
-            this.logger.LogInformation($"Project unique name: {projectUniqueName}");
+            Logger.Information($"Project unique name: {projectUniqueName}");
 
             if (string.IsNullOrEmpty(projectUniqueName))
             {
@@ -265,7 +265,7 @@
         /// <returns>Project name string.</returns>
         private string GetProjectUniqueName()
         {
-            this.logger.LogInformation("Enter GetProjectUniqueName method");
+            Logger.Information("Enter GetProjectUniqueName method");
 
             Projects projects = this.solutionService.GetProjects();
 
@@ -276,7 +276,7 @@
 
             Project project = projects.Item(1);
 
-            this.logger.LogInformation($"Leave GetProjectUniqueName method. Project unique name: {project.UniqueName}");
+            Logger.Information($"Leave GetProjectUniqueName method. Project unique name: {project.UniqueName}");
 
             return project.UniqueName;
         }
