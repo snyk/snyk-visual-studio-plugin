@@ -154,7 +154,6 @@
     <Compile Include="Snyk\VisualStudio\Extension\UI\Toolwindow\EmptyState.cs" />
     <Compile Include="Snyk\VisualStudio\Extension\UI\HtmlRichTextBox.cs" />
     <Compile Include="Snyk\VisualStudio\Extension\Theme\SnykVsThemeService.cs" />
-    <Compile Include="Snyk\VisualStudio\Extension\SnykActivityLogger.cs" />
     <Compile Include="Snyk\VisualStudio\Extension\CLI\CLIError.cs" />
     <Compile Include="Snyk\VisualStudio\Extension\CLI\CLIResult.cs" />
     <Compile Include="Snyk\VisualStudio\Extension\Settings\ISnykOptions.cs" />

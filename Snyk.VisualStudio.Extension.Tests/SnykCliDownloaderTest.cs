@@ -133,7 +133,7 @@
 
             string currentCliVersion = "1.234.2";
 
-            var cliDownloader = new SnykCliDownloader(currentCliVersion, null);
+            var cliDownloader = new SnykCliDownloader(currentCliVersion);
 
             cliDownloader.AutoUpdateCli(DateTime.Now.AddDays(-5), tempCliPath);
 
@@ -157,7 +157,7 @@
 
             string currentCliVersion = "1.234.2";
 
-            var cliDownloader = new SnykCliDownloader(currentCliVersion, null);
+            var cliDownloader = new SnykCliDownloader(currentCliVersion);
 
             cliDownloader.AutoUpdateCli(DateTime.Now.AddDays(-5), tempCliPath);
 

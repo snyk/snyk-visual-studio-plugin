@@ -2,6 +2,8 @@
 {
     using System;
     using System.Windows.Forms;
+    using Serilog;
+    using Snyk.Common;
     using Snyk.VisualStudio.Extension.Service;
 
     /// <summary>
@@ -9,11 +11,11 @@
     /// </summary>
     public partial class SnykProjectOptionsUserControl : UserControl
     {
+        private static readonly ILogger Logger = LogManager.ForContext<SnykProjectOptionsUserControl>();
+
         private ISnykServiceProvider serviceProvider;
 
         private SnykUserStorageSettingsService userStorageSettingsService;
-
-        private SnykActivityLogger logger;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="SnykProjectOptionsUserControl"/> class.
@@ -25,7 +27,6 @@
 
             this.serviceProvider = serviceProvider;
             this.userStorageSettingsService = serviceProvider.UserStorageSettingsService;
-            this.logger = serviceProvider.ActivityLogger;
         }
 
         private void CheckOptionConflicts()
@@ -91,7 +92,7 @@
             }
             catch (Exception exception)
             {
-                this.logger.LogError(exception.Message);
+                Logger.Error(exception.Message);
 
                 this.additionalOptionsTextBox.Text = string.Empty;
             }
@@ -102,7 +103,7 @@
             }
             catch (Exception exception)
             {
-                this.logger.LogError(exception.Message);
+                Logger.Error(exception.Message);
 
                 this.allProjectsCheckBox.Checked = false;
 
