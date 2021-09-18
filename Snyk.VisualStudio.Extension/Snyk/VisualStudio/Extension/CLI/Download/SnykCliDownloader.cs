@@ -4,6 +4,7 @@
     using System.Collections.Generic;
     using System.IO;
     using System.Net;
+    using Serilog;
     using Snyk.Common;
     using Snyk.VisualStudio.Extension.Service;
 
@@ -12,6 +13,8 @@
     /// </summary>
     public class SnykCliDownloader
     {
+        private static readonly ILogger Logger = LogManager.ForContext<SnykCliDownloader>();
+
         private const string LatestReleasesUrl = "https://api.github.com/repos/snyk/snyk/releases/latest";
 
         private const string LatestReleaseDownloadUrl = "https://github.com/snyk/snyk/releases/download/{0}/{1}";
@@ -20,23 +23,23 @@
 
         private readonly LatestReleaseInfo latestReleaseInfo;
 
-        private readonly SnykActivityLogger logger = null;
-
         private string currentCliVersion;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="SnykCliDownloader"/> class.
         /// </summary>
         /// <param name="logger">ActivityLogger parameter.</param>
-        public SnykCliDownloader(SnykActivityLogger logger) => this.logger = logger;
+        public SnykCliDownloader()
+        {
+        }
 
         /// <summary>
         /// Initializes a new instance of the <see cref="SnykCliDownloader"/> class.
         /// </summary>
         /// <param name="currentCliVersion">Initial CLI version parameter.</param>
         /// <param name="logger">ActivityLogger parameter.</param>
-        public SnykCliDownloader(string currentCliVersion, SnykActivityLogger logger)
-            : this(logger) => this.currentCliVersion = currentCliVersion;
+        public SnykCliDownloader(string currentCliVersion)
+            : this() => this.currentCliVersion = currentCliVersion;
 
         /// <summary>
         /// Callback on download finished event.
@@ -49,17 +52,17 @@
         /// <returns>Latest CLI relaese information.</returns>
         public LatestReleaseInfo GetLatestReleaseInfo()
         {
-            this.logger?.LogError("Enter GetLatestReleaseInfo method");
+            Logger.Information("Enter GetLatestReleaseInfo method");
 
             if (this.latestReleaseInfo == null)
             {
                 using (var webClient = new SnykWebClient())
                 {
-                    this.logger?.LogError("Downloading latest CLI release info");
+                    Logger.Information("Downloading latest CLI release info");
 
                     string latestReleasesInfoJson = webClient.DownloadString(LatestReleasesUrl);
 
-                    this.logger?.LogError("Deserialize latest CLI release info");
+                    Logger.Information("Deserialize latest CLI release info");
 
                     return Json.Deserialize<LatestReleaseInfo>(latestReleasesInfoJson);
                 }
@@ -173,21 +176,21 @@
             ISnykProgressWorker progressWorker = null,
             List<CliDownloadFinishedCallback> downloadFinishedCallbacks = null)
         {
-            this.logger?.LogInformation("Enter Download method");
+            Logger.Information("Enter Download method");
 
             string cliFileDestinationPath = this.GetCliFilePath(fileDestinationPath);
 
-            this.logger?.LogInformation($"CLI File Destination Path: {cliFileDestinationPath}");
+            Logger.Information($"CLI File Destination Path: {cliFileDestinationPath}");
 
             if (!File.Exists(cliFileDestinationPath))
             {
-                this.logger?.LogInformation("CLI file not exists. Starting download");
+                Logger.Information("CLI file not exists. Starting download");
 
                 progressWorker?.DownloadStarted();
 
                 progressWorker?.CancelIfCancellationRequested();
 
-                this.logger?.LogInformation("Got latest relase information");
+                Logger.Information("Got latest relase information");
 
                 using (var webClient = new SnykWebClient())
                 {
@@ -195,11 +198,11 @@
 
                     string cliVersion = latestReleaseInfo.TagName;
 
-                    this.logger?.LogInformation($"Latest relase information CLI version: {cliVersion}");
+                    Logger.Information($"Latest relase information CLI version: {cliVersion}");
 
                     string cliDownloadUrl = string.Format(LatestReleaseDownloadUrl, cliVersion, SnykCli.CliFileName);
 
-                    this.logger?.LogInformation($"CLI download url: {cliDownloadUrl}");
+                    Logger.Information($"CLI download url: {cliDownloadUrl}");
 
                     string snykDirectoryPath = SnykDirectory.GetSnykAppDataDirectoryPath();
 
@@ -225,7 +228,7 @@
             string cliDownloadUrl,
             List<CliDownloadFinishedCallback> downloadFinishedCallbacks = null)
         {
-            this.logger?.LogInformation("Enter SynchronousDownload method");
+            Logger.Information("Enter SynchronousDownload method");
 
             webClient.DownloadFile(cliDownloadUrl, cliFileDestinationPath);
 
@@ -245,7 +248,7 @@
             string cliDownloadUrl,
             List<CliDownloadFinishedCallback> downloadFinishedCallbacks = null)
         {
-            this.logger?.LogInformation("Enter AsynchronousDownload method");
+            Logger.Information("Enter AsynchronousDownload method");
 
             webClient.DownloadProgressChanged += (source, progressChangedEvent) =>
             {
@@ -257,7 +260,7 @@
                 }
                 catch (Exception exception)
                 {
-                    this.logger?.LogError(exception.Message);
+                    Logger.Error(exception.Message);
 
                     webClient.CancelAsync();
 
@@ -272,14 +275,14 @@
                     }
                     catch (Exception ex)
                     {
-                        this.logger?.LogError($"Error: Can't delete temp CLI file. Message: {ex.Message}");
+                        Logger.Error($"Error: Can't delete temp CLI file. Message: {ex.Message}");
                     }
                 }
             };
 
             webClient.DownloadFileCompleted += (sender, completedEventArgs) =>
             {
-                this.logger?.LogInformation("Fire DownloadFinished event");
+                Logger.Information("Fire DownloadFinished event");
 
                 progressWorker.DownloadFinished();
 
