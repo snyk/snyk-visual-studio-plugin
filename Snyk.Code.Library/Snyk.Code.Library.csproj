@@ -79,6 +79,7 @@
     <Compile Include="Domain\Analysis\Marker.cs" />
     <Compile Include="Domain\Analysis\MarkerByPositionLineComparer.cs" />
     <Compile Include="Domain\Analysis\Position.cs" />
+    <Compile Include="Domain\SnykCodeError.cs" />
     <Compile Include="Service\AnalysisService.cs" />
     <Compile Include="Api\Dto\Analysis\AnalysisResultDto.cs" />
     <Compile Include="Api\Dto\Analysis\AnalysisResultsDto.cs" />
