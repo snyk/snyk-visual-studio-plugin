@@ -47,11 +47,6 @@
         ISnykOptions Options { get; }
 
         /// <summary>
-        /// Gets Visual Studio logger instance.
-        /// </summary>
-        SnykActivityLogger ActivityLogger { get; }
-
-        /// <summary>
         /// Gets Visual Studio Settiings Manager instance.
         /// </summary>
         SettingsManager SettingsManager { get; }
