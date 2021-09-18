@@ -168,7 +168,7 @@ In the settings, you can also choose which results you want to receive:
 
 Logs could be found in user AppData directory:
 ```
-C:\Users\USER_NAME_\AppData\Local\Snyk\snyk-extension.log
+C:\Users\USER_NAME\AppData\Local\Snyk\snyk-extension.log
 ```
 
 ### Build process
