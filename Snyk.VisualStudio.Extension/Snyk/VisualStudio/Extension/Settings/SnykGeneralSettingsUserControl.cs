@@ -30,7 +30,7 @@
 
         private static readonly int MaxSastRequestAttempts = 20;
 
-        private SnykActivityLogger logger;
+        private SnykApiService apiService;
 
         private Timer snykCodeEnableTimer = new Timer();
 
