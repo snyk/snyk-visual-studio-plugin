@@ -22,6 +22,10 @@
 
         private SnykGeneralSettingsUserControl generalSettingsUserControl;
 
+        private string apiToken;
+
+        private string customEndpoint;
+
         private bool snykCodeSecurityEnabled;
 
         private bool snykCodeQualityEnabled;
@@ -39,12 +43,30 @@
         /// <summary>
         /// Gets or sets a value indicating whether API token.
         /// </summary>
-        public string ApiToken { get; set; }
+        public string ApiToken
+        {
+            get => this.apiToken;
+            set
+            {
+                this.apiToken = value;
+
+                this.FireSettingsChangedEvent();
+            }
+        }
 
         /// <summary>
         /// Gets or sets a value indicating whether Custom endpoint.
         /// </summary>
-        public string CustomEndpoint { get; set; }
+        public string CustomEndpoint
+        {
+            get => this.customEndpoint;
+            set
+            {
+                this.customEndpoint = value;
+
+                this.FireSettingsChangedEvent();
+            }
+        }
 
         /// <summary>
         /// Gets or sets a value indicating whether organization.
