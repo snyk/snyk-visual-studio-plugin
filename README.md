@@ -89,6 +89,7 @@ Once the authentication has been confirmed, please feel free to close the browse
 Open your solution and run Snyk scan. Depending on the size of your solution, time to build a dependency graph, it might take from less than a minute to a couple of minutes to get the vulnerabilities. 
 
 The extension provides the user with two kinds of results:
+
 * Open Source vulnerabilities
 * Snyk Code issues
 
