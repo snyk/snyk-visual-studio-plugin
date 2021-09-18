@@ -28,10 +28,6 @@
                 this.ToolWindowControl.progressBar.IsIndeterminate = false;
 
                 this.ToolWindowControl.progressBarPanel.Visibility = Visibility.Collapsed;
-
-                this.ToolWindowControl.resultsGrid.Visibility = Visibility.Collapsed;
-
-                this.ToolWindowControl.resultsGrid.Visibility = Visibility.Collapsed;
             });
         }
 
@@ -50,8 +46,6 @@
                 this.ToolWindowControl.progressBar.IsIndeterminate = true;
 
                 this.ToolWindowControl.progressBarPanel.Visibility = Visibility.Visible;
-
-                this.ToolWindowControl.resultsGrid.Visibility = Visibility.Visible;
 
                 this.ToolWindowControl.VulnerabilitiesTree.Clear();
 
