@@ -22,9 +22,7 @@
             {
                 await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
 
-                this.ToolWindowControl.noVulnerabilitiesAddedMessageGrid.Visibility = Visibility.Collapsed;
-
-                this.ToolWindowControl.resultsGrid.Visibility = Visibility.Collapsed;
+                this.ToolWindowControl.messagePanel.Visibility = Visibility.Collapsed;
             });
         }
 
@@ -37,9 +35,9 @@
             {
                 await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
 
-                this.ToolWindowControl.noVulnerabilitiesAddedMessageGrid.Visibility = Visibility.Visible;
+                this.ToolWindowControl.messagePanel.Visibility = Visibility.Visible;
 
-                this.ToolWindowControl.resultsGrid.Visibility = Visibility.Visible;
+                this.ToolWindowControl.messagePanel.RunScanMessage();
             });
         }
     }

@@ -3,22 +3,12 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
-             xmlns:vsfx="clr-namespace:Microsoft.VisualStudio.Shell;assembly=Microsoft.VisualStudio.Shell.14.0"
-             xmlns:html="clr-namespace:Snyk.VisualStudio.Extension.UI"
              xmlns:tree="clr-namespace:Snyk.VisualStudio.Extension.UI.Tree"
              xmlns:window="clr-namespace:Snyk.VisualStudio.Extension.UI.Toolwindow"
-             xmlns:icons="clr-namespace:Snyk.VisualStudio.Extension" 
-             Background="{DynamicResource VsBrush.Window}"
-             Foreground="{DynamicResource VsBrush.WindowText}"
              mc:Ignorable="d"
              d:DesignHeight="300" d:DesignWidth="300"
              Name="SnykToolWindow" Loaded="SnykToolWindow_Loaded">
     <UserControl.Resources>
-        <BitmapImage x:Key="RunIcon" UriSource="../Resources/Run.png" DecodePixelWidth="16" DecodePixelHeight="16"/>
-        <BitmapImage x:Key="RunDisabledIcon" UriSource="../Resources/RunGrey.png" DecodePixelWidth="16" DecodePixelHeight="16"/>
-        <BitmapImage x:Key="StopIcon" UriSource="../Resources/Stop.png" DecodePixelWidth="16" DecodePixelHeight="16"/>
-        <BitmapImage x:Key="StopDisabledIcon" UriSource="../Resources/StopDisabled.png" DecodePixelWidth="16" DecodePixelHeight="16"/>
-        <BitmapImage x:Key="CleanIcon" UriSource="../Resources/CleanData.png" DecodePixelWidth="16" DecodePixelHeight="16"/>
     </UserControl.Resources>
     <Grid>
         <Grid.RowDefinitions>
@@ -33,85 +23,25 @@
                 <ProgressBar x:Name="progressBar" Minimum="0" Maximum="100" Height="3"/>
             </Grid>
         </StackPanel>
-        <StackPanel Grid.Row="2" Grid.Column="0" Name="errorPanel" Orientation="Vertical" Margin="1" UseLayoutRounding="False" Visibility="Collapsed">
-            <Border Margin="0,15" Padding="5" BorderThickness="0" BorderBrush="#CC666E" CornerRadius="0, 5, 5, 0" Background="#CC666E" 
-                                  VerticalAlignment="Center" HorizontalAlignment="Left">
-                <TextBlock Text="Error" Width="100" HorizontalAlignment="Left" VerticalAlignment="Center" FontSize="20" Background="#CC666E"/>
-            </Border>
-            <StackPanel Orientation="Horizontal">
-                <TextBlock Text="Message:" FontWeight="Bold" FontSize="12" Margin="5, 5, 5, 5"/>
-                <html:HtmlRichTextBox x:Name="errorMessage" IsDocumentEnabled="True" 
-                                        IsReadOnly="True" 
-                                        FontSize="12" 
-                                        Margin="5, 5, 5, 5" 
-                                        MaxWidth="1000"
-                                        BorderThickness="0, 0, 0, 0"
-                                        Background="{DynamicResource VsBrush.Window}"
-                                        HorizontalContentAlignment="Stretch" VerticalContentAlignment="Stretch"/>
-            </StackPanel>
-            <StackPanel Orientation="Horizontal">
-                <TextBlock Text="Path:" FontWeight="Bold" FontSize="12" Margin="5, 5, 30, 5"/>
-                <html:HtmlRichTextBox x:Name="errorPath" IsDocumentEnabled="True" 
-                                        IsReadOnly="True" 
-                                        FontSize="12" 
-                                        Margin="5, 5, 5, 5" 
-                                        MaxWidth="1000"
-                                        BorderThickness="0, 0, 0, 0"                                        
-                                        Background="{DynamicResource VsBrush.Window}"/>
-            </StackPanel>
-        </StackPanel>
-        <Grid Grid.Row="3" Grid.Column="0" Name="resultsGrid" Visibility="Collapsed">
+        <Grid Grid.Row="3" Grid.Column="0" Name="mainGrid">
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="3*"/>
                 <ColumnDefinition Width="5"/>
                 <ColumnDefinition Width="6*"/>
             </Grid.ColumnDefinitions>
             <tree:SnykFilterableTree x:Name="resultsTree" SelectedVulnerabilityChanged="VulnerabilitiesTree_SelectetVulnerabilityChanged"/>
-            <GridSplitter Grid.Column="1" Width="5" HorizontalAlignment="Stretch" Background="{DynamicResource VsBrush.Window}" Foreground="{DynamicResource VsBrush.WindowText}">
-            </GridSplitter>
-            <window:DescriptionPanel Grid.Column="2" x:Name="descriptionPanel" Visibility="Hidden" HorizontalContentAlignment="Stretch" VerticalContentAlignment="Stretch"/>
-            <Grid Grid.Column="3" Name="selectIssueMessageGrid" VerticalAlignment="Center" Visibility="Collapsed">
-                <StackPanel HorizontalAlignment="Center">
-                    <TextBlock>Select an issue and start improving your project.</TextBlock>
-                </StackPanel>
-            </Grid>
-            <Grid Grid.Column="4" Name="noIssuesMessageGrid" VerticalAlignment="Center" Visibility="Collapsed">
-                <StackPanel HorizontalAlignment="Center">
-                    <TextBlock>No issues for this project.</TextBlock>
-                </StackPanel>
-            </Grid>
-            <Grid Grid.Column="5" Name="noVulnerabilitiesAddedMessageGrid" VerticalAlignment="Center" Visibility="Collapsed">
-                <StackPanel HorizontalAlignment="Center">
-                    <TextBlock>
-                    Scan your project for security vulnerabilities.
-                    <Hyperlink Name="runScanLink" Click="RunButton_Click" IsEnabled="True">
-                        Run scan
-                    </Hyperlink>
-                    </TextBlock>
-                </StackPanel>
-            </Grid>
-        </Grid>
-        <Grid Grid.Row="4" Name="messageGrid" VerticalAlignment="Center" Visibility="Collapsed">
-            <StackPanel HorizontalAlignment="Center">
-                <TextBlock Name="message"></TextBlock>
-            </StackPanel>
-        </Grid>
-        <Grid Grid.Row="5" Name="overviewGrid" VerticalAlignment="Center" Visibility="Collapsed">
-            <StackPanel HorizontalAlignment="Center">
-                <Image Source="/Snyk.VisualStudio.Extension;component/Resources/SnykDogLogoFullSize.png" Width="128"/>
-                <TextBlock FontWeight="Bold" TextAlignment="Center" Padding="0,5">
-                    Welcome to Snyk for Visual Studio
-                </TextBlock>
-                <TextBlock FontWeight="Bold" TextAlignment="Center" Padding="0,5">
-                    Please authenticate to Snyk and connect your IDE
-                </TextBlock>
-                <TextBlock FontWeight="Bold" TextAlignment="Center" Padding="0,5">
-                    <Hyperlink Name="connectVSToSnykLink" Click="ConnectToSnykLink_Click">
-                        Connect Visual Studio to Snyk
-                    </Hyperlink>
-                </TextBlock>
-                <ProgressBar Name="connectVSToSnykProgressBar" Visibility="Collapsed" IsIndeterminate="True" Height="3" Padding="0,2"/>
-            </StackPanel>
+            
+            <GridSplitter Grid.Column="1" Width="5" HorizontalAlignment="Stretch" />
+
+            <window:DescriptionPanel Grid.Column="2" 
+                                     x:Name="descriptionPanel" 
+                                     Visibility="Collapsed" 
+                                     HorizontalContentAlignment="Stretch" 
+                                     VerticalContentAlignment="Stretch"/>
+            <window:MessagePanel Grid.Column="4" 
+                                 x:Name="messagePanel" 
+                                 HorizontalContentAlignment="Stretch" 
+                                 VerticalContentAlignment="Stretch"/>
         </Grid>
     </Grid>
 </UserControl>
