@@ -1,8 +1,10 @@
 ﻿namespace Snyk.Code.Library.Service
 {
+    using System;
     using System.Threading;
     using System.Threading.Tasks;
     using Serilog;
+    using Snyk.Code.Library.Domain;
     using Snyk.Code.Library.Domain.Analysis;
     using Snyk.Common;
 
@@ -30,6 +32,21 @@
             this.bundleService = bundleService;
 
             this.analysisService = analysisService;
+        }
+
+        /// <inheritdoc/>
+        public string GetSnykCodeErrorMessage(Exception sourceException)
+        {
+            try
+            {
+                var snykCodeError = Json.Deserialize<SnykCodeError>(sourceException.Message);
+
+                return $"Message: {snykCodeError.Message}. Code: {snykCodeError.Code}";
+            }
+            catch (Exception e)
+            {
+                return e.Message;
+            }
         }
 
         /// <inheritdoc/>
