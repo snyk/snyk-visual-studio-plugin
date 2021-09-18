@@ -14,6 +14,10 @@ EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "doc", "doc", "{9AAC9A90-42B0-464D-B4D5-4E30E148954C}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "images", "images", "{99BED51B-0DEF-4CF8-9029-CFB41C24B43F}"
+	ProjectSection(SolutionItems) = preProject
+		doc\images\readme_image_3_1_3.png = doc\images\readme_image_3_1_3.png
+		doc\images\readme_image_3_1_4.png = doc\images\readme_image_3_1_4.png
+	EndProjectSection
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Snyk.Code.Library", "Snyk.Code.Library\Snyk.Code.Library.csproj", "{73DF907B-A3BC-4176-A4E0-04BBD2FA924C}"
 EndProject
@@ -21,7 +25,7 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Snyk.Code.Library.Tests", "
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Snyk.Common", "Snyk.Common\Snyk.Common.csproj", "{7912AD6D-C154-4504-9AB3-8767D3C46E89}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Snyk.VisualStudio.Extension.Tests", "Snyk.VisualStudio.Extension.Tests\Snyk.VisualStudio.Extension.Tests.csproj", "{42A7C4CF-C297-4F07-B8F1-832C48AA1F5F}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Snyk.VisualStudio.Extension.Tests", "Snyk.VisualStudio.Extension.Tests\Snyk.VisualStudio.Extension.Tests.csproj", "{42A7C4CF-C297-4F07-B8F1-832C48AA1F5F}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
