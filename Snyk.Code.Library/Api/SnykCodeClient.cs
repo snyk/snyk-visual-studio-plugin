@@ -53,7 +53,7 @@
 
             this.httpClient.DefaultRequestHeaders.ExpectContinue = false;
 
-            this.httpClient.Timeout = TimeSpan.FromMinutes(10);
+            this.httpClient.Timeout = TimeSpan.FromMinutes(20);
             this.httpClient.BaseAddress = new Uri(baseUrl);
 
             this.httpClient.DefaultRequestHeaders.Add("Session-Token", token);
