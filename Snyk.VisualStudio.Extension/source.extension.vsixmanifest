@@ -3,7 +3,7 @@
     <Metadata>
         <Identity Id="snyk_visual_studio_plugin.02457ca9-710f-4c16-bfd1-a0401254438d" Version="2.0.0" Language="en-US" Publisher="Snyk" />
         <DisplayName>Snyk Vulnerability Scanner (Preview)</DisplayName>
-        <Description xml:space="preserve">Snyk’s Vulnerability Scanner (Preview) helps you find and fix security vulnerabilities in your projects. Within a few seconds, the extension will provide a list of all the different types of security vulnerabilities identified together with actionable fix advice.</Description>
+        <Description xml:space="preserve">This is an preview release for functionality that is not yet officially released. If you are looking for the officially supported release by Snyk you can find it [here](add a link to the official release). This preview functionality will be removed in a couple of weeks and the functionality merged in the official release.</Description>
         <MoreInfo>https://github.com/snyk/snyk-visual-studio-plugin/</MoreInfo>
         <License>LICENSE.txt</License>
         <ReleaseNotes />
