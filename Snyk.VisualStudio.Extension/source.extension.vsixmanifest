@@ -9,8 +9,8 @@
         <ReleaseNotes />
         <Icon>Resources\SnykDogLogo.png</Icon>
         <PreviewImage>Resources\SnykDogLogo.png</PreviewImage>
-        <Tags>snyk, extension, vulnerabilities, security, source</Tags>
-        <Preview>false</Preview>
+        <Tags>snyk, extension, vulnerabilities, security, source, sast</Tags>
+        <Preview>true</Preview>
     </Metadata>
     <Installation>
         <InstallationTarget Id="Microsoft.VisualStudio.Community" Version="[14.0,]" />
