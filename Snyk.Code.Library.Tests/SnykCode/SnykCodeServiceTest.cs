@@ -16,7 +16,7 @@
     public class SnykCodeServiceTest
     {
         [Fact]
-        public void SnykCodeService_JsonErrorProvided_GetSnykCodeErrorMessage()
+        public void SnykCodeService_JsonErrorProvided_GetSnykCodeErrorMessageReturnClearMessageWithoutJson()
         {
             var bundleServiceMock = new Mock<IBundleService>();
             var filtersServiceMock = new Mock<IFiltersService>();
