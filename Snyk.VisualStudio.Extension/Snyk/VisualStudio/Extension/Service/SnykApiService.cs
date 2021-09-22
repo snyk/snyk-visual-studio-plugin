@@ -1,9 +1,7 @@
 ﻿namespace Snyk.VisualStudio.Extension.Service
 {
     using System;
-    using System.Net;
     using System.Net.Http;
-    using System.Net.Http.Headers;
     using System.Threading.Tasks;
     using Serilog;
     using Snyk.Common;
@@ -41,8 +39,6 @@
         {
             using (var httpRequest = new HttpRequestMessage(HttpMethod.Get, new Uri(this.GetSnykCodeSettingsUri(), SastSettingsApiName)))
             {
-                httpRequest.Headers.Accept.Clear();
-                httpRequest.Headers.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
                 httpRequest.Headers.Add("Authorization", $"token {this.options.ApiToken}");
 
                 var response = await this.httpClient.SendAsync(httpRequest);
