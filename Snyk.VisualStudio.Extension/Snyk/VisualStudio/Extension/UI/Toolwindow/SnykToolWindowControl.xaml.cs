@@ -397,7 +397,7 @@
             {
                 await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
 
-                this.resultsTree.AppendVulnerabilities(cliResult);
+                this.resultsTree.OssResult = cliResult;
 
                 this.serviceProvider.AnalyticsService.LogOpenSourceAnalysisReadyEvent(
                     cliResult.CriticalSeverityCount,
@@ -415,7 +415,7 @@
             {
                 await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
 
-                this.resultsTree.AppendIssues(analysisResult);
+                this.resultsTree.AnalysisResults = analysisResult;
 
                 // TODO: Add SnykCode analytics event.
                 // this.serviceProvider.AnalyticsService.LogOpenSourceAnalysisReadyEvent(
