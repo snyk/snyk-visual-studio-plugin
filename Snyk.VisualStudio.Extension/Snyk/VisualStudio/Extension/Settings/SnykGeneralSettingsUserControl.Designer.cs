@@ -46,15 +46,15 @@
             this.codeQualityEnabledCheckBox = new System.Windows.Forms.CheckBox();
             this.generalSettingsGroupBox = new System.Windows.Forms.GroupBox();
             this.productSelectionGroupBox = new System.Windows.Forms.GroupBox();
+            this.snykCodeQualityInfoLabel = new System.Windows.Forms.Label();
+            this.snykCodeSecurityInfoLabel = new System.Windows.Forms.Label();
             this.ossInfoLabel = new System.Windows.Forms.Label();
             this.checkAgainLinkLabel = new System.Windows.Forms.LinkLabel();
             this.snykCodeSettingsLinkLabel = new System.Windows.Forms.LinkLabel();
             this.snykCodeDisabledInfoLabel = new System.Windows.Forms.Label();
             this.userExperienceGroupBox = new System.Windows.Forms.GroupBox();
-            this.snykCodeSecurityInfoLabel = new System.Windows.Forms.Label();
             this.ossInfoToolTip = new System.Windows.Forms.ToolTip(this.components);
             this.snykCodeSecurityInfoToolTip = new System.Windows.Forms.ToolTip(this.components);
-            this.snykCodeQualityInfoLabel = new System.Windows.Forms.Label();
             this.snykCodeQualityInfoToolTip = new System.Windows.Forms.ToolTip(this.components);
             ((System.ComponentModel.ISupportInitialize)(this.errorProvider)).BeginInit();
             this.generalSettingsGroupBox.SuspendLayout();
@@ -211,6 +211,8 @@
             // codeQualityEnabledCheckBox
             // 
             this.codeQualityEnabledCheckBox.AutoSize = true;
+            this.codeQualityEnabledCheckBox.Checked = true;
+            this.codeQualityEnabledCheckBox.CheckState = System.Windows.Forms.CheckState.Checked;
             this.codeQualityEnabledCheckBox.Location = new System.Drawing.Point(402, 92);
             this.codeQualityEnabledCheckBox.Name = "codeQualityEnabledCheckBox";
             this.codeQualityEnabledCheckBox.Size = new System.Drawing.Size(290, 29);
@@ -257,6 +259,34 @@
             this.productSelectionGroupBox.TabStop = false;
             this.productSelectionGroupBox.Text = "Product Selection";
             this.ossInfoToolTip.SetToolTip(this.productSelectionGroupBox, "Find and automatically fix open source vulnerabilities");
+            // 
+            // snykCodeQualityInfoLabel
+            // 
+            this.snykCodeQualityInfoLabel.AutoSize = true;
+            this.snykCodeQualityInfoLabel.Font = new System.Drawing.Font("Microsoft Sans Serif", 12F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(204)));
+            this.snykCodeQualityInfoLabel.Image = ((System.Drawing.Image)(resources.GetObject("snykCodeQualityInfoLabel.Image")));
+            this.snykCodeQualityInfoLabel.Location = new System.Drawing.Point(683, 92);
+            this.snykCodeQualityInfoLabel.Name = "snykCodeQualityInfoLabel";
+            this.snykCodeQualityInfoLabel.Size = new System.Drawing.Size(44, 37);
+            this.snykCodeQualityInfoLabel.TabIndex = 20;
+            this.snykCodeQualityInfoLabel.Text = "   ";
+            this.snykCodeQualityInfoToolTip.SetToolTip(this.snykCodeQualityInfoLabel, "Find and fix code quality issues in your application code in real time");
+            // 
+            // snykCodeSecurityInfoLabel
+            // 
+            this.snykCodeSecurityInfoLabel.Anchor = ((System.Windows.Forms.AnchorStyles)((((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom) 
+            | System.Windows.Forms.AnchorStyles.Left) 
+            | System.Windows.Forms.AnchorStyles.Right)));
+            this.snykCodeSecurityInfoLabel.AutoSize = true;
+            this.snykCodeSecurityInfoLabel.Font = new System.Drawing.Font("Microsoft Sans Serif", 12F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(204)));
+            this.snykCodeSecurityInfoLabel.Image = ((System.Drawing.Image)(resources.GetObject("snykCodeSecurityInfoLabel.Image")));
+            this.snykCodeSecurityInfoLabel.Location = new System.Drawing.Point(304, 92);
+            this.snykCodeSecurityInfoLabel.Margin = new System.Windows.Forms.Padding(0);
+            this.snykCodeSecurityInfoLabel.Name = "snykCodeSecurityInfoLabel";
+            this.snykCodeSecurityInfoLabel.Size = new System.Drawing.Size(53, 37);
+            this.snykCodeSecurityInfoLabel.TabIndex = 20;
+            this.snykCodeSecurityInfoLabel.Text = "    ";
+            this.snykCodeSecurityInfoToolTip.SetToolTip(this.snykCodeSecurityInfoLabel, "Find and fix vulnerabilities in your application code in real time");
             // 
             // ossInfoLabel
             // 
@@ -313,22 +343,6 @@
             this.userExperienceGroupBox.TabStop = false;
             this.userExperienceGroupBox.Text = "User experience";
             // 
-            // snykCodeSecurityInfoLabel
-            // 
-            this.snykCodeSecurityInfoLabel.Anchor = ((System.Windows.Forms.AnchorStyles)((((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom) 
-            | System.Windows.Forms.AnchorStyles.Left) 
-            | System.Windows.Forms.AnchorStyles.Right)));
-            this.snykCodeSecurityInfoLabel.AutoSize = true;
-            this.snykCodeSecurityInfoLabel.Font = new System.Drawing.Font("Microsoft Sans Serif", 12F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(204)));
-            this.snykCodeSecurityInfoLabel.Image = ((System.Drawing.Image)(resources.GetObject("snykCodeSecurityInfoLabel.Image")));
-            this.snykCodeSecurityInfoLabel.Location = new System.Drawing.Point(304, 92);
-            this.snykCodeSecurityInfoLabel.Margin = new System.Windows.Forms.Padding(0);
-            this.snykCodeSecurityInfoLabel.Name = "snykCodeSecurityInfoLabel";
-            this.snykCodeSecurityInfoLabel.Size = new System.Drawing.Size(53, 37);
-            this.snykCodeSecurityInfoLabel.TabIndex = 20;
-            this.snykCodeSecurityInfoLabel.Text = "    ";
-            this.snykCodeSecurityInfoToolTip.SetToolTip(this.snykCodeSecurityInfoLabel, "Find and fix vulnerabilities in your application code in real time");
-            // 
             // ossInfoToolTip
             // 
             this.ossInfoToolTip.IsBalloon = true;
@@ -338,18 +352,6 @@
             // 
             this.snykCodeSecurityInfoToolTip.IsBalloon = true;
             this.snykCodeSecurityInfoToolTip.ShowAlways = true;
-            // 
-            // snykCodeQualityInfoLabel
-            // 
-            this.snykCodeQualityInfoLabel.AutoSize = true;
-            this.snykCodeQualityInfoLabel.Font = new System.Drawing.Font("Microsoft Sans Serif", 12F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(204)));
-            this.snykCodeQualityInfoLabel.Image = ((System.Drawing.Image)(resources.GetObject("snykCodeQualityInfoLabel.Image")));
-            this.snykCodeQualityInfoLabel.Location = new System.Drawing.Point(683, 92);
-            this.snykCodeQualityInfoLabel.Name = "snykCodeQualityInfoLabel";
-            this.snykCodeQualityInfoLabel.Size = new System.Drawing.Size(44, 37);
-            this.snykCodeQualityInfoLabel.TabIndex = 20;
-            this.snykCodeQualityInfoLabel.Text = "   ";
-            this.snykCodeQualityInfoToolTip.SetToolTip(this.snykCodeQualityInfoLabel, "Find and fix code quality issues in your application code in real time");
             // 
             // snykCodeQualityInfoToolTip
             // 
