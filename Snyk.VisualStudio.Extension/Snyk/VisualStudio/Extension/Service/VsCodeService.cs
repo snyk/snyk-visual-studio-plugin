@@ -11,14 +11,6 @@
     /// </summary>
     public class VsCodeService
     {
-        private ISnykServiceProvider serviceProvider;
-
-        /// <summary>
-        /// Initializes a new instance of the <see cref="VsCodeService"/> class.
-        /// </summary>
-        /// <param name="serviceProvider">Service provider.</param>
-        private VsCodeService(ISnykServiceProvider serviceProvider) => this.serviceProvider = serviceProvider;
-
         /// <summary>
         /// Gets instance of this class.
         /// </summary>
@@ -27,26 +19,9 @@
         /// <summary>
         /// Initialize <see cref="VsCodeService"/> instance.
         /// </summary>
-        /// <param name="serviceProvider">Service provider.</param>
-        public static void Initialize(ISnykServiceProvider serviceProvider)
+        public static void Initialize()
         {
-            Instance = new VsCodeService(serviceProvider);
-        }
-
-        /// <summary>
-        /// Open file by path.
-        /// </summary>
-        /// <param name="documentFullPath">Full document path.</param>
-        public void OpenFile(string documentFullPath)
-        {
-            ThreadHelper.JoinableTaskFactory.Run(async () =>
-            {
-                await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
-
-                var itemOperations = this.serviceProvider.DTE.ItemOperations;
-
-                itemOperations.OpenFile(documentFullPath, "{" + VSConstants.LOGVIEWID_Code + "}");
-            });
+            Instance = new VsCodeService();
         }
 
         /// <summary>
@@ -59,55 +34,60 @@
         /// <param name="endColumn">End column.</param>
         public void OpenAndNavigate(string documentFullPath, int startLine, int startColumn, int endLine, int endColumn)
         {
+            new System.Threading.Tasks.Task(() =>
+            {
+                _ = this.OpenAndNavigateAsync(documentFullPath, startLine, startColumn, endLine, endColumn);
+            }).Start();
+        }
+
+        private async System.Threading.Tasks.Task OpenAndNavigateAsync(string documentFullPath, int startLine, int startColumn, int endLine, int endColumn)
+        {
+            await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
+
             if (documentFullPath == null)
             {
                 throw new ArgumentNullException(nameof(documentFullPath));
             }
 
-            ThreadHelper.JoinableTaskFactory.Run(async () =>
+            var shellOpenDocument = AsyncPackage.GetGlobalService(typeof(IVsUIShellOpenDocument)) as IVsUIShellOpenDocument;
+
+            IVsWindowFrame windowFrame;
+            Microsoft.VisualStudio.OLE.Interop.IServiceProvider serviceProvider;
+            IVsUIHierarchy vsUiHierarchy;
+            uint itemId;
+            Guid logicalView = VSConstants.LOGVIEWID_Code;
+
+            if (ErrorHandler.Failed(shellOpenDocument.OpenDocumentViaProject(documentFullPath, ref logicalView, out serviceProvider, out vsUiHierarchy, out itemId, out windowFrame)) || windowFrame == null)
             {
-                await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
+                return;
+            }
 
-                var shellOpenDocument = AsyncPackage.GetGlobalService(typeof(IVsUIShellOpenDocument)) as IVsUIShellOpenDocument;
+            object documentData;
+            windowFrame.GetProperty((int)__VSFPROPID.VSFPROPID_DocData, out documentData);
 
-                IVsWindowFrame windowFrame;
-                Microsoft.VisualStudio.OLE.Interop.IServiceProvider serviceProvider;
-                IVsUIHierarchy vsUiHierarchy;
-                uint itemId;
-                Guid logicalView = VSConstants.LOGVIEWID_Code;
+            var textBuffer = documentData as VsTextBuffer;
 
-                if (ErrorHandler.Failed(shellOpenDocument.OpenDocumentViaProject(documentFullPath, ref logicalView, out serviceProvider, out vsUiHierarchy, out itemId, out windowFrame)) || windowFrame == null)
+            if (textBuffer == null)
+            {
+                IVsTextBufferProvider bufferProvider = documentData as IVsTextBufferProvider;
+                if (bufferProvider != null)
                 {
-                    return;
-                }
+                    IVsTextLines vsTextLines;
 
-                object documentData;
-                windowFrame.GetProperty((int)__VSFPROPID.VSFPROPID_DocData, out documentData);
+                    ErrorHandler.ThrowOnFailure(bufferProvider.GetTextBuffer(out vsTextLines));
 
-                var textBuffer = documentData as VsTextBuffer;
+                    textBuffer = vsTextLines as VsTextBuffer;
 
-                if (textBuffer == null)
-                {
-                    IVsTextBufferProvider bufferProvider = documentData as IVsTextBufferProvider;
-                    if (bufferProvider != null)
+                    if (textBuffer == null)
                     {
-                        IVsTextLines vsTextLines;
-
-                        ErrorHandler.ThrowOnFailure(bufferProvider.GetTextBuffer(out vsTextLines));
-
-                        textBuffer = vsTextLines as VsTextBuffer;
-
-                        if (textBuffer == null)
-                        {
-                            return;
-                        }
+                        return;
                     }
                 }
+            }
 
-                IVsTextManager textManager = Package.GetGlobalService(typeof(VsTextManagerClass)) as IVsTextManager;
+            IVsTextManager textManager = Package.GetGlobalService(typeof(VsTextManagerClass)) as IVsTextManager;
 
-                textManager.NavigateToLineAndColumn(textBuffer, VSConstants.LOGVIEWID_TextView, startLine, startColumn, endLine, endColumn);
-            });
+            textManager.NavigateToLineAndColumn(textBuffer, VSConstants.LOGVIEWID_TextView, startLine, startColumn, endLine, endColumn);
         }
     }
 }
