@@ -1,15 +1,15 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <PackageManifest Version="2.0.0" xmlns="http://schemas.microsoft.com/developer/vsx-schema/2011" xmlns:d="http://schemas.microsoft.com/developer/vsx-schema-design/2011">
     <Metadata>
-        <Identity Id="snyk_visual_studio_plugin.02457ca9-710f-4c16-bfd1-a0401254438d" Version="2.0.0" Language="en-US" Publisher="Snyk" />
+        <Identity Id="snyk_visual_studio_plugin_preview.02457ca9-710f-4c16-bfd1-a0401254438d" Version="1.1.0" Language="en-US" Publisher="Snyk" />
         <DisplayName>Snyk Vulnerability Scanner (Preview)</DisplayName>
-        <Description xml:space="preserve">This is an preview release for functionality that is not yet officially released. If you are looking for the officially supported release by Snyk you can find it [here](add a link to the official release). This preview functionality will be removed in a couple of weeks and the functionality merged in the official release.</Description>
+        <Description xml:space="preserve">This is a preview release for functionality that is not yet officially released.</Description>
         <MoreInfo>https://github.com/snyk/snyk-visual-studio-plugin/</MoreInfo>
         <License>LICENSE.txt</License>
         <ReleaseNotes />
         <Icon>Resources\SnykDogLogo.png</Icon>
         <PreviewImage>Resources\SnykDogLogo.png</PreviewImage>
-        <Tags>snyk, extension, vulnerabilities, security, source, sast</Tags>
+        <Tags>snyk, extension, vulnerabilities, security, source, sast, snykcode</Tags>
         <Preview>true</Preview>
     </Metadata>
     <Installation>
