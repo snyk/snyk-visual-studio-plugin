@@ -16,7 +16,7 @@
         /// <summary>
         /// Integration name.
         /// </summary>
-        public const string IntegrationName = "VISUAL_STUDIO";
+        public const string IntegrationName = "VISUAL_STUDIO_PREVIEW";
 
         private const string AppSettingsFileName = "appsettings.json";
 
