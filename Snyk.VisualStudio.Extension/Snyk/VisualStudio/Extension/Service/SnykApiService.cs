@@ -1,9 +1,7 @@
 ﻿namespace Snyk.VisualStudio.Extension.Service
 {
     using System;
-    using System.Net;
     using System.Net.Http;
-    using System.Net.Http.Headers;
     using System.Threading.Tasks;
     using Serilog;
     using Snyk.Common;
@@ -30,13 +28,7 @@
         {
             this.options = options;
 
-            this.httpClient = new HttpClient(new HttpClientHandler
-            {
-                AutomaticDecompression = DecompressionMethods.GZip,
-            });
-
-            this.httpClient.DefaultRequestHeaders.ExpectContinue = false;
-            this.httpClient.DefaultRequestHeaders.AcceptEncoding.Add(new StringWithQualityHeaderValue("gzip"));
+            this.httpClient = HttpClientFactory.NewHttpClient(options.ApiToken);
         }
 
         /// <summary>
@@ -47,8 +39,6 @@
         {
             using (var httpRequest = new HttpRequestMessage(HttpMethod.Get, new Uri(this.GetSnykCodeSettingsUri(), SastSettingsApiName)))
             {
-                httpRequest.Headers.Accept.Clear();
-                httpRequest.Headers.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
                 httpRequest.Headers.Add("Authorization", $"token {this.options.ApiToken}");
 
                 var response = await this.httpClient.SendAsync(httpRequest);

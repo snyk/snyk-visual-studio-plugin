@@ -2,7 +2,6 @@
 {
     using System;
     using System.Collections.Generic;
-    using System.Net;
     using System.Net.Http;
     using System.Net.Http.Headers;
     using System.Text;
@@ -46,18 +45,7 @@
         /// <param name="token">User token.</param>
         public SnykCodeClient(string baseUrl, string token)
         {
-            this.httpClient = new HttpClient(new HttpClientHandler
-            {
-                AutomaticDecompression = DecompressionMethods.GZip,
-            });
-
-            this.httpClient.DefaultRequestHeaders.ExpectContinue = false;
-
-            this.httpClient.Timeout = TimeSpan.FromMinutes(10);
-            this.httpClient.BaseAddress = new Uri(baseUrl);
-
-            this.httpClient.DefaultRequestHeaders.Add("Session-Token", token);
-            this.httpClient.DefaultRequestHeaders.AcceptEncoding.Add(new StringWithQualityHeaderValue("gzip"));
+            this.httpClient = HttpClientFactory.NewHttpClient(token, baseUrl);
 
             Logger.Information("Create http client with with url {BaseUrl}.", baseUrl);
         }
@@ -110,10 +98,6 @@
                 watch.Start();
 
                 string payload = Json.Serialize(codeFiles);
-
-                var mt = new MediaTypeWithQualityHeaderValue("application/json");
-
-                httpRequest.Headers.Accept.Add(mt);
 
                 httpRequest.Content = new StringContent(payload, Encoding.UTF8, "application/json");
 
