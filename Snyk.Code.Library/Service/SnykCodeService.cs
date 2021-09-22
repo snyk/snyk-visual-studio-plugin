@@ -45,7 +45,9 @@
             }
             catch (Exception e)
             {
-                return e.Message;
+                Logger.Error(e, string.Empty);
+
+                return sourceException.Message;
             }
         }
 
