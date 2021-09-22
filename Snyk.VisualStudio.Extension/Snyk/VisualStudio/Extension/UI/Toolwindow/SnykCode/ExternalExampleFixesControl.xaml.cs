@@ -107,7 +107,7 @@
 
             fixUrl = fixUrl.IndexOf("/commit/") != -1 ? fixUrl.Substring(0, fixUrl.IndexOf("/commit/")) : fixUrl;
 
-            return fixUrl.Length > 50 ? fixUrl.Substring(0, 50) : fixUrl;
+            return fixUrl.Length > 50 ? fixUrl.Substring(0, 50) + "..." : fixUrl;
         }
     }
 }
