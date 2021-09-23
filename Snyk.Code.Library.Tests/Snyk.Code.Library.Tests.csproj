@@ -10,8 +10,9 @@
     <Compile Remove="Resources\HelloWorld.cs" />
   </ItemGroup>
   <ItemGroup>
+    <None Remove="Resources\.gitignore" />
     <None Remove="Resources\app1.js" />
-    <None Remove="Resources\app2.js" />
+    <None Remove="Resources\app2.js" />    
     <None Remove="settings.json" />
   </ItemGroup>
   <ItemGroup>
@@ -21,9 +22,12 @@
     <EmbeddedResource Include="Resources\app1.js">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </EmbeddedResource>
-    <EmbeddedResource Include="Resources\HelloWorld.cs">
+    <EmbeddedResource Include="Resources\.gitignore">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </EmbeddedResource>
+    <EmbeddedResource Include="Resources\HelloWorld.cs">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </EmbeddedResource>    
   </ItemGroup>
   <ItemGroup>
     <PackageReference Include="Microsoft.CodeAnalysis.NetAnalyzers" Version="5.0.3">

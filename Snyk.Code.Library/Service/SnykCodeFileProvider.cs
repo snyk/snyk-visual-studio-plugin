@@ -71,7 +71,14 @@
         }
 
         /// <inheritdoc/>
-        public async Task FilterFilesAsync(IFiltersService filtersService) => this.files = await filtersService.FilterFilesAsync(this.files);
+        public async Task FilterFilesAsync(IFiltersService filtersService)
+        {
+            var dcIgnoreService = new DcIgnoreService(this.solutionPath);
+
+            this.files = dcIgnoreService.FilterFiles(this.files);
+
+            this.files = await filtersService.FilterFilesAsync(this.files);
+        }
 
         private void InitializeCache()
         {

@@ -8,6 +8,13 @@
     /// </summary>
     public interface IFiltersService
     {
+        /// <summary>
+        /// Filter files by SnykCode filters.
+        /// </summary>
+        /// <param name="filePaths">Project file paths.</param>
+        /// <returns>Filtered file paths.</returns>
         Task<IList<string>> FilterFilesAsync(IList<string> filePaths);
+
+        
     }
 }
