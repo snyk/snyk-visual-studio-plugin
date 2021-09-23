@@ -21,7 +21,7 @@
         /// </summary>
         public string Icon => SnykIconProvider.SnykCodeIconPath;
 
-        protected override string GetIssuesTypeName() => "vulnerability";
+        protected override string GetIssuesTypeName() => "vulnerabilities";
 
         protected override string GetTitlePrefix() => SnykCodeTitle;
     }

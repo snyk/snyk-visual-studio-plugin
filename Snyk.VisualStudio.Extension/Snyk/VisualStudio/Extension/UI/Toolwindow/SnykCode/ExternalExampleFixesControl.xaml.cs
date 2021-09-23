@@ -52,6 +52,8 @@
                 var exampleLinesTextBox = new HtmlRichTextBox();
                 exampleLinesTextBox.IsReadOnly = true;
                 exampleLinesTextBox.Document.Blocks.Clear();
+                exampleLinesTextBox.FontFamily = new FontFamily("Consolas");
+
 
                 foreach (var fixLine in fix.Lines)
                 {
