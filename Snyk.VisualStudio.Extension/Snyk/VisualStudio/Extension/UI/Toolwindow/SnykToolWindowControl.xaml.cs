@@ -214,6 +214,7 @@
         });
 
         /// <summary>
+<<<<<<< HEAD
         /// Handle SnykCode disabled.
         /// </summary>
         /// <param name="sender">Source object.</param>
@@ -266,6 +267,8 @@
         });
 
         /// <summary>
+=======
+>>>>>>> 7a8fc19 (fix: rebase issues.)
         /// ScanningCancelled event handler. Switch context to ScanResultsState.
         /// </summary>
         /// <param name="sender">Source object.</param>
