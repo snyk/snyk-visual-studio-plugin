@@ -6,6 +6,7 @@
     using System.Threading.Tasks;
     using System.Windows.Forms;
     using Snyk.VisualStudio.Extension.CLI;
+    using Snyk.VisualStudio.Extension.Service;
     using static Snyk.VisualStudio.Extension.CLI.SnykCliDownloader;
 
     /// <summary>
@@ -21,7 +22,15 @@
 
         private static readonly Regex GuidRegex = new Regex(@"^(\{){0,1}[0-9a-fA-F]{8}\-[0-9a-fA-F]{4}\-[0-9a-fA-F]{4}\-[0-9a-fA-F]{4}\-[0-9a-fA-F]{12}(\}){0,1}$", RegexOptions.Compiled);
 
+        private static readonly int TwoSecondsDelay = 2000;
+
+        private static readonly int MaxSastRequestAttempts = 20;
+
         private SnykActivityLogger logger;
+
+        private SnykApiService apiService;
+
+        private Timer snykCodeEnableTimer = new Timer();
 
         private Action<string> successCallbackAction;
 
@@ -30,12 +39,15 @@
         /// <summary>
         /// Initializes a new instance of the <see cref="SnykGeneralSettingsUserControl"/> class.
         /// </summary>
+        /// <param name="apiService">Snyk API service instance.</param>
         /// <param name="logger">ActivityLogger parameter.</param>
-        public SnykGeneralSettingsUserControl(SnykActivityLogger logger)
+        public SnykGeneralSettingsUserControl(SnykApiService apiService, SnykActivityLogger logger)
         {
             this.InitializeComponent();
 
             this.logger = logger;
+
+            this.apiService = apiService;
         }
 
         /// <summary>
@@ -52,8 +64,6 @@
             this.ignoreUnknownCACheckBox.Checked = this.OptionsDialogPage.IgnoreUnknownCA;
             this.usageAnalyticsCheckBox.Checked = this.OptionsDialogPage.UsageAnalyticsEnabled;
             this.ossEnabledCheckBox.Checked = this.OptionsDialogPage.OssEnabled;
-            this.codeSecurityEnabledCheckBox.Checked = this.OptionsDialogPage.SnykCodeSecurityEnabled;
-            this.codeQualityEnabledCheckBox.Checked = this.OptionsDialogPage.SnykCodeQualityEnabled;
 
             this.successCallbackAction = (apiToken) =>
             {
@@ -161,10 +171,7 @@
             this.tokenTextBox.Text = this.OptionsDialogPage.ApiToken;
         }
 
-        private SnykCli NewCli() => new SnykCli
-        {
-            Options = this.OptionsDialogPage,
-        };
+        private SnykCli NewCli() => new SnykCli { Options = this.OptionsDialogPage, };
 
         private void AuthenticateButton_Click(object sender, EventArgs eventArgs)
         {
@@ -178,7 +185,7 @@
 
             Task.Run(() =>
             {
-                var serviceProvider = OptionsDialogPage.ServiceProvider;
+                var serviceProvider = this.OptionsDialogPage.ServiceProvider;
                 var tasksService = serviceProvider.TasksService;
 
                 if (SnykCli.IsCliExists())
@@ -340,6 +347,61 @@
         private void SnykGeneralSettingsUserControl_Load(object sender, EventArgs e)
         {
             this.InitializeApiToken();
+
+            _ = this.StartSastEnablementCheckLoopAsync();
+        }
+
+        private void UpdateSnykCodeEnablementSettings(bool snykCodeEnabled)
+        {
+            this.codeSecurityEnabledCheckBox.Enabled = snykCodeEnabled;
+            this.codeQualityEnabledCheckBox.Enabled = snykCodeEnabled;
+
+            this.snykCodeDisabledInfoLabel.Visible = !snykCodeEnabled;
+            this.snykCodeSettingsLinkLabel.Visible = !snykCodeEnabled;
+            this.checkAgainLinkLabel.Visible = !snykCodeEnabled;
+        }
+
+        private async Task StartSastEnablementCheckLoopAsync()
+        {
+            if (this.snykCodeEnableTimer.Enabled)
+            {
+                this.snykCodeEnableTimer.Stop();
+            }
+
+            bool onServerSnykCodeEnabled = await this.apiService.IsSnykCodeEnabledAsync();
+
+            this.UpdateSnykCodeEnablementSettings(onServerSnykCodeEnabled);
+
+            if (!onServerSnykCodeEnabled)
+            {
+                int currentRequestAttempt = 1;
+
+                this.snykCodeEnableTimer.Interval = TwoSecondsDelay;
+
+                this.snykCodeEnableTimer.Tick += async (sender, eventArgs) =>
+                {
+                    bool snykCodeEnabled = await this.apiService.IsSnykCodeEnabledAsync();
+
+                    this.UpdateSnykCodeEnablementSettings(snykCodeEnabled);
+
+                    if (snykCodeEnabled)
+                    {
+                        this.snykCodeEnableTimer.Stop();
+                    }
+                    else if (currentRequestAttempt < MaxSastRequestAttempts)
+                    {
+                        currentRequestAttempt++;
+
+                        this.snykCodeEnableTimer.Interval = TwoSecondsDelay * currentRequestAttempt;
+                    }
+                    else
+                    {
+                        this.snykCodeEnableTimer.Stop();
+                    }
+                };
+
+                this.snykCodeEnableTimer.Start();
+            }
         }
 
         private void UsageAnalyticsCheckBox_CheckedChanged(object sender, EventArgs e)
@@ -364,6 +426,32 @@
         private void CodeQualityEnabledCheckBox_CheckedChanged(object sender, EventArgs e)
         {
             this.OptionsDialogPage.SnykCodeQualityEnabled = this.codeQualityEnabledCheckBox.Checked;
+        }
+
+        private void SnykCodeSettingsLinkLabel_LinkClicked(object sender, LinkLabelLinkClickedEventArgs e)
+            => System.Diagnostics.Process.Start(this.GetSnykCodeSettingsUrl());
+
+        private string GetSnykCodeSettingsUrl()
+        {
+            string endpoint = this.customEndpointTextBox.Text;
+
+            if (string.IsNullOrEmpty(endpoint))
+            {
+                endpoint = "https://app.snyk.io";
+            }
+            else
+            {
+                endpoint = endpoint
+                    .Replace("https://", "https://app.")
+                    .Replace("/api", string.Empty);
+            }
+
+            return $"{endpoint}/manage/snyk-code";
+        }
+
+        private void CheckAgainLinkLabel_LinkClicked(object sender, LinkLabelLinkClickedEventArgs e)
+        {
+            _ = this.StartSastEnablementCheckLoopAsync();
         }
     }
 }

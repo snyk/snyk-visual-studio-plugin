@@ -55,9 +55,9 @@
 
                 this.ToolWindowControl.VulnerabilitiesTree.Clear();
 
-                this.ToolWindowControl.VulnerabilitiesTree.CliRootNode.SetScanningTitle();
-                this.ToolWindowControl.VulnerabilitiesTree.CodeSequrityRootNode.SetScanningTitle();
-                this.ToolWindowControl.VulnerabilitiesTree.CodeQualityRootNode.SetScanningTitle();
+                this.ToolWindowControl.VulnerabilitiesTree.CliRootNode.State = Tree.RootTreeNodeState.Scanning;
+                this.ToolWindowControl.VulnerabilitiesTree.CodeSequrityRootNode.State = Tree.RootTreeNodeState.Scanning;
+                this.ToolWindowControl.VulnerabilitiesTree.CodeQualityRootNode.State = Tree.RootTreeNodeState.Scanning;
             });
         }
     }

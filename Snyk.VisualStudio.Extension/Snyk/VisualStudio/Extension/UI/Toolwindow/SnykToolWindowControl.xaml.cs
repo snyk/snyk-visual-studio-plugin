@@ -70,6 +70,7 @@
 
             tasksService.OssScanError += this.OnCliDisplayError;
             tasksService.SnykCodeScanError += this.OnSnykCodeDisplayError;
+            tasksService.SnykCodeDisabled += this.OnSnykCodeDisabledHandler;
             tasksService.ScanningCancelled += this.OnScanningCancelled;
             tasksService.CliScanningStarted += this.OnCliScanningStarted;
             tasksService.SnykCodeScanningStarted += this.OnSnykCodeScanningStarted;
@@ -136,7 +137,7 @@
 
                 this.resultsGrid.Visibility = Visibility.Visible;
 
-                this.resultsTree.CliRootNode.SetScanningTitle();
+                this.resultsTree.CliRootNode.State = RootTreeNodeState.Scanning;
             });
         }
 
@@ -153,8 +154,8 @@
             {
                 await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
 
-                this.resultsTree.CodeSequrityRootNode.SetScanningTitle();
-                this.resultsTree.CodeQualityRootNode.SetScanningTitle();
+                this.resultsTree.CodeSequrityRootNode.State = RootTreeNodeState.Scanning;
+                this.resultsTree.CodeQualityRootNode.State = RootTreeNodeState.Scanning;
             });
         }
 
@@ -174,7 +175,7 @@
         {
             await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
 
-            this.resultsTree.CliRootNode.SetErrorTitle();
+            this.resultsTree.CliRootNode.State = RootTreeNodeState.Error;
 
             NotificationService.Instance.ShowWarningInfoBar("Snyk Open Source error: " + eventArgs.Error.Message);
         });
@@ -194,10 +195,23 @@
         {
             await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
 
-            this.resultsTree.CodeQualityRootNode.SetErrorTitle();
-            this.resultsTree.CodeSequrityRootNode.SetErrorTitle();
+            this.resultsTree.CodeQualityRootNode.State = RootTreeNodeState.Error;
+            this.resultsTree.CodeSequrityRootNode.State = RootTreeNodeState.Error;
 
             NotificationService.Instance.ShowWarningInfoBar("SnykCode error: " + eventArgs.Error);
+        });
+
+        /// <summary>
+        /// Handle SnykCode disabled.
+        /// </summary>
+        /// <param name="sender">Source object.</param>
+        /// <param name="eventArgs">Event args.</param>
+        public void OnSnykCodeDisabledHandler(object sender, SnykCodeScanEventArgs eventArgs) => ThreadHelper.JoinableTaskFactory.Run(async () =>
+        {
+            await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
+
+            this.resultsTree.CodeQualityRootNode.State = RootTreeNodeState.DisabledForOrganization;
+            this.resultsTree.CodeSequrityRootNode.State = RootTreeNodeState.DisabledForOrganization;
         });
 
         /// <summary>
@@ -346,17 +360,16 @@
         /// <summary>
         /// Clean vulnerability tree and transition state to RunScanState.
         /// </summary>
-        public void Clean()
+        public void Clean() => ThreadHelper.JoinableTaskFactory.Run(async () =>
         {
-            ThreadHelper.JoinableTaskFactory.Run(async () =>
-            {
-                await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
+            await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
 
-                this.resultsTree.Clear();
+            this.resultsTree.Clear();
 
-                this.context.TransitionTo(RunScanState.Instance);
-            });
-        }
+            this.context.TransitionTo(RunScanState.Instance);
+
+            this.UpdateTreeNodeItemsState();
+        });
 
         /// <summary>
         /// Hide issues messages.
@@ -373,9 +386,20 @@
         {
             await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
 
-            this.resultsTree.CliRootNode.Enabled = this.serviceProvider.Options.OssEnabled;
-            this.resultsTree.CodeQualityRootNode.Enabled = this.serviceProvider.Options.SnykCodeQualityEnabled;
-            this.resultsTree.CodeSequrityRootNode.Enabled = this.serviceProvider.Options.SnykCodeSecurityEnabled;
+            var options = this.serviceProvider.Options;
+
+            this.resultsTree.CliRootNode.State = options.OssEnabled? RootTreeNodeState.Enabled : RootTreeNodeState.Disabled;
+
+            if (!await this.serviceProvider.ApiService.IsSnykCodeEnabledAsync())
+            {
+                this.resultsTree.CodeQualityRootNode.State = RootTreeNodeState.DisabledForOrganization;
+                this.resultsTree.CodeSequrityRootNode.State = RootTreeNodeState.DisabledForOrganization;
+            }
+            else
+            {
+                this.resultsTree.CodeQualityRootNode.State = options.SnykCodeQualityEnabled ? RootTreeNodeState.Enabled : RootTreeNodeState.Disabled;
+                this.resultsTree.CodeSequrityRootNode.State = options.SnykCodeSecurityEnabled ? RootTreeNodeState.Enabled : RootTreeNodeState.Disabled;
+            }
         });
 
         /// <summary>
@@ -534,6 +558,8 @@
             {
                 this.SetInitialState();
             }
+
+            this.UpdateTreeNodeItemsState();
         }
 
         private void SetInitialState()

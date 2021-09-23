@@ -17,11 +17,11 @@
     {
         private static SnykFilterableTree instance;
 
-        private readonly RootTreeNode cliRootNode;
+        private readonly RootTreeNode ossRootNode;
 
-        private readonly RootTreeNode codeSequrityRootNode;
+        private readonly SnykCodeSecurityRootTreeNode codeSequrityRootNode;
 
-        private readonly RootTreeNode codeQualityRootNode;
+        private readonly SnykCodeQualityRootTreeNode codeQualityRootNode;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="SnykFilterableTree"/> class.
@@ -32,11 +32,11 @@
 
             instance = this;
 
-            this.cliRootNode = new OssRootTreeNode(this);
+            this.ossRootNode = new OssRootTreeNode(this);
             this.codeSequrityRootNode = new SnykCodeSecurityRootTreeNode(this);
             this.codeQualityRootNode = new SnykCodeQualityRootTreeNode(this);
 
-            this.vulnerabilitiesTree.Items.Add(this.cliRootNode);
+            this.vulnerabilitiesTree.Items.Add(this.ossRootNode);
             this.vulnerabilitiesTree.Items.Add(this.codeSequrityRootNode);
             this.vulnerabilitiesTree.Items.Add(this.codeQualityRootNode);
         }
@@ -49,31 +49,17 @@
         /// <summary>
         /// Gets Cli root node.
         /// </summary>
-        public RootTreeNode CliRootNode => this.cliRootNode;
+        public RootTreeNode CliRootNode => this.ossRootNode;
 
         /// <summary>
         /// Gets code sequrity root node.
         /// </summary>
-        public RootTreeNode CodeSequrityRootNode => this.codeSequrityRootNode;
+        public SnykCodeSecurityRootTreeNode CodeSequrityRootNode => this.codeSequrityRootNode;
 
         /// <summary>
         /// Gets code quality root node.
         /// </summary>
-        public RootTreeNode CodeQualityRootNode => this.codeQualityRootNode;
-
-        /// <summary>
-        /// Set cli root node title to error.
-        /// </summary>
-        public void SetCliRootNodeTitleToError() => this.cliRootNode.SetErrorTitle();
-
-        /// <summary>
-        /// Set cli root node title to error.
-        /// </summary>
-        public void SetSnykCodeRootNodesTitleToError()
-        {
-            this.codeQualityRootNode.SetErrorTitle();
-            this.codeSequrityRootNode.SetErrorTitle();
-        }
+        public SnykCodeQualityRootTreeNode CodeQualityRootNode => this.codeQualityRootNode;
 
         /// <summary>
         /// Gets a value indicating whether tree items.
@@ -98,7 +84,7 @@
         /// <param name="cliResult"><see cref="CliResult"/> object.</param>
         public void AppendVulnerabilities(CliResult cliResult)
         {
-            if (!this.cliRootNode.Enabled)
+            if (!this.ossRootNode.Enabled)
             {
                 return;
             }
@@ -122,14 +108,15 @@
                     fileNode.Items.Add(node);
                 }
 
-                this.cliRootNode.Items.Add(fileNode);
+                this.ossRootNode.Items.Add(fileNode);
             });
 
-            this.cliRootNode.SetDetails(
-                cliResult.CriticalSeverityCount,
-                cliResult.HighSeverityCount,
-                cliResult.MediumSeverityCount,
-                cliResult.LowSeverityCount);
+            this.ossRootNode.CriticalSeverityCount = cliResult.CriticalSeverityCount;
+            this.ossRootNode.HighSeverityCount = cliResult.HighSeverityCount;
+            this.ossRootNode.MediumSeverityCount = cliResult.MediumSeverityCount;
+            this.ossRootNode.LowSeverityCount = cliResult.LowSeverityCount;
+
+            this.CliRootNode.State = RootTreeNodeState.ResultDetails;
         }
 
         /// <summary>
@@ -157,7 +144,7 @@
         /// </summary>
         public void Clear()
         {
-            this.cliRootNode.Clean();
+            this.ossRootNode.Clean();
             this.codeSequrityRootNode.Clean();
             this.codeQualityRootNode.Clean();
         }
@@ -189,7 +176,7 @@
 
             string searchString = severityFilter.GetOnlyQueryString();
 
-            this.FilterOssItems(this.cliRootNode, severityFilter, searchString);
+            this.FilterOssItems(this.ossRootNode, severityFilter, searchString);
 
             this.FilterSnykCodeItems(this.codeQualityRootNode, severityFilter, searchString);
             this.FilterSnykCodeItems(this.codeSequrityRootNode, severityFilter, searchString);
@@ -270,11 +257,12 @@
                 rootNode.Items.Add(issueNode);
             }
 
-            rootNode.SetDetails(
-                crititcalSeverityCount,
-                highSeverityCount,
-                mediumSeverityCount,
-                lowSeverityCount);
+            rootNode.CriticalSeverityCount = crititcalSeverityCount;
+            rootNode.HighSeverityCount = highSeverityCount;
+            rootNode.MediumSeverityCount = mediumSeverityCount;
+            rootNode.LowSeverityCount = lowSeverityCount;
+
+            rootNode.State = RootTreeNodeState.ResultDetails;
         }
     }
 }

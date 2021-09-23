@@ -9,36 +9,52 @@
     /// </summary>
     public abstract class RootTreeNode : TreeNode
     {
-        private bool enabled;
+        private RootTreeNodeState state;
 
         private IRefreshable parent;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="RootTreeNode"/> class.
-        /// <para name="parent">Refreshable reference</para>
         /// </summary>
+        /// <param name="parent">Refreshable reference.</param>
         public RootTreeNode(IRefreshable parent)
         {
             this.parent = parent;
 
-            base.Title = this.GetDefaultDisabledTitle();
+            this.State = RootTreeNodeState.Disabled;
         }
 
         /// <inheritdoc/>
         public override string Title
         {
-            set
+            get
             {
-                if (this.enabled)
+                string title = string.Empty;
+
+                switch (this.state)
                 {
-                    base.Title = value;
-                }
-                else
-                {
-                    base.Title = this.GetDefaultDisabledTitle();
+                    case RootTreeNodeState.Enabled:
+                        title = this.GetDefaultTitle();
+                        break;
+                    case RootTreeNodeState.DisabledForOrganization:
+                        title = this.GetDisabledForOrganizationTitle();
+                        break;
+                    case RootTreeNodeState.Scanning:
+                        title = this.GetScanningTitle();
+                        break;
+                    case RootTreeNodeState.ResultDetails:
+                        title = this.GetResultDetailsTitle();
+                        break;
+                    case RootTreeNodeState.Error:
+                        title = this.GetErrorTitle();
+                        break;
+                    case RootTreeNodeState.Disabled:
+                    default:
+                        title = this.GetDefaultDisabledTitle();
+                        break;
                 }
 
-                this.parent.Refresh();
+                return title;
             }
         }
 
@@ -46,84 +62,43 @@
         public override bool IsRoot => true;
 
         /// <summary>
-        /// Gets or sets a value indicating whether is root node enabled.
+        /// Gets a value indicating whether is root node enabled.
         /// </summary>
-        public bool Enabled
+        public bool Enabled => this.State == RootTreeNodeState.Enabled || this.State == RootTreeNodeState.Scanning;
+
+        /// <summary>
+        /// Gets or sets node state.
+        /// </summary>
+        public RootTreeNodeState State
         {
-            get => this.enabled;
+            get => this.state;
             set
             {
-                this.enabled = value;
+                this.state = value;
 
-                if (this.enabled)
-                {
-                    this.Title = this.GetDefaultTitle();
-                } 
-                else
-                {
-                    this.Title = this.GetDefaultDisabledTitle();
-                }
+                this.parent.Refresh();
             }
         }
 
         /// <summary>
-        /// Set detailed title (with information by severity).
+        /// Gets or sets total issues with critical severity.
         /// </summary>
-        /// <param name="criticalSeverityCount">Total issues with critical severity.</param>
-        /// <param name="highSeverityCount">Total issues with high severity.</param>
-        /// <param name="mediumSeverityCount">Total issues with medium severity.</param>
-        /// <param name="lowSeverityCount">Total issues with low severity.</param>
-        public void SetDetails(
-            int criticalSeverityCount,
-            int highSeverityCount,
-            int mediumSeverityCount,
-            int lowSeverityCount)
-        {
-            var titleBuilder = new StringBuilder(this.GetTitlePrefix());
-
-            int totalIssuesCount = criticalSeverityCount + highSeverityCount + mediumSeverityCount + lowSeverityCount;
-
-            titleBuilder
-                .Append(" - ")
-                .Append(string.Format("{0} {1}", totalIssuesCount, this.GetIssuesTypeName()));
-
-            var severityDict = new Dictionary<string, int>
-                {
-                    { "critical" , criticalSeverityCount },
-                    { "high" , highSeverityCount },
-                    { "medium" , mediumSeverityCount},
-                    { "low" , lowSeverityCount},
-                };
-
-            if (severityDict.Sum(pair => pair.Value) > 0)
-            {
-                titleBuilder.Append(":");
-
-                foreach (var severityNameToIntPair in severityDict)
-                {
-                    if (severityNameToIntPair.Value <= 0)
-                    {
-                        continue;
-                    }
-
-                    titleBuilder.Append(string.Format(" {0} {1} |", severityNameToIntPair.Value, severityNameToIntPair.Key));
-                }
-
-                titleBuilder = titleBuilder.Remove(titleBuilder.Length - 2, 2);
-            }
-
-            this.Title = titleBuilder.ToString();
-        }
+        public int CriticalSeverityCount { get; set; }
 
         /// <summary>
-        /// Set node text to {Prefix} + (scanninng...).
+        /// Gets or sets total issues with high severity.
         /// </summary>
-        public void SetScanningTitle() => this.Title = this.GetTitlePrefix() + " (scanning...)";
+        public int HighSeverityCount { get; set; }
 
         /// <summary>
-        /// Set node text to {Prefix} + (error).
+        /// Gets or sets total issues with medium severity.
         /// </summary>
-        public void SetErrorTitle() => this.Title = this.GetTitlePrefix() + " (error)";
+        public int MediumSeverityCount { get; set; }
+
+        /// <summary>
+        /// Gets or sets total issues with low severity.
+        /// </summary>
+        public int LowSeverityCount { get; set; }
 
         /// <summary>
         /// Set node text to {Prefix} without additional text.
@@ -155,5 +130,52 @@
         private string GetDefaultTitle() => this.GetTitlePrefix();
 
         private string GetDefaultDisabledTitle() => this.GetTitlePrefix() + " (disabled)";
+
+        private string GetDisabledForOrganizationTitle() => this.GetTitlePrefix() + " (disabled for organization)";
+
+        private string GetScanningTitle() => this.GetTitlePrefix() + " (scanning...)";
+
+        private string GetErrorTitle() => this.GetTitlePrefix() + " (error)";
+
+        private string GetResultDetailsTitle()
+        {
+            var titleBuilder = new StringBuilder(this.GetTitlePrefix());
+
+            int totalIssuesCount = this.CriticalSeverityCount
+                + this.HighSeverityCount
+                + this.MediumSeverityCount
+                + this.LowSeverityCount;
+
+            titleBuilder
+                .Append(" - ")
+                .Append(string.Format("{0} {1}", totalIssuesCount, this.GetIssuesTypeName()));
+
+            var severityDict = new Dictionary<string, int>
+            {
+                { "critical", this.CriticalSeverityCount },
+                { "high", this.HighSeverityCount },
+                { "medium", this.MediumSeverityCount},
+                { "low", this.LowSeverityCount},
+            };
+
+            if (severityDict.Sum(pair => pair.Value) > 0)
+            {
+                titleBuilder.Append(":");
+
+                foreach (var severityNameToIntPair in severityDict)
+                {
+                    if (severityNameToIntPair.Value <= 0)
+                    {
+                        continue;
+                    }
+
+                    titleBuilder.Append(string.Format(" {0} {1} |", severityNameToIntPair.Value, severityNameToIntPair.Key));
+                }
+
+                titleBuilder = titleBuilder.Remove(titleBuilder.Length - 2, 2);
+            }
+
+            return titleBuilder.ToString();
+        }
     }
 }

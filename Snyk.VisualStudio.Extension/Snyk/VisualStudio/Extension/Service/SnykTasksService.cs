@@ -74,6 +74,11 @@
         public event EventHandler<SnykCodeScanEventArgs> SnykCodeScanError;
 
         /// <summary>
+        /// SnykCode disabled event handler.
+        /// </summary>
+        public event EventHandler<SnykCodeScanEventArgs> SnykCodeDisabled;
+
+        /// <summary>
         /// Scanning cancelled event handler.
         /// </summary>
         public event EventHandler<SnykCliScanEventArgs> ScanningCancelled;
@@ -164,19 +169,11 @@
         {
             this.Logger.LogInformation("Enter Scan method");
 
-            var options = this.serviceProvider.Options;
+            this.ScanOss();
 
-            if (options.OssEnabled)
-            {
-                this.ScanOss();
-            }
+            _ = this.ScanSnykCodeAsync();
 
-            if (options.SnykCodeQualityEnabled || options.SnykCodeSecurityEnabled)
-            {
-                this.ScanSnykCode();
-            }
-
-            this.serviceProvider.AnalyticsService.LogUserTriggersAnAnalysisEvent();
+            this.serviceProvider.AnalyticsService.LogUserTriggersAnAnalysisEvent(); // todo: move this to ScanOss and add for SnykCode.
         }
 
         /// <summary>
@@ -263,6 +260,11 @@
         public void OnSnykCodeError(string message) => this.SnykCodeScanError?.Invoke(this, new SnykCodeScanEventArgs(message));
 
         /// <summary>
+        /// Fire SnykCode disabled event with <see cref="SnykCodeScanEventArgs"/>.
+        /// </summary>
+        public void FireSnykCodeDisabledError() => this.SnykCodeDisabled?.Invoke(this, new SnykCodeScanEventArgs());
+
+        /// <summary>
         /// Fire download started.
         /// </summary>
         protected internal void OnDownloadStarted()
@@ -293,6 +295,11 @@
 
         private void ScanOss()
         {
+            if (!this.serviceProvider.Options.OssEnabled)
+            {
+                return;
+            }
+
             if (this.cliScanTask != null && this.cliScanTask.Status == TaskStatus.Running)
             {
                 this.Logger.LogInformation("There is already a task in progress");
@@ -408,8 +415,21 @@
                 }, progressWorker.TokenSource.Token);
         }
 
-        private void ScanSnykCode()
+        private async Task ScanSnykCodeAsync()
         {
+            if (!await this.serviceProvider.ApiService.IsSnykCodeEnabledAsync())
+            {
+                this.FireSnykCodeDisabledError();
+
+                return;
+            }
+
+            var options = this.serviceProvider.Options;
+            if (!options.SnykCodeQualityEnabled && !options.SnykCodeSecurityEnabled)
+            {
+                return;
+            }
+
             if (this.snykCodeScanTask != null && this.snykCodeScanTask.Status == TaskStatus.Running)
             {
                 this.Logger.LogInformation("There is already a task in progress for SnykCode scan.");
