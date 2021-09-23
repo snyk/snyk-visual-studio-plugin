@@ -10,6 +10,7 @@
     using Snyk.Code.Library.Domain.Analysis;
     using Snyk.Common;
     using Snyk.VisualStudio.Extension.CLI;
+    using Snyk.VisualStudio.Extension.SnykAnalytics;
     using static Snyk.VisualStudio.Extension.CLI.SnykCliDownloader;
     using Task = System.Threading.Tasks.Task;
 
@@ -196,11 +197,11 @@
         {
             Logger.Information("Enter Scan method");
 
+            _ = Task.Run(async () => this.serviceProvider.AnalyticsService.LogAnalysisIsTriggeredEvent(await this.GetSelectedProductsAsync()));
+
             this.ScanOss();
 
             _ = this.ScanSnykCodeAsync();
-
-            this.serviceProvider.AnalyticsService.LogUserTriggersAnAnalysisEvent(); // todo: move this to ScanOss and add for SnykCode.
         }
 
         /// <summary>
@@ -564,5 +565,31 @@
         private bool IsSnykCodeScanRunning() => this.snykCodeScanTask != null && this.snykCodeScanTask.Status == TaskStatus.Running;
 
         private bool IsDownloadRunning() => this.downloadCliTask != null && this.downloadCliTask.Status == TaskStatus.Running;
+
+        private async Task<IList<string>> GetSelectedProductsAsync()
+        {
+            var selectedProducts = new List<string>();
+            var options = this.serviceProvider.Options;
+
+            if (options.OssEnabled)
+            {
+                selectedProducts.Add(AnalysisType.SnykOpenSource);
+            }
+
+            if (await this.serviceProvider.ApiService.IsSnykCodeEnabledAsync())
+            {
+                if (options.SnykCodeSecurityEnabled)
+                {
+                    selectedProducts.Add(AnalysisType.SnykCodeSecurity);
+                }
+
+                if (options.SnykCodeQualityEnabled)
+                {
+                    selectedProducts.Add(AnalysisType.SnykCodeQuality);
+                }
+            }
+
+            return selectedProducts;
+        }
     }
 }

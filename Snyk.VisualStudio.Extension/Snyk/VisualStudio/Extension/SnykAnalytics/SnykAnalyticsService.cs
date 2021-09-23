@@ -1,6 +1,7 @@
 ﻿namespace Snyk.VisualStudio.Extension.SnykAnalytics
 {
     using System;
+    using System.Collections.Generic;
     using System.Threading.Tasks;
     using Segment;
     using Segment.Model;
@@ -14,31 +15,35 @@
     public class SnykAnalyticsService
     {
         /// <summary>
-        /// Snyk Open Source Analysis Ready message.
+        /// Analysis Ready message.
         /// </summary>
-        public const string OpenSourceAnalysisReady = "Snyk Open Source Analysis Ready";
+        public const string AnalysisIsReady = "Analysis Is Ready";
 
         /// <summary>
-        /// User Landed On The Welcome Page message.
+        /// The Welcome Page is viewed event.
         /// </summary>
-        public const string UserLandedOnTheWelcomePage = "User Landed On The Welcome Page";
+        public const string WelcomePageIsViewed = "Welcome Is Viewed";
 
         /// <summary>
         /// User Sees An Issue message.
         /// </summary>
-        public const string UserSeesAnIssue = "User Sees An Issue";
+        public const string IssueIsViewed = "Issue Is Viewed";
 
         /// <summary>
-        /// User Triggers An Analysis message.
+        /// User Triggers An Analysis.
         /// </summary>
-        public const string UserTriggersAnAnalysis = "User Triggers An Analysis";
+        public const string AnalysisIsTriggered = "Analysis Is Triggered";
 
-        private static readonly ILogger Logger = LogManager.ForContext<SnykAnalyticsService>();
+        private const string VisualStudioIde = "Visual Studio";
 
         /// <summary>
         /// Link to snyk.io user/me.
         /// </summary>
         private const string SnykUserMeUrl = "https://snyk.io/api/user/me/";
+
+        private static readonly ILogger Logger = LogManager.ForContext<SnykAnalyticsService>();
+
+        private static SnykAnalyticsService instance;
 
         private Client analyticsClient;
 
@@ -49,7 +54,23 @@
         /// <summary>
         /// Initializes a new instance of the <see cref="SnykAnalyticsService"/> class.
         /// </summary>
-        public SnykAnalyticsService() => this.AnalyticsEnabled = true;
+        private SnykAnalyticsService() => this.AnalyticsEnabled = true;
+
+        /// <summary>
+        /// Gets <see cref="SnykAnalyticsService"/> singleton instance.
+        /// </summary>
+        public static SnykAnalyticsService Instance
+        {
+            get
+            {
+                if (instance == null)
+                {
+                    instance = new SnykAnalyticsService();
+                }
+
+                return instance;
+            }
+        }
 
         /// <summary>
         /// Gets or sets a value indicating whether user id.
@@ -145,51 +166,49 @@
         }
 
         /// <summary>
-        /// Log OpenSourceAnalysisReadyEvent.
+        /// Log Analysis Is Ready event.
         /// </summary>
-        /// <param name="criticalSeverityCount">Critical severity count.</param>
-        /// <param name="highSeverityCount">High severity count.</param>
-        /// <param name="mediumSeverityCount">Medium severity count.</param>
-        /// <param name="lowSeverityCount">Low severity count.</param>
-        public void LogOpenSourceAnalysisReadyEvent(int criticalSeverityCount, int highSeverityCount, int mediumSeverityCount, int lowSeverityCount)
-            => this.LogEvent(SnykAnalyticsService.OpenSourceAnalysisReady, new Properties()
+        /// <param name="analysisType">Type of analysis (Oss, SnykCode Security or quality).</param>
+        /// <param name="analysisResult">Analysis result (success or error).</param>
+        public void LogAnalysisReadyEvent(string analysisType, string analysisResult)
+            => this.LogEvent(SnykAnalyticsService.AnalysisIsReady, new Properties()
             {
-                { "criticalSeverityIssuesCount", criticalSeverityCount },
-                { "highSeverityIssuesCount", highSeverityCount },
-                { "mediumSeverityIssuesCount", mediumSeverityCount },
-                { "lowSeverityIssuesCount", lowSeverityCount },
+                { "ide", VisualStudioIde },
+                { "analysisType", analysisType },
+                { "result", analysisResult },
             });
 
         /// <summary>
         /// Log UserLandedOnTheWelcomePageEvent.
         /// </summary>
-        public void LogUserLandedOnTheWelcomePageEvent()
-            => this.LogEvent(SnykAnalyticsService.UserLandedOnTheWelcomePage, new Properties());
+        public void LogWelcomeIsViewedEvent()
+            => this.LogEvent(SnykAnalyticsService.WelcomePageIsViewed, new Properties() { { "ide", VisualStudioIde }, });
 
         /// <summary>
         /// Log UserTriggersAnAnalysisEvent.
         /// </summary>
-        public void LogUserTriggersAnAnalysisEvent()
-            => this.LogEvent(SnykAnalyticsService.UserTriggersAnAnalysis, new Properties()
+        /// <param name="selectedProducts">Selected products (OSS, SnykCode Quality and Security).</param>
+        public void LogAnalysisIsTriggeredEvent(IList<string> selectedProducts)
+            => this.LogEvent(SnykAnalyticsService.AnalysisIsTriggered, new Properties()
             {
-                { "selectedProducts", "Snyk Open Source" },
+                { "ide", VisualStudioIde },
+                { "selectedProducts", selectedProducts },
+                { "triggeredByUser", true },
             });
 
         /// <summary>
-        /// Log UserSeesAnIssueEvent.
+        /// Log Issue Is Viewed Event.
         /// </summary>
         /// <param name="id">User id.</param>
+        /// <param name="issueType">Type of issue (Oss, SnykCode Security or Queality.</param>
         /// <param name="severity">Severity name.</param>
-        public void LogUserSeesAnIssueEvent(string id, string severity)
-            => this.LogEvent(SnykAnalyticsService.UserSeesAnIssue, new Properties()
+        public void LogIssueIsViewedEvent(string id, string issueType, string severity)
+            => this.LogEvent(SnykAnalyticsService.IssueIsViewed, new Properties()
             {
-                {
-                    "issueDetails", new Properties()
-                    {
-                        { "id", id},
-                        { "severity", severity },
-                    }
-                },
+                { "ide", VisualStudioIde },
+                { "issueId", id },
+                { "issueType", issueType },
+                { "severity", severity },
             });
 
         private void Identify()
