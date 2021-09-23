@@ -1,8 +1,8 @@
 ﻿namespace Snyk.VisualStudio.Extension.UI
 {
+    using System.Threading.Tasks;
     using System.Windows;
-    using EnvDTE;
-    using Microsoft;
+    using Microsoft.VisualStudio.Shell;
     using Microsoft.VisualStudio.Shell.Interop;
     using Snyk.VisualStudio.Extension.Service;
 
@@ -13,7 +13,7 @@
     {
         private ISnykServiceProvider serviceProvider;
 
-        private IVsStatusbar bar;
+        private IVsStatusbar statusBar;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="VsStatusBar"/> class.
@@ -22,7 +22,7 @@
         private VsStatusBar(ISnykServiceProvider serviceProvider) => this.serviceProvider = serviceProvider;
 
         /// <summary>
-        /// Single instance of <see cref="VsStatusBar"/>.
+        /// Gets single instance of <see cref="VsStatusBar"/>.
         /// </summary>
         public static VsStatusBar Instance { get; private set; }
 
@@ -31,23 +31,6 @@
         /// </summary>
         /// <param name="serviceProvider">Snyk service provider implementation.</param>
         public static void Initialize(ISnykServiceProvider serviceProvider) => Instance = new VsStatusBar(serviceProvider);
-
-        /// <summary>
-        /// Gets the status bar.
-        /// </summary>
-        /// <value>The status bar.</value>
-        protected IVsStatusbar Bar
-        {
-            get
-            {
-                if (this.bar == null)
-                {
-                    this.bar = this.serviceProvider.GetServiceAsync(typeof(SVsStatusbar)) as IVsStatusbar;
-                }
-
-                return this.bar;
-            }
-        }
 
         /// <summary>
         /// Show message box with title and message.
@@ -68,16 +51,58 @@
         /// <param name="message">The message.</param>
         public void DisplayMessage(string message)
         {
-            this.ShowMessageAsync(message);
+            _ = this.ShowMessageAsync(message);
+        }
+
+        public void ShowStartSearchMessage(string message)
+        {
+            _ = this.ShowMessageWithProgressIconAsync(message, (short)Constants.SBAI_Find, 1);
+        }
+
+        public void ShowFinishedSearchMessage(string message)
+        {
+            _ = this.ShowMessageWithProgressIconAsync(message, (short)Constants.SBAI_Find, 0);
+        }
+
+        public void ShowDownloadProgressMessage(string message)
+        {
+            _ = this.ShowMessageWithProgressIconAsync(message, (short)Constants.SBAI_Build, 1);
+        }
+
+        public void ShowDownloadFinishedMessage(string message)
+        {
+            _ = this.ShowMessageWithProgressIconAsync(message, (short)Constants.SBAI_Build, 0);
+        }
+
+        private async System.Threading.Tasks.Task ShowMessageWithProgressIconAsync(string message, object icon, int showIcon)
+        {
+            await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
+
+            IVsStatusbar statusBar = await this.GetStatusBarAsync();
+
+            statusBar.SetText(message);
+            statusBar.Animation(showIcon, ref icon);
         }
 
         private async System.Threading.Tasks.Task ShowMessageAsync(string message)
         {
-            var dte = await this.serviceProvider.GetServiceAsync(typeof(DTE)) as DTE;
+            await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
 
-            Assumes.Present(dte);
+            IVsStatusbar statusBar = await this.GetStatusBarAsync();
 
-            dte.StatusBar.Text = message;
+            statusBar.SetText(message);
+        }
+
+        private async Task<IVsStatusbar> GetStatusBarAsync()
+        {
+            if (this.statusBar == null)
+            {
+                await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
+
+                this.statusBar = (IVsStatusbar)await this.serviceProvider.GetServiceAsync(typeof(SVsStatusbar));
+            }
+
+            return this.statusBar;
         }
     }
 }

@@ -28,6 +28,11 @@
         public SnykCodeScanEventArgs(AnalysisResult analysisResult) => this.Result = analysisResult;
 
         /// <summary>
+        /// Gets or sets a value indicating whether OSS scan still running or not.
+        /// </summary>
+        public bool OssScanRunning { get; set; }
+
+        /// <summary>
         /// Gets or sets a value indicating error message.
         /// </summary>
         public string Error { get; set; }

@@ -63,7 +63,7 @@
 
             if (menuCommand != null)
             {
-                menuCommand.Enabled = SnykSolutionService.Instance.IsSolutionOpen && !SnykTasksService.Instance.IsScanRunning();
+                menuCommand.Enabled = SnykSolutionService.Instance.IsSolutionOpen && !SnykTasksService.Instance.IsTaskRunning();
             }
         }
     }
