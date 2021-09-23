@@ -187,7 +187,7 @@
             {
                 var serviceProvider = this.OptionsDialogPage.ServiceProvider;
                 var tasksService = serviceProvider.TasksService;
-
+                
                 if (SnykCli.IsCliExists())
                 {
                     this.logger.LogInformation("CLI exists. Calling SetupApiToken method");
