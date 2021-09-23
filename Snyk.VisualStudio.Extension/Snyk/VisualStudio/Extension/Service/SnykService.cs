@@ -5,7 +5,6 @@
     using System.Threading.Tasks;
     using EnvDTE;
     using Microsoft.VisualStudio.Settings;
-    using Microsoft.VisualStudio.Shell.Interop;
     using Microsoft.VisualStudio.Shell.Settings;
     using Serilog;
     using Snyk.Code.Library.Api;
@@ -141,23 +140,7 @@
                     this.SetupSnykCodeService();
                 }
 
-                return this.apiService;
-            }
-        }
-
-        /// <inheritdoc/>
-        public SnykApiService ApiService
-        {
-            get
-            {
-                if (this.apiService == null)
-                {
-                    this.apiService = new SnykApiService(this.Options);
-
-                    this.Options.SettingsChanged += this.OnSettingsChanged;
-                }
-
-                return this.apiService;
+                return this.snykCodeService;
             }
         }
 
