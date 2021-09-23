@@ -142,23 +142,7 @@
                     this.SetupSnykCodeService();
                 }
 
-                return this.apiService;
-            }
-        }
-
-        /// <inheritdoc/>
-        public SnykApiService ApiService
-        {
-            get
-            {
-                if (this.apiService == null)
-                {
-                    this.apiService = new SnykApiService(this.Options);
-
-                    this.Options.SettingsChanged += this.OnSettingsChanged;
-                }
-
-                return this.apiService;
+                return this.snykCodeService;
             }
         }
 
