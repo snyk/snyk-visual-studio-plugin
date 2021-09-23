@@ -415,7 +415,7 @@
 
         private async Task ScanSnykCodeAsync()
         {
-            if (!await this.serviceProvider.ApiService.IsSnykCodeEnabledAsync())
+            if (!await this.serviceProvider.ApiService.IsSnyCodeEnabledAsync())
             {
                 this.FireSnykCodeDisabledError();
 
