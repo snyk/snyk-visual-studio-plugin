@@ -53,5 +53,16 @@
         /// </summary>
         /// <returns>Command Id.</returns>
         protected override int GetCommandId() => SnykGuids.CleanCommandId;
+
+        /// <inheritdoc/>
+        protected override void OnBeforeQueryStatus(object sender, EventArgs e)
+        {
+            var menuCommand = sender as OleMenuCommand;
+
+            if (menuCommand != null)
+            {
+                menuCommand.Enabled = this.VsPackage.ToolWindowControl.IsTreeContentNotEmpty();
+            }
+        }
     }
 }

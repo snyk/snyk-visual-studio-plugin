@@ -53,6 +53,14 @@
         public SnykFilterableTree VulnerabilitiesTree => this.resultsTree;
 
         /// <summary>
+        /// Gets a value indicating whether tree content not empty.
+        /// </summary>
+        /// <returns>True if result tree not empty.</returns>
+        public bool IsTreeContentNotEmpty() => this.resultsTree.CliRootNode.HasContent
+            || this.resultsTree.CodeSequrityRootNode.HasContent 
+            || this.resultsTree.CodeQualityRootNode.HasContent;
+
+        /// <summary>
         /// Initialize event listeners for UI.
         /// </summary>
         /// <param name="serviceProvider">Service provider implementation.</param>
@@ -104,14 +112,16 @@
         /// </summary>
         /// <param name="sender">Source object.</param>
         /// <param name="eventArgs">Event args.</param>
-        public void OnAfterBackgroundSolutionLoadComplete(object sender, EventArgs eventArgs) => this.context.TransitionTo(RunScanState.Instance);
+        public void OnAfterBackgroundSolutionLoadComplete(object sender, EventArgs eventArgs)
+        {
+        }
 
         /// <summary>
         /// AfterCloseSolution event handler. Switch context to RunScanState.
         /// </summary>
         /// <param name="sender">Source object.</param>
         /// <param name="eventArgs">Event args.</param>
-        public void OnAfterCloseSolution(object sender, EventArgs eventArgs) => this.context.TransitionTo(RunScanState.Instance);
+        public void OnAfterCloseSolution(object sender, EventArgs eventArgs) => this.Clean();
 
         /// <summary>
         /// Scanning update event handler. Append CLI results to tree.

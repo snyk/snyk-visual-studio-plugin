@@ -54,5 +54,10 @@
         /// </summary>
         /// <returns>Command Id.</returns>
         protected override int GetCommandId() => SnykGuids.OptionsCommandId;
+
+        /// <inheritdoc/>
+        protected override void OnBeforeQueryStatus(object sender, EventArgs e)
+        {
+        }
     }
 }

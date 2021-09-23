@@ -3,6 +3,7 @@
     using System;
     using System.ComponentModel.Design;
     using Microsoft.VisualStudio.Shell;
+    using Snyk.VisualStudio.Extension.CLI;
     using Snyk.VisualStudio.Extension.Service;
     using Task = System.Threading.Tasks.Task;
 
@@ -54,5 +55,16 @@
         /// </summary>
         /// <returns>Id int.</returns>
         protected override int GetCommandId() => SnykGuids.RunScanCommandId;
+
+        /// <inheritdoc/>
+        protected override void OnBeforeQueryStatus(object sender, EventArgs e)
+        {
+            var menuCommand = sender as OleMenuCommand;
+
+            if (menuCommand != null)
+            {
+                menuCommand.Enabled = SnykSolutionService.Instance.IsSolutionOpen && !SnykTasksService.Instance.IsScanRunning();
+            }
+        }
     }
 }
