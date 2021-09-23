@@ -15,7 +15,7 @@
         </StackPanel>
 
         <StackPanel Name="scanningProjectMessagePanel" HorizontalAlignment="Center" Visibility="Collapsed">
-            <TextBlock>Scanning project for vulnerabilities.</TextBlock>
+            <TextBlock>Scanning project for vulnerabilities...</TextBlock>
         </StackPanel>
 
         <StackPanel Name="runScanMessagePanel" HorizontalAlignment="Center" Visibility="Collapsed">

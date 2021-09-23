@@ -173,7 +173,6 @@
     <Compile Include="Snyk\VisualStudio\Extension\CLI\SnykConsoleRunner.cs" />
     <Compile Include="Snyk\VisualStudio\Extension\UI\Toolwindow\OverviewState.cs" />
     <Compile Include="Snyk\VisualStudio\Extension\UI\Toolwindow\RunScanState.cs" />
-    <Compile Include="Snyk\VisualStudio\Extension\UI\Toolwindow\ScanningState.cs" />
     <Compile Include="Snyk\VisualStudio\Extension\UI\Toolwindow\ScanResultsState.cs" />
     <Compile Include="Snyk\VisualStudio\Extension\UI\SeverityFilter.cs" />
     <Compile Include="Snyk\VisualStudio\Extension\UI\Tree\OssVulnerabilityTreeNode.cs" />
