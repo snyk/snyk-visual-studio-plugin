@@ -95,6 +95,9 @@
     <Compile Include="Snyk\VisualStudio\Extension\Settings\SnykSettings.cs" />
     <Compile Include="Snyk\VisualStudio\Extension\Settings\SnykSettingsLoader.cs" />
     <Compile Include="Snyk\VisualStudio\Extension\Settings\SnykSettingsChangedEventArgs.cs" />
+    <Compile Include="Snyk\VisualStudio\Extension\SnykAnalytics\AnalyticsAnalysisResult.cs" />
+    <Compile Include="Snyk\VisualStudio\Extension\SnykAnalytics\AnalysisType.cs" />
+    <Compile Include="Snyk\VisualStudio\Extension\SnykAnalytics\IssueType.cs" />
     <Compile Include="Snyk\VisualStudio\Extension\SnykExtension.cs" />
     <Compile Include="Snyk\VisualStudio\Extension\Service\SnykCodeScanEventArgs.cs" />
     <Compile Include="Snyk\VisualStudio\Extension\SnykGuids.cs" />
