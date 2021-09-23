@@ -25,7 +25,7 @@
                 <ColumnDefinition Width="6*"/>
             </Grid.ColumnDefinitions>
             <tree:SnykFilterableTree x:Name="resultsTree" SelectedVulnerabilityChanged="VulnerabilitiesTree_SelectetVulnerabilityChanged"/>
-            
+
             <GridSplitter Grid.Column="1" Width="5" HorizontalAlignment="Stretch" />
 
             <StackPanel Grid.Column="3" Name="progressBarPanel" Visibility="Collapsed" Orientation="Vertical" Margin="1" UseLayoutRounding="False">
@@ -33,7 +33,7 @@
                     <ProgressBar x:Name="progressBar" Minimum="0" Maximum="100" Height="3"/>
                 </Grid>
             </StackPanel>
-            
+
             <window:DescriptionPanel Grid.Column="4" 
                                      x:Name="descriptionPanel" 
                                      Visibility="Collapsed" 

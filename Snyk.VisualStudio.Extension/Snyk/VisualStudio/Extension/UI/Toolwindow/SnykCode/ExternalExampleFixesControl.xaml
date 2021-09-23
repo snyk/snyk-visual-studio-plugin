@@ -17,9 +17,9 @@
             <ColumnDefinition Width="*"/>
         </Grid.ColumnDefinitions>
         
-        <TextBlock Grid.Row="0" Grid.Column="0" Text="External example fixes" FontSize="14" FontWeight="Bold"/>
-        
-        <TextBlock Grid.Row="1" Grid.Column="0" Name="shortDescription"/>
+        <TextBlock Grid.Row="0" Grid.Column="0" Text="External example fixes" FontWeight="Bold" Margin="0, 0, 0, 8"/>
+
+        <TextBlock Grid.Row="1" Grid.Column="0" Name="shortDescription" Margin="0, 0, 0, 8"/>
 
         <TabControl Grid.Row="3" Grid.Column="0" x:Name="externalExampleFixesTab"/>
     </Grid>

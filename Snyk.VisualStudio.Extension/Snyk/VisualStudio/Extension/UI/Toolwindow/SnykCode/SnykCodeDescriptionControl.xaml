@@ -17,10 +17,10 @@
             <ColumnDefinition Width="*"/>
         </Grid.ColumnDefinitions>
 
-        <TextBlock Grid.Row="0" Name="snykCodeDescription" Text="" FontSize="12" Margin="5,5,5,20" TextWrapping="Wrap"/>
+        <TextBlock Grid.Row="0" Name="snykCodeDescription" Text="" FontSize="12" Margin="0, 0, 0, 16" TextWrapping="Wrap"/>
 
-        <local:DataFlowStepsControl Grid.Row="1" x:Name="dataFlowStepsControl" Margin="5,5,5,20"/>
+        <local:DataFlowStepsControl Grid.Row="1" x:Name="dataFlowStepsControl" Margin="0, 0, 0, 16"/>
 
-        <local:ExternalExampleFixesControl Grid.Row="2" x:Name="externalExampleFixesControl" Margin="5,5,5,20"/>
+        <local:ExternalExampleFixesControl Grid.Row="2" x:Name="externalExampleFixesControl"/>
     </Grid>
 </UserControl>
