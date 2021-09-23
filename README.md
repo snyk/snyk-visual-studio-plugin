@@ -12,7 +12,7 @@
     - [Authentication](#authentication)
 - [Run analysis](#run-analysis)
   - [Open Source Vulnerabilities](#open-source-vulnerabilities)
-  - [SnykCode Vulnerabilities](#snykcode-vulnerabilities)
+  - [Snyk Code Vulnerabilities](#snykcode-vulnerabilities)
 - [View analysis results](#view-analysis-results)
 - [Extension Configuration](#extension-configuration)
 - [Known Caveats](#known-caveats)
@@ -90,7 +90,7 @@ Open your solution and run Snyk scan. Depending on the size of your solution, ti
 
 The extension provides the user with two kinds of results:
 * Open Source Vulnerabilities
-* SnykCode Issues
+* Snyk Code Issues
 
 ### Open Source Vulnerabilities
 
@@ -101,7 +101,7 @@ The extension provides the user with two kinds of results:
 
 ![Scan results](doc/images/readme_image_3_1_2.png "Scan results")
 
-### SnykCode Vulnerabilities
+### Snyk Code Issues
 
 Snyk Code analysis shows a list of security vulnerabilities and code issues found in the application code. For more details and examples of how others fixed the issue, select a security vulnerability or a code security issue. Once selected you will see the Snyk suggestion information in a panel.
 
@@ -149,8 +149,8 @@ After the plugin is installed, you can set the following configurations for the 
 In the settings, you can also choose which results you want to receive:
 
 * Open Source Vulnerabilities 
-* SnykCode Security Vulnerabilities
-* SnykCode Quality Issues
+* Snyk Code Security Vulnerabilities
+* Snyk Code Quality Issues
 
 ![Extension Settings Product Selection](doc/images/readme_image_settings_product_selection.png "Extension Settings Product Selection")
 
