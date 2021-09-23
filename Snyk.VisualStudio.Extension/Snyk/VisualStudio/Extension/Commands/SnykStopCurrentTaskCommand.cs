@@ -48,7 +48,7 @@
         /// </summary>
         /// <param name="sender">Source object.</param>
         /// <param name="eventArgs">Event args.</param>
-        protected override void Execute(object sender, EventArgs eventArgs) => SnykTasksService.Instance.CancelCurrentTask();
+        protected override void Execute(object sender, EventArgs eventArgs) => SnykTasksService.Instance.CancelTasks();
 
         /// <summary>
         /// Get command Id.
@@ -62,7 +62,7 @@
 
             if (menuCommand != null)
             {
-                menuCommand.Enabled = SnykSolutionService.Instance.IsSolutionOpen && SnykTasksService.Instance.IsScanRunning();
+                menuCommand.Enabled = SnykSolutionService.Instance.IsSolutionOpen && SnykTasksService.Instance.IsTaskRunning();
             }
         }
     }
