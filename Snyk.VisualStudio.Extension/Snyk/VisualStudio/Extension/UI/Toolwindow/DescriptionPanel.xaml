@@ -10,7 +10,7 @@
     <Grid>
         <ScrollViewer Grid.Column="2" Name="descriptionView" HorizontalContentAlignment="Stretch" VerticalContentAlignment="Stretch">
             <StackPanel>
-                <local:DescriptionHeaderPanel x:Name="descriptionHeaderPanel" Margin="20, 20, 20, 20"/>
+                <local:DescriptionHeaderPanel x:Name="descriptionHeaderPanel" Margin="20, 20, 20, 0"/>
                 <local:OssDescriptionControl x:Name="ossDescriptionControl" Margin="20, 20, 20, 20"/>
                 <snykcode:SnykCodeDescriptionControl x:Name="snykCodeDescriptionControl" Margin="20, 20, 20, 20"/>
             </StackPanel>
