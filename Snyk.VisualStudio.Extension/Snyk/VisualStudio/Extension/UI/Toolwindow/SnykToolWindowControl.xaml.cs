@@ -214,61 +214,6 @@
         });
 
         /// <summary>
-<<<<<<< HEAD
-        /// Handle SnykCode disabled.
-        /// </summary>
-        /// <param name="sender">Source object.</param>
-        /// <param name="eventArgs">Event args.</param>
-        public void OnSnykCodeDisabledHandler(object sender, SnykCodeScanEventArgs eventArgs) => ThreadHelper.JoinableTaskFactory.Run(async () =>
-        {
-            await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
-
-            this.resultsTree.CodeQualityRootNode.State = RootTreeNodeState.DisabledForOrganization;
-            this.resultsTree.CodeSequrityRootNode.State = RootTreeNodeState.DisabledForOrganization;
-        });
-
-        /// <summary>
-        /// Handle SnykCode disabled.
-        /// </summary>
-        /// <param name="sender">Source object.</param>
-        /// <param name="eventArgs">Event args.</param>
-        public void OnSnykCodeDisabledHandler(object sender, SnykCodeScanEventArgs eventArgs) => ThreadHelper.JoinableTaskFactory.Run(async () =>
-        {
-            await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
-
-            this.resultsTree.CodeQualityRootNode.State = RootTreeNodeState.DisabledForOrganization;
-            this.resultsTree.CodeSequrityRootNode.State = RootTreeNodeState.DisabledForOrganization;
-        });
-
-        /// <summary>
-        /// Handle SnykCode disabled.
-        /// </summary>
-        /// <param name="sender">Source object.</param>
-        /// <param name="eventArgs">Event args.</param>
-        public void OnSnykCodeDisabledHandler(object sender, SnykCodeScanEventArgs eventArgs) => ThreadHelper.JoinableTaskFactory.Run(async () =>
-        {
-            await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
-
-            this.resultsTree.CodeQualityRootNode.State = RootTreeNodeState.DisabledForOrganization;
-            this.resultsTree.CodeSequrityRootNode.State = RootTreeNodeState.DisabledForOrganization;
-        });
-
-        /// <summary>
-        /// Handle SnykCode disabled.
-        /// </summary>
-        /// <param name="sender">Source object.</param>
-        /// <param name="eventArgs">Event args.</param>
-        public void OnSnykCodeDisabledHandler(object sender, SnykCodeScanEventArgs eventArgs) => ThreadHelper.JoinableTaskFactory.Run(async () =>
-        {
-            await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
-
-            this.resultsTree.CodeQualityRootNode.State = RootTreeNodeState.DisabledForOrganization;
-            this.resultsTree.CodeSequrityRootNode.State = RootTreeNodeState.DisabledForOrganization;
-        });
-
-        /// <summary>
-=======
->>>>>>> 7a8fc19 (fix: rebase issues.)
         /// ScanningCancelled event handler. Switch context to ScanResultsState.
         /// </summary>
         /// <param name="sender">Source object.</param>
