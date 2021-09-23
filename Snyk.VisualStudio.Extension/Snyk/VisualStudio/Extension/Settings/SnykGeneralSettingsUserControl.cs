@@ -186,7 +186,7 @@
             {
                 var serviceProvider = this.OptionsDialogPage.ServiceProvider;
                 var tasksService = serviceProvider.TasksService;
-                
+
                 if (SnykCli.IsCliExists())
                 {
                     Logger.Information("CLI exists. Calling SetupApiToken method");
@@ -352,9 +352,6 @@
 
         private void UpdateSnykCodeEnablementSettings(bool snykCodeEnabled)
         {
-            this.codeSecurityEnabledCheckBox.Checked = snykCodeEnabled;
-            this.codeQualityEnabledCheckBox.Checked = snykCodeEnabled;
-
             this.codeSecurityEnabledCheckBox.Enabled = snykCodeEnabled;
             this.codeQualityEnabledCheckBox.Enabled = snykCodeEnabled;
 
