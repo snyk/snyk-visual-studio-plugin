@@ -132,37 +132,31 @@
         /// </summary>
         /// <param name="sender">Source object.</param>
         /// <param name="eventArgs">Event args.</param>
-        public void OnCliScanningStarted(object sender, SnykCliScanEventArgs eventArgs)
+        public void OnCliScanningStarted(object sender, SnykCliScanEventArgs eventArgs) => ThreadHelper.JoinableTaskFactory.Run(async () =>
         {
-            this.DisplayMainMessage("Scanning project for vulnerabilities...");
+            await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
 
-            ThreadHelper.JoinableTaskFactory.Run(async () =>
-            {
-                await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
+            this.messagePanel.ScanningMessage();
 
-                this.mainGrid.Visibility = Visibility.Visible;
+            this.mainGrid.Visibility = Visibility.Visible;
 
-                this.resultsTree.CliRootNode.State = RootTreeNodeState.Scanning;
-            });
-        }
+            this.resultsTree.CliRootNode.State = RootTreeNodeState.Scanning;
+        });
 
         /// <summary>
         /// SnykCode ScanningStarted event handler. Switch context to ScanningState.
         /// </summary>
         /// <param name="sender">Source object.</param>
         /// <param name="eventArgs">Event args.</param>
-        public void OnSnykCodeScanningStarted(object sender, SnykCodeScanEventArgs eventArgs)
+        public void OnSnykCodeScanningStarted(object sender, SnykCodeScanEventArgs eventArgs) => ThreadHelper.JoinableTaskFactory.Run(async () =>
         {
-            this.DisplayMainMessage("Scanning project for vulnerabilities...");
+            await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
 
-            ThreadHelper.JoinableTaskFactory.Run(async () =>
-            {
-                await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
+            this.messagePanel.ScanningMessage();
 
-                this.resultsTree.CodeSequrityRootNode.State = RootTreeNodeState.Scanning;
-                this.resultsTree.CodeQualityRootNode.State = RootTreeNodeState.Scanning;
-            });
-        }
+            this.resultsTree.CodeSequrityRootNode.State = RootTreeNodeState.Scanning;
+            this.resultsTree.CodeQualityRootNode.State = RootTreeNodeState.Scanning;
+        });
 
         /// <summary>
         /// ScanningFinished event handler. Switch context to ScanResultsState.
