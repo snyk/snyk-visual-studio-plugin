@@ -494,7 +494,7 @@
                     this.descriptionPanel.Visibility = Visibility.Collapsed;
 
                     this.messagePanel.Visibility = Visibility.Visible;
-                    this.messagePanel.SelectIssueMessage();
+                    this.messagePanel.ShowSelectIssueMessage();
 
                     return;
                 }

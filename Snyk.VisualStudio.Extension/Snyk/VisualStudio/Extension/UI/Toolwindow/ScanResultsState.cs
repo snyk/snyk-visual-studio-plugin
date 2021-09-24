@@ -20,7 +20,7 @@
         {
             await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
 
-            this.ToolWindowControl.messagePanel.SelectIssueMessage();
+            this.ToolWindowControl.messagePanel.ShowSelectIssueMessage();
 
             this.ToolWindowControl.messagePanel.Visibility = Visibility.Visible;
         });

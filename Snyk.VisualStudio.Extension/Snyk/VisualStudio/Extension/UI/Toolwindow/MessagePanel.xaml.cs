@@ -58,17 +58,17 @@
         /// <summary>
         /// Show run scan message.
         /// </summary>
-        public void RunScanMessage() => this.ShowPanel(this.runScanMessagePanel);
+        public void ShowRunScanMessage() => this.ShowPanel(this.runScanMessagePanel);
 
         /// <summary>
         /// Show select issue message.
         /// </summary>
-        public void SelectIssueMessage() => this.ShowPanel(this.selectIssueMessagePanel);
+        public void ShowSelectIssueMessage() => this.ShowPanel(this.selectIssueMessagePanel);
 
         /// <summary>
         /// Show overview screen message.
         /// </summary>
-        public void OverviewScreenMessage() => this.ShowPanel(this.overviewPanel);
+        public void ShowOverviewScreenMessage() => this.ShowPanel(this.overviewPanel);
 
         private void RunButton_Click(object sender, RoutedEventArgs e) => SnykTasksService.Instance.Scan();
 
