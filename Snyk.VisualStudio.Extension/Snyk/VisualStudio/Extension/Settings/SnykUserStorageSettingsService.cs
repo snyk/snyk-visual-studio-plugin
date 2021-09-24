@@ -17,27 +17,33 @@
     /// </summary>
     public class SnykUserStorageSettingsService
     {
-        private static readonly ILogger Logger = LogManager.ForContext<SnykUserStorageSettingsService>();
+        /// <summary>
+        /// Last date for check of CLI release.
+        /// </summary>
+        private const string CliReleaseLastCheckDateName = "CliReleaseLastCheckDate";
 
         /// <summary>
         /// Main settings entry key name.
         /// </summary>
-        public const string SnykSettingsCollectionName = "Snyk";
+        private const string SnykSettingsCollectionName = "Snyk";
 
         /// <summary>
         /// Usage Analytics Enabled key name.
         /// </summary>
-        public const string UsageAnalyticsEnabledName = "UsageAnalyticsEnabled";
+        private const string UsageAnalyticsEnabledName = "UsageAnalyticsEnabled";
 
         /// <summary>
         /// Current CLI version key name.
         /// </summary>
-        public const string CurrentCliVersionName = "CurrentCliVersionName";
+        private const string CurrentCliVersionName = "CurrentCliVersionName";
 
-        /// <summary>
-        /// Last date for check of CLI release.
-        /// </summary>
-        public const string CliReleaseLastCheckDateName = "CliReleaseLastCheckDate";
+        private const string OssEnabledName = "OssEnabled";
+
+        private const string SnykCodeSecurityEnabledName = "SnykCodeSecurityEnabled";
+
+        private const string SnykCodeQualityEnabledName = "SnykCodeQualityEnabled";
+
+        private static readonly ILogger Logger = LogManager.ForContext<SnykUserStorageSettingsService>();
 
         private readonly SettingsManager settingsManager;
 
@@ -145,30 +151,50 @@
         /// Get usage analytics enabled.
         /// </summary>
         /// <returns>Bool.</returns>
-        public bool GetUsageAnalyticsEnabled()
-        {
-            bool usageAnalyticsEnabled = true;
-
-            WritableSettingsStore settingsStore = this.GetUserSettingsStore();
-
-            try
-            {
-                return settingsStore.GetBoolean(SnykSettingsCollectionName, UsageAnalyticsEnabledName);
-            }
-            catch (Exception exception)
-            {
-                Logger.Error(exception.Message);
-            }
-
-            return usageAnalyticsEnabled;
-        }
+        public bool GetUsageAnalyticsEnabled() => this.GetBoolValue(SnykSettingsCollectionName, UsageAnalyticsEnabledName, true);
 
         /// <summary>
         /// Save usage analytics enabled option.
         /// </summary>
         /// <param name="usageAnalyticsEnabled">Bool param.</param>
-        public void SaveUsageAnalyticsEnabled(bool usageAnalyticsEnabled) => this.GetUserSettingsStore()
-            .SetBoolean(SnykSettingsCollectionName, UsageAnalyticsEnabledName, usageAnalyticsEnabled);
+        public void SaveUsageAnalyticsEnabled(bool usageAnalyticsEnabled) =>
+            this.SaveBoolValue(SnykSettingsCollectionName, UsageAnalyticsEnabledName, usageAnalyticsEnabled);
+
+        /// <summary>
+        /// Get oss enabled option.
+        /// </summary>
+        /// <returns>Oss enabled value.</returns>
+        public bool GetOssEnabled() => this.GetBoolValue(SnykSettingsCollectionName, OssEnabledName, true);
+
+        /// <summary>
+        /// Get SnykCode security enabled option.
+        /// </summary>
+        /// <returns>SnykCode security enabled value.</returns>
+        public bool GetSnykCodeSecurityEnabled() => this.GetBoolValue(SnykSettingsCollectionName, SnykCodeSecurityEnabledName, true);
+
+        /// <summary>
+        /// Get SnykCode quality enabled option.
+        /// </summary>
+        /// <returns>SnykCode quality enabled value.</returns>
+        public bool GetSnykCodeQualityEnabled() => this.GetBoolValue(SnykSettingsCollectionName, SnykCodeQualityEnabledName, true);
+
+        /// <summary>
+        /// Save Oss enabled option.
+        /// </summary>
+        /// <param name="value">Oss enabled value.</param>
+        public void SaveOssEnabled(bool value) => this.SaveBoolValue(SnykSettingsCollectionName, OssEnabledName, value);
+
+        /// <summary>
+        /// Save SnykCode security enabled option.
+        /// </summary>
+        /// <param name="value">SnykCode security enabled value.</param>
+        public void SaveSnykCodeSecurityEnabled(bool value) => this.SaveBoolValue(SnykSettingsCollectionName, SnykCodeSecurityEnabledName, value);
+
+        /// <summary>
+        /// Save SnykCode quality enabled option.
+        /// </summary>
+        /// <param name="value">SnykCode quality enabled value.</param>
+        public void SaveSnykCodeQualityEnabled(bool value) => this.SaveBoolValue(SnykSettingsCollectionName, SnykCodeQualityEnabledName, value);
 
         /// <summary>
         /// Get current CLI version.
@@ -320,6 +346,25 @@
             Logger.Information("Leave GetUserSettingsStore method");
 
             return settingsStore;
+        }
+
+        private void SaveBoolValue(string collectionName, string propertyValue, bool value) =>
+            this.GetUserSettingsStore().SetBoolean(collectionName, propertyValue, value);
+
+        private bool GetBoolValue(string collectionName, string propertyName, bool defaultValue)
+        {
+            WritableSettingsStore settingsStore = this.GetUserSettingsStore();
+
+            try
+            {
+                return settingsStore.GetBoolean(collectionName, propertyName);
+            }
+            catch (Exception exception)
+            {
+                Logger.Error(exception.Message);
+            }
+
+            return defaultValue;
         }
     }
 }

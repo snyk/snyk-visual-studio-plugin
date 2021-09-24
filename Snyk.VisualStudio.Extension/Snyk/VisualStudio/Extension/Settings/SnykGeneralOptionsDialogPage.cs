@@ -26,12 +26,6 @@
 
         private string customEndpoint;
 
-        private bool snykCodeSecurityEnabled;
-
-        private bool snykCodeQualityEnabled;
-
-        private bool ossEnabled;
-
         /// <inheritdoc/>
         public event EventHandler<SnykSettingsChangedEventArgs> SettingsChanged;
 
@@ -81,11 +75,10 @@
         /// <inheritdoc/>
         public bool OssEnabled
         {
-            get => this.ossEnabled;
-
+            get => this.userStorageSettingsService.GetOssEnabled();
             set
             {
-                this.ossEnabled = value;
+                this.userStorageSettingsService?.SaveOssEnabled(value);
 
                 this.FireSettingsChangedEvent();
             }
@@ -94,11 +87,10 @@
         /// <inheritdoc/>
         public bool SnykCodeSecurityEnabled
         {
-            get => this.snykCodeSecurityEnabled;
-
+            get => this.userStorageSettingsService.GetSnykCodeSecurityEnabled();
             set
             {
-                this.snykCodeSecurityEnabled = value;
+                this.userStorageSettingsService?.SaveSnykCodeSecurityEnabled(value);
 
                 this.FireSettingsChangedEvent();
             }
@@ -107,11 +99,10 @@
         /// <inheritdoc/>
         public bool SnykCodeQualityEnabled
         {
-            get => this.snykCodeQualityEnabled;
-
+            get => this.userStorageSettingsService.GetSnykCodeQualityEnabled();
             set
             {
-                this.snykCodeQualityEnabled = value;
+                this.userStorageSettingsService?.SaveSnykCodeQualityEnabled(value);
 
                 this.FireSettingsChangedEvent();
             }
@@ -123,22 +114,8 @@
         /// </summary>
         public bool UsageAnalyticsEnabled
         {
-            get
-            {
-                return this.userStorageSettingsService.GetUsageAnalyticsEnabled();
-            }
-
-            set
-            {
-                try
-                {
-                    this.userStorageSettingsService?.SaveUsageAnalyticsEnabled(value);
-                }
-                catch (Exception exception)
-                {
-                    Logger.Error(exception.Message);
-                }
-            }
+            get => this.userStorageSettingsService.GetUsageAnalyticsEnabled();
+            set => this.userStorageSettingsService?.SaveUsageAnalyticsEnabled(value);
         }
 
         /// <summary>
