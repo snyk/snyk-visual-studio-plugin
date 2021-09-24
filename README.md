@@ -11,13 +11,8 @@
 - [Install the extension](#install-the-extension)
     - [Authentication](#authentication)
 - [Run analysis](#run-analysis)
-<<<<<<< HEAD
   - [Open Source vulnerabilities](#open-source-vulnerabilities)
   - [Snyk Code vulnerabilities](#snykcode-vulnerabilities)
-=======
-  - [Open Source Vulnerabilities](#open-source-vulnerabilities)
-  - [Snyk Code Issues](#snyk-code-issues)
->>>>>>> 1225090 (fix: readme file.)
 - [View analysis results](#view-analysis-results)
 - [Extension Configuration](#extension-configuration)
 - [Known Caveats](#known-caveats)
@@ -94,11 +89,6 @@ Once the authentication has been confirmed, please feel free to close the browse
 Open your solution and run Snyk scan. Depending on the size of your solution, time to build a dependency graph, it might take from less than a minute to a couple of minutes to get the vulnerabilities. 
 
 The extension provides the user with two kinds of results:
-<<<<<<< HEAD
-=======
-* Open Source Vulnerabilities
-* Snyk Code Issues
->>>>>>> 1225090 (fix: readme file.)
 
 * Open Source vulnerabilities
 * Snyk Code issues
@@ -111,11 +101,7 @@ The extension provides the user with two kinds of results:
 
 ![Scan results](doc/images/readme_image_3_1_2.png "Scan results")
 
-<<<<<<< HEAD
 ### Snyk Code issues
-=======
-### Snyk Code Issues
->>>>>>> 1225090 (fix: readme file.)
 
 Snyk Code analysis shows a list of security vulnerabilities and code issues found in the application code. For more details and examples of how others fixed the issue, select a security vulnerability or a code security issue. Once selected you will see the Snyk suggestion information in a panel.
 
@@ -162,15 +148,9 @@ After the plugin is installed, you can set the following configurations for the 
 
 In the settings, you can also choose which results you want to receive:
 
-<<<<<<< HEAD
 * Open Source vulnerabilities 
 * Snyk Code Security vulnerabilities
 * Snyk Code Quality issues
-=======
-* Open Source Vulnerabilities 
-* Snyk Code Security Vulnerabilities
-* Snyk Code Quality Issues
->>>>>>> 1225090 (fix: readme file.)
 
 ![Extension Settings Product Selection](doc/images/readme_image_settings_product_selection.png "Extension Settings Product Selection")
 
