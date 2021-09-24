@@ -22,7 +22,7 @@
 
             this.ToolWindowControl.messagePanel.Visibility = Visibility.Visible;
 
-            this.ToolWindowControl.messagePanel.OverviewScreenMessage();
+            this.ToolWindowControl.messagePanel.ShowOverviewScreenMessage();
         });
 
         /// <summary>
