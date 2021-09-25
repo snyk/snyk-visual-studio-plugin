@@ -7,6 +7,8 @@
     using Microsoft.VisualStudio.Shell;
     using Microsoft.VisualStudio.Shell.Interop;
     using Microsoft.VisualStudio.Shell.Settings;
+    using Serilog;
+    using Snyk.Common;
     using Snyk.VisualStudio.Extension.CLI;
     using Snyk.VisualStudio.Extension.Service;
 
@@ -15,6 +17,8 @@
     /// </summary>
     public class SnykUserStorageSettingsService
     {
+        private static readonly ILogger Logger = LogManager.ForContext<SnykUserStorageSettingsService>();
+
         /// <summary>
         /// Main settings entry key name.
         /// </summary>
@@ -37,8 +41,6 @@
 
         private readonly SettingsManager settingsManager;
 
-        private readonly SnykActivityLogger logger;
-
         private readonly SnykSolutionService solutionService;
 
         /// <summary>
@@ -49,7 +51,6 @@
         {
             this.solutionService = serviceProvider.SolutionService;
             this.settingsManager = serviceProvider.SettingsManager;
-            this.logger = serviceProvider.ActivityLogger;
         }
 
         /// <summary>
@@ -58,15 +59,15 @@
         /// <returns>string.</returns>
         public string GetAdditionalOptions()
         {
-            this.logger.LogInformation("Enter GetAdditionalOptions method");
+            Logger.Information("Enter GetAdditionalOptions method");
 
             string projectUniqueName = this.GetProjectUniqueName();
 
-            this.logger.LogInformation($"Project unique name: {projectUniqueName}");
+            Logger.Information($"Project unique name: {projectUniqueName}");
 
             if (string.IsNullOrEmpty(projectUniqueName))
             {
-                this.logger.LogInformation("Project unique name is empty. Return from method");
+                Logger.Information("Project unique name is empty. Return from method");
 
                 return string.Empty;
             }
@@ -75,7 +76,7 @@
 
             if (!this.solutionService.IsSolutionOpen || !settingsStore.CollectionExists(SnykSettingsCollectionName))
             {
-                this.logger.LogInformation($"Solution not open or {SnykSettingsCollectionName} collection not exists. Return from method.");
+                Logger.Information($"Solution not open or {SnykSettingsCollectionName} collection not exists. Return from method.");
 
                 return string.Empty;
             }
@@ -84,13 +85,13 @@
 
             try
             {
-                this.logger.LogInformation("Try get additional options for project");
+                Logger.Information("Try get additional options for project");
 
                 additionalOptions = settingsStore.GetString(SnykSettingsCollectionName, projectUniqueName);
             }
             catch (Exception exception)
             {
-                this.logger.LogError(exception.Message);
+                Logger.Error(exception.Message);
             }
 
             return additionalOptions;
@@ -102,17 +103,17 @@
         /// <returns>Bool.</returns>
         public bool GetIsAllProjectsEnabled()
         {
-            this.logger.LogInformation("Enter GetIsAllProjectsEnabled method");
+            Logger.Information("Enter GetIsAllProjectsEnabled method");
 
             bool isAllProjectsEnabled = true;
 
             string projectUniqueName = this.GetProjectUniqueName();
 
-            this.logger.LogInformation($"Project unique name: {projectUniqueName}");
+            Logger.Information($"Project unique name: {projectUniqueName}");
 
             if (string.IsNullOrEmpty(projectUniqueName))
             {
-                this.logger.LogInformation("Project unique name is empty. Return from method");
+                Logger.Information("Project unique name is empty. Return from method");
 
                 return isAllProjectsEnabled;
             }
@@ -121,20 +122,20 @@
 
             if (!this.solutionService.IsSolutionOpen || !settingsStore.CollectionExists(SnykSettingsCollectionName))
             {
-                this.logger.LogInformation($"Solution not open or {SnykSettingsCollectionName} collection not exists. Return from method.");
+                Logger.Information($"Solution not open or {SnykSettingsCollectionName} collection not exists. Return from method.");
 
                 return isAllProjectsEnabled;
             }
 
             try
             {
-                this.logger.LogInformation("Try get additional options for project");
+                Logger.Information("Try get additional options for project");
 
                 return settingsStore.GetBoolean(SnykSettingsCollectionName, projectUniqueName);
             }
             catch (Exception exception)
             {
-                this.logger.LogError(exception.Message);
+                Logger.Error(exception.Message);
             }
 
             return isAllProjectsEnabled;
@@ -156,7 +157,7 @@
             }
             catch (Exception exception)
             {
-                this.logger.LogError(exception.Message);
+                Logger.Error(exception.Message);
             }
 
             return usageAnalyticsEnabled;
@@ -183,7 +184,7 @@
             }
             catch (Exception exception)
             {
-                this.logger.LogError(exception.Message);
+                Logger.Error(exception.Message);
             }
 
             return cliVersion;
@@ -212,7 +213,7 @@
             }
             catch (Exception exception)
             {
-                this.logger.LogError(exception.Message);
+                Logger.Error(exception.Message);
 
                 dateTime = DateTime.MinValue;
             }
@@ -233,11 +234,11 @@
         /// <param name="additionalOptions">CLI options string.</param>
         public void SaveAdditionalOptions(string additionalOptions)
         {
-            this.logger.LogInformation("Enter SaveAdditionalOptions method");
+            Logger.Information("Enter SaveAdditionalOptions method");
 
             string projectUniqueName = this.GetProjectUniqueName();
 
-            this.logger.LogInformation($"Project unique name: {projectUniqueName}");
+            Logger.Information($"Project unique name: {projectUniqueName}");
 
             if (!string.IsNullOrEmpty(projectUniqueName))
             {
@@ -246,12 +247,12 @@
                     additionalOptions = string.Empty;
                 }
 
-                this.logger.LogInformation($"Save additional options for : {SnykSettingsCollectionName} collection");
+                Logger.Information($"Save additional options for : {SnykSettingsCollectionName} collection");
 
                 this.GetUserSettingsStore().SetString(SnykSettingsCollectionName, projectUniqueName, additionalOptions);
             }
 
-            this.logger.LogInformation("Leave SaveAdditionalOptions method");
+            Logger.Information("Leave SaveAdditionalOptions method");
         }
 
         /// <summary>
@@ -260,20 +261,20 @@
         /// <param name="isAllProjectsEnabled">Bool param.</param>
         public void SaveIsAllProjectsScanEnabled(bool isAllProjectsEnabled)
         {
-            this.logger.LogInformation("Enter SaveIsAllProjectsScan method");
+            Logger.Information("Enter SaveIsAllProjectsScan method");
 
             string projectUniqueName = this.GetProjectUniqueName();
 
-            this.logger.LogInformation($"Project unique name: {projectUniqueName}");
+            Logger.Information($"Project unique name: {projectUniqueName}");
 
             if (!string.IsNullOrEmpty(projectUniqueName))
             {
-                this.logger.LogInformation($"Save is all projects enabled for : {SnykSettingsCollectionName} collection");
+                Logger.Information($"Save is all projects enabled for : {SnykSettingsCollectionName} collection");
 
                 this.GetUserSettingsStore().SetBoolean(SnykSettingsCollectionName, projectUniqueName, isAllProjectsEnabled);
             }
 
-            this.logger.LogInformation("Leave SaveIsAllProjectsScan method");
+            Logger.Information("Leave SaveIsAllProjectsScan method");
         }
 
         /// <summary>
@@ -282,7 +283,7 @@
         /// <returns>Project name string.</returns>
         public string GetProjectUniqueName()
         {
-            this.logger.LogInformation("Enter GetProjectUniqueName method");
+            Logger.Information("Enter GetProjectUniqueName method");
 
             Projects projects = this.solutionService.GetProjects();
 
@@ -293,7 +294,7 @@
 
             Project project = projects.Item(1);
 
-            this.logger.LogInformation($"Leave GetProjectUniqueName method. Project unique name: {project.UniqueName}");
+            Logger.Information($"Leave GetProjectUniqueName method. Project unique name: {project.UniqueName}");
 
             return project.UniqueName;
         }
@@ -307,7 +308,7 @@
 
         private WritableSettingsStore GetUserSettingsStore()
         {
-            this.logger.LogInformation("Enter GetUserSettingsStore method");
+            Logger.Information("Enter GetUserSettingsStore method");
 
             var settingsStore = this.settingsManager.GetWritableSettingsStore(SettingsScope.UserSettings);
 
@@ -316,7 +317,7 @@
                 settingsStore.CreateCollection(SnykSettingsCollectionName);
             }
 
-            this.logger.LogInformation("Leave GetUserSettingsStore method");
+            Logger.Information("Leave GetUserSettingsStore method");
 
             return settingsStore;
         }

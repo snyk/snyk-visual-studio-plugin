@@ -1,9 +1,9 @@
 ﻿namespace Snyk.VisualStudio.Extension.CLI
 {
-    using System;
     using System.Collections.Generic;
     using System.IO;
     using System.Linq;
+    using Serilog;
     using Snyk.Common;
     using Snyk.VisualStudio.Extension.Settings;
 
@@ -12,6 +12,8 @@
     /// </summary>
     public class SnykCli
     {
+        private static readonly ILogger Logger = LogManager.ForContext<SnykCli>();
+
         /// <summary>
         /// CLI name for Windows OS.
         /// </summary>
@@ -28,11 +30,6 @@
         /// Gets or sets a value indicating whether instance of <see cref="SnykConsoleRunner"/>.
         /// </summary>
         public SnykConsoleRunner ConsoleRunner { get; set; }
-
-        /// <summary>
-        /// Gets or sets a value indicating whether logger instance.
-        /// </summary>
-        public SnykActivityLogger Logger { get; set; }
 
         /// <summary>
         /// Gets or sets a value indicating whether <see cref="ISnykOptions"/> (settings).
@@ -81,33 +78,33 @@
         /// <returns><see cref="CliResult"/> object.</returns>
         public CliResult Scan(string basePath)
         {
-            this.Logger?.LogInformation("Enter Scan() method");
-            this.Logger?.LogInformation($"Base path is {basePath}");
+            Logger.Information("Enter Scan() method");
+            Logger.Information($"Base path is {basePath}");
 
             string cliPath = GetSnykCliPath();
 
-            this.Logger?.LogInformation($"CLI path is {cliPath}");
+            Logger.Information($"CLI path is {cliPath}");
 
             this.ConsoleRunner.CreateProcess(cliPath, this.BuildArguments());
 
-            this.Logger?.LogInformation("Adding token");
+            Logger.Information("Adding token");
 
             if (!string.IsNullOrEmpty(this.Options.ApiToken))
             {
-                this.Logger?.LogInformation("Token added from Options");
+                Logger.Information("Token added from Options");
 
                 this.ConsoleRunner.Process.StartInfo.EnvironmentVariables["SNYK_TOKEN"] = this.Options.ApiToken;
             }
 
             this.ConsoleRunner.Process.StartInfo.WorkingDirectory = basePath;
 
-            this.Logger?.LogInformation("Start run console process");
+            Logger.Information("Start run console process");
 
             string consoleResult = this.ConsoleRunner.Execute();
 
-            this.Logger?.LogInformation("Leave Scan() method");
+            Logger.Information("Leave Scan() method");
 
-            this.Logger?.LogInformation("Leave Scan() method");
+            Logger.Information("Leave Scan() method");
 
             return this.ConvertRawCliStringToCliResult(consoleResult);
         }
@@ -118,7 +115,7 @@
         /// <returns>arguments string.</returns>
         public string BuildArguments()
         {
-            this.Logger?.LogInformation("Enter BuildArguments method");
+            Logger.Information("Enter BuildArguments method");
 
             var arguments = new List<string>();
 
@@ -157,8 +154,8 @@
 
             string cliOptions = string.Join(" ", arguments.ToArray());
 
-            this.Logger?.LogInformation($"Result CLI options {cliOptions}");
-            this.Logger?.LogInformation("Leave BuildArguments method");
+            Logger.Information($"Result CLI options {cliOptions}");
+            Logger.Information("Leave BuildArguments method");
 
             return cliOptions;
         }
