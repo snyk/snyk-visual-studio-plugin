@@ -66,6 +66,11 @@
         public void ShowSelectIssueMessage() => this.ShowPanel(this.selectIssueMessagePanel);
 
         /// <summary>
+        /// Show scanning message.
+        /// </summary>
+        public void ScanningMessage() => this.ShowPanel(this.scanningProjectMessagePanel);
+
+        /// <summary>
         /// Show overview screen message.
         /// </summary>
         public void ShowOverviewScreenMessage() => this.ShowPanel(this.overviewPanel);
