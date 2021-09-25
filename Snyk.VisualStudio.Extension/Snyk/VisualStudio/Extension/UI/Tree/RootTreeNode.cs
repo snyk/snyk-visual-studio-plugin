@@ -74,6 +74,11 @@
             get => this.state;
             set
             {
+                if (this.State == RootTreeNodeState.ResultDetails && value == RootTreeNodeState.Enabled)
+                {
+                    return;
+                }
+
                 this.state = value;
 
                 this.parent.Refresh();
@@ -113,6 +118,8 @@
             this.Items.Clear();
 
             this.Title = this.GetTitlePrefix();
+
+            this.State = RootTreeNodeState.Disabled;
         }
 
         /// <summary>
