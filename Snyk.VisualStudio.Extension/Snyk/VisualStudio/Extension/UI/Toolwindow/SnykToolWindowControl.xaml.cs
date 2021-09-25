@@ -340,7 +340,7 @@
 
             var options = this.serviceProvider.Options;
 
-            this.resultsTree.CliRootNode.State = options.OssEnabled? RootTreeNodeState.Enabled : RootTreeNodeState.Disabled;
+            this.resultsTree.CliRootNode.State = options.OssEnabled ? RootTreeNodeState.Enabled : RootTreeNodeState.Disabled;
 
             if (!await this.serviceProvider.ApiService.IsSnykCodeEnabledAsync())
             {
