@@ -43,7 +43,7 @@
                 this.detaiedIntroducedThrough.Text = detaiedIntroducedThroughText;
 
                 this.remediation.Text = vulnerability.FixedIn != null && vulnerability.FixedIn.Length != 0
-                                         ? "Upgrade to" + string.Join(" > ", vulnerability.FixedIn) : string.Empty;
+                                         ? "Upgrade to " + string.Join(" > ", vulnerability.FixedIn) : string.Empty;
 
                 this.overview.Html = Markdig.Markdown.ToHtml(vulnerability.Description);
 
