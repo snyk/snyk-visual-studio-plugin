@@ -11,8 +11,8 @@
 - [Install the extension](#install-the-extension)
     - [Authentication](#authentication)
 - [Run analysis](#run-analysis)
-  - [Open Source Vulnerabilities](#open-source-vulnerabilities)
-  - [Snyk Code Vulnerabilities](#snykcode-vulnerabilities)
+  - [Open Source vulnerabilities](#open-source-vulnerabilities)
+  - [Snyk Code vulnerabilities](#snykcode-vulnerabilities)
 - [View analysis results](#view-analysis-results)
 - [Extension Configuration](#extension-configuration)
 - [Known Caveats](#known-caveats)
@@ -89,10 +89,10 @@ Once the authentication has been confirmed, please feel free to close the browse
 Open your solution and run Snyk scan. Depending on the size of your solution, time to build a dependency graph, it might take from less than a minute to a couple of minutes to get the vulnerabilities. 
 
 The extension provides the user with two kinds of results:
-* Open Source Vulnerabilities
-* Snyk Code Issues
+* Open Source vulnerabilities
+* Snyk Code issues
 
-### Open Source Vulnerabilities
+### Open Source vulnerabilities
 
 * Note that your solution will have to successfully build in order to allow the CLI to pick up the dependencies (and find the vulnerabilities).
 * If you see only NPM vulnerabilities or vulnerabilities that are not related to your C#/.NET projects, that might mean your project is not built successfully and wasn’t detected by the CLI. Feel free to reach out to us (contacts at the end of the document) if you think something is not as expected, we are happy to help or clarify something for you.
@@ -148,9 +148,9 @@ After the plugin is installed, you can set the following configurations for the 
 
 In the settings, you can also choose which results you want to receive:
 
-* Open Source Vulnerabilities 
-* Snyk Code Security Vulnerabilities
-* Snyk Code Quality Issues
+* Open Source vulnerabilities 
+* Snyk Code Security vulnerabilities
+* Snyk Code Quality issues
 
 ![Extension Settings Product Selection](doc/images/readme_image_settings_product_selection.png "Extension Settings Product Selection")
 
@@ -168,7 +168,7 @@ In the settings, you can also choose which results you want to receive:
 
 Logs could be found in user AppData directory:
 ```
-C:\Users\USER_NAME\AppData\Local\Snyk\snyk-extension.log
+%HOMEPATH%\AppData\Local\Snyk\snyk-extension.log
 ```
 
 ### Build process
