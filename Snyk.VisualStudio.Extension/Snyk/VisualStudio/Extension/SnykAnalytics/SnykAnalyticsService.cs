@@ -4,6 +4,7 @@
     using System.Threading.Tasks;
     using Segment;
     using Segment.Model;
+    using Serilog;
     using Snyk.Common;
     using Snyk.VisualStudio.Extension.Settings;
 
@@ -32,6 +33,8 @@
         /// </summary>
         public const string UserTriggersAnAnalysis = "User Triggers An Analysis";
 
+        private static readonly ILogger Logger = LogManager.ForContext<SnykAnalyticsService>();
+
         /// <summary>
         /// Link to snyk.io user/me.
         /// </summary>
@@ -58,11 +61,6 @@
         /// </summary>
         public bool AnalyticsEnabled { get; set; }
 
-        /// <summary>
-        /// Gets or sets a value indicating whether VS logger.
-        /// </summary>
-        public SnykActivityLogger Logger { get; set; }
-
         private bool Enabled => this.AnalyticsEnabled && this.analyticsInitialized;
 
         private bool Disabled => !this.Enabled;
@@ -82,7 +80,7 @@
                 {
                     this.analyticsInitialized = false;
 
-                    this.Logger.LogInformation("Segment analytics collection is disabled because write key is empty!");
+                    Logger.Information("Segment analytics collection is disabled because write key is empty!");
                 }
                 else
                 {
@@ -100,7 +98,7 @@
             {
                 this.analyticsInitialized = false;
 
-                this.Logger.LogError(exception.Message);
+                Logger.Error(exception.Message);
             }
         }
 
@@ -140,7 +138,7 @@
         /// </summary>
         public void Dispose()
         {
-            this.Logger.LogInformation("Flush events in the message queue and stop this segment instance.");
+            Logger.Information("Flush events in the message queue and stop this segment instance.");
 
             this.analyticsClient?.Flush();
             this.analyticsClient?.Dispose();
@@ -215,7 +213,7 @@
 
                     if (string.IsNullOrEmpty(userId))
                     {
-                        this.Logger.LogInformation("Alias event cannot be executed because userId is empty");
+                        Logger.Information("Alias event cannot be executed because userId is empty");
 
                         return;
                     }
@@ -236,7 +234,7 @@
 
                     string userId = string.IsNullOrEmpty(this.UserId) ? this.anonymousUserId : this.UserId;
 
-                    this.Logger.LogInformation($"Analytics client track event {eventName}.");
+                    Logger.Information($"Analytics client track event {eventName}.");
 
                     this.analyticsClient?.Track(userId, eventName, properties);
                 });
@@ -266,7 +264,7 @@
                     }
                     catch (Exception exception)
                     {
-                        this.Logger.LogError(exception.Message);
+                        Logger.Error(exception.Message);
                     }
                 }).Start();
         }

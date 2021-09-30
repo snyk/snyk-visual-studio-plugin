@@ -6,7 +6,9 @@
     using System.Threading.Tasks;
     using System.Windows;
     using Microsoft.VisualStudio.Shell;
+    using Serilog;
     using Snyk.Code.Library.Domain.Analysis;
+    using Snyk.Common;
     using Snyk.VisualStudio.Extension.CLI;
     using Snyk.VisualStudio.Extension.UI;
     using static Snyk.VisualStudio.Extension.CLI.SnykCliDownloader;
@@ -17,6 +19,8 @@
     /// </summary>
     public class SnykTasksService
     {
+        private static readonly ILogger Logger = LogManager.ForContext<SnykTasksService>();
+
         private static SnykTasksService instance;
 
         private CancellationTokenSource cliScanTokenSource;
@@ -120,11 +124,6 @@
         }
 
         /// <summary>
-        /// Gets a value indicating whether VS logger.
-        /// </summary>
-        private SnykActivityLogger Logger => this.serviceProvider.ActivityLogger;
-
-        /// <summary>
         /// Initialize service.
         /// </summary>
         /// <param name="serviceProvider">Service provider.</param>
@@ -137,7 +136,7 @@
 
             instance.serviceProvider = serviceProvider;
 
-            instance.Logger.LogInformation("SnykTasksService initialized");
+            Logger.Information("SnykTasksService initialized");
         }
 
         /// <summary>
@@ -147,7 +146,7 @@
         {
             if (this.cliScanTokenSource != null)
             {
-                this.Logger.LogInformation("Cancel current task");
+                Logger.Information("Cancel current task");
 
                 this.cliScanTokenSource.Cancel();
 
@@ -167,7 +166,7 @@
         /// </summary>
         public void Scan()
         {
-            this.Logger.LogInformation("Enter Scan method");
+            Logger.Information("Enter Scan method");
 
             this.ScanOss();
 
@@ -182,11 +181,11 @@
         /// <param name="downloadFinishedCallback"><see cref="CliDownloadFinishedCallback"/> callback object.</param>
         public void Download(CliDownloadFinishedCallback downloadFinishedCallback = null)
         {
-            this.Logger.LogInformation("Enter Download method");
+            Logger.Information("Enter Download method");
 
             if (this.cliScanTask != null && this.cliScanTask.Status == TaskStatus.Running)
             {
-                this.Logger.LogInformation("There is already a task in progress");
+                Logger.Information("There is already a task in progress");
 
                 return;
             }
@@ -199,7 +198,7 @@
                 TokenSource = this.cliScanTokenSource,
             };
 
-            this.Logger.LogInformation("Start run task");
+            Logger.Information("Start run task");
 
             this.cliScanTask = Task.Run(
                 () =>
@@ -212,7 +211,7 @@
 
                         DateTime lastCliReleaseDate = userStorageService.GetCliReleaseLastCheckDate();
 
-                        var cliDownloader = new SnykCliDownloader(currentCliVersion, this.serviceProvider.ActivityLogger);
+                        var cliDownloader = new SnykCliDownloader(currentCliVersion);
 
                         List<CliDownloadFinishedCallback> downloadFinishedCallbacks = new List<CliDownloadFinishedCallback>();
 
@@ -234,7 +233,7 @@
                     }
                     catch (Exception exception)
                     {
-                        this.Logger.LogInformation(exception.Message);
+                        Logger.Information(exception.Message);
 
                         this.OnDownloadCancelled(exception.Message);
                     }
@@ -302,7 +301,7 @@
 
             if (this.cliScanTask != null && this.cliScanTask.Status == TaskStatus.Running)
             {
-                this.Logger.LogInformation("There is already a task in progress");
+                Logger.Information("There is already a task in progress");
 
                 return;
             }
@@ -317,7 +316,7 @@
                 TokenSource = this.cliScanTokenSource,
             };
 
-            this.Logger.LogInformation("Start scan task");
+            Logger.Information("Start scan task");
 
             this.cliScanTask = Task.Run(
                 () =>
@@ -332,7 +331,7 @@
                         {
                             this.FireOssError("No open solution");
 
-                            this.Logger.LogInformation("Solution not opened");
+                            Logger.Information("Solution not opened");
 
                             return;
                         }
@@ -344,16 +343,15 @@
                         this.cli = new SnykCli
                         {
                             Options = options,
-                            Logger = this.Logger,
                         };
 
-                        this.Logger.LogInformation($"Snyk Extension options");
-                        this.Logger.LogInformation($"API token = {options.ApiToken}");
-                        this.Logger.LogInformation($"Custom Endpoint = {options.CustomEndpoint}");
-                        this.Logger.LogInformation($"Organization = {options.Organization}");
-                        this.Logger.LogInformation($"Ignore Unknown CA = {options.IgnoreUnknownCA}");
-                        this.Logger.LogInformation($"Additional Options = {options.AdditionalOptions}");
-                        this.Logger.LogInformation($"Is Scan All Projects = {options.IsScanAllProjects}");
+                        Logger.Information($"Snyk Extension options");
+                        Logger.Information($"API token = {options.ApiToken}");
+                        Logger.Information($"Custom Endpoint = {options.CustomEndpoint}");
+                        Logger.Information($"Organization = {options.Organization}");
+                        Logger.Information($"Ignore Unknown CA = {options.IgnoreUnknownCA}");
+                        Logger.Information($"Additional Options = {options.AdditionalOptions}");
+                        Logger.Information($"Is Scan All Projects = {options.IsScanAllProjects}");
 
                         progressWorker.CancelIfCancellationRequested();
 
@@ -361,8 +359,8 @@
                         {
                             string solutionPath = this.serviceProvider.SolutionService.GetSolutionPath();
 
-                            this.Logger.LogInformation($"Solution path = {solutionPath}");
-                            this.Logger.LogInformation("Start scan");
+                            Logger.Information($"Solution path = {solutionPath}");
+                            Logger.Information("Start scan");
 
                             CliResult cliResult = this.cli.Scan(solutionPath);
 
@@ -370,7 +368,7 @@
 
                             if (!cliResult.IsSuccessful())
                             {
-                                this.Logger.LogInformation("Scan is successful");
+                                Logger.Information("Scan is successful");
 
                                 this.FireOssError(cliResult.Error);
 
@@ -378,14 +376,14 @@
                             }
                             else
                             {
-                                this.Logger.LogInformation("Scan update");
+                                Logger.Information("Scan update");
 
                                 this.FireScanningUpdateEvent(cliResult);
                             }
 
                             progressWorker.CancelIfCancellationRequested();
 
-                            this.Logger.LogInformation("Scan finished");
+                            Logger.Information("Scan finished");
                         }
                         catch (Exception scanException)
                         {
@@ -406,7 +404,7 @@
                     }
                     catch (Exception exception)
                     {
-                        this.Logger.LogError(exception.Message);
+                        Logger.Error(exception, string.Empty);
 
                         this.FireScanningCancelledEvent();
 
@@ -432,7 +430,7 @@
 
             if (this.snykCodeScanTask != null && this.snykCodeScanTask.Status == TaskStatus.Running)
             {
-                this.Logger.LogInformation("There is already a task in progress for SnykCode scan.");
+                Logger.Information("There is already a task in progress for SnykCode scan.");
 
                 return;
             }
@@ -447,7 +445,7 @@
                 TokenSource = this.snykCodeScanTokenSource,
             };
 
-            this.Logger.LogInformation("Start scan task");
+            Logger.Information("Start scan task");
 
             this.snykCodeScanTask = Task.Run(
                 async () =>
@@ -462,7 +460,7 @@
                         {
                             this.FireOssError("No open solution");
 
-                            this.Logger.LogInformation("Solution not opened");
+                            Logger.Information("Solution not opened");
 
                             return;
                         }
@@ -491,7 +489,7 @@
                     }
                     catch (Exception exception)
                     {
-                        this.Logger.LogError(exception.Message);
+                        Logger.Error(exception, string.Empty);
 
                         this.FireScanningCancelledEvent();
                     }

@@ -3,6 +3,8 @@
     using System;
     using System.ComponentModel.Design;
     using Microsoft.VisualStudio.Shell;
+    using Serilog;
+    using Snyk.Common;
     using Snyk.VisualStudio.Extension.Service;
     using Task = System.Threading.Tasks.Task;
 
@@ -15,6 +17,8 @@
         /// Command ID.
         /// </summary>
         public const int CommandId = 4129;
+
+        private static readonly ILogger Logger = LogManager.ForContext<SnykToolWindowCommand>();
 
         /// <summary>
         /// Command menu group (command set GUID).
@@ -37,8 +41,6 @@
         /// Gets the instance of the command.
         /// </summary>
         public static SnykToolWindowCommand Instance { get; private set; }
-
-        private SnykActivityLogger Logger => this.serviceProvider.ActivityLogger;
 
         /// <summary>
         /// Initializes the singleton instance of the command.
@@ -68,7 +70,7 @@
         /// <param name="e">The event args.</param>
         private void ShowToolWindow(object sender, EventArgs e)
         {
-            this.Logger.LogInformation("Enter ShowToolWindow method");
+            Logger.Information("Enter ShowToolWindow method");
 
             this.serviceProvider.ShowToolWindow();
         }

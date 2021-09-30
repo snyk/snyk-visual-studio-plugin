@@ -29,8 +29,6 @@
 
         private readonly IAsyncServiceProvider serviceProvider;
 
-        private SnykActivityLogger activityLogger;
-
         private SettingsManager settingsManager;
 
         private SnykVsThemeService vsThemeService;
@@ -56,11 +54,6 @@
         /// </summary>
         /// <param name="serviceProvider">Snyk service provider implementation.</param>
         public SnykService(IAsyncServiceProvider serviceProvider) => this.serviceProvider = serviceProvider;
-
-        /// <summary>
-        /// Gets VS logger.
-        /// </summary>
-        public SnykActivityLogger ActivityLogger => this.activityLogger;
 
         /// <summary>
         /// Gets Snyk options implementation.
@@ -111,12 +104,9 @@
             {
                 if (this.analyticsService == null)
                 {
-                    this.activityLogger.LogInformation("Initialize Snyk Segment Analytics Service.");
+                    Logger.Information("Initialize Snyk Segment Analytics Service.");
 
-                    this.analyticsService = new SnykAnalyticsService
-                    {
-                        Logger = this.activityLogger,
-                    };
+                    this.analyticsService = new SnykAnalyticsService();
 
                     this.analyticsService.Initialize();
                 }
@@ -197,11 +187,7 @@
         /// <returns>Task.</returns>
         public async Task InitializeAsync(CancellationToken cancellationToken)
         {
-            IVsActivityLog activityLog = await this.serviceProvider.GetServiceAsync(typeof(SVsActivityLog)) as IVsActivityLog;
-
-            this.activityLogger = new SnykActivityLogger(activityLog);
-
-            this.activityLogger.LogInformation("Initialize Snyk services");
+            Logger.Information("Initialize Snyk services");
 
             await this.Package.JoinableTaskFactory.SwitchToMainThreadAsync(cancellationToken);
 
@@ -227,18 +213,14 @@
 
             VsCodeService.Initialize();
 
-            this.activityLogger.LogInformation("Leave SnykService.InitializeAsync");
+            Logger.Information("Leave SnykService.InitializeAsync");
         }
 
         /// <summary>
         /// Create new instance of SnykCli class with Options and Logger parameters.
         /// </summary>
         /// <returns>New SnykCli instance.</returns>
-        public SnykCli NewCli() => new SnykCli
-        {
-            Options = this.Options,
-            Logger = this.ActivityLogger,
-        };
+        public SnykCli NewCli() => new SnykCli { Options = this.Options, };
 
         /// <summary>
         /// Check is Options.ApiToken initialized. But if it's empty it will call CLI.GetApiToken() method.
