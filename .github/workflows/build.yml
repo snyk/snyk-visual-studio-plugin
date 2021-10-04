@@ -1,10 +1,10 @@
-name: nightly-build 
+name: nightly-build
 
 on: [push, pull_request]
 
 env:
   SOLUTION_FILE_PATH: .
-  DEFAULT_BRANCH: feat/nightly-build
+  DEFAULT_BRANCH: feat/snykcode-dev
 
 jobs:
   build:
