@@ -5,7 +5,6 @@
     using System.Threading.Tasks;
     using EnvDTE;
     using Microsoft.VisualStudio.Settings;
-    using Microsoft.VisualStudio.Shell.Interop;
     using Microsoft.VisualStudio.Shell.Settings;
     using Serilog;
     using Snyk.Code.Library.Api;

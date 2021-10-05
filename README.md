@@ -89,11 +89,11 @@ Once the authentication has been confirmed, please feel free to close the browse
 Open your solution and run Snyk scan. Depending on the size of your solution, time to build a dependency graph, it might take from less than a minute to a couple of minutes to get the vulnerabilities. 
 
 The extension provides the user with two kinds of results:
+
 * Open Source vulnerabilities
 * Snyk Code issues
 
 ### Open Source vulnerabilities
-
 * Note that your solution will have to successfully build in order to allow the CLI to pick up the dependencies (and find the vulnerabilities).
 * If you see only NPM vulnerabilities or vulnerabilities that are not related to your C#/.NET projects, that might mean your project is not built successfully and wasn’t detected by the CLI. Feel free to reach out to us (contacts at the end of the document) if you think something is not as expected, we are happy to help or clarify something for you.
 
@@ -101,7 +101,7 @@ The extension provides the user with two kinds of results:
 
 ![Scan results](doc/images/readme_image_3_1_2.png "Scan results")
 
-### Snyk Code Issues
+### Snyk Code issues
 
 Snyk Code analysis shows a list of security vulnerabilities and code issues found in the application code. For more details and examples of how others fixed the issue, select a security vulnerability or a code security issue. Once selected you will see the Snyk suggestion information in a panel.
 
