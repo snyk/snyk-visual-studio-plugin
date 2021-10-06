@@ -64,14 +64,6 @@
         /// Show select issue message.
         /// </summary>
         public void ShowSelectIssueMessage() => this.ShowPanel(this.selectIssueMessagePanel);
-<<<<<<< HEAD
-
-        /// <summary>
-        /// Show scanning message.
-        /// </summary>
-        public void ScanningMessage() => this.ShowPanel(this.scanningProjectMessagePanel);
-=======
->>>>>>> 9c39931 (chore: rename method name for more clear meaning.)
 
         /// <summary>
         /// Show scanning message.
