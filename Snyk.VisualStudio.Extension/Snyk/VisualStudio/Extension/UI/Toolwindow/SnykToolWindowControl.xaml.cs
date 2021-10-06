@@ -136,7 +136,7 @@
         {
             await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
 
-            this.messagePanel.ScanningMessage();
+            this.messagePanel.ShowScanningMessage();
 
             this.mainGrid.Visibility = Visibility.Visible;
 
@@ -152,7 +152,7 @@
         {
             await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
 
-            this.messagePanel.ScanningMessage();
+            this.messagePanel.ShowScanningMessage();
 
             this.resultsTree.CodeSequrityRootNode.State = RootTreeNodeState.Scanning;
             this.resultsTree.CodeQualityRootNode.State = RootTreeNodeState.Scanning;
@@ -198,19 +198,6 @@
             this.resultsTree.CodeSequrityRootNode.State = RootTreeNodeState.Error;
 
             NotificationService.Instance.ShowWarningInfoBar(eventArgs.Error);
-        });
-
-        /// <summary>
-        /// Handle SnykCode disabled.
-        /// </summary>
-        /// <param name="sender">Source object.</param>
-        /// <param name="eventArgs">Event args.</param>
-        public void OnSnykCodeDisabledHandler(object sender, SnykCodeScanEventArgs eventArgs) => ThreadHelper.JoinableTaskFactory.Run(async () =>
-        {
-            await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
-
-            this.resultsTree.CodeQualityRootNode.State = RootTreeNodeState.DisabledForOrganization;
-            this.resultsTree.CodeSequrityRootNode.State = RootTreeNodeState.DisabledForOrganization;
         });
 
         /// <summary>
