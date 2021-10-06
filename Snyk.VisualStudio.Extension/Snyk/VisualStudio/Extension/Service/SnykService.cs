@@ -162,34 +162,6 @@
             }
         }
 
-        /// <inheritdoc/>
-        public SnykApiService ApiService
-        {
-            get
-            {
-                if (this.apiService == null)
-                {
-                    this.apiService = new SnykApiService(this.Options);
-                }
-
-                return this.apiService;
-            }
-        }
-
-        /// <inheritdoc/>
-        public SnykApiService ApiService
-        {
-            get
-            {
-                if (this.apiService == null)
-                {
-                    this.apiService = new SnykApiService(this.Options);
-                }
-
-                return this.apiService;
-            }
-        }
-
         /// <summary>
         /// Show Snyk tool window.
         /// </summary>
