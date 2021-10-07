@@ -106,7 +106,10 @@
                         fileNode.Items.Add(node);
                     }
 
-                    this.ossRootNode.Items.Add(fileNode);
+                    if (fileNode.Items.Count > 0)
+                    {
+                        this.ossRootNode.Items.Add(fileNode);
+                    }
                 });
 
                 this.ossRootNode.CriticalSeverityCount = cliResult.CriticalSeverityCount;
@@ -263,7 +266,10 @@
                     issueNode.Items.Add(new SnykCodeVulnerabilityTreeNode { Suggestion = suggestion, });
                 }
 
-                rootNode.Items.Add(issueNode);
+                if (issueNode.Items.Count > 0)
+                {
+                    rootNode.Items.Add(issueNode);
+                }
             }
 
             rootNode.CriticalSeverityCount = crititcalSeverityCount;
