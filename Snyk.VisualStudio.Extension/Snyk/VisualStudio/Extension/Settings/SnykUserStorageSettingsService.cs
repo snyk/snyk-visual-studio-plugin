@@ -39,9 +39,9 @@
 
         private const string OssEnabledName = "OssEnabled";
 
-        private const string SnykCodeSecurityEnabledName = "SnykCodeSecurityEnabled";
+        private const string CodeSecurityEnabledName = "CodeSecurityEnabled";
 
-        private const string SnykCodeQualityEnabledName = "SnykCodeQualityEnabled";
+        private const string CodeQualityEnabledName = "CodeQualityEnabled";
 
         private static readonly ILogger Logger = LogManager.ForContext<SnykUserStorageSettingsService>();
 
@@ -170,13 +170,13 @@
         /// Get SnykCode security enabled option.
         /// </summary>
         /// <returns>SnykCode security enabled value.</returns>
-        public bool GetSnykCodeSecurityEnabled() => this.GetBoolValue(SnykSettingsCollectionName, SnykCodeSecurityEnabledName, true);
+        public bool GetSnykCodeSecurityEnabled() => this.GetBoolValue(SnykSettingsCollectionName, CodeSecurityEnabledName, true);
 
         /// <summary>
         /// Get SnykCode quality enabled option.
         /// </summary>
         /// <returns>SnykCode quality enabled value.</returns>
-        public bool GetSnykCodeQualityEnabled() => this.GetBoolValue(SnykSettingsCollectionName, SnykCodeQualityEnabledName, true);
+        public bool GetSnykCodeQualityEnabled() => this.GetBoolValue(SnykSettingsCollectionName, CodeQualityEnabledName, true);
 
         /// <summary>
         /// Save Oss enabled option.
@@ -188,13 +188,13 @@
         /// Save SnykCode security enabled option.
         /// </summary>
         /// <param name="value">SnykCode security enabled value.</param>
-        public void SaveSnykCodeSecurityEnabled(bool value) => this.SaveBoolValue(SnykSettingsCollectionName, SnykCodeSecurityEnabledName, value);
+        public void SaveSnykCodeSecurityEnabled(bool value) => this.SaveBoolValue(SnykSettingsCollectionName, CodeSecurityEnabledName, value);
 
         /// <summary>
         /// Save SnykCode quality enabled option.
         /// </summary>
         /// <param name="value">SnykCode quality enabled value.</param>
-        public void SaveSnykCodeQualityEnabled(bool value) => this.SaveBoolValue(SnykSettingsCollectionName, SnykCodeQualityEnabledName, value);
+        public void SaveSnykCodeQualityEnabled(bool value) => this.SaveBoolValue(SnykSettingsCollectionName, CodeQualityEnabledName, value);
 
         /// <summary>
         /// Get current CLI version.
