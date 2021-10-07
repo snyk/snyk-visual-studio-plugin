@@ -136,7 +136,7 @@
         {
             await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
 
-            this.messagePanel.ScanningMessage();
+            this.messagePanel.ShowScanningMessage();
 
             this.mainGrid.Visibility = Visibility.Visible;
 
@@ -152,7 +152,7 @@
         {
             await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
 
-            this.messagePanel.ScanningMessage();
+            this.messagePanel.ShowScanningMessage();
 
             this.resultsTree.CodeSequrityRootNode.State = RootTreeNodeState.Scanning;
             this.resultsTree.CodeQualityRootNode.State = RootTreeNodeState.Scanning;

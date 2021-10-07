@@ -9,7 +9,7 @@
         <ReleaseNotes />
         <Icon>Resources\SnykDogLogo.png</Icon>
         <PreviewImage>Resources\SnykDogLogo.png</PreviewImage>
-        <Tags>snyk, extension, vulnerabilities, security, source</Tags>
+        <Tags>snyk, extension, vulnerabilities, security, source, sast</Tags>
         <Preview>false</Preview>
     </Metadata>
     <Installation>
