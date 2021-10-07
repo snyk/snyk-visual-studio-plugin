@@ -24,27 +24,27 @@
             <ColumnDefinition Width="8*"/>
         </Grid.ColumnDefinitions>
 
-        <TextBlock Grid.Row="0" Grid.ColumnSpan="2" Text="Information Exposure" FontSize="16" Margin="5, 10, 5, 5"/>
+        <TextBlock Grid.Row="0" Grid.ColumnSpan="2" Text="Detailed paths and remediation" FontSize="16" Margin="5, 10, 5, 5"/>
 
-        <TextBlock Grid.Row="1" Grid.Column="0" Text="Vulnerable module:" FontWeight="Bold" FontSize="12" Margin="5, 5, 5, 5"/>
-        <TextBlock Grid.Row="1" Grid.Column="1" Name="vulnerableModule" Text="" FontSize="12" Margin="5, 5, 5, 5" TextWrapping="Wrap"/>
+        <TextBlock Grid.Row="1" Grid.Column="0" Text="Remediation:" FontWeight="Bold" FontSize="12" Margin="5, 5, 5, 5"/>
+        <TextBlock Grid.Row="1" Grid.Column="1" Name="remediation" Text="" FontSize="12" Margin="5, 5, 5, 5" TextWrapping="Wrap"/>
 
         <TextBlock Grid.Row="2" Grid.Column="0" Text="Introduced through:" FontWeight="Bold" FontSize="12" Margin="5, 5, 5, 5"/>
-        <TextBlock Grid.Row="2" Grid.Column="1" Name="introducedThrough" Text="" FontSize="12" Margin="5, 5, 5, 5" TextWrapping="Wrap"/>
+        <TextBlock Grid.Row="2" Grid.Column="1" Name="detaiedIntroducedThrough" Text="" FontSize="12" Margin="5, 5, 5, 5" TextWrapping="Wrap"/>
 
-        <TextBlock Grid.Row="3" Grid.Column="0" Text="Exploit maturity:" FontWeight="Bold" FontSize="12" Margin="5, 5, 5, 5"/>
-        <TextBlock Grid.Row="3" Grid.Column="1" Name="exploitMaturity" Text="" FontSize="12" Margin="5, 5, 5, 5" TextWrapping="Wrap"/>
+        <TextBlock Grid.Row="3" Grid.ColumnSpan="2" Text="Information Exposure" FontSize="16" Margin="5, 10, 5, 5"/>
 
-        <TextBlock Grid.Row="4" Grid.Column="0" Text="Fixed in:" FontWeight="Bold" FontSize="12" Margin="5, 5, 5, 5"/>
-        <TextBlock Grid.Row="4" Grid.Column="1" Name="fixedIn" Text="" FontSize="12" Margin="5, 5, 5, 5" TextWrapping="Wrap"/>
+        <TextBlock Grid.Row="4" Grid.Column="0" Text="Vulnerable module:" FontWeight="Bold" FontSize="12" Margin="5, 5, 5, 5"/>
+        <TextBlock Grid.Row="4" Grid.Column="1" Name="vulnerableModule" Text="" FontSize="12" Margin="5, 5, 5, 5" TextWrapping="Wrap"/>
 
-        <TextBlock Grid.Row="5" Grid.ColumnSpan="2" Text="Detailed paths and remediation" FontSize="16" Margin="5, 10, 5, 5"/>
+        <TextBlock Grid.Row="5" Grid.Column="0" Text="Introduced through:" FontWeight="Bold" FontSize="12" Margin="5, 5, 5, 5"/>
+        <TextBlock Grid.Row="5" Grid.Column="1" Name="introducedThrough" Text="" FontSize="12" Margin="5, 5, 5, 5" TextWrapping="Wrap"/>
 
-        <TextBlock Grid.Row="6" Grid.Column="0" Text="Introduced through:" FontWeight="Bold" FontSize="12" Margin="5, 5, 5, 5"/>
-        <TextBlock Grid.Row="6" Grid.Column="1" Name="detaiedIntroducedThrough" Text="" FontSize="12" Margin="5, 5, 5, 5" TextWrapping="Wrap"/>
+        <TextBlock Grid.Row="6" Grid.Column="0" Text="Exploit maturity:" FontWeight="Bold" FontSize="12" Margin="5, 5, 5, 5"/>
+        <TextBlock Grid.Row="6" Grid.Column="1" Name="exploitMaturity" Text="" FontSize="12" Margin="5, 5, 5, 5" TextWrapping="Wrap"/>
 
-        <TextBlock Grid.Row="7" Grid.Column="0" Text="Remediation:" FontSize="12" Margin="5, 5, 5, 5"/>
-        <TextBlock Grid.Row="7" Grid.Column="1" Name="remediation" Text="" FontSize="12" Margin="5, 5, 5, 5" TextWrapping="Wrap"/>
+        <TextBlock Grid.Row="7" Grid.Column="0" Text="Fixed in:" FontWeight="Bold" FontSize="12" Margin="5, 5, 5, 5"/>
+        <TextBlock Grid.Row="7" Grid.Column="1" Name="fixedIn" Text="" FontSize="12" Margin="5, 5, 5, 5" TextWrapping="Wrap"/>
 
         <html:HtmlRichTextBox Grid.Row="8" Grid.ColumnSpan="2" x:Name="overview" IsDocumentEnabled="True" 
                                         IsReadOnly="True"
