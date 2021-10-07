@@ -23,11 +23,6 @@
         private const string CliReleaseLastCheckDateName = "CliReleaseLastCheckDate";
 
         /// <summary>
-        /// Last date for check of CLI release.
-        /// </summary>
-        private const string CliReleaseLastCheckDateName = "CliReleaseLastCheckDate";
-
-        /// <summary>
         /// Main settings entry key name.
         /// </summary>
         private const string SnykSettingsCollectionName = "Snyk";
