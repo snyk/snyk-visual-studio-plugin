@@ -34,6 +34,11 @@
         }
 
         /// <summary>
+        /// Gets or sets a value indicating whether SnykCode scan still running or not.
+        /// </summary>
+        public bool SnykCodeScanRunning { get; set; }
+
+        /// <summary>
         /// Gets or sets a value indicating whether <see cref="CliError"/> object.
         /// </summary>
         public CliError Error { get; set; }

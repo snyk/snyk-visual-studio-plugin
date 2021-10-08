@@ -11,6 +11,7 @@
     using Snyk.VisualStudio.Extension.Commands;
     using Snyk.VisualStudio.Extension.Service;
     using Snyk.VisualStudio.Extension.Settings;
+    using Snyk.VisualStudio.Extension.UI.Notifications;
     using Snyk.VisualStudio.Extension.UI.Toolwindow;
     using Task = System.Threading.Tasks.Task;
 
@@ -182,7 +183,12 @@
 
             Logger.Information("Before call toolWindowControl.InitializeEventListeners() method.");
 
-            new Task(() => this.toolWindowControl.InitializeEventListeners(this.serviceProvider)).Start();
+            new Task(() =>
+            {
+                VsStatusBarNotificationService.Instance.InitializeEventListeners(this.serviceProvider);
+
+                this.toolWindowControl.InitializeEventListeners(this.serviceProvider);
+            }).Start();
 
             Logger.Information("Initialize Commands()");
 

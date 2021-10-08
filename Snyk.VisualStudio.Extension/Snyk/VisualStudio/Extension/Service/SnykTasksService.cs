@@ -10,7 +10,6 @@
     using Snyk.Code.Library.Domain.Analysis;
     using Snyk.Common;
     using Snyk.VisualStudio.Extension.CLI;
-    using Snyk.VisualStudio.Extension.UI;
     using static Snyk.VisualStudio.Extension.CLI.SnykCliDownloader;
     using Task = System.Threading.Tasks.Task;
 
@@ -27,9 +26,13 @@
 
         private CancellationTokenSource snykCodeScanTokenSource;
 
+        private CancellationTokenSource downloadCliTokenSource;
+
         private Task ossScanTask;
 
         private Task snykCodeScanTask;
+
+        private Task downloadCliTask;
 
         private ISnykServiceProvider serviceProvider;
 
@@ -53,9 +56,14 @@
         public event EventHandler<SnykCodeScanEventArgs> SnykCodeScanningStarted;
 
         /// <summary>
-        /// Scanning finished event handler.
+        /// Scanning OSS finished event handler.
         /// </summary>
-        public event EventHandler<SnykCliScanEventArgs> ScanningFinished;
+        public event EventHandler<SnykCliScanEventArgs> OssScanningFinished;
+
+        /// <summary>
+        /// Scanning SnykCode finished event handler.
+        /// </summary>
+        public event EventHandler<SnykCodeScanEventArgs> SnykCodeScanningFinished;
 
         /// <summary>
         /// Cli Scanning update event handler.
@@ -140,23 +148,37 @@
         }
 
         /// <summary>
-        /// Check is Scan running (oss or snykcode).
+        /// Check is Scan running (oss or snykcode) or CLI download.
         /// </summary>
         /// <returns>True if Oss or SnykCode scan running.</returns>
-        public bool IsScanRunning() => this.IsOssScanRunning() || this.IsSnykCodeScanRunning();
+        public bool IsTaskRunning() => this.IsOssScanRunning() || this.IsSnykCodeScanRunning() || this.IsDownloadRunning();
 
         /// <summary>
         /// Cancel current task.
         /// </summary>
-        public void CancelCurrentTask()
+        public void CancelTasks()
         {
             if (this.cliScanTokenSource != null)
             {
-                Logger.Information("Cancel current task");
+                Logger.Information("Cancel OSS task");
 
                 this.cliScanTokenSource.Cancel();
 
                 this.cli?.ConsoleRunner?.Stop();
+            }
+
+            if (this.snykCodeScanTokenSource != null)
+            {
+                Logger.Information("Cancel SnykCode task");
+
+                this.snykCodeScanTokenSource.Cancel();
+            }
+
+            if (this.downloadCliTokenSource != null)
+            {
+                Logger.Information("Cancel download Cli task");
+
+                this.downloadCliTokenSource.Cancel();
             }
         }
 
@@ -189,24 +211,24 @@
         {
             Logger.Information("Enter Download method");
 
-            if (this.IsOssScanRunning())
+            if (this.IsTaskRunning())
             {
                 Logger.Information("There is already a task in progress");
 
                 return;
             }
 
-            this.cliScanTokenSource = new CancellationTokenSource();
+            this.downloadCliTokenSource = new CancellationTokenSource();
 
             var progressWorker = new SnykProgressWorker
             {
                 TasksService = this,
-                TokenSource = this.cliScanTokenSource,
+                TokenSource = this.downloadCliTokenSource,
             };
 
             Logger.Information("Start run task");
 
-            this.ossScanTask = Task.Run(
+            this.downloadCliTask = Task.Run(
                 () =>
                 {
                     try
@@ -312,8 +334,6 @@
                 return;
             }
 
-            VsStatusBar.Instance.DisplayMessage("Cli scan started.");
-
             this.cliScanTokenSource = new CancellationTokenSource();
 
             var progressWorker = new SnykProgressWorker
@@ -389,6 +409,8 @@
 
                             progressWorker.CancelIfCancellationRequested();
 
+                            this.FireOssScanningFinishedEvent();
+
                             Logger.Information("Scan finished");
                         }
                         catch (Exception scanException)
@@ -401,10 +423,6 @@
                         }
 
                         progressWorker.CancelIfCancellationRequested();
-
-                        this.FireScanningFinishedEvent();
-
-                        VsStatusBar.Instance.DisplayMessage("Cli scan finished.");
 
                         this.cli = null;
                     }
@@ -440,8 +458,6 @@
 
                 return;
             }
-
-            VsStatusBar.Instance.DisplayMessage("Scan started.");
 
             this.snykCodeScanTokenSource = new CancellationTokenSource();
 
@@ -482,6 +498,8 @@
                                 var analysisResult = await this.serviceProvider.SnykCodeService.ScanAsync(filesProvider, progressWorker.TokenSource.Token);
 
                                 this.FireScanningUpdateEvent(analysisResult);
+
+                                this.FireSnykCodeScanningFinishedEvent();
                             }
                             catch (Exception e)
                             {
@@ -525,9 +543,16 @@
         private void FireScanningUpdateEvent(AnalysisResult analysisResult) => this.SnykCodeScanningUpdate?.Invoke(this, new SnykCodeScanEventArgs(analysisResult));
 
         /// <summary>
-        /// Fire scanning finished event.
+        /// Fire OSS scanning finished event.
         /// </summary>
-        private void FireScanningFinishedEvent() => this.ScanningFinished?.Invoke(this, new SnykCliScanEventArgs());
+        private void FireOssScanningFinishedEvent()
+            => this.OssScanningFinished?.Invoke(this, new SnykCliScanEventArgs { SnykCodeScanRunning = this.IsSnykCodeScanRunning() });
+
+        /// <summary>
+        /// Fire SnykCode scanning finished event.
+        /// </summary>
+        private void FireSnykCodeScanningFinishedEvent() 
+            => this.SnykCodeScanningFinished?.Invoke(this, new SnykCodeScanEventArgs { OssScanRunning = this.IsOssScanRunning() });
 
         /// <summary>
         /// Fire scanning cancelled event.
@@ -537,5 +562,7 @@
         private bool IsOssScanRunning() => this.ossScanTask != null && this.ossScanTask.Status == TaskStatus.Running;
 
         private bool IsSnykCodeScanRunning() => this.snykCodeScanTask != null && this.snykCodeScanTask.Status == TaskStatus.Running;
+
+        private bool IsDownloadRunning() => this.downloadCliTask != null && this.downloadCliTask.Status == TaskStatus.Running;
     }
 }
