@@ -106,6 +106,11 @@
         public int LowSeverityCount { get; set; }
 
         /// <summary>
+        /// Gets a value indicating whether node content not empty.
+        /// </summary>
+        public bool HasContent => this.State == RootTreeNodeState.ResultDetails || this.State == RootTreeNodeState.Error;
+
+        /// <summary>
         /// Set node text to {Prefix} without additional text.
         /// </summary>
         public void ResetTitleText() => this.Title = this.GetDefaultTitle();

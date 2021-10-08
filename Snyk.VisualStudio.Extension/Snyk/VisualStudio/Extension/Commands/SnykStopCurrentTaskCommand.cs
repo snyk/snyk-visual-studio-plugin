@@ -3,7 +3,8 @@
     using System;
     using System.ComponentModel.Design;
     using Microsoft.VisualStudio.Shell;
-    using Service;
+    using Snyk.VisualStudio.Extension.CLI;
+    using Snyk.VisualStudio.Extension.Service;
     using Task = System.Threading.Tasks.Task;
 
     /// <summary>
@@ -54,5 +55,15 @@
         /// </summary>
         /// <returns>Stop Command Id.</returns>
         protected override int GetCommandId() => SnykGuids.StopCommandId;
+
+        protected override void OnBeforeQueryStatus(object sender, EventArgs e)
+        {
+            var menuCommand = sender as OleMenuCommand;
+
+            if (menuCommand != null)
+            {
+                menuCommand.Enabled = SnykSolutionService.Instance.IsSolutionOpen && SnykTasksService.Instance.IsScanRunning();
+            }
+        }
     }
 }

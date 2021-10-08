@@ -26,9 +26,11 @@
 
             var menuCommandID = new CommandID(this.GetCommandSet(), this.GetCommandId());
 
-            var menuItem = new MenuCommand(this.Execute, menuCommandID);
+            var menuItem = new OleMenuCommand(this.Execute, menuCommandID);
 
             commandService.AddCommand(menuItem);
+
+            menuItem.BeforeQueryStatus += new EventHandler(this.OnBeforeQueryStatus);
         }
 
         /// <summary>
@@ -54,5 +56,12 @@
         /// </summary>
         /// <returns>Command id.</returns>
         protected abstract int GetCommandId();
+
+        /// <summary>
+        /// On before query status event handler for button (to change button state enabled/disabled).
+        /// </summary>
+        /// <param name="sender">Sender object.</param>
+        /// <param name="e">Event object.</param>
+        protected abstract void OnBeforeQueryStatus(object sender, EventArgs e);
     }
 }
