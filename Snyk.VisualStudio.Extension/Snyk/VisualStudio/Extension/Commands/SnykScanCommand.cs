@@ -48,7 +48,7 @@
         /// </summary>
         /// <param name="sender">Source object.</param>
         /// <param name="eventArgs">Event args.</param>
-        protected override void Execute(object sender, EventArgs eventArgs) => SnykTasksService.Instance.Scan();
+        protected override void Execute(object sender, EventArgs eventArgs) => SnykTasksService.Instance.ScanAsync();
 
         /// <summary>
         /// Get command Id.

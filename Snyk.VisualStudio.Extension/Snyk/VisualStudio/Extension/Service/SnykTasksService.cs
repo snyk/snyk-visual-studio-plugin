@@ -10,6 +10,7 @@
     using Snyk.Code.Library.Domain.Analysis;
     using Snyk.Common;
     using Snyk.VisualStudio.Extension.CLI;
+    using Snyk.VisualStudio.Extension.Service.Domain;
     using Snyk.VisualStudio.Extension.SnykAnalytics;
     using static Snyk.VisualStudio.Extension.CLI.SnykCliDownloader;
     using Task = System.Threading.Tasks.Task;
@@ -193,15 +194,18 @@
         /// <summary>
         /// Start scan in background task.
         /// </summary>
-        public void Scan()
+        /// <returns>A <see cref="Task"/> representing the asynchronous operation.</returns>
+        public async Task ScanAsync()
         {
             Logger.Information("Enter Scan method");
 
-            _ = Task.Run(async () => this.serviceProvider.AnalyticsService.LogAnalysisIsTriggeredEvent(await this.GetSelectedProductsAsync()));
+            var selectedFeatures = await this.GetFeaturesSettingsAsync();
 
-            this.ScanOss();
+            this.serviceProvider.AnalyticsService.LogAnalysisIsTriggeredEvent(this.GetSelectedFeatures(selectedFeatures));
 
-            _ = this.ScanSnykCodeAsync();
+            this.ScanOss(selectedFeatures);
+
+            this.ScanSnykCode(selectedFeatures);
         }
 
         /// <summary>
@@ -321,9 +325,9 @@
         /// <param name="progress">Donwload progress form 0..100$.</param>
         protected internal void OnDownloadUpdate(int progress) => this.DownloadUpdate?.Invoke(this, new SnykCliDownloadEventArgs(progress));
 
-        private void ScanOss()
+        private void ScanOss(FeaturesSettings featuresSettings)
         {
-            if (!this.serviceProvider.Options.OssEnabled)
+            if (!featuresSettings.OssEnabled)
             {
                 return;
             }
@@ -438,17 +442,16 @@
                 }, progressWorker.TokenSource.Token);
         }
 
-        private async Task ScanSnykCodeAsync()
+        private void ScanSnykCode(FeaturesSettings featuresSettings)
         {
-            if (!await this.serviceProvider.ApiService.IsSnykCodeEnabledAsync())
+            if (!featuresSettings.SastOnServerEnabled)
             {
                 this.FireSnykCodeDisabledError();
 
                 return;
             }
 
-            var options = this.serviceProvider.Options;
-            if (!options.SnykCodeQualityEnabled && !options.SnykCodeSecurityEnabled)
+            if (!featuresSettings.CodeQualityEnabled && !featuresSettings.CodeSecurityEnabled)
             {
                 return;
             }
@@ -566,24 +569,38 @@
 
         private bool IsDownloadRunning() => this.downloadCliTask != null && this.downloadCliTask.Status == TaskStatus.Running;
 
-        private async Task<IList<string>> GetSelectedProductsAsync()
+        private async Task<FeaturesSettings> GetFeaturesSettingsAsync()
         {
-            var selectedProducts = new List<string>();
             var options = this.serviceProvider.Options;
 
-            if (options.OssEnabled)
+            bool sastOnServerEnabled = await this.serviceProvider.ApiService.IsSnykCodeEnabledAsync();
+
+            return new FeaturesSettings
+            {
+                OssEnabled = options.OssEnabled,
+                SastOnServerEnabled = await this.serviceProvider.ApiService.IsSnykCodeEnabledAsync(),
+                CodeSecurityEnabled = sastOnServerEnabled && options.SnykCodeSecurityEnabled,
+                CodeQualityEnabled = sastOnServerEnabled && options.SnykCodeQualityEnabled,
+            };
+        }
+
+        private IList<string> GetSelectedFeatures(FeaturesSettings featuresSettings)
+        {
+            var selectedProducts = new List<string>();
+
+            if (featuresSettings.OssEnabled)
             {
                 selectedProducts.Add(AnalysisType.SnykOpenSource);
             }
 
-            if (await this.serviceProvider.ApiService.IsSnykCodeEnabledAsync())
+            if (featuresSettings.SastOnServerEnabled)
             {
-                if (options.SnykCodeSecurityEnabled)
+                if (featuresSettings.CodeSecurityEnabled)
                 {
                     selectedProducts.Add(AnalysisType.SnykCodeSecurity);
                 }
 
-                if (options.SnykCodeQualityEnabled)
+                if (featuresSettings.CodeQualityEnabled)
                 {
                     selectedProducts.Add(AnalysisType.SnykCodeQuality);
                 }

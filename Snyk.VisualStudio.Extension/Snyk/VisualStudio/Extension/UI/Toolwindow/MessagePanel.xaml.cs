@@ -75,7 +75,7 @@
         /// </summary>
         public void ShowOverviewScreenMessage() => this.ShowPanel(this.overviewPanel);
 
-        private void RunButton_Click(object sender, RoutedEventArgs e) => SnykTasksService.Instance.Scan();
+        private void RunButton_Click(object sender, RoutedEventArgs e) => SnykTasksService.Instance.ScanAsync();
 
         private void ShowPanel(StackPanel panel)
         {
