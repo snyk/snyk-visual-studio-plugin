@@ -1,3 +1,5 @@
+**This extension is for beta purposes only and you will need an invitation to join. If you are looking for the officially supported release by Snyk you can find it [here](https://marketplace.visualstudio.com/items?itemName=snyk-security.snyk-vulnerability-scanner-vs)**.
+
 # Snyk for Visual Studio
 
 
