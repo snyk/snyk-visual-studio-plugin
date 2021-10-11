@@ -2,6 +2,7 @@
 {
     using System.Collections.Generic;
     using System.IO;
+    using System.Linq;
     using Snyk.Code.Library.Service;
     using Snyk.Code.Library.Tests.Api;
     using Xunit;
@@ -12,7 +13,7 @@
     public class DcIgnoreServiceTest
     {
         [Fact]
-        public void DcIgnoreService_ListOfProjectFilesProvided_CreateDcIgnoreFileAndFilterFilesSuccess()
+        public void DcIgnoreService_ListOfProjectFilesProvided_CreateDcIgnoreFileAndFilterFiles()
         {
             string folderPath = Path.GetTempPath();
 
@@ -37,7 +38,7 @@
             };
 
             var dcIgnoreService = new DcIgnoreService(folderPath);
-            var filteredFiles = dcIgnoreService.FilterFiles(projectFiles) as IList<string>;
+            var filteredFiles = dcIgnoreService.FilterFiles(projectFiles).ToList();
 
             Assert.Equal(3, filteredFiles.Count);
 
@@ -47,7 +48,7 @@
         }
 
         [Fact]
-        public void DcIgnoreService_SolutionWithoutDcIgnoreProvided_CreateDcSuccess()
+        public void DcIgnoreService_SolutionWithoutDcIgnoreProvided_CreateDcIgnore()
         {
             string folderPath = Path.GetTempPath();
 
@@ -69,7 +70,7 @@
         }
 
         [Fact]
-        public void DcIgnoreService_ListOfProjectFilesProvided_FilterFilesByGitIgnoreCheckSuccess()
+        public void DcIgnoreService_ListOfProjectFilesProvided_FilterFilesByGitIgnoreCheck()
         {
             var projectFiles = new List<string>
             {
@@ -83,7 +84,7 @@
             };
 
             var dcIgnoreService = new DcIgnoreService(TestResource.GetResourcesPath());
-            var filteredFiles = dcIgnoreService.FilterFilesByGitIgnore(projectFiles) as IList<string>;
+            var filteredFiles = dcIgnoreService.FilterFilesByGitIgnore(projectFiles).ToList();
 
             Assert.Equal(4, filteredFiles.Count);
         }

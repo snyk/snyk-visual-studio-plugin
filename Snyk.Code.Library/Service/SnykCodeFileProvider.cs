@@ -3,6 +3,7 @@
     using System;
     using System.Collections.Generic;
     using System.IO;
+    using System.Linq;
     using System.Runtime.Caching;
     using System.Text;
     using System.Threading.Tasks;
@@ -75,7 +76,7 @@
         {
             var dcIgnoreService = new DcIgnoreService(this.solutionPath);
 
-            this.files = (IList<string>)dcIgnoreService.FilterFiles(this.files);
+            this.files = dcIgnoreService.FilterFiles(this.files).ToList();
 
             this.files = await filtersService.FilterFilesAsync(this.files);
         }

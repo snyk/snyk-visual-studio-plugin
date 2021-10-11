@@ -14,7 +14,5 @@
         /// <param name="filePaths">Project file paths.</param>
         /// <returns>Filtered file paths.</returns>
         Task<IList<string>> FilterFilesAsync(IList<string> filePaths);
-
-        
     }
 }

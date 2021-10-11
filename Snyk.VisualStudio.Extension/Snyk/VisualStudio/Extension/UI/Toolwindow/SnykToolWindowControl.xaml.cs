@@ -89,16 +89,15 @@
             tasksService.SnykCodeScanningStarted += this.OnSnykCodeScanningStarted;
             tasksService.CliScanningUpdate += this.OnCliScanningUpdate;
             tasksService.SnykCodeScanningUpdate += this.OnSnykCodeScanningUpdate;
-            //tasksService.ScanningFinished += this.OnScanningFinished;
 
             Logger.Information("Initialize Download Event Listeners");
 
-            //tasksService.DownloadStarted += this.OnDownloadStarted;
-            //tasksService.DownloadFinished += this.OnDownloadFinished;
-            //tasksService.DownloadUpdate += this.OnDownloadUpdate;
-            //tasksService.DownloadCancelled += this.OnDownloadCancelled;
+            tasksService.DownloadStarted += this.OnDownloadStarted;
+            tasksService.DownloadFinished += this.OnDownloadFinished;
+            tasksService.DownloadUpdate += this.OnDownloadUpdate;
+            tasksService.DownloadCancelled += this.OnDownloadCancelled;
 
-            //this.Loaded += tasksService.OnUiLoaded;
+            this.Loaded += tasksService.OnUiLoaded;
 
             serviceProvider.VsThemeService.ThemeChanged += this.OnVsThemeChanged;
 
