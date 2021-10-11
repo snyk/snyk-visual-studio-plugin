@@ -89,7 +89,6 @@
             tasksService.SnykCodeScanningStarted += this.OnSnykCodeScanningStarted;
             tasksService.CliScanningUpdate += this.OnCliScanningUpdate;
             tasksService.SnykCodeScanningUpdate += this.OnSnykCodeScanningUpdate;
-            //tasksService.ScanningFinished += this.OnScanningFinished;
 
             Logger.Information("Initialize Download Event Listeners");
 

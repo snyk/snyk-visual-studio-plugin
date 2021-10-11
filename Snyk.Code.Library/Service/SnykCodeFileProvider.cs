@@ -3,6 +3,7 @@
     using System;
     using System.Collections.Generic;
     using System.IO;
+    using System.Linq;
     using System.Runtime.Caching;
     using System.Text;
     using System.Threading.Tasks;
@@ -71,7 +72,14 @@
         }
 
         /// <inheritdoc/>
-        public async Task FilterFilesAsync(IFiltersService filtersService) => this.files = await filtersService.FilterFilesAsync(this.files);
+        public async Task FilterFilesAsync(IFiltersService filtersService)
+        {
+            var dcIgnoreService = new DcIgnoreService(this.solutionPath);
+
+            this.files = dcIgnoreService.FilterFiles(this.files).ToList();
+
+            this.files = await filtersService.FilterFilesAsync(this.files);
+        }
 
         private void InitializeCache()
         {
