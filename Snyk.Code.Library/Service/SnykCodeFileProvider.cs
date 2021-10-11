@@ -75,7 +75,7 @@
         {
             var dcIgnoreService = new DcIgnoreService(this.solutionPath);
 
-            this.files = dcIgnoreService.FilterFiles(this.files);
+            this.files = (IList<string>)dcIgnoreService.FilterFiles(this.files);
 
             this.files = await filtersService.FilterFilesAsync(this.files);
         }

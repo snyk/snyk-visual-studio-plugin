@@ -4,6 +4,7 @@
     using System.IO;
     using System.Linq;
     using System.Reflection;
+    using System.Text;
     using MAB.DotIgnore;
 
     /// <inheritdoc/>
@@ -29,26 +30,28 @@
         /// <inheritdoc/>
         public void CreateDcIgnoreIfNeeded()
         {
-            if (!File.Exists(this.gitIGnorePath) && !File.Exists(this.dcIGnorePath))
+            if (File.Exists(this.gitIGnorePath) && File.Exists(this.dcIGnorePath))
             {
-                var assembly = Assembly.GetExecutingAssembly();
-                string resourcePath = assembly.GetManifestResourceNames()
-                        .Single(str => str.EndsWith("full.dcignore"));
+                return;
+            }
 
-                using (Stream stream = assembly.GetManifestResourceStream(resourcePath))
+            var assembly = Assembly.GetExecutingAssembly();
+            string resourcePath = assembly.GetManifestResourceNames()
+                    .Single(str => str.EndsWith("full.dcignore"));
+
+            using (Stream stream = assembly.GetManifestResourceStream(resourcePath))
+            {
+                using (StreamReader reader = new StreamReader(stream))
                 {
-                    using (StreamReader reader = new StreamReader(stream))
-                    {
-                        string dcIgnoreTemplate = reader.ReadToEnd();
+                    string dcIgnoreTemplate = reader.ReadToEnd();
 
-                        File.WriteAllText(this.dcIGnorePath, dcIgnoreTemplate);
-                    }
+                    File.WriteAllText(this.dcIGnorePath, dcIgnoreTemplate, Encoding.UTF8);
                 }
             }
         }
 
         /// <inheritdoc/>
-        public IList<string> FilterFiles(IList<string> filePaths)
+        public IEnumerable<string> FilterFiles(IEnumerable<string> filePaths)
         {
             this.CreateDcIgnoreIfNeeded();
 
@@ -58,14 +61,14 @@
         }
 
         /// <inheritdoc/>
-        public IList<string> FilterFilesByDcIgnore(IList<string> filePaths)
+        public IEnumerable<string> FilterFilesByDcIgnore(IEnumerable<string> filePaths)
             => this.FilterFilesByIgnoreFile(this.dcIGnorePath, filePaths);
 
         /// <inheritdoc/>
-        public IList<string> FilterFilesByGitIgnore(IList<string> filePaths)
+        public IEnumerable<string> FilterFilesByGitIgnore(IEnumerable<string> filePaths)
             => this.FilterFilesByIgnoreFile(this.gitIGnorePath, filePaths);
 
-        private IList<string> FilterFilesByIgnoreFile(string ignoreFilePath, IList<string> filePaths)
+        private IEnumerable<string> FilterFilesByIgnoreFile(string ignoreFilePath, IEnumerable<string> filePaths)
         {
             if (!File.Exists(ignoreFilePath))
             {
