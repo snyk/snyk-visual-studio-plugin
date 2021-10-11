@@ -18,13 +18,13 @@
             <TextBlock>Scanning project for vulnerabilities...</TextBlock>
         </StackPanel>
 
-        <StackPanel Name="runScanMessagePanel" HorizontalAlignment="Center" Visibility="Collapsed">
+        <StackPanel Name="runScanMessagePanel" HorizontalAlignment="Center" Orientation="Vertical" Visibility="Collapsed">
             <TextBlock>
-                    Scan your project for security vulnerabilities.
-                    <Hyperlink Name="runScanLink" Click="RunButton_Click">
-                        Run scan
-                    </Hyperlink>
+                Scan your project for security vulnerabilities.
             </TextBlock>
+            <StackPanel>
+                <Button x:Name="runScanLink" Content="Run scan" IsDefault="True" Click="RunButton_Click"/>
+            </StackPanel>
         </StackPanel>
         
         <StackPanel Name="messagePanel" Visibility="Collapsed" HorizontalAlignment="Center">
