@@ -83,7 +83,7 @@
                     Paragraph paragraph = new Paragraph();
                     paragraph.Inlines.Clear();
                     paragraph.Margin = new Thickness(0);
-                    paragraph.Padding = new Thickness(0);
+                    paragraph.Padding = new Thickness(2);
 
                     if (backgroundBrush != null)
                     {
