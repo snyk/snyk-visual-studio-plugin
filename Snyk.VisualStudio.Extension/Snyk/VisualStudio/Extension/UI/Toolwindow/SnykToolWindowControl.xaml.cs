@@ -15,6 +15,7 @@
     using Snyk.VisualStudio.Extension.CLI;
     using Snyk.VisualStudio.Extension.Service;
     using Snyk.VisualStudio.Extension.Settings;
+    using Snyk.VisualStudio.Extension.SnykAnalytics;
     using Snyk.VisualStudio.Extension.Theme;
     using Snyk.VisualStudio.Extension.UI.Notifications;
     using Snyk.VisualStudio.Extension.UI.Tree;
@@ -186,6 +187,8 @@
             this.resultsTree.CliRootNode.State = RootTreeNodeState.Error;
 
             NotificationService.Instance.ShowWarningInfoBar(eventArgs.Error.Message);
+
+            this.serviceProvider.AnalyticsService.LogAnalysisReadyEvent(AnalysisType.SnykOpenSource, SnykAnalytics.AnalyticsAnalysisResult.Error);
         });
 
         /// <summary>
@@ -207,6 +210,8 @@
             this.resultsTree.CodeSequrityRootNode.State = RootTreeNodeState.Error;
 
             NotificationService.Instance.ShowWarningInfoBar(eventArgs.Error);
+
+            this.serviceProvider.AnalyticsService.LogAnalysisReadyEvent(AnalysisType.SnykCodeSecurity, SnykAnalytics.AnalyticsAnalysisResult.Error);
         });
 
         /// <summary>
@@ -404,11 +409,8 @@
 
                 this.resultsTree.OssResult = cliResult;
 
-                this.serviceProvider.AnalyticsService.LogOpenSourceAnalysisReadyEvent(
-                    cliResult.CriticalSeverityCount,
-                    cliResult.HighSeverityCount,
-                    cliResult.MediumSeverityCount,
-                    cliResult.LowSeverityCount);
+                this.serviceProvider.AnalyticsService
+                    .LogAnalysisReadyEvent(AnalysisType.SnykOpenSource, AnalyticsAnalysisResult.Success);
             });
         }
 
@@ -421,13 +423,6 @@
                 await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
 
                 this.resultsTree.AnalysisResults = analysisResult;
-
-                // TODO: Add SnykCode analytics event.
-                // this.serviceProvider.AnalyticsService.LogOpenSourceAnalysisReadyEvent(
-                //    cliResult.CriticalSeverityCount,
-                //    cliResult.HighSeverityCount,
-                //    cliResult.MediumSeverityCount,
-                //    cliResult.LowSeverityCount);
             });
         }
 
@@ -471,7 +466,10 @@
 
                         this.descriptionPanel.Vulnerability = vulnerability;
 
-                        this.serviceProvider.AnalyticsService.LogUserSeesAnIssueEvent(vulnerability.Id, vulnerability.Severity);
+                        this.serviceProvider.AnalyticsService.LogIssueIsViewedEvent(
+                            vulnerability.Id,
+                            IssueType.Get(vulnerability),
+                            vulnerability.Severity);
                     }
                     else
                     {
@@ -497,6 +495,11 @@
                         suggestion.Columns.Item1 - 1,
                         suggestion.Rows.Item2 - 1,
                         suggestion.Columns.Item2);
+
+                    this.serviceProvider.AnalyticsService.LogIssueIsViewedEvent(
+                            suggestion.Id,
+                            IssueType.Get(suggestion),
+                            Severity.FromInt(suggestion.Severity));
                 }
 
                 if (treeNode == null)
@@ -533,7 +536,7 @@
             {
                 this.context.TransitionTo(OverviewState.Instance);
 
-                this.serviceProvider.AnalyticsService.LogUserLandedOnTheWelcomePageEvent();
+                this.serviceProvider.AnalyticsService.LogWelcomeIsViewedEvent();
             }
             else
             {

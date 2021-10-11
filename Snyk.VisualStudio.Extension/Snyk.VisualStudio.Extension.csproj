@@ -86,10 +86,14 @@
     <Compile Include="Snyk\VisualStudio\Extension\Commands\SnykOpenSettingsCommand.cs" />
     <Compile Include="Snyk\VisualStudio\Extension\Commands\SnykScanCommand.cs" />
     <Compile Include="Snyk\VisualStudio\Extension\Commands\SnykStopCurrentTaskCommand.cs" />
+    <Compile Include="Snyk\VisualStudio\Extension\Service\Domain\FeaturesSettings.cs" />
     <Compile Include="Snyk\VisualStudio\Extension\Service\SastSettings.cs" />
     <Compile Include="Snyk\VisualStudio\Extension\Service\SnykApiService.cs" />
     <Compile Include="Snyk\VisualStudio\Extension\Service\VsCodeService.cs" />
     <Compile Include="Snyk\VisualStudio\Extension\Settings\SnykSettingsChangedEventArgs.cs" />
+    <Compile Include="Snyk\VisualStudio\Extension\SnykAnalytics\AnalyticsAnalysisResult.cs" />
+    <Compile Include="Snyk\VisualStudio\Extension\SnykAnalytics\AnalysisType.cs" />
+    <Compile Include="Snyk\VisualStudio\Extension\SnykAnalytics\IssueType.cs" />
     <Compile Include="Snyk\VisualStudio\Extension\SnykExtension.cs" />
     <Compile Include="Snyk\VisualStudio\Extension\Service\SnykCodeScanEventArgs.cs" />
     <Compile Include="Snyk\VisualStudio\Extension\SnykGuids.cs" />

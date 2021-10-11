@@ -9,6 +9,7 @@
     using Microsoft.VisualStudio.Shell;
     using Snyk.Code.Library.Domain.Analysis;
     using Snyk.VisualStudio.Extension.CLI;
+    using Snyk.VisualStudio.Extension.SnykAnalytics;
 
     /// <summary>
     /// Interaction logic for SnykFilterableComboBox.xaml.
@@ -132,11 +133,17 @@
                 if (this.codeSequrityRootNode.Enabled)
                 {
                     this.AppendSnykCodeIssues(this.codeSequrityRootNode, value, suggestion => suggestion.Categories.Contains("Security"));
+
+                    SnykAnalyticsService.Instance
+                        .LogAnalysisReadyEvent(AnalysisType.SnykCodeSecurity, AnalyticsAnalysisResult.Success);
                 }
 
                 if (this.codeQualityRootNode.Enabled)
                 {
                     this.AppendSnykCodeIssues(this.codeQualityRootNode, value, suggestion => !suggestion.Categories.Contains("Security"));
+
+                    SnykAnalyticsService.Instance
+                        .LogAnalysisReadyEvent(AnalysisType.SnykCodeQuality, AnalyticsAnalysisResult.Success);
                 }
             }
         }

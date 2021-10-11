@@ -105,7 +105,7 @@
                 {
                     Logger.Information("Initialize Snyk Segment Analytics Service.");
 
-                    this.analyticsService = new SnykAnalyticsService();
+                    this.analyticsService = SnykAnalyticsService.Instance;
 
                     this.analyticsService.Initialize();
                 }
