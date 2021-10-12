@@ -30,7 +30,7 @@
         /// <inheritdoc/>
         public void CreateDcIgnoreIfNeeded()
         {
-            if (File.Exists(this.gitIGnorePath) && File.Exists(this.dcIGnorePath))
+            if (File.Exists(this.gitIGnorePath) || File.Exists(this.dcIGnorePath))
             {
                 return;
             }
