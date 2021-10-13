@@ -4,6 +4,7 @@
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
              xmlns:html="clr-namespace:Snyk.VisualStudio.Extension.UI"
+             xmlns:c="clr-namespace:Snyk.VisualStudio.Extension.UI.Controls"
              mc:Ignorable="d" 
              d:DesignHeight="450" d:DesignWidth="800">
     <Grid x:Name="vulnerabilityDescriptionGrid">
@@ -24,27 +25,27 @@
             <ColumnDefinition Width="8*"/>
         </Grid.ColumnDefinitions>
 
-        <TextBlock Grid.Row="0" Grid.ColumnSpan="2" Text="Detailed paths and remediation" FontSize="16" Margin="5, 10, 5, 5"/>
+        <c:TextField Grid.Row="0" Grid.ColumnSpan="2" Text="Detailed paths and remediation" FontSize="16" Margin="5, 10, 5, 5"/>
 
-        <TextBlock Grid.Row="1" Grid.Column="0" Text="Remediation:" FontWeight="Bold" FontSize="12" Margin="5, 5, 5, 5"/>
-        <TextBlock Grid.Row="1" Grid.Column="1" Name="remediation" Text="" FontSize="12" Margin="5, 5, 5, 5" TextWrapping="Wrap"/>
+        <c:TextField Grid.Row="1" Grid.Column="0" Text="Remediation:" FontWeight="Bold" FontSize="12" Margin="5, 5, 5, 5"/>
+        <c:TextField Grid.Row="1" Grid.Column="1" x:Name="remediation" Text="" FontSize="12" Margin="5, 5, 5, 5" TextWrapping="Wrap"/>
 
-        <TextBlock Grid.Row="2" Grid.Column="0" Text="Introduced through:" FontWeight="Bold" FontSize="12" Margin="5, 5, 5, 5"/>
-        <TextBlock Grid.Row="2" Grid.Column="1" Name="detaiedIntroducedThrough" Text="" FontSize="12" Margin="5, 5, 5, 5" TextWrapping="Wrap"/>
+        <c:TextField Grid.Row="2" Grid.Column="0" Text="Introduced through:" FontWeight="Bold" FontSize="12" Margin="5, 5, 5, 5"/>
+        <c:TextField Grid.Row="2" Grid.Column="1" x:Name="detaiedIntroducedThrough" Text="" FontSize="12" Margin="5, 5, 5, 5" TextWrapping="Wrap"/>
 
-        <TextBlock Grid.Row="3" Grid.ColumnSpan="2" Text="Information Exposure" FontSize="16" Margin="5, 10, 5, 5"/>
+        <c:TextField Grid.Row="3" Grid.ColumnSpan="2" Text="Information Exposure" FontSize="16" Margin="5, 10, 5, 5"/>
 
-        <TextBlock Grid.Row="4" Grid.Column="0" Text="Vulnerable module:" FontWeight="Bold" FontSize="12" Margin="5, 5, 5, 5"/>
-        <TextBlock Grid.Row="4" Grid.Column="1" Name="vulnerableModule" Text="" FontSize="12" Margin="5, 5, 5, 5" TextWrapping="Wrap"/>
+        <c:TextField Grid.Row="4" Grid.Column="0" Text="Vulnerable module:" FontWeight="Bold" FontSize="12" Margin="5, 5, 5, 5"/>
+        <c:TextField Grid.Row="4" Grid.Column="1" x:Name="vulnerableModule" Text="" FontSize="12" Margin="5, 5, 5, 5" TextWrapping="Wrap"/>
 
-        <TextBlock Grid.Row="5" Grid.Column="0" Text="Introduced through:" FontWeight="Bold" FontSize="12" Margin="5, 5, 5, 5"/>
-        <TextBlock Grid.Row="5" Grid.Column="1" Name="introducedThrough" Text="" FontSize="12" Margin="5, 5, 5, 5" TextWrapping="Wrap"/>
+        <c:TextField Grid.Row="5" Grid.Column="0" Text="Introduced through:" FontWeight="Bold" FontSize="12" Margin="5, 5, 5, 5"/>
+        <c:TextField Grid.Row="5" Grid.Column="1" x:Name="introducedThrough" Text="" FontSize="12" Margin="5, 5, 5, 5" TextWrapping="Wrap"/>
 
-        <TextBlock Grid.Row="6" Grid.Column="0" Text="Exploit maturity:" FontWeight="Bold" FontSize="12" Margin="5, 5, 5, 5"/>
-        <TextBlock Grid.Row="6" Grid.Column="1" Name="exploitMaturity" Text="" FontSize="12" Margin="5, 5, 5, 5" TextWrapping="Wrap"/>
+        <c:TextField Grid.Row="6" Grid.Column="0" Text="Exploit maturity:" FontWeight="Bold" FontSize="12" Margin="5, 5, 5, 5"/>
+        <c:TextField Grid.Row="6" Grid.Column="1" x:Name="exploitMaturity" Text="" FontSize="12" Margin="5, 5, 5, 5" TextWrapping="Wrap"/>
 
-        <TextBlock Grid.Row="7" Grid.Column="0" Text="Fixed in:" FontWeight="Bold" FontSize="12" Margin="5, 5, 5, 5"/>
-        <TextBlock Grid.Row="7" Grid.Column="1" Name="fixedIn" Text="" FontSize="12" Margin="5, 5, 5, 5" TextWrapping="Wrap"/>
+        <c:TextField Grid.Row="7" Grid.Column="0" Text="Fixed in:" FontWeight="Bold" FontSize="12" Margin="5, 5, 5, 5"/>
+        <c:TextField Grid.Row="7" Grid.Column="1" x:Name="fixedIn" Text="" FontSize="12" Margin="5, 5, 5, 5" TextWrapping="Wrap"/>
 
         <html:HtmlRichTextBox Grid.Row="8" Grid.ColumnSpan="2" x:Name="overview" IsDocumentEnabled="True" 
                                         IsReadOnly="True"

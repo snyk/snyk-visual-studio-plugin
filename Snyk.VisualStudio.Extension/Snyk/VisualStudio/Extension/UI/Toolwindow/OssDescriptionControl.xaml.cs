@@ -51,6 +51,14 @@
             }
         }
 
+        /// <summary>
+        /// Adapt components for VS theme change.
+        /// </summary>
+        public void AdaptComponentsForThemeChange()
+        {
+            this.overview.AdaptForeground();
+        }
+
         private void MoreAboutThisIssue_RequestNavigate(object sender, System.Windows.Navigation.RequestNavigateEventArgs args)
         {
             Process.Start(new ProcessStartInfo(args.Uri.AbsoluteUri));
