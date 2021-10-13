@@ -30,6 +30,11 @@
         public virtual bool IsRoot => false;
 
         /// <summary>
+        /// Gets a value indicating whether is node enabled/disabled.
+        /// </summary>
+        public virtual bool Enabled => true;
+
+        /// <summary>
         /// Gets or sets a value indicating whether items.
         /// </summary>
         public ObservableCollection<TreeNode> Items { get; set; }

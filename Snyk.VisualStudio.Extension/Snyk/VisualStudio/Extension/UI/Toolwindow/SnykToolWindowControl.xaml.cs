@@ -58,7 +58,7 @@
         /// </summary>
         /// <returns>True if result tree not empty.</returns>
         public bool IsTreeContentNotEmpty() => this.resultsTree.CliRootNode.HasContent
-            || this.resultsTree.CodeSequrityRootNode.HasContent 
+            || this.resultsTree.CodeSequrityRootNode.HasContent
             || this.resultsTree.CodeQualityRootNode.HasContent;
 
         /// <summary>
@@ -277,10 +277,7 @@
         /// </summary>
         /// <param name="sender">Source object.</param>
         /// <param name="eventArgs">Event args.</param>
-        public void OnVsThemeChanged(object sender, SnykVsThemeChangedEventArgs eventArgs)
-        {
-            //this.overview.AdaptForeground(); todo: fix theme cheged for description panel.
-        }
+        public void OnVsThemeChanged(object sender, SnykVsThemeChangedEventArgs eventArgs) => this.descriptionPanel.AdaptComponentsForThemeChange();
 
         /// <summary>
         /// Show tool window.

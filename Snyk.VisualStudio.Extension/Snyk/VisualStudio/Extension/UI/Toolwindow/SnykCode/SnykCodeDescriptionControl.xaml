@@ -4,6 +4,7 @@
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
              xmlns:local="clr-namespace:Snyk.VisualStudio.Extension.UI.Toolwindow.SnykCode"
+             xmlns:c="clr-namespace:Snyk.VisualStudio.Extension.UI.Controls"
              mc:Ignorable="d" 
              d:DesignHeight="450" d:DesignWidth="800">
     <Grid x:Name="snykCodeDescriptionGrid">
@@ -17,7 +18,7 @@
             <ColumnDefinition Width="*"/>
         </Grid.ColumnDefinitions>
 
-        <TextBlock Grid.Row="0" Name="snykCodeDescription" Text="" FontSize="12" Margin="0, 0, 0, 16" TextWrapping="Wrap"/>
+        <c:TextField Grid.Row="0" x:Name="snykCodeDescription" Text="" FontSize="12" Margin="0, 0, 0, 16"/>
 
         <local:DataFlowStepsControl Grid.Row="1" x:Name="dataFlowStepsControl" Margin="0, 0, 0, 16"/>
 

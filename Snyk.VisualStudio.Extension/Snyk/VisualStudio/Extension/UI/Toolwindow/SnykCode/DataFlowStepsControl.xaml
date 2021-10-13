@@ -4,6 +4,7 @@
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
              xmlns:local="clr-namespace:Snyk.VisualStudio.Extension.UI.Toolwindow.SnykCode"
+             xmlns:c="clr-namespace:Snyk.VisualStudio.Extension.UI.Controls"
              mc:Ignorable="d" 
              d:DesignHeight="450" d:DesignWidth="800">
     <Grid>
@@ -15,7 +16,7 @@
             <ColumnDefinition Width="*"/>
         </Grid.ColumnDefinitions>
 
-        <TextBlock Grid.Row="0" Grid.Column="0" Name="stepsCountHeader" Text="" FontWeight="Bold" Margin="0, 0, 0, 8"/>
+        <c:TextField Grid.Row="0" Grid.Column="0" x:Name="stepsCountHeader" Text="" FontWeight="Bold" Margin="0, 0, 0, 8"/>
 
         <Grid Grid.Row="1" Grid.Column="0">
             <ItemsControl ItemsSource="{Binding DataFlowSteps}">
@@ -28,11 +29,7 @@
                                 <ColumnDefinition Width="8*"/>
                             </Grid.ColumnDefinitions>
 
-                            <TextBox Grid.Column="0"                                                  
-                                Text="{Binding RowNumber}" 
-                                Background="{DynamicResource VsBrush.Window}" 
-                                Foreground="{DynamicResource VsBrush.WindowText}" 
-                                BorderThickness="0"/>
+                            <c:TextField Grid.Column="0" Text="{Binding RowNumber}" />
 
                             <TextBlock Grid.Column="1" HorizontalAlignment="Left">
                                 <Hyperlink Command="{Binding Path=NavigateCommand}">
@@ -40,12 +37,10 @@
                                 </Hyperlink>
                             </TextBlock>
 
-                            <TextBox Grid.Column="2" 
+                            <c:TextField Grid.Column="2" 
                                 Text="{Binding LineContent}" 
                                 HorizontalAlignment="Left"
-                                Background="{DynamicResource VsBrush.Window}" 
-                                Foreground="{DynamicResource VsBrush.WindowText}" 
-                                BorderThickness="0" FontFamily="Consolas"/>
+                                FontFamily="Consolas"/>
                         </Grid>
                     </DataTemplate>
                 </ItemsControl.ItemTemplate>

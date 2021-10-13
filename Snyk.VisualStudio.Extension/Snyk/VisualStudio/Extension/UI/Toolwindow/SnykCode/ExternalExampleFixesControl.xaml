@@ -4,6 +4,7 @@
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
              xmlns:local="clr-namespace:Snyk.VisualStudio.Extension.UI.Toolwindow.SnykCode"
+             xmlns:c="clr-namespace:Snyk.VisualStudio.Extension.UI.Controls"
              mc:Ignorable="d" 
              d:DesignHeight="450" d:DesignWidth="800">
     <Grid>
@@ -17,10 +18,11 @@
             <ColumnDefinition Width="*"/>
         </Grid.ColumnDefinitions>
         
-        <TextBlock Grid.Row="0" Grid.Column="0" Text="External example fixes" FontWeight="Bold" Margin="0, 0, 0, 8"/>
+        <c:TextField Grid.Row="0" Grid.Column="0" Text="External example fixes" FontWeight="Bold" Margin="0, 0, 0, 8"/>
 
-        <TextBlock Grid.Row="1" Grid.Column="0" Name="shortDescription" Margin="0, 0, 0, 8"/>
+        <c:TextField Grid.Row="1" Grid.Column="0" x:Name="shortDescription" Margin="0, 0, 0, 8"/>
 
-        <TabControl Grid.Row="3" Grid.Column="0" x:Name="externalExampleFixesTab" Padding="4, 4, 4, 4"/>
+        <TabControl Grid.Row="3" Grid.Column="0" x:Name="externalExampleFixesTab" Padding="4, 4, 4, 4" 
+                    Background="Transparent" Foreground="{DynamicResource VsBrush.WindowText}"/>
     </Grid>
 </UserControl>

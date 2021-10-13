@@ -121,6 +121,9 @@
     </Compile>
     <Compile Include="Snyk\VisualStudio\Extension\Theme\ThemeInfo.cs" />
     <Compile Include="Snyk\VisualStudio\Extension\Theme\VsBroadcastMessageEvents.cs" />
+    <Compile Include="Snyk\VisualStudio\Extension\UI\Controls\TextField.xaml.cs">
+      <DependentUpon>TextField.xaml</DependentUpon>
+    </Compile>
     <Compile Include="Snyk\VisualStudio\Extension\UI\IRefreshable.cs" />
     <Compile Include="Snyk\VisualStudio\Extension\UI\Notifications\NotificationService.cs" />
     <Compile Include="Snyk\VisualStudio\Extension\UI\Notifications\VsStatusBarNotificationService.cs" />
@@ -604,6 +607,10 @@
     </EmbeddedResource>
   </ItemGroup>
   <ItemGroup>
+    <Page Include="Snyk\VisualStudio\Extension\UI\Controls\TextField.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
     <Page Include="Snyk\VisualStudio\Extension\UI\Toolwindow\DescriptionHeaderPanel.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
