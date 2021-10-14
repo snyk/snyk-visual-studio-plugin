@@ -64,7 +64,10 @@
         /// <summary>
         /// Gets a value indicating whether is root node enabled.
         /// </summary>
-        public bool Enabled => this.State == RootTreeNodeState.Enabled || this.State == RootTreeNodeState.Scanning;
+        public override bool Enabled => this.State == RootTreeNodeState.Enabled
+            || this.State == RootTreeNodeState.Scanning
+            || this.State == RootTreeNodeState.Error
+            || this.State == RootTreeNodeState.ResultDetails;
 
         /// <summary>
         /// Gets or sets node state.
