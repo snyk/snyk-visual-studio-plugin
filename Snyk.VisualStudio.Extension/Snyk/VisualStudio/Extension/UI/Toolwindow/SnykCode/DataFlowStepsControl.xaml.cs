@@ -54,11 +54,34 @@
         /// <param name="dataFlowStep">Step object to add to model.</param>
         public void AddStep(DataFlowStep dataFlowStep)
         {
+            if (this.ContainsStep(dataFlowStep))
+            {
+                return;
+            }
+
             this.model.DataFlowSteps.Add(dataFlowStep);
 
             int stepsCount = this.model.DataFlowSteps.Count;
 
             this.stepsCountHeader.Text = $"Data Flow - {stepsCount} step" + (stepsCount > 1 ? "s" : string.Empty);
+        }
+
+        /// <summary>
+        /// Check is data flow steps list contains step by file name and row number.
+        /// </summary>
+        /// <param name="step"><see cref="DataFlowStep"/> instance.</param>
+        /// <returns>True if this step already exists.</returns>
+        public bool ContainsStep(DataFlowStep step)
+        {
+            foreach (var dataFlowStep in this.model.DataFlowSteps)
+            {
+                if (step.FileName == dataFlowStep.FileName && step.LineContent == dataFlowStep.LineContent)
+                {
+                    return true;
+                }
+            }
+
+            return false;
         }
 
         /// <summary>
