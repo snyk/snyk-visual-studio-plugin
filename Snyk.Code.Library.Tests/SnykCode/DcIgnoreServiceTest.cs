@@ -13,13 +13,44 @@
     public class DcIgnoreServiceTest
     {
         [Fact]
+        public void DcIgnoreService_MultipleGitIgnoreAndDcIgnoreFilesProvided_FilterFiles()
+        {
+            var projectFiles = new List<string>
+            {
+                "/SubProject1/Main.cs",
+                "/SubProject1/RestService.cs",
+                "/SubProject1/Debug/Main.cs",
+                "/SubProject1/Debug/RestService.cs",
+                "/SubProject1/Backup/Main.cs",
+                "/SubProject1/Backup/RestService.cs",
+
+                "/SubProject2/App.cs",
+                "/SubProject2/AppService.cs",
+                "/SubProject2/obj/App.cs",
+                "/SubProject2/obj/AppService.cs",
+                "/SubProject2/bin/Main.cs",
+
+                "/SubProject3/App.cs",
+                "/SubProject3/AppService.cs",
+                "/SubProject3/bin/App.cs",
+                "/SubProject3/bin/AppService.cs",
+                "/SubProject3/Packages/App.cs",
+                "/SubProject3/Packages/AppService.cs",
+
+                "/bin/Main.cs",
+                "/Main.cs",
+                "/AppService.cs",
+            };
+
+            var dcIgnoreService = new DcIgnoreService();
+            var filteredFiles = dcIgnoreService.FilterFiles(TestResource.GetFileFullPath("TestProject"), projectFiles).ToList();
+
+            Assert.Equal(8, filteredFiles.Count);
+        }
+
+        [Fact]
         public void DcIgnoreService_MultipleGitIgnoreFilesProvided_FilterFilesByMultipleGitignore()
         {
-            string solutionPath = TestResource.GetFileFullPath("TestProject");
-
-            var gitIgnoreFiles = Directory
-                .EnumerateFiles(solutionPath, ".gitignore", SearchOption.AllDirectories).OrderBy(str => str.Length).ToList();
-
             var projectFiles = new List<string>
             {
                 "/SubProject1/Main.cs",
@@ -43,35 +74,8 @@
                 "/AppService.cs",
             };
 
-            // -1. Sort gitignore list by directory (from deep to top)
-
-            List<string> filteredFiles = new List<string>();
-
-            foreach (string gitIgnoreFullPath in gitIgnoreFiles)
-            {
-                string gitIgnoreDir = Directory.GetParent(gitIgnoreFullPath).FullName
-                    .Replace(solutionPath, string.Empty)
-                    .Replace(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar);
-
-                var dirFiles = projectFiles
-                    .Where(file => file.StartsWith(gitIgnoreDir))
-                    .ToList();
-
-                dirFiles.ForEach(path => path.Replace(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar));
-
-                if (dirFiles.Count == 0)
-                {
-                    continue;
-                }
-
-                var dcIgnoreService = new DcIgnoreService(gitIgnoreDir);
-
-                filteredFiles.AddRange(dcIgnoreService.FilterFiles(projectFiles).ToList());
-
-                projectFiles = projectFiles.Except(dirFiles).ToList();
-            }
-
-            // 3. Exclude this entries from source project files list
+            var dcIgnoreService = new DcIgnoreService();
+            var filteredFiles = dcIgnoreService.FilterFiles(TestResource.GetFileFullPath("TestProject"), projectFiles).ToList();
 
             Assert.Equal(8, filteredFiles.Count);
         }
@@ -101,8 +105,8 @@
                 "/build/Service.cs",
             };
 
-            var dcIgnoreService = new DcIgnoreService(folderPath);
-            var filteredFiles = dcIgnoreService.FilterFiles(projectFiles).ToList();
+            var dcIgnoreService = new DcIgnoreService();
+            var filteredFiles = dcIgnoreService.FilterFiles(folderPath, projectFiles).ToList();
 
             Assert.Equal(3, filteredFiles.Count);
 
@@ -125,8 +129,8 @@
 
             Assert.False(File.Exists(dcIGnorePath));
 
-            var dcIgnoreService = new DcIgnoreService(folderPath);
-            dcIgnoreService.CreateDcIgnoreIfNeeded();
+            var dcIgnoreService = new DcIgnoreService();
+            dcIgnoreService.CreateDcIgnoreIfNeeded(folderPath);
 
             Assert.True(File.Exists(dcIGnorePath));
 
@@ -147,8 +151,8 @@
                 "/build/Service.cs",
             };
 
-            var dcIgnoreService = new DcIgnoreService(TestResource.GetResourcesPath());
-            var filteredFiles = dcIgnoreService.FilterFilesByGitIgnore(projectFiles).ToList();
+            var dcIgnoreService = new DcIgnoreService();
+            var filteredFiles = dcIgnoreService.FilterFilesByGitIgnore(TestResource.GetResourcesPath(), projectFiles).ToList();
 
             Assert.Equal(4, filteredFiles.Count);
         }
