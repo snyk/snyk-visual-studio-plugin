@@ -74,9 +74,9 @@
         /// <inheritdoc/>
         public async Task FilterFilesAsync(IFiltersService filtersService)
         {
-            var dcIgnoreService = new DcIgnoreService(this.solutionPath);
+            var dcIgnoreService = new DcIgnoreService();
 
-            this.files = dcIgnoreService.FilterFiles(this.files).ToList();
+            this.files = dcIgnoreService.FilterFiles(this.solutionPath, this.files).ToList();
 
             this.files = await filtersService.FilterFilesAsync(this.files);
         }

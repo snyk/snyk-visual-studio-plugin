@@ -13,9 +13,12 @@
     <None Remove="Resources\.gitignore" />
     <None Remove="Resources\app1.js" />
     <None Remove="Resources\app2.js" />
+    <None Remove="Resources\TestProject\.dcignore" />
     <None Remove="Resources\TestProject\.gitignore" />
+    <None Remove="Resources\TestProject\SubProject1\.dcignore" />
     <None Remove="Resources\TestProject\SubProject1\.gitignore" />
-    <None Remove="Resources\TestProject\SubProject2\.gitignore" />    
+    <None Remove="Resources\TestProject\SubProject2\.gitignore" />
+    <None Remove="Resources\TestProject\SubProject3\.dcignore" />    
     <None Remove="settings.json" />
   </ItemGroup>
   <ItemGroup>
@@ -31,13 +34,22 @@
     <EmbeddedResource Include="Resources\HelloWorld.cs">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </EmbeddedResource>
+    <EmbeddedResource Include="Resources\TestProject\.dcignore">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </EmbeddedResource>
     <EmbeddedResource Include="Resources\TestProject\.gitignore">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </EmbeddedResource>
     <EmbeddedResource Include="Resources\TestProject\SubProject1\.gitignore">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </EmbeddedResource>
+    <EmbeddedResource Include="Resources\TestProject\SubProject1\.dcignore">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </EmbeddedResource>
     <EmbeddedResource Include="Resources\TestProject\SubProject2\.gitignore">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Resources\TestProject\SubProject3\.dcignore">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </EmbeddedResource>    
   </ItemGroup>
@@ -75,9 +87,6 @@
   </ItemGroup>
   <ItemGroup>
     <Reference Include="System.Runtime.Caching" />
-  </ItemGroup>
-  <ItemGroup>
-    <Folder Include="Resources\TestProject\SubProject3\" />
   </ItemGroup>
 
   <Target Name="WriteSettingsFile" BeforeTargets="PreBuildEvent">
