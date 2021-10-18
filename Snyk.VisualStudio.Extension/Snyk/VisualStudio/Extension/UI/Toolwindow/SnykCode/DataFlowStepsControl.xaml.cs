@@ -51,37 +51,17 @@
         /// <summary>
         /// Add step to model and update header text.
         /// </summary>
-        /// <param name="dataFlowStep">Step object to add to model.</param>
-        public void AddStep(DataFlowStep dataFlowStep)
+        /// <param name="dataFlowSteps">Step object to add to model.</param>
+        public void AddDataFlowSteps(IList<DataFlowStep> dataFlowSteps)
         {
-            if (this.ContainsStep(dataFlowStep))
+            foreach (var dataFlowStep in dataFlowSteps)
             {
-                return;
+                this.model.DataFlowSteps.Add(dataFlowStep);
             }
-
-            this.model.DataFlowSteps.Add(dataFlowStep);
 
             int stepsCount = this.model.DataFlowSteps.Count;
 
             this.stepsCountHeader.Text = $"Data Flow - {stepsCount} step" + (stepsCount > 1 ? "s" : string.Empty);
-        }
-
-        /// <summary>
-        /// Check is data flow steps list contains step by file name and row number.
-        /// </summary>
-        /// <param name="step"><see cref="DataFlowStep"/> instance.</param>
-        /// <returns>True if this step already exists.</returns>
-        public bool ContainsStep(DataFlowStep step)
-        {
-            foreach (var dataFlowStep in this.model.DataFlowSteps)
-            {
-                if (step.FileName == dataFlowStep.FileName && step.LineContent == dataFlowStep.LineContent)
-                {
-                    return true;
-                }
-            }
-
-            return false;
         }
 
         /// <summary>
@@ -95,6 +75,8 @@
             this.Visibility = markers != null && markers.Count > 0 ? Visibility.Visible : Visibility.Collapsed;
 
             var index = 1;
+
+            var dataFlowSteps = new List<DataFlowStep>();
 
             foreach (var marker in markers)
             {
@@ -131,9 +113,11 @@
 
                     index++;
 
-                    this.AddStep(dataFlowStep);
+                    dataFlowSteps.Add(dataFlowStep);
                 }
             }
+
+            this.AddDataFlowSteps(dataFlowSteps.Distinct().ToList());
         }
 
         private string GetLineContent(string file, long lineNumber)
