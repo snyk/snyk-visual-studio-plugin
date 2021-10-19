@@ -76,7 +76,7 @@
 
             var index = 1;
 
-            var dataFlowSteps = new List<DataFlowStep>();
+            var dataFlowSteps = new HashSet<DataFlowStep>();
 
             foreach (var marker in markers)
             {
@@ -117,7 +117,7 @@
                 }
             }
 
-            this.AddDataFlowSteps(dataFlowSteps.Distinct().ToList());
+            this.AddDataFlowSteps(dataFlowSteps.ToList());
         }
 
         private string GetLineContent(string file, long lineNumber)
