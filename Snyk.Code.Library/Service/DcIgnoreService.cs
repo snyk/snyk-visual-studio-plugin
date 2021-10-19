@@ -90,11 +90,11 @@
                     continue;
                 }
 
-                var files = this.FilterFilesByFileIgnoreList(gitIgnoreFullPath, dirFiles).ToList();
+                var files = this.FilterFilesByFileIgnoreList(gitIgnoreFullPath, dirFiles);
 
                 filteredFiles.AddRange(files);
 
-                projectFiles = projectFiles.Except(dirFiles).ToList();
+                projectFiles = projectFiles.Except(dirFiles);
             }
 
             filteredFiles.AddRange(projectFiles);
@@ -111,7 +111,7 @@
 
             var ignores = new IgnoreList(ignoreFilePath);
 
-            return filePaths.Where(path => !ignores.IsIgnored(new FileInfo(path))).ToList();
+            return filePaths.Where(path => !ignores.IsIgnored(new FileInfo(path)));
         }
     }
 }
