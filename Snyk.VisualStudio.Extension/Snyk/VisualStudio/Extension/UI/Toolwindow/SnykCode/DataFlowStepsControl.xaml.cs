@@ -51,10 +51,13 @@
         /// <summary>
         /// Add step to model and update header text.
         /// </summary>
-        /// <param name="dataFlowStep">Step object to add to model.</param>
-        public void AddStep(DataFlowStep dataFlowStep)
+        /// <param name="dataFlowSteps">Step object to add to model.</param>
+        public void AddDataFlowSteps(IList<DataFlowStep> dataFlowSteps)
         {
-            this.model.DataFlowSteps.Add(dataFlowStep);
+            foreach (var dataFlowStep in dataFlowSteps)
+            {
+                this.model.DataFlowSteps.Add(dataFlowStep);
+            }
 
             int stepsCount = this.model.DataFlowSteps.Count;
 
@@ -72,6 +75,8 @@
             this.Visibility = markers != null && markers.Count > 0 ? Visibility.Visible : Visibility.Collapsed;
 
             var index = 1;
+
+            var dataFlowSteps = new HashSet<DataFlowStep>();
 
             foreach (var marker in markers)
             {
@@ -108,9 +113,11 @@
 
                     index++;
 
-                    this.AddStep(dataFlowStep);
+                    dataFlowSteps.Add(dataFlowStep);
                 }
             }
+
+            this.AddDataFlowSteps(dataFlowSteps.ToList());
         }
 
         private string GetLineContent(string file, long lineNumber)
