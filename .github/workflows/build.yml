@@ -1,6 +1,9 @@
-name: nightly-build
+name: build
 
-on: [push, pull_request]
+on:
+  push:
+    branches: [ main ]
+  pull_request:
 
 env:
   SOLUTION_FILE_PATH: .
