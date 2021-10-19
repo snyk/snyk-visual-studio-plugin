@@ -388,7 +388,7 @@
 
                         try
                         {
-                            string solutionPath = this.serviceProvider.SolutionService.GetSolutionPath();
+                            string solutionPath = this.serviceProvider.SolutionService.GetPath();
 
                             Logger.Information($"Solution path = {solutionPath}");
                             Logger.Information("Start scan");
@@ -497,7 +497,7 @@
                         {
                             try
                             {
-                                var filesProvider = this.serviceProvider.SolutionService.NewFileProvider();
+                                var filesProvider = this.serviceProvider.SolutionService.GetFileProvider();
 
                                 var analysisResult = await this.serviceProvider.SnykCodeService.ScanAsync(filesProvider, progressWorker.TokenSource.Token);
 

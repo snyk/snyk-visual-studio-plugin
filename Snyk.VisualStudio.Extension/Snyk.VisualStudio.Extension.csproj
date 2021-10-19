@@ -94,6 +94,7 @@
     <Compile Include="Snyk\VisualStudio\Extension\SnykAnalytics\AnalyticsAnalysisResult.cs" />
     <Compile Include="Snyk\VisualStudio\Extension\SnykAnalytics\AnalysisType.cs" />
     <Compile Include="Snyk\VisualStudio\Extension\SnykAnalytics\IssueType.cs" />
+    <Compile Include="Snyk\VisualStudio\Extension\SnykCode\CodeCacheHierarchyEvents.cs" />
     <Compile Include="Snyk\VisualStudio\Extension\SnykExtension.cs" />
     <Compile Include="Snyk\VisualStudio\Extension\Service\SnykCodeScanEventArgs.cs" />
     <Compile Include="Snyk\VisualStudio\Extension\SnykGuids.cs" />
@@ -670,9 +671,7 @@
       <Name>Snyk.Common</Name>
     </ProjectReference>
   </ItemGroup>
-  <ItemGroup>
-    <Folder Include="Snyk\VisualStudio\Extension\SnykCode\" />
-  </ItemGroup>
+  <ItemGroup />
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <Import Project="$(VSToolsPath)\VSSDK\Microsoft.VsSDK.targets" Condition="'$(VSToolsPath)' != ''" />
   <Target Name="WriteAppSettingsFile" BeforeTargets="PreBuildEvent">

@@ -42,9 +42,7 @@
 
         private SnykUserStorageSettingsService userStorageSettingsService;
 
-        private SnykCodeService snykCodeService;
-
-        private FiltersService filterService;
+        private ISnykCodeService snykCodeService;
 
         private SnykApiService apiService;
 
@@ -62,7 +60,18 @@
         /// <summary>
         /// Gets solution service.
         /// </summary>
-        public SnykSolutionService SolutionService => this.solutionService;
+        public SnykSolutionService SolutionService
+        {
+            get
+            {
+                if (this.solutionService == null)
+                {
+                    this.solutionService = SnykSolutionService.Instance;
+                }
+
+                return this.solutionService;
+            }
+        }
 
         /// <summary>
         /// Gets Tasks service.
@@ -199,9 +208,9 @@
 
             await SnykTasksService.InitializeAsync(this);
 
-            await SnykSolutionService.InitializeAsync(this);
-
             this.dte = await this.serviceProvider.GetServiceAsync(typeof(DTE)) as DTE;
+
+            await SnykSolutionService.InitializeAsync(this);
 
             this.tasksService = SnykTasksService.Instance;
             this.solutionService = SnykSolutionService.Instance;
@@ -246,14 +255,8 @@
                 string endpoint = string.IsNullOrEmpty(options.CustomEndpoint)
                     ? SnykExtension.GetAppSettings().SnykCodeApiEndpoinUrl : options.CustomEndpoint;
 
-                var codeClient = new SnykCodeClient(endpoint, this.Options.ApiToken);
-
-                this.filterService = new FiltersService(codeClient);
-
-                var bundleService = new BundleService(codeClient);
-                var analysisService = new AnalysisService(codeClient);
-
-                this.snykCodeService = new SnykCodeService(bundleService, analysisService, this.filterService);
+                this.snykCodeService = CodeServiceFactory
+                    .CreateSnykCodeService(options.ApiToken, endpoint, new SnykCodeFileProvider(this.SolutionService));
             }
             catch (Exception e)
             {

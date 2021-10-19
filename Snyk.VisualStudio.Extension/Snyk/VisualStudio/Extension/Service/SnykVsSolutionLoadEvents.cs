@@ -3,12 +3,16 @@
     using System;
     using Microsoft.VisualStudio;
     using Microsoft.VisualStudio.Shell.Interop;
+    using Snyk.Code.Library.Service;
+    using Snyk.VisualStudio.Extension.SnykCode;
 
     /// <summary>
     /// Visual Studio solution load events implementation.
     /// </summary>
     public class SnykVsSolutionLoadEvents : IVsSolutionLoadEvents, IVsSolutionEvents, IVsSolutionEvents7
     {
+        private IFileProvider fileProvider;
+
         /// <summary>
         /// After Background Solution Load Complete event handler.
         /// </summary>
@@ -18,6 +22,15 @@
         /// After Close Solution event handler.
         /// </summary>
         public event EventHandler<EventArgs> AfterCloseSolution;
+
+        /// <summary>
+        /// Initializes a new instance of the <see cref="SnykVsSolutionLoadEvents"/> class.
+        /// </summary>
+        /// <param name="fileProvider">File provider instance.</param>
+        public SnykVsSolutionLoadEvents(IFileProvider fileProvider)
+        {
+            this.fileProvider = fileProvider;
+        }
 
         /// <summary>
         /// AfterBackgroundSolutionLoadComplete event handler. Invoke AfterBackgroundSolutionLoadComplete.
@@ -75,15 +88,26 @@
         /// AfterBackgroundSolutionLoadComplete event handler. Invoke AfterBackgroundSolutionLoadComplete.
         /// </summary>
         /// <param name="folderPath">Folder path.</param>
-        public void OnAfterOpenFolder(string folderPath) => this.AfterBackgroundSolutionLoadComplete?.Invoke(this, EventArgs.Empty);
+        public void OnAfterOpenFolder(string folderPath)
+        {
+            this.AfterBackgroundSolutionLoadComplete?.Invoke(this, EventArgs.Empty);
+        }
 
         /// <summary>
         /// AfterOpenProject event handler.
         /// </summary>
-        /// <param name="pHierarchy">Hierarchy.</param>
+        /// <param name="vsHierarchy">Hierarchy.</param>
         /// <param name="fAdded">Added.</param>
         /// <returns>VSConstants.S_OK.</returns>
-        public int OnAfterOpenProject(IVsHierarchy pHierarchy, int fAdded) => VSConstants.S_OK;
+        public int OnAfterOpenProject(IVsHierarchy vsHierarchy, int fAdded)
+        {
+            uint m_cookie;
+            var hierarchyEvents = new CodeCacheHierarchyEvents(vsHierarchy, this.fileProvider);
+
+            vsHierarchy.AdviseHierarchyEvents(hierarchyEvents, out m_cookie);
+
+            return VSConstants.S_OK;
+        }
 
         /// <summary>
         /// AfterOpenSolution event handler.

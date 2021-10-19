@@ -108,6 +108,7 @@
   <ItemGroup>
     <Compile Include="CollectionExtensions.cs" />
     <Compile Include="HttpClientFactory.cs" />
+    <Compile Include="ISolutionService.cs" />
     <Compile Include="Json.cs" />
     <Compile Include="LogManager.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />

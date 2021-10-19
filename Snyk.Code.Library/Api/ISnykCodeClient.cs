@@ -56,8 +56,8 @@
         /// <returns>Extended bundle object.</returns>
         Task<BundleResponseDto> ExtendBundleAsync(
             string bundleId, 
-            Dictionary<string, string> pathToHashFileDict,
-            List<string> removedFiles, 
+            IDictionary<string, string> pathToHashFileDict,
+            IEnumerable<string> removedFiles, 
             CancellationToken cancellationToken = default);
 
         /// <summary>
