@@ -37,8 +37,6 @@
         /// <inheritdoc/>
         public string GetSnykCodeErrorMessage(Exception sourceException)
         {
-            Logger.Error(sourceException, string.Empty);
-
             try
             {
                 var snykCodeError = Json.Deserialize<SnykCodeError>(sourceException.Message);
@@ -47,6 +45,7 @@
             }
             catch (Exception e)
             {
+                Logger.Error(sourceException, string.Empty);
                 Logger.Error(e, string.Empty);
 
                 return sourceException.Message;
