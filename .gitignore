@@ -246,3 +246,8 @@ Snyk.VisualStudio.Extension/appsettings.json
 snyk-visual-studio-plugin/appsettings.json
 Snyk.Code.Library.Tests/settings.json
 *.dccache*
+
+# OS generated files
+Thumbs.db
+.directory
+.DS_Store
