@@ -35,3 +35,8 @@ jobs:
         msbuild ${{env.SOLUTION_FILE_PATH}} /p:configuration=Release /p:DeployExtension=false /p:ZipPackageCompressionLevel=normal /v:m
         #Vsix-PushArtifacts | Vsix-PublishToGallery
       shell: powershell
+      
+    - name: Tests
+      working-directory: ${{env.GITHUB_WORKSPACE}}
+      run: dotnet test
+      shell: powershell
