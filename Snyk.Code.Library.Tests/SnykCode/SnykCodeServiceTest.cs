@@ -56,10 +56,6 @@
 
             var filtersServiceMock = new Mock<IFiltersService>();
 
-            filtersServiceMock
-                .Setup(filtersService => filtersService.FilterFilesAsync(filePaths).Result)
-                .Returns(filePaths);
-
             string bundleId = "dummyId";
 
             var bundleServiceMock = new Mock<IBundleService>();
@@ -89,20 +85,25 @@
                 .Setup(analysisService => analysisService.GetAnalysisAsync(bundleId, It.IsAny<CancellationToken>()).Result)
                 .Returns(analysisResults);
 
+            var fileProviderMock = new Mock<IFileProvider>();
+
+            fileProviderMock
+                .Setup(fileProvider => fileProvider.CreateFilePathToHashDictionary())
+                .Returns(new Dictionary<string, string>()
+                 {
+                    { "/app1.js", "123" },
+                    { "/app2.js", "456" },
+                 });
+
             var snykCodeService = new SnykCodeService(bundleServiceMock.Object, analysisServiceMock.Object, filtersServiceMock.Object);
 
-            var fileProvider = new SnykCodeFileProvider(TestResource.GetResourcesPath(), new List<string> { filePath1, filePath2 });
-
-            var analysisResult = await snykCodeService.ScanAsync(fileProvider);
+            var analysisResult = await snykCodeService.ScanAsync(fileProviderMock.Object);
 
             Assert.NotNull(analysisResult);
             Assert.Equal(2, analysisResult.FileAnalyses.Count);
 
             Assert.Equal("app1.js", analysisResult.FileAnalyses[0].FileName);
             Assert.Equal("app2.js", analysisResult.FileAnalyses[1].FileName);
-
-            filtersServiceMock
-                .Verify(filterService => filterService.FilterFilesAsync(filePaths), Times.Exactly(1));
 
             bundleServiceMock
                 .Verify(bundleService => bundleService.CreateBundleAsync(It.IsAny<Dictionary<string, string>>(), It.IsAny<int>(), It.IsAny<CancellationToken>()), Times.Exactly(1));
