@@ -20,8 +20,8 @@ jobs:
 
     - name: Add MSBuild to PATH
       uses: microsoft/setup-msbuild@v1
-      with: 
-        vs-version: '[14.0, ]' 
+      with:
+        vs-version: '[14.0, ]'
 
     - name: Restore NuGet packages
       working-directory: ${{env.GITHUB_WORKSPACE}}
@@ -29,8 +29,6 @@ jobs:
 
     - name: Build
       working-directory: ${{env.GITHUB_WORKSPACE}}
-      env:
-        TEST_API_TOKEN: ${{ secrets.TEST_API_TOKEN }}
       run: |
         (new-object Net.WebClient).DownloadString("https://raw.github.com/madskristensen/ExtensionScripts/master/AppVeyor/vsix.ps1") | iex
         #Vsix-IncrementVsixVersion | Vsix-UpdateBuildVersion
@@ -39,7 +37,7 @@ jobs:
         msbuild ${{env.SOLUTION_FILE_PATH}} /p:configuration=Release /p:DeployExtension=false /p:ZipPackageCompressionLevel=normal /v:m
         #Vsix-PushArtifacts | Vsix-PublishToGallery
       shell: powershell
-      
+
     - name: Tests
       working-directory: ${{env.GITHUB_WORKSPACE}}
       run: dotnet test
