@@ -29,9 +29,6 @@ jobs:
     - name: Build
       working-directory: ${{env.GITHUB_WORKSPACE}}
       run: |
-        echo testing...
-        echo ${{ secrets.TEST_API_TOKEN }}
-        echo $TEST_API_TOKEN
         (new-object Net.WebClient).DownloadString("https://raw.github.com/madskristensen/ExtensionScripts/master/AppVeyor/vsix.ps1") | iex
         #Vsix-IncrementVsixVersion | Vsix-UpdateBuildVersion
         #echo {version}
