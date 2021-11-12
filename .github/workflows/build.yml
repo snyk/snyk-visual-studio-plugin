@@ -41,4 +41,3 @@ jobs:
     - name: Tests
       working-directory: ${{env.GITHUB_WORKSPACE}}
       run: dotnet test
-      shell: powershell
