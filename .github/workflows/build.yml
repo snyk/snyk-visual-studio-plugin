@@ -20,8 +20,8 @@ jobs:
 
     - name: Add MSBuild to PATH
       uses: microsoft/setup-msbuild@v1
-      with: 
-        vs-version: '[14.0, ]' 
+      with:
+        vs-version: '[14.0, ]'
 
     - name: Restore NuGet packages
       working-directory: ${{env.GITHUB_WORKSPACE}}
@@ -36,9 +36,4 @@ jobs:
         #Vsix-TokenReplacement Snyk.VisualStudio.Extension\source.extension.vsixmanifest 'Version="([0-9\\.]+)"' 'Version="{version}"'
         msbuild ${{env.SOLUTION_FILE_PATH}} /p:configuration=Release /p:DeployExtension=false /p:ZipPackageCompressionLevel=normal /v:m
         #Vsix-PushArtifacts | Vsix-PublishToGallery
-      shell: powershell
-      
-    - name: Tests
-      working-directory: ${{env.GITHUB_WORKSPACE}}
-      run: dotnet test
       shell: powershell
