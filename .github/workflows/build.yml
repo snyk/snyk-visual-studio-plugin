@@ -12,26 +12,22 @@ env:
 jobs:
   build:
     runs-on: windows-latest
+    env:
+      TEST_API_TOKEN: ${{ secrets.TEST_API_TOKEN }}
 
     steps:
     - uses: actions/checkout@v2
 
     - name: Add MSBuild to PATH
       uses: microsoft/setup-msbuild@v1
-      with: 
-        vs-version: '[14.0, ]' 
+      with:
+        vs-version: '[14.0, ]'
 
-    - name: Restore NuGet packages
-      working-directory: ${{env.GITHUB_WORKSPACE}}
-      run: nuget restore ${{env.SOLUTION_FILE_PATH}}
-
+    - name: Install dependencies    
+      run: dotnet restore
+      
     - name: Build
-      working-directory: ${{env.GITHUB_WORKSPACE}}
-      run: |
-        (new-object Net.WebClient).DownloadString("https://raw.github.com/madskristensen/ExtensionScripts/master/AppVeyor/vsix.ps1") | iex
-        #Vsix-IncrementVsixVersion | Vsix-UpdateBuildVersion
-        #echo {version}
-        #Vsix-TokenReplacement Snyk.VisualStudio.Extension\source.extension.vsixmanifest 'Version="([0-9\\.]+)"' 'Version="{version}"'
-        msbuild ${{env.SOLUTION_FILE_PATH}} /p:configuration=Release /p:DeployExtension=false /p:ZipPackageCompressionLevel=normal /v:m
-        #Vsix-PushArtifacts | Vsix-PublishToGallery
-      shell: powershell
+      run: dotnet build --configuration Release --no-restore
+      
+    - name: Test
+      run: dotnet test --no-restore --verbosity normal
