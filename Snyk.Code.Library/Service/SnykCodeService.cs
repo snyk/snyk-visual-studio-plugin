@@ -78,7 +78,7 @@
                 return await this.NewScanAsync(fileProvider, cancellationToken);
             }
 
-            var filteredChangedFiles = await this.GetFilteredFilesAsync(fileProvider.GetAllChangedFiles());
+            var filteredChangedFiles = await this.GetFilteredFilesAsync(fileProvider.GetSolutionPath(), fileProvider.GetAllChangedFiles());
 
             if (this.NoChangedFilesInSolution(filteredChangedFiles))
             {
@@ -90,7 +90,7 @@
 
         private async Task<AnalysisResult> NewScanAsync(IFileProvider fileProvider, CancellationToken cancellationToken = default)
         {
-            var files = await this.GetFilteredFilesAsync(fileProvider.GetFiles());
+            var files = await this.GetFilteredFilesAsync(fileProvider.GetSolutionPath(), fileProvider.GetFiles());
 
             this.codeCacheService.Initialize(files);
 
@@ -132,9 +132,9 @@
             return analysisResult;
         }
 
-        private async Task<IEnumerable<string>> GetFilteredFilesAsync(IEnumerable<string> files)
+        private async Task<IEnumerable<string>> GetFilteredFilesAsync(string rootDirectoryPath, IEnumerable<string> files)
         {
-            files = this.dcIgnoreService.FilterFiles(files);
+            files = this.dcIgnoreService.FilterFiles(rootDirectoryPath, files);
 
             return await this.filtersService.FilterFilesAsync(files);
         }

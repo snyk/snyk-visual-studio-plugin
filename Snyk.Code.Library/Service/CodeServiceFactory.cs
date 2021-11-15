@@ -7,14 +7,13 @@
     /// </summary>
     public class CodeServiceFactory
     {
-
-
-
-
-
         /// <summary>
-        /// TODO:
+        /// Factory method for <see cref="ISnykCodeService"/> instance.
         /// </summary>
+        /// <param name="apiToken">Snyk ApiToken.</param>
+        /// <param name="endpoint">Snyk endpoint.</param>
+        /// <param name="fileProvider">VisualStudio file provider.</param>
+        /// <returns>ISnykCodeService instance.</returns>
         public static ISnykCodeService CreateSnykCodeService(string apiToken, string endpoint, IFileProvider fileProvider)
         {
             var codeClient = new SnykCodeClient(endpoint, apiToken);
@@ -27,7 +26,7 @@
             string rootDirectoryPath = fileProvider.GetSolutionPath();
 
             var codeCacheService = new CodeCacheService(rootDirectoryPath);
-            var dcIgnoreService = new DcIgnoreService(rootDirectoryPath);
+            var dcIgnoreService = new DcIgnoreService();
 
             return new SnykCodeService(bundleService, analysisService, filterService, codeCacheService, dcIgnoreService);
         }

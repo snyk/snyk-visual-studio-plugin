@@ -119,7 +119,7 @@
                 .Returns(changedFiles);
 
             dcIgnoreServiceMock
-                .Setup(dcIgnoreService => dcIgnoreService.FilterFiles(changedFiles))
+                .Setup(dcIgnoreService => dcIgnoreService.FilterFiles(It.IsAny<string>(), changedFiles))
                 .Returns(changedFiles);
 
             var extendedBundle = new Bundle { Id = bundleId, };
