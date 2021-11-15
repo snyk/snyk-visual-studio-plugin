@@ -1,7 +1,9 @@
 # Snyk for Visual Studio
 
+**The Visual Studio extension (Snyk’s Vulnerability Scanner) helps you find and fix security vulnerabilities in your projects. Within a few seconds, the extension will provide a list of all the different types of security vulnerabilities identified together with actionable fix advice. The extension combines the power of two Snyk products: Snyk Open Source and Snyk Code:**
 
-**The Visual Studio extension (Snyk’s Vulnerability Scanner) helps you find and fix security vulnerabilities in your projects. Within a few seconds, the extension will provide a list of all the different types of security vulnerabilities identified together with actionable fix advice. Using the engine behind Snyk Open Source Security, we find known vulnerabilities in both the direct and in-direct (transitive) open source dependencies you are pulling into the project.**
+1. With Snyk Open Source we find known vulnerabilities in both the direct and in-direct (transitive) open source dependencies you are pulling into the project.
+2. With Snyk Code we find known security vulnerabilities and code quality issues at a blazing speed looking at the code you and your team wrote.
 
 # Table of Contents
 
@@ -26,8 +28,6 @@
 
 ## Introduction
 
-Use this documentation to get started with the Visual Studio extension for [Snyk Open Source](https://support.snyk.io/hc/en-us/articles/360020073958-Visual-Studio-extension).
-
 ### Software requirements
 
 * Operating system - Windows. 
@@ -35,7 +35,8 @@ Use this documentation to get started with the Visual Studio extension for [Snyk
 
 ### Supported languages
 
-Currently supported languages for Snyk Open Source are C#, JavaScript, TypeScript, Java, Go, Ruby, Python, PHP, Scala, Swift, Objective-C. See [Snyk Open Source language and framework support](https://support.snyk.io/hc/en-us/articles/360020352437-Language-support-summary)
+- Supported languages for Snyk Open Source are C#, JavaScript, TypeScript, Java, Go, Ruby, Python, PHP, Scala, Swift, Objective-C. See the full list [here](https://docs.snyk.io/products/snyk-open-source/language-and-package-manager-support).
+- Supported languages for Snyk Code are C# ([frameworks](https://docs.snyk.io/products/snyk-code/snyk-code-language-and-framework-support#c-frameworks)), Java, JavaScript, TypeScript, Python. See the full list [here](https://docs.snyk.io/products/snyk-code/snyk-code-language-and-framework-support).
 
 ## Install the extension
 
