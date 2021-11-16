@@ -1,6 +1,8 @@
 ﻿namespace Snyk.Code.Library.Service
 {
     using System.Collections.Generic;
+    using System.Threading;
+    using System.Threading.Tasks;
 
     /// <summary>
     /// Provide file path and content for solutions and projects.
@@ -53,5 +55,8 @@
         /// </summary>
         /// <returns>List of file paths.</returns>
         IEnumerable<string> GetAllChangedFiles();
+        /// <param name="filtersService">Filter service implementation</param
+        /// <param name="cancellationToken">Token to cancel current task.</param>
+        /// <returns>Task.</returns>
     }
 }

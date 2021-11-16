@@ -61,17 +61,18 @@
 
             using (var httpRequest = new HttpRequestMessage(HttpMethod.Get, AnalysisApiUrl + "/" + bundleId))
             {
-                var response = await this.httpClient.SendAsync(httpRequest, cancellationToken);
-
-                string responseText = await response.Content.ReadAsStringAsync();
-
-                if (response.IsSuccessStatusCode)
+                using (var response = await this.httpClient.SendAsync(httpRequest, cancellationToken))
                 {
-                    return Json.Deserialize<AnalysisResultDto>(responseText);
-                }
-                else
-                {
-                    throw new SnykCodeException((int)response.StatusCode, responseText);
+                    string responseText = await response.Content.ReadAsStringAsync();
+
+                    if (response.IsSuccessStatusCode)
+                    {
+                        return Json.Deserialize<AnalysisResultDto>(responseText);
+                    }
+                    else
+                    {
+                        throw new SnykCodeException((int)response.StatusCode, responseText);
+                    }
                 }
             }
         }
@@ -100,13 +101,14 @@
 
                 httpRequest.Content = new StringContent(payload, Encoding.UTF8, "application/json");
 
-                var response = await this.httpClient.SendAsync(httpRequest, HttpCompletionOption.ResponseHeadersRead, cancellationToken);
+                using (var response = await this.httpClient.SendAsync(httpRequest, HttpCompletionOption.ResponseHeadersRead, cancellationToken))
+                {
+                    watch.Stop();
 
-                watch.Stop();
+                    Logger.Information("Execution Time: {ElapsedMilliseconds} ms", watch.ElapsedMilliseconds);
 
-                Logger.Information("Execution Time: {ElapsedMilliseconds} ms", watch.ElapsedMilliseconds);
-
-                return response.IsSuccessStatusCode;
+                    return response.IsSuccessStatusCode;
+                }
             }
         }
 
@@ -139,17 +141,18 @@
 
                 using (httpRequest.Content = new StringContent(payload, Encoding.UTF8, "application/json"))
                 {
-                    var response = await this.httpClient.SendAsync(httpRequest);
-
-                    string responseText = await response.Content.ReadAsStringAsync();
-
-                    if (response.IsSuccessStatusCode)
+                    using (var response = await this.httpClient.SendAsync(httpRequest))
                     {
-                        return Json.Deserialize<BundleResponseDto>(responseText);
-                    }
-                    else
-                    {
-                        throw new SnykCodeException((int)response.StatusCode, responseText);
+                        string responseText = await response.Content.ReadAsStringAsync();
+
+                        if (response.IsSuccessStatusCode)
+                        {
+                            return Json.Deserialize<BundleResponseDto>(responseText);
+                        }
+                        else
+                        {
+                            throw new SnykCodeException((int)response.StatusCode, responseText);
+                        }
                     }
                 }
             }
@@ -167,17 +170,18 @@
 
             using (var httpRequest = new HttpRequestMessage(HttpMethod.Get, BundleApiUrl + "/" + bundleId))
             {
-                var response = await this.httpClient.SendAsync(httpRequest);
-
-                string responseText = await response.Content.ReadAsStringAsync();
-
-                if (response.IsSuccessStatusCode)
+                using (var response = await this.httpClient.SendAsync(httpRequest))
                 {
-                    return Json.Deserialize<BundleResponseDto>(responseText);
-                }
-                else
-                {
-                    throw new SnykCodeException((int)response.StatusCode, responseText);
+                    string responseText = await response.Content.ReadAsStringAsync();
+
+                    if (response.IsSuccessStatusCode)
+                    {
+                        return Json.Deserialize<BundleResponseDto>(responseText);
+                    }
+                    else
+                    {
+                        throw new SnykCodeException((int)response.StatusCode, responseText);
+                    }
                 }
             }
         }
@@ -201,17 +205,18 @@
 
                 using (httpRequest.Content = new StringContent(payload, Encoding.UTF8, "application/json"))
                 {
-                    var response = await this.httpClient.SendAsync(httpRequest);
-
-                    string responseText = await response.Content.ReadAsStringAsync();
-
-                    if (response.IsSuccessStatusCode)
+                    using (var response = await this.httpClient.SendAsync(httpRequest))
                     {
-                        return Json.Deserialize<BundleResponseDto>(responseText);
-                    }
-                    else
-                    {
-                        throw new SnykCodeException((int)response.StatusCode, responseText);
+                        string responseText = await response.Content.ReadAsStringAsync();
+
+                        if (response.IsSuccessStatusCode)
+                        {
+                            return Json.Deserialize<BundleResponseDto>(responseText);
+                        }
+                        else
+                        {
+                            throw new SnykCodeException((int)response.StatusCode, responseText);
+                        }
                     }
                 }
             }
@@ -227,17 +232,18 @@
 
             using (var request = new HttpRequestMessage(HttpMethod.Get, FiltersApiUrl))
             {
-                var response = await this.httpClient.SendAsync(request);
-
-                string responseText = await response.Content.ReadAsStringAsync();
-
-                if (response.IsSuccessStatusCode)
+                using (var response = await this.httpClient.SendAsync(request))
                 {
-                    return Json.Deserialize<FiltersDto>(responseText);
-                }
-                else
-                {
-                    throw new SnykCodeException((int)response.StatusCode, responseText);
+                    string responseText = await response.Content.ReadAsStringAsync();
+
+                    if (response.IsSuccessStatusCode)
+                    {
+                        return Json.Deserialize<FiltersDto>(responseText);
+                    }
+                    else
+                    {
+                        throw new SnykCodeException((int)response.StatusCode, responseText);
+                    }
                 }
             }
         }
@@ -258,19 +264,20 @@
 
             using (var request = new HttpRequestMessage(HttpMethod.Post, LoginApiUrl))
             {
-                var response = await this.httpClient.SendAsync(request);
-
-                string responseText = await response.Content.ReadAsStringAsync();
-
-                if (response.IsSuccessStatusCode)
+                using (var response = await this.httpClient.SendAsync(request))
                 {
-                    this.loginResponse = Json.Deserialize<LoginResponseDto>(responseText);
+                    string responseText = await response.Content.ReadAsStringAsync();
 
-                    return this.loginResponse;
-                }
-                else
-                {
-                    throw new SnykCodeException((int)response.StatusCode, responseText);
+                    if (response.IsSuccessStatusCode)
+                    {
+                        this.loginResponse = Json.Deserialize<LoginResponseDto>(responseText);
+
+                        return this.loginResponse;
+                    }
+                    else
+                    {
+                        throw new SnykCodeException((int)response.StatusCode, responseText);
+                    }
                 }
             }
         }
@@ -284,9 +291,10 @@
         {
             using (var request = new HttpRequestMessage(HttpMethod.Get, CheckSessionApiUrl))
             {
-                HttpResponseMessage httpResponse = await this.httpClient.SendAsync(request);
-
-                return new LoginStatus((int)httpResponse.StatusCode);
+                using (var httpResponse = await this.httpClient.SendAsync(request))
+                {
+                    return new LoginStatus((int)httpResponse.StatusCode);
+                }
             }
         }
     }

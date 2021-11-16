@@ -24,17 +24,11 @@
 
         private static SnykTasksService instance;
 
-        private CancellationTokenSource cliScanTokenSource;
+        private CancellationTokenSource ossScanTokenSource;
 
         private CancellationTokenSource snykCodeScanTokenSource;
 
         private CancellationTokenSource downloadCliTokenSource;
-
-        private Task ossScanTask;
-
-        private Task snykCodeScanTask;
-
-        private Task downloadCliTask;
 
         private ISnykServiceProvider serviceProvider;
 
@@ -160,11 +154,11 @@
         /// </summary>
         public void CancelTasks()
         {
-            if (this.cliScanTokenSource != null)
+            if (this.ossScanTokenSource != null)
             {
                 Logger.Information("Cancel OSS task");
 
-                this.cliScanTokenSource.Cancel();
+                this.ossScanTokenSource.Cancel();
 
                 this.cli?.ConsoleRunner?.Stop();
             }
@@ -198,6 +192,15 @@
         public async Task ScanAsync()
         {
             Logger.Information("Enter Scan method");
+
+            if (!this.serviceProvider.SolutionService.IsSolutionOpen)
+            {
+                this.FireOssError("No open solution");
+
+                Logger.Information("Solution not opened");
+
+                return;
+            }
 
             var selectedFeatures = await this.GetFeaturesSettingsAsync();
 
@@ -233,7 +236,7 @@
 
             Logger.Information("Start run task");
 
-            this.downloadCliTask = Task.Run(
+            _ = Task.Run(
                 () =>
                 {
                     try
@@ -266,9 +269,13 @@
                     }
                     catch (Exception exception)
                     {
-                        Logger.Information(exception.Message);
+                        Logger.Error(exception.Message);
 
                         this.OnDownloadCancelled(exception.Message);
+                    }
+                    finally
+                    {
+                        this.downloadCliTokenSource.Dispose();
                     }
                 }, progressWorker.TokenSource.Token);
         }
@@ -339,35 +346,19 @@
                 return;
             }
 
-            this.cliScanTokenSource = new CancellationTokenSource();
-
-            var progressWorker = new SnykProgressWorker
-            {
-                TasksService = this,
-                TokenSource = this.cliScanTokenSource,
-            };
+            this.ossScanTokenSource = new CancellationTokenSource();
+            var token = this.ossScanTokenSource.Token;
 
             Logger.Information("Start scan task");
 
-            this.ossScanTask = Task.Run(
+            _ = Task.Run(
                 () =>
                 {
                     this.FireCliScanningStartedEvent();
 
                     try
                     {
-                        progressWorker.CancelIfCancellationRequested();
-
-                        if (!this.serviceProvider.SolutionService.IsSolutionOpen)
-                        {
-                            this.FireOssError("No open solution");
-
-                            Logger.Information("Solution not opened");
-
-                            return;
-                        }
-
-                        progressWorker.CancelIfCancellationRequested();
+                        token.ThrowIfCancellationRequested();
 
                         var options = this.serviceProvider.Options;
 
@@ -377,14 +368,13 @@
                         };
 
                         Logger.Information($"Snyk Extension options");
-                        Logger.Information($"API token = {options.ApiToken}");
                         Logger.Information($"Custom Endpoint = {options.CustomEndpoint}");
                         Logger.Information($"Organization = {options.Organization}");
                         Logger.Information($"Ignore Unknown CA = {options.IgnoreUnknownCA}");
                         Logger.Information($"Additional Options = {options.AdditionalOptions}");
                         Logger.Information($"Is Scan All Projects = {options.IsScanAllProjects}");
 
-                        progressWorker.CancelIfCancellationRequested();
+                        token.ThrowIfCancellationRequested();
 
                         try
                         {
@@ -395,7 +385,7 @@
 
                             CliResult cliResult = this.cli.Scan(solutionPath);
 
-                            progressWorker.CancelIfCancellationRequested();
+                            token.ThrowIfCancellationRequested();
 
                             if (!cliResult.IsSuccessful())
                             {
@@ -412,24 +402,31 @@
                                 this.FireScanningUpdateEvent(cliResult);
                             }
 
-                            progressWorker.CancelIfCancellationRequested();
+                            token.ThrowIfCancellationRequested();
 
                             this.FireOssScanningFinishedEvent();
 
+                            this.cli = null;
+
                             Logger.Information("Scan finished");
                         }
-                        catch (Exception scanException)
+                        catch (Exception e)
                         {
-                            this.FireOssError(scanException.Message);
+                            bool isCancelled = this.cli.ConsoleRunner.IsStopped;
 
                             this.cli = null;
 
-                            return;
+                            if (isCancelled || this.IsTaskCancelled(e))
+                            {
+                                this.cli = null;
+
+                                this.FireScanningCancelledEvent();
+
+                                return;
+                            }
+
+                            this.FireOssError(e.Message);
                         }
-
-                        progressWorker.CancelIfCancellationRequested();
-
-                        this.cli = null;
                     }
                     catch (Exception exception)
                     {
@@ -439,10 +436,14 @@
 
                         this.cli = null;
                     }
-                }, progressWorker.TokenSource.Token);
+                    finally
+                    {
+                        this.ossScanTokenSource.Dispose();
+                    }
+                }, token);
         }
 
-        private void ScanSnykCode(FeaturesSettings featuresSettings)
+        private async Task ScanSnykCodeAsync(FeaturesSettings featuresSettings)
         {
             if (!featuresSettings.SastOnServerEnabled)
             {
@@ -473,55 +474,84 @@
 
             Logger.Information("Start scan task");
 
-            this.snykCodeScanTask = Task.Run(
-                async () =>
+            try
+            {
+                try
                 {
                     this.FireSnykCodeScanningStartedEvent();
 
-                    try
+                    var filesProvider = this.serviceProvider.SolutionService.GetFileProvider();
+
+                    var analysisResult = await this.serviceProvider.SnykCodeService.ScanAsync(filesProvider, progressWorker.TokenSource.Token);
+
+                    this.FireScanningUpdateEvent(analysisResult);
+
+                    this.FireSnykCodeScanningFinishedEvent();
+                }
+                catch (Exception e)
+                {
+                    if (this.IsTaskCancelled(e))
                     {
-                        progressWorker.CancelIfCancellationRequested();
-
-                        if (!this.serviceProvider.SolutionService.IsSolutionOpen)
-                        {
-                            this.FireOssError("No open solution");
-
-                            Logger.Information("Solution not opened");
-
-                            return;
-                        }
-
-                        progressWorker.CancelIfCancellationRequested();
-
-                        await Task.Run(async () =>
-                        {
-                            try
-                            {
-                                var filesProvider = this.serviceProvider.SolutionService.GetFileProvider();
-
-                                var analysisResult = await this.serviceProvider.SnykCodeService.ScanAsync(filesProvider, progressWorker.TokenSource.Token);
-
-                                this.FireScanningUpdateEvent(analysisResult);
-
-                                this.FireSnykCodeScanningFinishedEvent();
-                            }
-                            catch (Exception e)
-                            {
-                                string errorMessage = this.serviceProvider.SnykCodeService.GetSnykCodeErrorMessage(e);
-
-                                this.OnSnykCodeError(errorMessage);
-                            }
-                        });
-
-                        progressWorker.CancelIfCancellationRequested();
-                    }
-                    catch (Exception exception)
-                    {
-                        Logger.Error(exception, string.Empty);
-
                         this.FireScanningCancelledEvent();
+
+                        return;
                     }
-                }, progressWorker.TokenSource.Token);
+
+                    string errorMessage = this.serviceProvider.SnykCodeService.GetSnykCodeErrorMessage(e);
+
+                    this.OnSnykCodeError(errorMessage);
+                }
+            }
+            catch (Exception exception)
+            {
+                Logger.Error(exception, string.Empty);
+
+                this.FireScanningCancelledEvent();
+            }
+            finally
+            {
+                this.snykCodeScanTokenSource.Dispose();
+            }
+        }
+
+        private bool IsTaskCancelled(Exception sourceException)
+        {
+            if (sourceException is AggregateException)
+            {
+                var agException = (AggregateException)sourceException;
+
+                foreach (var exception in agException.Flatten().InnerExceptions)
+                {
+                    if (this.IsTaskCancelled(exception))
+                    {
+                        return true;
+                    }
+                }
+            }
+
+            var exceptionType = sourceException.GetType();
+
+            if (exceptionType == typeof(TaskCanceledException))
+            {
+                var canceledException = (TaskCanceledException)sourceException;
+
+                if (canceledException.CancellationToken.IsCancellationRequested)
+                {
+                    return true;
+                }
+            }
+
+            if (exceptionType == typeof(OperationCanceledException))
+            {
+                var canceledException = (OperationCanceledException)sourceException;
+
+                if (canceledException.CancellationToken.IsCancellationRequested)
+                {
+                    return true;
+                }
+            }
+
+            return false;
         }
 
         /// <summary>
@@ -555,7 +585,7 @@
         /// <summary>
         /// Fire SnykCode scanning finished event.
         /// </summary>
-        private void FireSnykCodeScanningFinishedEvent() 
+        private void FireSnykCodeScanningFinishedEvent()
             => this.SnykCodeScanningFinished?.Invoke(this, new SnykCodeScanEventArgs { OssScanRunning = this.IsOssScanRunning() });
 
         /// <summary>
@@ -563,11 +593,11 @@
         /// </summary>
         private void FireScanningCancelledEvent() => this.ScanningCancelled?.Invoke(this, new SnykCliScanEventArgs());
 
-        private bool IsOssScanRunning() => this.ossScanTask != null && this.ossScanTask.Status == TaskStatus.Running;
+        private bool IsOssScanRunning() => this.ossScanTokenSource != null && !this.ossScanTokenSource.IsCancellationRequested;
 
-        private bool IsSnykCodeScanRunning() => this.snykCodeScanTask != null && this.snykCodeScanTask.Status == TaskStatus.Running;
+        private bool IsSnykCodeScanRunning() => this.snykCodeScanTokenSource != null && !this.snykCodeScanTokenSource.IsCancellationRequested;
 
-        private bool IsDownloadRunning() => this.downloadCliTask != null && this.downloadCliTask.Status == TaskStatus.Running;
+        private bool IsDownloadRunning() => this.downloadCliTokenSource != null && !this.downloadCliTokenSource.IsCancellationRequested;
 
         private async Task<FeaturesSettings> GetFeaturesSettingsAsync()
         {

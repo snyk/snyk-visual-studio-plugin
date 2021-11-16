@@ -2,6 +2,11 @@
 {
     using System.Collections.Generic;
     using System.Linq;
+    using System.Runtime.Caching;
+    using System.Text;
+    using System.Threading;
+    using System.Threading.Tasks;
+    using Serilog;
     using Snyk.Common;
 
     /// <summary>
@@ -47,7 +52,38 @@
         public void AddChangedFile(string file) => this.changedFiles.Add(file);
 
         /// <inheritdoc/>
-        public void RemoveFile(string file) => this.removedFiles.Add(file);
+        public async Task FilterFilesAsync(IFiltersService filtersService, CancellationToken cancellationToken = default)
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+
+            var dcIgnoreService = new DcIgnoreService();
+
+            this.files = dcIgnoreService.FilterFiles(this.solutionPath, this.files, cancellationToken).ToList();
+
+            this.files = await filtersService.FilterFilesAsync(this.files, cancellationToken);
+        }
+
+        private void InitializeCache()
+        {
+            foreach (string filePath in this.files)
+            {
+                this.AddToCache(filePath);
+            }
+        }
+
+        /// <summary>
+        /// Add file hash and content to cache.
+        /// </summary>
+        /// <param name="filePath">Source file path.</param>
+        private void AddToCache(string filePath)
+        {
+            try
+            {
+                string fileContent = File.ReadAllText(filePath, Encoding.UTF8);
+
+                string fileHash = Sha256.ComputeHash(fileContent);
+
+                string relativeFilePath = this.CreateRelativeFilePath(filePath);
 
         /// <inheritdoc/>
         public IEnumerable<string> GetChangedFiles() => this.changedFiles.Except(this.removedFiles);

@@ -104,8 +104,6 @@
 
             Logger.Information("Leave Scan() method");
 
-            Logger.Information("Leave Scan() method");
-
             return this.ConvertRawCliStringToCliResult(consoleResult);
         }
 
