@@ -4,7 +4,7 @@
     using EnvDTE;
     using Microsoft.VisualStudio;
     using Microsoft.VisualStudio.Shell.Interop;
-    using Snyk.Code.Library.Service;
+    using Snyk.Common;
 
     /// <summary>
     /// Impleemnts <see cref="IVsHierarchyEvents"/> for SnykCode cache.

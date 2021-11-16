@@ -1,6 +1,7 @@
 ﻿namespace Snyk.Code.Library.Service
 {
     using Snyk.Code.Library.Api;
+    using Snyk.Common;
 
     /// <summary>
     /// Factory to create SnykCode services. This class hide intance createtion.

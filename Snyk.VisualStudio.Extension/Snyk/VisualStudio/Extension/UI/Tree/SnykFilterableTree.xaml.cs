@@ -255,6 +255,8 @@
             int mediumSeverityCount = 0;
             int lowSeverityCount = 0;
 
+            rootNode.Clean();
+
             foreach (var fileAnalyses in analysisResult.FileAnalyses)
             {
                 var issueNode = new SnykCodeFileTreeNode { FileAnalysis = fileAnalyses, };

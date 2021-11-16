@@ -26,17 +26,27 @@
 
             var menuCommandID = new CommandID(this.GetCommandSet(), this.GetCommandId());
 
-            var menuItem = new OleMenuCommand(this.Execute, menuCommandID);
+            this.MenuCommand = new OleMenuCommand(this.Execute, menuCommandID);
 
-            commandService.AddCommand(menuItem);
+            commandService.AddCommand(this.MenuCommand);
 
-            menuItem.BeforeQueryStatus += this.OnBeforeQueryStatus;
+            this.MenuCommand.BeforeQueryStatus += this.OnBeforeQueryStatus;
         }
+
+        /// <summary>
+        /// Gets or sets menu command.
+        /// </summary>
+        protected OleMenuCommand MenuCommand { get; set; }
 
         /// <summary>
         /// Gets a value indicating whether VS package.
         /// </summary>
         protected SnykVSPackage VsPackage => this.package as SnykVSPackage;
+
+        /// <summary>
+        /// Update command state.
+        /// </summary>
+        public abstract void UpdateState();
 
         /// <summary>
         /// Get command set GUID.

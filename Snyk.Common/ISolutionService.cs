@@ -8,6 +8,11 @@
     public interface ISolutionService
     {
         /// <summary>
+        /// Gets file provider instance.
+        /// </summary>
+        IFileProvider FileProvider { get; }
+
+        /// <summary>
         /// Get solution path.
         /// </summary>
         /// <returns>Path string.</returns>
@@ -18,5 +23,10 @@
         /// </summary>
         /// <returns>List of solution files.</returns>
         IEnumerable<string> GetFiles();
+
+        /// <summary>
+        /// Clean solution related variables.
+        /// </summary>
+        void Clean();
     }
 }

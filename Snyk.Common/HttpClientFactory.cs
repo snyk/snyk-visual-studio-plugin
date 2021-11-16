@@ -25,7 +25,7 @@
 
             httpClient.DefaultRequestHeaders.ExpectContinue = false;
 
-            httpClient.Timeout = TimeSpan.FromMinutes(10);
+            httpClient.Timeout = TimeSpan.FromMinutes(30);
 
             if (!string.IsNullOrEmpty(baseUrl))
             {

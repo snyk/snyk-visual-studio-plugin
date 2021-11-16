@@ -2,6 +2,7 @@
 {
     using System.Collections.Generic;
     using Snyk.Code.Library.Domain.Analysis;
+    using Snyk.Common;
 
     /// <summary>
     /// Cache service for SnykCode.

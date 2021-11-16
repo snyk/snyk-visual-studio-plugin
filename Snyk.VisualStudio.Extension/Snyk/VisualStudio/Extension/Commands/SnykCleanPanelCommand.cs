@@ -41,6 +41,8 @@
             Instance = new SnykCleanPanelCommand(package, commandService);
         }
 
+        public override void UpdateState() => this.MenuCommand.Enabled = this.VsPackage.ToolWindowControl.IsTreeContentNotEmpty();
+
         /// <summary>
         /// Run clean of tool window content.
         /// </summary>
@@ -55,14 +57,6 @@
         protected override int GetCommandId() => SnykGuids.CleanCommandId;
 
         /// <inheritdoc/>
-        protected override void OnBeforeQueryStatus(object sender, EventArgs e)
-        {
-            var menuCommand = sender as OleMenuCommand;
-
-            if (menuCommand != null)
-            {
-                menuCommand.Enabled = this.VsPackage.ToolWindowControl.IsTreeContentNotEmpty();
-            }
-        }
+        protected override void OnBeforeQueryStatus(object sender, EventArgs e) => this.UpdateState();
     }
 }

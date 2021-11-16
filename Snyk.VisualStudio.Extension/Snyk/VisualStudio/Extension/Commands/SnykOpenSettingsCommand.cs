@@ -42,6 +42,11 @@
             Instance = new SnykOpenSettingsCommand(package, commandService);
         }
 
+        /// <inheritdoc/>
+        public override void UpdateState()
+        {
+        }
+
         /// <summary>
         /// Open Snyk Options (Settings) page.
         /// </summary>

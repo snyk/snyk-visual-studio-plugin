@@ -3,7 +3,7 @@
     using System;
     using Microsoft.VisualStudio;
     using Microsoft.VisualStudio.Shell.Interop;
-    using Snyk.Code.Library.Service;
+    using Snyk.Common;
     using Snyk.VisualStudio.Extension.SnykCode;
 
     /// <summary>
@@ -11,7 +11,13 @@
     /// </summary>
     public class SnykVsSolutionLoadEvents : IVsSolutionLoadEvents, IVsSolutionEvents, IVsSolutionEvents7
     {
-        private IFileProvider fileProvider;
+        private ISolutionService solutionService;
+
+        /// <summary>
+        /// Initializes a new instance of the <see cref="SnykVsSolutionLoadEvents"/> class.
+        /// </summary>
+        /// <param name="solutionService">Current solution service instance.</param>
+        public SnykVsSolutionLoadEvents(ISolutionService solutionService) => this.solutionService = solutionService;
 
         /// <summary>
         /// After Background Solution Load Complete event handler.
@@ -24,21 +30,14 @@
         public event EventHandler<EventArgs> AfterCloseSolution;
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="SnykVsSolutionLoadEvents"/> class.
-        /// </summary>
-        /// <param name="fileProvider">File provider instance.</param>
-        public SnykVsSolutionLoadEvents(IFileProvider fileProvider)
-        {
-            this.fileProvider = fileProvider;
-        }
-
-        /// <summary>
         /// AfterBackgroundSolutionLoadComplete event handler. Invoke AfterBackgroundSolutionLoadComplete.
         /// </summary>
         /// <returns>VSConstants.S_OK.</returns>
         public int OnAfterBackgroundSolutionLoadComplete()
         {
             this.AfterBackgroundSolutionLoadComplete?.Invoke(this, EventArgs.Empty);
+
+            this.solutionService.Clean();
 
             return VSConstants.S_OK;
         }
@@ -49,6 +48,8 @@
         /// <param name="folderPath">Folder path.</param>
         public void OnAfterCloseFolder(string folderPath)
         {
+            this.solutionService.Clean();
+
             this.AfterCloseSolution?.Invoke(this, EventArgs.Empty);
         }
 
@@ -59,6 +60,8 @@
         /// <returns>VSConstants.S_OK</returns>
         public int OnAfterCloseSolution(object pUnkReserved)
         {
+            this.solutionService.Clean();
+
             this.AfterCloseSolution?.Invoke(this, EventArgs.Empty);
 
             return VSConstants.S_OK;
@@ -102,7 +105,7 @@
         public int OnAfterOpenProject(IVsHierarchy vsHierarchy, int fAdded)
         {
             uint m_cookie;
-            var hierarchyEvents = new CodeCacheHierarchyEvents(vsHierarchy, this.fileProvider);
+            var hierarchyEvents = new CodeCacheHierarchyEvents(vsHierarchy, this.solutionService.FileProvider);
 
             vsHierarchy.AdviseHierarchyEvents(hierarchyEvents, out m_cookie);
 

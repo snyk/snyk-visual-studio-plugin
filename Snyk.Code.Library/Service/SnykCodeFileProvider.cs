@@ -50,7 +50,9 @@
         public void RemoveFile(string file) => this.removedFiles.Add(file);
 
         /// <inheritdoc/>
-        public IEnumerable<string> GetChangedFiles() => this.changedFiles.Except(this.removedFiles);
+        public IEnumerable<string> GetChangedFiles() => this.changedFiles
+            .Except(this.removedFiles)
+            .Where(file => file != null);
 
         /// <inheritdoc/>
         public IEnumerable<string> GetRemovedFiles() => this.removedFiles;
@@ -66,6 +68,6 @@
         public IEnumerable<string> GetAllChangedFiles() => this.GetChangedFiles()
                 .Concat(this.GetRemovedFiles())
                 .Distinct()
-                .ToList();
+                .Where(file => file != null);
     }
 }
