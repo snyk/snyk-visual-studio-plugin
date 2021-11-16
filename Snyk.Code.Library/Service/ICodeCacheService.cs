@@ -50,14 +50,14 @@
         /// </summary>
         /// <param name="project">Project key.</param>
         /// <returns>True if cache for this project exists and valid.</returns>
-        bool CacheValid();
+        bool IsCacheValid();
 
         /// <summary>
         /// Check is cache exists.
         /// </summary>
         /// <param name="project">Project key.</param>
         /// <returns>True if cache for this project exists.</returns>
-        bool CacheNotExists();
+        bool IsCacheExists();
 
         /// <summary>
         /// Get <see cref="AnalysisResult"/> instance for project if it exists.

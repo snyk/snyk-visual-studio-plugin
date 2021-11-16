@@ -36,7 +36,7 @@
         /// <returns><see cref="VSConstants"/> S_OK.</returns>
         public int OnItemAdded(uint itemidParent, uint itemidSiblingPrev, uint itemidAdded)
         {
-            this.fileProvider.AddNewFile(this.GetFilePath(itemidAdded));
+            this.fileProvider.AddChangedFile(this.GetFilePath(itemidParent));
 
             return VSConstants.S_OK;
         }

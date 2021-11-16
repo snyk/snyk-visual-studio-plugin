@@ -26,28 +26,10 @@
         void AddChangedFile(string file);
 
         /// <summary>
-        /// Save new path to file provider.
-        /// </summary>
-        /// <param name="file">File path.</param>
-        void AddNewFile(string file);
-
-        /// <summary>
         /// Save path to remove in file provider.
         /// </summary>
         /// <param name="file">File path</param>
         void RemoveFile(string file);
-
-        /// <summary>
-        /// Get all added file paths (exclude removed files).
-        /// </summary>
-        /// <returns>List of file paths.</returns>
-        IEnumerable<string> GetAddedFiles();
-
-        /// <summary>
-        /// Get all changed file paths (exclude removed files).
-        /// </summary>
-        /// <returns>List of changed file paths.</returns>
-        IEnumerable<string> GetChangedFiles();
 
         /// <summary>
         /// Get all removed from solution file paths.
@@ -61,10 +43,10 @@
         void ClearHistory();
 
         /// <summary>
-        /// Get only added and changed file paths (exclude removed file paths).
+        /// Get added and changed file paths (exclude removed file paths).
         /// </summary>
         /// <returns>List of added and removed file paths.</returns>
-        IEnumerable<string> GetAddedAndChangedFiles();
+        IEnumerable<string> GetChangedFiles();
 
         /// <summary>
         /// Get all file paths (added, removed, changed).

@@ -73,7 +73,7 @@
         {
             Logger.Information("Start SnykCode scanning...");
 
-            if (this.codeCacheService.CacheNotExists())
+            if (!this.codeCacheService.IsCacheExists())
             {
                 return await this.NewScanAsync(fileProvider, cancellationToken);
             }

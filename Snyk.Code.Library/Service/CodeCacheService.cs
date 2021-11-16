@@ -12,15 +12,17 @@
     /// <inheritdoc/>
     public class CodeCacheService : ICodeCacheService
     {
+        private const double ExprirationTime = 24.0;
+
         private static readonly ILogger Logger = LogManager.ForContext<CodeCacheService>();
 
-        private ObjectCache filePathToHashCache = new MemoryCache("FilePathToFileHashCache");
+        private readonly ObjectCache filePathToHashCache = new MemoryCache("FilePathToFileHashCache");
 
-        private ObjectCache filePathToContentCache = new MemoryCache("FilePathToFileContentCache");
+        private readonly ObjectCache filePathToContentCache = new MemoryCache("FilePathToFileContentCache");
 
-        private AnalysisResult analysisResult;
+        private readonly ObjectCache analysisResultCache = new MemoryCache("analysisResultCache");
 
-        private bool cacheValid;
+        private bool isCacheValid;
 
         private string rootDirectoryPath;
 
@@ -30,10 +32,7 @@
         /// Initializes a new instance of the <see cref="CodeCacheService"/> class.
         /// </summary>
         /// <param name="rootPath">Path to solution folder.</param>
-        public CodeCacheService(string rootPath)
-        {
-            this.rootDirectoryPath = rootPath;
-        }
+        public CodeCacheService(string rootPath) => this.rootDirectoryPath = rootPath;
 
         /// <inheritdoc/>
         public IDictionary<string, string> GetFileHashToContentDictionary()
@@ -93,20 +92,21 @@
         }
 
         /// <inheritdoc/>
-        public bool CacheNotExists() => this.analysisResult == null;
+        public bool IsCacheExists() => this.GetCachedAnalysisResult() != null;
 
         /// <inheritdoc/>
-        public bool CacheValid() => this.cacheValid;
+        public bool IsCacheValid() => this.isCacheValid;
 
         /// <inheritdoc/>
-        public AnalysisResult GetCachedAnalysisResult() => this.analysisResult;
+        public AnalysisResult GetCachedAnalysisResult() =>
+            this.analysisResultCache["analysisResult"] != null ? (AnalysisResult)this.analysisResultCache["analysisResult"] : null;
 
         /// <inheritdoc/>
         public void SetAnalysisResult(AnalysisResult analysisResult)
         {
-            this.analysisResult = analysisResult;
+            this.analysisResultCache.Add("analysisResult", analysisResult, this.New24HoursExpirationTimeCacheItemPolicy());
 
-            this.cacheValid = true;
+            this.isCacheValid = true;
         }
 
         /// <inheritdoc/>
@@ -127,7 +127,7 @@
         /// <inheritdoc/>
         public void Update(IFileProvider fileProvider)
         {
-            foreach (string file in fileProvider.GetAddedAndChangedFiles())
+            foreach (string file in fileProvider.GetChangedFiles())
             {
                 this.UpdateFile(file);
             }
@@ -173,7 +173,7 @@
             }
             catch (Exception ex)
             {
-                Logger.Error(ex.Message);
+                Logger.Error(ex.Message, "Failed to update cache.");
             }
         }
 
@@ -194,7 +194,7 @@
             this.Invalidate();
         }
 
-        private void Invalidate() => this.cacheValid = false;
+        private void Invalidate() => this.isCacheValid = false;
 
         private string GetRelativeFilePath(string filePath)
         {
@@ -206,8 +206,13 @@
         private string GetRelativeFilePathIfFullPath(string filePath)
             => string.IsNullOrEmpty(filePath) || !filePath.StartsWith(this.rootDirectoryPath) ? filePath : this.GetRelativeFilePath(filePath);
 
-        private void AddToFilePathToHashCache(string filePath, string fileHash) => this.filePathToHashCache[filePath] = fileHash;
+        private void AddToFilePathToHashCache(string filePath, string fileHash) =>
+            this.filePathToHashCache.Set(filePath, fileHash, this.New24HoursExpirationTimeCacheItemPolicy());
 
-        private void AddToFilePathToContentCache(string filePath, string fileContent) => this.filePathToContentCache[filePath] = fileContent;
+        private void AddToFilePathToContentCache(string filePath, string fileContent) =>
+            this.filePathToContentCache.Set(filePath, fileContent, this.New24HoursExpirationTimeCacheItemPolicy());
+
+        private CacheItemPolicy New24HoursExpirationTimeCacheItemPolicy() =>
+            new CacheItemPolicy { AbsoluteExpiration = DateTime.Now.AddHours(ExprirationTime) };
     }
 }

@@ -60,7 +60,7 @@
 
                 resultBundle = await this.CheckBundleAsync(bundle.Id, cancellationToken);
 
-                if (resultBundle.MissingFiles.IsEmpty())
+                if (resultBundle.MissingFiles.IsNullOrEmpty())
                 {
                     return true;
                 }

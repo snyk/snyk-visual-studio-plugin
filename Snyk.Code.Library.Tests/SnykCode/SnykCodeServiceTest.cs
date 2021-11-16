@@ -39,10 +39,6 @@
                 "C:\\Project\\Test\\DbService.cs",
             };
 
-            fileProviderMock
-                .Setup(fileProvider => fileProvider.GetAddedFiles())
-                .Returns(addedFiles);
-
             var changedFiles = new List<string> { "C:\\Project\\Test\\Window.cs", };
 
             fileProviderMock
@@ -63,12 +59,12 @@
                 .Setup(fileProvider => fileProvider.ClearHistory());
 
             codeCacheServiceMock
-                .Setup(analysisService => analysisService.CacheValid())
+                .Setup(analysisService => analysisService.IsCacheValid())
                 .Returns(false);
 
             codeCacheServiceMock
-                .Setup(analysisService => analysisService.CacheNotExists())
-                .Returns(false);
+                .Setup(analysisService => analysisService.IsCacheExists())
+                .Returns(true);
 
             string bundleId = "testBundleId";
 
@@ -178,7 +174,11 @@
                 .Returns(analysisResults);
 
             codeCacheServiceMock
-                .Setup(analysisService => analysisService.CacheValid())
+                .Setup(analysisService => analysisService.IsCacheExists())
+                .Returns(true);
+
+            codeCacheServiceMock
+                .Setup(analysisService => analysisService.IsCacheValid())
                 .Returns(true);
 
             var snykCodeService = new SnykCodeService(
@@ -291,8 +291,8 @@
                 .Returns((AnalysisResult)null);
 
             codeCacheServiceMock
-                .Setup(analysisService => analysisService.CacheNotExists())
-                .Returns(true);
+                .Setup(analysisService => analysisService.IsCacheExists())
+                .Returns(false);
 
             var dcIgnoreServiceMock = new Mock<IDcIgnoreService>();
 
