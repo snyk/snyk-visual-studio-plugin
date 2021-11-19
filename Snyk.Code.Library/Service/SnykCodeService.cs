@@ -80,7 +80,7 @@
 
             var filteredChangedFiles = await this.GetFilteredFilesAsync(fileProvider.GetSolutionPath(), fileProvider.GetAllChangedFiles());
 
-            if (this.NoChangedFilesInSolution(filteredChangedFiles))
+            if (this.AnyFilesChangedInSolution(filteredChangedFiles))
             {
                 return this.codeCacheService.GetCachedAnalysisResult();
             }
@@ -113,7 +113,7 @@
         {
             this.codeCacheService.Update(fileProvider);
 
-            IDictionary<string, string> extendFilePathToHashDict = this.codeCacheService.GetFilePathToHashDictionary(changedFiles);
+            var extendFilePathToHashDict = this.codeCacheService.GetFilePathToHashDictionary(changedFiles);
 
             string bundleId = this.codeCacheService.GetCachedBundleId();
 
@@ -146,6 +146,6 @@
             this.codeCacheService.SetCachedBundleId(bundleId);
         }
 
-        private bool NoChangedFilesInSolution(IEnumerable<string> files) => files.IsNullOrEmpty();
+        private bool AnyFilesChangedInSolution(IEnumerable<string> files) => files.IsNullOrEmpty();
     }
 }

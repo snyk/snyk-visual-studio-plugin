@@ -12,7 +12,7 @@
     /// <inheritdoc/>
     public class CodeCacheService : ICodeCacheService
     {
-        private const double ExprirationTime = 24.0;
+        private const double ExpirationTime = 24.0;
 
         private static readonly ILogger Logger = LogManager.ForContext<CodeCacheService>();
 
@@ -145,7 +145,7 @@
 
             foreach (string fileFullPath in files)
             {
-                relateFilePaths.Add(this.GetRelativeFilePath(fileFullPath));
+                relateFilePaths.Add(FileUtil.GetRelativeFilePath(this.rootDirectoryPath, fileFullPath));
             }
 
             return relateFilePaths;
@@ -163,7 +163,7 @@
 
                 string fileHash = Sha256.ComputeHash(fileContent);
 
-                string relativeFilePath = this.GetRelativeFilePath(filePath);
+                string relativeFilePath = FileUtil.GetRelativeFilePath(this.rootDirectoryPath, filePath);
 
                 this.AddToFilePathToHashCache(relativeFilePath, fileHash);
 
@@ -186,7 +186,7 @@
 
         private void RemoveFile(string file)
         {
-            string relativeFilePath = this.GetRelativeFilePath(file);
+            string relativeFilePath = FileUtil.GetRelativeFilePath(this.rootDirectoryPath, file);
 
             this.filePathToHashCache.Remove(relativeFilePath);
             this.filePathToContentCache.Remove(relativeFilePath);
@@ -196,15 +196,9 @@
 
         private void Invalidate() => this.isCacheValid = false;
 
-        private string GetRelativeFilePath(string filePath)
-        {
-            string path = filePath.Replace(this.rootDirectoryPath, string.Empty);
-
-            return path.Replace(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar);
-        }
-
         private string GetRelativeFilePathIfFullPath(string filePath)
-            => string.IsNullOrEmpty(filePath) || !filePath.StartsWith(this.rootDirectoryPath) ? filePath : this.GetRelativeFilePath(filePath);
+            => string.IsNullOrEmpty(filePath) || !filePath.StartsWith(this.rootDirectoryPath)
+                ? filePath : FileUtil.GetRelativeFilePath(this.rootDirectoryPath, filePath);
 
         private void AddToFilePathToHashCache(string filePath, string fileHash) =>
             this.filePathToHashCache.Set(filePath, fileHash, this.New24HoursExpirationTimeCacheItemPolicy());
@@ -213,6 +207,6 @@
             this.filePathToContentCache.Set(filePath, fileContent, this.New24HoursExpirationTimeCacheItemPolicy());
 
         private CacheItemPolicy New24HoursExpirationTimeCacheItemPolicy() =>
-            new CacheItemPolicy { AbsoluteExpiration = DateTime.Now.AddHours(ExprirationTime) };
+            new CacheItemPolicy { AbsoluteExpiration = DateTime.Now.AddHours(ExpirationTime) };
     }
 }
