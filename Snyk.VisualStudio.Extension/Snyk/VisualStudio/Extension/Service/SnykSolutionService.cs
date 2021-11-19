@@ -15,11 +15,13 @@
     /// <summary>
     /// Incapsulate logic for work with Visual Studio solutions.
     /// </summary>
-    public class SnykSolutionService : IVsSolutionLoadManager
+    public class SnykSolutionService : IVsSolutionLoadManager, ISolutionService
     {
         private static readonly ILogger Logger = LogManager.ForContext<SnykSolutionService>();
 
         private static SnykSolutionService instance;
+
+        private IFileProvider fileProvider;
 
         private SnykSolutionService() { }
 
@@ -68,7 +70,15 @@
         /// Create new instance of <see cref="IFileProvider"/>.
         /// </summary>
         /// <returns>Create new instance of IFileProvider.</returns>
-        public IFileProvider NewFileProvider() => new SnykCodeFileProvider(this.GetSolutionPath(), this.GetSolutionFiles());
+        public IFileProvider GetFileProvider()
+        {
+            if (this.fileProvider == null)
+            {
+                this.fileProvider = new SnykCodeFileProvider(this);
+            }
+
+            return this.fileProvider;
+        }
 
         /// <summary>
         /// Get solution projects.
@@ -115,16 +125,37 @@
                 .Replace("/", "\\")
                 .Substring(1, file.Length - 1);
 
-            string baseDirPath = this.GetSolutionPath();
+            string baseDirPath = this.GetPath();
 
             return Path.Combine(baseDirPath, relativePath);
         }
 
         /// <summary>
-        /// Get solution path.
+        /// Handle before open project event.
         /// </summary>
-        /// <returns>Path string.</returns>
-        public string GetSolutionPath()
+        /// <param name="guidProjectID">Project id.</param>
+        /// <param name="guidProjectType">Project type.</param>
+        /// <param name="pszFileName">file name.</param>
+        /// <param name="pSLMgrSupport">Support.</param>
+        /// <returns>Ok constant.</returns>
+        public int OnBeforeOpenProject(
+            ref Guid guidProjectID,
+            ref Guid guidProjectType,
+            string pszFileName,
+            IVsSolutionLoadManagerSupport pSLMgrSupport) => VSConstants.S_OK;
+
+        /// <summary>
+        /// Handle Disconnect event.
+        /// </summary>
+        /// <returns>Return Ok constant.</returns>
+        public int OnDisconnect() => VSConstants.S_OK;
+
+        /// <summary>
+        /// Get solution path. First try to get path by VS solution (solution with projects or folder).
+        /// If no success, try to get path for flat project (without solution) or web site (in case VS2015).
+        /// </summary>
+        /// <returns>Solution path string.</returns>
+        public string GetPath()
         {
             Logger.Information("Enter GetSolutionPath method");
 
@@ -141,6 +172,11 @@
                 Logger.Information("Path is solution with projects or folder.");
 
                 solutionPath = solution.FullName;
+
+                if (string.IsNullOrEmpty(solutionPath))
+                {
+                    return string.Empty;
+                }
 
                 if (!File.GetAttributes(solutionPath).HasFlag(FileAttributes.Directory))
                 {
@@ -169,44 +205,10 @@
         }
 
         /// <summary>
-        /// Handle before open project event.
+        /// Get solution files using VS API.
         /// </summary>
-        /// <param name="guidProjectID">Project id.</param>
-        /// <param name="guidProjectType">Project type.</param>
-        /// <param name="pszFileName">file name.</param>
-        /// <param name="pSLMgrSupport">Support.</param>
-        /// <returns>Ok constant.</returns>
-        public int OnBeforeOpenProject(
-            ref Guid guidProjectID,
-            ref Guid guidProjectType,
-            string pszFileName,
-            IVsSolutionLoadManagerSupport pSLMgrSupport) => VSConstants.S_OK;
-
-        /// <summary>
-        /// Handle Disconnect event.
-        /// </summary>
-        /// <returns>Return Ok constant.</returns>
-        public int OnDisconnect() => VSConstants.S_OK;
-
-        private async Task InitializeSolutionEventsAsync()
-        {
-            Logger.Information("Enter InitializeSolutionEvents method");
-
-            IVsSolution vsSolution = await this.ServiceProvider.GetServiceAsync(typeof(SVsSolution)) as IVsSolution;
-
-            vsSolution.SetProperty((int)__VSPROPID4.VSPROPID_ActiveSolutionLoadManager, this);
-
-            this.SolutionEvents = new SnykVsSolutionLoadEvents();
-
-            uint pdwCookie;
-            vsSolution.AdviseSolutionEvents(this.SolutionEvents, out pdwCookie);
-
-            Logger.Information("Leave InitializeSolutionEvents method");
-        }
-
-        private bool IsFilePath(string path) => !File.GetAttributes(path).HasFlag(FileAttributes.Directory);
-
-        private IList<string> GetSolutionFiles()
+        /// <returns>List of file paths.</returns>
+        public IEnumerable<string> GetFiles()
         {
             var solutionProjectsFiles = this.GetSolutionProjectsFiles();
 
@@ -219,9 +221,27 @@
             return solutionProjectsFiles;
         }
 
+        private async Task InitializeSolutionEventsAsync()
+        {
+            Logger.Information("Enter InitializeSolutionEvents method");
+
+            IVsSolution vsSolution = await this.ServiceProvider.GetServiceAsync(typeof(SVsSolution)) as IVsSolution;
+
+            vsSolution.SetProperty((int)__VSPROPID4.VSPROPID_ActiveSolutionLoadManager, this);
+
+            this.SolutionEvents = new SnykVsSolutionLoadEvents(this.GetFileProvider());
+
+            uint pdwCookie;
+            vsSolution.AdviseSolutionEvents(this.SolutionEvents, out pdwCookie);
+
+            Logger.Information("Leave InitializeSolutionEvents method");
+        }
+
+        private bool IsFilePath(string path) => !File.GetAttributes(path).HasFlag(FileAttributes.Directory);
+
         private IList<string> GetSolutionDirectoryFiles()
         {
-            string solutionPath = this.GetSolutionPath();
+            string solutionPath = this.GetPath();
 
             string[] files = Directory.GetFileSystemEntries(solutionPath, "*", SearchOption.AllDirectories);
 

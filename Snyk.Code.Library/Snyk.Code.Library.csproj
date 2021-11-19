@@ -102,10 +102,13 @@
     <Compile Include="Domain\Analysis\Suggestion.cs" />
     <Compile Include="Domain\Analysis\SuggestionFix.cs" />
     <Compile Include="Domain\Bundle.cs" />
+    <Compile Include="Service\CodeCacheService.cs" />
+    <Compile Include="Service\CodeServiceFactory.cs" />
     <Compile Include="Service\DcIgnoreService.cs" />
     <Compile Include="Service\FiltersService.cs" />
     <Compile Include="Service\IAnalysisService.cs" />
     <Compile Include="Service\IBundleService.cs" />
+    <Compile Include="Service\ICodeCacheService.cs" />
     <Compile Include="Service\IDcIgnoreService.cs" />
     <Compile Include="Service\IFileProvider.cs" />
     <Compile Include="Service\IFiltersService.cs" />
