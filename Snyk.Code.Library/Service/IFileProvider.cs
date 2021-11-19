@@ -1,7 +1,6 @@
 ﻿namespace Snyk.Code.Library.Service
 {
     using System.Collections.Generic;
-    using System.Threading.Tasks;
 
     /// <summary>
     /// Provide file path and content for solutions and projects.
@@ -9,23 +8,50 @@
     public interface IFileProvider
     {
         /// <summary>
-        /// Create <see cref="IDictionary{TKey, TValue}"/> with file path to file content values.
+        /// Get solution files.
         /// </summary>
-        /// <param name="files">Files list.</param>
-        /// <returns>IDictionary.</returns>
-        IDictionary<string, string> CreateFileHashToContentDictionary(IList<string> files);
+        /// <returns>List of file paths.</returns>
+        IEnumerable<string> GetFiles();
 
         /// <summary>
-        /// Create <see cref="IDictionary{TKey, TValue}"/> with file path to file hash values.
+        /// Get solution path.
         /// </summary>
-        /// <returns>IDictionary.</returns>
-        IDictionary<string, string> CreateFilePathToHashDictionary();
+        /// <returns>Path to solution.</returns>
+        string GetSolutionPath();
 
         /// <summary>
-        /// Filter files with <see cref="IFiltersService"/>.
+        /// Save changed file path.
         /// </summary>
-        /// <param name="filtersService">Filter service implementation</param>
-        /// <returns>Task.</returns>
-        Task FilterFilesAsync(IFiltersService filtersService);
+        /// <param name="file">File path.</param>
+        void AddChangedFile(string file);
+
+        /// <summary>
+        /// Save path to remove in file provider.
+        /// </summary>
+        /// <param name="file">File path</param>
+        void RemoveFile(string file);
+
+        /// <summary>
+        /// Get all removed from solution file paths.
+        /// </summary>
+        /// <returns>List of removed file paths.</returns>
+        IEnumerable<string> GetRemovedFiles();
+
+        /// <summary>
+        /// Clear added, changed and removed lists.
+        /// </summary>
+        void ClearHistory();
+
+        /// <summary>
+        /// Get added and changed file paths (exclude removed file paths).
+        /// </summary>
+        /// <returns>List of added and removed file paths.</returns>
+        IEnumerable<string> GetChangedFiles();
+
+        /// <summary>
+        /// Get all file paths (added, removed, changed).
+        /// </summary>
+        /// <returns>List of file paths.</returns>
+        IEnumerable<string> GetAllChangedFiles();
     }
 }

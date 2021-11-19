@@ -3,7 +3,6 @@
     using System;
     using System.Collections.Generic;
     using System.Net.Http;
-    using System.Net.Http.Headers;
     using System.Text;
     using System.Threading;
     using System.Threading.Tasks;
@@ -112,7 +111,11 @@
         }
 
         /// <inheritdoc/>
-        public async Task<BundleResponseDto> ExtendBundleAsync(string bundleId, Dictionary<string, string> pathToHashFileDict, List<string> removedFiles, CancellationToken cancellationToken = default)
+        public async Task<BundleResponseDto> ExtendBundleAsync(
+            string bundleId,
+            IDictionary<string, string> pathToHashFileDict,
+            IEnumerable<string> removedFiles,
+            CancellationToken cancellationToken = default)
         {
             Logger.Information("Extend bundle for bundle id {BundleId}.", bundleId);
 

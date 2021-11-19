@@ -1,13 +1,7 @@
 ﻿namespace Snyk.Code.Library.Service
 {
-    using System;
     using System.Collections.Generic;
-    using System.IO;
     using System.Linq;
-    using System.Runtime.Caching;
-    using System.Text;
-    using System.Threading.Tasks;
-    using Serilog;
     using Snyk.Common;
 
     /// <summary>
@@ -15,113 +9,63 @@
     /// </summary>
     public class SnykCodeFileProvider : IFileProvider
     {
-        private static readonly ILogger Logger = LogManager.ForContext<SnykCodeFileProvider>();
+        private IList<string> removedFiles;
 
-        private ObjectCache filePathToHashCache = new MemoryCache("FilePathToFileHashCache");
-
-        private ObjectCache filePathToContentCache = new MemoryCache("FilePathToFileContentCache");
+        private IList<string> changedFiles;
 
         private string solutionPath;
 
-        private IList<string> files;
+        private ISolutionService solutionService;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="SnykCodeFileProvider"/> class.
         /// </summary>
-        /// <param name="solutionPath">Solution path service.</param>
-        /// <param name="files"><see cref="IList{T}"/> files.</param>
-        public SnykCodeFileProvider(string solutionPath, IList<string> files)
+        /// <param name="solutionService">Solution service intance.</param>
+        public SnykCodeFileProvider(ISolutionService solutionService)
         {
-            this.solutionPath = solutionPath;
+            this.solutionService = solutionService;
 
-            this.files = files;
-        }
-
-        public IDictionary<string, string> CreateFileHashToContentDictionary(IList<string> files)
-        {
-            if (this.filePathToContentCache.GetCount() == 0)
-            {
-                this.InitializeCache();
-            }
-
-            var fileHashToContentDict = new Dictionary<string, string>();
-
-            foreach (var keyValuePair in this.filePathToContentCache)
-            {
-                fileHashToContentDict.Add(keyValuePair.Key, keyValuePair.Value.ToString());
-            }
-
-            return fileHashToContentDict;
-        }
-
-        public IDictionary<string, string> CreateFilePathToHashDictionary()
-        {
-            if (this.filePathToHashCache.GetCount() == 0)
-            {
-                this.InitializeCache();
-            }
-
-            var filePathToHashDict = new Dictionary<string, string>();
-
-            foreach (var keyValuePair in this.filePathToHashCache)
-            {
-                filePathToHashDict.Add(keyValuePair.Key, keyValuePair.Value.ToString());
-            }
-
-            return filePathToHashDict;
+            this.removedFiles = new List<string>();
+            this.changedFiles = new List<string>();
         }
 
         /// <inheritdoc/>
-        public async Task FilterFilesAsync(IFiltersService filtersService)
+        public IEnumerable<string> GetFiles() => this.solutionService.GetFiles();
+
+        /// <inheritdoc/>
+        public string GetSolutionPath()
         {
-            var dcIgnoreService = new DcIgnoreService();
-
-            this.files = dcIgnoreService.FilterFiles(this.solutionPath, this.files).ToList();
-
-            this.files = await filtersService.FilterFilesAsync(this.files);
-        }
-
-        private void InitializeCache()
-        {
-            foreach (string filePath in this.files)
+            if (string.IsNullOrEmpty(this.solutionPath))
             {
-                this.AddToCache(filePath);
+                this.solutionPath = this.solutionService.GetPath();
             }
+
+            return this.solutionPath;
         }
 
-        /// <summary>
-        /// Add file hash and content to cache.
-        /// </summary>
-        /// <param name="filePath">Source file path.</param>
-        private void AddToCache(string filePath)
+        /// <inheritdoc/>
+        public void AddChangedFile(string file) => this.changedFiles.Add(file);
+
+        /// <inheritdoc/>
+        public void RemoveFile(string file) => this.removedFiles.Add(file);
+
+        /// <inheritdoc/>
+        public IEnumerable<string> GetChangedFiles() => this.changedFiles.Except(this.removedFiles);
+
+        /// <inheritdoc/>
+        public IEnumerable<string> GetRemovedFiles() => this.removedFiles;
+
+        /// <inheritdoc/>
+        public void ClearHistory()
         {
-            try
-            {
-                string fileContent = File.ReadAllText(filePath, Encoding.UTF8);
-
-                string fileHash = Sha256.ComputeHash(fileContent);
-
-                string relativeFilePath = this.CreateRelativeFilePath(filePath);
-
-                this.AddToFilePathToHashCache(relativeFilePath, fileHash);
-
-                this.AddToFilePathToContentCache(relativeFilePath, fileContent);
-            }
-            catch (Exception ex)
-            {
-                Logger.Error(ex.Message);
-            }
+            this.changedFiles.Clear();
+            this.removedFiles.Clear();
         }
 
-        private string CreateRelativeFilePath(string filePath)
-        {
-            string path = filePath.Replace(this.solutionPath, string.Empty);
-
-            return path.Replace(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar);
-        }
-
-        private void AddToFilePathToHashCache(string filePath, string fileHash) => this.filePathToHashCache.Add(filePath, fileHash, new CacheItemPolicy());
-
-        private void AddToFilePathToContentCache(string filePath, string fileContent) => this.filePathToContentCache.Add(filePath, fileContent, new CacheItemPolicy());
+        /// <inheritdoc/>
+        public IEnumerable<string> GetAllChangedFiles() => this.GetChangedFiles()
+                .Concat(this.GetRemovedFiles())
+                .Distinct()
+                .ToList();
     }
 }

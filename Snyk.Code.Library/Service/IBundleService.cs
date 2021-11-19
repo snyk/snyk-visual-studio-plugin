@@ -26,10 +26,10 @@
         /// Upload bundle missing files. If files not uploaded by one call it will try 5 times for upload.
         /// </summary>
         /// <param name="bundle">Source bundle with missing files to upload.</param>
-        /// <param name="fileProvider">Source file provider.</param>
+        /// <param name="codeCacheService">File cache service.</param>
         /// <param name="cancellationToken"><see cref="CancellationToken"/> token to cancel request.</param>
         /// <returns>True if upload all files successfully and false if not.</returns>
-        Task<bool> UploadMissingFilesAsync(Bundle bundle, IFileProvider fileProvider, CancellationToken cancellationToken = default);
+        Task<bool> UploadMissingFilesAsync(Bundle bundle, ICodeCacheService codeCacheService, CancellationToken cancellationToken = default);
 
         /// <summary>
         /// Uploads missing files to a bundle.
@@ -70,8 +70,8 @@
         /// <returns>Result extended bundle.</returns>
         Task<Bundle> ExtendBundleAsync(
             string bundleId,
-            Dictionary<string, string> pathToHashFileDict,
-            List<string> filesToRemovePaths,
+            IDictionary<string, string> pathToHashFileDict,
+            IEnumerable<string> filesToRemovePaths,
             int maxChunkSize = SnykCodeClient.MaxBundleSize,
             CancellationToken cancellationToken = default);
     }

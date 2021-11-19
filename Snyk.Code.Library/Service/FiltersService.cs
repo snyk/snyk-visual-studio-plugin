@@ -27,9 +27,9 @@
         public FiltersService(ISnykCodeClient client) => this.codeClient = client;
 
         /// <inheritdoc/>
-        public async Task<IList<string>> FilterFilesAsync(IList<string> filePaths)
+        public async Task<IList<string>> FilterFilesAsync(IEnumerable<string> filePaths)
         {
-            Logger.Information("Filter {Count} files.", filePaths.Count);
+            Logger.Information("Filter {Count} files.", filePaths.Count());
 
             var filters = await this.GetFiltersAsync();
             var extensionFilters = filters.Extensions;

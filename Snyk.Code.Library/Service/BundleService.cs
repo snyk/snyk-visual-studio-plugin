@@ -46,7 +46,7 @@
         }
 
         /// <inheritdoc/>
-        public async Task<bool> UploadMissingFilesAsync(Bundle bundle, IFileProvider fileProvider, CancellationToken cancellationToken = default)
+        public async Task<bool> UploadMissingFilesAsync(Bundle bundle, ICodeCacheService codeCacheService, CancellationToken cancellationToken = default)
         {
             Logger.Information("Uploading missing files for bundle.");
 
@@ -54,13 +54,13 @@
 
             for (int counter = 0; counter < UploadFileRequestAttempts; counter++)
             {
-                var fileHashToContentDict = fileProvider.CreateFileHashToContentDictionary(resultBundle.MissingFiles);
+                var fileHashToContentDict = codeCacheService.GetFileHashToContentDictionary(resultBundle.MissingFiles);
 
                 await this.UploadFilesAsync(resultBundle.Id, fileHashToContentDict, cancellationToken: cancellationToken);
 
                 resultBundle = await this.CheckBundleAsync(bundle.Id, cancellationToken);
 
-                if (resultBundle.MissingFiles.IsEmpty())
+                if (resultBundle.MissingFiles.IsNullOrEmpty())
                 {
                     return true;
                 }
@@ -160,8 +160,8 @@
         /// <inheritdoc/>
         public async Task<Bundle> ExtendBundleAsync(
             string bundleId,
-            Dictionary<string, string> pathToHashFileDict,
-            List<string> filesToRemovePaths,
+            IDictionary<string, string> pathToHashFileDict,
+            IEnumerable<string> filesToRemovePaths,
             int maxChunkSize = SnykCodeClient.MaxBundleSize,
             CancellationToken cancellationToken = default)
         {
@@ -245,7 +245,7 @@
         /// <param name="removedFiles">Source list of removed files.</param>
         /// <param name="maxChunkSize">Maximum chunk size for upload.</param>
         /// <returns>List of small removed file lists.</returns>
-        public List<List<string>> SplitRemovedFilesToChunkListsBySize(List<string> removedFiles, int maxChunkSize = SnykCodeClient.MaxBundleSize)
+        public IEnumerable<List<string>> SplitRemovedFilesToChunkListsBySize(IEnumerable<string> removedFiles, int maxChunkSize = SnykCodeClient.MaxBundleSize)
         {
             var chunkLists = new List<List<string>>();
 
@@ -297,8 +297,8 @@
         /// <returns>Result Bundle object from server.</returns>
         public async Task<BundleResponseDto> ProcessExtendLargeBundleAsync(
             string bundleId,
-            Dictionary<string, string> pathToHashFileDict,
-            List<string> removedFiles,
+            IDictionary<string, string> pathToHashFileDict,
+            IEnumerable<string> removedFiles,
             int maxChunkSize = SnykCodeClient.MaxBundleSize,
             CancellationToken cancellationToken = default)
         {
@@ -330,7 +330,7 @@
         /// <returns>Result Bundle object from server.</returns>
         public async Task<BundleResponseDto> ExtendBundleWithFilesAsync(
             string bundleId, 
-            Dictionary<string, string> pathToHashFileDict,
+            IDictionary<string, string> pathToHashFileDict,
             int maxChunkSize = SnykCodeClient.MaxBundleSize,
             CancellationToken cancellationToken = default)
         {
@@ -361,12 +361,12 @@
         /// <param name="cancellationToken"><see cref="CancellationToken"/> token to cancel request.</param>
         /// <returns>Result Bundle object from server.</returns>
         public async Task<BundleResponseDto> ExtendBundleWithRemovedFilesAsync(
-            string bundleId, 
-            List<string> filesToRemovePaths, 
+            string bundleId,
+            IEnumerable<string> filesToRemovePaths,
             int maxChunkSize = SnykCodeClient.MaxBundleSize,
             CancellationToken cancellationToken = default)
         {
-            var removeFileChunks = this.SplitRemovedFilesToChunkListsBySize(filesToRemovePaths, maxChunkSize);
+            var removeFileChunks = this.SplitRemovedFilesToChunkListsBySize(filesToRemovePaths, maxChunkSize).ToList();
 
             var firstRemovedFiles = removeFileChunks[0];
             var emptyDictionary = new Dictionary<string, string>();
@@ -435,7 +435,7 @@
         /// </summary>
         /// <param name="files">Source dictionary with file info.</param>
         /// <returns>Size of dictionary.</returns>
-        private int CalculateFilesSize(List<string> files) => this.CalculatePayloadSize(Json.Serialize(files));
+        private int CalculateFilesSize(IEnumerable<string> files) => this.CalculatePayloadSize(Json.Serialize(files));
 
         /// <summary>
         /// Calculate bundle size in bytes.

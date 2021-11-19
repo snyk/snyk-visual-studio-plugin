@@ -1,6 +1,7 @@
 ﻿namespace Snyk.Code.Library.Tests.Api
 {
     using System.Collections.Generic;
+    using System.Linq;
     using System.Threading;
     using System.Threading.Tasks;
     using Moq;
@@ -43,10 +44,13 @@
             string fileContent1 = TestResource.GetFileContent("app1.js");
             string fileContent2 = TestResource.GetFileContent("app2.js");
 
+            string fileHash1 = Sha256.ComputeHash(fileContent1);
+            string fileHash2 = Sha256.ComputeHash(fileContent2);
+
             var codeFileDtos = new List<CodeFileDto>
             {
-                new CodeFileDto(Sha256.ComputeHash(fileContent1), fileContent1),
-                new CodeFileDto(Sha256.ComputeHash(fileContent2), fileContent2),
+                new CodeFileDto(fileHash1, fileContent1),
+                new CodeFileDto(fileHash2, fileContent2),
             };
 
             var mockMethodCallsCount = 1;
@@ -66,9 +70,19 @@
 
             var bundleService = new BundleService(codeClientMock.Object);
 
-            var fileProvider = new SnykCodeFileProvider(TestResource.GetResourcesPath(), new List<string> { filePath1, filePath2 });
+            var solutionServiceMock = new Mock<ISolutionService>();
+            var filtersServiceMock = new Mock<IFiltersService>();
+            var codeCacheServiceMock = new Mock<ICodeCacheService>();
 
-            await bundleService.UploadMissingFilesAsync(bundle, fileProvider, It.IsAny<CancellationToken>());
+            var fileHashToContentDictionary = new Dictionary<string, string>();
+            fileHashToContentDictionary.Add(fileHash1, fileContent1);
+            fileHashToContentDictionary.Add(fileHash2, fileContent2);
+
+            codeCacheServiceMock
+                .Setup(codeCacheService => codeCacheService.GetFileHashToContentDictionary(It.IsAny<IEnumerable<string>>()))
+                .Returns(fileHashToContentDictionary);
+
+            await bundleService.UploadMissingFilesAsync(bundle, codeCacheServiceMock.Object, It.IsAny<CancellationToken>());
 
             codeClientMock
                 .Verify(codeClient => codeClient.CheckBundleAsync(bundle.Id, It.IsAny<CancellationToken>()), Times.Exactly(3));
@@ -464,7 +478,7 @@
             var removedFileChunkLists = bundleService.SplitRemovedFilesToChunkListsBySize(fileToRemovePaths, 100);
 
             Assert.NotNull(removedFileChunkLists);
-            Assert.Equal(3, removedFileChunkLists.Count);
+            Assert.Equal(3, removedFileChunkLists.Count());
         }
 
         [Fact]
