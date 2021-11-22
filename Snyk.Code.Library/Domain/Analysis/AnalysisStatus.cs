@@ -28,7 +28,7 @@
         /// <summary>
         /// All analyses have been computed and are available.
         /// </summary>
-        public const string Done = "DONE";
+        public const string COMPLETE = "COMPLETE";
 
         /// <summary>
         /// Something went wrong with the analysis. For uploaded bundles this occurs when attempting to analyze bundles with missing files. If caused by a transient error, further calls to this API will reset the analysis status and start from the "FETCHING" phase again.

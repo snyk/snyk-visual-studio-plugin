@@ -15,13 +15,14 @@
         /// </summary>
         public BundleResponseDto()
         {
+            this.MissingFiles = new string[0];
         }
 
         /// <summary>
-        /// Gets or sets a value indicating bundle id.
+        /// Gets or sets a value indicating bundle hash.
         /// </summary>
-        [JsonPropertyName("bundleId")]
-        public string Id { get; set; }
+        [JsonPropertyName("bundleHash")]
+        public string Hash { get; set; }
 
         /// <summary>
         /// Gets or sets a value indicating whether missing files.

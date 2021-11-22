@@ -44,6 +44,14 @@
 
         /// <summary>
         /// Get added and changed file paths (exclude removed file paths).
+        /// Create <see cref="IDictionary{TKey, TValue}"/> with file path to file hash and content tuple .
+        /// </summary>
+        /// <param name="files">Files list.</param>
+        /// <returns>IDictionary.</returns>
+        IDictionary<string, (string, string)> CreateFilePathToHashAndContentDictionary(IList<string> files);
+
+        /// <summary>
+        /// Create <see cref="IDictionary{TKey, TValue}"/> with file path to file hash values.
         /// </summary>
         /// <returns>List of added and removed file paths.</returns>
         IEnumerable<string> GetChangedFiles();

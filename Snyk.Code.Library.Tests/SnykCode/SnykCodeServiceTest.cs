@@ -218,7 +218,7 @@
         {
             var analysisResults = new AnalysisResult
             {
-                Status = AnalysisStatus.Done,
+                Status = AnalysisStatus.COMPLETE,
                 Progress = 1,
                 FileAnalyses = new List<FileAnalysis>
                 {
@@ -252,6 +252,8 @@
 
             this.bundleServiceMock
                 .Setup(bundleService => bundleService.UploadFilesAsync(bundleId, It.IsAny<IDictionary<string, string>>(), It.IsAny<int>(), It.IsAny<CancellationToken>()).Result)
+            bundleServiceMock
+                .Setup(bundleService => bundleService.UploadFilesAsync(bundleId, It.IsAny<Dictionary<string, (string, string)>>(), It.IsAny<int>(), It.IsAny<CancellationToken>()).Result)
                 .Returns(true);
 
             this.bundleServiceMock

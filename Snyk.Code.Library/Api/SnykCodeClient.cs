@@ -19,17 +19,15 @@
         /// </summary>
         public const int MaxBundleSize = 4000000;
 
-        private const string LoginApiUrl = "publicapi/login";
+        private const string LoginApiUrl = "login";
 
-        private const string CheckSessionApiUrl = "publicapi/session";
+        private const string CheckSessionApiUrl = "session";
 
-        private const string FiltersApiUrl = "publicapi/filters";
+        private const string FiltersApiUrl = "filters";
 
-        private const string BundleApiUrl = "publicapi/bundle";
+        private const string BundleApiUrl = "bundle";
 
-        private const string FileApiUrl = "publicapi/file";
-
-        private const string AnalysisApiUrl = "publicapi/analysis";
+        private const string AnalysisApiUrl = "analysis";
 
         private static readonly ILogger Logger = LogManager.ForContext<SnykCodeClient>();
 
@@ -59,11 +57,23 @@
                 throw new ArgumentException("Bundle id is null or empty.");
             }
 
-            using (var httpRequest = new HttpRequestMessage(HttpMethod.Get, AnalysisApiUrl + "/" + bundleId))
+            using (var httpRequest = new HttpRequestMessage(HttpMethod.Post, AnalysisApiUrl))
             {
-                using (var response = await this.httpClient.SendAsync(httpRequest, cancellationToken))
+                string payload = Json.Serialize(new AnalysisResultRequestDto
                 {
-                    string responseText = await response.Content.ReadAsStringAsync();
+                    Key = new AnalysisResultKeyDto
+                    {
+                        Type = "file",
+                        Hash = bundleId,
+                    },
+                    Legacy = true,
+                }); ;
+
+                httpRequest.Content = new StringContent(payload, Encoding.UTF8, "application/json");
+
+                var response = await this.httpClient.SendAsync(httpRequest, HttpCompletionOption.ResponseHeadersRead, cancellationToken);
+
+                string responseText = await response.Content.ReadAsStringAsync();
 
                     if (response.IsSuccessStatusCode)
                     {
@@ -78,36 +88,44 @@
         }
 
         /// <inheritdoc/>
-        public async Task<bool> UploadFilesAsync(string bundleId, IEnumerable<CodeFileDto> codeFiles, CancellationToken cancellationToken = default)
+        public async Task<BundleResponseDto> ExtendBundleAsync(
+            string bundleId,
+            Dictionary<string, CodeFileDto> hashToContentDict,
+            CancellationToken cancellationToken = default)
         {
-            Logger.Information("Upload files for bundle id {BundleId}.", bundleId);
+            Logger.Information("Extend bundle for bundle id {BundleId}.", bundleId);
 
             if (string.IsNullOrEmpty(bundleId))
             {
-                throw new ArgumentException("Bundle id is null or empty.");
+                throw new ArgumentException("Previous Bundle is null or empty.");
             }
 
-            if (codeFiles == null)
+            if (hashToContentDict == null)
             {
-                throw new ArgumentException("Code files to upload is null.");
+                throw new ArgumentException("Files or removed files are null.");
             }
 
-            using (HttpRequestMessage httpRequest = new HttpRequestMessage(HttpMethod.Post, FileApiUrl + "/" + bundleId))
+            using (var httpRequest = new HttpRequestMessage(HttpMethod.Put, BundleApiUrl + "/" + bundleId))
             {
-                var watch = new System.Diagnostics.Stopwatch();
-                watch.Start();
-
-                string payload = Json.Serialize(codeFiles);
-
-                httpRequest.Content = new StringContent(payload, Encoding.UTF8, "application/json");
-
-                using (var response = await this.httpClient.SendAsync(httpRequest, HttpCompletionOption.ResponseHeadersRead, cancellationToken))
+                string payload = Json.Serialize(new UploadFilesExtendBundleRequestDto
                 {
-                    watch.Stop();
+                    Files = hashToContentDict,
+                });
 
-                    Logger.Information("Execution Time: {ElapsedMilliseconds} ms", watch.ElapsedMilliseconds);
+                using (httpRequest.Content = new StringContent(payload, Encoding.UTF8, "application/json"))
+                {
+                    var response = await this.httpClient.SendAsync(httpRequest, HttpCompletionOption.ResponseHeadersRead, cancellationToken);
 
-                    return response.IsSuccessStatusCode;
+                    string responseText = await response.Content.ReadAsStringAsync();
+
+                    if (response.IsSuccessStatusCode)
+                    {
+                        return Json.Deserialize<BundleResponseDto>(responseText);
+                    }
+                    else
+                    {
+                        throw new SnykCodeException((int)response.StatusCode, responseText);
+                    }
                 }
             }
         }
@@ -198,10 +216,7 @@
 
             using (var httpRequest = new HttpRequestMessage(HttpMethod.Post, BundleApiUrl))
             {
-                string payload = Json.Serialize(new CreateBundleRequestDto
-                {
-                    Files = pathToHashFileDict,
-                });
+                string payload = Json.Serialize(pathToHashFileDict);
 
                 using (httpRequest.Content = new StringContent(payload, Encoding.UTF8, "application/json"))
                 {
