@@ -393,7 +393,7 @@
         {
             cancellationToken.ThrowIfCancellationRequested();
 
-            var removeFileChunks = this.SplitRemovedFilesToChunkListsBySize(filesToRemovePaths, maxChunkSize);
+            var removeFileChunks = this.SplitRemovedFilesToChunkListsBySize(filesToRemovePaths, maxChunkSize).ToList();
 
             var firstRemovedFiles = removeFileChunks[0];
             var emptyDictionary = new Dictionary<string, string>();

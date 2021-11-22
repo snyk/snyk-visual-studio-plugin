@@ -208,7 +208,7 @@
 
             this.ScanOss(selectedFeatures);
 
-            this.ScanSnykCode(selectedFeatures);
+            this.ScanSnykCodeAsync(selectedFeatures);
         }
 
         /// <summary>
