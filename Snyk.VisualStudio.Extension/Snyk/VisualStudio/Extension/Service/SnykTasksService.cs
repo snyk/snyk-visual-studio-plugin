@@ -529,19 +529,7 @@
                 }
             }
 
-            var exceptionType = sourceException.GetType();
-
-            if (exceptionType == typeof(TaskCanceledException))
-            {
-                var canceledException = (TaskCanceledException)sourceException;
-
-                if (canceledException.CancellationToken.IsCancellationRequested)
-                {
-                    return true;
-                }
-            }
-
-            if (exceptionType == typeof(OperationCanceledException))
+            if (sourceException is OperationCanceledException)
             {
                 var canceledException = (OperationCanceledException)sourceException;
 
