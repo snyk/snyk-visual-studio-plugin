@@ -31,6 +31,8 @@
                 throw new ArgumentException("Bundle id is null or empty.");
             }
 
+            cancellationToken.ThrowIfCancellationRequested();
+
             var analysisResultDto = await this.TryGetAnalysisDtoAsync(bundleId, cancellationToken);
 
             return this.MapDtoAnalysisResultToDomain(analysisResultDto);
@@ -45,8 +47,12 @@
         {
             Logger.Information("Try get analysis DTO object {RequestAttempts} times.", RequestAttempts);
 
+            cancellationToken.ThrowIfCancellationRequested();
+
             for (int counter = 0; counter < RequestAttempts; counter++)
             {
+                cancellationToken.ThrowIfCancellationRequested();
+
                 AnalysisResultDto analysisResultDto = await this.codeClient.GetAnalysisAsync(bundleId, cancellationToken);
 
                 switch (analysisResultDto.Status)
@@ -61,7 +67,7 @@
                     default:
                         Logger.Information("SnykCode service return {Status} status. Sleep for {RequestTimeout} timeout.", analysisResultDto.Status, RequestTimeout);
 
-                        System.Threading.Thread.Sleep(RequestTimeout);
+                        Thread.Sleep(RequestTimeout);
                         break;
                 }
             }

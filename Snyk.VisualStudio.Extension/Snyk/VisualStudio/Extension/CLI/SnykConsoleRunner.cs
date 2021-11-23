@@ -3,12 +3,16 @@
     using System;
     using System.Diagnostics;
     using System.Text;
+    using Serilog;
+    using Snyk.Common;
 
     /// <summary>
     /// Incapsulate work with console/terminal.
     /// </summary>
     public class SnykConsoleRunner
     {
+        private static readonly ILogger Logger = LogManager.ForContext<SnykConsoleRunner>();
+
         private bool isStopped = false;
 
         /// <summary>
@@ -81,6 +85,8 @@
             }
             catch (Exception exception)
             {
+                Logger.Error(exception, "Cli running process error.");
+
                 stringBuilder.Append(exception.Message);
             }
 
@@ -94,7 +100,14 @@
         /// </summary>
         public void Stop()
         {
-            this.Process?.Kill();
+            try
+            {
+                this.Process?.Kill();
+            }
+            catch (Exception e)
+            {
+                Logger.Error(e, "Cli running process error.");
+            }
 
             this.isStopped = true;
         }

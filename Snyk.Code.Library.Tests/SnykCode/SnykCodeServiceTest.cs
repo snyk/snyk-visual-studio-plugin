@@ -123,11 +123,11 @@
                 .Setup(codeCacheService => codeCacheService.SetCachedBundleId(bundleId));
 
             this.filtersServiceMock
-                .Setup(filtersService => filtersService.FilterFilesAsync(changedFiles).Result)
+                .Setup(filtersService => filtersService.FilterFilesAsync(changedFiles, It.IsAny<CancellationToken>()).Result)
                 .Returns(changedFiles);
 
             this.dcIgnoreServiceMock
-                .Setup(dcIgnoreService => dcIgnoreService.FilterFiles(It.IsAny<string>(), changedFiles))
+                .Setup(dcIgnoreService => dcIgnoreService.FilterFiles(It.IsAny<string>(), changedFiles, It.IsAny<CancellationToken>()))
                 .Returns(changedFiles);
 
             var extendedBundle = new Bundle { Id = bundleId, };
