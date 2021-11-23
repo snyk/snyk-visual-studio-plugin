@@ -30,7 +30,7 @@
 
             commandService.AddCommand(menuItem);
 
-            menuItem.BeforeQueryStatus += new EventHandler(this.OnBeforeQueryStatus);
+            menuItem.BeforeQueryStatus += this.OnBeforeQueryStatus;
         }
 
         /// <summary>

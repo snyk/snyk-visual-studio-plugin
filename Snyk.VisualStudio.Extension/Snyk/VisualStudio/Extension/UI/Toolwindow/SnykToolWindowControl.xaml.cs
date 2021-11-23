@@ -232,7 +232,12 @@
         /// </summary>
         /// <param name="sender">Source object.</param>
         /// <param name="eventArgs">Event args.</param>
-        public void OnScanningCancelled(object sender, SnykCliScanEventArgs eventArgs) => this.context.TransitionTo(RunScanState.Instance);
+        public void OnScanningCancelled(object sender, SnykCliScanEventArgs eventArgs)
+        {
+            this.context.TransitionTo(RunScanState.Instance);
+
+            this.UpdateTreeNodeItemsState();
+        }
 
         /// <summary>
         /// DownloadStarted event handler. Switch context to DownloadState.

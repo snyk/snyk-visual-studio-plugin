@@ -3,6 +3,7 @@
     using System.Collections.Generic;
     using System.IO;
     using System.Linq;
+    using System.Threading;
     using System.Threading.Tasks;
     using Serilog;
     using Snyk.Code.Library.Api;
@@ -27,11 +28,16 @@
         public FiltersService(ISnykCodeClient client) => this.codeClient = client;
 
         /// <inheritdoc/>
-        public async Task<IList<string>> FilterFilesAsync(IEnumerable<string> filePaths)
+        public async Task<IList<string>> FilterFilesAsync(IEnumerable<string> filePaths, CancellationToken cancellationToken = default)
         {
             Logger.Information("Filter {Count} files.", filePaths.Count());
 
+            cancellationToken.ThrowIfCancellationRequested();
+
             var filters = await this.GetFiltersAsync();
+
+            cancellationToken.ThrowIfCancellationRequested();
+
             var extensionFilters = filters.Extensions;
             var configFileFilters = filters.ConfigFiles;
 

@@ -96,15 +96,23 @@
 
             var filePathToHashDict = this.codeCacheService.GetFilePathToHashDictionary();
 
+            cancellationToken.ThrowIfCancellationRequested();
+
             var resultBundle = await this.bundleService.CreateBundleAsync(filePathToHashDict, cancellationToken: cancellationToken);
 
             await this.bundleService.UploadMissingFilesAsync(resultBundle, this.codeCacheService, cancellationToken);
 
+            cancellationToken.ThrowIfCancellationRequested();
+
             var analysisResult = await this.analysisService.GetAnalysisAsync(resultBundle.Id, cancellationToken: cancellationToken);
+
+            cancellationToken.ThrowIfCancellationRequested();
 
             this.UpdateCache(resultBundle.Id, analysisResult);
 
             fileProvider.ClearHistory();
+
+            cancellationToken.ThrowIfCancellationRequested();
 
             return analysisResult;
         }
@@ -123,20 +131,26 @@
 
             await this.bundleService.UploadMissingFilesAsync(extendedBundle, this.codeCacheService, cancellationToken);
 
+            cancellationToken.ThrowIfCancellationRequested();
+
             var analysisResult = await this.analysisService.GetAnalysisAsync(extendedBundle.Id, cancellationToken: cancellationToken);
 
+            cancellationToken.ThrowIfCancellationRequested();
+
             this.UpdateCache(extendedBundle.Id, analysisResult);
+
+            cancellationToken.ThrowIfCancellationRequested();
 
             fileProvider.ClearHistory();
 
             return analysisResult;
         }
 
-        private async Task<IEnumerable<string>> GetFilteredFilesAsync(string rootDirectoryPath, IEnumerable<string> files)
+        private async Task<IEnumerable<string>> GetFilteredFilesAsync(string rootDirectoryPath, IEnumerable<string> files, CancellationToken cancellationToken = default)
         {
             files = this.dcIgnoreService.FilterFiles(rootDirectoryPath, files);
 
-            return await this.filtersService.FilterFilesAsync(files);
+            return await this.filtersService.FilterFilesAsync(files, cancellationToken);
         }
 
         private void UpdateCache(string bundleId, AnalysisResult analysisResult)

@@ -5,6 +5,7 @@
     using System.Linq;
     using System.Reflection;
     using System.Text;
+    using System.Threading;
     using MAB.DotIgnore;
 
     /// <inheritdoc/>
@@ -44,28 +45,34 @@
         }
 
         /// <inheritdoc/>
-        public IEnumerable<string> FilterFiles(string folderPath, IEnumerable<string> filePaths)
+        public IEnumerable<string> FilterFiles(string folderPath, IEnumerable<string> filePaths, CancellationToken cancellationToken = default)
         {
             this.CreateDcIgnoreIfNeeded(folderPath);
 
-            var filteredFiles = this.FilterFilesByGitIgnore(folderPath, filePaths);
+            cancellationToken.ThrowIfCancellationRequested();
 
-            return this.FilterFilesByDcIgnore(folderPath, filteredFiles);
+            var filteredFiles = this.FilterFilesByGitIgnore(folderPath, filePaths, cancellationToken);
+
+            cancellationToken.ThrowIfCancellationRequested();
+
+            return this.FilterFilesByDcIgnore(folderPath, filteredFiles, cancellationToken);
         }
 
         /// <inheritdoc/>
-        public IEnumerable<string> FilterFilesByDcIgnore(string folderPath, IEnumerable<string> filePaths) => this.FilterFilesByIgnoreFile(folderPath, ".dcignore", filePaths);
+        public IEnumerable<string> FilterFilesByDcIgnore(string folderPath, IEnumerable<string> filePaths, CancellationToken cancellationToken = default) => this.FilterFilesByIgnoreFile(folderPath, ".dcignore", filePaths);
 
         /// <inheritdoc/>
-        public IEnumerable<string> FilterFilesByGitIgnore(string folderPath, IEnumerable<string> filePaths) => this.FilterFilesByIgnoreFile(folderPath, ".gitignore", filePaths);
+        public IEnumerable<string> FilterFilesByGitIgnore(string folderPath, IEnumerable<string> filePaths, CancellationToken cancellationToken = default) => this.FilterFilesByIgnoreFile(folderPath, ".gitignore", filePaths);
 
-        private IEnumerable<string> FilterFilesByIgnoreFile(string folderPath, string ignoreFileName, IEnumerable<string> filePaths)
+        private IEnumerable<string> FilterFilesByIgnoreFile(string folderPath, string ignoreFileName, IEnumerable<string> filePaths, CancellationToken cancellationToken = default)
         {
             var gitIgnoreFiles = Directory.EnumerateFiles(folderPath, ignoreFileName, SearchOption.AllDirectories).ToList();
             string rootGitIgnoreFile = Path.Combine(folderPath, ignoreFileName);
 
             var projectFiles = filePaths;
             var filteredFiles = new List<string>();
+
+            cancellationToken.ThrowIfCancellationRequested();
 
             if (gitIgnoreFiles.Contains(rootGitIgnoreFile))
             {
@@ -76,6 +83,8 @@
 
             foreach (string gitIgnoreFullPath in gitIgnoreFiles)
             {
+                cancellationToken.ThrowIfCancellationRequested();
+
                 string gitIgnoreDir = Directory.GetParent(gitIgnoreFullPath).FullName;
                 string gitIgnoreRelativeDir = gitIgnoreDir
                     .Replace(folderPath, string.Empty)

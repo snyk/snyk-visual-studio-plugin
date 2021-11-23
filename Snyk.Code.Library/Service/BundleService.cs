@@ -54,6 +54,7 @@
 
             for (int counter = 0; counter < UploadFileRequestAttempts; counter++)
             {
+                cancellationToken.ThrowIfCancellationRequested();
                 var fileHashToContentDict = codeCacheService.GetFileHashToContentDictionary(resultBundle.MissingFiles);
 
                 await this.UploadFilesAsync(resultBundle.Id, fileHashToContentDict, cancellationToken: cancellationToken);
@@ -88,6 +89,8 @@
                 throw new ArgumentException("Code files list is null.");
             }
 
+            cancellationToken.ThrowIfCancellationRequested();
+
             int payloadSize = this.CalculateFilesSize(fileHashToContentDict);
 
             if (payloadSize < maxChunkSize)
@@ -98,7 +101,7 @@
             }
             else
             {
-                return this.ProcessUploadLargeFilesAsync(bundleId, fileHashToContentDict, maxChunkSize, cancellationToken);
+                return this.ProcessUploadLargeFilesAsync(bundleId, fileHashToContentDict, maxChunkSize, cancellationToken: cancellationToken);
             }
         }
 
@@ -122,9 +125,11 @@
 
             foreach (var codeFileList in codeFileLists)
             {
+                cancellationToken.ThrowIfCancellationRequested();
+
                 var codeFiles = this.BuildCodeFileDtoList(codeFileList);
 
-                isAllFilesUploaded &= await this.codeClient.UploadFilesAsync(bundleId, codeFiles, cancellationToken);
+                isAllFilesUploaded &= await this.codeClient.UploadFilesAsync(bundleId, codeFiles, cancellationToken: cancellationToken).ConfigureAwait(false);
             }
 
             return isAllFilesUploaded;
@@ -141,6 +146,8 @@
                 throw new ArgumentException("Files list is null or empty.");
             }
 
+            cancellationToken.ThrowIfCancellationRequested();
+
             int payloadSize = this.CalculateFilesSize(pathToHashFileDict);
 
             Task<BundleResponseDto> bundleDto;
@@ -153,6 +160,8 @@
             {
                 bundleDto = this.ProcessCreateLargeBundleAsync(pathToHashFileDict, maxChunkSize, cancellationToken);
             }
+
+            cancellationToken.ThrowIfCancellationRequested();
 
             return this.MapDtoBundleToDomain(await bundleDto);
         }
@@ -175,6 +184,8 @@
                 throw new ArgumentException("On Extend Bundle files or removed files are empty.");
             }
 
+            cancellationToken.ThrowIfCancellationRequested();
+
             int payloadSize = this.CalculateFilesSize(pathToHashFileDict) + this.CalculateFilesSize(filesToRemovePaths);
 
             Task<BundleResponseDto> bundleDto = null;
@@ -187,6 +198,8 @@
             {
                 bundleDto = this.ProcessExtendLargeBundleAsync(bundleId, pathToHashFileDict, filesToRemovePaths, maxChunkSize, cancellationToken);
             }
+
+            cancellationToken.ThrowIfCancellationRequested();
 
             return this.MapDtoBundleToDomain(await bundleDto);
         }
@@ -206,12 +219,16 @@
                 return fileDictionaries;
             }
 
+            cancellationToken.ThrowIfCancellationRequested();
+
             int bundleSize = 0;
 
             var fileDictionary = new Dictionary<string, string>();
 
             foreach (var filePair in pathToHashFileDict)
             {
+                cancellationToken.ThrowIfCancellationRequested();
+
                 int fileSize = this.CalculateFilePairSize(filePair);
 
                 if (fileSize > maxChunkSize)
@@ -235,6 +252,8 @@
             }
 
             fileDictionaries.Add(fileDictionary);
+
+            cancellationToken.ThrowIfCancellationRequested();
 
             return fileDictionaries;
         }
@@ -302,6 +321,8 @@
             int maxChunkSize = SnykCodeClient.MaxBundleSize,
             CancellationToken cancellationToken = default)
         {
+            cancellationToken.ThrowIfCancellationRequested();
+
             var bundleDto = new BundleResponseDto
             {
                 Id = bundleId,
@@ -334,6 +355,8 @@
             int maxChunkSize = SnykCodeClient.MaxBundleSize,
             CancellationToken cancellationToken = default)
         {
+            cancellationToken.ThrowIfCancellationRequested();
+
             var fileDictionaries = this.SplitFilesToChunkListsBySize(pathToHashFileDict, maxChunkSize);
 
             var firstFiles = fileDictionaries[0];
@@ -345,6 +368,8 @@
             // Call Extend Bundle REST API for bundles.
             foreach (var filesDictionary in fileDictionaries)
             {
+                cancellationToken.ThrowIfCancellationRequested();
+
                 resultBundleDto = await this.codeClient.ExtendBundleAsync(resultBundleDto.Id, filesDictionary, Enumerable.Empty<string>().ToList(), cancellationToken);
             }
 
@@ -366,6 +391,8 @@
             int maxChunkSize = SnykCodeClient.MaxBundleSize,
             CancellationToken cancellationToken = default)
         {
+            cancellationToken.ThrowIfCancellationRequested();
+
             var removeFileChunks = this.SplitRemovedFilesToChunkListsBySize(filesToRemovePaths, maxChunkSize).ToList();
 
             var firstRemovedFiles = removeFileChunks[0];
@@ -378,6 +405,8 @@
             // Call Extend Bundle REST API for bundles.
             foreach (var removeFilesList in removeFileChunks)
             {
+                cancellationToken.ThrowIfCancellationRequested();
+
                 resultBundleDto = await this.codeClient.ExtendBundleAsync(resultBundleDto.Id, emptyDictionary, removeFilesList, cancellationToken);
             }
 
@@ -397,6 +426,8 @@
             int maxChunkSize = SnykCodeClient.MaxBundleSize,
             CancellationToken cancellationToken = default)
         {
+            cancellationToken.ThrowIfCancellationRequested();
+
             var fileDictionaries = this.SplitFilesToChunkListsBySize(pathToHashFileDict, maxChunkSize);
 
             var firstFiles = fileDictionaries[0];
@@ -409,6 +440,8 @@
             // Call Extend Bundle REST API for bundles.
             foreach (var extendFiles in fileDictionaries)
             {
+                cancellationToken.ThrowIfCancellationRequested();
+
                 resultBundleDto = await this.codeClient.ExtendBundleAsync(resultBundleDto.Id, extendFiles, Enumerable.Empty<string>().ToList(), cancellationToken);
             }
 
