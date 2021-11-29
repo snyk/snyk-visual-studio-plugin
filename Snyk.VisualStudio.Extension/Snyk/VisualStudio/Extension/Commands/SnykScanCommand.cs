@@ -43,6 +43,9 @@
             Instance = new SnykScanCommand(package, commandService);
         }
 
+        public override void UpdateState() =>
+            this.MenuCommand.Enabled = SnykSolutionService.Instance.IsSolutionOpen && !SnykTasksService.Instance.IsTaskRunning();
+
         /// <summary>
         /// Run scan.
         /// </summary>
@@ -57,14 +60,6 @@
         protected override int GetCommandId() => SnykGuids.RunScanCommandId;
 
         /// <inheritdoc/>
-        protected override void OnBeforeQueryStatus(object sender, EventArgs e)
-        {
-            var menuCommand = sender as OleMenuCommand;
-
-            if (menuCommand != null)
-            {
-                menuCommand.Enabled = SnykSolutionService.Instance.IsSolutionOpen && !SnykTasksService.Instance.IsTaskRunning();
-            }
-        }
+        protected override void OnBeforeQueryStatus(object sender, EventArgs e) => this.UpdateState();
     }
 }

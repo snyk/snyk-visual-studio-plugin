@@ -13,9 +13,9 @@
     /// <inheritdoc/>
     public class AnalysisService : IAnalysisService
     {
-        private const int RequestTimeout = 100;
+        public const int RequestAttempts = 720;
 
-        private const int RequestAttempts = 100;
+        private const int RequestTimeout = 1000;
 
         private static readonly ILogger Logger = LogManager.ForContext<AnalysisService>();
 
@@ -24,7 +24,7 @@
         public AnalysisService(ISnykCodeClient codeClient) => this.codeClient = codeClient;
 
         /// <inheritdoc/>
-        public async Task<AnalysisResult> GetAnalysisAsync(string bundleId, CancellationToken cancellationToken = default)
+        public async Task<AnalysisResult> GetAnalysisAsync(string bundleId, int requestAttempts = RequestAttempts, CancellationToken cancellationToken = default)
         {
             if (string.IsNullOrEmpty(bundleId))
             {
@@ -33,7 +33,7 @@
 
             cancellationToken.ThrowIfCancellationRequested();
 
-            var analysisResultDto = await this.TryGetAnalysisDtoAsync(bundleId, cancellationToken);
+            var analysisResultDto = await this.TryGetAnalysisDtoAsync(bundleId, requestAttempts, cancellationToken);
 
             return this.MapDtoAnalysisResultToDomain(analysisResultDto);
         }
@@ -43,17 +43,19 @@
         /// </summary>
         /// <param name="bundleId">Source bundle id.</param>
         /// <returns><see cref="AnalysisResultDto"/> object.</returns>
-        private async Task<AnalysisResultDto> TryGetAnalysisDtoAsync(string bundleId, CancellationToken cancellationToken = default)
+        private async Task<AnalysisResultDto> TryGetAnalysisDtoAsync(string bundleId, int requestAttempts, CancellationToken cancellationToken = default)
         {
             Logger.Information("Try get analysis DTO object {RequestAttempts} times.", RequestAttempts);
 
             cancellationToken.ThrowIfCancellationRequested();
 
-            for (int counter = 0; counter < RequestAttempts; counter++)
+            for (int counter = 0; counter < requestAttempts; counter++)
             {
                 cancellationToken.ThrowIfCancellationRequested();
 
-                AnalysisResultDto analysisResultDto = await this.codeClient.GetAnalysisAsync(bundleId, cancellationToken);
+                var analysisResultDto = await this.codeClient.GetAnalysisAsync(bundleId, cancellationToken);
+
+                Logger.Information($"Request analysis status {analysisResultDto.Status}");
 
                 switch (analysisResultDto.Status)
                 {
@@ -65,14 +67,14 @@
 
                     case AnalysisStatus.Waiting:
                     default:
-                        Logger.Information("SnykCode service return {Status} status. Sleep for {RequestTimeout} timeout.", analysisResultDto.Status, RequestTimeout);
+                        Logger.Information("SnykCode service return {Status} status. Sleep for {requestAttempts} timeout.", analysisResultDto.Status, requestAttempts);
 
                         Thread.Sleep(RequestTimeout);
                         break;
                 }
             }
 
-            Logger.Warning("Can't Get analysis after {RequestAttempts} attepts. Return AnalysisResultDto with Failed status.", RequestAttempts);
+            Logger.Warning("Can't Get analysis after {requestAttempts} attepts. Return AnalysisResultDto with Failed status.", requestAttempts);
 
             return new AnalysisResultDto { Status = AnalysisStatus.Failed, };
         }

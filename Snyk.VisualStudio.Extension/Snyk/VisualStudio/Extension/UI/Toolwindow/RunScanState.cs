@@ -23,6 +23,8 @@
                 await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
 
                 this.ToolWindowControl.messagePanel.Visibility = Visibility.Collapsed;
+
+                this.ToolWindowControl.UpdateToolbarState();
             });
         }
 
@@ -38,6 +40,8 @@
                 this.ToolWindowControl.messagePanel.Visibility = Visibility.Visible;
 
                 this.ToolWindowControl.messagePanel.ShowRunScanMessage();
+
+                this.ToolWindowControl.UpdateToolbarState();
             });
         }
     }

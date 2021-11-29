@@ -4,12 +4,12 @@
     using System.Collections.Generic;
     using System.IO;
     using EnvDTE;
-    using Microsoft.VisualStudio;
-    using Microsoft.VisualStudio.Shell.Interop;
-    using Serilog;
     using Snyk.Code.Library.Service;
     using Snyk.Common;
     using Snyk.VisualStudio.Extension.Service;
+    using Microsoft.VisualStudio;
+    using Microsoft.VisualStudio.Shell.Interop;
+    using Serilog;
     using Task = System.Threading.Tasks.Task;
 
     /// <summary>
@@ -51,6 +51,20 @@
         /// </summary>
         public SnykVsSolutionLoadEvents SolutionEvents { get; set; }
 
+        /// <inheritdoc/>
+        public IFileProvider FileProvider
+        {
+            get
+            {
+                if (this.fileProvider == null)
+                {
+                    this.fileProvider = new SnykCodeFileProvider(this);
+                }
+
+                return this.fileProvider;
+            }
+        }
+
         /// <summary>
         /// Initialize service.
         /// </summary>
@@ -64,20 +78,6 @@
 
                 await instance.InitializeSolutionEventsAsync();
             }
-        }
-
-        /// <summary>
-        /// Create new instance of <see cref="IFileProvider"/>.
-        /// </summary>
-        /// <returns>Create new instance of IFileProvider.</returns>
-        public IFileProvider GetFileProvider()
-        {
-            if (this.fileProvider == null)
-            {
-                this.fileProvider = new SnykCodeFileProvider(this);
-            }
-
-            return this.fileProvider;
         }
 
         /// <summary>
@@ -221,6 +221,14 @@
             return solutionProjectsFiles;
         }
 
+        /// <inheritdoc/>
+        public void Clean()
+        {
+            this.fileProvider = null;
+
+            this.ServiceProvider.SnykCodeService.Clean();
+        }
+
         private async Task InitializeSolutionEventsAsync()
         {
             Logger.Information("Enter InitializeSolutionEvents method");
@@ -229,7 +237,7 @@
 
             vsSolution.SetProperty((int)__VSPROPID4.VSPROPID_ActiveSolutionLoadManager, this);
 
-            this.SolutionEvents = new SnykVsSolutionLoadEvents(this.GetFileProvider());
+            this.SolutionEvents = new SnykVsSolutionLoadEvents(this);
 
             uint pdwCookie;
             vsSolution.AdviseSolutionEvents(this.SolutionEvents, out pdwCookie);

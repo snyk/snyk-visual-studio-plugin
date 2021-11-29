@@ -73,6 +73,8 @@
         {
             Logger.Information("Start SnykCode scanning...");
 
+            this.InitializeCacheIfNeeded(fileProvider);
+
             if (!this.codeCacheService.IsCacheExists())
             {
                 return await this.NewScanAsync(fileProvider, cancellationToken);
@@ -87,6 +89,9 @@
 
             return await this.UpdatePreviousScanAsync(fileProvider, filteredChangedFiles, cancellationToken);
         }
+
+        /// <inheritdoc/>
+        public void Clean() => this.codeCacheService = null;
 
         private async Task<AnalysisResult> NewScanAsync(IFileProvider fileProvider, CancellationToken cancellationToken = default)
         {
@@ -161,5 +166,13 @@
         }
 
         private bool AnyFilesChangedInSolution(IEnumerable<string> files) => files.IsNullOrEmpty();
+
+        private void InitializeCacheIfNeeded(IFileProvider fileProvider)
+        {
+            if (this.codeCacheService == null)
+            {
+                this.codeCacheService = new CodeCacheService(fileProvider.GetSolutionPath());
+            }
+        }
     }
 }

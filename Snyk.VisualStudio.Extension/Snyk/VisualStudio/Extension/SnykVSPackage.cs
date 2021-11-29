@@ -196,7 +196,7 @@
             await SnykStopCurrentTaskCommand.InitializeAsync(this);
             await SnykCleanPanelCommand.InitializeAsync(this);
             await SnykOpenSettingsCommand.InitializeAsync(this);
-
+            
             new Task(() => this.toolWindowControl.Initialize(this.serviceProvider)).Start();
 
             Logger.Information("Leave SnykVSPackage.InitializeAsync()");

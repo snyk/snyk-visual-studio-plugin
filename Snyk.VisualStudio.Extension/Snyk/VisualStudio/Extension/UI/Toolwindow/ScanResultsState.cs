@@ -23,6 +23,8 @@
             this.ToolWindowControl.messagePanel.ShowSelectIssueMessage();
 
             this.ToolWindowControl.messagePanel.Visibility = Visibility.Visible;
+
+            this.ToolWindowControl.UpdateToolbarState();
         });
 
         /// <summary>
@@ -33,6 +35,8 @@
             await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
 
             this.ToolWindowControl.messagePanel.Visibility = Visibility.Collapsed;
+
+            this.ToolWindowControl.UpdateToolbarState();
         });
     }
 }

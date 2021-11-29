@@ -25,6 +25,8 @@
 
                 this.ToolWindowControl.progressBarPanel.Visibility = Visibility.Collapsed;
             });
+
+            this.ToolWindowControl.UpdateToolbarState();
         }
 
         /// <summary>
@@ -40,6 +42,8 @@
             });
 
             this.ToolWindowControl.DisplayMainMessage("Downloading latest Snyk CLI release 0%...");
+
+            this.ToolWindowControl.UpdateToolbarState();
         }
     }
 }
