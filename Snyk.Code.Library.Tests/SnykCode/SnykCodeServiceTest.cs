@@ -145,7 +145,7 @@
                 .Setup(bundleService => bundleService.UploadMissingFilesAsync(extendedBundle, this.codeCacheServiceMock.Object, It.IsAny<CancellationToken>()));
 
             this.analysisServiceMock
-                .Setup(analysisService => analysisService.GetAnalysisAsync(extendedBundle.Id, It.IsAny<CancellationToken>()).Result)
+                .Setup(analysisService => analysisService.GetAnalysisAsync(extendedBundle.Id, It.IsAny<int>(), It.IsAny<CancellationToken>()).Result)
                 .Returns(analysisResults);
 
             var analysisResult = await this.snykCodeService.ScanAsync(this.fileProviderMock.Object);
@@ -199,7 +199,7 @@
             Assert.NotNull(analysisResult);
 
             this.analysisServiceMock
-                .Verify(analysisService => analysisService.GetAnalysisAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()), Times.Exactly(0));
+                .Verify(analysisService => analysisService.GetAnalysisAsync(It.IsAny<string>(), It.IsAny<int>(), It.IsAny<CancellationToken>()), Times.Exactly(0));
 
             this.codeCacheServiceMock
                 .Verify(codeCacheService => codeCacheService.GetCachedAnalysisResult(), Times.Exactly(1));
@@ -260,7 +260,7 @@
                 .Returns(bundle);
 
             this.analysisServiceMock
-                .Setup(analysisService => analysisService.GetAnalysisAsync(bundleId, It.IsAny<CancellationToken>()).Result)
+                .Setup(analysisService => analysisService.GetAnalysisAsync(bundleId, It.IsAny<int>(), It.IsAny<CancellationToken>()).Result)
                 .Returns(analysisResults);
 
             this.codeCacheServiceMock
@@ -290,7 +290,7 @@
                 .Verify(bundleService => bundleService.UploadMissingFilesAsync(It.IsAny<Bundle>(), It.IsAny<ICodeCacheService>(), It.IsAny<CancellationToken>()), Times.Exactly(1));
 
             this.analysisServiceMock
-                .Verify(analysisService => analysisService.GetAnalysisAsync(bundleId, It.IsAny<CancellationToken>()), Times.Exactly(1));
+                .Verify(analysisService => analysisService.GetAnalysisAsync(bundleId, It.IsAny<int>(), It.IsAny<CancellationToken>()), Times.Exactly(1));
         }
     }
 }

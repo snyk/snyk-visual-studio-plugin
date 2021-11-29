@@ -4,6 +4,7 @@
     using System.Threading;
     using System.Threading.Tasks;
     using Snyk.Code.Library.Domain.Analysis;
+    using Snyk.Common;
 
     /// <summary>
     /// Contains high level busines logic for SnykCode APIs.
@@ -24,5 +25,10 @@
         /// <param name="e">Source exception.</param>
         /// <returns>String exception message.</returns>
         string GetSnykCodeErrorMessage(Exception e);
+
+        /// <summary>
+        /// Clean code realted variables.
+        /// </summary>
+        void Clean();
     }
 }

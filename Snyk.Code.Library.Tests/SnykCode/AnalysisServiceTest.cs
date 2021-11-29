@@ -99,13 +99,13 @@
                 .Setup(codeClient => codeClient.GetAnalysisAsync(dummyBundleId, It.IsAny<CancellationToken>()).Result)
                 .Returns(dummyAnalysisResultDto);
 
-            var analysisResult = await analysisService.GetAnalysisAsync(dummyBundleId);
+            var analysisResult = await analysisService.GetAnalysisAsync(dummyBundleId, requestAttempts: 5);
 
             Assert.NotNull(analysisResult);
             Assert.Equal(AnalysisStatus.Failed, analysisResult.Status);
 
             codeClientMock
-                .Verify(codeClient => codeClient.GetAnalysisAsync(dummyBundleId, It.IsAny<CancellationToken>()), Times.Exactly(100));
+                .Verify(codeClient => codeClient.GetAnalysisAsync(dummyBundleId, It.IsAny<CancellationToken>()), Times.Exactly(5));
         }
 
         [Fact]
@@ -282,7 +282,7 @@
                 .Setup(codeClient => codeClient.GetAnalysisAsync(dummyBundleId, It.IsAny<CancellationToken>()).Result)
                 .Returns(dummyAnalysisResultDto);
 
-            var analysisResult = await analysisService.GetAnalysisAsync(dummyBundleId, It.IsAny<CancellationToken>());
+            var analysisResult = await analysisService.GetAnalysisAsync(dummyBundleId);
 
             Assert.NotNull(analysisResult);
             Assert.Equal(2, analysisResult.FileAnalyses.Count);

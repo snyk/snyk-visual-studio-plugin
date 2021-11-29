@@ -109,6 +109,7 @@
     <Compile Include="CollectionExtensions.cs" />
     <Compile Include="FileUtil.cs" />
     <Compile Include="HttpClientFactory.cs" />
+    <Compile Include="IFileProvider.cs" />
     <Compile Include="ISolutionService.cs" />
     <Compile Include="Json.cs" />
     <Compile Include="LogManager.cs" />

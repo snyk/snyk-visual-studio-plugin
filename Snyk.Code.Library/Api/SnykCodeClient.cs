@@ -73,15 +73,18 @@
 
                 using (var response = await this.httpClient.SendAsync(httpRequest, HttpCompletionOption.ResponseHeadersRead, cancellationToken))
                 {
-                    string responseText = await response.Content.ReadAsStringAsync();
+                    using (var content = response.Content)
+                    {
+                        string responseText = await content.ReadAsStringAsync();
 
-                    if (response.IsSuccessStatusCode)
-                    {
-                        return Json.Deserialize<AnalysisResultDto>(responseText);
-                    }
-                    else
-                    {
-                        throw new SnykCodeException((int)response.StatusCode, responseText);
+                        if (response.IsSuccessStatusCode)
+                        {
+                            return Json.Deserialize<AnalysisResultDto>(responseText);
+                        }
+                        else
+                        {
+                            throw new SnykCodeException((int)response.StatusCode, responseText);
+                        }
                     }
                 }
             }

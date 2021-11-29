@@ -18,7 +18,7 @@
         /// </summary>
         /// <param name="package">Owner package, not null.</param>
         /// <param name="commandService">Command service to add command to, not null.</param>
-        private SnykStopCurrentTaskCommand(AsyncPackage package, OleMenuCommandService commandService) 
+        private SnykStopCurrentTaskCommand(AsyncPackage package, OleMenuCommandService commandService)
             : base(package, commandService)
         {
         }
@@ -43,6 +43,10 @@
             Instance = new SnykStopCurrentTaskCommand(package, commandService);
         }
 
+        /// <inheritdoc/>
+        public override void UpdateState() => 
+            this.MenuCommand.Enabled = SnykSolutionService.Instance.IsSolutionOpen && SnykTasksService.Instance.IsTaskRunning();
+
         /// <summary>
         /// Cancel current running task.
         /// </summary>
@@ -56,14 +60,6 @@
         /// <returns>Stop Command Id.</returns>
         protected override int GetCommandId() => SnykGuids.StopCommandId;
 
-        protected override void OnBeforeQueryStatus(object sender, EventArgs e)
-        {
-            var menuCommand = sender as OleMenuCommand;
-
-            if (menuCommand != null)
-            {
-                menuCommand.Enabled = SnykSolutionService.Instance.IsSolutionOpen && SnykTasksService.Instance.IsTaskRunning();
-            }
-        }
+        protected override void OnBeforeQueryStatus(object sender, EventArgs e) => this.UpdateState();
     }
 }
