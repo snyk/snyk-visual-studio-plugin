@@ -67,13 +67,13 @@
                         Hash = bundleId,
                     },
                     Legacy = true,
-                }); ;
+                });
 
                 httpRequest.Content = new StringContent(payload, Encoding.UTF8, "application/json");
 
-                var response = await this.httpClient.SendAsync(httpRequest, HttpCompletionOption.ResponseHeadersRead, cancellationToken);
-
-                string responseText = await response.Content.ReadAsStringAsync();
+                using (var response = await this.httpClient.SendAsync(httpRequest, HttpCompletionOption.ResponseHeadersRead, cancellationToken))
+                {
+                    string responseText = await response.Content.ReadAsStringAsync();
 
                     if (response.IsSuccessStatusCode)
                     {
@@ -293,22 +293,6 @@
                     {
                         throw new SnykCodeException((int)response.StatusCode, responseText);
                     }
-                }
-            }
-        }
-
-        /// <summary>
-        /// Check current session status with user token.
-        /// </summary>
-        /// <param name="sessionToken">User API token.</param>
-        /// <returns><see cref="LoginStatus"/> object.</returns>
-        public async Task<LoginStatus> CheckSessionAsync()
-        {
-            using (var request = new HttpRequestMessage(HttpMethod.Get, CheckSessionApiUrl))
-            {
-                using (var httpResponse = await this.httpClient.SendAsync(request))
-                {
-                    return new LoginStatus((int)httpResponse.StatusCode);
                 }
             }
         }

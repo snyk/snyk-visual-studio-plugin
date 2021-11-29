@@ -34,6 +34,13 @@
         IDictionary<string, string> GetFilePathToHashDictionary(IEnumerable<string> files);
 
         /// <summary>
+        /// Create file path to file hash and content dictionary.
+        /// </summary>
+        /// <param name="files">Source files.</param>
+        /// <returns>Dictionariy with file path and file hash and content.</returns>
+        IDictionary<string, (string, string)> CreateFilePathToHashAndContentDictionary(IList<string> files);
+
+        /// <summary>
         /// Create <see cref="IDictionary{TKey, TValue}"/> with file path to file hash values.
         /// </summary>
         /// <returns>IDictionary.</returns>

@@ -66,14 +66,14 @@
 
                     if (mockMethodCallsCount > 23)
                     {
-                        dummyAnalysisResultDto.Status = AnalysisStatus.COMPLETE;
+                        dummyAnalysisResultDto.Status = AnalysisStatus.Complete;
                     }
                 });
 
             var analysisResult = await analysisService.GetAnalysisAsync(dummyBundleId);
 
             Assert.NotNull(analysisResult);
-            Assert.Equal(AnalysisStatus.COMPLETE, analysisResult.Status);
+            Assert.Equal(AnalysisStatus.Complete, analysisResult.Status);
 
             codeClientMock
                 .Verify(codeClient => codeClient.GetAnalysisAsync(dummyBundleId, It.IsAny<CancellationToken>()), Times.Exactly(24));
@@ -273,7 +273,7 @@
 
             var dummyAnalysisResultDto = new AnalysisResultDto
             {
-                Status = AnalysisStatus.COMPLETE,
+                Status = AnalysisStatus.Complete,
                 Suggestions = suggestions,
                 Files = files,
             };

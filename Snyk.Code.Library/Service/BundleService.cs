@@ -54,14 +54,13 @@
 
             for (int counter = 0; counter < UploadFileRequestAttempts; counter++)
             {
-                cancellationToken.ThrowIfCancellationRequested();
-                var fileHashToContentDict = codeCacheService.GetFileHashToContentDictionary(resultBundle.MissingFiles);
+                var pathToHashAndContentDict = codeCacheService.CreateFilePathToHashAndContentDictionary(resultBundle.MissingFiles);
 
                 await this.UploadFilesAsync(resultBundle.Id, pathToHashAndContentDict, cancellationToken: cancellationToken);
 
                 resultBundle = await this.CheckBundleAsync(bundle.Id, cancellationToken);
 
-                if (resultBundle.MissingFiles.IsNullOrEmpty())
+                if (resultBundle.MissingFiles.Count() == 0)
                 {
                     return true;
                 }
@@ -91,7 +90,7 @@
 
             cancellationToken.ThrowIfCancellationRequested();
 
-            int payloadSize = this.CalculateFilesSize(fileHashToContentDict);
+            int payloadSize = this.CalculateFilesSize(pathToHashAndContentDict);
 
             if (payloadSize < maxChunkSize)
             {
@@ -99,11 +98,10 @@
 
                 var bundle = await this.codeClient.ExtendBundleAsync(bundleId, codeFilesDict, cancellationToken);
 
-                return bundle.MissingFiles.IsEmpty();
+                return bundle.MissingFiles.Count() == 0;
             }
             else
             {
-                return this.ProcessUploadLargeFilesAsync(bundleId, fileHashToContentDict, maxChunkSize, cancellationToken: cancellationToken);
                 return await this.ProcessUploadLargeFilesAsync(bundleId, pathToHashAndContentDict, maxChunkSize, cancellationToken);
             }
         }
@@ -130,9 +128,11 @@
             {
                 cancellationToken.ThrowIfCancellationRequested();
 
-                var codeFiles = this.BuildCodeFileDtoList(codeFileList);
+                var codeFiles = this.BuildCodeFileDtoDictionary(codeFileList);
 
-                isAllFilesUploaded &= await this.codeClient.UploadFilesAsync(bundleId, codeFiles, cancellationToken: cancellationToken).ConfigureAwait(false);
+                var extendedBundle = await this.codeClient.ExtendBundleAsync(bundleId, codeFiles, cancellationToken);
+
+                isAllFilesUploaded &= extendedBundle.MissingFiles.Count() == 0;
             }
 
             return isAllFilesUploaded;
@@ -423,7 +423,6 @@
             {
                 cancellationToken.ThrowIfCancellationRequested();
 
-                resultBundleDto = await this.codeClient.ExtendBundleAsync(resultBundleDto.Id, filesDictionary, Enumerable.Empty<string>().ToList(), cancellationToken);
                 resultBundleDto = await this.codeClient.ExtendBundleAsync(resultBundleDto.Hash, filesDictionary, Enumerable.Empty<string>().ToList(), cancellationToken);
             }
 
@@ -461,7 +460,6 @@
             {
                 cancellationToken.ThrowIfCancellationRequested();
 
-                resultBundleDto = await this.codeClient.ExtendBundleAsync(resultBundleDto.Id, emptyDictionary, removeFilesList, cancellationToken);
                 resultBundleDto = await this.codeClient.ExtendBundleAsync(resultBundleDto.Hash, emptyDictionary, removeFilesList, cancellationToken);
             }
 
@@ -497,7 +495,6 @@
             {
                 cancellationToken.ThrowIfCancellationRequested();
 
-                resultBundleDto = await this.codeClient.ExtendBundleAsync(resultBundleDto.Id, extendFiles, Enumerable.Empty<string>().ToList(), cancellationToken);
                 resultBundleDto = await this.codeClient.ExtendBundleAsync(resultBundleDto.Hash, extendFiles, Enumerable.Empty<string>().ToList(), cancellationToken);
             }
 

@@ -58,7 +58,7 @@
             codeClientMock
                 .Setup(codeClient => codeClient.ExtendBundleAsync(bundle.Id, It.IsAny<Dictionary<string, CodeFileDto>>(), It.IsAny<CancellationToken>()).Result)
                 .Returns(new BundleResponseDto())
-                .Callback<string, IDictionary<string, CodeFileDto>, CancellationToken> ((str, codeFilesDict, cancellationToken) =>
+                .Callback<string, IDictionary<string, CodeFileDto>, CancellationToken>((str, codeFilesDict, cancellationToken) =>
                 {
                     mockMethodCallsCount++;
 
@@ -81,6 +81,10 @@
             codeCacheServiceMock
                 .Setup(codeCacheService => codeCacheService.GetFileHashToContentDictionary(It.IsAny<IEnumerable<string>>()))
                 .Returns(fileHashToContentDictionary);
+
+            codeCacheServiceMock
+                .Setup(codeCacheService => codeCacheService.CreateFilePathToHashAndContentDictionary(It.IsAny<IList<string>>()))
+                .Returns(new Dictionary<string, (string, string)>());
 
             await bundleService.UploadMissingFilesAsync(bundle, codeCacheServiceMock.Object, It.IsAny<CancellationToken>());
 

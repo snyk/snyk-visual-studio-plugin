@@ -57,7 +57,7 @@
 
                 switch (analysisResultDto.Status)
                 {
-                    case AnalysisStatus.COMPLETE:
+                    case AnalysisStatus.Complete:
                         return analysisResultDto;
 
                     case AnalysisStatus.Failed:

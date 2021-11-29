@@ -53,7 +53,7 @@
 
             var extendedBundle = await snykCodeClient.ExtendBundleAsync(createdBundle.Hash, fileNameToContentDict);
 
-            Assert.True(extendedBundle.MissingFiles.IsEmpty());
+            Assert.Empty(extendedBundle.MissingFiles);
 
             AnalysisResultDto analysisResult = await snykCodeClient.GetAnalysisAsync(createdBundle.Hash);
 
@@ -96,7 +96,7 @@
 
             var extendedBundle = await snykCodeClient.ExtendBundleAsync(createdBundle.Hash, pathToContentDict);
 
-            Assert.True(extendedBundle.MissingFiles.IsEmpty());
+            Assert.Empty(extendedBundle.MissingFiles);
 
             AnalysisResultDto analysisResult = await snykCodeClient.GetAnalysisAsync(createdBundle.Hash);
 
@@ -153,7 +153,7 @@
 
             var extendBundle = await snykCodeClient.ExtendBundleAsync(createdBundle.Hash, pathToContentDict);
 
-            Assert.True(extendBundle.MissingFiles.IsEmpty());
+            Assert.Empty(extendBundle.MissingFiles);
 
             var analysisResult = await snykCodeClient.GetAnalysisAsync(createdBundle.Hash);
 
@@ -207,7 +207,7 @@
 
             var bundle = await snykCodeClient.ExtendBundleAsync(createdBundle.Hash, pathToContentDict);
 
-            Assert.True(bundle.MissingFiles.IsEmpty());
+            Assert.Empty(bundle.MissingFiles);
         }
 
         [Fact]
@@ -235,7 +235,7 @@
 
             var bundle = await snykCodeClient.ExtendBundleAsync(createdBundle.Hash, pathToContentDict);
 
-            Assert.True(bundle.MissingFiles.IsEmpty());
+            Assert.Empty(bundle.MissingFiles);
         }
 
         [Fact]

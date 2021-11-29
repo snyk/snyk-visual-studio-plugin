@@ -32,42 +32,6 @@
         /// <inheritdoc/>
         public IEnumerable<string> GetFiles() => this.solutionService.GetFiles();
 
-            var fileHashToContentDict = new Dictionary<string, string>();
-
-            foreach (var keyValuePair in this.filePathToContentCache)
-            {
-                fileHashToContentDict.Add(keyValuePair.Key, keyValuePair.Value.ToString());
-            }
-
-            return fileHashToContentDict;
-        }
-
-        public IDictionary<string, (string, string)> CreateFilePathToHashAndContentDictionary(IList<string> files)
-        {
-            if (this.filePathToContentCache.GetCount() == 0)
-            {
-                this.InitializeCache();
-            }
-
-            var pathToHashAndContentDict = new Dictionary<string, (string, string)>();
-
-            foreach (var keyValuePair in this.filePathToContentCache)
-            {
-                string path = keyValuePair.Key;
-                string hash = this.filePathToHashCache[path].ToString();
-                string content = keyValuePair.Value.ToString();
-
-                pathToHashAndContentDict.Add(path, (hash, content));
-            }
-
-            return pathToHashAndContentDict;
-        }
-
-        public IDictionary<string, string> CreateFilePathToHashDictionary()
-        {
-            if (this.filePathToHashCache.GetCount() == 0)
-            {
-                this.InitializeCache();
         /// <inheritdoc/>
         public string GetSolutionPath()
         {
