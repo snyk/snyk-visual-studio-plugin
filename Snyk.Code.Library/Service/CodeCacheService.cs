@@ -61,6 +61,23 @@
         }
 
         /// <inheritdoc/>
+        public IDictionary<string, (string, string)> CreateFilePathToHashAndContentDictionary(IList<string> files)
+        {
+            var pathToHashAndContentDict = new Dictionary<string, (string, string)>();
+
+            foreach (var keyValuePair in this.filePathToContentCache)
+            {
+                string path = keyValuePair.Key;
+                string hash = this.filePathToHashCache[path].ToString();
+                string content = keyValuePair.Value.ToString();
+
+                pathToHashAndContentDict.Add(path, (hash, content));
+            }
+
+            return pathToHashAndContentDict;
+        }
+
+        /// <inheritdoc/>
         public IDictionary<string, string> GetFilePathToHashDictionary()
         {
             var filePathToHashDict = new Dictionary<string, string>();

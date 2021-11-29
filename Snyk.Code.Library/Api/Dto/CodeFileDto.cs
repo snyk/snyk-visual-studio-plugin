@@ -21,13 +21,13 @@
         /// <summary>
         /// Gets or sets a value indicating file path hash.
         /// </summary>
-        [JsonPropertyName("fileHash")]
+        [JsonPropertyName("hash")]
         public string Hash { get; set; }
 
         /// <summary>
         /// Gets or sets a value indicating file content.
         /// </summary>
-        [JsonPropertyName("fileContent")]
+        [JsonPropertyName("content")]
         public string Content { get; set; }
     }
 }

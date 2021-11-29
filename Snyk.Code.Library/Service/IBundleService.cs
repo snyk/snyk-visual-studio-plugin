@@ -41,7 +41,7 @@
         /// <param name="maxChunkSize">Maximum allowed upload files size.</param>
         /// <param name="cancellationToken"><see cref="CancellationToken"/> token to cancel request.</param>
         /// <returns>True if upload success.</returns>
-        Task<bool> UploadFilesAsync(string bundleId, IDictionary<string, string> fileHashToContentDict, int maxChunkSize = SnykCodeClient.MaxBundleSize, CancellationToken cancellationToken = default);
+        Task<bool> UploadFilesAsync(string bundleId, IDictionary<string, (string hash, string content)> fileHashToContentDict, int maxChunkSize = SnykCodeClient.MaxBundleSize, CancellationToken cancellationToken = default);
 
         /// <summary>
         /// Create new <see cref="BundleResponseDto"/> and get result <see cref="BundleResponseDto"/> object.
@@ -72,6 +72,18 @@
             string bundleId,
             IDictionary<string, string> pathToHashFileDict,
             IEnumerable<string> filesToRemovePaths,
+            int maxChunkSize = SnykCodeClient.MaxBundleSize,
+            CancellationToken cancellationToken = default);
+
+        /// <summary>
+        /// Split bundle to list of bundles by maximun bundle size.
+        /// </summary>
+        /// <param name="pathToHashFileDict">Source files dictionary.</param>
+        /// <param name="maxChunkSize">Maximum chunk size. By default it's 4 Mb.</param>
+        /// <param name="cancellationToken">Token to cancel current task.</param>
+        /// <returns>List of smaller file dictionaries.</returns>
+        List<Dictionary<string, string>> SplitFilesToChunkListsBySize(
+            IDictionary<string, string> pathToHashFileDict,
             int maxChunkSize = SnykCodeClient.MaxBundleSize,
             CancellationToken cancellationToken = default);
     }
