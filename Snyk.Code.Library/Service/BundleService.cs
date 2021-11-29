@@ -54,14 +54,13 @@
 
             for (int counter = 0; counter < UploadFileRequestAttempts; counter++)
             {
-                cancellationToken.ThrowIfCancellationRequested();
-                var fileHashToContentDict = codeCacheService.GetFileHashToContentDictionary(resultBundle.MissingFiles);
+                var pathToHashAndContentDict = codeCacheService.CreateFilePathToHashAndContentDictionary(resultBundle.MissingFiles);
 
-                await this.UploadFilesAsync(resultBundle.Id, fileHashToContentDict, cancellationToken: cancellationToken);
+                await this.UploadFilesAsync(resultBundle.Id, pathToHashAndContentDict, cancellationToken: cancellationToken);
 
                 resultBundle = await this.CheckBundleAsync(bundle.Id, cancellationToken);
 
-                if (resultBundle.MissingFiles.IsNullOrEmpty())
+                if (resultBundle.MissingFiles.Count() == 0)
                 {
                     return true;
                 }
@@ -73,9 +72,9 @@
         }
 
         /// <inheritdoc/>
-        public Task<bool> UploadFilesAsync(
+        public async Task<bool> UploadFilesAsync(
             string bundleId,
-            IDictionary<string, string> fileHashToContentDict,
+            IDictionary<string, (string, string)> pathToHashAndContentDict,
             int maxChunkSize = SnykCodeClient.MaxBundleSize,
             CancellationToken cancellationToken = default)
         {
@@ -84,24 +83,26 @@
                 throw new ArgumentException("Bundle id is null or empty.");
             }
 
-            if (fileHashToContentDict == null)
+            if (pathToHashAndContentDict == null)
             {
                 throw new ArgumentException("Code files list is null.");
             }
 
             cancellationToken.ThrowIfCancellationRequested();
 
-            int payloadSize = this.CalculateFilesSize(fileHashToContentDict);
+            int payloadSize = this.CalculateFilesSize(pathToHashAndContentDict);
 
             if (payloadSize < maxChunkSize)
             {
-                var codeFiles = this.BuildCodeFileDtoList(fileHashToContentDict);
+                var codeFilesDict = this.BuildCodeFileDtoDictionary(pathToHashAndContentDict);
 
-                return this.codeClient.UploadFilesAsync(bundleId, codeFiles, cancellationToken);
+                var bundle = await this.codeClient.ExtendBundleAsync(bundleId, codeFilesDict, cancellationToken);
+
+                return bundle.MissingFiles.Count() == 0;
             }
             else
             {
-                return this.ProcessUploadLargeFilesAsync(bundleId, fileHashToContentDict, maxChunkSize, cancellationToken: cancellationToken);
+                return await this.ProcessUploadLargeFilesAsync(bundleId, pathToHashAndContentDict, maxChunkSize, cancellationToken);
             }
         }
 
@@ -115,7 +116,7 @@
         /// <returns>True if upload success.</returns>
         public async Task<bool> ProcessUploadLargeFilesAsync(
             string bundleId,
-            IDictionary<string, string> fileHashToContentDict,
+            IDictionary<string, (string, string)> fileHashToContentDict,
             int maxChunkSize = SnykCodeClient.MaxBundleSize,
             CancellationToken cancellationToken = default)
         {
@@ -127,9 +128,11 @@
             {
                 cancellationToken.ThrowIfCancellationRequested();
 
-                var codeFiles = this.BuildCodeFileDtoList(codeFileList);
+                var codeFiles = this.BuildCodeFileDtoDictionary(codeFileList);
 
-                isAllFilesUploaded &= await this.codeClient.UploadFilesAsync(bundleId, codeFiles, cancellationToken: cancellationToken).ConfigureAwait(false);
+                var extendedBundle = await this.codeClient.ExtendBundleAsync(bundleId, codeFiles, cancellationToken);
+
+                isAllFilesUploaded &= extendedBundle.MissingFiles.Count() == 0;
             }
 
             return isAllFilesUploaded;
@@ -209,8 +212,58 @@
         /// </summary>
         /// <param name="pathToHashFileDict">Source files dictionary.</param>
         /// <param name="maxChunkSize">Maximum chunk size. By default it's 4 Mb.</param>
+        /// <param name="cancellationToken">Token to cancel current task.</param>
         /// <returns>List of smaller file dictionaries.</returns>
-        public List<Dictionary<string, string>> SplitFilesToChunkListsBySize(IDictionary<string, string> pathToHashFileDict, int maxChunkSize = SnykCodeClient.MaxBundleSize, CancellationToken cancellationToken = default)
+        public List<Dictionary<string, (string, string)>> SplitFilesToChunkListsBySize(
+            IDictionary<string, (string, string)> pathToHashFileDict,
+            int maxChunkSize = SnykCodeClient.MaxBundleSize,
+            CancellationToken cancellationToken = default)
+        {
+            var fileDictionaries = new List<Dictionary<string, (string, string)>>();
+
+            if (pathToHashFileDict == null || pathToHashFileDict.Count == 0)
+            {
+                return fileDictionaries;
+            }
+
+            int bundleSize = 0;
+
+            var fileDictionary = new Dictionary<string, (string, string)>();
+
+            foreach (var filePair in pathToHashFileDict)
+            {
+                int fileSize = this.CalculateFilePairSize(filePair);
+
+                if (fileSize > maxChunkSize)
+                {
+                    continue; // If file too big it skip it and continue to upload other files.
+                }
+
+                if (bundleSize + fileSize > maxChunkSize)
+                {
+                    // Save previous dictionary and create new.
+                    fileDictionaries.Add(fileDictionary);
+
+                    fileDictionary = new Dictionary<string, (string, string)>();
+
+                    bundleSize = 0;
+                }
+
+                fileDictionary.Add(filePair.Key, filePair.Value);
+
+                bundleSize += fileSize;
+            }
+
+            fileDictionaries.Add(fileDictionary);
+
+            return fileDictionaries;
+        }
+
+        /// <inheritdoc/>
+        public List<Dictionary<string, string>> SplitFilesToChunkListsBySize(
+            IDictionary<string, string> pathToHashFileDict,
+            int maxChunkSize = SnykCodeClient.MaxBundleSize,
+            CancellationToken cancellationToken = default)
         {
             var fileDictionaries = new List<Dictionary<string, string>>();
 
@@ -325,17 +378,17 @@
 
             var bundleDto = new BundleResponseDto
             {
-                Id = bundleId,
+                Hash = bundleId,
             };
 
             if (!removedFiles.IsNullOrEmpty())
             {
-                bundleDto = await this.ExtendBundleWithRemovedFilesAsync(bundleDto.Id, removedFiles, maxChunkSize, cancellationToken);
+                bundleDto = await this.ExtendBundleWithRemovedFilesAsync(bundleDto.Hash, removedFiles, maxChunkSize, cancellationToken);
             }
 
             if (!pathToHashFileDict.IsNullOrEmpty())
             {
-                bundleDto = await this.ExtendBundleWithFilesAsync(bundleDto.Id, pathToHashFileDict, maxChunkSize, cancellationToken);
+                bundleDto = await this.ExtendBundleWithFilesAsync(bundleDto.Hash, pathToHashFileDict, maxChunkSize, cancellationToken);
             }
 
             return bundleDto;
@@ -370,7 +423,7 @@
             {
                 cancellationToken.ThrowIfCancellationRequested();
 
-                resultBundleDto = await this.codeClient.ExtendBundleAsync(resultBundleDto.Id, filesDictionary, Enumerable.Empty<string>().ToList(), cancellationToken);
+                resultBundleDto = await this.codeClient.ExtendBundleAsync(resultBundleDto.Hash, filesDictionary, Enumerable.Empty<string>().ToList(), cancellationToken);
             }
 
             // Last created bundle is result bundle.
@@ -407,7 +460,7 @@
             {
                 cancellationToken.ThrowIfCancellationRequested();
 
-                resultBundleDto = await this.codeClient.ExtendBundleAsync(resultBundleDto.Id, emptyDictionary, removeFilesList, cancellationToken);
+                resultBundleDto = await this.codeClient.ExtendBundleAsync(resultBundleDto.Hash, emptyDictionary, removeFilesList, cancellationToken);
             }
 
             // Last created bundle is result bundle.
@@ -442,7 +495,7 @@
             {
                 cancellationToken.ThrowIfCancellationRequested();
 
-                resultBundleDto = await this.codeClient.ExtendBundleAsync(resultBundleDto.Id, extendFiles, Enumerable.Empty<string>().ToList(), cancellationToken);
+                resultBundleDto = await this.codeClient.ExtendBundleAsync(resultBundleDto.Hash, extendFiles, Enumerable.Empty<string>().ToList(), cancellationToken);
             }
 
             // Last created bundle is result bundle.
@@ -457,11 +510,24 @@
         private int CalculateFilePairSize(KeyValuePair<string, string> filePair) => this.CalculatePayloadSize(Json.Serialize(filePair));
 
         /// <summary>
+        /// Calculate key value pair size in bytes. It multiply it to 2 because for UTF one char is 2 bytes.
+        /// </summary>
+        /// <param name="filePair">Source file pair (file path + file hash).</param>
+        /// <returns>Size in bytys.</returns>
+        private int CalculateFilePairSize(KeyValuePair<string, (string, string)> filePair) => this.CalculatePayloadSize(Json.Serialize(filePair));
+
+        /// <summary>
         /// Claculate file pairs size.
         /// </summary>
         /// <param name="files">Source dictionary with file info.</param>
         /// <returns>Size of dictionary.</returns>
         private int CalculateFilesSize(IDictionary<string, string> files) => this.CalculatePayloadSize(Json.Serialize(files));
+
+        /// <summary>
+        /// Claculate file pairs size.
+        /// </summary>
+        /// <param name="files">Source dictionary with file info.</param>
+        private int CalculateFilesSize(IDictionary<string, (string, string)> files) => this.CalculatePayloadSize(Json.Serialize(files));
 
         /// <summary>
         /// Claculate file pairs size.
@@ -486,22 +552,26 @@
         {
             return new Bundle
             {
-                Id = bundleDto.Id,
+                Id = bundleDto.Hash,
                 UploadURL = bundleDto.UploadURL,
                 MissingFiles = bundleDto.MissingFiles,
             };
         }
 
-        private List<CodeFileDto> BuildCodeFileDtoList(IDictionary<string, string> fileHashToContentDict)
+        private Dictionary<string, CodeFileDto> BuildCodeFileDtoDictionary(IDictionary<string, (string hash, string content)> fileHashToContentDict)
         {
-            var codeFileDtos = new List<CodeFileDto>();
+            var pathToContentDict = new Dictionary<string, CodeFileDto>();
 
             foreach (var filePair in fileHashToContentDict)
             {
-                codeFileDtos.Add(new CodeFileDto(filePair.Key, filePair.Value));
+                string filePath = filePair.Key;
+                string fileHash = filePair.Value.hash;
+                string fileContent = filePair.Value.content;
+
+                pathToContentDict.Add(filePath, new CodeFileDto(fileHash, fileContent));
             }
 
-            return codeFileDtos;
+            return pathToContentDict;
         }
     }
 }

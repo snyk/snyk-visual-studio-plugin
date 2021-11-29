@@ -43,7 +43,7 @@
         void ClearHistory();
 
         /// <summary>
-        /// Get added and changed file paths (exclude removed file paths).
+        /// Create <see cref="IDictionary{TKey, TValue}"/> with file path to file hash values.
         /// </summary>
         /// <returns>List of added and removed file paths.</returns>
         IEnumerable<string> GetChangedFiles();

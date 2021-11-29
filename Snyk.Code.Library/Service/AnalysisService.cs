@@ -57,7 +57,7 @@
 
                 switch (analysisResultDto.Status)
                 {
-                    case AnalysisStatus.Done:
+                    case AnalysisStatus.Complete:
                         return analysisResultDto;
 
                     case AnalysisStatus.Failed:
@@ -86,14 +86,17 @@
                 URL = analysisResultDto.AnalysisURL,
             };
 
-            var analysisResultsDto = analysisResultDto.AnalysisResults;
-
-            if (analysisResultsDto == null)
+            if (analysisResultDto == null)
             {
                 return analysisrResult;
             }
 
-            foreach (var fileKeyPair in analysisResultsDto.Files)
+            if (analysisResultDto.Files == null || analysisResultDto.Suggestions == null)
+            {
+                return analysisrResult;
+            }
+
+            foreach (var fileKeyPair in analysisResultDto.Files)
             {
                 var fileAnalysis = new FileAnalysis { FileName = fileKeyPair.Key, };
 
@@ -102,7 +105,7 @@
                     string suggestionId = suggestionIdToFileKeyPair.Key;
                     var fileDtos = suggestionIdToFileKeyPair.Value;
 
-                    var suggestionDto = analysisResultsDto.Suggestions[suggestionId];
+                    var suggestionDto = analysisResultDto.Suggestions[suggestionId];
 
                     var fileDto = fileDtos.First();
 
