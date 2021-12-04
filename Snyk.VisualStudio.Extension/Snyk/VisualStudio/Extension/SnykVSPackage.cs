@@ -2,6 +2,8 @@
 {
     using System;
     using System.Diagnostics.CodeAnalysis;
+    using System.IO;
+    using System.Reflection;
     using System.Runtime.InteropServices;
     using System.Threading;
     using System.Threading.Tasks;
@@ -162,6 +164,8 @@
         protected override async Task InitializeAsync(CancellationToken cancellationToken, IProgress<ServiceProgressData> progress)
         {
             await base.InitializeAsync(cancellationToken, progress);
+
+            ManualAssemblyResolver.Initialize(SnykExtension.GetExtensionDirectoryPath());
 
             this.AddService(typeof(SnykService), this.CreateSnykServiceAsync, true);
 
