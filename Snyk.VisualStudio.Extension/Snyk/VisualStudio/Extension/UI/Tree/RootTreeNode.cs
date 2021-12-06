@@ -146,7 +146,7 @@
 
         private string GetDefaultDisabledTitle() => this.GetTitlePrefix() + " (disabled)";
 
-        private string GetDisabledForOrganizationTitle() => this.GetTitlePrefix() + " (disabled for organization)";
+        private string GetDisabledForOrganizationTitle() => this.GetTitlePrefix() + " (disabled, enable in Settings)";
 
         private string GetScanningTitle() => this.GetTitlePrefix() + " (scanning...)";
 

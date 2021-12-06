@@ -61,7 +61,7 @@
 
             var spans = new InfoBarTextSpan[] { text };
             var actions = new InfoBarActionItem[] { knownCaveatsLink, submitIssueLink, };
-            var infoBarModel = new InfoBarModel(spans, actions, KnownMonikers.StatusWarning, isCloseButtonVisible: true);
+            var infoBarModel = new InfoBarModel(spans, actions, KnownMonikers.StatusError, isCloseButtonVisible: true);
 
             var factory = await this.serviceProvider.GetServiceAsync(typeof(SVsInfoBarUIFactory)) as IVsInfoBarUIFactory;
 
