@@ -255,7 +255,6 @@
             this.productSelectionGroupBox.TabIndex = 18;
             this.productSelectionGroupBox.TabStop = false;
             this.productSelectionGroupBox.Text = "Product Selection";
-            this.ossInfoToolTip.SetToolTip(this.productSelectionGroupBox, "Find and automatically fix open source vulnerabilities");
             // 
             // snykCodeQualityInfoLabel
             // 
