@@ -85,7 +85,7 @@
         /// <inheritdoc/>
         public async Task<AnalysisResult> ScanAsync(IFileProvider fileProvider, CancellationToken cancellationToken = default)
         {
-            Logger.Information("Start SnykCode scanning...");
+            Logger.Debug("Start SnykCode scanning...");
 
             this.FireScanProgressEvent(SnykCodeScanState.Preparing, 0);
 
