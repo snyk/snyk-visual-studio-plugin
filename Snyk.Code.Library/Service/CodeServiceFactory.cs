@@ -23,10 +23,7 @@
 
             var bundleService = new BundleService(codeClient);
             var analysisService = new AnalysisService(codeClient);
-
-            string rootDirectoryPath = fileProvider.GetSolutionPath();
-
-            var codeCacheService = new CodeCacheService(rootDirectoryPath);
+            var codeCacheService = new CodeCacheService(fileProvider);
             var dcIgnoreService = new DcIgnoreService();
 
             return new SnykCodeService(bundleService, analysisService, filterService, codeCacheService, dcIgnoreService);

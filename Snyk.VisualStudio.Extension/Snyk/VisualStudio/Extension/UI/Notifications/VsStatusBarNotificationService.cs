@@ -52,6 +52,8 @@
             tasksService.SnykCodeScanningFinished += this.OnSnykCodeScanningFinished;
         }
 
+        public void ShowSnykCodeUpdateMessage(string message) => this.statusBar.ShowSnykCodeUpdateMessage(message);
+
         private void OnOssScanningFinished(object sender, SnykCliScanEventArgs eventArgs)
         {
             if (eventArgs.SnykCodeScanRunning)

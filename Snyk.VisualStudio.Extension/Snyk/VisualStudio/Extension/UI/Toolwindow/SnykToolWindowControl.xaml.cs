@@ -11,6 +11,7 @@
     using Microsoft.VisualStudio.Shell.Interop;
     using Serilog;
     using Snyk.Code.Library.Domain.Analysis;
+    using Snyk.Code.Library.Service;
     using Snyk.Common;
     using Snyk.VisualStudio.Extension.CLI;
     using Snyk.VisualStudio.Extension.Commands;
@@ -101,11 +102,13 @@
             tasksService.DownloadUpdate += this.OnDownloadUpdate;
             tasksService.DownloadCancelled += this.OnDownloadCancelled;
 
-            this.Loaded += tasksService.OnUiLoaded;
+            //this.Loaded += tasksService.OnUiLoaded;
 
             serviceProvider.VsThemeService.ThemeChanged += this.OnVsThemeChanged;
 
             serviceProvider.Options.SettingsChanged += this.OnSettingsChanged;
+
+            this.serviceProvider.SnykCodeService.ScanEventHandler += this.OnSnykCodeScanUpdate;
 
             Logger.Information("Leave InitializeEventListenersAsync() method.");
         }
@@ -368,6 +371,11 @@
             SnykStopCurrentTaskCommand.Instance.UpdateState();
             SnykCleanPanelCommand.Instance.UpdateState();
             SnykOpenSettingsCommand.Instance.UpdateState();
+        }
+
+        private void OnSnykCodeScanUpdate(object sender, SnykCodeEventArgs eventArgs)
+        {
+            VsStatusBarNotificationService.Instance.ShowSnykCodeUpdateMessage($"{eventArgs.ScanState} {eventArgs.Progress}%");
         }
 
         private void OnOssScanningFinished(object sender, SnykCliScanEventArgs e) => this.UpdateToolbarState();

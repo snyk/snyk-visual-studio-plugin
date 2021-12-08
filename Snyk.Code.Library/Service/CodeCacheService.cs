@@ -24,15 +24,15 @@
 
         private bool isCacheValid;
 
-        private string rootDirectoryPath;
+        private IFileProvider fileProvider;
 
         private string bundleId;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="CodeCacheService"/> class.
         /// </summary>
-        /// <param name="rootPath">Path to solution folder.</param>
-        public CodeCacheService(string rootPath) => this.rootDirectoryPath = rootPath;
+        /// <param name="fileProvider">File provider interface for cache.</param>
+        public CodeCacheService(IFileProvider fileProvider) => this.fileProvider = fileProvider;
 
         /// <inheritdoc/>
         public IDictionary<string, string> GetFileHashToContentDictionary()
@@ -70,6 +70,11 @@
                 string path = keyValuePair.Key;
                 string hash = this.filePathToHashCache[path].ToString();
                 string content = keyValuePair.Value.ToString();
+
+                if (string.IsNullOrEmpty(content))
+                {
+                    continue;
+                }
 
                 pathToHashAndContentDict.Add(path, (hash, content));
             }
@@ -162,7 +167,7 @@
 
             foreach (string fileFullPath in files)
             {
-                relateFilePaths.Add(FileUtil.GetRelativeFilePath(this.rootDirectoryPath, fileFullPath));
+                relateFilePaths.Add(FileUtil.GetRelativeFilePath(this.fileProvider.GetSolutionPath(), fileFullPath));
             }
 
             return relateFilePaths;
@@ -178,9 +183,14 @@
             {
                 string fileContent = File.ReadAllText(filePath, Encoding.UTF8);
 
+                if (string.IsNullOrEmpty(fileContent))
+                {
+                    return;
+                }
+
                 string fileHash = Sha256.ComputeHash(fileContent);
 
-                string relativeFilePath = FileUtil.GetRelativeFilePath(this.rootDirectoryPath, filePath);
+                string relativeFilePath = FileUtil.GetRelativeFilePath(this.fileProvider.GetSolutionPath(), filePath);
 
                 this.AddToFilePathToHashCache(relativeFilePath, fileHash);
 
@@ -203,7 +213,7 @@
 
         private void RemoveFile(string file)
         {
-            string relativeFilePath = FileUtil.GetRelativeFilePath(this.rootDirectoryPath, file);
+            string relativeFilePath = FileUtil.GetRelativeFilePath(this.fileProvider.GetSolutionPath(), file);
 
             this.filePathToHashCache.Remove(relativeFilePath);
             this.filePathToContentCache.Remove(relativeFilePath);
@@ -214,8 +224,8 @@
         private void Invalidate() => this.isCacheValid = false;
 
         private string GetRelativeFilePathIfFullPath(string filePath)
-            => string.IsNullOrEmpty(filePath) || !filePath.StartsWith(this.rootDirectoryPath)
-                ? filePath : FileUtil.GetRelativeFilePath(this.rootDirectoryPath, filePath);
+            => string.IsNullOrEmpty(filePath) || !filePath.StartsWith(this.fileProvider.GetSolutionPath())
+                ? filePath : FileUtil.GetRelativeFilePath(this.fileProvider.GetSolutionPath(), filePath);
 
         private void AddToFilePathToHashCache(string filePath, string fileHash) =>
             this.filePathToHashCache.Set(filePath, fileHash, this.New24HoursExpirationTimeCacheItemPolicy());

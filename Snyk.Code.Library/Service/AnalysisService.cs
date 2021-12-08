@@ -9,6 +9,7 @@
     using Snyk.Code.Library.Api.Dto.Analysis;
     using Snyk.Code.Library.Domain.Analysis;
     using Snyk.Common;
+    using static Snyk.Code.Library.Service.SnykCodeService;
 
     /// <inheritdoc/>
     public class AnalysisService : IAnalysisService
@@ -24,7 +25,11 @@
         public AnalysisService(ISnykCodeClient codeClient) => this.codeClient = codeClient;
 
         /// <inheritdoc/>
-        public async Task<AnalysisResult> GetAnalysisAsync(string bundleId, int requestAttempts = RequestAttempts, CancellationToken cancellationToken = default)
+        public async Task<AnalysisResult> GetAnalysisAsync(
+            string bundleId,
+            FireScanCodeProgressUpdate scanCodeProgressUpdate,
+            int requestAttempts = RequestAttempts,
+            CancellationToken cancellationToken = default)
         {
             if (string.IsNullOrEmpty(bundleId))
             {
@@ -33,7 +38,7 @@
 
             cancellationToken.ThrowIfCancellationRequested();
 
-            var analysisResultDto = await this.TryGetAnalysisDtoAsync(bundleId, requestAttempts, cancellationToken);
+            var analysisResultDto = await this.TryGetAnalysisDtoAsync(bundleId, scanCodeProgressUpdate, requestAttempts, cancellationToken);
 
             return this.MapDtoAnalysisResultToDomain(analysisResultDto);
         }
@@ -43,7 +48,11 @@
         /// </summary>
         /// <param name="bundleId">Source bundle id.</param>
         /// <returns><see cref="AnalysisResultDto"/> object.</returns>
-        private async Task<AnalysisResultDto> TryGetAnalysisDtoAsync(string bundleId, int requestAttempts, CancellationToken cancellationToken = default)
+        private async Task<AnalysisResultDto> TryGetAnalysisDtoAsync(
+            string bundleId,
+            FireScanCodeProgressUpdate scanCodeProgressUpdate,
+            int requestAttempts,
+            CancellationToken cancellationToken = default)
         {
             Logger.Information("Try get analysis DTO object {RequestAttempts} times.", RequestAttempts);
 
@@ -56,6 +65,10 @@
                 var analysisResultDto = await this.codeClient.GetAnalysisAsync(bundleId, cancellationToken);
 
                 Logger.Information($"Request analysis status {analysisResultDto.Status}");
+
+                int progress = (int)analysisResultDto.Progress * 100;
+
+                scanCodeProgressUpdate(SnykCodeScanState.Analysing, progress);
 
                 switch (analysisResultDto.Status)
                 {

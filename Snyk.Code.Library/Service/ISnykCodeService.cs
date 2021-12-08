@@ -12,6 +12,11 @@
     public interface ISnykCodeService
     {
         /// <summary>
+        /// Gets or sets scan event handler.
+        /// </summary>
+        EventHandler<SnykCodeEventArgs> ScanEventHandler { get; set; }
+
+        /// <summary>
         /// Scan source code provided for code vulnerabilities.
         /// </summary>
         /// <param name="fileProvider">Provider for files to scan.</param>
@@ -27,7 +32,7 @@
         string GetSnykCodeErrorMessage(Exception e);
 
         /// <summary>
-        /// Clean code realted variables.
+        /// Clean variables and cache.
         /// </summary>
         void Clean();
     }
