@@ -5,6 +5,7 @@
     using System.Threading.Tasks;
     using Snyk.Code.Library.Api;
     using Snyk.Code.Library.Domain;
+    using static Snyk.Code.Library.Service.SnykCodeService;
 
     /// <summary>
     /// BundleService contains logic on top of <see cref="SnykCodeClient"/> class for SnykCode functionality.
@@ -27,9 +28,14 @@
         /// </summary>
         /// <param name="bundle">Source bundle with missing files to upload.</param>
         /// <param name="codeCacheService">File cache service.</param>
+        /// <param name="fireScanCodeProgressUpdate">Progress worker for update scan progress.</param>
         /// <param name="cancellationToken"><see cref="CancellationToken"/> token to cancel request.</param>
         /// <returns>True if upload all files successfully and false if not.</returns>
-        Task<bool> UploadMissingFilesAsync(Bundle bundle, ICodeCacheService codeCacheService, CancellationToken cancellationToken = default);
+        Task<bool> UploadMissingFilesAsync(
+            Bundle bundle,
+            ICodeCacheService codeCacheService,
+            FireScanCodeProgressUpdate fireScanCodeProgressUpdate,
+            CancellationToken cancellationToken = default);
 
         /// <summary>
         /// Uploads missing files to a bundle.
@@ -38,10 +44,16 @@
         /// </summary>
         /// <param name="bundleId">Bundle id to file upload.</param>
         /// <param name="fileHashToContentDict">Dictionary with file hash to file content mapping.</param>
+        /// <param name="fireScanCodeProgressUpdate">Progress worker for update scan progress.</param>
         /// <param name="maxChunkSize">Maximum allowed upload files size.</param>
         /// <param name="cancellationToken"><see cref="CancellationToken"/> token to cancel request.</param>
         /// <returns>True if upload success.</returns>
-        Task<bool> UploadFilesAsync(string bundleId, IDictionary<string, (string hash, string content)> fileHashToContentDict, int maxChunkSize = SnykCodeClient.MaxBundleSize, CancellationToken cancellationToken = default);
+        Task<bool> UploadFilesAsync(
+            string bundleId,
+            IDictionary<string, (string hash, string content)> fileHashToContentDict,
+            FireScanCodeProgressUpdate fireScanCodeProgressUpdate,
+            int maxChunkSize = SnykCodeClient.MaxBundleSize,
+            CancellationToken cancellationToken = default);
 
         /// <summary>
         /// Create new <see cref="BundleResponseDto"/> and get result <see cref="BundleResponseDto"/> object.

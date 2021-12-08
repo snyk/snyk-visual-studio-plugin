@@ -86,7 +86,7 @@
                 .Setup(codeCacheService => codeCacheService.CreateFilePathToHashAndContentDictionary(It.IsAny<IList<string>>()))
                 .Returns(new Dictionary<string, (string, string)>());
 
-            await bundleService.UploadMissingFilesAsync(bundle, codeCacheServiceMock.Object, It.IsAny<CancellationToken>());
+            await bundleService.UploadMissingFilesAsync(bundle, codeCacheServiceMock.Object, (state, progress) => { }, It.IsAny<CancellationToken>());
 
             codeClientMock
                 .Verify(codeClient => codeClient.CheckBundleAsync(bundle.Id, It.IsAny<CancellationToken>()), Times.Exactly(3));
@@ -162,7 +162,7 @@
                 .Setup(codeClient => codeClient.ExtendBundleAsync(dummyBundleDto.Hash, It.IsAny<Dictionary<string, CodeFileDto>>(), It.IsAny<CancellationToken>()).Result)
                 .Returns(new BundleResponseDto());
 
-            bool isSuccess = await bundleService.UploadFilesAsync(createdBundle.Id, fileHashToContentDict, 60);
+            bool isSuccess = await bundleService.UploadFilesAsync(createdBundle.Id, fileHashToContentDict, (state, progress) => { }, 60);
 
             Assert.True(isSuccess);
 

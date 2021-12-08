@@ -3,6 +3,7 @@
     using System.Threading;
     using System.Threading.Tasks;
     using Snyk.Code.Library.Domain.Analysis;
+    using static Snyk.Code.Library.Service.SnykCodeService;
 
     /// <summary>
     /// Contains logic related to SnykCode analysis logic.
@@ -23,9 +24,14 @@
         /// It contains all the suggestions and the relative positions.
         /// </summary>
         /// <param name="bundleId">Source bundle id to analysy.</param>
+        /// <param name="scanCodeProgressUpdate">Scan code progress update delegate.</param>
         /// <param name="requestAttempts">Request attempts.</param>
         /// <param name="cancellationToken"><see cref="CancellationToken"/> token to cancel request.</param>
         /// <returns>Analysis results with suggestions and the relative positions.</returns>
-        Task<AnalysisResult> GetAnalysisAsync(string bundleId, int requestAttempts = AnalysisService.RequestAttempts, CancellationToken cancellationToken = default);
+        Task<AnalysisResult> GetAnalysisAsync(
+            string bundleId,
+            FireScanCodeProgressUpdate scanCodeProgressUpdate,
+            int requestAttempts = AnalysisService.RequestAttempts,
+            CancellationToken cancellationToken = default);
     }
 }

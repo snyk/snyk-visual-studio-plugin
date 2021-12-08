@@ -50,6 +50,20 @@
             this.dcIgnoreService = dcIgnoreService;
         }
 
+        /// <summary>
+        /// Delegate interface to process progress update events.
+        /// </summary>
+        /// <param name="state">Current progress state (step).</param>
+        /// <param name="progress">Current progress percentage.</param>
+        public delegate void FireScanCodeProgressUpdate(SnykCodeScanState state, int progress);
+
+        /// <summary>
+        /// Cli scanning started event handler.
+        /// </summary>
+        private event EventHandler<SnykCodeEventArgs> ScanProgress;
+
+        public EventHandler<SnykCodeEventArgs> ScanEventHandler { get => this.ScanProgress; set => this.ScanProgress = value; }
+
         /// <inheritdoc/>
         public string GetSnykCodeErrorMessage(Exception sourceException)
         {
@@ -71,7 +85,9 @@
         /// <inheritdoc/>
         public async Task<AnalysisResult> ScanAsync(IFileProvider fileProvider, CancellationToken cancellationToken = default)
         {
-            Logger.Information("Start SnykCode scanning...");
+            Logger.Debug("Start SnykCode scanning...");
+
+            this.FireScanProgressEvent(SnykCodeScanState.Preparing, 0);
 
             this.InitializeCacheIfNeeded(fileProvider);
 
@@ -84,6 +100,8 @@
 
             if (this.AnyFilesChangedInSolution(filteredChangedFiles))
             {
+                this.FireScanProgressEvent(SnykCodeScanState.Analysing, 100);
+
                 return this.codeCacheService.GetCachedAnalysisResult();
             }
 
@@ -95,6 +113,8 @@
 
         private async Task<AnalysisResult> NewScanAsync(IFileProvider fileProvider, CancellationToken cancellationToken = default)
         {
+            this.FireScanProgressEvent(SnykCodeScanState.Preparing, 0);
+
             var files = await this.GetFilteredFilesAsync(fileProvider.GetSolutionPath(), fileProvider.GetFiles());
 
             this.codeCacheService.Initialize(files);
@@ -105,11 +125,17 @@
 
             var resultBundle = await this.bundleService.CreateBundleAsync(filePathToHashDict, cancellationToken: cancellationToken);
 
-            await this.bundleService.UploadMissingFilesAsync(resultBundle, this.codeCacheService, cancellationToken);
+            var scanCodeProgressUpdater = new FireScanCodeProgressUpdate(this.FireScanProgressEvent);
+
+            await this.bundleService.UploadMissingFilesAsync(
+                resultBundle,
+                this.codeCacheService,
+                scanCodeProgressUpdater,
+                cancellationToken);
 
             cancellationToken.ThrowIfCancellationRequested();
 
-            var analysisResult = await this.analysisService.GetAnalysisAsync(resultBundle.Id, cancellationToken: cancellationToken);
+            var analysisResult = await this.analysisService.GetAnalysisAsync(resultBundle.Id, scanCodeProgressUpdater, cancellationToken: cancellationToken);
 
             cancellationToken.ThrowIfCancellationRequested();
 
@@ -118,6 +144,8 @@
             fileProvider.ClearHistory();
 
             cancellationToken.ThrowIfCancellationRequested();
+
+            this.FireScanProgressEvent(SnykCodeScanState.Analysing, 100);
 
             return analysisResult;
         }
@@ -134,11 +162,17 @@
 
             var extendedBundle = await this.bundleService.ExtendBundleAsync(bundleId, extendFilePathToHashDict, removedFiles);
 
-            await this.bundleService.UploadMissingFilesAsync(extendedBundle, this.codeCacheService, cancellationToken);
+            var scanCodeProgressUpdater = new FireScanCodeProgressUpdate(this.FireScanProgressEvent);
+
+            await this.bundleService.UploadMissingFilesAsync(
+                extendedBundle,
+                this.codeCacheService,
+                scanCodeProgressUpdater,
+                cancellationToken);
 
             cancellationToken.ThrowIfCancellationRequested();
 
-            var analysisResult = await this.analysisService.GetAnalysisAsync(extendedBundle.Id, cancellationToken: cancellationToken);
+            var analysisResult = await this.analysisService.GetAnalysisAsync(extendedBundle.Id, scanCodeProgressUpdater, cancellationToken: cancellationToken);
 
             cancellationToken.ThrowIfCancellationRequested();
 
@@ -171,8 +205,11 @@
         {
             if (this.codeCacheService == null)
             {
-                this.codeCacheService = new CodeCacheService(fileProvider.GetSolutionPath());
+                this.codeCacheService = new CodeCacheService(fileProvider);
             }
         }
+
+        private void FireScanProgressEvent(SnykCodeScanState state, int progress)
+            => this.ScanProgress?.Invoke(this, new SnykCodeEventArgs { ScanState = state, Progress = progress, });
     }
 }

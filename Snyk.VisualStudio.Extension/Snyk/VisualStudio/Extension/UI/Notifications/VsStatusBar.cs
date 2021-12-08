@@ -74,6 +74,11 @@
             _ = this.ShowMessageWithProgressIconAsync(message, (short)Constants.SBAI_Build, 0);
         }
 
+        public void ShowSnykCodeUpdateMessage(string message)
+        {
+            _ = this.ShowMessageWithProgressIconAsync(message, (short)Constants.SBAI_Build, 0);
+        }
+
         private async System.Threading.Tasks.Task ShowMessageWithProgressIconAsync(string message, object icon, int showIcon)
         {
             await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();

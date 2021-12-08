@@ -11,6 +11,7 @@
     using Microsoft.VisualStudio.Shell.Interop;
     using Serilog;
     using Snyk.Code.Library.Domain.Analysis;
+    using Snyk.Code.Library.Service;
     using Snyk.Common;
     using Snyk.VisualStudio.Extension.CLI;
     using Snyk.VisualStudio.Extension.Commands;
