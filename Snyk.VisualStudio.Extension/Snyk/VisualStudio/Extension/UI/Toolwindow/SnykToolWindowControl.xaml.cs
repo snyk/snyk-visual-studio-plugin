@@ -101,7 +101,7 @@
             tasksService.DownloadUpdate += this.OnDownloadUpdate;
             tasksService.DownloadCancelled += this.OnDownloadCancelled;
 
-            //this.Loaded += tasksService.OnUiLoaded;
+            this.Loaded += tasksService.OnUiLoaded;
 
             serviceProvider.VsThemeService.ThemeChanged += this.OnVsThemeChanged;
 
