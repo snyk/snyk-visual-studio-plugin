@@ -1,5 +1,6 @@
 ﻿namespace Snyk.VisualStudio.Extension.UI.Notifications
 {
+    using Snyk.Code.Library.Service;
     using Snyk.VisualStudio.Extension.Service;
 
     /// <summary>
@@ -52,7 +53,19 @@
             tasksService.SnykCodeScanningFinished += this.OnSnykCodeScanningFinished;
         }
 
-        public void ShowSnykCodeUpdateMessage(string message) => this.statusBar.ShowSnykCodeUpdateMessage(message);
+        /// <summary>
+        /// Initialize SnykCode event listeners for this service.
+        /// </summary>
+        /// <param name="codeService">SnykCode service instance</param>
+        public void InitializeEventListeners(ISnykCodeService codeService)
+        {
+            codeService.ScanEventHandler += this.OnSnykCodeScanUpdate;
+        }
+
+        private void OnSnykCodeScanUpdate(object sender, SnykCodeEventArgs eventArgs)
+        {
+            this.statusBar.ShowSnykCodeUpdateMessage($"{eventArgs.ScanState} {eventArgs.Progress}%");
+        }
 
         private void OnOssScanningFinished(object sender, SnykCliScanEventArgs eventArgs)
         {

@@ -102,13 +102,11 @@
             tasksService.DownloadUpdate += this.OnDownloadUpdate;
             tasksService.DownloadCancelled += this.OnDownloadCancelled;
 
-            //this.Loaded += tasksService.OnUiLoaded;
+            this.Loaded += tasksService.OnUiLoaded;
 
             serviceProvider.VsThemeService.ThemeChanged += this.OnVsThemeChanged;
 
             serviceProvider.Options.SettingsChanged += this.OnSettingsChanged;
-
-            this.serviceProvider.SnykCodeService.ScanEventHandler += this.OnSnykCodeScanUpdate;
 
             Logger.Information("Leave InitializeEventListenersAsync() method.");
         }
@@ -371,11 +369,6 @@
             SnykStopCurrentTaskCommand.Instance.UpdateState();
             SnykCleanPanelCommand.Instance.UpdateState();
             SnykOpenSettingsCommand.Instance.UpdateState();
-        }
-
-        private void OnSnykCodeScanUpdate(object sender, SnykCodeEventArgs eventArgs)
-        {
-            VsStatusBarNotificationService.Instance.ShowSnykCodeUpdateMessage($"{eventArgs.ScanState} {eventArgs.Progress}%");
         }
 
         private void OnOssScanningFinished(object sender, SnykCliScanEventArgs e) => this.UpdateToolbarState();
