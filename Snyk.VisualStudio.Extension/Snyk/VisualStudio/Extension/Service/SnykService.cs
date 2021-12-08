@@ -256,7 +256,9 @@
                     ? SnykExtension.GetAppSettings().SnykCodeApiEndpoinUrl : options.CustomEndpoint;
 
                 this.snykCodeService = CodeServiceFactory
-                    .CreateSnykCodeService(options.ApiToken, endpoint, new SnykCodeFileProvider(this.SolutionService));
+                    .CreateSnykCodeService(options.ApiToken, endpoint, this.SolutionService.FileProvider);
+
+                VsStatusBarNotificationService.Instance.InitializeEventListeners(this.snykCodeService);
             }
             catch (Exception e)
             {

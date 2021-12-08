@@ -126,7 +126,9 @@
     <Compile Include="Api\LoginStatus.cs" />
     <Compile Include="Api\SnykCodeException.cs" />
     <Compile Include="Service\BundleService.cs" />
+    <Compile Include="Service\SnykCodeEventArgs.cs" />
     <Compile Include="Service\SnykCodeFileProvider.cs" />
+    <Compile Include="Service\SnykCodeScanState.cs" />
     <Compile Include="Service\SnykCodeService.cs" />
   </ItemGroup>
   <ItemGroup>

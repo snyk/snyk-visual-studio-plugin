@@ -48,7 +48,7 @@
                 .Returns(new List<string>());
 
             var fileProvider = new SnykCodeFileProvider(solutionServiceMock.Object);
-            var codeCacheService = new CodeCacheService(fileProvider.GetSolutionPath());
+            var codeCacheService = new CodeCacheService(fileProvider);
 
             codeCacheService.Initialize(new List<string> { this.appCsPath });
 
@@ -72,7 +72,7 @@
 
             var fileProvider = new SnykCodeFileProvider(solutionServiceMock.Object);
 
-            var codeCacheService = new CodeCacheService(fileProvider.GetSolutionPath());
+            var codeCacheService = new CodeCacheService(fileProvider);
 
             codeCacheService.SetAnalysisResult(new Domain.Analysis.AnalysisResult());
 
@@ -93,7 +93,7 @@
                 .Returns(new List<string>());
 
             var fileProvider = new SnykCodeFileProvider(solutionServiceMock.Object);
-            var codeCacheService = new CodeCacheService(fileProvider.GetSolutionPath());
+            var codeCacheService = new CodeCacheService(fileProvider);
 
             codeCacheService.SetAnalysisResult(new Domain.Analysis.AnalysisResult());
 
@@ -121,7 +121,7 @@
                 .Returns(new List<string>());
 
             var fileProvider = new SnykCodeFileProvider(solutionServiceMock.Object);
-            var codeCacheService = new CodeCacheService(fileProvider.GetSolutionPath());
+            var codeCacheService = new CodeCacheService(fileProvider);
 
             codeCacheService.Initialize(new List<string> { this.appCsPath });
 
@@ -156,7 +156,7 @@
                 .Returns(new List<string>());
 
             var fileProvider = new SnykCodeFileProvider(solutionServiceMock.Object);
-            var codeCacheService = new CodeCacheService(fileProvider.GetSolutionPath());
+            var codeCacheService = new CodeCacheService(fileProvider);
 
             codeCacheService.Initialize(new List<string> { this.appCsPath, app2CsPath });
 

@@ -10,9 +10,12 @@
     using Snyk.Code.Library.Domain.Analysis;
     using Snyk.Code.Library.Service;
     using Xunit;
+    using static Snyk.Code.Library.Service.SnykCodeService;
 
     public class AnalysisServiceTest
     {
+        private FireScanCodeProgressUpdate scanCodeProgressUpdate = (state, progress) => { };
+
         [Fact]
         public void AnalysisService_FailedStatusProvided_GetAnalysisThrowException()
         {
@@ -33,7 +36,7 @@
                 .Setup(codeClient => codeClient.GetAnalysisAsync(dummyBundleId, It.IsAny<CancellationToken>()).Result)
                 .Returns(dummyAnalysisResultDto);
 
-            _ = Assert.ThrowsAsync<AggregateException>(() => analysisService.GetAnalysisAsync(dummyBundleId));
+            _ = Assert.ThrowsAsync<AggregateException>(() => analysisService.GetAnalysisAsync(dummyBundleId, scanCodeProgressUpdate));
 
             codeClientMock
                 .Verify(codeClient => codeClient.GetAnalysisAsync(dummyBundleId, It.IsAny<CancellationToken>()), Times.Exactly(1));
@@ -70,7 +73,7 @@
                     }
                 });
 
-            var analysisResult = await analysisService.GetAnalysisAsync(dummyBundleId);
+            var analysisResult = await analysisService.GetAnalysisAsync(dummyBundleId, this.scanCodeProgressUpdate);
 
             Assert.NotNull(analysisResult);
             Assert.Equal(AnalysisStatus.Complete, analysisResult.Status);
@@ -99,7 +102,7 @@
                 .Setup(codeClient => codeClient.GetAnalysisAsync(dummyBundleId, It.IsAny<CancellationToken>()).Result)
                 .Returns(dummyAnalysisResultDto);
 
-            var analysisResult = await analysisService.GetAnalysisAsync(dummyBundleId, requestAttempts: 5);
+            var analysisResult = await analysisService.GetAnalysisAsync(dummyBundleId, this.scanCodeProgressUpdate, requestAttempts: 5);
 
             Assert.NotNull(analysisResult);
             Assert.Equal(AnalysisStatus.Failed, analysisResult.Status);
@@ -282,7 +285,7 @@
                 .Setup(codeClient => codeClient.GetAnalysisAsync(dummyBundleId, It.IsAny<CancellationToken>()).Result)
                 .Returns(dummyAnalysisResultDto);
 
-            var analysisResult = await analysisService.GetAnalysisAsync(dummyBundleId);
+            var analysisResult = await analysisService.GetAnalysisAsync(dummyBundleId, this.scanCodeProgressUpdate);
 
             Assert.NotNull(analysisResult);
             Assert.Equal(2, analysisResult.FileAnalyses.Count);

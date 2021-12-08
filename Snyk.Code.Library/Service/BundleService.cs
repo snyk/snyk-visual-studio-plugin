@@ -11,6 +11,7 @@
     using Snyk.Code.Library.Api.Dto;
     using Snyk.Code.Library.Domain;
     using Snyk.Common;
+    using static Snyk.Code.Library.Service.SnykCodeService;
 
     /// <inheritdoc/>
     public class BundleService : IBundleService
@@ -46,7 +47,11 @@
         }
 
         /// <inheritdoc/>
-        public async Task<bool> UploadMissingFilesAsync(Bundle bundle, ICodeCacheService codeCacheService, CancellationToken cancellationToken = default)
+        public async Task<bool> UploadMissingFilesAsync(
+            Bundle bundle,
+            ICodeCacheService codeCacheService,
+            FireScanCodeProgressUpdate fireScanCodeProgressUpdate,
+            CancellationToken cancellationToken = default)
         {
             Logger.Information("Uploading missing files for bundle.");
 
@@ -56,7 +61,7 @@
             {
                 var pathToHashAndContentDict = codeCacheService.CreateFilePathToHashAndContentDictionary(resultBundle.MissingFiles);
 
-                await this.UploadFilesAsync(resultBundle.Id, pathToHashAndContentDict, cancellationToken: cancellationToken);
+                await this.UploadFilesAsync(resultBundle.Id, pathToHashAndContentDict, fireScanCodeProgressUpdate, cancellationToken: cancellationToken);
 
                 resultBundle = await this.CheckBundleAsync(bundle.Id, cancellationToken);
 
@@ -75,6 +80,7 @@
         public async Task<bool> UploadFilesAsync(
             string bundleId,
             IDictionary<string, (string, string)> pathToHashAndContentDict,
+            FireScanCodeProgressUpdate fireScanCodeProgressUpdate,
             int maxChunkSize = SnykCodeClient.MaxBundleSize,
             CancellationToken cancellationToken = default)
         {
@@ -94,15 +100,19 @@
 
             if (payloadSize < maxChunkSize)
             {
+                fireScanCodeProgressUpdate(SnykCodeScanState.Preparing, 5);
+
                 var codeFilesDict = this.BuildCodeFileDtoDictionary(pathToHashAndContentDict);
 
                 var bundle = await this.codeClient.ExtendBundleAsync(bundleId, codeFilesDict, cancellationToken);
+
+                fireScanCodeProgressUpdate(SnykCodeScanState.Preparing, 100);
 
                 return bundle.MissingFiles.Count() == 0;
             }
             else
             {
-                return await this.ProcessUploadLargeFilesAsync(bundleId, pathToHashAndContentDict, maxChunkSize, cancellationToken);
+                return await this.ProcessUploadLargeFilesAsync(bundleId, pathToHashAndContentDict, fireScanCodeProgressUpdate, maxChunkSize, cancellationToken);
             }
         }
 
@@ -111,18 +121,22 @@
         /// </summary>
         /// <param name="bundleId">Source bundle id.</param>
         /// <param name="fileHashToContentDict">Dictionary with file hash to file content mapping.</param>
+        /// <param name="fireScanCodeProgressUpdate">Delegate to fire scan code progress update.</param>
         /// <param name="maxChunkSize">Maximum allowed upload files size.</param>
         /// <param name="cancellationToken"><see cref="CancellationToken"/> token to cancel request.</param>
         /// <returns>True if upload success.</returns>
         public async Task<bool> ProcessUploadLargeFilesAsync(
             string bundleId,
             IDictionary<string, (string, string)> fileHashToContentDict,
+            FireScanCodeProgressUpdate fireScanCodeProgressUpdate,
             int maxChunkSize = SnykCodeClient.MaxBundleSize,
             CancellationToken cancellationToken = default)
         {
             var codeFileLists = this.SplitFilesToChunkListsBySize(fileHashToContentDict, maxChunkSize);
 
             bool isAllFilesUploaded = true;
+            int chunksCount = codeFileLists.Count;
+            int index = 1;
 
             foreach (var codeFileList in codeFileLists)
             {
@@ -133,7 +147,13 @@
                 var extendedBundle = await this.codeClient.ExtendBundleAsync(bundleId, codeFiles, cancellationToken);
 
                 isAllFilesUploaded &= extendedBundle.MissingFiles.Count() == 0;
+
+                fireScanCodeProgressUpdate(SnykCodeScanState.Preparing, index * 100 / chunksCount);
+
+                index++;
             }
+
+            fireScanCodeProgressUpdate(SnykCodeScanState.Preparing, 100);
 
             return isAllFilesUploaded;
         }
