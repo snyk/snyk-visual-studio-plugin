@@ -184,10 +184,10 @@
                         continue;
                     }
 
-                    titleBuilder.Append(string.Format(" {0} {1} ,", severityNameToIntPair.Value, severityNameToIntPair.Key));
+                    titleBuilder.Append(string.Format(" {0} {1},", severityNameToIntPair.Value, severityNameToIntPair.Key));
                 }
 
-                titleBuilder = titleBuilder.Remove(titleBuilder.Length - 2, 2);
+                titleBuilder = titleBuilder.Remove(titleBuilder.Length - 1, 1);
             }
 
             return titleBuilder.ToString();

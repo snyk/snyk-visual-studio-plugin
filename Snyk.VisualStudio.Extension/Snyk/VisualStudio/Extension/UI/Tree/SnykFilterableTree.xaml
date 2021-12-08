@@ -160,6 +160,11 @@
                                                 <DynamicResource ResourceKey="{x:Static SystemColors.HighlightTextBrushKey}"/>
                                             </Setter.Value>
                                         </Setter>
+                                        <Setter Property="TextBlock.Foreground">
+                                            <Setter.Value>
+                                                <DynamicResource ResourceKey="White"/>
+                                            </Setter.Value>
+                                        </Setter>
                                     </Trigger>
                                     <Trigger Property="UIElement.IsEnabled" Value="False">
                                         <Setter Property="TextElement.Foreground">
@@ -183,8 +188,8 @@
                                Source="{Binding Icon}"/>
                         <TextBlock Text="{Binding Title}" 
                                    ToolTipService.ToolTip="{Binding Title}" 
-                                   Foreground="{DynamicResource VsBrush.WindowText}" 
-                                   IsEnabled="{Binding Enabled}"/>
+                                   IsEnabled="{Binding Enabled}">
+                        </TextBlock>
                     </StackPanel>
                 </HierarchicalDataTemplate>
             </TreeView.ItemTemplate>
