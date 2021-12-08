@@ -146,7 +146,7 @@
 
         private string GetDefaultDisabledTitle() => this.GetTitlePrefix() + " (disabled)";
 
-        private string GetDisabledForOrganizationTitle() => this.GetTitlePrefix() + " (disabled for organization)";
+        private string GetDisabledForOrganizationTitle() => this.GetTitlePrefix() + " (disabled, enable in Settings)";
 
         private string GetScanningTitle() => this.GetTitlePrefix() + " (scanning...)";
 
@@ -184,10 +184,10 @@
                         continue;
                     }
 
-                    titleBuilder.Append(string.Format(" {0} {1} ,", severityNameToIntPair.Value, severityNameToIntPair.Key));
+                    titleBuilder.Append(string.Format(" {0} {1},", severityNameToIntPair.Value, severityNameToIntPair.Key));
                 }
 
-                titleBuilder = titleBuilder.Remove(titleBuilder.Length - 2, 2);
+                titleBuilder = titleBuilder.Remove(titleBuilder.Length - 1, 1);
             }
 
             return titleBuilder.ToString();
