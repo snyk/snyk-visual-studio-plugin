@@ -42,6 +42,12 @@
                 .Enrich.WithThreadId()
                 .Enrich.WithExceptionDetails()
                 .MinimumLevel.ControlledBy(loggingLevelSwitch)
+                .WriteTo.Sentry(config =>
+                {
+                    config.Dsn = SnykExtension.GetAppSettings()?.SentryDsn;
+
+                    config.AttachStacktrace = true;
+                })
                 .WriteTo.File(
                     Path.Combine(SnykDirectory.GetSnykAppDataDirectoryPath(), "snyk-extension.log"),
                     fileSizeLimitBytes: LogFileSize,
