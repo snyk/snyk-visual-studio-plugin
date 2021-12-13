@@ -24,7 +24,7 @@
                 Scan your project for security vulnerabilities.
             </c:TextField>
             <StackPanel Margin="0, 8, 0, 0">
-                <Button x:Name="runScanLink" Content="Run scan" IsDefault="True" Click="RunButton_Click" HorizontalAlignment="Center" MinWidth="80"/>
+                <Button x:Name="runScanButton" Content="Run scan" IsDefault="True" Click="RunButton_Click" HorizontalAlignment="Center" MinWidth="80"/>
             </StackPanel>
         </StackPanel>
         

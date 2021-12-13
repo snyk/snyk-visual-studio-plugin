@@ -24,9 +24,20 @@
         }
 
         /// <summary>
+        /// Delegate for update other controls state.
+        /// </summary>
+        /// <param name="isEnabled">Is control enabled.</param>
+        public delegate void UpdateControlsState(bool isEnabled);
+
+        /// <summary>
         /// Gets the instance of the command.
         /// </summary>
         public static SnykScanCommand Instance { get; private set; }
+
+        /// <summary>
+        /// Gets or Sets callback for update controls state.
+        /// </summary>
+        public UpdateControlsState UpdateControlsStateCallback { get; set; }
 
         /// <summary>
         /// Initializes the singleton instance of the command.
@@ -43,8 +54,24 @@
             Instance = new SnykScanCommand(package, commandService);
         }
 
-        public override void UpdateState() =>
-            this.MenuCommand.Enabled = SnykSolutionService.Instance.IsSolutionOpen && !SnykTasksService.Instance.IsTaskRunning();
+        /// <inheritdoc/>
+        public override void UpdateState()
+        {
+            bool isEnabled = this.IsScanEnabled();
+
+            this.MenuCommand.Enabled = isEnabled;
+
+            if (this.UpdateControlsStateCallback != null)
+            {
+                this.UpdateControlsStateCallback(isEnabled);
+            }
+        }
+
+        /// <summary>
+        /// Check is scan enabled.
+        /// </summary>
+        /// <returns>True if no other tasks running and solution is open.</returns>
+        public bool IsScanEnabled() => SnykSolutionService.Instance.IsSolutionOpen && !SnykTasksService.Instance.IsTaskRunning();
 
         /// <summary>
         /// Run scan.

@@ -24,7 +24,7 @@
 
                 this.ToolWindowControl.messagePanel.Visibility = Visibility.Collapsed;
 
-                this.ToolWindowControl.UpdateToolbarState();
+                this.ToolWindowControl.UpdateActionsState();
             });
         }
 
@@ -41,7 +41,7 @@
 
                 this.ToolWindowControl.messagePanel.ShowRunScanMessage();
 
-                this.ToolWindowControl.UpdateToolbarState();
+                this.ToolWindowControl.UpdateActionsState();
             });
         }
     }
