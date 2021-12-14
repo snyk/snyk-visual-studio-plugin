@@ -85,6 +85,9 @@
     <Compile Include="Snyk\VisualStudio\Extension\Commands\SnykOpenSettingsCommand.cs" />
     <Compile Include="Snyk\VisualStudio\Extension\Commands\SnykScanCommand.cs" />
     <Compile Include="Snyk\VisualStudio\Extension\Commands\SnykStopCurrentTaskCommand.cs" />
+    <Compile Include="Snyk\VisualStudio\Extension\Settings\SnykProjectSettings.cs" />
+    <Compile Include="Snyk\VisualStudio\Extension\Settings\SnykSettings.cs" />
+    <Compile Include="Snyk\VisualStudio\Extension\Settings\SnykSettingsLoader.cs" />
     <Compile Include="Snyk\VisualStudio\Extension\SnykExtension.cs" />
     <Compile Include="Snyk\VisualStudio\Extension\SnykGuids.cs" />
     <Compile Include="Snyk\VisualStudio\Extension\Service\ISnykProgressWorker.cs" />

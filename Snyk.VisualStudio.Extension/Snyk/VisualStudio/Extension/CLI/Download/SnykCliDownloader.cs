@@ -304,6 +304,11 @@
         /// <returns>Int value, if CLI version string is incorrect it will return -1.</returns>
         private int CliVersionAsInt(string cliVersion)
         {
+            if (string.IsNullOrEmpty(cliVersion))
+            {
+                return -1;
+            }
+
             try
             {
                 return int.Parse(cliVersion.Replace(".", string.Empty));
