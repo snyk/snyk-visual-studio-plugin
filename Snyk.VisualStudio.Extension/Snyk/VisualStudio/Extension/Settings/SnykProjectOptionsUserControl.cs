@@ -56,7 +56,7 @@
         {
             if (this.serviceProvider.SolutionService.IsSolutionOpen)
             {
-                this.userStorageSettingsService.SaveIsAllProjectsScanEnabled(allProjectsCheckBox.Checked);
+                this.userStorageSettingsService.SaveIsAllProjectsScanEnabled(this.allProjectsCheckBox.Checked);
 
                 this.CheckOptionConflicts();
             }
@@ -64,7 +64,7 @@
 
         private void SnykProjectOptionsUserControl_Load(object sender, EventArgs eventArgs)
         {
-            base.OnVisibleChanged(eventArgs);
+            this.OnVisibleChanged(eventArgs);
 
             bool isProjectOpened = this.serviceProvider.SolutionService.IsSolutionOpen;
 
@@ -98,7 +98,9 @@
 
             try
             {
-                this.allProjectsCheckBox.Checked = this.userStorageSettingsService.GetIsAllProjectsEnabled();
+                bool isChecked = this.userStorageSettingsService.GetIsAllProjectsEnabled();
+
+                this.allProjectsCheckBox.Checked = isChecked;
             }
             catch (Exception exception)
             {
