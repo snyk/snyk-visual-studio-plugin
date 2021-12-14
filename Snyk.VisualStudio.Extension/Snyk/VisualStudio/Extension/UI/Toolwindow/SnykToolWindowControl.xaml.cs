@@ -11,7 +11,6 @@
     using Microsoft.VisualStudio.Shell.Interop;
     using Serilog;
     using Snyk.Code.Library.Domain.Analysis;
-    using Snyk.Code.Library.Service;
     using Snyk.Common;
     using Snyk.VisualStudio.Extension.CLI;
     using Snyk.VisualStudio.Extension.Commands;
@@ -108,6 +107,13 @@
 
             serviceProvider.Options.SettingsChanged += this.OnSettingsChanged;
 
+            SnykScanCommand.Instance.UpdateControlsStateCallback = (isEnabled) => ThreadHelper.JoinableTaskFactory.Run(async () =>
+            {
+                await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
+
+                this.messagePanel.runScanButton.IsEnabled = isEnabled;
+            });
+
             Logger.Information("Leave InitializeEventListenersAsync() method.");
         }
 
@@ -156,7 +162,7 @@
 
             this.resultsTree.CliRootNode.State = RootTreeNodeState.Scanning;
 
-            this.UpdateToolbarState();
+            this.UpdateActionsState();
         });
 
         /// <summary>
@@ -173,7 +179,7 @@
             this.resultsTree.CodeSequrityRootNode.State = RootTreeNodeState.Scanning;
             this.resultsTree.CodeQualityRootNode.State = RootTreeNodeState.Scanning;
 
-            this.UpdateToolbarState();
+            this.UpdateActionsState();
         });
 
         /// <summary>
@@ -198,7 +204,7 @@
 
             this.serviceProvider.AnalyticsService.LogAnalysisReadyEvent(AnalysisType.SnykOpenSource, SnykAnalytics.AnalyticsAnalysisResult.Error);
 
-            this.UpdateToolbarState();
+            this.UpdateActionsState();
         });
 
         /// <summary>
@@ -223,7 +229,7 @@
 
             this.serviceProvider.AnalyticsService.LogAnalysisReadyEvent(AnalysisType.SnykCodeSecurity, SnykAnalytics.AnalyticsAnalysisResult.Error);
 
-            this.UpdateToolbarState();
+            this.UpdateActionsState();
         });
 
         /// <summary>
@@ -363,7 +369,7 @@
         /// <summary>
         /// Update state of toolbar (commands).
         /// </summary>
-        public void UpdateToolbarState()
+        public void UpdateActionsState()
         {
             SnykScanCommand.Instance.UpdateState();
             SnykStopCurrentTaskCommand.Instance.UpdateState();
@@ -371,9 +377,9 @@
             SnykOpenSettingsCommand.Instance.UpdateState();
         }
 
-        private void OnOssScanningFinished(object sender, SnykCliScanEventArgs e) => this.UpdateToolbarState();
+        private void OnOssScanningFinished(object sender, SnykCliScanEventArgs e) => this.UpdateActionsState();
 
-        private void OnSnykCodeScanningFinished(object sender, SnykCodeScanEventArgs e) => this.UpdateToolbarState();
+        private void OnSnykCodeScanningFinished(object sender, SnykCodeScanEventArgs e) => this.UpdateActionsState();
 
         private void OnSettingsChanged(object sender, SnykSettingsChangedEventArgs e) => this.UpdateTreeNodeItemsState();
 
