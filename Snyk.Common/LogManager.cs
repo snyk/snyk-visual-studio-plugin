@@ -44,7 +44,10 @@
                 .MinimumLevel.ControlledBy(loggingLevelSwitch)
                 .WriteTo.Sentry(config =>
                 {
-                    config.Dsn = SnykExtension.GetAppSettings()?.SentryDsn;
+                    var appSettings = SnykExtension.GetAppSettings();
+
+                    config.Environment = appSettings.Environment;
+                    config.Dsn = appSettings.SentryDsn;
 
                     config.AttachStacktrace = true;
                 })
