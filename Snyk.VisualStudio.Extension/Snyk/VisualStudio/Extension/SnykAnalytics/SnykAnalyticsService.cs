@@ -7,7 +7,6 @@
     using Segment.Model;
     using Serilog;
     using Snyk.Common;
-    using Snyk.VisualStudio.Extension.Settings;
 
     /// <summary>
     /// Analytics service.

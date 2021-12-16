@@ -1,4 +1,4 @@
-﻿namespace Snyk.VisualStudio.Extension.Settings
+﻿namespace Snyk.Common
 {
     /// <summary>
     /// Snyk application settings.
@@ -14,5 +14,10 @@
         /// Gets or sets a value indicating Snyk code API endpoint.
         /// </summary>
         public string SnykCodeApiEndpoinUrl { get; set; }
+
+        /// <summary>
+        /// Gets or sets a value indicating Snyk Sentry DSN.
+        /// </summary>
+        public string SentryDsn { get; set; }
     }
 }

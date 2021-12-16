@@ -12,9 +12,6 @@
     <TargetFrameworkProfile />
   </PropertyGroup>
   <PropertyGroup>
-    <AppSettingsFile>appsettings.json</AppSettingsFile>
-  </PropertyGroup>
-  <PropertyGroup>
     <StartAction>Program</StartAction>
     <StartProgram>$(DevEnvDir)devenv.exe</StartProgram>
     <StartArguments>/rootsuffix Exp</StartArguments>
@@ -101,7 +98,6 @@
     <Compile Include="Snyk\VisualStudio\Extension\SnykAnalytics\AnalysisType.cs" />
     <Compile Include="Snyk\VisualStudio\Extension\SnykAnalytics\IssueType.cs" />
     <Compile Include="Snyk\VisualStudio\Extension\SnykCode\CodeCacheHierarchyEvents.cs" />
-    <Compile Include="Snyk\VisualStudio\Extension\SnykExtension.cs" />
     <Compile Include="Snyk\VisualStudio\Extension\Service\SnykCodeScanEventArgs.cs" />
     <Compile Include="Snyk\VisualStudio\Extension\SnykGuids.cs" />
     <Compile Include="Snyk\VisualStudio\Extension\Service\ISnykProgressWorker.cs" />
@@ -120,7 +116,6 @@
     <Compile Include="Snyk\VisualStudio\Extension\Service\SnykCliScanEventArgs.cs" />
     <Compile Include="Snyk\VisualStudio\Extension\Service\SnykProgressWorker.cs" />
     <Compile Include="Snyk\VisualStudio\Extension\Service\SnykService.cs" />
-    <Compile Include="Snyk\VisualStudio\Extension\Settings\SnykAppSettings.cs" />
     <Compile Include="Snyk\VisualStudio\Extension\SnykAnalytics\SnykUser.cs" />
     <Compile Include="Snyk\VisualStudio\Extension\Service\SnykVsSolutionLoadEvents.cs" />
     <Compile Include="Snyk\VisualStudio\Extension\SnykWebClient.cs">
@@ -234,10 +229,6 @@
     </Compile>
   </ItemGroup>
   <ItemGroup>
-    <Content Include="appsettings.json">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-      <IncludeInVSIX>true</IncludeInVSIX>
-    </Content>
     <None Include="..\.editorconfig">
       <Link>.editorconfig</Link>
     </None>
@@ -686,12 +677,6 @@
   <ItemGroup />
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <Import Project="$(VSToolsPath)\VSSDK\Microsoft.VsSDK.targets" Condition="'$(VSToolsPath)' != ''" />
-  <Target Name="WriteAppSettingsFile" BeforeTargets="PreBuildEvent">
-    <WriteLinesToFile File="$(AppSettingsFile)" Overwrite="true" Lines="{" />
-    <WriteLinesToFile File="$(AppSettingsFile)" Lines="&quot;SegmentAnalyticsWriteKey&quot;: &quot;$(SEGMENT_ANALYTICS_WRITE_KEY)&quot;," />
-    <WriteLinesToFile File="$(AppSettingsFile)" Lines="&quot;SnykCodeApiEndpoinUrl&quot;: &quot;$(SNYK_CODE_API_ENDPOINT_URL)&quot;" />
-    <WriteLinesToFile File="$(AppSettingsFile)" Lines="}" />
-  </Target>
   <Target Name="EnsureNuGetPackageBuildImports" BeforeTargets="PrepareForBuild">
     <PropertyGroup>
       <ErrorText>This project references NuGet package(s) that are missing on this computer. Use NuGet Package Restore to download them.  For more information, see http://go.microsoft.com/fwlink/?LinkID=322105. The missing file is {0}.</ErrorText>
