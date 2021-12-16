@@ -1,12 +1,10 @@
-﻿namespace Snyk.VisualStudio.Extension
+﻿namespace Snyk.Common
 {
     using System;
     using System.IO;
     using System.Linq;
     using System.Text;
     using System.Xml;
-    using Snyk.Common;
-    using Snyk.VisualStudio.Extension.Settings;
 
     /// <summary>
     /// Common Snyk extension message.
@@ -89,7 +87,7 @@
         {
             if (string.IsNullOrEmpty(extensionDirectoryPath))
             {
-                string codebase = typeof(SnykVSPackage).Assembly.CodeBase;
+                string codebase = typeof(SnykExtension).Assembly.CodeBase;
 
                 var uri = new Uri(codebase, UriKind.Absolute);
 
