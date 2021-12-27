@@ -1,6 +1,7 @@
 ﻿namespace Snyk.VisualStudio.Extension.Tests
 {
     using System;
+    using System.Collections.Specialized;
     using System.IO;
     using Snyk.VisualStudio.Extension.CLI;
     using Snyk.VisualStudio.Extension.Settings;
@@ -16,7 +17,7 @@
                 Options = new SnykMockOptions(),
             };
 
-            var cliResult = cli.ConvertRawCliStringToCliResult(this.GetFileContent("CriticalSeverityObject.json"));
+            var cliResult = SnykCli.ConvertRawCliStringToCliResult(this.GetFileContent("CriticalSeverityObject.json"));
 
             bool isCriticalSeverityVulnExists = false;
 
@@ -77,7 +78,7 @@
                 Options = new SnykMockOptions(),
             };
 
-            Assert.Equal("--json test", cli.BuildArguments());
+            Assert.Equal("--json test", cli.BuildScanArguments());
         }
 
         [Fact]
@@ -91,7 +92,7 @@
                 },
             };
 
-            Assert.Equal("--json test --API=https://github.com/snyk/", cli.BuildArguments());
+            Assert.Equal("--json test --API=https://github.com/snyk/", cli.BuildScanArguments());
         }
 
         [Fact]
@@ -105,7 +106,7 @@
                 },
             };
 
-            Assert.Equal("--json test --insecure", cli.BuildArguments());
+            Assert.Equal("--json test --insecure", cli.BuildScanArguments());
         }
 
         [Fact]
@@ -119,7 +120,7 @@
                 },
             };
 
-            Assert.Equal("--json test --org=test-snyk-organization", cli.BuildArguments());
+            Assert.Equal("--json test --org=test-snyk-organization", cli.BuildScanArguments());
         }
 
         [Fact]
@@ -133,7 +134,7 @@
                 },
             };
 
-            Assert.Equal("--json test --file=C:\build.pom", cli.BuildArguments());
+            Assert.Equal("--json test --file=C:\build.pom", cli.BuildScanArguments());
         }
 
         [Fact]
@@ -147,7 +148,7 @@
                 },
             };
 
-            Assert.Equal("--json test --all-projects", cli.BuildArguments());
+            Assert.Equal("--json test --all-projects", cli.BuildScanArguments());
         }
 
         [Fact]
@@ -166,7 +167,7 @@
                 },
             };
 
-            Assert.Equal("--json test --API=https://github.com/snyk/ --insecure --org=test-snyk-organization --ignore-policy --all-projects --DISABLE_ANALYTICS", cli.BuildArguments());
+            Assert.Equal("--json test --API=https://github.com/snyk/ --insecure --org=test-snyk-organization --ignore-policy --all-projects --DISABLE_ANALYTICS", cli.BuildScanArguments());
         }
 
         [Fact]
@@ -180,7 +181,30 @@
                 },
             };
 
-            Assert.Equal("--json test --DISABLE_ANALYTICS", cli.BuildArguments());
+            Assert.Equal("--json test --DISABLE_ANALYTICS", cli.BuildScanArguments());
+        }
+
+        [Fact]
+        public void BuildEnvironmentVariables_WithAllOptions()
+        {
+            var cli = new SnykCli
+            {
+                Options = new SnykMockOptions()
+                {
+                    CustomEndpoint = "https://github.com/snyk/",
+                    IgnoreUnknownCA = true,
+                    Organization = "test-snyk-organization",
+                    AdditionalOptions = "--ignore-policy",
+                    IsScanAllProjects = true,
+                    UsageAnalyticsEnabled = false,
+                    ApiToken = "test-token",
+                },
+            };
+
+            var result = cli.BuildScanEnvironmentVariables();
+
+            Assert.Equal(result["SNYK_API"], cli.Options.CustomEndpoint);
+            Assert.Equal(result["SNYK_TOKEN"], cli.Options.ApiToken);
         }
 
         [Fact]
@@ -191,7 +215,7 @@
                 Options = new SnykMockOptions(),
             };
 
-            Assert.True(cli.IsSuccessCliJsonString("{\"vulnerabilities\": []}"));
+            Assert.True(SnykCli.IsSuccessCliJsonString("{\"vulnerabilities\": []}"));
         }
 
         [Fact]
@@ -202,7 +226,7 @@
                 Options = new SnykMockOptions(),
             };
 
-            Assert.False(cli.IsSuccessCliJsonString("{\"error\": \"Error details.\"}"));
+            Assert.False(SnykCli.IsSuccessCliJsonString("{\"error\": \"Error details.\"}"));
         }
 
         [Fact]
@@ -213,7 +237,7 @@
                 Options = new SnykMockOptions(),
             };
 
-            var cliResult = cli.ConvertRawCliStringToCliResult(this.GetFileContent("VulnerabilitiesArray.json"));
+            var cliResult = SnykCli.ConvertRawCliStringToCliResult(this.GetFileContent("VulnerabilitiesArray.json"));
 
             Assert.Equal(2, cliResult.CliVulnerabilitiesList.Count);
         }
@@ -226,7 +250,7 @@
                 Options = new SnykMockOptions(),
             };
 
-            var cliResult = cli.ConvertRawCliStringToCliResult(this.GetFileContent("VulnerabilitiesSingleObject.json"));
+            var cliResult = SnykCli.ConvertRawCliStringToCliResult(this.GetFileContent("VulnerabilitiesSingleObject.json"));
 
             Assert.Single(cliResult.CliVulnerabilitiesList);
         }
@@ -239,7 +263,7 @@
                 Options = new SnykMockOptions(),
             };
 
-            var cliResult = cli.ConvertRawCliStringToCliResult(this.GetFileContent("ErrorJsonObject.json"));
+            var cliResult = SnykCli.ConvertRawCliStringToCliResult(this.GetFileContent("ErrorJsonObject.json"));
 
             Assert.NotNull(cliResult.Error);
             Assert.False(cliResult.Error.IsSuccess);
@@ -255,7 +279,7 @@
                 Options = new SnykMockOptions(),
             };
 
-            var cliResult = cli.ConvertRawCliStringToCliResult(this.GetFileContent("ErrorPlainText.json"));
+            var cliResult = SnykCli.ConvertRawCliStringToCliResult(this.GetFileContent("ErrorPlainText.json"));
 
             Assert.NotNull(cliResult.Error);
             Assert.False(cliResult.Error.IsSuccess);
@@ -302,7 +326,7 @@
             this.consoleResult = result;
         }
 
-        public override string Run(string fileName, string arguments)
+        public override string Run(string fileName, string arguments, StringDictionary environmentVariables = null)
         {
             return consoleResult;
         }
