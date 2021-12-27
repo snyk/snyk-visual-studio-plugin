@@ -1,6 +1,7 @@
 ﻿namespace Snyk.VisualStudio.Extension.CLI
 {
     using System.Collections.Generic;
+    using System.Collections.Specialized;
     using System.IO;
     using System.Linq;
     using Serilog;
@@ -12,12 +13,13 @@
     /// </summary>
     public class SnykCli
     {
-        private static readonly ILogger Logger = LogManager.ForContext<SnykCli>();
-
         /// <summary>
         /// CLI name for Windows OS.
         /// </summary>
         public const string CliFileName = "snyk-win.exe";
+        private const string ApiEnvironmentVariableName = "SNYK_API";
+
+        private static readonly ILogger Logger = LogManager.ForContext<SnykCli>();
 
         private ISnykOptions options;
 
@@ -25,11 +27,6 @@
         /// Initializes a new instance of the <see cref="SnykCli"/> class.
         /// </summary>
         public SnykCli() => this.ConsoleRunner = new SnykConsoleRunner();
-
-        /// <summary>
-        /// Gets or sets a value indicating whether instance of <see cref="SnykConsoleRunner"/>.
-        /// </summary>
-        public SnykConsoleRunner ConsoleRunner { get; set; }
 
         /// <summary>
         /// Gets or sets a value indicating whether <see cref="ISnykOptions"/> (settings).
@@ -46,6 +43,11 @@
                 this.options = value;
             }
         }
+
+        /// <summary>
+        /// Gets or sets a value indicating whether instance of <see cref="SnykConsoleRunner"/>.
+        /// </summary>
+        public SnykConsoleRunner ConsoleRunner { get; set; }
 
         /// <summary>
         /// Get Snyk CLI file path.
@@ -69,7 +71,22 @@
         /// Call Snyk CLI auth for authentication. This will open authentication web page and store token in config file.
         /// </summary>
         /// <returns>Snyk API token.</returns>
-        public string Authenticate() => this.ConsoleRunner.Run(GetSnykCliPath(), "auth");
+        public string Authenticate()
+        {
+            var args = new List<string> { "auth" };
+            if (this.Options.IgnoreUnknownCA)
+            {
+                args.Add("--insecure");
+            }
+
+            var environmentVariables = new StringDictionary();
+            if (!string.IsNullOrEmpty(this.Options.CustomEndpoint))
+            {
+                environmentVariables.Add(ApiEnvironmentVariableName, this.Options.CustomEndpoint);
+            }
+
+            return this.ConsoleRunner.Run(GetSnykCliPath(), string.Join(" ", args), environmentVariables);
+        }
 
         /// <summary>
         /// Run snyk test to scan for vulnerabilities.
@@ -79,46 +96,52 @@
         public CliResult Scan(string basePath)
         {
             Logger.Information("Enter Scan() method");
-            Logger.Information($"Base path is {basePath}");
+            Logger.Information("Base path is {BasePath}", basePath);
 
-            string cliPath = GetSnykCliPath();
+            var cliPath = GetSnykCliPath();
+            Logger.Information("CLI path is {CliPath}", cliPath);
 
-            Logger.Information($"CLI path is {cliPath}");
-
-            this.ConsoleRunner.CreateProcess(cliPath, this.BuildArguments());
-
-            Logger.Information("Adding token");
-
-            if (!string.IsNullOrEmpty(this.Options.ApiToken))
-            {
-                Logger.Information("Token added from Options");
-
-                this.ConsoleRunner.Process.StartInfo.EnvironmentVariables["SNYK_TOKEN"] = this.Options.ApiToken;
-            }
-
-            this.ConsoleRunner.Process.StartInfo.WorkingDirectory = basePath;
+            this.ConsoleRunner.CreateProcess(cliPath, this.BuildScanArguments(), this.BuildScanEnvironmentVariables(), basePath);
 
             Logger.Information("Start run console process");
-
-            string consoleResult = this.ConsoleRunner.Execute();
+            var consoleResult = this.ConsoleRunner.Execute();
 
             Logger.Information("Leave Scan() method");
 
-            return this.ConvertRawCliStringToCliResult(consoleResult);
+            return ConvertRawCliStringToCliResult(consoleResult);
+        }
+
+        public StringDictionary BuildScanEnvironmentVariables()
+        {
+            var environmentVariables = new StringDictionary();
+            if (!string.IsNullOrEmpty(this.Options.ApiToken))
+            {
+                environmentVariables.Add("SNYK_TOKEN", this.Options.ApiToken);
+                Logger.Information("Token added from Options");
+            }
+
+            if (!string.IsNullOrEmpty(this.Options.CustomEndpoint))
+            {
+                environmentVariables.Add(ApiEnvironmentVariableName, this.Options.CustomEndpoint);
+                Logger.Information("Custom endpoint added from Options");
+            }
+
+            return environmentVariables;
         }
 
         /// <summary>
         /// Build arguments (options) for snyk cli depending on user settings.
         /// </summary>
         /// <returns>arguments string.</returns>
-        public string BuildArguments()
+        public string BuildScanArguments()
         {
             Logger.Information("Enter BuildArguments method");
 
-            var arguments = new List<string>();
-
-            arguments.Add("--json");
-            arguments.Add("test");
+            var arguments = new List<string>
+            {
+                "--json",
+                "test",
+            };
 
             if (!string.IsNullOrEmpty(this.Options.CustomEndpoint))
             {
@@ -152,7 +175,7 @@
 
             string cliOptions = string.Join(" ", arguments.ToArray());
 
-            Logger.Information($"Result CLI options {cliOptions}");
+            Logger.Information("Result CLI options {CliOptions}", cliOptions);
             Logger.Information("Leave BuildArguments method");
 
             return cliOptions;
@@ -166,7 +189,7 @@
         /// </summary>
         /// <param name="rawResult">Json string.</param>
         /// <returns>Result <see cref="CliResult"/> object.</returns>
-        public CliResult ConvertRawCliStringToCliResult(string rawResult)
+        public static CliResult ConvertRawCliStringToCliResult(string rawResult)
         {
             if (rawResult.First() == '[')
             {
@@ -176,12 +199,11 @@
                 };
             } else if (rawResult.First() == '{')
             {
-                if (this.IsSuccessCliJsonString(rawResult))
+                if (IsSuccessCliJsonString(rawResult))
                 {
                     var cliVulnerabilities = Json.Deserialize<CliVulnerabilities>(rawResult);
 
-                    var cliVulnerabilitiesList = new List<CliVulnerabilities>();
-                    cliVulnerabilitiesList.Add(cliVulnerabilities);
+                    var cliVulnerabilitiesList = new List<CliVulnerabilities> { cliVulnerabilities };
 
                     return new CliResult
                     {
@@ -213,6 +235,6 @@
         /// </summary>
         /// <param name="json">Source json string.</param>
         /// <returns>True if json string contains vulnerabilities object(s).</returns>
-        public bool IsSuccessCliJsonString(string json) => json.Contains("\"vulnerabilities\":") && !json.Contains("\"error\":");
+        public static bool IsSuccessCliJsonString(string json) => json.Contains("\"vulnerabilities\":") && !json.Contains("\"error\":");
     }
 }

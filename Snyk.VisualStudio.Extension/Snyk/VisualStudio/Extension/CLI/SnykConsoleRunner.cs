@@ -1,6 +1,8 @@
 ﻿namespace Snyk.VisualStudio.Extension.CLI
 {
     using System;
+    using System.Collections.Generic;
+    using System.Collections.Specialized;
     using System.Diagnostics;
     using System.Text;
     using Serilog;
@@ -18,7 +20,7 @@
         /// <summary>
         /// Gets or sets a value indicating whether process.
         /// </summary>
-        public Process Process { get; set; }
+        private Process Process { get; set; }
 
         /// <summary>
         /// Gets a value indicating whether is current process is stoped or still running.
@@ -30,10 +32,11 @@
         /// </summary>
         /// <param name="fileName">Path to file for run.</param>
         /// <param name="arguments">Arguments for programm to run.</param>
+        /// <param name="environmentVariables">Environment variables to set for a process.</param>
         /// <returns>Result string from programm.</returns>
-        public virtual string Run(string fileName, string arguments)
+        public virtual string Run(string fileName, string arguments, StringDictionary environmentVariables = null)
         {
-            this.CreateProcess(fileName, arguments);
+            this.CreateProcess(fileName, arguments, environmentVariables);
 
             return this.Execute();
         }
@@ -43,8 +46,10 @@
         /// </summary>
         /// <param name="fileName">Programm file name (full path).</param>
         /// <param name="arguments">Arguments for programm to run.</param>
+        /// <param name="environmentVariables">Environment variables to set for a process.</param>
+        /// <param name="workingDirectory">Working directory to set for a process.</param>
         /// <returns>Result process.</returns>
-        public virtual Process CreateProcess(string fileName, string arguments)
+        public virtual Process CreateProcess(string fileName, string arguments, StringDictionary environmentVariables = null, string workingDirectory = null)
         {
             var processStartInfo = new ProcessStartInfo
             {
@@ -55,8 +60,18 @@
                 CreateNoWindow = true,
             };
 
+            if (environmentVariables != null)
+            {
+                foreach (KeyValuePair<string, string> var in environmentVariables)
+                {
+                    processStartInfo.EnvironmentVariables.Add(var.Key, var.Value);
+                }
+            }
+
             processStartInfo.EnvironmentVariables["SNYK_INTEGRATION_NAME"] = SnykExtension.IntegrationName;
             processStartInfo.EnvironmentVariables["SNYK_INTEGRATION_VERSION"] = SnykExtension.GetIntegrationVersion();
+
+            processStartInfo.WorkingDirectory = workingDirectory;
 
             this.Process = new Process
             {
