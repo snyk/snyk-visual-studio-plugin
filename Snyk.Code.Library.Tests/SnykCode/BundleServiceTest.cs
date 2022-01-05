@@ -162,7 +162,7 @@
                 .Setup(codeClient => codeClient.ExtendBundleAsync(dummyBundleDto.Hash, It.IsAny<Dictionary<string, CodeFileDto>>(), It.IsAny<CancellationToken>()).Result)
                 .Returns(new BundleResponseDto());
 
-            bool isSuccess = await bundleService.UploadFilesAsync(createdBundle.Id, fileHashToContentDict, (state, progress) => { }, 60);
+            bool isSuccess = await bundleService.UploadFilesAsync(createdBundle.Id, fileHashToContentDict, (state, progress) => { }, 200);
 
             Assert.True(isSuccess);
 

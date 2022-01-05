@@ -21,8 +21,6 @@
 
         private const string LoginApiUrl = "login";
 
-        private const string CheckSessionApiUrl = "session";
-
         private const string FiltersApiUrl = "filters";
 
         private const string BundleApiUrl = "bundle";

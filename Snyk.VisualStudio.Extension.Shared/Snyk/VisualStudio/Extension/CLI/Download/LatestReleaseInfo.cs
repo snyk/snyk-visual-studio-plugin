@@ -1,7 +1,7 @@
 ﻿namespace Snyk.VisualStudio.Extension.CLI
 {
+    using Newtonsoft.Json;
     using System.Runtime.Serialization;
-    using System.Text.Json.Serialization;
 
     /// <summary>
     /// Represents latest CLI release information.
@@ -22,7 +22,7 @@
         /// <summary>
         /// Gets or sets a value indicating whether tag name.
         /// </summary>
-        [JsonPropertyName("tag_name")]
+        [JsonProperty("tag_name")]
         public string TagName { get; set; }
 
         /// <summary>

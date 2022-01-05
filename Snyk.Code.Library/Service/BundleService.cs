@@ -61,11 +61,22 @@
             {
                 var pathToHashAndContentDict = codeCacheService.CreateFilePathToHashAndContentDictionary(resultBundle.MissingFiles);
 
-                await this.UploadFilesAsync(resultBundle.Id, pathToHashAndContentDict, fireScanCodeProgressUpdate, cancellationToken: cancellationToken);
+                try
+                {
+                    await this.UploadFilesAsync(resultBundle.Id, pathToHashAndContentDict, fireScanCodeProgressUpdate, cancellationToken: cancellationToken);
+                }
+                catch (Exception e)
+                {
+                    Logger.Error(e, "Error on upload missing files");
+                }
 
                 resultBundle = await this.CheckBundleAsync(bundle.Id, cancellationToken);
 
-                if (resultBundle.MissingFiles.Count() == 0)
+                var missingFiles = resultBundle.MissingFiles;
+
+                Logger.Warning("Missing files: {0}", string.Join(", ", missingFiles));
+
+                if (missingFiles.Count() == 0)
                 {
                     return true;
                 }

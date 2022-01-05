@@ -161,7 +161,7 @@
 
             if (analysisResult.Status == "WAITING")
             {
-                System.Threading.Thread.Sleep(5000);
+                System.Threading.Thread.Sleep(15000);
 
                 analysisResult = await snykCodeClient.GetAnalysisAsync(createdBundle.Hash);
             }

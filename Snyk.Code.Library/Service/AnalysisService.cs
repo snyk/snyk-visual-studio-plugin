@@ -14,7 +14,7 @@
     /// <inheritdoc/>
     public class AnalysisService : IAnalysisService
     {
-        public const int RequestAttempts = 720;
+        public const int RequestAttempts = 900;
 
         private const int RequestTimeout = 1000;
 
@@ -62,7 +62,21 @@
             {
                 cancellationToken.ThrowIfCancellationRequested();
 
-                var analysisResultDto = await this.codeClient.GetAnalysisAsync(bundleHash, cancellationToken);
+                AnalysisResultDto analysisResultDto;
+
+                try
+                {
+                    analysisResultDto = await this.codeClient.GetAnalysisAsync(bundleHash, cancellationToken);
+                }
+                catch (Exception e)
+                {
+                    Logger.Error(e, "Error on try to get analysis.");
+
+                    analysisResultDto = new AnalysisResultDto
+                    {
+                        Status = AnalysisStatus.Waiting,
+                    };
+                }
 
                 Logger.Debug($"Request analysis status {analysisResultDto.Status}");
 
@@ -73,6 +87,8 @@
                 switch (analysisResultDto.Status)
                 {
                     case AnalysisStatus.Complete:
+                        Logger.Information("SnykCode service return {Status} status.", analysisResultDto.Status);
+
                         return analysisResultDto;
 
                     case AnalysisStatus.Failed:
@@ -80,7 +96,7 @@
 
                     case AnalysisStatus.Waiting:
                     default:
-                        Logger.Information("SnykCode service return {Status} status. Sleep for {requestAttempts} timeout.", analysisResultDto.Status, requestAttempts);
+                        Logger.Information("SnykCode service return {Status} status. Sleep for 1 second timeout.", analysisResultDto.Status);
 
                         Thread.Sleep(RequestTimeout);
                         break;

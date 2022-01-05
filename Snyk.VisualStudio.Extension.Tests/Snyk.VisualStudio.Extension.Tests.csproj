@@ -35,6 +35,7 @@
   <ItemGroup>    
     <PackageReference Include="Microsoft.NET.Test.Sdk" Version="16.7.1" />    
     <PackageReference Include="Moq" Version="4.16.1" />
+    <PackageReference Include="Newtonsoft.Json" Version="13.0.1" />
     <PackageReference Include="SerilogAnalyzer" Version="0.15.0" />
     <PackageReference Include="StyleCop.Analyzers" Version="1.1.118">
       <PrivateAssets>all</PrivateAssets>

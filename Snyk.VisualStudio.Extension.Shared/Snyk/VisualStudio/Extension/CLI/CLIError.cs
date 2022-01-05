@@ -1,7 +1,7 @@
 ﻿namespace Snyk.VisualStudio.Extension.CLI
 {
     using System.Runtime.Serialization;
-    using System.Text.Json.Serialization;
+    using Newtonsoft.Json;
 
     /// <summary>
     /// Snyk Open source error object.
@@ -23,18 +23,19 @@
         /// <summary>
         /// Gets or sets a value indicating whether is success. In Json it's "ok" property.
         /// </summary>
-        [JsonPropertyName("ok")]
+        [JsonProperty("ok")]
         public bool IsSuccess { get; set; }
 
         /// <summary>
         /// Gets or sets a value indicating whether error message.
         /// </summary>
-        [JsonPropertyName("error")]
+        [JsonProperty("error")]
         public string Message { get; set; }
 
         /// <summary>
         /// Gets or sets a value indicating whether error path.
         /// </summary>
+        [JsonProperty("path")]
         public string Path { get; set; }
     }
 }
