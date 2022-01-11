@@ -3,6 +3,7 @@
     using System;
     using System.Collections.Generic;
     using System.Linq;
+    using System.Net.Http;
     using System.Text;
     using System.Threading;
     using System.Threading.Tasks;
@@ -61,11 +62,25 @@
             {
                 var pathToHashAndContentDict = codeCacheService.CreateFilePathToHashAndContentDictionary(resultBundle.MissingFiles);
 
-                await this.UploadFilesAsync(resultBundle.Id, pathToHashAndContentDict, fireScanCodeProgressUpdate, cancellationToken: cancellationToken);
+                try
+                {
+                    await this.UploadFilesAsync(resultBundle.Id, pathToHashAndContentDict, fireScanCodeProgressUpdate, cancellationToken: cancellationToken);
+                }
+                catch (HttpRequestException e)
+                {
+                    // This catch handle possible network connection issues.
+                    // If some network connection problem appear this catch just log it and method
+                    // try to upload files on next iteration.
+                    Logger.Error(e, "Error on upload missing files");
+                }
 
                 resultBundle = await this.CheckBundleAsync(bundle.Id, cancellationToken);
 
-                if (resultBundle.MissingFiles.Count() == 0)
+                var missingFiles = resultBundle.MissingFiles;
+
+                Logger.Information("Missing files: {0}", string.Join(", ", missingFiles));
+
+                if (missingFiles.Count() == 0)
                 {
                     return true;
                 }

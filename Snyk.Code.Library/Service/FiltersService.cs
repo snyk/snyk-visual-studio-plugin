@@ -1,5 +1,6 @@
 ﻿namespace Snyk.Code.Library.Service
 {
+    using System;
     using System.Collections.Generic;
     using System.IO;
     using System.Linq;
@@ -13,6 +14,8 @@
     /// <inheritdoc/>
     public class FiltersService : IFiltersService
     {
+        private const int MaxFileSize = SnykCodeClient.MaxBundleSize;
+
         private static readonly ILogger Logger = LogManager.ForContext<FiltersService>();
 
         private readonly string[] defaultIgnoreDirectories = new string[] { "node_modules", ".vs", ".github" };
@@ -42,7 +45,17 @@
             var configFileFilters = filters.ConfigFiles;
 
             return filePaths
-                    .Where(path => !this.IsFileInIgnoredDirectory(path) && (extensionFilters.Contains(Path.GetExtension(path)) || configFileFilters.Contains(Path.GetFileName(path))))
+                    .Where(path =>
+                    {
+                        if (configFileFilters.Contains(Path.GetFileName(path))
+                            || this.IsFileInIgnoredDirectory(path)
+                            || this.IsFileSizeLargerThanMaximum(path))
+                        {
+                            return false;
+                        }
+
+                        return extensionFilters.Contains(Path.GetExtension(path));
+                    })
                     .ToList();
         }
 
@@ -62,6 +75,18 @@
             }
 
             return false;
+        }
+
+        private bool IsFileSizeLargerThanMaximum(string path)
+        {
+            try
+            {
+                return new FileInfo(path).Length > MaxFileSize;
+            }
+            catch (Exception e)
+            {
+                return true;
+            }
         }
 
         private async Task<FiltersDto> GetFiltersAsync()

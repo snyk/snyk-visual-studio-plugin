@@ -174,14 +174,20 @@
 
             await this.InitializeGeneralOptionsAsync();
 
-            new Task(() =>
-            {
-                this.serviceProvider.AnalyticsService.ObtainUser(this.serviceProvider.GetApiToken());
-            }).Start();
+            this.serviceProvider.AnalyticsService.ObtainUser(this.serviceProvider.GetApiToken());
+
+            Logger.Information("Initialize Commands()");
+
+            await SnykScanCommand.InitializeAsync(this);
+            await SnykStopCurrentTaskCommand.InitializeAsync(this);
+            await SnykCleanPanelCommand.InitializeAsync(this);
+            await SnykOpenSettingsCommand.InitializeAsync(this);
 
             Logger.Information("Start Initialize tool window. Before call GetToolWindowControl() method.");
 
             await this.InitializeToolWindowAsync();
+
+            VsStatusBarNotificationService.Instance.InitializeEventListeners(this.serviceProvider);
 
             Logger.Information("Before call toolWindowControl.InitializeEventListeners() method.");
 

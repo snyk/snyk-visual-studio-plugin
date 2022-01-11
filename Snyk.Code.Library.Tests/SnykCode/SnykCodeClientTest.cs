@@ -161,7 +161,7 @@
 
             if (analysisResult.Status == "WAITING")
             {
-                System.Threading.Thread.Sleep(5000);
+                System.Threading.Thread.Sleep(15000);
 
                 analysisResult = await snykCodeClient.GetAnalysisAsync(createdBundle.Hash);
             }
@@ -378,14 +378,6 @@
             Assert.NotNull(filters);
             Assert.NotNull(filters.Extensions);
             Assert.NotNull(filters.ConfigFiles);
-        }
-
-        [Fact]
-        public void SnykCodeClient_WrongPayloadProvided_ChecksFailed()
-        {
-            var snykCodeClient = new SnykCodeClient(TestSettings.SnykCodeApiUrl, string.Empty);
-
-            _ = Assert.ThrowsAsync<AggregateException>(() => snykCodeClient.LoginAsync("\\{"));
         }
 
         [Fact]

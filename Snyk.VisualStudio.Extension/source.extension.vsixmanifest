@@ -21,7 +21,8 @@
     </Dependencies>
     <Assets>
         <Asset Type="Microsoft.VisualStudio.VsPackage" d:Source="Project" d:ProjectName="%CurrentProject%" Path="|%CurrentProject%;PkgdefProjectOutputGroup|" />
-        <Asset Type="Microsoft.VisualStudio.Assembly" d:Source="File" Path="Analytics.dll" AssemblyName="Analytics, Version=3.8.0.0, Culture=neutral, PublicKeyToken=null" />
+        <Asset Type="Microsoft.VisualStudio.Assembly" d:Source="File" Path="Analytics.dll" AssemblyName="Analytics, Version=3.7.0.0, Culture=neutral, PublicKeyToken=null" />
+        <Asset Type="Microsoft.VisualStudio.Assembly" d:Source="File" Path="Newtonsoft.Json.dll" AssemblyName="Newtonsoft.Json, Version=12.0.0.0, Culture=neutral, PublicKeyToken=30ad4fe6b2a6aeed" />
         <Asset Type="Microsoft.VisualStudio.Assembly" d:Source="File" Path="MAB.DotIgnore.dll" AssemblyName="MAB.DotIgnore, Version=3.0.0.0, Culture=neutral, PublicKeyToken=bb17585c8bff981a" />
     </Assets>
     <Prerequisites>
