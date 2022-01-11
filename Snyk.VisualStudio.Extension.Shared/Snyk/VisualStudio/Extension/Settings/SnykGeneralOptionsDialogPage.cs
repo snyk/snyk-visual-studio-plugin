@@ -75,7 +75,7 @@
         /// <inheritdoc/>
         public bool OssEnabled
         {
-            get => this.userStorageSettingsService.GetOssEnabled();
+            get => this.userStorageSettingsService.IsOssEnabled();
             set
             {
                 this.userStorageSettingsService?.SaveOssEnabled(value);
@@ -87,7 +87,7 @@
         /// <inheritdoc/>
         public bool SnykCodeSecurityEnabled
         {
-            get => this.userStorageSettingsService.GetSnykCodeSecurityEnabled();
+            get => this.userStorageSettingsService.IsSnykCodeSecurityEnabled();
             set
             {
                 this.userStorageSettingsService?.SaveSnykCodeSecurityEnabled(value);
@@ -99,7 +99,7 @@
         /// <inheritdoc/>
         public bool SnykCodeQualityEnabled
         {
-            get => this.userStorageSettingsService.GetSnykCodeQualityEnabled();
+            get => this.userStorageSettingsService.IsSnykCodeQualityEnabled();
             set
             {
                 this.userStorageSettingsService?.SaveSnykCodeQualityEnabled(value);

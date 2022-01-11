@@ -1,8 +1,10 @@
 ﻿namespace Snyk.VisualStudio.Extension.Settings
 {
     using System;
-    using EnvDTE;
     using CLI;
+    using EnvDTE;
+    using Serilog;
+    using Snyk.Common;
     using Snyk.VisualStudio.Extension.Service;
 
     /// <summary>
@@ -10,7 +12,7 @@
     /// </summary>
     public class SnykUserStorageSettingsService
     {
-        private readonly SnykActivityLogger logger;
+        private static readonly ILogger Logger = LogManager.ForContext<SnykUserStorageSettingsService>();
 
         private readonly SnykSolutionService solutionService;
 
@@ -21,11 +23,9 @@
         public SnykUserStorageSettingsService(ISnykServiceProvider serviceProvider)
         {
             this.solutionService = serviceProvider.SolutionService;
-
-            this.logger = serviceProvider.ActivityLogger;
         }
 
-        private SnykSettingsLoader SettingsLoader => new SnykSettingsLoader { Logger = this.logger, };
+        private SnykSettingsLoader SettingsLoader => new SnykSettingsLoader();
 
         /// <summary>
         /// Get CLI additional options string.
@@ -90,6 +90,78 @@
         }
 
         /// <summary>
+        /// Save snyk code security enalbed.
+        /// </summary>
+        /// <param name="enabled">Snyk code security enabled or disabled.</param>
+        public void SaveSnykCodeSecurityEnabled(bool enabled)
+        {
+            var settings = this.LoadSettings();
+
+            settings.SnykCodeSecurityEnabled = enabled;
+
+            this.SettingsLoader.Save(settings);
+        }
+
+        /// <summary>
+        /// Get snyk code quality enabled.
+        /// </summary>
+        /// <returns>Bool.</returns>
+        public bool IsSnykCodeQualityEnabled()
+        {
+            var settings = this.SettingsLoader.Load();
+
+            return settings == null ? true : settings.SnykCodeQualityEnabled;
+        }
+
+        /// <summary>
+        /// Save snyk code quality enalbed.
+        /// </summary>
+        /// <param name="enabled">Snyk code quality enabled or disabled.</param>
+        public void SaveSnykCodeQualityEnabled(bool enabled)
+        {
+            var settings = this.LoadSettings();
+
+            settings.SnykCodeQualityEnabled = enabled;
+
+            this.SettingsLoader.Save(settings);
+        }
+
+        /// <summary>
+        /// Get snyk code security enabled.
+        /// </summary>
+        /// <returns>Bool.</returns>
+        public bool IsSnykCodeSecurityEnabled()
+        {
+            var settings = this.SettingsLoader.Load();
+
+            return settings == null ? true : settings.SnykCodeSecurityEnabled;
+        }
+
+        /// <summary>
+        /// Save oss enabled.
+        /// </summary>
+        /// <param name="enabled">Enabled or disabled oss.</param>
+        public void SaveOssEnabled(bool enabled)
+        {
+            var settings = this.LoadSettings();
+
+            settings.OssEnabled = enabled;
+
+            this.SettingsLoader.Save(settings);
+        }
+
+        /// <summary>
+        /// Get oss enabled.
+        /// </summary>
+        /// <returns>Bool.</returns>
+        public bool IsOssEnabled()
+        {
+            var settings = this.SettingsLoader.Load();
+
+            return settings == null ? true : settings.OssEnabled;
+        }
+
+        /// <summary>
         /// Get usage analytics enabled.
         /// </summary>
         /// <returns>Bool.</returns>
@@ -106,12 +178,7 @@
         /// <param name="usageAnalyticsEnabled">Bool param.</param>
         public void SaveUsageAnalyticsEnabled(bool usageAnalyticsEnabled)
         {
-            var settings = this.SettingsLoader.Load();
-
-            if (settings == null)
-            {
-                settings = new SnykSettings();
-            }
+            var settings = this.LoadSettings();
 
             settings.UsageAnalyticsEnabled = usageAnalyticsEnabled;
 
@@ -212,7 +279,7 @@
 
             this.SettingsLoader.Save(settings);
 
-            this.logger.LogInformation("Leave SaveAdditionalOptions method");
+            Logger.Information("Leave SaveAdditionalOptions method");
         }
 
         /// <summary>
@@ -256,7 +323,7 @@
 
             this.SettingsLoader.Save(settings);
 
-            this.logger.LogInformation("Leave SaveIsAllProjectsScan method");
+            Logger.Information("Leave SaveIsAllProjectsScan method");
         }
 
         /// <summary>
@@ -279,6 +346,18 @@
             Logger.Information($"Leave GetProjectUniqueName method. Project unique name: {project.UniqueName}");
 
             return project.UniqueName;
+        }
+
+        private SnykSettings LoadSettings()
+        {
+            var settings = this.SettingsLoader.Load();
+
+            if (settings == null)
+            {
+                settings = new SnykSettings();
+            }
+
+            return settings;
         }
     }
 }

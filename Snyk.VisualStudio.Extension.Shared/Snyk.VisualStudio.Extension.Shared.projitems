@@ -136,9 +136,12 @@
     <Compile Include="$(MSBuildThisFileDirectory)Snyk\VisualStudio\Extension\Settings\SnykProjectOptionsUserControl.Designer.cs">
       <DependentUpon>SnykProjectOptionsUserControl.cs</DependentUpon>
     </Compile>
+    <Compile Include="$(MSBuildThisFileDirectory)Snyk\VisualStudio\Extension\Settings\SnykProjectSettings.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Snyk\VisualStudio\Extension\Settings\SnykSettings.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Snyk\VisualStudio\Extension\Settings\SnykSettingsChangedEventArgs.cs">
       <CopyToOutputDirectory>Never</CopyToOutputDirectory>
     </Compile>
+    <Compile Include="$(MSBuildThisFileDirectory)Snyk\VisualStudio\Extension\Settings\SnykSettingsLoader.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Snyk\VisualStudio\Extension\Settings\SnykUserStorageSettingsService.cs">
       <CopyToOutputDirectory>Never</CopyToOutputDirectory>
     </Compile>

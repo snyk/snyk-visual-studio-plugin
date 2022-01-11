@@ -244,5 +244,11 @@
 
             return filesList;
         }
+
+        private bool IsFlatProjectOrWebSite(Solution solution, Projects projects) => solution.IsDirty && projects.Count > 0;
+
+        private bool IsSolutionWithProjects(Solution solution, Projects projects) => !solution.IsDirty && projects.Count > 0;
+
+        private bool IsFolder(Solution solution, Projects projects) => !solution.IsDirty && projects.Count == 0;
     }
 }
