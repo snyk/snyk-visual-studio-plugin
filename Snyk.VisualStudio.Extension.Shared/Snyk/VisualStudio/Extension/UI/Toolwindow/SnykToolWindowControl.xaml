@@ -6,6 +6,8 @@
              xmlns:tree="clr-namespace:Snyk.VisualStudio.Extension.UI.Tree"
              xmlns:window="clr-namespace:Snyk.VisualStudio.Extension.UI.Toolwindow"
              mc:Ignorable="d"
+             xmlns:toolkit="clr-namespace:Community.VisualStudio.Toolkit;assembly=Community.VisualStudio.Toolkit"
+             toolkit:Themes.UseVsTheme="True"
              d:DesignHeight="300" d:DesignWidth="300"
              Name="SnykToolWindow" Loaded="SnykToolWindow_Loaded">
     <UserControl.Resources>

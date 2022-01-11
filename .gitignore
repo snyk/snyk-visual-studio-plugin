@@ -242,8 +242,8 @@ ModelManifest.xml
 .fake/
 
 # Private information.
-Snyk.Common/appsettings.json
 Snyk.VisualStudio.Extension/appsettings.json
+Snyk.VisualStudio.Extension.2022/appsettings.json
 snyk-visual-studio-plugin/appsettings.json
 Snyk.Code.Library.Tests/settings.json
 *.dccache*

@@ -4,6 +4,7 @@
     using System.Threading;
     using System.Threading.Tasks;
     using EnvDTE;
+    using EnvDTE80;
     using Microsoft.VisualStudio.Settings;
     using Microsoft.VisualStudio.Shell.Settings;
     using Serilog;
@@ -38,7 +39,7 @@
 
         private SnykSolutionService solutionService;
 
-        private DTE dte;
+        private DTE2 dte;
 
         private SnykAnalyticsService analyticsService;
 
@@ -88,7 +89,7 @@
         /// <summary>
         /// Gets VS dte instance.
         /// </summary>
-        public DTE DTE => this.dte;
+        public DTE2 DTE => this.dte;
 
         /// <summary>
         /// Gets Snyk Extension package intance.
@@ -210,7 +211,7 @@
 
             await SnykTasksService.InitializeAsync(this);
 
-            this.dte = await this.serviceProvider.GetServiceAsync(typeof(DTE)) as DTE;
+            this.dte = await this.serviceProvider.GetServiceAsync(typeof(DTE)) as DTE2;
 
             await SnykSolutionService.InitializeAsync(this);
 
@@ -255,7 +256,7 @@
                 var options = this.Options;
 
                 string endpoint = string.IsNullOrEmpty(options.CustomEndpoint)
-                    ? SnykExtension.GetAppSettings().SnykCodeApiEndpoinUrl : options.CustomEndpoint;
+                    ? SnykExtension.GetAppSettings().SnykCodeApiEndpointUrl : options.CustomEndpoint;
 
                 this.snykCodeService = CodeServiceFactory
                     .CreateSnykCodeService(options.ApiToken, endpoint, this.SolutionService.FileProvider);

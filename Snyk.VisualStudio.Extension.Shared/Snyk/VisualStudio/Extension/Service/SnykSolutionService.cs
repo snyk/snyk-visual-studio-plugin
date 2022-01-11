@@ -15,7 +15,7 @@
     /// <summary>
     /// Incapsulate logic for work with Visual Studio solutions.
     /// </summary>
-    public class SnykSolutionService : IVsSolutionLoadManager, ISolutionService
+    public class SnykSolutionService : ISolutionService
     {
         private static readonly ILogger Logger = LogManager.ForContext<SnykSolutionService>();
 
@@ -129,20 +129,6 @@
 
             return Path.Combine(baseDirPath, relativePath);
         }
-
-        /// <summary>
-        /// Handle before open project event.
-        /// </summary>
-        /// <param name="guidProjectID">Project id.</param>
-        /// <param name="guidProjectType">Project type.</param>
-        /// <param name="pszFileName">file name.</param>
-        /// <param name="pSLMgrSupport">Support.</param>
-        /// <returns>Ok constant.</returns>
-        public int OnBeforeOpenProject(
-            ref Guid guidProjectID,
-            ref Guid guidProjectType,
-            string pszFileName,
-            IVsSolutionLoadManagerSupport pSLMgrSupport) => VSConstants.S_OK;
 
         /// <summary>
         /// Handle Disconnect event.

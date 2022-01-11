@@ -2,8 +2,6 @@
 {
     using System;
     using System.Diagnostics.CodeAnalysis;
-    using System.IO;
-    using System.Reflection;
     using System.Runtime.InteropServices;
     using System.Threading;
     using System.Threading.Tasks;
@@ -187,6 +185,11 @@
 
             Logger.Information("Before call toolWindowControl.InitializeEventListeners() method.");
 
+            await SnykScanCommand.InitializeAsync(this);
+            await SnykStopCurrentTaskCommand.InitializeAsync(this);
+            await SnykCleanPanelCommand.InitializeAsync(this);
+            await SnykOpenSettingsCommand.InitializeAsync(this);
+
             new Task(() =>
             {
                 VsStatusBarNotificationService.Instance.InitializeEventListeners(this.serviceProvider);
@@ -195,11 +198,6 @@
             }).Start();
 
             Logger.Information("Initialize Commands()");
-
-            await SnykScanCommand.InitializeAsync(this);
-            await SnykStopCurrentTaskCommand.InitializeAsync(this);
-            await SnykCleanPanelCommand.InitializeAsync(this);
-            await SnykOpenSettingsCommand.InitializeAsync(this);
 
             new Task(() => this.toolWindowControl.Initialize(this.serviceProvider)).Start();
 

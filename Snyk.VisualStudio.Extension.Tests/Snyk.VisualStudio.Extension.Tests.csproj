@@ -32,29 +32,14 @@
     </EmbeddedResource>
   </ItemGroup>
 
-  <ItemGroup>
-    <PackageReference Include="EnvDTE" Version="16.7.30328.74" />
-    <PackageReference Include="Microsoft.CodeAnalysis.NetAnalyzers" Version="5.0.3">
-      <PrivateAssets>all</PrivateAssets>
-      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
-    </PackageReference>
-    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="16.7.1" />
-    <PackageReference Include="Microsoft.VisualStudio.OLE.Interop" Version="16.7.30328.74" />
-    <PackageReference Include="Microsoft.VisualStudio.SDK.Analyzers" Version="15.8.33" />
-    <PackageReference Include="Microsoft.VisualStudio.Shell.14.0" Version="14.3.25407" />
-    <PackageReference Include="Microsoft.VisualStudio.Shell.Immutable.14.0" Version="14.3.25407" />
-    <PackageReference Include="Microsoft.VisualStudio.Shell.Interop" Version="16.7.30328.74" />
-    <PackageReference Include="Microsoft.VisualStudio.Threading.Analyzers" Version="16.10.56">
-      <PrivateAssets>all</PrivateAssets>
-      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
-    </PackageReference>
+  <ItemGroup>    
+    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="16.7.1" />    
     <PackageReference Include="Moq" Version="4.16.1" />
     <PackageReference Include="SerilogAnalyzer" Version="0.15.0" />
     <PackageReference Include="StyleCop.Analyzers" Version="1.1.118">
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
     </PackageReference>
-    <PackageReference Include="System.Runtime.CompilerServices.Unsafe" Version="5.0.0" />
     <PackageReference Include="xunit" Version="2.4.1" />
     <PackageReference Include="xunit.runner.visualstudio" Version="2.4.3">
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
