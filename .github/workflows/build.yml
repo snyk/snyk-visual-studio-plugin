@@ -7,7 +7,7 @@ on:
 
 env:
   SOLUTION_FILE_PATH: .
-  DEFAULT_BRANCH: feat/snykcode-dev
+  DEFAULT_BRANCH: main
 
 jobs:
   build:
