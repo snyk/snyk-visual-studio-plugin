@@ -33,7 +33,7 @@
         /// <summary>
         /// Path from this class folder to Resources folder.
         /// </summary>
-        private const string ResourcesDirectoryPath = "..\\..\\..\\..\\..\\Resources\\";
+        private const string ResourcesDirectoryPath = "pack://application:,,,/Snyk.VisualStudio.Extension;component/";
 
         private const string NugetIconPath = ResourcesDirectoryPath + "NugetLogo.png";
         private const string NpmIconPath = ResourcesDirectoryPath + "NpmLogo.png";
@@ -47,10 +47,10 @@
         private const string SeverityMediumIconPath = ResourcesDirectoryPath + "SeverityMedium.png";
         private const string SeverityLowIconPath = ResourcesDirectoryPath + "SeverityLow.png";
 
-        private const string SeverityCritical24IconName = "SeverityCritical24.png";
-        private const string SeverityHigh24IconName = "SeverityHigh24.png";
-        private const string SeverityMedium24IconName = "SeverityMedium24.png";
-        private const string SeverityLow24IconName = "SeverityLow24.png";
+        private const string SeverityCritical24IconName = ResourcesDirectoryPath + "SeverityCritical24.png";
+        private const string SeverityHigh24IconName = ResourcesDirectoryPath + "SeverityHigh24.png";
+        private const string SeverityMedium24IconName = ResourcesDirectoryPath + "SeverityMedium24.png";
+        private const string SeverityLow24IconName = ResourcesDirectoryPath + "SeverityLow24.png";
 
         private const string JsFileIconPath = ResourcesDirectoryPath + "JSScript.png";
         private const string CsFileIconPath = ResourcesDirectoryPath + "CSFileNode.png";
@@ -220,24 +220,24 @@
         /// <returns>Icon path.</returns>
         public static ImageSource GetSeverityIconSource(string severity)
         {
-            string iconPath = @"/Snyk.VisualStudio.Extension;component/Resources/";
+            string iconPath;
 
             switch (severity)
             {
                 case Severity.Critical:
-                    iconPath += SeverityCritical24IconName;
+                    iconPath = SeverityCritical24IconName;
 
                     break;
                 case Severity.High:
-                    iconPath += SeverityHigh24IconName;
+                    iconPath = SeverityHigh24IconName;
 
                     break;
                 case Severity.Medium:
-                    iconPath += SeverityMedium24IconName;
+                    iconPath = SeverityMedium24IconName;
 
                     break;
                 case Severity.Low:
-                    iconPath += SeverityLow24IconName;
+                    iconPath = SeverityLow24IconName;
 
                     break;
                 default:

@@ -1,7 +1,7 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <PackageManifest Version="2.0.0" xmlns="http://schemas.microsoft.com/developer/vsx-schema/2011" xmlns:d="http://schemas.microsoft.com/developer/vsx-schema-design/2011">
     <Metadata>
-        <Identity Id="snyk_visual_studio_plugin.154948da-e3ba-45ce-9bee-9688a7e30462" Version="1.1.0" Language="en-US" Publisher="Snyk" />
+        <Identity Id="snyk_visual_studio_plugin.154948da-e3ba-45ce-9bee-9688a7e30462" Version="1.2.1" Language="en-US" Publisher="Snyk" />
         <DisplayName>Snyk Vulnerability Scanner</DisplayName>
         <Description xml:space="preserve">Snyk’s Vulnerability Scanner helps you find and fix security vulnerabilities in your projects. Within a few seconds, the extension will provide a list of all the different types of security vulnerabilities identified together with actionable fix advice.</Description>
         <MoreInfo>https://github.com/snyk/snyk-visual-studio-plugin/</MoreInfo>
@@ -21,8 +21,8 @@
     </Dependencies>
     <Assets>
         <Asset Type="Microsoft.VisualStudio.VsPackage" d:Source="Project" d:ProjectName="%CurrentProject%" Path="|%CurrentProject%;PkgdefProjectOutputGroup|" />
-        <Asset Type="Microsoft.VisualStudio.Assembly" d:Source="File" Path="Analytics.dll" AssemblyName="Analytics, Version=3.7.0.0, Culture=neutral, PublicKeyToken=null" />
-        <Asset Type="Microsoft.VisualStudio.Assembly" d:Source="File" Path="Newtonsoft.Json.dll" AssemblyName="Newtonsoft.Json, Version=12.0.0.0, Culture=neutral, PublicKeyToken=30ad4fe6b2a6aeed" />
+        <Asset Type="Microsoft.VisualStudio.Assembly" d:Source="File" Path="Analytics.dll" AssemblyName="Analytics, Version=3.8.0.0, Culture=neutral, PublicKeyToken=null" />
+        <Asset Type="Microsoft.VisualStudio.Assembly" d:Source="File" Path="MAB.DotIgnore.dll" AssemblyName="MAB.DotIgnore, Version=3.0.0.0, Culture=neutral, PublicKeyToken=bb17585c8bff981a" />
     </Assets>
     <Prerequisites>
         <Prerequisite Id="Microsoft.VisualStudio.Component.CoreEditor" Version="[15.0,]" DisplayName="Visual Studio core editor" />

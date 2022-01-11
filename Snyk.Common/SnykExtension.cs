@@ -32,7 +32,7 @@
         {
             if (appSettings == null)
             {
-                string extensionPath = SnykExtension.GetExtensionDirectoryPath();
+                string extensionPath = GetExtensionDirectoryPath();
 
                 string appsettingsPath = Path.Combine(extensionPath, AppSettingsFileName);
 
@@ -70,9 +70,11 @@
 
                     version = identity.GetAttribute("Version");
                 }
-                catch (Exception exception)
+                catch (Exception e)
                 {
-                    Console.WriteLine(exception.Message);
+                    var logger = LogManager.ForContext<SnykExtension>();
+
+                    logger.Error(e, "Try to get VS integration version method.");
                 }
             }
 

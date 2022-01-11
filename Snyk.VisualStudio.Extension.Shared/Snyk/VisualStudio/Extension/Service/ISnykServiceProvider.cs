@@ -3,6 +3,7 @@
     using System;
     using System.Threading.Tasks;
     using EnvDTE;
+    using EnvDTE80;
     using Microsoft.VisualStudio.Settings;
     using Microsoft.VisualStudio.Shell;
     using Snyk.Code.Library.Service;
@@ -19,7 +20,7 @@
         /// <summary>
         /// Gets VisualStudio DTE object instance.
         /// </summary>
-        DTE DTE { get; }
+        DTE2 DTE { get; }
 
         /// <summary>
         /// Gets Snyk package instance.

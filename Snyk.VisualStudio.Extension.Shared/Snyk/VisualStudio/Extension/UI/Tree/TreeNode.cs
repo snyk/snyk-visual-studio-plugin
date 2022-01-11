@@ -30,6 +30,11 @@
         public virtual bool IsRoot => false;
 
         /// <summary>
+        /// Gets a value indicating whether a node font weight normal or bold.
+        /// </summary>
+        public virtual string FontWeight => "Normal";
+
+        /// <summary>
         /// Gets a value indicating whether is node enabled/disabled.
         /// </summary>
         public virtual bool Enabled => true;

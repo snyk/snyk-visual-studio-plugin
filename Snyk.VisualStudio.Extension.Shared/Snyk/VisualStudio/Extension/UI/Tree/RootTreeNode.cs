@@ -61,6 +61,9 @@
         /// <inheritdoc/>
         public override bool IsRoot => true;
 
+        /// <inheritdoc/>
+        public override string FontWeight => "Bold";
+
         /// <summary>
         /// Gets a value indicating whether is root node enabled.
         /// </summary>
