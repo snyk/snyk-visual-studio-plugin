@@ -2,6 +2,7 @@
 {
     using System;
     using System.Linq;
+    using System.Net.Http;
     using System.Threading;
     using System.Threading.Tasks;
     using Serilog;
@@ -68,8 +69,11 @@
                 {
                     analysisResultDto = await this.codeClient.GetAnalysisAsync(bundleHash, cancellationToken);
                 }
-                catch (Exception e)
+                catch (HttpRequestException e)
                 {
+                    // This catch handle possible network connection issues.
+                    // If some network connection problem appear this catch just log it and method
+                    // try to get analysis results on next iteration.
                     Logger.Error(e, "Error on try to get analysis.");
 
                     analysisResultDto = new AnalysisResultDto

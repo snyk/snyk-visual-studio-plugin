@@ -3,6 +3,7 @@
     using System;
     using System.Collections.Generic;
     using System.Linq;
+    using System.Net.Http;
     using System.Text;
     using System.Threading;
     using System.Threading.Tasks;
@@ -65,8 +66,11 @@
                 {
                     await this.UploadFilesAsync(resultBundle.Id, pathToHashAndContentDict, fireScanCodeProgressUpdate, cancellationToken: cancellationToken);
                 }
-                catch (Exception e)
+                catch (HttpRequestException e)
                 {
+                    // This catch handle possible network connection issues.
+                    // If some network connection problem appear this catch just log it and method
+                    // try to upload files on next iteration.
                     Logger.Error(e, "Error on upload missing files");
                 }
 
@@ -74,7 +78,7 @@
 
                 var missingFiles = resultBundle.MissingFiles;
 
-                Logger.Warning("Missing files: {0}", string.Join(", ", missingFiles));
+                Logger.Information("Missing files: {0}", string.Join(", ", missingFiles));
 
                 if (missingFiles.Count() == 0)
                 {

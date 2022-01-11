@@ -381,14 +381,6 @@
         }
 
         [Fact]
-        public void SnykCodeClient_WrongPayloadProvided_ChecksFailed()
-        {
-            var snykCodeClient = new SnykCodeClient(TestSettings.SnykCodeApiUrl, string.Empty);
-
-            _ = Assert.ThrowsAsync<AggregateException>(() => snykCodeClient.LoginAsync("\\{"));
-        }
-
-        [Fact]
         public void SnykCodeClient_WaitingAnalysisResultJsonProvided_DeserialisationAnalysisJsonSuccess()
         {
             var analysisResultDto = Json.Deserialize<AnalysisResultDto>("{\"status\":\"ANALYZING\",\"progress\":0.5,\"complete\":false}");

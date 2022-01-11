@@ -19,8 +19,6 @@
         /// </summary>
         public const int MaxBundleSize = 4000000;
 
-        private const string LoginApiUrl = "login";
-
         private const string FiltersApiUrl = "filters";
 
         private const string BundleApiUrl = "bundle";
@@ -255,40 +253,6 @@
                     if (response.IsSuccessStatusCode)
                     {
                         return Json.Deserialize<FiltersDto>(responseText);
-                    }
-                    else
-                    {
-                        throw new SnykCodeException((int)response.StatusCode, responseText);
-                    }
-                }
-            }
-        }
-
-        /// <summary>
-        /// Requests the creation of a new login session.
-        /// <param name="userAgent">Represents requested client. For example, VisualStudio or VisualStudio code or other IDE.</param>
-        /// /// <returns><see cref="LoginResponseDto"/> object.</returns>
-        /// </summary>
-        /// <param name="userAgent">Optional parameter with again (VisualStudio for example).</param>
-        /// <returns><see cref="loginResponse"/> object.</returns>
-        public async Task<LoginResponseDto> LoginAsync(string userAgent = "")
-        {
-            if (string.IsNullOrEmpty(userAgent))
-            {
-                throw new ArgumentException("User agent is null or empty");
-            }
-
-            using (var request = new HttpRequestMessage(HttpMethod.Post, LoginApiUrl))
-            {
-                using (var response = await this.httpClient.SendAsync(request))
-                {
-                    string responseText = await response.Content.ReadAsStringAsync();
-
-                    if (response.IsSuccessStatusCode)
-                    {
-                        this.loginResponse = Json.Deserialize<LoginResponseDto>(responseText);
-
-                        return this.loginResponse;
                     }
                     else
                     {
