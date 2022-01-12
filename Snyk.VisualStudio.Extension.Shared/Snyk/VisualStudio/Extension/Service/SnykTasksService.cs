@@ -260,6 +260,8 @@
                             userStorageService.SaveCliReleaseLastCheckDate(DateTime.UtcNow);
 
                             this.isCliDownloading = false;
+
+                            this.DisposeCancellationTokenSource(this.downloadCliTokenSource);
                         }));
 
                         cliDownloader.AutoUpdateCli(
@@ -272,12 +274,6 @@
                         Logger.Error(exception.Message);
 
                         this.OnDownloadCancelled(exception.Message);
-                    }
-                    finally
-                    {
-                        this.DisposeCancellationTokenSource(this.downloadCliTokenSource);
-
-                        this.isCliDownloading = false;
                     }
                 }, progressWorker.TokenSource.Token);
         }

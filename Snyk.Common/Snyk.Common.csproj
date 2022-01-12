@@ -133,7 +133,6 @@
     <Compile Include="ISolutionService.cs" />
     <Compile Include="Json.cs" />
     <Compile Include="LogManager.cs" />
-    <Compile Include="ManualAssemblyResolver.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Sha256.cs" />
     <Compile Include="SnykAppSettings.cs" />

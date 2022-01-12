@@ -32,8 +32,6 @@
         {
             if (appSettings == null)
             {
-                //ManualAssemblyResolver.Initialize(GetExtensionDirectoryPath());
-
                 string extensionPath = GetExtensionDirectoryPath();
 
                 string appsettingsPath = Path.Combine(extensionPath, AppSettingsFileName);
