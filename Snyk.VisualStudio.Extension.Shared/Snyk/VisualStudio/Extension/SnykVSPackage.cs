@@ -163,8 +163,6 @@
         {
             await base.InitializeAsync(cancellationToken, progress);
 
-            ManualAssemblyResolver.Initialize(SnykExtension.GetExtensionDirectoryPath());
-
             this.AddService(typeof(SnykService), this.CreateSnykServiceAsync, true);
 
             this.serviceProvider = await this.GetServiceAsync(typeof(SnykService)) as SnykService;
@@ -190,11 +188,6 @@
             VsStatusBarNotificationService.Instance.InitializeEventListeners(this.serviceProvider);
 
             Logger.Information("Before call toolWindowControl.InitializeEventListeners() method.");
-
-            await SnykScanCommand.InitializeAsync(this);
-            await SnykStopCurrentTaskCommand.InitializeAsync(this);
-            await SnykCleanPanelCommand.InitializeAsync(this);
-            await SnykOpenSettingsCommand.InitializeAsync(this);
 
             new Task(() =>
             {

@@ -28,10 +28,5 @@
     </Prerequisites>
     <Assets>
         <Asset Type="Microsoft.VisualStudio.VsPackage" d:Source="Project" d:ProjectName="%CurrentProject%" Path="|%CurrentProject%;PkgdefProjectOutputGroup|" />
-        <Asset Type="Microsoft.VisualStudio.Assembly" d:Source="File" Path="Analytics.dll" AssemblyName="Analytics, Version=3.7.1.0, Culture=neutral, PublicKeyToken=null" />
-        <Asset Type="Microsoft.VisualStudio.Assembly" d:Source="File" Path="Markdig.dll" AssemblyName="Markdig, Version=0.24.0.0, Culture=neutral, PublicKeyToken=null" />
-        <Asset Type="Microsoft.VisualStudio.Assembly" d:Source="File" Path="Newtonsoft.Json.dll" AssemblyName="Newtonsoft.Json, Version=13.0.0.0, Culture=neutral, PublicKeyToken=30ad4fe6b2a6aeed" />
-        <Asset Type="Microsoft.VisualStudio.Assembly" d:Source="File" Path="Sentry.dll" AssemblyName="Sentry, Version=3.12.1.0, Culture=neutral, PublicKeyToken=fba2ec45388e2af0" />
-        <Asset Type="Microsoft.VisualStudio.Assembly" d:Source="File" Path="Sentry.Serilog.dll" AssemblyName="Sentry.Serilog, Version=3.12.1.0, Culture=neutral, PublicKeyToken=fba2ec45388e2af0" />
     </Assets>
 </PackageManifest>
