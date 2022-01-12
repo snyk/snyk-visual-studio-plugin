@@ -9,7 +9,7 @@
     /// <summary>
     /// Visual Studio solution load events implementation.
     /// </summary>
-    public class SnykVsSolutionLoadEvents : IVsSolutionLoadEvents, IVsSolutionEvents, IVsSolutionEvents7
+    public class SnykVsSolutionLoadEvents : IVsSolutionLoadEvents, IVsSolutionEvents
     {
         private ISolutionService solutionService;
 

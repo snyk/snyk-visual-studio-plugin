@@ -167,7 +167,7 @@
   <Target Name="WriteAppSettingsFile" BeforeTargets="PreBuildEvent">
     <WriteLinesToFile File="$(AppSettingsFile)" Overwrite="true" Lines="{" />
     <WriteLinesToFile File="$(AppSettingsFile)" Lines="&quot;SegmentAnalyticsWriteKey&quot;: &quot;$(SEGMENT_ANALYTICS_WRITE_KEY)&quot;," />
-    <WriteLinesToFile File="$(AppSettingsFile)" Lines="&quot;SnykCodeApiEndpoinUrl&quot;: &quot;$(SNYK_CODE_API_ENDPOINT_URL)&quot;," />
+    <WriteLinesToFile File="$(AppSettingsFile)" Lines="&quot;SnykCodeApiEndpointUrl&quot;: &quot;$(SNYK_CODE_API_ENDPOINT_URL)&quot;," />
     <WriteLinesToFile File="$(AppSettingsFile)" Lines="&quot;SentryDsn&quot;: &quot;$(SENTRY_DSN)&quot;," />
     <WriteLinesToFile File="$(AppSettingsFile)" Lines="&quot;Environment&quot;: &quot;$(SENTRY_ENVIRONMENT)&quot;" />
     <WriteLinesToFile File="$(AppSettingsFile)" Lines="}" />

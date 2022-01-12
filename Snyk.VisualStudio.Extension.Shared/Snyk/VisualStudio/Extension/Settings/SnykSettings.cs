@@ -16,6 +16,10 @@
             this.ProjectSettingsDict = new Dictionary<string, SnykProjectSettings>();
 
             this.UsageAnalyticsEnabled = true;
+
+            this.OssEnabled = true;
+            this.SnykCodeQualityEnabled = true;
+            this.SnykCodeSecurityEnabled = true;
         }
 
         /// <summary>

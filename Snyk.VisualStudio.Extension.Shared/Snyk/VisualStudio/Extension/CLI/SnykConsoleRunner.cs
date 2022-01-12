@@ -1,6 +1,7 @@
 ﻿namespace Snyk.VisualStudio.Extension.CLI
 {
     using System;
+    using System.Collections;
     using System.Collections.Generic;
     using System.Collections.Specialized;
     using System.Diagnostics;
@@ -62,9 +63,9 @@
 
             if (environmentVariables != null)
             {
-                foreach (KeyValuePair<string, string> var in environmentVariables)
+                foreach (DictionaryEntry keyValuePair in environmentVariables)
                 {
-                    processStartInfo.EnvironmentVariables.Add(var.Key, var.Value);
+                    processStartInfo.EnvironmentVariables.Add(keyValuePair.Key.ToString(), keyValuePair.Value.ToString());
                 }
             }
 

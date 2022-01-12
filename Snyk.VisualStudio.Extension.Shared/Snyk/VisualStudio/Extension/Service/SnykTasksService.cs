@@ -275,6 +275,15 @@
 
                         this.OnDownloadCancelled(exception.Message);
                     }
+                    finally
+                    {
+                        if (progressWorker.IsWorkFinished)
+                        {
+                            this.isCliDownloading = false;
+
+                            this.DisposeCancellationTokenSource(this.downloadCliTokenSource);
+                        }
+                    }
                 }, progressWorker.TokenSource.Token);
         }
 

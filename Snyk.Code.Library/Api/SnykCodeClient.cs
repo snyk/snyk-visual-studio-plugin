@@ -29,8 +29,6 @@
 
         private readonly HttpClient httpClient;
 
-        private LoginResponseDto loginResponse;
-
         /// <summary>
         /// Initializes a new instance of the <see cref="SnykCodeClient"/> class.
         /// </summary>

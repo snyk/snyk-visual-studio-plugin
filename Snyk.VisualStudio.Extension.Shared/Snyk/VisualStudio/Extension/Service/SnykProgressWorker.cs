@@ -23,6 +23,11 @@
         public bool IsUpdateDownload { get; set; }
 
         /// <summary>
+        /// Gets or sets a value indicating whether is work finished.
+        /// </summary>
+        public bool IsWorkFinished { get; set; }
+
+        /// <summary>
         /// Notify progress update.
         /// </summary>
         /// <param name="progress">Current progress from 1 to 100.</param>

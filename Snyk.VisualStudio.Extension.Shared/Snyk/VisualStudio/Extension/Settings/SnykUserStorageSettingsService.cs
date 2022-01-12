@@ -106,12 +106,7 @@
         /// Get snyk code quality enabled.
         /// </summary>
         /// <returns>Bool.</returns>
-        public bool IsSnykCodeQualityEnabled()
-        {
-            var settings = this.SettingsLoader.Load();
-
-            return settings == null ? true : settings.SnykCodeQualityEnabled;
-        }
+        public bool IsSnykCodeQualityEnabled() => this.LoadSettings().SnykCodeQualityEnabled;
 
         /// <summary>
         /// Save snyk code quality enalbed.
@@ -130,12 +125,7 @@
         /// Get snyk code security enabled.
         /// </summary>
         /// <returns>Bool.</returns>
-        public bool IsSnykCodeSecurityEnabled()
-        {
-            var settings = this.SettingsLoader.Load();
-
-            return settings == null ? true : settings.SnykCodeSecurityEnabled;
-        }
+        public bool IsSnykCodeSecurityEnabled() => this.LoadSettings().SnykCodeSecurityEnabled;
 
         /// <summary>
         /// Save oss enabled.
@@ -154,23 +144,13 @@
         /// Get oss enabled.
         /// </summary>
         /// <returns>Bool.</returns>
-        public bool IsOssEnabled()
-        {
-            var settings = this.SettingsLoader.Load();
-
-            return settings == null ? true : settings.OssEnabled;
-        }
+        public bool IsOssEnabled() => this.LoadSettings().OssEnabled;
 
         /// <summary>
         /// Get usage analytics enabled.
         /// </summary>
         /// <returns>Bool.</returns>
-        public bool GetUsageAnalyticsEnabled()
-        {
-            var settings = this.SettingsLoader.Load();
-
-            return settings == null ? true : settings.UsageAnalyticsEnabled;
-        }
+        public bool IsUsageAnalyticsEnabled() => this.LoadSettings().UsageAnalyticsEnabled;
 
         /// <summary>
         /// Save usage analytics enabled option.

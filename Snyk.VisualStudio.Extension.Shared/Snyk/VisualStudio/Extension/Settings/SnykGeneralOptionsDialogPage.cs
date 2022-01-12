@@ -114,7 +114,7 @@
         /// </summary>
         public bool UsageAnalyticsEnabled
         {
-            get => this.userStorageSettingsService.GetUsageAnalyticsEnabled();
+            get => this.userStorageSettingsService.IsUsageAnalyticsEnabled();
             set => this.userStorageSettingsService?.SaveUsageAnalyticsEnabled(value);
         }
 

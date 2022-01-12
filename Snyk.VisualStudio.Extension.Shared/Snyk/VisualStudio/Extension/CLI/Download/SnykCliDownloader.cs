@@ -4,6 +4,9 @@
     using System.Collections.Generic;
     using System.IO;
     using System.Net;
+    using System.Net.Http;
+    using System.Threading;
+    using System.Threading.Tasks;
     using Serilog;
     using Snyk.Common;
     using Snyk.VisualStudio.Extension.Service;
@@ -163,6 +166,10 @@
                     progressWorker: progressWorker,
                     downloadFinishedCallbacks: downloadFinishedCallbacks);
             }
+            else
+            {
+                progressWorker.IsWorkFinished = true;
+            }
         }
 
         /// <summary>
@@ -212,7 +219,7 @@
 
                     if (progressWorker != null)
                     {
-                        this.AsynchronousDownload(webClient, progressWorker, cliFileDestinationPath, cliDownloadUrl, downloadFinishedCallbacks);
+                        this.AsynchronousDownloadAsync(progressWorker, cliFileDestinationPath, cliDownloadUrl, downloadFinishedCallbacks);
                     }
                     else
                     {
@@ -241,8 +248,7 @@
             }
         }
 
-        private void AsynchronousDownload(
-            WebClient webClient,
+        private async Task AsynchronousDownloadAsync(
             ISnykProgressWorker progressWorker,
             string cliFileDestinationPath,
             string cliDownloadUrl,
@@ -250,54 +256,61 @@
         {
             Logger.Information("Enter AsynchronousDownload method");
 
-            webClient.DownloadProgressChanged += (source, progressChangedEvent) =>
+            using (var client = new HttpClient())
             {
-                try
+                client.Timeout = TimeSpan.FromMinutes(5);
+
+                var response = await client.GetAsync(cliDownloadUrl, HttpCompletionOption.ResponseHeadersRead);
+
+                response.EnsureSuccessStatusCode();
+
+                using (Stream contentStream = await response.Content.ReadAsStreamAsync(), fileStream = new FileStream(cliFileDestinationPath, FileMode.Create, FileAccess.Write, FileShare.ReadWrite, 8192, true))
                 {
-                    progressWorker.UpdateProgress(progressChangedEvent.ProgressPercentage);
+                    var totalBytes = response.Content.Headers.ContentLength;
+                    var totalRead = 0L;
+                    var buffer = new byte[8192];
+                    var isMoreToRead = true;
 
-                    progressWorker.CancelIfCancellationRequested();
-                }
-                catch (Exception exception)
-                {
-                    Logger.Error(exception.Message);
-
-                    webClient.CancelAsync();
-
-                    progressWorker.DownloadCancelled(exception.Message);
-
-                    try
+                    do
                     {
-                        if (File.Exists(cliFileDestinationPath))
+                        var read = await contentStream.ReadAsync(buffer, 0, buffer.Length);
+
+                        if (read == 0)
                         {
-                            File.Delete(cliFileDestinationPath);
+                            isMoreToRead = false;
+                        }
+                        else
+                        {
+                            await fileStream.WriteAsync(buffer, 0, read);
+
+                            totalRead += read;
+
+                            int percentage = (int)(totalRead * 100 / totalBytes);
+
+                            progressWorker.UpdateProgress(percentage);
+
+                            progressWorker.CancelIfCancellationRequested();
                         }
                     }
-                    catch (Exception ex)
-                    {
-                        Logger.Error($"Error: Can't delete temp CLI file. Message: {ex.Message}");
-                    }
+                    while (isMoreToRead);
+
+                    this.FinishDownload(progressWorker, downloadFinishedCallbacks);
                 }
-            };
-
-            webClient.DownloadFileCompleted += (sender, completedEventArgs) =>
-            {
-                Logger.Information("Fire DownloadFinished event");
-
-                progressWorker.DownloadFinished();
-
-                if (downloadFinishedCallbacks != null)
-                {
-                    downloadFinishedCallbacks.ForEach(downloadFinishedCallback =>
-                    {
-                        downloadFinishedCallback();
-                    });
-                }
-            };
-
-            webClient.DownloadFileAsync(new Uri(cliDownloadUrl), cliFileDestinationPath);
+            }
 
             progressWorker.CancelIfCancellationRequested();
+        }
+
+        private void FinishDownload(ISnykProgressWorker progressWorker, List<CliDownloadFinishedCallback> downloadFinishedCallbacks)
+        {
+            Logger.Information("Fire DownloadFinished event");
+
+            if (downloadFinishedCallbacks != null)
+            {
+                downloadFinishedCallbacks.ForEach(downloadFinishedCallback => downloadFinishedCallback());
+            }
+
+            progressWorker.DownloadFinished();
         }
 
         /// <summary>
