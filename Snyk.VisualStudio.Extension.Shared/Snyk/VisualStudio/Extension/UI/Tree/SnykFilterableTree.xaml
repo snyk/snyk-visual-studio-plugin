@@ -22,6 +22,11 @@
                   ScrollViewer.HorizontalScrollBarVisibility="Auto" 
                   VerticalContentAlignment="Stretch" 
                   ScrollViewer.CanContentScroll="True" UseLayoutRounding="False">
+            <TreeView.ItemContainerStyle>
+                <Style TargetType="{x:Type TreeViewItem}">
+                    <Setter Property="IsExpanded" Value="True"/>
+                </Style>
+            </TreeView.ItemContainerStyle>
             <TreeView.ItemTemplate>
                 <HierarchicalDataTemplate ItemsSource="{Binding Items}">
                     <StackPanel Orientation="Horizontal" Height="19">
