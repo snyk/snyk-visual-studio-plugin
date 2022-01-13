@@ -1,5 +1,7 @@
 ﻿namespace Snyk.Code.Library.Api.Dto.Analysis
 {
+    using System.Collections.Generic;
+
     /// <summary>
     /// Code analysis result information.
     /// </summary>
@@ -13,17 +15,12 @@
         /// <summary>
         /// Gets or sets a value indicating anaylysis progress (from 0 to 1).
         /// </summary>
-        public int Progress { get; set; }
+        public float Progress { get; set; }
 
         /// <summary>
         /// Gets or sets a value indicating anaylysis url.
         /// </summary>
         public string AnalysisURL { get; set; }
-
-        /// <summary>
-        /// Gets or sets a value indicating anaylysis information (suggestions).
-        /// </summary>
-        public AnalysisResultsDto AnalysisResults { get; set; }
 
         /// <summary>
         /// Gets or sets a value indicating anaylysis timing information.
@@ -34,5 +31,15 @@
         /// Gets or sets a value indicating anaylysis coverage information.
         /// </summary>
         public CoverageDto[] Coverage { get; set; }
+
+        /// <summary>
+        /// Gets or sets a value indicating map suggestion id to file object.
+        /// </summary>
+        public IDictionary<string, SuggestionIdToFileDto> Files { get; set; }
+
+        /// <summary>
+        /// Gets or sets a value indicating anaylysis suggestion id to suggestion object with information.
+        /// </summary>
+        public IDictionary<string, SuggestionDto> Suggestions { get; set; }
     }
 }

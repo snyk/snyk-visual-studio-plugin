@@ -1,22 +1,30 @@
-name: nightly-build 
+name: build
 
-on: [push, pull_request]
+on:
+  push:
+    branches: [ main ]
+  pull_request:
 
 env:
   SOLUTION_FILE_PATH: .
-  DEFAULT_BRANCH: feat/nightly-build
+  DEFAULT_BRANCH: main
 
 jobs:
   build:
     runs-on: windows-latest
+    env:
+      TEST_API_TOKEN: ${{ secrets.TEST_API_TOKEN }}
 
     steps:
     - uses: actions/checkout@v2
 
     - name: Add MSBuild to PATH
       uses: microsoft/setup-msbuild@v1
-      with: 
-        vs-version: '[14.0, ]' 
+      with:
+        vs-version: '[14.0, ]'
+
+    - name: Setup VSTest
+      uses: darenm/Setup-VSTest@v1
 
     - name: Restore NuGet packages
       working-directory: ${{env.GITHUB_WORKSPACE}}
@@ -32,3 +40,7 @@ jobs:
         msbuild ${{env.SOLUTION_FILE_PATH}} /p:configuration=Release /p:DeployExtension=false /p:ZipPackageCompressionLevel=normal /v:m
         #Vsix-PushArtifacts | Vsix-PublishToGallery
       shell: powershell
+
+    - name: Tests
+      working-directory: ${{env.GITHUB_WORKSPACE}}
+      run: vstest.console.exe .\Snyk.VisualStudio.Extension.Tests\bin\Release\net472\Snyk.VisualStudio.Extension.Tests.dll .\Snyk.Code.Library.Tests\bin\Release\net472\Snyk.Code.Library.Tests.dll

@@ -1,7 +1,10 @@
 ﻿namespace Snyk.Code.Library.Service
 {
+    using System;
     using System.Collections.Generic;
     using System.IO;
+    using System.Linq;
+    using System.Threading;
     using System.Threading.Tasks;
     using Serilog;
     using Snyk.Code.Library.Api;
@@ -11,7 +14,11 @@
     /// <inheritdoc/>
     public class FiltersService : IFiltersService
     {
+        private const int MaxFileSize = SnykCodeClient.MaxBundleSize;
+
         private static readonly ILogger Logger = LogManager.ForContext<FiltersService>();
+
+        private readonly string[] defaultIgnoreDirectories = new string[] { "node_modules", ".vs", ".github" };
 
         private ISnykCodeClient codeClient;
 
@@ -24,35 +31,68 @@
         public FiltersService(ISnykCodeClient client) => this.codeClient = client;
 
         /// <inheritdoc/>
-        public async Task<IList<string>> FilterFilesAsync(IList<string> filePaths)
+        public async Task<IList<string>> FilterFilesAsync(IEnumerable<string> filePaths, CancellationToken cancellationToken = default)
         {
-            Logger.Debug("Filter Files count {Count}.", filePaths.Count);
+            Logger.Information("Filter {Count} files.", filePaths.Count());
+
+            cancellationToken.ThrowIfCancellationRequested();
 
             var filters = await this.GetFiltersAsync();
+
+            cancellationToken.ThrowIfCancellationRequested();
+
             var extensionFilters = filters.Extensions;
             var configFileFilters = filters.ConfigFiles;
 
-            var filteredFiles = new List<string>();
+            return filePaths
+                    .Where(path =>
+                    {
+                        if (configFileFilters.Contains(Path.GetFileName(path))
+                            || this.IsFileInIgnoredDirectory(path)
+                            || this.IsFileSizeLargerThanMaximum(path))
+                        {
+                            return false;
+                        }
 
-            foreach (string filePath in filePaths)
+                        return extensionFilters.Contains(Path.GetExtension(path));
+                    })
+                    .ToList();
+        }
+
+        private bool IsFileInIgnoredDirectory(string filePath)
+        {
+            foreach (string defaultIgnoreDirectory in this.defaultIgnoreDirectories)
             {
-                if (extensionFilters.Contains(Path.GetExtension(filePath)) || configFileFilters.Contains(Path.GetFileName(filePath)))
+                string[] directories = filePath.Split(Path.DirectorySeparatorChar);
+
+                foreach (string directoryName in directories)
                 {
-                    filteredFiles.Add(filePath);
+                    if (defaultIgnoreDirectory == directoryName)
+                    {
+                        return true;
+                    }
                 }
             }
 
-            Logger.Debug("Filtered Files count {Count}.", filteredFiles.Count);
+            return false;
+        }
 
-            return filteredFiles;
+        private bool IsFileSizeLargerThanMaximum(string path)
+        {
+            try
+            {
+                return new FileInfo(path).Length > MaxFileSize;
+            }
+            catch (Exception e)
+            {
+                return true;
+            }
         }
 
         private async Task<FiltersDto> GetFiltersAsync()
         {
             if (this.filters == null)
             {
-                Logger.Debug("Request GetFilters.");
-
                 this.filters = await this.codeClient.GetFiltersAsync();
             }
 

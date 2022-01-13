@@ -5,6 +5,7 @@
     using Serilog;
     using Serilog.Core;
     using Serilog.Events;
+    using Serilog.Exceptions;
 
     /// <summary>
     /// Logger manager for create logger per class.
@@ -13,6 +14,11 @@
     {
         private const string OutputTemplate =
                 "{Timestamp:yyyy-MM-dd HH:mm:ss.fff} [{ProcessId:00000}] {Level:u4} [{ThreadId:00}] {ShortSourceContext,-25} {Message:lj}{NewLine}{Exception}";
+
+        /// <summary>
+        /// 10 Mb.
+        /// </summary>
+        private const int LogFileSize = 10485760;
 
         #if DEBUG
         private static LogEventLevel defaultLoggingLevel = LogEventLevel.Debug;
@@ -34,10 +40,20 @@
         private static Logger CreateLogger() => new LoggerConfiguration()
                 .Enrich.WithProcessId()
                 .Enrich.WithThreadId()
+                .Enrich.WithExceptionDetails()
                 .MinimumLevel.ControlledBy(loggingLevelSwitch)
+                .WriteTo.Sentry(config =>
+                {
+                    var appSettings = SnykExtension.GetAppSettings();
+
+                    config.Environment = appSettings.Environment;
+                    config.Dsn = appSettings.SentryDsn;
+
+                    config.AttachStacktrace = true;
+                })
                 .WriteTo.File(
                     Path.Combine(SnykDirectory.GetSnykAppDataDirectoryPath(), "snyk-extension.log"),
-                    fileSizeLimitBytes: null,
+                    fileSizeLimitBytes: LogFileSize,
                     outputTemplate: OutputTemplate,
                     shared: true)
                 .CreateLogger();

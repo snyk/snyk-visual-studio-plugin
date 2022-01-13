@@ -1,6 +1,7 @@
 ﻿namespace Snyk.Code.Library.Tests.Api
 {
     using System.Collections.Generic;
+    using System.IO;
     using System.Threading.Tasks;
     using Moq;
     using Snyk.Code.Library.Api;
@@ -15,11 +16,21 @@
         {
             IList<string> files = new List<string>();
 
-            files.Add("/home/test/projects/main/app.js");
-            files.Add("/home/test/projects/main/app.js.dev");
-            files.Add("/home/test/projects/main/main.ts");
-            files.Add("C:\\projects\\main\\Db.cs");
-            files.Add("C:\\projects\\Db.cs.dev");
+            string tempPath = this.GetTemporaryDirectory();
+
+            files.Add($"{tempPath}\\projects\\main\\app.js");
+            files.Add($"{tempPath}\\projects\\main\\app.js.dev");
+            files.Add($"{tempPath}\\projects\\main\\main.ts");
+            files.Add($"{tempPath}\\projects\\main\\Db.cs");
+            files.Add($"{tempPath}\\projects\\Db.cs.dev");
+
+            Directory.CreateDirectory($"{tempPath}\\projects");
+            Directory.CreateDirectory($"{tempPath}\\projects\\main");
+
+            foreach (string file in files)
+            {
+                File.Create(file);
+            }
 
             var codeClientMock = new Mock<ISnykCodeClient>();
 
@@ -45,9 +56,9 @@
             Assert.NotNull(filteredFiles);
             Assert.Equal(3, filteredFiles.Count);
 
-            Assert.True(filteredFiles.Contains("/home/test/projects/main/app.js"));
-            Assert.True(filteredFiles.Contains("/home/test/projects/main/main.ts"));
-            Assert.True(filteredFiles.Contains("C:\\projects\\main\\Db.cs"));
+            Assert.True(filteredFiles.Contains($"{tempPath}\\projects\\main\\app.js"));
+            Assert.True(filteredFiles.Contains($"{tempPath}\\projects\\main\\main.ts"));
+            Assert.True(filteredFiles.Contains($"{tempPath}\\projects\\main\\Db.cs"));
 
             codeClientMock.Verify(codeClient => codeClient.GetFiltersAsync());
         }
@@ -57,11 +68,21 @@
         {
             IList<string> files = new List<string>();
 
-            files.Add("/home/test/projects/main/.dcignore");
-            files.Add("/home/test/projects/main/.gitignore");
-            files.Add("/home/test/projects/main/main.ts.dev");
-            files.Add("C:\\projects\\main\\Db.cs.dev");
-            files.Add("C:\\projects\\.gitignore");
+            string tempPath = this.GetTemporaryDirectory();
+
+            files.Add($"{tempPath}\\projects\\main\\.dcignore");
+            files.Add($"{tempPath}\\projects\\main\\.gitignore");
+            files.Add($"{tempPath}\\projects\\main\\main.ts.dev");
+            files.Add($"{tempPath}\\projects\\main\\Db.cs.dev");
+            files.Add($"{tempPath}\\projects\\.gitignore");
+
+            Directory.CreateDirectory($"{tempPath}\\projects");
+            Directory.CreateDirectory($"{tempPath}\\projects\\main");
+
+            foreach (string file in files)
+            {
+                File.Create(file);
+            }
 
             var configFiles = new List<string>();
             configFiles.Add(".dcignore");
@@ -84,11 +105,7 @@
             var filteredFiles = await filterService.FilterFilesAsync(files);
 
             Assert.NotNull(filteredFiles);
-            Assert.Equal(3, filteredFiles.Count);
-
-            Assert.True(filteredFiles.Contains("/home/test/projects/main/.dcignore"));
-            Assert.True(filteredFiles.Contains("/home/test/projects/main/.gitignore"));
-            Assert.True(filteredFiles.Contains("C:\\projects\\.gitignore"));
+            Assert.Empty(filteredFiles);
 
             codeClientMock.Verify(codeClient => codeClient.GetFiltersAsync());
         }
@@ -98,16 +115,26 @@
         {
             IList<string> files = new List<string>();
 
-            files.Add("/home/test/projects/main/.dcignore");
-            files.Add("/home/test/projects/main/.gitignore");
-            files.Add("/home/test/projects/main/main.ts.dev");
-            files.Add("C:\\projects\\main\\Db.cs.dev");
-            files.Add("C:\\projects\\.gitignore");
-            files.Add("/home/test/projects/main/app.js");
-            files.Add("/home/test/projects/main/app.js.dev");
-            files.Add("/home/test/projects/main/main.ts");
-            files.Add("C:\\projects\\main\\Db.cs");
-            files.Add("C:\\projects\\Db.cs.dev");
+            string tempPath = this.GetTemporaryDirectory();
+
+            files.Add($"{tempPath}\\projects\\main\\.dcignore");
+            files.Add($"{tempPath}\\projects/main\\.gitignore");
+            files.Add($"{tempPath}\\projects\\main\\main.ts.dev");
+            files.Add($"{tempPath}\\projects\\main\\Db.cs.dev");
+            files.Add($"{tempPath}\\projects\\.gitignore");
+            files.Add($"{tempPath}\\projects\\main\\app.js");
+            files.Add($"{tempPath}\\projects\\main\\app.js.dev");
+            files.Add($"{tempPath}\\projects\\main\\main.ts");
+            files.Add($"{tempPath}\\projects\\main\\Db.cs");
+            files.Add($"{tempPath}\\projects\\Db.cs.dev");
+
+            Directory.CreateDirectory($"{tempPath}\\projects");
+            Directory.CreateDirectory($"{tempPath}\\projects\\main");
+
+            foreach (string file in files)
+            {
+                File.Create(file);
+            }
 
             var codeClientMock = new Mock<ISnykCodeClient>();
 
@@ -135,17 +162,22 @@
             var filteredFiles = await filterService.FilterFilesAsync(files);
 
             Assert.NotNull(filteredFiles);
-            Assert.Equal(6, filteredFiles.Count);
+            Assert.Equal(3, filteredFiles.Count);
 
-            Assert.True(filteredFiles.Contains("/home/test/projects/main/app.js"));
-            Assert.True(filteredFiles.Contains("/home/test/projects/main/main.ts"));
-            Assert.True(filteredFiles.Contains("C:\\projects\\main\\Db.cs"));
-
-            Assert.True(filteredFiles.Contains("/home/test/projects/main/.dcignore"));
-            Assert.True(filteredFiles.Contains("/home/test/projects/main/.gitignore"));
-            Assert.True(filteredFiles.Contains("C:\\projects\\.gitignore"));
+            Assert.True(filteredFiles.Contains($"{tempPath}\\projects\\main\\app.js"));
+            Assert.True(filteredFiles.Contains($"{tempPath}\\projects\\main\\main.ts"));
+            Assert.True(filteredFiles.Contains($"{tempPath}\\projects\\main\\Db.cs"));
 
             codeClientMock.Verify(codeClient => codeClient.GetFiltersAsync());
+        }
+
+        private string GetTemporaryDirectory()
+        {
+            string tempDirectory = Path.Combine(Path.GetTempPath(), Path.GetRandomFileName());
+
+            Directory.CreateDirectory(tempDirectory);
+
+            return tempDirectory;
         }
     }
 }

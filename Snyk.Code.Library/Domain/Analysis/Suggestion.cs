@@ -1,5 +1,6 @@
 ﻿namespace Snyk.Code.Library.Domain.Analysis
 {
+    using System;
     using System.Collections.Generic;
 
     /// <summary>
@@ -18,6 +19,16 @@
         public string Id { get; set; }
 
         /// <summary>
+        /// Gets or sets tuple of rows.
+        /// </summary>
+        public Tuple<int, int> Rows { get; set; }
+
+        /// <summary>
+        /// Gets or sets tuple of columns.
+        /// </summary>
+        public Tuple<int, int> Columns { get; set; }
+
+        /// <summary>
         /// Gets or sets a value indicating anaylysis rule.
         /// </summary>
         public string Rule { get; set; }
@@ -28,9 +39,19 @@
         public string Message { get; set; }
 
         /// <summary>
+        /// Gets or sets file name (relative path).
+        /// </summary>
+        public string FileName { get; set; }
+
+        /// <summary>
         /// Gets or sets a value indicating anaylysis severity value (from 1 to 4).
         /// </summary>
         public int Severity { get; set; }
+
+        /// <summary>
+        /// Gets or sets position markers.
+        /// </summary>
+        public IList<Marker> Markers { get; set; }
 
         /// <summary>
         /// Gets or sets a value indicating anaylysis categories.
@@ -46,6 +67,11 @@
         /// Gets or sets a value indicating suggestion title.
         /// </summary>
         public string Title { get; set; }
+
+        /// <summary>
+        /// Gets or sets repo dataset size.
+        /// </summary>
+        public int RepoDatasetSize { get; set; }
 
         /// <summary>
         /// Gets or sets a value indicating analysis CWE list.
@@ -66,5 +92,17 @@
         /// Gets or sets a value indicating suggestion list of proposed fixes and examples.
         /// </summary>
         public IList<SuggestionFix> Fixes { get; set; }
+
+        /// <summary>
+        /// Get row line and title (if title is null it use message).
+        /// </summary>
+        /// <returns>Title for display.</returns>
+        public string GetDisplayTitleWithLineNumber() => "line " + this.Rows.Item1 + ": " + this.GetDisplayTitle();
+
+        /// <summary>
+        /// Get title. If title is null or empty it will return message as title.
+        /// </summary>
+        /// <returns>Title for display.</returns>
+        public string GetDisplayTitle() => string.IsNullOrEmpty(this.Title) ? this.Message : this.Title;
     }
 }

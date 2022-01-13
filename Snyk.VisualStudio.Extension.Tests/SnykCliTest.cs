@@ -1,165 +1,157 @@
 ﻿namespace Snyk.VisualStudio.Extension.Tests
 {
     using System;
+    using System.Collections.Specialized;
     using System.IO;
-    using System.Reflection;
-    using System.Resources;
-    using System.Text.RegularExpressions;
-    using Microsoft.VisualStudio.TestTools.UnitTesting;
     using Snyk.VisualStudio.Extension.CLI;
     using Snyk.VisualStudio.Extension.Settings;
-    
-    [TestClass]
+    using Xunit;
+
     public class SnykCliTest
     {
-        [AssemblyInitialize]
-        public static void AssemblyInit(TestContext context)
-        {           
-        }
-
-        [TestMethod]
+        [Fact]
         public void ConvertRawCliStringToCliResultWithCriticalSeverity()
         {
             var cli = new SnykCli
             {
-                Options = new SnykMockOptions()
+                Options = new SnykMockOptions(),
             };
 
-            var cliResult = cli.ConvertRawCliStringToCliResult(GetFileContents("CriticalSeverityObject.json"));
+            var cliResult = SnykCli.ConvertRawCliStringToCliResult(this.GetFileContent("CriticalSeverityObject.json"));
 
             bool isCriticalSeverityVulnExists = false;
 
             foreach (Vulnerability vulnerability in cliResult.CliVulnerabilitiesList[0].Vulnerabilities)
             {
-                if (Severity.Critical == vulnerability.Severity)
+                if (vulnerability.Severity == Severity.Critical)
                 {
                     isCriticalSeverityVulnExists = true;
                 }
             }
-           
-            Assert.IsTrue(isCriticalSeverityVulnExists);
+
+            Assert.True(isCriticalSeverityVulnExists);
         }
 
-        [TestMethod]
+        [Fact]
         public void Scan()
         {
             var cli = new SnykCli
             {
                 Options = new SnykMockOptions(),
-                ConsoleRunner = new SnykMockConsoleRunner(GetFileContents("VulnerabilitiesSingleObject.json"))
+                ConsoleRunner = new SnykMockConsoleRunner(this.GetFileContent("VulnerabilitiesSingleObject.json")),
             };
 
-            var cliResult = cli.Scan("");
+            var cliResult = cli.Scan(string.Empty);
 
-            Assert.AreEqual(1, cliResult.CliVulnerabilitiesList.Count);
+            Assert.Single(cliResult.CliVulnerabilitiesList);
         }
 
-        [TestMethod]
+        [Fact]
         public void GetApiToken()
         {
             var cli = new SnykCli
             {
                 Options = new SnykMockOptions(),
-                ConsoleRunner = new SnykMockConsoleRunner("1111-0000-2222-3333-4444")
+                ConsoleRunner = new SnykMockConsoleRunner("1111-0000-2222-3333-4444"),
             };
 
-            Assert.AreEqual("1111-0000-2222-3333-4444", cli.GetApiToken());
+            Assert.Equal("1111-0000-2222-3333-4444", cli.GetApiToken());
         }
 
-        [TestMethod]
+        [Fact]
         public void Authenticate()
         {
             var cli = new SnykCli
             {
                 Options = new SnykMockOptions(),
-                ConsoleRunner = new SnykMockConsoleRunner("Your account has been authenticated. Snyk is now ready to be used.")
+                ConsoleRunner = new SnykMockConsoleRunner("Your account has been authenticated. Snyk is now ready to be used."),
             };
 
-            Assert.AreEqual("Your account has been authenticated. Snyk is now ready to be used.", cli.Authenticate());
+            Assert.Equal("Your account has been authenticated. Snyk is now ready to be used.", cli.Authenticate());
         }
 
-        [TestMethod]
+        [Fact]
         public void BuildArguments_WithoutOptions()
         {
             var cli = new SnykCli
             {
-                Options = new SnykMockOptions()
+                Options = new SnykMockOptions(),
             };
 
-            Assert.AreEqual("--json test", cli.BuildArguments());
+            Assert.Equal("--json test", cli.BuildScanArguments());
         }
 
-        [TestMethod]
+        [Fact]
         public void BuildArguments_WithCustomEndpointOption()
         {
             var cli = new SnykCli
             {
                 Options = new SnykMockOptions()
                 {
-                    CustomEndpoint = "https://github.com/snyk/"
-                }
+                    CustomEndpoint = "https://github.com/snyk/",
+                },
             };
 
-            Assert.AreEqual("--json test --api=https://github.com/snyk/", cli.BuildArguments());
+            Assert.Equal("--json test --API=https://github.com/snyk/", cli.BuildScanArguments());
         }
 
-        [TestMethod]
+        [Fact]
         public void BuildArguments_WithInsecureOption()
         {
             var cli = new SnykCli
             {
                 Options = new SnykMockOptions()
                 {
-                    IgnoreUnknownCA = true
-                }
+                    IgnoreUnknownCA = true,
+                },
             };
 
-            Assert.AreEqual("--json test --insecure", cli.BuildArguments());
+            Assert.Equal("--json test --insecure", cli.BuildScanArguments());
         }
 
-        [TestMethod]
+        [Fact]
         public void BuildArguments_WithOrganizationOption()
         {
             var cli = new SnykCli
             {
                 Options = new SnykMockOptions()
                 {
-                    Organization = "test-snyk-organization"
-                }
+                    Organization = "test-snyk-organization",
+                },
             };
 
-            Assert.AreEqual("--json test --org=test-snyk-organization", cli.BuildArguments());
+            Assert.Equal("--json test --org=test-snyk-organization", cli.BuildScanArguments());
         }
 
-        [TestMethod]
+        [Fact]
         public void BuildArguments_WithAdditionalOptions()
         {
             var cli = new SnykCli
             {
                 Options = new SnykMockOptions()
                 {
-                    AdditionalOptions = "--file=C:\build.pom"
-                }
+                    AdditionalOptions = "--file=C:\build.pom",
+                },
             };
 
-            Assert.AreEqual("--json test --file=C:\build.pom", cli.BuildArguments());
+            Assert.Equal("--json test --file=C:\build.pom", cli.BuildScanArguments());
         }
 
-        [TestMethod]
+        [Fact]
         public void BuildArguments_WithScanAllProjects()
         {
             var cli = new SnykCli
             {
                 Options = new SnykMockOptions()
                 {
-                    IsScanAllProjects = true
-                }
+                    IsScanAllProjects = true,
+                },
             };
 
-            Assert.AreEqual("--json test --all-projects", cli.BuildArguments());
+            Assert.Equal("--json test --all-projects", cli.BuildScanArguments());
         }
 
-        [TestMethod]
+        [Fact]
         public void BuildArguments_WithAllOptions()
         {
             var cli = new SnykCli
@@ -171,150 +163,150 @@
                     Organization = "test-snyk-organization",
                     AdditionalOptions = "--ignore-policy",
                     IsScanAllProjects = true,
-                    UsageAnalyticsEnabled = false
-                }
+                    UsageAnalyticsEnabled = false,
+                },
             };
 
-            Assert.AreEqual("--json test --api=https://github.com/snyk/ --insecure --org=test-snyk-organization --ignore-policy --all-projects --DISABLE_ANALYTICS", cli.BuildArguments());
+            Assert.Equal("--json test --API=https://github.com/snyk/ --insecure --org=test-snyk-organization --ignore-policy --all-projects --DISABLE_ANALYTICS", cli.BuildScanArguments());
         }
 
-        [TestMethod]
+        [Fact]
         public void BuildArguments_WithDisableAnalytics()
         {
             var cli = new SnykCli
             {
                 Options = new SnykMockOptions()
                 {
-                    UsageAnalyticsEnabled = false
-                }
+                    UsageAnalyticsEnabled = false,
+                },
             };
 
-            Assert.AreEqual("--json test --DISABLE_ANALYTICS", cli.BuildArguments());
+            Assert.Equal("--json test --DISABLE_ANALYTICS", cli.BuildScanArguments());
         }
 
-        [TestMethod]
+        [Fact]
+        public void BuildEnvironmentVariables_WithAllOptions()
+        {
+            var cli = new SnykCli
+            {
+                Options = new SnykMockOptions()
+                {
+                    CustomEndpoint = "https://github.com/snyk/",
+                    IgnoreUnknownCA = true,
+                    Organization = "test-snyk-organization",
+                    AdditionalOptions = "--ignore-policy",
+                    IsScanAllProjects = true,
+                    UsageAnalyticsEnabled = false,
+                    ApiToken = "test-token",
+                },
+            };
+
+            var result = cli.BuildScanEnvironmentVariables();
+
+            Assert.Equal(result["SNYK_API"], cli.Options.CustomEndpoint);
+            Assert.Equal(result["SNYK_TOKEN"], cli.Options.ApiToken);
+        }
+
+        [Fact]
         public void IsSuccessCliJsonString_True()
         {
             var cli = new SnykCli
             {
-                Options = new SnykMockOptions()
+                Options = new SnykMockOptions(),
             };
 
-            Assert.IsTrue(cli.IsSuccessCliJsonString("{\"vulnerabilities\": []}"));
+            Assert.True(SnykCli.IsSuccessCliJsonString("{\"vulnerabilities\": []}"));
         }
 
-        [TestMethod]
+        [Fact]
         public void IsSuccessCliJsonString_False()
         {
             var cli = new SnykCli
             {
-                Options = new SnykMockOptions()
+                Options = new SnykMockOptions(),
             };
 
-            Assert.IsFalse(cli.IsSuccessCliJsonString("{\"error\": \"Error details.\"}"));
+            Assert.False(SnykCli.IsSuccessCliJsonString("{\"error\": \"Error details.\"}"));
         }
 
-        [TestMethod]
+        [Fact]
         public void ConvertRawCliStringToCliResult_VulnerabilitiesArrayJson()
         {
             var cli = new SnykCli
             {
-                Options = new SnykMockOptions()
+                Options = new SnykMockOptions(),
             };
 
-            
+            var cliResult = SnykCli.ConvertRawCliStringToCliResult(this.GetFileContent("VulnerabilitiesArray.json"));
 
-            var cliResult = cli.ConvertRawCliStringToCliResult(GetFileContents("VulnerabilitiesArray.json"));
-
-            Assert.AreEqual(2, cliResult.CliVulnerabilitiesList.Count);
+            Assert.Equal(2, cliResult.CliVulnerabilitiesList.Count);
         }
 
-        [TestMethod]
+        [Fact]
         public void ConvertRawCliStringToCliResult_VulnerabilitiesSingleJson()
         {
             var cli = new SnykCli
             {
-                Options = new SnykMockOptions()
+                Options = new SnykMockOptions(),
             };
 
-            var cliResult = cli.ConvertRawCliStringToCliResult(GetFileContents("VulnerabilitiesSingleObject.json"));
+            var cliResult = SnykCli.ConvertRawCliStringToCliResult(this.GetFileContent("VulnerabilitiesSingleObject.json"));
 
-            Assert.AreEqual(1, cliResult.CliVulnerabilitiesList.Count);
+            Assert.Single(cliResult.CliVulnerabilitiesList);
         }
 
-        [TestMethod]
+        [Fact]
         public void ConvertRawCliStringToCliResult_ErrorJson()
         {
             var cli = new SnykCli
             {
-                Options = new SnykMockOptions()
+                Options = new SnykMockOptions(),
             };
 
-            var cliResult = cli.ConvertRawCliStringToCliResult(GetFileContents("ErrorJsonObject.json"));
+            var cliResult = SnykCli.ConvertRawCliStringToCliResult(this.GetFileContent("ErrorJsonObject.json"));
 
-            Assert.IsNotNull(cliResult.Error);
-            Assert.IsFalse(cliResult.Error.IsSuccess);
-            Assert.IsTrue(cliResult.Error.Message.Contains("Could not detect supported target files in C:\\Users\\Test\\Documents\\MultiProjectConsoleApplication."));
-            Assert.AreEqual("C:\\Users\\Test\\Documents\\MultiProjectConsoleApplication", cliResult.Error.Path);
+            Assert.NotNull(cliResult.Error);
+            Assert.False(cliResult.Error.IsSuccess);
+            Assert.Contains("Could not detect supported target files in C:\\Users\\Test\\Documents\\MultiProjectConsoleApplication.", cliResult.Error.Message);
+            Assert.Equal("C:\\Users\\Test\\Documents\\MultiProjectConsoleApplication", cliResult.Error.Path);
         }
 
-        [TestMethod]
+        [Fact]
         public void ConvertRawCliStringToCliResult_PlainTextError()
         {
             var cli = new SnykCli
             {
-                Options = new SnykMockOptions()
+                Options = new SnykMockOptions(),
             };
 
-            var cliResult = cli.ConvertRawCliStringToCliResult(GetFileContents("ErrorPlainText.json"));
+            var cliResult = SnykCli.ConvertRawCliStringToCliResult(this.GetFileContent("ErrorPlainText.json"));
 
-            Assert.IsNotNull(cliResult.Error);
-            Assert.IsFalse(cliResult.Error.IsSuccess);
-            Assert.IsTrue(cliResult.Error.Message.Contains("Please see our documentation for supported languages and target files:"));
-            Assert.AreEqual("", cliResult.Error.Path);
+            Assert.NotNull(cliResult.Error);
+            Assert.False(cliResult.Error.IsSuccess);
+            Assert.Contains("Please see our documentation for supported languages and target files:", cliResult.Error.Message);
+            Assert.Equal(string.Empty, cliResult.Error.Path);
         }
 
-        private string GetFileContents(string resourceFileName)
-        {
-            var assembly = Assembly.GetExecutingAssembly();
-            var resourceFilePath = $"Resources.{resourceFileName}";
+        /// <summary>
+        /// Get full path for file in test resources.
+        /// </summary>
+        /// <param name="fileName">File name.</param>
+        /// <returns>Full path string.</returns>
+        private string GetFileFullPath(string fileName)
+            => Path.Combine(Directory.GetCurrentDirectory(), "Resources", fileName);
 
-            using (var inputStream = assembly.GetEmbeddedResourceStream(resourceFilePath))
-            {
-                if (inputStream != null)
-                {
-                    var streamReader = new StreamReader(inputStream);
+        /// <summary>
+        /// Get path to Resources directory.
+        /// </summary>
+        /// <returns>Resources directory path string.</returns>
+        private string GetResourcesPath() => Path.Combine(Directory.GetCurrentDirectory(), "Resources");
 
-                    return streamReader.ReadToEnd();
-                }
-            }
-
-            return String.Empty;
-        }        
-    }    
-
-    static class AssemblyExtensions
-    {
-        public static Stream GetEmbeddedResourceStream(this Assembly assembly, string relativeResourcePath)
-        {
-            if (string.IsNullOrEmpty(relativeResourcePath))
-            {
-                throw new ArgumentNullException("relativeResourcePath");
-            }
-
-            var resourcePath = string.Format("{0}.{1}",
-                Regex.Replace(assembly.ManifestModule.Name, @"\.(exe|dll)$",
-                      string.Empty, RegexOptions.IgnoreCase), relativeResourcePath);
-
-            var stream = assembly.GetManifestResourceStream(resourcePath);
-
-            if (stream == null)
-            {
-                throw new ArgumentException(String.Format("The specified embedded resource \"{0}\" is not found.", relativeResourcePath));
-            }
-
-            return stream;
-        }
+        /// <summary>
+        /// Get file content as string.
+        /// </summary>
+        /// <param name="fileName">File name</param>
+        /// <returns>File content string.</returns>
+        private string GetFileContent(string fileName) => File.ReadAllText(this.GetFileFullPath(fileName));
     }
 
     class MockServiceProvider : IServiceProvider
@@ -334,7 +326,7 @@
             this.consoleResult = result;
         }
 
-        public override string Run(string fileName, string arguments)
+        public override string Run(string fileName, string arguments, StringDictionary environmentVariables = null)
         {
             return consoleResult;
         }
@@ -458,6 +450,14 @@
                 usageAnalyticsEnabled = value;
             }
         }
+
+        public bool OssEnabled => throw new NotImplementedException();
+
+        public bool SnykCodeSecurityEnabled => throw new NotImplementedException();
+
+        public bool SnykCodeQualityEnabled => throw new NotImplementedException();
+
+        public event EventHandler<SnykSettingsChangedEventArgs> SettingsChanged;
 
         public void Authenticate(Action<string> successCallbackAction, Action<string> errorCallbackAction)
         {

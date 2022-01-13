@@ -16,6 +16,12 @@
             => Path.Combine(Directory.GetCurrentDirectory(), "Resources", fileName);
 
         /// <summary>
+        /// Get path to Resources directory.
+        /// </summary>
+        /// <returns>Resources directory path string.</returns>
+        public static string GetResourcesPath() => Path.Combine(Directory.GetCurrentDirectory(), "Resources");
+
+        /// <summary>
         /// Get file content as string.
         /// </summary>
         /// <param name="fileName">File name</param>

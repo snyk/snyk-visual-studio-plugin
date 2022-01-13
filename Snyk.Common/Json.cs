@@ -1,6 +1,7 @@
 ﻿namespace Snyk.Common
 {
-    using System.Text.Json;
+    using Newtonsoft.Json;
+    using Newtonsoft.Json.Serialization;
 
     /// <summary>
     /// Json util for serialize and deserialize objects with Json serialization parameters.
@@ -11,10 +12,9 @@
         /// Gets a value indicating whether with serialization options.
         /// For example it enable Camel case by default.
         /// </summary>
-        private static JsonSerializerOptions SerializerOptions => new JsonSerializerOptions
+        private static JsonSerializerSettings SerializerOptions => new JsonSerializerSettings
         {
-            PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
-            WriteIndented = true,
+            ContractResolver = new CamelCasePropertyNamesContractResolver(),
         };
 
         /// <summary>
@@ -23,7 +23,7 @@
         /// <typeparam name="T">Result type.</typeparam>
         /// <param name="json">Json string for deserialization.</param>
         /// <returns>Result object.</returns>
-        public static T Deserialize<T>(string json) => JsonSerializer.Deserialize<T>(json, SerializerOptions);
+        public static T Deserialize<T>(string json) => JsonConvert.DeserializeObject<T>(json, SerializerOptions);
 
         /// <summary>
         /// Serialize object to json.
@@ -31,6 +31,6 @@
         /// <typeparam name="T">Source type.</typeparam>
         /// <param name="sourceObj">Source object to serialize.</param>
         /// <returns>Result string.</returns>
-        public static string Serialize<T>(T sourceObj) => JsonSerializer.Serialize<T>(sourceObj, SerializerOptions);
+        public static string Serialize<T>(T sourceObj) => JsonConvert.SerializeObject(sourceObj, SerializerOptions);
     }
 }
