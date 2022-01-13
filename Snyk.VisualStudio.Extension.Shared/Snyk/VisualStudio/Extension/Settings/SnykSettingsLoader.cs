@@ -21,7 +21,14 @@
         {
             try
             {
-                return Json.Deserialize<SnykSettings>(File.ReadAllText(this.GetSettingsFilePath(), Encoding.UTF8));
+                string filePath = this.GetSettingsFilePath();
+
+                if (!File.Exists(filePath))
+                {
+                    return null;
+                }
+
+                return Json.Deserialize<SnykSettings>(File.ReadAllText(filePath, Encoding.UTF8));
             }
             catch (Exception e)
             {
