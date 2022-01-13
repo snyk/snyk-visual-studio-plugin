@@ -1,0 +1,225 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<CommandTable xmlns="http://schemas.microsoft.com/VisualStudio/2005-10-18/CommandTable" xmlns:xs="http://www.w3.org/2001/XMLSchema">
+
+  <!--  This is the file that defines the actual layout and type of the commands.
+        It is divided in different sections (e.g. command definition, command
+        placement, ...), with each defining a specific set of properties.
+        See the comment before each section for more details about how to
+        use it. -->
+
+  <!--  The VSCT compiler (the tool that translates this file into the binary
+        format that VisualStudio will consume) has the ability to run a preprocessor
+        on the vsct file; this preprocessor is (usually) the C++ preprocessor, so
+        it is possible to define includes and macros with the same syntax used
+        in C++ files. Using this ability of the compiler here, we include some files
+        defining some of the constants that we will use inside the file. -->
+
+  <Include href="KnownImageIds.vsct" />
+  
+  <!--This is the file that defines the IDs for all the commands exposed by VisualStudio. -->
+  <Extern href="stdidcmd.h" />
+
+  <!--This header contains the command ids for the menus provided by the shell. -->
+  <Extern href="vsshlids.h" />
+
+  <!--The Commands section is where commands, menus, and menu groups are defined.
+      This section uses a Guid to identify the package that provides the command defined inside it. -->
+  <Commands package="guidSnykVSPackage">
+    <!-- Inside this section we have different sub-sections: one for the menus, another
+    for the menu groups, one for the buttons (the actual commands), one for the combos
+    and the last one for the bitmaps used. Each element is identified by a command id that
+    is a unique pair of guid and numeric identifier; the guid part of the identifier is usually
+    called "command set" and is used to group different command inside a logically related
+    group; your package should define its own command set in order to avoid collisions
+    with command ids defined by other packages. -->
+
+    <!-- In this section you can define new menu groups. A menu group is a container for
+         other menus or buttons (commands); from a visual point of view you can see the
+         group as the part of a menu contained between two lines. The parent of a group
+         must be a menu. -->
+    <Menus>
+      <!-- A toolbar is a menu with itself as the "Relative to Group" and a "Type" of "ToolWindowToolbar" -->
+      <Menu guid="guidSnykVSPackageCmdSet" id="SnykToolbar" priority="0x0000" type="ToolWindowToolbar">
+        <Parent guid="guidSnykVSPackageCmdSet" id="SnykToolbar" />
+        <Strings>
+          <ButtonText>Snyk ToolBar</ButtonText>
+        </Strings>
+      </Menu>
+    </Menus>
+    
+    <Groups>
+      <Group guid="guidSnykVSPackageCmdSet" id="MyMenuGroup" priority="0x0600">
+        <Parent guid="guidSHLMainMenu" id="IDM_VS_MENU_TOOLS" />
+      </Group>
+
+      <Group guid="guidSnykVSPackageCmdSet" id="SnykToolbarGroup" priority="0x0500">
+        <Parent guid="guidSnykVSPackageCmdSet" id="SnykToolbar" />
+      </Group>
+    </Groups>
+
+    <!--Buttons section. -->
+    <!--This section defines the elements the user can interact with, like a menu command or a button
+        or combo box in a toolbar. -->
+    <Buttons>
+      <!--To define a menu group you have to specify its ID, the parent menu and its display priority.
+          The command is visible and enabled by default. If you need to change the visibility, status, etc, you can use
+          the CommandFlag node.
+          You can add more than one CommandFlag node e.g.:
+              <CommandFlag>DefaultInvisible</CommandFlag>
+              <CommandFlag>DynamicVisibility</CommandFlag>
+          If you do not want an image next to your command, remove the Icon node /> -->
+      <Button guid="guidSnykVSPackageCmdSet" id="cmdidSnykToolWindowCommand" priority="0x0100" type="Button">
+        <Parent guid="guidSHLMainMenu" id="IDG_VS_WNDO_OTRWNDWS1" />
+        <Icon guid="snykIcon" id="snykIconID" />
+        <Strings>
+          <ButtonText>Snyk</ButtonText>
+        </Strings>
+      </Button>
+      
+      <Button guid="guidSnykVSPackageCmdSet" id="cmdidScan" priority="0x200" type="Button">
+        <Parent guid="guidSnykVSPackageCmdSet" id="SnykToolbarGroup" />
+        <Icon guid="ImageCatalogGuid" id="Run" />
+        <CommandFlag>IconIsMoniker</CommandFlag>
+        <Strings>
+          <ButtonText>Scan</ButtonText>
+        </Strings>
+      </Button>
+      <Button guid="guidSnykVSPackageCmdSet" id="cmdidStop" priority="0x201" type="Button">
+        <Parent guid="guidSnykVSPackageCmdSet" id="SnykToolbarGroup" />
+        <Icon guid="ImageCatalogGuid" id="Stop" />
+        <CommandFlag>IconIsMoniker</CommandFlag>
+        <Strings>
+          <ButtonText>Stop</ButtonText>
+        </Strings>
+      </Button>
+      <Button guid="guidSnykVSPackageCmdSet" id="cmdidClean" priority="0x202" type="Button">
+        <Parent guid="guidSnykVSPackageCmdSet" id="SnykToolbarGroup" />
+        <Icon guid="ImageCatalogGuid" id="CleanData" />
+        <CommandFlag>IconIsMoniker</CommandFlag>
+        <Strings>
+          <ButtonText>Clean</ButtonText>
+        </Strings>
+      </Button>
+      <Button guid="guidSnykVSPackageCmdSet" id="cmdidOptions" priority="0x203" type="Button">
+        <Parent guid="guidSnykVSPackageCmdSet" id="SnykToolbarGroup" />
+        <Icon guid="ImageCatalogGuid" id="Settings" />
+        <CommandFlag>IconIsMoniker</CommandFlag>
+        <Strings>
+          <ButtonText>Settings</ButtonText>
+        </Strings>
+      </Button>      
+      <Button guid="guidSnykVSPackageCmdSet" id="cmdidSnykOpenSettingsCommand" priority="0x0100" type="Button">
+        <Parent guid="guidSnykVSPackageCmdSet" id="MyMenuGroup" />
+        <Icon guid="guidImages5" id="bmpPic1" />
+        <Strings>
+          <ButtonText>Invoke SnykOpenSettingsCommand</ButtonText>
+        </Strings>
+      </Button>
+    </Buttons>
+
+    <!--The bitmaps section is used to define the bitmaps that are used for the commands.-->
+    <Bitmaps>
+      <!--  The bitmap id is defined in a way that is a little bit different from the others:
+            the declaration starts with a guid for the bitmap strip, then there is the resource id of the
+            bitmap strip containing the bitmaps and then there are the numeric ids of the elements used
+            inside a button definition. An important aspect of this declaration is that the element id
+            must be the actual index (1-based) of the bitmap inside the bitmap strip. -->
+      <Bitmap guid="guidImages1" href="Resources\SnykToolWindowCommand.png" usedList="bmpPic1, bmpPic2, bmpPicSearch, bmpPicX, bmpPicArrows, bmpPicStrikethrough" />
+      <Bitmap guid="snykIcon" href="Resources\SnykToolWindow.png" usedList="snykIconID" />
+      <Bitmap guid="runIcon" href="Resources\Run.png" usedList="runIconId" />
+      <Bitmap guid="stopIcon" href="Resources\Stop.png" />
+      <Bitmap guid="cleanIcon" href="Resources\CleanData.png" />
+      <Bitmap guid="settingsIcon" href="Resources\Settings.png" />
+    </Bitmaps>
+  </Commands>
+
+  <Symbols>
+    <!-- This is the package guid. -->
+    <GuidSymbol name="guidSnykVSPackage" value="{5ddf9abb-42ec-49b9-b201-b3e2fc2f8f89}" />
+
+    <!-- This is the guid used to group the menu commands together -->
+    <GuidSymbol name="guidSnykVSPackageCmdSet" value="{31b6f1bd-8317-4d93-b023-b60f667b9e76}">
+      <IDSymbol name="MyMenuGroup" value="0x1020" />
+      <IDSymbol name="SnykRunScanCommandId" value="0x0100" />
+      <IDSymbol name="cmdidSnykToolWindowCommand" value="4129" />
+
+      <IDSymbol name="SnykToolbar" value="0x501" />
+      <IDSymbol name="SnykToolbarGroup" value="0x502" />
+      <IDSymbol name="cmdidScan" value="0x503" />
+      <IDSymbol name="cmdidStop" value="0x504" />
+      <IDSymbol name="cmdidClean" value="0x505" />
+      <IDSymbol name="cmdidOptions" value="0x506" />
+      <IDSymbol value="4130" name="cmdidSnykOpenSettingsCommand" />
+    </GuidSymbol>
+
+    <GuidSymbol name="guidImages" value="{f1d8a19c-c67e-46ac-997e-2beffd24d4c2}">
+      <IDSymbol name="bmpPic1" value="1" />
+      <IDSymbol name="bmpPic2" value="2" />
+      <IDSymbol name="bmpPicSearch" value="3" />
+      <IDSymbol name="bmpPicX" value="4" />
+      <IDSymbol name="bmpPicArrows" value="5" />
+      <IDSymbol name="bmpPicStrikethrough" value="6" />
+    </GuidSymbol>
+  
+    <GuidSymbol value="{02b1e517-ed81-4b12-9f36-46010de7b437}" name="guidImages1">
+      <IDSymbol name="bmpPic1" value="1" />
+      <IDSymbol name="bmpPic2" value="2" />
+      <IDSymbol name="bmpPicSearch" value="3" />
+      <IDSymbol name="bmpPicX" value="4" />
+      <IDSymbol name="bmpPicArrows" value="5" />
+      <IDSymbol name="bmpPicStrikethrough" value="6" />
+    </GuidSymbol>
+
+    <GuidSymbol name="snykIcon" value="{4058E265-7834-46E0-91E3-49109DB11EF9}">
+      <IDSymbol name="snykIconID" value="1" />
+    </GuidSymbol>
+    <GuidSymbol name="runIcon" value="{CC41D142-B8EE-42EE-9D62-460EDAD56DA3}">
+      <IDSymbol name="runIconId" value="1" />
+    </GuidSymbol>
+    <GuidSymbol name="stopIcon" value="{4A91D48E-452F-4B28-96B5-16AA8917E068}">
+      <IDSymbol name="stopIconId" value="1" />
+    </GuidSymbol>
+    <GuidSymbol name="cleanIcon" value="{BE075869-202B-4A71-90A0-718E34C8FD89}">
+      <IDSymbol name="cleanIconId" value="1" />
+    </GuidSymbol>
+    <GuidSymbol name="settingsIcon" value="{C861111A-CABB-42CB-BE31-CFA1D5CC9231}">
+      <IDSymbol name="settingsIconId" value="1" />
+    </GuidSymbol>
+  
+    <GuidSymbol value="{5dba7aa5-c0c4-4515-8448-4fea1ebbe6be}" name="guidImages2">
+      <IDSymbol name="bmpPic1" value="1" />
+      <IDSymbol name="bmpPic2" value="2" />
+      <IDSymbol name="bmpPicSearch" value="3" />
+      <IDSymbol name="bmpPicX" value="4" />
+      <IDSymbol name="bmpPicArrows" value="5" />
+      <IDSymbol name="bmpPicStrikethrough" value="6" />
+    </GuidSymbol>
+  
+    <GuidSymbol value="{8475230b-8970-4cc5-ac61-c93a9c5d0d88}" name="guidImages3">
+      <IDSymbol name="bmpPic1" value="1" />
+      <IDSymbol name="bmpPic2" value="2" />
+      <IDSymbol name="bmpPicSearch" value="3" />
+      <IDSymbol name="bmpPicX" value="4" />
+      <IDSymbol name="bmpPicArrows" value="5" />
+      <IDSymbol name="bmpPicStrikethrough" value="6" />
+    </GuidSymbol>
+  
+    <GuidSymbol value="{e4f2a598-8513-439a-be3f-8c16bc501532}" name="guidImages4">
+      <IDSymbol name="bmpPic1" value="1" />
+      <IDSymbol name="bmpPic2" value="2" />
+      <IDSymbol name="bmpPicSearch" value="3" />
+      <IDSymbol name="bmpPicX" value="4" />
+      <IDSymbol name="bmpPicArrows" value="5" />
+      <IDSymbol name="bmpPicStrikethrough" value="6" />
+    </GuidSymbol>
+  
+    <GuidSymbol value="{9b81c284-d7c4-4715-bfcc-25f55b39aeaa}" name="guidImages5">
+      <IDSymbol name="bmpPic1" value="1" />
+      <IDSymbol name="bmpPic2" value="2" />
+      <IDSymbol name="bmpPicSearch" value="3" />
+      <IDSymbol name="bmpPicX" value="4" />
+      <IDSymbol name="bmpPicArrows" value="5" />
+      <IDSymbol name="bmpPicStrikethrough" value="6" />
+    </GuidSymbol>
+  </Symbols>
+</CommandTable>

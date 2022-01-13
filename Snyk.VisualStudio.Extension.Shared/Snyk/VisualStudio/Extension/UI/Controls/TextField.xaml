@@ -1,0 +1,12 @@
+﻿<TextBox x:Class="Snyk.VisualStudio.Extension.UI.Controls.TextField"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
+             xmlns:local="clr-namespace:Snyk.VisualStudio.Extension.UI.Controls"
+             TextWrapping="Wrap"
+             Background="Transparent" Foreground="{DynamicResource VsBrush.WindowText}" 
+             BorderThickness="0"
+             IsReadOnly="True"
+             VerticalAlignment="Center">
+</TextBox>

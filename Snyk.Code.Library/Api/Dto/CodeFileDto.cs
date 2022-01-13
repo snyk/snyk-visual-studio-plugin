@@ -1,6 +1,6 @@
 ﻿namespace Snyk.Code.Library.Api.Dto
 {
-    using System.Text.Json.Serialization;
+    using Newtonsoft.Json;
 
     /// <summary>
     /// Data transfer object for file content pair: file path hash - file content.
@@ -21,13 +21,13 @@
         /// <summary>
         /// Gets or sets a value indicating file path hash.
         /// </summary>
-        [JsonPropertyName("fileHash")]
+        [JsonProperty("hash")]
         public string Hash { get; set; }
 
         /// <summary>
         /// Gets or sets a value indicating file content.
         /// </summary>
-        [JsonPropertyName("fileContent")]
+        [JsonProperty("content")]
         public string Content { get; set; }
     }
 }

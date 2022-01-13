@@ -1,6 +1,7 @@
 ﻿namespace Snyk.Code.Library.Service
 {
     using System.Collections.Generic;
+    using System.Threading;
     using System.Threading.Tasks;
 
     /// <summary>
@@ -8,6 +9,12 @@
     /// </summary>
     public interface IFiltersService
     {
-        Task<IList<string>> FilterFilesAsync(IList<string> filePaths);
+        /// <summary>
+        /// Filter files by SnykCode filters.
+        /// </summary>
+        /// <param name="filePaths">Project file paths.</param>
+        /// <param name="cancellationToken">Token to cancel current task.</param>
+        /// <returns>Filtered file paths.</returns>
+        Task<IList<string>> FilterFilesAsync(IEnumerable<string> filePaths, CancellationToken cancellationToken = default);
     }
 }

@@ -2,6 +2,7 @@
 {
     using System;
     using System.Collections.Generic;
+    using System.Threading;
     using System.Threading.Tasks;
     using Moq;
     using Snyk.Code.Library.Api;
@@ -9,11 +10,14 @@
     using Snyk.Code.Library.Domain.Analysis;
     using Snyk.Code.Library.Service;
     using Xunit;
+    using static Snyk.Code.Library.Service.SnykCodeService;
 
     public class AnalysisServiceTest
     {
+        private FireScanCodeProgressUpdate scanCodeProgressUpdate = (state, progress) => { };
+
         [Fact]
-        public async Task AnalysisService_FailedStatusProvided_GetAnalysisThrowExceptionAsync()
+        public void AnalysisService_FailedStatusProvided_GetAnalysisThrowException()
         {
             var codeClientMock = new Mock<ISnykCodeClient>();
 
@@ -29,13 +33,13 @@
             };
 
             codeClientMock
-                .Setup(codeClient => codeClient.GetAnalysisAsync(dummyBundleId).Result)
+                .Setup(codeClient => codeClient.GetAnalysisAsync(dummyBundleId, It.IsAny<CancellationToken>()).Result)
                 .Returns(dummyAnalysisResultDto);
 
-            _ = Assert.ThrowsAsync<AggregateException>(() => analysisService.GetAnalysisAsync(dummyBundleId));
+            _ = Assert.ThrowsAsync<AggregateException>(() => analysisService.GetAnalysisAsync(dummyBundleId, scanCodeProgressUpdate));
 
             codeClientMock
-                .Verify(codeClient => codeClient.GetAnalysisAsync(dummyBundleId), Times.Exactly(1));
+                .Verify(codeClient => codeClient.GetAnalysisAsync(dummyBundleId, It.IsAny<CancellationToken>()), Times.Exactly(1));
         }
 
         [Fact]
@@ -57,25 +61,25 @@
             var mockMethodCallsCount = 0;
 
             codeClientMock
-                .Setup(codeClient => codeClient.GetAnalysisAsync(dummyBundleId).Result)
+                .Setup(codeClient => codeClient.GetAnalysisAsync(dummyBundleId, It.IsAny<CancellationToken>()).Result)
                 .Returns(dummyAnalysisResultDto)
-                .Callback<string>((str) =>
+                .Callback<string, CancellationToken>((str, cancellationToken) =>
                 {
                     mockMethodCallsCount++;
 
                     if (mockMethodCallsCount > 23)
                     {
-                        dummyAnalysisResultDto.Status = AnalysisStatus.Done;
+                        dummyAnalysisResultDto.Status = AnalysisStatus.Complete;
                     }
                 });
 
-            var analysisResult = await analysisService.GetAnalysisAsync(dummyBundleId);
+            var analysisResult = await analysisService.GetAnalysisAsync(dummyBundleId, this.scanCodeProgressUpdate);
 
             Assert.NotNull(analysisResult);
-            Assert.Equal(AnalysisStatus.Done, analysisResult.Status);
+            Assert.Equal(AnalysisStatus.Complete, analysisResult.Status);
 
             codeClientMock
-                .Verify(codeClient => codeClient.GetAnalysisAsync(dummyBundleId), Times.Exactly(24));
+                .Verify(codeClient => codeClient.GetAnalysisAsync(dummyBundleId, It.IsAny<CancellationToken>()), Times.Exactly(24));
         }
 
         [Fact]
@@ -95,16 +99,16 @@
             };
 
             codeClientMock
-                .Setup(codeClient => codeClient.GetAnalysisAsync(dummyBundleId).Result)
+                .Setup(codeClient => codeClient.GetAnalysisAsync(dummyBundleId, It.IsAny<CancellationToken>()).Result)
                 .Returns(dummyAnalysisResultDto);
 
-            var analysisResult = await analysisService.GetAnalysisAsync(dummyBundleId);
+            var analysisResult = await analysisService.GetAnalysisAsync(dummyBundleId, this.scanCodeProgressUpdate, requestAttempts: 5);
 
             Assert.NotNull(analysisResult);
             Assert.Equal(AnalysisStatus.Failed, analysisResult.Status);
 
             codeClientMock
-                .Verify(codeClient => codeClient.GetAnalysisAsync(dummyBundleId), Times.Exactly(100));
+                .Verify(codeClient => codeClient.GetAnalysisAsync(dummyBundleId, It.IsAny<CancellationToken>()), Times.Exactly(5));
         }
 
         [Fact]
@@ -116,7 +120,7 @@
 
             var analysisResultsDto = new AnalysisResultsDto();
 
-            analysisResultsDto.Files = new Dictionary<string, SuggestionIdToFileDto>
+            var files = new Dictionary<string, SuggestionIdToFileDto>
             {
                 ["app.js"] = new SuggestionIdToFileDto
                 {
@@ -198,7 +202,7 @@
                 },
             };
 
-            analysisResultsDto.Suggestions = new Dictionary<string, SuggestionDto>
+            var suggestions = new Dictionary<string, SuggestionDto>
             {
                 ["0"] = new SuggestionDto
                 {
@@ -272,15 +276,16 @@
 
             var dummyAnalysisResultDto = new AnalysisResultDto
             {
-                Status = AnalysisStatus.Done,
-                AnalysisResults = analysisResultsDto,
+                Status = AnalysisStatus.Complete,
+                Suggestions = suggestions,
+                Files = files,
             };
 
             codeClientMock
-                .Setup(codeClient => codeClient.GetAnalysisAsync(dummyBundleId).Result)
+                .Setup(codeClient => codeClient.GetAnalysisAsync(dummyBundleId, It.IsAny<CancellationToken>()).Result)
                 .Returns(dummyAnalysisResultDto);
 
-            var analysisResult = await analysisService.GetAnalysisAsync(dummyBundleId);
+            var analysisResult = await analysisService.GetAnalysisAsync(dummyBundleId, this.scanCodeProgressUpdate);
 
             Assert.NotNull(analysisResult);
             Assert.Equal(2, analysisResult.FileAnalyses.Count);
@@ -292,7 +297,7 @@
             Assert.Equal("db.js", analysisResult.FileAnalyses[1].FileName);
 
             codeClientMock
-                .Verify(codeClient => codeClient.GetAnalysisAsync(dummyBundleId), Times.Exactly(1));
+                .Verify(codeClient => codeClient.GetAnalysisAsync(dummyBundleId, It.IsAny<CancellationToken>()), Times.Exactly(1));
         }
     }
 }

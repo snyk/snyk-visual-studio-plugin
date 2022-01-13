@@ -25,7 +25,7 @@
         /// The file hash must be computed by parsing the file in utf8, performing a SHA-256 on the resulting string and encoding the hash in hexadecimal.
         /// E.g. *"/.eslintrc.js": "4ed8e2973ddad1fe3eb6bbacd7b967ee8d5ef934763872c160d7cf708cc0c57e"*.
         /// </summary>
-        public Dictionary<string, string> Files { get; set; }
+        public IDictionary<string, string> Files { get; set; }
 
         /// <summary>
         /// Gets or sets a value indicating removed files dictionary.
@@ -33,6 +33,6 @@
         /// The removedFiles are parsed before the files, therefore if the same filePath appears in both of them it will not be removed. 
         /// The entries in the files object can either replace an old file with a new version (if the paths match) or add a new file to the child bundle. 
         /// </summary>
-        public List<string> RemovedFiles { get; set; }
+        public IEnumerable<string> RemovedFiles { get; set; }
     }
 }

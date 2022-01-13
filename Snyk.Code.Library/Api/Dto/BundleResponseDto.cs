@@ -1,6 +1,6 @@
 ﻿namespace Snyk.Code.Library.Api.Dto
 {
-    using System.Text.Json.Serialization;
+    using Newtonsoft.Json;
 
     /// <summary>
     /// For uploaded bundles, the files parameter contain an object with slash-beginning file paths as keys and file hashes as values. 
@@ -15,13 +15,14 @@
         /// </summary>
         public BundleResponseDto()
         {
+            this.MissingFiles = new string[0];
         }
 
         /// <summary>
-        /// Gets or sets a value indicating bundle id.
+        /// Gets or sets a value indicating bundle hash.
         /// </summary>
-        [JsonPropertyName("bundleId")]
-        public string Id { get; set; }
+        [JsonProperty("bundleHash")]
+        public string Hash { get; set; }
 
         /// <summary>
         /// Gets or sets a value indicating whether missing files.

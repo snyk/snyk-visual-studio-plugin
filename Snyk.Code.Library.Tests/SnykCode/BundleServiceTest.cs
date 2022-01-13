@@ -1,6 +1,8 @@
 ﻿namespace Snyk.Code.Library.Tests.Api
 {
     using System.Collections.Generic;
+    using System.Linq;
+    using System.Threading;
     using System.Threading.Tasks;
     using Moq;
     using Snyk.Code.Library.Api;
@@ -31,29 +33,32 @@
 
             var bundleDto = new BundleResponseDto
             {
-                Id = bundle.Id,
+                Hash = bundle.Id,
                 MissingFiles = new string[] { filePath1, filePath2 },
             };
 
             codeClientMock
-                .Setup(codeClient => codeClient.CheckBundleAsync(bundle.Id).Result)
+                .Setup(codeClient => codeClient.CheckBundleAsync(bundle.Id, It.IsAny<CancellationToken>()).Result)
                 .Returns(bundleDto);
 
             string fileContent1 = TestResource.GetFileContent("app1.js");
             string fileContent2 = TestResource.GetFileContent("app2.js");
 
+            string fileHash1 = Sha256.ComputeHash(fileContent1);
+            string fileHash2 = Sha256.ComputeHash(fileContent2);
+
             var codeFileDtos = new List<CodeFileDto>
             {
-                new CodeFileDto(Sha256.ComputeHash(fileContent1), fileContent1),
-                new CodeFileDto(Sha256.ComputeHash(fileContent2), fileContent2),
+                new CodeFileDto(fileHash1, fileContent1),
+                new CodeFileDto(fileHash2, fileContent2),
             };
 
             var mockMethodCallsCount = 1;
 
             codeClientMock
-                .Setup(codeClient => codeClient.UploadFilesAsync(bundle.Id, It.IsAny<IEnumerable<CodeFileDto>>()).Result)
-                .Returns(true)
-                .Callback<string, IEnumerable<CodeFileDto>>((str, codeFiles) =>
+                .Setup(codeClient => codeClient.ExtendBundleAsync(bundle.Id, It.IsAny<Dictionary<string, CodeFileDto>>(), It.IsAny<CancellationToken>()).Result)
+                .Returns(new BundleResponseDto())
+                .Callback<string, IDictionary<string, CodeFileDto>, CancellationToken>((str, codeFilesDict, cancellationToken) =>
                 {
                     mockMethodCallsCount++;
 
@@ -65,13 +70,29 @@
 
             var bundleService = new BundleService(codeClientMock.Object);
 
-            await bundleService.UploadMissingFilesAsync(bundle);
+            var solutionServiceMock = new Mock<ISolutionService>();
+            var filtersServiceMock = new Mock<IFiltersService>();
+            var codeCacheServiceMock = new Mock<ICodeCacheService>();
+
+            var fileHashToContentDictionary = new Dictionary<string, string>();
+            fileHashToContentDictionary.Add(fileHash1, fileContent1);
+            fileHashToContentDictionary.Add(fileHash2, fileContent2);
+
+            codeCacheServiceMock
+                .Setup(codeCacheService => codeCacheService.GetFileHashToContentDictionary(It.IsAny<IEnumerable<string>>()))
+                .Returns(fileHashToContentDictionary);
+
+            codeCacheServiceMock
+                .Setup(codeCacheService => codeCacheService.CreateFilePathToHashAndContentDictionary(It.IsAny<IList<string>>()))
+                .Returns(new Dictionary<string, (string, string)>());
+
+            await bundleService.UploadMissingFilesAsync(bundle, codeCacheServiceMock.Object, (state, progress) => { }, It.IsAny<CancellationToken>());
 
             codeClientMock
-                .Verify(codeClient => codeClient.CheckBundleAsync(bundle.Id), Times.Exactly(3));
+                .Verify(codeClient => codeClient.CheckBundleAsync(bundle.Id, It.IsAny<CancellationToken>()), Times.Exactly(3));
 
             codeClientMock
-                .Verify(codeClient => codeClient.UploadFilesAsync(bundle.Id, It.IsAny<IEnumerable<CodeFileDto>>()), Times.Exactly(3));
+                .Verify(codeClient => codeClient.ExtendBundleAsync(bundle.Id, It.IsAny<Dictionary<string, CodeFileDto>>(), It.IsAny<CancellationToken>()), Times.Exactly(3));
         }
 
         [Fact]
@@ -79,18 +100,18 @@
         {
             var codeClientMock = new Mock<ISnykCodeClient>();
 
-            var dummyBundleDto = new BundleResponseDto { Id = "dummy id" };
+            var dummyBundleDto = new BundleResponseDto { Hash = "dummy id" };
 
             codeClientMock
-                .Setup(codeClient => codeClient.CheckBundleAsync(dummyBundleDto.Id).Result)
+                .Setup(codeClient => codeClient.CheckBundleAsync(dummyBundleDto.Hash, It.IsAny<CancellationToken>()).Result)
                 .Returns(dummyBundleDto);
 
             var bundleService = new BundleService(codeClientMock.Object);
 
-            var bundle = await bundleService.CheckBundleAsync(dummyBundleDto.Id);
+            var bundle = await bundleService.CheckBundleAsync(dummyBundleDto.Hash);
 
             Assert.NotNull(bundle);
-            Assert.Equal(dummyBundleDto.Id, bundle.Id);
+            Assert.Equal(dummyBundleDto.Hash, bundle.Id);
         }
 
         [Fact]
@@ -118,10 +139,10 @@
 
             var codeClientMock = new Mock<ISnykCodeClient>();
 
-            var dummyBundleDto = new BundleResponseDto { Id = "dummy id" };
+            var dummyBundleDto = new BundleResponseDto { Hash = "dummy id" };
 
             codeClientMock
-                .Setup(codeClient => codeClient.CreateBundleAsync(It.IsAny<Dictionary<string, string>>()).Result)
+                .Setup(codeClient => codeClient.CreateBundleAsync(It.IsAny<Dictionary<string, string>>(), It.IsAny<CancellationToken>()).Result)
                 .Returns(dummyBundleDto);
 
             var bundleService = new BundleService(codeClientMock.Object);
@@ -131,25 +152,25 @@
             Assert.NotNull(createdBundle);
             Assert.True(!string.IsNullOrEmpty(createdBundle.Id));
 
-            var fileHashToContentDict = new Dictionary<string, string>();
+            var fileHashToContentDict = new Dictionary<string, (string, string)>();
 
-            fileHashToContentDict.Add(fileHash1, fileContent1);
-            fileHashToContentDict.Add(fileHash2, fileContent2);
-            fileHashToContentDict.Add(fileHash3, fileContent3);
+            fileHashToContentDict.Add(filePath1, (fileHash1, fileContent1));
+            fileHashToContentDict.Add(filePath2, (fileHash2, fileContent2));
+            fileHashToContentDict.Add(filePath3, (fileHash3, fileContent3));
 
             codeClientMock
-                .Setup(codeClient => codeClient.UploadFilesAsync(dummyBundleDto.Id, It.IsAny<IEnumerable<CodeFileDto>>()).Result)
-                .Returns(true);
+                .Setup(codeClient => codeClient.ExtendBundleAsync(dummyBundleDto.Hash, It.IsAny<Dictionary<string, CodeFileDto>>(), It.IsAny<CancellationToken>()).Result)
+                .Returns(new BundleResponseDto());
 
-            bool isSuccess = await bundleService.UploadFilesAsync(createdBundle.Id, fileHashToContentDict, 200);
+            bool isSuccess = await bundleService.UploadFilesAsync(createdBundle.Id, fileHashToContentDict, (state, progress) => { }, 200);
 
             Assert.True(isSuccess);
 
             codeClientMock
-                .Verify(codeClient => codeClient.CreateBundleAsync(filePathToHashDict));
+                .Verify(codeClient => codeClient.CreateBundleAsync(filePathToHashDict, It.IsAny<CancellationToken>()));
 
             codeClientMock
-                .Verify(codeClient => codeClient.UploadFilesAsync(dummyBundleDto.Id, It.IsAny<IEnumerable<CodeFileDto>>()), Times.Exactly(3));
+                .Verify(codeClient => codeClient.ExtendBundleAsync(dummyBundleDto.Hash, It.IsAny<Dictionary<string, CodeFileDto>>(), It.IsAny<CancellationToken>()), Times.Exactly(3));
         }
 
         [Fact]
@@ -167,10 +188,10 @@
 
             var bundleService = new BundleService(codeClientMock.Object);
 
-            var dummyBundleDto = new BundleResponseDto { Id = "dummy id" };
+            var dummyBundleDto = new BundleResponseDto { Hash = "dummy id" };
 
             codeClientMock
-                .Setup(codeClient => codeClient.CreateBundleAsync(filePathToHashDict).Result)
+                .Setup(codeClient => codeClient.CreateBundleAsync(filePathToHashDict, It.IsAny<CancellationToken>()).Result)
                 .Returns(dummyBundleDto);
 
             var firstBundleDto = await bundleService.CreateBundleAsync(filePathToHashDict);
@@ -189,12 +210,12 @@
 
             var resultExtendBundleDto = new BundleResponseDto
             {
-                Id = dummyBundleDto.Id,
+                Hash = dummyBundleDto.Hash,
                 MissingFiles = new string[3],
             };
 
             codeClientMock
-                .Setup(codeClient => codeClient.ExtendBundleAsync(dummyBundleDto.Id, It.IsAny<Dictionary<string, string>>(), It.IsAny<List<string>>()).Result)
+                .Setup(codeClient => codeClient.ExtendBundleAsync(dummyBundleDto.Hash, It.IsAny<Dictionary<string, string>>(), It.IsAny<List<string>>(), It.IsAny<CancellationToken>()).Result)
                 .Returns(resultExtendBundleDto);
 
             var uploadedBundle = await bundleService.ExtendBundleAsync(firstBundleDto.Id, extendFilePathToHashDict, filesToRemovePaths, 200);
@@ -204,10 +225,10 @@
             Assert.Equal(3, uploadedBundle.MissingFiles.Count);
 
             codeClientMock
-                .Verify(codeClient => codeClient.CreateBundleAsync(filePathToHashDict));
+                .Verify(codeClient => codeClient.CreateBundleAsync(filePathToHashDict, It.IsAny<CancellationToken>()));
 
             codeClientMock
-                .Verify(codeClient => codeClient.ExtendBundleAsync(dummyBundleDto.Id, It.IsAny<Dictionary<string, string>>(), It.IsAny<List<string>>()), Times.Exactly(3));
+                .Verify(codeClient => codeClient.ExtendBundleAsync(dummyBundleDto.Hash, It.IsAny<Dictionary<string, string>>(), It.IsAny<List<string>>(), It.IsAny<CancellationToken>()), Times.Exactly(3));
         }
 
         [Fact]
@@ -223,10 +244,10 @@
 
             var bundleService = new BundleService(codeClientMock.Object);
 
-            var dummyBundleDto = new BundleResponseDto { Id = "dummy id" };
+            var dummyBundleDto = new BundleResponseDto { Hash = "dummy id" };
 
             codeClientMock
-                .Setup(codeClient => codeClient.CreateBundleAsync(filePathToHashDict).Result)
+                .Setup(codeClient => codeClient.CreateBundleAsync(filePathToHashDict, It.IsAny<CancellationToken>()).Result)
                 .Returns(dummyBundleDto);
 
             var firstBundleDto = await bundleService.CreateBundleAsync(filePathToHashDict);
@@ -247,12 +268,12 @@
 
             var resultExtendBundleDto = new BundleResponseDto
             {
-                Id = dummyBundleDto.Id,
+                Hash = dummyBundleDto.Hash,
                 MissingFiles = new string[6],
             };
 
             codeClientMock
-                .Setup(codeClient => codeClient.ExtendBundleAsync(dummyBundleDto.Id, It.IsAny<Dictionary<string, string>>(), It.IsAny<List<string>>()).Result)
+                .Setup(codeClient => codeClient.ExtendBundleAsync(dummyBundleDto.Hash, It.IsAny<Dictionary<string, string>>(), It.IsAny<List<string>>(), It.IsAny<CancellationToken>()).Result)
                 .Returns(resultExtendBundleDto);
 
             var extendedBundle = await bundleService.ExtendBundleAsync(firstBundleDto.Id, extendFilePathToHashDict, new List<string>(), 150);
@@ -262,10 +283,10 @@
             Assert.Equal(6, extendedBundle.MissingFiles.Count);
 
             codeClientMock
-                .Verify(codeClient => codeClient.CreateBundleAsync(filePathToHashDict));
+                .Verify(codeClient => codeClient.CreateBundleAsync(filePathToHashDict, It.IsAny<CancellationToken>()));
 
             codeClientMock
-                .Verify(codeClient => codeClient.ExtendBundleAsync(dummyBundleDto.Id, It.IsAny<Dictionary<string, string>>(), It.IsAny<List<string>>()), Times.Exactly(5));
+                .Verify(codeClient => codeClient.ExtendBundleAsync(dummyBundleDto.Hash, It.IsAny<Dictionary<string, string>>(), It.IsAny<List<string>>(), It.IsAny<CancellationToken>()), Times.Exactly(5));
         }
 
         [Fact]
@@ -281,10 +302,10 @@
 
             var bundleService = new BundleService(codeClientMock.Object);
 
-            var dummyBundleDto = new BundleResponseDto { Id = "dummy id" };
+            var dummyBundleDto = new BundleResponseDto { Hash = "dummy id" };
 
             codeClientMock
-                .Setup(codeClient => codeClient.CreateBundleAsync(filePathToHashDict).Result)
+                .Setup(codeClient => codeClient.CreateBundleAsync(filePathToHashDict, It.IsAny<CancellationToken>()).Result)
                 .Returns(dummyBundleDto);
 
             var firstBundleDto = await bundleService.CreateBundleAsync(filePathToHashDict);
@@ -305,25 +326,25 @@
 
             var resultExtendBundleDto = new BundleResponseDto
             {
-                Id = dummyBundleDto.Id,
+                Hash = dummyBundleDto.Hash,
                 MissingFiles = new string[6],
             };
 
             codeClientMock
-                .Setup(codeClient => codeClient.ExtendBundleAsync(dummyBundleDto.Id, It.IsAny<Dictionary<string, string>>(), It.IsAny<List<string>>()).Result)
+                .Setup(codeClient => codeClient.ExtendBundleAsync(dummyBundleDto.Hash, It.IsAny<Dictionary<string, string>>(), It.IsAny<List<string>>(), It.IsAny<CancellationToken>()).Result)
                 .Returns(resultExtendBundleDto);
 
             var extendedBundle = await bundleService.ProcessExtendLargeBundleAsync(firstBundleDto.Id, extendFilePathToHashDict, null, 150);
 
             Assert.NotNull(extendedBundle);
-            Assert.NotEmpty(extendedBundle.Id);
+            Assert.NotEmpty(extendedBundle.Hash);
             Assert.Equal(6, extendedBundle.MissingFiles.Length);
 
             codeClientMock
-                .Verify(codeClient => codeClient.CreateBundleAsync(filePathToHashDict));
+                .Verify(codeClient => codeClient.CreateBundleAsync(filePathToHashDict, It.IsAny<CancellationToken>()));
 
             codeClientMock
-                .Verify(codeClient => codeClient.ExtendBundleAsync(dummyBundleDto.Id, It.IsAny<Dictionary<string, string>>(), It.IsAny<List<string>>()), Times.Exactly(5));
+                .Verify(codeClient => codeClient.ExtendBundleAsync(dummyBundleDto.Hash, It.IsAny<Dictionary<string, string>>(), It.IsAny<List<string>>(), It.IsAny<CancellationToken>()), Times.Exactly(5));
         }
 
         [Fact]
@@ -342,20 +363,20 @@
 
             var bundleService = new BundleService(codeClientMock.Object);
 
-            var dummyBundleDto = new BundleResponseDto { Id = "dummy id" };
+            var dummyBundleDto = new BundleResponseDto { Hash = "dummy id" };
 
             codeClientMock
-                .Setup(codeClient => codeClient.CreateBundleAsync(It.IsAny<Dictionary<string, string>>()).Result)
+                .Setup(codeClient => codeClient.CreateBundleAsync(It.IsAny<Dictionary<string, string>>(), It.IsAny<CancellationToken>()).Result)
                 .Returns(dummyBundleDto);
 
             var resultExtendBundleDto = new BundleResponseDto
             {
-                Id = dummyBundleDto.Id,
+                Hash = dummyBundleDto.Hash,
                 MissingFiles = new string[50],
             };
 
             codeClientMock
-                .Setup(codeClient => codeClient.ExtendBundleAsync(dummyBundleDto.Id, It.IsAny<Dictionary<string, string>>(), It.IsAny<List<string>>()).Result)
+                .Setup(codeClient => codeClient.ExtendBundleAsync(dummyBundleDto.Hash, It.IsAny<Dictionary<string, string>>(), It.IsAny<List<string>>(), It.IsAny<CancellationToken>()).Result)
                 .Returns(resultExtendBundleDto);
 
             var bundleDto = await bundleService.CreateBundleAsync(filePathToHashDict, 150);
@@ -365,10 +386,10 @@
             Assert.Equal(50, bundleDto.MissingFiles.Count);
 
             codeClientMock
-                .Verify(codeClient => codeClient.CreateBundleAsync(It.IsAny<Dictionary<string, string>>()));
+                .Verify(codeClient => codeClient.CreateBundleAsync(It.IsAny<Dictionary<string, string>>(), It.IsAny<CancellationToken>()));
 
             codeClientMock
-                .Verify(codeClient => codeClient.ExtendBundleAsync(dummyBundleDto.Id, It.IsAny<Dictionary<string, string>>(), It.IsAny<List<string>>()), Times.Exactly(49));
+                .Verify(codeClient => codeClient.ExtendBundleAsync(dummyBundleDto.Hash, It.IsAny<Dictionary<string, string>>(), It.IsAny<List<string>>(), It.IsAny<CancellationToken>()), Times.Exactly(49));
         }
 
         [Fact]
@@ -388,33 +409,33 @@
 
             var bundleService = new BundleService(codeClientMock.Object);
 
-            var dummyBundleDto = new BundleResponseDto { Id = "dummy id" };
+            var dummyBundleDto = new BundleResponseDto { Hash = "dummy id" };
 
             codeClientMock
-                .Setup(codeClient => codeClient.CreateBundleAsync(It.IsAny<Dictionary<string, string>>()).Result)
+                .Setup(codeClient => codeClient.CreateBundleAsync(It.IsAny<Dictionary<string, string>>(), It.IsAny<CancellationToken>()).Result)
                 .Returns(dummyBundleDto);
 
             var resultExtendBundleDto = new BundleResponseDto
             {
-                Id = dummyBundleDto.Id,
+                Hash = dummyBundleDto.Hash,
                 MissingFiles = new string[3],
             };
 
             codeClientMock
-                .Setup(codeClient => codeClient.ExtendBundleAsync(dummyBundleDto.Id, It.IsAny<Dictionary<string, string>>(), It.IsAny<List<string>>()).Result)
+                .Setup(codeClient => codeClient.ExtendBundleAsync(dummyBundleDto.Hash, It.IsAny<Dictionary<string, string>>(), It.IsAny<List<string>>(), It.IsAny<CancellationToken>()).Result)
                 .Returns(resultExtendBundleDto);
 
             var bundleDto = await bundleService.ProcessCreateLargeBundleAsync(filePathToHashDict, 175);
 
             Assert.NotNull(bundleDto);
-            Assert.NotEmpty(bundleDto.Id);
+            Assert.NotEmpty(bundleDto.Hash);
             Assert.Equal(3, bundleDto.MissingFiles.Length);
 
             codeClientMock
-                .Verify(codeClient => codeClient.CreateBundleAsync(It.IsAny<Dictionary<string, string>>()));
+                .Verify(codeClient => codeClient.CreateBundleAsync(It.IsAny<Dictionary<string, string>>(), It.IsAny<CancellationToken>()));
 
             codeClientMock
-                .Verify(codeClient => codeClient.ExtendBundleAsync(dummyBundleDto.Id, It.IsAny<Dictionary<string, string>>(), It.IsAny<List<string>>()), Times.Exactly(2));
+                .Verify(codeClient => codeClient.ExtendBundleAsync(dummyBundleDto.Hash, It.IsAny<Dictionary<string, string>>(), It.IsAny<List<string>>(), It.IsAny<CancellationToken>()), Times.Exactly(2));
         }
 
         [Fact]
@@ -461,7 +482,7 @@
             var removedFileChunkLists = bundleService.SplitRemovedFilesToChunkListsBySize(fileToRemovePaths, 100);
 
             Assert.NotNull(removedFileChunkLists);
-            Assert.Equal(3, removedFileChunkLists.Count);
+            Assert.Equal(3, removedFileChunkLists.Count());
         }
 
         [Fact]

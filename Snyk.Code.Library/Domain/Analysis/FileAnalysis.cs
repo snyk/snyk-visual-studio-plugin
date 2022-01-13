@@ -1,5 +1,6 @@
 ﻿namespace Snyk.Code.Library.Domain.Analysis
 {
+    using System;
     using System.Collections.Generic;
 
     /// <summary>

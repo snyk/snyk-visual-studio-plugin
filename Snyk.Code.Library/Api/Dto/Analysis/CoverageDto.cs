@@ -1,6 +1,6 @@
 ﻿namespace Snyk.Code.Library.Api.Dto.Analysis
 {
-    using System.Text.Json.Serialization;
+    using Newtonsoft.Json;
 
     /// <summary>
     /// Analysis result coverage information.
@@ -10,7 +10,7 @@
         /// <summary>
         /// Gets or sets a value indicating anaylysis source language.
         /// </summary>
-        [JsonPropertyName("lang")]
+        [JsonProperty("lang")]
         public string Langguage { get; set; }
 
         /// <summary>
@@ -21,7 +21,7 @@
         /// <summary>
         /// Gets or sets a value indicating anaylysis files count.
         /// </summary>
-        [JsonPropertyName("files")]
+        [JsonProperty("files")]
         public int FilesCount { get; set; }
     }
 }
