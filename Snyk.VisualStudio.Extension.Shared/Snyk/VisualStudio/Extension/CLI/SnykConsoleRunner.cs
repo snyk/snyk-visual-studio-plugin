@@ -65,7 +65,7 @@
             {
                 foreach (DictionaryEntry keyValuePair in environmentVariables)
                 {
-                    processStartInfo.EnvironmentVariables.Add(keyValuePair.Key.ToString(), keyValuePair.Value.ToString());
+                    processStartInfo.EnvironmentVariables[keyValuePair.Key.ToString().ToUpper()] = keyValuePair.Value.ToString();
                 }
             }
 
