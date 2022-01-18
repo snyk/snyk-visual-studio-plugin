@@ -5,6 +5,8 @@
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:tree="clr-namespace:Snyk.VisualStudio.Extension.Shared.UI.Tree"
              xmlns:window="clr-namespace:Snyk.VisualStudio.Extension.Shared.UI.Toolwindow"
+             xmlns:toolkit="clr-namespace:Community.VisualStudio.Toolkit;assembly=Community.VisualStudio.Toolkit"
+             toolkit:Themes.UseVsTheme="True"
              mc:Ignorable="d"
              d:DesignHeight="300" d:DesignWidth="300"
              Name="SnykToolWindow" Loaded="SnykToolWindow_Loaded">

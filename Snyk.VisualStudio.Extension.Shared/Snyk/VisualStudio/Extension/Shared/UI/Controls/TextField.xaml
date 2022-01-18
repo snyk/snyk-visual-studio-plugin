@@ -6,6 +6,8 @@
              xmlns:local="clr-namespace:Snyk.VisualStudio.Extension.Shared.UI.Controls"
              TextWrapping="Wrap"
              Background="Transparent" Foreground="{DynamicResource VsBrush.WindowText}" 
+             xmlns:toolkit="clr-namespace:Community.VisualStudio.Toolkit;assembly=Community.VisualStudio.Toolkit"
+             toolkit:Themes.UseVsTheme="True"
              BorderThickness="0"
              IsReadOnly="True"
              VerticalAlignment="Center">

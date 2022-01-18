@@ -33,7 +33,7 @@
         /// <summary>
         /// Path from this class folder to Resources folder.
         /// </summary>
-        private const string ResourcesDirectoryPath = "pack://application:,,,/Snyk.VisualStudio.Extension.Shared;component/";
+        private const string ResourcesDirectoryPath = "pack://application:,,,/Snyk.VisualStudio.Extension;component/";
 
         private const string NugetIconPath = ResourcesDirectoryPath + "NugetLogo.png";
         private const string NpmIconPath = ResourcesDirectoryPath + "NpmLogo.png";
