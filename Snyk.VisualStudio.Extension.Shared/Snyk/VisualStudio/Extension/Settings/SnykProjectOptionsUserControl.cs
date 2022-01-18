@@ -1,10 +1,10 @@
-﻿namespace Snyk.VisualStudio.Extension.Settings
+﻿namespace Snyk.VisualStudio.Extension.Shared.Settings
 {
     using System;
     using System.Windows.Forms;
     using Serilog;
     using Snyk.Common;
-    using Snyk.VisualStudio.Extension.Service;
+    using Snyk.VisualStudio.Extension.Shared.Service;
 
     /// <summary>
     /// Project settings control.

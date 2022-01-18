@@ -1,4 +1,4 @@
-﻿namespace Snyk.VisualStudio.Extension.UI.Toolwindow.SnykCode
+﻿namespace Snyk.VisualStudio.Extension.Shared.UI.Toolwindow.SnykCode
 {
     using System;
     using System.Collections.Generic;
@@ -10,8 +10,8 @@
     using Serilog;
     using Snyk.Code.Library.Domain.Analysis;
     using Snyk.Common;
-    using Snyk.VisualStudio.Extension.CLI;
-    using Snyk.VisualStudio.Extension.Service;
+    using Snyk.VisualStudio.Extension.Shared.CLI;
+    using Snyk.VisualStudio.Extension.Shared.Service;
 
     /// <summary>
     /// Interaction logic for DataFlowStepsControl.xaml.

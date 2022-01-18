@@ -1,4 +1,4 @@
-﻿namespace Snyk.VisualStudio.Extension.SnykAnalytics
+﻿namespace Snyk.VisualStudio.Extension.Shared.SnykAnalytics
 {
     using System;
     using System.Collections.Generic;

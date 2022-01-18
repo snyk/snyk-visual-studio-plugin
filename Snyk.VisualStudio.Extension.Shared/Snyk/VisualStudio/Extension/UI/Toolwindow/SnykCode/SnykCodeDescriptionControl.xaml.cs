@@ -1,4 +1,4 @@
-﻿namespace Snyk.VisualStudio.Extension.UI.Toolwindow.SnykCode
+﻿namespace Snyk.VisualStudio.Extension.Shared.UI.Toolwindow.SnykCode
 {
     using System.Windows.Controls;
     using Snyk.Code.Library.Domain.Analysis;

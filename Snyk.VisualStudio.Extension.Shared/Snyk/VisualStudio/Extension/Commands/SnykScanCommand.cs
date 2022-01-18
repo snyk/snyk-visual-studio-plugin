@@ -1,10 +1,10 @@
-﻿namespace Snyk.VisualStudio.Extension.Commands
+﻿namespace Snyk.VisualStudio.Extension.Shared.Commands
 {
     using System;
     using System.ComponentModel.Design;
     using Microsoft.VisualStudio.Shell;
-    using Snyk.VisualStudio.Extension.CLI;
-    using Snyk.VisualStudio.Extension.Service;
+    using Snyk.VisualStudio.Extension.Shared.CLI;
+    using Snyk.VisualStudio.Extension.Shared.Service;
     using Task = System.Threading.Tasks.Task;
 
     /// <summary>

@@ -1,10 +1,10 @@
-﻿namespace Snyk.VisualStudio.Extension.UI.Toolwindow
+﻿namespace Snyk.VisualStudio.Extension.Shared.UI.Toolwindow
 {
     using System;
     using System.Diagnostics;
     using System.Windows;
     using System.Windows.Controls;
-    using Snyk.VisualStudio.Extension.CLI;
+    using Snyk.VisualStudio.Extension.Shared.CLI;
 
     /// <summary>
     /// Interaction logic for OssDescriptionControl.xaml.

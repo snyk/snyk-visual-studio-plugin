@@ -1,4 +1,4 @@
-﻿namespace Snyk.VisualStudio.Extension.Settings
+﻿namespace Snyk.VisualStudio.Extension.Shared.Settings
 {
     using System;
     using System.Diagnostics.CodeAnalysis;
@@ -7,9 +7,9 @@
     using System.Windows.Forms;
     using Serilog;
     using Snyk.Common;
-    using Snyk.VisualStudio.Extension.CLI;
-    using Snyk.VisualStudio.Extension.Service;
-    using static Snyk.VisualStudio.Extension.CLI.SnykCliDownloader;
+    using Snyk.VisualStudio.Extension.Shared.CLI;
+    using Snyk.VisualStudio.Extension.Shared.Service;
+    using static Snyk.VisualStudio.Extension.Shared.CLI.SnykCliDownloader;
 
     /// <summary>
     /// Control for Snyk General Settings.

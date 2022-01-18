@@ -1,4 +1,6 @@
-﻿namespace Snyk.VisualStudio.Extension.Settings
+﻿using System.Runtime.InteropServices;
+
+namespace Snyk.VisualStudio.Extension.Shared.Settings
 {
     using System;
     using System.Runtime.InteropServices;
@@ -6,12 +8,13 @@
     using Microsoft.VisualStudio.Shell;
     using Serilog;
     using Snyk.Common;
-    using Snyk.VisualStudio.Extension.Service;
+    using Snyk.VisualStudio.Extension.Shared.Service;
 
     /// <summary>
     /// Snyk general settings page.
     /// </summary>
     [Guid("d45468c1-33d2-4dca-9780-68abaedf95e7")]
+    [ComVisible(true)]
     public class SnykGeneralOptionsDialogPage : DialogPage, ISnykOptions
     {
         private static readonly ILogger Logger = LogManager.ForContext<SnykGeneralOptionsDialogPage>();

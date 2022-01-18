@@ -1,4 +1,4 @@
-﻿namespace Snyk.VisualStudio.Extension.Settings
+﻿namespace Snyk.VisualStudio.Extension.Shared.Settings
 {
     /// <summary>
     /// Contains project/solution settings for Snyk.

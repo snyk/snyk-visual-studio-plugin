@@ -1,4 +1,4 @@
-﻿namespace Snyk.VisualStudio.Extension.UI.Tree
+﻿namespace Snyk.VisualStudio.Extension.Shared.UI.Tree
 {
     /// <summary>
     /// Open source root node for vulnerability tree.

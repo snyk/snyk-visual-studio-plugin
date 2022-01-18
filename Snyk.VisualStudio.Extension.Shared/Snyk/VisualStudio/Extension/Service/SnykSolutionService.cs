@@ -1,4 +1,4 @@
-﻿namespace Snyk.VisualStudio.Extension.CLI
+﻿namespace Snyk.VisualStudio.Extension.Shared.CLI
 {
     using System;
     using System.Collections.Generic;
@@ -6,7 +6,7 @@
     using EnvDTE;
     using Snyk.Code.Library.Service;
     using Snyk.Common;
-    using Snyk.VisualStudio.Extension.Service;
+    using Snyk.VisualStudio.Extension.Shared.Service;
     using Microsoft.VisualStudio;
     using Microsoft.VisualStudio.Shell.Interop;
     using Serilog;

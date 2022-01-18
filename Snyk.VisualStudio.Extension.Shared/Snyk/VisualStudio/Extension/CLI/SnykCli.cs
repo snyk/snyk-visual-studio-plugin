@@ -1,4 +1,4 @@
-﻿namespace Snyk.VisualStudio.Extension.CLI
+﻿namespace Snyk.VisualStudio.Extension.Shared.CLI
 {
     using System.Collections.Generic;
     using System.Collections.Specialized;
@@ -6,7 +6,7 @@
     using System.Linq;
     using Serilog;
     using Snyk.Common;
-    using Snyk.VisualStudio.Extension.Settings;
+    using Snyk.VisualStudio.Extension.Shared.Settings;
 
     /// <summary>
     /// Incapsulate work logic with Snyk CLI.

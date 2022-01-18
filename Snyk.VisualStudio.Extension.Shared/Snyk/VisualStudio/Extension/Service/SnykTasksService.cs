@@ -1,4 +1,4 @@
-﻿namespace Snyk.VisualStudio.Extension.Service
+﻿namespace Snyk.VisualStudio.Extension.Shared.Service
 {
     using System;
     using System.Collections.Generic;
@@ -9,10 +9,10 @@
     using Serilog;
     using Snyk.Code.Library.Domain.Analysis;
     using Snyk.Common;
-    using Snyk.VisualStudio.Extension.CLI;
-    using Snyk.VisualStudio.Extension.Service.Domain;
-    using Snyk.VisualStudio.Extension.SnykAnalytics;
-    using static Snyk.VisualStudio.Extension.CLI.SnykCliDownloader;
+    using Snyk.VisualStudio.Extension.Shared.CLI;
+    using Snyk.VisualStudio.Extension.Shared.Service.Domain;
+    using Snyk.VisualStudio.Extension.Shared.SnykAnalytics;
+    using static Snyk.VisualStudio.Extension.Shared.CLI.SnykCliDownloader;
     using Task = System.Threading.Tasks.Task;
 
     /// <summary>

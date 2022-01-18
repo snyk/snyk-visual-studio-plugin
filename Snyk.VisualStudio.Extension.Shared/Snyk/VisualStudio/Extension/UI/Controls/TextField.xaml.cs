@@ -1,4 +1,4 @@
-﻿namespace Snyk.VisualStudio.Extension.UI.Controls
+﻿namespace Snyk.VisualStudio.Extension.Shared.UI.Controls
 {
     using System.Windows.Controls;
 

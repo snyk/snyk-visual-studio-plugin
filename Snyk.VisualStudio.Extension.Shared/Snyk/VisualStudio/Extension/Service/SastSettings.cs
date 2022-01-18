@@ -1,4 +1,4 @@
-﻿namespace Snyk.VisualStudio.Extension.Service
+﻿namespace Snyk.VisualStudio.Extension.Shared.Service
 {
     /// <summary>
     /// Sast settings.

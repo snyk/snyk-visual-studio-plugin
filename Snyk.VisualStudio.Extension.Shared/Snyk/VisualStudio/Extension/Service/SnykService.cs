@@ -1,4 +1,4 @@
-﻿namespace Snyk.VisualStudio.Extension.Service
+﻿namespace Snyk.VisualStudio.Extension.Shared.Service
 {
     using System;
     using System.Threading;
@@ -11,14 +11,14 @@
     using Snyk.Code.Library.Api;
     using Snyk.Code.Library.Service;
     using Snyk.Common;
-    using Snyk.VisualStudio.Extension.CLI;
-    using Snyk.VisualStudio.Extension.Settings;
-    using Snyk.VisualStudio.Extension.SnykAnalytics;
-    using Snyk.VisualStudio.Extension.Theme;
-    using Snyk.VisualStudio.Extension.UI;
-    using Snyk.VisualStudio.Extension.UI.Notifications;
-    using Snyk.VisualStudio.Extension.UI.Notifications;
-    using Snyk.VisualStudio.Extension.UI.Toolwindow;
+    using Snyk.VisualStudio.Extension.Shared.CLI;
+    using Snyk.VisualStudio.Extension.Shared.Settings;
+    using Snyk.VisualStudio.Extension.Shared.SnykAnalytics;
+    using Snyk.VisualStudio.Extension.Shared.Theme;
+    using Snyk.VisualStudio.Extension.Shared.UI;
+    using Snyk.VisualStudio.Extension.Shared.UI.Notifications;
+    using Snyk.VisualStudio.Extension.Shared.UI.Notifications;
+    using Snyk.VisualStudio.Extension.Shared.UI.Toolwindow;
     using IAsyncServiceProvider = Microsoft.VisualStudio.Shell.IAsyncServiceProvider;
     using Task = System.Threading.Tasks.Task;
 

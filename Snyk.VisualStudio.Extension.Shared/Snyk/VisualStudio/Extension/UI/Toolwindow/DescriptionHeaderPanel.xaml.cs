@@ -1,4 +1,4 @@
-﻿namespace Snyk.VisualStudio.Extension.UI.Toolwindow
+﻿namespace Snyk.VisualStudio.Extension.Shared.UI.Toolwindow
 {
     using System;
     using System.Diagnostics;
@@ -7,7 +7,7 @@
     using System.Windows.Controls;
     using System.Windows.Documents;
     using Snyk.Code.Library.Domain.Analysis;
-    using Snyk.VisualStudio.Extension.CLI;
+    using Snyk.VisualStudio.Extension.Shared.CLI;
 
     /// <summary>
     /// Interaction logic for DescriptionHeaderPanel.xaml.

@@ -1,9 +1,9 @@
-﻿namespace Snyk.VisualStudio.Extension.UI
+﻿namespace Snyk.VisualStudio.Extension.Shared.UI
 {
     using System;
     using System.Windows.Media;
     using System.Windows.Media.Imaging;
-    using Snyk.VisualStudio.Extension.CLI;
+    using Snyk.VisualStudio.Extension.Shared.CLI;
 
     /// <summary>
     /// Provide icon path.
@@ -33,7 +33,7 @@
         /// <summary>
         /// Path from this class folder to Resources folder.
         /// </summary>
-        private const string ResourcesDirectoryPath = "pack://application:,,,/Snyk.VisualStudio.Extension;component/";
+        private const string ResourcesDirectoryPath = "pack://application:,,,/Snyk.VisualStudio.Extension.Shared;component/";
 
         private const string NugetIconPath = ResourcesDirectoryPath + "NugetLogo.png";
         private const string NpmIconPath = ResourcesDirectoryPath + "NpmLogo.png";

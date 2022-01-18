@@ -1,4 +1,4 @@
-﻿namespace Snyk.VisualStudio.Extension.SnykCode
+﻿namespace Snyk.VisualStudio.Extension.Shared.SnykCode
 {
     using System;
     using EnvDTE;

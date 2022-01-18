@@ -1,10 +1,10 @@
-﻿namespace Snyk.VisualStudio.Extension.UI
+﻿namespace Snyk.VisualStudio.Extension.Shared.UI
 {
     using System.Threading.Tasks;
     using System.Windows;
     using Microsoft.VisualStudio.Shell;
     using Microsoft.VisualStudio.Shell.Interop;
-    using Snyk.VisualStudio.Extension.Service;
+    using Snyk.VisualStudio.Extension.Shared.Service;
 
     /// <summary>
     /// Wrapper for Visual Studio status bar.

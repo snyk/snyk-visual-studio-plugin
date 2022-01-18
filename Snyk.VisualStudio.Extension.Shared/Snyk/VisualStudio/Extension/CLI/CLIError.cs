@@ -1,12 +1,10 @@
-﻿namespace Snyk.VisualStudio.Extension.CLI
+﻿namespace Snyk.VisualStudio.Extension.Shared.CLI
 {
-    using System.Runtime.Serialization;
     using Newtonsoft.Json;
 
     /// <summary>
     /// Snyk Open source error object.
     /// </summary>
-    [DataContract]
     public class CliError
     {
         /// <summary>

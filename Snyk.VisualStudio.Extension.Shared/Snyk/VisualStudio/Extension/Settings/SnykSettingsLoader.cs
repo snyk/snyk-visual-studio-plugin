@@ -1,4 +1,4 @@
-﻿namespace Snyk.VisualStudio.Extension.Settings
+﻿namespace Snyk.VisualStudio.Extension.Shared.Settings
 {
     using System;
     using System.IO;

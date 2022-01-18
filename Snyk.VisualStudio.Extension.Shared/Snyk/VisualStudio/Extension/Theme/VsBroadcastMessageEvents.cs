@@ -1,4 +1,4 @@
-﻿namespace Snyk.VisualStudio.Extension.Theme
+﻿namespace Snyk.VisualStudio.Extension.Shared.Theme
 {
     using System;
     using Microsoft.VisualStudio;

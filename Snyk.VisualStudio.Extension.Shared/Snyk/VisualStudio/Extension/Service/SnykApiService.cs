@@ -1,11 +1,11 @@
-﻿namespace Snyk.VisualStudio.Extension.Service
+﻿namespace Snyk.VisualStudio.Extension.Shared.Service
 {
     using System;
     using System.Net.Http;
     using System.Threading.Tasks;
     using Serilog;
     using Snyk.Common;
-    using Snyk.VisualStudio.Extension.Settings;
+    using Snyk.VisualStudio.Extension.Shared.Settings;
 
     /// <summary>
     /// Service for remote endpoint API work.

@@ -1,4 +1,4 @@
-﻿namespace Snyk.VisualStudio.Extension.UI.Toolwindow
+﻿namespace Snyk.VisualStudio.Extension.Shared.UI.Toolwindow
 {
     using System;
     using System.Diagnostics;
@@ -12,14 +12,14 @@
     using Serilog;
     using Snyk.Code.Library.Domain.Analysis;
     using Snyk.Common;
-    using Snyk.VisualStudio.Extension.CLI;
-    using Snyk.VisualStudio.Extension.Commands;
-    using Snyk.VisualStudio.Extension.Service;
-    using Snyk.VisualStudio.Extension.Settings;
-    using Snyk.VisualStudio.Extension.SnykAnalytics;
-    using Snyk.VisualStudio.Extension.Theme;
-    using Snyk.VisualStudio.Extension.UI.Notifications;
-    using Snyk.VisualStudio.Extension.UI.Tree;
+    using Snyk.VisualStudio.Extension.Shared.CLI;
+    using Snyk.VisualStudio.Extension.Shared.Commands;
+    using Snyk.VisualStudio.Extension.Shared.Service;
+    using Snyk.VisualStudio.Extension.Shared.Settings;
+    using Snyk.VisualStudio.Extension.Shared.SnykAnalytics;
+    using Snyk.VisualStudio.Extension.Shared.Theme;
+    using Snyk.VisualStudio.Extension.Shared.UI.Notifications;
+    using Snyk.VisualStudio.Extension.Shared.UI.Tree;
 
     /// <summary>
     /// Interaction logic for SnykToolWindowControl.

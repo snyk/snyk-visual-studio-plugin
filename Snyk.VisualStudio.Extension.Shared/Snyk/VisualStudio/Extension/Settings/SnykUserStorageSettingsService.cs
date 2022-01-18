@@ -1,11 +1,11 @@
-﻿namespace Snyk.VisualStudio.Extension.Settings
+﻿namespace Snyk.VisualStudio.Extension.Shared.Settings
 {
     using System;
     using CLI;
     using EnvDTE;
     using Serilog;
     using Snyk.Common;
-    using Snyk.VisualStudio.Extension.Service;
+    using Snyk.VisualStudio.Extension.Shared.Service;
 
     /// <summary>
     /// Service for solution settings.

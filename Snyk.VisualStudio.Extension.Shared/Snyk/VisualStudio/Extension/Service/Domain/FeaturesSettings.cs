@@ -1,4 +1,4 @@
-﻿namespace Snyk.VisualStudio.Extension.Service.Domain
+﻿namespace Snyk.VisualStudio.Extension.Shared.Service.Domain
 {
     /// <summary>
     /// Settings for enabled/disabled features (OSS, SAST, Code quality and security).

@@ -1,12 +1,10 @@
-﻿namespace Snyk.VisualStudio.Extension.CLI
+﻿namespace Snyk.VisualStudio.Extension.Shared.CLI
 {
     using Newtonsoft.Json;
-    using System.Runtime.Serialization;
 
     /// <summary>
     /// Represents latest CLI release information.
     /// </summary>
-    [DataContract]
     public class LatestReleaseInfo
     {
         /// <summary>

@@ -6,7 +6,7 @@
     <SharedGUID>ea4850be-70bf-4d93-ae23-aa55f2796c5e</SharedGUID>
   </PropertyGroup>
   <PropertyGroup Label="Configuration">
-    <Import_RootNamespace>Snyk.VisualStudio.Extension</Import_RootNamespace>
+    <Import_RootNamespace>Snyk.VisualStudio.Extension.Shared</Import_RootNamespace>
   </PropertyGroup>
   <ItemGroup>
     <Compile Include="$(MSBuildThisFileDirectory)Microsoft\HtmlParser\CssStylesheet.cs" />

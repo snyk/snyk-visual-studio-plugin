@@ -1,9 +1,9 @@
-﻿using Snyk.Code.Library.Domain.Analysis;
-using Snyk.VisualStudio.Extension.CLI;
-using System;
-
-namespace Snyk.VisualStudio.Extension.SnykAnalytics
+﻿namespace Snyk.VisualStudio.Extension.Shared.SnykAnalytics
 {
+    using System;
+    using Snyk.Code.Library.Domain.Analysis;
+    using Snyk.VisualStudio.Extension.Shared.CLI;
+    
     /// <summary>
     /// Issue type for analytics event.
     /// </summary>

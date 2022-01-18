@@ -1,10 +1,10 @@
-﻿namespace Snyk.VisualStudio.Extension.Service
+﻿namespace Snyk.VisualStudio.Extension.Shared.Service
 {
     using System;
     using Microsoft.VisualStudio;
     using Microsoft.VisualStudio.Shell.Interop;
     using Snyk.Common;
-    using Snyk.VisualStudio.Extension.SnykCode;
+    using Snyk.VisualStudio.Extension.Shared.SnykCode;
 
     /// <summary>
     /// Visual Studio solution load events implementation.

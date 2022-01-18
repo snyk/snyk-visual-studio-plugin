@@ -1,4 +1,4 @@
-﻿namespace Snyk.VisualStudio.Extension
+﻿namespace Snyk.VisualStudio.Extension.Shared
 {
     using System;
     using System.Diagnostics.CodeAnalysis;
@@ -8,11 +8,11 @@
     using Microsoft.VisualStudio.Shell;
     using Serilog;
     using Snyk.Common;
-    using Snyk.VisualStudio.Extension.Commands;
-    using Snyk.VisualStudio.Extension.Service;
-    using Snyk.VisualStudio.Extension.Settings;
-    using Snyk.VisualStudio.Extension.UI.Notifications;
-    using Snyk.VisualStudio.Extension.UI.Toolwindow;
+    using Snyk.VisualStudio.Extension.Shared.Commands;
+    using Snyk.VisualStudio.Extension.Shared.Service;
+    using Snyk.VisualStudio.Extension.Shared.Settings;
+    using Snyk.VisualStudio.Extension.Shared.UI.Notifications;
+    using Snyk.VisualStudio.Extension.Shared.UI.Toolwindow;
     using Task = System.Threading.Tasks.Task;
 
     /// <summary>

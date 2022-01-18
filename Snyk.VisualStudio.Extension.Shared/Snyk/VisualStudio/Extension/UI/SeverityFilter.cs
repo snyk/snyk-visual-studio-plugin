@@ -1,4 +1,4 @@
-﻿namespace Snyk.VisualStudio.Extension.UI
+﻿namespace Snyk.VisualStudio.Extension.Shared.UI
 {
     using System.Text;
     using System.Windows.Media;

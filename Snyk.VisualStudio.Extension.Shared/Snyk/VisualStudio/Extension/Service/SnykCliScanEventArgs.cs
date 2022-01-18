@@ -1,7 +1,7 @@
-﻿namespace Snyk.VisualStudio.Extension.Service
+﻿namespace Snyk.VisualStudio.Extension.Shared.Service
 {
     using System;
-    using Snyk.VisualStudio.Extension.CLI;
+    using Snyk.VisualStudio.Extension.Shared.CLI;
 
     /// <summary>
     /// CLI scan event args.

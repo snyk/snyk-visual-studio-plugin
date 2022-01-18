@@ -1,15 +1,14 @@
-﻿namespace Snyk.VisualStudio.Extension.CLI
+﻿namespace Snyk.VisualStudio.Extension.Shared.CLI
 {
     using System;
     using System.Collections.Generic;
     using System.IO;
     using System.Net;
     using System.Net.Http;
-    using System.Threading;
     using System.Threading.Tasks;
     using Serilog;
     using Snyk.Common;
-    using Snyk.VisualStudio.Extension.Service;
+    using Snyk.VisualStudio.Extension.Shared.Service;
 
     /// <summary>
     /// Donwnload last Snyk CLI version.

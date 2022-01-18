@@ -1,4 +1,4 @@
-﻿namespace Snyk.VisualStudio.Extension.UI.Toolwindow
+﻿namespace Snyk.VisualStudio.Extension.Shared.UI.Toolwindow
 {
     /// <summary>
     /// Represents tool window context.

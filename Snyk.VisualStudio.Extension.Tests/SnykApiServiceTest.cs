@@ -1,10 +1,10 @@
-﻿namespace Snyk.VisualStudio.Extension.Tests
+﻿namespace Snyk.VisualStudio.Extension.Shared.Tests
 {
     using System;
     using System.Threading.Tasks;
     using Moq;
-    using Snyk.VisualStudio.Extension.Service;
-    using Snyk.VisualStudio.Extension.Settings;
+    using Snyk.VisualStudio.Extension.Shared.Service;
+    using Snyk.VisualStudio.Extension.Shared.Settings;
     using Xunit;
 
     /// <summary>
