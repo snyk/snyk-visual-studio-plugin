@@ -23,279 +23,279 @@
       <DesignTime>True</DesignTime>
       <AutoGen>True</AutoGen>
     </Compile>
-    <Compile Include="$(MSBuildThisFileDirectory)Snyk\VisualStudio\Extension\Shared\CLI\CLIError.cs" />
-    <Compile Include="$(MSBuildThisFileDirectory)Snyk\VisualStudio\Extension\Shared\CLI\CliGroupedVulnerabilities.cs" />
-    <Compile Include="$(MSBuildThisFileDirectory)Snyk\VisualStudio\Extension\Shared\CLI\CLIResult.cs" />
-    <Compile Include="$(MSBuildThisFileDirectory)Snyk\VisualStudio\Extension\Shared\CLI\CliVulnerabilities.cs" />
-    <Compile Include="$(MSBuildThisFileDirectory)Snyk\VisualStudio\Extension\Shared\CLI\Download\LatestReleaseInfo.cs">
+    <Compile Include="$(MSBuildThisFileDirectory)CLI\CLIError.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)CLI\CliGroupedVulnerabilities.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)CLI\CLIResult.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)CLI\CliVulnerabilities.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)CLI\Download\LatestReleaseInfo.cs">
       <CopyToOutputDirectory>Never</CopyToOutputDirectory>
     </Compile>
-    <Compile Include="$(MSBuildThisFileDirectory)Snyk\VisualStudio\Extension\Shared\CLI\Download\SnykCliDownloader.cs">
+    <Compile Include="$(MSBuildThisFileDirectory)CLI\Download\SnykCliDownloader.cs">
       <CopyToOutputDirectory>Never</CopyToOutputDirectory>
     </Compile>
-    <Compile Include="$(MSBuildThisFileDirectory)Snyk\VisualStudio\Extension\Shared\CLI\Dto\Identifiers.cs">
+    <Compile Include="$(MSBuildThisFileDirectory)CLI\Dto\Identifiers.cs">
       <CopyToOutputDirectory>Never</CopyToOutputDirectory>
     </Compile>
-    <Compile Include="$(MSBuildThisFileDirectory)Snyk\VisualStudio\Extension\Shared\CLI\Severity.cs">
+    <Compile Include="$(MSBuildThisFileDirectory)CLI\Severity.cs">
       <CopyToOutputDirectory>Never</CopyToOutputDirectory>
     </Compile>
-    <Compile Include="$(MSBuildThisFileDirectory)Snyk\VisualStudio\Extension\Shared\CLI\SnykCli.cs">
+    <Compile Include="$(MSBuildThisFileDirectory)CLI\SnykCli.cs">
       <CopyToOutputDirectory>Never</CopyToOutputDirectory>
     </Compile>
-    <Compile Include="$(MSBuildThisFileDirectory)Snyk\VisualStudio\Extension\Shared\CLI\SnykConsoleRunner.cs">
+    <Compile Include="$(MSBuildThisFileDirectory)CLI\SnykConsoleRunner.cs">
       <CopyToOutputDirectory>Never</CopyToOutputDirectory>
     </Compile>
-    <Compile Include="$(MSBuildThisFileDirectory)Snyk\VisualStudio\Extension\Shared\CLI\Vulnerability.cs">
+    <Compile Include="$(MSBuildThisFileDirectory)CLI\Vulnerability.cs">
       <CopyToOutputDirectory>Never</CopyToOutputDirectory>
     </Compile>
-    <Compile Include="$(MSBuildThisFileDirectory)Snyk\VisualStudio\Extension\Shared\Commands\AbstractSnykCommand.cs">
+    <Compile Include="$(MSBuildThisFileDirectory)Commands\AbstractSnykCommand.cs">
       <CopyToOutputDirectory>Never</CopyToOutputDirectory>
     </Compile>
-    <Compile Include="$(MSBuildThisFileDirectory)Snyk\VisualStudio\Extension\Shared\Commands\SnykCleanPanelCommand.cs">
+    <Compile Include="$(MSBuildThisFileDirectory)Commands\SnykCleanPanelCommand.cs">
       <CopyToOutputDirectory>Never</CopyToOutputDirectory>
     </Compile>
-    <Compile Include="$(MSBuildThisFileDirectory)Snyk\VisualStudio\Extension\Shared\Commands\SnykOpenSettingsCommand.cs">
+    <Compile Include="$(MSBuildThisFileDirectory)Commands\SnykOpenSettingsCommand.cs">
       <CopyToOutputDirectory>Never</CopyToOutputDirectory>
     </Compile>
-    <Compile Include="$(MSBuildThisFileDirectory)Snyk\VisualStudio\Extension\Shared\Commands\SnykScanCommand.cs">
+    <Compile Include="$(MSBuildThisFileDirectory)Commands\SnykScanCommand.cs">
       <CopyToOutputDirectory>Never</CopyToOutputDirectory>
     </Compile>
-    <Compile Include="$(MSBuildThisFileDirectory)Snyk\VisualStudio\Extension\Shared\Commands\SnykStopCurrentTaskCommand.cs">
+    <Compile Include="$(MSBuildThisFileDirectory)Commands\SnykStopCurrentTaskCommand.cs">
       <CopyToOutputDirectory>Never</CopyToOutputDirectory>
     </Compile>
-    <Compile Include="$(MSBuildThisFileDirectory)Snyk\VisualStudio\Extension\Shared\ManualAssemblyResolver.cs">
+    <Compile Include="$(MSBuildThisFileDirectory)ManualAssemblyResolver.cs">
       <CopyToOutputDirectory>Never</CopyToOutputDirectory>
     </Compile>
-    <Compile Include="$(MSBuildThisFileDirectory)Snyk\VisualStudio\Extension\Shared\Service\Domain\FeaturesSettings.cs">
+    <Compile Include="$(MSBuildThisFileDirectory)Service\Domain\FeaturesSettings.cs">
       <CopyToOutputDirectory>Never</CopyToOutputDirectory>
     </Compile>
-    <Compile Include="$(MSBuildThisFileDirectory)Snyk\VisualStudio\Extension\Shared\Service\ISnykProgressWorker.cs">
+    <Compile Include="$(MSBuildThisFileDirectory)Service\ISnykProgressWorker.cs">
       <CopyToOutputDirectory>Never</CopyToOutputDirectory>
     </Compile>
-    <Compile Include="$(MSBuildThisFileDirectory)Snyk\VisualStudio\Extension\Shared\Service\ISnykService.cs">
+    <Compile Include="$(MSBuildThisFileDirectory)Service\ISnykService.cs">
       <CopyToOutputDirectory>Never</CopyToOutputDirectory>
     </Compile>
-    <Compile Include="$(MSBuildThisFileDirectory)Snyk\VisualStudio\Extension\Shared\Service\ISnykServiceProvider.cs">
+    <Compile Include="$(MSBuildThisFileDirectory)Service\ISnykServiceProvider.cs">
       <CopyToOutputDirectory>Never</CopyToOutputDirectory>
     </Compile>
-    <Compile Include="$(MSBuildThisFileDirectory)Snyk\VisualStudio\Extension\Shared\Service\SastSettings.cs">
+    <Compile Include="$(MSBuildThisFileDirectory)Service\SastSettings.cs">
       <CopyToOutputDirectory>Never</CopyToOutputDirectory>
     </Compile>
-    <Compile Include="$(MSBuildThisFileDirectory)Snyk\VisualStudio\Extension\Shared\Service\SnykApiService.cs">
+    <Compile Include="$(MSBuildThisFileDirectory)Service\SnykApiService.cs">
       <CopyToOutputDirectory>Never</CopyToOutputDirectory>
     </Compile>
-    <Compile Include="$(MSBuildThisFileDirectory)Snyk\VisualStudio\Extension\Shared\Service\SnykCliDownloadEventArgs.cs">
+    <Compile Include="$(MSBuildThisFileDirectory)Service\SnykCliDownloadEventArgs.cs">
       <CopyToOutputDirectory>Never</CopyToOutputDirectory>
     </Compile>
-    <Compile Include="$(MSBuildThisFileDirectory)Snyk\VisualStudio\Extension\Shared\Service\SnykCliScanEventArgs.cs">
+    <Compile Include="$(MSBuildThisFileDirectory)Service\SnykCliScanEventArgs.cs">
       <CopyToOutputDirectory>Never</CopyToOutputDirectory>
     </Compile>
-    <Compile Include="$(MSBuildThisFileDirectory)Snyk\VisualStudio\Extension\Shared\Service\SnykCodeScanEventArgs.cs">
+    <Compile Include="$(MSBuildThisFileDirectory)Service\SnykCodeScanEventArgs.cs">
       <CopyToOutputDirectory>Never</CopyToOutputDirectory>
     </Compile>
-    <Compile Include="$(MSBuildThisFileDirectory)Snyk\VisualStudio\Extension\Shared\Service\SnykProgressWorker.cs">
+    <Compile Include="$(MSBuildThisFileDirectory)Service\SnykProgressWorker.cs">
       <CopyToOutputDirectory>Never</CopyToOutputDirectory>
     </Compile>
-    <Compile Include="$(MSBuildThisFileDirectory)Snyk\VisualStudio\Extension\Shared\Service\SnykService.cs">
+    <Compile Include="$(MSBuildThisFileDirectory)Service\SnykService.cs">
       <CopyToOutputDirectory>Never</CopyToOutputDirectory>
     </Compile>
-    <Compile Include="$(MSBuildThisFileDirectory)Snyk\VisualStudio\Extension\Shared\Service\SnykSolutionService.cs">
+    <Compile Include="$(MSBuildThisFileDirectory)Service\SnykSolutionService.cs">
       <CopyToOutputDirectory>Never</CopyToOutputDirectory>
     </Compile>
-    <Compile Include="$(MSBuildThisFileDirectory)Snyk\VisualStudio\Extension\Shared\Service\SnykTasksService.cs">
+    <Compile Include="$(MSBuildThisFileDirectory)Service\SnykTasksService.cs">
       <CopyToOutputDirectory>Never</CopyToOutputDirectory>
     </Compile>
-    <Compile Include="$(MSBuildThisFileDirectory)Snyk\VisualStudio\Extension\Shared\Service\SnykVsSolutionLoadEvents.cs">
+    <Compile Include="$(MSBuildThisFileDirectory)Service\SnykVsSolutionLoadEvents.cs">
       <CopyToOutputDirectory>Never</CopyToOutputDirectory>
     </Compile>
-    <Compile Include="$(MSBuildThisFileDirectory)Snyk\VisualStudio\Extension\Shared\Service\VsCodeService.cs">
+    <Compile Include="$(MSBuildThisFileDirectory)Service\VsCodeService.cs">
       <CopyToOutputDirectory>Never</CopyToOutputDirectory>
     </Compile>
-    <Compile Include="$(MSBuildThisFileDirectory)Snyk\VisualStudio\Extension\Shared\Settings\ISnykOptions.cs">
+    <Compile Include="$(MSBuildThisFileDirectory)Settings\ISnykOptions.cs">
       <CopyToOutputDirectory>Never</CopyToOutputDirectory>
     </Compile>
-    <Compile Include="$(MSBuildThisFileDirectory)Snyk\VisualStudio\Extension\Shared\Settings\SnykGeneralOptionsDialogPage.cs">
+    <Compile Include="$(MSBuildThisFileDirectory)Settings\SnykGeneralOptionsDialogPage.cs">
       <SubType>Component</SubType>
       <CopyToOutputDirectory>Never</CopyToOutputDirectory>
     </Compile>
-    <Compile Include="$(MSBuildThisFileDirectory)Snyk\VisualStudio\Extension\Shared\Settings\SnykGeneralSettingsUserControl.cs">
+    <Compile Include="$(MSBuildThisFileDirectory)Settings\SnykGeneralSettingsUserControl.cs">
       <SubType>UserControl</SubType>
       <CopyToOutputDirectory>Never</CopyToOutputDirectory>
     </Compile>
-    <Compile Include="$(MSBuildThisFileDirectory)Snyk\VisualStudio\Extension\Shared\Settings\SnykGeneralSettingsUserControl.Designer.cs">
+    <Compile Include="$(MSBuildThisFileDirectory)Settings\SnykGeneralSettingsUserControl.Designer.cs">
       <DependentUpon>SnykGeneralSettingsUserControl.cs</DependentUpon>
     </Compile>
-    <Compile Include="$(MSBuildThisFileDirectory)Snyk\VisualStudio\Extension\Shared\Settings\SnykProjectOptionsDialogPage.cs">
+    <Compile Include="$(MSBuildThisFileDirectory)Settings\SnykProjectOptionsDialogPage.cs">
       <SubType>Component</SubType>
       <CopyToOutputDirectory>Never</CopyToOutputDirectory>
     </Compile>
-    <Compile Include="$(MSBuildThisFileDirectory)Snyk\VisualStudio\Extension\Shared\Settings\SnykProjectOptionsUserControl.cs">
+    <Compile Include="$(MSBuildThisFileDirectory)Settings\SnykProjectOptionsUserControl.cs">
       <SubType>UserControl</SubType>
       <CopyToOutputDirectory>Never</CopyToOutputDirectory>
     </Compile>
-    <Compile Include="$(MSBuildThisFileDirectory)Snyk\VisualStudio\Extension\Shared\Settings\SnykProjectOptionsUserControl.Designer.cs">
+    <Compile Include="$(MSBuildThisFileDirectory)Settings\SnykProjectOptionsUserControl.Designer.cs">
       <DependentUpon>SnykProjectOptionsUserControl.cs</DependentUpon>
     </Compile>
-    <Compile Include="$(MSBuildThisFileDirectory)Snyk\VisualStudio\Extension\Shared\Settings\SnykProjectSettings.cs" />
-    <Compile Include="$(MSBuildThisFileDirectory)Snyk\VisualStudio\Extension\Shared\Settings\SnykSettings.cs" />
-    <Compile Include="$(MSBuildThisFileDirectory)Snyk\VisualStudio\Extension\Shared\Settings\SnykSettingsChangedEventArgs.cs">
+    <Compile Include="$(MSBuildThisFileDirectory)Settings\SnykProjectSettings.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Settings\SnykSettings.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Settings\SnykSettingsChangedEventArgs.cs">
       <CopyToOutputDirectory>Never</CopyToOutputDirectory>
     </Compile>
-    <Compile Include="$(MSBuildThisFileDirectory)Snyk\VisualStudio\Extension\Shared\Settings\SnykSettingsLoader.cs" />
-    <Compile Include="$(MSBuildThisFileDirectory)Snyk\VisualStudio\Extension\Shared\Settings\SnykUserStorageSettingsService.cs">
+    <Compile Include="$(MSBuildThisFileDirectory)Settings\SnykSettingsLoader.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Settings\SnykUserStorageSettingsService.cs">
       <CopyToOutputDirectory>Never</CopyToOutputDirectory>
     </Compile>
-    <Compile Include="$(MSBuildThisFileDirectory)Snyk\VisualStudio\Extension\Shared\SnykAnalytics\AnalysisType.cs">
+    <Compile Include="$(MSBuildThisFileDirectory)SnykAnalytics\AnalysisType.cs">
       <CopyToOutputDirectory>Never</CopyToOutputDirectory>
     </Compile>
-    <Compile Include="$(MSBuildThisFileDirectory)Snyk\VisualStudio\Extension\Shared\SnykAnalytics\AnalyticsAnalysisResult.cs">
+    <Compile Include="$(MSBuildThisFileDirectory)SnykAnalytics\AnalyticsAnalysisResult.cs">
       <CopyToOutputDirectory>Never</CopyToOutputDirectory>
     </Compile>
-    <Compile Include="$(MSBuildThisFileDirectory)Snyk\VisualStudio\Extension\Shared\SnykAnalytics\IssueType.cs">
+    <Compile Include="$(MSBuildThisFileDirectory)SnykAnalytics\IssueType.cs">
       <CopyToOutputDirectory>Never</CopyToOutputDirectory>
     </Compile>
-    <Compile Include="$(MSBuildThisFileDirectory)Snyk\VisualStudio\Extension\Shared\SnykAnalytics\SnykAnalyticsService.cs">
+    <Compile Include="$(MSBuildThisFileDirectory)SnykAnalytics\SnykAnalyticsService.cs">
       <CopyToOutputDirectory>Never</CopyToOutputDirectory>
     </Compile>
-    <Compile Include="$(MSBuildThisFileDirectory)Snyk\VisualStudio\Extension\Shared\SnykAnalytics\SnykUser.cs">
+    <Compile Include="$(MSBuildThisFileDirectory)SnykAnalytics\SnykUser.cs">
       <CopyToOutputDirectory>Never</CopyToOutputDirectory>
     </Compile>
-    <Compile Include="$(MSBuildThisFileDirectory)Snyk\VisualStudio\Extension\Shared\SnykCode\CodeCacheHierarchyEvents.cs">
+    <Compile Include="$(MSBuildThisFileDirectory)SnykCode\CodeCacheHierarchyEvents.cs">
       <CopyToOutputDirectory>Never</CopyToOutputDirectory>
     </Compile>
-    <Compile Include="$(MSBuildThisFileDirectory)Snyk\VisualStudio\Extension\Shared\SnykGuids.cs">
+    <Compile Include="$(MSBuildThisFileDirectory)SnykGuids.cs">
       <CopyToOutputDirectory>Never</CopyToOutputDirectory>
     </Compile>
-    <Compile Include="$(MSBuildThisFileDirectory)Snyk\VisualStudio\Extension\Shared\SnykVSPackage.cs">
+    <Compile Include="$(MSBuildThisFileDirectory)SnykVSPackage.cs">
       <CopyToOutputDirectory>Never</CopyToOutputDirectory>
     </Compile>
-    <Compile Include="$(MSBuildThisFileDirectory)Snyk\VisualStudio\Extension\Shared\SnykWebClient.cs">
+    <Compile Include="$(MSBuildThisFileDirectory)SnykWebClient.cs">
       <CopyToOutputDirectory>Never</CopyToOutputDirectory>
     </Compile>
-    <Compile Include="$(MSBuildThisFileDirectory)Snyk\VisualStudio\Extension\Shared\Theme\SnykVsThemeService.cs">
+    <Compile Include="$(MSBuildThisFileDirectory)Theme\SnykVsThemeService.cs">
       <CopyToOutputDirectory>Never</CopyToOutputDirectory>
     </Compile>
-    <Compile Include="$(MSBuildThisFileDirectory)Snyk\VisualStudio\Extension\Shared\Theme\ThemeInfo.cs">
+    <Compile Include="$(MSBuildThisFileDirectory)Theme\ThemeInfo.cs">
       <CopyToOutputDirectory>Never</CopyToOutputDirectory>
     </Compile>
-    <Compile Include="$(MSBuildThisFileDirectory)Snyk\VisualStudio\Extension\Shared\Theme\VsBroadcastMessageEvents.cs">
+    <Compile Include="$(MSBuildThisFileDirectory)Theme\VsBroadcastMessageEvents.cs">
       <CopyToOutputDirectory>Never</CopyToOutputDirectory>
     </Compile>
-    <Compile Include="$(MSBuildThisFileDirectory)Snyk\VisualStudio\Extension\Shared\UI\Controls\TextField.xaml.cs">
+    <Compile Include="$(MSBuildThisFileDirectory)UI\Controls\TextField.xaml.cs">
       <DependentUpon>TextField.xaml</DependentUpon>
     </Compile>
-    <Compile Include="$(MSBuildThisFileDirectory)Snyk\VisualStudio\Extension\Shared\UI\HtmlRichTextBox.cs">
+    <Compile Include="$(MSBuildThisFileDirectory)UI\HtmlRichTextBox.cs">
       <CopyToOutputDirectory>Never</CopyToOutputDirectory>
     </Compile>
-    <Compile Include="$(MSBuildThisFileDirectory)Snyk\VisualStudio\Extension\Shared\UI\IRefreshable.cs">
+    <Compile Include="$(MSBuildThisFileDirectory)UI\IRefreshable.cs">
       <CopyToOutputDirectory>Never</CopyToOutputDirectory>
     </Compile>
-    <Compile Include="$(MSBuildThisFileDirectory)Snyk\VisualStudio\Extension\Shared\UI\Notifications\NotificationService.cs">
+    <Compile Include="$(MSBuildThisFileDirectory)UI\Notifications\NotificationService.cs">
       <CopyToOutputDirectory>Never</CopyToOutputDirectory>
     </Compile>
-    <Compile Include="$(MSBuildThisFileDirectory)Snyk\VisualStudio\Extension\Shared\UI\Notifications\VsInfoBarService.cs">
+    <Compile Include="$(MSBuildThisFileDirectory)UI\Notifications\VsInfoBarService.cs">
       <CopyToOutputDirectory>Never</CopyToOutputDirectory>
     </Compile>
-    <Compile Include="$(MSBuildThisFileDirectory)Snyk\VisualStudio\Extension\Shared\UI\Notifications\VsStatusBar.cs">
+    <Compile Include="$(MSBuildThisFileDirectory)UI\Notifications\VsStatusBar.cs">
       <CopyToOutputDirectory>Never</CopyToOutputDirectory>
     </Compile>
-    <Compile Include="$(MSBuildThisFileDirectory)Snyk\VisualStudio\Extension\Shared\UI\Notifications\VsStatusBarNotificationService.cs">
+    <Compile Include="$(MSBuildThisFileDirectory)UI\Notifications\VsStatusBarNotificationService.cs">
       <CopyToOutputDirectory>Never</CopyToOutputDirectory>
     </Compile>
-    <Compile Include="$(MSBuildThisFileDirectory)Snyk\VisualStudio\Extension\Shared\UI\SeverityFilter.cs">
+    <Compile Include="$(MSBuildThisFileDirectory)UI\SeverityFilter.cs">
       <CopyToOutputDirectory>Never</CopyToOutputDirectory>
     </Compile>
-    <Compile Include="$(MSBuildThisFileDirectory)Snyk\VisualStudio\Extension\Shared\UI\SnykIconProvider.cs">
+    <Compile Include="$(MSBuildThisFileDirectory)UI\SnykIconProvider.cs">
       <CopyToOutputDirectory>Never</CopyToOutputDirectory>
     </Compile>
-    <Compile Include="$(MSBuildThisFileDirectory)Snyk\VisualStudio\Extension\Shared\UI\Toolwindow\DescriptionHeaderPanel.xaml.cs">
+    <Compile Include="$(MSBuildThisFileDirectory)UI\Toolwindow\DescriptionHeaderPanel.xaml.cs">
       <DependentUpon>DescriptionHeaderPanel.xaml</DependentUpon>
     </Compile>
-    <Compile Include="$(MSBuildThisFileDirectory)Snyk\VisualStudio\Extension\Shared\UI\Toolwindow\DescriptionPanel.xaml.cs">
+    <Compile Include="$(MSBuildThisFileDirectory)UI\Toolwindow\DescriptionPanel.xaml.cs">
       <DependentUpon>DescriptionPanel.xaml</DependentUpon>
     </Compile>
-    <Compile Include="$(MSBuildThisFileDirectory)Snyk\VisualStudio\Extension\Shared\UI\Toolwindow\DownloadState.cs">
+    <Compile Include="$(MSBuildThisFileDirectory)UI\Toolwindow\DownloadState.cs">
       <CopyToOutputDirectory>Never</CopyToOutputDirectory>
     </Compile>
-    <Compile Include="$(MSBuildThisFileDirectory)Snyk\VisualStudio\Extension\Shared\UI\Toolwindow\EmptyState.cs">
+    <Compile Include="$(MSBuildThisFileDirectory)UI\Toolwindow\EmptyState.cs">
       <CopyToOutputDirectory>Never</CopyToOutputDirectory>
     </Compile>
-    <Compile Include="$(MSBuildThisFileDirectory)Snyk\VisualStudio\Extension\Shared\UI\Toolwindow\MessagePanel.xaml.cs">
+    <Compile Include="$(MSBuildThisFileDirectory)UI\Toolwindow\MessagePanel.xaml.cs">
       <DependentUpon>MessagePanel.xaml</DependentUpon>
     </Compile>
-    <Compile Include="$(MSBuildThisFileDirectory)Snyk\VisualStudio\Extension\Shared\UI\Toolwindow\OssDescriptionControl.xaml.cs">
+    <Compile Include="$(MSBuildThisFileDirectory)UI\Toolwindow\OssDescriptionControl.xaml.cs">
       <DependentUpon>OssDescriptionControl.xaml</DependentUpon>
     </Compile>
-    <Compile Include="$(MSBuildThisFileDirectory)Snyk\VisualStudio\Extension\Shared\UI\Toolwindow\OverviewState.cs">
+    <Compile Include="$(MSBuildThisFileDirectory)UI\Toolwindow\OverviewState.cs">
       <CopyToOutputDirectory>Never</CopyToOutputDirectory>
     </Compile>
-    <Compile Include="$(MSBuildThisFileDirectory)Snyk\VisualStudio\Extension\Shared\UI\Toolwindow\RunScanState.cs">
+    <Compile Include="$(MSBuildThisFileDirectory)UI\Toolwindow\RunScanState.cs">
       <CopyToOutputDirectory>Never</CopyToOutputDirectory>
     </Compile>
-    <Compile Include="$(MSBuildThisFileDirectory)Snyk\VisualStudio\Extension\Shared\UI\Toolwindow\ScanResultsState.cs">
+    <Compile Include="$(MSBuildThisFileDirectory)UI\Toolwindow\ScanResultsState.cs">
       <CopyToOutputDirectory>Never</CopyToOutputDirectory>
     </Compile>
-    <Compile Include="$(MSBuildThisFileDirectory)Snyk\VisualStudio\Extension\Shared\UI\Toolwindow\SnykCode\DataFlowStep.cs">
+    <Compile Include="$(MSBuildThisFileDirectory)UI\Toolwindow\SnykCode\DataFlowStep.cs">
       <CopyToOutputDirectory>Never</CopyToOutputDirectory>
     </Compile>
-    <Compile Include="$(MSBuildThisFileDirectory)Snyk\VisualStudio\Extension\Shared\UI\Toolwindow\SnykCode\DataFlowStepsControl.xaml.cs">
+    <Compile Include="$(MSBuildThisFileDirectory)UI\Toolwindow\SnykCode\DataFlowStepsControl.xaml.cs">
       <DependentUpon>DataFlowStepsControl.xaml</DependentUpon>
     </Compile>
-    <Compile Include="$(MSBuildThisFileDirectory)Snyk\VisualStudio\Extension\Shared\UI\Toolwindow\SnykCode\DataFlowStepsViewModel.cs">
+    <Compile Include="$(MSBuildThisFileDirectory)UI\Toolwindow\SnykCode\DataFlowStepsViewModel.cs">
       <CopyToOutputDirectory>Never</CopyToOutputDirectory>
     </Compile>
-    <Compile Include="$(MSBuildThisFileDirectory)Snyk\VisualStudio\Extension\Shared\UI\Toolwindow\SnykCode\ExternalExampleFixesControl.xaml.cs">
+    <Compile Include="$(MSBuildThisFileDirectory)UI\Toolwindow\SnykCode\ExternalExampleFixesControl.xaml.cs">
       <DependentUpon>ExternalExampleFixesControl.xaml</DependentUpon>
     </Compile>
-    <Compile Include="$(MSBuildThisFileDirectory)Snyk\VisualStudio\Extension\Shared\UI\Toolwindow\SnykCode\SnykCodeDescriptionControl.xaml.cs">
+    <Compile Include="$(MSBuildThisFileDirectory)UI\Toolwindow\SnykCode\SnykCodeDescriptionControl.xaml.cs">
       <DependentUpon>SnykCodeDescriptionControl.xaml</DependentUpon>
     </Compile>
-    <Compile Include="$(MSBuildThisFileDirectory)Snyk\VisualStudio\Extension\Shared\UI\Toolwindow\SnykToolWindow.cs">
+    <Compile Include="$(MSBuildThisFileDirectory)UI\Toolwindow\SnykToolWindow.cs">
       <CopyToOutputDirectory>Never</CopyToOutputDirectory>
     </Compile>
-    <Compile Include="$(MSBuildThisFileDirectory)Snyk\VisualStudio\Extension\Shared\UI\Toolwindow\SnykToolWindowCommand.cs">
+    <Compile Include="$(MSBuildThisFileDirectory)UI\Toolwindow\SnykToolWindowCommand.cs">
       <CopyToOutputDirectory>Never</CopyToOutputDirectory>
     </Compile>
-    <Compile Include="$(MSBuildThisFileDirectory)Snyk\VisualStudio\Extension\Shared\UI\Toolwindow\SnykToolWindowControl.xaml.cs">
+    <Compile Include="$(MSBuildThisFileDirectory)UI\Toolwindow\SnykToolWindowControl.xaml.cs">
       <DependentUpon>SnykToolWindowControl.xaml</DependentUpon>
     </Compile>
-    <Compile Include="$(MSBuildThisFileDirectory)Snyk\VisualStudio\Extension\Shared\UI\Toolwindow\ToolWindowContext.cs">
+    <Compile Include="$(MSBuildThisFileDirectory)UI\Toolwindow\ToolWindowContext.cs">
       <CopyToOutputDirectory>Never</CopyToOutputDirectory>
     </Compile>
-    <Compile Include="$(MSBuildThisFileDirectory)Snyk\VisualStudio\Extension\Shared\UI\Toolwindow\ToolWindowState.cs">
+    <Compile Include="$(MSBuildThisFileDirectory)UI\Toolwindow\ToolWindowState.cs">
       <CopyToOutputDirectory>Never</CopyToOutputDirectory>
     </Compile>
-    <Compile Include="$(MSBuildThisFileDirectory)Snyk\VisualStudio\Extension\Shared\UI\Toolwindow\UpdateDownloadState.cs">
+    <Compile Include="$(MSBuildThisFileDirectory)UI\Toolwindow\UpdateDownloadState.cs">
       <CopyToOutputDirectory>Never</CopyToOutputDirectory>
     </Compile>
-    <Compile Include="$(MSBuildThisFileDirectory)Snyk\VisualStudio\Extension\Shared\UI\Tree\OssRootTreeNode.cs">
+    <Compile Include="$(MSBuildThisFileDirectory)UI\Tree\OssRootTreeNode.cs">
       <CopyToOutputDirectory>Never</CopyToOutputDirectory>
     </Compile>
-    <Compile Include="$(MSBuildThisFileDirectory)Snyk\VisualStudio\Extension\Shared\UI\Tree\OssVulnerabilityTreeNode.cs">
+    <Compile Include="$(MSBuildThisFileDirectory)UI\Tree\OssVulnerabilityTreeNode.cs">
       <CopyToOutputDirectory>Never</CopyToOutputDirectory>
     </Compile>
-    <Compile Include="$(MSBuildThisFileDirectory)Snyk\VisualStudio\Extension\Shared\UI\Tree\RootTreeNode.cs">
+    <Compile Include="$(MSBuildThisFileDirectory)UI\Tree\RootTreeNode.cs">
       <CopyToOutputDirectory>Never</CopyToOutputDirectory>
     </Compile>
-    <Compile Include="$(MSBuildThisFileDirectory)Snyk\VisualStudio\Extension\Shared\UI\Tree\RootTreeNodeState.cs">
+    <Compile Include="$(MSBuildThisFileDirectory)UI\Tree\RootTreeNodeState.cs">
       <CopyToOutputDirectory>Never</CopyToOutputDirectory>
     </Compile>
-    <Compile Include="$(MSBuildThisFileDirectory)Snyk\VisualStudio\Extension\Shared\UI\Tree\SnykCodeFileTreeNode.cs">
+    <Compile Include="$(MSBuildThisFileDirectory)UI\Tree\SnykCodeFileTreeNode.cs">
       <CopyToOutputDirectory>Never</CopyToOutputDirectory>
     </Compile>
-    <Compile Include="$(MSBuildThisFileDirectory)Snyk\VisualStudio\Extension\Shared\UI\Tree\SnykCodeQualityRootTreeNode.cs">
+    <Compile Include="$(MSBuildThisFileDirectory)UI\Tree\SnykCodeQualityRootTreeNode.cs">
       <CopyToOutputDirectory>Never</CopyToOutputDirectory>
     </Compile>
-    <Compile Include="$(MSBuildThisFileDirectory)Snyk\VisualStudio\Extension\Shared\UI\Tree\SnykCodeSecurityRootTreeNode.cs">
+    <Compile Include="$(MSBuildThisFileDirectory)UI\Tree\SnykCodeSecurityRootTreeNode.cs">
       <CopyToOutputDirectory>Never</CopyToOutputDirectory>
     </Compile>
-    <Compile Include="$(MSBuildThisFileDirectory)Snyk\VisualStudio\Extension\Shared\UI\Tree\SnykCodeVulnerabilityTreeNode.cs">
+    <Compile Include="$(MSBuildThisFileDirectory)UI\Tree\SnykCodeVulnerabilityTreeNode.cs">
       <CopyToOutputDirectory>Never</CopyToOutputDirectory>
     </Compile>
-    <Compile Include="$(MSBuildThisFileDirectory)Snyk\VisualStudio\Extension\Shared\UI\Tree\SnykFilterableTree.xaml.cs">
+    <Compile Include="$(MSBuildThisFileDirectory)UI\Tree\SnykFilterableTree.xaml.cs">
       <DependentUpon>SnykFilterableTree.xaml</DependentUpon>
     </Compile>
-    <Compile Include="$(MSBuildThisFileDirectory)Snyk\VisualStudio\Extension\Shared\UI\Tree\TreeNode.cs">
+    <Compile Include="$(MSBuildThisFileDirectory)UI\Tree\TreeNode.cs">
       <CopyToOutputDirectory>Never</CopyToOutputDirectory>
     </Compile>
     <Compile Include="$(MSBuildThisFileDirectory)VSPackage.Designer.cs">
@@ -533,10 +533,10 @@
       <LastGenOutput>SnykIcons.Designer.cs</LastGenOutput>
       <Generator>ResXFileCodeGenerator</Generator>
     </EmbeddedResource>
-    <EmbeddedResource Include="$(MSBuildThisFileDirectory)Snyk\VisualStudio\Extension\Shared\Settings\SnykGeneralSettingsUserControl.resx">
+    <EmbeddedResource Include="$(MSBuildThisFileDirectory)Settings\SnykGeneralSettingsUserControl.resx">
       <DependentUpon>SnykGeneralSettingsUserControl.cs</DependentUpon>
     </EmbeddedResource>
-    <EmbeddedResource Include="$(MSBuildThisFileDirectory)Snyk\VisualStudio\Extension\Shared\Settings\SnykProjectOptionsUserControl.resx">
+    <EmbeddedResource Include="$(MSBuildThisFileDirectory)Settings\SnykProjectOptionsUserControl.resx">
       <DependentUpon>SnykProjectOptionsUserControl.cs</DependentUpon>
     </EmbeddedResource>
     <EmbeddedResource Include="$(MSBuildThisFileDirectory)VSPackage.resx">
@@ -545,48 +545,48 @@
     </EmbeddedResource>
   </ItemGroup>
   <ItemGroup>
-    <Page Include="$(MSBuildThisFileDirectory)Snyk\VisualStudio\Extension\Shared\UI\Controls\TextField.xaml">
+    <Page Include="$(MSBuildThisFileDirectory)UI\Controls\TextField.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
       <CopyToOutputDirectory>Never</CopyToOutputDirectory>
     </Page>
-    <Page Include="$(MSBuildThisFileDirectory)Snyk\VisualStudio\Extension\Shared\UI\Toolwindow\DescriptionHeaderPanel.xaml">
+    <Page Include="$(MSBuildThisFileDirectory)UI\Toolwindow\DescriptionHeaderPanel.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
       <CopyToOutputDirectory>Never</CopyToOutputDirectory>
     </Page>
-    <Page Include="$(MSBuildThisFileDirectory)Snyk\VisualStudio\Extension\Shared\UI\Toolwindow\DescriptionPanel.xaml">
+    <Page Include="$(MSBuildThisFileDirectory)UI\Toolwindow\DescriptionPanel.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
       <CopyToOutputDirectory>Never</CopyToOutputDirectory>
     </Page>
-    <Page Include="$(MSBuildThisFileDirectory)Snyk\VisualStudio\Extension\Shared\UI\Toolwindow\MessagePanel.xaml">
+    <Page Include="$(MSBuildThisFileDirectory)UI\Toolwindow\MessagePanel.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
       <CopyToOutputDirectory>Never</CopyToOutputDirectory>
     </Page>
-    <Page Include="$(MSBuildThisFileDirectory)Snyk\VisualStudio\Extension\Shared\UI\Toolwindow\OssDescriptionControl.xaml">
+    <Page Include="$(MSBuildThisFileDirectory)UI\Toolwindow\OssDescriptionControl.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
       <CopyToOutputDirectory>Never</CopyToOutputDirectory>
     </Page>
-    <Page Include="$(MSBuildThisFileDirectory)Snyk\VisualStudio\Extension\Shared\UI\Toolwindow\SnykCode\DataFlowStepsControl.xaml">
+    <Page Include="$(MSBuildThisFileDirectory)UI\Toolwindow\SnykCode\DataFlowStepsControl.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>
-    <Page Include="$(MSBuildThisFileDirectory)Snyk\VisualStudio\Extension\Shared\UI\Toolwindow\SnykCode\ExternalExampleFixesControl.xaml">
+    <Page Include="$(MSBuildThisFileDirectory)UI\Toolwindow\SnykCode\ExternalExampleFixesControl.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>
-    <Page Include="$(MSBuildThisFileDirectory)Snyk\VisualStudio\Extension\Shared\UI\Toolwindow\SnykCode\SnykCodeDescriptionControl.xaml">
+    <Page Include="$(MSBuildThisFileDirectory)UI\Toolwindow\SnykCode\SnykCodeDescriptionControl.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>
-    <Page Include="$(MSBuildThisFileDirectory)Snyk\VisualStudio\Extension\Shared\UI\Toolwindow\SnykToolWindowControl.xaml">
+    <Page Include="$(MSBuildThisFileDirectory)UI\Toolwindow\SnykToolWindowControl.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>
-    <Page Include="$(MSBuildThisFileDirectory)Snyk\VisualStudio\Extension\Shared\UI\Tree\SnykFilterableTree.xaml">
+    <Page Include="$(MSBuildThisFileDirectory)UI\Tree\SnykFilterableTree.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>
@@ -600,9 +600,6 @@
       <Link>SnykVSPackage.vsct</Link>
       <ResourceName>Menus.ctmenu</ResourceName>
     </VSCTCompile>
-  </ItemGroup>
-  <ItemGroup>
-    <Folder Include="$(MSBuildThisFileDirectory)Snyk\VisualStudio\Extension\Shared\" />
   </ItemGroup>
   <Target Name="AfterBuild">
     <ItemGroup>
