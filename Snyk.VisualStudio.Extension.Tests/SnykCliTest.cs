@@ -1,10 +1,10 @@
-﻿namespace Snyk.VisualStudio.Extension.Tests
+﻿namespace Snyk.VisualStudio.Extension.Shared.Tests
 {
     using System;
     using System.Collections.Specialized;
     using System.IO;
-    using Snyk.VisualStudio.Extension.CLI;
-    using Snyk.VisualStudio.Extension.Settings;
+    using Snyk.VisualStudio.Extension.Shared.CLI;
+    using Snyk.VisualStudio.Extension.Shared.Settings;
     using Xunit;
 
     public class SnykCliTest
