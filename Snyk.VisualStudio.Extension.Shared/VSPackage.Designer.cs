@@ -8,7 +8,7 @@
 // </auto-generated>
 //------------------------------------------------------------------------------
 
-namespace Snyk.VisualStudio.Extension {
+namespace Snyk.VisualStudio.Extension.Shared {
     using System;
     
     
