@@ -31,7 +31,7 @@
 ### Software requirements
 
 * Operating system - Windows. 
-* Supported versions of Visual Studio: 2015, 2017, 2019. Compatible with Community, Professional and Enterprise.
+* Supported versions of Visual Studio: 2015, 2017, 2019, 2022. Compatible with Community, Professional and Enterprise.
 
 ### Supported languages
 
