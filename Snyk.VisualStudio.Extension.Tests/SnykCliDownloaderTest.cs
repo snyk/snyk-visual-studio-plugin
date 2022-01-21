@@ -2,23 +2,24 @@
 {
     using System;
     using System.IO;
+    using System.Threading.Tasks;
+    using Moq;
     using Snyk.VisualStudio.Extension.Shared.CLI;
+    using Snyk.VisualStudio.Extension.Shared.CLI.Download;
+    using Snyk.VisualStudio.Extension.Shared.Service;
     using Xunit;
 
     public class SnykCliDownloaderTest
     {
-        [Fact]
-        public void SnykCliDownloader_CorrectInformationProvided_LatestReleaseInfoCorrect()
+        private Mock<ISnykProgressWorker> progressWorkerMock;
+
+        public SnykCliDownloaderTest()
         {
-            var cliDownloader = new SnykCliDownloader(null);
-
-            LatestReleaseInfo latestReleaseInfo = cliDownloader.GetLatestReleaseInfo();
-
-            Assert.False(string.IsNullOrWhiteSpace(latestReleaseInfo.TagName));
+            this.progressWorkerMock = new Mock<ISnykProgressWorker>();
         }
 
         [Fact]
-        public void SnykCliDownloader_CorrectInformationProvided_DownloadSuccessful()
+        public void SnykCliDownloader_VerifyCliFile_Failed()
         {
             var cliDownloader = new SnykCliDownloader(null);
 
@@ -28,7 +29,65 @@
 
             Assert.False(File.Exists(tempCliPath));
 
-            cliDownloader.Download(tempCliPath);
+            File.WriteAllText(tempCliPath, "Testing verify chechsum");
+
+            Assert.True(File.Exists(tempCliPath));
+
+            Assert.Throws<ChecksumVerificationException>(() => cliDownloader.VerifyCliFile(tempCliPath));
+
+            File.Delete(tempCliPath);
+        }
+
+        [Fact]
+        public async Task SnykCliDownloader_VerifyCliFile_SuccessfulAsync()
+        {
+            var cliDownloader = new SnykCliDownloader(null);
+
+            string tempCliPath = Path.Combine(Path.GetTempPath(), SnykCli.CliFileName);
+
+            File.Delete(tempCliPath);
+
+            Assert.False(File.Exists(tempCliPath));
+
+            await cliDownloader.DownloadAsync(this.progressWorkerMock.Object, tempCliPath);
+
+            Assert.True(File.Exists(tempCliPath));
+
+            cliDownloader.VerifyCliFile(tempCliPath);
+
+            File.Delete(tempCliPath);
+        }
+
+        [Fact]
+        public void SnykCliDownloader_GetLatestSha_SuccessfulRequest()
+        {
+            var cliDownloader = new SnykCliDownloader(null);
+
+            Assert.False(string.IsNullOrWhiteSpace(cliDownloader.GetLatestCliSha()));
+        }
+
+        [Fact]
+        public void SnykCliDownloader_CorrectInformationProvided_LatestReleaseInfoCorrect()
+        {
+            var cliDownloader = new SnykCliDownloader(null);
+
+            LatestReleaseInfo latestReleaseInfo = cliDownloader.GetLatestReleaseInfo();
+
+            Assert.False(string.IsNullOrWhiteSpace(latestReleaseInfo.Version));
+        }
+
+        [Fact]
+        public async Task SnykCliDownloader_CorrectInformationProvided_DownloadSuccessfulAsync()
+        {
+            var cliDownloader = new SnykCliDownloader(null);
+
+            string tempCliPath = Path.Combine(Path.GetTempPath(), SnykCli.CliFileName);
+
+            File.Delete(tempCliPath);
+
+            Assert.False(File.Exists(tempCliPath));
+
+            await cliDownloader.DownloadAsync(this.progressWorkerMock.Object, tempCliPath);
 
             Assert.True(File.Exists(tempCliPath));
 
@@ -80,7 +139,7 @@
         }
 
         [Fact]
-        public void SnykCliDownloader_CliFileNotExists_CliDownloadSuccessful()
+        public async Task SnykCliDownloader_CliFileNotExists_CliDownloadSuccessfulAsync()
         {
             string tempCliPath = Path.Combine(Path.GetTempPath(), SnykCli.CliFileName);
 
@@ -90,9 +149,9 @@
 
             var cliDownloader = new SnykCliDownloader(null);
 
-            cliDownloader.AutoUpdateCli(DateTime.Now.AddDays(-5), tempCliPath);
+            await cliDownloader.AutoUpdateCliAsync(this.progressWorkerMock.Object, DateTime.Now.AddDays(-5), tempCliPath);
 
-            string newCliVersion = cliDownloader.GetLatestReleaseInfo().CliVersion;
+            string newCliVersion = cliDownloader.GetLatestReleaseInfo().Name;
 
             Assert.True(File.Exists(tempCliPath));
 
@@ -100,7 +159,7 @@
         }
 
         [Fact]
-        public void SnykCliDownloader_WrongPreviousVersionProvided_CliDownloadSuccessful()
+        public async Task SnykCliDownloader_WrongPreviousVersionProvided_CliDownloadSuccessfulAsync()
         {
             string tempCliPath = Path.Combine(Path.GetTempPath(), SnykCli.CliFileName);
 
@@ -110,9 +169,9 @@
 
             var cliDownloader = new SnykCliDownloader(null);
 
-            cliDownloader.AutoUpdateCli(DateTime.Now.AddDays(-5), tempCliPath);
+            await cliDownloader.AutoUpdateCliAsync(this.progressWorkerMock.Object, DateTime.Now.AddDays(-5), tempCliPath);
 
-            string newCliVersion = cliDownloader.GetLatestReleaseInfo().CliVersion;
+            string newCliVersion = cliDownloader.GetLatestReleaseInfo().Version;
 
             Assert.True(File.Exists(tempCliPath));
 
@@ -123,7 +182,7 @@
         }
 
         [Fact]
-        public void SnykCliDownloader_PreviousVersionOlderProvided_CliDownloadSuccessful()
+        public async Task SnykCliDownloader_PreviousVersionOlderProvided_CliDownloadSuccessfulAsync()
         {
             string tempCliPath = Path.Combine(Path.GetTempPath(), SnykCli.CliFileName);
 
@@ -135,9 +194,9 @@
 
             var cliDownloader = new SnykCliDownloader(currentCliVersion);
 
-            cliDownloader.AutoUpdateCli(DateTime.Now.AddDays(-5), tempCliPath);
+            await cliDownloader.AutoUpdateCliAsync(this.progressWorkerMock.Object, DateTime.Now.AddDays(-5), tempCliPath);
 
-            string newCliVersion = cliDownloader.GetLatestReleaseInfo().CliVersion;
+            string newCliVersion = cliDownloader.GetLatestReleaseInfo().Version;
 
             Assert.True(File.Exists(tempCliPath));
 
@@ -147,7 +206,7 @@
         }
 
         [Fact]
-        public void SnykCliDownloader_PreviousVersionOlderAndFourDaysPassedProvided_CliDownloadSuccessful()
+        public async Task SnykCliDownloader_PreviousVersionOlderAndFourDaysPassedProvided_CliDownloadSuccessfulAsync()
         {
             string tempCliPath = Path.Combine(Path.GetTempPath(), SnykCli.CliFileName);
 
@@ -159,9 +218,9 @@
 
             var cliDownloader = new SnykCliDownloader(currentCliVersion);
 
-            cliDownloader.AutoUpdateCli(DateTime.Now.AddDays(-5), tempCliPath);
+            await cliDownloader.AutoUpdateCliAsync(this.progressWorkerMock.Object, DateTime.Now.AddDays(-5), tempCliPath);
 
-            string newCliVersion = cliDownloader.GetLatestReleaseInfo().CliVersion;
+            string newCliVersion = cliDownloader.GetLatestReleaseInfo().Version;
 
             Assert.True(File.Exists(tempCliPath));
 

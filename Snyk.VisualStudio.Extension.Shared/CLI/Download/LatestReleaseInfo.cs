@@ -1,7 +1,5 @@
-﻿namespace Snyk.VisualStudio.Extension.Shared.CLI
+﻿namespace Snyk.VisualStudio.Extension.Shared.CLI.Download
 {
-    using Newtonsoft.Json;
-
     /// <summary>
     /// Represents latest CLI release information.
     /// </summary>
@@ -18,19 +16,13 @@
         public int Id { get; set; }
 
         /// <summary>
-        /// Gets or sets a value indicating whether tag name.
-        /// </summary>
-        [JsonProperty("tag_name")]
-        public string TagName { get; set; }
-
-        /// <summary>
         /// Gets or sets a value indicating whether name.
         /// </summary>
         public string Name { get; set; }
 
         /// <summary>
-        /// Gets a value indicating whether version from TagName by removing 'v' char.
+        /// Gets or sets a value indicating whether version.
         /// </summary>
-        public string CliVersion => this.TagName?.Replace("v", string.Empty);
+        public string Version { get; set; }
     }
 }

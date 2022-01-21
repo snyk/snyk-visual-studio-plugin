@@ -10,9 +10,10 @@
     using Snyk.Code.Library.Domain.Analysis;
     using Snyk.Common;
     using Snyk.VisualStudio.Extension.Shared.CLI;
+    using Snyk.VisualStudio.Extension.Shared.CLI.Download;
     using Snyk.VisualStudio.Extension.Shared.Service.Domain;
     using Snyk.VisualStudio.Extension.Shared.SnykAnalytics;
-    using static Snyk.VisualStudio.Extension.Shared.CLI.SnykCliDownloader;
+    using static Snyk.VisualStudio.Extension.Shared.CLI.Download.SnykCliDownloader;
     using Task = System.Threading.Tasks.Task;
 
     /// <summary>
@@ -228,45 +229,21 @@
             Logger.Information("Start run task");
 
             _ = Task.Run(
-                () =>
+                async () =>
                 {
                     try
                     {
-                        this.isCliDownloading = true;
+                        await this.DownloadAsync(downloadFinishedCallback, progressWorker);
+                    }
+                    catch (ChecksumVerificationException e)
+                    {
+                        Logger.Error(e, "Cli download failed. Checksum don't match. Try to download again...");
 
-                        var userStorageService = this.serviceProvider.UserStorageSettingsService;
-
-                        string currentCliVersion = userStorageService.GetCurrentCliVersion();
-
-                        DateTime lastCliReleaseDate = userStorageService.GetCliReleaseLastCheckDate();
-
-                        var cliDownloader = new SnykCliDownloader(currentCliVersion);
-
-                        List<CliDownloadFinishedCallback> downloadFinishedCallbacks = new List<CliDownloadFinishedCallback>();
-
-                        if (downloadFinishedCallback != null)
-                        {
-                            downloadFinishedCallbacks.Add(downloadFinishedCallback);
-                        }
-
-                        downloadFinishedCallbacks.Add(new CliDownloadFinishedCallback(() =>
-                        {
-                            userStorageService.SaveCurrentCliVersion(cliDownloader.GetLatestReleaseInfo().CliVersion);
-                            userStorageService.SaveCliReleaseLastCheckDate(DateTime.UtcNow);
-
-                            this.isCliDownloading = false;
-
-                            this.DisposeCancellationTokenSource(this.downloadCliTokenSource);
-                        }));
-
-                        cliDownloader.AutoUpdateCli(
-                            lastCliReleaseDate,
-                            progressWorker: progressWorker,
-                            downloadFinishedCallbacks: downloadFinishedCallbacks);
+                        await this.RetryDownloadAsync(downloadFinishedCallback, progressWorker);
                     }
                     catch (Exception e)
                     {
-                        Logger.Error(e, "Error on cli download task");
+                        Logger.Error(e, "Error on cli download");
 
                         this.OnDownloadCancelled(e.Message);
                     }
@@ -628,6 +605,66 @@
             finally
             {
                 tokenSource = null;
+            }
+        }
+
+        private async Task DownloadAsync(CliDownloadFinishedCallback downloadFinishedCallback, ISnykProgressWorker progressWorker)
+        {
+            this.isCliDownloading = true;
+
+            var userStorageService = this.serviceProvider.UserStorageSettingsService;
+
+            string currentCliVersion = userStorageService.GetCurrentCliVersion();
+
+            DateTime lastCliReleaseDate = userStorageService.GetCliReleaseLastCheckDate();
+
+            var cliDownloader = new SnykCliDownloader(currentCliVersion);
+
+            List<CliDownloadFinishedCallback> downloadFinishedCallbacks = new List<CliDownloadFinishedCallback>();
+
+            if (downloadFinishedCallback != null)
+            {
+                downloadFinishedCallbacks.Add(downloadFinishedCallback);
+            }
+
+            downloadFinishedCallbacks.Add(new CliDownloadFinishedCallback(() =>
+            {
+                cliDownloader.VerifyCliFile();
+
+                userStorageService.SaveCurrentCliVersion(cliDownloader.GetLatestReleaseInfo().Name);
+                userStorageService.SaveCliReleaseLastCheckDate(DateTime.UtcNow);
+
+                this.isCliDownloading = false;
+
+                this.DisposeCancellationTokenSource(this.downloadCliTokenSource);
+            }));
+
+            await cliDownloader.AutoUpdateCliAsync(
+                progressWorker,
+                lastCliReleaseDate,
+                downloadFinishedCallbacks: downloadFinishedCallbacks);
+        }
+
+        private async Task RetryDownloadAsync(CliDownloadFinishedCallback downloadFinishedCallback, SnykProgressWorker progressWorker)
+        {
+            try
+            {
+                await this.DownloadAsync(downloadFinishedCallback, progressWorker);
+            }
+            catch (Exception e)
+            {
+                Logger.Error(e, "Cli retry download failed");
+
+                this.OnDownloadCancelled($"The download of the Snyk CLI was not successful. The integrity check failed ({e.Message})");
+            }
+            finally
+            {
+                if (progressWorker.IsWorkFinished)
+                {
+                    this.isCliDownloading = false;
+
+                    this.DisposeCancellationTokenSource(this.downloadCliTokenSource);
+                }
             }
         }
     }

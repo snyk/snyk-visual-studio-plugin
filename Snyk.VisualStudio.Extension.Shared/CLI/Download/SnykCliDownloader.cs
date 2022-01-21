@@ -1,9 +1,8 @@
-﻿namespace Snyk.VisualStudio.Extension.Shared.CLI
+﻿namespace Snyk.VisualStudio.Extension.Shared.CLI.Download
 {
     using System;
     using System.Collections.Generic;
     using System.IO;
-    using System.Net;
     using System.Net.Http;
     using System.Threading.Tasks;
     using Serilog;
@@ -15,15 +14,14 @@
     /// </summary>
     public class SnykCliDownloader
     {
-        private static readonly ILogger Logger = LogManager.ForContext<SnykCliDownloader>();
-
-        private const string LatestReleasesUrl = "https://api.github.com/repos/snyk/snyk/releases/latest";
-
-        private const string LatestReleaseDownloadUrl = "https://github.com/snyk/snyk/releases/download/{0}/{1}";
+        private const string BaseUrl = "https://static.snyk.io";
+        private const string LatestReleaseVersionUrl = BaseUrl + "/cli/latest/version";
+        private const string LatestReleaseDownloadUrl = BaseUrl + "/cli/latest/{0}";
+        private const string Sha256DownloadUrl = BaseUrl + "/cli/latest/snyk-win.exe.sha256";
 
         private const int FourDays = 4;
 
-        private readonly LatestReleaseInfo latestReleaseInfo;
+        private static readonly ILogger Logger = LogManager.ForContext<SnykCliDownloader>();
 
         private string currentCliVersion;
 
@@ -52,25 +50,46 @@
         /// Request last cli information.
         /// </summary>
         /// <returns>Latest CLI relaese information.</returns>
+        /// <summary>
         public LatestReleaseInfo GetLatestReleaseInfo()
         {
             Logger.Information("Enter GetLatestReleaseInfo method");
 
-            if (this.latestReleaseInfo == null)
+            using (var webClient = new SnykWebClient())
             {
-                using (var webClient = new SnykWebClient())
+                Logger.Information("Get latest CLI release info");
+
+                string latestVersion = webClient.DownloadString(LatestReleaseVersionUrl).Replace("\n", string.Empty);
+
+                return new LatestReleaseInfo
                 {
-                    Logger.Information("Downloading latest CLI release info");
-
-                    string latestReleasesInfoJson = webClient.DownloadString(LatestReleasesUrl);
-
-                    Logger.Information("Deserialize latest CLI release info");
-
-                    return Json.Deserialize<LatestReleaseInfo>(latestReleasesInfoJson);
-                }
+                    Version = latestVersion,
+                    Url = string.Format(LatestReleaseDownloadUrl, SnykCli.CliFileName),
+                    Name = "v" + latestVersion,
+                };
             }
+        }
 
-            return this.latestReleaseInfo;
+        /// <summary>
+        /// Request last cli sha.
+        /// </summary>
+        /// <returns>CLI sha string.</returns>
+        /// <summary>
+        public string GetLatestCliSha()
+        {
+            Logger.Information("Enter GetLatestCliSha method");
+
+            using (var webClient = new SnykWebClient())
+            {
+                Logger.Information("Get latest CLI sha");
+
+                string result = webClient.DownloadString(Sha256DownloadUrl)
+                    .Replace(SnykCli.CliFileName, string.Empty)
+                    .Replace("\n", string.Empty)
+                    .Trim();
+
+                return result;
+            }
         }
 
         /// <summary>
@@ -114,8 +133,26 @@
         /// <param name="lastCheckDate">Last check date.</param>
         /// <param name="cliFileDestinationPath">Path to CLI file.</param>
         /// <returns>True if CLI file not exists or new release exists.</returns>
-        public bool IsCliDownloadNeeded(DateTime lastCheckDate, string cliFileDestinationPath = null) =>
-            !this.IsCliFileExists(cliFileDestinationPath) || this.IsCliUpdateExists(lastCheckDate);
+        public bool IsCliDownloadNeeded(DateTime lastCheckDate, string cliFileDestinationPath = null)
+        {
+            if (!this.IsCliFileExists(cliFileDestinationPath) || this.IsCliUpdateExists(lastCheckDate))
+            {
+                return true;
+            }
+
+            try
+            {
+                this.VerifyCliFile(cliFileDestinationPath);
+            }
+            catch (ChecksumVerificationException e)
+            {
+                Logger.Error(e, "Cli file checksum verification failed");
+
+                return true;
+            }
+
+            return false;
+        }
 
         /// <summary>
         /// Check is CLI file not exists by provided location.
@@ -130,37 +167,32 @@
         /// <param name="lastCheckDate">Last check date.</param>
         /// <returns>True if new version CLI exists</returns>
         public bool IsCliUpdateExists(DateTime lastCheckDate) => this.IsFourDaysPassedAfterLastCheck(lastCheckDate)
-                    && this.IsNewVersionAvailable(this.currentCliVersion, this.GetLatestReleaseInfo().CliVersion);
+                    && this.IsNewVersionAvailable(this.currentCliVersion, this.GetLatestReleaseInfo().Name);
 
         /// <summary>
         /// Check is there a new version on the server and if there is, download it.
         /// </summary>
+        /// <param name="progressWorker">Progress worker for update get download progress.</param>
         /// <param name="lastCheckDate">Last date when it check for CLI updates.</param>
         /// <param name="filePath">CLI file destination path or null.</param>
-        /// <param name="progressWorker">Progress worker for update get download progress.</param>
         /// <param name="downloadFinishedCallbacks">List of callback for download finished event.</param>
-        public void AutoUpdateCli(
+        /// <returns>A <see cref="Task"/> representing the asynchronous operation.</returns>
+        public async Task AutoUpdateCliAsync(
+            ISnykProgressWorker progressWorker,
             DateTime lastCheckDate,
             string filePath = null,
-            ISnykProgressWorker progressWorker = null,
             List<CliDownloadFinishedCallback> downloadFinishedCallbacks = null)
         {
             string fileDestinationPath = this.GetCliFilePath(filePath);
 
             if (this.IsCliDownloadNeeded(lastCheckDate, filePath))
             {
-                if (progressWorker != null)
+                if (this.IsCliFileExists(fileDestinationPath))
                 {
-                    progressWorker.IsUpdateDownload =
-                        this.IsCliFileExists(fileDestinationPath) && this.IsCliUpdateExists(lastCheckDate);
-
-                    if (progressWorker.IsUpdateDownload)
-                    {
-                        File.Delete(fileDestinationPath);
-                    }
+                    File.Delete(fileDestinationPath);
                 }
 
-                this.Download(
+                await this.DownloadAsync(
                     fileDestinationPath: fileDestinationPath,
                     progressWorker: progressWorker,
                     downloadFinishedCallbacks: downloadFinishedCallbacks);
@@ -174,80 +206,82 @@
         /// <summary>
         /// Download last CLI instance.
         /// </summary>
-        /// <param name="fileDestinationPath">Path to destination cli file.</param>
         /// <param name="progressWorker">Progress worker for update get download progress.</param>
+        /// <param name="fileDestinationPath">Path to destination cli file.</param>
         /// <param name="downloadFinishedCallbacks">List of Callbacks for download finished event.</param>
-        public void Download(
+        /// <returns>A <see cref="Task"/> representing the asynchronous operation.</returns>
+        public async Task DownloadAsync(
+            ISnykProgressWorker progressWorker,
             string fileDestinationPath = null,
-            ISnykProgressWorker progressWorker = null,
             List<CliDownloadFinishedCallback> downloadFinishedCallbacks = null)
         {
             Logger.Information("Enter Download method");
 
             string cliFileDestinationPath = this.GetCliFilePath(fileDestinationPath);
 
-            Logger.Information("Cli file destination Path: {CliFileDestinationPath}", cliFileDestinationPath);
+            Logger.Information("CLI File Destination Path: {Path}", cliFileDestinationPath);
 
-            if (!File.Exists(cliFileDestinationPath))
-            {
-                Logger.Information("CLI file not exists. Starting download");
+            progressWorker?.DownloadStarted();
 
-                progressWorker?.DownloadStarted();
+            progressWorker?.CancelIfCancellationRequested();
 
-                progressWorker?.CancelIfCancellationRequested();
+            Logger.Information("Got latest relase information");
 
-                Logger.Information("Got latest relase information");
-
-                using (var webClient = new SnykWebClient())
-                {
-                    LatestReleaseInfo latestReleaseInfo = this.GetLatestReleaseInfo();
+            LatestReleaseInfo latestReleaseInfo = this.GetLatestReleaseInfo();
 
                     string cliVersion = latestReleaseInfo.TagName;
 
                     Logger.Information("Latest relase information CLI version: {CliVersion}", cliVersion);
 
                     string cliDownloadUrl = string.Format(LatestReleaseDownloadUrl, cliVersion, SnykCli.CliFileName);
+            Logger.Information("Latest relase information: version {Version} and url {Url}", latestReleaseInfo.Version, latestReleaseInfo.Url);
 
                     Logger.Information("Cli download url: {CliDownloadUrl}", cliDownloadUrl);
+            progressWorker?.CancelIfCancellationRequested();
 
-                    string snykDirectoryPath = SnykDirectory.GetSnykAppDataDirectoryPath();
+            this.PrepareSnykCliDirectory();
 
-                    progressWorker?.CancelIfCancellationRequested();
-
-                    Directory.CreateDirectory(snykDirectoryPath);
-
-                    if (progressWorker != null)
-                    {
-                        this.AsynchronousDownloadAsync(progressWorker, cliFileDestinationPath, cliDownloadUrl, downloadFinishedCallbacks);
-                    }
-                    else
-                    {
-                        this.SynchronousDownload(webClient, cliFileDestinationPath, cliDownloadUrl, downloadFinishedCallbacks);
-                    }
-                }
-            }
+            await this.DownloadAsync(
+                progressWorker,
+                cliFileDestinationPath,
+                latestReleaseInfo.Url,
+                downloadFinishedCallbacks);
         }
 
-        private void SynchronousDownload(
-            WebClient webClient,
-            string cliFileDestinationPath,
-            string cliDownloadUrl,
-            List<CliDownloadFinishedCallback> downloadFinishedCallbacks = null)
+        /// <summary>
+        /// Verify cli file sha. If it's not correct method will from <see cref="ChecksumVerificationException"/> exception.
+        /// </summary>
+        /// <param name="path">CLI file full path.</param>
+        /// <exception cref="ChecksumVerificationException">Exception if cli sha not correct.</exception>
+        public void VerifyCliFile(string path = null)
         {
-            Logger.Information("Enter SynchronousDownload method");
+            string cliPath = this.GetCliFilePath(path);
 
-            webClient.DownloadFile(cliDownloadUrl, cliFileDestinationPath);
-
-            if (downloadFinishedCallbacks != null)
+            if (!this.IsCliFileExists(cliPath))
             {
-                downloadFinishedCallbacks.ForEach(downloadFinishedCallback =>
-                {
-                    downloadFinishedCallback();
-                });
+                throw new ChecksumVerificationException("Cli file not exists, can't verify checksum");
+            }
+
+            string extectedSha = this.GetLatestCliSha();
+            string currentSha = Sha256.Checksum(cliPath);
+
+            if (extectedSha.ToLower() != currentSha.ToLower())
+            {
+                throw new ChecksumVerificationException($"Expected {extectedSha}, but downloaded file has {currentSha}");
             }
         }
 
-        private async Task AsynchronousDownloadAsync(
+        private void PrepareSnykCliDirectory()
+        {
+            string snykDirectoryPath = SnykDirectory.GetSnykAppDataDirectoryPath();
+
+            if (!Directory.Exists(snykDirectoryPath))
+            {
+                Directory.CreateDirectory(snykDirectoryPath);
+            }
+        }
+
+        private async Task DownloadAsync(
             ISnykProgressWorker progressWorker,
             string cliFileDestinationPath,
             string cliDownloadUrl,
@@ -255,6 +289,25 @@
         {
             Logger.Information("Enter AsynchronousDownload method");
 
+            try
+            {
+                await this.DownloadFileAsync(progressWorker, cliDownloadUrl, cliFileDestinationPath);
+            }
+            catch (ChecksumVerificationException e)
+            {
+                Logger.Error(e, "Error on cli file download");
+
+                // Try to download again if file checksum failed.
+                File.Delete(cliFileDestinationPath);
+
+                await this.DownloadFileAsync(progressWorker, cliDownloadUrl, cliFileDestinationPath);
+            }
+
+            this.FinishDownload(progressWorker, downloadFinishedCallbacks);
+        }
+
+        private async Task DownloadFileAsync(ISnykProgressWorker progressWorker, string cliDownloadUrl, string cliFileDestinationPath)
+        {
             using (var client = new HttpClient())
             {
                 client.Timeout = TimeSpan.FromMinutes(5);
@@ -263,9 +316,9 @@
 
                 response.EnsureSuccessStatusCode();
 
-                using (var contentStream = await response.Content.ReadAsStreamAsync())
+                using (var fileStream = new FileStream(cliFileDestinationPath, FileMode.Create, FileAccess.Write, FileShare.ReadWrite, 8192, true))
                 {
-                    using (var fileStream = new FileStream(cliFileDestinationPath, FileMode.Create, FileAccess.Write, FileShare.ReadWrite, 8192, true))
+                    using (Stream contentStream = await response.Content.ReadAsStreamAsync())
                     {
                         var totalBytes = response.Content.Headers.ContentLength;
                         var totalRead = 0L;
@@ -294,17 +347,9 @@
                             }
                         }
                         while (isMoreToRead);
-
-                        await fileStream.FlushAsync();
-
-                        fileStream.Close();
                     }
                 }
             }
-
-            this.FinishDownload(progressWorker, downloadFinishedCallbacks);
-
-            progressWorker.CancelIfCancellationRequested();
         }
 
         private void FinishDownload(ISnykProgressWorker progressWorker, List<CliDownloadFinishedCallback> downloadFinishedCallbacks)
@@ -335,7 +380,7 @@
             {
                 return int.Parse(cliVersion.Replace(".", string.Empty));
             }
-            catch (FormatException ignore)
+            catch (FormatException e)
             {
                 return -1;
             }
