@@ -23,6 +23,8 @@
         {
             var cliDownloader = new SnykCliDownloader(null);
 
+            cliDownloader.SaveLatestCliSha();
+
             string tempCliPath = Path.Combine(Path.GetTempPath(), SnykCli.CliFileName);
 
             File.Delete(tempCliPath);

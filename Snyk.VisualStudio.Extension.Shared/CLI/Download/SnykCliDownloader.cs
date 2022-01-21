@@ -25,6 +25,8 @@
 
         private string currentCliVersion;
 
+        private string extectedSha;
+
         /// <summary>
         /// Initializes a new instance of the <see cref="SnykCliDownloader"/> class.
         /// </summary>
@@ -140,17 +142,6 @@
                 return true;
             }
 
-            try
-            {
-                this.VerifyCliFile(cliFileDestinationPath);
-            }
-            catch (ChecksumVerificationException e)
-            {
-                Logger.Error(e, "Cli file checksum verification failed");
-
-                return true;
-            }
-
             return false;
         }
 
@@ -262,14 +253,18 @@
                 throw new ChecksumVerificationException("Cli file not exists, can't verify checksum");
             }
 
-            string extectedSha = this.GetLatestCliSha();
             string currentSha = Sha256.Checksum(cliPath);
 
-            if (extectedSha.ToLower() != currentSha.ToLower())
+            if (this.extectedSha.ToLower() != currentSha.ToLower())
             {
-                throw new ChecksumVerificationException($"Expected {extectedSha}, but downloaded file has {currentSha}");
+                throw new ChecksumVerificationException($"Expected {this.extectedSha}, but downloaded file has {currentSha}");
             }
         }
+
+        /// <summary>
+        /// Initialize extectedSha property with latest value from server.
+        /// </summary>
+        public void SaveLatestCliSha() => this.extectedSha = this.GetLatestCliSha();
 
         private void PrepareSnykCliDirectory()
         {
@@ -291,6 +286,8 @@
 
             try
             {
+                this.SaveLatestCliSha();
+
                 await this.DownloadFileAsync(progressWorker, cliDownloadUrl, cliFileDestinationPath);
             }
             catch (ChecksumVerificationException e)
