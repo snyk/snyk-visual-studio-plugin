@@ -9,6 +9,7 @@
     <Import_RootNamespace>Snyk.VisualStudio.Extension.Shared</Import_RootNamespace>
   </PropertyGroup>
   <ItemGroup>
+    <Compile Include="$(MSBuildThisFileDirectory)CLI\InvalidTokenException.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Microsoft\HtmlParser\CssStylesheet.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Microsoft\HtmlParser\HtmlCssParser.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Microsoft\HtmlParser\HtmlFromXamlConverter.cs" />
@@ -465,10 +466,10 @@
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
       <IncludeInVSIX>true</IncludeInVSIX>
     </Resource>
-    <Content Include="$(MSBuildThisFileDirectory)Resources\SnykDogLogoFullSize.png">
+    <Resource Include="$(MSBuildThisFileDirectory)Resources\SnykDogLogoFullSize.png">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
       <IncludeInVSIX>true</IncludeInVSIX>
-    </Content>
+    </Resource>
     <Content Include="$(MSBuildThisFileDirectory)Resources\SnykLogo.ico">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
       <IncludeInVSIX>true</IncludeInVSIX>

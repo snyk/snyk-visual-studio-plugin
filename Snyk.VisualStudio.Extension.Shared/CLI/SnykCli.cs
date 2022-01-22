@@ -65,7 +65,17 @@
         /// Get Snyk API token from settings.
         /// </summary>
         /// <returns>API token string.</returns>
-        public string GetApiToken() => this.ConsoleRunner.Run(GetSnykCliPath(), "config get api");
+        public string GetApiToken()
+        {
+            string apiToken = this.ConsoleRunner.Run(GetSnykCliPath(), "config get api");
+
+            if (string.IsNullOrEmpty(apiToken) || !Guid.IsValid(apiToken))
+            {
+                throw new InvalidTokenException(string.IsNullOrEmpty(apiToken) ? string.Empty : apiToken);
+            }
+
+            return apiToken;
+        }
 
         /// <summary>
         /// Call Snyk CLI auth for authentication. This will open authentication web page and store token in config file.

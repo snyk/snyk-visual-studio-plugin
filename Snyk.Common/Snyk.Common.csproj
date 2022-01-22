@@ -128,6 +128,7 @@
   <ItemGroup>
     <Compile Include="CollectionExtensions.cs" />
     <Compile Include="FileUtil.cs" />
+    <Compile Include="Guid.cs" />
     <Compile Include="HttpClientFactory.cs" />
     <Compile Include="IFileProvider.cs" />
     <Compile Include="ISolutionService.cs" />

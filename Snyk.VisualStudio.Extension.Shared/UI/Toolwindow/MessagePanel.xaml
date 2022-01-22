@@ -35,7 +35,7 @@
         </StackPanel>
         
         <StackPanel Name="overviewPanel" Visibility="Collapsed" HorizontalAlignment="Center">
-            <Image Source="/Snyk.VisualStudio.Extension.Shared;component/Resources/SnykDogLogoFullSize.png" Width="128"/>
+            <Image Source="pack://application:,,,/Snyk.VisualStudio.Extension;component/SnykDogLogoFullSize.png" Width="128"/>
             <c:TextField FontWeight="Bold" TextAlignment="Center" Padding="0,5">
                     Welcome to Snyk for Visual Studio
             </c:TextField>

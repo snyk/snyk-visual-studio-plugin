@@ -101,7 +101,7 @@
             tasksService.DownloadUpdate += this.OnDownloadUpdate;
             tasksService.DownloadCancelled += this.OnDownloadCancelled;
 
-            this.Loaded += tasksService.OnUiLoaded;
+            //this.Loaded += tasksService.OnUiLoaded;
 
             serviceProvider.VsThemeService.ThemeChanged += this.OnVsThemeChanged;
 
@@ -198,11 +198,16 @@
         {
             await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
 
+            this.serviceProvider.AnalyticsService.LogAnalysisReadyEvent(AnalysisType.SnykOpenSource, AnalyticsAnalysisResult.Error);
+
             this.resultsTree.CliRootNode.State = RootTreeNodeState.Error;
 
-            NotificationService.Instance.ShowWarningInfoBar(eventArgs.Error.Message);
+            NotificationService.Instance.ShowErrorInfoBar(eventArgs.Error.Message);
 
-            this.serviceProvider.AnalyticsService.LogAnalysisReadyEvent(AnalysisType.SnykOpenSource, SnykAnalytics.AnalyticsAnalysisResult.Error);
+            if (!this.serviceProvider.Options.SnykCodeSecurityEnabled && !this.serviceProvider.Options.SnykCodeQualityEnabled)
+            {
+                this.context.TransitionTo(RunScanState.Instance);
+            }
 
             this.UpdateActionsState();
         });
@@ -222,12 +227,17 @@
         {
             await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
 
+            this.serviceProvider.AnalyticsService.LogAnalysisReadyEvent(AnalysisType.SnykCodeSecurity, AnalyticsAnalysisResult.Error);
+
             this.resultsTree.CodeQualityRootNode.State = RootTreeNodeState.Error;
             this.resultsTree.CodeSequrityRootNode.State = RootTreeNodeState.Error;
 
-            NotificationService.Instance.ShowWarningInfoBar(eventArgs.Error);
+            NotificationService.Instance.ShowErrorInfoBar(eventArgs.Error);
 
-            this.serviceProvider.AnalyticsService.LogAnalysisReadyEvent(AnalysisType.SnykCodeSecurity, SnykAnalytics.AnalyticsAnalysisResult.Error);
+            if (!this.serviceProvider.Options.OssEnabled)
+            {
+                this.context.TransitionTo(RunScanState.Instance);
+            }
 
             this.UpdateActionsState();
         });
@@ -309,7 +319,7 @@
         {
             await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
 
-            IVsWindowFrame windowFrame = (IVsWindowFrame)toolWindow.Frame;
+            IVsWindowFrame windowFrame = (IVsWindowFrame)this.toolWindow.Frame;
 
             ErrorHandler.ThrowOnFailure(windowFrame.Show());
         });
@@ -567,7 +577,18 @@
         {
             this.serviceProvider.AnalyticsService.AnalyticsEnabled = this.serviceProvider.Options.UsageAnalyticsEnabled;
 
-            if (string.IsNullOrEmpty(this.serviceProvider.GetApiToken()))
+            string apiToken = string.Empty;
+
+            try
+            {
+                apiToken = this.serviceProvider.GetApiToken();
+            }
+            catch (InvalidTokenException e)
+            {
+                Logger.Error(e, "Error on get api token");
+            }
+
+            if (string.IsNullOrEmpty(apiToken))
             {
                 this.context.TransitionTo(OverviewState.Instance);
 

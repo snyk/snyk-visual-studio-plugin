@@ -2,13 +2,14 @@
 {
     using System;
     using System.Diagnostics.CodeAnalysis;
-    using System.Text.RegularExpressions;
     using System.Threading.Tasks;
     using System.Windows.Forms;
     using Serilog;
     using Snyk.Common;
     using Snyk.VisualStudio.Extension.Shared.CLI;
     using Snyk.VisualStudio.Extension.Shared.Service;
+    using Snyk.VisualStudio.Extension.Shared.UI;
+    using Snyk.VisualStudio.Extension.Shared.UI.Notifications;
     using static Snyk.VisualStudio.Extension.Shared.CLI.SnykCliDownloader;
 
     /// <summary>
@@ -23,8 +24,6 @@
         /// </summary>
         [SuppressMessage("StyleCop.CSharp.MaintainabilityRules", "SA1401:FieldsMustBePrivate", Justification = "Reviewed.")]
         internal SnykGeneralOptionsDialogPage OptionsDialogPage;
-
-        private static readonly Regex GuidRegex = new Regex(@"^(\{){0,1}[0-9a-fA-F]{8}\-[0-9a-fA-F]{4}\-[0-9a-fA-F]{4}\-[0-9a-fA-F]{4}\-[0-9a-fA-F]{12}(\}){0,1}$", RegexOptions.Compiled);
 
         private static readonly int TwoSecondsDelay = 2000;
 
@@ -159,9 +158,18 @@
         {
             if (string.IsNullOrEmpty(this.OptionsDialogPage.ApiToken))
             {
-                string apiToken = this.NewCli().GetApiToken();
+                string apiToken = string.Empty;
 
-                if (this.IsValidGuid(apiToken))
+                try
+                {
+                    apiToken = this.NewCli().GetApiToken();
+                }
+                catch (Exception e)
+                {
+                    Logger.Error(e, "Error on get api tonek via cli for settings");
+                }
+
+                if (Common.Guid.IsValid(apiToken))
                 {
                     this.OptionsDialogPage.ApiToken = apiToken;
                 }
@@ -247,7 +255,7 @@
 
                 Logger.Information("Validate Api token GUID");
 
-                if (!this.IsValidGuid(apiToken))
+                if (!Common.Guid.IsValid(apiToken))
                 {
                     errorCallback($"Invalid GUID: {apiToken}");
 
@@ -265,8 +273,6 @@
                 errorCallback(exception.Message);
             }
         }
-
-        private bool IsValidGuid(string guid) => guid != null && GuidRegex.IsMatch(guid);
 
         private bool IsValidUrl(string url) => Uri.IsWellFormedUriString(url, UriKind.RelativeOrAbsolute);
 
@@ -303,7 +309,7 @@
                 return;
             }
 
-            if (string.IsNullOrWhiteSpace(this.tokenTextBox.Text) || !this.IsValidGuid(this.tokenTextBox.Text))
+            if (string.IsNullOrWhiteSpace(this.tokenTextBox.Text) || !Common.Guid.IsValid(this.tokenTextBox.Text))
             {
                 cancelEventArgs.Cancel = true;
 
@@ -409,7 +415,7 @@
 
             this.OptionsDialogPage.ServiceProvider.AnalyticsService.AnalyticsEnabled = this.usageAnalyticsCheckBox.Checked;
 
-            this.OptionsDialogPage.ServiceProvider.AnalyticsService.ObtainUser(this.OptionsDialogPage.ServiceProvider.GetApiToken());
+            this.OptionsDialogPage.ServiceProvider.AnalyticsService.ObtainUser(this.OptionsDialogPage.ServiceProvider);
         }
 
         private void OssEnabledCheckBox_CheckedChanged(object sender, EventArgs e)

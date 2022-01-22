@@ -261,7 +261,7 @@
                 this.snykCodeService = CodeServiceFactory
                     .CreateSnykCodeService(options.ApiToken, endpoint, this.SolutionService.FileProvider);
 
-                VsStatusBarNotificationService.Instance.InitializeEventListeners(this.snykCodeService);
+                VsStatusBarNotificationService.Instance.InitializeEventListeners(this.snykCodeService, options);
             }
             catch (Exception e)
             {
