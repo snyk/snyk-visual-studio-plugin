@@ -18,7 +18,7 @@
                 ConsoleRunner = new SnykMockConsoleRunner("cli file note exists"),
             };
 
-            Assert.Throws<InvalidTokenException>(() => cli.GetApiToken());
+            Assert.Throws<InvalidTokenException>(() => cli.GetApiTokenOrThrowException());
         }
 
         [Fact]

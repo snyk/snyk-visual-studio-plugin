@@ -577,18 +577,7 @@
         {
             this.serviceProvider.AnalyticsService.AnalyticsEnabled = this.serviceProvider.Options.UsageAnalyticsEnabled;
 
-            string apiToken = string.Empty;
-
-            try
-            {
-                apiToken = this.serviceProvider.GetApiToken();
-            }
-            catch (InvalidTokenException e)
-            {
-                Logger.Error(e, "Error on get api token");
-            }
-
-            if (string.IsNullOrEmpty(apiToken))
+            if (string.IsNullOrEmpty(this.GetApiToken()))
             {
                 this.context.TransitionTo(OverviewState.Instance);
 
@@ -597,6 +586,20 @@
             else
             {
                 this.context.TransitionTo(RunScanState.Instance);
+            }
+        }
+
+        private string GetApiToken()
+        {
+            try
+            {
+                return this.serviceProvider.GetApiToken();
+            }
+            catch (InvalidTokenException e)
+            {
+                Logger.Error(e, "Error on get api token");
+
+                return string.Empty;
             }
         }
     }

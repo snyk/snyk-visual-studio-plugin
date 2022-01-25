@@ -67,46 +67,67 @@
             {
                 Logger.Information("Enter authenticate successCallback");
 
-                this.authProgressBar.Invoke((MethodInvoker)delegate
+                if (this.authProgressBar.IsHandleCreated)
                 {
-                    this.authProgressBar.Visible = false;
-                });
+                    this.authProgressBar.Invoke(new Action(() =>
+                    {
+                        this.authProgressBar.Visible = false;
+                    }));
+                }
 
-                this.tokenTextBox.Invoke((MethodInvoker)delegate
+                if (this.tokenTextBox.IsHandleCreated)
                 {
-                    this.tokenTextBox.Text = apiToken;
-                    this.tokenTextBox.Enabled = true;
-                });
+                    this.tokenTextBox.Invoke(new Action(() =>
+                    {
+                        this.tokenTextBox.Text = apiToken;
+                        this.tokenTextBox.Enabled = true;
+                    }));
+                }
 
-                this.authenticateButton.Invoke((MethodInvoker)delegate
+                if (this.authenticateButton.IsHandleCreated)
                 {
-                    this.authenticateButton.Enabled = true;
-                });
+                    this.authenticateButton.Invoke(new Action(() =>
+                    {
+                        this.authenticateButton.Enabled = true;
+                    }));
+                }
 
-                this.authenticateButton.Invoke((MethodInvoker)delegate
+                if (this.authenticateButton.IsHandleCreated)
                 {
-                    this.errorProvider.SetError(this.tokenTextBox, string.Empty);
-                });
+                    this.authenticateButton.Invoke(new Action(() =>
+                    {
+                        this.errorProvider.SetError(this.tokenTextBox, string.Empty);
+                    }));
+                }
             };
 
             this.errorCallbackAction = (errorMessage) =>
             {
                 Logger.Information("Enter authenticate errorCallback");
 
-                this.authProgressBar.Invoke((MethodInvoker)delegate
+                if (this.authProgressBar.IsHandleCreated)
                 {
-                    this.authProgressBar.Visible = false;
-                });
+                    this.authProgressBar.Invoke(new Action(() =>
+                    {
+                        this.authProgressBar.Visible = false;
+                    }));
+                }
 
-                this.tokenTextBox.Invoke((MethodInvoker)delegate
+                if (this.tokenTextBox.IsHandleCreated)
                 {
-                    this.tokenTextBox.Enabled = true;
-                });
+                    this.tokenTextBox.Invoke(new Action(() =>
+                    {
+                        this.tokenTextBox.Enabled = true;
+                    }));
+                }
 
-                this.authenticateButton.Invoke((MethodInvoker)delegate
+                if (this.authenticateButton.IsHandleCreated)
                 {
-                    this.authenticateButton.Enabled = true;
-                });
+                    this.authenticateButton.Invoke(new Action(() =>
+                    {
+                        this.authenticateButton.Enabled = true;
+                    }));
+                }
 
                 CliError cliError = new CliError
                 {
@@ -158,18 +179,9 @@
         {
             if (string.IsNullOrEmpty(this.OptionsDialogPage.ApiToken))
             {
-                string apiToken = string.Empty;
+                string apiToken = this.NewCli().GetApiToken();
 
-                try
-                {
-                    apiToken = this.NewCli().GetApiToken();
-                }
-                catch (Exception e)
-                {
-                    Logger.Error(e, "Error on get api tonek via cli for settings");
-                }
-
-                if (Common.Guid.IsValid(apiToken))
+                if (!string.IsNullOrEmpty(apiToken) && Common.Guid.IsValid(apiToken))
                 {
                     this.OptionsDialogPage.ApiToken = apiToken;
                 }
@@ -221,31 +233,29 @@
         {
             Logger.Information("Enter SetupApiToken method");
 
-            var cli = this.NewCli();
-
-            string apiToken = string.Empty;
+            string apiToken;
 
             try
             {
                 Logger.Information("Try get Api token");
 
-                apiToken = cli.GetApiToken();
+                apiToken = this.NewCli().GetApiToken();
 
                 if (string.IsNullOrEmpty(apiToken))
                 {
                     Logger.Information("Api toke is null or empty. Try to authenticate via snyk auth");
 
-                    string authResultMessage = cli.Authenticate();
+                    string authResultMessage = this.NewCli().Authenticate();
 
                     if (authResultMessage.Contains("Your account has been authenticated. Snyk is now ready to be used."))
                     {
                         Logger.Information("Snyk auth executed successfully. Try to get Api token");
 
-                        apiToken = cli.GetApiToken();
+                        apiToken = this.NewCli().GetApiToken();
                     }
                     else
                     {
-                        Logger.Information($"Snyk auth executed with error: {authResultMessage}");
+                        Logger.Information("Snyk auth executed with error: {AuthResultMessage}", authResultMessage);
 
                         errorCallback(authResultMessage);
 
@@ -266,11 +276,11 @@
 
                 Logger.Information("Leave SetupApiToken method");
             }
-            catch (Exception exception)
+            catch (Exception e)
             {
-                Logger.Error(exception.Message);
+                Logger.Error(e, "Setup api token in general settings");
 
-                errorCallback(exception.Message);
+                errorCallback(e.Message);
             }
         }
 

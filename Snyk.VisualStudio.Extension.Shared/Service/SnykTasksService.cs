@@ -269,11 +269,11 @@
                             progressWorker: progressWorker,
                             downloadFinishedCallbacks: downloadFinishedCallbacks);
                     }
-                    catch (Exception exception)
+                    catch (Exception e)
                     {
-                        Logger.Error(exception.Message);
+                        Logger.Error(e, "Error on cli download task");
 
-                        this.OnDownloadCancelled(exception.Message);
+                        this.OnDownloadCancelled(e.Message);
                     }
                     finally
                     {
