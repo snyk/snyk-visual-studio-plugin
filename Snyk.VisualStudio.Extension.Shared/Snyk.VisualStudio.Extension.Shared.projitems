@@ -22,6 +22,9 @@
     <Compile Include="$(MSBuildThisFileDirectory)Service\ISentryService.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Service\SentryService.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Service\SolutionType.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Service\IOssService.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Service\OssScanException.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Service\OssService.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)SnykIcons.Designer.cs">
       <DependentUpon>SnykIcons.resx</DependentUpon>
       <DesignTime>True</DesignTime>

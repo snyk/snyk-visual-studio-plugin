@@ -38,8 +38,6 @@
 
         private ISnykServiceProvider serviceProvider;
 
-        private SnykCli cli;
-
         /// <summary>
         /// Initializes a new instance of the <see cref="SnykTasksService"/> class.
         /// </summary>
@@ -70,7 +68,7 @@
         /// <summary>
         /// Cli Scanning update event handler.
         /// </summary>
-        public event EventHandler<SnykCliScanEventArgs> CliScanningUpdate;
+        public event EventHandler<SnykCliScanEventArgs> OssScanningUpdate;
 
         /// <summary>
         /// SnykCode scanning update event handler.
@@ -168,10 +166,7 @@
             this.CancelTask(this.snykCodeScanTokenSource);
             this.CancelTask(this.downloadCliTokenSource);
 
-            if (this.cli != null && this.cli?.ConsoleRunner != null)
-            {
-                this.cli?.ConsoleRunner?.Stop();
-            }
+            this.serviceProvider.OssService.StopScan();
         }
 
         /// <summary>
@@ -363,74 +358,37 @@
                 {
                     this.isOssScanning = true;
 
-                    this.FireCliScanningStartedEvent();
+                    this.FireOssScanningStartedEvent();
+
+                    var ossService = this.serviceProvider.OssService;
 
                     try
                     {
                         token.ThrowIfCancellationRequested();
 
-                        var options = this.serviceProvider.Options;
-
-                        this.cli = new SnykCli
-                        {
-                            Options = options,
-                        };
-
-                        Logger.Information($"Snyk Extension options");
-                        Logger.Information($"Custom Endpoint = {options.CustomEndpoint}");
-                        Logger.Information($"Organization = {options.Organization}");
-                        Logger.Information($"Ignore Unknown CA = {options.IgnoreUnknownCA}");
-                        Logger.Information($"Additional Options = {options.AdditionalOptions}");
-                        Logger.Information($"Is Scan All Projects = {options.IsScanAllProjects}");
-
-                        token.ThrowIfCancellationRequested();
-
                         try
                         {
-                            string solutionPath = this.serviceProvider.SolutionService.GetPath();
+                            var cliResult = ossService.Scan(
+                                this.serviceProvider.SolutionService.GetPath(),
+                                this.serviceProvider.Options,
+                                token);
 
-                            Logger.Information($"Solution path = {solutionPath}");
-                            Logger.Information("Start scan");
-
-                            CliResult cliResult = this.cli.Scan(solutionPath);
-
-                            token.ThrowIfCancellationRequested();
-
-                            if (!cliResult.IsSuccessful())
-                            {
-                                Logger.Error("Cli return an error {CliError}", cliResult.Error.Message);
-
-                                this.FireOssError(cliResult.Error);
-
-                                return;
-                            }
-                            else
-                            {
-                                Logger.Information("Scan update");
-
-                                this.FireScanningUpdateEvent(cliResult);
-                            }
-
-                            token.ThrowIfCancellationRequested();
+                            this.FireOssScanningUpdateEvent(cliResult);
 
                             this.FireOssScanningFinishedEvent();
 
-                            this.cli = null;
-
                             Logger.Information("Scan finished");
+                        }
+                        catch (OssScanException e)
+                        {
+                            Logger.Error(e, "Oss scan exception");
+
+                            this.FireOssError(e.Error);
                         }
                         catch (Exception e)
                         {
-                            Logger.Error(e, "Oss scan exception: cancelled or error appear");
-
-                            bool isCancelled = this.cli.ConsoleRunner.IsStopped;
-
-                            this.cli = null;
-
-                            if (isCancelled || this.IsTaskCancelled(e))
+                            if (ossService.IsCurrentScanProcessCanceled() || this.IsTaskCancelled(e))
                             {
-                                this.cli = null;
-
                                 this.FireScanningCancelledEvent();
 
                                 return;
@@ -444,8 +402,6 @@
                         Logger.Error(e, "Error on oss scan");
 
                         this.FireScanningCancelledEvent();
-
-                        this.cli = null;
                     }
                     finally
                     {
@@ -565,7 +521,7 @@
         /// <summary>
         /// Fire Cli scanning started event.
         /// </summary>
-        private void FireCliScanningStartedEvent() => this.CliScanningStarted?.Invoke(this, new SnykCliScanEventArgs());
+        private void FireOssScanningStartedEvent() => this.CliScanningStarted?.Invoke(this, new SnykCliScanEventArgs());
 
         /// <summary>
         /// Fire SnykCode scanning started event.
@@ -576,7 +532,7 @@
         /// Fire scanning update with <see cref="SnykCliScanEventArgs"/> object.
         /// </summary>
         /// <param name="cliResult"><see cref="CliResult"/> object with vulnerabilities.</param>
-        private void FireScanningUpdateEvent(CliResult cliResult) => this.CliScanningUpdate?.Invoke(this, new SnykCliScanEventArgs(cliResult));
+        private void FireOssScanningUpdateEvent(CliResult cliResult) => this.OssScanningUpdate?.Invoke(this, new SnykCliScanEventArgs(cliResult));
 
         /// <summary>
         /// Fire scanning update with <see cref="SnykCodeScanEventArgs"/> object.

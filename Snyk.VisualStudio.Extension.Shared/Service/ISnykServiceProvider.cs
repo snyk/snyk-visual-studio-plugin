@@ -57,9 +57,14 @@
         SnykVsThemeService VsThemeService { get; }
 
         /// <summary>
-        /// Gets Theme service instance.
+        /// Gets SnykCodeService service instance.
         /// </summary>
         ISnykCodeService SnykCodeService { get; }
+
+        /// <summary>
+        /// Gets OssService service instance.
+        /// </summary>
+        IOssService OssService { get; }
 
         /// <summary>
         /// Gets Analytics service instance.

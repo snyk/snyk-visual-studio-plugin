@@ -171,6 +171,8 @@
             }
         }
 
+        public IOssService OssService => new OssService();
+
         /// <inheritdoc/>
         public ISentryService SentryService
         {
