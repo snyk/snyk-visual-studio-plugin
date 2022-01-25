@@ -13,7 +13,7 @@
     <ProjectGuid>{910098F4-EC69-40F2-8CF1-B2E86E30D2F8}</ProjectGuid>
     <OutputType>Library</OutputType>
     <AppDesignerFolder>Properties</AppDesignerFolder>
-    <RootNamespace>Snyk.VisualStudio.Extension</RootNamespace>
+    <RootNamespace>Snyk.VisualStudio.Extension.Shared</RootNamespace>
     <AssemblyName>Snyk.VisualStudio.Extension</AssemblyName>
     <TargetFrameworkVersion>v4.7.2</TargetFrameworkVersion>
     <GeneratePkgDefFile>true</GeneratePkgDefFile>
