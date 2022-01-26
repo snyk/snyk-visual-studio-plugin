@@ -178,11 +178,6 @@
 
             if (this.IsCliDownloadNeeded(lastCheckDate, filePath))
             {
-                if (this.IsCliFileExists(fileDestinationPath))
-                {
-                    File.Delete(fileDestinationPath);
-                }
-
                 await this.DownloadAsync(
                     fileDestinationPath: fileDestinationPath,
                     progressWorker: progressWorker,
