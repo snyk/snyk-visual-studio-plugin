@@ -91,7 +91,7 @@
         /// Create new instance of <see cref="SnykCli"/>.
         /// </summary>
         /// <returns>SnykCli.</returns>
-        SnykCli NewCli();
+        ICli NewCli();
 
         /// <summary>
         /// Show Snyk tool window panel.

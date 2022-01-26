@@ -4,7 +4,7 @@
     using Microsoft.VisualStudio;
     using Microsoft.VisualStudio.Shell.Interop;
     using Snyk.Common;
-    using Snyk.VisualStudio.Extension.Shared.SnykCode;
+    using Snyk.VisualStudio.Extension.Shared.Cache;
 
     /// <summary>
     /// Visual Studio solution load events implementation.
@@ -12,6 +12,8 @@
     public class SnykVsSolutionLoadEvents : IVsSolutionLoadEvents, IVsSolutionEvents
     {
         private ISolutionService solutionService;
+
+        private IOssService ossService;
 
         private ISentryService sentryService;
 
@@ -24,6 +26,14 @@
         {
             this.solutionService = solutionService;
             this.sentryService = sentryService;
+        }
+        /// <param name="solutionService">Current solution service instance.</param>
+        /// <param name="ossService">Oss service instance.</param>
+        public SnykVsSolutionLoadEvents(ISolutionService solutionService, IOssService ossService)
+        {
+            this.solutionService = solutionService;
+
+            this.ossService = ossService;
         }
 
         /// <summary>
@@ -121,6 +131,7 @@
         {
             var hierarchyEvents = new CodeCacheHierarchyEvents(vsHierarchy, this.solutionService.FileProvider);
 
+            vsHierarchy.AdviseHierarchyEvents(new OssCacheHierarchyEvents(vsHierarchy, this.ossService), out _);
             vsHierarchy.AdviseHierarchyEvents(hierarchyEvents, out _);
 
             this.sentryService.SetSolutionType(SolutionType.Project);

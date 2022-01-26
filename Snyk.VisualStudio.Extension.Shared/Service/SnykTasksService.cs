@@ -368,10 +368,7 @@
 
                         try
                         {
-                            var cliResult = ossService.Scan(
-                                this.serviceProvider.SolutionService.GetPath(),
-                                this.serviceProvider.Options,
-                                token);
+                            var cliResult = ossService.Scan(this.serviceProvider.SolutionService.GetPath(), token);
 
                             this.FireOssScanningUpdateEvent(cliResult);
 

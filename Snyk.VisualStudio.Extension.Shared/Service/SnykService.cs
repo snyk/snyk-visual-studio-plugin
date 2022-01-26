@@ -44,6 +44,8 @@
 
         private ISnykCodeService snykCodeService;
 
+        private IOssService ossService;
+
         private SnykApiService apiService;
 
         private ISentryService sentryService;
@@ -171,7 +173,19 @@
             }
         }
 
-        public IOssService OssService => new OssService();
+        /// <inheritdoc/>
+        public IOssService OssService
+        {
+            get
+            {
+                if (this.ossService == null)
+                {
+                    this.ossService = new OssService(this);
+                }
+
+                return this.ossService;
+            }
+        }
 
         /// <inheritdoc/>
         public ISentryService SentryService
@@ -246,7 +260,7 @@
         /// Create new instance of SnykCli class with Options and Logger parameters.
         /// </summary>
         /// <returns>New SnykCli instance.</returns>
-        public SnykCli NewCli() => new SnykCli { Options = this.Options, };
+        public ICli NewCli() => new SnykCli { Options = this.Options, };
 
         /// <summary>
         /// Check is Options.ApiToken initialized. But if it's empty it will call CLI.GetApiToken() method.

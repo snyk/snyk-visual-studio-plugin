@@ -11,7 +11,7 @@
     /// <summary>
     /// Incapsulate work logic with Snyk CLI.
     /// </summary>
-    public class SnykCli
+    public class SnykCli : ICli
     {
         /// <summary>
         /// CLI name for Windows OS.
@@ -45,9 +45,7 @@
             }
         }
 
-        /// <summary>
-        /// Gets or sets a value indicating whether instance of <see cref="SnykConsoleRunner"/>.
-        /// </summary>
+        /// <inheritdoc/>
         public SnykConsoleRunner ConsoleRunner { get; set; }
 
         /// <summary>
@@ -121,25 +119,22 @@
             return this.ConsoleRunner.Run(GetSnykCliPath(), string.Join(" ", args), environmentVariables);
         }
 
-        /// <summary>
-        /// Run snyk test to scan for vulnerabilities.
-        /// </summary>
-        /// <param name="basePath">Path for run scan.</param>
-        /// <returns><see cref="CliResult"/> object.</returns>
+        /// <inheritdoc/>
         public CliResult Scan(string basePath)
         {
-            Logger.Information("Enter Scan() method");
-            Logger.Information("Base path is {BasePath}", basePath);
+            Logger.Information("Path to scan {BasePath}", basePath);
 
             var cliPath = GetSnykCliPath();
+
             Logger.Information("CLI path is {CliPath}", cliPath);
 
             this.ConsoleRunner.CreateProcess(cliPath, this.BuildScanArguments(), this.BuildScanEnvironmentVariables(), basePath);
 
             Logger.Information("Start run console process");
+
             var consoleResult = this.ConsoleRunner.Execute();
 
-            Logger.Information("Leave Scan() method");
+            Logger.Information("Start convert console string result to CliResult and return value");
 
             return ConvertRawCliStringToCliResult(consoleResult);
         }
