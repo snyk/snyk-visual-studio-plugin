@@ -2,6 +2,7 @@
 {
     using Snyk.Code.Library.Service;
     using Snyk.VisualStudio.Extension.Shared.Service;
+    using Snyk.VisualStudio.Extension.Shared.Settings;
 
     /// <summary>
     /// Display notifications in Visual Studio status bar.
@@ -11,6 +12,8 @@
         private static VsStatusBarNotificationService instance;
 
         private VsStatusBar statusBar;
+
+        private ISnykOptions options;
 
         private VsStatusBarNotificationService()
         {
@@ -51,21 +54,41 @@
             tasksService.SnykCodeScanningStarted += this.OnSnykCodeScanningStarted;
             tasksService.OssScanningFinished += this.OnOssScanningFinished;
             tasksService.SnykCodeScanningFinished += this.OnSnykCodeScanningFinished;
+
+            tasksService.OssScanError += this.OnOssScanError;
+            tasksService.SnykCodeScanError += this.OnSykCodeScanError;
         }
 
         /// <summary>
         /// Initialize SnykCode event listeners for this service.
         /// </summary>
         /// <param name="codeService">SnykCode service instance</param>
-        public void InitializeEventListeners(ISnykCodeService codeService)
+        /// <param name="options">Extension options.</param>
+        public void InitializeEventListeners(ISnykCodeService codeService, ISnykOptions options)
         {
             codeService.ScanEventHandler += this.OnSnykCodeScanUpdate;
+
+            this.options = options;
+        }
+
+        private void OnOssScanError(object sender, SnykCliScanEventArgs eventArgs)
+        {
+            if (!this.options.SnykCodeSecurityEnabled && !this.options.SnykCodeQualityEnabled)
+            {
+                this.statusBar.ShowSnykCodeUpdateMessage("Snyk Open Source scan error");
+            }
+        }
+
+        private void OnSykCodeScanError(object sender, SnykCodeScanEventArgs eventArgs)
+        {
+            if (!this.options.OssEnabled)
+            {
+                this.statusBar.ShowSnykCodeUpdateMessage("Snyk Code scan error");
+            }
         }
 
         private void OnSnykCodeScanUpdate(object sender, SnykCodeEventArgs eventArgs)
-        {
-            this.statusBar.ShowSnykCodeUpdateMessage($"{eventArgs.ScanState} {eventArgs.Progress}%");
-        }
+            => this.statusBar.ShowSnykCodeUpdateMessage($"{eventArgs.ScanState} {eventArgs.Progress}%");
 
         private void OnOssScanningFinished(object sender, SnykCliScanEventArgs eventArgs)
         {

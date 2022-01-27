@@ -23,7 +23,7 @@
         /// <summary>
         /// Command menu group (command set GUID).
         /// </summary>
-        public static readonly Guid CommandSet = new Guid("31b6f1bd-8317-4d93-b023-b60f667b9e76");
+        public static readonly System.Guid CommandSet = new System.Guid("31b6f1bd-8317-4d93-b023-b60f667b9e76");
 
         private ISnykServiceProvider serviceProvider;
 

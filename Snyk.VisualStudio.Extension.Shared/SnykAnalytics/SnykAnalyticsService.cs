@@ -7,6 +7,8 @@
     using Segment.Model;
     using Serilog;
     using Snyk.Common;
+    using Snyk.VisualStudio.Extension.Shared.CLI;
+    using Snyk.VisualStudio.Extension.Shared.Service;
 
     /// <summary>
     /// Analytics service.
@@ -46,7 +48,7 @@
 
         private Client analyticsClient;
 
-        private string anonymousUserId = Guid.NewGuid().ToString();
+        private string anonymousUserId = System.Guid.NewGuid().ToString();
 
         private bool analyticsInitialized = true;
 
@@ -114,44 +116,29 @@
                     this.Identify();
                 }
             }
-            catch (Exception exception)
+            catch (Exception e)
             {
                 this.analyticsInitialized = false;
 
-                Logger.Error(exception.Message);
+                Logger.Error(e, "Error on initialize analytics service");
             }
         }
 
         /// <summary>
         /// Obtain user by user token.
         /// </summary>
-        /// <param name="token">API token.</param>
-        public void ObtainUser(string token)
-            => this.Execute(
-                () =>
-                {
-                    if (this.Disabled)
-                    {
-                        return;
-                    }
-
-                    if (string.IsNullOrEmpty(token))
-                    {
-                        return;
-                    }
-
-                    if (!string.IsNullOrEmpty(this.UserId))
-                    {
-                        return;
-                    }
-
-                    SnykUser user = this.GetSnykUser(token);
-
-                    if (user != null)
-                    {
-                        this.Alias(user.Id);
-                    }
-                });
+        /// <param name="serviceProvider">Service provider to get API token.</param>
+        public void ObtainUser(ISnykServiceProvider serviceProvider)
+        {
+            try
+            {
+                this.ObtainUser(serviceProvider.GetApiToken());
+            }
+            catch (InvalidTokenException e)
+            {
+                Logger.Error(e, "Error on obtain user");
+            }
+        }
 
         /// <summary>
         /// Flush and dispose analytics.
@@ -252,7 +239,7 @@
 
                     string userId = string.IsNullOrEmpty(this.UserId) ? this.anonymousUserId : this.UserId;
 
-                    Logger.Information($"Analytics client track event {eventName}.");
+                    Logger.Information("Analytics client track event {EventName}.", eventName);
 
                     this.analyticsClient?.Track(userId, eventName, properties);
                 });
@@ -270,6 +257,33 @@
                 return Json.Deserialize<SnykUser>(userInfoJson);
             }
         }
+
+        private void ObtainUser(string token)
+            => this.Execute(
+                () =>
+                {
+                    if (this.Disabled)
+                    {
+                        return;
+                    }
+
+                    if (string.IsNullOrEmpty(token))
+                    {
+                        return;
+                    }
+
+                    if (!string.IsNullOrEmpty(this.UserId))
+                    {
+                        return;
+                    }
+
+                    var user = this.GetSnykUser(token);
+
+                    if (user != null)
+                    {
+                        this.Alias(user.Id);
+                    }
+                });
 
         private void Execute(Action method)
         {

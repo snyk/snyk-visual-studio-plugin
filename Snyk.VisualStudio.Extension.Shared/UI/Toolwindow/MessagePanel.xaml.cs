@@ -6,6 +6,7 @@
     using System.Windows.Controls;
     using Microsoft.VisualStudio.Shell;
     using Snyk.VisualStudio.Extension.Shared.Service;
+    using Snyk.VisualStudio.Extension.Shared.UI.Notifications;
 
     /// <summary>
     /// Interaction logic for MessagePanel.xaml.
@@ -114,6 +115,8 @@
                     this.connectVSToSnykLink.IsEnabled = true;
 
                     this.connectVSToSnykProgressBar.Visibility = Visibility.Collapsed;
+
+                    NotificationService.Instance.ShowErrorInfoBar(error);
                 });
 
                 this.Context.TransitionTo(OverviewState.Instance);
