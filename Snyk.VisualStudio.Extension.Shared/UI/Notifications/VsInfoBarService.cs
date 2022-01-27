@@ -51,7 +51,7 @@
         /// Show message in infobar.
         /// </summary>
         /// <param name="message">Message.</param>
-        public void ShowWarningInfoBar(string message) => ThreadHelper.JoinableTaskFactory.Run(async () =>
+        public void ShowErrorInfoBar(string message) => ThreadHelper.JoinableTaskFactory.Run(async () =>
         {
             await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
 

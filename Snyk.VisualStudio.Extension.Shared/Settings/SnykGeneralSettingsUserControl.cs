@@ -2,13 +2,14 @@
 {
     using System;
     using System.Diagnostics.CodeAnalysis;
-    using System.Text.RegularExpressions;
     using System.Threading.Tasks;
     using System.Windows.Forms;
     using Serilog;
     using Snyk.Common;
     using Snyk.VisualStudio.Extension.Shared.CLI;
     using Snyk.VisualStudio.Extension.Shared.Service;
+    using Snyk.VisualStudio.Extension.Shared.UI;
+    using Snyk.VisualStudio.Extension.Shared.UI.Notifications;
     using static Snyk.VisualStudio.Extension.Shared.CLI.SnykCliDownloader;
 
     /// <summary>
@@ -23,8 +24,6 @@
         /// </summary>
         [SuppressMessage("StyleCop.CSharp.MaintainabilityRules", "SA1401:FieldsMustBePrivate", Justification = "Reviewed.")]
         internal SnykGeneralOptionsDialogPage OptionsDialogPage;
-
-        private static readonly Regex GuidRegex = new Regex(@"^(\{){0,1}[0-9a-fA-F]{8}\-[0-9a-fA-F]{4}\-[0-9a-fA-F]{4}\-[0-9a-fA-F]{4}\-[0-9a-fA-F]{12}(\}){0,1}$", RegexOptions.Compiled);
 
         private static readonly int TwoSecondsDelay = 2000;
 
@@ -68,46 +67,67 @@
             {
                 Logger.Information("Enter authenticate successCallback");
 
-                this.authProgressBar.Invoke((MethodInvoker)delegate
+                if (this.authProgressBar.IsHandleCreated)
                 {
-                    this.authProgressBar.Visible = false;
-                });
+                    this.authProgressBar.Invoke(new Action(() =>
+                    {
+                        this.authProgressBar.Visible = false;
+                    }));
+                }
 
-                this.tokenTextBox.Invoke((MethodInvoker)delegate
+                if (this.tokenTextBox.IsHandleCreated)
                 {
-                    this.tokenTextBox.Text = apiToken;
-                    this.tokenTextBox.Enabled = true;
-                });
+                    this.tokenTextBox.Invoke(new Action(() =>
+                    {
+                        this.tokenTextBox.Text = apiToken;
+                        this.tokenTextBox.Enabled = true;
+                    }));
+                }
 
-                this.authenticateButton.Invoke((MethodInvoker)delegate
+                if (this.authenticateButton.IsHandleCreated)
                 {
-                    this.authenticateButton.Enabled = true;
-                });
+                    this.authenticateButton.Invoke(new Action(() =>
+                    {
+                        this.authenticateButton.Enabled = true;
+                    }));
+                }
 
-                this.authenticateButton.Invoke((MethodInvoker)delegate
+                if (this.authenticateButton.IsHandleCreated)
                 {
-                    this.errorProvider.SetError(this.tokenTextBox, string.Empty);
-                });
+                    this.authenticateButton.Invoke(new Action(() =>
+                    {
+                        this.errorProvider.SetError(this.tokenTextBox, string.Empty);
+                    }));
+                }
             };
 
             this.errorCallbackAction = (errorMessage) =>
             {
                 Logger.Information("Enter authenticate errorCallback");
 
-                this.authProgressBar.Invoke((MethodInvoker)delegate
+                if (this.authProgressBar.IsHandleCreated)
                 {
-                    this.authProgressBar.Visible = false;
-                });
+                    this.authProgressBar.Invoke(new Action(() =>
+                    {
+                        this.authProgressBar.Visible = false;
+                    }));
+                }
 
-                this.tokenTextBox.Invoke((MethodInvoker)delegate
+                if (this.tokenTextBox.IsHandleCreated)
                 {
-                    this.tokenTextBox.Enabled = true;
-                });
+                    this.tokenTextBox.Invoke(new Action(() =>
+                    {
+                        this.tokenTextBox.Enabled = true;
+                    }));
+                }
 
-                this.authenticateButton.Invoke((MethodInvoker)delegate
+                if (this.authenticateButton.IsHandleCreated)
                 {
-                    this.authenticateButton.Enabled = true;
-                });
+                    this.authenticateButton.Invoke(new Action(() =>
+                    {
+                        this.authenticateButton.Enabled = true;
+                    }));
+                }
 
                 CliError cliError = new CliError
                 {
@@ -161,7 +181,7 @@
             {
                 string apiToken = this.NewCli().GetApiToken();
 
-                if (this.IsValidGuid(apiToken))
+                if (!string.IsNullOrEmpty(apiToken) && Common.Guid.IsValid(apiToken))
                 {
                     this.OptionsDialogPage.ApiToken = apiToken;
                 }
@@ -213,31 +233,29 @@
         {
             Logger.Information("Enter SetupApiToken method");
 
-            var cli = this.NewCli();
-
-            string apiToken = string.Empty;
+            string apiToken;
 
             try
             {
                 Logger.Information("Try get Api token");
 
-                apiToken = cli.GetApiToken();
+                apiToken = this.NewCli().GetApiToken();
 
                 if (string.IsNullOrEmpty(apiToken))
                 {
                     Logger.Information("Api toke is null or empty. Try to authenticate via snyk auth");
 
-                    string authResultMessage = cli.Authenticate();
+                    string authResultMessage = this.NewCli().Authenticate();
 
                     if (authResultMessage.Contains("Your account has been authenticated. Snyk is now ready to be used."))
                     {
                         Logger.Information("Snyk auth executed successfully. Try to get Api token");
 
-                        apiToken = cli.GetApiToken();
+                        apiToken = this.NewCli().GetApiToken();
                     }
                     else
                     {
-                        Logger.Information($"Snyk auth executed with error: {authResultMessage}");
+                        Logger.Information("Snyk auth executed with error: {AuthResultMessage}", authResultMessage);
 
                         errorCallback(authResultMessage);
 
@@ -247,7 +265,7 @@
 
                 Logger.Information("Validate Api token GUID");
 
-                if (!this.IsValidGuid(apiToken))
+                if (!Common.Guid.IsValid(apiToken))
                 {
                     errorCallback($"Invalid GUID: {apiToken}");
 
@@ -258,15 +276,13 @@
 
                 Logger.Information("Leave SetupApiToken method");
             }
-            catch (Exception exception)
+            catch (Exception e)
             {
-                Logger.Error(exception.Message);
+                Logger.Error(e, "Setup api token in general settings");
 
-                errorCallback(exception.Message);
+                errorCallback(e.Message);
             }
         }
-
-        private bool IsValidGuid(string guid) => guid != null && GuidRegex.IsMatch(guid);
 
         private bool IsValidUrl(string url) => Uri.IsWellFormedUriString(url, UriKind.RelativeOrAbsolute);
 
@@ -303,7 +319,7 @@
                 return;
             }
 
-            if (string.IsNullOrWhiteSpace(this.tokenTextBox.Text) || !this.IsValidGuid(this.tokenTextBox.Text))
+            if (!Common.Guid.IsValid(this.tokenTextBox.Text))
             {
                 cancelEventArgs.Cancel = true;
 
@@ -409,7 +425,7 @@
 
             this.OptionsDialogPage.ServiceProvider.AnalyticsService.AnalyticsEnabled = this.usageAnalyticsCheckBox.Checked;
 
-            this.OptionsDialogPage.ServiceProvider.AnalyticsService.ObtainUser(this.OptionsDialogPage.ServiceProvider.GetApiToken());
+            this.OptionsDialogPage.ServiceProvider.AnalyticsService.ObtainUser(this.OptionsDialogPage.ServiceProvider);
         }
 
         private void OssEnabledCheckBox_CheckedChanged(object sender, EventArgs e)

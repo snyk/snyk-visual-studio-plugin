@@ -10,6 +10,18 @@
     public class SnykCliTest
     {
         [Fact]
+        public void SnykCliTest_CliReturnError_GetApiTokenThrowException()
+        {
+            var cli = new SnykCli
+            {
+                Options = new SnykMockOptions(),
+                ConsoleRunner = new SnykMockConsoleRunner("cli file note exists"),
+            };
+
+            Assert.Throws<InvalidTokenException>(() => cli.GetApiTokenOrThrowException());
+        }
+
+        [Fact]
         public void ConvertRawCliStringToCliResultWithCriticalSeverity()
         {
             var cli = new SnykCli
@@ -47,15 +59,17 @@
         }
 
         [Fact]
-        public void GetApiToken()
+        public void SnykCliTest_GetApiToken_Successful()
         {
+            string testGuid = Guid.NewGuid().ToString();
+
             var cli = new SnykCli
             {
                 Options = new SnykMockOptions(),
-                ConsoleRunner = new SnykMockConsoleRunner("1111-0000-2222-3333-4444"),
+                ConsoleRunner = new SnykMockConsoleRunner(testGuid),
             };
 
-            Assert.Equal("1111-0000-2222-3333-4444", cli.GetApiToken());
+            Assert.Equal(testGuid, cli.GetApiToken());
         }
 
         [Fact]

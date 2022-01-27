@@ -19,9 +19,9 @@
         public static void Initialize(ISnykServiceProvider serviceProvider) => Instance = new NotificationService(serviceProvider);
 
         /// <summary>
-        /// Show warning info bar with provided message.
+        /// Show error info bar with provided message.
         /// </summary>
         /// <param name="message">Message to show.</param>
-        public void ShowWarningInfoBar(string message) => this.infoBarService.ShowWarningInfoBar(message);
+        public void ShowErrorInfoBar(string message) => this.infoBarService.ShowErrorInfoBar(message);
     }
 }

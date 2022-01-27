@@ -17,6 +17,7 @@
         /// CLI name for Windows OS.
         /// </summary>
         public const string CliFileName = "snyk-win.exe";
+
         private const string ApiEnvironmentVariableName = "SNYK_API";
 
         private static readonly ILogger Logger = LogManager.ForContext<SnykCli>();
@@ -62,10 +63,42 @@
         public static bool IsCliExists() => File.Exists(GetSnykCliPath());
 
         /// <summary>
-        /// Get Snyk API token from settings.
+        /// Safely get Snyk API token from settings.
         /// </summary>
         /// <returns>API token string.</returns>
-        public string GetApiToken() => this.ConsoleRunner.Run(GetSnykCliPath(), "config get api");
+        public string GetApiToken()
+        {
+            string apiToken;
+
+            try
+            {
+                apiToken = this.GetApiTokenOrThrowException();
+            }
+            catch (InvalidTokenException e)
+            {
+                Logger.Error(e, "Error on get api token via cli for settings");
+
+                apiToken = string.Empty;
+            }
+
+            return apiToken;
+        }
+
+        /// <summary>
+        /// Try get Snyk API token from snyk cli config or throw <see cref="InvalidTokenException"/>.
+        /// </summary>
+        /// <returns>API token string.</returns>
+        public string GetApiTokenOrThrowException()
+        {
+            string apiToken = this.ConsoleRunner.Run(GetSnykCliPath(), "config get api");
+
+            if (string.IsNullOrEmpty(apiToken) || !Common.Guid.IsValid(apiToken))
+            {
+                throw new InvalidTokenException(string.IsNullOrEmpty(apiToken) ? string.Empty : apiToken);
+            }
+
+            return apiToken;
+        }
 
         /// <summary>
         /// Call Snyk CLI auth for authentication. This will open authentication web page and store token in config file.

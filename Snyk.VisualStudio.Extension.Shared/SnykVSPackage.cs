@@ -172,7 +172,7 @@
 
             await this.InitializeGeneralOptionsAsync();
 
-            this.serviceProvider.AnalyticsService.ObtainUser(this.serviceProvider.GetApiToken());
+            this.serviceProvider.AnalyticsService.ObtainUser(this.serviceProvider);
 
             Logger.Information("Initialize Commands()");
 

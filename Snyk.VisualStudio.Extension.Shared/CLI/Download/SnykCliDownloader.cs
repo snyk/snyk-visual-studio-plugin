@@ -186,7 +186,7 @@
 
             string cliFileDestinationPath = this.GetCliFilePath(fileDestinationPath);
 
-            Logger.Information($"CLI File Destination Path: {cliFileDestinationPath}");
+            Logger.Information("Cli file destination Path: {CliFileDestinationPath}", cliFileDestinationPath);
 
             if (!File.Exists(cliFileDestinationPath))
             {
@@ -204,11 +204,11 @@
 
                     string cliVersion = latestReleaseInfo.TagName;
 
-                    Logger.Information($"Latest relase information CLI version: {cliVersion}");
+                    Logger.Information("Latest relase information CLI version: {CliVersion}", cliVersion);
 
                     string cliDownloadUrl = string.Format(LatestReleaseDownloadUrl, cliVersion, SnykCli.CliFileName);
 
-                    Logger.Information($"CLI download url: {cliDownloadUrl}");
+                    Logger.Information("Cli download url: {CliDownloadUrl}", cliDownloadUrl);
 
                     string snykDirectoryPath = SnykDirectory.GetSnykAppDataDirectoryPath();
 
@@ -263,39 +263,46 @@
 
                 response.EnsureSuccessStatusCode();
 
-                using (Stream contentStream = await response.Content.ReadAsStreamAsync(), fileStream = new FileStream(cliFileDestinationPath, FileMode.Create, FileAccess.Write, FileShare.ReadWrite, 8192, true))
+                using (var contentStream = await response.Content.ReadAsStreamAsync())
                 {
-                    var totalBytes = response.Content.Headers.ContentLength;
-                    var totalRead = 0L;
-                    var buffer = new byte[8192];
-                    var isMoreToRead = true;
-
-                    do
+                    using (var fileStream = new FileStream(cliFileDestinationPath, FileMode.Create, FileAccess.Write, FileShare.ReadWrite, 8192, true))
                     {
-                        var read = await contentStream.ReadAsync(buffer, 0, buffer.Length);
+                        var totalBytes = response.Content.Headers.ContentLength;
+                        var totalRead = 0L;
+                        var buffer = new byte[8192];
+                        var isMoreToRead = true;
 
-                        if (read == 0)
+                        do
                         {
-                            isMoreToRead = false;
+                            var read = await contentStream.ReadAsync(buffer, 0, buffer.Length);
+
+                            if (read == 0)
+                            {
+                                isMoreToRead = false;
+                            }
+                            else
+                            {
+                                await fileStream.WriteAsync(buffer, 0, read);
+
+                                totalRead += read;
+
+                                int percentage = (int)(totalRead * 100 / totalBytes);
+
+                                progressWorker.UpdateProgress(percentage);
+
+                                progressWorker.CancelIfCancellationRequested();
+                            }
                         }
-                        else
-                        {
-                            await fileStream.WriteAsync(buffer, 0, read);
+                        while (isMoreToRead);
 
-                            totalRead += read;
+                        await fileStream.FlushAsync();
 
-                            int percentage = (int)(totalRead * 100 / totalBytes);
-
-                            progressWorker.UpdateProgress(percentage);
-
-                            progressWorker.CancelIfCancellationRequested();
-                        }
+                        fileStream.Close();
                     }
-                    while (isMoreToRead);
-
-                    this.FinishDownload(progressWorker, downloadFinishedCallbacks);
                 }
             }
+
+            this.FinishDownload(progressWorker, downloadFinishedCallbacks);
 
             progressWorker.CancelIfCancellationRequested();
         }
