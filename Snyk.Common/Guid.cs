@@ -10,11 +10,6 @@
         /// </summary>
         /// <param name="guid">Source string with guid to check.</param>
         /// <returns>True if source string is valid guid.</returns>
-        public static bool IsValid(string guid)
-        {
-            System.Guid x;
-
-            return System.Guid.TryParse(guid, out x);
-        }
+        public static bool IsValid(string guid) => !string.IsNullOrEmpty(guid) && System.Guid.TryParse(guid, out _);
     }
 }

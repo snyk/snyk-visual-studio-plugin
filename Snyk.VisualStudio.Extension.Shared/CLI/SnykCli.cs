@@ -76,7 +76,7 @@
             }
             catch (InvalidTokenException e)
             {
-                Logger.Error(e, "Error on get api tonek via cli for settings");
+                Logger.Error(e, "Error on get api token via cli for settings");
 
                 apiToken = string.Empty;
             }

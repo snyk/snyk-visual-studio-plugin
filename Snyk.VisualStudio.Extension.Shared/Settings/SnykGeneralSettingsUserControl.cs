@@ -319,7 +319,7 @@
                 return;
             }
 
-            if (string.IsNullOrWhiteSpace(this.tokenTextBox.Text) || !Common.Guid.IsValid(this.tokenTextBox.Text))
+            if (!Common.Guid.IsValid(this.tokenTextBox.Text))
             {
                 cancelEventArgs.Cancel = true;
 
