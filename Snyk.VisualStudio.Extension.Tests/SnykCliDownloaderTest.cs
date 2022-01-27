@@ -19,6 +19,35 @@
         }
 
         [Fact]
+        public async Task SnykCliDownloader_ExistingCliFilesNotCorruptedWhenDownloadFails_SuccessAsync()
+        {
+            var cliDownloader = new SnykCliDownloader(null);
+
+            string tempCliPath = Path.Combine(Path.GetTempPath(), SnykCli.CliFileName);
+
+            File.Delete(tempCliPath);
+
+            Assert.False(File.Exists(tempCliPath));
+
+            var progressWorkerWithErrorMock = new Mock<ISnykProgressWorker>();
+
+            await cliDownloader.DownloadAsync(this.progressWorkerMock.Object, tempCliPath);
+
+            progressWorkerWithErrorMock
+                .Setup(progressWorker => progressWorker.CancelIfCancellationRequested())
+                .Throws(new Exception("Some error for test previous cli not deleted"));
+
+            await Assert.ThrowsAsync<Exception>(async ()
+                => await cliDownloader.DownloadAsync(progressWorkerWithErrorMock.Object, tempCliPath));
+
+            Assert.True(File.Exists(tempCliPath));
+
+            cliDownloader.VerifyCliFile(tempCliPath);
+
+            File.Delete(tempCliPath);
+        }
+
+        [Fact]
         public void SnykCliDownloader_VerifyCliFile_Failed()
         {
             var cliDownloader = new SnykCliDownloader(null);

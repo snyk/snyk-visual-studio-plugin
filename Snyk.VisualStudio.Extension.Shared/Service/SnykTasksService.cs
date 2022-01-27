@@ -629,8 +629,6 @@
 
             downloadFinishedCallbacks.Add(new CliDownloadFinishedCallback(() =>
             {
-                cliDownloader.VerifyCliFile();
-
                 userStorageService.SaveCurrentCliVersion(cliDownloader.GetLatestReleaseInfo().Name);
                 userStorageService.SaveCliReleaseLastCheckDate(DateTime.UtcNow);
 

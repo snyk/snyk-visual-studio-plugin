@@ -25,7 +25,7 @@
 
         private string currentCliVersion;
 
-        private string extectedSha;
+        private string expectedSha;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="SnykCliDownloader"/> class.
@@ -207,9 +207,9 @@
 
             Logger.Information("CLI File Destination Path: {Path}", cliFileDestinationPath);
 
-            progressWorker?.DownloadStarted();
+            progressWorker.DownloadStarted();
 
-            progressWorker?.CancelIfCancellationRequested();
+            progressWorker.CancelIfCancellationRequested();
 
             Logger.Information("Got latest relase information");
 
@@ -222,8 +222,7 @@
                     string cliDownloadUrl = string.Format(LatestReleaseDownloadUrl, cliVersion, SnykCli.CliFileName);
             Logger.Information("Latest relase information: version {Version} and url {Url}", latestReleaseInfo.Version, latestReleaseInfo.Url);
 
-                    Logger.Information("Cli download url: {CliDownloadUrl}", cliDownloadUrl);
-            progressWorker?.CancelIfCancellationRequested();
+            progressWorker.CancelIfCancellationRequested();
 
             this.PrepareSnykCliDirectory();
 
@@ -237,12 +236,10 @@
         /// <summary>
         /// Verify cli file sha. If it's not correct method will from <see cref="ChecksumVerificationException"/> exception.
         /// </summary>
-        /// <param name="path">CLI file full path.</param>
+        /// <param name="cliPath">CLI file full path.</param>
         /// <exception cref="ChecksumVerificationException">Exception if cli sha not correct.</exception>
-        public void VerifyCliFile(string path = null)
+        public void VerifyCliFile(string cliPath)
         {
-            string cliPath = this.GetCliFilePath(path);
-
             if (!this.IsCliFileExists(cliPath))
             {
                 throw new ChecksumVerificationException("Cli file not exists, can't verify checksum");
@@ -250,16 +247,16 @@
 
             string currentSha = Sha256.Checksum(cliPath);
 
-            if (this.extectedSha.ToLower() != currentSha.ToLower())
+            if (this.expectedSha.ToLower() != currentSha.ToLower())
             {
-                throw new ChecksumVerificationException($"Expected {this.extectedSha}, but downloaded file has {currentSha}");
+                throw new ChecksumVerificationException($"Expected {this.expectedSha}, but downloaded file has {currentSha}");
             }
         }
 
         /// <summary>
         /// Initialize extectedSha property with latest value from server.
         /// </summary>
-        public void SaveLatestCliSha() => this.extectedSha = this.GetLatestCliSha();
+        public void SaveLatestCliSha() => this.expectedSha = this.GetLatestCliSha();
 
         private void PrepareSnykCliDirectory()
         {
@@ -289,9 +286,6 @@
             {
                 Logger.Error(e, "Error on cli file download");
 
-                // Try to download again if file checksum failed.
-                File.Delete(cliFileDestinationPath);
-
                 await this.DownloadFileAsync(progressWorker, cliDownloadUrl, cliFileDestinationPath);
             }
 
@@ -308,7 +302,9 @@
 
                 response.EnsureSuccessStatusCode();
 
-                using (var fileStream = new FileStream(cliFileDestinationPath, FileMode.Create, FileAccess.Write, FileShare.ReadWrite, 8192, true))
+                string tempCliFile = Path.GetTempFileName();
+
+                using (var fileStream = new FileStream(tempCliFile, FileMode.Create, FileAccess.Write, FileShare.ReadWrite, 8192, true))
                 {
                     using (Stream contentStream = await response.Content.ReadAsStreamAsync())
                     {
@@ -341,6 +337,12 @@
                         while (isMoreToRead);
                     }
                 }
+
+                this.VerifyCliFile(tempCliFile);
+
+                File.Copy(tempCliFile, cliFileDestinationPath);
+
+                File.Delete(tempCliFile);
             }
         }
 
