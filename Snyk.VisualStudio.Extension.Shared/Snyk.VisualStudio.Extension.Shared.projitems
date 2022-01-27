@@ -19,6 +19,7 @@
     <Compile Include="$(MSBuildThisFileDirectory)Microsoft\HtmlParser\HtmlTokenType.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Microsoft\HtmlParser\HtmlToXamlConverter.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Microsoft\UI\HtmlRichTextBoxBehavior.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Service\SolutionType.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)SnykIcons.Designer.cs">
       <DependentUpon>SnykIcons.resx</DependentUpon>
       <DesignTime>True</DesignTime>

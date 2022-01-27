@@ -13,6 +13,8 @@
     {
         private ISolutionService solutionService;
 
+        private string projectType;
+
         /// <summary>
         /// Initializes a new instance of the <see cref="SnykVsSolutionLoadEvents"/> class.
         /// </summary>
@@ -39,6 +41,8 @@
 
             this.solutionService.Clean();
 
+            this.SetupSentrySolutionInformation(SolutionType.Solution);
+
             return VSConstants.S_OK;
         }
 
@@ -49,6 +53,8 @@
         public void OnAfterCloseFolder(string folderPath)
         {
             this.solutionService.Clean();
+
+            this.SetupSentrySolutionInformation(SolutionType.NoOpenSolution);
 
             this.AfterCloseSolution?.Invoke(this, EventArgs.Empty);
         }
@@ -61,6 +67,8 @@
         public int OnAfterCloseSolution(object pUnkReserved)
         {
             this.solutionService.Clean();
+
+            this.SetupSentrySolutionInformation(SolutionType.NoOpenSolution);
 
             this.AfterCloseSolution?.Invoke(this, EventArgs.Empty);
 
@@ -94,6 +102,8 @@
         public void OnAfterOpenFolder(string folderPath)
         {
             this.AfterBackgroundSolutionLoadComplete?.Invoke(this, EventArgs.Empty);
+
+            this.SetupSentrySolutionInformation(SolutionType.Folder);
         }
 
         /// <summary>
@@ -104,10 +114,11 @@
         /// <returns>VSConstants.S_OK.</returns>
         public int OnAfterOpenProject(IVsHierarchy vsHierarchy, int fAdded)
         {
-            uint m_cookie;
             var hierarchyEvents = new CodeCacheHierarchyEvents(vsHierarchy, this.solutionService.FileProvider);
 
-            vsHierarchy.AdviseHierarchyEvents(hierarchyEvents, out m_cookie);
+            vsHierarchy.AdviseHierarchyEvents(hierarchyEvents, out _);
+
+            this.SetupSentrySolutionInformation(SolutionType.Project);
 
             return VSConstants.S_OK;
         }
@@ -118,7 +129,12 @@
         /// <param name="pUnkReserved">Unk reserved.</param>
         /// <param name="fNewSolution">New solution.</param>
         /// <returns>VSConstants.S_OK.</returns>
-        public int OnAfterOpenSolution(object pUnkReserved, int fNewSolution) => VSConstants.S_OK;
+        public int OnAfterOpenSolution(object pUnkReserved, int fNewSolution)
+        {
+            this.SetupSentrySolutionInformation(SolutionType.Solution);
+
+            return VSConstants.S_OK;
+        }
 
         /// <summary>
         /// BeforeBackgroundSolutionLoadBegins event handler.
@@ -213,5 +229,15 @@
         /// <param name="pfCancel">Cancel.</param>
         /// <returns>VSConstants.S_OK.</returns>
         public int OnQueryUnloadProject(IVsHierarchy pRealHierarchy, ref int pfCancel) => VSConstants.S_OK;
+
+        private void SetupSentrySolutionInformation(SolutionType solutionType)
+        {
+            LogManager.SetSentryBeforeSendHook(sentryEvent =>
+            {
+                sentryEvent.SetTag("vs.project.type", solutionType.ToString());
+
+                return sentryEvent;
+            });
+        }
     }
 }

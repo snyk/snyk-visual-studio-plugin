@@ -52,6 +52,8 @@
 
         private bool analyticsInitialized = true;
 
+        private string userIdAsHash;
+
         /// <summary>
         /// Initializes a new instance of the <see cref="SnykAnalyticsService"/> class.
         /// </summary>
@@ -77,6 +79,22 @@
         /// Gets or sets a value indicating whether user id.
         /// </summary>
         public string UserId { get; set; }
+
+        /// <summary>
+        /// Gets a value indicating whether user id hash string.
+        /// </summary>
+        public string UserIdAsHash
+        {
+            get
+            {
+                if (string.IsNullOrEmpty(this.userIdAsHash) && !string.IsNullOrEmpty(this.UserId))
+                {
+                    this.userIdAsHash = Sha256.ComputeHash(this.UserId);
+                }
+
+                return this.userIdAsHash;
+            }
+        }
 
         /// <summary>
         /// Gets or sets a value indicating whether is analytics enabled.
@@ -128,11 +146,12 @@
         /// Obtain user by user token.
         /// </summary>
         /// <param name="serviceProvider">Service provider to get API token.</param>
-        public void ObtainUser(ISnykServiceProvider serviceProvider)
+        /// <param name="callback">Callback function for execute code after obtain user.</param>
+        public void ObtainUser(ISnykServiceProvider serviceProvider, Action callback)
         {
             try
             {
-                this.ObtainUser(serviceProvider.GetApiToken());
+                this.ObtainUser(serviceProvider.GetApiToken(), callback);
             }
             catch (InvalidTokenException e)
             {
@@ -207,7 +226,7 @@
             this.analyticsClient?.Identify(this.anonymousUserId, new Traits());
         }
 
-        private void Alias(string userId)
+        private void Alias(string userId, Action callback)
             => this.Execute(
                 () =>
                 {
@@ -224,6 +243,8 @@
                     }
 
                     this.UserId = userId;
+
+                    callback();
 
                     this.analyticsClient?.Alias(this.anonymousUserId, userId);
                 });
@@ -258,7 +279,7 @@
             }
         }
 
-        private void ObtainUser(string token)
+        private void ObtainUser(string token, Action callback)
             => this.Execute(
                 () =>
                 {
@@ -281,7 +302,7 @@
 
                     if (user != null)
                     {
-                        this.Alias(user.Id);
+                        this.Alias(user.Id, callback);
                     }
                 });
 

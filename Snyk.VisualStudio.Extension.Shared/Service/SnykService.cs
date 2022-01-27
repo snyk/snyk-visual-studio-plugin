@@ -6,9 +6,10 @@
     using EnvDTE;
     using EnvDTE80;
     using Microsoft.VisualStudio.Settings;
+    using Microsoft.VisualStudio.Shell.Interop;
     using Microsoft.VisualStudio.Shell.Settings;
+    using Sentry;
     using Serilog;
-    using Snyk.Code.Library.Api;
     using Snyk.Code.Library.Service;
     using Snyk.Common;
     using Snyk.VisualStudio.Extension.Shared.CLI;
@@ -17,8 +18,6 @@
     using Snyk.VisualStudio.Extension.Shared.Theme;
     using Snyk.VisualStudio.Extension.Shared.UI;
     using Snyk.VisualStudio.Extension.Shared.UI.Notifications;
-    using Snyk.VisualStudio.Extension.Shared.UI.Notifications;
-    using Snyk.VisualStudio.Extension.Shared.UI.Toolwindow;
     using IAsyncServiceProvider = Microsoft.VisualStudio.Shell.IAsyncServiceProvider;
     using Task = System.Threading.Tasks.Task;
 
@@ -245,6 +244,21 @@
             }
 
             return this.NewCli().GetApiToken();
+        }
+
+        /// <inheritdoc/>
+        public async Task SetupSentryAsync()
+        {
+            var shell = await this.Package.GetServiceAsync(typeof(SVsShell)) as IVsShell;
+            shell.GetProperty((int)__VSSPROPID5.VSSPROPID_ReleaseVersion, out object vsVersion);
+
+            SentrySdk.ConfigureScope(scope =>
+            {
+                scope.User = new User { Id = this.AnalyticsService.UserIdAsHash, };
+
+                scope.SetTag("vs.version", vsVersion.ToString());
+                scope.SetTag("vs.edition", dte.Edition);
+            });
         }
 
         private void OnSettingsChanged(object sender, SnykSettingsChangedEventArgs e) => this.SetupSnykCodeService();

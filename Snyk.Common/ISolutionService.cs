@@ -28,5 +28,11 @@
         /// Clean solution related variables.
         /// </summary>
         void Clean();
+
+        /// <summary>
+        /// Return project type.
+        /// </summary>
+        /// <returns>Flat or web site, solution or folder.</returns>
+        string GetProjectType();
     }
 }

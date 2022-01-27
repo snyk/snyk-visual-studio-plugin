@@ -99,5 +99,11 @@
         /// <param name="serviceType">Service type.</param>
         /// <returns>VS service instance.</returns>
         Task<object> GetServiceAsync(Type serviceType);
+
+        /// <summary>
+        /// Setup Sentry scope with VS version, edition and user.
+        /// </summary>
+        /// <returns>Task.</returns>
+        System.Threading.Tasks.Task SetupSentryAsync();
     }
 }

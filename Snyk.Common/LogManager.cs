@@ -2,6 +2,8 @@
 {
     using System;
     using System.IO;
+    using Sentry;
+    using Sentry.Serilog;
     using Serilog;
     using Serilog.Core;
     using Serilog.Events;
@@ -28,6 +30,8 @@
 
         private static LoggingLevelSwitch loggingLevelSwitch = new LoggingLevelSwitch(defaultLoggingLevel);
 
+        private static SentrySerilogOptions sentryConfiguration;
+
         private static Lazy<Logger> Logger { get; } = new Lazy<Logger>(CreateLogger);
 
         /// <summary>
@@ -36,6 +40,15 @@
         /// <typeparam name="T">Type of class.</typeparam>
         /// <returns><see cref="ILogger"/> implementation for class.</returns>
         public static ILogger ForContext<T>() => ForContext(typeof(T));
+
+        /// <summary>
+        /// Set Sentry BeforeSend hook function.
+        /// </summary>
+        /// <param name="beforeSendHookFunc">Function for execute before Sentry send events.</param>
+        public static void SetSentryBeforeSendHook(Func<SentryEvent, SentryEvent> beforeSendHookFunc)
+        {
+            sentryConfiguration.BeforeSend = beforeSendHookFunc;
+        }
 
         private static Logger CreateLogger() => new LoggerConfiguration()
                 .Enrich.WithProcessId()
@@ -46,10 +59,14 @@
                 {
                     var appSettings = SnykExtension.GetAppSettings();
 
+                    config.Release = SnykExtension.GetIntegrationVersion();
+
                     config.Environment = appSettings.Environment;
                     config.Dsn = appSettings.SentryDsn;
 
                     config.AttachStacktrace = true;
+
+                    sentryConfiguration = config;
                 })
                 .WriteTo.File(
                     Path.Combine(SnykDirectory.GetSnykAppDataDirectoryPath(), "snyk-extension.log"),

@@ -4,12 +4,12 @@
     using System.Collections.Generic;
     using System.IO;
     using EnvDTE;
-    using Snyk.Code.Library.Service;
-    using Snyk.Common;
-    using Snyk.VisualStudio.Extension.Shared.Service;
     using Microsoft.VisualStudio;
     using Microsoft.VisualStudio.Shell.Interop;
     using Serilog;
+    using Snyk.Code.Library.Service;
+    using Snyk.Common;
+    using Snyk.VisualStudio.Extension.Shared.Service;
     using Task = System.Threading.Tasks.Task;
 
     /// <summary>
@@ -190,6 +190,33 @@
             return solutionPath;
         }
 
+        /// <inheritdoc/>
+        public string GetProjectType()
+        {
+            Logger.Information("Get project type according to solution and projects information.");
+
+            var dte = this.ServiceProvider.DTE;
+            var solution = dte.Solution;
+            var projects = this.GetProjects();
+
+            if (this.IsSolutionWithProjects(solution, projects))
+            {
+                return "Solution with projects";
+            }
+
+            if (this.IsFolder(solution, projects))
+            {
+                return "Folder";
+            }
+
+            if (this.IsFlatProjectOrWebSite(solution, projects))
+            {
+                return "Flat project or web site";
+            }
+
+            return "unknown";
+        }
+
         /// <summary>
         /// Get solution files using VS API.
         /// </summary>
@@ -225,13 +252,10 @@
 
             this.SolutionEvents = new SnykVsSolutionLoadEvents(this);
 
-            uint pdwCookie;
-            vsSolution.AdviseSolutionEvents(this.SolutionEvents, out pdwCookie);
+            vsSolution.AdviseSolutionEvents(this.SolutionEvents, out _);
 
             Logger.Information("Leave InitializeSolutionEvents method");
         }
-
-        private bool IsFilePath(string path) => !File.GetAttributes(path).HasFlag(FileAttributes.Directory);
 
         private IList<string> GetSolutionDirectoryFiles()
         {
