@@ -13,13 +13,18 @@
     {
         private ISolutionService solutionService;
 
-        private string projectType;
+        private ISentryService sentryService;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="SnykVsSolutionLoadEvents"/> class.
         /// </summary>
-        /// <param name="solutionService">Current solution service instance.</param>
-        public SnykVsSolutionLoadEvents(ISolutionService solutionService) => this.solutionService = solutionService;
+        /// <param name="solutionService">Solution serviceinstance.</param>
+        /// <param name="sentryService">Sentry service instance.</param>
+        public SnykVsSolutionLoadEvents(ISolutionService solutionService, ISentryService sentryService)
+        {
+            this.solutionService = solutionService;
+            this.sentryService = sentryService;
+        }
 
         /// <summary>
         /// After Background Solution Load Complete event handler.
@@ -41,7 +46,7 @@
 
             this.solutionService.Clean();
 
-            this.SetupSentrySolutionInformation(SolutionType.Solution);
+            this.sentryService.SetSolutionType(SolutionType.Solution);
 
             return VSConstants.S_OK;
         }
@@ -54,7 +59,7 @@
         {
             this.solutionService.Clean();
 
-            this.SetupSentrySolutionInformation(SolutionType.NoOpenSolution);
+            this.sentryService.SetSolutionType(SolutionType.NoOpenSolution);
 
             this.AfterCloseSolution?.Invoke(this, EventArgs.Empty);
         }
@@ -68,7 +73,7 @@
         {
             this.solutionService.Clean();
 
-            this.SetupSentrySolutionInformation(SolutionType.NoOpenSolution);
+            this.sentryService.SetSolutionType(SolutionType.NoOpenSolution);
 
             this.AfterCloseSolution?.Invoke(this, EventArgs.Empty);
 
@@ -103,7 +108,7 @@
         {
             this.AfterBackgroundSolutionLoadComplete?.Invoke(this, EventArgs.Empty);
 
-            this.SetupSentrySolutionInformation(SolutionType.Folder);
+            this.sentryService.SetSolutionType(SolutionType.Folder);
         }
 
         /// <summary>
@@ -118,7 +123,7 @@
 
             vsHierarchy.AdviseHierarchyEvents(hierarchyEvents, out _);
 
-            this.SetupSentrySolutionInformation(SolutionType.Project);
+            this.sentryService.SetSolutionType(SolutionType.Project);
 
             return VSConstants.S_OK;
         }
@@ -131,7 +136,7 @@
         /// <returns>VSConstants.S_OK.</returns>
         public int OnAfterOpenSolution(object pUnkReserved, int fNewSolution)
         {
-            this.SetupSentrySolutionInformation(SolutionType.Solution);
+            this.sentryService.SetSolutionType(SolutionType.Solution);
 
             return VSConstants.S_OK;
         }
@@ -229,15 +234,5 @@
         /// <param name="pfCancel">Cancel.</param>
         /// <returns>VSConstants.S_OK.</returns>
         public int OnQueryUnloadProject(IVsHierarchy pRealHierarchy, ref int pfCancel) => VSConstants.S_OK;
-
-        private void SetupSentrySolutionInformation(SolutionType solutionType)
-        {
-            LogManager.SetSentryBeforeSendHook(sentryEvent =>
-            {
-                sentryEvent.SetTag("vs.project.type", solutionType.ToString());
-
-                return sentryEvent;
-            });
-        }
     }
 }

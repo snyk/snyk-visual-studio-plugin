@@ -428,7 +428,7 @@
             serviceProvider.AnalyticsService.AnalyticsEnabled = this.usageAnalyticsCheckBox.Checked;
 
             serviceProvider.AnalyticsService
-                .ObtainUser(serviceProvider, () => serviceProvider.SetupSentryAsync());
+                .ObtainUser(serviceProvider, () => serviceProvider.SentryService.SetupAsync());
         }
 
         private void OssEnabledCheckBox_CheckedChanged(object sender, EventArgs e)

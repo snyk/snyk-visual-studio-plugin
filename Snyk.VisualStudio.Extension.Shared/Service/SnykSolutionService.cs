@@ -188,34 +188,7 @@
             Logger.Information($"Result solution path is {solutionPath}.");
 
             return solutionPath;
-        }
-
-        /// <inheritdoc/>
-        public string GetProjectType()
-        {
-            Logger.Information("Get project type according to solution and projects information.");
-
-            var dte = this.ServiceProvider.DTE;
-            var solution = dte.Solution;
-            var projects = this.GetProjects();
-
-            if (this.IsSolutionWithProjects(solution, projects))
-            {
-                return "Solution with projects";
-            }
-
-            if (this.IsFolder(solution, projects))
-            {
-                return "Folder";
-            }
-
-            if (this.IsFlatProjectOrWebSite(solution, projects))
-            {
-                return "Flat project or web site";
-            }
-
-            return "unknown";
-        }
+        }        
 
         /// <summary>
         /// Get solution files using VS API.
@@ -250,7 +223,7 @@
 
             vsSolution.SetProperty((int)__VSPROPID4.VSPROPID_ActiveSolutionLoadManager, this);
 
-            this.SolutionEvents = new SnykVsSolutionLoadEvents(this);
+            this.SolutionEvents = new SnykVsSolutionLoadEvents(this, this.ServiceProvider.SentryService);
 
             vsSolution.AdviseSolutionEvents(this.SolutionEvents, out _);
 

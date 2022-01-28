@@ -77,6 +77,12 @@
         SnykApiService ApiService { get; }
 
         /// <summary>
+        /// Gets <see cref="SentryService"/> instance.
+        /// </summary>
+        /// <returns>Task.</returns>
+        ISentryService SentryService { get; }
+
+        /// <summary>
         /// Create new instance of <see cref="SnykCli"/>.
         /// </summary>
         /// <returns>SnykCli.</returns>
@@ -99,11 +105,5 @@
         /// <param name="serviceType">Service type.</param>
         /// <returns>VS service instance.</returns>
         Task<object> GetServiceAsync(Type serviceType);
-
-        /// <summary>
-        /// Setup Sentry scope with VS version, edition and user.
-        /// </summary>
-        /// <returns>Task.</returns>
-        System.Threading.Tasks.Task SetupSentryAsync();
     }
 }

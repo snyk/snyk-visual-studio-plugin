@@ -58,6 +58,11 @@
         bool SnykCodeQualityEnabled { get; }
 
         /// <summary>
+        /// Gets or sets a value indicating whether Sentry anonymous user id.
+        /// </summary>
+        string SentryAnonymousUserId { get; set; }
+
+        /// <summary>
         /// Gets or sets a value indicating whether Analytics enabled or disabled. By default it's enabled.
         /// </summary>
         bool UsageAnalyticsEnabled { get; set; }

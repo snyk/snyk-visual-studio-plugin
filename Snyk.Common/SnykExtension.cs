@@ -72,12 +72,9 @@
                 }
                 catch (Exception e)
                 {
-                    if (LogManager.IsInitialized())
-                    {
-                        var logger = LogManager.ForContext<SnykExtension>();
-
-                        logger.Error(e, "Try to get VS integration version method.");
-                    }
+                    // The Exception.ToString() containing the exception type, message,
+                    // stack trace, and all of these things again for nested/inner exceptions.
+                    Console.Error.WriteLine(e.ToString());
                 }
             }
 

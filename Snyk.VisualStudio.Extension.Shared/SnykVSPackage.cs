@@ -173,7 +173,7 @@
             await this.InitializeGeneralOptionsAsync();
 
             this.serviceProvider.AnalyticsService
-                .ObtainUser(this.serviceProvider, () => this.serviceProvider.SetupSentryAsync());
+                .ObtainUser(this.serviceProvider, () => this.serviceProvider.SentryService.SetupAsync());
 
             Logger.Information("Initialize Commands()");
 

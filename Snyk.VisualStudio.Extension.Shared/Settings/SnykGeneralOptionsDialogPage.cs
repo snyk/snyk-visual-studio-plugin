@@ -1,6 +1,4 @@
-﻿using System.Runtime.InteropServices;
-
-namespace Snyk.VisualStudio.Extension.Shared.Settings
+﻿namespace Snyk.VisualStudio.Extension.Shared.Settings
 {
     using System;
     using System.Runtime.InteropServices;
@@ -132,6 +130,13 @@ namespace Snyk.VisualStudio.Extension.Shared.Settings
         /// Get this data using <see cref="SnykUserStorageSettingsService"/>.
         /// </summary>
         public bool IsScanAllProjects => this.userStorageSettingsService.GetIsAllProjectsEnabled();
+
+        /// <inheritdoc/>
+        public string SentryAnonymousUserId
+        {
+            get => this.userStorageSettingsService.GetSentryAnonymousUserId();
+            set => this.userStorageSettingsService?.SaveSentryAnonymousUserId(value);
+        }
 
         /// <summary>
         /// Gets a value indicating whether General Settings control.

@@ -6,9 +6,7 @@
     using EnvDTE;
     using EnvDTE80;
     using Microsoft.VisualStudio.Settings;
-    using Microsoft.VisualStudio.Shell.Interop;
     using Microsoft.VisualStudio.Shell.Settings;
-    using Sentry;
     using Serilog;
     using Snyk.Code.Library.Service;
     using Snyk.Common;
@@ -47,6 +45,8 @@
         private ISnykCodeService snykCodeService;
 
         private SnykApiService apiService;
+
+        private ISentryService sentryService;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="SnykService"/> class.
@@ -116,9 +116,9 @@
                 {
                     Logger.Information("Initialize Snyk Segment Analytics Service.");
 
-                    this.analyticsService = SnykAnalyticsService.Instance;
+                    SnykAnalyticsService.Initialize(this.Options);
 
-                    this.analyticsService.Initialize();
+                    this.analyticsService = SnykAnalyticsService.Instance;
                 }
 
                 return this.analyticsService;
@@ -168,6 +168,20 @@
                 }
 
                 return this.apiService;
+            }
+        }
+
+        /// <inheritdoc/>
+        public ISentryService SentryService
+        {
+            get
+            {
+                if (this.sentryService == null)
+                {
+                    this.sentryService = new SentryService(this);
+                }
+
+                return this.sentryService;
             }
         }
 
@@ -244,21 +258,6 @@
             }
 
             return this.NewCli().GetApiToken();
-        }
-
-        /// <inheritdoc/>
-        public async Task SetupSentryAsync()
-        {
-            var shell = await this.Package.GetServiceAsync(typeof(SVsShell)) as IVsShell;
-            shell.GetProperty((int)__VSSPROPID5.VSSPROPID_ReleaseVersion, out object vsVersion);
-
-            SentrySdk.ConfigureScope(scope =>
-            {
-                scope.User = new User { Id = this.AnalyticsService.UserIdAsHash, };
-
-                scope.SetTag("vs.version", vsVersion.ToString());
-                scope.SetTag("vs.edition", dte.Edition);
-            });
         }
 
         private void OnSettingsChanged(object sender, SnykSettingsChangedEventArgs e) => this.SetupSnykCodeService();

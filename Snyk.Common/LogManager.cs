@@ -2,7 +2,6 @@
 {
     using System;
     using System.IO;
-    using Sentry;
     using Sentry.Serilog;
     using Serilog;
     using Serilog.Core;
@@ -30,7 +29,7 @@
 
         private static LoggingLevelSwitch loggingLevelSwitch = new LoggingLevelSwitch(defaultLoggingLevel);
 
-        private static SentrySerilogOptions sentryConfiguration;
+        public static SentrySerilogOptions SentryConfiguration { get; private set; }
 
         private static Lazy<Logger> Logger { get; } = new Lazy<Logger>(CreateLogger);
 
@@ -40,22 +39,6 @@
         /// <typeparam name="T">Type of class.</typeparam>
         /// <returns><see cref="ILogger"/> implementation for class.</returns>
         public static ILogger ForContext<T>() => ForContext(typeof(T));
-
-        /// <summary>
-        /// Set Sentry BeforeSend hook function.
-        /// </summary>
-        /// <param name="beforeSendHookFunc">Function for execute before Sentry send events.</param>
-        public static void SetSentryBeforeSendHook(Func<SentryEvent, SentryEvent> beforeSendHookFunc)
-        {
-            sentryConfiguration.BeforeSend = beforeSendHookFunc;
-        }
-
-        /// <summary>
-        /// Check is sentry configuration already initialized.
-        /// If sentryConfiguration not null it means logger configuration already created and ready to use.
-        /// </summary>
-        /// <returns>True if logger configuration already created</returns>
-        public static bool IsInitialized() => sentryConfiguration != null;
 
         private static Logger CreateLogger() => new LoggerConfiguration()
                 .Enrich.WithProcessId()
@@ -67,13 +50,12 @@
                     var appSettings = SnykExtension.GetAppSettings();
 
                     config.Release = SnykExtension.GetIntegrationVersion();
-
                     config.Environment = appSettings.Environment;
                     config.Dsn = appSettings.SentryDsn;
 
                     config.AttachStacktrace = true;
 
-                    sentryConfiguration = config;
+                    SentryConfiguration = config;
                 })
                 .WriteTo.File(
                     Path.Combine(SnykDirectory.GetSnykAppDataDirectoryPath(), "snyk-extension.log"),

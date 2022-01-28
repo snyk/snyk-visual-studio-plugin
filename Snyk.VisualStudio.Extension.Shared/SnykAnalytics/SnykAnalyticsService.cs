@@ -9,6 +9,7 @@
     using Snyk.Common;
     using Snyk.VisualStudio.Extension.Shared.CLI;
     using Snyk.VisualStudio.Extension.Shared.Service;
+    using Snyk.VisualStudio.Extension.Shared.Settings;
 
     /// <summary>
     /// Analytics service.
@@ -48,7 +49,7 @@
 
         private Client analyticsClient;
 
-        private string anonymousUserId = System.Guid.NewGuid().ToString();
+        private string anonymousUserId;
 
         private bool analyticsInitialized = true;
 
@@ -57,23 +58,18 @@
         /// <summary>
         /// Initializes a new instance of the <see cref="SnykAnalyticsService"/> class.
         /// </summary>
-        private SnykAnalyticsService() => this.AnalyticsEnabled = true;
+        /// <param name="anonymousUserId">Analytics anonymous user id.</param>
+        private SnykAnalyticsService(string anonymousUserId)
+        {
+            this.AnalyticsEnabled = true;
+
+            this.anonymousUserId = anonymousUserId;
+        }
 
         /// <summary>
         /// Gets <see cref="SnykAnalyticsService"/> singleton instance.
         /// </summary>
-        public static SnykAnalyticsService Instance
-        {
-            get
-            {
-                if (instance == null)
-                {
-                    instance = new SnykAnalyticsService();
-                }
-
-                return instance;
-            }
-        }
+        public static SnykAnalyticsService Instance => instance;
 
         /// <summary>
         /// Gets or sets a value indicating whether user id.
@@ -106,37 +102,45 @@
         private bool Disabled => !this.Enabled;
 
         /// <summary>
-        /// Initialize service.
+        /// Initialize Analytics service intance.
         /// </summary>
-        public void Initialize()
+        /// <param name="options">Snyk options.</param>
+        public static void Initialize(ISnykOptions options)
         {
             try
             {
                 SnykAppSettings appSettings = SnykExtension.GetAppSettings();
 
+                if (string.IsNullOrEmpty(options.SentryAnonymousUserId))
+                {
+                    options.SentryAnonymousUserId = System.Guid.NewGuid().ToString();
+                }
+
+                instance = new SnykAnalyticsService(options.SentryAnonymousUserId);
+
                 string writeKey = appSettings?.SegmentAnalyticsWriteKey;
 
                 if (string.IsNullOrEmpty(writeKey))
                 {
-                    this.analyticsInitialized = false;
+                    instance.analyticsInitialized = false;
 
                     Logger.Information("Segment analytics collection is disabled because write key is empty!");
                 }
                 else
                 {
-                    Analytics.Initialize(appSettings?.SegmentAnalyticsWriteKey, new Config()
+                    Analytics.Initialize(writeKey, new Config()
                             .SetAsync(true)
                             .SetTimeout(TimeSpan.FromSeconds(10))
                             .SetMaxQueueSize(5));
 
-                    this.analyticsClient = Analytics.Client;
+                    instance.analyticsClient = Analytics.Client;
 
-                    this.Identify();
+                    instance.Identify();
                 }
             }
             catch (Exception e)
             {
-                this.analyticsInitialized = false;
+                instance.analyticsInitialized = false;
 
                 Logger.Error(e, "Error on initialize analytics service");
             }
