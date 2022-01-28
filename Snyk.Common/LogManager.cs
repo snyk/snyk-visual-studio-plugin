@@ -50,6 +50,13 @@
             sentryConfiguration.BeforeSend = beforeSendHookFunc;
         }
 
+        /// <summary>
+        /// Check is sentry configuration already initialized.
+        /// If sentryConfiguration not null it means logger configuration already created and ready to use.
+        /// </summary>
+        /// <returns>True if logger configuration already created</returns>
+        public static bool IsInitialized() => sentryConfiguration != null;
+
         private static Logger CreateLogger() => new LoggerConfiguration()
                 .Enrich.WithProcessId()
                 .Enrich.WithThreadId()
