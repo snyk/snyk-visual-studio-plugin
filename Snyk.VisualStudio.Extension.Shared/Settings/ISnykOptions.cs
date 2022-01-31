@@ -60,7 +60,7 @@
         /// <summary>
         /// Gets or sets a value indicating whether Sentry anonymous user id.
         /// </summary>
-        string SentryAnonymousUserId { get; set; }
+        string AnonymousId { get; set; }
 
         /// <summary>
         /// Gets or sets a value indicating whether Analytics enabled or disabled. By default it's enabled.

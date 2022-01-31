@@ -111,12 +111,12 @@
             {
                 SnykAppSettings appSettings = SnykExtension.GetAppSettings();
 
-                if (string.IsNullOrEmpty(options.SentryAnonymousUserId))
+                if (string.IsNullOrEmpty(options.AnonymousId))
                 {
-                    options.SentryAnonymousUserId = System.Guid.NewGuid().ToString();
+                    options.AnonymousId = System.Guid.NewGuid().ToString();
                 }
 
-                instance = new SnykAnalyticsService(options.SentryAnonymousUserId);
+                instance = new SnykAnalyticsService(options.AnonymousId);
 
                 string writeKey = appSettings?.SegmentAnalyticsWriteKey;
 

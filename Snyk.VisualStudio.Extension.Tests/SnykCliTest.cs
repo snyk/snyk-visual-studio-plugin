@@ -380,7 +380,7 @@
 
         public bool SnykCodeQualityEnabled => throw new NotImplementedException();
 
-        public string SentryAnonymousUserId { get => throw new NotImplementedException(); set => throw new NotImplementedException(); }
+        public string AnonymousId { get => throw new NotImplementedException(); set => throw new NotImplementedException(); }
 
         public void Authenticate(Action<string> successCallbackAction, Action<string> errorCallbackAction) => throw new NotImplementedException();
 

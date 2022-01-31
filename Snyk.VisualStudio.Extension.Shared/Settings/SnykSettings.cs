@@ -35,7 +35,7 @@
         /// <summary>
         /// Gets or sets Sentry anonymous user id.
         /// </summary>
-        public string SentryAnonymousUserId { get; set; }
+        public string AnonymousId { get; set; }
 
         /// <summary>
         /// Gets or sets Cli release last check date.

@@ -132,10 +132,10 @@
         public bool IsScanAllProjects => this.userStorageSettingsService.GetIsAllProjectsEnabled();
 
         /// <inheritdoc/>
-        public string SentryAnonymousUserId
+        public string AnonymousId
         {
-            get => this.userStorageSettingsService.GetSentryAnonymousUserId();
-            set => this.userStorageSettingsService?.SaveSentryAnonymousUserId(value);
+            get => this.userStorageSettingsService.GetAnonymousId();
+            set => this.userStorageSettingsService?.SaveAnonymousId(value);
         }
 
         /// <summary>
