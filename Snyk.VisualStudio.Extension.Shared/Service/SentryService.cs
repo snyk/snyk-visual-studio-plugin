@@ -12,6 +12,8 @@
     /// </summary>
     public class SentryService : ISentryService
     {
+        private const string SnykKeyword = "Snyk";
+
         private ISnykServiceProvider serviceProvider;
 
         /// <summary>
@@ -42,10 +44,28 @@
         {
             LogManager.SentryConfiguration.BeforeSend = sentryEvent =>
             {
+                // Filter error's not related to Snyk Extension.
+                if (this.CheckEventNotRelatedToExtension(sentryEvent))
+                {
+                    return null;
+                }
+
                 sentryEvent.SetTag("vs.project.type", solutionType.ToString());
 
                 return sentryEvent;
             };
+        }
+
+        private bool CheckEventNotRelatedToExtension(SentryEvent sentryEvent)
+        {
+            if (sentryEvent.Logger == null)
+            {
+                return true;
+            }
+
+            return sentryEvent.Exception != null
+                && sentryEvent.Exception.StackTrace != null
+                && !sentryEvent.Exception.StackTrace.Contains(SnykKeyword);
         }
     }
 }

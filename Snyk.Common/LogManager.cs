@@ -55,6 +55,12 @@
 
                     config.AttachStacktrace = true;
 
+
+                    config.Debug = true;
+                    config.TracesSampleRate = 1.0;
+
+
+
                     SentryConfiguration = config;
                 })
                 .WriteTo.File(
