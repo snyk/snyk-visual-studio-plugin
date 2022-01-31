@@ -4,12 +4,12 @@
     using System.Collections.Generic;
     using System.IO;
     using EnvDTE;
-    using Snyk.Code.Library.Service;
-    using Snyk.Common;
-    using Snyk.VisualStudio.Extension.Shared.Service;
     using Microsoft.VisualStudio;
     using Microsoft.VisualStudio.Shell.Interop;
     using Serilog;
+    using Snyk.Code.Library.Service;
+    using Snyk.Common;
+    using Snyk.VisualStudio.Extension.Shared.Service;
     using Task = System.Threading.Tasks.Task;
 
     /// <summary>
@@ -188,7 +188,7 @@
             Logger.Information($"Result solution path is {solutionPath}.");
 
             return solutionPath;
-        }
+        }        
 
         /// <summary>
         /// Get solution files using VS API.
@@ -223,15 +223,12 @@
 
             vsSolution.SetProperty((int)__VSPROPID4.VSPROPID_ActiveSolutionLoadManager, this);
 
-            this.SolutionEvents = new SnykVsSolutionLoadEvents(this);
+            this.SolutionEvents = new SnykVsSolutionLoadEvents(this, this.ServiceProvider.SentryService);
 
-            uint pdwCookie;
-            vsSolution.AdviseSolutionEvents(this.SolutionEvents, out pdwCookie);
+            vsSolution.AdviseSolutionEvents(this.SolutionEvents, out _);
 
             Logger.Information("Leave InitializeSolutionEvents method");
         }
-
-        private bool IsFilePath(string path) => !File.GetAttributes(path).HasFlag(FileAttributes.Directory);
 
         private IList<string> GetSolutionDirectoryFiles()
         {

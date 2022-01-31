@@ -18,7 +18,7 @@
 
         private const string AppSettingsFileName = "appsettings.json";
 
-        private static string version;
+        private static string version = string.Empty;
 
         private static string extensionDirectoryPath;
 
@@ -49,7 +49,7 @@
         /// <returns>String.</returns>
         public static string GetIntegrationVersion()
         {
-            if (version == null)
+            if (string.IsNullOrEmpty(version))
             {
                 try
                 {
@@ -72,9 +72,9 @@
                 }
                 catch (Exception e)
                 {
-                    var logger = LogManager.ForContext<SnykExtension>();
-
-                    logger.Error(e, "Try to get VS integration version method.");
+                    // The Exception.ToString() containing the exception type, message,
+                    // stack trace, and all of these things again for nested/inner exceptions.
+                    Console.Error.WriteLine(e.ToString());
                 }
             }
 

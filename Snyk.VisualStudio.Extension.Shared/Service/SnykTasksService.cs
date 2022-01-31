@@ -398,7 +398,7 @@
 
                             if (!cliResult.IsSuccessful())
                             {
-                                Logger.Information("Scan is successful");
+                                Logger.Error("Cli return an error {CliError}", cliResult.Error.Message);
 
                                 this.FireOssError(cliResult.Error);
 
@@ -421,6 +421,8 @@
                         }
                         catch (Exception e)
                         {
+                            Logger.Error(e, "Oss scan exception: cancelled or error appear");
+
                             bool isCancelled = this.cli.ConsoleRunner.IsStopped;
 
                             this.cli = null;
@@ -437,9 +439,9 @@
                             this.FireOssError(e.Message);
                         }
                     }
-                    catch (Exception exception)
+                    catch (Exception e)
                     {
-                        Logger.Error(exception, string.Empty);
+                        Logger.Error(e, "Error on oss scan");
 
                         this.FireScanningCancelledEvent();
 

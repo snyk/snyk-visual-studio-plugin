@@ -423,9 +423,12 @@
         {
             this.OptionsDialogPage.UsageAnalyticsEnabled = this.usageAnalyticsCheckBox.Checked;
 
-            this.OptionsDialogPage.ServiceProvider.AnalyticsService.AnalyticsEnabled = this.usageAnalyticsCheckBox.Checked;
+            var serviceProvider = this.OptionsDialogPage.ServiceProvider;
 
-            this.OptionsDialogPage.ServiceProvider.AnalyticsService.ObtainUser(this.OptionsDialogPage.ServiceProvider);
+            serviceProvider.AnalyticsService.AnalyticsEnabled = this.usageAnalyticsCheckBox.Checked;
+
+            serviceProvider.AnalyticsService
+                .ObtainUser(serviceProvider, () => serviceProvider.SentryService.SetupAsync());
         }
 
         private void OssEnabledCheckBox_CheckedChanged(object sender, EventArgs e)

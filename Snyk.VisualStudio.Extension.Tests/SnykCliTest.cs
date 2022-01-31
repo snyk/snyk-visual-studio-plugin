@@ -1,7 +1,6 @@
 ﻿namespace Snyk.VisualStudio.Extension.Shared.Tests
 {
     using System;
-    using System.Collections.Specialized;
     using System.IO;
     using Snyk.VisualStudio.Extension.Shared.CLI;
     using Snyk.VisualStudio.Extension.Shared.Settings;
@@ -224,33 +223,18 @@
         [Fact]
         public void IsSuccessCliJsonString_True()
         {
-            var cli = new SnykCli
-            {
-                Options = new SnykMockOptions(),
-            };
-
             Assert.True(SnykCli.IsSuccessCliJsonString("{\"vulnerabilities\": []}"));
         }
 
         [Fact]
         public void IsSuccessCliJsonString_False()
         {
-            var cli = new SnykCli
-            {
-                Options = new SnykMockOptions(),
-            };
-
             Assert.False(SnykCli.IsSuccessCliJsonString("{\"error\": \"Error details.\"}"));
         }
 
         [Fact]
         public void ConvertRawCliStringToCliResult_VulnerabilitiesArrayJson()
         {
-            var cli = new SnykCli
-            {
-                Options = new SnykMockOptions(),
-            };
-
             var cliResult = SnykCli.ConvertRawCliStringToCliResult(this.GetFileContent("VulnerabilitiesArray.json"));
 
             Assert.Equal(2, cliResult.CliVulnerabilitiesList.Count);
@@ -259,11 +243,6 @@
         [Fact]
         public void ConvertRawCliStringToCliResult_VulnerabilitiesSingleJson()
         {
-            var cli = new SnykCli
-            {
-                Options = new SnykMockOptions(),
-            };
-
             var cliResult = SnykCli.ConvertRawCliStringToCliResult(this.GetFileContent("VulnerabilitiesSingleObject.json"));
 
             Assert.Single(cliResult.CliVulnerabilitiesList);
@@ -272,11 +251,6 @@
         [Fact]
         public void ConvertRawCliStringToCliResult_ErrorJson()
         {
-            var cli = new SnykCli
-            {
-                Options = new SnykMockOptions(),
-            };
-
             var cliResult = SnykCli.ConvertRawCliStringToCliResult(this.GetFileContent("ErrorJsonObject.json"));
 
             Assert.NotNull(cliResult.Error);
@@ -325,144 +299,79 @@
 
     class MockServiceProvider : IServiceProvider
     {
-        public object GetService(Type serviceType)
-        {
-            throw new NotImplementedException();
-        }
-    }
-
-    class SnykMockConsoleRunner: SnykConsoleRunner
-    {
-        private string consoleResult;
-
-        public SnykMockConsoleRunner(string result)
-        {
-            this.consoleResult = result;
-        }
-
-        public override string Run(string fileName, string arguments, StringDictionary environmentVariables = null)
-        {
-            return consoleResult;
-        }
-
-        public override string Execute()
-        {
-            return consoleResult;
-        }
+        public object GetService(Type serviceType) => throw new NotImplementedException();
     }
 
     class SnykMockOptions : ISnykOptions
     {
-        private string apiToken = "";
-        private string customEndpoint = "";
-        private string organization = "";
+        private string apiToken = string.Empty;
+        private string customEndpoint = string.Empty;
+        private string organization = string.Empty;
         private bool ignoreUnknownCA = false;
-        private string additionalOptions = "";
+        private string additionalOptions = string.Empty;
         private bool isScanAllProjects = false;
         private bool usageAnalyticsEnabled = true;
 
         public SnykMockOptions() { }
 
-        public SnykMockOptions(string apiToken = "", 
-            string customEndpoint = "", 
-            string organization = "", 
-            string additionalOptions = "", 
+        public SnykMockOptions(
+            string apiToken = "",
+            string customEndpoint = "",
+            string organization = "",
+            string additionalOptions = "",
             bool ignoreUnknownCA = false,
             bool isScanAllProjects = false)
         {
-            CustomEndpoint = customEndpoint;
-            ApiToken = apiToken;
-            Organization = organization;
-            IgnoreUnknownCA = ignoreUnknownCA;
-            AdditionalOptions = additionalOptions;
-            IsScanAllProjects = isScanAllProjects;
+            this.CustomEndpoint = customEndpoint;
+            this.ApiToken = apiToken;
+            this.Organization = organization;
+            this.IgnoreUnknownCA = ignoreUnknownCA;
+            this.AdditionalOptions = additionalOptions;
+            this.IsScanAllProjects = isScanAllProjects;
         }
-        
+
+        public event EventHandler<SnykSettingsChangedEventArgs> SettingsChanged;
+
         public string ApiToken
         {
-            get
-            {
-                return apiToken;
-            }
-            set
-            {
-                apiToken = value;
-            }
+            get => this.apiToken;
+            set => this.apiToken = value;
         }
 
         public string CustomEndpoint
         {
-            get
-            {
-                return customEndpoint;
-            }
-            set
-            {
-                customEndpoint = value;
-            }
+            get => this.customEndpoint;
+            set => this.customEndpoint = value;
         }
 
         public string Organization
         {
-            get
-            {
-                return organization;
-            }
-            set
-            {
-                organization = value;
-            }
+            get => this.organization;
+            set => this.organization = value;
         }
 
         public bool IgnoreUnknownCA
         {
-            get
-            {
-                return ignoreUnknownCA;
-            }
-            set
-            {
-                ignoreUnknownCA = value;
-            }
+            get => this.ignoreUnknownCA;
+            set => this.ignoreUnknownCA = value;
         }
 
         public string AdditionalOptions
         {
-            get
-            {
-                return additionalOptions;
-            }
-
-            set
-            {
-                additionalOptions = value;
-            }
+            get => this.additionalOptions;
+            set => this.additionalOptions = value;
         }
 
         public bool IsScanAllProjects
         {
-            set
-            {
-                isScanAllProjects = value;
-            }
-
-            get
-            {
-                return isScanAllProjects;
-            }
+            get => this.isScanAllProjects;
+            set => this.isScanAllProjects = value;
         }
 
         public bool UsageAnalyticsEnabled
         {
-            get
-            {
-                return usageAnalyticsEnabled;
-            }
-
-            set
-            {
-                usageAnalyticsEnabled = value;
-            }
+            get => this.usageAnalyticsEnabled;
+            set => this.usageAnalyticsEnabled = value;
         }
 
         public bool OssEnabled => throw new NotImplementedException();
@@ -471,16 +380,10 @@
 
         public bool SnykCodeQualityEnabled => throw new NotImplementedException();
 
-        public event EventHandler<SnykSettingsChangedEventArgs> SettingsChanged;
+        public string AnonymousId { get => throw new NotImplementedException(); set => throw new NotImplementedException(); }
 
-        public void Authenticate(Action<string> successCallbackAction, Action<string> errorCallbackAction)
-        {
-            throw new NotImplementedException();
-        }
+        public void Authenticate(Action<string> successCallbackAction, Action<string> errorCallbackAction) => throw new NotImplementedException();
 
-        public void LoadSettingsFromStorage()
-        {
-            throw new NotImplementedException();
-        }
+        public void LoadSettingsFromStorage() => throw new NotImplementedException();
     }
 }
