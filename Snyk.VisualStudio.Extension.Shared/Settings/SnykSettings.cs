@@ -33,6 +33,11 @@
         public string CurrentCliVersion { get; set; }
 
         /// <summary>
+        /// Gets or sets Sentry anonymous user id.
+        /// </summary>
+        public string AnonymousId { get; set; }
+
+        /// <summary>
         /// Gets or sets Cli release last check date.
         /// </summary>
         public DateTime CliReleaseLastCheckDate { get; set; }

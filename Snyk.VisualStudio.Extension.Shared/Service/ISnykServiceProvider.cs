@@ -77,6 +77,12 @@
         SnykApiService ApiService { get; }
 
         /// <summary>
+        /// Gets <see cref="SentryService"/> instance.
+        /// </summary>
+        /// <returns>Task.</returns>
+        ISentryService SentryService { get; }
+
+        /// <summary>
         /// Create new instance of <see cref="SnykCli"/>.
         /// </summary>
         /// <returns>SnykCli.</returns>

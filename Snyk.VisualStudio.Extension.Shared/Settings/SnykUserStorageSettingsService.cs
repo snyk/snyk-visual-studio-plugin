@@ -166,6 +166,30 @@
         }
 
         /// <summary>
+        /// Save Sentry anonymous user id.
+        /// </summary>
+        /// <param name="anonymousUserId">Anonymous user id to save.</param>
+        public void SaveAnonymousId(string anonymousUserId)
+        {
+            var settings = this.SettingsLoader.Load();
+
+            if (settings == null)
+            {
+                settings = new SnykSettings();
+            }
+
+            settings.AnonymousId = anonymousUserId;
+
+            this.SettingsLoader.Save(settings);
+        }
+
+        /// <summary>
+        /// Get Sentry anonymous user id.
+        /// </summary>
+        /// <returns>String Sentry anonymous user id.</returns>
+        public string GetAnonymousId() => this.SettingsLoader.Load()?.AnonymousId;
+
+        /// <summary>
         /// Get current CLI version.
         /// </summary>
         /// <returns>String in '1.100.1' format.</returns>

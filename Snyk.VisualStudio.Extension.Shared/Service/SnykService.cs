@@ -8,7 +8,6 @@
     using Microsoft.VisualStudio.Settings;
     using Microsoft.VisualStudio.Shell.Settings;
     using Serilog;
-    using Snyk.Code.Library.Api;
     using Snyk.Code.Library.Service;
     using Snyk.Common;
     using Snyk.VisualStudio.Extension.Shared.CLI;
@@ -17,8 +16,6 @@
     using Snyk.VisualStudio.Extension.Shared.Theme;
     using Snyk.VisualStudio.Extension.Shared.UI;
     using Snyk.VisualStudio.Extension.Shared.UI.Notifications;
-    using Snyk.VisualStudio.Extension.Shared.UI.Notifications;
-    using Snyk.VisualStudio.Extension.Shared.UI.Toolwindow;
     using IAsyncServiceProvider = Microsoft.VisualStudio.Shell.IAsyncServiceProvider;
     using Task = System.Threading.Tasks.Task;
 
@@ -48,6 +45,8 @@
         private ISnykCodeService snykCodeService;
 
         private SnykApiService apiService;
+
+        private ISentryService sentryService;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="SnykService"/> class.
@@ -117,9 +116,9 @@
                 {
                     Logger.Information("Initialize Snyk Segment Analytics Service.");
 
-                    this.analyticsService = SnykAnalyticsService.Instance;
+                    SnykAnalyticsService.Initialize(this.Options);
 
-                    this.analyticsService.Initialize();
+                    this.analyticsService = SnykAnalyticsService.Instance;
                 }
 
                 return this.analyticsService;
@@ -169,6 +168,20 @@
                 }
 
                 return this.apiService;
+            }
+        }
+
+        /// <inheritdoc/>
+        public ISentryService SentryService
+        {
+            get
+            {
+                if (this.sentryService == null)
+                {
+                    this.sentryService = new SentryService(this);
+                }
+
+                return this.sentryService;
             }
         }
 

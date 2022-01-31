@@ -2,6 +2,7 @@
 {
     using System;
     using System.IO;
+    using Sentry.Serilog;
     using Serilog;
     using Serilog.Core;
     using Serilog.Events;
@@ -28,6 +29,8 @@
 
         private static LoggingLevelSwitch loggingLevelSwitch = new LoggingLevelSwitch(defaultLoggingLevel);
 
+        public static SentrySerilogOptions SentryConfiguration { get; private set; }
+
         private static Lazy<Logger> Logger { get; } = new Lazy<Logger>(CreateLogger);
 
         /// <summary>
@@ -46,10 +49,13 @@
                 {
                     var appSettings = SnykExtension.GetAppSettings();
 
+                    config.Release = SnykExtension.GetIntegrationVersion();
                     config.Environment = appSettings.Environment;
                     config.Dsn = appSettings.SentryDsn;
 
                     config.AttachStacktrace = true;
+
+                    SentryConfiguration = config;
                 })
                 .WriteTo.File(
                     Path.Combine(SnykDirectory.GetSnykAppDataDirectoryPath(), "snyk-extension.log"),

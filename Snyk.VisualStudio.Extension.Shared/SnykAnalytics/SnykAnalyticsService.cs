@@ -9,6 +9,7 @@
     using Snyk.Common;
     using Snyk.VisualStudio.Extension.Shared.CLI;
     using Snyk.VisualStudio.Extension.Shared.Service;
+    using Snyk.VisualStudio.Extension.Shared.Settings;
 
     /// <summary>
     /// Analytics service.
@@ -48,35 +49,48 @@
 
         private Client analyticsClient;
 
-        private string anonymousUserId = System.Guid.NewGuid().ToString();
+        private string anonymousUserId;
 
         private bool analyticsInitialized = true;
+
+        private string userIdAsHash;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="SnykAnalyticsService"/> class.
         /// </summary>
-        private SnykAnalyticsService() => this.AnalyticsEnabled = true;
+        /// <param name="anonymousUserId">Analytics anonymous user id.</param>
+        private SnykAnalyticsService(string anonymousUserId)
+        {
+            this.AnalyticsEnabled = true;
+
+            this.anonymousUserId = anonymousUserId;
+        }
 
         /// <summary>
         /// Gets <see cref="SnykAnalyticsService"/> singleton instance.
         /// </summary>
-        public static SnykAnalyticsService Instance
-        {
-            get
-            {
-                if (instance == null)
-                {
-                    instance = new SnykAnalyticsService();
-                }
-
-                return instance;
-            }
-        }
+        public static SnykAnalyticsService Instance => instance;
 
         /// <summary>
         /// Gets or sets a value indicating whether user id.
         /// </summary>
         public string UserId { get; set; }
+
+        /// <summary>
+        /// Gets a value indicating whether user id hash string.
+        /// </summary>
+        public string UserIdAsHash
+        {
+            get
+            {
+                if (string.IsNullOrEmpty(this.userIdAsHash) && !string.IsNullOrEmpty(this.UserId))
+                {
+                    this.userIdAsHash = Sha256.ComputeHash(this.UserId);
+                }
+
+                return this.userIdAsHash;
+            }
+        }
 
         /// <summary>
         /// Gets or sets a value indicating whether is analytics enabled.
@@ -88,37 +102,45 @@
         private bool Disabled => !this.Enabled;
 
         /// <summary>
-        /// Initialize service.
+        /// Initialize Analytics service intance.
         /// </summary>
-        public void Initialize()
+        /// <param name="options">Snyk options.</param>
+        public static void Initialize(ISnykOptions options)
         {
             try
             {
                 SnykAppSettings appSettings = SnykExtension.GetAppSettings();
 
+                if (string.IsNullOrEmpty(options.AnonymousId))
+                {
+                    options.AnonymousId = System.Guid.NewGuid().ToString();
+                }
+
+                instance = new SnykAnalyticsService(options.AnonymousId);
+
                 string writeKey = appSettings?.SegmentAnalyticsWriteKey;
 
                 if (string.IsNullOrEmpty(writeKey))
                 {
-                    this.analyticsInitialized = false;
+                    instance.analyticsInitialized = false;
 
                     Logger.Information("Segment analytics collection is disabled because write key is empty!");
                 }
                 else
                 {
-                    Analytics.Initialize(appSettings?.SegmentAnalyticsWriteKey, new Config()
+                    Analytics.Initialize(writeKey, new Config()
                             .SetAsync(true)
                             .SetTimeout(TimeSpan.FromSeconds(10))
                             .SetMaxQueueSize(5));
 
-                    this.analyticsClient = Analytics.Client;
+                    instance.analyticsClient = Analytics.Client;
 
-                    this.Identify();
+                    instance.Identify();
                 }
             }
             catch (Exception e)
             {
-                this.analyticsInitialized = false;
+                instance.analyticsInitialized = false;
 
                 Logger.Error(e, "Error on initialize analytics service");
             }
@@ -128,11 +150,12 @@
         /// Obtain user by user token.
         /// </summary>
         /// <param name="serviceProvider">Service provider to get API token.</param>
-        public void ObtainUser(ISnykServiceProvider serviceProvider)
+        /// <param name="callback">Callback function for execute code after obtain user.</param>
+        public void ObtainUser(ISnykServiceProvider serviceProvider, Action callback)
         {
             try
             {
-                this.ObtainUser(serviceProvider.GetApiToken());
+                this.ObtainUser(serviceProvider.GetApiToken(), callback);
             }
             catch (InvalidTokenException e)
             {
@@ -207,7 +230,7 @@
             this.analyticsClient?.Identify(this.anonymousUserId, new Traits());
         }
 
-        private void Alias(string userId)
+        private void Alias(string userId, Action callback)
             => this.Execute(
                 () =>
                 {
@@ -224,6 +247,8 @@
                     }
 
                     this.UserId = userId;
+
+                    callback();
 
                     this.analyticsClient?.Alias(this.anonymousUserId, userId);
                 });
@@ -258,7 +283,7 @@
             }
         }
 
-        private void ObtainUser(string token)
+        private void ObtainUser(string token, Action callback)
             => this.Execute(
                 () =>
                 {
@@ -281,7 +306,7 @@
 
                     if (user != null)
                     {
-                        this.Alias(user.Id);
+                        this.Alias(user.Id, callback);
                     }
                 });
 

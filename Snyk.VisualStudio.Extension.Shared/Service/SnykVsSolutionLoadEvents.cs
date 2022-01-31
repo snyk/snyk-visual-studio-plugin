@@ -13,11 +13,18 @@
     {
         private ISolutionService solutionService;
 
+        private ISentryService sentryService;
+
         /// <summary>
         /// Initializes a new instance of the <see cref="SnykVsSolutionLoadEvents"/> class.
         /// </summary>
-        /// <param name="solutionService">Current solution service instance.</param>
-        public SnykVsSolutionLoadEvents(ISolutionService solutionService) => this.solutionService = solutionService;
+        /// <param name="solutionService">Solution serviceinstance.</param>
+        /// <param name="sentryService">Sentry service instance.</param>
+        public SnykVsSolutionLoadEvents(ISolutionService solutionService, ISentryService sentryService)
+        {
+            this.solutionService = solutionService;
+            this.sentryService = sentryService;
+        }
 
         /// <summary>
         /// After Background Solution Load Complete event handler.
@@ -39,6 +46,8 @@
 
             this.solutionService.Clean();
 
+            this.sentryService.SetSolutionType(SolutionType.Solution);
+
             return VSConstants.S_OK;
         }
 
@@ -49,6 +58,8 @@
         public void OnAfterCloseFolder(string folderPath)
         {
             this.solutionService.Clean();
+
+            this.sentryService.SetSolutionType(SolutionType.NoOpenSolution);
 
             this.AfterCloseSolution?.Invoke(this, EventArgs.Empty);
         }
@@ -61,6 +72,8 @@
         public int OnAfterCloseSolution(object pUnkReserved)
         {
             this.solutionService.Clean();
+
+            this.sentryService.SetSolutionType(SolutionType.NoOpenSolution);
 
             this.AfterCloseSolution?.Invoke(this, EventArgs.Empty);
 
@@ -94,6 +107,8 @@
         public void OnAfterOpenFolder(string folderPath)
         {
             this.AfterBackgroundSolutionLoadComplete?.Invoke(this, EventArgs.Empty);
+
+            this.sentryService.SetSolutionType(SolutionType.Folder);
         }
 
         /// <summary>
@@ -104,10 +119,11 @@
         /// <returns>VSConstants.S_OK.</returns>
         public int OnAfterOpenProject(IVsHierarchy vsHierarchy, int fAdded)
         {
-            uint m_cookie;
             var hierarchyEvents = new CodeCacheHierarchyEvents(vsHierarchy, this.solutionService.FileProvider);
 
-            vsHierarchy.AdviseHierarchyEvents(hierarchyEvents, out m_cookie);
+            vsHierarchy.AdviseHierarchyEvents(hierarchyEvents, out _);
+
+            this.sentryService.SetSolutionType(SolutionType.Project);
 
             return VSConstants.S_OK;
         }
@@ -118,7 +134,12 @@
         /// <param name="pUnkReserved">Unk reserved.</param>
         /// <param name="fNewSolution">New solution.</param>
         /// <returns>VSConstants.S_OK.</returns>
-        public int OnAfterOpenSolution(object pUnkReserved, int fNewSolution) => VSConstants.S_OK;
+        public int OnAfterOpenSolution(object pUnkReserved, int fNewSolution)
+        {
+            this.sentryService.SetSolutionType(SolutionType.Solution);
+
+            return VSConstants.S_OK;
+        }
 
         /// <summary>
         /// BeforeBackgroundSolutionLoadBegins event handler.
