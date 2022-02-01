@@ -223,8 +223,7 @@
 
             vsSolution.SetProperty((int)__VSPROPID4.VSPROPID_ActiveSolutionLoadManager, this);
 
-            this.SolutionEvents = new SnykVsSolutionLoadEvents(this, this.ServiceProvider.OssService);
-            this.SolutionEvents = new SnykVsSolutionLoadEvents(this, this.ServiceProvider.SentryService);
+            this.SolutionEvents = new SnykVsSolutionLoadEvents(this, this.ServiceProvider.OssService, this.ServiceProvider.SentryService);
 
             vsSolution.AdviseSolutionEvents(this.SolutionEvents, out _);
 

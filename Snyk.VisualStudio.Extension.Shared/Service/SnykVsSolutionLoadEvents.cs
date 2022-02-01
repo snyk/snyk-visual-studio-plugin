@@ -22,17 +22,10 @@
         /// </summary>
         /// <param name="solutionService">Solution serviceinstance.</param>
         /// <param name="sentryService">Sentry service instance.</param>
-        public SnykVsSolutionLoadEvents(ISolutionService solutionService, ISentryService sentryService)
+        public SnykVsSolutionLoadEvents(ISolutionService solutionService, IOssService ossService, ISentryService sentryService)
         {
             this.solutionService = solutionService;
             this.sentryService = sentryService;
-        }
-        /// <param name="solutionService">Current solution service instance.</param>
-        /// <param name="ossService">Oss service instance.</param>
-        public SnykVsSolutionLoadEvents(ISolutionService solutionService, IOssService ossService)
-        {
-            this.solutionService = solutionService;
-
             this.ossService = ossService;
         }
 
