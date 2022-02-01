@@ -215,11 +215,8 @@
 
             LatestReleaseInfo latestReleaseInfo = this.GetLatestReleaseInfo();
 
-                    string cliVersion = latestReleaseInfo.TagName;
+            string cliDownloadUrl = string.Format(LatestReleaseDownloadUrl, latestReleaseInfo.Version, SnykCli.CliFileName);
 
-                    Logger.Information("Latest relase information CLI version: {CliVersion}", cliVersion);
-
-                    string cliDownloadUrl = string.Format(LatestReleaseDownloadUrl, cliVersion, SnykCli.CliFileName);
             Logger.Information("Latest relase information: version {Version} and url {Url}", latestReleaseInfo.Version, latestReleaseInfo.Url);
 
             progressWorker.CancelIfCancellationRequested();
