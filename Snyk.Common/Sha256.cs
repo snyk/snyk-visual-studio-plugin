@@ -1,5 +1,7 @@
 ﻿namespace Snyk.Common
 {
+    using System;
+    using System.IO;
     using System.Security.Cryptography;
     using System.Text;
 
@@ -30,6 +32,22 @@
                 }
 
                 return builder.ToString();
+            }
+        }
+
+        /// <summary>
+        /// Get SHA 256 checksum for file.
+        /// </summary>
+        /// <param name="filePath">File path.</param>
+        /// <returns>Checksum string.</returns>
+        public static string Checksum(string filePath)
+        {
+            using (var sha256 = SHA256Managed.Create())
+            {
+                using (FileStream fileStream = File.OpenRead(filePath))
+                {
+                    return BitConverter.ToString(sha256.ComputeHash(fileStream)).Replace("-", string.Empty);
+                }
             }
         }
     }
