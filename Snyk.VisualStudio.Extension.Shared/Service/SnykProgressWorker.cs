@@ -52,17 +52,7 @@
         /// <summary>
         /// Notify download started.
         /// </summary>
-        public void DownloadStarted()
-        {
-            if (this.IsUpdateDownload)
-            {
-                this.TasksService.OnUpdateDownloadStarted();
-            }
-            else
-            {
-                this.TasksService.OnDownloadStarted();
-            }
-        }
+        public void DownloadStarted() => this.TasksService.OnDownloadStarted();
 
         /// <summary>
         /// Notify donwload cancelled.

@@ -10,7 +10,7 @@
     using Snyk.VisualStudio.Extension.Shared.Service;
     using Snyk.VisualStudio.Extension.Shared.UI;
     using Snyk.VisualStudio.Extension.Shared.UI.Notifications;
-    using static Snyk.VisualStudio.Extension.Shared.CLI.SnykCliDownloader;
+    using static Snyk.VisualStudio.Extension.Shared.CLI.Download.SnykCliDownloader;
 
     /// <summary>
     /// Control for Snyk General Settings.

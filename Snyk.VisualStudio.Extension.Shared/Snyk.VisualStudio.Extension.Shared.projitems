@@ -9,6 +9,7 @@
     <Import_RootNamespace>Snyk.VisualStudio.Extension.Shared</Import_RootNamespace>
   </PropertyGroup>
   <ItemGroup>
+    <Compile Include="$(MSBuildThisFileDirectory)CLI\Download\ChecksumVerificationException.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Cache\AbstractCacheHierarchyEvents.cs">
       <CopyToOutputDirectory>Never</CopyToOutputDirectory>
     </Compile>
