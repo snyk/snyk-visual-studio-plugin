@@ -89,7 +89,7 @@
             tasksService.ScanningCancelled += this.OnScanningCancelled;
             tasksService.CliScanningStarted += this.OnCliScanningStarted;
             tasksService.SnykCodeScanningStarted += this.OnSnykCodeScanningStarted;
-            tasksService.CliScanningUpdate += this.OnCliScanningUpdate;
+            tasksService.OssScanningUpdate += this.OnCliScanningUpdate;
             tasksService.SnykCodeScanningUpdate += this.OnSnykCodeScanningUpdate;
             tasksService.SnykCodeScanningFinished += this.OnSnykCodeScanningFinished;
             tasksService.OssScanningFinished += this.OnOssScanningFinished;

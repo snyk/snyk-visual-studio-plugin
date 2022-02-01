@@ -1,4 +1,4 @@
-﻿namespace Snyk.VisualStudio.Extension.Shared.SnykCode
+﻿namespace Snyk.VisualStudio.Extension.Shared.Cache
 {
     using System;
     using EnvDTE;
@@ -9,23 +9,33 @@
     /// <summary>
     /// Impleemnts <see cref="IVsHierarchyEvents"/> for SnykCode cache.
     /// </summary>
-    public class CodeCacheHierarchyEvents : IVsHierarchyEvents
+    public abstract class AbstractCacheHierarchyEvents : IVsHierarchyEvents
     {
-        private IVsHierarchy vsHierarchy;
-
-        private IFileProvider fileProvider;
+        protected IVsHierarchy vsHierarchy;
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="CodeCacheHierarchyEvents"/> class.
+        /// Initializes a new instance of the <see cref="AbstractCacheHierarchyEvents"/> class.
         /// </summary>
-        /// <param name="pHierarchy">VS Hierarchy instance.</param>
-        /// <param name="fileProvider">File provider instance.</param>
-        public CodeCacheHierarchyEvents(IVsHierarchy pHierarchy, IFileProvider fileProvider)
-        {
-            this.vsHierarchy = pHierarchy;
+        /// <param name="vsHierarchy"><see cref="IVsHierarchy"/> instance.</param>
+        public AbstractCacheHierarchyEvents(IVsHierarchy vsHierarchy) => this.vsHierarchy = vsHierarchy;
 
-            this.fileProvider = fileProvider;
-        }
+        /// <summary>
+        /// Handle file add event.
+        /// </summary>
+        /// <param name="filePath">Full paht to file.</param>
+        public abstract void OnFileAdded(string filePath);
+
+        /// <summary>
+        /// Handle file deleted event.
+        /// </summary>
+        /// <param name="filePath">Full paht to file.</param>
+        public abstract void OnFileDeleted(string filePath);
+
+        /// <summary>
+        /// Handle file changed event.
+        /// </summary>
+        /// <param name="filePath">Full paht to file.</param>
+        public abstract void OnFileChanged(string filePath);
 
         /// <summary>
         /// Add file to <see cref="IFileProvider"/> as new file.
@@ -36,7 +46,7 @@
         /// <returns><see cref="VSConstants"/> S_OK.</returns>
         public int OnItemAdded(uint itemidParent, uint itemidSiblingPrev, uint itemidAdded)
         {
-            this.fileProvider.AddChangedFile(this.GetFilePath(itemidParent));
+            this.OnFileAdded(this.GetFilePath(itemidAdded));
 
             return VSConstants.S_OK;
         }
@@ -55,7 +65,7 @@
         /// <returns><see cref="VSConstants"/> S_OK.</returns>
         public int OnItemDeleted(uint itemid)
         {
-            this.fileProvider.RemoveFile(this.GetFilePath(itemid));
+            this.OnFileDeleted(this.GetFilePath(itemid));
 
             return VSConstants.S_OK;
         }
@@ -69,7 +79,7 @@
         /// <returns><see cref="VSConstants"/> S_OK.</returns>
         public int OnPropertyChanged(uint itemid, int propid, uint flags)
         {
-            this.fileProvider.AddChangedFile(this.GetFilePath(itemid));
+            this.OnFileChanged(this.GetFilePath(itemid));
 
             return VSConstants.S_OK;
         }
@@ -88,11 +98,16 @@
         /// <returns><see cref="VSConstants"/> S_OK.</returns>
         public int OnInvalidateIcon(IntPtr hicon) => VSConstants.S_OK;
 
-        private string GetFilePath(uint itemidAdded)
+        /// <summary>
+        /// Get file paht by item id.
+        /// </summary>
+        /// <param name="itemid">Item id.</param>
+        /// <returns>Full path to solution file.</returns>
+        protected string GetFilePath(uint itemid)
         {
             object itemAddedExtObject;
 
-            if (vsHierarchy.GetProperty(itemidAdded, (int)__VSHPROPID.VSHPROPID_ExtObject, out itemAddedExtObject) == VSConstants.S_OK)
+            if (this.vsHierarchy.GetProperty(itemid, (int)__VSHPROPID.VSHPROPID_ExtObject, out itemAddedExtObject) == VSConstants.S_OK)
             {
                 var projectItem = itemAddedExtObject as ProjectItem;
                 if (projectItem != null)

@@ -57,9 +57,14 @@
         SnykVsThemeService VsThemeService { get; }
 
         /// <summary>
-        /// Gets Theme service instance.
+        /// Gets SnykCodeService service instance.
         /// </summary>
         ISnykCodeService SnykCodeService { get; }
+
+        /// <summary>
+        /// Gets OssService service instance.
+        /// </summary>
+        IOssService OssService { get; }
 
         /// <summary>
         /// Gets Analytics service instance.
@@ -86,7 +91,7 @@
         /// Create new instance of <see cref="SnykCli"/>.
         /// </summary>
         /// <returns>SnykCli.</returns>
-        SnykCli NewCli();
+        ICli NewCli();
 
         /// <summary>
         /// Show Snyk tool window panel.
