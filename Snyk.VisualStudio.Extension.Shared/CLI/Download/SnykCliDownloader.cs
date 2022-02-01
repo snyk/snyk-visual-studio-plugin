@@ -340,9 +340,14 @@
 
                 this.VerifyCliFile(tempCliFile);
 
-                File.Copy(tempCliFile, cliFileDestinationPath);
-
-                File.Delete(tempCliFile);
+                try
+                {
+                    File.Copy(tempCliFile, cliFileDestinationPath);
+                }
+                finally
+                {
+                    File.Delete(tempCliFile);
+                }
             }
         }
 
