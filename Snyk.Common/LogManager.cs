@@ -2,6 +2,7 @@
 {
     using System;
     using System.IO;
+    using Sentry;
     using Sentry.Serilog;
     using Serilog;
     using Serilog.Core;
@@ -54,6 +55,9 @@
                     config.Dsn = appSettings.SentryDsn;
 
                     config.AttachStacktrace = true;
+
+                    config.DisableTaskUnobservedTaskExceptionCapture();
+                    config.DisableAppDomainUnhandledExceptionCapture();
 
                     SentryConfiguration = config;
                 })

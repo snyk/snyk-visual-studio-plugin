@@ -3,7 +3,6 @@
     using Microsoft.VisualStudio.Shell;
     using Microsoft.VisualStudio.Shell.Interop;
     using Microsoft.VisualStudio.Threading;
-    using Sentry;
     using Snyk.Common;
     using Task = System.Threading.Tasks.Task;
 
@@ -44,28 +43,10 @@
         {
             LogManager.SentryConfiguration.BeforeSend = sentryEvent =>
             {
-                // Filter error's not related to Snyk Extension.
-                if (this.CheckEventNotRelatedToExtension(sentryEvent))
-                {
-                    return null;
-                }
-
                 sentryEvent.SetTag("vs.project.type", solutionType.ToString());
 
                 return sentryEvent;
             };
-        }
-
-        private bool CheckEventNotRelatedToExtension(SentryEvent sentryEvent)
-        {
-            if (sentryEvent.Logger == null)
-            {
-                return true;
-            }
-
-            return sentryEvent.Exception != null
-                && sentryEvent.Exception.StackTrace != null
-                && !sentryEvent.Exception.StackTrace.Contains(SnykKeyword);
         }
     }
 }
