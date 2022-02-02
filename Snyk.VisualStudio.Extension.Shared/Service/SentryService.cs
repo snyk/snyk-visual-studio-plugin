@@ -12,8 +12,6 @@
     /// </summary>
     public class SentryService : ISentryService
     {
-        private const string SnykKeyword = "Snyk";
-
         private ISnykServiceProvider serviceProvider;
 
         /// <summary>
