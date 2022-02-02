@@ -3,6 +3,7 @@
     using Microsoft.VisualStudio.Shell;
     using Microsoft.VisualStudio.Shell.Interop;
     using Microsoft.VisualStudio.Threading;
+    using Sentry;
     using Snyk.Common;
     using Task = System.Threading.Tasks.Task;
 
