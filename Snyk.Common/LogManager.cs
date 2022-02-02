@@ -2,12 +2,13 @@
 {
     using System;
     using System.IO;
-    using Sentry;
-    using Sentry.Serilog;
+    using global::Sentry;
+    using global::Sentry.Serilog;
     using Serilog;
     using Serilog.Core;
     using Serilog.Events;
     using Serilog.Exceptions;
+    using Snyk.Common.Sentry;
 
     /// <summary>
     /// Logger manager for create logger per class.
@@ -56,8 +57,13 @@
 
                     config.AttachStacktrace = true;
 
+                    // Disable default Sentry integrations for capture TaskUnobservedTaskException and AppDomainUnhandledException exceptions.
                     config.DisableTaskUnobservedTaskExceptionCapture();
                     config.DisableAppDomainUnhandledExceptionCapture();
+
+                    // Register Snyk integrations for capture only Snyk related TaskUnobservedTaskException and AppDomainUnhandledException exceptions.
+                    config.AddIntegration(new TaskUnobservedTaskExceptionIntegration());
+                    config.AddIntegration(new AppDomainUnhandledExceptionIntegration());
 
                     SentryConfiguration = config;
                 })
