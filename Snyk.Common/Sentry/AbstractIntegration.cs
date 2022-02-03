@@ -41,6 +41,6 @@
         /// <param name="e">Source exception.</param>
         /// <returns>True if contains mentions about Snyk extension.</returns>
         protected static bool IsNeedToHandleException(Exception e)
-            => e != null && e.StackTrace != null && e.StackTrace.Contains(SnykKey);
+            => e != null && e.StackTrace != null && e.StackTrace.IndexOf(SnykKey, StringComparison.OrdinalIgnoreCase) >= 0;
     }
 }
