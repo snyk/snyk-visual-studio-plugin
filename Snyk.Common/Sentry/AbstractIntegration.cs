@@ -41,6 +41,29 @@
         /// <param name="e">Source exception.</param>
         /// <returns>True if contains mentions about Snyk extension.</returns>
         protected static bool IsNeedToHandleException(Exception e)
+        {
+            if (IsExceptionRelatedToExtension(e))
+            {
+                return true;
+            }
+
+            if (e is AggregateException)
+            {
+                var aggregateException = e as AggregateException;
+
+                foreach (var exception in aggregateException.Flatten().InnerExceptions)
+                {
+                    if (IsExceptionRelatedToExtension(exception))
+                    {
+                        return true;
+                    }
+                }
+            }
+
+            return false;
+        }
+
+        private static bool IsExceptionRelatedToExtension(Exception e)
             => e != null && e.StackTrace != null && e.StackTrace.IndexOf(SnykKey, StringComparison.OrdinalIgnoreCase) >= 0;
     }
 }
