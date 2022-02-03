@@ -138,6 +138,11 @@
     <Compile Include="Json.cs" />
     <Compile Include="LogManager.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="Sentry\AbstractIntegration.cs" />
+    <Compile Include="Sentry\AppDomainAdapter.cs" />
+    <Compile Include="Sentry\AppDomainUnhandledExceptionIntegration.cs" />
+    <Compile Include="Sentry\IAppDomain.cs" />
+    <Compile Include="Sentry\TaskUnobservedTaskExceptionIntegration.cs" />
     <Compile Include="Sha256.cs" />
     <Compile Include="SnykAppSettings.cs" />
     <Compile Include="SnykDirectory.cs" />
@@ -166,6 +171,7 @@
     <Analyzer Include="..\packages\StyleCop.Analyzers.1.1.118\analyzers\dotnet\cs\StyleCop.Analyzers.CodeFixes.dll" />
     <Analyzer Include="..\packages\StyleCop.Analyzers.1.1.118\analyzers\dotnet\cs\StyleCop.Analyzers.dll" />
   </ItemGroup>
+  <ItemGroup />
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <Import Project="..\packages\Microsoft.VisualStudio.Threading.Analyzers.16.10.56\build\Microsoft.VisualStudio.Threading.Analyzers.targets" Condition="Exists('..\packages\Microsoft.VisualStudio.Threading.Analyzers.16.10.56\build\Microsoft.VisualStudio.Threading.Analyzers.targets')" />
   <Target Name="WriteAppSettingsFile" BeforeTargets="PreBuildEvent">
