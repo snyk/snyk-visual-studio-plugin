@@ -1,6 +1,7 @@
 ﻿namespace Snyk.Common.Sentry
 {
     using System;
+    using System.Linq;
     using global::Sentry;
     using global::Sentry.Integrations;
 
@@ -47,17 +48,10 @@
                 return true;
             }
 
-            if (e is AggregateException)
+            if (e is AggregateException aggregateEx
+                && !aggregateEx.Flatten().InnerExceptions.Where(ex => IsExceptionRelatedToExtension(ex)).Any())
             {
-                var aggregateException = e as AggregateException;
-
-                foreach (var exception in aggregateException.Flatten().InnerExceptions)
-                {
-                    if (IsExceptionRelatedToExtension(exception))
-                    {
-                        return true;
-                    }
-                }
+                return true;
             }
 
             return false;
