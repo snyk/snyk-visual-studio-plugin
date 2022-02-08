@@ -5,6 +5,7 @@
     using System.Runtime.InteropServices;
     using System.Threading;
     using System.Threading.Tasks;
+    using System.Windows;
     using Microsoft.VisualStudio.Shell;
     using Serilog;
     using Snyk.Common;
@@ -113,8 +114,6 @@
         /// <returns>Task.</returns>
         public async Task InitializeToolWindowAsync()
         {
-            Logger.Information("Enter InitializeToolWindowAsync() method");
-
             if (this.toolWindow == null)
             {
                 Logger.Information("ToolWindow is not initialized. Call await JoinableTaskFactory.SwitchToMainThreadAsync().");
@@ -144,8 +143,6 @@
 
                 Logger.Information("Leave InitializeToolWindowControlAsync() method");
             }
-
-            Logger.Information("Leave InitializeToolWindowAsync() method");
         }
 
         /// <summary>
@@ -161,47 +158,52 @@
         /// <returns>Task.</returns>
         protected override async Task InitializeAsync(CancellationToken cancellationToken, IProgress<ServiceProgressData> progress)
         {
-            await base.InitializeAsync(cancellationToken, progress);
-
-            this.AddService(typeof(SnykService), this.CreateSnykServiceAsync, true);
-
-            this.serviceProvider = await this.GetServiceAsync(typeof(SnykService)) as SnykService;
-
-            Logger.Information("Get SnykService as ServiceProvider.");
-            Logger.Information("Start InitializeGeneralOptionsAsync.");
-
-            await this.InitializeGeneralOptionsAsync();
-
-            this.serviceProvider.AnalyticsService
-                .ObtainUser(this.serviceProvider, () => this.serviceProvider.SentryService.SetupAsync());
-
-            Logger.Information("Initialize Commands()");
-
-            await SnykScanCommand.InitializeAsync(this);
-            await SnykStopCurrentTaskCommand.InitializeAsync(this);
-            await SnykCleanPanelCommand.InitializeAsync(this);
-            await SnykOpenSettingsCommand.InitializeAsync(this);
-
-            Logger.Information("Start Initialize tool window. Before call GetToolWindowControl() method.");
-
-            await this.InitializeToolWindowAsync();
-
-            VsStatusBarNotificationService.Instance.InitializeEventListeners(this.serviceProvider);
-
-            Logger.Information("Before call toolWindowControl.InitializeEventListeners() method.");
-
-            new Task(() =>
+            try
             {
+                await base.InitializeAsync(cancellationToken, progress);
+
+                this.AddService(typeof(SnykService), this.CreateSnykServiceAsync, true);
+
+                this.serviceProvider = await this.GetServiceAsync(typeof(SnykService)) as SnykService;
+
+                Logger.Information("Get SnykService as ServiceProvider.");
+                Logger.Information("Start InitializeGeneralOptionsAsync.");
+
+                await this.InitializeGeneralOptionsAsync();
+
+                this.serviceProvider.AnalyticsService
+                    .ObtainUser(this.serviceProvider, () => this.serviceProvider.SentryService.SetupAsync());
+
+                Logger.Information("Initialize Commands()");
+
+                await SnykScanCommand.InitializeAsync(this);
+                await SnykStopCurrentTaskCommand.InitializeAsync(this);
+                await SnykCleanPanelCommand.InitializeAsync(this);
+                await SnykOpenSettingsCommand.InitializeAsync(this);
+
+                Logger.Information("Start Initialize tool window. Before call GetToolWindowControl() method.");
+
+                await this.InitializeToolWindowAsync();
+
                 VsStatusBarNotificationService.Instance.InitializeEventListeners(this.serviceProvider);
 
-                this.toolWindowControl.InitializeEventListeners(this.serviceProvider);
-            }).Start();
+                Logger.Information("Before call toolWindowControl.InitializeEventListeners() method.");
 
-            Logger.Information("Initialize Commands()");
+                new Task(() =>
+                {
+                    VsStatusBarNotificationService.Instance.InitializeEventListeners(this.serviceProvider);
 
-            new Task(() => this.toolWindowControl.Initialize(this.serviceProvider)).Start();
+                    this.toolWindowControl.InitializeEventListeners(this.serviceProvider);
+                }).Start();
 
-            Logger.Information("Leave SnykVSPackage.InitializeAsync()");
+                Logger.Information("Initialize Commands()");
+
+                new Task(() => this.toolWindowControl.Initialize(this.serviceProvider)).Start();
+            }
+            catch (Exception ex)
+            {
+                Logger.Error(ex, "Error on intialize Snyk VS package");
+            }
         }
 
         /// <summary>
@@ -217,8 +219,6 @@
 
         private async Task InitializeGeneralOptionsAsync()
         {
-            Logger.Information("Enter InitializeGeneralOptionsAsync() method.");
-
             if (this.generalOptionsDialogPage == null)
             {
                 Logger.Information("Call GetDialogPage to create. await JoinableTaskFactory.SwitchToMainThreadAsync().");
@@ -235,8 +235,6 @@
 
                 this.generalOptionsDialogPage.Initialize(serviceProvider);
             }
-
-            Logger.Information("Leave InitializeGeneralOptionsAsync() method.");
         }
 
         #region Package Members

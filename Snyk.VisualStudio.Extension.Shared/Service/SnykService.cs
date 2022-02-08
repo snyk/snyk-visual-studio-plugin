@@ -227,33 +227,40 @@
         /// <returns>Task.</returns>
         public async Task InitializeAsync(CancellationToken cancellationToken)
         {
-            Logger.Information("Initialize Snyk services");
+            try
+            {
+                Logger.Information("Initialize Snyk services");
 
-            await this.Package.JoinableTaskFactory.SwitchToMainThreadAsync(cancellationToken);
+                await this.Package.JoinableTaskFactory.SwitchToMainThreadAsync(cancellationToken);
 
-            this.settingsManager = new ShellSettingsManager(this.Package);
+                this.settingsManager = new ShellSettingsManager(this.Package);
 
-            this.vsThemeService = new SnykVsThemeService(this);
-            await this.vsThemeService.InitializeAsync();
+                this.vsThemeService = new SnykVsThemeService(this);
+                await this.vsThemeService.InitializeAsync();
 
-            await SnykToolWindowCommand.InitializeAsync(this);
+                await SnykToolWindowCommand.InitializeAsync(this);
 
-            await SnykTasksService.InitializeAsync(this);
+                await SnykTasksService.InitializeAsync(this);
 
-            this.dte = await this.serviceProvider.GetServiceAsync(typeof(DTE)) as DTE2;
+                this.dte = await this.serviceProvider.GetServiceAsync(typeof(DTE)) as DTE2;
 
-            await SnykSolutionService.InitializeAsync(this);
+                await SnykSolutionService.InitializeAsync(this);
 
-            this.tasksService = SnykTasksService.Instance;
-            this.solutionService = SnykSolutionService.Instance;
+                this.tasksService = SnykTasksService.Instance;
+                this.solutionService = SnykSolutionService.Instance;
 
-            NotificationService.Initialize(this);
+                NotificationService.Initialize(this);
 
-            VsStatusBar.Initialize(this);
+                VsStatusBar.Initialize(this);
 
-            VsCodeService.Initialize();
+                VsCodeService.Initialize();
 
-            Logger.Information("Leave SnykService.InitializeAsync");
+                Logger.Information("Leave SnykService.InitializeAsync");
+            }
+            catch (Exception ex)
+            {
+                Logger.Error(ex, "Error on initialize Snyk service");
+            }
         }
 
         /// <summary>
