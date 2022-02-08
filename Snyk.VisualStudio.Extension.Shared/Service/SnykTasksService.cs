@@ -159,15 +159,22 @@
         /// </summary>
         public void CancelTasks()
         {
-            this.isOssScanning = false;
-            this.isSnykCodeScanning = false;
-            this.isCliDownloading = false;
+            try
+            {
+                this.isOssScanning = false;
+                this.isSnykCodeScanning = false;
+                this.isCliDownloading = false;
 
-            this.CancelTask(this.ossScanTokenSource);
-            this.CancelTask(this.snykCodeScanTokenSource);
-            this.CancelTask(this.downloadCliTokenSource);
+                this.CancelTask(this.ossScanTokenSource);
+                this.CancelTask(this.snykCodeScanTokenSource);
+                this.CancelTask(this.downloadCliTokenSource);
 
-            this.serviceProvider.OssService.StopScan();
+                this.serviceProvider.OssService.StopScan();
+            }
+            catch (Exception ex)
+            {
+                Logger.Error(ex, "Error on cancel tasks");
+            }
         }
 
         /// <summary>
@@ -185,22 +192,28 @@
         {
             Logger.Information("Enter Scan method");
 
-            if (!this.serviceProvider.SolutionService.IsSolutionOpen)
+            try
             {
-                this.FireOssError("No open solution");
+                if (!this.serviceProvider.SolutionService.IsSolutionOpen)
+                {
+                    this.FireOssError("No open solution");
 
-                Logger.Information("Solution not opened");
+                    Logger.Information("Solution not opened");
 
-                return;
+                    return;
+                }
+
+                var selectedFeatures = await this.GetFeaturesSettingsAsync();
+
+                this.serviceProvider.AnalyticsService.LogAnalysisIsTriggeredEvent(this.GetSelectedFeatures(selectedFeatures));
+
+                this.ScanOss(selectedFeatures);
+
+                this.ScanSnykCode(selectedFeatures);
+            } catch (Exception ex)
+            {
+                Logger.Error(ex, "Error on scan");
             }
-
-            var selectedFeatures = await this.GetFeaturesSettingsAsync();
-
-            this.serviceProvider.AnalyticsService.LogAnalysisIsTriggeredEvent(this.GetSelectedFeatures(selectedFeatures));
-
-            this.ScanOss(selectedFeatures);
-
-            this.ScanSnykCode(selectedFeatures);
         }
 
         /// <summary>
@@ -211,52 +224,59 @@
         {
             Logger.Information("Enter Download method");
 
-            if (this.IsTaskRunning())
+            try
             {
-                Logger.Information("There is already a task in progress");
-
-                return;
-            }
-
-            this.downloadCliTokenSource = new CancellationTokenSource();
-
-            var progressWorker = new SnykProgressWorker
-            {
-                TasksService = this,
-                TokenSource = this.downloadCliTokenSource,
-            };
-
-            Logger.Information("Start run task");
-
-            _ = Task.Run(
-                async () =>
+                if (this.IsTaskRunning())
                 {
-                    try
-                    {
-                        await this.DownloadAsync(downloadFinishedCallback, progressWorker);
-                    }
-                    catch (ChecksumVerificationException e)
-                    {
-                        Logger.Error(e, "Cli download failed. Checksum don't match. Try to download again...");
+                    Logger.Information("There is already a task in progress");
 
-                        await this.RetryDownloadAsync(downloadFinishedCallback, progressWorker);
-                    }
-                    catch (Exception e)
-                    {
-                        Logger.Error(e, "Error on cli download");
+                    return;
+                }
 
-                        this.OnDownloadCancelled(e.Message);
-                    }
-                    finally
+                this.downloadCliTokenSource = new CancellationTokenSource();
+
+                var progressWorker = new SnykProgressWorker
+                {
+                    TasksService = this,
+                    TokenSource = this.downloadCliTokenSource,
+                };
+
+                Logger.Information("Start run task");
+
+                _ = Task.Run(
+                    async () =>
                     {
-                        if (progressWorker.IsWorkFinished)
+                        try
                         {
-                            this.isCliDownloading = false;
-
-                            this.DisposeCancellationTokenSource(this.downloadCliTokenSource);
+                            await this.DownloadAsync(downloadFinishedCallback, progressWorker);
                         }
-                    }
-                }, progressWorker.TokenSource.Token);
+                        catch (ChecksumVerificationException e)
+                        {
+                            Logger.Error(e, "Cli download failed. Checksum don't match. Try to download again...");
+
+                            await this.RetryDownloadAsync(downloadFinishedCallback, progressWorker);
+                        }
+                        catch (Exception e)
+                        {
+                            Logger.Error(e, "Error on cli download");
+
+                            this.OnDownloadCancelled(e.Message);
+                        }
+                        finally
+                        {
+                            if (progressWorker.IsWorkFinished)
+                            {
+                                this.isCliDownloading = false;
+
+                                this.DisposeCancellationTokenSource(this.downloadCliTokenSource);
+                            }
+                        }
+                    }, progressWorker.TokenSource.Token);
+            }
+            catch (Exception ex)
+            {
+                Logger.Error(ex, "Error on CLI download");
+            }
         }
 
         /// <summary>
@@ -313,155 +333,169 @@
 
         private void ScanOss(FeaturesSettings featuresSettings)
         {
-            if (!featuresSettings.OssEnabled)
+            try
             {
-                return;
-            }
-
-            if (this.isOssScanning)
-            {
-                Logger.Information("There is already a task in progress");
-
-                return;
-            }
-
-            this.ossScanTokenSource = new CancellationTokenSource();
-            var token = this.ossScanTokenSource.Token;
-
-            Logger.Information("Start scan task");
-
-            _ = Task.Run(
-                () =>
+                if (!featuresSettings.OssEnabled)
                 {
-                    this.isOssScanning = true;
+                    return;
+                }
 
-                    this.FireOssScanningStartedEvent();
+                if (this.isOssScanning)
+                {
+                    Logger.Information("There is already a task in progress");
 
-                    var ossService = this.serviceProvider.OssService;
+                    return;
+                }
 
-                    try
+                this.ossScanTokenSource = new CancellationTokenSource();
+                var token = this.ossScanTokenSource.Token;
+
+                Logger.Information("Start scan task");
+
+                _ = Task.Run(
+                    () =>
                     {
-                        token.ThrowIfCancellationRequested();
+                        this.isOssScanning = true;
+
+                        this.FireOssScanningStartedEvent();
+
+                        var ossService = this.serviceProvider.OssService;
 
                         try
                         {
-                            var cliResult = ossService.Scan(this.serviceProvider.SolutionService.GetPath(), token);
+                            token.ThrowIfCancellationRequested();
 
-                            this.FireOssScanningUpdateEvent(cliResult);
+                            try
+                            {
+                                var cliResult = ossService.Scan(this.serviceProvider.SolutionService.GetPath(), token);
 
-                            this.FireOssScanningFinishedEvent();
+                                this.FireOssScanningUpdateEvent(cliResult);
 
-                            Logger.Information("Scan finished");
-                        }
-                        catch (OssScanException e)
-                        {
-                            Logger.Error(e, "Oss scan exception");
+                                this.FireOssScanningFinishedEvent();
 
-                            this.FireOssError(e.Error);
+                                Logger.Information("Scan finished");
+                            }
+                            catch (OssScanException e)
+                            {
+                                Logger.Error(e, "Oss scan exception");
+
+                                this.FireOssError(e.Error);
+                            }
+                            catch (Exception e)
+                            {
+                                if (ossService.IsCurrentScanProcessCanceled() || this.IsTaskCancelled(e))
+                                {
+                                    this.FireScanningCancelledEvent();
+
+                                    return;
+                                }
+
+                                this.FireOssError(e.Message);
+                            }
                         }
                         catch (Exception e)
                         {
-                            if (ossService.IsCurrentScanProcessCanceled() || this.IsTaskCancelled(e))
+                            Logger.Error(e, "Error on oss scan");
+
+                            this.FireScanningCancelledEvent();
+                        }
+                        finally
+                        {
+                            this.DisposeCancellationTokenSource(this.ossScanTokenSource);
+
+                            this.isOssScanning = false;
+                        }
+                    }, token);
+            }
+            catch (Exception ex)
+            {
+                Logger.Error(ex, "Error on oss scan");
+            }
+        }
+
+        private void ScanSnykCode(FeaturesSettings featuresSettings)
+        {
+            try
+            {
+                if (!featuresSettings.SastOnServerEnabled)
+                {
+                    this.FireSnykCodeDisabledError();
+
+                    return;
+                }
+
+                if (!featuresSettings.CodeQualityEnabled && !featuresSettings.CodeSecurityEnabled)
+                {
+                    return;
+                }
+
+                if (this.isSnykCodeScanning)
+                {
+                    Logger.Information("There is already a task in progress for SnykCode scan.");
+
+                    return;
+                }
+
+                this.snykCodeScanTokenSource = new CancellationTokenSource();
+
+                var progressWorker = new SnykProgressWorker
+                {
+                    TasksService = this,
+                    TokenSource = this.snykCodeScanTokenSource,
+                };
+
+                Logger.Information("Start scan task");
+
+                _ = Task.Run(async () =>
+                {
+                    try
+                    {
+                        try
+                        {
+                            this.isSnykCodeScanning = true;
+
+                            this.FireSnykCodeScanningStartedEvent();
+
+                            var fileProvider = this.serviceProvider.SolutionService.FileProvider;
+
+                            var analysisResult = await this.serviceProvider.SnykCodeService.ScanAsync(fileProvider, progressWorker.TokenSource.Token);
+
+                            this.FireScanningUpdateEvent(analysisResult);
+
+                            this.FireSnykCodeScanningFinishedEvent();
+                        }
+                        catch (Exception e)
+                        {
+                            if (this.IsTaskCancelled(e))
                             {
                                 this.FireScanningCancelledEvent();
 
                                 return;
                             }
 
-                            this.FireOssError(e.Message);
+                            string errorMessage = this.serviceProvider.SnykCodeService.GetSnykCodeErrorMessage(e);
+
+                            this.OnSnykCodeError(errorMessage);
                         }
                     }
-                    catch (Exception e)
+                    catch (Exception exception)
                     {
-                        Logger.Error(e, "Error on oss scan");
+                        Logger.Error(exception, string.Empty);
 
                         this.FireScanningCancelledEvent();
                     }
                     finally
                     {
-                        this.DisposeCancellationTokenSource(this.ossScanTokenSource);
+                        this.DisposeCancellationTokenSource(this.snykCodeScanTokenSource);
 
-                        this.isOssScanning = false;
+                        this.isSnykCodeScanning = false;
                     }
-                }, token);
-        }
-
-        private void ScanSnykCode(FeaturesSettings featuresSettings)
-        {
-            if (!featuresSettings.SastOnServerEnabled)
-            {
-                this.FireSnykCodeDisabledError();
-
-                return;
+                });
             }
-
-            if (!featuresSettings.CodeQualityEnabled && !featuresSettings.CodeSecurityEnabled)
+            catch (Exception ex)
             {
-                return;
+                Logger.Error(ex, "Error on SnykCode scan");
             }
-
-            if (this.isSnykCodeScanning)
-            {
-                Logger.Information("There is already a task in progress for SnykCode scan.");
-
-                return;
-            }
-
-            this.snykCodeScanTokenSource = new CancellationTokenSource();
-
-            var progressWorker = new SnykProgressWorker
-            {
-                TasksService = this,
-                TokenSource = this.snykCodeScanTokenSource,
-            };
-
-            Logger.Information("Start scan task");
-
-            _ = Task.Run(async () =>
-            {
-                try
-                {
-                    try
-                    {
-                        this.isSnykCodeScanning = true;
-
-                        this.FireSnykCodeScanningStartedEvent();
-
-                        var fileProvider = this.serviceProvider.SolutionService.FileProvider;
-
-                        var analysisResult = await this.serviceProvider.SnykCodeService.ScanAsync(fileProvider, progressWorker.TokenSource.Token);
-
-                        this.FireScanningUpdateEvent(analysisResult);
-
-                        this.FireSnykCodeScanningFinishedEvent();
-                    }
-                    catch (Exception e)
-                    {
-                        if (this.IsTaskCancelled(e))
-                        {
-                            this.FireScanningCancelledEvent();
-
-                            return;
-                        }
-
-                        string errorMessage = this.serviceProvider.SnykCodeService.GetSnykCodeErrorMessage(e);
-
-                        this.OnSnykCodeError(errorMessage);
-                    }
-                }
-                catch (Exception exception)
-                {
-                    Logger.Error(exception, string.Empty);
-
-                    this.FireScanningCancelledEvent();
-                }
-                finally
-                {
-                    this.DisposeCancellationTokenSource(this.snykCodeScanTokenSource);
-
-                    this.isSnykCodeScanning = false;
-                }
-            });
         }
 
         private bool IsTaskCancelled(Exception sourceException)
