@@ -50,7 +50,7 @@ jobs:
         vsix-token-source-file: ${{ env.VsixManifestSourcePath }}
 
     - name: Increment VSIX version for 2022
-      id: vsix_version
+      id: vsix_2022_version
       uses: timheuer/vsix-version-stamp@v1
       with:
         manifest-file: ${{ env.Vsix2022ManifestPath }}
