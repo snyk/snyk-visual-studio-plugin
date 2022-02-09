@@ -1,0 +1,12 @@
+﻿{
+  "$schema": "http://json.schemastore.org/vsix-publish",
+  "categories": [ "Tools", "Coding" ],
+  "identity": {
+    "internalName": "SnykVulnerabilityScanner"
+  },
+  "assetFiles": [
+  ],
+  "overview": "README.md",
+  "publisher": "Snyk",
+  "repo": "http://github.com/snyk/snyk-visual-studio-plugin/"
+}

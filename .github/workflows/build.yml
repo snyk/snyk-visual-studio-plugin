@@ -17,6 +17,14 @@ jobs:
 
     steps:
     - uses: actions/checkout@v2
+    - uses: microsoft/variable-substitution@v1 
+      with:
+        files: '.\Snyk.Common\appsettings.json'
+      env:
+        SegmentAnalyticsWriteKey: ${{ secrets.SEGMENT_ANALYTICS_WRITE_KEY }}
+        SnykCodeApiEndpointUrl: ${{ secrets.SNYK_CODE_API_ENDPOINT_URL }}
+        SentryDsn: ${{ secrets.SENTRY_DSN }}
+        Environment: ${{ secrets.SENTRY_ENVIRONMENT }}
 
     - name: Add MSBuild to PATH
       uses: microsoft/setup-msbuild@v1
@@ -34,11 +42,7 @@ jobs:
       working-directory: ${{env.GITHUB_WORKSPACE}}
       run: |
         (new-object Net.WebClient).DownloadString("https://raw.github.com/madskristensen/ExtensionScripts/master/AppVeyor/vsix.ps1") | iex
-        #Vsix-IncrementVsixVersion | Vsix-UpdateBuildVersion
-        #echo {version}
-        #Vsix-TokenReplacement Snyk.VisualStudio.Extension\source.extension.vsixmanifest 'Version="([0-9\\.]+)"' 'Version="{version}"'
         msbuild ${{env.SOLUTION_FILE_PATH}} /p:configuration=Release /p:DeployExtension=false /p:ZipPackageCompressionLevel=normal /v:m
-        #Vsix-PushArtifacts | Vsix-PublishToGallery
       shell: powershell
 
     - name: Tests
