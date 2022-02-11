@@ -399,19 +399,30 @@
 
             var options = this.serviceProvider.Options;
 
-            this.resultsTree.CliRootNode.State = options.OssEnabled ? RootTreeNodeState.Enabled : RootTreeNodeState.Disabled;
+            this.resultsTree.CliRootNode.State = this.CalculateOssNodeState(options);
 
-            if (!await this.serviceProvider.ApiService.IsSnykCodeEnabledAsync())
-            {
-                this.resultsTree.CodeQualityRootNode.State = RootTreeNodeState.DisabledForOrganization;
-                this.resultsTree.CodeSequrityRootNode.State = RootTreeNodeState.DisabledForOrganization;
-            }
-            else
-            {
-                this.resultsTree.CodeQualityRootNode.State = options.SnykCodeQualityEnabled ? RootTreeNodeState.Enabled : RootTreeNodeState.Disabled;
-                this.resultsTree.CodeSequrityRootNode.State = options.SnykCodeSecurityEnabled ? RootTreeNodeState.Enabled : RootTreeNodeState.Disabled;
-            }
+            var sastSettings = await this.serviceProvider.ApiService.GetSastSettingsAsync();
+
+            this.resultsTree.CodeQualityRootNode.State = this.CalculateSnykCodeNodeState(sastSettings, options.SnykCodeQualityEnabled);
+            this.resultsTree.CodeSequrityRootNode.State = this.CalculateSnykCodeNodeState(sastSettings, options.SnykCodeSecurityEnabled);
         });
+
+        private RootTreeNodeState CalculateOssNodeState(ISnykOptions options) => options.OssEnabled ? RootTreeNodeState.Enabled : RootTreeNodeState.Disabled;
+
+        private RootTreeNodeState CalculateSnykCodeNodeState(SastSettings sastSettings, bool enabledInOptions)
+        {
+            if (!sastSettings.SastEnabled)
+            {
+                return RootTreeNodeState.DisabledForOrganization;
+            }
+
+            if (sastSettings.LocalCodeEngine.Enabled)
+            {
+                return RootTreeNodeState.LocalCodeEngineIsEnabled;
+            }
+
+            return enabledInOptions ? RootTreeNodeState.Enabled : RootTreeNodeState.Disabled;
+        }
 
         /// <summary>
         /// On link click handler. It open provided link.

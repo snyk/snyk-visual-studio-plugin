@@ -37,22 +37,32 @@
         /// <returns>Object of <see cref="SastSettings"/>.</returns>
         public async Task<SastSettings> GetSastSettingsAsync()
         {
-            using (var httpRequest = new HttpRequestMessage(HttpMethod.Get, new Uri(this.GetSnykCodeSettingsUri(), SastSettingsApiName)))
+            try
             {
-                httpRequest.Headers.Add("Authorization", $"token {this.options.ApiToken}");
-
-                var response = await this.httpClient.SendAsync(httpRequest);
-
-                string responseText = await response.Content.ReadAsStringAsync();
-
-                if (response.IsSuccessStatusCode)
+                using (var httpRequest = new HttpRequestMessage(HttpMethod.Get, new Uri(this.GetSnykCodeSettingsUri(), SastSettingsApiName)))
                 {
-                    return Json.Deserialize<SastSettings>(responseText);
+                    httpRequest.Headers.Add("Authorization", $"token {this.options.ApiToken}");
+                    httpRequest.Headers.Add("x-snyk-ide", $"vs-{SnykExtension.Version}");
+
+                    var response = await this.httpClient.SendAsync(httpRequest);
+
+                    string responseText = await response.Content.ReadAsStringAsync();
+
+                    if (response.IsSuccessStatusCode)
+                    {
+                        return Json.Deserialize<SastSettings>(responseText); ;
+                    }
+                    else
+                    {
+                        return new SastSettings { SastEnabled = false };
+                    }
                 }
-                else
-                {
-                    throw new Exception(responseText);
-                }
+            }
+            catch (Exception ex)
+            {
+                Logger.Error(ex, "Error on request sast settings.");
+
+                return new SastSettings { SastEnabled = false };
             }
         }
 
@@ -60,25 +70,7 @@
         /// Request server and return SastEnabled or if some error occure return false.
         /// </summary>
         /// <returns>SnykCode enabled or disabled value.</returns>
-        public async Task<bool> IsSnykCodeEnabledAsync()
-        {
-            bool isSnykCodeEnabled;
-
-            try
-            {
-                var sastSettings = await this.GetSastSettingsAsync();
-
-                isSnykCodeEnabled = sastSettings.SastEnabled;
-            }
-            catch (Exception e)
-            {
-                Logger.Error(e, "SnykApiService error.");
-
-                isSnykCodeEnabled = false;
-            }
-
-            return isSnykCodeEnabled;
-        }
+        public async Task<bool> IsSnykCodeEnabledAsync() => (await this.GetSastSettingsAsync()).SastEnabled;
 
         private Uri GetSnykCodeSettingsUri()
         {

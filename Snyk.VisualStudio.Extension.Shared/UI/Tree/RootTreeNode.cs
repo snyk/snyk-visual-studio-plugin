@@ -37,20 +37,23 @@
                         title = this.GetDefaultTitle();
                         break;
                     case RootTreeNodeState.DisabledForOrganization:
-                        title = this.GetDisabledForOrganizationTitle();
+                        title = this.GetTitlePrefix() + " (disabled, enable in Settings)";
                         break;
                     case RootTreeNodeState.Scanning:
-                        title = this.GetScanningTitle();
+                        title = this.GetTitlePrefix() + " (scanning...)";
                         break;
                     case RootTreeNodeState.ResultDetails:
                         title = this.GetResultDetailsTitle();
                         break;
                     case RootTreeNodeState.Error:
-                        title = this.GetErrorTitle();
+                        title = this.GetTitlePrefix() + " (error)";
+                        break;
+                    case RootTreeNodeState.LocalCodeEngineIsEnabled:
+                        title = this.GetTitlePrefix() + " (error, Snyk’s local code engine is enabled)";
                         break;
                     case RootTreeNodeState.Disabled:
                     default:
-                        title = this.GetDefaultDisabledTitle();
+                        title = this.GetTitlePrefix() + " (disabled)";
                         break;
                 }
 
@@ -146,14 +149,6 @@
         protected abstract string GetIssuesTypeName();
 
         private string GetDefaultTitle() => this.GetTitlePrefix();
-
-        private string GetDefaultDisabledTitle() => this.GetTitlePrefix() + " (disabled)";
-
-        private string GetDisabledForOrganizationTitle() => this.GetTitlePrefix() + " (disabled, enable in Settings)";
-
-        private string GetScanningTitle() => this.GetTitlePrefix() + " (scanning...)";
-
-        private string GetErrorTitle() => this.GetTitlePrefix() + " (error)";
 
         private string GetResultDetailsTitle()
         {
