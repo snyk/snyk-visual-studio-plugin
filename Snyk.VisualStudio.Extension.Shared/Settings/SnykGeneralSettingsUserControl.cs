@@ -366,8 +366,10 @@
             _ = this.StartSastEnablementCheckLoopAsync();
         }
 
-        private void UpdateSnykCodeEnablementSettings(bool snykCodeEnabled)
+        private void UpdateSnykCodeEnablementSettings(SastSettings sastSettings)
         {
+            bool snykCodeEnabled = sastSettings.SastEnabled && !sastSettings.LocalCodeEngine.Enabled;
+
             this.codeSecurityEnabledCheckBox.Enabled = snykCodeEnabled;
             this.codeQualityEnabledCheckBox.Enabled = snykCodeEnabled;
 
@@ -383,11 +385,11 @@
                 this.snykCodeEnableTimer.Stop();
             }
 
-            bool onServerSnykCodeEnabled = await this.apiService.IsSnykCodeEnabledAsync();
+            var sastSettings = await this.apiService.GetSastSettingsAsync();
 
-            this.UpdateSnykCodeEnablementSettings(onServerSnykCodeEnabled);
+            this.UpdateSnykCodeEnablementSettings(sastSettings);
 
-            if (!onServerSnykCodeEnabled)
+            if (!sastSettings.SastEnabled)
             {
                 int currentRequestAttempt = 1;
 
@@ -397,7 +399,7 @@
                 {
                     bool snykCodeEnabled = await this.apiService.IsSnykCodeEnabledAsync();
 
-                    this.UpdateSnykCodeEnablementSettings(snykCodeEnabled);
+                    this.UpdateSnykCodeEnablementSettings(sastSettings);
 
                     if (snykCodeEnabled)
                     {

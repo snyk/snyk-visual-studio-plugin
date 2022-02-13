@@ -50,7 +50,7 @@
 
                     if (response.IsSuccessStatusCode)
                     {
-                        return Json.Deserialize<SastSettings>(responseText); ;
+                        return Json.Deserialize<SastSettings>(responseText);
                     }
                     else
                     {

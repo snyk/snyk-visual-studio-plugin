@@ -49,7 +49,7 @@
                         title = this.GetTitlePrefix() + " (error)";
                         break;
                     case RootTreeNodeState.LocalCodeEngineIsEnabled:
-                        title = this.GetTitlePrefix() + " (error, Snyk’s local code engine is enabled)";
+                        title = this.GetTitlePrefix() + " (disabled due to local code engine)";
                         break;
                     case RootTreeNodeState.Disabled:
                     default:
