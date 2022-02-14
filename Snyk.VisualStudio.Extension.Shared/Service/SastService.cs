@@ -10,31 +10,28 @@
     /// <summary>
     /// Service for remote endpoint API work.
     /// </summary>
-    public class SnykApiService
+    public class SastService : ISastService
     {
         private const string SastSettingsApiName = "cli-config/settings/sast";
 
-        private static readonly ILogger Logger = LogManager.ForContext<SnykApiService>();
+        private static readonly ILogger Logger = LogManager.ForContext<SastService>();
 
         private ISnykOptions options;
 
         private HttpClient httpClient;
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="SnykApiService"/> class.
+        /// Initializes a new instance of the <see cref="SastService"/> class.
         /// </summary>
         /// <param name="options">Options instance.</param>
-        public SnykApiService(ISnykOptions options)
+        public SastService(ISnykOptions options)
         {
             this.options = options;
 
             this.httpClient = HttpClientFactory.NewHttpClient(options.ApiToken);
         }
 
-        /// <summary>
-        /// Request Sast settings by Settings custom endpoint and user token.
-        /// </summary>
-        /// <returns>Object of <see cref="SastSettings"/>.</returns>
+        /// <inheritdoc/>
         public async Task<SastSettings> GetSastSettingsAsync()
         {
             try
@@ -66,10 +63,7 @@
             }
         }
 
-        /// <summary>
-        /// Request server and return SastEnabled or if some error occure return false.
-        /// </summary>
-        /// <returns>SnykCode enabled or disabled value.</returns>
+        /// <inheritdoc/>
         public async Task<bool> IsSnykCodeEnabledAsync() => (await this.GetSastSettingsAsync()).SastEnabled;
 
         private Uri GetSnykCodeSettingsUri()

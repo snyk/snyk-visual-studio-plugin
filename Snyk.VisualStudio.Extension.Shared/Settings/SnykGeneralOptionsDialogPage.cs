@@ -149,7 +149,7 @@
             {
                 if (this.generalSettingsUserControl == null)
                 {
-                    this.generalSettingsUserControl = new SnykGeneralSettingsUserControl(this.serviceProvider.ApiService)
+                    this.generalSettingsUserControl = new SnykGeneralSettingsUserControl(this.serviceProvider.SastService)
                     {
                         OptionsDialogPage = this,
                     };

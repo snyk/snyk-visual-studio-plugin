@@ -77,9 +77,9 @@
         SnykUserStorageSettingsService UserStorageSettingsService { get; }
 
         /// <summary>
-        /// Gets <see cref="SnykApiService"/> service instance.
+        /// Gets <see cref="ISastService"/> service instance.
         /// </summary>
-        SnykApiService ApiService { get; }
+        ISastService SastService { get; }
 
         /// <summary>
         /// Gets <see cref="SentryService"/> instance.

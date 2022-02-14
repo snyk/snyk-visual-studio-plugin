@@ -46,7 +46,7 @@
 
         private IOssService ossService;
 
-        private SnykApiService apiService;
+        private ISastService sastService;
 
         private ISentryService sentryService;
 
@@ -158,18 +158,18 @@
         }
 
         /// <inheritdoc/>
-        public SnykApiService ApiService
+        public ISastService SastService
         {
             get
             {
-                if (this.apiService == null)
+                if (this.sastService == null)
                 {
-                    this.apiService = new SnykApiService(this.Options);
+                    this.sastService = new SastService(this.Options);
 
                     this.Options.SettingsChanged += this.OnSettingsChanged;
                 }
 
-                return this.apiService;
+                return this.sastService;
             }
         }
 

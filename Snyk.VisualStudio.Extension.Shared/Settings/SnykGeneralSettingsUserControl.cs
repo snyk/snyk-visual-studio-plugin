@@ -29,7 +29,7 @@
 
         private static readonly int MaxSastRequestAttempts = 20;
 
-        private SnykApiService apiService;
+        private ISastService sastService;
 
         private Timer snykCodeEnableTimer = new Timer();
 
@@ -41,11 +41,11 @@
         /// Initializes a new instance of the <see cref="SnykGeneralSettingsUserControl"/> class.
         /// </summary>
         /// <param name="apiService">Snyk API service instance.</param>
-        public SnykGeneralSettingsUserControl(SnykApiService apiService)
+        public SnykGeneralSettingsUserControl(ISastService apiService)
         {
             this.InitializeComponent();
 
-            this.apiService = apiService;
+            this.sastService = apiService;
         }
 
         /// <summary>
@@ -385,7 +385,7 @@
                 this.snykCodeEnableTimer.Stop();
             }
 
-            var sastSettings = await this.apiService.GetSastSettingsAsync();
+            var sastSettings = await this.sastService.GetSastSettingsAsync();
 
             this.UpdateSnykCodeEnablementSettings(sastSettings);
 
@@ -397,7 +397,7 @@
 
                 this.snykCodeEnableTimer.Tick += async (sender, eventArgs) =>
                 {
-                    bool snykCodeEnabled = await this.apiService.IsSnykCodeEnabledAsync();
+                    bool snykCodeEnabled = await this.sastService.IsSnykCodeEnabledAsync();
 
                     this.UpdateSnykCodeEnablementSettings(sastSettings);
 

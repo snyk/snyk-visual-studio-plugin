@@ -569,12 +569,12 @@
         {
             var options = this.serviceProvider.Options;
 
-            bool sastOnServerEnabled = await this.serviceProvider.ApiService.IsSnykCodeEnabledAsync();
+            bool sastOnServerEnabled = await this.serviceProvider.SastService.IsSnykCodeEnabledAsync();
 
             return new FeaturesSettings
             {
                 OssEnabled = options.OssEnabled,
-                SastOnServerEnabled = await this.serviceProvider.ApiService.IsSnykCodeEnabledAsync(),
+                SastOnServerEnabled = await this.serviceProvider.SastService.IsSnykCodeEnabledAsync(),
                 CodeSecurityEnabled = sastOnServerEnabled && options.SnykCodeSecurityEnabled,
                 CodeQualityEnabled = sastOnServerEnabled && options.SnykCodeQualityEnabled,
             };
