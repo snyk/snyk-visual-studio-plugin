@@ -45,14 +45,7 @@
 
                     string responseText = await response.Content.ReadAsStringAsync();
 
-                    if (response.IsSuccessStatusCode)
-                    {
-                        return Json.Deserialize<SastSettings>(responseText);
-                    }
-                    else
-                    {
-                        return new SastSettings { SastEnabled = false };
-                    }
+                    return Json.Deserialize<SastSettings>(responseText);
                 }
             }
             catch (Exception ex)

@@ -414,14 +414,14 @@
 
         private RootTreeNodeState CalculateSnykCodeNodeState(SastSettings sastSettings, bool enabledInOptions)
         {
-            if (!sastSettings.SastEnabled)
-            {
-                return RootTreeNodeState.DisabledForOrganization;
-            }
-
             if (sastSettings.LocalCodeEngineEnabled)
             {
                 return RootTreeNodeState.LocalCodeEngineIsEnabled;
+            }
+
+            if (!sastSettings.SastEnabled)
+            {
+                return RootTreeNodeState.DisabledForOrganization;
             }
 
             return enabledInOptions ? RootTreeNodeState.Enabled : RootTreeNodeState.Disabled;
