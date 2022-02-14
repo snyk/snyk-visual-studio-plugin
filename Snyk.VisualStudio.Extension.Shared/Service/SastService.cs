@@ -63,9 +63,6 @@
             }
         }
 
-        /// <inheritdoc/>
-        public async Task<bool> IsSnykCodeEnabledAsync() => (await this.GetSastSettingsAsync()).SastEnabled;
-
         private Uri GetSnykCodeSettingsUri()
         {
             string customEndpoint = this.options.CustomEndpoint;

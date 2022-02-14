@@ -12,11 +12,5 @@
         /// </summary>
         /// <returns>Object of <see cref="SastSettings"/>.</returns>
         Task<SastSettings> GetSastSettingsAsync();
-
-        /// <summary>
-        /// Request server and return SastEnabled or if some error occure return false.
-        /// </summary>
-        /// <returns>SnykCode enabled or disabled value.</returns>
-        Task<bool> IsSnykCodeEnabledAsync();
     }
 }

@@ -251,8 +251,11 @@
         {
             await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
 
-            this.resultsTree.CodeQualityRootNode.State = RootTreeNodeState.DisabledForOrganization;
-            this.resultsTree.CodeSequrityRootNode.State = RootTreeNodeState.DisabledForOrganization;
+            var disabledNodeState = eventArgs.LocalCodeEngineEnabled
+                ? RootTreeNodeState.LocalCodeEngineIsEnabled : RootTreeNodeState.DisabledForOrganization;
+
+            this.resultsTree.CodeQualityRootNode.State = disabledNodeState;
+            this.resultsTree.CodeSequrityRootNode.State = disabledNodeState;
         });
 
         /// <summary>
@@ -416,7 +419,7 @@
                 return RootTreeNodeState.DisabledForOrganization;
             }
 
-            if (sastSettings.LocalCodeEngine.Enabled)
+            if (sastSettings.LocalCodeEngineEnabled)
             {
                 return RootTreeNodeState.LocalCodeEngineIsEnabled;
             }

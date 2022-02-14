@@ -368,7 +368,7 @@
 
         private void UpdateSnykCodeEnablementSettings(SastSettings sastSettings)
         {
-            bool snykCodeEnabled = sastSettings.SastEnabled && !sastSettings.LocalCodeEngine.Enabled;
+            bool snykCodeEnabled = sastSettings.SnykCodeEnabled;
 
             this.codeSecurityEnabledCheckBox.Enabled = snykCodeEnabled;
             this.codeQualityEnabledCheckBox.Enabled = snykCodeEnabled;
@@ -397,7 +397,9 @@
 
                 this.snykCodeEnableTimer.Tick += async (sender, eventArgs) =>
                 {
-                    bool snykCodeEnabled = await this.sastService.IsSnykCodeEnabledAsync();
+                    sastSettings = await this.sastService.GetSastSettingsAsync();
+
+                    bool snykCodeEnabled = sastSettings.SnykCodeEnabled;
 
                     this.UpdateSnykCodeEnablementSettings(sastSettings);
 
