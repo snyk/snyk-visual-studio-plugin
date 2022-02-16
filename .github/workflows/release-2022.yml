@@ -1,4 +1,4 @@
-name: release
+name: release for 2022
 
 on:
   workflow_dispatch:
