@@ -94,9 +94,6 @@
             panel.Visibility = Visibility.Visible;
         }
 
-        private void OpenSnykCodeLocalEngineDocs_Click(object sender, RoutedEventArgs e)
-            => System.Diagnostics.Process.Start("https://docs.snyk.io/products/snyk-code/deployment-options/snyk-code-local-engine");
-
         private void ConnectToSnykLink_Click(object sender, RoutedEventArgs e)
         {
             Action<string> successCallbackAction = (apiToken) =>

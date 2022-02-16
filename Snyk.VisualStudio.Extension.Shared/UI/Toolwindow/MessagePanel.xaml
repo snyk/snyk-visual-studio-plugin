@@ -51,12 +51,9 @@
         </StackPanel>
 
         <StackPanel Name="localCodeEngineIsEnabledPanel" Visibility="Collapsed" HorizontalAlignment="Center">
-            <TextBlock TextAlignment="Center" TextWrapping="Wrap" Width="700">
-                <Run>Snyk Code is connected a Local Code Engine instance, which is disabled for your Snyk organisation. </Run>
-                <Run>If you want to learn more about what Local Code Engine is and how it works, have a look at our </Run>
-                <Hyperlink Click="OpenSnykCodeLocalEngineDocs_Click">docs</Hyperlink>
-                <Run>.</Run>
-            </TextBlock>
+            <c:TextField TextAlignment="Center" Padding="0,5">
+                Snyk Code is configured to use a Local Code Engine instance. This setup is not yet supported by the extension.
+            </c:TextField>
         </StackPanel>
     </Grid>
 </UserControl>

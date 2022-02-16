@@ -63,6 +63,10 @@
             }
         }
 
+        /// <inheritdoc/>
+        public string SnykCodeSettingsUrl => $"{this.GetAppCustomEndpoint()}/manage/snyk-code";
+
+
         /// <summary>
         /// Gets or sets a value indicating whether organization.
         /// </summary>
@@ -149,7 +153,7 @@
             {
                 if (this.generalSettingsUserControl == null)
                 {
-                    this.generalSettingsUserControl = new SnykGeneralSettingsUserControl(this.serviceProvider.SastService)
+                    this.generalSettingsUserControl = new SnykGeneralSettingsUserControl(this.serviceProvider.ApiService)
                     {
                         OptionsDialogPage = this,
                     };
@@ -181,5 +185,11 @@
             => this.GeneralSettingsUserControl.Authenticate(successCallbackAction, errorCallbackAction);
 
         private void FireSettingsChangedEvent() => this.SettingsChanged?.Invoke(this, new SnykSettingsChangedEventArgs());
+
+        private string GetAppCustomEndpoint() => string.IsNullOrEmpty(this.customEndpoint)
+            ? "https://app.snyk.io"
+            : this.customEndpoint
+                .Replace("https://", "https://app.")
+                .Replace("/api", string.Empty);
     }
 }

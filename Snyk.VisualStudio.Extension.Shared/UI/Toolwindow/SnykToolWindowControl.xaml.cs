@@ -404,7 +404,7 @@
 
             this.resultsTree.CliRootNode.State = this.CalculateOssNodeState(options);
 
-            var sastSettings = await this.serviceProvider.SastService.GetSastSettingsAsync();
+            var sastSettings = await this.serviceProvider.ApiService.GetSastSettingsAsync();
 
             this.resultsTree.CodeQualityRootNode.State = this.CalculateSnykCodeNodeState(sastSettings, options.SnykCodeQualityEnabled);
             this.resultsTree.CodeSequrityRootNode.State = this.CalculateSnykCodeNodeState(sastSettings, options.SnykCodeSecurityEnabled);

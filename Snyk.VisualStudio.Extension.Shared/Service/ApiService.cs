@@ -10,21 +10,21 @@
     /// <summary>
     /// Service for remote endpoint API work.
     /// </summary>
-    public class SastService : ISastService
+    public class ApiService : IApiService
     {
         private const string SastSettingsApiName = "cli-config/settings/sast";
 
-        private static readonly ILogger Logger = LogManager.ForContext<SastService>();
+        private static readonly ILogger Logger = LogManager.ForContext<ApiService>();
 
         private ISnykOptions options;
 
         private HttpClient httpClient;
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="SastService"/> class.
+        /// Initializes a new instance of the <see cref="ApiService"/> class.
         /// </summary>
         /// <param name="options">Options instance.</param>
-        public SastService(ISnykOptions options)
+        public ApiService(ISnykOptions options)
         {
             this.options = options;
 
@@ -36,7 +36,9 @@
         {
             try
             {
-                using (var httpRequest = new HttpRequestMessage(HttpMethod.Get, new Uri(this.GetSnykCodeSettingsUri(), SastSettingsApiName)))
+                var sastUrl = new Uri(this.GetSnykCodeSettingsUri(), SastSettingsApiName);
+
+                using (var httpRequest = new HttpRequestMessage(HttpMethod.Get, sastUrl))
                 {
                     httpRequest.Headers.Add("Authorization", $"token {this.options.ApiToken}");
                     httpRequest.Headers.Add("x-snyk-ide", $"vs-{SnykExtension.Version}");
@@ -59,23 +61,18 @@
         private Uri GetSnykCodeSettingsUri()
         {
             string customEndpoint = this.options.CustomEndpoint;
-            string baseUrl;
 
-            if (string.IsNullOrEmpty(customEndpoint))
+            if (string.IsNullOrEmpty(customEndpoint) || customEndpoint.Contains("https://snyk.io"))
             {
-                baseUrl = "https://snyk.io/api/";
-            }
-            else
-            {
-                baseUrl = customEndpoint;
+                return new Uri("https://snyk.io/api/");
             }
 
-            if (!baseUrl.EndsWith("/"))
+            if (customEndpoint.Contains("https://dev.snyk.io"))
             {
-                baseUrl = baseUrl + "/";
+                return new Uri("https://dev.snyk.io/api/");
             }
 
-            return new Uri(baseUrl);
+            return !customEndpoint.EndsWith("/") ? new Uri(customEndpoint + "/") : new Uri(customEndpoint);
         }
     }
 }

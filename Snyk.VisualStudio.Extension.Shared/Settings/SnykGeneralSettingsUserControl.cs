@@ -8,8 +8,6 @@
     using Snyk.Common;
     using Snyk.VisualStudio.Extension.Shared.CLI;
     using Snyk.VisualStudio.Extension.Shared.Service;
-    using Snyk.VisualStudio.Extension.Shared.UI;
-    using Snyk.VisualStudio.Extension.Shared.UI.Notifications;
     using static Snyk.VisualStudio.Extension.Shared.CLI.Download.SnykCliDownloader;
 
     /// <summary>
@@ -29,7 +27,7 @@
 
         private static readonly int MaxSastRequestAttempts = 20;
 
-        private ISastService sastService;
+        private IApiService apiService;
 
         private Timer snykCodeEnableTimer = new Timer();
 
@@ -41,11 +39,11 @@
         /// Initializes a new instance of the <see cref="SnykGeneralSettingsUserControl"/> class.
         /// </summary>
         /// <param name="apiService">Snyk API service instance.</param>
-        public SnykGeneralSettingsUserControl(ISastService apiService)
+        public SnykGeneralSettingsUserControl(IApiService apiService)
         {
             this.InitializeComponent();
 
-            this.sastService = apiService;
+            this.apiService = apiService;
         }
 
         /// <summary>
@@ -373,9 +371,25 @@
             this.codeSecurityEnabledCheckBox.Enabled = snykCodeEnabled;
             this.codeQualityEnabledCheckBox.Enabled = snykCodeEnabled;
 
-            this.snykCodeDisabledInfoLabel.Visible = !snykCodeEnabled;
-            this.snykCodeSettingsLinkLabel.Visible = !snykCodeEnabled;
-            this.checkAgainLinkLabel.Visible = !snykCodeEnabled;
+            if (sastSettings.LocalCodeEngineEnabled)
+            {
+                this.snykCodeDisabledInfoLabel.Text =
+                    "Snyk Code is configured to use a Local Code Engine instance. This setup is not yet supported by the extension.";
+
+                this.snykCodeDisabledInfoLabel.Visible = true;
+                this.snykCodeSettingsLinkLabel.Visible = false;
+                this.checkAgainLinkLabel.Visible = false;
+
+                return;
+            }
+            else
+            {
+                this.snykCodeDisabledInfoLabel.Text = "Snyk Code is disabled by your organisation\'s configuration:";
+
+                this.snykCodeDisabledInfoLabel.Visible = !snykCodeEnabled;
+                this.snykCodeSettingsLinkLabel.Visible = !snykCodeEnabled;
+                this.checkAgainLinkLabel.Visible = !snykCodeEnabled;
+            }
         }
 
         private async Task StartSastEnablementCheckLoopAsync()
@@ -385,7 +399,7 @@
                 this.snykCodeEnableTimer.Stop();
             }
 
-            var sastSettings = await this.sastService.GetSastSettingsAsync();
+            var sastSettings = await this.apiService.GetSastSettingsAsync();
 
             this.UpdateSnykCodeEnablementSettings(sastSettings);
 
@@ -397,7 +411,7 @@
 
                 this.snykCodeEnableTimer.Tick += async (sender, eventArgs) =>
                 {
-                    sastSettings = await this.sastService.GetSastSettingsAsync();
+                    sastSettings = await this.apiService.GetSastSettingsAsync();
 
                     bool snykCodeEnabled = sastSettings.SnykCodeEnabled;
 
@@ -451,25 +465,7 @@
         }
 
         private void SnykCodeSettingsLinkLabel_LinkClicked(object sender, LinkLabelLinkClickedEventArgs e)
-            => System.Diagnostics.Process.Start(this.GetSnykCodeSettingsUrl());
-
-        private string GetSnykCodeSettingsUrl()
-        {
-            string endpoint = this.customEndpointTextBox.Text;
-
-            if (string.IsNullOrEmpty(endpoint))
-            {
-                endpoint = "https://app.snyk.io";
-            }
-            else
-            {
-                endpoint = endpoint
-                    .Replace("https://", "https://app.")
-                    .Replace("/api", string.Empty);
-            }
-
-            return $"{endpoint}/manage/snyk-code";
-        }
+            => System.Diagnostics.Process.Start(this.OptionsDialogPage.SnykCodeSettingsUrl);
 
         private void CheckAgainLinkLabel_LinkClicked(object sender, LinkLabelLinkClickedEventArgs e)
         {

@@ -571,7 +571,7 @@
         {
             var options = this.serviceProvider.Options;
 
-            var sastSettings = await this.serviceProvider.SastService.GetSastSettingsAsync();
+            var sastSettings = await this.serviceProvider.ApiService.GetSastSettingsAsync();
 
             bool snykCodeEnabled = sastSettings.SnykCodeEnabled;
 

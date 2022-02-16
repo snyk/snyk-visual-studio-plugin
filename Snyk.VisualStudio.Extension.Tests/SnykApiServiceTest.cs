@@ -25,7 +25,7 @@
                 .Setup(options => options.ApiToken)
                 .Returns(Environment.GetEnvironmentVariable("TEST_API_TOKEN"));
 
-            var apiService = new SastService(optionsMock.Object);
+            var apiService = new ApiService(optionsMock.Object);
 
             var sastSettings = await apiService.GetSastSettingsAsync();
 
