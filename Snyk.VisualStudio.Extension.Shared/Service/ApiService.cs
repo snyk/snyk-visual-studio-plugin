@@ -14,8 +14,6 @@
     {
         private const string SastSettingsApiName = "cli-config/settings/sast";
 
-        private static readonly ILogger Logger = LogManager.ForContext<ApiService>();
-
         private ISnykOptions options;
 
         private HttpClient httpClient;
@@ -34,45 +32,42 @@
         /// <inheritdoc/>
         public async Task<SastSettings> GetSastSettingsAsync()
         {
-            try
+            var settingsUrl = ApiEndpointResolver.NewInstance(this.options).GetSastUrl();
+            var sastUrl = new Uri(new Uri(settingsUrl), SastSettingsApiName);
+
+            using (var httpRequest = new HttpRequestMessage(HttpMethod.Get, sastUrl))
             {
-                var sastUrl = new Uri(this.GetSnykCodeSettingsUri(), SastSettingsApiName);
+                httpRequest.Headers.Add("Authorization", $"token {this.options.ApiToken}");
+                httpRequest.Headers.Add("x-snyk-ide", $"{SnykExtension.IntegrationName}-{SnykExtension.Version}");
 
-                using (var httpRequest = new HttpRequestMessage(HttpMethod.Get, sastUrl))
-                {
-                    httpRequest.Headers.Add("Authorization", $"token {this.options.ApiToken}");
-                    httpRequest.Headers.Add("x-snyk-ide", $"vs-{SnykExtension.Version}");
+                var response = await this.httpClient.SendAsync(httpRequest);
 
-                    var response = await this.httpClient.SendAsync(httpRequest);
+                string responseText = await response.Content.ReadAsStringAsync();
 
-                    string responseText = await response.Content.ReadAsStringAsync();
-
-                    return Json.Deserialize<SastSettings>(responseText);
-                }
-            }
-            catch (Exception ex)
-            {
-                Logger.Error(ex, "Error on request sast settings.");
-
-                return new SastSettings { SastEnabled = false };
+                return Json.Deserialize<SastSettings>(responseText);
             }
         }
 
         private Uri GetSnykCodeSettingsUri()
         {
             string customEndpoint = this.options.CustomEndpoint;
+            string baseUrl;
 
-            if (string.IsNullOrEmpty(customEndpoint) || customEndpoint.Contains("https://snyk.io"))
+            if (string.IsNullOrEmpty(customEndpoint))
             {
-                return new Uri("https://snyk.io/api/");
+                baseUrl = "https://snyk.io/api/";
+            }
+            else
+            {
+                baseUrl = customEndpoint;
             }
 
-            if (customEndpoint.Contains("https://dev.snyk.io"))
+            if (!baseUrl.EndsWith("/"))
             {
-                return new Uri("https://dev.snyk.io/api/");
+                baseUrl = baseUrl + "/";
             }
 
-            return !customEndpoint.EndsWith("/") ? new Uri(customEndpoint + "/") : new Uri(customEndpoint);
+            return new Uri(baseUrl);
         }
     }
 }

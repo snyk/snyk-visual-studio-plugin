@@ -291,7 +291,7 @@
             {
                 var options = this.Options;
 
-                string endpoint = this.GetEndpoint(this.Options.CustomEndpoint);
+                string endpoint = ApiEndpointResolver.NewInstance(this.Options).GetSnykCodeApiUrl();
 
                 this.snykCodeService = CodeServiceFactory
                     .CreateSnykCodeService(options.ApiToken, endpoint, this.SolutionService.FileProvider);
@@ -302,24 +302,6 @@
             {
                 Logger.Error(e, string.Empty);
             }
-        }
-
-        /// <summary>
-        /// At the moment Snyk Code (backend) is available for snyk.io and dev.snyk.io
-        /// That’s why othrer plugins (IntelliJ, for example) handles both cases (whether it’s dev or prod environment) with the right token.
-        /// It means checking whether Snyk Code is enabled (SAST API call) should be done for right environment.
-        /// All other environments (e.g.on-prem installations) are not supported.
-        /// </summary>
-        /// <param name="customEndpoint">Custom endpoint string.</param>
-        /// <returns>Endpoint string.</returns>
-        private string GetEndpoint(string customEndpoint)
-        {
-            if (string.IsNullOrEmpty(customEndpoint))
-            {
-                return SnykExtension.GetAppSettings().SnykCodeApiEndpointUrl;
-            }
-
-            return customEndpoint.Contains("https://dev.snyk.io") ? "https://deeproxy.dev.snyk.io" : customEndpoint;
         }
     }
 }

@@ -402,17 +402,29 @@
 
             var options = this.serviceProvider.Options;
 
-            this.resultsTree.CliRootNode.State = this.CalculateOssNodeState(options);
+            this.resultsTree.CliRootNode.State = this.GetOssRootTreeNodeState(options);
 
-            var sastSettings = await this.serviceProvider.ApiService.GetSastSettingsAsync();
+            try
+            {
+                var sastSettings = await this.serviceProvider.ApiService.GetSastSettingsAsync();
 
-            this.resultsTree.CodeQualityRootNode.State = this.CalculateSnykCodeNodeState(sastSettings, options.SnykCodeQualityEnabled);
-            this.resultsTree.CodeSequrityRootNode.State = this.CalculateSnykCodeNodeState(sastSettings, options.SnykCodeSecurityEnabled);
+                this.resultsTree.CodeQualityRootNode.State = this.GetSnykCodeRootNodeState(sastSettings, options.SnykCodeQualityEnabled);
+                this.resultsTree.CodeSequrityRootNode.State = this.GetSnykCodeRootNodeState(sastSettings, options.SnykCodeSecurityEnabled);
+            }
+            catch (Exception e)
+            {
+                Logger.Error(e, "Error on get sast settings and display tree node state");
+
+                this.resultsTree.CodeQualityRootNode.State = RootTreeNodeState.Error;
+                this.resultsTree.CodeSequrityRootNode.State = RootTreeNodeState.Error;
+
+                NotificationService.Instance.ShowErrorInfoBar(e.Message);
+            }
         });
 
-        private RootTreeNodeState CalculateOssNodeState(ISnykOptions options) => options.OssEnabled ? RootTreeNodeState.Enabled : RootTreeNodeState.Disabled;
+        private RootTreeNodeState GetOssRootTreeNodeState(ISnykOptions options) => options.OssEnabled ? RootTreeNodeState.Enabled : RootTreeNodeState.Disabled;
 
-        private RootTreeNodeState CalculateSnykCodeNodeState(SastSettings sastSettings, bool enabledInOptions)
+        private RootTreeNodeState GetSnykCodeRootNodeState(SastSettings sastSettings, bool enabledInOptions)
         {
             if (sastSettings.LocalCodeEngineEnabled)
             {

@@ -8,6 +8,7 @@
     using Snyk.Common;
     using Snyk.VisualStudio.Extension.Shared.CLI;
     using Snyk.VisualStudio.Extension.Shared.Service;
+    using Snyk.VisualStudio.Extension.Shared.UI.Notifications;
     using static Snyk.VisualStudio.Extension.Shared.CLI.Download.SnykCliDownloader;
 
     /// <summary>
@@ -379,8 +380,6 @@
                 this.snykCodeDisabledInfoLabel.Visible = true;
                 this.snykCodeSettingsLinkLabel.Visible = false;
                 this.checkAgainLinkLabel.Visible = false;
-
-                return;
             }
             else
             {
@@ -394,47 +393,75 @@
 
         private async Task StartSastEnablementCheckLoopAsync()
         {
-            if (this.snykCodeEnableTimer.Enabled)
+            try
             {
-                this.snykCodeEnableTimer.Stop();
-            }
-
-            var sastSettings = await this.apiService.GetSastSettingsAsync();
-
-            this.UpdateSnykCodeEnablementSettings(sastSettings);
-
-            if (!sastSettings.SastEnabled)
-            {
-                int currentRequestAttempt = 1;
-
-                this.snykCodeEnableTimer.Interval = TwoSecondsDelay;
-
-                this.snykCodeEnableTimer.Tick += async (sender, eventArgs) =>
+                if (this.snykCodeEnableTimer.Enabled)
                 {
-                    sastSettings = await this.apiService.GetSastSettingsAsync();
+                    this.snykCodeEnableTimer.Stop();
+                }
 
-                    bool snykCodeEnabled = sastSettings.SnykCodeEnabled;
+                var sastSettings = await this.apiService.GetSastSettingsAsync();
 
-                    this.UpdateSnykCodeEnablementSettings(sastSettings);
+                this.UpdateSnykCodeEnablementSettings(sastSettings);
 
-                    if (snykCodeEnabled)
+                if (!sastSettings.SastEnabled)
+                {
+                    int currentRequestAttempt = 1;
+
+                    this.snykCodeEnableTimer.Interval = TwoSecondsDelay;
+
+                    this.snykCodeEnableTimer.Tick += async (sender, eventArgs) =>
                     {
-                        this.snykCodeEnableTimer.Stop();
-                    }
-                    else if (currentRequestAttempt < MaxSastRequestAttempts)
-                    {
-                        currentRequestAttempt++;
+                        try
+                        {
+                            sastSettings = await this.apiService.GetSastSettingsAsync();
 
-                        this.snykCodeEnableTimer.Interval = TwoSecondsDelay * currentRequestAttempt;
-                    }
-                    else
-                    {
-                        this.snykCodeEnableTimer.Stop();
-                    }
-                };
+                            bool snykCodeEnabled = sastSettings.SnykCodeEnabled;
 
-                this.snykCodeEnableTimer.Start();
+                            this.UpdateSnykCodeEnablementSettings(sastSettings);
+
+                            if (snykCodeEnabled)
+                            {
+                                this.snykCodeEnableTimer.Stop();
+                            }
+                            else if (currentRequestAttempt < MaxSastRequestAttempts)
+                            {
+                                currentRequestAttempt++;
+
+                                this.snykCodeEnableTimer.Interval = TwoSecondsDelay * currentRequestAttempt;
+                            }
+                            else
+                            {
+                                this.snykCodeEnableTimer.Stop();
+                            }
+                        }
+                        catch (Exception e)
+                        {
+                            this.HandleSastError(e);
+                        }
+                    };
+
+                    this.snykCodeEnableTimer.Start();
+                }
             }
+            catch (Exception e)
+            {
+                this.HandleSastError(e);
+            }
+        }
+
+        private void HandleSastError(Exception e)
+        {
+            this.snykCodeEnableTimer.Stop();
+
+            NotificationService.Instance.ShowErrorInfoBar(e.Message);
+
+            this.codeSecurityEnabledCheckBox.Enabled = false;
+            this.codeQualityEnabledCheckBox.Enabled = false;
+
+            this.snykCodeDisabledInfoLabel.Visible = false;
+            this.snykCodeSettingsLinkLabel.Visible = false;
+            this.checkAgainLinkLabel.Visible = false;
         }
 
         private void UsageAnalyticsCheckBox_CheckedChanged(object sender, EventArgs e)
