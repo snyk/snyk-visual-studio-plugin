@@ -49,5 +49,11 @@
             </TextBlock>
             <ProgressBar Name="connectVSToSnykProgressBar" Visibility="Collapsed" IsIndeterminate="True" Height="3" Padding="0,2"/>
         </StackPanel>
+
+        <StackPanel Name="localCodeEngineIsEnabledPanel" Visibility="Collapsed" HorizontalAlignment="Center">
+            <c:TextField TextAlignment="Center" Padding="0,5">
+                Snyk Code is configured to use a Local Code Engine instance. This setup is not yet supported by the extension.
+            </c:TextField>
+        </StackPanel>
     </Grid>
 </UserControl>

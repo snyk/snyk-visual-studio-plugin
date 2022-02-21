@@ -31,6 +31,8 @@
 
             Assert.NotNull(sastSettings);
             Assert.True(sastSettings.SastEnabled);
+
+            Assert.NotNull(sastSettings.LocalCodeEngine);
         }
     }
 }

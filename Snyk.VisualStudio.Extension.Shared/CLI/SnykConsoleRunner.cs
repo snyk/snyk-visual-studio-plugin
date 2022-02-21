@@ -70,7 +70,7 @@
             }
 
             processStartInfo.EnvironmentVariables["SNYK_INTEGRATION_NAME"] = SnykExtension.IntegrationName;
-            processStartInfo.EnvironmentVariables["SNYK_INTEGRATION_VERSION"] = SnykExtension.GetIntegrationVersion();
+            processStartInfo.EnvironmentVariables["SNYK_INTEGRATION_VERSION"] = SnykExtension.Version;
 
             processStartInfo.WorkingDirectory = workingDirectory;
 
