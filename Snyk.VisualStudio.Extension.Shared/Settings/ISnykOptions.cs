@@ -23,6 +23,11 @@
         string CustomEndpoint { get; set; }
 
         /// <summary>
+        /// Gets a value indicating whether Snyk Code settings URL.
+        /// </summary>
+        string SnykCodeSettingsUrl { get; }
+
+        /// <summary>
         /// Gets or sets a value indicating whether CLI organization parameter.
         /// </summary>
         string Organization { get; set; }

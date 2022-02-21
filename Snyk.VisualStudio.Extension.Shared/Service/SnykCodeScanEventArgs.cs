@@ -33,6 +33,11 @@
         public bool OssScanRunning { get; set; }
 
         /// <summary>
+        /// Gets or sets a value indicating whether local code engine enabled.
+        /// </summary>
+        public bool LocalCodeEngineEnabled { get; set; }
+
+        /// <summary>
         /// Gets or sets a value indicating error message.
         /// </summary>
         public string Error { get; set; }

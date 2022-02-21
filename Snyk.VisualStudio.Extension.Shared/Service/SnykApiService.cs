@@ -10,11 +10,9 @@
     /// <summary>
     /// Service for remote endpoint API work.
     /// </summary>
-    public class SnykApiService
+    public class SnykApiService : ISnykApiService
     {
         private const string SastSettingsApiName = "cli-config/settings/sast";
-
-        private static readonly ILogger Logger = LogManager.ForContext<SnykApiService>();
 
         private ISnykOptions options;
 
@@ -31,75 +29,23 @@
             this.httpClient = HttpClientFactory.NewHttpClient(options.ApiToken);
         }
 
-        /// <summary>
-        /// Request Sast settings by Settings custom endpoint and user token.
-        /// </summary>
-        /// <returns>Object of <see cref="SastSettings"/>.</returns>
+        /// <inheritdoc/>
         public async Task<SastSettings> GetSastSettingsAsync()
         {
-            using (var httpRequest = new HttpRequestMessage(HttpMethod.Get, new Uri(this.GetSnykCodeSettingsUri(), SastSettingsApiName)))
+            var settingsUrl = new ApiEndpointResolver(this.options).GetSnykApiEndpoint();
+            var sastUrl = new Uri(new Uri(settingsUrl), SastSettingsApiName);
+
+            using (var httpRequest = new HttpRequestMessage(HttpMethod.Get, sastUrl))
             {
                 httpRequest.Headers.Add("Authorization", $"token {this.options.ApiToken}");
+                httpRequest.Headers.Add("x-snyk-ide", $"{SnykExtension.IntegrationName}-{SnykExtension.Version}");
 
                 var response = await this.httpClient.SendAsync(httpRequest);
 
                 string responseText = await response.Content.ReadAsStringAsync();
 
-                if (response.IsSuccessStatusCode)
-                {
-                    return Json.Deserialize<SastSettings>(responseText);
-                }
-                else
-                {
-                    throw new Exception(responseText);
-                }
+                return Json.Deserialize<SastSettings>(responseText);
             }
-        }
-
-        /// <summary>
-        /// Request server and return SastEnabled or if some error occure return false.
-        /// </summary>
-        /// <returns>SnykCode enabled or disabled value.</returns>
-        public async Task<bool> IsSnykCodeEnabledAsync()
-        {
-            bool isSnykCodeEnabled;
-
-            try
-            {
-                var sastSettings = await this.GetSastSettingsAsync();
-
-                isSnykCodeEnabled = sastSettings.SastEnabled;
-            }
-            catch (Exception e)
-            {
-                Logger.Error(e, "SnykApiService error.");
-
-                isSnykCodeEnabled = false;
-            }
-
-            return isSnykCodeEnabled;
-        }
-
-        private Uri GetSnykCodeSettingsUri()
-        {
-            string customEndpoint = this.options.CustomEndpoint;
-            string baseUrl;
-
-            if (string.IsNullOrEmpty(customEndpoint))
-            {
-                baseUrl = "https://snyk.io/api/";
-            }
-            else
-            {
-                baseUrl = customEndpoint;
-            }
-
-            if (!baseUrl.EndsWith("/"))
-            {
-                baseUrl = baseUrl + "/";
-            }
-
-            return new Uri(baseUrl);
         }
     }
 }

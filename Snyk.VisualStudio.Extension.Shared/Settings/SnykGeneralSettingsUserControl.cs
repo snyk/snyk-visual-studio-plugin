@@ -8,7 +8,6 @@
     using Snyk.Common;
     using Snyk.VisualStudio.Extension.Shared.CLI;
     using Snyk.VisualStudio.Extension.Shared.Service;
-    using Snyk.VisualStudio.Extension.Shared.UI;
     using Snyk.VisualStudio.Extension.Shared.UI.Notifications;
     using static Snyk.VisualStudio.Extension.Shared.CLI.Download.SnykCliDownloader;
 
@@ -29,7 +28,7 @@
 
         private static readonly int MaxSastRequestAttempts = 20;
 
-        private SnykApiService apiService;
+        private ISnykApiService apiService;
 
         private Timer snykCodeEnableTimer = new Timer();
 
@@ -41,7 +40,7 @@
         /// Initializes a new instance of the <see cref="SnykGeneralSettingsUserControl"/> class.
         /// </summary>
         /// <param name="apiService">Snyk API service instance.</param>
-        public SnykGeneralSettingsUserControl(SnykApiService apiService)
+        public SnykGeneralSettingsUserControl(ISnykApiService apiService)
         {
             this.InitializeComponent();
 
@@ -366,57 +365,105 @@
             _ = this.StartSastEnablementCheckLoopAsync();
         }
 
-        private void UpdateSnykCodeEnablementSettings(bool snykCodeEnabled)
+        private void UpdateSnykCodeEnablementSettings(SastSettings sastSettings)
         {
+            bool snykCodeEnabled = sastSettings.SnykCodeEnabled;
+
             this.codeSecurityEnabledCheckBox.Enabled = snykCodeEnabled;
             this.codeQualityEnabledCheckBox.Enabled = snykCodeEnabled;
 
-            this.snykCodeDisabledInfoLabel.Visible = !snykCodeEnabled;
-            this.snykCodeSettingsLinkLabel.Visible = !snykCodeEnabled;
-            this.checkAgainLinkLabel.Visible = !snykCodeEnabled;
+            if (sastSettings.LocalCodeEngineEnabled)
+            {
+                this.snykCodeDisabledInfoLabel.Text =
+                    "Snyk Code is configured to use a Local Code Engine instance. This setup is not yet supported by the extension.";
+
+                this.snykCodeDisabledInfoLabel.Visible = true;
+                this.snykCodeSettingsLinkLabel.Visible = false;
+                this.checkAgainLinkLabel.Visible = false;
+            }
+            else
+            {
+                this.snykCodeDisabledInfoLabel.Text = "Snyk Code is disabled by your organisation\'s configuration:";
+
+                this.snykCodeDisabledInfoLabel.Visible = !snykCodeEnabled;
+                this.snykCodeSettingsLinkLabel.Visible = !snykCodeEnabled;
+                this.checkAgainLinkLabel.Visible = !snykCodeEnabled;
+            }
         }
 
         private async Task StartSastEnablementCheckLoopAsync()
         {
-            if (this.snykCodeEnableTimer.Enabled)
+            try
             {
-                this.snykCodeEnableTimer.Stop();
-            }
+                if (this.snykCodeEnableTimer.Enabled)
+                {
+                    this.snykCodeEnableTimer.Stop();
+                }
 
-            bool onServerSnykCodeEnabled = await this.apiService.IsSnykCodeEnabledAsync();
+                var sastSettings = await this.apiService.GetSastSettingsAsync();
 
-            this.UpdateSnykCodeEnablementSettings(onServerSnykCodeEnabled);
+                this.UpdateSnykCodeEnablementSettings(sastSettings);
 
-            if (!onServerSnykCodeEnabled)
-            {
+                if (sastSettings.SastEnabled)
+                {
+                    return;
+                }
+
                 int currentRequestAttempt = 1;
 
                 this.snykCodeEnableTimer.Interval = TwoSecondsDelay;
 
                 this.snykCodeEnableTimer.Tick += async (sender, eventArgs) =>
                 {
-                    bool snykCodeEnabled = await this.apiService.IsSnykCodeEnabledAsync();
-
-                    this.UpdateSnykCodeEnablementSettings(snykCodeEnabled);
-
-                    if (snykCodeEnabled)
+                    try
                     {
-                        this.snykCodeEnableTimer.Stop();
+                        sastSettings = await this.apiService.GetSastSettingsAsync();
+
+                        bool snykCodeEnabled = sastSettings.SnykCodeEnabled;
+
+                        this.UpdateSnykCodeEnablementSettings(sastSettings);
+
+                        if (snykCodeEnabled)
+                        {
+                            this.snykCodeEnableTimer.Stop();
+                        }
+                        else if (currentRequestAttempt < MaxSastRequestAttempts)
+                        {
+                            currentRequestAttempt++;
+
+                            this.snykCodeEnableTimer.Interval = TwoSecondsDelay * currentRequestAttempt;
+                        }
+                        else
+                        {
+                            this.snykCodeEnableTimer.Stop();
+                        }
                     }
-                    else if (currentRequestAttempt < MaxSastRequestAttempts)
+                    catch (Exception e)
                     {
-                        currentRequestAttempt++;
-
-                        this.snykCodeEnableTimer.Interval = TwoSecondsDelay * currentRequestAttempt;
-                    }
-                    else
-                    {
-                        this.snykCodeEnableTimer.Stop();
+                        this.HandleSastError(e);
                     }
                 };
 
                 this.snykCodeEnableTimer.Start();
             }
+            catch (Exception e)
+            {
+                this.HandleSastError(e);
+            }
+        }
+
+        private void HandleSastError(Exception e)
+        {
+            this.snykCodeEnableTimer.Stop();
+
+            NotificationService.Instance.ShowErrorInfoBar(e.Message);
+
+            this.codeSecurityEnabledCheckBox.Enabled = false;
+            this.codeQualityEnabledCheckBox.Enabled = false;
+
+            this.snykCodeDisabledInfoLabel.Visible = false;
+            this.snykCodeSettingsLinkLabel.Visible = false;
+            this.checkAgainLinkLabel.Visible = false;
         }
 
         private void UsageAnalyticsCheckBox_CheckedChanged(object sender, EventArgs e)
@@ -447,25 +494,7 @@
         }
 
         private void SnykCodeSettingsLinkLabel_LinkClicked(object sender, LinkLabelLinkClickedEventArgs e)
-            => System.Diagnostics.Process.Start(this.GetSnykCodeSettingsUrl());
-
-        private string GetSnykCodeSettingsUrl()
-        {
-            string endpoint = this.customEndpointTextBox.Text;
-
-            if (string.IsNullOrEmpty(endpoint))
-            {
-                endpoint = "https://app.snyk.io";
-            }
-            else
-            {
-                endpoint = endpoint
-                    .Replace("https://", "https://app.")
-                    .Replace("/api", string.Empty);
-            }
-
-            return $"{endpoint}/manage/snyk-code";
-        }
+            => System.Diagnostics.Process.Start(this.OptionsDialogPage.SnykCodeSettingsUrl);
 
         private void CheckAgainLinkLabel_LinkClicked(object sender, LinkLabelLinkClickedEventArgs e)
         {

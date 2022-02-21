@@ -11,11 +11,6 @@
         public string SegmentAnalyticsWriteKey { get; set; }
 
         /// <summary>
-        /// Gets or sets a value indicating Snyk code API endpoint.
-        /// </summary>
-        public string SnykCodeApiEndpointUrl { get; set; }
-
-        /// <summary>
         /// Gets or sets a value indicating Snyk Sentry DSN.
         /// </summary>
         public string SentryDsn { get; set; }

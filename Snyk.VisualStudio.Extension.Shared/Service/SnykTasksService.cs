@@ -300,7 +300,9 @@
         /// <summary>
         /// Fire SnykCode disabled event with <see cref="SnykCodeScanEventArgs"/>.
         /// </summary>
-        public void FireSnykCodeDisabledError() => this.SnykCodeDisabled?.Invoke(this, new SnykCodeScanEventArgs());
+        /// <param name="localCodeEngineEnabled">Send local code engine enabled/disabled on server in event.</param>
+        public void FireSnykCodeDisabledError(bool localCodeEngineEnabled)
+            => this.SnykCodeDisabled?.Invoke(this, new SnykCodeScanEventArgs { LocalCodeEngineEnabled = localCodeEngineEnabled, });
 
         /// <summary>
         /// Fire download started.
@@ -419,7 +421,7 @@
             {
                 if (!featuresSettings.SastOnServerEnabled)
                 {
-                    this.FireSnykCodeDisabledError();
+                    this.FireSnykCodeDisabledError(featuresSettings.LocalCodeEngineEnabled);
 
                     return;
                 }
@@ -569,14 +571,17 @@
         {
             var options = this.serviceProvider.Options;
 
-            bool sastOnServerEnabled = await this.serviceProvider.ApiService.IsSnykCodeEnabledAsync();
+            var sastSettings = await this.serviceProvider.ApiService.GetSastSettingsAsync();
+
+            bool snykCodeEnabled = sastSettings.SnykCodeEnabled;
 
             return new FeaturesSettings
             {
                 OssEnabled = options.OssEnabled,
-                SastOnServerEnabled = await this.serviceProvider.ApiService.IsSnykCodeEnabledAsync(),
-                CodeSecurityEnabled = sastOnServerEnabled && options.SnykCodeSecurityEnabled,
-                CodeQualityEnabled = sastOnServerEnabled && options.SnykCodeQualityEnabled,
+                SastOnServerEnabled = sastSettings.SnykCodeEnabled,
+                CodeSecurityEnabled = snykCodeEnabled && options.SnykCodeSecurityEnabled,
+                CodeQualityEnabled = snykCodeEnabled && options.SnykCodeQualityEnabled,
+                LocalCodeEngineEnabled = sastSettings.LocalCodeEngineEnabled,
             };
         }
 
