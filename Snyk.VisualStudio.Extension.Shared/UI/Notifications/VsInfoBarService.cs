@@ -1,12 +1,12 @@
 ﻿namespace Snyk.VisualStudio.Extension.Shared.UI
 {
-    using System;
     using System.Collections.Generic;
     using System.Linq;
     using Microsoft.VisualStudio.Imaging;
     using Microsoft.VisualStudio.Shell;
     using Microsoft.VisualStudio.Shell.Interop;
     using Snyk.VisualStudio.Extension.Shared.Service;
+    using Task = System.Threading.Tasks.Task;
 
     /// <summary>
     /// Provide InfoBar display messages.
@@ -17,7 +17,10 @@
 
         private uint cookie;
 
-        private IDictionary<string, IVsInfoBarUIElement> messagesDictionary;
+        /// <summary>
+        /// Cache/save all displayed messages for prevent display same message multiple times.
+        /// </summary>
+        private IDictionary<string, IVsInfoBarUIElement> messagesCache;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="VsInfoBarService"/> class.
@@ -27,7 +30,7 @@
         {
             this.serviceProvider = serviceProvider;
 
-            this.messagesDictionary = new Dictionary<string, IVsInfoBarUIElement>();
+            this.messagesCache = new Dictionary<string, IVsInfoBarUIElement>();
         }
 
         /// <summary>
@@ -40,7 +43,7 @@
 
             infoBarUIElement.Unadvise(this.cookie);
 
-            this.messagesDictionary.Remove(this.messagesDictionary.FirstOrDefault(x => x.Value == infoBarUIElement).Key);
+            this.messagesCache.Remove(this.messagesCache.FirstOrDefault(x => x.Value == infoBarUIElement).Key);
         });
 
         /// <summary>
@@ -63,7 +66,7 @@
                     System.Diagnostics.Process.Start("https://github.com/snyk/snyk-visual-studio-plugin#known-caveats");
                 }
 
-                return System.Threading.Tasks.Task.CompletedTask;
+                return Task.CompletedTask;
             });
 
         /// <summary>
@@ -74,7 +77,7 @@
         {
             await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
 
-            if (this.messagesDictionary.ContainsKey(message))
+            if (this.messagesCache.ContainsKey(message))
             {
                 return;
             }
@@ -93,7 +96,7 @@
 
             element.Advise(this, out this.cookie);
 
-            this.messagesDictionary.Add(message, element);
+            this.messagesCache.Add(message, element);
 
             this.serviceProvider.Package.ToolWindow.AddInfoBar(element);
         });

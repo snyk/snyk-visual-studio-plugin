@@ -29,7 +29,7 @@
     <Compile Include="$(MSBuildThisFileDirectory)Microsoft\UI\HtmlRichTextBoxBehavior.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Service\ApiEndpointResolver.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Service\ISentryService.cs" />
-    <Compile Include="$(MSBuildThisFileDirectory)Service\IApiService.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Service\ISnykApiService.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Service\LocalCodeEngine.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Service\SentryService.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Service\SolutionType.cs" />
@@ -99,7 +99,7 @@
     <Compile Include="$(MSBuildThisFileDirectory)Service\SastSettings.cs">
       <CopyToOutputDirectory>Never</CopyToOutputDirectory>
     </Compile>
-    <Compile Include="$(MSBuildThisFileDirectory)Service\ApiService.cs">
+    <Compile Include="$(MSBuildThisFileDirectory)Service\SnykApiService.cs">
       <CopyToOutputDirectory>Never</CopyToOutputDirectory>
     </Compile>
     <Compile Include="$(MSBuildThisFileDirectory)Service\SnykCliDownloadEventArgs.cs">

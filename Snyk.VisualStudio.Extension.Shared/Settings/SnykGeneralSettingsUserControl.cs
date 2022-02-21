@@ -28,7 +28,7 @@
 
         private static readonly int MaxSastRequestAttempts = 20;
 
-        private IApiService apiService;
+        private ISnykApiService apiService;
 
         private Timer snykCodeEnableTimer = new Timer();
 
@@ -40,7 +40,7 @@
         /// Initializes a new instance of the <see cref="SnykGeneralSettingsUserControl"/> class.
         /// </summary>
         /// <param name="apiService">Snyk API service instance.</param>
-        public SnykGeneralSettingsUserControl(IApiService apiService)
+        public SnykGeneralSettingsUserControl(ISnykApiService apiService)
         {
             this.InitializeComponent();
 
@@ -404,45 +404,47 @@
 
                 this.UpdateSnykCodeEnablementSettings(sastSettings);
 
-                if (!sastSettings.SastEnabled)
+                if (sastSettings.SastEnabled)
                 {
-                    int currentRequestAttempt = 1;
-
-                    this.snykCodeEnableTimer.Interval = TwoSecondsDelay;
-
-                    this.snykCodeEnableTimer.Tick += async (sender, eventArgs) =>
-                    {
-                        try
-                        {
-                            sastSettings = await this.apiService.GetSastSettingsAsync();
-
-                            bool snykCodeEnabled = sastSettings.SnykCodeEnabled;
-
-                            this.UpdateSnykCodeEnablementSettings(sastSettings);
-
-                            if (snykCodeEnabled)
-                            {
-                                this.snykCodeEnableTimer.Stop();
-                            }
-                            else if (currentRequestAttempt < MaxSastRequestAttempts)
-                            {
-                                currentRequestAttempt++;
-
-                                this.snykCodeEnableTimer.Interval = TwoSecondsDelay * currentRequestAttempt;
-                            }
-                            else
-                            {
-                                this.snykCodeEnableTimer.Stop();
-                            }
-                        }
-                        catch (Exception e)
-                        {
-                            this.HandleSastError(e);
-                        }
-                    };
-
-                    this.snykCodeEnableTimer.Start();
+                    return;
                 }
+
+                int currentRequestAttempt = 1;
+
+                this.snykCodeEnableTimer.Interval = TwoSecondsDelay;
+
+                this.snykCodeEnableTimer.Tick += async (sender, eventArgs) =>
+                {
+                    try
+                    {
+                        sastSettings = await this.apiService.GetSastSettingsAsync();
+
+                        bool snykCodeEnabled = sastSettings.SnykCodeEnabled;
+
+                        this.UpdateSnykCodeEnablementSettings(sastSettings);
+
+                        if (snykCodeEnabled)
+                        {
+                            this.snykCodeEnableTimer.Stop();
+                        }
+                        else if (currentRequestAttempt < MaxSastRequestAttempts)
+                        {
+                            currentRequestAttempt++;
+
+                            this.snykCodeEnableTimer.Interval = TwoSecondsDelay * currentRequestAttempt;
+                        }
+                        else
+                        {
+                            this.snykCodeEnableTimer.Stop();
+                        }
+                    }
+                    catch (Exception e)
+                    {
+                        this.HandleSastError(e);
+                    }
+                };
+
+                this.snykCodeEnableTimer.Start();
             }
             catch (Exception e)
             {

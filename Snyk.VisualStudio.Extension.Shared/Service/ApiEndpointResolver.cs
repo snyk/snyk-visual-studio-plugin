@@ -17,21 +17,14 @@
         public ApiEndpointResolver(ISnykOptions options) => this.options = options;
 
         /// <summary>
-        /// Util method for create instance of <see cref="ApiEndpointResolver"/>.
-        /// </summary>
-        /// <param name="options">Extension options.</param>
-        /// <returns>New ApiEndpointResolver instance.</returns>
-        public static ApiEndpointResolver NewInstance(ISnykOptions options) => new ApiEndpointResolver(options);
-
-        /// <summary>
         /// Get SnykCode Settings url.
         /// </summary>
         /// <returns>Path to Snyk Code settings url.</returns>
-        public string GetSastUrl()
+        public string GetSnykApiEndpoint()
         {
             string customEndpoint = this.options.CustomEndpoint;
 
-            string sastUrl = customEndpoint.IsNullOrEmpty() ? "https://snyk.io/api/" : customEndpoint;
+            string sastUrl = string.IsNullOrEmpty(customEndpoint) ? "https://snyk.io/api/" : customEndpoint;
 
             return !sastUrl.EndsWith("/") ? $"{sastUrl}/" : sastUrl;
         }

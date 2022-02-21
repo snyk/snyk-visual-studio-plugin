@@ -10,7 +10,7 @@
     /// <summary>
     /// Service for remote endpoint API work.
     /// </summary>
-    public class ApiService : IApiService
+    public class SnykApiService : ISnykApiService
     {
         private const string SastSettingsApiName = "cli-config/settings/sast";
 
@@ -19,10 +19,10 @@
         private HttpClient httpClient;
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="ApiService"/> class.
+        /// Initializes a new instance of the <see cref="SnykApiService"/> class.
         /// </summary>
         /// <param name="options">Options instance.</param>
-        public ApiService(ISnykOptions options)
+        public SnykApiService(ISnykOptions options)
         {
             this.options = options;
 
@@ -32,7 +32,7 @@
         /// <inheritdoc/>
         public async Task<SastSettings> GetSastSettingsAsync()
         {
-            var settingsUrl = ApiEndpointResolver.NewInstance(this.options).GetSastUrl();
+            var settingsUrl = new ApiEndpointResolver(this.options).GetSnykApiEndpoint();
             var sastUrl = new Uri(new Uri(settingsUrl), SastSettingsApiName);
 
             using (var httpRequest = new HttpRequestMessage(HttpMethod.Get, sastUrl))
@@ -46,28 +46,6 @@
 
                 return Json.Deserialize<SastSettings>(responseText);
             }
-        }
-
-        private Uri GetSnykCodeSettingsUri()
-        {
-            string customEndpoint = this.options.CustomEndpoint;
-            string baseUrl;
-
-            if (string.IsNullOrEmpty(customEndpoint))
-            {
-                baseUrl = "https://snyk.io/api/";
-            }
-            else
-            {
-                baseUrl = customEndpoint;
-            }
-
-            if (!baseUrl.EndsWith("/"))
-            {
-                baseUrl = baseUrl + "/";
-            }
-
-            return new Uri(baseUrl);
         }
     }
 }

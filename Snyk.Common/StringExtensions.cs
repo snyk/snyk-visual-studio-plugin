@@ -31,12 +31,5 @@
         /// <param name="source">Source string.</param>
         /// <returns>Result string.</returns>
         public static string RemoveTrailingSlashes(this string source) => Regex.Replace(source, "/+$", string.Empty);
-
-        /// <summary>
-        /// Check is current string is null or empty.
-        /// </summary>
-        /// <param name="source">Source string.</param>
-        /// <returns>True if string null or empty size.</returns>
-        public static bool IsNullOrEmpty(this string source) => string.IsNullOrEmpty(source);
     }
 }

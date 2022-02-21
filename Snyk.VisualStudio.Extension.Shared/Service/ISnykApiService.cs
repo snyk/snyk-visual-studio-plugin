@@ -5,7 +5,7 @@
     /// <summary>
     /// Snyk Sast service interface.
     /// </summary>
-    public interface IApiService
+    public interface ISnykApiService
     {
         /// <summary>
         /// Request Sast settings by Settings custom endpoint and user token.

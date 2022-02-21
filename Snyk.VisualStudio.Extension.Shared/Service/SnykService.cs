@@ -46,7 +46,7 @@
 
         private IOssService ossService;
 
-        private IApiService apiService;
+        private ISnykApiService apiService;
 
         private ISentryService sentryService;
 
@@ -158,13 +158,13 @@
         }
 
         /// <inheritdoc/>
-        public IApiService ApiService
+        public ISnykApiService ApiService
         {
             get
             {
                 if (this.apiService == null)
                 {
-                    this.apiService = new ApiService(this.Options);
+                    this.apiService = new SnykApiService(this.Options);
 
                     this.Options.SettingsChanged += this.OnSettingsChanged;
                 }
@@ -291,7 +291,7 @@
             {
                 var options = this.Options;
 
-                string endpoint = ApiEndpointResolver.NewInstance(this.Options).GetSnykCodeApiUrl();
+                string endpoint = new ApiEndpointResolver(this.Options).GetSnykCodeApiUrl();
 
                 this.snykCodeService = CodeServiceFactory
                     .CreateSnykCodeService(options.ApiToken, endpoint, this.SolutionService.FileProvider);
