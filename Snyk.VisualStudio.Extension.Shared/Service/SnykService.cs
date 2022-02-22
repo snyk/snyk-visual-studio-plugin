@@ -46,7 +46,7 @@
 
         private IOssService ossService;
 
-        private SnykApiService apiService;
+        private ISnykApiService apiService;
 
         private ISentryService sentryService;
 
@@ -158,7 +158,7 @@
         }
 
         /// <inheritdoc/>
-        public SnykApiService ApiService
+        public ISnykApiService ApiService
         {
             get
             {
@@ -291,8 +291,7 @@
             {
                 var options = this.Options;
 
-                string endpoint = string.IsNullOrEmpty(options.CustomEndpoint)
-                    ? SnykExtension.GetAppSettings().SnykCodeApiEndpointUrl : options.CustomEndpoint;
+                string endpoint = new ApiEndpointResolver(this.Options).GetSnykCodeApiUrl();
 
                 this.snykCodeService = CodeServiceFactory
                     .CreateSnykCodeService(options.ApiToken, endpoint, this.SolutionService.FileProvider);

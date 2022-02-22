@@ -35,5 +35,10 @@
         /// Scan error state.
         /// </summary>
         Error,
+
+        /// <summary>
+        /// Local code engine is enabled state.
+        /// </summary>
+        LocalCodeEngineIsEnabled,
     }
 }

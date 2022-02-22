@@ -251,8 +251,11 @@
         {
             await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
 
-            this.resultsTree.CodeQualityRootNode.State = RootTreeNodeState.DisabledForOrganization;
-            this.resultsTree.CodeSequrityRootNode.State = RootTreeNodeState.DisabledForOrganization;
+            var disabledNodeState = eventArgs.LocalCodeEngineEnabled
+                ? RootTreeNodeState.LocalCodeEngineIsEnabled : RootTreeNodeState.DisabledForOrganization;
+
+            this.resultsTree.CodeQualityRootNode.State = disabledNodeState;
+            this.resultsTree.CodeSequrityRootNode.State = disabledNodeState;
         });
 
         /// <summary>
@@ -399,19 +402,42 @@
 
             var options = this.serviceProvider.Options;
 
-            this.resultsTree.CliRootNode.State = options.OssEnabled ? RootTreeNodeState.Enabled : RootTreeNodeState.Disabled;
+            this.resultsTree.CliRootNode.State = this.GetOssRootTreeNodeState(options);
 
-            if (!await this.serviceProvider.ApiService.IsSnykCodeEnabledAsync())
+            try
             {
-                this.resultsTree.CodeQualityRootNode.State = RootTreeNodeState.DisabledForOrganization;
-                this.resultsTree.CodeSequrityRootNode.State = RootTreeNodeState.DisabledForOrganization;
+                var sastSettings = await this.serviceProvider.ApiService.GetSastSettingsAsync();
+
+                this.resultsTree.CodeQualityRootNode.State = this.GetSnykCodeRootNodeState(sastSettings, options.SnykCodeQualityEnabled);
+                this.resultsTree.CodeSequrityRootNode.State = this.GetSnykCodeRootNodeState(sastSettings, options.SnykCodeSecurityEnabled);
             }
-            else
+            catch (Exception e)
             {
-                this.resultsTree.CodeQualityRootNode.State = options.SnykCodeQualityEnabled ? RootTreeNodeState.Enabled : RootTreeNodeState.Disabled;
-                this.resultsTree.CodeSequrityRootNode.State = options.SnykCodeSecurityEnabled ? RootTreeNodeState.Enabled : RootTreeNodeState.Disabled;
+                Logger.Error(e, "Error on get sast settings and display tree node state");
+
+                this.resultsTree.CodeQualityRootNode.State = RootTreeNodeState.Error;
+                this.resultsTree.CodeSequrityRootNode.State = RootTreeNodeState.Error;
+
+                NotificationService.Instance.ShowErrorInfoBar(e.Message);
             }
         });
+
+        private RootTreeNodeState GetOssRootTreeNodeState(ISnykOptions options) => options.OssEnabled ? RootTreeNodeState.Enabled : RootTreeNodeState.Disabled;
+
+        private RootTreeNodeState GetSnykCodeRootNodeState(SastSettings sastSettings, bool enabledInOptions)
+        {
+            if (sastSettings.LocalCodeEngineEnabled)
+            {
+                return RootTreeNodeState.LocalCodeEngineIsEnabled;
+            }
+
+            if (!sastSettings.SastEnabled)
+            {
+                return RootTreeNodeState.DisabledForOrganization;
+            }
+
+            return enabledInOptions ? RootTreeNodeState.Enabled : RootTreeNodeState.Disabled;
+        }
 
         /// <summary>
         /// On link click handler. It open provided link.
@@ -499,64 +525,90 @@
 
                 if (this.resultsTree.SelectedItem is OssVulnerabilityTreeNode)
                 {
-                    var ossTreeNode = this.resultsTree.SelectedItem as OssVulnerabilityTreeNode;
+                    this.HandleOssTreeNodeSelected();
 
-                    var vulnerability = ossTreeNode.Vulnerability;
-
-                    if (vulnerability != null)
-                    {
-                        treeNode = ossTreeNode;
-
-                        this.descriptionPanel.Visibility = Visibility.Visible;
-
-                        this.descriptionPanel.Vulnerability = vulnerability;
-
-                        this.serviceProvider.AnalyticsService.LogIssueIsViewedEvent(
-                            vulnerability.Id,
-                            IssueType.Get(vulnerability),
-                            vulnerability.Severity);
-                    }
-                    else
-                    {
-                        this.descriptionPanel.Visibility = Visibility.Collapsed;
-                    }
+                    return;
                 }
 
                 if (this.resultsTree.SelectedItem is SnykCodeVulnerabilityTreeNode)
                 {
-                    this.descriptionPanel.Visibility = Visibility.Visible;
-
-                    var snykCodeTreeNode = this.resultsTree.SelectedItem as SnykCodeVulnerabilityTreeNode;
-
-                    this.descriptionPanel.Suggestion = snykCodeTreeNode.Suggestion;
-
-                    treeNode = snykCodeTreeNode;
-
-                    var suggestion = snykCodeTreeNode.Suggestion;
-
-                    VsCodeService.Instance.OpenAndNavigate(
-                        this.serviceProvider.SolutionService.GetFileFullPath(suggestion.FileName),
-                        suggestion.Rows.Item1 - 1,
-                        suggestion.Columns.Item1 - 1,
-                        suggestion.Rows.Item2 - 1,
-                        suggestion.Columns.Item2);
-
-                    this.serviceProvider.AnalyticsService.LogIssueIsViewedEvent(
-                            suggestion.Id,
-                            IssueType.Get(suggestion),
-                            Severity.FromInt(suggestion.Severity));
-                }
-
-                if (treeNode == null)
-                {
-                    this.descriptionPanel.Visibility = Visibility.Collapsed;
-
-                    this.messagePanel.Visibility = Visibility.Visible;
-                    this.messagePanel.ShowSelectIssueMessage();
+                    this.HandleSnykCodeTreeNodeSelected();
 
                     return;
                 }
+
+                this.HandleRootTreeNodeSelected();
             });
+        }
+
+        private void HandleRootTreeNodeSelected()
+        {
+            this.descriptionPanel.Visibility = Visibility.Collapsed;
+            this.messagePanel.Visibility = Visibility.Visible;
+
+            var selectedItem = this.resultsTree.SelectedItem;
+
+            // Check if selected tree node is related to Snyk Code and if state is LocalCodeEngineIsEnabled.
+            // In this case display additional informaiton in toolwindow panel.
+            if (selectedItem is SnykCodeQualityRootTreeNode || selectedItem is SnykCodeSecurityRootTreeNode)
+            {
+                var rootTreeNode = selectedItem as RootTreeNode;
+
+                if (rootTreeNode.State == RootTreeNodeState.LocalCodeEngineIsEnabled)
+                {
+                    this.messagePanel.ShowDisabledDueToLocalCodeEngineMessage();
+
+                    return;
+                }
+            }
+
+            this.messagePanel.ShowSelectIssueMessage();
+        }
+
+        private void HandleOssTreeNodeSelected()
+        {
+            var ossTreeNode = this.resultsTree.SelectedItem as OssVulnerabilityTreeNode;
+
+            var vulnerability = ossTreeNode.Vulnerability;
+
+            if (vulnerability != null)
+            {
+                this.descriptionPanel.Visibility = Visibility.Visible;
+
+                this.descriptionPanel.Vulnerability = vulnerability;
+
+                this.serviceProvider.AnalyticsService.LogIssueIsViewedEvent(
+                    vulnerability.Id,
+                    IssueType.Get(vulnerability),
+                    vulnerability.Severity);
+            }
+            else
+            {
+                this.descriptionPanel.Visibility = Visibility.Collapsed;
+            }
+        }
+
+        private void HandleSnykCodeTreeNodeSelected()
+        {
+            this.descriptionPanel.Visibility = Visibility.Visible;
+
+            var snykCodeTreeNode = this.resultsTree.SelectedItem as SnykCodeVulnerabilityTreeNode;
+
+            this.descriptionPanel.Suggestion = snykCodeTreeNode.Suggestion;
+
+            var suggestion = snykCodeTreeNode.Suggestion;
+
+            VsCodeService.Instance.OpenAndNavigate(
+                this.serviceProvider.SolutionService.GetFileFullPath(suggestion.FileName),
+                suggestion.Rows.Item1 - 1,
+                suggestion.Columns.Item1 - 1,
+                suggestion.Rows.Item2 - 1,
+                suggestion.Columns.Item2);
+
+            this.serviceProvider.AnalyticsService.LogIssueIsViewedEvent(
+                    suggestion.Id,
+                    IssueType.Get(suggestion),
+                    Severity.FromInt(suggestion.Severity));
         }
 
         private void StopButton_Click(object sender, RoutedEventArgs e) => SnykTasksService.Instance.CancelTasks();

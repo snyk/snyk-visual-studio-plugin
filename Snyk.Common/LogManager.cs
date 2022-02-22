@@ -51,7 +51,7 @@
                 {
                     var appSettings = SnykExtension.GetAppSettings();
 
-                    config.Release = SnykExtension.GetIntegrationVersion();
+                    config.Release = SnykExtension.Version;
                     config.Environment = appSettings.Environment;
                     config.Dsn = appSettings.SentryDsn;
 
