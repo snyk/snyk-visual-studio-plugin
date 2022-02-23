@@ -47,10 +47,4 @@ jobs:
 
     - name: Tests
       run: vstest.console.exe **\*.Tests.dll
-      
-    - name: Publish 2015-2019 extension to Marketplace
-      uses: cezarypiatek/VsixPublisherAction@0.1
-      with:
-        extension-file: '.\Snyk.VisualStudio.Extension\bin\Release\Snyk.VisualStudio.Extension.vsix'
-        publish-manifest-file: '.\Snyk.VisualStudio.Extension\vs-publish.json'
-        personal-access-code: ${{ secrets.VS_PUBLISHER_ACCESS_TOKEN }}
+    
