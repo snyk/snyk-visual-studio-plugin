@@ -12,10 +12,11 @@ env:
 jobs:
   build:
     runs-on: windows-latest
+    defaults:
+      run:
+        working-directory: ${{ github.workspace }} 
     env:
       TEST_API_TOKEN: ${{ secrets.TEST_API_TOKEN }}
-      Vsix2022ManifestPath: .\Snyk.VisualStudio.Extension.2022\source.extension.vsixmanifest
-      Vsix2022ManifestSourcePath: .\Snyk.VisualStudio.Extension.2022\source.extension.cs
 
     steps:
     - uses: actions/checkout@v2
@@ -37,24 +38,14 @@ jobs:
       uses: darenm/Setup-VSTest@v1
 
     - name: Restore NuGet packages
-      working-directory: ${{env.GITHUB_WORKSPACE}}
       run: nuget restore ${{env.SOLUTION_FILE_PATH}}
 
-    - name: Increment VSIX version for 2022
-      id: vsix_2022_version
-      uses: timheuer/vsix-version-stamp@v1
-      with:
-        manifest-file: ${{ env.Vsix2022ManifestPath }}
-        vsix-token-source-file: ${{ env.Vsix2022ManifestSourcePath }}
-
     - name: Build
-      working-directory: ${{env.GITHUB_WORKSPACE}}
       run: |
         msbuild ${{env.SOLUTION_FILE_PATH}} /p:configuration=Release /p:DeployExtension=false /p:ZipPackageCompressionLevel=normal /v:m
       shell: powershell
 
     - name: Tests
-      working-directory: ${{env.GITHUB_WORKSPACE}}
       run: vstest.console.exe .\Snyk.VisualStudio.Extension.Tests\bin\Release\net472\Snyk.VisualStudio.Extension.Tests.dll .\Snyk.Code.Library.Tests\bin\Release\net472\Snyk.Code.Library.Tests.dll      
 
     - name: Publish 2022 extension to Marketplace
