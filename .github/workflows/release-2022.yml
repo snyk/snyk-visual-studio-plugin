@@ -48,4 +48,9 @@ jobs:
     - name: Tests
       run: vstest.console.exe **\*.Tests.dll
 
-    
+    - name: Publish 2022 extension to Marketplace
+      uses: cezarypiatek/VsixPublisherAction@0.1
+      with:
+        extension-file: '.\Snyk.VisualStudio.Extension.2022\bin\Release\Snyk.VisualStudio.Extension.vsix'
+        publish-manifest-file: '.\Snyk.VisualStudio.Extension.2022\vs-publish.json'
+        personal-access-code: ${{ secrets.VS_PUBLISHER_ACCESS_TOKEN }}
