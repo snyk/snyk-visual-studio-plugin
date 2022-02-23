@@ -3,7 +3,7 @@ name: release for 2022
 on:
   workflow_dispatch:
   schedule:
-    - cron: '0 10 * * 2'  # every Tuesday at 10 am UTC
+    - cron: '0 9 * * 2'  # every Tuesday at 10 am UTC
 
 env:
   SOLUTION_FILE_PATH: .
