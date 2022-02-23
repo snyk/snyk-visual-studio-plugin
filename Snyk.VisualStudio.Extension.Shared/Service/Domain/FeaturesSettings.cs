@@ -24,5 +24,10 @@
         /// Gets or sets a value indicating whether Code security enabled.
         /// </summary>
         public bool CodeSecurityEnabled { get; set; }
+
+        /// <summary>
+        /// Gets or sets a value indicating whether local code engine enabled.
+        /// </summary>
+        public bool LocalCodeEngineEnabled { get; set; }
     }
 }

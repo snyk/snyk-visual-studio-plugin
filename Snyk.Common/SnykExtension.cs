@@ -25,6 +25,11 @@
         private static SnykAppSettings appSettings;
 
         /// <summary>
+        /// Gets extension version.
+        /// </summary>
+        public static string Version => GetIntegrationVersion();
+
+        /// <summary>
         /// Get <see cref="SnykAppSettings"/> from file.
         /// </summary>
         /// <returns><see cref="SnykAppSettings"/> object.</returns>
@@ -44,10 +49,28 @@
         }
 
         /// <summary>
+        /// Get extension directory path.
+        /// </summary>
+        /// <returns>Extension directory path.</returns>
+        public static string GetExtensionDirectoryPath()
+        {
+            if (string.IsNullOrEmpty(extensionDirectoryPath))
+            {
+                string codebase = typeof(SnykExtension).Assembly.CodeBase;
+
+                var uri = new Uri(codebase, UriKind.Absolute);
+
+                extensionDirectoryPath = Directory.GetParent(uri.LocalPath).FullName;
+            }
+
+            return extensionDirectoryPath;
+        }
+
+        /// <summary>
         /// Get integration version.
         /// </summary>
         /// <returns>String.</returns>
-        public static string GetIntegrationVersion()
+        private static string GetIntegrationVersion()
         {
             if (string.IsNullOrEmpty(version))
             {
@@ -79,24 +102,6 @@
             }
 
             return version;
-        }
-
-        /// <summary>
-        /// Get extension directory path.
-        /// </summary>
-        /// <returns>Extension directory path.</returns>
-        public static string GetExtensionDirectoryPath()
-        {
-            if (string.IsNullOrEmpty(extensionDirectoryPath))
-            {
-                string codebase = typeof(SnykExtension).Assembly.CodeBase;
-
-                var uri = new Uri(codebase, UriKind.Absolute);
-
-                extensionDirectoryPath = Directory.GetParent(uri.LocalPath).FullName;
-            }
-
-            return extensionDirectoryPath;
         }
     }
 }
