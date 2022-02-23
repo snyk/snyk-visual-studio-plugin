@@ -46,7 +46,7 @@ jobs:
       shell: powershell
 
     - name: Tests
-      run: vstest.console.exe .\Snyk.VisualStudio.Extension.Tests\bin\Release\net472\Snyk.VisualStudio.Extension.Tests.dll .\Snyk.Code.Library.Tests\bin\Release\net472\Snyk.Code.Library.Tests.dll      
+      run: vstest.console.exe **\*.Tests.dll
 
     - name: Publish 2022 extension to Marketplace
       uses: cezarypiatek/VsixPublisherAction@0.1
