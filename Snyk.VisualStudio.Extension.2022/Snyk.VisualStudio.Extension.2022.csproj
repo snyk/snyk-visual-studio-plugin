@@ -47,7 +47,6 @@
   </PropertyGroup>
   <ItemGroup>
     <Compile Include="Properties\AssemblyInfo.cs" />
-    <Compile Include="source.extension.cs" />
   </ItemGroup>
   <ItemGroup>
     <Content Include="source.extension.preview.vsixmanifest" />
