@@ -20,9 +20,21 @@ jobs:
         working-directory: ${{ github.workspace }} 
     env:
       TEST_API_TOKEN: ${{ secrets.TEST_API_TOKEN }}
+      VsixManifestPath: .\Snyk.VisualStudio.Extension\source.extension.vsixmanifest
 
     steps:
     - uses: actions/checkout@v2
+    
+    - name: Unshallow
+      run: git fetch --prune --unshallow
+    
+    - uses: actions/cache@v2
+      with:
+        path: ~/.nuget/packages
+        key: ${{ runner.os }}-nuget-${{ hashFiles('**/packages.lock.json') }}
+        restore-keys: |
+          ${{ runner.os }}-nuget-
+    
     - uses: microsoft/variable-substitution@v1 
       with:
         files: '.\Snyk.Common\appsettings.json'
@@ -43,6 +55,22 @@ jobs:
     - name: Restore NuGet packages
       run: nuget restore ${{env.SOLUTION_FILE_PATH}}
 
+    - name: Increment VSIX version
+      id: vsix_version
+      uses: timheuer/vsix-version-stamp@v1
+      with:
+        manifest-file: ${{ env.VsixManifestPath }}
+        
+    - name: Set up Git actions user
+      uses: fregante/setup-git-user@v1
+      
+    - name: Commit new version
+      run: | 
+        git commit -am 'increment new version'
+        git tag ${{ steps.vsix_version.outputs.version-number }}
+        git push origin main
+        git push origin main --tags
+        
     - name: Build
       run: |
         msbuild ${{env.SOLUTION_FILE_PATH}} /p:configuration=Release /p:DeployExtension=false /p:ZipPackageCompressionLevel=normal /v:m
@@ -57,11 +85,10 @@ jobs:
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       with:
-        tag_name: ${{ github.ref }}
-        release_name: Release 2015-2019 ${{ github.ref }}
+        tag_name: ${{ steps.vsix_version.outputs.version-number }}
+        release_name: Release ${{ steps.vsix_version.outputs.version-number }}
         draft: false
         prerelease: false
-        
     - name: Upload Release Asset
       id: upload-release-asset
       uses: actions/upload-release-asset@v1
@@ -70,7 +97,7 @@ jobs:
       with:
         upload_url: ${{ steps.create_release.outputs.upload_url }} # This pulls from the CREATE RELEASE step above, referencing it's ID to get its outputs object, which include a `upload_url`. See this blog post for more info: https://jasonet.co/posts/new-features-of-github-actions/#passing-data-to-future-steps 
         asset_path: .\Snyk.VisualStudio.Extension\bin\Release\Snyk.VisualStudio.Extension.vsix
-        asset_name: Snyk_Vulnerability_Scanner-latest.vsix
+        asset_name: Snyk_Vulnerability_Scanner-${{ steps.vsix_version.outputs.version-number }}.vsix
         asset_content_type: application/zip
     
     - name: Publish 2015-2019 extension to Marketplace
