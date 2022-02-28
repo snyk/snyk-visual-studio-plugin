@@ -48,8 +48,8 @@ jobs:
         msbuild ${{env.SOLUTION_FILE_PATH}} /p:configuration=Release /p:DeployExtension=false /p:ZipPackageCompressionLevel=normal /v:m
       shell: powershell
 
-    - name: Tests
-      run: vstest.console.exe **\*.Tests.dll
+#     - name: Tests
+#       run: vstest.console.exe **\*.Tests.dll
       
     - name: Create Release
       id: create_release
