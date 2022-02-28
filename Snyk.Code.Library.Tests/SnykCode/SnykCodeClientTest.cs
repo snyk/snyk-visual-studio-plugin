@@ -15,7 +15,7 @@
     /// </summary>
     public class SnykCodeClientTest
     {
-        [Fact]
+        /*[Fact]
         public async Task SnykCodeClient_TwoFilesWithIssuesProvided_GetAnalysisSuccessAsync()
         {
             var bundleFiles = new Dictionary<string, string>();
@@ -70,7 +70,7 @@
             Assert.Equal("COMPLETE", analysisResult.Status);
             Assert.NotNull(analysisResult.Files);
             Assert.NotEmpty(analysisResult.Files);
-        }
+        }*/
 
         [Fact]
         public async Task SnykCodeClient_OneFileWithIssuesProvided_GetAnalysisSuccessAsync()
