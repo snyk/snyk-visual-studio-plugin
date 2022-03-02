@@ -31,6 +31,8 @@ Project("{D954291E-2A0B-460D-934E-DC6B0785DB48}") = "Snyk.VisualStudio.Extension
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Snyk.VisualStudio.Extension.2022", "Snyk.VisualStudio.Extension.2022\Snyk.VisualStudio.Extension.2022.csproj", "{AB050A12-200E-48AE-898D-CB5532151A66}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Snyk.Common.Tests", "Snyk.Common.Tests\Snyk.Common.Tests.csproj", "{F6F1D541-4B5E-412C-9F1C-161654FE9641}"
+EndProject
 Global
 	GlobalSection(SharedMSBuildProjectFiles) = preSolution
 		Snyk.VisualStudio.Extension.Shared\Snyk.VisualStudio.Extension.Shared.projitems*{910098f4-ec69-40f2-8cf1-b2e86e30d2f8}*SharedItemsImports = 4
@@ -66,6 +68,10 @@ Global
 		{AB050A12-200E-48AE-898D-CB5532151A66}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{AB050A12-200E-48AE-898D-CB5532151A66}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{AB050A12-200E-48AE-898D-CB5532151A66}.Release|Any CPU.Build.0 = Release|Any CPU
+		{F6F1D541-4B5E-412C-9F1C-161654FE9641}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{F6F1D541-4B5E-412C-9F1C-161654FE9641}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{F6F1D541-4B5E-412C-9F1C-161654FE9641}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{F6F1D541-4B5E-412C-9F1C-161654FE9641}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

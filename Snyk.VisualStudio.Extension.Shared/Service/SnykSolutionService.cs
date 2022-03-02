@@ -23,18 +23,28 @@
 
         private IFileProvider fileProvider;
 
-        private SnykSolutionService() { }
-
         /// <summary>
         /// Initializes a new instance of the <see cref="SnykSolutionService"/> class.
         /// </summary>
-        /// <param name="serviceProvider">Service provider implementation.</param>
-        private SnykSolutionService(ISnykServiceProvider serviceProvider) => this.ServiceProvider = serviceProvider;
+        private SnykSolutionService()
+        {
+        }
 
         /// <summary>
         /// Gets a value indicating whether <see cref="SnykSolutionService"/> singleton instance.
         /// </summary>
-        public static SnykSolutionService Instance => instance;
+        public static SnykSolutionService Instance
+        {
+            get
+            {
+                if (instance == null)
+                {
+                    instance = new SnykSolutionService();
+                }
+
+                return instance;
+            }
+        }
 
         /// <summary>
         /// Gets a value indicating whether is solution open.
@@ -70,14 +80,11 @@
         /// </summary>
         /// <param name="serviceProvider">Service provider implementation.</param>
         /// <returns>Task.</returns>
-        public static async Task InitializeAsync(ISnykServiceProvider serviceProvider)
+        public async Task InitializeAsync(ISnykServiceProvider serviceProvider)
         {
-            if (instance == null)
-            {
-                instance = new SnykSolutionService(serviceProvider);
+            Instance.ServiceProvider = serviceProvider;
 
-                await instance.InitializeSolutionEventsAsync();
-            }
+            await Instance.InitializeSolutionEventsAsync();
         }
 
         /// <summary>
@@ -96,19 +103,26 @@
 
             var projects = this.GetProjects();
 
-            foreach (Project project in projects)
+            try
             {
-                foreach (ProjectItem projectItem in project.ProjectItems)
+                foreach (Project project in projects)
                 {
-                    try
+                    foreach (ProjectItem projectItem in project.ProjectItems)
                     {
-                        solutionFiles.Add(projectItem.get_FileNames(0));
-                    }
-                    catch (Exception ex)
-                    {
-                        Logger.Error(ex.Message);
+                        try
+                        {
+                            solutionFiles.Add(projectItem.get_FileNames(0));
+                        }
+                        catch (Exception ex)
+                        {
+                            Logger.Error(ex, "Failed to get file name");
+                        }
                     }
                 }
+            }
+            catch (Exception e)
+            {
+                Logger.Error(e, "Failed to get project files");
             }
 
             return solutionFiles;
@@ -188,7 +202,7 @@
             Logger.Information($"Result solution path is {solutionPath}.");
 
             return solutionPath;
-        }        
+        }
 
         /// <summary>
         /// Get solution files using VS API.
@@ -210,7 +224,7 @@
         /// <inheritdoc/>
         public void Clean()
         {
-            this.fileProvider = null;
+            this.fileProvider.ClearHistory();
 
             this.ServiceProvider.SnykCodeService.Clean();
         }

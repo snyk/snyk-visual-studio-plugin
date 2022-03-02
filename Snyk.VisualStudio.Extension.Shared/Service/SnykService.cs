@@ -34,8 +34,6 @@
 
         private SnykTasksService tasksService;
 
-        private SnykSolutionService solutionService;
-
         private DTE2 dte;
 
         private SnykAnalyticsService analyticsService;
@@ -64,18 +62,7 @@
         /// <summary>
         /// Gets solution service.
         /// </summary>
-        public SnykSolutionService SolutionService
-        {
-            get
-            {
-                if (this.solutionService == null)
-                {
-                    this.solutionService = SnykSolutionService.Instance;
-                }
-
-                return this.solutionService;
-            }
-        }
+        public SnykSolutionService SolutionService => SnykSolutionService.Instance;
 
         /// <summary>
         /// Gets Tasks service.
@@ -244,10 +231,9 @@
 
                 this.dte = await this.serviceProvider.GetServiceAsync(typeof(DTE)) as DTE2;
 
-                await SnykSolutionService.InitializeAsync(this);
+                await SnykSolutionService.Instance.InitializeAsync(this);
 
                 this.tasksService = SnykTasksService.Instance;
-                this.solutionService = SnykSolutionService.Instance;
 
                 NotificationService.Initialize(this);
 
