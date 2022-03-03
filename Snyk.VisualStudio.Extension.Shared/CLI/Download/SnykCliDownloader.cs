@@ -176,7 +176,7 @@
         {
             string fileDestinationPath = this.GetCliFilePath(filePath);
 
-            if (this.IsCliDownloadNeeded(lastCheckDate, filePath))
+            if (this.IsCliDownloadNeeded(lastCheckDate, fileDestinationPath))
             {
                 await this.DownloadAsync(
                     fileDestinationPath: fileDestinationPath,
@@ -277,19 +277,21 @@
             {
                 this.SaveLatestCliSha();
 
-                await this.DownloadFileAsync(progressWorker, cliDownloadUrl, cliFileDestinationPath);
+                await this.DownloadFileAsync(progressWorker, cliDownloadUrl, cliFileDestinationPath, downloadFinishedCallbacks);
             }
             catch (ChecksumVerificationException e)
             {
                 Logger.Error(e, "Error on cli file download");
 
-                await this.DownloadFileAsync(progressWorker, cliDownloadUrl, cliFileDestinationPath);
+                await this.DownloadFileAsync(progressWorker, cliDownloadUrl, cliFileDestinationPath, downloadFinishedCallbacks);
             }
-
-            this.FinishDownload(progressWorker, downloadFinishedCallbacks);
         }
 
-        private async Task DownloadFileAsync(ISnykProgressWorker progressWorker, string cliDownloadUrl, string cliFileDestinationPath)
+        private async Task DownloadFileAsync(
+            ISnykProgressWorker progressWorker,
+            string cliDownloadUrl,
+            string cliFileDestinationPath,
+            List<CliDownloadFinishedCallback> downloadFinishedCallbacks = null)
         {
             using (var client = new HttpClient())
             {
@@ -339,7 +341,18 @@
 
                 try
                 {
+                    if (File.Exists(cliFileDestinationPath))
+                    {
+                        File.Delete(cliFileDestinationPath);
+                    }
+
                     File.Copy(tempCliFile, cliFileDestinationPath);
+
+                    this.FinishDownload(progressWorker, downloadFinishedCallbacks);
+                }
+                catch (Exception e)
+                {
+                    Logger.Error(e, "Error on CLI copy from temp file");
                 }
                 finally
                 {

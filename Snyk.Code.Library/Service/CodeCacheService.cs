@@ -102,10 +102,15 @@
 
             foreach (string file in files)
             {
-                string filePath = this.GetRelativeFilePathIfFullPath(file);
-
-                if (File.Exists(filePath))
+                if (File.Exists(file))
                 {
+                    string filePath = this.GetRelativeFilePathIfFullPath(file);
+
+                    if (this.filePathToHashCache[filePath] == null)
+                    {
+                        this.AddFile(file);
+                    }
+
                     filePathToHashDict.Add(filePath, this.filePathToHashCache[filePath].ToString());
                 }
             }
