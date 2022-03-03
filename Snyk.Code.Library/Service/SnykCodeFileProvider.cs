@@ -62,6 +62,8 @@
         {
             this.changedFiles.Clear();
             this.removedFiles.Clear();
+
+            this.solutionPath = null;
         }
 
         /// <inheritdoc/>
