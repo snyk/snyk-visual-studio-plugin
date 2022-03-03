@@ -82,6 +82,6 @@
         }
 
         private bool IsManifestFile(string [] array, string searchString) =>
-            Array.Exists(array, fileName => fileName.ToLower() == searchString.ToLower());
+            Array.Exists(array, fileName => !string.IsNullOrEmpty(searchString) && fileName.ToLower() == searchString.ToLower());
     }
 }
