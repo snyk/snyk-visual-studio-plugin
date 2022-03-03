@@ -1,8 +1,8 @@
-namespace Snyk.Common.Tests
+namespace Snyk.Code.Library.Service
 {
-    using Moq;
-    using Snyk.Code.Library.Service;
     using System.Linq;
+    using Moq;
+    using Snyk.Common;
     using Xunit;
 
     /// <summary>
