@@ -153,7 +153,6 @@
     <Content Include="appsettings.json">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>
-    <None Include="packages.config" />
   </ItemGroup>
   <ItemGroup>
     <Analyzer Include="..\packages\Microsoft.CodeAnalysis.BannedApiAnalyzers.3.3.2\analyzers\dotnet\cs\Microsoft.CodeAnalysis.BannedApiAnalyzers.dll" />
@@ -172,17 +171,11 @@
     <Analyzer Include="..\packages\StyleCop.Analyzers.1.1.118\analyzers\dotnet\cs\StyleCop.Analyzers.CodeFixes.dll" />
     <Analyzer Include="..\packages\StyleCop.Analyzers.1.1.118\analyzers\dotnet\cs\StyleCop.Analyzers.dll" />
   </ItemGroup>
-  <ItemGroup />
+  <ItemGroup>
+    <None Include="packages.config" />
+  </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <Import Project="..\packages\Microsoft.VisualStudio.Threading.Analyzers.16.10.56\build\Microsoft.VisualStudio.Threading.Analyzers.targets" Condition="Exists('..\packages\Microsoft.VisualStudio.Threading.Analyzers.16.10.56\build\Microsoft.VisualStudio.Threading.Analyzers.targets')" />
-  <Target Name="WriteAppSettingsFile" BeforeTargets="PreBuildEvent">
-    <WriteLinesToFile File="$(AppSettingsFile)" Overwrite="true" Lines="{" />
-    <WriteLinesToFile File="$(AppSettingsFile)" Lines="&quot;SegmentAnalyticsWriteKey&quot;: &quot;$(SEGMENT_ANALYTICS_WRITE_KEY)&quot;," />
-    <WriteLinesToFile File="$(AppSettingsFile)" Lines="&quot;SnykCodeApiEndpointUrl&quot;: &quot;$(SNYK_CODE_API_ENDPOINT_URL)&quot;," />
-    <WriteLinesToFile File="$(AppSettingsFile)" Lines="&quot;SentryDsn&quot;: &quot;$(SENTRY_DSN)&quot;," />
-    <WriteLinesToFile File="$(AppSettingsFile)" Lines="&quot;Environment&quot;: &quot;$(SENTRY_ENVIRONMENT)&quot;" />
-    <WriteLinesToFile File="$(AppSettingsFile)" Lines="}" />
-  </Target>
   <Target Name="EnsureNuGetPackageBuildImports" BeforeTargets="PrepareForBuild">
     <PropertyGroup>
       <ErrorText>This project references NuGet package(s) that are missing on this computer. Use NuGet Package Restore to download them.  For more information, see http://go.microsoft.com/fwlink/?LinkID=322105. The missing file is {0}.</ErrorText>
