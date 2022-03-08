@@ -12,11 +12,22 @@ env:
 jobs:
   build:
     runs-on: windows-latest
+    defaults:
+      run:
+        working-directory: ${{ github.workspace }} 
     env:
       TEST_API_TOKEN: ${{ secrets.TEST_API_TOKEN }}
 
     steps:
     - uses: actions/checkout@v2
+    - uses: microsoft/variable-substitution@v1 
+      with:
+        files: '.\Snyk.Common\appsettings.json'
+      env:
+        SegmentAnalyticsWriteKey: ${{ secrets.SEGMENT_ANALYTICS_WRITE_KEY }}
+        SnykCodeApiEndpointUrl: ${{ secrets.SNYK_CODE_API_ENDPOINT_URL }}
+        SentryDsn: ${{ secrets.SENTRY_DSN }}
+        Environment: ${{ secrets.SENTRY_ENVIRONMENT }}
 
     - name: Add MSBuild to PATH
       uses: microsoft/setup-msbuild@v1
@@ -26,21 +37,13 @@ jobs:
     - name: Setup VSTest
       uses: darenm/Setup-VSTest@v1
 
-    - name: Restore NuGet packages
-      working-directory: ${{env.GITHUB_WORKSPACE}}
+    - name: Restore NuGet packages      
       run: nuget restore ${{env.SOLUTION_FILE_PATH}}
 
     - name: Build
-      working-directory: ${{env.GITHUB_WORKSPACE}}
       run: |
-        (new-object Net.WebClient).DownloadString("https://raw.github.com/madskristensen/ExtensionScripts/master/AppVeyor/vsix.ps1") | iex
-        #Vsix-IncrementVsixVersion | Vsix-UpdateBuildVersion
-        #echo {version}
-        #Vsix-TokenReplacement Snyk.VisualStudio.Extension\source.extension.vsixmanifest 'Version="([0-9\\.]+)"' 'Version="{version}"'
         msbuild ${{env.SOLUTION_FILE_PATH}} /p:configuration=Release /p:DeployExtension=false /p:ZipPackageCompressionLevel=normal /v:m
-        #Vsix-PushArtifacts | Vsix-PublishToGallery
       shell: powershell
 
     - name: Tests
-      working-directory: ${{env.GITHUB_WORKSPACE}}
-      run: vstest.console.exe .\Snyk.VisualStudio.Extension.Tests\bin\Release\net472\Snyk.VisualStudio.Extension.Tests.dll .\Snyk.Code.Library.Tests\bin\Release\net472\Snyk.Code.Library.Tests.dll
+      run: vstest.console.exe **\*.Tests.dll

@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <PackageManifest Version="2.0.0" xmlns="http://schemas.microsoft.com/developer/vsx-schema/2011" xmlns:d="http://schemas.microsoft.com/developer/vsx-schema-design/2011">
     <Metadata>
-        <Identity Id="snyk_visual_studio_plugin_2022.1a8ce03c-713d-41f9-9d2d-6451639dfca5" Version="1.1.3" Language="en-US" Publisher="Snyk" />
+        <Identity Id="snyk_visual_studio_plugin_2022.1a8ce03c-713d-41f9-9d2d-6451639dfca5" Version="1.1.4" Language="en-US" Publisher="Snyk" />
         <DisplayName>Snyk Vulnerability Scanner</DisplayName>
         <Description xml:space="preserve">The Visual Studio extension (Snyk’s Vulnerability Scanner) helps you find and fix security vulnerabilities in your projects. Within a few seconds, the extension will provide a list of all the different types of security vulnerabilities identified together with actionable fix advice. The extension combines the power of two Snyk products: Snyk Open Source and Snyk Code.</Description>
         <MoreInfo>https://github.com/snyk/snyk-visual-studio-plugin/</MoreInfo>
