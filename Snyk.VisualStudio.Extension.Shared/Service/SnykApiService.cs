@@ -32,19 +32,28 @@
         /// <inheritdoc/>
         public async Task<SastSettings> GetSastSettingsAsync()
         {
-            var settingsUrl = new ApiEndpointResolver(this.options).GetSnykApiEndpoint();
-            var sastUrl = new Uri(new Uri(settingsUrl), SastSettingsApiName);
+            var response = await SendSastSettingsRequestAsync();
+            var responseContent = await response.Content.ReadAsStringAsync();
 
-            using (var httpRequest = new HttpRequestMessage(HttpMethod.Get, sastUrl))
+            return Json.Deserialize<SastSettings>(responseContent);
+        }
+
+        public async Task<HttpResponseMessage> SendSastSettingsRequestAsync()
+        {
+            var settingsUrl = new ApiEndpointResolver(this.options).GetSnykApiEndpoint();
+            var builder = new UriBuilder(new Uri(new Uri(settingsUrl), SastSettingsApiName).ToString());
+            var organization = this.options.Organization;
+            if (!string.IsNullOrEmpty(organization))
+            {
+                builder.Query = $"org={organization}";
+            }
+
+            using (var httpRequest = new HttpRequestMessage(HttpMethod.Get, builder.Uri))
             {
                 httpRequest.Headers.Add("Authorization", $"token {this.options.ApiToken}");
                 httpRequest.Headers.Add("x-snyk-ide", $"{SnykExtension.IntegrationName}-{SnykExtension.Version}");
 
-                var response = await this.httpClient.SendAsync(httpRequest);
-
-                string responseText = await response.Content.ReadAsStringAsync();
-
-                return Json.Deserialize<SastSettings>(responseText);
+                return await httpClient.SendAsync(httpRequest);
             }
         }
     }
