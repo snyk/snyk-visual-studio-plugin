@@ -23,18 +23,20 @@ jobs:
       VsixManifestPath: .\Snyk.VisualStudio.Extension\source.extension.vsixmanifest
 
     steps:
-    - uses: actions/checkout@v2
-    
-    - name: Unshallow
-      run: git fetch --prune --unshallow
-    
+    - uses: actions/checkout@v3
+      with:
+        fetch-depth: 0
+
+    - name: Fetch Git tags
+      run: git fetch --all --tags
+
     - uses: actions/cache@v2
       with:
         path: ~/.nuget/packages
         key: ${{ runner.os }}-nuget-${{ hashFiles('**/packages.config') }}
         restore-keys: |
           ${{ runner.os }}-nuget-
-    
+
     - uses: microsoft/variable-substitution@v1 
       with:
         files: '.\Snyk.Common\appsettings.json'
@@ -55,22 +57,19 @@ jobs:
     - name: Restore NuGet packages
       run: nuget restore ${{env.SOLUTION_FILE_PATH}}
 
-    - name: Increment VSIX version
+   - name: Fetch Git tags
+      run: git fetch --all --tags
+
+    - name: Get next Git tag
       id: vsix_version
-      uses: timheuer/vsix-version-stamp@v1
+      uses: ./.github/actions/next-git-tag
+
+    - name: Set VSIX version
+      uses: cezarypiatek/VsixVersionAction@1.0
       with:
-        manifest-file: ${{ env.VsixManifestPath }}
-        
-    - name: Set up Git actions user
-      uses: fregante/setup-git-user@v1
-      
-    - name: Commit new version
-      run: | 
-        git commit -am 'increment new version'
-        git tag ${{ steps.vsix_version.outputs.version-number }}
-        git push origin main
-        git push origin main --tags
-        
+        version: ${{ steps.vsix_version.outputs.next-tag }}
+        vsix-manifest-file: src\SampleProject.VSIX\source.extension.vsixmanifest
+
     - name: Build
       run: |
         msbuild ${{env.SOLUTION_FILE_PATH}} /p:configuration=Release /p:DeployExtension=false /p:ZipPackageCompressionLevel=normal /v:m
@@ -78,15 +77,15 @@ jobs:
 
     - name: Tests
       run: vstest.console.exe **\*.Tests.dll
-      
+
     - name: Create Release
       id: create_release
       uses: actions/create-release@v1
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       with:
-        tag_name: ${{ steps.vsix_version.outputs.version-number }}
-        release_name: Release ${{ steps.vsix_version.outputs.version-number }}
+        tag_name: ${{ steps.vsix_version.outputs.next-tag }}
+        release_name: Release ${{ steps.vsix_version.outputs.next-tag }}
         draft: false
         prerelease: false
     - name: Upload Release Asset
@@ -97,9 +96,9 @@ jobs:
       with:
         upload_url: ${{ steps.create_release.outputs.upload_url }} # This pulls from the CREATE RELEASE step above, referencing it's ID to get its outputs object, which include a `upload_url`. See this blog post for more info: https://jasonet.co/posts/new-features-of-github-actions/#passing-data-to-future-steps 
         asset_path: .\Snyk.VisualStudio.Extension\bin\Release\Snyk.VisualStudio.Extension.vsix
-        asset_name: Snyk_Vulnerability_Scanner-${{ steps.vsix_version.outputs.version-number }}.vsix
+        asset_name: Snyk_Vulnerability_Scanner-${{ steps.vsix_version.outputs.next-tag }}.vsix
         asset_content_type: application/zip
-    
+
     - name: Publish 2015-2019 extension to Marketplace
       uses: cezarypiatek/VsixPublisherAction@0.1
       with:

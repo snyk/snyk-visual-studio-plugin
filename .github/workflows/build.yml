@@ -20,6 +20,9 @@ jobs:
 
     steps:
     - uses: actions/checkout@v2
+      with:
+        fetch-depth: 0
+
     - uses: microsoft/variable-substitution@v1 
       with:
         files: '.\Snyk.Common\appsettings.json'
@@ -34,10 +37,18 @@ jobs:
       with:
         vs-version: '[14.0, ]'
 
+    # testing: remove to release workflows
+    - name: Get next Git tag
+      id: vsix_version
+      uses: ./.github/actions/next-git-tag
+
+    - name: output next semver tag
+      run: echo ${{ steps.vsix_version.outputs.next-tag }}
+
     - name: Setup VSTest
       uses: darenm/Setup-VSTest@v1
 
-    - name: Restore NuGet packages      
+    - name: Restore NuGet packages
       run: nuget restore ${{env.SOLUTION_FILE_PATH}}
 
     - name: Build
