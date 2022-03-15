@@ -2,7 +2,7 @@
 <PackageManifest Version="2.0.0" xmlns="http://schemas.microsoft.com/developer/vsx-schema/2011" xmlns:d="http://schemas.microsoft.com/developer/vsx-schema-design/2011">
     <Metadata>
         <Identity Id="snyk_visual_studio_plugin_2022.1a8ce03c-713d-41f9-9d2d-6451639dfca5" Version="1.1.7" Language="en-US" Publisher="Snyk" />
-        <DisplayName>Snyk Vulnerability Scanner (Preview)</DisplayName>
+        <DisplayName>Snyk Security - Code and Open Source Dependencies (Preview)</DisplayName>
         <Description xml:space="preserve">This is a preview release for functionality that is not yet officially released.</Description>
         <MoreInfo>https://github.com/snyk/snyk-visual-studio-plugin/</MoreInfo>
         <License>LICENSE.txt</License>
