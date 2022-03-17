@@ -57,5 +57,25 @@
 
             Assert.Contains("?org=my-super-org", response.RequestMessage.RequestUri.Query);
         }
+
+        [Fact]
+        public async Task SnykApiService_InvalidAuthTokenProvided_ReturnNullAsync()
+        {
+            var optionsMock = new Mock<ISnykOptions>();
+
+            optionsMock
+                .Setup(options => options.CustomEndpoint)
+                .Returns("https://dev.snyk.io/api");
+
+            optionsMock
+                .Setup(options => options.ApiToken)
+                .Returns("bad api token");
+
+            var apiService = new SnykApiService(optionsMock.Object);
+
+            var sastSettings = await apiService.GetSastSettingsAsync();
+
+            Assert.Null(sastSettings);
+        }
     }
 }

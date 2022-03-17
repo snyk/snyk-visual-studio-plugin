@@ -44,8 +44,11 @@
         }
 
         /// <inheritdoc/>
-        public override void UpdateState() => 
-            this.MenuCommand.Enabled = SnykSolutionService.Instance.IsSolutionOpen && SnykTasksService.Instance.IsTaskRunning();
+        public override void UpdateState() =>
+            this.MenuCommand.Enabled =
+                Common.Guid.IsValid(SnykVSPackage.ServiceProvider.Options.ApiToken)
+                    && SnykSolutionService.Instance.IsSolutionOpen 
+                    && SnykTasksService.Instance.IsTaskRunning();
 
         /// <summary>
         /// Cancel current running task.

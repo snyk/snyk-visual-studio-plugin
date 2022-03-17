@@ -1,5 +1,6 @@
 ﻿namespace Snyk.VisualStudio.Extension.Shared.Service
 {
+    using System.Net.Http;
     using System.Threading.Tasks;
 
     /// <summary>
@@ -12,5 +13,11 @@
         /// </summary>
         /// <returns>Object of <see cref="SastSettings"/>.</returns>
         Task<SastSettings> GetSastSettingsAsync();
+
+        /// <summary>
+        /// Send sast settings request to server.
+        /// </summary>
+        /// <returns>HttpResponseMessage response object.</returns>
+        Task<HttpResponseMessage> SendSastSettingsRequestAsync();
     }
 }

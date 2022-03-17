@@ -3,7 +3,6 @@
     using System;
     using System.Net.Http;
     using System.Threading.Tasks;
-    using Serilog;
     using Snyk.Common;
     using Snyk.VisualStudio.Extension.Shared.Settings;
 
@@ -26,18 +25,24 @@
         {
             this.options = options;
 
-            this.httpClient = HttpClientFactory.NewHttpClient(options.ApiToken);
+            this.httpClient = HttpClientFactory.NewHttpClient(this.options.ApiToken);
         }
 
         /// <inheritdoc/>
         public async Task<SastSettings> GetSastSettingsAsync()
         {
-            var response = await SendSastSettingsRequestAsync();
+            if (!Common.Guid.IsValid(this.options.ApiToken))
+            {
+                return null;
+            }
+
+            var response = await this.SendSastSettingsRequestAsync();
             var responseContent = await response.Content.ReadAsStringAsync();
 
             return Json.Deserialize<SastSettings>(responseContent);
         }
 
+        /// <inheritdoc/>
         public async Task<HttpResponseMessage> SendSastSettingsRequestAsync()
         {
             var settingsUrl = new ApiEndpointResolver(this.options).GetSnykApiEndpoint();
@@ -53,7 +58,7 @@
                 httpRequest.Headers.Add("Authorization", $"token {this.options.ApiToken}");
                 httpRequest.Headers.Add("x-snyk-ide", $"{SnykExtension.IntegrationName}-{SnykExtension.Version}");
 
-                return await httpClient.SendAsync(httpRequest);
+                return await this.httpClient.SendAsync(httpRequest);
             }
         }
     }

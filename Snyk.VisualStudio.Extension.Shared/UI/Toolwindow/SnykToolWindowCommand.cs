@@ -68,11 +68,6 @@
         /// </summary>
         /// <param name="sender">The event sender.</param>
         /// <param name="e">The event args.</param>
-        private void ShowToolWindow(object sender, EventArgs e)
-        {
-            Logger.Information("Enter ShowToolWindow method");
-
-            this.serviceProvider.ShowToolWindow();
-        }
+        private void ShowToolWindow(object sender, EventArgs e) => this.serviceProvider.ToolWindow.Show();
     }
 }

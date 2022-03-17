@@ -98,6 +98,8 @@
                         this.errorProvider.SetError(this.tokenTextBox, string.Empty);
                     }));
                 }
+
+                this.OptionsDialogPage.ServiceProvider.ToolWindow.UpdateScreenState();
             };
 
             this.errorCallbackAction = (errorMessage) =>
@@ -137,7 +139,9 @@
 
                 this.OptionsDialogPage.ServiceProvider.TasksService.FireOssError(cliError);
 
-                this.OptionsDialogPage.ServiceProvider.ShowToolWindow();
+                this.OptionsDialogPage.ServiceProvider.ToolWindow.Show();
+
+                this.OptionsDialogPage.ServiceProvider.ToolWindow.UpdateScreenState();
             };
 
             Logger.Information("Leave Initialize method");
@@ -180,7 +184,7 @@
             {
                 string apiToken = this.NewCli().GetApiToken();
 
-                if (!string.IsNullOrEmpty(apiToken) && Common.Guid.IsValid(apiToken))
+                if (Common.Guid.IsValid(apiToken))
                 {
                     this.OptionsDialogPage.ApiToken = apiToken;
                 }
@@ -311,6 +315,8 @@
 
         private void TokenTextBox_Validating(object sender, System.ComponentModel.CancelEventArgs cancelEventArgs)
         {
+            this.OptionsDialogPage.ServiceProvider.ToolWindow.UpdateScreenState();
+
             if (string.IsNullOrEmpty(this.tokenTextBox.Text))
             {
                 this.errorProvider.SetError(this.tokenTextBox, string.Empty);
@@ -367,6 +373,15 @@
 
         private void UpdateSnykCodeEnablementSettings(SastSettings sastSettings)
         {
+            if (sastSettings == null)
+            {
+                this.snykCodeDisabledInfoLabel.Text = "Snyk Code is disabled.";
+
+                this.snykCodeDisabledInfoLabel.Visible = true;
+                this.snykCodeSettingsLinkLabel.Visible = true;
+                this.checkAgainLinkLabel.Visible = true;
+            }
+
             bool snykCodeEnabled = sastSettings.SnykCodeEnabled;
 
             this.codeSecurityEnabledCheckBox.Enabled = snykCodeEnabled;
@@ -404,7 +419,7 @@
 
                 this.UpdateSnykCodeEnablementSettings(sastSettings);
 
-                if (sastSettings.SastEnabled)
+                if (sastSettings != null && sastSettings.SastEnabled)
                 {
                     return;
                 }
@@ -419,7 +434,7 @@
                     {
                         sastSettings = await this.apiService.GetSastSettingsAsync();
 
-                        bool snykCodeEnabled = sastSettings.SnykCodeEnabled;
+                        bool snykCodeEnabled = sastSettings != null ? sastSettings.SnykCodeEnabled : false;
 
                         this.UpdateSnykCodeEnablementSettings(sastSettings);
 

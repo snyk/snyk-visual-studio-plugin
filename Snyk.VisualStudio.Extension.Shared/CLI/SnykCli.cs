@@ -90,7 +90,7 @@
         {
             string apiToken = this.ConsoleRunner.Run(GetSnykCliPath(), "config get api");
 
-            if (string.IsNullOrEmpty(apiToken) || !Common.Guid.IsValid(apiToken))
+            if (!Guid.IsValid(apiToken))
             {
                 throw new InvalidTokenException(string.IsNullOrEmpty(apiToken) ? string.Empty : apiToken);
             }

@@ -71,7 +71,10 @@
         /// Check is scan enabled.
         /// </summary>
         /// <returns>True if no other tasks running and solution is open.</returns>
-        public bool IsScanEnabled() => SnykSolutionService.Instance.IsSolutionOpen && !SnykTasksService.Instance.IsTaskRunning();
+        public bool IsScanEnabled() =>
+            Common.Guid.IsValid(SnykVSPackage.ServiceProvider.Options.ApiToken)
+                && SnykSolutionService.Instance.IsSolutionOpen
+                && !SnykTasksService.Instance.IsTaskRunning();
 
         /// <summary>
         /// Run scan.
