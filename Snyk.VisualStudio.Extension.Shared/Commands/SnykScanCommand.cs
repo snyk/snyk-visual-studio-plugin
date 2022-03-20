@@ -3,14 +3,13 @@
     using System;
     using System.ComponentModel.Design;
     using Microsoft.VisualStudio.Shell;
-    using Snyk.VisualStudio.Extension.Shared.CLI;
     using Snyk.VisualStudio.Extension.Shared.Service;
     using Task = System.Threading.Tasks.Task;
 
     /// <summary>
     /// Command handler.
     /// </summary>
-    internal sealed class SnykScanCommand : AbstractSnykCommand
+    internal sealed class SnykScanCommand : AbstractTaskCommand
     {
         /// <summary>
         /// Initializes a new instance of the <see cref="SnykScanCommand"/> class.
@@ -57,7 +56,7 @@
         /// <inheritdoc/>
         public override void UpdateState()
         {
-            bool isEnabled = this.IsScanEnabled();
+            bool isEnabled = this.IsButtonAvailable();
 
             this.MenuCommand.Enabled = isEnabled;
 
@@ -66,15 +65,6 @@
                 this.UpdateControlsStateCallback(isEnabled);
             }
         }
-
-        /// <summary>
-        /// Check is scan enabled.
-        /// </summary>
-        /// <returns>True if no other tasks running and solution is open.</returns>
-        public bool IsScanEnabled() =>
-            Common.Guid.IsValid(SnykVSPackage.ServiceProvider.Options.ApiToken)
-                && SnykSolutionService.Instance.IsSolutionOpen
-                && !SnykTasksService.Instance.IsTaskRunning();
 
         /// <summary>
         /// Run scan.
@@ -88,8 +78,5 @@
         /// </summary>
         /// <returns>Id int.</returns>
         protected override int GetCommandId() => SnykGuids.RunScanCommandId;
-
-        /// <inheritdoc/>
-        protected override void OnBeforeQueryStatus(object sender, EventArgs e) => this.UpdateState();
     }
 }

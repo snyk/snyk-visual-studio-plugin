@@ -573,7 +573,7 @@
 
             var sastSettings = await this.serviceProvider.ApiService.GetSastSettingsAsync();
 
-            bool snykCodeEnabled = sastSettings != null ? sastSettings.SnykCodeEnabled : false;
+            bool snykCodeEnabled = sastSettings?.SnykCodeEnabled ?? false;
 
             return new FeaturesSettings
             {
@@ -581,7 +581,7 @@
                 SastOnServerEnabled = snykCodeEnabled,
                 CodeSecurityEnabled = snykCodeEnabled && options.SnykCodeSecurityEnabled,
                 CodeQualityEnabled = snykCodeEnabled && options.SnykCodeQualityEnabled,
-                LocalCodeEngineEnabled = sastSettings != null ? sastSettings.LocalCodeEngineEnabled : false,
+                LocalCodeEngineEnabled = sastSettings?.LocalCodeEngineEnabled ?? false,
             };
         }
 
