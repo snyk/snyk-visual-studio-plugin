@@ -292,7 +292,7 @@
         /// </summary>
         /// <param name="sender">Source object.</param>
         /// <param name="eventArgs">Event args.</param>
-        public void OnDownloadFinished(object sender, SnykCliDownloadEventArgs eventArgs) => this.SetInitialState();
+        public void OnDownloadFinished(object sender, SnykCliDownloadEventArgs eventArgs) => this.ShowWelcomeOrRunScanScreen();
 
         /// <summary>
         /// DownloadUpdate event handler. Call UpdateDonwloadProgress() method.
@@ -306,7 +306,7 @@
         /// </summary>
         /// <param name="sender">Source object.</param>
         /// <param name="eventArgs">Event args.</param>
-        public void OnDownloadCancelled(object sender, SnykCliDownloadEventArgs eventArgs) => this.SetInitialState();
+        public void OnDownloadCancelled(object sender, SnykCliDownloadEventArgs eventArgs) => this.ShowWelcomeOrRunScanScreen();
 
         /// <summary>
         /// VsThemeChanged event handler. Call Adapt methods for <see cref="HtmlRichTextBox"/> controls.
@@ -318,7 +318,7 @@
         /// <summary>
         /// Show tool window.
         /// </summary>
-        public void ShowToolWindow() => ThreadHelper.JoinableTaskFactory.Run(async () =>
+        public void Show() => ThreadHelper.JoinableTaskFactory.Run(async () =>
         {
             await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
 
@@ -390,6 +390,11 @@
             SnykOpenSettingsCommand.Instance.UpdateState();
         }
 
+        /// <summary>
+        /// Update current screen state (welcome screen or run scan state).
+        /// </summary>
+        public void UpdateScreenState() => System.Threading.Tasks.Task.Delay(1500).ContinueWith(task => this.ShowWelcomeOrRunScanScreen());
+
         private void OnOssScanningFinished(object sender, SnykCliScanEventArgs e) => this.UpdateActionsState();
 
         private void OnSnykCodeScanningFinished(object sender, SnykCodeScanEventArgs e) => this.UpdateActionsState();
@@ -422,10 +427,16 @@
             }
         });
 
-        private RootTreeNodeState GetOssRootTreeNodeState(ISnykOptions options) => options.OssEnabled ? RootTreeNodeState.Enabled : RootTreeNodeState.Disabled;
+        private RootTreeNodeState GetOssRootTreeNodeState(ISnykOptions options) =>
+            Common.Guid.IsValid(options.ApiToken) && options.OssEnabled ? RootTreeNodeState.Enabled : RootTreeNodeState.Disabled;
 
         private RootTreeNodeState GetSnykCodeRootNodeState(SastSettings sastSettings, bool enabledInOptions)
         {
+            if (sastSettings == null)
+            {
+                return RootTreeNodeState.Disabled;
+            }
+
             if (sastSettings.LocalCodeEngineEnabled)
             {
                 return RootTreeNodeState.LocalCodeEngineIsEnabled;
@@ -619,40 +630,29 @@
         {
             if (this.context.IsEmptyState())
             {
-                this.SetInitialState();
+                this.ShowWelcomeOrRunScanScreen();
             }
 
             this.UpdateTreeNodeItemsState();
         }
 
-        private void SetInitialState()
+        /// <summary>
+        /// If api token is not empty it will show run scan screen. If api token is invalid or empty it will show Welcome screen.
+        /// </summary>
+        private void ShowWelcomeOrRunScanScreen()
         {
             this.serviceProvider.AnalyticsService.AnalyticsEnabled = this.serviceProvider.Options.UsageAnalyticsEnabled;
 
-            if (string.IsNullOrEmpty(this.GetApiToken()))
-            {
-                this.context.TransitionTo(OverviewState.Instance);
-
-                this.serviceProvider.AnalyticsService.LogWelcomeIsViewedEvent();
-            }
-            else
+            if (Common.Guid.IsValid(this.serviceProvider.Options.ApiToken))
             {
                 this.context.TransitionTo(RunScanState.Instance);
-            }
-        }
 
-        private string GetApiToken()
-        {
-            try
-            {
-                return this.serviceProvider.GetApiToken();
+                return;
             }
-            catch (InvalidTokenException e)
-            {
-                Logger.Error(e, "Error on get api token");
 
-                return string.Empty;
-            }
+            this.context.TransitionTo(OverviewState.Instance);
+
+            this.serviceProvider.AnalyticsService.LogWelcomeIsViewedEvent();
         }
     }
 }

@@ -10,6 +10,7 @@
     using Snyk.VisualStudio.Extension.Shared.Settings;
     using Snyk.VisualStudio.Extension.Shared.SnykAnalytics;
     using Snyk.VisualStudio.Extension.Shared.Theme;
+    using Snyk.VisualStudio.Extension.Shared.UI.Toolwindow;
 
     /// <summary>
     /// ServiceProvider interface for Snyk extension. Provide all needed services for this extension.
@@ -88,15 +89,15 @@
         ISentryService SentryService { get; }
 
         /// <summary>
+        /// Gets <see cref="SnykToolWindowControl/> instance.
+        /// </summary>
+        SnykToolWindowControl ToolWindow { get; }
+
+        /// <summary>
         /// Create new instance of <see cref="SnykCli"/>.
         /// </summary>
         /// <returns>SnykCli.</returns>
         ICli NewCli();
-
-        /// <summary>
-        /// Show Snyk tool window panel.
-        /// </summary>
-        void ShowToolWindow();
 
         /// <summary>
         /// Get User Snyk API token.

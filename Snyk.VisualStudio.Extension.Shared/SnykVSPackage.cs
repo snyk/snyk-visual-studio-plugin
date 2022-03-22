@@ -146,11 +146,6 @@
         }
 
         /// <summary>
-        /// Show tool window panel.
-        /// </summary>
-        public void ShowToolWindow() => this.toolWindowControl.ShowToolWindow();
-
-        /// <summary>
         /// Initialize package.
         /// </summary>
         /// <param name="cancellationToken">Cancellation token.</param>
