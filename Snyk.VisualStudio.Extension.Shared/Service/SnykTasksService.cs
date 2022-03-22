@@ -118,6 +118,11 @@
         public event EventHandler<SnykCliDownloadEventArgs> DownloadCancelled;
 
         /// <summary>
+        /// Task finished event.
+        /// </summary>
+        public event EventHandler<EventArgs> TaskFinished;
+
+        /// <summary>
         /// Gets a value indicating whether <see cref="SnykTasksService"/> singleton instance.
         /// </summary>
         public static SnykTasksService Instance
@@ -195,7 +200,7 @@
 
             try
             {
-                if (!this.serviceProvider.SolutionService.IsSolutionOpen)
+                if (!this.serviceProvider.SolutionService.IsSolutionOpen())
                 {
                     this.FireOssError("No open solution");
 
@@ -270,6 +275,8 @@
                                 this.isCliDownloading = false;
 
                                 this.DisposeCancellationTokenSource(this.downloadCliTokenSource);
+
+                                this.FireTaskFinished();
                             }
                         }
                     }, progressWorker.TokenSource.Token);
@@ -279,6 +286,12 @@
                 Logger.Error(ex, "Error on CLI download");
             }
         }
+
+        /// <summary>
+        /// Fire on task finished (oss scan or snykcode scan or cli download).
+        /// </summary>
+        /// <param name="message">Error message.</param>
+        public void FireTaskFinished() => this.TaskFinished?.Invoke(this, new EventArgs());
 
         /// <summary>
         /// Fire error event. Create <see cref="CliError"/> instance.
@@ -395,6 +408,12 @@
 
                                 this.FireOssError(e.Message);
                             }
+                            finally
+                            {
+                                this.isOssScanning = false;
+
+                                this.FireTaskFinished();
+                            }
                         }
                         catch (Exception e)
                         {
@@ -407,6 +426,8 @@
                             this.DisposeCancellationTokenSource(this.ossScanTokenSource);
 
                             this.isOssScanning = false;
+
+                            this.FireTaskFinished();
                         }
                     }, token);
             }
@@ -492,6 +513,8 @@
                         this.DisposeCancellationTokenSource(this.snykCodeScanTokenSource);
 
                         this.isSnykCodeScanning = false;
+
+                        this.FireTaskFinished();
                     }
                 });
             }

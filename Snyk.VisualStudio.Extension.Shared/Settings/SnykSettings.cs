@@ -13,7 +13,7 @@
         /// </summary>
         public SnykSettings()
         {
-            this.ProjectSettingsDict = new Dictionary<string, SnykProjectSettings>();
+            this.SolutionSettingsDict = new Dictionary<int, SnykSolutionSettings>();
 
             this.UsageAnalyticsEnabled = true;
 
@@ -43,9 +43,9 @@
         public DateTime CliReleaseLastCheckDate { get; set; }
 
         /// <summary>
-        /// Gets or sets project settings dictionary.
+        /// Gets or sets solution settings dictionary.
         /// </summary>
-        public IDictionary<string, SnykProjectSettings> ProjectSettingsDict { get; set; }
+        public IDictionary<int, SnykSolutionSettings> SolutionSettingsDict { get; set; }
 
         /// <summary>
         /// Gets or sets a value indicating whether snyk code security enabled.

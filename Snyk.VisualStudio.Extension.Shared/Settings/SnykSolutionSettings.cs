@@ -3,12 +3,12 @@
     /// <summary>
     /// Contains project/solution settings for Snyk.
     /// </summary>
-    public class SnykProjectSettings
+    public class SnykSolutionSettings
     {
         /// <summary>
-        /// Initializes a new instance of the <see cref="SnykProjectSettings"/> class.
+        /// Initializes a new instance of the <see cref="SnykSolutionSettings"/> class.
         /// </summary>
-        public SnykProjectSettings()
+        public SnykSolutionSettings()
         {
             this.IsAllProjectsScanEnabled = true;
         }

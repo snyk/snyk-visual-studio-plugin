@@ -6,6 +6,7 @@
     using Microsoft.VisualStudio.Settings;
     using Microsoft.VisualStudio.Shell;
     using Snyk.Code.Library.Service;
+    using Snyk.Common;
     using Snyk.VisualStudio.Extension.Shared.CLI;
     using Snyk.VisualStudio.Extension.Shared.Settings;
     using Snyk.VisualStudio.Extension.Shared.SnykAnalytics;
@@ -35,7 +36,7 @@
         /// <summary>
         /// Gets Solution service instance.
         /// </summary>
-        SnykSolutionService SolutionService { get; }
+        ISolutionService SolutionService { get; }
 
         /// <summary>
         /// Gets Tasks service instance.

@@ -13,6 +13,17 @@
     {
         private static readonly ILogger Logger = LogManager.ForContext<SnykSettingsLoader>();
 
+        private readonly string settingsFilePath;
+
+        /// <summary>
+        /// Initializes a new instance of the <see cref="SnykSettingsLoader"/> class.
+        /// </summary>
+        /// <param name="settingsPath">File path to settings.</param>
+        public SnykSettingsLoader(string settingsPath)
+        {
+            this.settingsFilePath = settingsPath;
+        }
+
         /// <summary>
         /// Load <see cref="SnykSettings"/> instance.
         /// </summary>
@@ -21,14 +32,12 @@
         {
             try
             {
-                string filePath = this.GetSettingsFilePath();
-
-                if (!File.Exists(filePath))
+                if (!File.Exists(this.settingsFilePath))
                 {
                     return null;
                 }
 
-                return Json.Deserialize<SnykSettings>(File.ReadAllText(filePath, Encoding.UTF8));
+                return Json.Deserialize<SnykSettings>(File.ReadAllText(this.settingsFilePath, Encoding.UTF8));
             }
             catch (Exception e)
             {
@@ -46,14 +55,12 @@
         {
             try
             {
-                File.WriteAllText(this.GetSettingsFilePath(), Json.Serialize(settings), Encoding.UTF8);
+                File.WriteAllText(this.settingsFilePath, Json.Serialize(settings), Encoding.UTF8);
             }
             catch (Exception e)
             {
                 Logger.Error(e, "Settings serialize error on save.");
             }
         }
-
-        private string GetSettingsFilePath() => Path.Combine(SnykExtension.GetExtensionDirectoryPath(), "settings.json");
     }
 }

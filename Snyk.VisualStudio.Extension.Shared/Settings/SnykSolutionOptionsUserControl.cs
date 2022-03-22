@@ -7,21 +7,21 @@
     using Snyk.VisualStudio.Extension.Shared.Service;
 
     /// <summary>
-    /// Project settings control.
+    /// Solution settings control.
     /// </summary>
-    public partial class SnykProjectOptionsUserControl : UserControl
+    public partial class SnykSolutionOptionsUserControl : UserControl
     {
-        private static readonly ILogger Logger = LogManager.ForContext<SnykProjectOptionsUserControl>();
+        private static readonly ILogger Logger = LogManager.ForContext<SnykSolutionOptionsUserControl>();
 
         private ISnykServiceProvider serviceProvider;
 
         private SnykUserStorageSettingsService userStorageSettingsService;
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="SnykProjectOptionsUserControl"/> class.
+        /// Initializes a new instance of the <see cref="SnykSolutionOptionsUserControl"/> class.
         /// </summary>
         /// <param name="serviceProvider">Snyk service provider.</param>
-        public SnykProjectOptionsUserControl(ISnykServiceProvider serviceProvider)
+        public SnykSolutionOptionsUserControl(ISnykServiceProvider serviceProvider)
         {
             this.InitializeComponent();
 
@@ -45,9 +45,11 @@
 
         private void AdditionalOptionsTextBox_TextChanged(object sender, EventArgs e)
         {
-            if (this.serviceProvider.SolutionService.IsSolutionOpen)
+            if (this.serviceProvider.SolutionService.IsSolutionOpen())
             {
-                this.userStorageSettingsService.SaveAdditionalOptions(this.additionalOptionsTextBox.Text.ToString());
+                string additionalOptions = this.additionalOptionsTextBox.Text.ToString();
+
+                this.userStorageSettingsService.SaveAdditionalOptions(additionalOptions);
 
                 this.CheckOptionConflicts();
             }
@@ -55,7 +57,7 @@
 
         private void AllProjectsCheckBox_CheckedChanged(object sender, EventArgs e)
         {
-            if (this.serviceProvider.SolutionService.IsSolutionOpen)
+            if (this.serviceProvider.SolutionService.IsSolutionOpen())
             {
                 this.userStorageSettingsService.SaveIsAllProjectsScanEnabled(this.allProjectsCheckBox.Checked);
 
@@ -67,7 +69,7 @@
         {
             this.OnVisibleChanged(eventArgs);
 
-            bool isProjectOpened = this.serviceProvider.SolutionService.IsSolutionOpen;
+            bool isProjectOpened = this.serviceProvider.SolutionService.IsSolutionOpen();
 
             this.additionalOptionsTextBox.Enabled = isProjectOpened;
             this.allProjectsCheckBox.Enabled = isProjectOpened;

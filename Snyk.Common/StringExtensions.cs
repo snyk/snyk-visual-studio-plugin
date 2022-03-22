@@ -14,16 +14,7 @@
         /// <param name="suffix">Suffix to remove.</param>
         /// <returns>Return result string.</returns>
         public static string RemoveFromEnd(this string source, string suffix)
-        {
-            if (source.EndsWith(suffix))
-            {
-                return source.Substring(0, source.Length - suffix.Length);
-            }
-            else
-            {
-                return source;
-            }
-        }
+            => source.EndsWith(suffix) ? source.Substring(0, source.Length - suffix.Length) : source;
 
         /// <summary>
         /// Remove trailing slashes from string.

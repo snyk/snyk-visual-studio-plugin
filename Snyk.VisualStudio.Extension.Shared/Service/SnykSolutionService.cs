@@ -52,7 +52,7 @@
         /// <summary>
         /// Gets a value indicating whether is solution open.
         /// </summary>
-        public bool IsSolutionOpen => this.ServiceProvider.DTE.Solution.IsOpen;
+        public bool IsSolutionOpen() => this.ServiceProvider.DTE.Solution.IsOpen;
 
         /// <summary>
         /// Gets or sets a value indicating whether <see cref="ISnykServiceProvider"/> instance.
