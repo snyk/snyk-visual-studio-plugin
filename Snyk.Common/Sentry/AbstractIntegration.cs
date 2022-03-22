@@ -48,13 +48,8 @@
                 return true;
             }
 
-            if (e is AggregateException aggregateEx
-                && !aggregateEx.Flatten().InnerExceptions.Where(ex => IsExceptionRelatedToExtension(ex)).Any())
-            {
-                return true;
-            }
-
-            return false;
+            return e is AggregateException aggregateEx
+                && aggregateEx.Flatten().InnerExceptions.Where(ex => IsExceptionRelatedToExtension(ex)).Any();
         }
 
         private static bool IsExceptionRelatedToExtension(Exception e)
