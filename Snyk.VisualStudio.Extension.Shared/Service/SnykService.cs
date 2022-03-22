@@ -16,6 +16,7 @@
     using Snyk.VisualStudio.Extension.Shared.Theme;
     using Snyk.VisualStudio.Extension.Shared.UI;
     using Snyk.VisualStudio.Extension.Shared.UI.Notifications;
+    using Snyk.VisualStudio.Extension.Shared.UI.Toolwindow;
     using IAsyncServiceProvider = Microsoft.VisualStudio.Shell.IAsyncServiceProvider;
     using Task = System.Threading.Tasks.Task;
 
@@ -188,10 +189,8 @@
             }
         }
 
-        /// <summary>
-        /// Show Snyk tool window.
-        /// </summary>
-        public void ShowToolWindow() => this.Package.ShowToolWindow();
+        /// <inheritdoc/>
+        public SnykToolWindowControl ToolWindow => this.Package.ToolWindowControl;
 
         /// <summary>
         /// Get Visual Studio service by type.
