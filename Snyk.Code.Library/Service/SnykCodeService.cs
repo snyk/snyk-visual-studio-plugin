@@ -2,6 +2,7 @@
 {
     using System;
     using System.Collections.Generic;
+    using System.Linq;
     using System.Threading;
     using System.Threading.Tasks;
     using Serilog;
@@ -115,7 +116,14 @@
         {
             this.FireScanProgressEvent(SnykCodeScanState.Preparing, 0);
 
-            var files = await this.GetFilteredFilesAsync(fileProvider.GetSolutionPath(), fileProvider.GetFiles());
+            var solutionFiles = await fileProvider.GetFilesAsync();
+
+            var files = await this.GetFilteredFilesAsync(fileProvider.GetSolutionPath(), solutionFiles);
+
+            if (files == null || files.Count() == 0)
+            {
+                return null;
+            }
 
             this.codeCacheService.Initialize(files);
 

@@ -1,6 +1,7 @@
 ﻿namespace Snyk.Common
 {
     using System.Collections.Generic;
+    using System.Threading.Tasks;
 
     /// <summary>
     /// Provide file path and content for solutions and projects.
@@ -11,7 +12,7 @@
         /// Get solution files.
         /// </summary>
         /// <returns>List of file paths.</returns>
-        IEnumerable<string> GetFiles();
+        Task<IEnumerable<string>> GetFilesAsync();
 
         /// <summary>
         /// Get solution path.

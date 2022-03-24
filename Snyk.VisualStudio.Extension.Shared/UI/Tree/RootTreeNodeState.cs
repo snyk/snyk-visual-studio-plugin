@@ -40,5 +40,10 @@
         /// Local code engine is enabled state.
         /// </summary>
         LocalCodeEngineIsEnabled,
+
+        /// <summary>
+        /// No files for SnykCode scan (No supported code available).
+        /// </summary>
+        NoFilesForSnykCodeScan,
     }
 }

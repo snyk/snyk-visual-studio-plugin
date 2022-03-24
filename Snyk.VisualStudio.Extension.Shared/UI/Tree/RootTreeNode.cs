@@ -51,6 +51,9 @@
                     case RootTreeNodeState.LocalCodeEngineIsEnabled:
                         title = this.GetTitlePrefix() + " (disabled due to local code engine)";
                         break;
+                    case RootTreeNodeState.NoFilesForSnykCodeScan:
+                        title = this.GetTitlePrefix() + " (no supported code available)";
+                        break;
                     case RootTreeNodeState.Disabled:
                     default:
                         title = this.GetTitlePrefix() + " (disabled)";
@@ -83,7 +86,9 @@
             get => this.state;
             set
             {
-                if (this.State == RootTreeNodeState.ResultDetails && value == RootTreeNodeState.Enabled)
+                if ((this.State == RootTreeNodeState.ResultDetails
+                    || this.State == RootTreeNodeState.NoFilesForSnykCodeScan)
+                    && value == RootTreeNodeState.Enabled)
                 {
                     return;
                 }
