@@ -45,7 +45,7 @@
 
         private void AdditionalOptionsTextBox_TextChanged(object sender, EventArgs e)
         {
-            if (this.serviceProvider.SolutionService.IsSolutionOpen())
+            if (this.serviceProvider.SolutionService.IsSolutionOpenedAsFolder())
             {
                 string additionalOptions = this.additionalOptionsTextBox.Text.ToString();
 
@@ -57,7 +57,7 @@
 
         private void AllProjectsCheckBox_CheckedChanged(object sender, EventArgs e)
         {
-            if (this.serviceProvider.SolutionService.IsSolutionOpen())
+            if (this.serviceProvider.SolutionService.IsSolutionOpenedAsFolder())
             {
                 this.userStorageSettingsService.SaveIsAllProjectsScanEnabled(this.allProjectsCheckBox.Checked);
 
@@ -69,7 +69,7 @@
         {
             this.OnVisibleChanged(eventArgs);
 
-            bool isProjectOpened = this.serviceProvider.SolutionService.IsSolutionOpen();
+            bool isProjectOpened = this.serviceProvider.SolutionService.IsSolutionOpenedAsFolder();
 
             this.additionalOptionsTextBox.Enabled = isProjectOpened;
             this.allProjectsCheckBox.Enabled = isProjectOpened;

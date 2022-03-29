@@ -35,5 +35,12 @@
         /// </summary>
         /// <returns>True is user open folder as solution.</returns>
         bool IsSolutionOpenedAsFolder();
+
+        /// <summary>
+        /// Get full file path by relative file path.
+        /// </summary>
+        /// <param name="file">Relative file path.</param>
+        /// <returns>Full file path.</returns>
+        string GetFileFullPath(string file);
     }
 }
