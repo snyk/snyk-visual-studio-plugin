@@ -122,10 +122,8 @@
         /// <returns>VSConstants.S_OK.</returns>
         public int OnAfterOpenProject(IVsHierarchy vsHierarchy, int fAdded)
         {
-            var hierarchyEvents = new CodeCacheHierarchyEvents(vsHierarchy, this.solutionService.FileProvider);
-
-            vsHierarchy.AdviseHierarchyEvents(new OssCacheHierarchyEvents(vsHierarchy, this.ossService), out _);
-            vsHierarchy.AdviseHierarchyEvents(hierarchyEvents, out _);
+            new CodeCacheHierarchyEvents(this.solutionService.FileProvider);
+            new OssCacheHierarchyEvents(this.ossService);
 
             this.sentryService.SetSolutionType(SolutionType.Project);
 
