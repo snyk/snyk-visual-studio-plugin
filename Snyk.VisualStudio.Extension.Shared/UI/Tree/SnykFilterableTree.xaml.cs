@@ -20,7 +20,7 @@
 
         private readonly RootTreeNode ossRootNode;
 
-        private readonly SnykCodeSecurityRootTreeNode codeSequrityRootNode;
+        private readonly SnykCodeSecurityRootTreeNode codeSecurityRootNode;
 
         private readonly SnykCodeQualityRootTreeNode codeQualityRootNode;
 
@@ -34,11 +34,11 @@
             instance = this;
 
             this.ossRootNode = new OssRootTreeNode(this);
-            this.codeSequrityRootNode = new SnykCodeSecurityRootTreeNode(this);
+            this.codeSecurityRootNode = new SnykCodeSecurityRootTreeNode(this);
             this.codeQualityRootNode = new SnykCodeQualityRootTreeNode(this);
 
             this.vulnerabilitiesTree.Items.Add(this.ossRootNode);
-            this.vulnerabilitiesTree.Items.Add(this.codeSequrityRootNode);
+            this.vulnerabilitiesTree.Items.Add(this.codeSecurityRootNode);
             this.vulnerabilitiesTree.Items.Add(this.codeQualityRootNode);
         }
 
@@ -55,7 +55,7 @@
         /// <summary>
         /// Gets code sequrity root node.
         /// </summary>
-        public SnykCodeSecurityRootTreeNode CodeSequrityRootNode => this.codeSequrityRootNode;
+        public SnykCodeSecurityRootTreeNode CodeSecurityRootNode => this.codeSecurityRootNode;
 
         /// <summary>
         /// Gets code quality root node.
@@ -130,9 +130,9 @@
         {
             set
             {
-                if (this.codeSequrityRootNode.Enabled)
+                if (this.codeSecurityRootNode.Enabled)
                 {
-                    this.AppendSnykCodeIssues(this.codeSequrityRootNode, value, suggestion => suggestion.Categories.Contains("Security"));
+                    this.AppendSnykCodeIssues(this.codeSecurityRootNode, value, suggestion => suggestion.Categories.Contains("Security"));
 
                     SnykAnalyticsService.Instance
                         .LogAnalysisReadyEvent(AnalysisType.SnykCodeSecurity, AnalyticsAnalysisResult.Success);
@@ -164,7 +164,7 @@
         public void Clear()
         {
             this.ossRootNode.Clean();
-            this.codeSequrityRootNode.Clean();
+            this.codeSecurityRootNode.Clean();
             this.codeQualityRootNode.Clean();
         }
 
@@ -175,7 +175,7 @@
         {
             await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
 
-            foreach (TreeNode treeNode in this.codeSequrityRootNode.Items)
+            foreach (TreeNode treeNode in this.codeSecurityRootNode.Items)
             {
                 ICollectionView collectionView = CollectionViewSource.GetDefaultView(treeNode.Items);
 
@@ -198,7 +198,7 @@
             this.FilterOssItems(this.ossRootNode, severityFilter, searchString);
 
             this.FilterSnykCodeItems(this.codeQualityRootNode, severityFilter, searchString);
-            this.FilterSnykCodeItems(this.codeSequrityRootNode, severityFilter, searchString);
+            this.FilterSnykCodeItems(this.codeSecurityRootNode, severityFilter, searchString);
         });
 
         private void FilterOssItems(RootTreeNode rootTreeNode, SeverityFilter severityFilter, string searchString)

@@ -255,6 +255,14 @@
                 MissingFiles = new string[] { filePath1, filePath2 },
             };
 
+            this.fileProviderMock
+                .Setup(fileProvider => fileProvider.GetFilesAsync().Result)
+                .Returns(filePaths);
+
+            this.filtersServiceMock
+                .Setup(filtersService => filtersService.FilterFilesAsync(It.IsAny<IEnumerable<string>>(), It.IsAny<CancellationToken>()).Result)
+                .Returns(filePaths);
+
             this.bundleServiceMock
                 .Setup(bundleService => bundleService.CreateBundleAsync(It.IsAny<Dictionary<string, string>>(), It.IsAny<int>(), It.IsAny<CancellationToken>()).Result)
                 .Returns(bundle);
@@ -300,6 +308,14 @@
 
             this.analysisServiceMock
                 .Verify(analysisService => analysisService.GetAnalysisAsync(bundleId, It.IsAny<FireScanCodeProgressUpdate>(), It.IsAny<int>(), It.IsAny<CancellationToken>()), Times.Exactly(1));
+        }
+
+        [Fact]
+        public async Task SnykCodeService_NoFilesForScanProvided_ReturnNullSuccessAsync()
+        {
+            var result = await this.snykCodeService.ScanAsync(this.fileProviderMock.Object);
+
+            Assert.Null(result);
         }
     }
 }

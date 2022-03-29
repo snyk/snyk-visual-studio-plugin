@@ -8,6 +8,7 @@
     using Microsoft.VisualStudio.Shell;
     using Serilog;
     using Snyk.Code.Library.Domain.Analysis;
+    using Snyk.Code.Library.Service;
     using Snyk.Common;
     using Snyk.VisualStudio.Extension.Shared.CLI;
     using Snyk.VisualStudio.Extension.Shared.CLI.Download;
