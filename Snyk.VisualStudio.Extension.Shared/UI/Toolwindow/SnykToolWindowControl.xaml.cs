@@ -59,7 +59,7 @@
         /// </summary>
         /// <returns>True if result tree not empty.</returns>
         public bool IsTreeContentNotEmpty() => this.resultsTree.CliRootNode.HasContent
-            || this.resultsTree.CodeSequrityRootNode.HasContent
+            || this.resultsTree.CodeSecurityRootNode.HasContent
             || this.resultsTree.CodeQualityRootNode.HasContent;
 
         /// <summary>
@@ -176,7 +176,7 @@
 
             this.messagePanel.ShowScanningMessage();
 
-            this.resultsTree.CodeSequrityRootNode.State = RootTreeNodeState.Scanning;
+            this.resultsTree.CodeSecurityRootNode.State = RootTreeNodeState.Scanning;
             this.resultsTree.CodeQualityRootNode.State = RootTreeNodeState.Scanning;
 
             this.UpdateActionsState();
@@ -230,7 +230,7 @@
             this.serviceProvider.AnalyticsService.LogAnalysisReadyEvent(AnalysisType.SnykCodeSecurity, AnalyticsAnalysisResult.Error);
 
             this.resultsTree.CodeQualityRootNode.State = RootTreeNodeState.Error;
-            this.resultsTree.CodeSequrityRootNode.State = RootTreeNodeState.Error;
+            this.resultsTree.CodeSecurityRootNode.State = RootTreeNodeState.Error;
 
             NotificationService.Instance.ShowErrorInfoBar(eventArgs.Error);
 
@@ -255,7 +255,7 @@
                 ? RootTreeNodeState.LocalCodeEngineIsEnabled : RootTreeNodeState.DisabledForOrganization;
 
             this.resultsTree.CodeQualityRootNode.State = disabledNodeState;
-            this.resultsTree.CodeSequrityRootNode.State = disabledNodeState;
+            this.resultsTree.CodeSecurityRootNode.State = disabledNodeState;
         });
 
         /// <summary>
@@ -414,14 +414,14 @@
                 var sastSettings = await this.serviceProvider.ApiService.GetSastSettingsAsync();
 
                 this.resultsTree.CodeQualityRootNode.State = this.GetSnykCodeRootNodeState(sastSettings, options.SnykCodeQualityEnabled);
-                this.resultsTree.CodeSequrityRootNode.State = this.GetSnykCodeRootNodeState(sastSettings, options.SnykCodeSecurityEnabled);
+                this.resultsTree.CodeSecurityRootNode.State = this.GetSnykCodeRootNodeState(sastSettings, options.SnykCodeSecurityEnabled);
             }
             catch (Exception e)
             {
                 Logger.Error(e, "Error on get sast settings and display tree node state");
 
                 this.resultsTree.CodeQualityRootNode.State = RootTreeNodeState.Error;
-                this.resultsTree.CodeSequrityRootNode.State = RootTreeNodeState.Error;
+                this.resultsTree.CodeSecurityRootNode.State = RootTreeNodeState.Error;
 
                 NotificationService.Instance.ShowErrorInfoBar(e.Message);
             }
@@ -504,7 +504,15 @@
             {
                 await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
 
-                this.resultsTree.AnalysisResults = analysisResult;
+                if (analysisResult != null)
+                {
+                    this.resultsTree.AnalysisResults = analysisResult;
+                }
+                else
+                {
+                    this.resultsTree.CodeQualityRootNode.State = RootTreeNodeState.NoFilesForSnykCodeScan;
+                    this.resultsTree.CodeSecurityRootNode.State = RootTreeNodeState.NoFilesForSnykCodeScan;
+                }
             });
         }
 

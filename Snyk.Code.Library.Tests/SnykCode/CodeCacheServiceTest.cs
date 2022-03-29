@@ -3,6 +3,7 @@
     using System;
     using System.Collections.Generic;
     using System.IO;
+    using System.Threading.Tasks;
     using Moq;
     using Snyk.Code.Library.Service;
     using Snyk.Common;
@@ -44,7 +45,7 @@
                 .Returns(this.projectPath);
 
             solutionServiceMock
-                .Setup(solutionService => solutionService.GetFiles())
+                .Setup(solutionService => solutionService.GetFilesAsync().Result)
                 .Returns(new List<string>());
 
             var fileProvider = new SnykCodeFileProvider(solutionServiceMock.Object);
@@ -89,7 +90,7 @@
                 .Returns(this.projectPath);
 
             solutionServiceMock
-                .Setup(solutionService => solutionService.GetFiles())
+                .Setup(solutionService => solutionService.GetFilesAsync().Result)
                 .Returns(new List<string>());
 
             var fileProvider = new SnykCodeFileProvider(solutionServiceMock.Object);
@@ -117,7 +118,7 @@
                 .Returns(this.projectPath);
 
             solutionServiceMock
-                .Setup(solutionService => solutionService.GetFiles())
+                .Setup(solutionService => solutionService.GetFilesAsync().Result)
                 .Returns(new List<string>());
 
             var fileProvider = new SnykCodeFileProvider(solutionServiceMock.Object);
@@ -152,7 +153,7 @@
                 .Returns(this.projectPath);
 
             solutionServiceMock
-                .Setup(solutionService => solutionService.GetFiles())
+                .Setup(solutionService => solutionService.GetFilesAsync().Result)
                 .Returns(new List<string>());
 
             var fileProvider = new SnykCodeFileProvider(solutionServiceMock.Object);

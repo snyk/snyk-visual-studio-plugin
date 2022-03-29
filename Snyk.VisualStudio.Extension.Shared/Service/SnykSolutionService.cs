@@ -3,14 +3,17 @@
     using System;
     using System.Collections.Generic;
     using System.IO;
+    using System.Linq;
     using EnvDTE;
     using Microsoft.VisualStudio;
+    using Microsoft.VisualStudio.Shell;
     using Microsoft.VisualStudio.Shell.Interop;
     using Serilog;
     using Snyk.Code.Library.Service;
     using Snyk.Common;
     using Snyk.VisualStudio.Extension.Shared.Service;
     using Task = System.Threading.Tasks.Task;
+    using Toolkit = Community.VisualStudio.Toolkit;
 
     /// <summary>
     /// Incapsulate logic for work with Visual Studio solutions.
@@ -93,40 +96,10 @@
         /// <returns>Projects instance.</returns>
         public Projects GetProjects() => this.ServiceProvider.DTE.Solution.Projects;
 
-        /// <summary>
-        /// Get all solution files.
-        /// </summary>
-        /// <returns>List of solution files.</returns>
-        public IList<string> GetSolutionProjectsFiles()
-        {
-            var solutionFiles = new List<string>();
-
-            var projects = this.GetProjects();
-
-            try
-            {
-                foreach (Project project in projects)
-                {
-                    foreach (ProjectItem projectItem in project.ProjectItems)
-                    {
-                        try
-                        {
-                            solutionFiles.Add(projectItem.get_FileNames(0));
-                        }
-                        catch (Exception ex)
-                        {
-                            Logger.Error(ex, "Failed to get file name");
-                        }
-                    }
-                }
-            }
-            catch (Exception e)
-            {
-                Logger.Error(e, "Failed to get project files");
-            }
-
-            return solutionFiles;
-        }
+        /// <inheritdoc/>
+        /// If DTE.Solution.FullName - path to solution file (*.sln file), then it's Visual Studio solution.
+        /// If DTE.Solution.FullName - path to folder (not *.sln file), then project opened as folder.
+        public bool IsSolutionOpenedAsFolder() => Directory.Exists(this.ServiceProvider.DTE.Solution.FullName);
 
         /// <summary>
         /// Get full file path by relative file path.
@@ -194,12 +167,12 @@
 
                 string projectPath = solution.Projects.Item(1).FullName;
 
-                Logger.Information($"Project path {projectPath}. Get solution path as project directory.");
+                Logger.Information("Project path {ProjectPath}. Get solution path as project directory.", projectPath);
 
                 solutionPath = Directory.GetParent(projectPath).FullName;
             }
 
-            Logger.Information($"Result solution path is {solutionPath}.");
+            Logger.Information("Result solution path is {SolutionPath}.", solutionPath);
 
             return solutionPath;
         }
@@ -208,17 +181,18 @@
         /// Get solution files using VS API.
         /// </summary>
         /// <returns>List of file paths.</returns>
-        public IEnumerable<string> GetFiles()
+        public async System.Threading.Tasks.Task<IEnumerable<string>> GetFilesAsync()
         {
-            var solutionProjectsFiles = this.GetSolutionProjectsFiles();
+            await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
 
-            // If Solution files are empty try get files directly from file system.
-            if (solutionProjectsFiles.Count == 0)
+            // If solution is folder type when just get all files in solution directory.
+            if (this.IsSolutionOpenedAsFolder())
             {
-                solutionProjectsFiles = this.GetSolutionDirectoryFiles();
+                return this.GetSolutionDirectoryFiles();
             }
 
-            return solutionProjectsFiles;
+            // If normal solution, then get all files in solution projects.
+            return await this.GetSolutionFilesAsync();
         }
 
         /// <inheritdoc/>
@@ -261,5 +235,56 @@
         private bool IsSolutionWithProjects(Solution solution, Projects projects) => !solution.IsDirty && projects.Count > 0;
 
         private bool IsFolder(Solution solution, Projects projects) => !solution.IsDirty && projects.Count == 0;
+
+        private async System.Threading.Tasks.Task<IList<string>> GetSolutionItemFilesAsync(Toolkit.SolutionItem solutionItem)
+        {
+            await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
+
+            try
+            {
+                var files = new List<string>();
+
+                foreach (var item in solutionItem.Children)
+                {
+                    if (item.Type == Toolkit.SolutionItemType.PhysicalFile)
+                    {
+                        files.Add(item.FullPath);
+                    }
+                    else
+                    {
+                        var itemFiles = await this.GetSolutionItemFilesAsync(item);
+
+                        if (itemFiles != null && itemFiles.Count > 0)
+                        {
+                            files.AddRange(itemFiles);
+                        }
+                    }
+                }
+
+                return files;
+            }
+            catch (Exception ignore)
+            {
+                // SolutionItem.Children inside Children can throw parameter incorrect exception.
+                // In this case return empty list.
+                return new List<string>();
+            }
+        }
+
+        private async System.Threading.Tasks.Task<IEnumerable<string>> GetSolutionFilesAsync()
+        {
+            await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
+
+            var item = await Toolkit.VS.Solutions.GetActiveItemAsync();
+
+            if (item == null)
+            {
+                return new List<string>();
+            }
+
+            var solutionItem = item.FindParent(Toolkit.SolutionItemType.Solution);
+
+            return await this.GetSolutionItemFilesAsync(solutionItem);
+        }
     }
 }

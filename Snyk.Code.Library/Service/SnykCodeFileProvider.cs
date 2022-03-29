@@ -2,6 +2,7 @@
 {
     using System.Collections.Generic;
     using System.Linq;
+    using System.Threading.Tasks;
     using Snyk.Common;
 
     /// <summary>
@@ -30,7 +31,7 @@
         }
 
         /// <inheritdoc/>
-        public IEnumerable<string> GetFiles() => this.solutionService.GetFiles();
+        public async Task<IEnumerable<string>> GetFilesAsync() => await this.solutionService.GetFilesAsync();
 
         /// <inheritdoc/>
         public string GetSolutionPath()

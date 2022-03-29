@@ -1,6 +1,7 @@
 ﻿namespace Snyk.Common
 {
     using System.Collections.Generic;
+    using System.Threading.Tasks;
 
     /// <summary>
     /// Service for solution related functionality.
@@ -22,11 +23,17 @@
         /// Get all solution files.
         /// </summary>
         /// <returns>List of solution files.</returns>
-        IEnumerable<string> GetFiles();
+        Task<IEnumerable<string>> GetFilesAsync();
 
         /// <summary>
         /// Clean solution related variables.
         /// </summary>
         void Clean();
+
+        /// <summary>
+        /// Check is folder opened as solution.
+        /// </summary>
+        /// <returns>True is user open folder as solution.</returns>
+        bool IsSolutionOpenedAsFolder();
     }
 }
