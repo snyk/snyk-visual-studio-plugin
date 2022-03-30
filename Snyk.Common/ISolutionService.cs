@@ -42,5 +42,10 @@
         /// <param name="file">Relative file path.</param>
         /// <returns>Full file path.</returns>
         string GetFileFullPath(string file);
+
+        /// <summary>
+        /// Gets a value indicating whether is solution open.
+        /// </summary>
+        bool IsSolutionOpen();
     }
 }
