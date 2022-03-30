@@ -30,8 +30,7 @@
         /// <returns>True if no other tasks running and solution is open.</returns>
         protected bool IsButtonAvailable() =>
             Common.Guid.IsValid(SnykVSPackage.ServiceProvider.Options.ApiToken)
-                && SnykSolutionService.Instance.IsSolutionOpen
-                && !SnykTasksService.Instance.IsTaskRunning();
+                && SnykSolutionService.Instance.IsSolutionOpen();
 
         /// <inheritdoc/>
         protected override void OnBeforeQueryStatus(object sender, EventArgs e) => this.UpdateState();

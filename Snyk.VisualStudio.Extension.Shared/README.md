@@ -73,7 +73,7 @@ Snyk Security - Code and Open Source Dependencies extension helps you find and f
 
 ![Scan results](https://github.com/snyk/snyk-visual-studio-plugin/blob/feat/tree-view/doc/images/readme_image_3_2_2.png "Scan results")
 
-**Step 3.3.** Users could configure Snyk extension by Project settings.
+**Step 3.3.** Users could configure Snyk extension by Solution settings.
 
 - Note that the “Scan all projects” option is enabled by default. It adds --all-projects option for Snyk CLI. This option scans all projects by default.
 
@@ -83,7 +83,7 @@ Snyk Security - Code and Open Source Dependencies extension helps you find and f
 
 ##### 4.1 Could not detect supported target files
 
-**Solution** Open Visual Studio Options to go to the Project Settings of the Snyk extension and check Scan all projects.
+**Solution** Open Visual Studio Options to go to the Solution Settings of the Snyk extension and check Scan all projects.
 
 ![Scan all projects option](https://github.com/snyk/snyk-visual-studio-plugin/blob/feat/tree-view/doc/images/readme_image_4_1.png "Scan all projects option")
 

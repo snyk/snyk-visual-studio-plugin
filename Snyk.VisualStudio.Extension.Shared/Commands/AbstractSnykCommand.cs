@@ -34,6 +34,11 @@
         }
 
         /// <summary>
+        /// Gets a value indicating whether is menu command enabled.
+        /// </summary>
+        public bool Enabled => this.MenuCommand.Enabled;
+
+        /// <summary>
         /// Gets or sets menu command.
         /// </summary>
         protected OleMenuCommand MenuCommand { get; set; }
