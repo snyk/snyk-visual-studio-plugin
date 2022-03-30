@@ -1,7 +1,9 @@
 ﻿namespace Snyk.VisualStudio.Extension.Shared.Cache
 {
     using System;
+    using System.Collections.Generic;
     using System.IO;
+    using Community.VisualStudio.Toolkit;
     using Microsoft.VisualStudio.Shell.Interop;
     using Snyk.VisualStudio.Extension.Shared.Service;
 
@@ -42,9 +44,11 @@
 
         private static readonly string[] SupportedManifestFileExtensions =
             {
-                "gemspec",
-                "*.jar",
-                "*.war",
+                ".gemspec",
+                ".jar",
+                ".war",
+                ".csproj",
+                ".sln",
             };
 
         private IOssService ossService;
@@ -52,30 +56,47 @@
         /// <summary>
         /// Initializes a new instance of the <see cref="OssCacheHierarchyEvents"/> class.
         /// </summary>
-        /// /// <param name="vsHierarchy">VS Hierarchy instance.</param>
         /// <param name="ossService">Oss service instance.</param>
-        public OssCacheHierarchyEvents(IVsHierarchy vsHierarchy, IOssService ossService)
-            : base(vsHierarchy)
+        public OssCacheHierarchyEvents(IOssService ossService)
+            : base()
         {
             this.ossService = ossService;
         }
 
         /// <inheritdoc/>
-        public override void OnFileAdded(string filePath)
-            => this.ClearOssCacheIfNeeded(filePath);
+        protected override void OnFileSaved(string file) => this.ClearOssCacheIfNeeded(file);
 
         /// <inheritdoc/>
-        public override void OnFileDeleted(string filePath)
-            => this.ClearOssCacheIfNeeded(filePath);
+        protected override void OnFileRename(AfterRenameProjectItemEventArgs eventArgs)
+        {
+            foreach (var item in eventArgs.ProjectItemRenames)
+            {
+                this.ClearOssCacheIfNeeded(item.SolutionItem.FullPath);
+            }
+        }
 
         /// <inheritdoc/>
-        public override void OnFileChanged(string filePath)
-            => this.ClearOssCacheIfNeeded(filePath);
+        protected override void OnFileRemove(AfterRemoveProjectItemEventArgs eventArgs)
+        {
+            foreach (var item in eventArgs.ProjectItemRemoves)
+            {
+                this.ClearOssCacheIfNeeded(item.RemovedItemName);
+            }
+        }
+
+        /// <inheritdoc/>
+        protected override void OnFileAdd(IEnumerable<SolutionItem> solutionItems)
+        {
+            foreach (var solutionItem in solutionItems)
+            {
+                this.ClearOssCacheIfNeeded(solutionItem.FullPath);
+            }
+        }
 
         private void ClearOssCacheIfNeeded(string filePath)
         {
-            if (this.IsManifestFile(SupportedManifestFiles, Path.GetFileName(filePath))
-                || this.IsManifestFile(SupportedManifestFileExtensions, Path.GetExtension(filePath)))
+            if (filePath == null || (this.IsManifestFile(SupportedManifestFiles, Path.GetFileName(filePath))
+                || this.IsManifestFile(SupportedManifestFileExtensions, Path.GetExtension(filePath))))
             {
                 this.ossService.ClearCache();
             }
