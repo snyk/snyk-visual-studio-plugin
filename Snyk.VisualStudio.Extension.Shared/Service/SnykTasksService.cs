@@ -200,7 +200,7 @@
 
             try
             {
-                if (!this.serviceProvider.SolutionService.IsSolutionOpenedAsFolder())
+                if (!this.serviceProvider.SolutionService.IsSolutionOpen())
                 {
                     this.FireOssError("No open solution");
 
