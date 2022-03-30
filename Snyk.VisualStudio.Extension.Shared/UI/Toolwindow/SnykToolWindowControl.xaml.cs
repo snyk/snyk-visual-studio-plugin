@@ -75,7 +75,7 @@
 
             Logger.Information("Initialize Solultion Event Listeners");
 
-            SnykSolutionService solutionService = serviceProvider.SolutionService;
+            var solutionService = serviceProvider.SolutionService as SnykSolutionService;
 
             solutionService.SolutionEvents.AfterCloseSolution += this.OnAfterCloseSolution;
 
@@ -93,6 +93,7 @@
             tasksService.SnykCodeScanningUpdate += this.OnSnykCodeScanningUpdate;
             tasksService.SnykCodeScanningFinished += this.OnSnykCodeScanningFinished;
             tasksService.OssScanningFinished += this.OnOssScanningFinished;
+            tasksService.TaskFinished += this.OnTaskFinished;
 
             Logger.Information("Initialize Download Event Listeners");
 
@@ -400,6 +401,8 @@
         private void OnSnykCodeScanningFinished(object sender, SnykCodeScanEventArgs e) => this.UpdateActionsState();
 
         private void OnSettingsChanged(object sender, SnykSettingsChangedEventArgs e) => this.UpdateTreeNodeItemsState();
+
+        private void OnTaskFinished(object sender, EventArgs e) => this.UpdateActionsState();
 
         private void UpdateTreeNodeItemsState() => ThreadHelper.JoinableTaskFactory.Run(async () =>
         {

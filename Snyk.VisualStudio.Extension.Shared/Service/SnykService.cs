@@ -1,6 +1,7 @@
 ﻿namespace Snyk.VisualStudio.Extension.Shared.Service
 {
     using System;
+    using System.IO;
     using System.Threading;
     using System.Threading.Tasks;
     using EnvDTE;
@@ -63,7 +64,7 @@
         /// <summary>
         /// Gets solution service.
         /// </summary>
-        public SnykSolutionService SolutionService => SnykSolutionService.Instance;
+        public ISolutionService SolutionService => SnykSolutionService.Instance;
 
         /// <summary>
         /// Gets Tasks service.
@@ -124,7 +125,9 @@
             {
                 if (this.userStorageSettingsService == null)
                 {
-                    this.userStorageSettingsService = new SnykUserStorageSettingsService(this);
+                    string settingsFilePath = Path.Combine(SnykExtension.GetExtensionDirectoryPath(), "settings.json");
+
+                    this.userStorageSettingsService = new SnykUserStorageSettingsService(settingsFilePath, this);
                 }
 
                 return this.userStorageSettingsService;

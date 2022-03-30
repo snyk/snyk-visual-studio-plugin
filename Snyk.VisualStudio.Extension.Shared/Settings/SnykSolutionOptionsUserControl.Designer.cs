@@ -1,6 +1,6 @@
 ﻿namespace Snyk.VisualStudio.Extension.Shared.Settings
 {
-    partial class SnykProjectOptionsUserControl
+    partial class SnykSolutionOptionsUserControl
     {
         /// <summary> 
         /// Required designer variable.

@@ -1,8 +1,6 @@
 ﻿namespace Snyk.VisualStudio.Extension.Shared.Settings
 {
     using System;
-    using CLI;
-    using EnvDTE;
     using Serilog;
     using Snyk.Common;
     using Snyk.VisualStudio.Extension.Shared.Service;
@@ -14,18 +12,21 @@
     {
         private static readonly ILogger Logger = LogManager.ForContext<SnykUserStorageSettingsService>();
 
-        private readonly SnykSolutionService solutionService;
+        private readonly ISolutionService solutionService;
+
+        private readonly SnykSettingsLoader settingsLoader;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="SnykUserStorageSettingsService"/> class.
         /// </summary>
+        /// <param name="settingsPath">File path to settings file.</param>
         /// <param name="serviceProvider">Snyk service provider.</param>
-        public SnykUserStorageSettingsService(ISnykServiceProvider serviceProvider)
+        public SnykUserStorageSettingsService(string settingsPath, ISnykServiceProvider serviceProvider)
         {
             this.solutionService = serviceProvider.SolutionService;
-        }
 
-        private SnykSettingsLoader SettingsLoader => new SnykSettingsLoader();
+            this.settingsLoader = new SnykSettingsLoader(settingsPath);
+        }
 
         /// <summary>
         /// Get CLI additional options string.
@@ -35,27 +36,16 @@
         {
             Logger.Information("Enter GetAdditionalOptions method");
 
-            string projectUniqueName = this.GetProjectUniqueName();
+            int solutionPathHash = this.GetSolutionPathHash();
 
-            Logger.Information($"Project unique name: {projectUniqueName}");
+            var settings = this.settingsLoader.Load();
 
-            if (string.IsNullOrEmpty(projectUniqueName))
-            {
-                Logger.Information("Project unique name is empty. Return from method");
-
-                return string.Empty;
-            }
-
-            var settings = this.SettingsLoader.Load();
-
-            if (settings == null || !settings.ProjectSettingsDict.ContainsKey(projectUniqueName))
+            if (settings == null || !settings.SolutionSettingsDict.ContainsKey(solutionPathHash))
             {
                 return string.Empty;
             }
-            else
-            {
-                return settings.ProjectSettingsDict[projectUniqueName].AdditionalOptions;
-            }
+
+            return settings.SolutionSettingsDict[solutionPathHash].AdditionalOptions;
         }
 
         /// <summary>
@@ -66,26 +56,17 @@
         {
             Logger.Information("Enter GetIsAllProjectsEnabled method");
 
-            string projectUniqueName = this.GetProjectUniqueName();
+            int solutionPathHash = this.GetSolutionPathHash();
 
-            Logger.Information($"Project unique name: {projectUniqueName}");
+            var settings = this.settingsLoader.Load();
 
-            if (string.IsNullOrEmpty(projectUniqueName))
-            {
-                Logger.Information("Project unique name is empty. Return from method");
-
-                return true;
-            }
-
-            var settings = this.SettingsLoader.Load();
-
-            if (settings == null || !settings.ProjectSettingsDict.ContainsKey(projectUniqueName))
+            if (settings == null || !settings.SolutionSettingsDict.ContainsKey(solutionPathHash))
             {
                 return true;
             }
             else
             {
-                return settings.ProjectSettingsDict[projectUniqueName].IsAllProjectsScanEnabled;
+                return settings.SolutionSettingsDict[solutionPathHash].IsAllProjectsScanEnabled;
             }
         }
 
@@ -99,7 +80,7 @@
 
             settings.SnykCodeSecurityEnabled = enabled;
 
-            this.SettingsLoader.Save(settings);
+            this.settingsLoader.Save(settings);
         }
 
         /// <summary>
@@ -118,7 +99,7 @@
 
             settings.SnykCodeQualityEnabled = enabled;
 
-            this.SettingsLoader.Save(settings);
+            this.settingsLoader.Save(settings);
         }
 
         /// <summary>
@@ -137,7 +118,7 @@
 
             settings.OssEnabled = enabled;
 
-            this.SettingsLoader.Save(settings);
+            this.settingsLoader.Save(settings);
         }
 
         /// <summary>
@@ -162,7 +143,7 @@
 
             settings.UsageAnalyticsEnabled = usageAnalyticsEnabled;
 
-            this.SettingsLoader.Save(settings);
+            this.settingsLoader.Save(settings);
         }
 
         /// <summary>
@@ -171,7 +152,7 @@
         /// <param name="anonymousUserId">Anonymous user id to save.</param>
         public void SaveAnonymousId(string anonymousUserId)
         {
-            var settings = this.SettingsLoader.Load();
+            var settings = this.settingsLoader.Load();
 
             if (settings == null)
             {
@@ -180,20 +161,20 @@
 
             settings.AnonymousId = anonymousUserId;
 
-            this.SettingsLoader.Save(settings);
+            this.settingsLoader.Save(settings);
         }
 
         /// <summary>
         /// Get Sentry anonymous user id.
         /// </summary>
         /// <returns>String Sentry anonymous user id.</returns>
-        public string GetAnonymousId() => this.SettingsLoader.Load()?.AnonymousId;
+        public string GetAnonymousId() => this.settingsLoader.Load()?.AnonymousId;
 
         /// <summary>
         /// Get current CLI version.
         /// </summary>
         /// <returns>String in '1.100.1' format.</returns>
-        public string GetCurrentCliVersion() => this.SettingsLoader.Load()?.CurrentCliVersion;
+        public string GetCurrentCliVersion() => this.settingsLoader.Load()?.CurrentCliVersion;
 
         /// <summary>
         /// Save CLI version number.
@@ -201,7 +182,7 @@
         /// <param name="cliVersion">CLI version to save.</param>
         public void SaveCurrentCliVersion(string cliVersion)
         {
-            var settings = this.SettingsLoader.Load();
+            var settings = this.settingsLoader.Load();
 
             if (settings == null)
             {
@@ -210,7 +191,7 @@
 
             settings.CurrentCliVersion = cliVersion;
 
-            this.SettingsLoader.Save(settings);
+            this.settingsLoader.Save(settings);
         }
 
         /// <summary>
@@ -219,7 +200,7 @@
         /// <returns>String in '1.100.1' format.</returns>
         public DateTime GetCliReleaseLastCheckDate()
         {
-            var checkDate = this.SettingsLoader.Load()?.CliReleaseLastCheckDate;
+            var checkDate = this.settingsLoader.Load()?.CliReleaseLastCheckDate;
 
             return (DateTime)(checkDate == null ? DateTime.MinValue : checkDate);
         }
@@ -230,7 +211,7 @@
         /// <param name="lastCheckDate">Last check date.</param>
         public void SaveCliReleaseLastCheckDate(DateTime lastCheckDate)
         {
-            var settings = this.SettingsLoader.Load();
+            var settings = this.settingsLoader.Load();
 
             if (settings == null)
             {
@@ -239,7 +220,7 @@
 
             settings.CliReleaseLastCheckDate = lastCheckDate;
 
-            this.SettingsLoader.Save(settings);
+            this.settingsLoader.Save(settings);
         }
 
         /// <summary>
@@ -250,38 +231,31 @@
         {
             Logger.Information("Enter SaveAdditionalOptions method");
 
-            string projectUniqueName = this.GetProjectUniqueName();
+            int solutionPathHash = this.GetSolutionPathHash();
 
-            Logger.Information($"Project unique name: {projectUniqueName}");
-
-            if (string.IsNullOrEmpty(projectUniqueName))
-            {
-                return;
-            }
-
-            var settings = this.SettingsLoader.Load();
+            var settings = this.settingsLoader.Load();
 
             if (settings == null)
             {
                 settings = new SnykSettings();
             }
 
-            SnykProjectSettings projectSettings;
+            SnykSolutionSettings projectSettings;
 
-            if (settings.ProjectSettingsDict.ContainsKey(projectUniqueName))
+            if (settings.SolutionSettingsDict.ContainsKey(solutionPathHash))
             {
-                projectSettings = settings.ProjectSettingsDict[projectUniqueName];
+                projectSettings = settings.SolutionSettingsDict[solutionPathHash];
             }
             else
             {
-                projectSettings = new SnykProjectSettings();
+                projectSettings = new SnykSolutionSettings();
             }
 
             projectSettings.AdditionalOptions = additionalOptions;
 
-            settings.ProjectSettingsDict[projectUniqueName] = projectSettings;
+            settings.SolutionSettingsDict[solutionPathHash] = projectSettings;
 
-            this.SettingsLoader.Save(settings);
+            this.settingsLoader.Save(settings);
 
             Logger.Information("Leave SaveAdditionalOptions method");
         }
@@ -294,67 +268,38 @@
         {
             Logger.Information("Enter SaveIsAllProjectsScan method");
 
-            string projectUniqueName = this.GetProjectUniqueName();
+            int solutionPathHash = this.GetSolutionPathHash();
 
-            Logger.Information($"Project unique name: {projectUniqueName}");
-
-            if (string.IsNullOrEmpty(projectUniqueName))
-            {
-                return;
-            }
-
-            var settings = this.SettingsLoader.Load();
+            var settings = this.settingsLoader.Load();
 
             if (settings == null)
             {
                 settings = new SnykSettings();
             }
 
-            SnykProjectSettings projectSettings;
+            SnykSolutionSettings projectSettings;
 
-            if (settings.ProjectSettingsDict.ContainsKey(projectUniqueName))
+            if (settings.SolutionSettingsDict.ContainsKey(solutionPathHash))
             {
-                projectSettings = settings.ProjectSettingsDict[projectUniqueName];
+                projectSettings = settings.SolutionSettingsDict[solutionPathHash];
             }
             else
             {
-                projectSettings = new SnykProjectSettings();
+                projectSettings = new SnykSolutionSettings();
             }
 
             projectSettings.IsAllProjectsScanEnabled = isAllProjectsEnabled;
 
-            settings.ProjectSettingsDict[projectUniqueName] = projectSettings;
+            settings.SolutionSettingsDict[solutionPathHash] = projectSettings;
 
-            this.SettingsLoader.Save(settings);
+            this.settingsLoader.Save(settings);
 
             Logger.Information("Leave SaveIsAllProjectsScan method");
         }
 
-        /// <summary>
-        /// Get project unique name.
-        /// </summary>
-        /// <returns>Project name string.</returns>
-        private string GetProjectUniqueName()
-        {
-            Logger.Information("Enter GetProjectUniqueName method");
-
-            Projects projects = this.solutionService.GetProjects();
-
-            if (projects.Count == 0)
-            {
-                return string.Empty;
-            }
-
-            Project project = projects.Item(1);
-
-            Logger.Information($"Leave GetProjectUniqueName method. Project unique name: {project.UniqueName}");
-
-            return project.UniqueName;
-        }
-
         private SnykSettings LoadSettings()
         {
-            var settings = this.SettingsLoader.Load();
+            var settings = this.settingsLoader.Load();
 
             if (settings == null)
             {
@@ -363,5 +308,7 @@
 
             return settings;
         }
+
+        private int GetSolutionPathHash() => this.solutionService.GetPath().ToLower().GetHashCode();
     }
 }

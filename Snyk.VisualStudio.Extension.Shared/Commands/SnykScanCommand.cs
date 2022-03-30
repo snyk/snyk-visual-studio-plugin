@@ -56,7 +56,7 @@
         /// <inheritdoc/>
         public override void UpdateState()
         {
-            bool isEnabled = this.IsButtonAvailable();
+            bool isEnabled = this.IsButtonAvailable() && !SnykTasksService.Instance.IsTaskRunning();
 
             this.MenuCommand.Enabled = isEnabled;
 

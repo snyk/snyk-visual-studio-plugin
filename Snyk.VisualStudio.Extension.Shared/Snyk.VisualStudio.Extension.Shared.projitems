@@ -144,18 +144,18 @@
     <Compile Include="$(MSBuildThisFileDirectory)Settings\SnykGeneralSettingsUserControl.Designer.cs">
       <DependentUpon>SnykGeneralSettingsUserControl.cs</DependentUpon>
     </Compile>
-    <Compile Include="$(MSBuildThisFileDirectory)Settings\SnykProjectOptionsDialogPage.cs">
+    <Compile Include="$(MSBuildThisFileDirectory)Settings\SnykSolutionOptionsDialogPage.cs">
       <SubType>Component</SubType>
       <CopyToOutputDirectory>Never</CopyToOutputDirectory>
     </Compile>
-    <Compile Include="$(MSBuildThisFileDirectory)Settings\SnykProjectOptionsUserControl.cs">
+    <Compile Include="$(MSBuildThisFileDirectory)Settings\SnykSolutionOptionsUserControl.cs">
       <SubType>UserControl</SubType>
       <CopyToOutputDirectory>Never</CopyToOutputDirectory>
     </Compile>
-    <Compile Include="$(MSBuildThisFileDirectory)Settings\SnykProjectOptionsUserControl.Designer.cs">
-      <DependentUpon>SnykProjectOptionsUserControl.cs</DependentUpon>
+    <Compile Include="$(MSBuildThisFileDirectory)Settings\SnykSolutionOptionsUserControl.Designer.cs">
+      <DependentUpon>SnykSolutionOptionsUserControl.cs</DependentUpon>
     </Compile>
-    <Compile Include="$(MSBuildThisFileDirectory)Settings\SnykProjectSettings.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Settings\SnykSolutionSettings.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Settings\SnykSettings.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Settings\SnykSettingsChangedEventArgs.cs">
       <CopyToOutputDirectory>Never</CopyToOutputDirectory>
@@ -555,8 +555,8 @@
     <EmbeddedResource Include="$(MSBuildThisFileDirectory)Settings\SnykGeneralSettingsUserControl.resx">
       <DependentUpon>SnykGeneralSettingsUserControl.cs</DependentUpon>
     </EmbeddedResource>
-    <EmbeddedResource Include="$(MSBuildThisFileDirectory)Settings\SnykProjectOptionsUserControl.resx">
-      <DependentUpon>SnykProjectOptionsUserControl.cs</DependentUpon>
+    <EmbeddedResource Include="$(MSBuildThisFileDirectory)Settings\SnykSolutionOptionsUserControl.resx">
+      <DependentUpon>SnykSolutionOptionsUserControl.cs</DependentUpon>
     </EmbeddedResource>
     <EmbeddedResource Include="$(MSBuildThisFileDirectory)VSPackage.resx">
       <LastGenOutput>VSPackage.Designer.cs</LastGenOutput>

@@ -42,6 +42,12 @@
             Instance = new SnykStopCurrentTaskCommand(package, commandService);
         }
 
+        /// <inheritdoc/>
+        public override void UpdateState()
+        {
+            this.MenuCommand.Enabled = this.IsButtonAvailable() && !SnykScanCommand.Instance.Enabled;
+        }
+
         /// <summary>
         /// Cancel current running task.
         /// </summary>

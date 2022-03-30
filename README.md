@@ -140,7 +140,7 @@ You could filter vulnerabilities by name or by severity.
 
 ![Scan results](doc/images/readme_image_3_2_2.png "Scan results")
 
-Users could configure Snyk extension by Project settings. 
+Users could configure Snyk extension by Solution settings. 
 
 * Note that the “Scan all projects” option is enabled  by default. It adds --all-projects option for Snyk CLI. This option scans all projects by default.
 
@@ -156,7 +156,7 @@ After the plugin is installed, you can set the following configurations for the 
 - **Ignore unknown CA**: Ignore unknown certificate authorities.
 - **Organization**: Specify the ORG_NAME to run Snyk commands tied to a specific organization.
 - **Send usage analytics**: To help us improve the extension, you can let your Visual Studio send us information about how it’s working.
-- **Project settings**: Specify any additional Snyk CLI parameters.
+- **Solution settings**: Specify any additional Snyk CLI parameters.
 - **Scan all projects**: Auto-detect all projects in the working directory. It's enabled by default.
 
 In the settings, you can also choose which results you want to receive:
@@ -171,7 +171,7 @@ In the settings, you can also choose which results you want to receive:
 
 ### Could not detect supported target files
 
-**Solution** Open Visual Studio Options to go to the Project Settings of the Snyk extension and check Scan all projects. 
+**Solution** Open Visual Studio Options to go to the Solution Settings of the Snyk extension and check Scan all projects. 
 
 ![Scan all projects option](doc/images/readme_image_4_1.png "Scan all projects option")
 
