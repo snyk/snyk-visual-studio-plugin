@@ -77,5 +77,25 @@
 
             Assert.Null(sastSettings);
         }
+
+        [Fact]
+        public async Task SnykApiService_InvalidUrlProvided_ReturnNullAsync()
+        {
+            var optionsMock = new Mock<ISnykOptions>();
+
+            optionsMock
+                .Setup(options => options.CustomEndpoint)
+                .Returns("https://snyk.io/");
+
+            optionsMock
+                .Setup(options => options.ApiToken)
+                .Returns(Environment.GetEnvironmentVariable("TEST_API_TOKEN"));
+
+            var apiService = new SnykApiService(optionsMock.Object);
+
+            var sastSettings = await apiService.GetSastSettingsAsync();
+
+            Assert.Null(sastSettings);
+        }
     }
 }
