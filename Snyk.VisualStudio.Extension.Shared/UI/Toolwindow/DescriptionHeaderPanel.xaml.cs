@@ -82,14 +82,6 @@
             }
         }
 
-        private void OnCvssLinkClick(object obj, RoutedEventArgs eventArgs)
-        {
-            if (obj is Hyperlink link)
-            {
-                Process.Start(new ProcessStartInfo(link.NavigateUri.AbsoluteUri));
-            }
-        }
-
         public Suggestion Suggestion
         {
             set
@@ -126,6 +118,14 @@
             }
         }
 
+        private void OnLinkClick(object obj, RoutedEventArgs eventArgs)
+        {
+            if (obj is Hyperlink link)
+            {
+                Process.Start(new ProcessStartInfo(link.NavigateUri.AbsoluteUri));
+            }
+        }
+
         private void AddLinksToPanel(StackPanel panel, string[] linkIds, string namePrefix, string urlPatter)
         {
             panel.Children.Clear();
@@ -142,15 +142,7 @@
 
                 link.NavigateUri = new Uri(string.Format(urlPatter, linkData.Replace(namePrefix, string.Empty)));
                 link.Inlines.Add(linkData);
-                link.Click += new RoutedEventHandler(delegate(object obj, RoutedEventArgs args)
-                {
-                    if (obj is Hyperlink)
-                    {
-                        var hyperlink = obj as Hyperlink;
-
-                        Process.Start(new ProcessStartInfo(hyperlink.NavigateUri.AbsoluteUri));
-                    }
-                });
+                link.Click += OnLinkClick;
 
                 textBlock.Inlines.Add(link);
 

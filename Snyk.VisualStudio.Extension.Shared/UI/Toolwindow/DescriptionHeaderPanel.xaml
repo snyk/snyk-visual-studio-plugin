@@ -57,7 +57,7 @@
             <StackPanel Grid.Row="0" Grid.Column="4" Name="cvePanel" Orientation="Horizontal" VerticalAlignment="Center"/>
 
             <TextBlock Grid.Row="0" Grid.Column="6" Name="cvssLinkBlock" Padding="0,5">
-                <Hyperlink Name="cvssLink" Click="OnCvssLinkClick">
+                <Hyperlink Name="cvssLink" Click="OnLinkClick">
                     <TextBlock x:Name="cvssLinkText"/>
                 </Hyperlink>
             </TextBlock>
