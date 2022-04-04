@@ -39,7 +39,15 @@
             var response = await this.SendSastSettingsRequestAsync();
             var responseContent = await response.Content.ReadAsStringAsync();
 
-            return Json.Deserialize<SastSettings>(responseContent);
+            try
+            {
+                return Json.Deserialize<SastSettings>(responseContent);
+            }
+            catch (Exception e)
+            {
+                // In case of invalid json string return null.
+                return null;
+            }
         }
 
         /// <inheritdoc/>
