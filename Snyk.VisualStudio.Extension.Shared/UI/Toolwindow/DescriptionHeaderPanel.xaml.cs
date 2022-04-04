@@ -79,15 +79,6 @@
 
                 this.cvssLink.NavigateUri = new Uri(vulnerability.Url);
                 this.cvssLinkText.Text = vulnerability.Id;
-                this.cvssLink.Click += new RoutedEventHandler(delegate (object obj, RoutedEventArgs eventArgs)
-                {
-                    if (obj is Hyperlink)
-                    {
-                        var link = obj as Hyperlink;
-
-                        Process.Start(new ProcessStartInfo(link.NavigateUri.AbsoluteUri));
-                    }
-                });
             }
         }
 
@@ -127,6 +118,14 @@
             }
         }
 
+        private void OnLinkClick(object obj, RoutedEventArgs eventArgs)
+        {
+            if (obj is Hyperlink link)
+            {
+                Process.Start(new ProcessStartInfo(link.NavigateUri.AbsoluteUri));
+            }
+        }
+
         private void AddLinksToPanel(StackPanel panel, string[] linkIds, string namePrefix, string urlPatter)
         {
             panel.Children.Clear();
@@ -137,26 +136,18 @@
             }
 
             foreach (var linkData in linkIds)
-                {
+            {
                 var textBlock = new TextBlock();
                 var link = new Hyperlink();
 
-                    link.NavigateUri = new Uri(string.Format(urlPatter, linkData.Replace(namePrefix, string.Empty)));
-                    link.Inlines.Add(linkData);
-                link.Click += new RoutedEventHandler(delegate (object obj, RoutedEventArgs args)
-                    {
-                        if (obj is Hyperlink)
-                        {
-                            var hyperlink = obj as Hyperlink;
+                link.NavigateUri = new Uri(string.Format(urlPatter, linkData.Replace(namePrefix, string.Empty)));
+                link.Inlines.Add(linkData);
+                link.Click += OnLinkClick;
 
-                            Process.Start(new ProcessStartInfo(hyperlink.NavigateUri.AbsoluteUri));
-                        }
-                    });
+                textBlock.Inlines.Add(link);
 
-                    textBlock.Inlines.Add(link);
-
-                    panel.Children.Add(textBlock);
-                }
+                panel.Children.Add(textBlock);
             }
+        }
     }
 }
