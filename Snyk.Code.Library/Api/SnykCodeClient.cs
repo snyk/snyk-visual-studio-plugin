@@ -15,7 +15,7 @@
     public class SnykCodeClient : ISnykCodeClient
     {
         /// <summary>
-        /// Maxium bundle size per one upload is 4 Mb. 4 Mb in bytes.
+        /// Maximum bundle size per one upload is 4 Mb. 4 Mb in bytes.
         /// </summary>
         public const int MaxBundleSize = 4000000;
 

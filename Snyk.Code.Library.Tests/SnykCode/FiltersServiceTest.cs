@@ -111,7 +111,7 @@
         }
 
         [Fact]
-        public async Task FiltersService_FveCodeFilesAndFiveConfigFilesProvided_FilterFilesCheckPassAsync()
+        public async Task FiltersService_FiveCodeFilesAndFiveConfigFilesProvided_FilterFilesCheckPassAsync()
         {
             IList<string> files = new List<string>();
 
@@ -138,20 +138,7 @@
 
             var codeClientMock = new Mock<ISnykCodeClient>();
 
-            var extensions = new List<string>();
-            extensions.Add(".cs");
-            extensions.Add(".ts");
-            extensions.Add(".js");
-
-            var configFiles = new List<string>();
-            configFiles.Add(".dcignore");
-            configFiles.Add(".gitignore");
-
-            var filtersDto = new FiltersDto
-            {
-                Extensions = extensions,
-                ConfigFiles = configFiles,
-            };
+            var filtersDto = GetFiltersDto();
 
             codeClientMock
                 .Setup(codeClient => codeClient.GetFiltersAsync().Result)
@@ -171,6 +158,32 @@
             codeClientMock.Verify(codeClient => codeClient.GetFiltersAsync());
         }
 
+        [Fact]
+        public async Task FilterServices_OversizedFile_FileIsIgnored()
+        {
+            // Arrange
+            const int fileSizeLimit = 1_000_000;
+            var smallFileSize = fileSizeLimit / 2;
+            var largeFileSize = fileSizeLimit * 2;
+            var codeClientMock = new Mock<ISnykCodeClient>();
+            codeClientMock.Setup(codeClient => codeClient.GetFiltersAsync())
+                .ReturnsAsync(GetFiltersDto());
+
+            var filtersService = new FiltersService(codeClientMock.Object);
+
+            using (var smallFile = TempFile.Create("smallFile.cs", smallFileSize))
+            using (var largeFile = TempFile.Create("largeFile.cs", largeFileSize))
+            {
+                // Act
+                var filteredFiles = await filtersService.FilterFilesAsync(new[] { smallFile.FilePath, largeFile.FilePath });
+
+                // Assert
+                Assert.Equal(1, filteredFiles.Count);
+                Assert.Contains(smallFile.FilePath, filteredFiles);
+                Assert.DoesNotContain(largeFile.FilePath, filteredFiles);
+            }
+        }
+
         private string GetTemporaryDirectory()
         {
             string tempDirectory = Path.Combine(Path.GetTempPath(), Path.GetRandomFileName());
@@ -178,6 +191,25 @@
             Directory.CreateDirectory(tempDirectory);
 
             return tempDirectory;
+        }
+
+        private static FiltersDto GetFiltersDto()
+        {
+            var extensions = new List<string>();
+            extensions.Add(".cs");
+            extensions.Add(".ts");
+            extensions.Add(".js");
+
+            var configFiles = new List<string>();
+            configFiles.Add(".dcignore");
+            configFiles.Add(".gitignore");
+
+            var filtersDto = new FiltersDto
+            {
+                Extensions = extensions,
+                ConfigFiles = configFiles,
+            };
+            return filtersDto;
         }
     }
 }
