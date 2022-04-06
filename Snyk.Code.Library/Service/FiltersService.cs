@@ -14,7 +14,10 @@
     /// <inheritdoc/>
     public class FiltersService : IFiltersService
     {
-        private const int MaxFileSize = SnykCodeClient.MaxBundleSize;
+        /// <summary>
+        /// The limit for maximum file size in bytes. The limit is 1MB.
+        /// </summary>
+        private const int MaxFileSize = 1_000_000;
 
         private static readonly ILogger Logger = LogManager.ForContext<FiltersService>();
 
