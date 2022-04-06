@@ -94,14 +94,24 @@
         /// <param name="pStubHierarchy">Stub Hierarchy.</param>
         /// <param name="pRealHierarchy">Real Hierarchy.</param>
         /// <returns>VSConstants.S_OK.</returns>
-        public int OnAfterLoadProject(IVsHierarchy pStubHierarchy, IVsHierarchy pRealHierarchy) => VSConstants.S_OK;
+        public int OnAfterLoadProject(IVsHierarchy pStubHierarchy, IVsHierarchy pRealHierarchy)
+        {
+            this.solutionService.Clean();
+
+            return VSConstants.S_OK;
+        }
 
         /// <summary>
         /// AfterLoadProjectBatch event handler.
         /// </summary>
         /// <param name="fIsBackgroundIdleBatch">Is Background Idle Batch.</param>
         /// <returns>VSConstants.S_OK.</returns>
-        public int OnAfterLoadProjectBatch(bool fIsBackgroundIdleBatch) => VSConstants.S_OK;
+        public int OnAfterLoadProjectBatch(bool fIsBackgroundIdleBatch)
+        {
+            this.solutionService.Clean();
+
+            return VSConstants.S_OK;
+        }
 
         /// <summary>
         /// AfterBackgroundSolutionLoadComplete event handler. Invoke AfterBackgroundSolutionLoadComplete.
@@ -110,6 +120,8 @@
         public void OnAfterOpenFolder(string folderPath)
         {
             this.AfterBackgroundSolutionLoadComplete?.Invoke(this, EventArgs.Empty);
+
+            this.solutionService.Clean();
 
             this.sentryService.SetSolutionType(SolutionType.Folder);
         }
@@ -125,6 +137,8 @@
             new CodeCacheHierarchyEvents(this.solutionService.FileProvider);
             new OssCacheHierarchyEvents(this.ossService);
 
+            this.solutionService.Clean();
+
             this.sentryService.SetSolutionType(SolutionType.Project);
 
             return VSConstants.S_OK;
@@ -139,6 +153,8 @@
         public int OnAfterOpenSolution(object pUnkReserved, int fNewSolution)
         {
             this.sentryService.SetSolutionType(SolutionType.Solution);
+
+            this.solutionService.Clean();
 
             return VSConstants.S_OK;
         }
