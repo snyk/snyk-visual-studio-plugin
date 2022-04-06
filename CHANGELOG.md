@@ -3,4 +3,5 @@
 ## [1.1.7]
 
 ### Fixed
-- Issue that brought Visual Studio 2017 to crash
+- Extension crash on Visual Studio 2017.
+- Cache invalidation for Open Source vulnerabilities.

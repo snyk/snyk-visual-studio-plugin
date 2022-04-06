@@ -200,6 +200,8 @@
             this.fileProvider.ClearHistory();
 
             this.ServiceProvider.SnykCodeService.Clean();
+
+            this.ServiceProvider.OssService.ClearCache();
         }
 
         private async Task InitializeSolutionEventsAsync()
