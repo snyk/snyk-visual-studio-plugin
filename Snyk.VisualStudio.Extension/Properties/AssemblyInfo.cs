@@ -37,3 +37,9 @@ using Microsoft.VisualStudio.Shell;
     NewVersion = "4.2.0.1",
     OldVersionLowerBound = "0.0.0.0",
     OldVersionUpperBound = "4.2.0.1")]
+
+[assembly: ProvideBindingRedirection(
+    AssemblyName = "System.Runtime.CompilerServices.Unsafe",
+    NewVersion = "5.0.0.0",
+    OldVersionLowerBound = "4.0.4.1",
+    OldVersionUpperBound = "5.0.0.0")]
