@@ -20,6 +20,7 @@
     using Snyk.VisualStudio.Extension.Shared.Theme;
     using Snyk.VisualStudio.Extension.Shared.UI.Notifications;
     using Snyk.VisualStudio.Extension.Shared.UI.Tree;
+    using Task = System.Threading.Tasks.Task;
 
     /// <summary>
     /// Interaction logic for SnykToolWindowControl.
@@ -300,7 +301,7 @@
         /// </summary>
         /// <param name="sender">Source object.</param>
         /// <param name="eventArgs">Event args.</param>
-        public void OnDownloadUpdate(object sender, SnykCliDownloadEventArgs eventArgs) => this.UpdateDownloadProgress(eventArgs.Progress);
+        public async void OnDownloadUpdate(object sender, SnykCliDownloadEventArgs eventArgs) => await this.UpdateDownloadProgress(eventArgs.Progress);
 
         /// <summary>
         /// DownloadCancelled event handler. Call SetInitialState() method.
@@ -523,7 +524,7 @@
         /// Update progress bar.
         /// </summary>
         /// <param name="value">Progress bar value.</param>
-        private void UpdateDownloadProgress(int value) => ThreadHelper.JoinableTaskFactory.Run(async () =>
+        private async Task UpdateDownloadProgress(int value)
         {
             await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
 
@@ -533,7 +534,7 @@
 
             this.messagePanel.Visibility = Visibility.Visible;
             this.descriptionPanel.Visibility = Visibility.Collapsed;
-        });
+        }
 
         private void VulnerabilitiesTree_SelectetVulnerabilityChanged(object sender, RoutedEventArgs args)
         {
