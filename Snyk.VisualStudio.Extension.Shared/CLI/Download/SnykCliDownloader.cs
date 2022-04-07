@@ -311,6 +311,7 @@
                         var totalRead = 0L;
                         var buffer = new byte[8192];
                         var isMoreToRead = true;
+                        var lastProgressPercentage = 0;
 
                         do
                         {
@@ -328,7 +329,11 @@
 
                                 int percentage = (int)(totalRead * 100 / totalBytes);
 
-                                progressWorker.UpdateProgress(percentage);
+                                if (percentage > lastProgressPercentage)
+                                {
+                                    progressWorker.UpdateProgress(percentage);
+                                    lastProgressPercentage = percentage;
+                                }
 
                                 progressWorker.CancelIfCancellationRequested();
                             }
