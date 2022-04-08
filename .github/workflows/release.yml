@@ -115,7 +115,7 @@ jobs:
       with:
         upload_url: ${{ steps.create_release.outputs.upload_url }}
         asset_path: .\Snyk.VisualStudio.Extension.2022\bin\Release\Snyk.VisualStudio.Extension.vsix
-        asset_name: Snyk_Vulnerability_Scanner-${{ steps.vsix_version.outputs.next-tag }}.vsix
+        asset_name: Snyk_Vulnerability_Scanner-${{ steps.vsix_version.outputs.next-tag }}-2022.vsix
         asset_content_type: application/zip
 
     - name: Publish 2015-2019 extension to Marketplace
