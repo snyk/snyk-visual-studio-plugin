@@ -54,7 +54,7 @@ jobs:
     - name: Restore NuGet packages
       run: nuget restore ${{env.SOLUTION_FILE_PATH}}
 
-    - name: Calculate next Git tag
+    - name: Calculate next semantic version Git tag (vsix version)
       id: vsix_version
       uses: ./.github/actions/next-git-tag -Verbose
 
@@ -81,13 +81,13 @@ jobs:
     - name: Set up Git actions user
       uses: fregante/setup-git-user@v1
 
-    - name: Push Git tag
+    - name: Create and push Git tag release
       run: |
         git tag ${{ steps.vsix_version.outputs.next-tag }}
         git push origin main
         git push origin main --tags
 
-    - name: Create Release
+    - name: Create GitHub Release
       id: create_release
       uses: actions/create-release@v1
       env:
@@ -98,7 +98,7 @@ jobs:
         draft: false
         prerelease: false
 
-    - name: Upload Release 2015-2019 Asset
+    - name: Upload GitHub Release 2015-2019 Asset
       uses: actions/upload-release-asset@v1
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -108,7 +108,7 @@ jobs:
         asset_name: Snyk_Vulnerability_Scanner-${{ steps.vsix_version.outputs.next-tag }}.vsix
         asset_content_type: application/zip
 
-    - name: Upload Release 2022 Asset
+    - name: Upload GitHub Release 2022 Asset
       uses: actions/upload-release-asset@v1
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
