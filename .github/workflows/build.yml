@@ -20,6 +20,9 @@ jobs:
 
     steps:
     - uses: actions/checkout@v2
+      with:
+        fetch-depth: 0
+
     - uses: microsoft/variable-substitution@v1 
       with:
         files: '.\Snyk.Common\appsettings.json'
@@ -37,7 +40,7 @@ jobs:
     - name: Setup VSTest
       uses: darenm/Setup-VSTest@v1
 
-    - name: Restore NuGet packages      
+    - name: Restore NuGet packages
       run: nuget restore ${{env.SOLUTION_FILE_PATH}}
 
     - name: Build
