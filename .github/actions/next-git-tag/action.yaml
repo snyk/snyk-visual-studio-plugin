@@ -8,5 +8,5 @@ runs:
   using: 'composite'
   steps:
     - id: get-next-semver-tag
-      run: ${{ github.action_path }}/next-git-tag.ps1
+      run: ${{ github.action_path }}/next-git-tag.ps1 -Verbose
       shell: pwsh
