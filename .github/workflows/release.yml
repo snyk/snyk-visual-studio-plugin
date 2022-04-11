@@ -56,7 +56,7 @@ jobs:
 
     - name: Calculate next semantic version Git tag (vsix version)
       id: vsix_version
-      uses: ./.github/actions/next-git-tag -Verbose
+      uses: ./.github/actions/next-git-tag
 
     - name: Set VSIX version for 2015-2019
       uses: cezarypiatek/VsixVersionAction@1.0
