@@ -24,17 +24,16 @@ jobs:
 
     steps:
     - uses: actions/checkout@v2
-    
-    - name: Unshallow
-      run: git fetch --prune --unshallow
-    
+      with:
+        fetch-depth: 0
+
     - uses: actions/cache@v2
       with:
         path: ~/.nuget/packages
         key: ${{ runner.os }}-nuget-${{ hashFiles('**/packages.config') }}
         restore-keys: |
           ${{ runner.os }}-nuget-
-    
+
     - uses: microsoft/variable-substitution@v1 
       with:
         files: '.\Snyk.Common\appsettings.json'
@@ -55,22 +54,22 @@ jobs:
     - name: Restore NuGet packages
       run: nuget restore ${{env.SOLUTION_FILE_PATH}}
 
-    - name: Increment VSIX version
+    - name: Calculate next semantic version Git tag (vsix version)
       id: vsix_version
-      uses: timheuer/vsix-version-stamp@v1
+      uses: ./.github/actions/next-git-tag -Verbose
+
+    - name: Set VSIX version for 2015-2019
+      uses: cezarypiatek/VsixVersionAction@1.0
       with:
-        manifest-file: ${{ env.VsixManifestPath }}
-        
-    - name: Set up Git actions user
-      uses: fregante/setup-git-user@v1
-      
-    - name: Commit new version
-      run: | 
-        git commit -am 'increment new version'
-        git tag ${{ steps.vsix_version.outputs.version-number }}
-        git push origin main
-        git push origin main --tags
-        
+        version: ${{ steps.vsix_version.outputs.next-tag }}
+        vsix-manifest-file: .\Snyk.VisualStudio.Extension\source.extension.vsixmanifest
+
+    - name: Set VSIX version for 2022
+      uses: cezarypiatek/VsixVersionAction@1.0
+      with:
+        version: ${{ steps.vsix_version.outputs.next-tag }}
+        vsix-manifest-file: .\Snyk.VisualStudio.Extension.2022\source.extension.vsixmanifest
+
     - name: Build
       run: |
         msbuild ${{env.SOLUTION_FILE_PATH}} /p:configuration=Release /p:DeployExtension=false /p:ZipPackageCompressionLevel=normal /v:m
@@ -78,31 +77,57 @@ jobs:
 
     - name: Tests
       run: vstest.console.exe **\*.Tests.dll
-      
-    - name: Create Release
+
+    - name: Set up Git actions user
+      uses: fregante/setup-git-user@v1
+
+    - name: Create and push Git tag release
+      run: |
+        git tag ${{ steps.vsix_version.outputs.next-tag }}
+        git push origin main
+        git push origin main --tags
+
+    - name: Create GitHub Release
       id: create_release
       uses: actions/create-release@v1
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       with:
-        tag_name: ${{ steps.vsix_version.outputs.version-number }}
-        release_name: Release ${{ steps.vsix_version.outputs.version-number }}
+        tag_name: ${{ steps.vsix_version.outputs.next-tag }}
+        release_name: Release ${{ steps.vsix_version.outputs.next-tag }}
         draft: false
         prerelease: false
-    - name: Upload Release Asset
-      id: upload-release-asset
+
+    - name: Upload GitHub Release 2015-2019 Asset
       uses: actions/upload-release-asset@v1
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       with:
-        upload_url: ${{ steps.create_release.outputs.upload_url }} # This pulls from the CREATE RELEASE step above, referencing it's ID to get its outputs object, which include a `upload_url`. See this blog post for more info: https://jasonet.co/posts/new-features-of-github-actions/#passing-data-to-future-steps 
+        upload_url: ${{ steps.create_release.outputs.upload_url }}
         asset_path: .\Snyk.VisualStudio.Extension\bin\Release\Snyk.VisualStudio.Extension.vsix
-        asset_name: Snyk_Vulnerability_Scanner-${{ steps.vsix_version.outputs.version-number }}.vsix
+        asset_name: Snyk_Vulnerability_Scanner-${{ steps.vsix_version.outputs.next-tag }}.vsix
         asset_content_type: application/zip
-    
+
+    - name: Upload GitHub Release 2022 Asset
+      uses: actions/upload-release-asset@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        upload_url: ${{ steps.create_release.outputs.upload_url }}
+        asset_path: .\Snyk.VisualStudio.Extension.2022\bin\Release\Snyk.VisualStudio.Extension.vsix
+        asset_name: Snyk_Vulnerability_Scanner-${{ steps.vsix_version.outputs.next-tag }}-2022.vsix
+        asset_content_type: application/zip
+
     - name: Publish 2015-2019 extension to Marketplace
       uses: cezarypiatek/VsixPublisherAction@0.1
       with:
         extension-file: '.\Snyk.VisualStudio.Extension\bin\Release\Snyk.VisualStudio.Extension.vsix'
         publish-manifest-file: '.\Snyk.VisualStudio.Extension\vs-publish.json'
+        personal-access-code: ${{ secrets.VS_PUBLISHER_ACCESS_TOKEN }}
+
+    - name: Publish 2022 extension to Marketplace
+      uses: cezarypiatek/VsixPublisherAction@0.1
+      with:
+        extension-file: '.\Snyk.VisualStudio.Extension.2022\bin\Release\Snyk.VisualStudio.Extension.vsix'
+        publish-manifest-file: '.\Snyk.VisualStudio.Extension.2022\vs-publish.json'
         personal-access-code: ${{ secrets.VS_PUBLISHER_ACCESS_TOKEN }}

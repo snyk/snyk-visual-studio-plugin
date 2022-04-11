@@ -1,0 +1,12 @@
+name: 'Get Next SemVer Tag'
+description: 'Get next Git tag in semver format'
+outputs:
+  next-tag:
+    description: 'next Git tag in semver format'
+    value: ${{ steps.get-next-semver-tag.outputs.next-tag }}
+runs:
+  using: 'composite'
+  steps:
+    - id: get-next-semver-tag
+      run: ${{ github.action_path }}/next-git-tag.ps1
+      shell: pwsh
