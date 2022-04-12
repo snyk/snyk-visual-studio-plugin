@@ -6,7 +6,7 @@
   },
   "assetFiles": [
   ],
-  "overview": "README.md",
+  "overview": "../README.md",
   "publisher": "Snyk Ltd.",
   "repo": "http://github.com/snyk/snyk-visual-studio-plugin/"
 }
