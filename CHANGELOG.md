@@ -7,6 +7,7 @@
 
 ### Fixed
 - Scan of solutions in which *.sln file is not in the root directory.
+- Fixed CLI download blocking the UI longer than necessary
 
 ## [1.1.9]
 
