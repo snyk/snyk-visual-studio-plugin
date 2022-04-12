@@ -114,21 +114,16 @@
 
         private AnalysisResult MapDtoAnalysisResultToDomain(AnalysisResultDto analysisResultDto)
         {
-            var analysisrResult = new AnalysisResult
+            var analysisResult = new AnalysisResult
             {
                 Status = analysisResultDto.Status,
                 Progress = analysisResultDto.Progress,
                 URL = analysisResultDto.AnalysisURL,
             };
 
-            if (analysisResultDto == null)
-            {
-                return analysisrResult;
-            }
-
             if (analysisResultDto.Files == null || analysisResultDto.Suggestions == null)
             {
-                return analysisrResult;
+                return analysisResult;
             }
 
             foreach (var fileKeyPair in analysisResultDto.Files)
@@ -141,36 +136,9 @@
                     var fileDtos = suggestionIdToFileKeyPair.Value;
 
                     var suggestionDto = analysisResultDto.Suggestions[suggestionId];
-
                     var fileDto = fileDtos.First();
-
-                    var suggestion = new Suggestion
-                    {
-                        Id = suggestionDto.Id,
-                        Rule = suggestionDto.Rule,
-                        Message = suggestionDto.Message,
-                        Severity = suggestionDto.Severity,
-                        Categories = suggestionDto.Categories,
-                        Tags = suggestionDto.Tags,
-                        Title = suggestionDto.Title,
-                        Cwe = suggestionDto.Cwe,
-                        Text = suggestionDto.Text,
-                        FileName = fileAnalysis.FileName,
-                        RepoDatasetSize = suggestionDto.RepoDatasetSize,
-                        ExampleCommitDescriptions = suggestionDto.ExampleCommitDescriptions,
-                        Rows = Tuple.Create(fileDto.Rows[0], fileDto.Rows[1]),
-                        Columns = Tuple.Create(fileDto.Cols[0], fileDto.Cols[1]),
-                        Markers = fileDto.Markers.Select(markerDto => new Marker
-                        {
-                            MessageIndexes = markerDto.MessageIndexes,
-                            Positions = markerDto.Positions.Select(positionDto => new Position
-                            {
-                                Columns = positionDto.Cols,
-                                Rows = positionDto.Rows,
-                                FileName = positionDto.File,
-                            }).ToList(),
-                        }).ToList(),
-                    };
+                    var fileName = fileAnalysis.FileName;
+                    var suggestion = new Suggestion(fileName, suggestionDto, fileDto);
 
                     foreach (var exampleCommitFixes in suggestionDto.ExampleCommitFixes)
                     {
@@ -187,10 +155,10 @@
                     fileAnalysis.Suggestions.Add(suggestion);
                 }
 
-                analysisrResult.FileAnalyses.Add(fileAnalysis);
+                analysisResult.FileAnalyses.Add(fileAnalysis);
             }
 
-            return analysisrResult;
+            return analysisResult;
         }
     }
 }

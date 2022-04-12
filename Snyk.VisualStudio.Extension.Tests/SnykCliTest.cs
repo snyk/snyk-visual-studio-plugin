@@ -3,6 +3,7 @@
     using System;
     using System.IO;
     using Snyk.VisualStudio.Extension.Shared.CLI;
+    using Snyk.VisualStudio.Extension.Shared.Model;
     using Snyk.VisualStudio.Extension.Shared.Settings;
     using Xunit;
 

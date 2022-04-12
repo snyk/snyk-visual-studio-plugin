@@ -1,4 +1,4 @@
-﻿namespace Snyk.VisualStudio.Extension.Shared.CLI
+﻿namespace Snyk.VisualStudio.Extension.Shared.Model
 {
     /// <summary>
     /// Severity class.
@@ -27,10 +27,10 @@
 
         /// <summary>
         /// Transform string severity representation to int representation.
-        /// Crititlca => 3.
-        /// High => 2.
-        /// Medium => 1.
-        /// Low => 0.
+        /// Critical => 4.
+        /// High => 3.
+        /// Medium => 2.
+        /// Low => 1.
         /// </summary>
         /// <param name="severity">Severity as string.</param>
         /// <returns>Severity as int.</returns>
@@ -41,19 +41,19 @@
             switch (severity)
             {
                 case Severity.Critical:
-                    intSeverityRepresentation = 3;
+                    intSeverityRepresentation = 4;
                     break;
                 case Severity.High:
-                    intSeverityRepresentation = 2;
+                    intSeverityRepresentation = 3;
                     break;
                 case Severity.Medium:
-                    intSeverityRepresentation = 1;
+                    intSeverityRepresentation = 2;
                     break;
                 case Severity.Low:
-                    intSeverityRepresentation = 0;
+                    intSeverityRepresentation = 1;
                     break;
                 default:
-                    intSeverityRepresentation = -1;
+                    intSeverityRepresentation = 0;
                     break;
             }
 
@@ -62,10 +62,9 @@
 
         /// <summary>
         /// Transform int severity representation to string representation.
-        /// 3 => Crititlca.
-        /// 2 => High.
-        /// 1 => Medium.
-        /// 0 => Low.
+        /// 3 => High.
+        /// 2 => Medium.
+        /// 1 => Low.
         /// </summary>
         /// <param name="severity">Severity as int.</param>
         /// <returns>Severity as string.</returns>
@@ -76,15 +75,12 @@
             switch (severity)
             {
                 case 3:
-                    severityRepresentation = Severity.Critical;
-                    break;
-                case 2:
                     severityRepresentation = Severity.High;
                     break;
-                case 1:
+                case 2:
                     severityRepresentation = Severity.Medium;
                     break;
-                case 0:
+                case 1:
                     severityRepresentation = Severity.Low;
                     break;
                 default:
