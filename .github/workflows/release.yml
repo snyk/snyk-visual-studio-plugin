@@ -17,7 +17,7 @@ jobs:
     runs-on: windows-latest
     defaults:
       run:
-        working-directory: ${{ github.workspace }} 
+        working-directory: ${{ github.workspace }}
     env:
       TEST_API_TOKEN: ${{ secrets.TEST_API_TOKEN }}
       VsixManifestPath: .\Snyk.VisualStudio.Extension\source.extension.vsixmanifest
@@ -34,7 +34,7 @@ jobs:
         restore-keys: |
           ${{ runner.os }}-nuget-
 
-    - uses: microsoft/variable-substitution@v1 
+    - uses: microsoft/variable-substitution@v1
       with:
         files: '.\Snyk.Common\appsettings.json'
       env:
@@ -119,14 +119,14 @@ jobs:
         asset_content_type: application/zip
 
     - name: Publish 2015-2019 extension to Marketplace
-      uses: cezarypiatek/VsixPublisherAction@0.1
+      uses: cezarypiatek/VsixPublisherAction@0.2
       with:
         extension-file: '.\Snyk.VisualStudio.Extension\bin\Release\Snyk.VisualStudio.Extension.vsix'
         publish-manifest-file: '.\Snyk.VisualStudio.Extension\vs-publish.json'
         personal-access-code: ${{ secrets.VS_PUBLISHER_ACCESS_TOKEN }}
 
     - name: Publish 2022 extension to Marketplace
-      uses: cezarypiatek/VsixPublisherAction@0.1
+      uses: cezarypiatek/VsixPublisherAction@0.2
       with:
         extension-file: '.\Snyk.VisualStudio.Extension.2022\bin\Release\Snyk.VisualStudio.Extension.vsix'
         publish-manifest-file: '.\Snyk.VisualStudio.Extension.2022\vs-publish.json'
