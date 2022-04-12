@@ -8,6 +8,7 @@
     using System.Windows.Documents;
     using Snyk.Code.Library.Domain.Analysis;
     using Snyk.VisualStudio.Extension.Shared.CLI;
+    using Snyk.VisualStudio.Extension.Shared.Model;
 
     /// <summary>
     /// Interaction logic for DescriptionHeaderPanel.xaml.
