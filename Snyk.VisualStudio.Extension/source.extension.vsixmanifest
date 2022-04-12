@@ -9,7 +9,7 @@
         <ReleaseNotes>https://github.com/snyk/snyk-visual-studio-plugin/blob/main/CHANGELOG.md</ReleaseNotes>
         <Icon>Resources\SnykDogLogo.png</Icon>
         <PreviewImage>Resources\SnykDogLogo.png</PreviewImage>
-        <Tags>vulnerabilities, security, source, sast, code-analysis, code-quality, static-code-analysis</Tags>
+        <Tags>vulnerabilities;security;source;sast;code-analysis;code-quality;static-code-analysis</Tags>
         <Preview>false</Preview>
     </Metadata>
     <Installation>
