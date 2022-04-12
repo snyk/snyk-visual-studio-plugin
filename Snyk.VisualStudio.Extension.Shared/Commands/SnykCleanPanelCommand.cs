@@ -51,7 +51,12 @@
         /// </summary>
         /// <param name="sender">Source object.</param>
         /// <param name="eventArgs">Event args.</param>
-        protected override void Execute(object sender, EventArgs eventArgs) => this.VsPackage.ToolWindowControl.Clean();
+        protected override void Execute(object sender, EventArgs eventArgs)
+        {
+            this.VsPackage.ToolWindowControl.Clean();
+
+            SnykVSPackage.ServiceProvider.SolutionService.Clean();
+        }
 
         /// <summary>
         /// Get command Id.

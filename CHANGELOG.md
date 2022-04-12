@@ -1,5 +1,10 @@
 # Snyk Changelog
 
+## [1.1.8]
+
+### Fixed
+- Clean Open Source and SnykCode vulnerabilities cache.
+
 ## [1.1.7]
 
 ### Fixed
