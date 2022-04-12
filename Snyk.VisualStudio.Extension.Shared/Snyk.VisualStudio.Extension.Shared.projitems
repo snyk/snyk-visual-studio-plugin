@@ -55,7 +55,7 @@
     <Compile Include="$(MSBuildThisFileDirectory)CLI\Dto\Identifiers.cs">
       <CopyToOutputDirectory>Never</CopyToOutputDirectory>
     </Compile>
-    <Compile Include="$(MSBuildThisFileDirectory)CLI\Severity.cs">
+    <Compile Include="$(MSBuildThisFileDirectory)Model\Severity.cs">
       <CopyToOutputDirectory>Never</CopyToOutputDirectory>
     </Compile>
     <Compile Include="$(MSBuildThisFileDirectory)CLI\SnykCli.cs">
@@ -619,6 +619,9 @@
       <Link>SnykVSPackage.vsct</Link>
       <ResourceName>Menus.ctmenu</ResourceName>
     </VSCTCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <Folder Include="$(MSBuildThisFileDirectory)Model\" />
   </ItemGroup>
   <Target Name="AfterBuild">
     <ItemGroup>

@@ -2,7 +2,7 @@
 {
     using System.Text;
     using System.Windows.Media;
-    using CLI;
+    using Model;
 
     /// <summary>
     /// Filter vulnerabilities by severity.

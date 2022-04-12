@@ -14,6 +14,7 @@
     using Snyk.Common;
     using Snyk.VisualStudio.Extension.Shared.CLI;
     using Snyk.VisualStudio.Extension.Shared.Commands;
+    using Snyk.VisualStudio.Extension.Shared.Model;
     using Snyk.VisualStudio.Extension.Shared.Service;
     using Snyk.VisualStudio.Extension.Shared.Settings;
     using Snyk.VisualStudio.Extension.Shared.SnykAnalytics;

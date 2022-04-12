@@ -3,7 +3,7 @@
     using System;
     using System.Windows.Media;
     using System.Windows.Media.Imaging;
-    using Snyk.VisualStudio.Extension.Shared.CLI;
+    using Snyk.VisualStudio.Extension.Shared.Model;
 
     /// <summary>
     /// Provide icon path.
