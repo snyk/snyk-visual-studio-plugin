@@ -100,7 +100,7 @@
 
             tasksService.DownloadStarted += this.OnDownloadStarted;
             tasksService.DownloadFinished += this.OnDownloadFinished;
-            tasksService.DownloadUpdate += this.OnDownloadUpdate;
+            tasksService.DownloadUpdate += (sender, args) => ThreadHelper.JoinableTaskFactory.RunAsync(() => this.OnDownloadUpdateAsync(sender, args));
             tasksService.DownloadCancelled += this.OnDownloadCancelled;
 
             this.Loaded += tasksService.OnUiLoaded;
@@ -301,7 +301,8 @@
         /// </summary>
         /// <param name="sender">Source object.</param>
         /// <param name="eventArgs">Event args.</param>
-        public async void OnDownloadUpdate(object sender, SnykCliDownloadEventArgs eventArgs) => await this.UpdateDownloadProgress(eventArgs.Progress);
+        /// <returns>A <see cref="Task"/> representing the asynchronous operation.</returns>
+        public async Task OnDownloadUpdateAsync(object sender, SnykCliDownloadEventArgs eventArgs) => await this.UpdateDownloadProgress(eventArgs.Progress);
 
         /// <summary>
         /// DownloadCancelled event handler. Call SetInitialState() method.
