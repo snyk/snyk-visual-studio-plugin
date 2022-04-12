@@ -4,6 +4,7 @@
 
 ### Fixed
 - Clean Open Source and SnykCode vulnerabilities cache.
+- Fixed severity icons for SnykCode issues.
 
 ## [1.1.7]
 
