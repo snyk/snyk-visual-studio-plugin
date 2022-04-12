@@ -7,6 +7,6 @@
   "assetFiles": [
   ],
   "overview": "../README.md",
-  "publisher": "Snyk",
+  "publisher": "snyk-security",
   "repo": "http://github.com/snyk/snyk-visual-studio-plugin/"
 }
