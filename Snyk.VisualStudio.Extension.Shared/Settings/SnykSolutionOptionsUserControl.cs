@@ -1,6 +1,7 @@
 ﻿namespace Snyk.VisualStudio.Extension.Shared.Settings
 {
     using System;
+    using System.Threading.Tasks;
     using System.Windows.Forms;
     using Serilog;
     using Snyk.Common;
@@ -49,7 +50,7 @@
             {
                 string additionalOptions = this.additionalOptionsTextBox.Text.ToString();
 
-                this.userStorageSettingsService.SaveAdditionalOptions(additionalOptions);
+                this.userStorageSettingsService.SaveAdditionalOptionsAsync(additionalOptions);
 
                 this.CheckOptionConflicts();
             }
@@ -59,7 +60,7 @@
         {
             if (this.serviceProvider.SolutionService.IsSolutionOpen())
             {
-                this.userStorageSettingsService.SaveIsAllProjectsScanEnabled(this.allProjectsCheckBox.Checked);
+                this.userStorageSettingsService.SaveIsAllProjectsScanEnabledAsync(this.allProjectsCheckBox.Checked);
 
                 this.CheckOptionConflicts();
             }
@@ -79,42 +80,45 @@
                 return;
             }
 
-            try
+            Task.Run(async () => // TDOO: Don't sure how to call async/await.
             {
-                string additionalOptions = this.userStorageSettingsService.GetAdditionalOptions();
+                try
+                {
+                    string additionalOptions = await this.userStorageSettingsService.GetAdditionalOptionsAsync();
 
-                if (!string.IsNullOrEmpty(additionalOptions))
-                {
-                    this.additionalOptionsTextBox.Text = additionalOptions;
+                    if (!string.IsNullOrEmpty(additionalOptions))
+                    {
+                        this.additionalOptionsTextBox.Text = additionalOptions;
+                    }
+                    else
+                    {
+                        this.additionalOptionsTextBox.Text = string.Empty;
+                    }
                 }
-                else
+                catch (Exception e)
                 {
+                    Logger.Error(e, "Error on load additional options");
+
                     this.additionalOptionsTextBox.Text = string.Empty;
                 }
-            }
-            catch (Exception exception)
-            {
-                Logger.Error(exception.Message);
 
-                this.additionalOptionsTextBox.Text = string.Empty;
-            }
+                try
+                {
+                    bool isChecked = await this.userStorageSettingsService.GetIsAllProjectsEnabledAsync();
 
-            try
-            {
-                bool isChecked = this.userStorageSettingsService.GetIsAllProjectsEnabled();
+                    this.allProjectsCheckBox.Checked = isChecked;
+                }
+                catch (Exception e)
+                {
+                    Logger.Error(e, "Error on load is all projects enabled");
 
-                this.allProjectsCheckBox.Checked = isChecked;
-            }
-            catch (Exception exception)
-            {
-                Logger.Error(exception.Message);
+                    this.allProjectsCheckBox.Checked = false;
 
-                this.allProjectsCheckBox.Checked = false;
+                    await this.userStorageSettingsService.SaveIsAllProjectsScanEnabledAsync(false);
+                }
 
-                this.userStorageSettingsService.SaveIsAllProjectsScanEnabled(false);
-            }
-
-            this.CheckOptionConflicts();
+                this.CheckOptionConflicts();
+            });
         }
     }
 }

@@ -93,7 +93,7 @@
             };
 
             this.codeCacheServiceMock
-                .Setup(codeCacheService => codeCacheService.GetFilePathToHashDictionary(It.IsAny<List<string>>()))
+                .Setup(codeCacheService => codeCacheService.GetFilePathToHashDictionaryAsync(It.IsAny<List<string>>()).Result)
                 .Returns(extendFilePathToHashDict);
 
             var analysisResults = new AnalysisResult
@@ -198,7 +198,7 @@
             var solutionServiceMock = new Mock<ISolutionService>();
 
             solutionServiceMock
-                .Setup(solutionService => solutionService.GetPath())
+                .Setup(solutionService => solutionService.GetPathAsync().Result)
                 .Returns(TestResource.GetResourcesPath());
 
             var fileProvider = new SnykCodeFileProvider(solutionServiceMock.Object);

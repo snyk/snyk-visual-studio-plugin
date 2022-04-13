@@ -3,6 +3,7 @@
     using System;
     using System.Collections.Generic;
     using System.IO;
+    using System.Linq;
     using EnvDTE;
     using Microsoft.VisualStudio;
     using Microsoft.VisualStudio.Shell;
@@ -28,7 +29,7 @@
         /// <summary>
         /// Initializes a new instance of the <see cref="SnykSolutionService"/> class.
         /// </summary>
-        private SnykSolutionService()
+        public SnykSolutionService()
         {
         }
 
@@ -105,13 +106,13 @@
         /// </summary>
         /// <param name="file">Relative file path.</param>
         /// <returns>Full file path.</returns>
-        public string GetFileFullPath(string file)
+        public async System.Threading.Tasks.Task<string> GetFileFullPathAsync(string file)
         {
             string relativePath = file
                 .Replace("/", "\\")
                 .Substring(1, file.Length - 1);
 
-            string baseDirPath = this.GetPath();
+            string baseDirPath = await this.GetPathAsync();
 
             return Path.Combine(baseDirPath, relativePath);
         }
@@ -127,53 +128,34 @@
         /// If no success, try to get path for flat project (without solution) or web site (in case VS2015).
         /// </summary>
         /// <returns>Solution path string.</returns>
-        public string GetPath()
+        public async System.Threading.Tasks.Task<string> GetPathAsync()
         {
-            Logger.Information("Enter GetSolutionPath method");
+            var rootDir = await this.FindRootDirectoryForSolutionAsync();
 
-            var dte = this.ServiceProvider.DTE;
-            var solution = dte.Solution;
-            var projects = this.GetProjects();
-
-            string solutionPath = string.Empty;
-
-            // 1 case: Solution with projects.
-            // 2 case: Solution is folder.
-            if (this.IsSolutionWithProjects(solution, projects) || this.IsFolder(solution, projects))
+            if (rootDir == null || rootDir.IsNullOrEmpty())
             {
-                Logger.Information("Path is solution with projects or folder.");
-
-                solutionPath = solution.FullName;
-
-                if (string.IsNullOrEmpty(solutionPath))
-                {
-                    return string.Empty;
-                }
-
-                if (!File.GetAttributes(solutionPath).HasFlag(FileAttributes.Directory))
-                {
-                    Logger.Information("Remove solution file name from path.");
-
-                    solutionPath = Directory.GetParent(solutionPath).FullName;
-                }
+                rootDir = await this.FindRootDirectoryForSolutionFromDteAsync();
             }
 
-            // 3 case: Flat project without solution.
-            // 4 case: Web site (in 2015)
-            if (this.IsFlatProjectOrWebSite(solution, projects))
+            return rootDir;
+        }
+
+        /// <inheritdoc/>
+        public string FindRootDirectoryForSolutionProjects(string rootDir, IList<string> projectDirs)
+        {
+            if (rootDir == null || rootDir.IsNullOrEmpty())
             {
-                Logger.Information("Solution is 'dirty'. Get solution path from first project full name");
-
-                string projectPath = solution.Projects.Item(1).FullName;
-
-                Logger.Information("Project path {ProjectPath}. Get solution path as project directory.", projectPath);
-
-                solutionPath = Directory.GetParent(projectPath).FullName;
+                return null;
             }
 
-            Logger.Information("Result solution path is {SolutionPath}.", solutionPath);
+            if (projectDirs.All(dir => dir.StartsWith(rootDir)))
+            {
+                return rootDir;
+            }
 
-            return solutionPath;
+            string newRootDir = Directory.GetParent(rootDir)?.FullName;
+
+            return this.FindRootDirectoryForSolutionProjects(newRootDir, projectDirs);
         }
 
         /// <summary>
@@ -187,7 +169,7 @@
             // If solution is folder type when just get all files in solution directory.
             if (this.IsSolutionOpenedAsFolder())
             {
-                return this.GetSolutionDirectoryFiles();
+                return await this.GetSolutionDirectoryFilesAsync();
             }
 
             // If normal solution, then get all files in solution projects.
@@ -206,6 +188,8 @@
 
         private async Task InitializeSolutionEventsAsync()
         {
+            await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
+
             Logger.Information("Enter InitializeSolutionEvents method");
 
             IVsSolution vsSolution = await this.ServiceProvider.GetServiceAsync(typeof(SVsSolution)) as IVsSolution;
@@ -219,9 +203,9 @@
             Logger.Information("Leave InitializeSolutionEvents method");
         }
 
-        private IList<string> GetSolutionDirectoryFiles()
+        private async System.Threading.Tasks.Task<IList<string>> GetSolutionDirectoryFilesAsync()
         {
-            string solutionPath = this.GetPath();
+            string solutionPath = await this.GetPathAsync();
 
             string[] files = Directory.GetFileSystemEntries(solutionPath, "*", SearchOption.AllDirectories);
 
@@ -230,12 +214,6 @@
 
             return filesList;
         }
-
-        private bool IsFlatProjectOrWebSite(Solution solution, Projects projects) => solution.IsDirty && projects.Count > 0;
-
-        private bool IsSolutionWithProjects(Solution solution, Projects projects) => !solution.IsDirty && projects.Count > 0;
-
-        private bool IsFolder(Solution solution, Projects projects) => !solution.IsDirty && projects.Count == 0;
 
         private async System.Threading.Tasks.Task<IList<string>> GetSolutionItemFilesAsync(Toolkit.SolutionItem solutionItem)
         {
@@ -286,6 +264,125 @@
             var solutionItem = item.FindParent(Toolkit.SolutionItemType.Solution);
 
             return await this.GetSolutionItemFilesAsync(solutionItem);
+        }
+
+        private string GetDirectoryPath(string path) => Directory.Exists(path) ? path : Directory.GetParent(path).FullName;
+
+        private async System.Threading.Tasks.Task<string> FindRootDirectoryForSolutionAsync()
+        {
+            await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
+
+            var item = await Toolkit.VS.Solutions.GetActiveItemAsync();
+
+            if (item == null)
+            {
+                return null;
+            }
+
+            var solutionItem = item.FindParent(Toolkit.SolutionItemType.Solution);
+
+            if (solutionItem == null)
+            {
+                return null;
+            }
+
+            var projectDirs = new List<string>();
+
+            var solutionDir = this.GetDirectoryPath(solutionItem.FullPath);
+
+            try
+            {
+                if (solutionItem.Children != null)
+                {
+                    foreach (var children in solutionItem.Children)
+                    {
+                        if (children.Type == Toolkit.SolutionItemType.Project
+                            || children.Type == Toolkit.SolutionItemType.VirtualProject
+                            || children.Type == Toolkit.SolutionItemType.MiscProject)
+                        {
+                            projectDirs.Add(this.GetDirectoryPath(children.FullPath));
+                        }
+                    }
+                }
+            }
+            catch (Exception e)
+            {
+                Logger.Error(e, "Error on get all project paths");
+            }
+
+            return this.FindRootDirectoryForSolutionProjects(solutionDir, projectDirs);
+        }
+
+        private async System.Threading.Tasks.Task<string> FindRootDirectoryForSolutionFromDteAsync()
+        {
+            await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
+
+            Logger.Information("Enter GetSolutionPath method");
+
+            var dte = this.ServiceProvider.DTE;
+            var solution = dte.Solution;
+            var projects = this.GetProjects();
+
+            string solutionPath = string.Empty;
+
+            // 1 case: Solution with projects.
+            // 2 case: Solution is folder.
+            if (await this.IsSolutionWithProjectsAsync(solution, projects) || await this.IsFolderAsync(solution, projects))
+            {
+                Logger.Information("Path is solution with projects or folder.");
+
+                solutionPath = solution.FullName;
+
+                if (string.IsNullOrEmpty(solutionPath))
+                {
+                    return string.Empty;
+                }
+
+                if (!File.GetAttributes(solutionPath).HasFlag(FileAttributes.Directory))
+                {
+                    Logger.Information("Remove solution file name from path.");
+
+                    solutionPath = Directory.GetParent(solutionPath).FullName;
+                }
+            }
+
+            // 3 case: Flat project without solution.
+            // 4 case: Web site (in 2015)
+            if (await this.IsFlatProjectOrWebSiteAsync(solution, projects))
+            {
+                Logger.Information("Solution is 'dirty'. Get solution path from first project full name");
+
+                string projectPath = solution.Projects.Item(1).FullName;
+
+                Logger.Information("Project path {ProjectPath}. Get solution path as project directory.", projectPath);
+
+                solutionPath = Directory.GetParent(projectPath).FullName;
+            }
+
+            Logger.Information("Result solution path is {SolutionPath}.", solutionPath);
+
+            return solutionPath;
+        }
+
+        private async System.Threading.Tasks.Task<bool> IsFlatProjectOrWebSiteAsync(Solution solution, Projects projects)
+        {
+            await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
+
+            return solution.IsDirty && projects.Count > 0;
+        }
+
+        private async System.Threading.Tasks.Task<bool> IsFolderAsync(Solution solution, Projects projects)
+        {
+            await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
+
+            return !solution.IsDirty && projects.Count == 0;
+        }
+
+        private async System.Threading.Tasks.Task<bool> IsSolutionWithProjectsAsync(Solution solution, Projects projects)
+        {
+            await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
+
+            return !solution.IsDirty && projects.Count > 0;
         }
     }
 }

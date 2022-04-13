@@ -368,8 +368,8 @@
 
                 Logger.Information("Start scan task");
 
-                _ = Task.Run(
-                    () =>
+                _ = Task.Run(// TODO: extract this to method...
+                    async () =>
                     {
                         this.isOssScanning = true;
 
@@ -383,7 +383,9 @@
 
                             try
                             {
-                                var cliResult = ossService.Scan(this.serviceProvider.SolutionService.GetPath(), token);
+                                var directoryPath = await this.serviceProvider.SolutionService.GetPathAsync();
+
+                                var cliResult = await ossService.ScanAsync(directoryPath, token);
 
                                 this.FireOssScanningUpdateEvent(cliResult);
 

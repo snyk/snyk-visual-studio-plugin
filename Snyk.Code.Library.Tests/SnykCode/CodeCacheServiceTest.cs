@@ -41,7 +41,7 @@
             var solutionServiceMock = new Mock<ISolutionService>();
 
             solutionServiceMock
-                .Setup(solutionService => solutionService.GetPath())
+                .Setup(solutionService => solutionService.GetPathAsync().Result)
                 .Returns(this.projectPath);
 
             solutionServiceMock
@@ -68,7 +68,7 @@
             var solutionServiceMock = new Mock<ISolutionService>();
 
             solutionServiceMock
-                .Setup(solutionService => solutionService.GetPath())
+                .Setup(solutionService => solutionService.GetPathAsync().Result)
                 .Returns(this.projectPath);
 
             var fileProvider = new SnykCodeFileProvider(solutionServiceMock.Object);
@@ -86,7 +86,7 @@
             var solutionServiceMock = new Mock<ISolutionService>();
 
             solutionServiceMock
-                .Setup(solutionService => solutionService.GetPath())
+                .Setup(solutionService => solutionService.GetPathAsync().Result)
                 .Returns(this.projectPath);
 
             solutionServiceMock
@@ -114,7 +114,7 @@
             var filtersServiceMock = new Mock<IFiltersService>();
 
             solutionServiceMock
-                .Setup(solutionService => solutionService.GetPath())
+                .Setup(solutionService => solutionService.GetPathAsync().Result)
                 .Returns(this.projectPath);
 
             solutionServiceMock
@@ -149,7 +149,7 @@
             var filtersServiceMock = new Mock<IFiltersService>();
 
             solutionServiceMock
-                .Setup(solutionService => solutionService.GetPath())
+                .Setup(solutionService => solutionService.GetPathAsync().Result)
                 .Returns(this.projectPath);
 
             solutionServiceMock
