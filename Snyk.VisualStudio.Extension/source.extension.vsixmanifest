@@ -1,19 +1,19 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <PackageManifest Version="2.0.0" xmlns="http://schemas.microsoft.com/developer/vsx-schema/2011" xmlns:d="http://schemas.microsoft.com/developer/vsx-schema-design/2011">
     <Metadata>
-        <Identity Id="snyk_visual_studio_plugin.154948da-e3ba-45ce-9bee-9688a7e30462" Version="1.1.8" Language="en-US" Publisher="Snyk" />
+        <Identity Id="snyk-vulnerability-scanner-vs" Version="1.1.8" Language="en-US" Publisher="Snyk" />
         <DisplayName>Snyk Security - Code and Open Source Dependencies</DisplayName>
-        <Description xml:space="preserve">The Visual Studio extension (Snyk Security - Code and Open Source Dependencies) helps you find and fix security vulnerabilities in your projects. Within a few seconds, the extension will provide a list of all the different types of security vulnerabilities identified together with actionable fix advice. The extension combines the power of two Snyk products: Snyk Open Source and Snyk Code.</Description>
+        <Description xml:space="preserve">The Visual Studio extension (Snyk Security - Code and Open Source Dependencies) helps you find and fix security vulnerabilities in your projects.</Description>
         <MoreInfo>https://github.com/snyk/snyk-visual-studio-plugin/</MoreInfo>
         <License>LICENSE.txt</License>
         <ReleaseNotes>https://github.com/snyk/snyk-visual-studio-plugin/blob/main/CHANGELOG.md</ReleaseNotes>
         <Icon>Resources\SnykDogLogo.png</Icon>
         <PreviewImage>Resources\SnykDogLogo.png</PreviewImage>
-        <Tags>vulnerabilities, security, source, sast, code-analysis, code-quality, static-code-analysis</Tags>
+        <Tags>vulnerabilities;security;source;sast;code-analysis;code-quality;static-code-analysis</Tags>
         <Preview>false</Preview>
     </Metadata>
     <Installation>
-        <InstallationTarget Id="Microsoft.VisualStudio.Community" Version="[14.0,]" />
+        <InstallationTarget Id="Microsoft.VisualStudio.Community" Version="[14.0,17.0)" />
     </Installation>
     <Dependencies>
         <Dependency Id="Microsoft.Framework.NDP" DisplayName="Microsoft .NET Framework" d:Source="Manual" Version="[4.5,)" />
