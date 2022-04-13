@@ -31,7 +31,7 @@
         }
 
         /// <summary>
-        ///
+        /// Get correct Deeproxy URL for SaaS and Single Tenant deployment types.
         /// </summary>
         public string GetSnykCodeApiUrl()
         {
@@ -64,17 +64,8 @@
         ///
         /// If the endpointUrl is null or empty, then https://snyk.io/api" will be used.
         /// </summary>
-        private string ResolveCustomEndpoint(string endpointUrl)
-        {
-            if (string.IsNullOrEmpty(endpointUrl))
-            {
-                return "https://snyk.io/api";
-            }
-            else
-            {
-                return endpointUrl.RemoveTrailingSlashes();
-            }
-        }
+        private string ResolveCustomEndpoint(string endpointUrl) =>
+            string.IsNullOrEmpty(endpointUrl) ? "https://snyk.io/api": endpointUrl.RemoveTrailingSlashes();
 
         /// <summary>
         /// Checks if the deployment type is SaaS (production or development).
