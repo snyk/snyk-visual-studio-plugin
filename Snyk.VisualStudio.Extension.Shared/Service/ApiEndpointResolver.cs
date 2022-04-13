@@ -54,7 +54,7 @@
 
         private bool IsSnykCodeAvailable(string endpointUrl)
         {
-            string endpoint = ResolveCustomEndpoint(endpointUrl);
+            string endpoint = this.ResolveCustomEndpoint(endpointUrl);
             Uri uri = new Uri(endpoint);
             return this.IsSaaS(uri) || this.IsSingleTenant(uri);
         }

@@ -24,6 +24,7 @@ namespace Snyk.VisualStudio.Extension.Shared.Tests
             Assert.Equal("https://deeproxy.snyk.io/", snykCodeApiUrl);
         }
         
+        [Fact]
         public void ApiEndpointResolver_GetSnykCodeApiUrl_SaaSDevelopment()
         {
             var optionsMock = new Mock<ISnykOptions>();
