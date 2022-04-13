@@ -70,7 +70,7 @@
   </ItemGroup>
   <ItemGroup>
     <PackageReference Include="Community.VisualStudio.Toolkit.17">
-      <Version>17.0.430</Version>
+      <Version>17.0.394</Version>
     </PackageReference>
     <PackageReference Include="MarkdownSharp">
       <Version>2.0.5</Version>

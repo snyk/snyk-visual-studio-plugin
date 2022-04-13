@@ -1,5 +1,10 @@
 # Snyk Changelog
 
+## [1.1.9]
+
+### Fixed
+- "Object reference not set to an instance of an object" when launching extension in Visual Studio 2022.
+
 ## [1.1.8]
 
 ### Fixed
