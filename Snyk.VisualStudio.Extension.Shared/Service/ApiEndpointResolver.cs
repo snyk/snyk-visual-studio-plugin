@@ -44,7 +44,7 @@
             }
             else if (this.IsSingleTenant(uri))
             {
-                return endpoint.Replace("registry-web", "deeproxy").RemoveFromEnd("api");
+                return endpoint.Replace("app", "deeproxy").RemoveFromEnd("api");
             }
             else
             {
@@ -71,12 +71,12 @@
         /// Checks if the deployment type is SaaS (production or development).
         /// </summary>
         private bool IsSaaS(Uri uri) =>
-            uri.Host.EndsWith("snyk.io");
+            !uri.Host.StartsWith("app") && uri.Host.EndsWith("snyk.io");
 
         /// <summary>
         /// Checks if the deployment type is Single Tenant.
         /// </summary>
         private bool IsSingleTenant(Uri uri) =>
-            uri.Host.Contains("registry-web") && uri.Host.EndsWith("snyk-internal.net");
+            uri.Host.StartsWith("app") && uri.Host.EndsWith("snyk.io");
     }
 }

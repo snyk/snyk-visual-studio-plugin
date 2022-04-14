@@ -382,12 +382,12 @@
                 this.checkAgainLinkLabel.Visible = true;
             }
 
-            bool snykCodeEnabled = sastSettings.SnykCodeEnabled;
+            bool snykCodeEnabled = sastSettings?.SnykCodeEnabled ?? false;
 
             this.codeSecurityEnabledCheckBox.Enabled = snykCodeEnabled;
             this.codeQualityEnabledCheckBox.Enabled = snykCodeEnabled;
 
-            if (sastSettings.LocalCodeEngineEnabled)
+            if (sastSettings?.LocalCodeEngineEnabled ?? false)
             {
                 this.snykCodeDisabledInfoLabel.Text =
                     "Snyk Code is configured to use a Local Code Engine instance. This setup is not yet supported by the extension.";
