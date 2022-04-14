@@ -64,7 +64,7 @@
         }
 
         /// <inheritdoc/>
-        public string SnykCodeSettingsUrl => $"{this.GetAppCustomEndpoint()}/manage/snyk-code";
+        public string SnykCodeSettingsUrl => $"{this.GetAppCustomEndpoint()}manage/snyk-code";
 
 
         /// <summary>
@@ -186,10 +186,23 @@
 
         private void FireSettingsChangedEvent() => this.SettingsChanged?.Invoke(this, new SnykSettingsChangedEventArgs());
 
-        private string GetAppCustomEndpoint() => string.IsNullOrEmpty(this.customEndpoint)
-            ? "https://app.snyk.io"
-            : this.customEndpoint
-                .Replace("https://", "https://app.")
-                .Replace("/api", string.Empty);
+        private string GetAppCustomEndpoint()
+        {
+            var endpoint = this.customEndpoint.IsNullOrEmpty() ? "https://app.snyk.io" : this.customEndpoint.RemoveTrailingSlashes();
+            Uri uri = new Uri(endpoint);
+
+            if (!uri.Host.StartsWith("app") && uri.Host.EndsWith("snyk.io"))
+            {
+                return endpoint.Replace("https://", "https://app.").RemoveFromEnd("api");
+            }
+            else if (uri.Host.StartsWith("app") && uri.Host.EndsWith("snyk.io"))
+            {
+                return endpoint.RemoveFromEnd("api");
+            }
+            else
+            {
+                return "https://app.snyk.io/";
+            }
+        }
     }
 }

@@ -1,5 +1,6 @@
 ﻿namespace Snyk.VisualStudio.Extension.Shared.Service
 {
+    using System;
     using Snyk.Common;
     using Snyk.VisualStudio.Extension.Shared.Settings;
 
@@ -30,25 +31,20 @@
         }
 
         /// <summary>
-        /// Current logic is next:
-        /// customEndpointUrl = https://dev.snyk.io/api
-        /// https://dev.snyk.io/api -> https://deeproxy.dev.snyk.io/api -> https://deeproxy.dev.snyk.io/
-        /// customEndpointUrl = https://snyk.io/api
-        /// https://snyk.io/api -> https://deeproxy.snyk.io/api -> https://deeproxy.snyk.io/
-        /// customEndpointUrl = ''
-        /// https://deeproxy.snyk.io/.
+        /// Get correct Deeproxy URL for SaaS and Single Tenant deployment types.
         /// </summary>
-        /// <returns>Result url string.</returns>
         public string GetSnykCodeApiUrl()
         {
-            string customEndpointUrl = this.options.CustomEndpoint;
+            string endpoint = this.ResolveCustomEndpoint(this.options.CustomEndpoint);
+            Uri uri = new Uri(endpoint);
 
-            if (!string.IsNullOrEmpty(customEndpointUrl) && this.IsSnykCodeSupportedEndpoint(customEndpointUrl))
+            if (this.IsSaaS(uri))
             {
-                return customEndpointUrl
-                    .Replace("https://", "https://deeproxy.")
-                    .RemoveTrailingSlashes()
-                    .RemoveFromEnd("api");
+                return endpoint.Replace("https://", "https://deeproxy.").RemoveFromEnd("api");
+            }
+            else if (this.IsSingleTenant(uri))
+            {
+                return endpoint.Replace("app", "deeproxy").RemoveFromEnd("api");
             }
             else
             {
@@ -56,8 +52,31 @@
             }
         }
 
-        private bool IsSnykCodeSupportedEndpoint(string customEndpointUrl) =>
-            customEndpointUrl.RemoveTrailingSlashes() == "https://dev.snyk.io/api"
-                || customEndpointUrl.RemoveTrailingSlashes() == "https://snyk.io/api";
+        private bool IsSnykCodeAvailable(string endpointUrl)
+        {
+            string endpoint = this.ResolveCustomEndpoint(endpointUrl);
+            Uri uri = new Uri(endpoint);
+            return this.IsSaaS(uri) || this.IsSingleTenant(uri);
+        }
+
+        /// <summary>
+        /// Resolves the custom endpoint.
+        ///
+        /// If the endpointUrl is null or empty, then https://snyk.io/api" will be used.
+        /// </summary>
+        private string ResolveCustomEndpoint(string endpointUrl) =>
+            string.IsNullOrEmpty(endpointUrl) ? "https://snyk.io/api": endpointUrl.RemoveTrailingSlashes();
+
+        /// <summary>
+        /// Checks if the deployment type is SaaS (production or development).
+        /// </summary>
+        private bool IsSaaS(Uri uri) =>
+            !uri.Host.StartsWith("app") && uri.Host.EndsWith("snyk.io");
+
+        /// <summary>
+        /// Checks if the deployment type is Single Tenant.
+        /// </summary>
+        private bool IsSingleTenant(Uri uri) =>
+            uri.Host.StartsWith("app") && uri.Host.EndsWith("snyk.io");
     }
 }
