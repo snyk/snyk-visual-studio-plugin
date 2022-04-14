@@ -103,15 +103,7 @@
                         FileName = filePosition,
                         RowNumber = index.ToString(),
                         LineContent = await this.GetLineContentAsync(position.FileName, startLineNumber),
-                        NavigateCommand = new DelegateCommand(async (obj) =>
-                        {
-                            VsCodeService.Instance.OpenAndNavigate(
-                                await this.solutionService.GetFileFullPathAsync(position.FileName),
-                                startLine,
-                                startColumn,
-                                endLine,
-                                endColumn);
-                        }), //TODO: Avoid unsupported async delegates
+                        NavigateCommand = new DelegateCommand((obj) => this.NavigateToCodeAsync(position.FileName, startLine, startColumn, endLine, endColumn)),
                     };
 
                     index++;
@@ -122,6 +114,15 @@
 
             this.AddDataFlowSteps(dataFlowSteps.ToList());
         }
+
+        private async System.Threading.Tasks.Task NavigateToCodeAsync(
+            string fileName, int startLine, int startColumn, int endLine, int endColumn)
+                => VsCodeService.Instance.OpenAndNavigate(
+                    await this.solutionService.GetFileFullPathAsync(fileName),
+                    startLine,
+                    startColumn,
+                    endLine,
+                    endColumn);
 
         private async Task<string> GetLineContentAsync(string file, long lineNumber)
         {
