@@ -7,6 +7,7 @@
 
 ### Fixed
 - "Object reference not set to an instance of an object" when launching extension in Visual Studio 2022.
+- Scan of solutions in which *.sln file is not in the root directory.
 
 ## [1.1.8]
 
