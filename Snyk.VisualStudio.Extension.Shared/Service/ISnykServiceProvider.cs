@@ -90,7 +90,7 @@
         ISentryService SentryService { get; }
 
         /// <summary>
-        /// Gets <see cref="SnykToolWindowControl/> instance.
+        /// Gets <see cref="SnykToolWindowControl"/> instance.
         /// </summary>
         SnykToolWindowControl ToolWindow { get; }
 
