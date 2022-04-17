@@ -30,22 +30,24 @@
         public static string Version => GetIntegrationVersion();
 
         /// <summary>
-        /// Get <see cref="SnykAppSettings"/> from file.
+        /// Gets <see cref="SnykAppSettings"/> from the appsettings.json file.
         /// </summary>
-        /// <returns><see cref="SnykAppSettings"/> object.</returns>
-        public static SnykAppSettings GetAppSettings()
+        public static SnykAppSettings AppSettings
         {
-            if (appSettings == null)
+            get
             {
-                string extensionPath = GetExtensionDirectoryPath();
+                if (appSettings == null)
+                {
+                    string extensionPath = GetExtensionDirectoryPath();
 
-                string appsettingsPath = Path.Combine(extensionPath, AppSettingsFileName);
+                    string appSettingsPath = Path.Combine(extensionPath, AppSettingsFileName);
 
-                appSettings = Json
-                    .Deserialize<SnykAppSettings>(File.ReadAllText(appsettingsPath, Encoding.UTF8));
+                    appSettings = Json
+                        .Deserialize<SnykAppSettings>(File.ReadAllText(appSettingsPath, Encoding.UTF8));
+                }
+
+                return appSettings;
             }
-
-            return appSettings;
         }
 
         /// <summary>
