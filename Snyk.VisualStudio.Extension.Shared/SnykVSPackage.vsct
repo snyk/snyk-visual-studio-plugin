@@ -45,11 +45,18 @@
           <ButtonText>Snyk ToolBar</ButtonText>
         </Strings>
       </Menu>
+      <Menu guid="guidSnykVSPackageCmdSet" id="SnykTopMenu" priority="0x700" type="Menu">
+        <!--<Parent guid="guidSnykVSPackageCmdSet" id="IDG_VS_MM_TOOLSADDINS" />-->
+        <Parent guid="guidSHLMainMenu" id="IDG_VS_MM_TOOLSADDINS" />
+        <Strings>
+          <ButtonText>Snyk</ButtonText>
+        </Strings>
+      </Menu>
     </Menus>
     
     <Groups>
       <Group guid="guidSnykVSPackageCmdSet" id="MyMenuGroup" priority="0x0600">
-        <Parent guid="guidSHLMainMenu" id="IDM_VS_MENU_TOOLS" />
+        <Parent guid="guidSnykVSPackageCmdSet" id="SnykTopMenu" />
       </Group>
 
       <Group guid="guidSnykVSPackageCmdSet" id="SnykToolbarGroup" priority="0x0500">
@@ -143,6 +150,7 @@
       <IDSymbol name="SnykRunScanCommandId" value="0x0100" />
       <IDSymbol name="cmdidSnykToolWindowCommand" value="0x1021" />
       <IDSymbol name="cmdidSnykOpenSettingsCommand" value="0x1022" />
+      <!--<IDSymbol name="SnykTopMenuGroup" value="0x1023" />-->
 
       <IDSymbol name="SnykToolbar" value="0x501" />
       <IDSymbol name="SnykToolbarGroup" value="0x502" />
@@ -150,6 +158,7 @@
       <IDSymbol name="cmdidStop" value="0x504" />
       <IDSymbol name="cmdidClean" value="0x505" />
       <IDSymbol name="cmdidOptions" value="0x506" />
+      <IDSymbol name="SnykTopMenu" value="0x507" />
     </GuidSymbol>
 
     <GuidSymbol name="guidImages" value="{f1d8a19c-c67e-46ac-997e-2beffd24d4c2}">
