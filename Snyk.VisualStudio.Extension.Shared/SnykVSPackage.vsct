@@ -112,7 +112,7 @@
         <Parent guid="guidSnykVSPackageCmdSet" id="MyMenuGroup" />
         <Icon guid="guidImages5" id="bmpPic1" />
         <Strings>
-          <ButtonText>Invoke SnykOpenSettingsCommand</ButtonText>
+          <ButtonText>Snyk Settings</ButtonText>
         </Strings>
       </Button>
     </Buttons>
