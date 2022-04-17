@@ -141,7 +141,8 @@
     <GuidSymbol name="guidSnykVSPackageCmdSet" value="{31b6f1bd-8317-4d93-b023-b60f667b9e76}">
       <IDSymbol name="MyMenuGroup" value="0x1020" />
       <IDSymbol name="SnykRunScanCommandId" value="0x0100" />
-      <IDSymbol name="cmdidSnykToolWindowCommand" value="4129" />
+      <IDSymbol name="cmdidSnykToolWindowCommand" value="0x1021" />
+      <IDSymbol name="cmdidSnykOpenSettingsCommand" value="0x1022" />
 
       <IDSymbol name="SnykToolbar" value="0x501" />
       <IDSymbol name="SnykToolbarGroup" value="0x502" />
@@ -149,7 +150,6 @@
       <IDSymbol name="cmdidStop" value="0x504" />
       <IDSymbol name="cmdidClean" value="0x505" />
       <IDSymbol name="cmdidOptions" value="0x506" />
-      <IDSymbol value="4130" name="cmdidSnykOpenSettingsCommand" />
     </GuidSymbol>
 
     <GuidSymbol name="guidImages" value="{f1d8a19c-c67e-46ac-997e-2beffd24d4c2}">
