@@ -55,12 +55,12 @@
     </Menus>
     
     <Groups>
-      <Group guid="guidSnykVSPackageCmdSet" id="MyMenuGroup" priority="0x0600">
-        <Parent guid="guidSnykVSPackageCmdSet" id="SnykTopMenu" />
-      </Group>
-
       <Group guid="guidSnykVSPackageCmdSet" id="SnykToolbarGroup" priority="0x0500">
         <Parent guid="guidSnykVSPackageCmdSet" id="SnykToolbar" />
+      </Group>
+      
+      <Group guid="guidSnykVSPackageCmdSet" id="SnykToolbarGroup" priority="0x0500">
+        <Parent guid="guidSnykVSPackageCmdSet" id="SnykTopMenu" />
       </Group>
     </Groups>
 
@@ -115,13 +115,6 @@
           <ButtonText>Settings</ButtonText>
         </Strings>
       </Button>      
-      <Button guid="guidSnykVSPackageCmdSet" id="cmdidSnykOpenSettingsCommand" priority="0x0100" type="Button">
-        <Parent guid="guidSnykVSPackageCmdSet" id="MyMenuGroup" />
-        <Icon guid="guidImages5" id="bmpPic1" />
-        <Strings>
-          <ButtonText>Snyk Settings</ButtonText>
-        </Strings>
-      </Button>
     </Buttons>
 
     <!--The bitmaps section is used to define the bitmaps that are used for the commands.-->
@@ -146,12 +139,9 @@
 
     <!-- This is the guid used to group the menu commands together -->
     <GuidSymbol name="guidSnykVSPackageCmdSet" value="{31b6f1bd-8317-4d93-b023-b60f667b9e76}">
-      <IDSymbol name="MyMenuGroup" value="0x1020" />
       <IDSymbol name="SnykRunScanCommandId" value="0x0100" />
       <IDSymbol name="cmdidSnykToolWindowCommand" value="0x1021" />
       <IDSymbol name="cmdidSnykOpenSettingsCommand" value="0x1022" />
-      <!--<IDSymbol name="SnykTopMenuGroup" value="0x1023" />-->
-
       <IDSymbol name="SnykToolbar" value="0x501" />
       <IDSymbol name="SnykToolbarGroup" value="0x502" />
       <IDSymbol name="cmdidScan" value="0x503" />
