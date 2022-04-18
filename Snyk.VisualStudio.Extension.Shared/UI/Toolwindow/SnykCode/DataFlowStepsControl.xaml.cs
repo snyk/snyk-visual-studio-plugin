@@ -117,14 +117,22 @@
             this.AddDataFlowSteps(dataFlowSteps.ToList());
         }
 
-        private async Task NavigateToCodeAsync(
-            string fileName, int startLine, int startColumn, int endLine, int endColumn)
-                => VsCodeService.Instance.OpenAndNavigate(
+        private async Task NavigateToCodeAsync(string fileName, int startLine, int startColumn, int endLine, int endColumn)
+        {
+            try
+            {
+                VsCodeService.Instance.OpenAndNavigate(
                     await this.solutionService.GetFileFullPathAsync(fileName),
                     startLine,
                     startColumn,
                     endLine,
                     endColumn);
+            }
+            catch (Exception e)
+            {
+                Logger.Error(e, "Error on open and nagigate to source code");
+            }
+        }
 
         private async Task<string> GetLineContentAsync(string file, long lineNumber)
         {
