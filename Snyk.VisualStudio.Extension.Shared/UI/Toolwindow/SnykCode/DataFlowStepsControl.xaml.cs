@@ -14,6 +14,7 @@
     using Snyk.Common;
     using Snyk.VisualStudio.Extension.Shared.CLI;
     using Snyk.VisualStudio.Extension.Shared.Service;
+    using Task = System.Threading.Tasks.Task;
 
     /// <summary>
     /// Interaction logic for DataFlowStepsControl.xaml.
@@ -71,7 +72,7 @@
         /// </summary>
         /// <param name="markers">Markers from suggestion.</param>
         /// <returns>A <see cref="Task"/> representing the asynchronous operation.</returns>
-        internal async System.Threading.Tasks.Task DisplayAsync(IList<Marker> markers)
+        internal async Task DisplayAsync(IList<Marker> markers)
         {
             this.Clear();
 
@@ -103,7 +104,8 @@
                         FileName = filePosition,
                         RowNumber = index.ToString(),
                         LineContent = await this.GetLineContentAsync(position.FileName, startLineNumber),
-                        NavigateCommand = new DelegateCommand((obj) => this.NavigateToCodeAsync(position.FileName, startLine, startColumn, endLine, endColumn)),
+                        NavigateCommand = new DelegateCommand((obj) =>
+                            this.NavigateToCodeAsync(position.FileName, startLine, startColumn, endLine, endColumn).FireAndForget()),
                     };
 
                     index++;
@@ -115,7 +117,7 @@
             this.AddDataFlowSteps(dataFlowSteps.ToList());
         }
 
-        private async System.Threading.Tasks.Task NavigateToCodeAsync(
+        private async Task NavigateToCodeAsync(
             string fileName, int startLine, int startColumn, int endLine, int endColumn)
                 => VsCodeService.Instance.OpenAndNavigate(
                     await this.solutionService.GetFileFullPathAsync(fileName),
