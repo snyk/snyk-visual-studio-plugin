@@ -46,21 +46,29 @@
         </Strings>
       </Menu>
       <Menu guid="guidSnykVSPackageCmdSet" id="SnykTopMenu" priority="0x700" type="Menu">
-        <!--<Parent guid="guidSnykVSPackageCmdSet" id="IDG_VS_MM_TOOLSADDINS" />-->
         <Parent guid="guidSHLMainMenu" id="IDG_VS_MM_TOOLSADDINS" />
         <Strings>
           <ButtonText>Snyk</ButtonText>
         </Strings>
       </Menu>
+      <Menu guid="guidSnykVSPackageCmdSet" id="SnykWindowsSubMenu" priority="0x700" type="Menu">
+        <Parent guid="guidSnykVSPackageCmdSet" id="SnykSubMenusGroup" />
+        <Strings>
+          <ButtonText>Windows</ButtonText>
+          <CommandName>Windows</CommandName>
+        </Strings>
+      </Menu>
     </Menus>
     
     <Groups>
-      <Group guid="guidSnykVSPackageCmdSet" id="SnykToolbarGroup" priority="0x0500">
-        <Parent guid="guidSnykVSPackageCmdSet" id="SnykToolbar" />
-      </Group>
-      
-      <Group guid="guidSnykVSPackageCmdSet" id="SnykToolbarGroup" priority="0x0500">
+      <Group guid="guidSnykVSPackageCmdSet" id="SnykActionsGroup" priority="0x0500">
         <Parent guid="guidSnykVSPackageCmdSet" id="SnykTopMenu" />
+      </Group>
+      <Group guid="guidSnykVSPackageCmdSet" id="SnykSubMenusGroup" priority="0x0500">
+        <Parent guid="guidSnykVSPackageCmdSet" id="SnykTopMenu" />
+      </Group>
+      <Group guid="guidSnykVSPackageCmdSet" id="SnykWindowsSubMenuGroup" priority="0x0500">
+        <Parent guid="guidSnykVSPackageCmdSet" id="SnykWindowsSubMenu" />
       </Group>
     </Groups>
 
@@ -76,7 +84,7 @@
               <CommandFlag>DynamicVisibility</CommandFlag>
           If you do not want an image next to your command, remove the Icon node /> -->
       <Button guid="guidSnykVSPackageCmdSet" id="cmdidSnykToolWindowCommand" priority="0x0100" type="Button">
-        <Parent guid="guidSHLMainMenu" id="IDG_VS_WNDO_OTRWNDWS1" />
+        <Parent guid="guidSnykVSPackageCmdSet" id="SnykWindowsSubMenuGroup" />
         <Icon guid="snykIcon" id="snykIconID" />
         <Strings>
           <ButtonText>Snyk</ButtonText>
@@ -84,7 +92,7 @@
       </Button>
       
       <Button guid="guidSnykVSPackageCmdSet" id="cmdidScan" priority="0x200" type="Button">
-        <Parent guid="guidSnykVSPackageCmdSet" id="SnykToolbarGroup" />
+        <Parent guid="guidSnykVSPackageCmdSet" id="SnykActionsGroup" />
         <Icon guid="ImageCatalogGuid" id="Run" />
         <CommandFlag>IconIsMoniker</CommandFlag>
         <Strings>
@@ -92,7 +100,7 @@
         </Strings>
       </Button>
       <Button guid="guidSnykVSPackageCmdSet" id="cmdidStop" priority="0x201" type="Button">
-        <Parent guid="guidSnykVSPackageCmdSet" id="SnykToolbarGroup" />
+        <Parent guid="guidSnykVSPackageCmdSet" id="SnykActionsGroup" />
         <Icon guid="ImageCatalogGuid" id="Stop" />
         <CommandFlag>IconIsMoniker</CommandFlag>
         <Strings>
@@ -100,7 +108,7 @@
         </Strings>
       </Button>
       <Button guid="guidSnykVSPackageCmdSet" id="cmdidClean" priority="0x202" type="Button">
-        <Parent guid="guidSnykVSPackageCmdSet" id="SnykToolbarGroup" />
+        <Parent guid="guidSnykVSPackageCmdSet" id="SnykActionsGroup" />
         <Icon guid="ImageCatalogGuid" id="CleanData" />
         <CommandFlag>IconIsMoniker</CommandFlag>
         <Strings>
@@ -108,7 +116,7 @@
         </Strings>
       </Button>
       <Button guid="guidSnykVSPackageCmdSet" id="cmdidOptions" priority="0x203" type="Button">
-        <Parent guid="guidSnykVSPackageCmdSet" id="SnykToolbarGroup" />
+        <Parent guid="guidSnykVSPackageCmdSet" id="SnykActionsGroup" />
         <Icon guid="ImageCatalogGuid" id="Settings" />
         <CommandFlag>IconIsMoniker</CommandFlag>
         <Strings>
@@ -132,6 +140,14 @@
       <Bitmap guid="settingsIcon" href="Resources\Settings.png" />
     </Bitmaps>
   </Commands>
+  <CommandPlacements>
+    <CommandPlacement guid="guidSnykVSPackageCmdSet" id="SnykActionsGroup" priority="0x0500">
+      <Parent guid="guidSnykVSPackageCmdSet" id="SnykToolbar"/>
+    </CommandPlacement>
+    <CommandPlacement guid="guidSnykVSPackageCmdSet" id="cmdidSnykToolWindowCommand" priority="0x0500">
+      <Parent guid="guidSHLMainMenu" id="IDG_VS_WNDO_OTRWNDWS1"/>
+    </CommandPlacement>
+  </CommandPlacements>
 
   <Symbols>
     <!-- This is the package guid. -->
@@ -143,12 +159,15 @@
       <IDSymbol name="cmdidSnykToolWindowCommand" value="0x1021" />
       <IDSymbol name="cmdidSnykOpenSettingsCommand" value="0x1022" />
       <IDSymbol name="SnykToolbar" value="0x501" />
-      <IDSymbol name="SnykToolbarGroup" value="0x502" />
+      <IDSymbol name="SnykActionsGroup" value="0x502" />
       <IDSymbol name="cmdidScan" value="0x503" />
       <IDSymbol name="cmdidStop" value="0x504" />
       <IDSymbol name="cmdidClean" value="0x505" />
       <IDSymbol name="cmdidOptions" value="0x506" />
       <IDSymbol name="SnykTopMenu" value="0x507" />
+      <IDSymbol name="SnykWindowsSubMenu" value="0x508" />
+      <IDSymbol name="SnykWindowsSubMenuGroup" value="0x509" />
+      <IDSymbol name="SnykSubMenusGroup" value="0x50A" />
     </GuidSymbol>
 
     <GuidSymbol name="guidImages" value="{f1d8a19c-c67e-46ac-997e-2beffd24d4c2}">
