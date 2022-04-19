@@ -4,6 +4,7 @@
     using System.Collections.Specialized;
     using System.IO;
     using System.Linq;
+    using System.Threading.Tasks;
     using Serilog;
     using Snyk.Common;
     using Snyk.VisualStudio.Extension.Shared.Settings;
@@ -120,7 +121,7 @@
         }
 
         /// <inheritdoc/>
-        public CliResult Scan(string basePath)
+        public async Task<CliResult> ScanAsync(string basePath)
         {
             Logger.Information("Path to scan {BasePath}", basePath);
 
@@ -128,7 +129,9 @@
 
             Logger.Information("CLI path is {CliPath}", cliPath);
 
-            this.ConsoleRunner.CreateProcess(cliPath, this.BuildScanArguments(), this.BuildScanEnvironmentVariables(), basePath);
+            var arguments = await this.BuildScanArgumentsAsync();
+
+            this.ConsoleRunner.CreateProcess(cliPath, arguments, this.BuildScanEnvironmentVariables(), basePath);
 
             Logger.Information("Start run console process");
 
@@ -161,7 +164,7 @@
         /// Build arguments (options) for snyk cli depending on user settings.
         /// </summary>
         /// <returns>arguments string.</returns>
-        public string BuildScanArguments()
+        public async Task<string> BuildScanArgumentsAsync()
         {
             Logger.Information("Enter BuildArguments method");
 
@@ -186,12 +189,16 @@
                 arguments.Add($"--org={this.Options.Organization}");
             }
 
-            if (!string.IsNullOrEmpty(this.Options.AdditionalOptions))
+            var additionalOptions = await this.Options.GetAdditionalOptionsAsync();
+
+            if (!string.IsNullOrEmpty(additionalOptions))
             {
-                arguments.Add($"{this.Options.AdditionalOptions}");
+                arguments.Add($"{additionalOptions}");
             }
 
-            if (this.Options.IsScanAllProjects)
+            var isScanAllProjects = await this.Options.IsScanAllProjectsAsync();
+
+            if (isScanAllProjects)
             {
                 arguments.Add("--all-projects");
             }

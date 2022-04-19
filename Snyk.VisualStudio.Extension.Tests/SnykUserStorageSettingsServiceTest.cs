@@ -1,6 +1,7 @@
 ﻿namespace Snyk.VisualStudio.Extension.Tests
 {
     using System.IO;
+    using System.Threading.Tasks;
     using Moq;
     using Snyk.Common;
     using Snyk.VisualStudio.Extension.Shared.Service;
@@ -13,7 +14,7 @@
     public class SnykUserStorageSettingsServiceTest
     {
         [Fact]
-        public void SnykUserStorageSettingsService_ProjectNameNotExists_SaveAdditionalOptionsSuccessfull()
+        public async Task SnykUserStorageSettingsService_ProjectNameNotExists_SaveAdditionalOptionsSuccessfullAsync()
         {
             var serviceProviderMock = new Mock<ISnykServiceProvider>();
             var solutionServiceMock = new Mock<ISolutionService>();
@@ -23,16 +24,16 @@
                 .Returns(solutionServiceMock.Object);
 
             solutionServiceMock
-                .Setup(solutionService => solutionService.GetPath())
-                .Returns("C:\\Projects\\TestProj");
+                .Setup(solutionService => solutionService.GetSolutionFolderAsync())
+                .ReturnsAsync("C:\\Projects\\TestProj");
 
             string settingsFilePath = Path.GetTempFileName();
 
             var userStorageSettingsService = new SnykUserStorageSettingsService(settingsFilePath, serviceProviderMock.Object);
 
-            userStorageSettingsService.SaveAdditionalOptions("--test-command");
+            await userStorageSettingsService.SaveAdditionalOptionsAsync("--test-command");
 
-            Assert.Equal("--test-command", userStorageSettingsService.GetAdditionalOptions());
+            Assert.Equal("--test-command", await userStorageSettingsService.GetAdditionalOptionsAsync());
         }
     }
 }

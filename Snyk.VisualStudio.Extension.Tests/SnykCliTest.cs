@@ -2,6 +2,8 @@
 {
     using System;
     using System.IO;
+    using System.Threading.Tasks;
+    using Moq;
     using Snyk.VisualStudio.Extension.Shared.CLI;
     using Snyk.VisualStudio.Extension.Shared.Model;
     using Snyk.VisualStudio.Extension.Shared.Settings;
@@ -9,12 +11,23 @@
 
     public class SnykCliTest
     {
+        private Mock<ISnykOptions> optionsMock;
+
+        public SnykCliTest()
+        {
+            this.optionsMock = new Mock<ISnykOptions>();
+
+            this.optionsMock
+                .Setup(options => options.UsageAnalyticsEnabled)
+                .Returns(true);
+        }
+
         [Fact]
         public void SnykCliTest_CliReturnError_GetApiTokenThrowException()
         {
             var cli = new SnykCli
             {
-                Options = new SnykMockOptions(),
+                Options = this.optionsMock.Object,
                 ConsoleRunner = new SnykMockConsoleRunner("cli file note exists"),
             };
 
@@ -22,11 +35,11 @@
         }
 
         [Fact]
-        public void ConvertRawCliStringToCliResultWithCriticalSeverity()
+        public void SnykCliTest_ConvertRawCliStringToCliResultWithCriticalSeverity_CriticalSeverityVulnExists()
         {
             var cli = new SnykCli
             {
-                Options = new SnykMockOptions(),
+                Options = this.optionsMock.Object,
             };
 
             var cliResult = SnykCli.ConvertRawCliStringToCliResult(this.GetFileContent("CriticalSeverityObject.json"));
@@ -45,15 +58,15 @@
         }
 
         [Fact]
-        public void Scan()
+        public async Task SnykCliTest_RunScan_SuccessfulCliResultAsync()
         {
             var cli = new SnykCli
             {
-                Options = new SnykMockOptions(),
+                Options = this.optionsMock.Object,
                 ConsoleRunner = new SnykMockConsoleRunner(this.GetFileContent("VulnerabilitiesSingleObject.json")),
             };
 
-            var cliResult = cli.Scan(string.Empty);
+            var cliResult = await cli.ScanAsync(string.Empty);
 
             Assert.Single(cliResult.CliVulnerabilitiesList);
         }
@@ -65,7 +78,7 @@
 
             var cli = new SnykCli
             {
-                Options = new SnykMockOptions(),
+                Options = this.optionsMock.Object,
                 ConsoleRunner = new SnykMockConsoleRunner(testGuid),
             };
 
@@ -73,11 +86,11 @@
         }
 
         [Fact]
-        public void Authenticate()
+        public void SnykCliTest_Authenticate_Successful()
         {
             var cli = new SnykCli
             {
-                Options = new SnykMockOptions(),
+                Options = this.optionsMock.Object,
                 ConsoleRunner = new SnykMockConsoleRunner("Your account has been authenticated. Snyk is now ready to be used."),
             };
 
@@ -85,135 +98,154 @@
         }
 
         [Fact]
-        public void BuildArguments_WithoutOptions()
+        public async Task SnykCliTest_BuildArguments_WithoutOptionsAsync()
         {
             var cli = new SnykCli
             {
-                Options = new SnykMockOptions(),
+                Options = this.optionsMock.Object,
             };
 
-            Assert.Equal("--json test", cli.BuildScanArguments());
+            Assert.Equal("--json test", await cli.BuildScanArgumentsAsync());
         }
 
         [Fact]
-        public void BuildArguments_WithCustomEndpointOption()
+        public async Task SnykCliTest_BuildArguments_WithCustomEndpointOptionAsync()
         {
-            var cli = new SnykCli
-            {
-                Options = new SnykMockOptions()
-                {
-                    CustomEndpoint = "https://github.com/snyk/",
-                },
-            };
+            this.optionsMock
+                .Setup(options => options.CustomEndpoint)
+                .Returns("https://github.com/snyk/");
 
-            Assert.Equal("--json test --API=https://github.com/snyk/", cli.BuildScanArguments());
+            var cli = new SnykCli { Options = this.optionsMock.Object, };
+
+            Assert.Equal("--json test --API=https://github.com/snyk/", await cli.BuildScanArgumentsAsync());
         }
 
         [Fact]
-        public void BuildArguments_WithInsecureOption()
+        public async Task SnykCliTest_BuildArguments_WithInsecureOptionAsync()
         {
-            var cli = new SnykCli
-            {
-                Options = new SnykMockOptions()
-                {
-                    IgnoreUnknownCA = true,
-                },
-            };
+            this.optionsMock
+                .Setup(options => options.IgnoreUnknownCA)
+                .Returns(true);
 
-            Assert.Equal("--json test --insecure", cli.BuildScanArguments());
+            var cli = new SnykCli { Options = this.optionsMock.Object, };
+
+            Assert.Equal("--json test --insecure", await cli.BuildScanArgumentsAsync());
         }
 
         [Fact]
-        public void BuildArguments_WithOrganizationOption()
+        public async Task SnykCliTest_BuildArguments_WithOrganizationOptionAsync()
         {
-            var cli = new SnykCli
-            {
-                Options = new SnykMockOptions()
-                {
-                    Organization = "test-snyk-organization",
-                },
-            };
+            this.optionsMock
+                .Setup(options => options.Organization)
+                .Returns("test-snyk-organization");
 
-            Assert.Equal("--json test --org=test-snyk-organization", cli.BuildScanArguments());
+            var cli = new SnykCli { Options = this.optionsMock.Object, };
+
+            Assert.Equal("--json test --org=test-snyk-organization", await cli.BuildScanArgumentsAsync());
         }
 
         [Fact]
-        public void BuildArguments_WithAdditionalOptions()
+        public async Task SnykCliTest_BuildArguments_WithAdditionalOptionsAsync()
         {
-            var cli = new SnykCli
-            {
-                Options = new SnykMockOptions()
-                {
-                    AdditionalOptions = "--file=C:\build.pom",
-                },
-            };
+            this.optionsMock
+                .Setup(options => options.GetAdditionalOptionsAsync())
+                .ReturnsAsync("--file=C:\build.pom");
 
-            Assert.Equal("--json test --file=C:\build.pom", cli.BuildScanArguments());
+            var cli = new SnykCli { Options = this.optionsMock.Object, };
+
+            Assert.Equal("--json test --file=C:\build.pom", await cli.BuildScanArgumentsAsync());
         }
 
         [Fact]
-        public void BuildArguments_WithScanAllProjects()
+        public async Task SnykCliTest_BuildArguments_WithScanAllProjectsAsync()
         {
-            var cli = new SnykCli
-            {
-                Options = new SnykMockOptions()
-                {
-                    IsScanAllProjects = true,
-                },
-            };
+            this.optionsMock
+                .Setup(options => options.IsScanAllProjectsAsync())
+                .ReturnsAsync(true);
 
-            Assert.Equal("--json test --all-projects", cli.BuildScanArguments());
+            var cli = new SnykCli { Options = this.optionsMock.Object, };
+
+            Assert.Equal("--json test --all-projects", await cli.BuildScanArgumentsAsync());
         }
 
         [Fact]
-        public void BuildArguments_WithAllOptions()
+        public async Task SnykCliTest_BuildArguments_WithAllOptionsAsync()
         {
-            var cli = new SnykCli
-            {
-                Options = new SnykMockOptions()
-                {
-                    CustomEndpoint = "https://github.com/snyk/",
-                    IgnoreUnknownCA = true,
-                    Organization = "test-snyk-organization",
-                    AdditionalOptions = "--ignore-policy",
-                    IsScanAllProjects = true,
-                    UsageAnalyticsEnabled = false,
-                },
-            };
+            this.optionsMock
+                .Setup(options => options.CustomEndpoint)
+                .Returns("https://github.com/snyk/");
 
-            Assert.Equal("--json test --API=https://github.com/snyk/ --insecure --org=test-snyk-organization --ignore-policy --all-projects --DISABLE_ANALYTICS", cli.BuildScanArguments());
+            this.optionsMock
+                .Setup(options => options.IgnoreUnknownCA)
+                .Returns(true);
+
+            this.optionsMock
+                .Setup(options => options.Organization)
+                .Returns("test-snyk-organization");
+
+            this.optionsMock
+                .Setup(options => options.UsageAnalyticsEnabled)
+                .Returns(false);
+
+            this.optionsMock
+                .Setup(options => options.GetAdditionalOptionsAsync())
+                .ReturnsAsync("--ignore-policy");
+
+            this.optionsMock
+                   .Setup(options => options.IsScanAllProjectsAsync())
+                   .ReturnsAsync(true);
+
+            var cli = new SnykCli { Options = this.optionsMock.Object, };
+
+            Assert.Equal(
+                "--json test --API=https://github.com/snyk/ --insecure --org=test-snyk-organization --ignore-policy --all-projects --DISABLE_ANALYTICS",
+                await cli.BuildScanArgumentsAsync());
         }
 
         [Fact]
-        public void BuildArguments_WithDisableAnalytics()
+        public async Task SnykCliTest_BuildArguments_WithDisableAnalyticsAsync()
         {
-            var cli = new SnykCli
-            {
-                Options = new SnykMockOptions()
-                {
-                    UsageAnalyticsEnabled = false,
-                },
-            };
+            this.optionsMock
+                .Setup(options => options.UsageAnalyticsEnabled)
+                .Returns(false);
 
-            Assert.Equal("--json test --DISABLE_ANALYTICS", cli.BuildScanArguments());
+            var cli = new SnykCli { Options = this.optionsMock.Object, };
+
+            Assert.Equal("--json test --DISABLE_ANALYTICS", await cli.BuildScanArgumentsAsync());
         }
 
         [Fact]
-        public void BuildEnvironmentVariables_WithAllOptions()
+        public void SnykCliTest_BuildEnvironmentVariables_WithAllOptions()
         {
-            var cli = new SnykCli
-            {
-                Options = new SnykMockOptions()
-                {
-                    CustomEndpoint = "https://github.com/snyk/",
-                    IgnoreUnknownCA = true,
-                    Organization = "test-snyk-organization",
-                    AdditionalOptions = "--ignore-policy",
-                    IsScanAllProjects = true,
-                    UsageAnalyticsEnabled = false,
-                    ApiToken = "test-token",
-                },
-            };
+            this.optionsMock
+                .Setup(options => options.CustomEndpoint)
+                .Returns("https://github.com/snyk/");
+
+            this.optionsMock
+                .Setup(options => options.IgnoreUnknownCA)
+                .Returns(true);
+
+            this.optionsMock
+                .Setup(options => options.Organization)
+                .Returns("test-snyk-organization");
+
+            this.optionsMock
+                .Setup(options => options.UsageAnalyticsEnabled)
+                .Returns(false);
+
+            this.optionsMock
+                .Setup(options => options.GetAdditionalOptionsAsync())
+                .ReturnsAsync("--ignore-policy");
+
+            this.optionsMock
+                   .Setup(options => options.IsScanAllProjectsAsync())
+                   .ReturnsAsync(true);
+
+            this.optionsMock
+                   .Setup(options => options.ApiToken)
+                   .Returns("test-token");
+
+            var cli = new SnykCli { Options = this.optionsMock.Object, };
 
             var result = cli.BuildScanEnvironmentVariables();
 
@@ -261,12 +293,9 @@
         }
 
         [Fact]
-        public void ConvertRawCliStringToCliResult_PlainTextError()
+        public void SnykCliTest_ConvertRawCliStringToCliResult_PlainTextError()
         {
-            var cli = new SnykCli
-            {
-                Options = new SnykMockOptions(),
-            };
+            var cli = new SnykCli { Options = this.optionsMock.Object, };
 
             var cliResult = SnykCli.ConvertRawCliStringToCliResult(this.GetFileContent("ErrorPlainText.json"));
 
@@ -301,92 +330,5 @@
     class MockServiceProvider : IServiceProvider
     {
         public object GetService(Type serviceType) => throw new NotImplementedException();
-    }
-
-    class SnykMockOptions : ISnykOptions
-    {
-        private string apiToken = string.Empty;
-        private string customEndpoint = string.Empty;
-        private string organization = string.Empty;
-        private bool ignoreUnknownCA = false;
-        private string additionalOptions = string.Empty;
-        private bool isScanAllProjects = false;
-        private bool usageAnalyticsEnabled = true;
-
-        public SnykMockOptions() { }
-
-        public SnykMockOptions(
-            string apiToken = "",
-            string customEndpoint = "",
-            string organization = "",
-            string additionalOptions = "",
-            bool ignoreUnknownCA = false,
-            bool isScanAllProjects = false)
-        {
-            this.CustomEndpoint = customEndpoint;
-            this.ApiToken = apiToken;
-            this.Organization = organization;
-            this.IgnoreUnknownCA = ignoreUnknownCA;
-            this.AdditionalOptions = additionalOptions;
-            this.IsScanAllProjects = isScanAllProjects;
-        }
-
-        public event EventHandler<SnykSettingsChangedEventArgs> SettingsChanged;
-
-        public string ApiToken
-        {
-            get => this.apiToken;
-            set => this.apiToken = value;
-        }
-
-        public string CustomEndpoint
-        {
-            get => this.customEndpoint;
-            set => this.customEndpoint = value;
-        }
-
-        public string Organization
-        {
-            get => this.organization;
-            set => this.organization = value;
-        }
-
-        public bool IgnoreUnknownCA
-        {
-            get => this.ignoreUnknownCA;
-            set => this.ignoreUnknownCA = value;
-        }
-
-        public string AdditionalOptions
-        {
-            get => this.additionalOptions;
-            set => this.additionalOptions = value;
-        }
-
-        public bool IsScanAllProjects
-        {
-            get => this.isScanAllProjects;
-            set => this.isScanAllProjects = value;
-        }
-
-        public bool UsageAnalyticsEnabled
-        {
-            get => this.usageAnalyticsEnabled;
-            set => this.usageAnalyticsEnabled = value;
-        }
-
-        public bool OssEnabled => throw new NotImplementedException();
-
-        public bool SnykCodeSecurityEnabled => throw new NotImplementedException();
-
-        public bool SnykCodeQualityEnabled => throw new NotImplementedException();
-
-        public string AnonymousId { get => throw new NotImplementedException(); set => throw new NotImplementedException(); }
-
-        public string SnykCodeSettingsUrl => throw new NotImplementedException();
-
-        public void Authenticate(Action<string> successCallbackAction, Action<string> errorCallbackAction) => throw new NotImplementedException();
-
-        public void LoadSettingsFromStorage() => throw new NotImplementedException();
     }
 }

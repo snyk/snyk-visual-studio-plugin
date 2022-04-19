@@ -97,7 +97,7 @@
                 return await this.NewScanAsync(fileProvider, cancellationToken);
             }
 
-            var filteredChangedFiles = await this.GetFilteredFilesAsync(fileProvider.GetSolutionPath(), fileProvider.GetAllChangedFiles());
+            var filteredChangedFiles = await this.GetFilteredFilesAsync(await fileProvider.GetSolutionPathAsync(), fileProvider.GetAllChangedFiles());
 
             if (this.AnyFilesChangedInSolution(filteredChangedFiles))
             {
@@ -118,7 +118,7 @@
 
             var solutionFiles = await fileProvider.GetFilesAsync();
 
-            var files = await this.GetFilteredFilesAsync(fileProvider.GetSolutionPath(), solutionFiles);
+            var files = await this.GetFilteredFilesAsync(await fileProvider.GetSolutionPathAsync(), solutionFiles);
 
             if (files == null || files.Count() == 0)
             {
@@ -162,11 +162,11 @@
         {
             this.codeCacheService.Update(fileProvider);
 
-            var extendFilePathToHashDict = this.codeCacheService.GetFilePathToHashDictionary(changedFiles);
+            var extendFilePathToHashDict = await this.codeCacheService.GetFilePathToHashDictionaryAsync(changedFiles);
 
             string bundleId = this.codeCacheService.GetCachedBundleId();
 
-            var removedFiles = this.codeCacheService.GetRelativeFilePaths(fileProvider.GetRemovedFiles());
+            var removedFiles = await this.codeCacheService.GetRelativeFilePathsAsync(fileProvider.GetRemovedFiles());
 
             var extendedBundle = await this.bundleService.ExtendBundleAsync(bundleId, extendFilePathToHashDict, removedFiles);
 

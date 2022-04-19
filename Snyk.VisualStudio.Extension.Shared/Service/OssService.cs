@@ -1,6 +1,7 @@
 ﻿namespace Snyk.VisualStudio.Extension.Shared.Service
 {
     using System.Threading;
+    using System.Threading.Tasks;
     using Serilog;
     using Snyk.Common;
     using Snyk.VisualStudio.Extension.Shared.CLI;
@@ -29,7 +30,7 @@
         public bool IsCurrentScanProcessCanceled() => this.cli.ConsoleRunner.IsStopped;
 
         /// <inheritdoc/>
-        public CliResult Scan(string path, CancellationToken token)
+        public async Task<CliResult> ScanAsync(string path, CancellationToken token)
         {
             token.ThrowIfCancellationRequested();
 
@@ -45,15 +46,15 @@
             Logger.Information("Custom Endpoint is {CustomEndpoint}", options.CustomEndpoint);
             Logger.Information("Organization {Organization}", options.Organization);
             Logger.Information("Ignore Unknown CA is {IgnoreUnknownCA}", options.IgnoreUnknownCA);
-            Logger.Information("Additional Options is {AdditionalOptions}", options.AdditionalOptions);
-            Logger.Information("Is Scan All Projects is {IsScanAllProjects}", options.IsScanAllProjects);
+            Logger.Information("Additional Options is {AdditionalOptions}", await options.GetAdditionalOptionsAsync());
+            Logger.Information("Is Scan All Projects is {IsScanAllProjects}", await options.IsScanAllProjectsAsync());
             Logger.Information("Solution path is {SolutionPath}", path);
 
             Logger.Information("Start scan");
 
             token.ThrowIfCancellationRequested();
 
-            var cliResult = this.cli.Scan(path);
+            var cliResult = await this.cli.ScanAsync(path);
 
             Logger.Information("Scan finished. Is successful: {IsSuccessful}", cliResult.IsSuccessful());
 

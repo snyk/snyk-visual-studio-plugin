@@ -1,6 +1,7 @@
 ﻿namespace Snyk.Code.Library.Service
 {
     using System.Collections.Generic;
+    using System.Threading.Tasks;
     using Snyk.Code.Library.Domain.Analysis;
     using Snyk.Common;
 
@@ -32,7 +33,7 @@
         /// </summary>
         /// <param name="files">Provided files list.</param>
         /// <returns>IDictionary.</returns>
-        IDictionary<string, string> GetFilePathToHashDictionary(IEnumerable<string> files);
+        Task<IDictionary<string, string>> GetFilePathToHashDictionaryAsync(IEnumerable<string> files);
 
         /// <summary>
         /// Create file path to file hash and content dictionary.
@@ -103,6 +104,6 @@
         /// </summary>
         /// <param name="files">List of absolute file paths.</param>
         /// <returns>List of relative file paths.</returns>
-        IEnumerable<string> GetRelativeFilePaths(IEnumerable<string> files);
+        Task<IEnumerable<string>> GetRelativeFilePathsAsync(IEnumerable<string> files);
     }
 }

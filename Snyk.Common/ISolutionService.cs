@@ -14,10 +14,10 @@
         IFileProvider FileProvider { get; }
 
         /// <summary>
-        /// Get solution path.
+        /// Get solution folder path.
         /// </summary>
         /// <returns>Path string.</returns>
-        string GetPath();
+        Task<string> GetSolutionFolderAsync();
 
         /// <summary>
         /// Get all solution files.
@@ -41,11 +41,20 @@
         /// </summary>
         /// <param name="file">Relative file path.</param>
         /// <returns>Full file path.</returns>
-        string GetFileFullPath(string file);
+        Task<string> GetFileFullPathAsync(string file);
 
         /// <summary>
         /// Gets a value indicating whether is solution open.
         /// </summary>
+        /// <returns>True if solution open.</returns>
         bool IsSolutionOpen();
+
+        /// <summary>
+        /// Find root directory for all paths.
+        /// </summary>
+        /// <param name="rootDir">Initial root directory.</param>
+        /// <param name="paths">All paths.</param>
+        /// <returns>Root directory for all paths.</returns>
+        string FindRootDirectoryForSolutionProjects(string rootDir, IList<string> paths);
     }
 }

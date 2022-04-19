@@ -27,7 +27,7 @@
 
                 this.snykCodeDescription.Text = suggestion.Message;
 
-                this.dataFlowStepsControl.Display(suggestion.Markers);
+                this.dataFlowStepsControl.DisplayAsync(suggestion.Markers);
 
                 this.externalExampleFixesControl.Display(suggestion.RepoDatasetSize, suggestion.Fixes);
             }

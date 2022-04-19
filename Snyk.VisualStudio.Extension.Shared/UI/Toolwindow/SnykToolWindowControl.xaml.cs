@@ -3,6 +3,7 @@
     using System;
     using System.Diagnostics;
     using System.Threading;
+    using System.Threading.Tasks;
     using System.Windows;
     using System.Windows.Controls;
     using System.Windows.Documents;
@@ -555,7 +556,7 @@
 
                 if (this.resultsTree.SelectedItem is SnykCodeVulnerabilityTreeNode)
                 {
-                    this.HandleSnykCodeTreeNodeSelected();
+                    this.HandleSnykCodeTreeNodeSelectedAsync();
 
                     return;
                 }
@@ -611,7 +612,7 @@
             }
         }
 
-        private void HandleSnykCodeTreeNodeSelected()
+        private async System.Threading.Tasks.Task HandleSnykCodeTreeNodeSelectedAsync()
         {
             this.descriptionPanel.Visibility = Visibility.Visible;
 
@@ -622,7 +623,7 @@
             var suggestion = snykCodeTreeNode.Suggestion;
 
             VsCodeService.Instance.OpenAndNavigate(
-                this.serviceProvider.SolutionService.GetFileFullPath(suggestion.FileName),
+                await this.serviceProvider.SolutionService.GetFileFullPathAsync(suggestion.FileName),
                 suggestion.Rows.Item1 - 1,
                 suggestion.Columns.Item1 - 1,
                 suggestion.Rows.Item2 - 1,

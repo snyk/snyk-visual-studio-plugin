@@ -368,72 +368,77 @@
 
                 Logger.Information("Start scan task");
 
-                _ = Task.Run(
-                    () =>
-                    {
-                        this.isOssScanning = true;
-
-                        this.FireOssScanningStartedEvent();
-
-                        var ossService = this.serviceProvider.OssService;
-
-                        try
-                        {
-                            token.ThrowIfCancellationRequested();
-
-                            try
-                            {
-                                var cliResult = ossService.Scan(this.serviceProvider.SolutionService.GetPath(), token);
-
-                                this.FireOssScanningUpdateEvent(cliResult);
-
-                                this.FireOssScanningFinishedEvent();
-
-                                Logger.Information("Scan finished");
-                            }
-                            catch (OssScanException e)
-                            {
-                                Logger.Error(e, "Oss scan exception");
-
-                                this.FireOssError(e.Error);
-                            }
-                            catch (Exception e)
-                            {
-                                if (ossService.IsCurrentScanProcessCanceled() || this.IsTaskCancelled(e))
-                                {
-                                    this.FireScanningCancelledEvent();
-
-                                    return;
-                                }
-
-                                this.FireOssError(e.Message);
-                            }
-                            finally
-                            {
-                                this.isOssScanning = false;
-
-                                this.FireTaskFinished();
-                            }
-                        }
-                        catch (Exception e)
-                        {
-                            Logger.Error(e, "Error on oss scan");
-
-                            this.FireScanningCancelledEvent();
-                        }
-                        finally
-                        {
-                            this.DisposeCancellationTokenSource(this.ossScanTokenSource);
-
-                            this.isOssScanning = false;
-
-                            this.FireTaskFinished();
-                        }
-                    }, token);
+                Task.Run(this.RunOssScanAsync, token).FireAndForget();
             }
             catch (Exception ex)
             {
                 Logger.Error(ex, "Error on oss scan");
+            }
+        }
+
+        private async Task RunOssScanAsync()
+        {
+            this.isOssScanning = true;
+
+            this.FireOssScanningStartedEvent();
+
+            var ossService = this.serviceProvider.OssService;
+
+            try
+            {
+                var token = this.ossScanTokenSource.Token;
+
+                token.ThrowIfCancellationRequested();
+
+                try
+                {
+                    var directoryPath = await this.serviceProvider.SolutionService.GetSolutionFolderAsync();
+
+                    var cliResult = await ossService.ScanAsync(directoryPath, token);
+
+                    this.FireOssScanningUpdateEvent(cliResult);
+
+                    this.FireOssScanningFinishedEvent();
+
+                    Logger.Information("Scan finished");
+                }
+                catch (OssScanException e)
+                {
+                    Logger.Error(e, "Oss scan exception");
+
+                    this.FireOssError(e.Error);
+                }
+                catch (Exception e)
+                {
+                    if (ossService.IsCurrentScanProcessCanceled() || this.IsTaskCancelled(e))
+                    {
+                        this.FireScanningCancelledEvent();
+
+                        return;
+                    }
+
+                    this.FireOssError(e.Message);
+                }
+                finally
+                {
+                    this.isOssScanning = false;
+
+                    this.FireTaskFinished();
+                }
+            }
+            catch (Exception e)
+            {
+                Logger.Error(e, "Error on oss scan");
+
+                this.FireScanningCancelledEvent();
+            }
+            finally
+            {
+                this.DisposeCancellationTokenSource(this.ossScanTokenSource);
+
+                this.isOssScanning = false;
+
+                this.FireTaskFinished();
             }
         }
 

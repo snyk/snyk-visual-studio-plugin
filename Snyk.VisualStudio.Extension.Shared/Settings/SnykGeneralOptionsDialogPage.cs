@@ -2,6 +2,7 @@
 {
     using System;
     using System.Runtime.InteropServices;
+    using System.Threading.Tasks;
     using System.Windows.Forms;
     using Microsoft.VisualStudio.Shell;
     using Serilog;
@@ -15,8 +16,6 @@
     [ComVisible(true)]
     public class SnykGeneralOptionsDialogPage : DialogPage, ISnykOptions
     {
-        private static readonly ILogger Logger = LogManager.ForContext<SnykGeneralOptionsDialogPage>();
-
         private ISnykServiceProvider serviceProvider;
 
         private SnykUserStorageSettingsService userStorageSettingsService;
@@ -123,18 +122,6 @@
             set => this.userStorageSettingsService?.SaveUsageAnalyticsEnabled(value);
         }
 
-        /// <summary>
-        /// Gets a value indicating whether additional options.
-        /// Get this data using <see cref="SnykUserStorageSettingsService"/>.
-        /// </summary>
-        public string AdditionalOptions => this.serviceProvider.UserStorageSettingsService.GetAdditionalOptions();
-
-        /// <summary>
-        /// Gets a value indicating whether is scan all projects enabled via <see cref="SnykUserStorageSettingsService"/>.
-        /// Get this data using <see cref="SnykUserStorageSettingsService"/>.
-        /// </summary>
-        public bool IsScanAllProjects => this.userStorageSettingsService.GetIsAllProjectsEnabled();
-
         /// <inheritdoc/>
         public string AnonymousId
         {
@@ -164,6 +151,20 @@
                 return this.generalSettingsUserControl;
             }
         }
+
+        /// <summary>
+        /// Gets a value indicating whether additional options.
+        /// Get this data using <see cref="SnykUserStorageSettingsService"/>.
+        /// </summary>
+        /// <returns><see cref="Task"/> representing the asynchronous operation.</returns>
+        public async Task<string> GetAdditionalOptionsAsync() => await this.serviceProvider.UserStorageSettingsService.GetAdditionalOptionsAsync();
+
+        /// <summary>
+        /// Gets a value indicating whether is scan all projects enabled via <see cref="SnykUserStorageSettingsService"/>.
+        /// Get this data using <see cref="SnykUserStorageSettingsService"/>.
+        /// </summary>
+        /// <returns><see cref="Task"/> representing the asynchronous operation.</returns>
+        public async Task<bool> IsScanAllProjectsAsync() => await this.userStorageSettingsService.GetIsAllProjectsEnabledAsync();
 
         /// <summary>
         /// Initialize <see cref="SnykGeneralOptionsDialogPage"/>.

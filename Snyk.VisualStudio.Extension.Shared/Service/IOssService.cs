@@ -1,6 +1,7 @@
 ﻿namespace Snyk.VisualStudio.Extension.Shared.Service
 {
     using System.Threading;
+    using System.Threading.Tasks;
     using Snyk.VisualStudio.Extension.Shared.CLI;
 
     /// <summary>
@@ -15,7 +16,7 @@
         /// <param name="token">Cancellation token</param>
         /// <returns><see cref="CliResult"/> object.</returns>
         /// <exception cref="OssScanException">If error on scan.</exception>
-        CliResult Scan(string path, CancellationToken token);
+        Task<CliResult> ScanAsync(string path, CancellationToken token);
 
         /// <summary>
         /// Stop current scan.

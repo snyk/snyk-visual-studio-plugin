@@ -46,8 +46,8 @@
             };
 
             codeClientMock
-                .Setup(codeClient => codeClient.GetFiltersAsync().Result)
-                .Returns(filtersDto);
+                .Setup(codeClient => codeClient.GetFiltersAsync())
+                .ReturnsAsync(filtersDto);
 
             var filterService = new FiltersService(codeClientMock.Object);
 
@@ -97,8 +97,8 @@
             var codeClientMock = new Mock<ISnykCodeClient>();
 
             codeClientMock
-                .Setup(codeClient => codeClient.GetFiltersAsync().Result)
-                .Returns(filtersDto);
+                .Setup(codeClient => codeClient.GetFiltersAsync())
+                .ReturnsAsync(filtersDto);
 
             var filterService = new FiltersService(codeClientMock.Object);
 
@@ -141,8 +141,8 @@
             var filtersDto = GetFiltersDto();
 
             codeClientMock
-                .Setup(codeClient => codeClient.GetFiltersAsync().Result)
-                .Returns(filtersDto);
+                .Setup(codeClient => codeClient.GetFiltersAsync())
+                .ReturnsAsync(filtersDto);
 
             var filterService = new FiltersService(codeClientMock.Object);
 
