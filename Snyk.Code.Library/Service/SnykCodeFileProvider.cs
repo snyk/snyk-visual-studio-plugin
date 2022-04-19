@@ -38,7 +38,7 @@
         {
             if (string.IsNullOrEmpty(this.solutionPath))
             {
-                this.solutionPath = await this.solutionService.GetPathAsync();
+                this.solutionPath = await this.solutionService.GetSolutionFolderAsync();
             }
 
             return this.solutionPath;

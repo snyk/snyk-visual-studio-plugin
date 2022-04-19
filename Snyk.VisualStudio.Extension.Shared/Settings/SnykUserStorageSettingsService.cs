@@ -312,6 +312,6 @@
             return settings;
         }
 
-        private async Task<int> GetSolutionPathHashAsync() => (await this.solutionService.GetPathAsync()).ToLower().GetHashCode();
+        private async Task<int> GetSolutionPathHashAsync() => (await this.solutionService.GetSolutionFolderAsync()).ToLower().GetHashCode();
     }
 }

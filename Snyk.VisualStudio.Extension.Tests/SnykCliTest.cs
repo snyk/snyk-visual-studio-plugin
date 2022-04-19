@@ -148,8 +148,8 @@
         public async Task SnykCliTest_BuildArguments_WithAdditionalOptionsAsync()
         {
             this.optionsMock
-                .Setup(options => options.GetAdditionalOptionsAsync().Result)
-                .Returns("--file=C:\build.pom");
+                .Setup(options => options.GetAdditionalOptionsAsync())
+                .ReturnsAsync("--file=C:\build.pom");
 
             var cli = new SnykCli { Options = this.optionsMock.Object, };
 
@@ -160,8 +160,8 @@
         public async Task SnykCliTest_BuildArguments_WithScanAllProjectsAsync()
         {
             this.optionsMock
-                .Setup(options => options.IsScanAllProjectsAsync().Result)
-                .Returns(true);
+                .Setup(options => options.IsScanAllProjectsAsync())
+                .ReturnsAsync(true);
 
             var cli = new SnykCli { Options = this.optionsMock.Object, };
 
@@ -188,12 +188,12 @@
                 .Returns(false);
 
             this.optionsMock
-                .Setup(options => options.GetAdditionalOptionsAsync().Result)
-                .Returns("--ignore-policy");
+                .Setup(options => options.GetAdditionalOptionsAsync())
+                .ReturnsAsync("--ignore-policy");
 
             this.optionsMock
-                   .Setup(options => options.IsScanAllProjectsAsync().Result)
-                   .Returns(true);
+                   .Setup(options => options.IsScanAllProjectsAsync())
+                   .ReturnsAsync(true);
 
             var cli = new SnykCli { Options = this.optionsMock.Object, };
 
@@ -234,12 +234,12 @@
                 .Returns(false);
 
             this.optionsMock
-                .Setup(options => options.GetAdditionalOptionsAsync().Result)
-                .Returns("--ignore-policy");
+                .Setup(options => options.GetAdditionalOptionsAsync())
+                .ReturnsAsync("--ignore-policy");
 
             this.optionsMock
-                   .Setup(options => options.IsScanAllProjectsAsync().Result)
-                   .Returns(true);
+                   .Setup(options => options.IsScanAllProjectsAsync())
+                   .ReturnsAsync(true);
 
             this.optionsMock
                    .Setup(options => options.ApiToken)

@@ -33,8 +33,8 @@
             };
 
             codeClientMock
-                .Setup(codeClient => codeClient.GetAnalysisAsync(dummyBundleId, It.IsAny<CancellationToken>()).Result)
-                .Returns(dummyAnalysisResultDto);
+                .Setup(codeClient => codeClient.GetAnalysisAsync(dummyBundleId, It.IsAny<CancellationToken>()))
+                .ReturnsAsync(dummyAnalysisResultDto);
 
             _ = Assert.ThrowsAsync<AggregateException>(() => analysisService.GetAnalysisAsync(dummyBundleId, scanCodeProgressUpdate));
 
@@ -61,8 +61,8 @@
             var mockMethodCallsCount = 0;
 
             codeClientMock
-                .Setup(codeClient => codeClient.GetAnalysisAsync(dummyBundleId, It.IsAny<CancellationToken>()).Result)
-                .Returns(dummyAnalysisResultDto)
+                .Setup(codeClient => codeClient.GetAnalysisAsync(dummyBundleId, It.IsAny<CancellationToken>()))
+                .ReturnsAsync(dummyAnalysisResultDto)
                 .Callback<string, CancellationToken>((str, cancellationToken) =>
                 {
                     mockMethodCallsCount++;
@@ -99,8 +99,8 @@
             };
 
             codeClientMock
-                .Setup(codeClient => codeClient.GetAnalysisAsync(dummyBundleId, It.IsAny<CancellationToken>()).Result)
-                .Returns(dummyAnalysisResultDto);
+                .Setup(codeClient => codeClient.GetAnalysisAsync(dummyBundleId, It.IsAny<CancellationToken>()))
+                .ReturnsAsync(dummyAnalysisResultDto);
 
             var analysisResult = await analysisService.GetAnalysisAsync(dummyBundleId, this.scanCodeProgressUpdate, requestAttempts: 5);
 
@@ -282,8 +282,8 @@
             };
 
             codeClientMock
-                .Setup(codeClient => codeClient.GetAnalysisAsync(dummyBundleId, It.IsAny<CancellationToken>()).Result)
-                .Returns(dummyAnalysisResultDto);
+                .Setup(codeClient => codeClient.GetAnalysisAsync(dummyBundleId, It.IsAny<CancellationToken>()))
+                .ReturnsAsync(dummyAnalysisResultDto);
 
             var analysisResult = await analysisService.GetAnalysisAsync(dummyBundleId, this.scanCodeProgressUpdate);
 

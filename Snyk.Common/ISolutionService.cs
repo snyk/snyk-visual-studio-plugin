@@ -14,10 +14,10 @@
         IFileProvider FileProvider { get; }
 
         /// <summary>
-        /// Get solution path.
+        /// Get solution folder path.
         /// </summary>
         /// <returns>Path string.</returns>
-        Task<string> GetPathAsync();
+        Task<string> GetSolutionFolderAsync();
 
         /// <summary>
         /// Get all solution files.

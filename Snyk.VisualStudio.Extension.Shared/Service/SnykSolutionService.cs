@@ -112,7 +112,7 @@
                 .Replace("/", "\\")
                 .Substring(1, file.Length - 1);
 
-            string baseDirPath = await this.GetPathAsync();
+            string baseDirPath = await this.GetSolutionFolderAsync();
 
             return Path.Combine(baseDirPath, relativePath);
         }
@@ -128,7 +128,7 @@
         /// If no success, try to get path for flat project (without solution) or web site (in case VS2015).
         /// </summary>
         /// <returns>Solution path string.</returns>
-        public async System.Threading.Tasks.Task<string> GetPathAsync()
+        public async System.Threading.Tasks.Task<string> GetSolutionFolderAsync()
         {
             var rootDir = await this.FindRootDirectoryForSolutionAsync();
 
@@ -205,7 +205,7 @@
 
         private async System.Threading.Tasks.Task<IList<string>> GetSolutionDirectoryFilesAsync()
         {
-            string solutionPath = await this.GetPathAsync();
+            string solutionPath = await this.GetSolutionFolderAsync();
 
             string[] files = Directory.GetFileSystemEntries(solutionPath, "*", SearchOption.AllDirectories);
 

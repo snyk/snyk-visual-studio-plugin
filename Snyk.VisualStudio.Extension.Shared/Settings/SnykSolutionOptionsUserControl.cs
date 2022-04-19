@@ -1,11 +1,12 @@
 ﻿namespace Snyk.VisualStudio.Extension.Shared.Settings
 {
     using System;
-    using System.Threading.Tasks;
     using System.Windows.Forms;
+    using Microsoft.VisualStudio.Shell;
     using Serilog;
     using Snyk.Common;
     using Snyk.VisualStudio.Extension.Shared.Service;
+    using Task = System.Threading.Tasks.Task;
 
     /// <summary>
     /// Solution settings control.
@@ -50,7 +51,7 @@
             {
                 string additionalOptions = this.additionalOptionsTextBox.Text.ToString();
 
-                this.userStorageSettingsService.SaveAdditionalOptionsAsync(additionalOptions);
+                this.userStorageSettingsService.SaveAdditionalOptionsAsync(additionalOptions).FireAndForget();
 
                 this.CheckOptionConflicts();
             }
@@ -60,13 +61,13 @@
         {
             if (this.serviceProvider.SolutionService.IsSolutionOpen())
             {
-                this.userStorageSettingsService.SaveIsAllProjectsScanEnabledAsync(this.allProjectsCheckBox.Checked);
+                this.userStorageSettingsService.SaveIsAllProjectsScanEnabledAsync(this.allProjectsCheckBox.Checked).FireAndForget(); ;
 
                 this.CheckOptionConflicts();
             }
         }
 
-        private void SnykProjectOptionsUserControl_Load(object sender, EventArgs eventArgs)
+        private async void SnykProjectOptionsUserControl_Load(object sender, EventArgs eventArgs)
         {
             this.OnVisibleChanged(eventArgs);
 
@@ -80,45 +81,42 @@
                 return;
             }
 
-            Task.Run(async () => // TDOO: Don't sure how to call async/await.
+            try
             {
-                try
-                {
-                    string additionalOptions = await this.userStorageSettingsService.GetAdditionalOptionsAsync();
+                string additionalOptions = await this.userStorageSettingsService.GetAdditionalOptionsAsync();
 
-                    if (!string.IsNullOrEmpty(additionalOptions))
-                    {
-                        this.additionalOptionsTextBox.Text = additionalOptions;
-                    }
-                    else
-                    {
-                        this.additionalOptionsTextBox.Text = string.Empty;
-                    }
+                if (!string.IsNullOrEmpty(additionalOptions))
+                {
+                    this.additionalOptionsTextBox.Text = additionalOptions;
                 }
-                catch (Exception e)
+                else
                 {
-                    Logger.Error(e, "Error on load additional options");
-
                     this.additionalOptionsTextBox.Text = string.Empty;
                 }
+            }
+            catch (Exception e)
+            {
+                Logger.Error(e, "Error on load additional options");
 
-                try
-                {
-                    bool isChecked = await this.userStorageSettingsService.GetIsAllProjectsEnabledAsync();
+                this.additionalOptionsTextBox.Text = string.Empty;
+            }
 
-                    this.allProjectsCheckBox.Checked = isChecked;
-                }
-                catch (Exception e)
-                {
-                    Logger.Error(e, "Error on load is all projects enabled");
+            try
+            {
+                bool isChecked = await this.userStorageSettingsService.GetIsAllProjectsEnabledAsync();
 
-                    this.allProjectsCheckBox.Checked = false;
+                this.allProjectsCheckBox.Checked = isChecked;
+            }
+            catch (Exception e)
+            {
+                Logger.Error(e, "Error on load is all projects enabled");
 
-                    await this.userStorageSettingsService.SaveIsAllProjectsScanEnabledAsync(false);
-                }
+                this.allProjectsCheckBox.Checked = false;
 
-                this.CheckOptionConflicts();
-            });
+                await this.userStorageSettingsService.SaveIsAllProjectsScanEnabledAsync(false);
+            }
+
+            this.CheckOptionConflicts();
         }
     }
 }

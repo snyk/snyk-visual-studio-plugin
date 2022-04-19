@@ -30,8 +30,8 @@
             var fakeCliResult = new CliResult();
 
             cliMock
-                .Setup(cli => cli.ScanAsync(It.IsAny<string>()).Result)
-                .Returns(fakeCliResult);
+                .Setup(cli => cli.ScanAsync(It.IsAny<string>()))
+                .ReturnsAsync(fakeCliResult);
 
             var ossService = new OssService(serviceProviderMock.Object);
 
@@ -60,8 +60,8 @@
             var fakeCliResult = new CliResult();
 
             cliMock
-                .Setup(cli => cli.ScanAsync(It.IsAny<string>()).Result)
-                .Returns(fakeCliResult);
+                .Setup(cli => cli.ScanAsync(It.IsAny<string>()))
+                .ReturnsAsync(fakeCliResult);
 
             var ossService = new OssService(serviceProviderMock.Object);
 
@@ -97,8 +97,8 @@
             var fakeCliResult = new CliResult();
 
             cliMock
-                .Setup(cli => cli.ScanAsync(It.IsAny<string>()).Result)
-                .Returns(fakeCliResult);
+                .Setup(cli => cli.ScanAsync(It.IsAny<string>()))
+                .ReturnsAsync(fakeCliResult);
 
             var ossService = new OssService(serviceProviderMock.Object);
 

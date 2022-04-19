@@ -24,8 +24,8 @@
                 .Returns(solutionServiceMock.Object);
 
             solutionServiceMock
-                .Setup(solutionService => solutionService.GetPathAsync().Result)
-                .Returns("C:\\Projects\\TestProj");
+                .Setup(solutionService => solutionService.GetSolutionFolderAsync())
+                .ReturnsAsync("C:\\Projects\\TestProj");
 
             string settingsFilePath = Path.GetTempFileName();
 
