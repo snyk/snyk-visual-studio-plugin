@@ -1,9 +1,14 @@
 # Snyk Changelog
 
-## [1.1.9]
+## [1.1.10]
 
 ### Changed
 - Snyk Code: add support for Single Tenant setups.
+
+### Fixed
+- Scan of solutions in which *.sln file is not in the root directory.
+
+## [1.1.9]
 
 ### Fixed
 - "Object reference not set to an instance of an object" when launching extension in Visual Studio 2022.

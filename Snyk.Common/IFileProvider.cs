@@ -18,7 +18,7 @@
         /// Get solution path.
         /// </summary>
         /// <returns>Path to solution.</returns>
-        string GetSolutionPath();
+        Task<string> GetSolutionPathAsync();
 
         /// <summary>
         /// Save changed file path.

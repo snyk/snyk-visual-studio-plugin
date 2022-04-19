@@ -1,5 +1,7 @@
 ﻿namespace Snyk.VisualStudio.Extension.Shared.CLI
 {
+    using System.Threading.Tasks;
+
     /// <summary>
     /// Describe Snyk CLI interface common methods.
     /// </summary>
@@ -15,7 +17,7 @@
         /// </summary>
         /// <param name="basePath">Path for run scan.</param>
         /// <returns><see cref="CliResult"/> object.</returns>
-        CliResult Scan(string basePath);
+        Task<CliResult> ScanAsync(string basePath);
 
         /// <summary>
         /// Get Snyk API token from settings.

@@ -2,9 +2,11 @@
 {
     using System;
     using System.Windows.Forms;
+    using Microsoft.VisualStudio.Shell;
     using Serilog;
     using Snyk.Common;
     using Snyk.VisualStudio.Extension.Shared.Service;
+    using Task = System.Threading.Tasks.Task;
 
     /// <summary>
     /// Solution settings control.
@@ -49,7 +51,7 @@
             {
                 string additionalOptions = this.additionalOptionsTextBox.Text.ToString();
 
-                this.userStorageSettingsService.SaveAdditionalOptions(additionalOptions);
+                this.userStorageSettingsService.SaveAdditionalOptionsAsync(additionalOptions).FireAndForget();
 
                 this.CheckOptionConflicts();
             }
@@ -59,13 +61,13 @@
         {
             if (this.serviceProvider.SolutionService.IsSolutionOpen())
             {
-                this.userStorageSettingsService.SaveIsAllProjectsScanEnabled(this.allProjectsCheckBox.Checked);
+                this.userStorageSettingsService.SaveIsAllProjectsScanEnabledAsync(this.allProjectsCheckBox.Checked).FireAndForget(); ;
 
                 this.CheckOptionConflicts();
             }
         }
 
-        private void SnykProjectOptionsUserControl_Load(object sender, EventArgs eventArgs)
+        private async void SnykProjectOptionsUserControl_Load(object sender, EventArgs eventArgs)
         {
             this.OnVisibleChanged(eventArgs);
 
@@ -81,7 +83,7 @@
 
             try
             {
-                string additionalOptions = this.userStorageSettingsService.GetAdditionalOptions();
+                string additionalOptions = await this.userStorageSettingsService.GetAdditionalOptionsAsync();
 
                 if (!string.IsNullOrEmpty(additionalOptions))
                 {
@@ -92,26 +94,26 @@
                     this.additionalOptionsTextBox.Text = string.Empty;
                 }
             }
-            catch (Exception exception)
+            catch (Exception e)
             {
-                Logger.Error(exception.Message);
+                Logger.Error(e, "Error on load additional options");
 
                 this.additionalOptionsTextBox.Text = string.Empty;
             }
 
             try
             {
-                bool isChecked = this.userStorageSettingsService.GetIsAllProjectsEnabled();
+                bool isChecked = await this.userStorageSettingsService.GetIsAllProjectsEnabledAsync();
 
                 this.allProjectsCheckBox.Checked = isChecked;
             }
-            catch (Exception exception)
+            catch (Exception e)
             {
-                Logger.Error(exception.Message);
+                Logger.Error(e, "Error on load is all projects enabled");
 
                 this.allProjectsCheckBox.Checked = false;
 
-                this.userStorageSettingsService.SaveIsAllProjectsScanEnabled(false);
+                await this.userStorageSettingsService.SaveIsAllProjectsScanEnabledAsync(false);
             }
 
             this.CheckOptionConflicts();

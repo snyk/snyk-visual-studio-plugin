@@ -1,6 +1,7 @@
 ﻿namespace Snyk.VisualStudio.Extension.Shared.Settings
 {
     using System;
+    using System.Threading.Tasks;
     using Serilog;
     using Snyk.Common;
     using Snyk.VisualStudio.Extension.Shared.Service;
@@ -32,11 +33,11 @@
         /// Get CLI additional options string.
         /// </summary>
         /// <returns>string.</returns>
-        public string GetAdditionalOptions()
+        public async Task<string> GetAdditionalOptionsAsync()
         {
             Logger.Information("Enter GetAdditionalOptions method");
 
-            int solutionPathHash = this.GetSolutionPathHash();
+            int solutionPathHash = await this.GetSolutionPathHashAsync();
 
             var settings = this.settingsLoader.Load();
 
@@ -52,11 +53,11 @@
         /// Get is all projects enabled.
         /// </summary>
         /// <returns>Bool.</returns>
-        public bool GetIsAllProjectsEnabled()
+        public async Task<bool> GetIsAllProjectsEnabledAsync()
         {
             Logger.Information("Enter GetIsAllProjectsEnabled method");
 
-            int solutionPathHash = this.GetSolutionPathHash();
+            int solutionPathHash = await this.GetSolutionPathHashAsync();
 
             var settings = this.settingsLoader.Load();
 
@@ -227,11 +228,12 @@
         /// Save additional options string.
         /// </summary>
         /// <param name="additionalOptions">CLI options string.</param>
-        public void SaveAdditionalOptions(string additionalOptions)
+        /// <returns>A <see cref="Task"/> representing the asynchronous operation.</returns>
+        public async Task SaveAdditionalOptionsAsync(string additionalOptions)
         {
             Logger.Information("Enter SaveAdditionalOptions method");
 
-            int solutionPathHash = this.GetSolutionPathHash();
+            int solutionPathHash = await this.GetSolutionPathHashAsync();
 
             var settings = this.settingsLoader.Load();
 
@@ -264,11 +266,12 @@
         /// Sace is all projects scan enabled.
         /// </summary>
         /// <param name="isAllProjectsEnabled">Bool param.</param>
-        public void SaveIsAllProjectsScanEnabled(bool isAllProjectsEnabled)
+        /// <returns>A <see cref="Task"/> representing the asynchronous operation.</returns>
+        public async Task SaveIsAllProjectsScanEnabledAsync(bool isAllProjectsEnabled)
         {
             Logger.Information("Enter SaveIsAllProjectsScan method");
 
-            int solutionPathHash = this.GetSolutionPathHash();
+            int solutionPathHash = await this.GetSolutionPathHashAsync();
 
             var settings = this.settingsLoader.Load();
 
@@ -309,6 +312,6 @@
             return settings;
         }
 
-        private int GetSolutionPathHash() => this.solutionService.GetPath().ToLower().GetHashCode();
+        private async Task<int> GetSolutionPathHashAsync() => (await this.solutionService.GetSolutionFolderAsync()).ToLower().GetHashCode();
     }
 }

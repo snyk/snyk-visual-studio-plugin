@@ -93,8 +93,8 @@
             };
 
             this.codeCacheServiceMock
-                .Setup(codeCacheService => codeCacheService.GetFilePathToHashDictionary(It.IsAny<List<string>>()))
-                .Returns(extendFilePathToHashDict);
+                .Setup(codeCacheService => codeCacheService.GetFilePathToHashDictionaryAsync(It.IsAny<List<string>>()))
+                .ReturnsAsync(extendFilePathToHashDict);
 
             var analysisResults = new AnalysisResult
             {
@@ -124,8 +124,8 @@
                 .Setup(codeCacheService => codeCacheService.SetCachedBundleId(bundleId));
 
             this.filtersServiceMock
-                .Setup(filtersService => filtersService.FilterFilesAsync(changedFiles, It.IsAny<CancellationToken>()).Result)
-                .Returns(changedFiles);
+                .Setup(filtersService => filtersService.FilterFilesAsync(changedFiles, It.IsAny<CancellationToken>()))
+                .ReturnsAsync(changedFiles);
 
             this.dcIgnoreServiceMock
                 .Setup(dcIgnoreService => dcIgnoreService.FilterFiles(It.IsAny<string>(), changedFiles, It.IsAny<CancellationToken>()))
@@ -139,8 +139,8 @@
                     It.IsAny<IDictionary<string, string>>(),
                     It.IsAny<IEnumerable<string>>(),
                     It.IsAny<int>(),
-                    It.IsAny<CancellationToken>()).Result)
-                .Returns(extendedBundle);
+                    It.IsAny<CancellationToken>()))
+                .ReturnsAsync(extendedBundle);
 
             this.bundleServiceMock
                 .Setup(bundleService => bundleService.UploadMissingFilesAsync(
@@ -154,8 +154,8 @@
                     extendedBundle.Id,
                     It.IsAny<FireScanCodeProgressUpdate>(),
                     It.IsAny<int>(),
-                    It.IsAny<CancellationToken>()).Result)
-                .Returns(analysisResults);
+                    It.IsAny<CancellationToken>()))
+                .ReturnsAsync(analysisResults);
 
             var analysisResult = await this.snykCodeService.ScanAsync(this.fileProviderMock.Object);
 
@@ -198,8 +198,8 @@
             var solutionServiceMock = new Mock<ISolutionService>();
 
             solutionServiceMock
-                .Setup(solutionService => solutionService.GetPath())
-                .Returns(TestResource.GetResourcesPath());
+                .Setup(solutionService => solutionService.GetSolutionFolderAsync())
+                .ReturnsAsync(TestResource.GetResourcesPath());
 
             var fileProvider = new SnykCodeFileProvider(solutionServiceMock.Object);
 
@@ -256,29 +256,29 @@
             };
 
             this.fileProviderMock
-                .Setup(fileProvider => fileProvider.GetFilesAsync().Result)
-                .Returns(filePaths);
+                .Setup(fileProvider => fileProvider.GetFilesAsync())
+                .ReturnsAsync(filePaths);
 
             this.filtersServiceMock
-                .Setup(filtersService => filtersService.FilterFilesAsync(It.IsAny<IEnumerable<string>>(), It.IsAny<CancellationToken>()).Result)
-                .Returns(filePaths);
+                .Setup(filtersService => filtersService.FilterFilesAsync(It.IsAny<IEnumerable<string>>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync(filePaths);
 
             this.bundleServiceMock
-                .Setup(bundleService => bundleService.CreateBundleAsync(It.IsAny<Dictionary<string, string>>(), It.IsAny<int>(), It.IsAny<CancellationToken>()).Result)
-                .Returns(bundle);
+                .Setup(bundleService => bundleService.CreateBundleAsync(It.IsAny<Dictionary<string, string>>(), It.IsAny<int>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync(bundle);
 
             this.bundleServiceMock
-                .Setup(bundleService => bundleService.UploadFilesAsync(bundleId, It.IsAny<Dictionary<string, (string, string)>>(), It.IsAny<FireScanCodeProgressUpdate>(), It.IsAny<int>(), It.IsAny<CancellationToken>()).Result)
-                .Returns(true);
+                .Setup(bundleService => bundleService.UploadFilesAsync(bundleId, It.IsAny<Dictionary<string, (string, string)>>(), It.IsAny<FireScanCodeProgressUpdate>(), It.IsAny<int>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync(true);
 
             this.bundleServiceMock
-                .Setup(bundleService => bundleService.CheckBundleAsync(bundleId, It.IsAny<CancellationToken>()).Result)
+                .Setup(bundleService => bundleService.CheckBundleAsync(bundleId, It.IsAny<CancellationToken>()))
                 .Callback<string, CancellationToken>((id, cancellationToken) => bundle.MissingFiles = new string[] { })
-                .Returns(bundle);
+                .ReturnsAsync(bundle);
 
             this.analysisServiceMock
-                .Setup(analysisService => analysisService.GetAnalysisAsync(bundleId, It.IsAny<FireScanCodeProgressUpdate>(), It.IsAny<int>(), It.IsAny<CancellationToken>()).Result)
-                .Returns(analysisResults);
+                .Setup(analysisService => analysisService.GetAnalysisAsync(bundleId, It.IsAny<FireScanCodeProgressUpdate>(), It.IsAny<int>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync(analysisResults);
 
             this.codeCacheServiceMock
                 .Setup(analysisService => analysisService.GetCachedAnalysisResult())
