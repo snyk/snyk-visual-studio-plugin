@@ -5,6 +5,7 @@
     using System.IO;
     using System.Runtime.Caching;
     using System.Text;
+    using System.Threading.Tasks;
     using Serilog;
     using Snyk.Code.Library.Domain.Analysis;
     using Snyk.Common;
@@ -96,7 +97,7 @@
         }
 
         /// <inheritdoc/>
-        public IDictionary<string, string> GetFilePathToHashDictionary(IEnumerable<string> files)
+        public async Task<IDictionary<string, string>> GetFilePathToHashDictionaryAsync(IEnumerable<string> files)
         {
             var filePathToHashDict = new Dictionary<string, string>();
 
@@ -104,11 +105,11 @@
             {
                 if (File.Exists(file))
                 {
-                    string filePath = this.GetRelativeFilePathIfFullPath(file);
+                    string filePath = await this.GetRelativeFilePathIfFullPathAsync(file);
 
                     if (this.filePathToHashCache[filePath] == null)
                     {
-                        this.AddFile(file);
+                        await this.AddFileAsync(file); // TODO: improve performance, parallelise this work (ROAD-871)
                     }
 
                     filePathToHashDict.Add(filePath, this.filePathToHashCache[filePath].ToString());
@@ -141,7 +142,7 @@
         {
             foreach (string filePath in files)
             {
-                this.AddFile(filePath);
+                this.AddFileAsync(filePath);
             }
         }
 
@@ -161,18 +162,20 @@
 
             foreach (string file in fileProvider.GetRemovedFiles())
             {
-                this.RemoveFile(file);
+                this.RemoveFileAsync(file);
             }
         }
 
         /// <inheritdoc/>
-        public IEnumerable<string> GetRelativeFilePaths(IEnumerable<string> files)
+        public async Task<IEnumerable<string>> GetRelativeFilePathsAsync(IEnumerable<string> files)
         {
             IList<string> relateFilePaths = new List<string>();
 
             foreach (string fileFullPath in files)
             {
-                relateFilePaths.Add(FileUtil.GetRelativeFilePath(this.fileProvider.GetSolutionPath(), fileFullPath));
+                var solutionPath = await this.fileProvider.GetSolutionPathAsync();
+
+                relateFilePaths.Add(FileUtil.GetRelativeFilePath(solutionPath, fileFullPath));
             }
 
             return relateFilePaths;
@@ -182,7 +185,7 @@
         /// Add (or update if it already exists) file hash and content to cache.
         /// </summary>
         /// <param name="filePath">Source file path.</param>
-        private void AddFile(string filePath)
+        private async Task<string> AddFileAsync(string filePath)
         {
             try
             {
@@ -190,35 +193,43 @@
 
                 if (string.IsNullOrEmpty(fileContent))
                 {
-                    return;
+                    return string.Empty;
                 }
 
                 string fileHash = Sha256.ComputeHash(fileContent);
 
-                string relativeFilePath = FileUtil.GetRelativeFilePath(this.fileProvider.GetSolutionPath(), filePath);
+                var solutionPath = await this.fileProvider.GetSolutionPathAsync();
+
+                string relativeFilePath = FileUtil.GetRelativeFilePath(solutionPath, filePath);
 
                 this.AddToFilePathToHashCache(relativeFilePath, fileHash);
 
                 this.AddToFilePathToContentCache(relativeFilePath, fileContent);
 
                 this.Invalidate();
+
+                return fileHash;
             }
-            catch (Exception ex)
+            catch (Exception e)
             {
-                Logger.Error(ex.Message, "Failed to update cache.");
+                Logger.Error(e, "Failed to update cache.");
             }
+
+            return string.Empty;
         }
 
         private void UpdateFile(string file)
         {
-            this.AddFile(file);
+            this.AddFileAsync(file);
 
             this.Invalidate();
         }
 
-        private void RemoveFile(string file)
+        private async Task RemoveFileAsync(string file)
         {
-            string relativeFilePath = FileUtil.GetRelativeFilePath(this.fileProvider.GetSolutionPath(), file);
+            var solutionPath = await this.fileProvider.GetSolutionPathAsync();
+
+            string relativeFilePath = FileUtil.GetRelativeFilePath(solutionPath, file);
 
             this.filePathToHashCache.Remove(relativeFilePath);
             this.filePathToContentCache.Remove(relativeFilePath);
@@ -228,9 +239,13 @@
 
         private void Invalidate() => this.isCacheValid = false;
 
-        private string GetRelativeFilePathIfFullPath(string filePath)
-            => string.IsNullOrEmpty(filePath) || !filePath.StartsWith(this.fileProvider.GetSolutionPath())
-                ? filePath : FileUtil.GetRelativeFilePath(this.fileProvider.GetSolutionPath(), filePath);
+        private async Task<string> GetRelativeFilePathIfFullPathAsync(string filePath)
+        {
+            var solutionPath = await this.fileProvider.GetSolutionPathAsync();
+
+            return string.IsNullOrEmpty(filePath) || !filePath.StartsWith(solutionPath)
+                ? filePath : FileUtil.GetRelativeFilePath(solutionPath, filePath);
+        }
 
         private void AddToFilePathToHashCache(string filePath, string fileHash) =>
             this.filePathToHashCache.Set(filePath, fileHash, this.New24HoursExpirationTimeCacheItemPolicy());

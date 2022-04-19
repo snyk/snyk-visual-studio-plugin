@@ -4,14 +4,17 @@
     using System.Collections.Generic;
     using System.IO;
     using System.Linq;
+    using System.Threading.Tasks;
     using System.Windows;
     using System.Windows.Controls;
     using Microsoft.VisualStudio.PlatformUI;
+    using Microsoft.VisualStudio.Shell;
     using Serilog;
     using Snyk.Code.Library.Domain.Analysis;
     using Snyk.Common;
     using Snyk.VisualStudio.Extension.Shared.CLI;
     using Snyk.VisualStudio.Extension.Shared.Service;
+    using Task = System.Threading.Tasks.Task;
 
     /// <summary>
     /// Interaction logic for DataFlowStepsControl.xaml.
@@ -68,7 +71,8 @@
         /// Add markers to panel.
         /// </summary>
         /// <param name="markers">Markers from suggestion.</param>
-        internal void Display(IList<Marker> markers)
+        /// <returns>A <see cref="Task"/> representing the asynchronous operation.</returns>
+        internal async Task DisplayAsync(IList<Marker> markers)
         {
             this.Clear();
 
@@ -99,16 +103,9 @@
                     {
                         FileName = filePosition,
                         RowNumber = index.ToString(),
-                        LineContent = this.GetLineContent(position.FileName, startLineNumber),
-                        NavigateCommand = new DelegateCommand(new Action<object>(delegate (object o)
-                        {
-                            VsCodeService.Instance.OpenAndNavigate(
-                                this.solutionService.GetFileFullPath(position.FileName),
-                                startLine,
-                                startColumn,
-                                endLine,
-                                endColumn);
-                        })),
+                        LineContent = await this.GetLineContentAsync(position.FileName, startLineNumber),
+                        NavigateCommand = new DelegateCommand((obj) =>
+                            this.NavigateToCodeAsync(position.FileName, startLine, startColumn, endLine, endColumn).FireAndForget()),
                     };
 
                     index++;
@@ -120,9 +117,26 @@
             this.AddDataFlowSteps(dataFlowSteps.ToList());
         }
 
-        private string GetLineContent(string file, long lineNumber)
+        private async Task NavigateToCodeAsync(string fileName, int startLine, int startColumn, int endLine, int endColumn)
         {
-            string filePath = this.solutionService.GetFileFullPath(file);
+            try
+            {
+                VsCodeService.Instance.OpenAndNavigate(
+                    await this.solutionService.GetFileFullPathAsync(fileName),
+                    startLine,
+                    startColumn,
+                    endLine,
+                    endColumn);
+            }
+            catch (Exception e)
+            {
+                Logger.Error(e, "Error on open and nagigate to source code");
+            }
+        }
+
+        private async Task<string> GetLineContentAsync(string file, long lineNumber)
+        {
+            string filePath = await this.solutionService.GetFileFullPathAsync(file);
 
             string line = string.Empty;
 
@@ -145,7 +159,7 @@
             }
             catch (Exception e)
             {
-                Logger.Error(e.Message);
+                Logger.Error(e, "Error on get editor line content");
             }
 
             return line;

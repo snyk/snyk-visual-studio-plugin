@@ -41,12 +41,12 @@
             var solutionServiceMock = new Mock<ISolutionService>();
 
             solutionServiceMock
-                .Setup(solutionService => solutionService.GetPath())
-                .Returns(this.projectPath);
+                .Setup(solutionService => solutionService.GetSolutionFolderAsync())
+                .ReturnsAsync(this.projectPath);
 
             solutionServiceMock
-                .Setup(solutionService => solutionService.GetFilesAsync().Result)
-                .Returns(new List<string>());
+                .Setup(solutionService => solutionService.GetFilesAsync())
+                .ReturnsAsync(new List<string>());
 
             var fileProvider = new SnykCodeFileProvider(solutionServiceMock.Object);
             var codeCacheService = new CodeCacheService(fileProvider);
@@ -68,8 +68,8 @@
             var solutionServiceMock = new Mock<ISolutionService>();
 
             solutionServiceMock
-                .Setup(solutionService => solutionService.GetPath())
-                .Returns(this.projectPath);
+                .Setup(solutionService => solutionService.GetSolutionFolderAsync())
+                .ReturnsAsync(this.projectPath);
 
             var fileProvider = new SnykCodeFileProvider(solutionServiceMock.Object);
 
@@ -86,12 +86,12 @@
             var solutionServiceMock = new Mock<ISolutionService>();
 
             solutionServiceMock
-                .Setup(solutionService => solutionService.GetPath())
-                .Returns(this.projectPath);
+                .Setup(solutionService => solutionService.GetSolutionFolderAsync())
+                .ReturnsAsync(this.projectPath);
 
             solutionServiceMock
-                .Setup(solutionService => solutionService.GetFilesAsync().Result)
-                .Returns(new List<string>());
+                .Setup(solutionService => solutionService.GetFilesAsync())
+                .ReturnsAsync(new List<string>());
 
             var fileProvider = new SnykCodeFileProvider(solutionServiceMock.Object);
             var codeCacheService = new CodeCacheService(fileProvider);
@@ -114,12 +114,12 @@
             var filtersServiceMock = new Mock<IFiltersService>();
 
             solutionServiceMock
-                .Setup(solutionService => solutionService.GetPath())
-                .Returns(this.projectPath);
+                .Setup(solutionService => solutionService.GetSolutionFolderAsync())
+                .ReturnsAsync(this.projectPath);
 
             solutionServiceMock
-                .Setup(solutionService => solutionService.GetFilesAsync().Result)
-                .Returns(new List<string>());
+                .Setup(solutionService => solutionService.GetFilesAsync())
+                .ReturnsAsync(new List<string>());
 
             var fileProvider = new SnykCodeFileProvider(solutionServiceMock.Object);
             var codeCacheService = new CodeCacheService(fileProvider);
@@ -149,12 +149,12 @@
             var filtersServiceMock = new Mock<IFiltersService>();
 
             solutionServiceMock
-                .Setup(solutionService => solutionService.GetPath())
-                .Returns(this.projectPath);
+                .Setup(solutionService => solutionService.GetSolutionFolderAsync())
+                .ReturnsAsync(this.projectPath);
 
             solutionServiceMock
-                .Setup(solutionService => solutionService.GetFilesAsync().Result)
-                .Returns(new List<string>());
+                .Setup(solutionService => solutionService.GetFilesAsync())
+                .ReturnsAsync(new List<string>());
 
             var fileProvider = new SnykCodeFileProvider(solutionServiceMock.Object);
             var codeCacheService = new CodeCacheService(fileProvider);

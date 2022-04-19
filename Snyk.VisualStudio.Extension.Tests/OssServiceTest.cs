@@ -30,20 +30,20 @@
             var fakeCliResult = new CliResult();
 
             cliMock
-                .Setup(cli => cli.Scan(It.IsAny<string>()))
-                .Returns(fakeCliResult);
+                .Setup(cli => cli.ScanAsync(It.IsAny<string>()))
+                .ReturnsAsync(fakeCliResult);
 
             var ossService = new OssService(serviceProviderMock.Object);
 
             var tokenSource = new CancellationTokenSource();
 
-            var cliResult = ossService.Scan(string.Empty, tokenSource.Token);
+            var cliResult = ossService.ScanAsync(string.Empty, tokenSource.Token);
 
             Assert.NotNull(cliResult);
         }
 
         [Fact]
-        public void OssServiceTest_CachedValuesExists_ReturnCachedResult()
+        public async System.Threading.Tasks.Task OssServiceTest_CachedValuesExists_ReturnCachedResultAsync()
         {
             var serviceProviderMock = new Mock<ISnykServiceProvider>();
             var cliMock = new Mock<ICli>();
@@ -60,23 +60,23 @@
             var fakeCliResult = new CliResult();
 
             cliMock
-                .Setup(cli => cli.Scan(It.IsAny<string>()))
-                .Returns(fakeCliResult);
+                .Setup(cli => cli.ScanAsync(It.IsAny<string>()))
+                .ReturnsAsync(fakeCliResult);
 
             var ossService = new OssService(serviceProviderMock.Object);
 
             var tokenSource = new CancellationTokenSource();
 
             // Run scan first time will setup cache value.
-            ossService.Scan(string.Empty, tokenSource.Token);
+            await ossService.ScanAsync(string.Empty, tokenSource.Token);
 
             // Get cached value.
-            var cliResult = ossService.Scan(string.Empty, tokenSource.Token);
+            var cliResult = ossService.ScanAsync(string.Empty, tokenSource.Token);
 
             Assert.NotNull(cliResult);
 
             cliMock
-                .Verify(cli => cli.Scan(It.IsAny<string>()), Times.Exactly(1));
+                .Verify(cli => cli.ScanAsync(It.IsAny<string>()), Times.Exactly(1));
         }
 
         [Fact]
@@ -97,23 +97,23 @@
             var fakeCliResult = new CliResult();
 
             cliMock
-                .Setup(cli => cli.Scan(It.IsAny<string>()))
-                .Returns(fakeCliResult);
+                .Setup(cli => cli.ScanAsync(It.IsAny<string>()))
+                .ReturnsAsync(fakeCliResult);
 
             var ossService = new OssService(serviceProviderMock.Object);
 
             var tokenSource = new CancellationTokenSource();
 
-            ossService.Scan(string.Empty, tokenSource.Token);
+            ossService.ScanAsync(string.Empty, tokenSource.Token);
 
             ossService.ClearCache();
 
-            var cliResult = ossService.Scan(string.Empty, tokenSource.Token);
+            var cliResult = ossService.ScanAsync(string.Empty, tokenSource.Token);
 
             Assert.NotNull(cliResult);
 
             cliMock
-                .Verify(cli => cli.Scan(It.IsAny<string>()), Times.Exactly(2));
+                .Verify(cli => cli.ScanAsync(It.IsAny<string>()), Times.Exactly(2));
         }
     }
 }

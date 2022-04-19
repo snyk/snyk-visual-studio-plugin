@@ -34,11 +34,11 @@
         public async Task<IEnumerable<string>> GetFilesAsync() => await this.solutionService.GetFilesAsync();
 
         /// <inheritdoc/>
-        public string GetSolutionPath()
+        public async Task<string> GetSolutionPathAsync()
         {
             if (string.IsNullOrEmpty(this.solutionPath))
             {
-                this.solutionPath = this.solutionService.GetPath();
+                this.solutionPath = await this.solutionService.GetSolutionFolderAsync();
             }
 
             return this.solutionPath;

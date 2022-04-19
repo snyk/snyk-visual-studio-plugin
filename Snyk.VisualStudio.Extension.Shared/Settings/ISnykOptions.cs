@@ -1,6 +1,7 @@
 ﻿namespace Snyk.VisualStudio.Extension.Shared.Settings
 {
     using System;
+    using System.Threading.Tasks;
 
     /// <summary>
     /// Interface for Snyk Options/Settings in Visual Studio.
@@ -38,16 +39,6 @@
         bool IgnoreUnknownCA { get; set; }
 
         /// <summary>
-        /// Gets a value indicating whether CLI additional parameters for current solution/project.
-        /// </summary>
-        string AdditionalOptions { get; }
-
-        /// <summary>
-        /// Gets a value indicating whether is CLI --all-projects parameter added by default. By default it's enabled.
-        /// </summary>
-        bool IsScanAllProjects { get; }
-
-        /// <summary>
         /// Gets a value indicating whether is Oss scan enabled.
         /// </summary>
         bool OssEnabled { get; }
@@ -71,6 +62,20 @@
         /// Gets or sets a value indicating whether Analytics enabled or disabled. By default it's enabled.
         /// </summary>
         bool UsageAnalyticsEnabled { get; set; }
+
+        /// <summary>
+        /// Gets a value indicating whether additional options.
+        /// Get this data using <see cref="SnykUserStorageSettingsService"/>.
+        /// </summary>
+        /// <returns><see cref="Task"/> representing the asynchronous operation.</returns>
+        Task<string> GetAdditionalOptionsAsync();
+
+        /// <summary>
+        /// Gets a value indicating whether is scan all projects enabled via <see cref="SnykUserStorageSettingsService"/>.
+        /// Get this data using <see cref="SnykUserStorageSettingsService"/>.
+        /// </summary>
+        /// <returns><see cref="Task"/> representing the asynchronous operation.</returns>
+        Task<bool> IsScanAllProjectsAsync();
 
         /// <summary>
         /// Call CLI auth for user authentication at Snyk and get user api token.
