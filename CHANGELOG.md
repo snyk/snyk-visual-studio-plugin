@@ -13,7 +13,6 @@
 
 ### Fixed
 - "Object reference not set to an instance of an object" when launching extension in Visual Studio 2022.
-- Fixed CLI download blocking the UI longer than necessary
 
 ## [1.1.8]
 
