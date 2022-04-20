@@ -5,6 +5,9 @@
 ### Fixed
 - Fixed CLI download blocking the UI longer than necessary
 
+### Changed
+- Improved message text when Snyk Code is disabled.
+
 ## [1.1.10]
 
 ### Changed
