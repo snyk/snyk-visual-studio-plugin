@@ -1,5 +1,10 @@
 # Snyk Changelog
 
+## [1.1.11]
+
+### Fixed
+- Fixed CLI download blocking the UI longer than necessary
+
 ## [1.1.10]
 
 ### Changed
@@ -7,7 +12,6 @@
 
 ### Fixed
 - Scan of solutions in which *.sln file is not in the root directory.
-- Fixed CLI download blocking the UI longer than necessary
 
 ## [1.1.9]
 
