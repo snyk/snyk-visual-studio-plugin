@@ -22,6 +22,7 @@
     using Snyk.VisualStudio.Extension.Shared.Theme;
     using Snyk.VisualStudio.Extension.Shared.UI.Notifications;
     using Snyk.VisualStudio.Extension.Shared.UI.Tree;
+    using Task = System.Threading.Tasks.Task;
 
     /// <summary>
     /// Interaction logic for SnykToolWindowControl.
@@ -101,7 +102,7 @@
 
             tasksService.DownloadStarted += this.OnDownloadStarted;
             tasksService.DownloadFinished += this.OnDownloadFinished;
-            tasksService.DownloadUpdate += this.OnDownloadUpdate;
+            tasksService.DownloadUpdate += (sender, args) => ThreadHelper.JoinableTaskFactory.RunAsync(() => this.OnDownloadUpdateAsync(sender, args));
             tasksService.DownloadCancelled += this.OnDownloadCancelled;
 
             this.Loaded += tasksService.OnUiLoaded;
@@ -302,7 +303,8 @@
         /// </summary>
         /// <param name="sender">Source object.</param>
         /// <param name="eventArgs">Event args.</param>
-        public void OnDownloadUpdate(object sender, SnykCliDownloadEventArgs eventArgs) => this.UpdateDownloadProgress(eventArgs.Progress);
+        /// <returns>A <see cref="Task"/> representing the asynchronous operation.</returns>
+        public async Task OnDownloadUpdateAsync(object sender, SnykCliDownloadEventArgs eventArgs) => await this.UpdateDownloadProgress(eventArgs.Progress);
 
         /// <summary>
         /// DownloadCancelled event handler. Call SetInitialState() method.
@@ -525,7 +527,7 @@
         /// Update progress bar.
         /// </summary>
         /// <param name="value">Progress bar value.</param>
-        private void UpdateDownloadProgress(int value) => ThreadHelper.JoinableTaskFactory.Run(async () =>
+        private async Task UpdateDownloadProgress(int value)
         {
             await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
 
@@ -535,7 +537,7 @@
 
             this.messagePanel.Visibility = Visibility.Visible;
             this.descriptionPanel.Visibility = Visibility.Collapsed;
-        });
+        }
 
         private void VulnerabilitiesTree_SelectetVulnerabilityChanged(object sender, RoutedEventArgs args)
         {

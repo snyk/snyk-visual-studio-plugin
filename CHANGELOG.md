@@ -2,6 +2,9 @@
 
 ## [1.1.11]
 
+### Fixed
+- Fixed CLI download blocking the UI longer than necessary
+
 ### Changed
 - Improved message text when Snyk Code is disabled.
 
