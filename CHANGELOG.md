@@ -7,6 +7,7 @@
 
 ### Changed
 - Improved message text when Snyk Code is disabled.
+- Added Snyk to the "Extensions" menu in VS2019+, and to the top menu bar in older versions
 
 ## [1.1.10]
 
