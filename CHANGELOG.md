@@ -1,5 +1,10 @@
 # Snyk Changelog
 
+## [1.1.11]
+
+### Changed
+- Improved message text when Snyk Code is disabled.
+
 ## [1.1.10]
 
 ### Changed
