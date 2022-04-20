@@ -37,7 +37,7 @@
                         title = this.GetDefaultTitle();
                         break;
                     case RootTreeNodeState.DisabledForOrganization:
-                        title = this.GetTitlePrefix() + " (disabled, enable in Settings)";
+                        title = this.GetTitlePrefix() + " (disabled in Snyk.io)";
                         break;
                     case RootTreeNodeState.Scanning:
                         title = this.GetTitlePrefix() + " (scanning...)";
@@ -49,7 +49,7 @@
                         title = this.GetTitlePrefix() + " (error)";
                         break;
                     case RootTreeNodeState.LocalCodeEngineIsEnabled:
-                        title = this.GetTitlePrefix() + " (disabled due to local code engine)";
+                        title = this.GetTitlePrefix() + " (disabled due to Local Code Engine)";
                         break;
                     case RootTreeNodeState.NoFilesForSnykCodeScan:
                         title = this.GetTitlePrefix() + " (no supported code available)";
