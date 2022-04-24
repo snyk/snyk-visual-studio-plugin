@@ -1,10 +1,10 @@
-﻿using System.Linq;
-
-namespace Snyk.Code.Library.Service
+﻿namespace Snyk.Code.Library.Service
 {
     using System;
+    using System.Collections.Concurrent;
     using System.Collections.Generic;
     using System.IO;
+    using System.Linq;
     using System.Runtime.Caching;
     using System.Text;
     using System.Threading.Tasks;
@@ -102,7 +102,7 @@ namespace Snyk.Code.Library.Service
         public async Task<IDictionary<string, string>> GetFilePathToHashDictionaryAsync(IEnumerable<string> files)
         {
             var tasks = new List<Task>();
-            var filePathToHashDict = new Dictionary<string, string>();
+            var filePathToHashDict = new ConcurrentDictionary<string, string>();
 
             foreach (string file in files)
             {
@@ -200,7 +200,7 @@ namespace Snyk.Code.Library.Service
             return string.Empty;
         }
 
-        private async Task AddHashToDictionaryAsync(string file, Dictionary<string, string> filePathToHashDict)
+        private async Task AddHashToDictionaryAsync(string file, ConcurrentDictionary<string, string> filePathToHashDict)
         {
             if (!File.Exists(file))
             {
@@ -214,7 +214,7 @@ namespace Snyk.Code.Library.Service
                 await this.AddFileAsync(file); // TODO: improve performance, parallelise this work (ROAD-871)
             }
 
-            filePathToHashDict.Add(filePath, this.filePathToHashCache[filePath].ToString());
+            filePathToHashDict[filePath] = this.filePathToHashCache[filePath].ToString();
         }
 
         private async Task RemoveFileAsync(string file)
