@@ -210,7 +210,7 @@
 
             if (this.filePathToHashCache[filePath] == null)
             {
-                await this.AddFileAsync(file); // TODO: improve performance, parallelise this work (ROAD-871)
+                await this.AddFileAsync(file);
             }
 
             filePathToHashDict[filePath] = this.filePathToHashCache[filePath].ToString();
