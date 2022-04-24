@@ -1,4 +1,6 @@
-﻿namespace Snyk.Code.Library.Service
+﻿using System.Linq;
+
+namespace Snyk.Code.Library.Service
 {
     using System;
     using System.Collections.Generic;
@@ -99,22 +101,15 @@
         /// <inheritdoc/>
         public async Task<IDictionary<string, string>> GetFilePathToHashDictionaryAsync(IEnumerable<string> files)
         {
+            var tasks = new List<Task>();
             var filePathToHashDict = new Dictionary<string, string>();
 
             foreach (string file in files)
             {
-                if (File.Exists(file))
-                {
-                    string filePath = await this.GetRelativeFilePathIfFullPathAsync(file);
-
-                    if (this.filePathToHashCache[filePath] == null)
-                    {
-                        await this.AddFileAsync(file); // TODO: improve performance, parallelise this work (ROAD-871)
-                    }
-
-                    filePathToHashDict.Add(filePath, this.filePathToHashCache[filePath].ToString());
-                }
+                tasks.Add(this.AddHashToDictionaryAsync(file, filePathToHashDict));
             }
+
+            await Task.WhenAll(tasks);
 
             return filePathToHashDict;
         }
@@ -138,13 +133,7 @@
         }
 
         /// <inheritdoc/>
-        public void Initialize(IEnumerable<string> files)
-        {
-            foreach (string filePath in files)
-            {
-                this.AddFileAsync(filePath);
-            }
-        }
+        public async Task InitializeAsync(IEnumerable<string> files) => await Task.WhenAll(files.Select(this.AddFileAsync));
 
         /// <inheritdoc/>
         public string GetCachedBundleId() => this.bundleId;
@@ -153,17 +142,10 @@
         public void SetCachedBundleId(string id) => this.bundleId = id;
 
         /// <inheritdoc/>
-        public void Update(IFileProvider fileProvider)
+        public async Task UpdateAsync(IFileProvider fileProvider)
         {
-            foreach (string file in fileProvider.GetChangedFiles())
-            {
-                this.UpdateFile(file);
-            }
-
-            foreach (string file in fileProvider.GetRemovedFiles())
-            {
-                this.RemoveFileAsync(file);
-            }
+            await Task.WhenAll(fileProvider.GetChangedFiles().Select(this.AddFileAsync));
+            await Task.WhenAll(fileProvider.GetRemovedFiles().Select(this.RemoveFileAsync));
         }
 
         /// <inheritdoc/>
@@ -218,11 +200,21 @@
             return string.Empty;
         }
 
-        private void UpdateFile(string file)
+        private async Task AddHashToDictionaryAsync(string file, Dictionary<string, string> filePathToHashDict)
         {
-            this.AddFileAsync(file);
+            if (!File.Exists(file))
+            {
+                return;
+            }
 
-            this.Invalidate();
+            string filePath = await this.GetRelativeFilePathIfFullPathAsync(file);
+
+            if (this.filePathToHashCache[filePath] == null)
+            {
+                await this.AddFileAsync(file); // TODO: improve performance, parallelise this work (ROAD-871)
+            }
+
+            filePathToHashDict.Add(filePath, this.filePathToHashCache[filePath].ToString());
         }
 
         private async Task RemoveFileAsync(string file)

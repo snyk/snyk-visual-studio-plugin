@@ -52,7 +52,8 @@
         /// Initialize cache.
         /// </summary>
         /// <param name="files">Files to initialize cache.</param>
-        void Initialize(IEnumerable<string> files);
+        /// <returns>A <see cref="Task"/> representing the asynchronous operation.</returns>
+        Task InitializeAsync(IEnumerable<string> files);
 
         /// <summary>
         /// Check is cache valid for this project.
@@ -97,7 +98,8 @@
         /// Update cache state according <see cref="IFileProvider"/> data.
         /// </summary>
         /// <param name="fileProvider">File provider instance.</param>
-        void Update(IFileProvider fileProvider);
+        /// <returns>A <see cref="Task"/> representing the asynchronous operation.</returns>
+        Task UpdateAsync(IFileProvider fileProvider);
 
         /// <summary>
         /// Get file paths in relative format. Input will be like C:\Test\ProjectName\somefile.txt and output will be like /somefile.txt.
