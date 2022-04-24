@@ -182,12 +182,11 @@
 
                 var solutionPath = await this.fileProvider.GetSolutionPathAsync();
 
+                // Updating caches is thread-safe:
+                // https://docs.microsoft.com/en-us/dotnet/api/system.runtime.caching.objectcache?view=dotnet-plat-ext-6.0#thread-safety
                 string relativeFilePath = FileUtil.GetRelativeFilePath(solutionPath, filePath);
-
                 this.AddToFilePathToHashCache(relativeFilePath, fileHash);
-
                 this.AddToFilePathToContentCache(relativeFilePath, fileContent);
-
                 this.Invalidate();
 
                 return fileHash;
