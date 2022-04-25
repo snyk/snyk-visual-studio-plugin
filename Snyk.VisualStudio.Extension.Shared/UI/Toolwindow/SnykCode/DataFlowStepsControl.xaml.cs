@@ -146,7 +146,7 @@
 
                 using (var reader = new StreamReader(filePath))
                 {
-                    while ((line = reader.ReadLine()) != null)
+                    while ((line = await reader.ReadLineAsync()) != null)
                     {
                         if (fileLineNumber == (lineNumber - 1))
                         {
