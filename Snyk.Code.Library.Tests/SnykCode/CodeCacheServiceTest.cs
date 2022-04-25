@@ -36,7 +36,7 @@
         public void Dispose() => Directory.Delete(this.projectPath, true);
 
         [Fact]
-        public void CodeCacheService_CodeCacheExists_RemoveDeletedFiles()
+        public async Task CodeCacheService_CodeCacheExists_RemoveDeletedFiles()
         {
             var solutionServiceMock = new Mock<ISolutionService>();
 
@@ -51,13 +51,13 @@
             var fileProvider = new SnykCodeFileProvider(solutionServiceMock.Object);
             var codeCacheService = new CodeCacheService(fileProvider);
 
-            codeCacheService.Initialize(new List<string> { this.appCsPath });
+            await codeCacheService.InitializeAsync(new List<string> { this.appCsPath });
 
             Assert.Single(codeCacheService.GetFilePathToHashDictionary());
 
             fileProvider.RemoveFile(this.appCsPath);
 
-            codeCacheService.Update(fileProvider);
+            await codeCacheService.UpdateAsync(fileProvider);
 
             Assert.Empty(codeCacheService.GetFilePathToHashDictionary());
         }
@@ -81,7 +81,7 @@
         }
 
         [Fact]
-        public void CodeCacheService_CodeCacheExists_InvalidCache()
+        public async Task CodeCacheService_CodeCacheExists_InvalidCache()
         {
             var solutionServiceMock = new Mock<ISolutionService>();
 
@@ -102,13 +102,13 @@
 
             fileProvider.AddChangedFile(this.appCsPath);
 
-            codeCacheService.Update(fileProvider);
+            await codeCacheService.UpdateAsync(fileProvider);
 
             Assert.False(codeCacheService.IsCacheValid());
         }
 
         [Fact]
-        public void CodeCacheService_UpdateFile_CacheUpdated()
+        public async Task CodeCacheService_UpdateFile_CacheUpdated()
         {
             var solutionServiceMock = new Mock<ISolutionService>();
             var filtersServiceMock = new Mock<IFiltersService>();
@@ -124,7 +124,7 @@
             var fileProvider = new SnykCodeFileProvider(solutionServiceMock.Object);
             var codeCacheService = new CodeCacheService(fileProvider);
 
-            codeCacheService.Initialize(new List<string> { this.appCsPath });
+            await codeCacheService.InitializeAsync(new List<string> { this.appCsPath });
 
             string oldFileContent = codeCacheService.GetFileHashToContentDictionary()["/App.cs"];
 
@@ -132,7 +132,7 @@
 
             fileProvider.AddChangedFile(this.appCsPath);
 
-            codeCacheService.Update(fileProvider);
+            await codeCacheService.UpdateAsync(fileProvider);
 
             string newFileContent = codeCacheService.GetFileHashToContentDictionary()["/App.cs"];
 
@@ -140,7 +140,7 @@
         }
 
         [Fact]
-        public void CodeCacheService_AddFiles_CacheContainsFiles()
+        public async Task CodeCacheService_AddFiles_CacheContainsFilesAsync()
         {
             string app2CsPath = Path.Combine(this.projectPath, "App2.cs");
             File.WriteAllText(app2CsPath, "namespace Tests2 {}");
@@ -159,7 +159,7 @@
             var fileProvider = new SnykCodeFileProvider(solutionServiceMock.Object);
             var codeCacheService = new CodeCacheService(fileProvider);
 
-            codeCacheService.Initialize(new List<string> { this.appCsPath, app2CsPath });
+            await codeCacheService.InitializeAsync(new List<string> { this.appCsPath, app2CsPath });
 
             Assert.NotNull(codeCacheService.GetFileHashToContentDictionary()["/App.cs"]);
             Assert.NotNull(codeCacheService.GetFileHashToContentDictionary()["/App2.cs"]);

@@ -120,12 +120,12 @@
 
             var files = await this.GetFilteredFilesAsync(await fileProvider.GetSolutionPathAsync(), solutionFiles);
 
-            if (files == null || files.Count() == 0)
+            if (files == null || !files.Any())
             {
                 return null;
             }
 
-            this.codeCacheService.Initialize(files);
+            await this.codeCacheService.InitializeAsync(files);
 
             var filePathToHashDict = this.codeCacheService.GetFilePathToHashDictionary();
 
@@ -160,7 +160,7 @@
 
         private async Task<AnalysisResult> UpdatePreviousScanAsync(IFileProvider fileProvider, IEnumerable<string> changedFiles, CancellationToken cancellationToken = default)
         {
-            this.codeCacheService.Update(fileProvider);
+            this.codeCacheService.UpdateAsync(fileProvider);
 
             var extendFilePathToHashDict = await this.codeCacheService.GetFilePathToHashDictionaryAsync(changedFiles);
 
