@@ -400,7 +400,7 @@
         /// <summary>
         /// Update current screen state (welcome screen or run scan state).
         /// </summary>
-        public void UpdateScreenState() => System.Threading.Tasks.Task.Delay(1500).ContinueWith(task => this.ShowWelcomeOrRunScanScreen());
+        public void UpdateScreenState() => Task.Delay(1500).ContinueWith(task => this.ShowWelcomeOrRunScanScreen());
 
         public async Task UpdateScreenStateAsync()
         {
