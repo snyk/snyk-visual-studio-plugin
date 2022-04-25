@@ -402,6 +402,12 @@
         /// </summary>
         public void UpdateScreenState() => System.Threading.Tasks.Task.Delay(1500).ContinueWith(task => this.ShowWelcomeOrRunScanScreen());
 
+        public async Task UpdateScreenStateAsync()
+        {
+            await Task.Delay(1500);
+            this.ShowWelcomeOrRunScanScreen();
+        }
+
         private async Task OnOssScanningFinishedAsync() => await this.UpdateActionsStateAsync();
 
         private async Task OnSnykCodeScanningFinishedAsync() => await this.UpdateActionsStateAsync();
