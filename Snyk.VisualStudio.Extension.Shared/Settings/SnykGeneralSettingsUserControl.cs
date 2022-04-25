@@ -4,6 +4,7 @@
     using System.Diagnostics.CodeAnalysis;
     using System.Threading.Tasks;
     using System.Windows.Forms;
+    using Microsoft.VisualStudio.Shell;
     using Serilog;
     using Snyk.Common;
     using Snyk.VisualStudio.Extension.Shared.CLI;
@@ -195,7 +196,11 @@
 
         private SnykCli NewCli() => new SnykCli { Options = this.OptionsDialogPage, };
 
-        private void AuthenticateButton_Click(object sender, EventArgs eventArgs)
+        private void AuthenticateButton_Click(object sender, EventArgs eventArgs) => ThreadHelper.JoinableTaskFactory
+            .RunAsync(() => this.AuthenticateButtonClickAsync(sender, eventArgs))
+            .FireAndForget();
+
+        private async Task AuthenticateButtonClickAsync(object sender, EventArgs eventArgs)
         {
             Logger.Information("Enter authenticateButton_Click method");
 
@@ -205,10 +210,9 @@
 
             Logger.Information("Start run task");
 
-            Task.Run(() =>
+            await Task.Run(() =>
             {
                 var serviceProvider = this.OptionsDialogPage.ServiceProvider;
-                var tasksService = serviceProvider.TasksService;
 
                 if (SnykCli.IsCliExists())
                 {
@@ -220,7 +224,7 @@
                 {
                     Logger.Information("CLI not exists. Download CLI before get Api token");
 
-                    serviceProvider.TasksService.Download(new CliDownloadFinishedCallback(this.OnCliDownloadFinishedCallback));
+                    serviceProvider.TasksService.Download(this.OnCliDownloadFinishedCallback);
                 }
             });
         }
