@@ -9,6 +9,7 @@
     using Serilog;
     using Snyk.Common;
     using Snyk.VisualStudio.Extension.Shared.Service;
+    using Task = System.Threading.Tasks.Task;
 
     /// <summary>
     /// Add support for light and dark Visual Studio themes.

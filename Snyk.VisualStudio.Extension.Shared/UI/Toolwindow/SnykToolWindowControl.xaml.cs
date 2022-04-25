@@ -96,7 +96,7 @@
             tasksService.SnykCodeScanningUpdate += this.OnSnykCodeScanningUpdate;
             tasksService.SnykCodeScanningFinished += this.OnSnykCodeScanningFinished;
             tasksService.OssScanningFinished += this.OnOssScanningFinished;
-            tasksService.TaskFinished += this.OnTaskFinished;
+            tasksService.TaskFinished += (sender, args) => ThreadHelper.JoinableTaskFactory.RunAsync(() => this.OnTaskFinishedAsync(sender, args));
 
             Logger.Information("Initialize Download Event Listeners");
 
@@ -166,7 +166,7 @@
 
             this.resultsTree.CliRootNode.State = RootTreeNodeState.Scanning;
 
-            this.UpdateActionsState();
+            await this.UpdateActionsStateAsync();
         });
 
         /// <summary>
@@ -183,7 +183,7 @@
             this.resultsTree.CodeSecurityRootNode.State = RootTreeNodeState.Scanning;
             this.resultsTree.CodeQualityRootNode.State = RootTreeNodeState.Scanning;
 
-            this.UpdateActionsState();
+            await this.UpdateActionsStateAsync();
         });
 
         /// <summary>
@@ -213,7 +213,7 @@
                 this.context.TransitionTo(RunScanState.Instance);
             }
 
-            this.UpdateActionsState();
+            await this.UpdateActionsStateAsync();
         });
 
         /// <summary>
@@ -243,7 +243,7 @@
                 this.context.TransitionTo(RunScanState.Instance);
             }
 
-            this.UpdateActionsState();
+            await this.UpdateActionsStateAsync();
         });
 
         /// <summary>
@@ -385,6 +385,16 @@
         });
 
         /// <summary>
+        /// Switch to main thread and update state of toolbar (commands).
+        /// </summary>
+        /// <returns>A <see cref="Task"/> representing the asynchronous operation.</returns>
+        public async Task UpdateActionsStateAsync()
+        {
+            await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
+            this.UpdateActionsState();
+        }
+
+        /// <summary>
         /// Update state of toolbar (commands).
         /// </summary>
         public void UpdateActionsState()
@@ -406,7 +416,7 @@
 
         private void OnSettingsChanged(object sender, SnykSettingsChangedEventArgs e) => this.UpdateTreeNodeItemsState();
 
-        private void OnTaskFinished(object sender, EventArgs e) => this.UpdateActionsState();
+        private async Task OnTaskFinishedAsync(object sender, EventArgs e) => await this.UpdateActionsStateAsync();
 
         private void UpdateTreeNodeItemsState() => ThreadHelper.JoinableTaskFactory.Run(async () =>
         {

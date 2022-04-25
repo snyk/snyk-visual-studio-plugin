@@ -11,6 +11,7 @@
     using Snyk.VisualStudio.Extension.Shared.Service;
     using Snyk.VisualStudio.Extension.Shared.UI.Notifications;
     using static Snyk.VisualStudio.Extension.Shared.CLI.Download.SnykCliDownloader;
+    using Task = System.Threading.Tasks.Task;
 
     /// <summary>
     /// Control for Snyk General Settings.
