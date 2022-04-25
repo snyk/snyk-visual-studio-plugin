@@ -1,11 +1,12 @@
 ﻿namespace Snyk.VisualStudio.Extension.Shared.UI.Toolwindow
 {
     using System.Windows;
+    using Microsoft.VisualStudio.Shell;
 
     /// <summary>
-    /// Incapsulate Donwload state for toolwindow.
+    /// Encapsulate download state for tool window.
     /// </summary>
-    public class DownloadState : ToolWindowState
+    public sealed class DownloadState : ToolWindowState
     {
         /// <summary>
         /// Gets a value indicating whether new <see cref="DownloadState"/>.
@@ -19,14 +20,12 @@
         {
             this.ToolWindowControl.HideMainMessage();
 
-            this.ToolWindowControl.Dispatcher.Invoke(() =>
+            ThreadHelper.JoinableTaskFactory.Run(async () =>
             {
                 this.ToolWindowControl.progressBar.Value = 0;
-
                 this.ToolWindowControl.progressBarPanel.Visibility = Visibility.Collapsed;
+                await this.ToolWindowControl.UpdateActionsStateAsync();
             });
-
-            this.ToolWindowControl.UpdateActionsState();
         }
 
         /// <summary>
@@ -34,16 +33,13 @@
         /// </summary>
         public override void DisplayComponents()
         {
-            this.ToolWindowControl.Dispatcher.Invoke(() =>
+            ThreadHelper.JoinableTaskFactory.Run(async () =>
             {
                 this.ToolWindowControl.progressBar.Value = 0;
-
                 this.ToolWindowControl.progressBarPanel.Visibility = Visibility.Visible;
+                this.ToolWindowControl.DisplayMainMessage("Downloading latest Snyk CLI release 0%...");
+                await this.ToolWindowControl.UpdateActionsStateAsync();
             });
-
-            this.ToolWindowControl.DisplayMainMessage("Downloading latest Snyk CLI release 0%...");
-
-            this.ToolWindowControl.UpdateActionsState();
         }
     }
 }

@@ -94,9 +94,9 @@
             tasksService.SnykCodeScanningStarted += this.OnSnykCodeScanningStarted;
             tasksService.OssScanningUpdate += this.OnCliScanningUpdate;
             tasksService.SnykCodeScanningUpdate += this.OnSnykCodeScanningUpdate;
-            tasksService.SnykCodeScanningFinished += this.OnSnykCodeScanningFinished;
-            tasksService.OssScanningFinished += this.OnOssScanningFinished;
-            tasksService.TaskFinished += (sender, args) => ThreadHelper.JoinableTaskFactory.RunAsync(() => this.OnTaskFinishedAsync(sender, args));
+            tasksService.SnykCodeScanningFinished += (sender, args) => ThreadHelper.JoinableTaskFactory.RunAsync(this.OnSnykCodeScanningFinishedAsync);
+            tasksService.OssScanningFinished += (sender, args) => ThreadHelper.JoinableTaskFactory.RunAsync(this.OnOssScanningFinishedAsync);
+            tasksService.TaskFinished += (sender, args) => ThreadHelper.JoinableTaskFactory.RunAsync(this.OnTaskFinishedAsync);
 
             Logger.Information("Initialize Download Event Listeners");
 
@@ -391,14 +391,6 @@
         public async Task UpdateActionsStateAsync()
         {
             await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
-            this.UpdateActionsState();
-        }
-
-        /// <summary>
-        /// Update state of toolbar (commands).
-        /// </summary>
-        public void UpdateActionsState()
-        {
             SnykScanCommand.Instance.UpdateState();
             SnykStopCurrentTaskCommand.Instance.UpdateState();
             SnykCleanPanelCommand.Instance.UpdateState();
@@ -410,13 +402,13 @@
         /// </summary>
         public void UpdateScreenState() => System.Threading.Tasks.Task.Delay(1500).ContinueWith(task => this.ShowWelcomeOrRunScanScreen());
 
-        private void OnOssScanningFinished(object sender, SnykCliScanEventArgs e) => this.UpdateActionsState();
+        private async Task OnOssScanningFinishedAsync() => await this.UpdateActionsStateAsync();
 
-        private void OnSnykCodeScanningFinished(object sender, SnykCodeScanEventArgs e) => this.UpdateActionsState();
+        private async Task OnSnykCodeScanningFinishedAsync() => await this.UpdateActionsStateAsync();
 
         private void OnSettingsChanged(object sender, SnykSettingsChangedEventArgs e) => this.UpdateTreeNodeItemsState();
 
-        private async Task OnTaskFinishedAsync(object sender, EventArgs e) => await this.UpdateActionsStateAsync();
+        private async Task OnTaskFinishedAsync() => await this.UpdateActionsStateAsync();
 
         private void UpdateTreeNodeItemsState() => ThreadHelper.JoinableTaskFactory.Run(async () =>
         {
