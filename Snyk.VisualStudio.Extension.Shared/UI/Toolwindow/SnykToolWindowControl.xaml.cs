@@ -304,7 +304,7 @@
         /// <param name="sender">Source object.</param>
         /// <param name="eventArgs">Event args.</param>
         /// <returns>A <see cref="Task"/> representing the asynchronous operation.</returns>
-        public async Task OnDownloadUpdateAsync(object sender, SnykCliDownloadEventArgs eventArgs) => await this.UpdateDownloadProgress(eventArgs.Progress);
+        public async Task OnDownloadUpdateAsync(object sender, SnykCliDownloadEventArgs eventArgs) => await this.UpdateDownloadProgressAsync(eventArgs.Progress);
 
         /// <summary>
         /// DownloadCancelled event handler. Call SetInitialState() method.
@@ -529,7 +529,7 @@
         /// Update progress bar.
         /// </summary>
         /// <param name="value">Progress bar value.</param>
-        private async Task UpdateDownloadProgress(int value)
+        private async Task UpdateDownloadProgressAsync(int value)
         {
             await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
 
