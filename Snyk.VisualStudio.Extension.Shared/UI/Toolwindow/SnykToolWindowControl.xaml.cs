@@ -616,13 +616,13 @@
             }
         }
 
-        private async System.Threading.Tasks.Task HandleSnykCodeTreeNodeSelectedAsync()
+        private async Task HandleSnykCodeTreeNodeSelectedAsync()
         {
             this.descriptionPanel.Visibility = Visibility.Visible;
 
             var snykCodeTreeNode = this.resultsTree.SelectedItem as SnykCodeVulnerabilityTreeNode;
 
-            this.descriptionPanel.Suggestion = snykCodeTreeNode.Suggestion;
+            await this.descriptionPanel.SetSuggestionAsync(snykCodeTreeNode.Suggestion);
 
             var suggestion = snykCodeTreeNode.Suggestion;
 

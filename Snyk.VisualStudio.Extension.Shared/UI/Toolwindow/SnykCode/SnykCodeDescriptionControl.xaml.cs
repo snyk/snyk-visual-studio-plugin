@@ -1,4 +1,6 @@
-﻿namespace Snyk.VisualStudio.Extension.Shared.UI.Toolwindow.SnykCode
+﻿using System.Threading.Tasks;
+
+namespace Snyk.VisualStudio.Extension.Shared.UI.Toolwindow.SnykCode
 {
     using System.Windows.Controls;
     using Snyk.Code.Library.Domain.Analysis;
@@ -16,21 +18,11 @@
             this.InitializeComponent();
         }
 
-        /// <summary>
-        /// Sets <see cref="Suggestion"/> information and update corresponding UI elements. For SnykCode scan result.
-        /// </summary>
-        public Suggestion Suggestion
+        public async Task SetSuggestionAsync(Suggestion suggestion)
         {
-            set
-            {
-                var suggestion = value;
-
-                this.snykCodeDescription.Text = suggestion.Message;
-
-                this.dataFlowStepsControl.DisplayAsync(suggestion.Markers);
-
-                this.externalExampleFixesControl.Display(suggestion.RepoDatasetSize, suggestion.Fixes);
-            }
+            this.snykCodeDescription.Text = suggestion.Message;
+            await this.dataFlowStepsControl.DisplayAsync(suggestion.Markers);
+            this.externalExampleFixesControl.Display(suggestion.RepoDatasetSize, suggestion.Fixes);
         }
     }
 }
