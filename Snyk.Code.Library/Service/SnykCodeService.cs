@@ -122,7 +122,7 @@
 
             var files = await this.GetFilteredFilesAsync(await fileProvider.GetSolutionPathAsync(), solutionFiles);
 
-            Logger.Information("Filtered files count {Count}", files.Count());
+            Logger.Information("Filtered files count {Count}", files?.Count());
 
             if (files == null || files.Count() == 0)
             {
