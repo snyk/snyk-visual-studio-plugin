@@ -55,6 +55,7 @@
         {
             get
             {
+                ThreadHelper.ThrowIfNotOnUIThread();
                 List<IVsWindowSearchFilter> severityFilters = new List<IVsWindowSearchFilter>();
 
                 severityFilters.Add(new WindowSearchSimpleFilter(SeverityFilter.CriticalTitle, SeverityFilter.CriticalTitle, "severity", Severity.Critical));
@@ -126,8 +127,8 @@
 
                 try
                 {
+                    ThreadHelper.ThrowIfNotOnUIThread();
                     SnykToolWindowControl toolWindowControl = (SnykToolWindowControl)toolWindow.Content;
-
                     toolWindowControl.VulnerabilitiesTree.FilterBy(this.SearchQuery.SearchString);
                 }
                 catch (Exception exception)

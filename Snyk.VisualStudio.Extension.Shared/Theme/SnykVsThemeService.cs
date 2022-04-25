@@ -4,6 +4,7 @@
     using System.Runtime.InteropServices;
     using System.Threading.Tasks;
     using Microsoft.VisualStudio;
+    using Microsoft.VisualStudio.Shell;
     using Microsoft.VisualStudio.Shell.Interop;
     using Serilog;
     using Snyk.Common;
@@ -35,7 +36,8 @@
         /// <returns>Task.</returns>
         public async Task InitializeAsync()
         {
-            IVsShell vsShell = await this.serviceProvider.GetServiceAsync(typeof(SVsShell)) as IVsShell;
+            await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
+            var vsShell = await this.serviceProvider.GetServiceAsync(typeof(SVsShell)) as IVsShell;
 
             try
             {
