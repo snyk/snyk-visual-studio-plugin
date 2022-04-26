@@ -5,6 +5,7 @@
     using System.Threading.Tasks;
     using System.Windows.Forms;
     using Microsoft.VisualStudio.Shell;
+    using Microsoft.VisualStudio.Threading;
     using Serilog;
     using Snyk.Common;
     using Snyk.VisualStudio.Extension.Shared.CLI;
@@ -93,10 +94,11 @@
             Logger.Information("Leave Authenticate method");
         }
 
-        private void OnAuthenticationSuccessful(string apiToken)
+        private async Task OnAuthenticationSuccessfulAsync(string apiToken)
         {
             Logger.Information("Enter authenticate successCallback");
 
+            //TODO - try to await SwitchToMainThread
             if (this.authProgressBar.IsHandleCreated)
             {
                 this.authProgressBar.Invoke(new Action(() =>
@@ -130,7 +132,7 @@
                 }));
             }
 
-            this.OptionsDialogPage.ServiceProvider.ToolWindow.UpdateScreenState();
+            await this.OptionsDialogPage.ServiceProvider.ToolWindow.UpdateScreenStateAsync();
         }
 
         private void InitializeApiToken()
@@ -148,7 +150,7 @@
             this.tokenTextBox.Text = this.OptionsDialogPage.ApiToken;
         }
 
-        private void OnAuthenticationFail(string errorMessage)
+        private async Task OnAuthenticationFailAsync(string errorMessage)
         {
             Logger.Information("Enter authenticate errorCallback");
 
@@ -187,16 +189,16 @@
 
             this.OptionsDialogPage.ServiceProvider.ToolWindow.Show();
 
-            this.OptionsDialogPage.ServiceProvider.ToolWindow.UpdateScreenState();
+            await this.OptionsDialogPage.ServiceProvider.ToolWindow.UpdateScreenStateAsync();
         }
 
-        private SnykCli NewCli() => new SnykCli { Options = this.OptionsDialogPage, };
+        private SnykCli NewCli() => new SnykCli {Options = this.OptionsDialogPage,};
 
         private void AuthenticateButton_Click(object sender, EventArgs eventArgs) => ThreadHelper.JoinableTaskFactory
-            .RunAsync(() => this.AuthenticateButtonClickAsync(sender, eventArgs))
-            .FireAndForget();
+            .RunAsync(this.AuthenticateButtonClickAsync);
+        //.FireAndForget();
 
-        private async Task AuthenticateButtonClickAsync(object sender, EventArgs eventArgs)
+        private async Task AuthenticateButtonClickAsync()
         {
             Logger.Information("Enter authenticateButton_Click method");
 
@@ -205,34 +207,32 @@
             this.authenticateButton.Enabled = false;
 
             Logger.Information("Start run task");
+            await TaskScheduler.Default;
 
-            await Task.Run(() =>
+            var serviceProvider = this.OptionsDialogPage.ServiceProvider;
+
+            if (SnykCli.IsCliExists())
             {
-                var serviceProvider = this.OptionsDialogPage.ServiceProvider;
+                Logger.Information("CLI exists. Calling SetupApiToken method");
 
-                if (SnykCli.IsCliExists())
-                {
-                    Logger.Information("CLI exists. Calling SetupApiToken method");
+                await this.SetupApiTokenAsync();
+            }
+            else
+            {
+                Logger.Information("CLI not exists. Download CLI before get Api token");
 
-                    this.SetupApiToken();
-                }
-                else
-                {
-                    Logger.Information("CLI not exists. Download CLI before get Api token");
-
-                    serviceProvider.TasksService.Download(this.OnCliDownloadFinishedCallback);
-                }
-            });
+                serviceProvider.TasksService.Download(this.OnCliDownloadFinishedCallback);
+            }
         }
 
-        private void OnCliDownloadFinishedCallback()
+        private void OnCliDownloadFinishedCallback() => ThreadHelper.JoinableTaskFactory.RunAsync(async () =>
         {
             Logger.Information("CLI downloaded. Calling SetupApiToken method");
 
-            this.SetupApiToken();
-        }
+            await this.SetupApiTokenAsync();
+        });
 
-        private void SetupApiToken()
+        private async Task SetupApiTokenAsync()
         {
             Logger.Information("Enter SetupApiToken method");
 
@@ -260,7 +260,7 @@
                     {
                         Logger.Information("Snyk auth executed with error: {AuthResultMessage}", authResultMessage);
 
-                        this.OnAuthenticationFail(authResultMessage);
+                        await this.OnAuthenticationFailAsync(authResultMessage);
 
                         return;
                     }
@@ -270,12 +270,12 @@
 
                 if (!Common.Guid.IsValid(apiToken))
                 {
-                    this.OnAuthenticationFail($"Invalid GUID: {apiToken}");
+                    await this.OnAuthenticationFailAsync($"Invalid GUID: {apiToken}");
 
                     return;
                 }
 
-                this.OnAuthenticationSuccessful(apiToken);
+                await this.OnAuthenticationSuccessfulAsync(apiToken);
 
                 Logger.Information("Leave SetupApiToken method");
             }
@@ -283,7 +283,7 @@
             {
                 Logger.Error(e, "Setup api token in general settings");
 
-                this.OnAuthenticationFail(e.Message);
+                await this.OnAuthenticationFailAsync(e.Message);
             }
         }
 
@@ -368,31 +368,32 @@
             this.OptionsDialogPage.IgnoreUnknownCA = this.ignoreUnknownCACheckBox.Checked;
         }
 
-        private void TokenTextBox_Validating(object sender, System.ComponentModel.CancelEventArgs cancelEventArgs)
-        {
-            this.OptionsDialogPage.ServiceProvider.ToolWindow.UpdateScreenState();
-
-            if (string.IsNullOrEmpty(this.tokenTextBox.Text))
+        private void TokenTextBox_Validating(object sender, System.ComponentModel.CancelEventArgs cancelEventArgs) =>
+            ThreadHelper.JoinableTaskFactory.RunAsync(async () =>
             {
-                this.errorProvider.SetError(this.tokenTextBox, string.Empty);
+                await this.OptionsDialogPage.ServiceProvider.ToolWindow.UpdateScreenStateAsync();
 
-                return;
-            }
+                if (string.IsNullOrEmpty(this.tokenTextBox.Text))
+                {
+                    this.errorProvider.SetError(this.tokenTextBox, string.Empty);
 
-            if (!Common.Guid.IsValid(this.tokenTextBox.Text))
-            {
-                cancelEventArgs.Cancel = true;
+                    return;
+                }
 
-                this.tokenTextBox.Focus();
+                if (!Common.Guid.IsValid(this.tokenTextBox.Text))
+                {
+                    cancelEventArgs.Cancel = true;
 
-                this.errorProvider.SetError(this.tokenTextBox, "Not valid GUID.");
-            }
-            else
-            {
-                cancelEventArgs.Cancel = false;
-                this.errorProvider.SetError(this.tokenTextBox, string.Empty);
-            }
-        }
+                    this.tokenTextBox.Focus();
+
+                    this.errorProvider.SetError(this.tokenTextBox, "Not valid GUID.");
+                }
+                else
+                {
+                    cancelEventArgs.Cancel = false;
+                    this.errorProvider.SetError(this.tokenTextBox, string.Empty);
+                }
+            });
 
         private void CustomEndpointTextBox_Validating(object sender, System.ComponentModel.CancelEventArgs cancelEventArgs)
         {
