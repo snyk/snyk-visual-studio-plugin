@@ -130,14 +130,18 @@
         /// <returns>Solution path string.</returns>
         public async System.Threading.Tasks.Task<string> GetSolutionFolderAsync()
         {
-            var rootDir = await this.FindRootDirectoryForSolutionAsync();
+            string solutionFolder = await this.FindRootDirectoryForSolutionAsync();
 
-            if (rootDir == null || rootDir.IsNullOrEmpty())
+            Logger.Information("Solution folder from is {SolutionFolder}", solutionFolder);
+
+            if (solutionFolder == null || solutionFolder.IsNullOrEmpty())
             {
-                rootDir = await this.FindRootDirectoryForSolutionFromDteAsync();
+                solutionFolder = await this.FindRootDirectoryForSolutionFromDteAsync();
             }
 
-            return rootDir;
+            Logger.Information("Result solution folder from is {SolutionFolder}", solutionFolder);
+
+            return solutionFolder;
         }
 
         /// <inheritdoc/>
@@ -258,7 +262,7 @@
 
             if (item == null)
             {
-                return new List<string>();
+                return await this.GetSolutionProjectsFilesFromDteAsync();
             }
 
             var solutionItem = item.FindParent(Toolkit.SolutionItemType.Solution);
@@ -286,31 +290,11 @@
                 return null;
             }
 
-            var projectDirs = new List<string>();
-
             var solutionDir = this.GetDirectoryPath(solutionItem.FullPath);
 
-            try
-            {
-                if (solutionItem.Children != null)
-                {
-                    foreach (var children in solutionItem.Children)
-                    {
-                        if (children.Type == Toolkit.SolutionItemType.Project
-                            || children.Type == Toolkit.SolutionItemType.VirtualProject
-                            || children.Type == Toolkit.SolutionItemType.MiscProject)
-                        {
-                            projectDirs.Add(this.GetDirectoryPath(children.FullPath));
-                        }
-                    }
-                }
-            }
-            catch (Exception e)
-            {
-                Logger.Error(e, "Error on get all project paths");
-            }
+            var projectFolders = this.GetSolutionProjects(solutionItem);
 
-            return this.FindRootDirectoryForSolutionProjects(solutionDir, projectDirs);
+            return this.FindRootDirectoryForSolutionProjects(solutionDir, projectFolders);
         }
 
         private async System.Threading.Tasks.Task<string> FindRootDirectoryForSolutionFromDteAsync()
@@ -344,6 +328,10 @@
 
                     solutionPath = Directory.GetParent(solutionPath).FullName;
                 }
+
+                var projectFolders = await this.GetSolutionProjectsFromDteAsync(projects);
+
+                solutionPath = this.FindRootDirectoryForSolutionProjects(solutionPath, projectFolders);
             }
 
             // 3 case: Flat project without solution.
@@ -383,6 +371,93 @@
             await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
 
             return !solution.IsDirty && projects.Count > 0;
+        }
+
+        private IList<string> GetSolutionProjects(Toolkit.SolutionItem solutionItem)
+        {
+            var projectFolders = new List<string>();
+
+            try
+            {
+                if (solutionItem.Children != null)
+                {
+                    foreach (var children in solutionItem.Children)
+                    {
+                        if (children.Type == Toolkit.SolutionItemType.Project
+                            || children.Type == Toolkit.SolutionItemType.VirtualProject
+                            || children.Type == Toolkit.SolutionItemType.MiscProject)
+                        {
+                            projectFolders.Add(this.GetDirectoryPath(children.FullPath));
+                        }
+                    }
+                }
+            }
+            catch (Exception e)
+            {
+                Logger.Error(e, "Error on get all project paths");
+            }
+
+            return projectFolders;
+        }
+
+        private async System.Threading.Tasks.Task<IList<string>> GetSolutionProjectsFromDteAsync(Projects projects)
+        {
+            await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
+
+            var projectFolders = new List<string>();
+
+            try
+            {
+                foreach (var projectItem in projects)
+                {
+                    var project = projectItem as Project;
+
+                    string projectPath = new FileInfo(project.FullName).DirectoryName;
+
+                    projectFolders.Add(this.GetDirectoryPath(projectPath));
+                }
+            }
+            catch (Exception e)
+            {
+                Logger.Error(e, "Error on get all project paths from dte");
+            }
+
+            return projectFolders;
+        }
+
+        private async System.Threading.Tasks.Task<IList<string>> GetSolutionProjectsFilesFromDteAsync()
+        {
+            await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
+
+            var solutionFiles = new List<string>();
+
+            var projects = this.GetProjects();
+
+            try
+            {
+                foreach (Project project in projects)
+                {
+                    foreach (ProjectItem projectItem in project.ProjectItems)
+                    {
+                        try
+                        {
+                            solutionFiles.Add(projectItem.get_FileNames(0));
+                        }
+                        catch (Exception ex)
+                        {
+                            Logger.Error(ex, "Failed to get file name from projectItem");
+                        }
+                    }
+                }
+            }
+            catch (Exception e)
+            {
+                Logger.Error(e, "Failed to get project files from Projects object");
+            }
+
+            Logger.Information("Solution files count {Count}", solutionFiles.Count());
+
+            return solutionFiles;
         }
     }
 }
