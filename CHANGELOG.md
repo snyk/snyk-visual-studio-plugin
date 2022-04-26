@@ -2,6 +2,10 @@
 
 ## [1.1.12]
 
+### Fixed
+- Display message on main panel if error occurs.
+- Link to Snyk Code settings on app.snyk.io.
+
 ### Changed
 - Added analysis context information for analysis requests.
 

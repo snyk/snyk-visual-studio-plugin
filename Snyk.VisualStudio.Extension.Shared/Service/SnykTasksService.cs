@@ -200,20 +200,20 @@
 
             try
             {
+                var selectedFeatures = await this.GetFeaturesSettingsAsync();
+
                 if (!this.serviceProvider.SolutionService.IsSolutionOpen())
                 {
-                    this.FireOssError("No open solution");
+                    this.FireOssError("No open solution", selectedFeatures);
 
                     Logger.Information("Solution not opened");
 
                     return;
                 }
 
-                var selectedFeatures = await this.GetFeaturesSettingsAsync();
-
                 this.serviceProvider.AnalyticsService.LogAnalysisIsTriggeredEvent(this.GetSelectedFeatures(selectedFeatures));
 
-                this.ScanOss(selectedFeatures);
+                await this.ScanOssAsync(selectedFeatures);
 
                 this.ScanSnykCode(selectedFeatures);
             } catch (Exception ex)
@@ -297,13 +297,17 @@
         /// Fire error event. Create <see cref="CliError"/> instance.
         /// </summary>
         /// <param name="message">Error message.</param>
-        public void FireOssError(string message) => this.FireOssError(new CliError(message));
+        /// <param name="featuresSettings">Features settings.</param>
+        public void FireOssError(string message, FeaturesSettings featuresSettings = null)
+            => this.FireOssError(new CliError(message), featuresSettings);
 
         /// <summary>
         /// Fire error event with <see cref="SnykCliScanEventArgs"/>.
         /// </summary>
         /// <param name="error"><see cref="CliError"/> object.</param>
-        public void FireOssError(CliError error) => this.OssScanError?.Invoke(this, new SnykCliScanEventArgs(error));
+        /// <param name="featuresSettings">Features settings.</param>
+        public void FireOssError(CliError error, FeaturesSettings featuresSettings = null)
+            => this.OssScanError?.Invoke(this, new SnykCliScanEventArgs(error, featuresSettings));
 
         /// <summary>
         /// Fire error event with <see cref="SnykCodeScanEventArgs"/>.
@@ -347,7 +351,7 @@
         /// <param name="progress">Donwload progress form 0..100$.</param>
         protected internal void OnDownloadUpdate(int progress) => this.DownloadUpdate?.Invoke(this, new SnykCliDownloadEventArgs(progress));
 
-        private void ScanOss(FeaturesSettings featuresSettings)
+        private async Task ScanOssAsync(FeaturesSettings featuresSettings)
         {
             try
             {
@@ -368,7 +372,7 @@
 
                 Logger.Information("Start scan task");
 
-                Task.Run(this.RunOssScanAsync, token).FireAndForget();
+                await this.RunOssScanAsync(featuresSettings);
             }
             catch (Exception ex)
             {
@@ -376,7 +380,7 @@
             }
         }
 
-        private async Task RunOssScanAsync()
+        private async Task RunOssScanAsync(FeaturesSettings featuresSettings)
         {
             this.isOssScanning = true;
 
@@ -406,7 +410,7 @@
                 {
                     Logger.Error(e, "Oss scan exception");
 
-                    this.FireOssError(e.Error);
+                    this.FireOssError(e.Error, featuresSettings);
                 }
                 catch (Exception e)
                 {
@@ -417,7 +421,7 @@
                         return;
                     }
 
-                    this.FireOssError(e.Message);
+                    this.FireOssError(e.Message, featuresSettings);
                 }
                 finally
                 {
