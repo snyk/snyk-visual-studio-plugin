@@ -192,7 +192,7 @@
             await this.OptionsDialogPage.ServiceProvider.ToolWindow.UpdateScreenStateAsync();
         }
 
-        private SnykCli NewCli() => new SnykCli {Options = this.OptionsDialogPage,};
+        private SnykCli NewCli() => new SnykCli { Options = this.OptionsDialogPage };
 
         private void AuthenticateButton_Click(object sender, EventArgs eventArgs) => ThreadHelper.JoinableTaskFactory
             .RunAsync(this.AuthenticateButtonClickAsync);
@@ -484,7 +484,7 @@
 
                 this.snykCodeEnableTimer.Interval = TwoSecondsDelay;
 
-                this.snykCodeEnableTimer.Tick += async (sender, eventArgs) =>
+                this.snykCodeEnableTimer.Tick += (sender, args) => ThreadHelper.JoinableTaskFactory.RunAsync(async () =>
                 {
                     try
                     {
@@ -513,7 +513,7 @@
                     {
                         this.HandleSastError(e);
                     }
-                };
+                });
 
                 this.snykCodeEnableTimer.Start();
             }
