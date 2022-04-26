@@ -391,10 +391,12 @@
         public async Task UpdateActionsStateAsync()
         {
             await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
-            SnykScanCommand.Instance.UpdateState();
-            SnykStopCurrentTaskCommand.Instance.UpdateState();
-            SnykCleanPanelCommand.Instance.UpdateState();
-            SnykOpenSettingsCommand.Instance.UpdateState();
+            
+            await Task.WhenAll(
+                SnykScanCommand.Instance.UpdateStateAsync(),
+                SnykStopCurrentTaskCommand.Instance.UpdateStateAsync(),
+                SnykCleanPanelCommand.Instance.UpdateStateAsync(),
+                SnykOpenSettingsCommand.Instance.UpdateStateAsync());
         }
 
         public async Task UpdateScreenStateAsync()

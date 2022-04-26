@@ -3,6 +3,7 @@
     using System;
     using System.ComponentModel.Design;
     using Microsoft.VisualStudio.Shell;
+    using Task = System.Threading.Tasks.Task;
 
     /// <summary>
     /// Abstract class for Snyk commands.
@@ -52,6 +53,11 @@
         /// Update command state.
         /// </summary>
         public abstract void UpdateState();
+
+        /// <summary>
+        /// Update command state asynchronously.
+        /// </summary>
+        public abstract Task UpdateStateAsync();
 
         /// <summary>
         /// Get command set GUID.

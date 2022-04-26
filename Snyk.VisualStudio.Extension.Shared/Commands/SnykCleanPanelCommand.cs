@@ -46,6 +46,13 @@
             this.MenuCommand.Enabled = Common.Guid.IsValid(SnykVSPackage.ServiceProvider.Options.ApiToken)
                 && this.VsPackage.ToolWindowControl.IsTreeContentNotEmpty();
 
+        public override async Task UpdateStateAsync()
+        {
+            await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
+            this.MenuCommand.Enabled = Common.Guid.IsValid(SnykVSPackage.ServiceProvider.Options.ApiToken)
+                                       && this.VsPackage.ToolWindowControl.IsTreeContentNotEmpty();
+        }
+
         /// <summary>
         /// Run clean of tool window content.
         /// </summary>

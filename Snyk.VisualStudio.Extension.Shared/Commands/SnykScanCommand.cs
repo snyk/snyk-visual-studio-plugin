@@ -54,8 +54,11 @@
         }
 
         /// <inheritdoc/>
-        public override void UpdateState()
+        public override void UpdateState() => ThreadHelper.JoinableTaskFactory.RunAsync(this.UpdateStateAsync);
+
+        public override async Task UpdateStateAsync()
         {
+            await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
             bool isEnabled = this.IsButtonAvailable() && !SnykTasksService.Instance.IsTaskRunning();
 
             this.MenuCommand.Enabled = isEnabled;
