@@ -159,7 +159,7 @@
 
                 this.AddService(typeof(SnykService), this.CreateSnykServiceAsync, true);
 
-                this.serviceProvider = await this.GetServiceAsync(typeof(SnykService)) as SnykService;
+                this.serviceProvider = await this.GetServiceAsync(typeof(SnykService)) as SnykService ?? throw new InvalidOperationException("Could not find Snyk Service");
 
                 Logger.Information("Get SnykService as ServiceProvider.");
                 Logger.Information("Start InitializeGeneralOptionsAsync.");
