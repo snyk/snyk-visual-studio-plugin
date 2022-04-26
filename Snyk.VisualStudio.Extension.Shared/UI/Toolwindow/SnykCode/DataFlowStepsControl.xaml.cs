@@ -2,6 +2,7 @@
 {
     using System;
     using System.Collections.Generic;
+    using System.Diagnostics.CodeAnalysis;
     using System.IO;
     using System.Linq;
     using System.Threading.Tasks;
@@ -72,6 +73,10 @@
         /// </summary>
         /// <param name="markers">Markers from suggestion.</param>
         /// <returns>A <see cref="Task"/> representing the asynchronous operation.</returns>
+        [SuppressMessage(
+            "Usage",
+            "VSTHRD012:Provide JoinableTaskFactory where allowed",
+            Justification = "Only possible in VS22, and DelegateCommand might be replaced with a different ICommand implementation")]
         internal async Task DisplayAsync(IList<Marker> markers)
         {
             this.Clear();
