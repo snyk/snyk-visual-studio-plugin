@@ -118,9 +118,13 @@
 
             var solutionFiles = await fileProvider.GetFilesAsync();
 
+            Logger.Information("Solution files to filter count {Count}", solutionFiles.Count());
+
             var files = await this.GetFilteredFilesAsync(await fileProvider.GetSolutionPathAsync(), solutionFiles);
 
-            if (files == null || !files.Any())
+            Logger.Information("Filtered files count {Count}", files?.Count());
+
+            if (files == null || files.Count() == 0)
             {
                 return null;
             }
