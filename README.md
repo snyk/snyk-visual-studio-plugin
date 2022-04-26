@@ -49,7 +49,7 @@ Search for *Snyk*
 
 ![Vsix install via Marketplace](doc/images/readme_image_2_1_2.png)
 
-Once installed, open the Snyk tool window by going to *View > Other Windows* as shown in the screenshot below.
+Once installed, use Snyk via the *Extensions > Snyk* menu. On Visual Studio versions older than 2019, Snyk will be part of the top menu bar.
 
 ![Snyk Toolwindow menu item](doc/images/readme_image_2_2.png "Snyk Toolwindow menu item")
 

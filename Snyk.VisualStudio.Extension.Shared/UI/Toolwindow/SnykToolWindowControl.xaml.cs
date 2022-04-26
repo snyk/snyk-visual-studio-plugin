@@ -161,7 +161,7 @@
             await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
 
             this.messagePanel.ShowScanningMessage();
-
+            this.Show();
             this.mainGrid.Visibility = Visibility.Visible;
 
             this.resultsTree.CliRootNode.State = RootTreeNodeState.Scanning;

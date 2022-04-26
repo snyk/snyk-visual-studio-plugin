@@ -16,7 +16,7 @@
         /// <summary>
         /// Command ID.
         /// </summary>
-        public const int CommandId = 4129;
+        public const int CommandId = 0x1021;
 
         private static readonly ILogger Logger = LogManager.ForContext<SnykToolWindowCommand>();
 
