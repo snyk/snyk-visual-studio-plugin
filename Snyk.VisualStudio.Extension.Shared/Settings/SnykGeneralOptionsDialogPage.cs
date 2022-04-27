@@ -90,7 +90,7 @@
             get => this.userStorageSettingsService.IsOssEnabled();
             set
             {
-                if (this.OssEnabled == value)
+                if (this.userStorageSettingsService?.IsOssEnabled() == value)
                 {
                     return;
                 }
@@ -106,7 +106,7 @@
             get => this.userStorageSettingsService.IsSnykCodeSecurityEnabled();
             set
             {
-                if (this.SnykCodeSecurityEnabled == value)
+                if (this.userStorageSettingsService?.IsSnykCodeSecurityEnabled() == value)
                 {
                     return;
                 }
@@ -122,7 +122,7 @@
             get => this.userStorageSettingsService.IsSnykCodeQualityEnabled();
             set
             {
-                if (this.SnykCodeQualityEnabled == value)
+                if (this.userStorageSettingsService?.IsSnykCodeQualityEnabled() == value)
                 {
                     return;
                 }
