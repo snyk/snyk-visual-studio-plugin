@@ -263,8 +263,7 @@
 
         /// <inheritdoc/>
         public string GetAnalysisResultRequestPayload(string bundleId)
-        {
-            return Json.Serialize(new AnalysisResultRequestDto
+            => Json.Serialize(new AnalysisResultRequestDto
             {
                 Key = new AnalysisResultKeyDto
                 {
@@ -278,6 +277,5 @@
                 },
                 Legacy = true,
             });
-        }
     }
 }
