@@ -23,6 +23,7 @@ namespace Snyk.VisualStudio.Extension.Shared.UI.Toolwindow
 
             ThreadHelper.JoinableTaskFactory.Run(async () =>
             {
+                await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
                 this.ToolWindowControl.progressBar.Value = 0;
                 this.ToolWindowControl.progressBarPanel.Visibility = Visibility.Collapsed;
                 await this.ToolWindowControl.UpdateActionsStateAsync();
@@ -36,6 +37,7 @@ namespace Snyk.VisualStudio.Extension.Shared.UI.Toolwindow
         {
             ThreadHelper.JoinableTaskFactory.Run(async () =>
             {
+                await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
                 this.ToolWindowControl.progressBar.Value = 0;
                 this.ToolWindowControl.progressBarPanel.Visibility = Visibility.Visible;
                 this.ToolWindowControl.DisplayMainMessage("Updating the Snyk CLI to the latest release 0%...");
