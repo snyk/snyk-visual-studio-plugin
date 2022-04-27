@@ -176,24 +176,14 @@
                 await SnykCleanPanelCommand.InitializeAsync(this);
                 await SnykOpenSettingsCommand.InitializeAsync(this);
 
-                Logger.Information("Start Initialize tool window. Before call GetToolWindowControl() method.");
-
+                Logger.Information("Initializing tool window");
                 await this.InitializeToolWindowAsync();
 
                 VsStatusBarNotificationService.Instance.InitializeEventListeners(this.serviceProvider);
 
                 Logger.Information("Before call toolWindowControl.InitializeEventListeners() method.");
-
-                new Task(() =>
-                {
-                    VsStatusBarNotificationService.Instance.InitializeEventListeners(this.serviceProvider);
-
-                    this.toolWindowControl.InitializeEventListeners(this.serviceProvider);
-                }).Start();
-
-                Logger.Information("Initialize Commands()");
-
-                new Task(() => this.toolWindowControl.Initialize(this.serviceProvider)).Start();
+                this.toolWindowControl.InitializeEventListeners(this.serviceProvider);
+                this.toolWindowControl.Initialize(this.serviceProvider);
             }
             catch (Exception ex)
             {
