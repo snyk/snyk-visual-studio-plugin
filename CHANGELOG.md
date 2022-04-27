@@ -8,6 +8,7 @@
 
 ### Changed
 - Added analysis context information for analysis requests.
+- Welcome screen text and added privacy policy, term of service links.
 
 ## [1.1.11]
 

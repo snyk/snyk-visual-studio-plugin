@@ -2,6 +2,7 @@
 {
     using System;
     using System.Collections.Generic;
+    using System.Diagnostics;
     using System.Windows;
     using System.Windows.Controls;
     using Microsoft.VisualStudio.Shell;
@@ -94,15 +95,15 @@
             panel.Visibility = Visibility.Visible;
         }
 
-        private void ConnectToSnykLink_Click(object sender, RoutedEventArgs e)
+        private void TestCodeNow_Click(object sender, RoutedEventArgs e)
         {
             Action<string> successCallbackAction = (apiToken) =>
             {
-                ThreadHelper.JoinableTaskFactory.Run(async () =>
+                ThreadHelper.JoinableTaskFactory.RunAsync(async () =>
                 {
                     await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
 
-                    this.connectVSToSnykLink.IsEnabled = true;
+                    this.testCodeNowButton.IsEnabled = true;
 
                     this.connectVSToSnykProgressBar.Visibility = Visibility.Collapsed;
                 });
@@ -114,11 +115,11 @@
 
             Action<string> errorCallbackAction = (error) =>
             {
-                ThreadHelper.JoinableTaskFactory.Run(async () =>
+                ThreadHelper.JoinableTaskFactory.RunAsync(async () =>
                 {
                     await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
 
-                    this.connectVSToSnykLink.IsEnabled = true;
+                    this.testCodeNowButton.IsEnabled = true;
 
                     this.connectVSToSnykProgressBar.Visibility = Visibility.Collapsed;
 
@@ -128,16 +129,23 @@
                 this.Context.TransitionTo(OverviewState.Instance);
             };
 
-            ThreadHelper.JoinableTaskFactory.Run(async () =>
+            ThreadHelper.JoinableTaskFactory.RunAsync(async () =>
             {
                 await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
 
-                this.connectVSToSnykLink.IsEnabled = false;
+                this.testCodeNowButton.IsEnabled = false;
 
                 this.connectVSToSnykProgressBar.Visibility = Visibility.Visible;
             });
 
             this.ServiceProvider.Options.Authenticate(successCallbackAction, errorCallbackAction);
+        }
+
+        private void Hyperlink_RequestNavigate(object sender, System.Windows.Navigation.RequestNavigateEventArgs args)
+        {
+            Process.Start(new ProcessStartInfo(args.Uri.AbsoluteUri));
+
+            args.Handled = true;
         }
     }
 }
