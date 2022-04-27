@@ -33,6 +33,6 @@
         }
 
         /// <inheritdoc/>
-        protected override void OnBeforeQueryStatus(object sender, EventArgs e) => this.UpdateState();
+        protected override void OnBeforeQueryStatus(object sender, EventArgs e) => ThreadHelper.JoinableTaskFactory.Run(this.UpdateStateAsync);
     }
 }

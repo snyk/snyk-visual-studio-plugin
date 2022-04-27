@@ -72,6 +72,6 @@
         protected override int GetCommandId() => SnykGuids.CleanCommandId;
 
         /// <inheritdoc/>
-        protected override void OnBeforeQueryStatus(object sender, EventArgs e) => this.UpdateState();
+        protected override void OnBeforeQueryStatus(object sender, EventArgs e) => ThreadHelper.JoinableTaskFactory.Run(UpdateStateAsync);
     }
 }

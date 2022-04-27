@@ -57,6 +57,7 @@
         /// <summary>
         /// Update command state asynchronously.
         /// </summary>
+        /// <returns>A <see cref="Task"/> representing the asynchronous operation.</returns>
         public abstract Task UpdateStateAsync();
 
         /// <summary>
