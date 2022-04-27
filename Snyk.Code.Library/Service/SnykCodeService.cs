@@ -166,7 +166,7 @@
             ICodeCacheService cacheService,
             CancellationToken cancellationToken = default)
         {
-            cacheService.UpdateAsync(fileProvider);
+            await cacheService.UpdateAsync(fileProvider);
 
             var extendFilePathToHashDict = await cacheService.GetFilePathToHashDictionaryAsync(changedFiles);
 

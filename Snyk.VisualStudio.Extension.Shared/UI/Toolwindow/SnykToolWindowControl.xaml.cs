@@ -562,7 +562,7 @@
 
                 if (this.resultsTree.SelectedItem is SnykCodeVulnerabilityTreeNode)
                 {
-                    this.HandleSnykCodeTreeNodeSelectedAsync();
+                    await this.HandleSnykCodeTreeNodeSelectedAsync();
 
                     return;
                 }
