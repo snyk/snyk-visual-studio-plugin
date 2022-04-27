@@ -391,7 +391,6 @@
         public async Task UpdateActionsStateAsync()
         {
             await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
-            
             await Task.WhenAll(
                 SnykScanCommand.Instance.UpdateStateAsync(),
                 SnykStopCurrentTaskCommand.Instance.UpdateStateAsync(),

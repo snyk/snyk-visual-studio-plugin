@@ -196,7 +196,6 @@
 
         private void AuthenticateButton_Click(object sender, EventArgs eventArgs) => ThreadHelper.JoinableTaskFactory
             .RunAsync(this.AuthenticateButtonClickAsync);
-        //.FireAndForget();
 
         private async Task AuthenticateButtonClickAsync()
         {
@@ -225,7 +224,7 @@
             }
         }
 
-        private void OnCliDownloadFinishedCallback() => ThreadHelper.JoinableTaskFactory.RunAsync(async () =>
+        private void OnCliDownloadFinishedCallback() => ThreadHelper.JoinableTaskFactory.Run(async () =>
         {
             Logger.Information("CLI downloaded. Calling SetupApiToken method");
 

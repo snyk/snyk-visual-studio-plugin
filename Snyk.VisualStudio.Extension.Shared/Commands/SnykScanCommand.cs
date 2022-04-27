@@ -54,7 +54,7 @@
         }
 
         /// <inheritdoc/>
-        public override void UpdateState() => ThreadHelper.JoinableTaskFactory.RunAsync(this.UpdateStateAsync);
+        public override void UpdateState() => ThreadHelper.JoinableTaskFactory.Run(this.UpdateStateAsync);
 
         public override async Task UpdateStateAsync()
         {
