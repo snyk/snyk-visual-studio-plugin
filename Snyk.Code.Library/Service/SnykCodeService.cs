@@ -21,6 +21,10 @@
 
         private IFiltersService filtersService;
 
+        /// <summary>
+        /// The Cache-Service can be set to null asynchronously by the <see cref="Clean"/> method,
+        /// so make sure to store it in local variables and pass it around as a parameter
+        /// </summary>
         private ICodeCacheService codeCacheService;
 
         private IDcIgnoreService dcIgnoreService;
@@ -149,7 +153,7 @@
 
             cancellationToken.ThrowIfCancellationRequested();
 
-            this.UpdateCache(resultBundle.Id, analysisResult);
+            this.UpdateCache(resultBundle.Id, analysisResult, codeCache);
 
             fileProvider.ClearHistory();
 
@@ -190,7 +194,7 @@
 
             cancellationToken.ThrowIfCancellationRequested();
 
-            this.UpdateCache(extendedBundle.Id, analysisResult);
+            this.UpdateCache(extendedBundle.Id, analysisResult, cacheService);
 
             cancellationToken.ThrowIfCancellationRequested();
 
@@ -206,11 +210,10 @@
             return await this.filtersService.FilterFilesAsync(files, cancellationToken);
         }
 
-        private void UpdateCache(string bundleId, AnalysisResult analysisResult)
+        private void UpdateCache(string bundleId, AnalysisResult analysisResult, ICodeCacheService cacheService)
         {
-            this.codeCacheService.SetAnalysisResult(analysisResult);
-
-            this.codeCacheService.SetCachedBundleId(bundleId);
+            cacheService.SetAnalysisResult(analysisResult);
+            cacheService.SetCachedBundleId(bundleId);
         }
 
         private bool AnyFilesChangedInSolution(IEnumerable<string> files) => files.IsNullOrEmpty();
