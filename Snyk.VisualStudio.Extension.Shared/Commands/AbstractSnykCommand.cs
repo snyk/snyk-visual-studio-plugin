@@ -50,11 +50,6 @@
         protected SnykVSPackage VsPackage => this.package as SnykVSPackage;
 
         /// <summary>
-        /// Update command state.
-        /// </summary>
-        public abstract void UpdateState();
-
-        /// <summary>
         /// Update command state asynchronously.
         /// </summary>
         /// <returns>A <see cref="Task"/> representing the asynchronous operation.</returns>

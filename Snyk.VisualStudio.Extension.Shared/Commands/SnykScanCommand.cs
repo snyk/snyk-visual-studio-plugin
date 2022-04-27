@@ -53,9 +53,6 @@
             Instance = new SnykScanCommand(package, commandService);
         }
 
-        /// <inheritdoc/>
-        public override void UpdateState() => ThreadHelper.JoinableTaskFactory.Run(this.UpdateStateAsync);
-
         public override async Task UpdateStateAsync()
         {
             await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
