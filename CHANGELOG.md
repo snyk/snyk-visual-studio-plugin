@@ -1,5 +1,10 @@
 # Snyk Changelog
 
+## [1.1.12]
+
+### Changed
+- Added analysis context information for analysis requests.
+
 ## [1.1.11]
 
 ### Fixed

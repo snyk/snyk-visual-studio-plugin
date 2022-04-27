@@ -29,16 +29,25 @@
 
         private readonly HttpClient httpClient;
 
+        private string contextFlowName;
+
+        private string contextOrgName;
+
         /// <summary>
         /// Initializes a new instance of the <see cref="SnykCodeClient"/> class.
         /// </summary>
         /// <param name="baseUrl">Base URL for deproxy.</param>
         /// <param name="token">User token.</param>
-        public SnykCodeClient(string baseUrl, string token)
+        /// <param name="flowName">Context flow name.</param>
+        /// <param name="orgName">User organization name.</param>
+        public SnykCodeClient(string baseUrl, string token, string flowName, string orgName)
         {
             this.httpClient = HttpClientFactory.NewHttpClient(token, baseUrl);
 
             Logger.Information("Create http client with with url {BaseUrl}.", baseUrl);
+
+            this.contextFlowName = flowName;
+            this.contextOrgName = orgName;
         }
 
         /// <inheritdoc/>
@@ -53,15 +62,7 @@
 
             using (var httpRequest = new HttpRequestMessage(HttpMethod.Post, AnalysisApiUrl))
             {
-                string payload = Json.Serialize(new AnalysisResultRequestDto
-                {
-                    Key = new AnalysisResultKeyDto
-                    {
-                        Type = "file",
-                        Hash = bundleId,
-                    },
-                    Legacy = true,
-                });
+                string payload = this.GetAnalysisResultRequestPayload(bundleId);
 
                 httpRequest.Content = new StringContent(payload, Encoding.UTF8, "application/json");
 
@@ -258,6 +259,25 @@
                     }
                 }
             }
+        }
+
+        /// <inheritdoc/>
+        public string GetAnalysisResultRequestPayload(string bundleId)
+        {
+            return Json.Serialize(new AnalysisResultRequestDto
+            {
+                Key = new AnalysisResultKeyDto
+                {
+                    Type = "file",
+                    Hash = bundleId,
+                },
+                AnalysisContext = new AnalysisContextDto
+                {
+                    Flow = this.contextFlowName,
+                    OrgDisplayName = this.contextOrgName,
+                },
+                Legacy = true,
+            });
         }
     }
 }

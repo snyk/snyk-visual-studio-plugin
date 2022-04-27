@@ -89,5 +89,18 @@
         /// </summary>
         /// <returns><see cref="FiltersDto"/>.</returns>
         Task<FiltersDto> GetFiltersAsync();
+
+        /// <summary>
+        /// Create payload json string for Analysis result request.
+        /// For better annotation and tracking it contains analysisContext information.
+        /// analysisContext: {
+        ///     flow: ‘specific IDE’,
+        ///     initiator: ‘IDE’, this is important, don’t change it
+        ///     orgDisplayName: ‘client’s snyk organization name’
+        /// }.
+        /// </summary>
+        /// <param name="bundleId">Bundle Id value.</param>
+        /// <returns>Json payload for analysis result request.</returns>
+        string GetAnalysisResultRequestPayload(string bundleId);
     }
 }

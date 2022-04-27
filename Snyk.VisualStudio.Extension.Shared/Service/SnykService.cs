@@ -281,8 +281,12 @@
 
                 string endpoint = new ApiEndpointResolver(this.Options).GetSnykCodeApiUrl();
 
-                this.snykCodeService = CodeServiceFactory
-                    .CreateSnykCodeService(options.ApiToken, endpoint, this.SolutionService.FileProvider);
+                this.snykCodeService = CodeServiceFactory.CreateSnykCodeService(
+                    options.ApiToken,
+                    endpoint,
+                    this.SolutionService.FileProvider,
+                    SnykExtension.IntegrationName,
+                    options.Organization ?? string.Empty);
 
                 VsStatusBarNotificationService.Instance.InitializeEventListeners(this.snykCodeService, options);
             }
