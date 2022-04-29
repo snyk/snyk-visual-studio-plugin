@@ -75,6 +75,11 @@
             get => this.organization;
             set
             {
+                if (this.organization == value)
+                {
+                    return;
+                }
+
                 this.organization = value;
 
                 this.FireSettingsChangedEvent();
