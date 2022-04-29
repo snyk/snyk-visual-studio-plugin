@@ -105,6 +105,9 @@
     <PackageReference Include="MarkdownSharp">
       <Version>2.0.5</Version>
     </PackageReference>
+    <PackageReference Include="Microsoft.VisualStudio.LanguageServer.Client">
+      <Version>17.1.68</Version>
+    </PackageReference>
     <PackageReference Include="Microsoft.VisualStudio.Shell.14.0">
       <Version>14.3.25407</Version>
     </PackageReference>

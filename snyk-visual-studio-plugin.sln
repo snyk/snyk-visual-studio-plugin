@@ -11,6 +11,7 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution 
 		.gitignore = .gitignore
 		CHANGELOG.md = CHANGELOG.md
 		README.md = README.md
+		..\..\snyk-ls.exe = ..\..\snyk-ls.exe
 	EndProjectSection
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "doc", "doc", "{9AAC9A90-42B0-464D-B4D5-4E30E148954C}"
