@@ -5,7 +5,6 @@
     using System.Threading.Tasks;
     using System.Windows.Forms;
     using Microsoft.VisualStudio.Shell;
-    using Serilog;
     using Snyk.Common;
     using Snyk.VisualStudio.Extension.Shared.Service;
 
@@ -25,6 +24,8 @@
         private string apiToken;
 
         private string customEndpoint;
+
+        private string organization;
 
         /// <inheritdoc/>
         public event EventHandler<SnykSettingsChangedEventArgs> SettingsChanged;
@@ -69,7 +70,21 @@
         /// <summary>
         /// Gets or sets a value indicating whether organization.
         /// </summary>
-        public string Organization { get; set; }
+        public string Organization
+        {
+            get => this.organization;
+            set
+            {
+                if (this.organization == value)
+                {
+                    return;
+                }
+
+                this.organization = value;
+
+                this.FireSettingsChangedEvent();
+            }
+        }
 
         /// <summary>
         /// Gets or sets a value indicating whether ignore unknown CA.
