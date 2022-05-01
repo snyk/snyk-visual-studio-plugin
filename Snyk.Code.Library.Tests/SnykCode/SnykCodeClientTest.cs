@@ -15,6 +15,20 @@
     /// </summary>
     public class SnykCodeClientTest
     {
+        private const string ContextFlowName = "test-vs-snyk-code-library-ide";
+        private const string ContextOrgName = "test-vs-snyk-code-library-org";
+
+        private SnykCodeClient snykCodeClient;
+
+        public SnykCodeClientTest()
+        {
+            this.snykCodeClient = new SnykCodeClient(
+                TestSettings.SnykCodeApiUrl,
+                TestSettings.Instance.ApiToken,
+                ContextFlowName,
+                ContextOrgName);
+        }
+
         [Fact]
         public async Task SnykCodeClient_TwoFilesWithIssuesProvided_GetAnalysisSuccessAsync()
         {
@@ -32,9 +46,7 @@
 
             bundleFiles.Add(filePath2, fileHash2);
 
-            var snykCodeClient = new SnykCodeClient(TestSettings.SnykCodeApiUrl, TestSettings.Instance.ApiToken);
-
-            var createdBundle = await snykCodeClient.CreateBundleAsync(bundleFiles);
+            var createdBundle = await this.snykCodeClient.CreateBundleAsync(bundleFiles);
 
             Assert.NotNull(createdBundle);
             Assert.True(!string.IsNullOrEmpty(createdBundle.Hash));
@@ -51,11 +63,11 @@
             fileNameToContentDict.Add(filePath1, codeFile1);
             fileNameToContentDict.Add(filePath2, codeFile2);
 
-            var extendedBundle = await snykCodeClient.ExtendBundleAsync(createdBundle.Hash, fileNameToContentDict);
+            var extendedBundle = await this.snykCodeClient.ExtendBundleAsync(createdBundle.Hash, fileNameToContentDict);
 
             Assert.Empty(extendedBundle.MissingFiles);
 
-            AnalysisResultDto analysisResult = await snykCodeClient.GetAnalysisAsync(createdBundle.Hash);
+            AnalysisResultDto analysisResult = await this.snykCodeClient.GetAnalysisAsync(createdBundle.Hash);
 
             Assert.NotNull(analysisResult);
 
@@ -83,9 +95,7 @@
 
             bundleFiles.Add(filePath1, fileHash1);
 
-            var snykCodeClient = new SnykCodeClient(TestSettings.SnykCodeApiUrl, TestSettings.Instance.ApiToken);
-
-            var createdBundle = await snykCodeClient.CreateBundleAsync(bundleFiles);
+            var createdBundle = await this.snykCodeClient.CreateBundleAsync(bundleFiles);
 
             Assert.NotNull(createdBundle);
             Assert.True(!string.IsNullOrEmpty(createdBundle.Hash));
@@ -94,11 +104,11 @@
 
             pathToContentDict.Add(filePath1, new CodeFileDto(fileHash1, fileContent1));
 
-            var extendedBundle = await snykCodeClient.ExtendBundleAsync(createdBundle.Hash, pathToContentDict);
+            var extendedBundle = await this.snykCodeClient.ExtendBundleAsync(createdBundle.Hash, pathToContentDict);
 
             Assert.Empty(extendedBundle.MissingFiles);
 
-            AnalysisResultDto analysisResult = await snykCodeClient.GetAnalysisAsync(createdBundle.Hash);
+            AnalysisResultDto analysisResult = await this.snykCodeClient.GetAnalysisAsync(createdBundle.Hash);
 
             Assert.NotNull(analysisResult);
 
@@ -106,7 +116,7 @@
             {
                 System.Threading.Thread.Sleep(15000);
 
-                analysisResult = await snykCodeClient.GetAnalysisAsync(createdBundle.Hash);
+                analysisResult = await this.snykCodeClient.GetAnalysisAsync(createdBundle.Hash);
             }
 
             Assert.NotNull(analysisResult);
@@ -118,8 +128,6 @@
         [Fact]
         public async Task SnykCodeClient_SimpleBundleProvided_GetAnalysisPassAsync()
         {
-            var snykCodeClient = new SnykCodeClient(TestSettings.SnykCodeApiUrl, TestSettings.Instance.ApiToken);
-
             var bundleFiles = new Dictionary<string, string>();
 
             string fileContent1 = "namespace HelloWorld {public class HelloWorld {}}";
@@ -140,7 +148,7 @@
 
             bundleFiles.Add(filePath3, fileHash3);
 
-            var createdBundle = await snykCodeClient.CreateBundleAsync(bundleFiles);
+            var createdBundle = await this.snykCodeClient.CreateBundleAsync(bundleFiles);
 
             Assert.NotNull(createdBundle);
             Assert.True(!string.IsNullOrEmpty(createdBundle.Hash));
@@ -151,11 +159,11 @@
             pathToContentDict.Add(filePath2, new CodeFileDto(fileHash2, fileContent2));
             pathToContentDict.Add(filePath3, new CodeFileDto(fileHash3, fileContent3));
 
-            var extendBundle = await snykCodeClient.ExtendBundleAsync(createdBundle.Hash, pathToContentDict);
+            var extendBundle = await this.snykCodeClient.ExtendBundleAsync(createdBundle.Hash, pathToContentDict);
 
             Assert.Empty(extendBundle.MissingFiles);
 
-            var analysisResult = await snykCodeClient.GetAnalysisAsync(createdBundle.Hash);
+            var analysisResult = await this.snykCodeClient.GetAnalysisAsync(createdBundle.Hash);
 
             Assert.NotNull(analysisResult);
 
@@ -163,7 +171,7 @@
             {
                 System.Threading.Thread.Sleep(15000);
 
-                analysisResult = await snykCodeClient.GetAnalysisAsync(createdBundle.Hash);
+                analysisResult = await this.snykCodeClient.GetAnalysisAsync(createdBundle.Hash);
             }
 
             Assert.NotNull(analysisResult);
@@ -192,9 +200,7 @@
 
             pathToHashFilesDict.Add(filePath3, fileHash3);
 
-            var snykCodeClient = new SnykCodeClient(TestSettings.SnykCodeApiUrl, TestSettings.Instance.ApiToken);
-
-            var createdBundle = await snykCodeClient.CreateBundleAsync(pathToHashFilesDict);
+            var createdBundle = await this.snykCodeClient.CreateBundleAsync(pathToHashFilesDict);
 
             Assert.NotNull(createdBundle);
             Assert.NotEmpty(createdBundle.Hash);
@@ -205,7 +211,7 @@
             pathToContentDict.Add(filePath2, new CodeFileDto(fileHash2, fileContent2));
             pathToContentDict.Add(filePath3, new CodeFileDto(fileHash3, fileContent3));
 
-            var bundle = await snykCodeClient.ExtendBundleAsync(createdBundle.Hash, pathToContentDict);
+            var bundle = await this.snykCodeClient.ExtendBundleAsync(createdBundle.Hash, pathToContentDict);
 
             Assert.Empty(bundle.MissingFiles);
         }
@@ -222,9 +228,7 @@
 
             filePathToHashDict.Add(filePath, fileHash);
 
-            var snykCodeClient = new SnykCodeClient(TestSettings.SnykCodeApiUrl, TestSettings.Instance.ApiToken);
-
-            var createdBundle = await snykCodeClient.CreateBundleAsync(filePathToHashDict);
+            var createdBundle = await this.snykCodeClient.CreateBundleAsync(filePathToHashDict);
 
             Assert.NotNull(createdBundle);
             Assert.True(!string.IsNullOrEmpty(createdBundle.Hash));
@@ -233,7 +237,7 @@
 
             pathToContentDict.Add(filePath, new CodeFileDto(fileHash, fileContent));
 
-            var bundle = await snykCodeClient.ExtendBundleAsync(createdBundle.Hash, pathToContentDict);
+            var bundle = await this.snykCodeClient.ExtendBundleAsync(createdBundle.Hash, pathToContentDict);
 
             Assert.Empty(bundle.MissingFiles);
         }
@@ -250,9 +254,7 @@
                 filePathToHashDict.Add(fileName, Sha256.ComputeHash(fileName));
             }
 
-            var snykCodeClient = new SnykCodeClient(TestSettings.SnykCodeApiUrl, TestSettings.Instance.ApiToken);
-
-            var uploadedBundle = await snykCodeClient.CreateBundleAsync(filePathToHashDict);
+            var uploadedBundle = await this.snykCodeClient.CreateBundleAsync(filePathToHashDict);
 
             Assert.NotNull(uploadedBundle);
             Assert.True(!string.IsNullOrEmpty(uploadedBundle.Hash));
@@ -268,9 +270,7 @@
             filePathToHashDict.Add("/Test2.cs", Sha256.ComputeHash("/Test2.cs"));
             filePathToHashDict.Add("/Test3.cs", Sha256.ComputeHash("/Test3.cs"));
 
-            var snykCodeClient = new SnykCodeClient(TestSettings.SnykCodeApiUrl, TestSettings.Instance.ApiToken);
-
-            var resultBundleDto = await snykCodeClient.CreateBundleAsync(filePathToHashDict);
+            var resultBundleDto = await this.snykCodeClient.CreateBundleAsync(filePathToHashDict);
 
             Assert.NotNull(resultBundleDto);
             Assert.False(string.IsNullOrEmpty(resultBundleDto.Hash));
@@ -281,7 +281,8 @@
             extendBundleFilePathToHashDict.Add("/Test5.cs", Sha256.ComputeHash("/Test5.cs"));
             extendBundleFilePathToHashDict.Add("/Test6.cs", Sha256.ComputeHash("/Test6.cs"));
 
-            BundleResponseDto extendedBundleDto = await snykCodeClient.ExtendBundleAsync(resultBundleDto.Hash, extendBundleFilePathToHashDict, new List<string>());
+            BundleResponseDto extendedBundleDto = await this.snykCodeClient
+                .ExtendBundleAsync(resultBundleDto.Hash, extendBundleFilePathToHashDict, new List<string>());
 
             Assert.NotNull(extendedBundleDto);
             Assert.False(string.IsNullOrEmpty(extendedBundleDto.Hash));
@@ -298,9 +299,7 @@
             filePathToHashDict.Add("/Test2.cs", Sha256.ComputeHash("/Test2.cs"));
             filePathToHashDict.Add("/Test3.cs", Sha256.ComputeHash("/Test3.cs"));
 
-            var snykCodeClient = new SnykCodeClient(TestSettings.SnykCodeApiUrl, TestSettings.Instance.ApiToken);
-
-            var resultBundleDto = await snykCodeClient.CreateBundleAsync(filePathToHashDict);
+            var resultBundleDto = await this.snykCodeClient.CreateBundleAsync(filePathToHashDict);
 
             Assert.NotNull(resultBundleDto);
             Assert.False(string.IsNullOrEmpty(resultBundleDto.Hash));
@@ -316,7 +315,7 @@
             removedFiles.Add("/Test1.cs");
             removedFiles.Add("/Test2.cs");
 
-            BundleResponseDto extendedBundleDto = await snykCodeClient
+            BundleResponseDto extendedBundleDto = await this.snykCodeClient
                 .ExtendBundleAsync(resultBundleDto.Hash, extendFilePathToHashDict, removedFiles);
 
             Assert.NotNull(extendedBundleDto);
@@ -332,14 +331,12 @@
 
             filePathToHashDict.Add("/Test.cs", Sha256.ComputeHash("/Test.cs"));
 
-            var snykCodeClient = new SnykCodeClient(TestSettings.SnykCodeApiUrl, TestSettings.Instance.ApiToken);
-
-            var resultBundleDto = await snykCodeClient.CreateBundleAsync(filePathToHashDict);
+            var resultBundleDto = await this.snykCodeClient.CreateBundleAsync(filePathToHashDict);
 
             Assert.NotNull(resultBundleDto);
             Assert.False(string.IsNullOrEmpty(resultBundleDto.Hash));
 
-            var checkedBundle = await snykCodeClient.CheckBundleAsync(resultBundleDto.Hash);
+            var checkedBundle = await this.snykCodeClient.CheckBundleAsync(resultBundleDto.Hash);
 
             Assert.NotNull(checkedBundle);
             Assert.False(string.IsNullOrEmpty(checkedBundle.Hash));
@@ -348,21 +345,17 @@
         [Fact]
         public void SnykCodeClient_WrongBundleProvided_CheckBundleFailed()
         {
-            var snykCodeClient = new SnykCodeClient(TestSettings.SnykCodeApiUrl, TestSettings.Instance.ApiToken);
-
-            _ = Assert.ThrowsAsync<AggregateException>(() => snykCodeClient.CheckBundleAsync("dummy"));
+            _ = Assert.ThrowsAsync<AggregateException>(() => this.snykCodeClient.CheckBundleAsync("dummy"));
         }
 
         [Fact]
         public async Task SnykCodeClient_SimpleFileProvided_CreateBundlePassAsync()
         {
-            var snykCodeClient = new SnykCodeClient(TestSettings.SnykCodeApiUrl, TestSettings.Instance.ApiToken);
-
             var filePathToHashDict = new Dictionary<string, string>();
 
             filePathToHashDict.Add("/Test.cs", Sha256.ComputeHash("/Test.cs"));
 
-            var uploadedBundle = await snykCodeClient.CreateBundleAsync(filePathToHashDict);
+            var uploadedBundle = await this.snykCodeClient.CreateBundleAsync(filePathToHashDict);
 
             Assert.NotNull(uploadedBundle);
             Assert.True(!string.IsNullOrEmpty(uploadedBundle.Hash));
@@ -371,9 +364,7 @@
         [Fact]
         public async Task SnykCodeClient_GetFilters_ChecksPassAsync()
         {
-            var snykCodeClient = new SnykCodeClient(TestSettings.SnykCodeApiUrl, TestSettings.Instance.ApiToken);
-
-            var filters = await snykCodeClient.GetFiltersAsync();
+            var filters = await this.snykCodeClient.GetFiltersAsync();
 
             Assert.NotNull(filters);
             Assert.NotNull(filters.Extensions);
@@ -386,6 +377,16 @@
             var analysisResultDto = Json.Deserialize<AnalysisResultDto>("{\"status\":\"ANALYZING\",\"progress\":0.5,\"complete\":false}");
 
             Assert.NotNull(analysisResultDto);
+        }
+
+        [Fact]
+        public void SnykCodeClient_GetAnalysisResultRequestPayload_JsonContainsFlowNameAndOrgName()
+        {
+            var snykCodeClient = new SnykCodeClient(string.Empty, string.Empty, "test-flow-name", "test-org");
+
+            var payload = snykCodeClient.GetAnalysisResultRequestPayload("test-bundle-id");
+
+            Assert.Contains("\"analysisContext\":{\"flow\":\"test-flow-name\",\"initiator\":\"IDE\",\"orgDisplayName\":\"test-org\"}", payload);
         }
 
         private string GetResourceContent(string resourceName) 

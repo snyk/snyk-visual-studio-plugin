@@ -11,6 +11,12 @@
         public AnalysisResultKeyDto Key { get; set; }
 
         /// <summary>
+        /// Gets or sets a value indicating analysis context object.
+        /// </summary>
+        /// 
+        public AnalysisContextDto AnalysisContext { get; set; }
+
+        /// <summary>
         /// Gets or sets a value indicating whether response should be legacy json or SARIF format.
         /// </summary>
         public bool Legacy { get; set; }
