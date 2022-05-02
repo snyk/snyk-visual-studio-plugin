@@ -64,7 +64,7 @@
         }
 
         /// <inheritdoc/>
-        public string SnykCodeSettingsUrl => $"{this.GetAppCustomEndpoint()}manage/snyk-code";
+        public string SnykCodeSettingsUrl => $"{this.GetAppCustomEndpoint()}/manage/snyk-code";
 
 
         /// <summary>
