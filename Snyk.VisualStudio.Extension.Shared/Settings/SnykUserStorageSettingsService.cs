@@ -307,6 +307,7 @@
             if (settings == null)
             {
                 settings = new SnykSettings();
+                this.settingsLoader.Save(settings);
             }
 
             return settings;

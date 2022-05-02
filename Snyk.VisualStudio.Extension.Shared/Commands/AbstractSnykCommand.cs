@@ -3,6 +3,7 @@
     using System;
     using System.ComponentModel.Design;
     using Microsoft.VisualStudio.Shell;
+    using Task = System.Threading.Tasks.Task;
 
     /// <summary>
     /// Abstract class for Snyk commands.
@@ -49,9 +50,10 @@
         protected SnykVSPackage VsPackage => this.package as SnykVSPackage;
 
         /// <summary>
-        /// Update command state.
+        /// Update command state asynchronously.
         /// </summary>
-        public abstract void UpdateState();
+        /// <returns>A <see cref="Task"/> representing the asynchronous operation.</returns>
+        public abstract Task UpdateStateAsync();
 
         /// <summary>
         /// Get command set GUID.

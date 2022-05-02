@@ -42,10 +42,7 @@
             Instance = new SnykOpenSettingsCommand(package, commandService);
         }
 
-        /// <inheritdoc/>
-        public override void UpdateState()
-        {
-        }
+        public override Task UpdateStateAsync() => Task.CompletedTask;
 
         /// <summary>
         /// Open Snyk Options (Settings) page.

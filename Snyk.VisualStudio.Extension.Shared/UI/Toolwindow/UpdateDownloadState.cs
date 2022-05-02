@@ -1,4 +1,6 @@
-﻿namespace Snyk.VisualStudio.Extension.Shared.UI.Toolwindow
+﻿using Microsoft.VisualStudio.Shell;
+
+namespace Snyk.VisualStudio.Extension.Shared.UI.Toolwindow
 {
     using System.Windows;
 
@@ -19,14 +21,13 @@
         {
             this.ToolWindowControl.HideMainMessage();
 
-            this.ToolWindowControl.Dispatcher.Invoke(() =>
+            ThreadHelper.JoinableTaskFactory.Run(async () =>
             {
+                await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
                 this.ToolWindowControl.progressBar.Value = 0;
-
                 this.ToolWindowControl.progressBarPanel.Visibility = Visibility.Collapsed;
+                await this.ToolWindowControl.UpdateActionsStateAsync();
             });
-
-            this.ToolWindowControl.UpdateActionsState();
         }
 
         /// <summary>
@@ -34,16 +35,14 @@
         /// </summary>
         public override void DisplayComponents()
         {
-            this.ToolWindowControl.Dispatcher.Invoke(() =>
+            ThreadHelper.JoinableTaskFactory.Run(async () =>
             {
+                await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
                 this.ToolWindowControl.progressBar.Value = 0;
-
                 this.ToolWindowControl.progressBarPanel.Visibility = Visibility.Visible;
+                this.ToolWindowControl.DisplayMainMessage("Updating the Snyk CLI to the latest release 0%...");
+                await this.ToolWindowControl.UpdateActionsStateAsync();
             });
-
-            this.ToolWindowControl.DisplayMainMessage("Updating the Snyk CLI to the latest release 0%...");
-
-            this.ToolWindowControl.UpdateActionsState();
         }
     }
 }

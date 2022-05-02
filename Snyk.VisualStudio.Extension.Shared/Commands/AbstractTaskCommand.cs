@@ -21,18 +21,18 @@
         {
         }
 
-        /// <inheritdoc/>
-        public override void UpdateState() => this.IsButtonAvailable();
-
         /// <summary>
         /// Check is scan enabled.
         /// </summary>
         /// <returns>True if no other tasks running and solution is open.</returns>
-        protected bool IsButtonAvailable() =>
-            Common.Guid.IsValid(SnykVSPackage.ServiceProvider.Options.ApiToken)
-                && SnykSolutionService.Instance.IsSolutionOpen();
+        protected bool IsButtonAvailable()
+        {
+            ThreadHelper.ThrowIfNotOnUIThread();
+            return Common.Guid.IsValid(SnykVSPackage.ServiceProvider.Options.ApiToken)
+                   && SnykSolutionService.Instance.IsSolutionOpen();
+        }
 
         /// <inheritdoc/>
-        protected override void OnBeforeQueryStatus(object sender, EventArgs e) => this.UpdateState();
+        protected override void OnBeforeQueryStatus(object sender, EventArgs e) => ThreadHelper.JoinableTaskFactory.Run(this.UpdateStateAsync);
     }
 }
