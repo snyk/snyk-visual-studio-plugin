@@ -53,9 +53,9 @@
             Instance = new SnykScanCommand(package, commandService);
         }
 
-        /// <inheritdoc/>
-        public override void UpdateState()
+        public override async Task UpdateStateAsync()
         {
+            await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
             bool isEnabled = this.IsButtonAvailable() && !SnykTasksService.Instance.IsTaskRunning();
 
             this.MenuCommand.Enabled = isEnabled;
@@ -71,7 +71,7 @@
         /// </summary>
         /// <param name="sender">Source object.</param>
         /// <param name="eventArgs">Event args.</param>
-        protected override void Execute(object sender, EventArgs eventArgs) => SnykTasksService.Instance.ScanAsync();
+        protected override void Execute(object sender, EventArgs eventArgs) => ThreadHelper.JoinableTaskFactory.RunAsync(SnykTasksService.Instance.ScanAsync);
 
         /// <summary>
         /// Get command Id.

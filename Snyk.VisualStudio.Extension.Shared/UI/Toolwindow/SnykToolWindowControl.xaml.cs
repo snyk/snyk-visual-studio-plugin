@@ -94,9 +94,9 @@
             tasksService.SnykCodeScanningStarted += this.OnSnykCodeScanningStarted;
             tasksService.OssScanningUpdate += this.OnCliScanningUpdate;
             tasksService.SnykCodeScanningUpdate += this.OnSnykCodeScanningUpdate;
-            tasksService.SnykCodeScanningFinished += this.OnSnykCodeScanningFinished;
-            tasksService.OssScanningFinished += this.OnOssScanningFinished;
-            tasksService.TaskFinished += this.OnTaskFinished;
+            tasksService.SnykCodeScanningFinished += (sender, args) => ThreadHelper.JoinableTaskFactory.RunAsync(this.OnSnykCodeScanningFinishedAsync);
+            tasksService.OssScanningFinished += (sender, args) => ThreadHelper.JoinableTaskFactory.RunAsync(this.OnOssScanningFinishedAsync);
+            tasksService.TaskFinished += (sender, args) => ThreadHelper.JoinableTaskFactory.RunAsync(this.OnTaskFinishedAsync);
 
             Logger.Information("Initialize Download Event Listeners");
 
@@ -166,7 +166,7 @@
 
             this.resultsTree.CliRootNode.State = RootTreeNodeState.Scanning;
 
-            this.UpdateActionsState();
+            await this.UpdateActionsStateAsync();
         });
 
         /// <summary>
@@ -183,7 +183,7 @@
             this.resultsTree.CodeSecurityRootNode.State = RootTreeNodeState.Scanning;
             this.resultsTree.CodeQualityRootNode.State = RootTreeNodeState.Scanning;
 
-            this.UpdateActionsState();
+            await this.UpdateActionsStateAsync();
         });
 
         /// <summary>
@@ -214,7 +214,7 @@
                 this.context.TransitionTo(RunScanState.Instance);
             }
 
-            this.UpdateActionsState();
+            await this.UpdateActionsStateAsync();
         }
 
         /// <summary>
@@ -244,7 +244,7 @@
                 this.context.TransitionTo(RunScanState.Instance);
             }
 
-            this.UpdateActionsState();
+            await this.UpdateActionsStateAsync();
         });
 
         /// <summary>
@@ -305,7 +305,7 @@
         /// <param name="sender">Source object.</param>
         /// <param name="eventArgs">Event args.</param>
         /// <returns>A <see cref="Task"/> representing the asynchronous operation.</returns>
-        public async Task OnDownloadUpdateAsync(object sender, SnykCliDownloadEventArgs eventArgs) => await this.UpdateDownloadProgress(eventArgs.Progress);
+        public async Task OnDownloadUpdateAsync(object sender, SnykCliDownloadEventArgs eventArgs) => await this.UpdateDownloadProgressAsync(eventArgs.Progress);
 
         /// <summary>
         /// DownloadCancelled event handler. Call SetInitialState() method.
@@ -386,28 +386,32 @@
         });
 
         /// <summary>
-        /// Update state of toolbar (commands).
+        /// Switch to main thread and update state of toolbar (commands).
         /// </summary>
-        public void UpdateActionsState()
+        /// <returns>A <see cref="Task"/> representing the asynchronous operation.</returns>
+        public async Task UpdateActionsStateAsync()
         {
-            SnykScanCommand.Instance.UpdateState();
-            SnykStopCurrentTaskCommand.Instance.UpdateState();
-            SnykCleanPanelCommand.Instance.UpdateState();
-            SnykOpenSettingsCommand.Instance.UpdateState();
+            await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
+            await Task.WhenAll(
+                SnykScanCommand.Instance.UpdateStateAsync(),
+                SnykStopCurrentTaskCommand.Instance.UpdateStateAsync(),
+                SnykCleanPanelCommand.Instance.UpdateStateAsync(),
+                SnykOpenSettingsCommand.Instance.UpdateStateAsync());
         }
 
-        /// <summary>
-        /// Update current screen state (welcome screen or run scan state).
-        /// </summary>
-        public void UpdateScreenState() => System.Threading.Tasks.Task.Delay(1500).ContinueWith(task => this.ShowWelcomeOrRunScanScreen());
+        public async Task UpdateScreenStateAsync()
+        {
+            await Task.Delay(1500);
+            this.ShowWelcomeOrRunScanScreen();
+        }
 
-        private void OnOssScanningFinished(object sender, SnykCliScanEventArgs e) => this.UpdateActionsState();
+        private async Task OnOssScanningFinishedAsync() => await this.UpdateActionsStateAsync();
 
-        private void OnSnykCodeScanningFinished(object sender, SnykCodeScanEventArgs e) => this.UpdateActionsState();
+        private async Task OnSnykCodeScanningFinishedAsync() => await this.UpdateActionsStateAsync();
 
         private void OnSettingsChanged(object sender, SnykSettingsChangedEventArgs e) => this.UpdateTreeNodeItemsState();
 
-        private void OnTaskFinished(object sender, EventArgs e) => this.UpdateActionsState();
+        private async Task OnTaskFinishedAsync() => await this.UpdateActionsStateAsync();
 
         private void UpdateTreeNodeItemsState() => ThreadHelper.JoinableTaskFactory.Run(async () =>
         {
@@ -528,7 +532,7 @@
         /// Update progress bar.
         /// </summary>
         /// <param name="value">Progress bar value.</param>
-        private async Task UpdateDownloadProgress(int value)
+        private async Task UpdateDownloadProgressAsync(int value)
         {
             await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
 
@@ -559,7 +563,7 @@
 
                 if (this.resultsTree.SelectedItem is SnykCodeVulnerabilityTreeNode)
                 {
-                    this.HandleSnykCodeTreeNodeSelectedAsync();
+                    await this.HandleSnykCodeTreeNodeSelectedAsync();
 
                     return;
                 }
@@ -615,13 +619,13 @@
             }
         }
 
-        private async System.Threading.Tasks.Task HandleSnykCodeTreeNodeSelectedAsync()
+        private async Task HandleSnykCodeTreeNodeSelectedAsync()
         {
             this.descriptionPanel.Visibility = Visibility.Visible;
 
             var snykCodeTreeNode = this.resultsTree.SelectedItem as SnykCodeVulnerabilityTreeNode;
 
-            this.descriptionPanel.Suggestion = snykCodeTreeNode.Suggestion;
+            await this.descriptionPanel.SetSuggestionAsync(snykCodeTreeNode.Suggestion);
 
             var suggestion = snykCodeTreeNode.Suggestion;
 

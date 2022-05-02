@@ -67,7 +67,7 @@
             }
         }
 
-        private async void SnykProjectOptionsUserControl_Load(object sender, EventArgs eventArgs)
+        private void SnykProjectOptionsUserControl_Load(object sender, EventArgs eventArgs) => ThreadHelper.JoinableTaskFactory.RunAsync(async () =>
         {
             this.OnVisibleChanged(eventArgs);
 
@@ -117,6 +117,6 @@
             }
 
             this.CheckOptionConflicts();
-        }
+        });
     }
 }

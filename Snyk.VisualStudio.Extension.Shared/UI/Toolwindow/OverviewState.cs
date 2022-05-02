@@ -24,7 +24,7 @@
 
             this.ToolWindowControl.messagePanel.ShowOverviewScreenMessage();
 
-            this.ToolWindowControl.UpdateActionsState();
+            await this.ToolWindowControl.UpdateActionsStateAsync();
         });
 
         /// <summary>
@@ -36,7 +36,7 @@
 
             this.ToolWindowControl.messagePanel.Visibility = Visibility.Collapsed;
 
-            this.ToolWindowControl.UpdateActionsState();
+            await this.ToolWindowControl.UpdateActionsStateAsync();
         });
     }
 }

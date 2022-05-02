@@ -4,12 +4,15 @@
     using System.Diagnostics.CodeAnalysis;
     using System.Threading.Tasks;
     using System.Windows.Forms;
+    using Microsoft.VisualStudio.Shell;
+    using Microsoft.VisualStudio.Threading;
     using Serilog;
     using Snyk.Common;
     using Snyk.VisualStudio.Extension.Shared.CLI;
     using Snyk.VisualStudio.Extension.Shared.Service;
     using Snyk.VisualStudio.Extension.Shared.UI.Notifications;
     using static Snyk.VisualStudio.Extension.Shared.CLI.Download.SnykCliDownloader;
+    using Task = System.Threading.Tasks.Task;
 
     /// <summary>
     /// Control for Snyk General Settings.
@@ -31,10 +34,6 @@
         private ISnykApiService apiService;
 
         private Timer snykCodeEnableTimer = new Timer();
-
-        private Action<string> successCallbackAction;
-
-        private Action<string> errorCallbackAction;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="SnykGeneralSettingsUserControl"/> class.
@@ -62,88 +61,6 @@
             this.usageAnalyticsCheckBox.Checked = this.OptionsDialogPage.UsageAnalyticsEnabled;
             this.ossEnabledCheckBox.Checked = this.OptionsDialogPage.OssEnabled;
 
-            this.successCallbackAction = (apiToken) =>
-            {
-                Logger.Information("Enter authenticate successCallback");
-
-                if (this.authProgressBar.IsHandleCreated)
-                {
-                    this.authProgressBar.Invoke(new Action(() =>
-                    {
-                        this.authProgressBar.Visible = false;
-                    }));
-                }
-
-                if (this.tokenTextBox.IsHandleCreated)
-                {
-                    this.tokenTextBox.Invoke(new Action(() =>
-                    {
-                        this.tokenTextBox.Text = apiToken;
-                        this.tokenTextBox.Enabled = true;
-                    }));
-                }
-
-                if (this.authenticateButton.IsHandleCreated)
-                {
-                    this.authenticateButton.Invoke(new Action(() =>
-                    {
-                        this.authenticateButton.Enabled = true;
-                    }));
-                }
-
-                if (this.authenticateButton.IsHandleCreated)
-                {
-                    this.authenticateButton.Invoke(new Action(() =>
-                    {
-                        this.errorProvider.SetError(this.tokenTextBox, string.Empty);
-                    }));
-                }
-
-                this.OptionsDialogPage.ServiceProvider.ToolWindow.UpdateScreenState();
-            };
-
-            this.errorCallbackAction = (errorMessage) =>
-            {
-                Logger.Information("Enter authenticate errorCallback");
-
-                if (this.authProgressBar.IsHandleCreated)
-                {
-                    this.authProgressBar.Invoke(new Action(() =>
-                    {
-                        this.authProgressBar.Visible = false;
-                    }));
-                }
-
-                if (this.tokenTextBox.IsHandleCreated)
-                {
-                    this.tokenTextBox.Invoke(new Action(() =>
-                    {
-                        this.tokenTextBox.Enabled = true;
-                    }));
-                }
-
-                if (this.authenticateButton.IsHandleCreated)
-                {
-                    this.authenticateButton.Invoke(new Action(() =>
-                    {
-                        this.authenticateButton.Enabled = true;
-                    }));
-                }
-
-                CliError cliError = new CliError
-                {
-                    IsSuccess = false,
-                    Message = errorMessage,
-                    Path = string.Empty,
-                };
-
-                this.OptionsDialogPage.ServiceProvider.TasksService.FireOssError(cliError);
-
-                this.OptionsDialogPage.ServiceProvider.ToolWindow.Show();
-
-                this.OptionsDialogPage.ServiceProvider.ToolWindow.UpdateScreenState();
-            };
-
             Logger.Information("Leave Initialize method");
         }
 
@@ -159,7 +76,6 @@
             _ = Task.Run(() =>
             {
                 var serviceProvider = this.OptionsDialogPage.ServiceProvider;
-                var tasksService = serviceProvider.TasksService;
 
                 if (SnykCli.IsCliExists())
                 {
@@ -178,6 +94,47 @@
             Logger.Information("Leave Authenticate method");
         }
 
+        private async Task OnAuthenticationSuccessfulAsync(string apiToken)
+        {
+            Logger.Information("Enter authenticate successCallback");
+
+            //TODO - try to await SwitchToMainThread
+            if (this.authProgressBar.IsHandleCreated)
+            {
+                this.authProgressBar.Invoke(new Action(() =>
+                {
+                    this.authProgressBar.Visible = false;
+                }));
+            }
+
+            if (this.tokenTextBox.IsHandleCreated)
+            {
+                this.tokenTextBox.Invoke(new Action(() =>
+                {
+                    this.tokenTextBox.Text = apiToken;
+                    this.tokenTextBox.Enabled = true;
+                }));
+            }
+
+            if (this.authenticateButton.IsHandleCreated)
+            {
+                this.authenticateButton.Invoke(new Action(() =>
+                {
+                    this.authenticateButton.Enabled = true;
+                }));
+            }
+
+            if (this.authenticateButton.IsHandleCreated)
+            {
+                this.authenticateButton.Invoke(new Action(() =>
+                {
+                    this.errorProvider.SetError(this.tokenTextBox, string.Empty);
+                }));
+            }
+
+            await this.OptionsDialogPage.ServiceProvider.ToolWindow.UpdateScreenStateAsync();
+        }
+
         private void InitializeApiToken()
         {
             if (string.IsNullOrEmpty(this.OptionsDialogPage.ApiToken))
@@ -193,9 +150,54 @@
             this.tokenTextBox.Text = this.OptionsDialogPage.ApiToken;
         }
 
-        private SnykCli NewCli() => new SnykCli { Options = this.OptionsDialogPage, };
+        private async Task OnAuthenticationFailAsync(string errorMessage)
+        {
+            Logger.Information("Enter authenticate errorCallback");
 
-        private void AuthenticateButton_Click(object sender, EventArgs eventArgs)
+            if (this.authProgressBar.IsHandleCreated)
+            {
+                this.authProgressBar.Invoke(new Action(() =>
+                {
+                    this.authProgressBar.Visible = false;
+                }));
+            }
+
+            if (this.tokenTextBox.IsHandleCreated)
+            {
+                this.tokenTextBox.Invoke(new Action(() =>
+                {
+                    this.tokenTextBox.Enabled = true;
+                }));
+            }
+
+            if (this.authenticateButton.IsHandleCreated)
+            {
+                this.authenticateButton.Invoke(new Action(() =>
+                {
+                    this.authenticateButton.Enabled = true;
+                }));
+            }
+
+            CliError cliError = new CliError
+            {
+                IsSuccess = false,
+                Message = errorMessage,
+                Path = string.Empty,
+            };
+
+            this.OptionsDialogPage.ServiceProvider.TasksService.FireOssError(cliError);
+
+            this.OptionsDialogPage.ServiceProvider.ToolWindow.Show();
+
+            await this.OptionsDialogPage.ServiceProvider.ToolWindow.UpdateScreenStateAsync();
+        }
+
+        private SnykCli NewCli() => new SnykCli { Options = this.OptionsDialogPage };
+
+        private void AuthenticateButton_Click(object sender, EventArgs eventArgs) => ThreadHelper.JoinableTaskFactory
+            .RunAsync(this.AuthenticateButtonClickAsync);
+
+        private async Task AuthenticateButtonClickAsync()
         {
             Logger.Information("Enter authenticateButton_Click method");
 
@@ -204,32 +206,84 @@
             this.authenticateButton.Enabled = false;
 
             Logger.Information("Start run task");
+            await TaskScheduler.Default;
 
-            Task.Run(() =>
+            var serviceProvider = this.OptionsDialogPage.ServiceProvider;
+
+            if (SnykCli.IsCliExists())
             {
-                var serviceProvider = this.OptionsDialogPage.ServiceProvider;
-                var tasksService = serviceProvider.TasksService;
+                Logger.Information("CLI exists. Calling SetupApiToken method");
 
-                if (SnykCli.IsCliExists())
-                {
-                    Logger.Information("CLI exists. Calling SetupApiToken method");
+                await this.SetupApiTokenAsync();
+            }
+            else
+            {
+                Logger.Information("CLI not exists. Download CLI before get Api token");
 
-                    this.SetupApiToken(this.successCallbackAction, this.errorCallbackAction);
-                }
-                else
-                {
-                    Logger.Information("CLI not exists. Download CLI before get Api token");
-
-                    serviceProvider.TasksService.Download(new CliDownloadFinishedCallback(this.OnCliDownloadFinishedCallback));
-                }
-            });
+                serviceProvider.TasksService.Download(this.OnCliDownloadFinishedCallback);
+            }
         }
 
-        private void OnCliDownloadFinishedCallback()
+        private void OnCliDownloadFinishedCallback() => ThreadHelper.JoinableTaskFactory.Run(async () =>
         {
             Logger.Information("CLI downloaded. Calling SetupApiToken method");
 
-            this.SetupApiToken(this.successCallbackAction, this.errorCallbackAction);
+            await this.SetupApiTokenAsync();
+        });
+
+        private async Task SetupApiTokenAsync()
+        {
+            Logger.Information("Enter SetupApiToken method");
+
+            string apiToken;
+
+            try
+            {
+                Logger.Information("Try get Api token");
+
+                apiToken = this.NewCli().GetApiToken();
+
+                if (string.IsNullOrEmpty(apiToken))
+                {
+                    Logger.Information("Api toke is null or empty. Try to authenticate via snyk auth");
+
+                    string authResultMessage = this.NewCli().Authenticate();
+
+                    if (authResultMessage.Contains("Your account has been authenticated. Snyk is now ready to be used."))
+                    {
+                        Logger.Information("Snyk auth executed successfully. Try to get Api token");
+
+                        apiToken = this.NewCli().GetApiToken();
+                    }
+                    else
+                    {
+                        Logger.Information("Snyk auth executed with error: {AuthResultMessage}", authResultMessage);
+
+                        await this.OnAuthenticationFailAsync(authResultMessage);
+
+                        return;
+                    }
+                }
+
+                Logger.Information("Validate Api token GUID");
+
+                if (!Common.Guid.IsValid(apiToken))
+                {
+                    await this.OnAuthenticationFailAsync($"Invalid GUID: {apiToken}");
+
+                    return;
+                }
+
+                await this.OnAuthenticationSuccessfulAsync(apiToken);
+
+                Logger.Information("Leave SetupApiToken method");
+            }
+            catch (Exception e)
+            {
+                Logger.Error(e, "Setup api token in general settings");
+
+                await this.OnAuthenticationFailAsync(e.Message);
+            }
         }
 
         private void SetupApiToken(Action<string> successCallback, Action<string> errorCallback)
@@ -313,31 +367,32 @@
             this.OptionsDialogPage.IgnoreUnknownCA = this.ignoreUnknownCACheckBox.Checked;
         }
 
-        private void TokenTextBox_Validating(object sender, System.ComponentModel.CancelEventArgs cancelEventArgs)
-        {
-            this.OptionsDialogPage.ServiceProvider.ToolWindow.UpdateScreenState();
-
-            if (string.IsNullOrEmpty(this.tokenTextBox.Text))
+        private void TokenTextBox_Validating(object sender, System.ComponentModel.CancelEventArgs cancelEventArgs) =>
+            ThreadHelper.JoinableTaskFactory.RunAsync(async () =>
             {
-                this.errorProvider.SetError(this.tokenTextBox, string.Empty);
+                await this.OptionsDialogPage.ServiceProvider.ToolWindow.UpdateScreenStateAsync();
 
-                return;
-            }
+                if (string.IsNullOrEmpty(this.tokenTextBox.Text))
+                {
+                    this.errorProvider.SetError(this.tokenTextBox, string.Empty);
 
-            if (!Common.Guid.IsValid(this.tokenTextBox.Text))
-            {
-                cancelEventArgs.Cancel = true;
+                    return;
+                }
 
-                this.tokenTextBox.Focus();
+                if (!Common.Guid.IsValid(this.tokenTextBox.Text))
+                {
+                    cancelEventArgs.Cancel = true;
 
-                this.errorProvider.SetError(this.tokenTextBox, "Not valid GUID.");
-            }
-            else
-            {
-                cancelEventArgs.Cancel = false;
-                this.errorProvider.SetError(this.tokenTextBox, string.Empty);
-            }
-        }
+                    this.tokenTextBox.Focus();
+
+                    this.errorProvider.SetError(this.tokenTextBox, "Not valid GUID.");
+                }
+                else
+                {
+                    cancelEventArgs.Cancel = false;
+                    this.errorProvider.SetError(this.tokenTextBox, string.Empty);
+                }
+            });
 
         private void CustomEndpointTextBox_Validating(object sender, System.ComponentModel.CancelEventArgs cancelEventArgs)
         {
@@ -428,7 +483,7 @@
 
                 this.snykCodeEnableTimer.Interval = TwoSecondsDelay;
 
-                this.snykCodeEnableTimer.Tick += async (sender, eventArgs) =>
+                this.snykCodeEnableTimer.Tick += (sender, args) => ThreadHelper.JoinableTaskFactory.RunAsync(async () =>
                 {
                     try
                     {
@@ -457,7 +512,7 @@
                     {
                         this.HandleSastError(e);
                     }
-                };
+                });
 
                 this.snykCodeEnableTimer.Start();
             }

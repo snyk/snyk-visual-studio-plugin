@@ -43,8 +43,9 @@
         }
 
         /// <inheritdoc/>
-        public override void UpdateState()
+        public override async Task UpdateStateAsync()
         {
+            await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
             this.MenuCommand.Enabled = this.IsButtonAvailable() && !SnykScanCommand.Instance.Enabled;
         }
 

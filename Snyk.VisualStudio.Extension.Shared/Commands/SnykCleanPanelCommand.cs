@@ -42,9 +42,12 @@
             Instance = new SnykCleanPanelCommand(package, commandService);
         }
 
-        public override void UpdateState() =>
+        public override async Task UpdateStateAsync()
+        {
+            await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
             this.MenuCommand.Enabled = Common.Guid.IsValid(SnykVSPackage.ServiceProvider.Options.ApiToken)
-                && this.VsPackage.ToolWindowControl.IsTreeContentNotEmpty();
+                                       && this.VsPackage.ToolWindowControl.IsTreeContentNotEmpty();
+        }
 
         /// <summary>
         /// Run clean of tool window content.
@@ -65,6 +68,6 @@
         protected override int GetCommandId() => SnykGuids.CleanCommandId;
 
         /// <inheritdoc/>
-        protected override void OnBeforeQueryStatus(object sender, EventArgs e) => this.UpdateState();
+        protected override void OnBeforeQueryStatus(object sender, EventArgs e) => ThreadHelper.JoinableTaskFactory.Run(UpdateStateAsync);
     }
 }

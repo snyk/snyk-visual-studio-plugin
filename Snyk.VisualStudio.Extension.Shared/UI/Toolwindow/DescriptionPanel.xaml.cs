@@ -4,6 +4,7 @@
     using System.Windows.Controls;
     using Snyk.Code.Library.Domain.Analysis;
     using Snyk.VisualStudio.Extension.Shared.CLI;
+    using Task = System.Threading.Tasks.Task;
 
     /// <summary>
     /// Interaction logic for DescriptionPanel.xaml.
@@ -33,19 +34,12 @@
             }
         }
 
-        /// <summary>
-        /// Sets <see cref="Suggestion"/> information and update corresponding UI elements. For SnykCode scan result.
-        /// </summary>
-        public Suggestion Suggestion
+        public async Task SetSuggestionAsync(Suggestion value)
         {
-            set
-            {
-                this.ossDescriptionControl.Visibility = Visibility.Collapsed;
-                this.snykCodeDescriptionControl.Visibility = Visibility.Visible;
-
-                this.descriptionHeaderPanel.Suggestion = value;
-                this.snykCodeDescriptionControl.Suggestion = value;
-            }
+            this.ossDescriptionControl.Visibility = Visibility.Collapsed;
+            this.snykCodeDescriptionControl.Visibility = Visibility.Visible;
+            this.descriptionHeaderPanel.Suggestion = value;
+            await this.snykCodeDescriptionControl.SetSuggestionAsync(value);
         }
 
         /// <summary>

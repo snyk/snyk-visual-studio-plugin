@@ -21,6 +21,10 @@
 
         private IFiltersService filtersService;
 
+        /// <summary>
+        /// The Cache-Service can be set to null asynchronously by the <see cref="Clean"/> method,
+        /// so make sure to store it in local variables and pass it around as a parameter
+        /// </summary>
         private ICodeCacheService codeCacheService;
 
         private IDcIgnoreService dcIgnoreService;
@@ -87,14 +91,12 @@
         public async Task<AnalysisResult> ScanAsync(IFileProvider fileProvider, CancellationToken cancellationToken = default)
         {
             Logger.Debug("Start SnykCode scanning...");
-
             this.FireScanProgressEvent(SnykCodeScanState.Preparing, 0);
+            var codeCache = this.LazyGetCacheService(fileProvider);
 
-            this.InitializeCacheIfNeeded(fileProvider);
-
-            if (!this.codeCacheService.IsCacheExists())
+            if (!codeCache.IsCacheExists())
             {
-                return await this.NewScanAsync(fileProvider, cancellationToken);
+                return await this.NewScanAsync(fileProvider, codeCache, cancellationToken);
             }
 
             var filteredChangedFiles = await this.GetFilteredFilesAsync(await fileProvider.GetSolutionPathAsync(), fileProvider.GetAllChangedFiles());
@@ -103,16 +105,16 @@
             {
                 this.FireScanProgressEvent(SnykCodeScanState.Analysing, 100);
 
-                return this.codeCacheService.GetCachedAnalysisResult();
+                return codeCache.GetCachedAnalysisResult();
             }
 
-            return await this.UpdatePreviousScanAsync(fileProvider, filteredChangedFiles, cancellationToken);
+            return await this.UpdatePreviousScanAsync(fileProvider, filteredChangedFiles, codeCache, cancellationToken);
         }
 
         /// <inheritdoc/>
         public void Clean() => this.codeCacheService = null;
 
-        private async Task<AnalysisResult> NewScanAsync(IFileProvider fileProvider, CancellationToken cancellationToken = default)
+        private async Task<AnalysisResult> NewScanAsync(IFileProvider fileProvider, ICodeCacheService codeCache, CancellationToken cancellationToken = default)
         {
             this.FireScanProgressEvent(SnykCodeScanState.Preparing, 0);
 
@@ -129,9 +131,9 @@
                 return null;
             }
 
-            await this.codeCacheService.InitializeAsync(files);
+            await codeCache.InitializeAsync(files);
 
-            var filePathToHashDict = this.codeCacheService.GetFilePathToHashDictionary();
+            var filePathToHashDict = codeCache.GetFilePathToHashDictionary();
 
             cancellationToken.ThrowIfCancellationRequested();
 
@@ -141,7 +143,7 @@
 
             await this.bundleService.UploadMissingFilesAsync(
                 resultBundle,
-                this.codeCacheService,
+                codeCache,
                 scanCodeProgressUpdater,
                 cancellationToken);
 
@@ -151,7 +153,7 @@
 
             cancellationToken.ThrowIfCancellationRequested();
 
-            this.UpdateCache(resultBundle.Id, analysisResult);
+            this.UpdateCache(resultBundle.Id, analysisResult, codeCache);
 
             fileProvider.ClearHistory();
 
@@ -162,15 +164,19 @@
             return analysisResult;
         }
 
-        private async Task<AnalysisResult> UpdatePreviousScanAsync(IFileProvider fileProvider, IEnumerable<string> changedFiles, CancellationToken cancellationToken = default)
+        private async Task<AnalysisResult> UpdatePreviousScanAsync(
+            IFileProvider fileProvider,
+            IEnumerable<string> changedFiles,
+            ICodeCacheService cacheService,
+            CancellationToken cancellationToken = default)
         {
-            this.codeCacheService.UpdateAsync(fileProvider);
+            await cacheService.UpdateAsync(fileProvider);
 
-            var extendFilePathToHashDict = await this.codeCacheService.GetFilePathToHashDictionaryAsync(changedFiles);
+            var extendFilePathToHashDict = await cacheService.GetFilePathToHashDictionaryAsync(changedFiles);
 
-            string bundleId = this.codeCacheService.GetCachedBundleId();
+            string bundleId = cacheService.GetCachedBundleId();
 
-            var removedFiles = await this.codeCacheService.GetRelativeFilePathsAsync(fileProvider.GetRemovedFiles());
+            var removedFiles = await cacheService.GetRelativeFilePathsAsync(fileProvider.GetRemovedFiles());
 
             var extendedBundle = await this.bundleService.ExtendBundleAsync(bundleId, extendFilePathToHashDict, removedFiles);
 
@@ -178,7 +184,7 @@
 
             await this.bundleService.UploadMissingFilesAsync(
                 extendedBundle,
-                this.codeCacheService,
+                cacheService,
                 scanCodeProgressUpdater,
                 cancellationToken);
 
@@ -188,7 +194,7 @@
 
             cancellationToken.ThrowIfCancellationRequested();
 
-            this.UpdateCache(extendedBundle.Id, analysisResult);
+            this.UpdateCache(extendedBundle.Id, analysisResult, cacheService);
 
             cancellationToken.ThrowIfCancellationRequested();
 
@@ -204,21 +210,24 @@
             return await this.filtersService.FilterFilesAsync(files, cancellationToken);
         }
 
-        private void UpdateCache(string bundleId, AnalysisResult analysisResult)
+        private void UpdateCache(string bundleId, AnalysisResult analysisResult, ICodeCacheService cacheService)
         {
-            this.codeCacheService.SetAnalysisResult(analysisResult);
-
-            this.codeCacheService.SetCachedBundleId(bundleId);
+            cacheService.SetAnalysisResult(analysisResult);
+            cacheService.SetCachedBundleId(bundleId);
         }
 
         private bool AnyFilesChangedInSolution(IEnumerable<string> files) => files.IsNullOrEmpty();
 
-        private void InitializeCacheIfNeeded(IFileProvider fileProvider)
+        private ICodeCacheService LazyGetCacheService(IFileProvider fileProvider)
         {
-            if (this.codeCacheService == null)
+            var codeCache = this.codeCacheService;
+            if (codeCache == null)
             {
-                this.codeCacheService = new CodeCacheService(fileProvider);
+                codeCache = new CodeCacheService(fileProvider);
+                this.codeCacheService = codeCache;
             }
+
+            return codeCache;
         }
 
         private void FireScanProgressEvent(SnykCodeScanState state, int progress)

@@ -52,7 +52,12 @@
         /// <summary>
         /// Gets a value indicating whether is solution open.
         /// </summary>
-        public bool IsSolutionOpen() => this.ServiceProvider.DTE.Solution.IsOpen;
+        /// <returns>True if the solution is open, false otherwise</returns>
+        public bool IsSolutionOpen()
+        {
+            ThreadHelper.ThrowIfNotOnUIThread();
+            return this.ServiceProvider.DTE.Solution.IsOpen;
+        }
 
         /// <summary>
         /// Gets or sets a value indicating whether <see cref="ISnykServiceProvider"/> instance.
@@ -94,12 +99,20 @@
         /// Get solution projects.
         /// </summary>
         /// <returns>Projects instance.</returns>
-        public Projects GetProjects() => this.ServiceProvider.DTE.Solution.Projects;
+        public Projects GetProjects()
+        {
+            ThreadHelper.ThrowIfNotOnUIThread();
+            return this.ServiceProvider.DTE.Solution.Projects;
+        }
 
         /// <inheritdoc/>
         /// If DTE.Solution.FullName - path to solution file (*.sln file), then it's Visual Studio solution.
         /// If DTE.Solution.FullName - path to folder (not *.sln file), then project opened as folder.
-        public bool IsSolutionOpenedAsFolder() => Directory.Exists(this.ServiceProvider.DTE.Solution.FullName);
+        public bool IsSolutionOpenedAsFolder()
+        {
+            ThreadHelper.ThrowIfNotOnUIThread();
+            return Directory.Exists(ServiceProvider.DTE.Solution.FullName);
+        }
 
         /// <summary>
         /// Get full file path by relative file path.

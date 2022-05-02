@@ -43,8 +43,12 @@
             get => this.apiToken;
             set
             {
-                this.apiToken = value;
+                if (this.apiToken == value)
+                {
+                    return;
+                }
 
+                this.apiToken = value;
                 this.FireSettingsChangedEvent();
             }
         }
@@ -57,8 +61,12 @@
             get => this.customEndpoint;
             set
             {
-                this.customEndpoint = value;
+                if (this.customEndpoint == value)
+                {
+                    return;
+                }
 
+                this.customEndpoint = value;
                 this.FireSettingsChangedEvent();
             }
         }
@@ -97,8 +105,12 @@
             get => this.userStorageSettingsService.IsOssEnabled();
             set
             {
-                this.userStorageSettingsService?.SaveOssEnabled(value);
+                if (this.userStorageSettingsService?.IsOssEnabled() == value)
+                {
+                    return;
+                }
 
+                this.userStorageSettingsService?.SaveOssEnabled(value);
                 this.FireSettingsChangedEvent();
             }
         }
@@ -109,8 +121,12 @@
             get => this.userStorageSettingsService.IsSnykCodeSecurityEnabled();
             set
             {
-                this.userStorageSettingsService?.SaveSnykCodeSecurityEnabled(value);
+                if (this.userStorageSettingsService?.IsSnykCodeSecurityEnabled() == value)
+                {
+                    return;
+                }
 
+                this.userStorageSettingsService?.SaveSnykCodeSecurityEnabled(value);
                 this.FireSettingsChangedEvent();
             }
         }
@@ -121,8 +137,12 @@
             get => this.userStorageSettingsService.IsSnykCodeQualityEnabled();
             set
             {
-                this.userStorageSettingsService?.SaveSnykCodeQualityEnabled(value);
+                if (this.userStorageSettingsService?.IsSnykCodeQualityEnabled() == value)
+                {
+                    return;
+                }
 
+                this.userStorageSettingsService?.SaveSnykCodeQualityEnabled(value);
                 this.FireSettingsChangedEvent();
             }
         }
