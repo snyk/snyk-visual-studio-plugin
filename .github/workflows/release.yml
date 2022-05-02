@@ -18,6 +18,7 @@ jobs:
     defaults:
       run:
         working-directory: ${{ github.workspace }}
+    environment: snyk-msbuild-envs
     env:
       TEST_API_TOKEN: ${{ secrets.TEST_API_TOKEN }}
       VsixManifestPath: .\Snyk.VisualStudio.Extension\source.extension.vsixmanifest
