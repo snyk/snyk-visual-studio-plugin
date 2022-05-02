@@ -372,7 +372,7 @@
 
                 Logger.Information("Start scan task");
 
-                await this.RunOssScanAsync(featuresSettings);
+                await Task.Run(() => this.RunOssScanAsync(featuresSettings));
             }
             catch (Exception ex)
             {
