@@ -2,6 +2,7 @@
 {
     using System;
     using Snyk.VisualStudio.Extension.Shared.CLI;
+    using Snyk.VisualStudio.Extension.Shared.Service.Domain;
 
     /// <summary>
     /// CLI scan event args.
@@ -19,9 +20,11 @@
         /// Initializes a new instance of the <see cref="SnykCliScanEventArgs"/> class.
         /// </summary>
         /// <param name="cliError"><see cref="CliError"/> object.</param>
-        public SnykCliScanEventArgs(CliError cliError)
+        /// <param name="featuresSettings">Features settings.</param>
+        public SnykCliScanEventArgs(CliError cliError, FeaturesSettings featuresSettings)
         {
             this.Error = cliError;
+            this.FeaturesSettings = featuresSettings;
         }
 
         /// <summary>
@@ -32,6 +35,11 @@
         {
             this.Result = cliResult;
         }
+
+        /// <summary>
+        /// Gets or sets a value indicating whether <see cref="FeaturesSettings"/> object.
+        /// </summary>
+        public FeaturesSettings FeaturesSettings { get; }
 
         /// <summary>
         /// Gets or sets a value indicating whether SnykCode scan still running or not.

@@ -14,10 +14,17 @@
         /// <param name="apiToken">Snyk ApiToken.</param>
         /// <param name="endpoint">Snyk endpoint.</param>
         /// <param name="fileProvider">VisualStudio file provider.</param>
+        /// <param name="flowName">Context flow name.</param>
+        /// <param name="orgName">User organization name.</param>
         /// <returns>ISnykCodeService instance.</returns>
-        public static ISnykCodeService CreateSnykCodeService(string apiToken, string endpoint, IFileProvider fileProvider)
+        public static ISnykCodeService CreateSnykCodeService(
+            string apiToken,
+            string endpoint,
+            IFileProvider fileProvider,
+            string flowName,
+            string orgName)
         {
-            var codeClient = new SnykCodeClient(endpoint, apiToken);
+            var codeClient = new SnykCodeClient(endpoint, apiToken, flowName, orgName);
 
             var filterService = new FiltersService(codeClient);
 

@@ -86,7 +86,7 @@
 
             SnykTasksService tasksService = serviceProvider.TasksService;
 
-            tasksService.OssScanError += this.OnCliDisplayError;
+            tasksService.OssScanError += (sender, args) => ThreadHelper.JoinableTaskFactory.RunAsync(() => this.OnCliDisplayErrorAsync(sender, args));
             tasksService.SnykCodeScanError += this.OnSnykCodeDisplayError;
             tasksService.SnykCodeDisabled += this.OnSnykCodeDisabledHandler;
             tasksService.ScanningCancelled += this.OnScanningCancelled;
@@ -198,7 +198,8 @@
         /// </summary>
         /// <param name="sender">Source object.</param>
         /// <param name="eventArgs">Event args.</param>
-        public void OnCliDisplayError(object sender, SnykCliScanEventArgs eventArgs) => ThreadHelper.JoinableTaskFactory.Run(async () =>
+        /// <returns>A <see cref="Task"/> representing the asynchronous operation.</returns>
+        public async Task OnCliDisplayErrorAsync(object sender, SnykCliScanEventArgs eventArgs)
         {
             await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
 
@@ -208,13 +209,13 @@
 
             NotificationService.Instance.ShowErrorInfoBar(eventArgs.Error.Message);
 
-            if (!this.serviceProvider.Options.SnykCodeSecurityEnabled && !this.serviceProvider.Options.SnykCodeQualityEnabled)
+            if (eventArgs.FeaturesSettings != null && !eventArgs.FeaturesSettings.CodeSecurityEnabled && !eventArgs.FeaturesSettings.CodeQualityEnabled)
             {
                 this.context.TransitionTo(RunScanState.Instance);
             }
 
             await this.UpdateActionsStateAsync();
-        });
+        }
 
         /// <summary>
         /// Initialize tool window control.

@@ -14,7 +14,7 @@
         public string Langguage { get; set; }
 
         /// <summary>
-        /// Gets or sets a value indicating anaylysis is supported language.
+        /// Gets or sets a value indicating whether anaylysis is supported language.
         /// </summary>
         public bool IsSupported { get; set; }
 
