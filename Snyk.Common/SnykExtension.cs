@@ -15,11 +15,9 @@
         /// Integration name.
         /// </summary>
         public const string IntegrationName = "VISUAL_STUDIO";
-#if DEBUG
-        private const string AppSettingsFileName = "appsettings.development.json";
-#else
+        private const string AppSettingsDevelopmentFileName = "appsettings.development.json";
         private const string AppSettingsFileName = "appsettings.json";
-#endif
+
         private static string version = string.Empty;
 
         private static string extensionDirectoryPath;
@@ -41,11 +39,18 @@
                 if (appSettings == null)
                 {
                     string extensionPath = GetExtensionDirectoryPath();
-
                     string appSettingsPath = Path.Combine(extensionPath, AppSettingsFileName);
 
-                    appSettings = Json
-                        .Deserialize<SnykAppSettings>(File.ReadAllText(appSettingsPath, Encoding.UTF8));
+#if DEBUG
+                    // In Debug mode, attempt to use the appsettings.development.json file if present
+                    var developmentAppSettingsPath = Path.Combine(extensionPath, AppSettingsDevelopmentFileName);
+                    if (File.Exists(developmentAppSettingsPath))
+                    {
+                        appSettingsPath = developmentAppSettingsPath;
+                    }
+#endif
+
+                    appSettings = Json.Deserialize<SnykAppSettings>(File.ReadAllText(appSettingsPath, Encoding.UTF8));
                 }
 
                 return appSettings;
