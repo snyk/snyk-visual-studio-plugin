@@ -49,7 +49,7 @@
                 .MinimumLevel.ControlledBy(loggingLevelSwitch)
                 .WriteTo.Sentry(config =>
                 {
-                    var appSettings = SnykExtension.GetAppSettings();
+                    var appSettings = SnykExtension.AppSettings;
 
                     config.Release = SnykExtension.Version;
                     config.Environment = appSettings.Environment;

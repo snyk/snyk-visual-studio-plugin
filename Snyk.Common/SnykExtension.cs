@@ -15,7 +15,7 @@
         /// Integration name.
         /// </summary>
         public const string IntegrationName = "VISUAL_STUDIO";
-
+        private const string AppSettingsDevelopmentFileName = "appsettings.development.json";
         private const string AppSettingsFileName = "appsettings.json";
 
         private static string version = string.Empty;
@@ -30,22 +30,31 @@
         public static string Version => GetIntegrationVersion();
 
         /// <summary>
-        /// Get <see cref="SnykAppSettings"/> from file.
+        /// Gets <see cref="SnykAppSettings"/> from the appsettings.json file.
         /// </summary>
-        /// <returns><see cref="SnykAppSettings"/> object.</returns>
-        public static SnykAppSettings GetAppSettings()
+        public static SnykAppSettings AppSettings
         {
-            if (appSettings == null)
+            get
             {
-                string extensionPath = GetExtensionDirectoryPath();
+                if (appSettings == null)
+                {
+                    string extensionPath = GetExtensionDirectoryPath();
+                    string appSettingsPath = Path.Combine(extensionPath, AppSettingsFileName);
 
-                string appsettingsPath = Path.Combine(extensionPath, AppSettingsFileName);
+#if DEBUG
+                    // In Debug mode, attempt to use the appsettings.development.json file if present
+                    var developmentAppSettingsPath = Path.Combine(extensionPath, AppSettingsDevelopmentFileName);
+                    if (File.Exists(developmentAppSettingsPath))
+                    {
+                        appSettingsPath = developmentAppSettingsPath;
+                    }
+#endif
 
-                appSettings = Json
-                    .Deserialize<SnykAppSettings>(File.ReadAllText(appsettingsPath, Encoding.UTF8));
+                    appSettings = Json.Deserialize<SnykAppSettings>(File.ReadAllText(appSettingsPath, Encoding.UTF8));
+                }
+
+                return appSettings;
             }
-
-            return appSettings;
         }
 
         /// <summary>

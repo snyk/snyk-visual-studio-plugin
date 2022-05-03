@@ -109,7 +109,7 @@
         {
             try
             {
-                SnykAppSettings appSettings = SnykExtension.GetAppSettings();
+                SnykAppSettings appSettings = SnykExtension.AppSettings;
 
                 if (string.IsNullOrEmpty(options.AnonymousId))
                 {
