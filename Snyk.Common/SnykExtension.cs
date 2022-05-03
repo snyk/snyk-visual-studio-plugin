@@ -16,7 +16,7 @@
         /// </summary>
         public const string IntegrationName = "VISUAL_STUDIO";
 #if DEBUG
-        private const string AppSettingsFileName = "appsettings.Development.json";
+        private const string AppSettingsFileName = "appsettings.development.json";
 #else
         private const string AppSettingsFileName = "appsettings.json";
 #endif
