@@ -8,7 +8,6 @@
     using Microsoft.VisualStudio.Shell;
     using Serilog;
     using Snyk.Code.Library.Domain.Analysis;
-    using Snyk.Code.Library.Service;
     using Snyk.Common;
     using Snyk.VisualStudio.Extension.Shared.CLI;
     using Snyk.VisualStudio.Extension.Shared.CLI.Download;
@@ -213,10 +212,12 @@
 
                 this.serviceProvider.AnalyticsService.LogAnalysisIsTriggeredEvent(this.GetSelectedFeatures(selectedFeatures));
 
-                await this.ScanOssAsync(selectedFeatures);
+                var ossScanTask = this.ScanOssAsync(selectedFeatures);
+                var snykCodeScanTask = this.ScanSnykCodeAsync(selectedFeatures);
 
-                this.ScanSnykCode(selectedFeatures);
-            } catch (Exception ex)
+                await Task.WhenAll(ossScanTask, snykCodeScanTask);
+            }
+            catch (Exception ex)
             {
                 Logger.Error(ex, "Error on scan");
             }
@@ -446,7 +447,7 @@
             }
         }
 
-        private void ScanSnykCode(FeaturesSettings featuresSettings)
+        private async Task ScanSnykCodeAsync(FeaturesSettings featuresSettings)
         {
             try
             {
@@ -479,57 +480,59 @@
 
                 Logger.Information("Start scan task");
 
-                _ = Task.Run(async () =>
-                {
-                    try
-                    {
-                        try
-                        {
-                            this.isSnykCodeScanning = true;
-
-                            this.FireSnykCodeScanningStartedEvent();
-
-                            var fileProvider = this.serviceProvider.SolutionService.FileProvider;
-
-                            var analysisResult = await this.serviceProvider.SnykCodeService.ScanAsync(fileProvider, progressWorker.TokenSource.Token);
-
-                            this.FireScanningUpdateEvent(analysisResult);
-
-                            this.FireSnykCodeScanningFinishedEvent();
-                        }
-                        catch (Exception e)
-                        {
-                            if (this.IsTaskCancelled(e))
-                            {
-                                this.FireScanningCancelledEvent();
-
-                                return;
-                            }
-
-                            string errorMessage = this.serviceProvider.SnykCodeService.GetSnykCodeErrorMessage(e);
-
-                            this.OnSnykCodeError(errorMessage);
-                        }
-                    }
-                    catch (Exception exception)
-                    {
-                        Logger.Error(exception, string.Empty);
-
-                        this.FireScanningCancelledEvent();
-                    }
-                    finally
-                    {
-                        this.DisposeCancellationTokenSource(this.snykCodeScanTokenSource);
-
-                        this.isSnykCodeScanning = false;
-
-                        this.FireTaskFinished();
-                    }
-                });
+                await Task.Run(() => this.RunSnykCodeScanAsync(progressWorker.TokenSource.Token));
             }
             catch (Exception ex)
             {
                 Logger.Error(ex, "Error on SnykCode scan");
+            }
+        }
+
+        private async Task RunSnykCodeScanAsync(CancellationToken cancellationToken)
+        {
+            try
+            {
+                try
+                {
+                    this.isSnykCodeScanning = true;
+
+                    this.FireSnykCodeScanningStartedEvent();
+
+                    var fileProvider = this.serviceProvider.SolutionService.FileProvider;
+
+                    var analysisResult = await this.serviceProvider.SnykCodeService.ScanAsync(fileProvider, cancellationToken);
+
+                    this.FireScanningUpdateEvent(analysisResult);
+
+                    this.FireSnykCodeScanningFinishedEvent();
+                }
+                catch (Exception e)
+                {
+                    if (this.IsTaskCancelled(e))
+                    {
+                        this.FireScanningCancelledEvent();
+
+                        return;
+                    }
+
+                    string errorMessage = this.serviceProvider.SnykCodeService.GetSnykCodeErrorMessage(e);
+
+                    this.OnSnykCodeError(errorMessage);
+                }
+            }
+            catch (Exception exception)
+            {
+                Logger.Error(exception, string.Empty);
+
+                this.FireScanningCancelledEvent();
+            }
+            finally
+            {
+                this.DisposeCancellationTokenSource(this.snykCodeScanTokenSource);
+
+                this.isSnykCodeScanning = false;
+
+                this.FireTaskFinished();
             }
         }
 
