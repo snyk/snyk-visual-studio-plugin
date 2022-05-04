@@ -492,39 +492,32 @@
         {
             try
             {
-                try
-                {
-                    this.isSnykCodeScanning = true;
+                this.isSnykCodeScanning = true;
 
-                    this.FireSnykCodeScanningStartedEvent();
+                this.FireSnykCodeScanningStartedEvent();
 
-                    var fileProvider = this.serviceProvider.SolutionService.FileProvider;
+                var fileProvider = this.serviceProvider.SolutionService.FileProvider;
 
-                    var analysisResult = await this.serviceProvider.SnykCodeService.ScanAsync(fileProvider, cancellationToken);
+                var analysisResult = await this.serviceProvider.SnykCodeService.ScanAsync(fileProvider, cancellationToken);
 
-                    this.FireScanningUpdateEvent(analysisResult);
+                this.FireScanningUpdateEvent(analysisResult);
 
-                    this.FireSnykCodeScanningFinishedEvent();
-                }
-                catch (Exception e)
-                {
-                    if (this.IsTaskCancelled(e))
-                    {
-                        this.FireScanningCancelledEvent();
-
-                        return;
-                    }
-
-                    string errorMessage = this.serviceProvider.SnykCodeService.GetSnykCodeErrorMessage(e);
-
-                    this.OnSnykCodeError(errorMessage);
-                }
+                this.FireSnykCodeScanningFinishedEvent();
             }
-            catch (Exception exception)
+            catch (Exception e)
             {
-                Logger.Error(exception, string.Empty);
+                if (this.IsTaskCancelled(e))
+                {
+                    this.FireScanningCancelledEvent();
 
-                this.FireScanningCancelledEvent();
+                    return;
+                }
+
+                Logger.Error(e, "Error on Run Snyk Code scan");
+
+                string errorMessage = this.serviceProvider.SnykCodeService.GetSnykCodeErrorMessage(e);
+
+                this.OnSnykCodeError(errorMessage);
             }
             finally
             {
