@@ -1,5 +1,10 @@
 # Snyk Changelog
 
+## [1.1.13]
+
+### Fixed
+- Error reporting and Snyk Code configuraton issues.
+
 ## [1.1.12]
 
 ### Fixed
