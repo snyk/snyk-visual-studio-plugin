@@ -19,13 +19,13 @@
     /// </summary>
     public partial class SnykGeneralSettingsUserControl : UserControl
     {
-        private static readonly ILogger Logger = LogManager.ForContext<SnykGeneralSettingsUserControl>();
-
         /// <summary>
         /// Instance of SnykGeneralOptionsDialogPage.
         /// </summary>
         [SuppressMessage("StyleCop.CSharp.MaintainabilityRules", "SA1401:FieldsMustBePrivate", Justification = "Reviewed.")]
         internal SnykGeneralOptionsDialogPage OptionsDialogPage;
+
+        private static readonly ILogger Logger = LogManager.ForContext<SnykGeneralSettingsUserControl>();
 
         private static readonly int TwoSecondsDelay = 2000;
 
