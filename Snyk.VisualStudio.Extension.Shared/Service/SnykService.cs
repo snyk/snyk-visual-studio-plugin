@@ -40,7 +40,7 @@ namespace Snyk.VisualStudio.Extension.Shared.Service
 
         private DTE2 dte;
 
-        private SnykAnalyticsService analyticsService;
+        private ISnykAnalyticsService analyticsService;
 
         private SnykUserStorageSettingsService userStorageSettingsService;
 
@@ -105,14 +105,8 @@ namespace Snyk.VisualStudio.Extension.Shared.Service
         {
             get
             {
-                if (this.analyticsService == null)
-                {
-                    Logger.Information("Initialize Snyk Segment Analytics Service.");
 
-                    SnykAnalyticsService.Initialize(this.Options);
 
-                    this.analyticsService = SnykAnalyticsService.Instance;
-                }
 
                 return this.analyticsService;
             }
@@ -225,25 +219,21 @@ namespace Snyk.VisualStudio.Extension.Shared.Service
                 await this.Package.JoinableTaskFactory.SwitchToMainThreadAsync(cancellationToken);
 
                 this.settingsManager = new ShellSettingsManager(this.Package);
-
                 this.vsThemeService = new SnykVsThemeService(this);
+
                 await this.vsThemeService.InitializeAsync();
-
                 await SnykToolWindowCommand.InitializeAsync(this);
-
                 await SnykTasksService.InitializeAsync(this);
 
                 this.dte = await this.serviceProvider.GetServiceAsync(typeof(DTE)) as DTE2;
-
                 await SnykSolutionService.Instance.InitializeAsync(this);
-
                 this.tasksService = SnykTasksService.Instance;
 
                 NotificationService.Initialize(this);
-
                 VsStatusBar.Initialize(this);
-
                 VsCodeService.Initialize();
+
+                this.analyticsService = await SnykAnalyticsClient.CreateAsync();
 
                 Logger.Information("Leave SnykService.InitializeAsync");
             }

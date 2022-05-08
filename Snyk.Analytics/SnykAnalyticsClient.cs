@@ -1,12 +1,14 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Threading;
 using System.Threading.Tasks;
+using Iteratively;
 
 namespace Snyk.Analytics
 {
     public class SnykAnalyticsClient : ISnykAnalyticsService
     {
-        public static async Task<SnykAnalyticsClient> CreateAsync()
+        public static async Task<ISnykAnalyticsService> CreateAsync()
         {
             await Task.Delay(1);
             return null;
