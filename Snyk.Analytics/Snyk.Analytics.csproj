@@ -4,4 +4,8 @@
     <TargetFramework>netstandard2.0</TargetFramework>
   </PropertyGroup>
 
+  <ItemGroup>
+    <ProjectReference Include="..\Snyk.Analytics.Itly\Itly\Itly.csproj" />
+  </ItemGroup>
+
 </Project>
