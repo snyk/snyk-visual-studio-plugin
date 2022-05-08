@@ -36,6 +36,11 @@ namespace Snyk.Analytics
         {
             throw new NotImplementedException();
         }
+
+        public bool AnalyticsEnabled { get; set; }
+        
+        public string UserIdAsHash { get; } = "";
+
         public void Dispose()
         {
             throw new NotImplementedException();

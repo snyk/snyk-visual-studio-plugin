@@ -36,5 +36,15 @@ namespace Snyk.Analytics
         /// </summary>
         /// <param name="apiToken">The API token that's used in authentication</param>
         void ObtainUser(string apiToken);
+
+        /// <summary>
+        /// Gets or sets a value indicating whether is analytics enabled.
+        /// </summary>
+        bool AnalyticsEnabled { get; set; }
+
+        /// <summary>
+        /// Gets a value indicating whether user id hash string.
+        /// </summary>
+        string UserIdAsHash { get; }
     }
 }
