@@ -56,6 +56,8 @@
 
         private string userIdAsHash;
 
+        private string userId;
+
         /// <summary>
         /// Initializes a new instance of the <see cref="SnykAnalyticsService"/> class.
         /// </summary>
@@ -73,20 +75,15 @@
         public static SnykAnalyticsService Instance => instance;
 
         /// <summary>
-        /// Gets or sets a value indicating whether user id.
-        /// </summary>
-        public string UserId { get; set; }
-
-        /// <summary>
         /// Gets a value indicating whether user id hash string.
         /// </summary>
         public string UserIdAsHash
         {
             get
             {
-                if (string.IsNullOrEmpty(this.userIdAsHash) && !string.IsNullOrEmpty(this.UserId))
+                if (string.IsNullOrEmpty(this.userIdAsHash) && !string.IsNullOrEmpty(this.userId))
                 {
-                    this.userIdAsHash = Sha256.ComputeHash(this.UserId);
+                    this.userIdAsHash = Sha256.ComputeHash(this.userId);
                 }
 
                 return this.userIdAsHash;
@@ -249,7 +246,7 @@
                         return;
                     }
 
-                    this.UserId = userId;
+                    this.userId = userId;
 
                     callback();
 
@@ -265,7 +262,7 @@
                         return;
                     }
 
-                    string userId = string.IsNullOrEmpty(this.UserId) ? this.anonymousUserId : this.UserId;
+                    string userId = string.IsNullOrEmpty(this.userId) ? this.anonymousUserId : this.userId;
 
                     Logger.Information("Analytics client track event {EventName}.", eventName);
 
@@ -300,7 +297,7 @@
                         return;
                     }
 
-                    if (!string.IsNullOrEmpty(this.UserId))
+                    if (!string.IsNullOrEmpty(this.userId))
                     {
                         return;
                     }
