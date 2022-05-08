@@ -31,5 +31,14 @@ namespace Snyk.Analytics
         {
             throw new NotImplementedException();
         }
+
+        public void ObtainUser(string apiToken)
+        {
+            throw new NotImplementedException();
+        }
+        public void Dispose()
+        {
+            throw new NotImplementedException();
+        }
     }
 }

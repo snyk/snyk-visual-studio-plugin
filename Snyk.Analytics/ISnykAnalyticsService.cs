@@ -30,5 +30,11 @@ namespace Snyk.Analytics
         /// <param name="issueType">Type of issue (Oss, SnykCode Security or Quality.</param>
         /// <param name="severity">Severity name.</param>
         void LogIssueIsViewedEvent(string id, string issueType, string severity);
+
+        /// <summary>
+        /// Fetch user information for event tracking
+        /// </summary>
+        /// <param name="apiToken">The API token that's used in authentication</param>
+        void ObtainUser(string apiToken);
     }
 }
