@@ -6,6 +6,7 @@
     using Segment;
     using Segment.Model;
     using Serilog;
+    using Snyk.Analytics;
     using Snyk.Common;
     using Snyk.VisualStudio.Extension.Shared.CLI;
     using Snyk.VisualStudio.Extension.Shared.Service;
@@ -14,7 +15,7 @@
     /// <summary>
     /// Analytics service.
     /// </summary>
-    public class SnykAnalyticsService
+    public class SnykAnalyticsService : ISnykAnalyticsService
     {
         /// <summary>
         /// Analysis Ready message.
