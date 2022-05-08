@@ -1,4 +1,6 @@
-﻿namespace Snyk.VisualStudio.Extension.Shared.Service
+﻿using Snyk.Analytics;
+
+namespace Snyk.VisualStudio.Extension.Shared.Service
 {
     using System;
     using System.IO;
@@ -99,7 +101,7 @@
         /// <summary>
         /// Gets Analytics service instance. If analytics service not created yet it will create it and return.
         /// </summary>
-        public SnykAnalyticsService AnalyticsService
+        public ISnykAnalyticsService AnalyticsService
         {
             get
             {

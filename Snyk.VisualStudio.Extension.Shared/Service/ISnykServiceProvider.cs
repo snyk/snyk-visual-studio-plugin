@@ -1,4 +1,6 @@
-﻿namespace Snyk.VisualStudio.Extension.Shared.Service
+﻿using Snyk.Analytics;
+
+namespace Snyk.VisualStudio.Extension.Shared.Service
 {
     using System;
     using System.Threading.Tasks;
@@ -71,7 +73,7 @@
         /// <summary>
         /// Gets Analytics service instance.
         /// </summary>
-        SnykAnalyticsService AnalyticsService { get; }
+        ISnykAnalyticsService AnalyticsService { get; }
 
         /// <summary>
         /// Gets user storage settings service instance.
