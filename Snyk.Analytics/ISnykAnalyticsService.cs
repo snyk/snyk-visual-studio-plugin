@@ -2,7 +2,7 @@
 
 namespace Snyk.Analytics
 {
-    public interface ISnykAnalyticsService
+    public interface ISnykAnalyticsService : IDisposable
     {
         /// <summary>
         /// Log Analysis Is Ready event.
