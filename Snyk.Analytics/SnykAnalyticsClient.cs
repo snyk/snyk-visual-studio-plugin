@@ -6,6 +6,7 @@ using Iteratively;
 using Segment;
 using Segment.Model;
 using Snyk.Common;
+using Guid = System.Guid;
 using ILogger = Serilog.ILogger;
 
 namespace Snyk.Analytics
@@ -35,6 +36,11 @@ namespace Snyk.Analytics
 
         public static void Initialize(string anonymousId, string writeKey)
         {
+            if (string.IsNullOrEmpty(anonymousId))
+            {
+                anonymousId = Guid.NewGuid().ToString();
+            }
+
             Segment.Analytics.Initialize(writeKey, new Config()
                 .SetAsync(true)
                 .SetTimeout(TimeSpan.FromSeconds(10))
