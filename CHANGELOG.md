@@ -1,5 +1,10 @@
 # Snyk Changelog
 
+## [1.1.14]
+
+### Fixed
+- Run a scan for OSS and for Snyk Code asynchronously.
+
 ## [1.1.13]
 
 ### Fixed
