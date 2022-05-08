@@ -146,6 +146,18 @@
 
         public void ObtainUser(ISnykServiceProvider serviceProvider) => this.ObtainUser(serviceProvider, () => { });
 
+        public void ObtainUser(string apiToken)
+        {
+            try
+            {
+                this.ObtainUser(apiToken, () => {});
+            }
+            catch (InvalidTokenException e)
+            {
+                Logger.Error(e, "Error on obtain user");
+            }
+        }
+
         /// <summary>
         /// Obtain user by user token.
         /// </summary>
