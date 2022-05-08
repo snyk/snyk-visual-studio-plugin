@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 
 namespace Snyk.Analytics
 {
@@ -26,7 +27,7 @@ namespace Snyk.Analytics
         /// Log Issue Is Viewed Event.
         /// </summary>
         /// <param name="id">User id.</param>
-        /// <param name="issueType">Type of issue (Oss, SnykCode Security or Queality.</param>
+        /// <param name="issueType">Type of issue (Oss, SnykCode Security or Quality.</param>
         /// <param name="severity">Severity name.</param>
         void LogIssueIsViewedEvent(string id, string issueType, string severity);
     }
