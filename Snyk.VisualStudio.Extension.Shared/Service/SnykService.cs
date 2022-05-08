@@ -105,8 +105,14 @@ namespace Snyk.VisualStudio.Extension.Shared.Service
         {
             get
             {
+                if (this.analyticsService == null)
+                {
+                    Logger.Information("Initialize Snyk Segment Analytics Service.");
+                    var writeKey = SnykExtension.AppSettings?.SegmentAnalyticsWriteKey;
+                    SnykAnalyticsClient.Initialize(this.Options.AnonymousId, writeKey);
+                    this.analyticsService = SnykAnalyticsClient.Instance;
 
-
+                }
 
                 return this.analyticsService;
             }
@@ -232,8 +238,6 @@ namespace Snyk.VisualStudio.Extension.Shared.Service
                 NotificationService.Initialize(this);
                 VsStatusBar.Initialize(this);
                 VsCodeService.Initialize();
-
-                this.analyticsService = await SnykAnalyticsClient.CreateAsync();
 
                 Logger.Information("Leave SnykService.InitializeAsync");
             }

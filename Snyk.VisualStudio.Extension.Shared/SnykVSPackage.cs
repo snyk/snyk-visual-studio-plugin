@@ -1,4 +1,6 @@
-﻿namespace Snyk.VisualStudio.Extension.Shared
+﻿using Snyk.Analytics;
+
+namespace Snyk.VisualStudio.Extension.Shared
 {
     using System;
     using System.Diagnostics.CodeAnalysis;
@@ -166,21 +168,21 @@
 
                 await this.InitializeGeneralOptionsAsync();
 
-                this.serviceProvider.AnalyticsService.ObtainUser(this.serviceProvider.GetApiToken());
+                // Initialize analytics
+                await this.serviceProvider.AnalyticsService.ObtainUserAsync(this.serviceProvider.GetApiToken());
                 await this.serviceProvider.SentryService.SetupAsync();
 
+                // Initialize commands
                 Logger.Information("Initialize Commands()");
-
                 await SnykScanCommand.InitializeAsync(this);
                 await SnykStopCurrentTaskCommand.InitializeAsync(this);
                 await SnykCleanPanelCommand.InitializeAsync(this);
                 await SnykOpenSettingsCommand.InitializeAsync(this);
 
+                // Initialize tool-window
                 Logger.Information("Initializing tool window");
                 await this.InitializeToolWindowAsync();
-
                 VsStatusBarNotificationService.Instance.InitializeEventListeners(this.serviceProvider);
-
                 Logger.Information("Before call toolWindowControl.InitializeEventListeners() method.");
                 this.toolWindowControl.InitializeEventListeners(this.serviceProvider);
                 this.toolWindowControl.Initialize(this.serviceProvider);

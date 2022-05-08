@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Threading.Tasks;
 
 namespace Snyk.Analytics
 {
@@ -36,6 +37,12 @@ namespace Snyk.Analytics
         /// </summary>
         /// <param name="apiToken">The API token that's used in authentication</param>
         void ObtainUser(string apiToken);
+
+        /// <summary>
+        /// Fetch user information for event tracking
+        /// </summary>
+        /// <param name="apiToken">The API token that's used in authentication</param>
+        Task ObtainUserAsync(string apiToken);
 
         /// <summary>
         /// Gets or sets a value indicating whether is analytics enabled.

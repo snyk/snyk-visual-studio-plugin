@@ -90,6 +90,12 @@
             }
         }
 
+        public Task ObtainUserAsync(string apiToken)
+        {
+            this.ObtainUser(apiToken);
+            return Task.CompletedTask;
+        }
+
         /// <summary>
         /// Gets or sets a value indicating whether is analytics enabled.
         /// </summary>
@@ -98,6 +104,12 @@
         private bool Enabled => this.AnalyticsEnabled && this.analyticsInitialized;
 
         private bool Disabled => !this.Enabled;
+
+        public static Task InitializeAsync(ISnykOptions options)
+        {
+            Initialize(options);
+            return Task.CompletedTask;
+        }
 
         /// <summary>
         /// Initialize Analytics service intance.
