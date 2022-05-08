@@ -147,6 +147,8 @@
             }
         }
 
+        public void ObtainUser(ISnykServiceProvider serviceProvider) => this.ObtainUser(serviceProvider, () => { });
+
         /// <summary>
         /// Obtain user by user token.
         /// </summary>
