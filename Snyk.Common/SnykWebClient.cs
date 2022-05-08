@@ -1,4 +1,4 @@
-﻿namespace Snyk.VisualStudio.Extension.Shared
+﻿namespace Snyk.Common
 {
     using System.Net;
 

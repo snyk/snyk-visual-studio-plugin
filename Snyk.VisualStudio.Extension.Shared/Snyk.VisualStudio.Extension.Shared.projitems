@@ -185,9 +185,6 @@
     <Compile Include="$(MSBuildThisFileDirectory)SnykVSPackage.cs">
       <CopyToOutputDirectory>Never</CopyToOutputDirectory>
     </Compile>
-    <Compile Include="$(MSBuildThisFileDirectory)SnykWebClient.cs">
-      <CopyToOutputDirectory>Never</CopyToOutputDirectory>
-    </Compile>
     <Compile Include="$(MSBuildThisFileDirectory)Theme\SnykVsThemeService.cs">
       <CopyToOutputDirectory>Never</CopyToOutputDirectory>
     </Compile>
