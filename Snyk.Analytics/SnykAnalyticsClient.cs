@@ -1,31 +1,29 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Threading;
-using System.Threading.Tasks;
-using Iteratively;
-using Segment;
-using Segment.Model;
-using Snyk.Common;
-using Guid = System.Guid;
-using ILogger = Serilog.ILogger;
-
-namespace Snyk.Analytics
+﻿namespace Snyk.Analytics
 {
+    using System;
+    using System.Collections.Generic;
+    using System.Linq;
+    using System.Threading;
+    using System.Threading.Tasks;
+    using Iteratively;
+    using Segment;
+    using Segment.Model;
+    using Snyk.Common;
+    using Guid = System.Guid;
+    using ILogger = Serilog.ILogger;
+
     public class SnykAnalyticsClient : ISnykAnalyticsService
     {
         private readonly string anonymousId;
-        private readonly string writeKey;
-        private bool enabled = true;
         private string userId;
         private string userIdAsHash;
         private readonly Client segmentClient;
 
         private static readonly ILogger Logger = LogManager.ForContext<SnykAnalyticsClient>();
 
-        private SnykAnalyticsClient(string anonymousId, string writeKey, Client segmentClient)
+        private SnykAnalyticsClient(string anonymousId, Client segmentClient)
         {
             this.anonymousId = anonymousId;
-            this.writeKey = writeKey;
             this.segmentClient = segmentClient ?? throw new InvalidOperationException("Segment client not initialized");
             this.segmentClient.Identify(this.anonymousId, new Traits());
         }
@@ -45,27 +43,134 @@ namespace Snyk.Analytics
                 .SetAsync(true)
                 .SetTimeout(TimeSpan.FromSeconds(10))
                 .SetMaxQueueSize(5));
-            Instance = new SnykAnalyticsClient(anonymousId, writeKey, Segment.Analytics.Client);
+
+            var segmentDestination = new SegmentCustomDestination(writeKey);
+            segmentDestination.Identify(anonymousId, new Iteratively.Properties());
+            
+            Itly.Load(new Iteratively.Options(new DestinationsOptions(new CustomOptions(segmentDestination))));
+            
+            Instance = new SnykAnalyticsClient(anonymousId, Segment.Analytics.Client);
+        }
+
+        public void LogAnalysisReadyEvent(AnalysisTypeEnum analysisTypeParam, string analysisResult)
+        {
+            AnalysisIsReady.Result result;
+            switch (analysisResult)
+            {
+                case "Success":
+                    result = AnalysisIsReady.Result.Success;
+                    break;
+                case "Error":
+                    result = AnalysisIsReady.Result.Error;
+                    break;
+                default:
+                    throw new ArgumentOutOfRangeException(nameof(analysisResult), analysisResult, null);
+            }
+
+            AnalysisIsReady.AnalysisType analysisType;
+            switch (analysisTypeParam)
+            {
+                case AnalysisTypeEnum.SnykOpenSource:
+                    analysisType = AnalysisIsReady.AnalysisType.SnykOpenSource;
+                    break;
+                case AnalysisTypeEnum.SnykCodeSecurity:
+                    analysisType = AnalysisIsReady.AnalysisType.SnykCodeSecurity;
+                    break;
+                case AnalysisTypeEnum.SnykCodeQuality:
+                    analysisType = AnalysisIsReady.AnalysisType.SnykCodeQuality;
+                    break;
+                default:
+                    throw new ArgumentOutOfRangeException(nameof(analysisTypeParam), analysisTypeParam, null);
+            }
+
+            Itly.AnalysisIsReady(this.userId, analysisType, AnalysisIsReady.Ide.VisualStudio, result);
         }
 
         public void LogAnalysisReadyEvent(string analysisType, string analysisResult)
         {
-            throw new NotImplementedException();
+            AnalysisIsReady.Result result;
+            switch (analysisResult)
+            {
+                case "Success":
+                    result = AnalysisIsReady.Result.Success;
+                    break;
+                case "Error":
+                    result = AnalysisIsReady.Result.Error;
+                    break;
+                default:
+                    throw new ArgumentOutOfRangeException(nameof(analysisResult), analysisResult, null);
+            }
+
+            AnalysisIsReady.AnalysisType analysisTypeEnum;
+            switch (analysisType)
+            {
+                case "Snyk Open Source":
+                    analysisTypeEnum = AnalysisIsReady.AnalysisType.SnykOpenSource;
+                    break;
+                case "Snyk Code Security":
+                    analysisTypeEnum = AnalysisIsReady.AnalysisType.SnykCodeSecurity;
+                    break;
+                case "Snyk Code Quality":
+                    analysisTypeEnum = AnalysisIsReady.AnalysisType.SnykCodeQuality;
+                    break;
+                default:
+                    throw new ArgumentOutOfRangeException(nameof(analysisType), analysisType, null);
+            }
+
+            Itly.AnalysisIsReady(this.userId, analysisTypeEnum, AnalysisIsReady.Ide.VisualStudio, result);
         }
 
         public void LogWelcomeIsViewedEvent()
         {
-            throw new NotImplementedException();
+            Itly.WelcomeIsViewed(this.userId);
         }
 
         public void LogAnalysisIsTriggeredEvent(IList<string> selectedProducts)
         {
-            throw new NotImplementedException();
+            Itly.AnalysisIsTriggered(this.userId, selectedProducts.ToArray(), AnalysisIsTriggered.Ide.VisualStudio, true);
         }
 
-        public void LogIssueIsViewedEvent(string id, string issueType, string severity)
+        public void LogIssueIsViewedEvent(string id, string issueTypeParam, string severityParam)
         {
-            throw new NotImplementedException();
+            IssueInTreeIsClicked.IssueType issueType;
+            switch (issueTypeParam)
+            {
+                case "Open Source Vulnerability":
+                    issueType = IssueInTreeIsClicked.IssueType.OpenSourceVulnerability;
+                    break;
+                case "Licence Issue":
+                    issueType = IssueInTreeIsClicked.IssueType.LicenceIssue;
+                    break;
+                case "Code Quality Issue":
+                    issueType = IssueInTreeIsClicked.IssueType.CodeQualityIssue;
+                    break;
+                case "Code Security Vulnerability":
+                    issueType = IssueInTreeIsClicked.IssueType.CodeSecurityVulnerability;
+                    break;
+                default:
+                    throw new ArgumentOutOfRangeException(nameof(issueTypeParam));
+            }
+
+            IssueInTreeIsClicked.Severity severity;
+            switch (severityParam)
+            {
+                case "High": 
+                    severity = IssueInTreeIsClicked.Severity.High;
+                    break;
+                case "Medium":
+                    severity = IssueInTreeIsClicked.Severity.Medium;
+                    break;
+                case "Low":
+                    severity = IssueInTreeIsClicked.Severity.Low;
+                    break;
+                case "Critical":
+                    severity = IssueInTreeIsClicked.Severity.Critical;
+                    break;
+                default:
+                    throw new ArgumentOutOfRangeException(nameof(severityParam));
+            }
+
+            Itly.IssueInTreeIsClicked(this.userId, IssueInTreeIsClicked.Ide.VisualStudio, id, issueType, severity);
         }
 
         public void ObtainUser(string apiToken)
@@ -90,7 +195,7 @@ namespace Snyk.Analytics
 
             this.userId = user.Id;
 
-            this.segmentClient.Alias(this.anonymousId, userId);
+            this.segmentClient.Alias(this.anonymousId, this.userId);
         }
 
         public string UserIdAsHash
