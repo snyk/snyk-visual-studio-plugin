@@ -24,8 +24,8 @@
         private SnykAnalyticsClient(string anonymousId, Client segmentClient)
         {
             this.anonymousId = anonymousId;
-            this.segmentClient = segmentClient ?? throw new InvalidOperationException("Segment client not initialized");
-            this.segmentClient.Identify(this.anonymousId, new Traits());
+            this.segmentClient = segmentClient;
+            this.segmentClient?.Identify(this.anonymousId, new Traits());
         }
 
         public static SnykAnalyticsClient Instance { get; private set; }
@@ -37,6 +37,14 @@
             if (string.IsNullOrEmpty(anonymousId))
             {
                 anonymousId = Guid.NewGuid().ToString();
+            }
+
+            if (string.IsNullOrEmpty(writeKey))
+            {
+                Instance = new SnykAnalyticsClient(anonymousId, null);
+                Instance.AnalyticsEnabled = false;
+                Logger.Information("Segment analytics collection is disabled because write key is empty!");
+                return;
             }
 
             Segment.Analytics.Initialize(writeKey, new Config()
