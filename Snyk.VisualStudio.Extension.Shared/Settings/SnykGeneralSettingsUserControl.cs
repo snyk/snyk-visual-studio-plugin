@@ -536,17 +536,18 @@
             this.checkAgainLinkLabel.Visible = false;
         }
 
-        private void UsageAnalyticsCheckBox_CheckedChanged(object sender, EventArgs e)
-        {
-            this.OptionsDialogPage.UsageAnalyticsEnabled = this.usageAnalyticsCheckBox.Checked;
+        private void UsageAnalyticsCheckBox_CheckedChanged(object sender, EventArgs e) =>
+            ThreadHelper.JoinableTaskFactory.RunAsync(async () =>
+            {
+                this.OptionsDialogPage.UsageAnalyticsEnabled = this.usageAnalyticsCheckBox.Checked;
 
-            var serviceProvider = this.OptionsDialogPage.ServiceProvider;
+                var serviceProvider = this.OptionsDialogPage.ServiceProvider;
 
-            serviceProvider.AnalyticsService.AnalyticsEnabled = this.usageAnalyticsCheckBox.Checked;
+                serviceProvider.AnalyticsService.AnalyticsEnabled = this.usageAnalyticsCheckBox.Checked;
 
-            serviceProvider.AnalyticsService.ObtainUser(serviceProvider.GetApiToken());
-            serviceProvider.SentryService.SetupAsync().FireAndForget();
-        }
+                await serviceProvider.AnalyticsService.ObtainUserAsync(serviceProvider.GetApiToken());
+                await serviceProvider.SentryService.SetupAsync();
+            });
 
         private void OssEnabledCheckBox_CheckedChanged(object sender, EventArgs e)
         {

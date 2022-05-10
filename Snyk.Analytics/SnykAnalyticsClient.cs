@@ -94,40 +94,6 @@
             Itly.AnalysisIsReady(this.userId, analysisType, AnalysisIsReady.Ide.VisualStudio, result);
         }
 
-        public void LogAnalysisReadyEvent(string analysisType, string analysisResult)
-        {
-            AnalysisIsReady.Result result;
-            switch (analysisResult)
-            {
-                case "Success":
-                    result = AnalysisIsReady.Result.Success;
-                    break;
-                case "Error":
-                    result = AnalysisIsReady.Result.Error;
-                    break;
-                default:
-                    throw new ArgumentOutOfRangeException(nameof(analysisResult), analysisResult, null);
-            }
-
-            AnalysisIsReady.AnalysisType analysisTypeEnum;
-            switch (analysisType)
-            {
-                case "Snyk Open Source":
-                    analysisTypeEnum = AnalysisIsReady.AnalysisType.SnykOpenSource;
-                    break;
-                case "Snyk Code Security":
-                    analysisTypeEnum = AnalysisIsReady.AnalysisType.SnykCodeSecurity;
-                    break;
-                case "Snyk Code Quality":
-                    analysisTypeEnum = AnalysisIsReady.AnalysisType.SnykCodeQuality;
-                    break;
-                default:
-                    throw new ArgumentOutOfRangeException(nameof(analysisType), analysisType, null);
-            }
-
-            Itly.AnalysisIsReady(this.userId, analysisTypeEnum, AnalysisIsReady.Ide.VisualStudio, result);
-        }
-
         public void LogWelcomeIsViewedEvent()
         {
             Itly.WelcomeIsViewed(this.userId);
@@ -179,11 +145,6 @@
             }
 
             Itly.IssueInTreeIsClicked(this.userId, IssueInTreeIsClicked.Ide.VisualStudio, id, issueType, severity);
-        }
-
-        public void ObtainUser(string apiToken)
-        {
-            throw new NotImplementedException();
         }
 
         public async Task ObtainUserAsync(string apiToken)
