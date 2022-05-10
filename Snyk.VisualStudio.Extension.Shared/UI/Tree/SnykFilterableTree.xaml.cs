@@ -1,4 +1,6 @@
-﻿namespace Snyk.VisualStudio.Extension.Shared.UI.Tree
+﻿using Snyk.Analytics;
+
+namespace Snyk.VisualStudio.Extension.Shared.UI.Tree
 {
     using System;
     using System.ComponentModel;
@@ -135,7 +137,7 @@
                 {
                     this.AppendSnykCodeIssues(this.codeSecurityRootNode, value, suggestion => suggestion.Categories.Contains("Security"));
 
-                    SnykAnalyticsService.Instance
+                    SnykAnalyticsClient.Instance
                         .LogAnalysisReadyEvent(AnalysisType.SnykCodeSecurity, AnalyticsAnalysisResult.Success);
                 }
 
@@ -143,7 +145,7 @@
                 {
                     this.AppendSnykCodeIssues(this.codeQualityRootNode, value, suggestion => !suggestion.Categories.Contains("Security"));
 
-                    SnykAnalyticsService.Instance
+                    SnykAnalyticsClient.Instance
                         .LogAnalysisReadyEvent(AnalysisType.SnykCodeQuality, AnalyticsAnalysisResult.Success);
                 }
             }
