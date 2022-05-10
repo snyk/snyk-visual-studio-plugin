@@ -109,6 +109,14 @@ namespace Snyk.VisualStudio.Extension.Shared.Service
                 {
                     Logger.Information("Initialize Snyk Segment Analytics Service.");
                     var writeKey = SnykExtension.AppSettings?.SegmentAnalyticsWriteKey;
+
+                    string anonymousId = this.Options.AnonymousId;
+                    if (string.IsNullOrEmpty(anonymousId))
+                    {
+                        anonymousId = System.Guid.NewGuid().ToString();
+                        this.Options.AnonymousId = anonymousId;
+                    }
+
                     SnykAnalyticsClient.Initialize(this.Options.AnonymousId, writeKey);
                     this.analyticsService = SnykAnalyticsClient.Instance;
 
