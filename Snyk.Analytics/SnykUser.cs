@@ -15,7 +15,7 @@ namespace Snyk.Analytics
 
         public static async Task<SnykUser> GetUserAsync(string token)
         {
-
+            //TODO - Use System.Text.Json/HttpClient.GetFromJsonAsync()
             using (var webClient = new SnykWebClient())
             {
                 webClient.Headers.Add("Authorization", $"token {token}");
@@ -24,7 +24,6 @@ namespace Snyk.Analytics
 
                 var userInfoJson = await webClient.DownloadStringTaskAsync(SnykUserMeUri);
 
-                //TODO - Use System.Text.Json/HttpClient.GetFromJsonAsync()
                 return Json.Deserialize<SnykUser>(userInfoJson);
             }
         }

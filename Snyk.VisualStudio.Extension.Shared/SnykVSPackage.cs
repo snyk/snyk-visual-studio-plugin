@@ -168,6 +168,7 @@ namespace Snyk.VisualStudio.Extension.Shared
 
                 await this.InitializeGeneralOptionsAsync();
 
+                // TODO - Pass user ID/hash as parameter
                 // Initialize analytics
                 await this.serviceProvider.AnalyticsService.ObtainUserAsync(this.serviceProvider.GetApiToken());
                 await this.serviceProvider.SentryService.SetupAsync();
