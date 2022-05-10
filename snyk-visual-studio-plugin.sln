@@ -35,7 +35,7 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Snyk.VisualStudio.Extension
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Snyk.Common.Tests", "Snyk.Common.Tests\Snyk.Common.Tests.csproj", "{F3FC7A42-F53F-4938-8D37-D1ABAF6A8A90}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Snyk.Analytics", "Snyk.Analytics\Snyk.Analytics.csproj", "{3A46A46D-2ED2-46EE-A005-77BC30336686}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Snyk.Analytics", "Snyk.Analytics\Snyk.Analytics.csproj", "{3A46A46D-2ED2-46EE-A005-77BC30336686}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Analytics", "Analytics", "{A20AC810-EB68-4C27-951E-B2C29A0E8960}"
 EndProject
