@@ -11,7 +11,7 @@ namespace Snyk.Analytics
         /// </summary>
         /// <param name="analysisType">Type of analysis (Oss, SnykCode Security or quality).</param>
         /// <param name="analysisResult">Analysis result (success or error).</param>
-        void LogAnalysisReadyEvent(AnalysisType analysisType, string analysisResult);
+        void LogAnalysisReadyEvent(AnalysisType analysisType, AnalyticsAnalysisResult analysisResult);
 
         /// <summary>
         /// Log UserLandedOnTheWelcomePageEvent.

@@ -13,6 +13,7 @@ namespace Snyk.VisualStudio.Extension.Shared.UI.Toolwindow
     using Microsoft.VisualStudio.Shell;
     using Microsoft.VisualStudio.Shell.Interop;
     using Serilog;
+    using Snyk.Analytics;
     using Snyk.Code.Library.Domain.Analysis;
     using Snyk.Common;
     using Snyk.VisualStudio.Extension.Shared.CLI;

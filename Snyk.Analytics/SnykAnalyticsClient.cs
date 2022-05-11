@@ -55,24 +55,12 @@
             Instance = new SnykAnalyticsClient(anonymousId, Segment.Analytics.Client);
         }
 
-        public void LogAnalysisReadyEvent(AnalysisType analysisTypeParam, string analysisResult)
+        public void LogAnalysisReadyEvent(AnalysisType analysisTypeParam, AnalyticsAnalysisResult analysisResultParam)
         {
-            AnalysisIsReady.Result result;
-            switch (analysisResult)
-            {
-                case "Success":
-                    result = AnalysisIsReady.Result.Success;
-                    break;
-                case "Error":
-                    result = AnalysisIsReady.Result.Error;
-                    break;
-                default:
-                    throw new ArgumentOutOfRangeException(nameof(analysisResult), analysisResult, null);
-            }
-
+            var analysisResult = analysisResultParam.ToAnalysisIsReadyEnum();
             var analysisType = analysisTypeParam.ToAnalysisIsReadyEnum();
 
-            Itly.AnalysisIsReady(this.userId, analysisType, AnalysisIsReady.Ide.VisualStudio, result);
+            Itly.AnalysisIsReady(this.userId, analysisType, AnalysisIsReady.Ide.VisualStudio, analysisResult);
         }
 
         public void LogWelcomeIsViewedEvent()
