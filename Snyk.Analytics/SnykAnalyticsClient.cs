@@ -47,11 +47,6 @@
                 return;
             }
 
-            Segment.Analytics.Initialize(writeKey, new Config()
-                .SetAsync(true)
-                .SetTimeout(TimeSpan.FromSeconds(10))
-                .SetMaxQueueSize(5));
-
             var segmentDestination = new SegmentCustomDestination(writeKey);
             segmentDestination.Identify(anonymousId, new Iteratively.Properties());
             
