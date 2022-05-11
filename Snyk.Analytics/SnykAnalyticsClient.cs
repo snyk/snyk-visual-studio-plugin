@@ -155,6 +155,7 @@
 
         public void Dispose()
         {
+            this.segmentClient.Dispose();
         }
     }
 }
