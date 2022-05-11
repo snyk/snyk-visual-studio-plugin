@@ -16,6 +16,7 @@
     {
         private readonly string anonymousId;
         private string userId;
+        private string vsVersion;
         private string userIdAsHash;
         private readonly Client segmentClient;
 
@@ -47,7 +48,7 @@
                 return;
             }
 
-            var segmentDestination = new SegmentCustomDestination(writeKey);
+            var segmentDestination = new SegmentCustomDestination(writeKey, anonymousId);
             segmentDestination.Identify(anonymousId, new Iteratively.Properties());
             
             Itly.Load(new Iteratively.Options(new DestinationsOptions(new CustomOptions(segmentDestination))));
@@ -120,6 +121,12 @@
             Itly.IssueInTreeIsClicked(this.userId, IssueInTreeIsClicked.Ide.VisualStudio, id, issueType, severity);
         }
 
+        public async Task ObtainUserAsync(string apiToken, string vsVersion)
+        {
+            this.vsVersion = vsVersion;
+            await ObtainUserAsync(apiToken);
+        }
+
         public async Task ObtainUserAsync(string apiToken)
         {
             if (string.IsNullOrEmpty(apiToken) || !string.IsNullOrEmpty(this.userId) || !this.AnalyticsEnabled)
@@ -131,13 +138,22 @@
 
             if (string.IsNullOrEmpty(user.Id))
             {
-                Logger.Information("Alias event cannot be executed because userId is empty");
+                Logger.Information("Can't obtain user because userId is empty");
                 return;
             }
 
             this.userId = user.Id;
 
-            this.segmentClient.Alias(this.anonymousId, this.userId);
+            var context = new Segment.Model.Context().Add("app", new Dict()
+            {
+                {"name", "Visual Studio"},
+                {"version", this.vsVersion},
+            });
+            var options = new Segment.Model.Options()
+                .SetAnonymousId(this.anonymousId)
+                .SetContext(context);
+
+            this.segmentClient.Identify(this.userId, null, options);
         }
 
         public string UserIdAsHash

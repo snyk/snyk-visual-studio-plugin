@@ -1,6 +1,4 @@
-﻿using Snyk.Analytics;
-
-namespace Snyk.VisualStudio.Extension.Shared.Service
+﻿namespace Snyk.VisualStudio.Extension.Shared.Service
 {
     using System;
     using System.IO;
@@ -11,6 +9,7 @@ namespace Snyk.VisualStudio.Extension.Shared.Service
     using Microsoft.VisualStudio.Settings;
     using Microsoft.VisualStudio.Shell.Settings;
     using Serilog;
+    using Snyk.Analytics;
     using Snyk.Code.Library.Service;
     using Snyk.Common;
     using Snyk.VisualStudio.Extension.Shared.CLI;

@@ -1,6 +1,4 @@
-﻿using Snyk.Analytics;
-
-namespace Snyk.VisualStudio.Extension.Shared
+﻿namespace Snyk.VisualStudio.Extension.Shared
 {
     using System;
     using System.Diagnostics.CodeAnalysis;
@@ -9,6 +7,8 @@ namespace Snyk.VisualStudio.Extension.Shared
     using System.Threading.Tasks;
     using System.Windows;
     using Microsoft.VisualStudio.Shell;
+    using Microsoft.VisualStudio.Shell.Interop;
+    using Microsoft.VisualStudio.Threading;
     using Serilog;
     using Snyk.Common;
     using Snyk.VisualStudio.Extension.Shared.Commands;
@@ -170,7 +170,9 @@ namespace Snyk.VisualStudio.Extension.Shared
 
                 // TODO - Pass user ID/hash as parameter
                 // Initialize analytics
-                await this.serviceProvider.AnalyticsService.ObtainUserAsync(this.serviceProvider.GetApiToken());
+                var vsVersion = await this.GetVsVersion();
+
+                await this.serviceProvider.AnalyticsService.ObtainUserAsync(this.serviceProvider.GetApiToken(), vsVersion);
                 await this.serviceProvider.SentryService.SetupAsync();
 
                 // Initialize commands
@@ -223,6 +225,33 @@ namespace Snyk.VisualStudio.Extension.Shared
 
                 this.generalOptionsDialogPage.Initialize(serviceProvider);
             }
+        }
+
+        private async Task<string> GetVsVersion()
+        {
+            await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
+            var shell = await this.serviceProvider.GetServiceAsync(typeof(SVsShell)) as IVsShell;
+            shell.GetProperty((int)__VSSPROPID5.VSSPROPID_ReleaseVersion, out object vsVersion);
+
+            var vsVersionString = vsVersion as string ?? string.Empty;
+            if (vsVersionString.StartsWith("17"))
+            {
+                return $"Visual Studio 2022";
+            }
+            else if (vsVersionString.StartsWith("16"))
+            {
+                return $"Visual Studio 2019";
+            }
+            else if (vsVersionString.StartsWith("15"))
+            {
+                return $"Visual Studio 2017";
+            }
+            else if (vsVersionString.StartsWith("14"))
+            {
+                return $"Visual Studio 2015";
+            }
+
+            return vsVersionString;
         }
 
         #region Package Members

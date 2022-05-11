@@ -112,11 +112,7 @@ namespace Iteratively
                     ["https://data.amplitude.com/6d7c255e-5bf5-46fc-be87-58b75c7e0ad5/event/Issue%20In%20Tree%20Is%20Clicked/version/2.0.4"] = "{\"$id\":\"https://data.amplitude.com/6d7c255e-5bf5-46fc-be87-58b75c7e0ad5/event/Issue%20In%20Tree%20Is%20Clicked/version/2.0.4\",\"$schema\":\"http://json-schema.org/draft-07/schema#\",\"title\":\"Issue In Tree Is Clicked\",\"description\":\"Triggered when the user selects an issue from the issues list and the issue is loaded.\",\"type\":\"object\",\"properties\":{\"ide\":{\"description\":\"Ide family.\",\"enum\":[\"Visual Studio Code\",\"Visual Studio\",\"Eclipse\",\"JetBrains\"]},\"issueId\":{\"description\":\"Issue ID as received from the backend.\",\"type\":\"string\"},\"issueType\":{\"description\":\"Issue type\",\"enum\":[\"Advisor\",\"Code Quality Issue\",\"Code Security Vulnerability\",\"Licence Issue\",\"Open Source Vulnerability\",\"Infrastructure as Code Issue\",\"Container Vulnerability\"]},\"itly\":{\"description\":\"Set to true for filtering within Segment\",\"const\":true},\"severity\":{\"description\":\"Severity of the issue\",\"enum\":[\"High\",\"Medium\",\"Low\",\"Critical\"]}},\"additionalProperties\":false,\"required\":[\"ide\",\"itly\"]}",
                     ["https://data.amplitude.com/6d7c255e-5bf5-46fc-be87-58b75c7e0ad5/event/Welcome%20Is%20Viewed/version/1.0.3"] = "{\"$id\":\"https://data.amplitude.com/6d7c255e-5bf5-46fc-be87-58b75c7e0ad5/event/Welcome%20Is%20Viewed/version/1.0.3\",\"$schema\":\"http://json-schema.org/draft-07/schema#\",\"title\":\"Welcome Is Viewed\",\"description\":\"User installs the IDE plugin and see Snyk's welcome screen.\",\"type\":\"object\",\"properties\":{\"ide\":{\"description\":\"Ide family.\",\"enum\":[\"Visual Studio Code\",\"Visual Studio\",\"Eclipse\",\"JetBrains\"]},\"itly\":{\"description\":\"Set to true for filtering within Segment\",\"const\":true}},\"additionalProperties\":false,\"required\":[\"ide\",\"itly\"]}"
                 },
-                properties: new Properties(new Dictionary<string, object>
-                {
-                    ["itlySource"] = "visual-studio-plugin",
-                    ["itlyVersion"] = "1.0"
-                }),
+                properties: new Properties(new Dictionary<string, object> { }),
                 context: new Context(),
                 disabled: options.Disabled,
                 environment: options.Environment,

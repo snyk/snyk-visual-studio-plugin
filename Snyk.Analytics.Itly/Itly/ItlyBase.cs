@@ -156,7 +156,7 @@ namespace Iteratively
 
             Validate(@event);
             var combined = Properties.Concatenate(Context, @event, Properties,
-                new Properties(new Dictionary<string, object> {["itlySchema"] = @event.Schema}));
+                new Properties(new Dictionary<string, object> {}));
             ForEachAdapter("group", adapter => adapter.Track(userId, eventName, combined));
         }
 

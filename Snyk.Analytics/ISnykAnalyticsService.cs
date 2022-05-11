@@ -39,6 +39,13 @@ namespace Snyk.Analytics
         Task ObtainUserAsync(string apiToken);
 
         /// <summary>
+        /// Fetch user information for event tracking
+        /// </summary>
+        /// <param name="apiToken">The API token that's used in authentication</param>
+        /// <param name="vsVersion">The Visual Studio version</param>
+        Task ObtainUserAsync(string apiToken, string vsVersion);
+
+        /// <summary>
         /// Gets or sets a value indicating whether is analytics enabled.
         /// </summary>
         bool AnalyticsEnabled { get; set; }
