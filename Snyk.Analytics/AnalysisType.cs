@@ -1,4 +1,5 @@
 ﻿using System;
+using Iteratively;
 
 namespace Snyk.Analytics
 {
@@ -24,6 +25,27 @@ namespace Snyk.Analytics
                 default:
                     throw new ArgumentOutOfRangeException(nameof(analysisType));
             }
+        }
+
+        public static AnalysisIsReady.AnalysisType ToAnalysisIsReadyEnum(this AnalysisType analysisTypeParam)
+        {
+            AnalysisIsReady.AnalysisType analysisType;
+            switch (analysisTypeParam)
+            {
+                case AnalysisType.SnykOpenSource:
+                    analysisType = AnalysisIsReady.AnalysisType.SnykOpenSource;
+                    break;
+                case AnalysisType.SnykCodeSecurity:
+                    analysisType = AnalysisIsReady.AnalysisType.SnykCodeSecurity;
+                    break;
+                case AnalysisType.SnykCodeQuality:
+                    analysisType = AnalysisIsReady.AnalysisType.SnykCodeQuality;
+                    break;
+                default:
+                    throw new ArgumentOutOfRangeException(nameof(analysisTypeParam), analysisTypeParam, null);
+            }
+
+            return analysisType;
         }
     }
 }
