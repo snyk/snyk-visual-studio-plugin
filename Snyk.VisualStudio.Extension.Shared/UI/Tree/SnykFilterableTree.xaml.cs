@@ -138,7 +138,7 @@ namespace Snyk.VisualStudio.Extension.Shared.UI.Tree
                     this.AppendSnykCodeIssues(this.codeSecurityRootNode, value, suggestion => suggestion.Categories.Contains("Security"));
 
                     SnykAnalyticsClient.Instance
-                        .LogAnalysisReadyEvent(AnalysisTypeEnum.SnykCodeSecurity, AnalyticsAnalysisResult.Success);
+                        .LogAnalysisReadyEvent(AnalysisType.SnykCodeSecurity, AnalyticsAnalysisResult.Success);
                 }
 
                 if (this.codeQualityRootNode.Enabled)
@@ -146,7 +146,7 @@ namespace Snyk.VisualStudio.Extension.Shared.UI.Tree
                     this.AppendSnykCodeIssues(this.codeQualityRootNode, value, suggestion => !suggestion.Categories.Contains("Security"));
 
                     SnykAnalyticsClient.Instance
-                        .LogAnalysisReadyEvent(AnalysisTypeEnum.SnykCodeQuality, AnalyticsAnalysisResult.Success);
+                        .LogAnalysisReadyEvent(AnalysisType.SnykCodeQuality, AnalyticsAnalysisResult.Success);
                 }
             }
         }

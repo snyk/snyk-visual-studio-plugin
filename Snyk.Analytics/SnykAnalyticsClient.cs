@@ -60,7 +60,7 @@
             Instance = new SnykAnalyticsClient(anonymousId, Segment.Analytics.Client);
         }
 
-        public void LogAnalysisReadyEvent(AnalysisTypeEnum analysisTypeParam, string analysisResult)
+        public void LogAnalysisReadyEvent(AnalysisType analysisTypeParam, string analysisResult)
         {
             AnalysisIsReady.Result result;
             switch (analysisResult)
@@ -78,13 +78,13 @@
             AnalysisIsReady.AnalysisType analysisType;
             switch (analysisTypeParam)
             {
-                case AnalysisTypeEnum.SnykOpenSource:
+                case AnalysisType.SnykOpenSource:
                     analysisType = AnalysisIsReady.AnalysisType.SnykOpenSource;
                     break;
-                case AnalysisTypeEnum.SnykCodeSecurity:
+                case AnalysisType.SnykCodeSecurity:
                     analysisType = AnalysisIsReady.AnalysisType.SnykCodeSecurity;
                     break;
-                case AnalysisTypeEnum.SnykCodeQuality:
+                case AnalysisType.SnykCodeQuality:
                     analysisType = AnalysisIsReady.AnalysisType.SnykCodeQuality;
                     break;
                 default:
@@ -99,7 +99,7 @@
             Itly.WelcomeIsViewed(this.userId);
         }
 
-        public void LogAnalysisIsTriggeredEvent(IList<AnalysisTypeEnum> selectedProducts)
+        public void LogAnalysisIsTriggeredEvent(IList<AnalysisType> selectedProducts)
         {
             var selectedProductsAsStrings = selectedProducts
                 .Select(analysisType => analysisType.ToAmplitudeString())

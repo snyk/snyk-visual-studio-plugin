@@ -2,7 +2,7 @@
 
 namespace Snyk.Analytics
 {
-    public enum AnalysisTypeEnum
+    public enum AnalysisType
     {
         SnykOpenSource,
         SnykCodeSecurity,
@@ -11,15 +11,15 @@ namespace Snyk.Analytics
 
     public static class AnalysisTypeEnumExtensions
     {
-        public static string ToAmplitudeString(this AnalysisTypeEnum analysisType)
+        public static string ToAmplitudeString(this AnalysisType analysisType)
         {
             switch (analysisType)
             {
-                case AnalysisTypeEnum.SnykOpenSource:
+                case AnalysisType.SnykOpenSource:
                     return "Snyk Open Source";
-                case AnalysisTypeEnum.SnykCodeSecurity:
+                case AnalysisType.SnykCodeSecurity:
                     return "Snyk Code Security";
-                case AnalysisTypeEnum.SnykCodeQuality:
+                case AnalysisType.SnykCodeQuality:
                     return "Snyk Code Quality";
                 default:
                     throw new ArgumentOutOfRangeException(nameof(analysisType));

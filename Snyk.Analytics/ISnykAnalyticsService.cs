@@ -11,7 +11,7 @@ namespace Snyk.Analytics
         /// </summary>
         /// <param name="analysisType">Type of analysis (Oss, SnykCode Security or quality).</param>
         /// <param name="analysisResult">Analysis result (success or error).</param>
-        void LogAnalysisReadyEvent(AnalysisTypeEnum analysisType, string analysisResult);
+        void LogAnalysisReadyEvent(AnalysisType analysisType, string analysisResult);
 
         /// <summary>
         /// Log UserLandedOnTheWelcomePageEvent.
@@ -22,7 +22,7 @@ namespace Snyk.Analytics
         /// Log UserTriggersAnAnalysisEvent.
         /// </summary>
         /// <param name="selectedProducts">Selected products (OSS, SnykCode Quality and Security).</param>
-        void LogAnalysisIsTriggeredEvent(IList<AnalysisTypeEnum> selectedProducts);
+        void LogAnalysisIsTriggeredEvent(IList<AnalysisType> selectedProducts);
 
         /// <summary>
         /// Log Issue Is Viewed Event.

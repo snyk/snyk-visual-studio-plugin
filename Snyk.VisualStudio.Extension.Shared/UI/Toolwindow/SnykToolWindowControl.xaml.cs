@@ -205,7 +205,7 @@ namespace Snyk.VisualStudio.Extension.Shared.UI.Toolwindow
         {
             await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
 
-            this.serviceProvider.AnalyticsService.LogAnalysisReadyEvent(AnalysisTypeEnum.SnykOpenSource, AnalyticsAnalysisResult.Error);
+            this.serviceProvider.AnalyticsService.LogAnalysisReadyEvent(AnalysisType.SnykOpenSource, AnalyticsAnalysisResult.Error);
 
             this.resultsTree.CliRootNode.State = RootTreeNodeState.Error;
 
@@ -234,7 +234,7 @@ namespace Snyk.VisualStudio.Extension.Shared.UI.Toolwindow
         {
             await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
 
-            this.serviceProvider.AnalyticsService.LogAnalysisReadyEvent(AnalysisTypeEnum.SnykCodeSecurity, AnalyticsAnalysisResult.Error);
+            this.serviceProvider.AnalyticsService.LogAnalysisReadyEvent(AnalysisType.SnykCodeSecurity, AnalyticsAnalysisResult.Error);
 
             this.resultsTree.CodeQualityRootNode.State = RootTreeNodeState.Error;
             this.resultsTree.CodeSecurityRootNode.State = RootTreeNodeState.Error;
@@ -506,7 +506,7 @@ namespace Snyk.VisualStudio.Extension.Shared.UI.Toolwindow
                 this.resultsTree.OssResult = cliResult;
 
                 this.serviceProvider.AnalyticsService
-                    .LogAnalysisReadyEvent(AnalysisTypeEnum.SnykOpenSource, AnalyticsAnalysisResult.Success);
+                    .LogAnalysisReadyEvent(AnalysisType.SnykOpenSource, AnalyticsAnalysisResult.Success);
             });
         }
 
