@@ -1,4 +1,6 @@
-﻿namespace Snyk.VisualStudio.Extension.Shared.Service
+﻿using Snyk.Analytics;
+
+namespace Snyk.VisualStudio.Extension.Shared.Service
 {
     using System;
     using System.Collections.Generic;
@@ -614,25 +616,25 @@
             };
         }
 
-        private IList<string> GetSelectedFeatures(FeaturesSettings featuresSettings)
+        private IList<AnalysisTypeEnum> GetSelectedFeatures(FeaturesSettings featuresSettings)
         {
-            var selectedProducts = new List<string>();
+            var selectedProducts = new List<AnalysisTypeEnum>();
 
             if (featuresSettings.OssEnabled)
             {
-                selectedProducts.Add(AnalysisType.SnykOpenSource);
+                selectedProducts.Add(AnalysisTypeEnum.SnykOpenSource);
             }
 
             if (featuresSettings.SastOnServerEnabled)
             {
                 if (featuresSettings.CodeSecurityEnabled)
                 {
-                    selectedProducts.Add(AnalysisType.SnykCodeSecurity);
+                    selectedProducts.Add(AnalysisTypeEnum.SnykCodeSecurity);
                 }
 
                 if (featuresSettings.CodeQualityEnabled)
                 {
-                    selectedProducts.Add(AnalysisType.SnykCodeQuality);
+                    selectedProducts.Add(AnalysisTypeEnum.SnykCodeQuality);
                 }
             }
 

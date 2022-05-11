@@ -99,9 +99,13 @@
             Itly.WelcomeIsViewed(this.userId);
         }
 
-        public void LogAnalysisIsTriggeredEvent(IList<string> selectedProducts)
+        public void LogAnalysisIsTriggeredEvent(IList<AnalysisTypeEnum> selectedProducts)
         {
-            Itly.AnalysisIsTriggered(this.userId, selectedProducts.ToArray(), AnalysisIsTriggered.Ide.VisualStudio, true);
+            var selectedProductsAsStrings = selectedProducts
+                .Select(analysisType => analysisType.ToAmplitudeString())
+                .ToArray();
+
+            Itly.AnalysisIsTriggered(this.userId, selectedProductsAsStrings, AnalysisIsTriggered.Ide.VisualStudio, true);
         }
 
         public void LogIssueIsViewedEvent(string id, string issueTypeParam, string severityParam)

@@ -22,7 +22,7 @@ namespace Snyk.Analytics
         /// Log UserTriggersAnAnalysisEvent.
         /// </summary>
         /// <param name="selectedProducts">Selected products (OSS, SnykCode Quality and Security).</param>
-        void LogAnalysisIsTriggeredEvent(IList<string> selectedProducts);
+        void LogAnalysisIsTriggeredEvent(IList<AnalysisTypeEnum> selectedProducts);
 
         /// <summary>
         /// Log Issue Is Viewed Event.
