@@ -12,7 +12,7 @@
     using Guid = System.Guid;
     using ILogger = Serilog.ILogger;
 
-    public class SnykAnalyticsClient : ISnykAnalyticsService
+    public class SnykAnalyticsService : ISnykAnalyticsService
     {
         private readonly string anonymousId;
         private string userId;
@@ -20,18 +20,19 @@
         private string userIdAsHash;
         private readonly Client segmentClient;
 
-        private static readonly ILogger Logger = LogManager.ForContext<SnykAnalyticsClient>();
+        private static readonly ILogger Logger = LogManager.ForContext<SnykAnalyticsService>();
 
-        private SnykAnalyticsClient(string anonymousId, Client segmentClient)
+        private SnykAnalyticsService(string anonymousId, Client segmentClient)
         {
             this.anonymousId = anonymousId;
             this.segmentClient = segmentClient;
-            this.segmentClient?.Identify(this.anonymousId, new Traits());
         }
 
-        public static SnykAnalyticsClient Instance { get; private set; }
+        public static SnykAnalyticsService Instance { get; private set; }
 
-        public bool AnalyticsEnabled { get; set; } = true;
+        public bool AnalyticsEnabled { get; set; }
+
+        private bool Disabled => !AnalyticsEnabled || this.segmentClient == null;
 
         public static void Initialize(string anonymousId, string writeKey)
         {
@@ -42,22 +43,26 @@
 
             if (string.IsNullOrEmpty(writeKey))
             {
-                Instance = new SnykAnalyticsClient(anonymousId, null);
+                Instance = new SnykAnalyticsService(anonymousId, null);
                 Instance.AnalyticsEnabled = false;
                 Logger.Information("Segment analytics collection is disabled because write key is empty!");
                 return;
             }
 
-            var segmentDestination = new SegmentCustomDestination(writeKey, anonymousId);
-            segmentDestination.Identify(anonymousId, new Iteratively.Properties());
-            
+            var segmentDestination = new SegmentCustomDestination(writeKey);
             Itly.Load(new Iteratively.Options(new DestinationsOptions(new CustomOptions(segmentDestination))));
             
-            Instance = new SnykAnalyticsClient(anonymousId, Segment.Analytics.Client);
+            Instance = new SnykAnalyticsService(anonymousId, Segment.Analytics.Client);
+            Instance.AnalyticsEnabled = true;
         }
 
         public void LogAnalysisReadyEvent(AnalysisType analysisTypeParam, AnalyticsAnalysisResult analysisResultParam)
         {
+            if (Disabled)
+            {
+                return;
+            }
+
             var analysisResult = analysisResultParam.ToAnalysisIsReadyEnum();
             var analysisType = analysisTypeParam.ToAnalysisIsReadyEnum();
 
@@ -66,11 +71,21 @@
 
         public void LogWelcomeIsViewedEvent()
         {
+            if (Disabled)
+            {
+                return;
+            }
+
             Itly.WelcomeIsViewed(this.userId);
         }
 
         public void LogAnalysisIsTriggeredEvent(IList<AnalysisType> selectedProducts)
         {
+            if (Disabled)
+            {
+                return;
+            }
+
             var selectedProductsAsStrings = selectedProducts
                 .Select(analysisType => analysisType.ToAmplitudeString())
                 .ToArray();
@@ -80,6 +95,11 @@
 
         public void LogIssueIsViewedEvent(string id, string issueTypeParam, string severityParam)
         {
+            if (Disabled)
+            {
+                return;
+            }
+
             IssueInTreeIsClicked.IssueType issueType;
             switch (issueTypeParam)
             {
@@ -129,8 +149,9 @@
 
         public async Task ObtainUserAsync(string apiToken)
         {
-            if (string.IsNullOrEmpty(apiToken) || !string.IsNullOrEmpty(this.userId) || !this.AnalyticsEnabled)
+            if (string.IsNullOrEmpty(apiToken) || !string.IsNullOrEmpty(this.userId) || this.Disabled)
             {
+                this.userId = null;
                 return;
             }
 

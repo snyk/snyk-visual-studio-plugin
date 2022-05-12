@@ -116,8 +116,8 @@
                         this.Options.AnonymousId = anonymousId;
                     }
 
-                    SnykAnalyticsClient.Initialize(this.Options.AnonymousId, writeKey);
-                    this.analyticsService = SnykAnalyticsClient.Instance;
+                    SnykAnalyticsService.Initialize(this.Options.AnonymousId, writeKey);
+                    this.analyticsService = SnykAnalyticsService.Instance;
 
                 }
 
