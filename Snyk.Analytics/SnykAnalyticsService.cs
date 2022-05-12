@@ -192,7 +192,7 @@
 
         public void Dispose()
         {
-            this.segmentClient.Dispose();
+            this.segmentClient?.Dispose();
         }
     }
 }
