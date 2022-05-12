@@ -10,14 +10,13 @@ namespace Snyk.Analytics
     {
         private readonly Client client;
 
-        public SegmentCustomDestination(string writeKey, string anonymousId, string vsVersion = null)
+        public SegmentCustomDestination(string writeKey)
         {
             Analytics.Initialize(writeKey, new Config()
                 .SetAsync(true)
                 .SetTimeout(TimeSpan.FromSeconds(10))
                 .SetMaxQueueSize(5));
             this.client = Analytics.Client;
-
         }
 
         public void Dispose()
