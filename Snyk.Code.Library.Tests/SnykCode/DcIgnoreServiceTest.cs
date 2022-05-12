@@ -156,5 +156,36 @@
 
             Assert.Equal(4, filteredFiles.Count);
         }
+
+        [Fact]
+        public void DcIgnoreService_FilePathWithUnderscoreFolderNameProvided_FilterFilesPass()
+        {
+            string folderPath = Path.GetTempPath();
+
+            string dcIGnorePath = Path.Combine(folderPath, ".dcignore");
+
+            if (File.Exists(dcIGnorePath))
+            {
+                File.Delete(dcIGnorePath);
+            }
+
+            Assert.False(File.Exists(dcIGnorePath));
+
+            var projectFiles = new List<string>
+            {
+                "/Projects/_/Src/Main.cs",
+                "/Projects/_/Src/App.cs",
+                "/Projects/_/Src/Service/Service.cs",
+            };
+
+            var dcIgnoreService = new DcIgnoreService();
+            var filteredFiles = dcIgnoreService.FilterFiles(folderPath, projectFiles).ToList();
+
+            Assert.Equal(3, filteredFiles.Count);
+
+            Assert.True(File.Exists(dcIGnorePath));
+
+            File.Delete(dcIGnorePath);
+        }
     }
 }

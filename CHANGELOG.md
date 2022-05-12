@@ -2,11 +2,12 @@
 
 ## [1.1.15]
 
+### Fixed
+- Fixed a bug in Snyk Code where files with an underscore in the path would be ignored.
+- Restore all tree items after clear search or filter.
+
 ### Changed
 - Expand all scan results after completing a scan
-
-### Fixed
- - Restore all tree items after clear search or filter.
 
 ## [1.1.14]
 
