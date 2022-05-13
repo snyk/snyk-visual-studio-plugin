@@ -1,7 +1,6 @@
 ﻿namespace Snyk.VisualStudio.Extension.Shared.UI.Tree
 {
     using System;
-    using System.ComponentModel;
     using System.Linq;
     using System.Windows;
     using System.Windows.Controls;
@@ -176,12 +175,12 @@
         {
             await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
 
-            foreach (TreeNode treeNode in this.codeSecurityRootNode.Items)
-            {
-                ICollectionView collectionView = CollectionViewSource.GetDefaultView(treeNode.Items);
+            var restoreOssItemsTask = this.DisplayAllVulnerabilitiesAsync(this.ossRootNode);
+            var restoreCodeSecurityItemsTask = this.DisplayAllVulnerabilitiesAsync(this.codeSecurityRootNode);
+            var restoreCodeQualityItemsTask = this.DisplayAllVulnerabilitiesAsync(this.codeQualityRootNode);
 
-                collectionView.Filter = null;
-            }
+            await System.Threading.Tasks.Task
+                .WhenAll(restoreOssItemsTask, restoreCodeSecurityItemsTask, restoreCodeQualityItemsTask);
         });
 
         /// <summary>
@@ -201,6 +200,18 @@
             this.FilterSnykCodeItems(this.codeQualityRootNode, severityFilter, searchString);
             this.FilterSnykCodeItems(this.codeSecurityRootNode, severityFilter, searchString);
         });
+
+        private async System.Threading.Tasks.Task DisplayAllVulnerabilitiesAsync(RootTreeNode rootTreeNode)
+        {
+            await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
+
+            foreach (var treeNode in rootTreeNode.Items)
+            {
+                var collectionView = CollectionViewSource.GetDefaultView(treeNode.Items);
+
+                collectionView.Filter = null;
+            }
+        }
 
         private void FilterOssItems(RootTreeNode rootTreeNode, SeverityFilter severityFilter, string searchString)
         {
