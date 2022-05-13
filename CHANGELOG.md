@@ -1,5 +1,10 @@
 # Snyk Changelog
 
+## [1.1.15]
+
+### Fixed
+ - Restore all tree items after clear search or filter.
+
 ## [1.1.14]
 
 ### Fixed
