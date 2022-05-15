@@ -149,7 +149,7 @@
 
         public async Task ObtainUserAsync(string apiToken)
         {
-            if (string.IsNullOrEmpty(apiToken) || !string.IsNullOrEmpty(this.userId) || this.Disabled)
+            if (this.segmentClient == null || string.IsNullOrEmpty(apiToken) || !string.IsNullOrEmpty(this.userId) || this.Disabled)
             {
                 this.userId = null;
                 return;
