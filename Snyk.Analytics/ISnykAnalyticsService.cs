@@ -30,8 +30,8 @@
         /// </summary>
         /// <param name="id">User id.</param>
         /// <param name="issueType">Type of issue (Oss, SnykCode Security or Quality.</param>
-        /// <param name="severity">Severity name.</param>
-        void LogIssueIsViewedEvent(string id, string issueType, string severity);
+        /// <param name="severity">Severity of issue (Low/Medium/High/Critical)</param>
+        void LogIssueIsViewedEvent(string id, ScanResultIssueType issueType, string severity);
 
         /// <summary>
         /// Fetch user information for event tracking

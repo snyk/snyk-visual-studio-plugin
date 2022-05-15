@@ -115,31 +115,14 @@
             Itly.AnalysisIsTriggered(this.userId, selectedProductsAsStrings, AnalysisIsTriggered.Ide.VisualStudio, true);
         }
 
-        public void LogIssueIsViewedEvent(string id, string issueTypeParam, string severityParam)
+        public void LogIssueIsViewedEvent(string id, ScanResultIssueType issueTypeParam, string severityParam)
         {
             if (Disabled)
             {
                 return;
             }
 
-            IssueInTreeIsClicked.IssueType issueType;
-            switch (issueTypeParam)
-            {
-                case "Open Source Vulnerability":
-                    issueType = IssueInTreeIsClicked.IssueType.OpenSourceVulnerability;
-                    break;
-                case "Licence Issue":
-                    issueType = IssueInTreeIsClicked.IssueType.LicenceIssue;
-                    break;
-                case "Code Quality Issue":
-                    issueType = IssueInTreeIsClicked.IssueType.CodeQualityIssue;
-                    break;
-                case "Code Security Vulnerability":
-                    issueType = IssueInTreeIsClicked.IssueType.CodeSecurityVulnerability;
-                    break;
-                default:
-                    throw new ArgumentOutOfRangeException(nameof(issueTypeParam));
-            }
+            var issueType = issueTypeParam.ToIssueInTreeIsClickedEnum();
 
             IssueInTreeIsClicked.Severity severity;
             switch (severityParam)

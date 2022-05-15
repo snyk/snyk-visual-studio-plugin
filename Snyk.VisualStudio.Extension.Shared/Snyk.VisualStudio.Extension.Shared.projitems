@@ -164,9 +164,6 @@
     <Compile Include="$(MSBuildThisFileDirectory)Settings\SnykUserStorageSettingsService.cs">
       <CopyToOutputDirectory>Never</CopyToOutputDirectory>
     </Compile>
-    <Compile Include="$(MSBuildThisFileDirectory)SnykAnalytics\IssueType.cs">
-      <CopyToOutputDirectory>Never</CopyToOutputDirectory>
-    </Compile>
     <Compile Include="$(MSBuildThisFileDirectory)Cache\CodeCacheHierarchyEvents.cs">
       <CopyToOutputDirectory>Never</CopyToOutputDirectory>
     </Compile>

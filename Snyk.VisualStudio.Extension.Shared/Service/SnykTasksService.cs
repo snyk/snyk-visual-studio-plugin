@@ -13,7 +13,6 @@
     using Snyk.VisualStudio.Extension.Shared.CLI;
     using Snyk.VisualStudio.Extension.Shared.CLI.Download;
     using Snyk.VisualStudio.Extension.Shared.Service.Domain;
-    using Snyk.VisualStudio.Extension.Shared.SnykAnalytics;
     using static Snyk.VisualStudio.Extension.Shared.CLI.Download.SnykCliDownloader;
     using Task = System.Threading.Tasks.Task;
 
