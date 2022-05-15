@@ -168,7 +168,6 @@
 
                 await this.InitializeGeneralOptionsAsync();
 
-                // TODO - Pass user ID/hash as parameter
                 // Initialize analytics
                 var vsVersion = await this.GetVsVersion();
 
