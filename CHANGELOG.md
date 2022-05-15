@@ -1,5 +1,10 @@
 # Snyk Changelog
 
+## [1.1.15]
+
+### Changed
+- Expand scan results after completing the scan
+
 ## [1.1.14]
 
 ### Fixed
