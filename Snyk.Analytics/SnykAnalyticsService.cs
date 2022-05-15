@@ -15,12 +15,13 @@
     public class SnykAnalyticsService : ISnykAnalyticsService
     {
         private readonly string anonymousId;
+        private readonly Client segmentClient;
+        private static readonly ILogger Logger = LogManager.ForContext<SnykAnalyticsService>();
+        private static readonly Uri SnykUserMeUri = new Uri("https://snyk.io/api/user/me/");
         private string userId;
         private string vsVersion;
         private string userIdAsHash;
-        private readonly Client segmentClient;
-
-        private static readonly ILogger Logger = LogManager.ForContext<SnykAnalyticsService>();
+        private bool _analyticsEnabled;
 
         private SnykAnalyticsService(string anonymousId, Client segmentClient)
         {
@@ -30,7 +31,28 @@
 
         public static SnykAnalyticsService Instance { get; private set; }
 
-        public bool AnalyticsEnabled { get; set; }
+        public bool AnalyticsEnabled
+        {
+            get => _analyticsEnabled;
+            set
+            {
+                if (_analyticsEnabled == value)
+                {
+                    return;
+                }
+
+                _analyticsEnabled = value;
+                
+                if (value)
+                {
+                    Logger.Information("Analytics enabled");
+                }
+                else
+                {
+                    Logger.Information("Analytics disabled");
+                }
+            }
+        }
 
         private bool Disabled => !AnalyticsEnabled || this.segmentClient == null;
 
@@ -155,7 +177,7 @@
                 return;
             }
 
-            var user = await SnykUser.GetUserAsync(apiToken);
+            var user = await GetSnykUserAsync(apiToken);
 
             if (string.IsNullOrEmpty(user.Id))
             {
@@ -195,6 +217,20 @@
             Logger.Information("Shutting down analytics service...");
             Itly.Dispose();
             Logger.Information("Analytics service shut down complete");
+        }
+
+        private async Task<SnykUser> GetSnykUserAsync(string token)
+        {
+            using (var webClient = new SnykWebClient())
+            {
+                webClient.Headers.Add("Authorization", $"token {token}");
+                webClient.Headers.Add("Accept", "application/json");
+                webClient.Headers.Add("Content-Type", "application/json");
+
+                var userInfoJson = await webClient.DownloadStringTaskAsync(SnykUserMeUri);
+
+                return Json.Deserialize<SnykUser>(userInfoJson);
+            }
         }
     }
 }
