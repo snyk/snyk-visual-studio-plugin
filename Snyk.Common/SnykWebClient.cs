@@ -5,6 +5,7 @@
     /// <summary>
     /// Extended WebClient for Snyk extension.
     /// </summary>
+    [System.ComponentModel.DesignerCategory("Code")] // To prevent VS from changing this file subtype to "Component" in the .csproj
     public class SnykWebClient : WebClient
     {
         /// <summary>
