@@ -116,7 +116,8 @@
                         this.Options.AnonymousId = anonymousId;
                     }
 
-                    SnykAnalyticsService.Initialize(this.Options.AnonymousId, writeKey);
+                    var enabled = this.Options.UsageAnalyticsEnabled;
+                    SnykAnalyticsService.Initialize(this.Options.AnonymousId, writeKey, enabled);
                     this.analyticsService = SnykAnalyticsService.Instance;
 
                 }

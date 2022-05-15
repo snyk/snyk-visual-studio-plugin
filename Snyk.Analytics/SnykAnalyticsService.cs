@@ -56,7 +56,7 @@
 
         private bool Disabled => !AnalyticsEnabled || this.segmentClient == null;
 
-        public static void Initialize(string anonymousId, string writeKey)
+        public static void Initialize(string anonymousId, string writeKey, bool enabled)
         {
             if (string.IsNullOrEmpty(anonymousId))
             {
@@ -75,7 +75,7 @@
             Itly.Load(new Iteratively.Options(new DestinationsOptions(new CustomOptions(segmentDestination))));
             
             Instance = new SnykAnalyticsService(anonymousId, Segment.Analytics.Client);
-            Instance.AnalyticsEnabled = true;
+            Instance.AnalyticsEnabled = enabled;
         }
 
         public void LogAnalysisReadyEvent(AnalysisType analysisTypeParam, AnalyticsAnalysisResult analysisResultParam)
