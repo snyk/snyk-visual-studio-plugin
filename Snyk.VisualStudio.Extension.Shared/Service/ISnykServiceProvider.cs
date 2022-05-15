@@ -1,17 +1,15 @@
-﻿using Snyk.Analytics;
-
-namespace Snyk.VisualStudio.Extension.Shared.Service
+﻿namespace Snyk.VisualStudio.Extension.Shared.Service
 {
     using System;
     using System.Threading.Tasks;
     using EnvDTE80;
     using Microsoft.VisualStudio.Settings;
     using Microsoft.VisualStudio.Shell;
+    using Snyk.Analytics;
     using Snyk.Code.Library.Service;
     using Snyk.Common;
     using Snyk.VisualStudio.Extension.Shared.CLI;
     using Snyk.VisualStudio.Extension.Shared.Settings;
-    using Snyk.VisualStudio.Extension.Shared.SnykAnalytics;
     using Snyk.VisualStudio.Extension.Shared.Theme;
     using Snyk.VisualStudio.Extension.Shared.UI.Toolwindow;
 

@@ -1,9 +1,10 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Threading.Tasks;
-
-namespace Snyk.Analytics
+﻿namespace Snyk.Analytics
 {
+    using System;
+    using System.Collections.Generic;
+    using System.Threading.Tasks;
+
+
     public interface ISnykAnalyticsService : IDisposable
     {
         /// <summary>

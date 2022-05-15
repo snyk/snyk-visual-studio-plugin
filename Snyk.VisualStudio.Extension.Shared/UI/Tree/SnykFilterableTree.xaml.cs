@@ -1,6 +1,4 @@
-﻿using Snyk.Analytics;
-
-namespace Snyk.VisualStudio.Extension.Shared.UI.Tree
+﻿namespace Snyk.VisualStudio.Extension.Shared.UI.Tree
 {
     using System;
     using System.ComponentModel;
@@ -9,6 +7,7 @@ namespace Snyk.VisualStudio.Extension.Shared.UI.Tree
     using System.Windows.Controls;
     using System.Windows.Data;
     using Microsoft.VisualStudio.Shell;
+    using Snyk.Analytics;
     using Snyk.Code.Library.Domain.Analysis;
     using Snyk.VisualStudio.Extension.Shared.CLI;
     using Snyk.VisualStudio.Extension.Shared.Model;

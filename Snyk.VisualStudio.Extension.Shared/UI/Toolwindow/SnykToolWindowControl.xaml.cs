@@ -1,6 +1,4 @@
-﻿using Snyk.Analytics;
-
-namespace Snyk.VisualStudio.Extension.Shared.UI.Toolwindow
+﻿namespace Snyk.VisualStudio.Extension.Shared.UI.Toolwindow
 {
     using System;
     using System.Diagnostics;
