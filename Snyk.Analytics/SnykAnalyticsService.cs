@@ -192,7 +192,9 @@
 
         public void Dispose()
         {
-            this.segmentClient?.Dispose();
+            Logger.Information("Shutting down analytics service...");
+            Itly.Dispose();
+            Logger.Information("Analytics service shut down complete");
         }
     }
 }

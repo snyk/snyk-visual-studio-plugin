@@ -21,6 +21,7 @@ namespace Snyk.Analytics
 
         public void Dispose()
         {
+            this.client.Flush();
             this.client.Dispose();
         }
 
