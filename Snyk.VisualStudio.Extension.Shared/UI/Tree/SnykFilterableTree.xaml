@@ -4,11 +4,10 @@
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
              xmlns:toolkit="clr-namespace:Community.VisualStudio.Toolkit;assembly=Community.VisualStudio.Toolkit"
+             xmlns:tree="clr-namespace:Snyk.VisualStudio.Extension.Shared.UI.Tree"
              toolkit:Themes.UseVsTheme="True"
              mc:Ignorable="d" 
              d:DesignHeight="300" d:DesignWidth="300">
-    <UserControl.Resources>
-    </UserControl.Resources>
     <Grid>
         <Grid.RowDefinitions>
             <RowDefinition Height="10*"/>
@@ -16,12 +15,13 @@
         <Grid.ColumnDefinitions>
             <ColumnDefinition Width="*"/>
         </Grid.ColumnDefinitions>
-        <TreeView Grid.Row="1" Name="vulnerabilitiesTree"  SelectedItemChanged="VulnerabilitiesTree_SelectedItemChanged"
+        <TreeView Name="vulnerabilitiesTree" SelectedItemChanged="VulnerabilitiesTree_SelectedItemChanged"
                   HorizontalAlignment="Stretch" VerticalAlignment="Stretch" 
                   ScrollViewer.VerticalScrollBarVisibility="Auto" 
                   ScrollViewer.HorizontalScrollBarVisibility="Auto" 
                   VerticalContentAlignment="Stretch" 
-                  ScrollViewer.CanContentScroll="True" UseLayoutRounding="False">
+                  ScrollViewer.CanContentScroll="True" UseLayoutRounding="False"
+                  d:DataContext="{d:DesignInstance tree:TreeNode}">
             <TreeView.ItemTemplate>
                 <HierarchicalDataTemplate ItemsSource="{Binding Items}">
                     <StackPanel Orientation="Horizontal" Height="19">
@@ -36,6 +36,13 @@
                     </StackPanel>
                 </HierarchicalDataTemplate>
             </TreeView.ItemTemplate>
+            
+            <!-- Set tree items to expand by default -->
+            <TreeView.ItemContainerStyle>
+                <Style>
+                    <Setter Property="TreeViewItem.IsExpanded" Value="True"/>
+                </Style>
+            </TreeView.ItemContainerStyle>
         </TreeView>
     </Grid>
 </UserControl>
