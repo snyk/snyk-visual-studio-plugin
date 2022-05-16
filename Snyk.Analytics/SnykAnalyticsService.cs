@@ -16,17 +16,18 @@
     {
         private readonly string anonymousId;
         private readonly Client segmentClient;
+        private readonly Uri userMeEndpoint;
         private static readonly ILogger Logger = LogManager.ForContext<SnykAnalyticsService>();
-        private static readonly Uri SnykUserMeUri = new Uri("https://snyk.io/api/user/me/");
         private string userId;
         private string vsVersion;
         private string userIdAsHash;
         private bool _analyticsEnabled;
 
-        private SnykAnalyticsService(string anonymousId, Client segmentClient)
+        private SnykAnalyticsService(string anonymousId, Client segmentClient, Uri userMeEndpoint)
         {
             this.anonymousId = anonymousId;
             this.segmentClient = segmentClient;
+            this.userMeEndpoint = userMeEndpoint;
         }
 
         public static SnykAnalyticsService Instance { get; private set; }
@@ -56,25 +57,39 @@
 
         private bool Disabled => !AnalyticsEnabled || this.segmentClient == null;
 
-        public static void Initialize(string anonymousId, string writeKey, bool enabled)
+        public static void Initialize(string anonymousId, string writeKey, bool enabled, string userMeApiEndpoint)
         {
             if (string.IsNullOrEmpty(anonymousId))
             {
                 anonymousId = Guid.NewGuid().ToString();
             }
 
+            Uri endpoint;
+            try
+            {
+                endpoint = new Uri(userMeApiEndpoint);
+            }
+            catch (Exception exception)
+            {
+                Logger.Error($"Analytics disabled because of invalid api endpoint: \"{userMeApiEndpoint}\"");
+                Logger.Error(exception.Message);
+                Instance = new SnykAnalyticsService(anonymousId, null, null);
+                Instance.AnalyticsEnabled = false;
+                return;
+            }
+
             if (string.IsNullOrEmpty(writeKey))
             {
-                Instance = new SnykAnalyticsService(anonymousId, null);
+                Instance = new SnykAnalyticsService(anonymousId, null, endpoint);
                 Instance.AnalyticsEnabled = false;
-                Logger.Information("Segment analytics collection is disabled because write key is empty!");
+                Logger.Information("Analytics disabled because of empty write key");
                 return;
             }
 
             var segmentDestination = new SegmentCustomDestination(writeKey);
             Itly.Load(new Iteratively.Options(new DestinationsOptions(new CustomOptions(segmentDestination))));
             
-            Instance = new SnykAnalyticsService(anonymousId, Segment.Analytics.Client);
+            Instance = new SnykAnalyticsService(anonymousId, Segment.Analytics.Client, endpoint);
             Instance.AnalyticsEnabled = enabled;
         }
 
@@ -210,7 +225,7 @@
                 webClient.Headers.Add("Accept", "application/json");
                 webClient.Headers.Add("Content-Type", "application/json");
 
-                var userInfoJson = await webClient.DownloadStringTaskAsync(SnykUserMeUri);
+                var userInfoJson = await webClient.DownloadStringTaskAsync(this.userMeEndpoint);
 
                 return Json.Deserialize<SnykUser>(userInfoJson);
             }

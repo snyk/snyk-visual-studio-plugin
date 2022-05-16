@@ -204,6 +204,8 @@
         /// <inheritdoc/>
         public SnykToolWindowControl ToolWindow => this.Package.ToolWindowControl;
 
+        public ApiEndpointResolver ApiEndpointResolver => new ApiEndpointResolver(this.Options);
+
         /// <summary>
         /// Get Visual Studio service by type.
         /// </summary>
