@@ -226,7 +226,7 @@
 
                     if (searchString != null && searchString != string.Empty)
                     {
-                        isVulnIncluded = isVulnIncluded && vulnerability.GetPackageNameTitle().Contains(searchString);
+                        isVulnIncluded = isVulnIncluded && vulnerability.GetPackageNameTitle().ToLowerInvariant().Contains(searchString.ToLowerInvariant());
                     }
 
                     return isVulnIncluded;
@@ -247,7 +247,7 @@
 
                     if (searchString != null && searchString != string.Empty)
                     {
-                        isVulnIncluded = isVulnIncluded && suggestion.GetDisplayTitleWithLineNumber().Contains(searchString);
+                        isVulnIncluded = isVulnIncluded && suggestion.GetDisplayTitleWithLineNumber().ToLowerInvariant().Contains(searchString.ToLowerInvariant());
                     }
 
                     return isVulnIncluded;
