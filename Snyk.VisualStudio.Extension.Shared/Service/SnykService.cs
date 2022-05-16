@@ -116,7 +116,7 @@
                     }
 
                     var enabled = this.Options.UsageAnalyticsEnabled;
-                    SnykAnalyticsService.Initialize(this.Options.AnonymousId, writeKey, enabled);
+                    SnykAnalyticsService.Initialize(this.Options.AnonymousId, writeKey, enabled, this.ApiEndpointResolver.UserMeEndpoint);
                     this.analyticsService = SnykAnalyticsService.Instance;
 
                 }
