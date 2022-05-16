@@ -89,7 +89,7 @@
         /// </summary>
         public override void ClearSearch()
         {
-            SnykToolWindowControl toolWindowControl = (SnykToolWindowControl) this.Content;
+            var toolWindowControl = (SnykToolWindowControl) this.Content;
 
             toolWindowControl.VulnerabilitiesTree.DisplayAllVulnerabilities();
         }
@@ -125,18 +125,21 @@
             {
                 this.ErrorCode = VSConstants.S_OK;
 
-                try
+                ThreadHelper.JoinableTaskFactory.Run(async () =>
                 {
-                    ThreadHelper.ThrowIfNotOnUIThread();
-                    SnykToolWindowControl toolWindowControl = (SnykToolWindowControl)toolWindow.Content;
-                    toolWindowControl.VulnerabilitiesTree.FilterBy(this.SearchQuery.SearchString);
-                }
-                catch (Exception exception)
-                {
-                    Console.WriteLine(exception.Message);
+                    await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
 
-                    this.ErrorCode = VSConstants.E_FAIL;
-                }
+                    try
+                    {
+                        var toolWindowControl = (SnykToolWindowControl)this.toolWindow.Content;
+
+                        toolWindowControl.VulnerabilitiesTree.FilterBy(this.SearchQuery.SearchString);
+                    }
+                    catch (Exception e)
+                    {
+                        this.ErrorCode = VSConstants.E_FAIL;
+                    }
+                });
 
                 base.OnStartSearch();
             }

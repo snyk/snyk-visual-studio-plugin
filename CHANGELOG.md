@@ -3,7 +3,10 @@
 ## [1.1.15]
 
 ### Changed
-- Expand scan results after completing the scan
+- Expand all scan results after completing a scan
+
+### Fixed
+ - Restore all tree items after clear search or filter.
 
 ## [1.1.14]
 
