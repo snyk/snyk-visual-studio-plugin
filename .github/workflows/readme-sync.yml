@@ -1,0 +1,45 @@
+name: Synchronize Readme # Copied from: https://github.com/snyk/vscode-extension/blob/e34b720733956dbd1b185f0ff3b16a6003ad3bbb/.github/workflows/readme-sync.yaml
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '0 12 * * 1-5' # Mon-Fri at 12
+
+jobs:
+  build:
+    name: synchronize-readme
+    runs-on: ubuntu-latest
+    steps:
+      - run: |
+          gh auth setup-git
+          git config --global user.email "noreply@snyk.io"
+          git config --global user.name "$GITHUB_ACTOR"
+          gh repo clone snyk/snyk-visual-studio-plugin snyk-visual-studio-plugin -- --depth=1 --quiet
+          gh repo clone snyk/user-docs docs -- --depth=1 --quiet
+          git -C ./snyk-visual-studio-plugin checkout -b docs/automatic-gitbook-update
+
+          cp ./docs/docs/ide-tools/visual-studio-extension.md ./snyk-visual-studio-plugin/README.md
+          sed -i \
+              -e "s|../.gitbook/assets/|https://github.com/snyk/user-docs/raw/$(git -C ./docs rev-parse HEAD)/docs/.gitbook/assets/|g" \
+              ./snyk-visual-studio-plugin/README.md
+          sed -i \
+              -E 's|(\{%.*%\})||g' \
+              ./snyk-visual-studio-plugin/README.md
+
+          if [[ $(git -C ./snyk-visual-studio-plugin status --porcelain) ]]; then
+            echo "Documentation changes detected"
+            cd ./snyk-visual-studio-plugin
+            git --no-pager diff --name-only
+            git add .
+            git commit -m "docs: synchronizing README from snyk/user-docs"
+            git push --force --set-upstream origin docs/automatic-gitbook-update
+            if [[ ! $(gh pr view docs/automatic-gitbook-update 2>&1 | grep -q "no open pull requests";) ]]; then
+              echo "Creating PR"
+              gh pr create --title="Synchronizing README from user-docs" --body="Automatic PR controlled by GitHub Action. Please sign the commit before merging." --head docs/automatic-gitbook-update
+            fi
+            echo "PR exists, pushed changes to it."
+          else
+            echo "No documentation changes detected, exiting."
+          fi
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
