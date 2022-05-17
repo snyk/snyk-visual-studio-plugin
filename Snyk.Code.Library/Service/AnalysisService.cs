@@ -1,6 +1,7 @@
 ﻿namespace Snyk.Code.Library.Service
 {
     using System;
+    using System.Collections.Generic;
     using System.Linq;
     using System.Net.Http;
     using System.Threading;
@@ -136,9 +137,7 @@
                     var fileDtos = suggestionIdToFileKeyPair.Value;
 
                     var suggestionDto = analysisResultDto.Suggestions[suggestionId];
-                    var fileDto = fileDtos.First();
-                    var fileName = fileAnalysis.FileName;
-                    var suggestion = new Suggestion(fileName, suggestionDto, fileDto);
+                    var exampleFixes = new List<SuggestionFix>();
 
                     foreach (var exampleCommitFixes in suggestionDto.ExampleCommitFixes)
                     {
@@ -149,10 +148,20 @@
                                 .Select(line => new FixLine { Line = line.Line, LineChange = line.LineChange, LineNumber = line.LineNumber }).ToList(),
                         };
 
-                        suggestion.Fixes.Add(suggestionFix);
+                        exampleFixes.Add(suggestionFix);
                     }
 
-                    fileAnalysis.Suggestions.Add(suggestion);
+                    foreach (var fileDto in fileDtos)
+                    {
+                        var fileName = fileAnalysis.FileName;
+                        var suggestion = new Suggestion(fileName, suggestionDto, fileDto);
+                        foreach (var exampleFix in exampleFixes)
+                        {
+                            suggestion.Fixes.Add(exampleFix);
+                        }
+
+                        fileAnalysis.Suggestions.Add(suggestion);
+                    }
                 }
 
                 analysisResult.FileAnalyses.Add(fileAnalysis);
