@@ -1,5 +1,13 @@
 # Snyk Changelog
 
+## [1.1.15]
+
+### Changed
+- Expand all scan results after completing a scan
+
+### Fixed
+ - Restore all tree items after clear search or filter.
+
 ## [1.1.14]
 
 ### Fixed
