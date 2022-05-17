@@ -1340,7 +1340,6 @@ DerivedData/
 **/IntegrationServer/packages/Wm*/
 
 # ModelSim
-[_@]*
 wlf*
 cov*/
 transcript*
