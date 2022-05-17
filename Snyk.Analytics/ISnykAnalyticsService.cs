@@ -49,7 +49,7 @@
         /// <summary>
         /// Gets or sets a value indicating whether is analytics enabled.
         /// </summary>
-        bool AnalyticsEnabled { get; set; }
+        bool AnalyticsEnabledOption { get; set; }
 
         /// <summary>
         /// Gets a value indicating whether user id hash string.

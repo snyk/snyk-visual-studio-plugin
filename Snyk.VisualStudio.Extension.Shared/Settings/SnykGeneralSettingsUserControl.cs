@@ -543,7 +543,7 @@
 
                 var serviceProvider = this.OptionsDialogPage.ServiceProvider;
 
-                serviceProvider.AnalyticsService.AnalyticsEnabled = this.usageAnalyticsCheckBox.Checked;
+                serviceProvider.AnalyticsService.AnalyticsEnabledOption = this.usageAnalyticsCheckBox.Checked;
 
                 await serviceProvider.AnalyticsService.ObtainUserAsync(serviceProvider.GetApiToken());
                 await serviceProvider.SentryService.SetupAsync();

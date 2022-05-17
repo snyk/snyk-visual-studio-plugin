@@ -14,14 +14,16 @@
 
     public class SnykAnalyticsService : ISnykAnalyticsService
     {
+        private static readonly ILogger Logger = LogManager.ForContext<SnykAnalyticsService>();
+        private static bool ItlyLoaded;
+        private static string VsVersion;
+
         private readonly string anonymousId;
         private readonly Client segmentClient;
-        private readonly Uri userMeEndpoint;
-        private static readonly ILogger Logger = LogManager.ForContext<SnykAnalyticsService>();
+        private Uri userMeEndpoint;
         private string userId;
-        private string vsVersion;
         private string userIdAsHash;
-        private bool _analyticsEnabled;
+        private bool analyticsEnabledOption;
 
         private SnykAnalyticsService(string anonymousId, Client segmentClient, Uri userMeEndpoint)
         {
@@ -32,65 +34,80 @@
 
         public static SnykAnalyticsService Instance { get; private set; }
 
-        public bool AnalyticsEnabled
+        public bool AnalyticsEnabledOption
         {
-            get => _analyticsEnabled;
+            get => this.analyticsEnabledOption;
             set
             {
-                if (_analyticsEnabled == value)
+                if (this.analyticsEnabledOption == value)
                 {
                     return;
                 }
 
-                _analyticsEnabled = value;
-                
-                if (value)
-                {
-                    Logger.Information("Analytics enabled");
-                }
-                else
-                {
-                    Logger.Information("Analytics disabled");
-                }
+                this.analyticsEnabledOption = value;
+                Logger.Information(value ? "Analytics set to enabled" : "Analytics set to disabled");
             }
         }
 
-        private bool Disabled => !AnalyticsEnabled || this.segmentClient == null;
+        private bool ValidApiEndpoint => this.userMeEndpoint != null;
+
+        private bool Disabled => !this.AnalyticsEnabledOption || this.segmentClient == null || !this.ValidApiEndpoint || !ItlyLoaded || string.IsNullOrEmpty(this.userId);
 
         public static void Initialize(string anonymousId, string writeKey, bool enabled, string userMeApiEndpoint)
         {
+            Logger.Information("Initializing analytics service instance");
+
+            // Verify write key
+            if (string.IsNullOrEmpty(writeKey))
+            {
+                // Write key cannot change during execution, so leave the service in invalid state.
+                // "Disabled" should be true because the segment client is missing
+                Instance = new SnykAnalyticsService(anonymousId, null, null);
+                Logger.Information("Analytics disabled because of empty write key");
+                return;
+            }
+
+            // Initialize Segment
+            var segmentDestination = new SegmentCustomDestination(writeKey);
+            var segmentClient = Segment.Analytics.Client;
+
+            // Verify or create new anonymous ID
             if (string.IsNullOrEmpty(anonymousId))
             {
+                Logger.Information("Missing user anonymous ID, generating new one");
                 anonymousId = Guid.NewGuid().ToString();
             }
 
+            // Verify endpoint
             Uri endpoint;
             try
             {
                 endpoint = new Uri(userMeApiEndpoint);
             }
-            catch (Exception exception)
+            catch (UriFormatException exception)
             {
                 Logger.Error($"Analytics disabled because of invalid api endpoint: \"{userMeApiEndpoint}\"");
                 Logger.Error(exception.Message);
-                Instance = new SnykAnalyticsService(anonymousId, null, null);
-                Instance.AnalyticsEnabled = false;
+                Instance = new SnykAnalyticsService(anonymousId, segmentClient, null);
                 return;
             }
 
-            if (string.IsNullOrEmpty(writeKey))
+            // Load Itly
+            if(!ItlyLoaded)
             {
-                Instance = new SnykAnalyticsService(anonymousId, null, endpoint);
-                Instance.AnalyticsEnabled = false;
-                Logger.Information("Analytics disabled because of empty write key");
-                return;
+                Logger.Information("Loading Iteratively");
+                Itly.Load(new Iteratively.Options(new DestinationsOptions(new CustomOptions(segmentDestination))));
+                ItlyLoaded = true;
+            }
+            else
+            {
+                Logger.Information("Iteratively already loaded - skipping Load call");
             }
 
-            var segmentDestination = new SegmentCustomDestination(writeKey);
-            Itly.Load(new Iteratively.Options(new DestinationsOptions(new CustomOptions(segmentDestination))));
-            
-            Instance = new SnykAnalyticsService(anonymousId, Segment.Analytics.Client, endpoint);
-            Instance.AnalyticsEnabled = enabled;
+            // Create analytics service instance
+            Instance = new SnykAnalyticsService(anonymousId, segmentClient, endpoint);
+            Instance.AnalyticsEnabledOption = enabled;
+            Logger.Information("Analytics service instance initialized");
         }
 
         public void LogAnalysisReadyEvent(AnalysisType analysisTypeParam, AnalyticsAnalysisResult analysisResultParam)
@@ -163,38 +180,75 @@
 
         public async Task ObtainUserAsync(string apiToken, string vsVersion)
         {
-            this.vsVersion = vsVersion;
+            VsVersion = vsVersion;
             await ObtainUserAsync(apiToken);
         }
 
         public async Task ObtainUserAsync(string apiToken)
         {
-            if (this.segmentClient == null || string.IsNullOrEmpty(apiToken) || !string.IsNullOrEmpty(this.userId) || this.Disabled)
+            Logger.Information("Identifying user");
+            
+            if (this.segmentClient == null || !this.ValidApiEndpoint)
             {
+                Logger.Information("Analytics service not initialized, identification stopped");
+                return;
+            }
+
+            if (!this.AnalyticsEnabledOption)
+            {
+                Logger.Information("Analytics service disabled, identification stopped");
+                return;
+            }
+
+            if (string.IsNullOrEmpty(apiToken))
+            {
+                Logger.Information("Analytics disabled - API token is missing");
                 this.userId = null;
                 return;
             }
 
-            var user = await GetSnykUserAsync(apiToken);
-
-            if (string.IsNullOrEmpty(user.Id))
+            SnykUser user = null;
+            try
             {
-                Logger.Information("Can't obtain user because userId is empty");
+                user = await GetSnykUserAsync(apiToken);
+            }
+            catch (Exception exception)
+            {
+                Logger.Error(exception, "Failed to obtain user ID");
+            }
+
+            if (user == null || string.IsNullOrEmpty(user.Id))
+            {
+                Logger.Information("Analytics disabled - Can't obtain user ID");
+                this.userId = null;
+                return;
+            }
+            
+            // If user ID hasn't changed, do nothing
+            if (this.userId == user.Id)
+            {
                 return;
             }
 
             this.userId = user.Id;
 
+            Logger.Information("Identifying segment client. User-Id = {UserId}, Anonymous Id = {AnonymousId}, Vs Version: {VsVersion}",
+                this.userId,
+                this.anonymousId,
+                VsVersion);
+
             var context = new Segment.Model.Context().Add("app", new Dict()
             {
                 {"name", "Visual Studio"},
-                {"version", this.vsVersion},
+                {"version", VsVersion},
             });
             var options = new Segment.Model.Options()
                 .SetAnonymousId(this.anonymousId)
                 .SetContext(context);
 
             this.segmentClient.Identify(this.userId, null, options);
+
+            Logger.Information("Analytics identification completed");
         }
 
         public string UserIdAsHash

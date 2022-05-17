@@ -1,4 +1,6 @@
-﻿namespace Snyk.VisualStudio.Extension.Shared.Service
+﻿using Microsoft.VisualStudio.Shell;
+
+namespace Snyk.VisualStudio.Extension.Shared.Service
 {
     using System;
     using System.IO;
@@ -105,20 +107,16 @@
             {
                 if (this.analyticsService == null)
                 {
-                    Logger.Information("Initialize Snyk Segment Analytics Service.");
-                    var writeKey = SnykExtension.AppSettings?.SegmentAnalyticsWriteKey;
+                    this.InitializeAnalyticsService();
 
-                    string anonymousId = this.Options.AnonymousId;
-                    if (string.IsNullOrEmpty(anonymousId))
+                    // When settings change (API endpoint/analytics enabling), re-initialize the service
+                    this.Options.SettingsChanged += (sender, args) =>
                     {
-                        anonymousId = System.Guid.NewGuid().ToString();
-                        this.Options.AnonymousId = anonymousId;
-                    }
-
-                    var enabled = this.Options.UsageAnalyticsEnabled;
-                    SnykAnalyticsService.Initialize(this.Options.AnonymousId, writeKey, enabled, this.ApiEndpointResolver.UserMeEndpoint);
-                    this.analyticsService = SnykAnalyticsService.Instance;
-
+                        Logger.Information("Notifying analytics service after settings change");
+                        this.InitializeAnalyticsService();
+                        ThreadHelper.JoinableTaskFactory.Run(async () => await this.analyticsService.ObtainUserAsync(this.Options.ApiToken));
+                        Logger.Information("Analytics service re-initialized");
+                    };
                 }
 
                 return this.analyticsService;
@@ -299,6 +297,27 @@
             {
                 Logger.Error(e, string.Empty);
             }
+        }
+
+        private void InitializeAnalyticsService()
+        {
+            Logger.Information("Initialize Analytics Service...");
+            var writeKey = SnykExtension.AppSettings?.SegmentAnalyticsWriteKey;
+
+            string anonymousId = this.Options.AnonymousId;
+            if (string.IsNullOrEmpty(anonymousId))
+            {
+                anonymousId = System.Guid.NewGuid().ToString();
+                this.Options.AnonymousId = anonymousId;
+            }
+
+            var enabled = this.Options.UsageAnalyticsEnabled;
+            var endpoint = this.ApiEndpointResolver.UserMeEndpoint;
+
+            Logger.Information("analytics enabled = {Enabled}, endpoint = {Endpoint}", enabled, endpoint);
+            SnykAnalyticsService.Initialize(this.Options.AnonymousId, writeKey, enabled, endpoint);
+            this.analyticsService = SnykAnalyticsService.Instance;
+            Logger.Information("Analytics service initialized");
         }
     }
 }
