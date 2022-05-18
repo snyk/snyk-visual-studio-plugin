@@ -12,6 +12,16 @@
         private ISnykOptions options;
 
         /// <summary>
+        /// The snyk API URL without trailing backslash.
+        /// </summary>
+        public string SnykApiEndpoint => this.ResolveCustomEndpoint(this.options.CustomEndpoint);
+
+        /// <summary>
+        /// The /user/me full URL without trailing backslash.
+        /// </summary>
+        public string UserMeEndpoint => SnykApiEndpoint + "/user/me";
+
+        /// <summary>
         /// Initializes a new instance of the <see cref="ApiEndpointResolver"/> class.
         /// </summary>
         /// <param name="options">Extension options.</param>

@@ -1,8 +1,7 @@
-﻿using Microsoft.VisualStudio.Shell;
-
-namespace Snyk.VisualStudio.Extension.Shared.UI.Toolwindow
+﻿namespace Snyk.VisualStudio.Extension.Shared.UI.Toolwindow
 {
     using System.Windows;
+    using Microsoft.VisualStudio.Shell;
 
     /// <summary>
     /// Incapsulate Update donwload state for toolwindow.

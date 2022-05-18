@@ -69,7 +69,7 @@
             this.customEndpointTextBox.Name = "customEndpointTextBox";
             this.customEndpointTextBox.Size = new System.Drawing.Size(836, 31);
             this.customEndpointTextBox.TabIndex = 0;
-            this.customEndpointTextBox.TextChanged += new System.EventHandler(this.CustomEndpointTextBox_TextChanged);
+            this.customEndpointTextBox.LostFocus += new System.EventHandler(this.CustomEndpointTextBox_TextChanged);
             this.customEndpointTextBox.Validating += new System.ComponentModel.CancelEventHandler(this.CustomEndpointTextBox_Validating);
             // 
             // customEndpointLabel

@@ -7,12 +7,12 @@
     using System.Windows;
     using Microsoft.VisualStudio.Shell;
     using Serilog;
+    using Snyk.Analytics;
     using Snyk.Code.Library.Domain.Analysis;
     using Snyk.Common;
     using Snyk.VisualStudio.Extension.Shared.CLI;
     using Snyk.VisualStudio.Extension.Shared.CLI.Download;
     using Snyk.VisualStudio.Extension.Shared.Service.Domain;
-    using Snyk.VisualStudio.Extension.Shared.SnykAnalytics;
     using static Snyk.VisualStudio.Extension.Shared.CLI.Download.SnykCliDownloader;
     using Task = System.Threading.Tasks.Task;
 
@@ -614,9 +614,9 @@
             };
         }
 
-        private IList<string> GetSelectedFeatures(FeaturesSettings featuresSettings)
+        private IList<AnalysisType> GetSelectedFeatures(FeaturesSettings featuresSettings)
         {
-            var selectedProducts = new List<string>();
+            var selectedProducts = new List<AnalysisType>();
 
             if (featuresSettings.OssEnabled)
             {

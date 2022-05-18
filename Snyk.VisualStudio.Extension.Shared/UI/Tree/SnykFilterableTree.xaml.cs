@@ -6,10 +6,10 @@
     using System.Windows.Controls;
     using System.Windows.Data;
     using Microsoft.VisualStudio.Shell;
+    using Snyk.Analytics;
     using Snyk.Code.Library.Domain.Analysis;
     using Snyk.VisualStudio.Extension.Shared.CLI;
     using Snyk.VisualStudio.Extension.Shared.Model;
-    using Snyk.VisualStudio.Extension.Shared.SnykAnalytics;
 
     /// <summary>
     /// Interaction logic for SnykFilterableComboBox.xaml.

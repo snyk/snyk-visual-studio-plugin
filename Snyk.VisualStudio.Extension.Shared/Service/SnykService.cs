@@ -1,4 +1,6 @@
-﻿namespace Snyk.VisualStudio.Extension.Shared.Service
+﻿using Microsoft.VisualStudio.Shell;
+
+namespace Snyk.VisualStudio.Extension.Shared.Service
 {
     using System;
     using System.IO;
@@ -9,11 +11,11 @@
     using Microsoft.VisualStudio.Settings;
     using Microsoft.VisualStudio.Shell.Settings;
     using Serilog;
+    using Snyk.Analytics;
     using Snyk.Code.Library.Service;
     using Snyk.Common;
     using Snyk.VisualStudio.Extension.Shared.CLI;
     using Snyk.VisualStudio.Extension.Shared.Settings;
-    using Snyk.VisualStudio.Extension.Shared.SnykAnalytics;
     using Snyk.VisualStudio.Extension.Shared.Theme;
     using Snyk.VisualStudio.Extension.Shared.UI;
     using Snyk.VisualStudio.Extension.Shared.UI.Notifications;
@@ -38,7 +40,7 @@
 
         private DTE2 dte;
 
-        private SnykAnalyticsService analyticsService;
+        private ISnykAnalyticsService analyticsService;
 
         private SnykUserStorageSettingsService userStorageSettingsService;
 
@@ -99,17 +101,22 @@
         /// <summary>
         /// Gets Analytics service instance. If analytics service not created yet it will create it and return.
         /// </summary>
-        public SnykAnalyticsService AnalyticsService
+        public ISnykAnalyticsService AnalyticsService
         {
             get
             {
                 if (this.analyticsService == null)
                 {
-                    Logger.Information("Initialize Snyk Segment Analytics Service.");
+                    this.InitializeAnalyticsService();
 
-                    SnykAnalyticsService.Initialize(this.Options);
-
-                    this.analyticsService = SnykAnalyticsService.Instance;
+                    // When settings change (API endpoint/analytics enabling), re-initialize the service
+                    this.Options.SettingsChanged += (sender, args) =>
+                    {
+                        Logger.Information("Notifying analytics service after settings change");
+                        this.InitializeAnalyticsService();
+                        ThreadHelper.JoinableTaskFactory.Run(async () => await this.analyticsService.ObtainUserAsync(this.Options.ApiToken));
+                        Logger.Information("Analytics service re-initialized");
+                    };
                 }
 
                 return this.analyticsService;
@@ -195,6 +202,8 @@
         /// <inheritdoc/>
         public SnykToolWindowControl ToolWindow => this.Package.ToolWindowControl;
 
+        public ApiEndpointResolver ApiEndpointResolver => new ApiEndpointResolver(this.Options);
+
         /// <summary>
         /// Get Visual Studio service by type.
         /// </summary>
@@ -223,24 +232,18 @@
                 await this.Package.JoinableTaskFactory.SwitchToMainThreadAsync(cancellationToken);
 
                 this.settingsManager = new ShellSettingsManager(this.Package);
-
                 this.vsThemeService = new SnykVsThemeService(this);
+
                 await this.vsThemeService.InitializeAsync();
-
                 await SnykToolWindowCommand.InitializeAsync(this);
-
                 await SnykTasksService.InitializeAsync(this);
 
                 this.dte = await this.serviceProvider.GetServiceAsync(typeof(DTE)) as DTE2;
-
                 await SnykSolutionService.Instance.InitializeAsync(this);
-
                 this.tasksService = SnykTasksService.Instance;
 
                 NotificationService.Initialize(this);
-
                 VsStatusBar.Initialize(this);
-
                 VsCodeService.Initialize();
 
                 Logger.Information("Leave SnykService.InitializeAsync");
@@ -294,6 +297,27 @@
             {
                 Logger.Error(e, string.Empty);
             }
+        }
+
+        private void InitializeAnalyticsService()
+        {
+            Logger.Information("Initialize Analytics Service...");
+            var writeKey = SnykExtension.AppSettings?.SegmentAnalyticsWriteKey;
+
+            string anonymousId = this.Options.AnonymousId;
+            if (string.IsNullOrEmpty(anonymousId))
+            {
+                anonymousId = System.Guid.NewGuid().ToString();
+                this.Options.AnonymousId = anonymousId;
+            }
+
+            var enabled = this.Options.UsageAnalyticsEnabled;
+            var endpoint = this.ApiEndpointResolver.UserMeEndpoint;
+
+            Logger.Information("analytics enabled = {Enabled}, endpoint = {Endpoint}", enabled, endpoint);
+            SnykAnalyticsService.Initialize(this.Options.AnonymousId, writeKey, enabled, endpoint);
+            this.analyticsService = SnykAnalyticsService.Instance;
+            Logger.Information("Analytics service initialized");
         }
     }
 }

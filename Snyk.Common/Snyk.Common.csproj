@@ -147,6 +147,7 @@
     <Compile Include="SnykAppSettings.cs" />
     <Compile Include="SnykDirectory.cs" />
     <Compile Include="SnykExtension.cs" />
+    <Compile Include="SnykWebClient.cs" />
     <Compile Include="StringExtensions.cs" />
   </ItemGroup>
   <ItemGroup>

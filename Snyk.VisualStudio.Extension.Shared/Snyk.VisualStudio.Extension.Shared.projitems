@@ -164,21 +164,6 @@
     <Compile Include="$(MSBuildThisFileDirectory)Settings\SnykUserStorageSettingsService.cs">
       <CopyToOutputDirectory>Never</CopyToOutputDirectory>
     </Compile>
-    <Compile Include="$(MSBuildThisFileDirectory)SnykAnalytics\AnalysisType.cs">
-      <CopyToOutputDirectory>Never</CopyToOutputDirectory>
-    </Compile>
-    <Compile Include="$(MSBuildThisFileDirectory)SnykAnalytics\AnalyticsAnalysisResult.cs">
-      <CopyToOutputDirectory>Never</CopyToOutputDirectory>
-    </Compile>
-    <Compile Include="$(MSBuildThisFileDirectory)SnykAnalytics\IssueType.cs">
-      <CopyToOutputDirectory>Never</CopyToOutputDirectory>
-    </Compile>
-    <Compile Include="$(MSBuildThisFileDirectory)SnykAnalytics\SnykAnalyticsService.cs">
-      <CopyToOutputDirectory>Never</CopyToOutputDirectory>
-    </Compile>
-    <Compile Include="$(MSBuildThisFileDirectory)SnykAnalytics\SnykUser.cs">
-      <CopyToOutputDirectory>Never</CopyToOutputDirectory>
-    </Compile>
     <Compile Include="$(MSBuildThisFileDirectory)Cache\CodeCacheHierarchyEvents.cs">
       <CopyToOutputDirectory>Never</CopyToOutputDirectory>
     </Compile>
@@ -186,9 +171,6 @@
       <CopyToOutputDirectory>Never</CopyToOutputDirectory>
     </Compile>
     <Compile Include="$(MSBuildThisFileDirectory)SnykVSPackage.cs">
-      <CopyToOutputDirectory>Never</CopyToOutputDirectory>
-    </Compile>
-    <Compile Include="$(MSBuildThisFileDirectory)SnykWebClient.cs">
       <CopyToOutputDirectory>Never</CopyToOutputDirectory>
     </Compile>
     <Compile Include="$(MSBuildThisFileDirectory)Theme\SnykVsThemeService.cs">

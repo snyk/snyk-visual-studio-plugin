@@ -11,6 +11,7 @@
     using Microsoft.VisualStudio.Shell;
     using Microsoft.VisualStudio.Shell.Interop;
     using Serilog;
+    using Snyk.Analytics;
     using Snyk.Code.Library.Domain.Analysis;
     using Snyk.Common;
     using Snyk.VisualStudio.Extension.Shared.CLI;
@@ -18,7 +19,6 @@
     using Snyk.VisualStudio.Extension.Shared.Model;
     using Snyk.VisualStudio.Extension.Shared.Service;
     using Snyk.VisualStudio.Extension.Shared.Settings;
-    using Snyk.VisualStudio.Extension.Shared.SnykAnalytics;
     using Snyk.VisualStudio.Extension.Shared.Theme;
     using Snyk.VisualStudio.Extension.Shared.UI.Notifications;
     using Snyk.VisualStudio.Extension.Shared.UI.Tree;
@@ -608,9 +608,10 @@
 
                 this.descriptionPanel.Vulnerability = vulnerability;
 
+                var issueType = vulnerability.IsLicense() ? ScanResultIssueType.LicenceIssue : ScanResultIssueType.OpenSourceVulnerability;
                 this.serviceProvider.AnalyticsService.LogIssueIsViewedEvent(
                     vulnerability.Id,
-                    IssueType.Get(vulnerability),
+                    issueType,
                     vulnerability.Severity);
             }
             else
@@ -636,9 +637,10 @@
                 suggestion.Rows.Item2 - 1,
                 suggestion.Columns.Item2);
 
+            var issueType = suggestion.Categories.Contains("Security") ? ScanResultIssueType.CodeSecurityVulnerability : ScanResultIssueType.CodeQualityIssue;
             this.serviceProvider.AnalyticsService.LogIssueIsViewedEvent(
                     suggestion.Id,
-                    IssueType.Get(suggestion),
+                    issueType,
                     Severity.FromInt(suggestion.Severity));
         }
 
@@ -661,7 +663,7 @@
         /// </summary>
         private void ShowWelcomeOrRunScanScreen()
         {
-            this.serviceProvider.AnalyticsService.AnalyticsEnabled = this.serviceProvider.Options.UsageAnalyticsEnabled;
+            this.serviceProvider.AnalyticsService.AnalyticsEnabledOption = this.serviceProvider.Options.UsageAnalyticsEnabled;
 
             if (Common.Guid.IsValid(this.serviceProvider.Options.ApiToken))
             {

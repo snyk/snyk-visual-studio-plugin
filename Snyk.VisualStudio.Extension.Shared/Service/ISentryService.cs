@@ -8,7 +8,7 @@
     public interface ISentryService
     {
         /// <summary>
-        /// Setup Sentry scope with Visual Studio verions and edition.
+        /// Setup Sentry scope with Visual Studio versions and edition.
         /// </summary>
         /// <returns>Task.</returns>
         Task SetupAsync();
