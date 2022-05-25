@@ -663,6 +663,11 @@
         /// </summary>
         private void ShowWelcomeOrRunScanScreen()
         {
+            if (this.serviceProvider?.Options == null)
+            {
+                return;
+            }
+
             this.serviceProvider.AnalyticsService.AnalyticsEnabledOption = this.serviceProvider.Options.UsageAnalyticsEnabled;
 
             if (Common.Guid.IsValid(this.serviceProvider.Options.ApiToken))

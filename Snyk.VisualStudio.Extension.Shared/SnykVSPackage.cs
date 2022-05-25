@@ -6,6 +6,7 @@
     using System.Threading;
     using System.Threading.Tasks;
     using System.Windows;
+    using Microsoft.VisualStudio;
     using Microsoft.VisualStudio.Shell;
     using Microsoft.VisualStudio.Shell.Interop;
     using Microsoft.VisualStudio.Threading;
@@ -41,6 +42,7 @@
     [Guid(SnykVSPackage.PackageGuidString)]
     [SuppressMessage("StyleCop.CSharp.DocumentationRules", "SA1650:ElementDocumentationMustBeSpelledCorrectly", Justification = "pkgdef, VS and vsixmanifest are valid VS terms")]
     [ProvideService(typeof(ISnykService), IsAsyncQueryable = true)]
+    //[ProvideAutoLoad(VSConstants.UICONTEXT.ShellInitialized_string, PackageAutoLoadFlags.BackgroundLoad)]
     [ProvideMenuResource("Menus.ctmenu", 1)]
     [ProvideToolWindow(typeof(SnykToolWindow), Style = VsDockStyle.Tabbed)]
     [ProvideOptionPage(typeof(SnykGeneralOptionsDialogPage), "Snyk", "General settings", 1000, 1001, true)]
@@ -72,7 +74,7 @@
         /// <summary>
         /// Gets a value indicating whether ServiceProvider.
         /// </summary>
-        public static ISnykServiceProvider ServiceProvider => instance.serviceProvider;
+        public static ISnykServiceProvider ServiceProvider => instance?.serviceProvider;
 
         /// <summary>
         /// Gets a value indicating whether ToolWindow Control.
@@ -147,6 +149,11 @@
             }
         }
 
+
+        // Some hack to get LS to load after initializating the plugin
+        private static TaskCompletionSource<bool> _initializationTaskCompletionSource = new TaskCompletionSource<bool>();
+        public static Task InitializationCompletedAwaiter => _initializationTaskCompletionSource.Task;
+
         /// <summary>
         /// Initialize package.
         /// </summary>
@@ -188,6 +195,7 @@
                 Logger.Information("Before call toolWindowControl.InitializeEventListeners() method.");
                 this.toolWindowControl.InitializeEventListeners(this.serviceProvider);
                 this.toolWindowControl.Initialize(this.serviceProvider);
+                _initializationTaskCompletionSource.SetResult(true);
             }
             catch (Exception ex)
             {

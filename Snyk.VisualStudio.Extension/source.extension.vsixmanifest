@@ -1,7 +1,7 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <PackageManifest Version="2.0.0" xmlns="http://schemas.microsoft.com/developer/vsx-schema/2011" xmlns:d="http://schemas.microsoft.com/developer/vsx-schema-design/2011">
     <Metadata>
-        <Identity Id="snyk_visual_studio_plugin.154948da-e3ba-45ce-9bee-9688a7e30462" Version="1.1.13" Language="en-US" Publisher="Snyk" />
+        <Identity Id="snyk_visual_studio_plugin.154948da-e3ba-45ce-9bee-9688a7e30462" Version="1.1.15" Language="en-US" Publisher="Snyk" />
         <DisplayName>Snyk Security - Code and Open Source Dependencies</DisplayName>
         <Description xml:space="preserve">The Visual Studio extension (Snyk Security - Code and Open Source Dependencies) helps you find and fix security vulnerabilities in your projects.</Description>
         <MoreInfo>https://github.com/snyk/snyk-visual-studio-plugin/</MoreInfo>
