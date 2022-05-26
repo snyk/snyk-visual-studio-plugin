@@ -1,5 +1,10 @@
 # Snyk Changelog
 
+## [1.1.16]
+
+### Fixed
+- The color of the text in the tree view does not match the color from VS theme.
+
 ## [1.1.15]
 
 ### Fixed

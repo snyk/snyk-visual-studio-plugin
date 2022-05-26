@@ -24,7 +24,7 @@
             <ItemsControl ItemsSource="{Binding DataFlowSteps}">
                 <ItemsControl.ItemTemplate>
                     <DataTemplate>
-                        <Grid>
+                        <Grid d:DataContext="{d:DesignInstance local:DataFlowStep}">
                             <Grid.ColumnDefinitions>
                                 <ColumnDefinition Width="30"/>
                                 <ColumnDefinition Width="3*"/>
