@@ -4,6 +4,7 @@
 
 ### Fixed
 - The color of the text in the tree view does not match the color from VS theme.
+- A problem with partially lost Snyk Code results if a single file contains multiple identical suggestions.
 
 ## [1.1.15]
 

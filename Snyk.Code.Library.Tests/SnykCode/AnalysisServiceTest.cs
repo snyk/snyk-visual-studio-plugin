@@ -2,6 +2,7 @@
 {
     using System;
     using System.Collections.Generic;
+    using System.Linq;
     using System.Threading;
     using System.Threading.Tasks;
     using Moq;
@@ -295,6 +296,137 @@
 
             Assert.Single(analysisResult.FileAnalyses[1].Suggestions);
             Assert.Equal("db.js", analysisResult.FileAnalyses[1].FileName);
+
+            codeClientMock
+                .Verify(codeClient => codeClient.GetAnalysisAsync(dummyBundleId, It.IsAny<CancellationToken>()), Times.Exactly(1));
+        }
+
+        [Fact]
+        public async Task SnykCodeService_FileWihtMultipleEqualSuggestionsProvided_MapDtoToAnalysisResultSuccessfulAsync()
+        {
+            var files = new Dictionary<string, SuggestionIdToFileDto>
+            {
+                ["App.cs"] = new SuggestionIdToFileDto
+                {
+                    ["0"] = new List<FileDto>
+                    {
+                        new FileDto
+                        {
+                            Rows = new int[] { 10, 10 },
+                            Cols = new int[] { 5, 5 },
+                            Markers = new List<MarkerDto>
+                            {
+                                new MarkerDto
+                                {
+                                    MessageIndexes = new List<long> { 10, 20 },
+                                    Positions = new List<PositionDto>
+                                    {
+                                        new PositionDto
+                                        {
+                                            Rows = new List<long> { 40, 50 },
+                                            Cols = new List<long> { 5, 10 },
+                                            File = "App.cs",
+                                        },
+                                    },
+                                },
+                            },
+                        },
+                        new FileDto
+                        {
+                            Rows = new int[] { 11, 11 },
+                            Cols = new int[] { 5, 5 },
+                            Markers = new List<MarkerDto>
+                            {
+                                new MarkerDto
+                                {
+                                    MessageIndexes = new List<long> { 10, 20 },
+                                    Positions = new List<PositionDto>
+                                    {
+                                        new PositionDto
+                                        {
+                                            Rows = new List<long> { 41, 41 },
+                                            Cols = new List<long> { 5, 10 },
+                                            File = "App.cs",
+                                        },
+                                    },
+                                },
+                            },
+                        },
+                        new FileDto
+                        {
+                            Rows = new int[] { 12, 12 },
+                            Cols = new int[] { 5, 5 },
+                            Markers = new List<MarkerDto>
+                            {
+                                new MarkerDto
+                                {
+                                    MessageIndexes = new List<long> { 10, 20 },
+                                    Positions = new List<PositionDto>
+                                    {
+                                        new PositionDto
+                                        {
+                                            Rows = new List<long> { 45, 45 },
+                                            Cols = new List<long> { 5, 10 },
+                                            File = "App.cs",
+                                        },
+                                    },
+                                },
+                            },
+                        },
+                    },
+                },
+            };
+
+            var suggestions = new Dictionary<string, SuggestionDto>
+            {
+                ["0"] = new SuggestionDto
+                {
+                    Id = "TestSuggestioinId0",
+                    Title = "TestSuggestioinId",
+                    Text = "Text TestSuggestioin",
+                    ExampleCommitFixes = new List<ExampleCommitFixDto>
+                    {
+                        new ExampleCommitFixDto
+                        {
+                            CommitURL = "http://github.com/",
+                            Lines = new List<LineDto>
+                            {
+                                new LineDto
+                                {
+                                    Line = "test1",
+                                    LineChange = "test 2",
+                                    LineNumber = 10,
+                                },
+                            },
+                        },
+                    },
+                },
+            };
+
+            string dummyBundleId = "dummyId";
+
+            var dummyAnalysisResultDto = new AnalysisResultDto
+            {
+                Status = AnalysisStatus.Complete,
+                Suggestions = suggestions,
+                Files = files,
+            };
+
+            var codeClientMock = new Mock<ISnykCodeClient>();
+
+            var analysisService = new AnalysisService(codeClientMock.Object);
+
+            var analysisResultsDto = new AnalysisResultsDto();
+
+            codeClientMock
+                .Setup(codeClient => codeClient.GetAnalysisAsync(dummyBundleId, It.IsAny<CancellationToken>()))
+                .ReturnsAsync(dummyAnalysisResultDto);
+
+            var analysisResult = await analysisService.GetAnalysisAsync(dummyBundleId, this.scanCodeProgressUpdate);
+
+            Assert.NotNull(analysisResult);
+            Assert.Equal(1, analysisResult.FileAnalyses.Count);
+            Assert.Equal(3, analysisResult.FileAnalyses.First().Suggestions.Count);
 
             codeClientMock
                 .Verify(codeClient => codeClient.GetAnalysisAsync(dummyBundleId, It.IsAny<CancellationToken>()), Times.Exactly(1));
