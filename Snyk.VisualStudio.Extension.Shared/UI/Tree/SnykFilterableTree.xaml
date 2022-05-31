@@ -24,24 +24,31 @@
                   ScrollViewer.CanContentScroll="True" UseLayoutRounding="False"
                   d:DataContext="{d:DesignInstance tree:TreeNode}">
             <TreeView.ItemTemplate>
-                <HierarchicalDataTemplate ItemsSource="{Binding Items}">
-                    <StackPanel Orientation="Horizontal" Height="19">
+                <HierarchicalDataTemplate ItemsSource="{Binding Items}" >
+                    <StackPanel Orientation="Horizontal">
                         <Image x:Name="icon" SnapsToDevicePixels="True" Margin="0, 0, 5, 0"  
                                Width="16" Height="16"
                                Source="{Binding Icon}"/>
-                        <controls:TextField Text="{Binding Title}"
-                                   ToolTipService.ToolTip="{Binding Title}" 
-                                   IsEnabled="{Binding Enabled}"
-                                   FontWeight="{Binding FontWeight}">
-                        </controls:TextField>
+                        <Label Content="{Binding Title}"
+                               ToolTipService.ToolTip="{Binding Title}" 
+                               IsEnabled="{Binding Enabled}"
+                               FontWeight="{Binding FontWeight}" />
                     </StackPanel>
                 </HierarchicalDataTemplate>
             </TreeView.ItemTemplate>
-            
-            <!-- Set tree items to expand by default -->
+
             <TreeView.ItemContainerStyle>
-                <Style>
-                    <Setter Property="TreeViewItem.IsExpanded" Value="True"/>
+                <Style TargetType="TreeViewItem" 
+                       BasedOn="{StaticResource {x:Type TreeViewItem}}">
+                    <Style.Resources>
+                        <!-- Make selected items background stay the same color (but different opacity) when focus is lost --> 
+                        <SolidColorBrush x:Key="{x:Static SystemColors.InactiveSelectionHighlightBrushKey}" 
+                                         Color="{DynamicResource TreeViewColors.SelectedItemInactiveBrushKey}"
+                                         Opacity="0.8"/>
+                    </Style.Resources>
+
+                    <!-- Set tree items to expand by default -->
+                    <Setter Property="IsExpanded" Value="True"/>
                 </Style>
             </TreeView.ItemContainerStyle>
         </TreeView>
