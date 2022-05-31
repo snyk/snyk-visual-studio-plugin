@@ -157,18 +157,18 @@
             var issueType = issueTypeParam.ToIssueInTreeIsClickedEnum();
 
             IssueInTreeIsClicked.Severity severity;
-            switch (severityParam)
+            switch (severityParam.ToLowerInvariant())
             {
-                case "High": 
+                case "high": 
                     severity = IssueInTreeIsClicked.Severity.High;
                     break;
-                case "Medium":
+                case "medium":
                     severity = IssueInTreeIsClicked.Severity.Medium;
                     break;
-                case "Low":
+                case "low":
                     severity = IssueInTreeIsClicked.Severity.Low;
                     break;
-                case "Critical":
+                case "critical":
                     severity = IssueInTreeIsClicked.Severity.Critical;
                     break;
                 default:
