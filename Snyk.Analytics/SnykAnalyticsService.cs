@@ -172,7 +172,8 @@
                     severity = IssueInTreeIsClicked.Severity.Critical;
                     break;
                 default:
-                    throw new ArgumentOutOfRangeException(nameof(severityParam));
+                    Logger.Error("Failed to log \"Issue in tree is clicked\" event due to unknown severity: {Severity}", severityParam);
+                    return;
             }
 
             Itly.IssueInTreeIsClicked(this.userId, IssueInTreeIsClicked.Ide.VisualStudio, id, issueType, severity);
