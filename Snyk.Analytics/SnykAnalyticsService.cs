@@ -172,7 +172,7 @@
                     severity = IssueInTreeIsClicked.Severity.Critical;
                     break;
                 default:
-                    Logger.Error("Failed to log \"Issue in tree is clicked\" event due to unknown severity: {Severity}", severityParam);
+                    Logger.Error("Failed to track \"Issue in tree is clicked\" event due to unknown severity: {Severity}", severityParam);
                     return;
             }
 
