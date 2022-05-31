@@ -43,8 +43,8 @@
                     <Style.Resources>
                         <!-- Make selected items background stay the same color (but different opacity) when focus is lost --> 
                         <SolidColorBrush x:Key="{x:Static SystemColors.InactiveSelectionHighlightBrushKey}" 
-                                         Color="{DynamicResource TreeViewColors.SelectedItemInactiveBrushKey}"
-                                         Opacity="0.8"/>
+                                         Color="{DynamicResource {x:Static SystemColors.HighlightColorKey}}"
+                                         Opacity="0.4"/>
                     </Style.Resources>
 
                     <!-- Set tree items to expand by default -->
