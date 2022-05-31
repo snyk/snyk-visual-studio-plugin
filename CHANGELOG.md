@@ -2,6 +2,9 @@
 
 ## [1.1.16]
 
+### Added
+- Base64 encoding for Snyk Code analysis file content payloads.
+
 ### Fixed
 - The color of the text in the tree view does not match the color from VS theme.
 - A problem with partially lost Snyk Code results if a single file contains multiple identical suggestions.

@@ -50,7 +50,6 @@
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup>
-    <Content Include="source.extension.preview.vsixmanifest" />
     <None Include="source.extension.vsixmanifest">
       <SubType>Designer</SubType>
     </None>

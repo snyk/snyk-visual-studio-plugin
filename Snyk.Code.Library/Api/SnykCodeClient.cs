@@ -3,12 +3,12 @@
     using System;
     using System.Collections.Generic;
     using System.Net.Http;
-    using System.Text;
     using System.Threading;
     using System.Threading.Tasks;
     using Serilog;
     using Snyk.Code.Library.Api.Dto;
     using Snyk.Code.Library.Api.Dto.Analysis;
+    using Snyk.Code.Library.Api.Encoding;
     using Snyk.Common;
 
     /// <inheritdoc />
@@ -60,27 +60,22 @@
                 throw new ArgumentException("Bundle id is null or empty.");
             }
 
-            using (var httpRequest = new HttpRequestMessage(HttpMethod.Post, AnalysisApiUrl))
+            string payload = this.GetAnalysisResultRequestPayload(bundleId);
+
+            using (var requestContent = await this.NewHttpRequestContentAsync(HttpMethod.Post, payload))
+            using (var httpRequest = this.NewHttpRequestMessage(HttpMethod.Post, AnalysisApiUrl, requestContent))
+            using (var response = await this.httpClient.SendAsync(httpRequest, HttpCompletionOption.ResponseHeadersRead, cancellationToken))
             {
-                string payload = this.GetAnalysisResultRequestPayload(bundleId);
-
-                httpRequest.Content = new StringContent(payload, Encoding.UTF8, "application/json");
-
-                using (var response = await this.httpClient.SendAsync(httpRequest, HttpCompletionOption.ResponseHeadersRead, cancellationToken))
+                using (var content = response.Content)
                 {
-                    using (var content = response.Content)
-                    {
-                        string responseText = await content.ReadAsStringAsync();
+                    string responseText = await content.ReadAsStringAsync();
 
-                        if (response.IsSuccessStatusCode)
-                        {
-                            return Json.Deserialize<AnalysisResultDto>(responseText);
-                        }
-                        else
-                        {
-                            throw new SnykCodeException((int)response.StatusCode, responseText);
-                        }
+                    if (response.IsSuccessStatusCode)
+                    {
+                        return Json.Deserialize<AnalysisResultDto>(responseText);
                     }
+
+                    throw new SnykCodeException((int)response.StatusCode, responseText);
                 }
             }
         }
@@ -103,28 +98,23 @@
                 throw new ArgumentException("Files or removed files are null.");
             }
 
-            using (var httpRequest = new HttpRequestMessage(HttpMethod.Put, BundleApiUrl + "/" + bundleId))
+            string payload = Json.Serialize(new UploadFilesExtendBundleRequestDto
             {
-                string payload = Json.Serialize(new UploadFilesExtendBundleRequestDto
+                Files = hashToContentDict,
+            });
+
+            using (var content = await this.NewHttpRequestContentAsync(HttpMethod.Put, payload))
+            using (var httpRequest = this.NewHttpRequestMessage(HttpMethod.Put, BundleApiUrl + "/" + bundleId, content))
+            using (var response = await this.httpClient.SendAsync(httpRequest, HttpCompletionOption.ResponseHeadersRead, cancellationToken))
+            {
+                var responseText = await response.Content.ReadAsStringAsync();
+
+                if (response.IsSuccessStatusCode)
                 {
-                    Files = hashToContentDict,
-                });
-
-                using (httpRequest.Content = new StringContent(payload, Encoding.UTF8, "application/json"))
-                {
-                    var response = await this.httpClient.SendAsync(httpRequest, HttpCompletionOption.ResponseHeadersRead, cancellationToken);
-
-                    string responseText = await response.Content.ReadAsStringAsync();
-
-                    if (response.IsSuccessStatusCode)
-                    {
-                        return Json.Deserialize<BundleResponseDto>(responseText);
-                    }
-                    else
-                    {
-                        throw new SnykCodeException((int)response.StatusCode, responseText);
-                    }
+                    return Json.Deserialize<BundleResponseDto>(responseText);
                 }
+
+                throw new SnykCodeException((int)response.StatusCode, responseText);
             }
         }
 
@@ -147,30 +137,24 @@
                 throw new ArgumentException("Files or removed files are null.");
             }
 
-            using (var httpRequest = new HttpRequestMessage(HttpMethod.Put, BundleApiUrl + "/" + bundleId))
+            string payload = Json.Serialize(new ExtendBundleRequestDto
             {
-                string payload = Json.Serialize(new ExtendBundleRequestDto
-                {
-                    Files = pathToHashFileDict,
-                    RemovedFiles = removedFiles,
-                });
+                Files = pathToHashFileDict,
+                RemovedFiles = removedFiles,
+            });
 
-                using (httpRequest.Content = new StringContent(payload, Encoding.UTF8, "application/json"))
-                {
-                    using (var response = await this.httpClient.SendAsync(httpRequest))
-                    {
-                        string responseText = await response.Content.ReadAsStringAsync();
+            using (var content = await this.NewHttpRequestContentAsync(HttpMethod.Put, payload))
+            using (var httpRequest = this.NewHttpRequestMessage(HttpMethod.Put, BundleApiUrl + "/" + bundleId, content))
+            using (var response = await this.httpClient.SendAsync(httpRequest, cancellationToken))
+            {
+                var responseText = await response.Content.ReadAsStringAsync();
 
-                        if (response.IsSuccessStatusCode)
-                        {
-                            return Json.Deserialize<BundleResponseDto>(responseText);
-                        }
-                        else
-                        {
-                            throw new SnykCodeException((int)response.StatusCode, responseText);
-                        }
-                    }
+                if (response.IsSuccessStatusCode)
+                {
+                    return Json.Deserialize<BundleResponseDto>(responseText);
                 }
+
+                throw new SnykCodeException((int)response.StatusCode, responseText);
             }
         }
 
@@ -184,21 +168,17 @@
                 throw new ArgumentException("Bundle id is null or empty.");
             }
 
-            using (var httpRequest = new HttpRequestMessage(HttpMethod.Get, BundleApiUrl + "/" + bundleId))
+            using (var httpRequest = this.NewHttpRequestMessage(HttpMethod.Get, BundleApiUrl + "/" + bundleId, null))
+            using (var response = await this.httpClient.SendAsync(httpRequest, cancellationToken))
             {
-                using (var response = await this.httpClient.SendAsync(httpRequest))
-                {
-                    string responseText = await response.Content.ReadAsStringAsync();
+                var responseText = await response.Content.ReadAsStringAsync();
 
-                    if (response.IsSuccessStatusCode)
-                    {
-                        return Json.Deserialize<BundleResponseDto>(responseText);
-                    }
-                    else
-                    {
-                        throw new SnykCodeException((int)response.StatusCode, responseText);
-                    }
+                if (response.IsSuccessStatusCode)
+                {
+                    return Json.Deserialize<BundleResponseDto>(responseText);
                 }
+
+                throw new SnykCodeException((int)response.StatusCode, responseText);
             }
         }
 
@@ -212,26 +192,20 @@
                 throw new ArgumentException("Bundle files is null.");
             }
 
-            using (var httpRequest = new HttpRequestMessage(HttpMethod.Post, BundleApiUrl))
+            string payload = Json.Serialize(pathToHashFileDict);
+
+            using (var content = await this.NewHttpRequestContentAsync(HttpMethod.Post, payload))
+            using (var httpRequest = this.NewHttpRequestMessage(HttpMethod.Post, BundleApiUrl, content))
+            using (var response = await this.httpClient.SendAsync(httpRequest, cancellationToken))
             {
-                string payload = Json.Serialize(pathToHashFileDict);
+                var responseText = await response.Content.ReadAsStringAsync();
 
-                using (httpRequest.Content = new StringContent(payload, Encoding.UTF8, "application/json"))
+                if (response.IsSuccessStatusCode)
                 {
-                    using (var response = await this.httpClient.SendAsync(httpRequest))
-                    {
-                        string responseText = await response.Content.ReadAsStringAsync();
-
-                        if (response.IsSuccessStatusCode)
-                        {
-                            return Json.Deserialize<BundleResponseDto>(responseText);
-                        }
-                        else
-                        {
-                            throw new SnykCodeException((int)response.StatusCode, responseText);
-                        }
-                    }
+                    return Json.Deserialize<BundleResponseDto>(responseText);
                 }
+
+                throw new SnykCodeException((int)response.StatusCode, responseText);
             }
         }
 
@@ -243,20 +217,18 @@
         {
             Logger.Information("Get SnykCode filters");
 
-            using (var request = new HttpRequestMessage(HttpMethod.Get, FiltersApiUrl))
+            using (var request = this.NewHttpRequestMessage(HttpMethod.Get, FiltersApiUrl, null))
+            using (var response = await this.httpClient.SendAsync(request))
             {
-                using (var response = await this.httpClient.SendAsync(request))
-                {
-                    string responseText = await response.Content.ReadAsStringAsync();
+                string responseText = await response.Content.ReadAsStringAsync();
 
-                    if (response.IsSuccessStatusCode)
-                    {
-                        return Json.Deserialize<FiltersDto>(responseText);
-                    }
-                    else
-                    {
-                        throw new SnykCodeException((int)response.StatusCode, responseText);
-                    }
+                if (response.IsSuccessStatusCode)
+                {
+                    return Json.Deserialize<FiltersDto>(responseText);
+                }
+                else
+                {
+                    throw new SnykCodeException((int)response.StatusCode, responseText);
                 }
             }
         }
@@ -277,5 +249,31 @@
                 },
                 Legacy = true,
             });
+
+        private HttpRequestMessage NewHttpRequestMessage(HttpMethod method, string requestUri, HttpContent content)
+        {
+            var request = new HttpRequestMessage(method, requestUri);
+            request.Content = content;
+
+            if (method == HttpMethod.Put || method == HttpMethod.Post)
+            {
+                request.Content.Headers.Add("Content-Type", "application/octet-stream");
+                request.Content.Headers.Add("Content-Encoding", "gzip");
+            }
+
+            return request;
+        }
+
+        private async Task<HttpContent> NewHttpRequestContentAsync(HttpMethod method, string payload)
+        {
+            // Snyk Code PUT and POST requests must be base64 encoded and deflated for certain environments (ROAD-909)
+            if (method == HttpMethod.Put || method == HttpMethod.Post)
+            {
+                var encodedPayload = await Encoder.EncodeAndCompressAsync(payload);
+                return new ByteArrayContent(encodedPayload.ToArray());
+            }
+
+            return new StringContent(payload, System.Text.Encoding.UTF8, "application/json");
+        }
     }
 }

@@ -52,6 +52,7 @@
     <Compile Include="Api\Dto\Analysis\AnalysisResultKeyDto.cs" />
     <Compile Include="Api\Dto\Analysis\AnalysisResultRequestDto.cs" />
     <Compile Include="Api\Dto\UploadFilesExtendBundleRequestDto.cs" />
+    <Compile Include="Api\Encoding\Encoder.cs" />
     <Compile Include="Domain\Analysis\AnalysisStatus.cs" />
     <Compile Include="Domain\Analysis\FixLine.cs" />
     <Compile Include="Domain\Analysis\Marker.cs" />
