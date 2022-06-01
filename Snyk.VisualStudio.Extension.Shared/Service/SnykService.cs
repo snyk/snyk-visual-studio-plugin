@@ -4,8 +4,11 @@ namespace Snyk.VisualStudio.Extension.Shared.Service
 {
     using System;
     using System.IO;
+    using System.Linq;
+    using System.Reflection;
     using System.Threading;
     using System.Threading.Tasks;
+    using System.Xml;
     using EnvDTE;
     using EnvDTE80;
     using Microsoft.VisualStudio.Settings;
@@ -242,6 +245,8 @@ namespace Snyk.VisualStudio.Extension.Shared.Service
                 await SnykSolutionService.Instance.InitializeAsync(this);
                 this.tasksService = SnykTasksService.Instance;
 
+                Logger.Information("Plugin version is {Version}", this.GetVsixVersion());
+
                 NotificationService.Initialize(this);
                 VsStatusBar.Initialize(this);
                 VsCodeService.Initialize();
@@ -318,6 +323,32 @@ namespace Snyk.VisualStudio.Extension.Shared.Service
             SnykAnalyticsService.Initialize(this.Options.AnonymousId, writeKey, enabled, endpoint);
             this.analyticsService = SnykAnalyticsService.Instance;
             Logger.Information("Analytics service initialized");
+        }
+
+        private string GetVsixVersion()
+        {
+            var version = "Unknown";
+            try
+            {
+                var asm = Assembly.GetExecutingAssembly();
+                var asmDir = Path.GetDirectoryName(asm.Location);
+                var manifestPath = Path.Combine(asmDir, "extension.vsixmanifest");
+
+                if (File.Exists(manifestPath))
+                {
+                    var doc = new XmlDocument();
+                    doc.Load(manifestPath);
+                    var metaData = doc.DocumentElement.ChildNodes.Cast<XmlElement>().First(x => x.Name == "Metadata");
+                    var identity = metaData.ChildNodes.Cast<XmlElement>().First(x => x.Name == "Identity");
+                    version = identity.GetAttribute("Version");
+                }
+            }
+            catch (Exception exception)
+            {
+                Logger.Error("Failed to find plugin version: {Exception}", exception);
+            }
+
+            return version;
         }
     }
 }
