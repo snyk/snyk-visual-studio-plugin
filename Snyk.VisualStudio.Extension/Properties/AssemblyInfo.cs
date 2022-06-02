@@ -32,14 +32,4 @@ using Microsoft.VisualStudio.Shell;
 [assembly: AssemblyVersion("1.0.0.0")]
 [assembly: AssemblyFileVersion("1.0.0.0")]
 
-[assembly: ProvideBindingRedirection(
-    AssemblyName = "System.Threading.Tasks.Extensions",
-    NewVersion = "4.2.0.1",
-    OldVersionLowerBound = "0.0.0.0",
-    OldVersionUpperBound = "4.2.0.1")]
 
-[assembly: ProvideBindingRedirection(
-    AssemblyName = "System.Runtime.CompilerServices.Unsafe",
-    NewVersion = "5.0.0.0",
-    OldVersionLowerBound = "4.0.4.1",
-    OldVersionUpperBound = "5.0.0.0")]

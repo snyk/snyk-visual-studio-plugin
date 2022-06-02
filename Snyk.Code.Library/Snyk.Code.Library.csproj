@@ -135,7 +135,7 @@
       <Version>15.8.122</Version>
     </PackageReference>
     <PackageReference Include="Newtonsoft.Json">
-      <Version>13.0.1</Version>
+      <Version>6.0.1</Version>
     </PackageReference>
     <PackageReference Include="SerilogAnalyzer">
       <Version>0.15.0</Version>
