@@ -1,4 +1,4 @@
-﻿namespace Snyk.Code.Library.Tests.Api
+﻿namespace Snyk.Code.Library.Tests.SnykCode.Api
 {
     using System;
     using System.Collections.Generic;
@@ -7,6 +7,7 @@
     using Snyk.Code.Library.Api;
     using Snyk.Code.Library.Api.Dto;
     using Snyk.Code.Library.Api.Dto.Analysis;
+    using Snyk.Code.Library.Tests.Api;
     using Snyk.Common;
     using Xunit;
 
@@ -389,7 +390,7 @@
             Assert.Contains("\"analysisContext\":{\"flow\":\"test-flow-name\",\"initiator\":\"IDE\",\"orgDisplayName\":\"test-org\"}", payload);
         }
 
-        private string GetResourceContent(string resourceName) 
+        private string GetResourceContent(string resourceName)
             => File.ReadAllText(Path.Combine(Directory.GetCurrentDirectory(), "Resources", resourceName));
     }
 }
