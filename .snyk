@@ -1,0 +1,10 @@
+# Snyk (https://snyk.io) policy file, patches or ignores known vulnerabilities.
+version: v1.25.0
+# ignores vulnerabilities until expiry date; change duration by modifying expiry date
+ignore:
+  SNYK-DOTNET-NEWTONSOFTJSON-2774678:
+    - '*':
+        reason: Only relevant for IIS apps
+        expires: 2023-06-01T00:00:00.000Z
+        created: 2022-06-02T11:45:31.420Z
+patch: {}
