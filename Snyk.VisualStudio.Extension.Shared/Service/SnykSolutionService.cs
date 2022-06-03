@@ -5,6 +5,7 @@
     using System.IO;
     using System.Linq;
     using EnvDTE;
+    using EnvDTE80;
     using Microsoft.VisualStudio;
     using Microsoft.VisualStudio.Shell;
     using Microsoft.VisualStudio.Shell.Interop;
@@ -421,13 +422,23 @@
 
             try
             {
-                foreach (var projectItem in projects)
+                foreach (var aProject in projects)
                 {
-                    var project = projectItem as Project;
+                    var project = aProject as Project;
 
-                    string projectPath = new FileInfo(project.FullName).DirectoryName;
+                    if (project.Kind == ProjectKinds.vsProjectKindSolutionFolder)
+                    {
+                        var innerProjects = await this.GetSolutionFolderProjectsAsync(project);
 
-                    projectFolders.Add(this.GetDirectoryPath(projectPath));
+                        foreach (var innerProject in innerProjects)
+                        {
+                            projectFolders.Add(await this.GetProjectPathAsync(innerProject));
+                        }
+                    }
+                    else
+                    {
+                        projectFolders.Add(await this.GetProjectPathAsync(project));
+                    }
                 }
             }
             catch (Exception e)
@@ -435,7 +446,46 @@
                 Logger.Error(e, "Error on get all project paths from dte");
             }
 
-            return projectFolders;
+            return projectFolders
+                .Where(str => !string.IsNullOrEmpty(str))
+                .Distinct()
+                .ToList();
+        }
+
+        private async System.Threading.Tasks.Task<IEnumerable<Project>> GetSolutionFolderProjectsAsync(Project project)
+        {
+            await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
+
+            var projects = new List<Project>();
+
+            var count = project.ProjectItems.Count;
+
+            for (var i = 1; i <= count; i++)
+            {
+                var item = project.ProjectItems.Item(i).SubProject;
+                var subProject = item as Project;
+
+                if (subProject != null)
+                {
+                    projects.Add(subProject);
+                }
+            }
+
+            return projects;
+        }
+
+        private async System.Threading.Tasks.Task<string> GetProjectPathAsync(Project project)
+        {
+            await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
+
+            if (string.IsNullOrEmpty(project.FullName))
+            {
+                return null;
+            }
+
+            string projectPath = new FileInfo(project.FullName).DirectoryName;
+
+            return this.GetDirectoryPath(projectPath);
         }
 
         private async System.Threading.Tasks.Task<IList<string>> GetSolutionProjectsFilesFromDteAsync()

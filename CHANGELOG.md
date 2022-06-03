@@ -5,6 +5,7 @@
 ### Fixed
 - Selection of tree view items only working when clicking on the icon
 - Background color of unfocused selected items might blend with font color on some themes
+- Error on get all project paths from dte
 
 ## [1.1.16]
 
