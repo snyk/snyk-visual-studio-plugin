@@ -284,7 +284,12 @@
             return await this.GetSolutionItemFilesAsync(solutionItem);
         }
 
-        private string GetDirectoryPath(string path) => Directory.Exists(path) ? path : Directory.GetParent(path).FullName;
+        /// <summary>
+        /// Check is solutionItem.FullPath is directory or it reference to solution item file in directory. If it reference to solution item file get only parent directory.
+        /// </summary>
+        /// <param name="path">Path to directory or to file in directory.</param>
+        /// <returns>Path to directory.</returns>
+        private string GetExistingDirectoryPath(string path) => Directory.Exists(path) ? path : Directory.GetParent(path).FullName;
 
         private async System.Threading.Tasks.Task<string> FindRootDirectoryForSolutionAsync()
         {
@@ -304,7 +309,7 @@
                 return null;
             }
 
-            var solutionDir = this.GetDirectoryPath(solutionItem.FullPath);
+            var solutionDir = this.GetExistingDirectoryPath(solutionItem.FullPath);
 
             var projectFolders = this.GetSolutionProjects(solutionItem);
 
@@ -343,9 +348,20 @@
                     solutionPath = Directory.GetParent(solutionPath).FullName;
                 }
 
-                var projectFolders = await this.GetSolutionProjectsFromDteAsync(projects);
+                var projectsList = new List<Project>();
+                foreach (var aProject in projects)
+                {
+                    var project = aProject as Project;
 
-                solutionPath = this.FindRootDirectoryForSolutionProjects(solutionPath, projectFolders);
+                    projectsList.Add(project);
+                }
+
+                var projectFolders = await this.GetSolutionProjectsFromDteAsync(projectsList);
+
+                if (!projectFolders.IsNullOrEmpty())
+                {
+                    solutionPath = this.FindRootDirectoryForSolutionProjects(solutionPath, projectFolders);
+                }
             }
 
             // 3 case: Flat project without solution.
@@ -401,7 +417,7 @@
                             || children.Type == Toolkit.SolutionItemType.VirtualProject
                             || children.Type == Toolkit.SolutionItemType.MiscProject)
                         {
-                            projectFolders.Add(this.GetDirectoryPath(children.FullPath));
+                            projectFolders.Add(this.GetExistingDirectoryPath(children.FullPath));
                         }
                     }
                 }
@@ -414,7 +430,7 @@
             return projectFolders;
         }
 
-        private async System.Threading.Tasks.Task<IList<string>> GetSolutionProjectsFromDteAsync(Projects projects)
+        private async System.Threading.Tasks.Task<IList<string>> GetSolutionProjectsFromDteAsync(IList<Project> projects)
         {
             await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
 
@@ -422,22 +438,20 @@
 
             try
             {
-                foreach (var aProject in projects)
+                foreach (var project in projects)
                 {
-                    var project = aProject as Project;
-
                     if (project.Kind == ProjectKinds.vsProjectKindSolutionFolder)
                     {
-                        var innerProjects = await this.GetSolutionFolderProjectsAsync(project);
+                        string slnPaht = this.ServiceProvider.DTE.Solution.FullName;
 
-                        foreach (var innerProject in innerProjects)
-                        {
-                            projectFolders.Add(await this.GetProjectPathAsync(innerProject));
-                        }
+                        var innerProjects = await this.GetSolutionFolderProjectsAsync(project);
+                        var innerProjectPaths = await this.GetSolutionProjectsFromDteAsync(innerProjects);
+
+                        projectFolders.AddRange(innerProjectPaths);
                     }
                     else
                     {
-                        projectFolders.Add(await this.GetProjectPathAsync(project));
+                        projectFolders.Add(await this.GetDteProjectPathAsync(project));
                     }
                 }
             }
@@ -452,7 +466,7 @@
                 .ToList();
         }
 
-        private async System.Threading.Tasks.Task<IEnumerable<Project>> GetSolutionFolderProjectsAsync(Project project)
+        private async System.Threading.Tasks.Task<IList<Project>> GetSolutionFolderProjectsAsync(Project project)
         {
             await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
 
@@ -474,7 +488,7 @@
             return projects;
         }
 
-        private async System.Threading.Tasks.Task<string> GetProjectPathAsync(Project project)
+        private async System.Threading.Tasks.Task<string> GetDteProjectPathAsync(Project project)
         {
             await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
 
@@ -483,9 +497,11 @@
                 return null;
             }
 
-            string projectPath = new FileInfo(project.FullName).DirectoryName;
+            string projectPath = this.GetExistingDirectoryPath(new FileInfo(project.FullName).DirectoryName);
 
-            return this.GetDirectoryPath(projectPath);
+            // Check is directory exists. If not it will return empty string.
+            // It could be in case of VS virtual folders. If path is virtual folder path, it could reference to not existing directory.
+            return Directory.Exists(projectPath) ? projectPath : null;
         }
 
         private async System.Threading.Tasks.Task<IList<string>> GetSolutionProjectsFilesFromDteAsync()
