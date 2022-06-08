@@ -1,20 +1,25 @@
 # Snyk Changelog
 
+## [1.1.20]
+
+### Fixed
+- Files not detected issue.
+
 ## [1.1.19]
 
 ### Fixed
-- Errors when projects are nested inside solution folders
+- Errors when projects are nested inside solution folders.
 
 ## [1.1.18]
 
 ### Changed
-- Removed manually included DLLs from VSIX package
+- Removed manually included DLLs from VSIX package.
 
 ## [1.1.17]
 
 ### Fixed
-- Selection of tree view items only working when clicking on the icon
-- Background color of unfocused selected items might blend with font color on some themes
+- Selection of tree view items only working when clicking on the icon.
+- Background color of unfocused selected items might blend with font color on some themes.
 
 ## [1.1.16]
 
@@ -24,7 +29,7 @@
 ### Fixed
 - The color of the text in the tree view does not match the color from VS theme.
 - A problem with partially lost Snyk Code results if a single file contains multiple identical suggestions.
-- Error when clicking on issues with unknown severity in the tool window
+- Error when clicking on issues with unknown severity in the tool window.
 
 ## [1.1.15]
 
@@ -33,7 +38,7 @@
 - Restore all tree items after clear search or filter.
 
 ### Changed
-- Expand all scan results after completing a scan
+- Expand all scan results after completing a scan.
 
 ## [1.1.14]
 
