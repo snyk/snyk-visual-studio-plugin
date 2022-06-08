@@ -1,11 +1,20 @@
 # Snyk Changelog
 
+## [1.1.19]
+
+### Fixed
+- Errors when projects are nested inside solution folders
+
+## [1.1.18]
+
+### Changed
+- Removed manually included DLLs from VSIX package
+
 ## [1.1.17]
 
 ### Fixed
 - Selection of tree view items only working when clicking on the icon
 - Background color of unfocused selected items might blend with font color on some themes
-- Error on get all project paths from dte
 
 ## [1.1.16]
 
