@@ -1,5 +1,15 @@
 # Snyk Changelog
 
+## [1.1.19]
+
+### Fixed
+- Errors when projects are nested inside solution folders
+
+## [1.1.18]
+
+### Changed
+- Removed manually included DLLs from VSIX package
+
 ## [1.1.17]
 
 ### Fixed
