@@ -413,11 +413,19 @@
                 {
                     foreach (var children in solutionItem.Children)
                     {
-                        if (children.Type == Toolkit.SolutionItemType.Project
-                            || children.Type == Toolkit.SolutionItemType.VirtualProject
+                        if (children.Type == Toolkit.SolutionItemType.VirtualProject
                             || children.Type == Toolkit.SolutionItemType.MiscProject)
                         {
                             projectFolders.Add(this.GetExistingDirectoryPath(children.FullPath));
+                        }
+                        else if (children.Type == Toolkit.SolutionItemType.Project)
+                        {
+                            var project = children as Toolkit.Project;
+
+                            if (project.IsLoaded)
+                            {
+                                projectFolders.Add(this.GetExistingDirectoryPath(project.FullPath));
+                            }
                         }
                     }
                 }
