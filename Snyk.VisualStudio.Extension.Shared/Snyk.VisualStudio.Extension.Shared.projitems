@@ -182,6 +182,8 @@
     <Compile Include="$(MSBuildThisFileDirectory)Theme\VsBroadcastMessageEvents.cs">
       <CopyToOutputDirectory>Never</CopyToOutputDirectory>
     </Compile>
+    <Compile Include="$(MSBuildThisFileDirectory)UI\Toolwindow\SnykCode\ExampleFixTab.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)UI\Toolwindow\SnykCode\ExternalExampleFixRichTextBox.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)UI\Controls\TextField.xaml.cs">
       <DependentUpon>TextField.xaml</DependentUpon>
     </Compile>

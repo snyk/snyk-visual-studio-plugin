@@ -2,6 +2,10 @@
 
 ## [1.1.21]
 
+### Fixed
+- External example fixes tab control dark theme support.
+
+
 ### Changed
 - Replace the word "Remediation" with "Fix" in OSS report
 
