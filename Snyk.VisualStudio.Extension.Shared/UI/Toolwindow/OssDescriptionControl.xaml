@@ -27,10 +27,10 @@
             <ColumnDefinition Width="8*"/>
         </Grid.ColumnDefinitions>
 
-        <c:TextField Grid.Row="0" Grid.ColumnSpan="2" Text="Detailed paths and remediation" FontSize="16" Margin="5, 10, 5, 5"/>
+        <c:TextField Grid.Row="0" Grid.ColumnSpan="2" Text="Detailed paths and fix" FontSize="16" Margin="5, 10, 5, 5"/>
 
-        <c:TextField Grid.Row="1" Grid.Column="0" Text="Remediation:" FontWeight="Bold" FontSize="12" Margin="5, 5, 5, 5"/>
-        <c:TextField Grid.Row="1" Grid.Column="1" x:Name="remediation" Text="" FontSize="12" Margin="5, 5, 5, 5" TextWrapping="Wrap"/>
+        <c:TextField Grid.Row="1" Grid.Column="0" Text="Fix:" FontWeight="Bold" FontSize="12" Margin="5, 5, 5, 5"/>
+        <c:TextField Grid.Row="1" Grid.Column="1" x:Name="fix" Text="" FontSize="12" Margin="5, 5, 5, 5" TextWrapping="Wrap"/>
 
         <c:TextField Grid.Row="2" Grid.Column="0" Text="Introduced through:" FontWeight="Bold" FontSize="12" Margin="5, 5, 5, 5"/>
         <c:TextField Grid.Row="2" Grid.Column="1" x:Name="detaiedIntroducedThrough" Text="" FontSize="12" Margin="5, 5, 5, 5" TextWrapping="Wrap"/>
