@@ -1,5 +1,10 @@
 # Snyk Changelog
 
+## [1.1.21]
+
+### Changed
+- Replace the word "Remediation" with "Fix" in OSS report
+
 ## [1.1.20]
 
 ### Fixed
