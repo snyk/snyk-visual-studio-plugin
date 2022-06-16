@@ -34,15 +34,15 @@
 
                 this.introducedThrough.Text = introducedThroughText;
                 this.exploitMaturity.Text = vulnerability.Exploit;
-                this.fixedIn.Text = string.IsNullOrWhiteSpace(vulnerability.FixedInRemediation)
-                    ? $"There is no fixed version for {vulnerability.Name}" : vulnerability.FixedInRemediation;
+                this.fixedIn.Text = string.IsNullOrWhiteSpace(vulnerability.FixedInDisplayText)
+                    ? $"There is no fixed version for {vulnerability.Name}" : vulnerability.FixedInDisplayText;
 
                 string detaiedIntroducedThroughText = vulnerability.From != null && vulnerability.From.Length != 0
                             ? string.Join(" > ", vulnerability.From) : string.Empty;
 
                 this.detaiedIntroducedThrough.Text = detaiedIntroducedThroughText;
 
-                this.remediation.Text = vulnerability.FixedIn != null && vulnerability.FixedIn.Length != 0
+                this.fix.Text = vulnerability.FixedIn != null && vulnerability.FixedIn.Length != 0
                                          ? "Upgrade to " + string.Join(" > ", vulnerability.FixedIn) : string.Empty;
 
                 this.overview.Html = new MarkdownSharp.Markdown().Transform(vulnerability.Description);
