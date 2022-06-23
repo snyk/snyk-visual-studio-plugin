@@ -1,9 +1,14 @@
 # Snyk Changelog
 
+## [1.1.22]
+
+### Fixed
+- External example fixes tab control dark theme support.
+
 ## [1.1.21]
 
 ### Changed
-- Replace the word "Remediation" with "Fix" in OSS report
+- Replace the word "Remediation" with "Fix" in OSS report.
 
 ## [1.1.20]
 

@@ -1,11 +1,10 @@
 ﻿namespace Snyk.VisualStudio.Extension.Shared.UI.Toolwindow.SnykCode
 {
     using System.Collections.Generic;
+    using System.Collections.ObjectModel;
     using System.Linq;
     using System.Windows;
     using System.Windows.Controls;
-    using System.Windows.Documents;
-    using System.Windows.Media;
     using Snyk.Code.Library.Domain.Analysis;
 
     /// <summary>
@@ -14,6 +13,8 @@
     public partial class ExternalExampleFixesControl : UserControl
     {
         private const int ShowExamplesCount = 3;
+
+        private ObservableCollection<ExampleFixTab> tabs = new ObservableCollection<ExampleFixTab>();
 
         /// <summary>
         /// Initializes a new instance of the <see cref="ExternalExampleFixesControl"/> class.
@@ -30,7 +31,7 @@
         /// <param name="fixes">Suggestion fixes.</param>
         internal void Display(int repoDatasetSize, IList<SuggestionFix> fixes)
         {
-            this.externalExampleFixesTab.Items.Clear();
+            this.tabs.Clear();
 
             this.Visibility = fixes != null && fixes.Count > 0 ? Visibility.Visible : Visibility.Collapsed;
 
@@ -49,57 +50,16 @@
             {
                 var fix = fixes.ElementAt(i);
 
-                var exampleLinesTextBox = new HtmlRichTextBox();
-                exampleLinesTextBox.IsReadOnly = true;
-                exampleLinesTextBox.Document.Blocks.Clear();
-                exampleLinesTextBox.FontFamily = new FontFamily("Consolas");
-
-
-                foreach (var fixLine in fix.Lines)
+                this.tabs.Add(new ExampleFixTab
                 {
-                    string lineChangeSymbol = string.Empty;
-                    SolidColorBrush backgroundBrush = null;
-
-                    switch (fixLine.LineChange)
-                    {
-                        case "added":
-                            lineChangeSymbol = "+";
-                            backgroundBrush = Brushes.LightGreen;
-
-                            break;
-                        case "removed":
-                            lineChangeSymbol = "-";
-                            backgroundBrush = Brushes.LightCoral;
-
-                            break;
-                        default:
-                            break;
-                    }
-
-                    var lineText = $"   {fixLine.LineNumber} {lineChangeSymbol}    {fixLine.Line}";
-
-                    var document = exampleLinesTextBox.Document;
-
-                    Paragraph paragraph = new Paragraph();
-                    paragraph.Inlines.Clear();
-                    paragraph.Margin = new Thickness(0);
-                    paragraph.Padding = new Thickness(2);
-
-                    if (backgroundBrush != null)
-                    {
-                        paragraph.Background = backgroundBrush;
-                    }
-
-                    paragraph.Inlines.Add(lineText);
-
-                    document.Blocks.Add(paragraph);
-                }
-
-                this.externalExampleFixesTab.Items.Add(new TabItem
-                {
-                    Header = new TextBlock { Text = this.GetGithubRepositoryName(fix.CommitURL), },
-                    Content = exampleLinesTextBox,
+                    Title = this.GetGithubRepositoryName(fix.CommitURL),
+                    Lines = new ObservableCollection<FixLine>(fix.Lines),
                 });
+            }
+
+            if (this.externalExampleFixesTab.ItemsSource == null)
+            {
+                this.externalExampleFixesTab.ItemsSource = this.tabs;
             }
         }
 
