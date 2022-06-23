@@ -4,6 +4,7 @@
 
 ### Fixed
 - External example fixes tab control dark theme support.
+- Snyk Code results partially lost for WPF projecs.
 
 ## [1.1.21]
 
