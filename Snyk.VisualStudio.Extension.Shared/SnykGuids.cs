@@ -1,6 +1,7 @@
 ﻿namespace Snyk.VisualStudio.Extension.Shared
 {
     using System;
+    using Snyk.VisualStudio.Extension.Shared.UI;
 
     /// <summary>
     /// Contains all Guids for Snyk extension.
@@ -31,6 +32,8 @@
         /// Options command id.
         /// </summary>
         public const int OptionsCommandId = 0x506;
+
+        public const int OpenToolWindowCommandId = SnykToolWindowCommand.CommandId;
 
         /// <summary>
         /// VS package command set.
