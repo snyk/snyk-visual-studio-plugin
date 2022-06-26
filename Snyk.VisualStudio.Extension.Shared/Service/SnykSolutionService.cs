@@ -247,14 +247,12 @@
                     {
                         files.Add(item.FullPath);
                     }
-                    else
-                    {
-                        var itemFiles = await this.GetSolutionItemFilesAsync(item);
 
-                        if (itemFiles != null && itemFiles.Count > 0)
-                        {
-                            files.AddRange(itemFiles);
-                        }
+                    var itemFiles = await this.GetSolutionItemFilesAsync(item);
+
+                    if (itemFiles != null && itemFiles.Count > 0)
+                    {
+                        files.AddRange(itemFiles);
                     }
                 }
 
@@ -272,14 +270,12 @@
         {
             await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
 
-            var item = await Toolkit.VS.Solutions.GetActiveItemAsync();
+            var solutionItem = await Toolkit.VS.Solutions.GetCurrentSolutionAsync();
 
-            if (item == null)
+            if (solutionItem == null)
             {
                 return await this.GetSolutionProjectsFilesFromDteAsync();
             }
-
-            var solutionItem = item.FindParent(Toolkit.SolutionItemType.Solution);
 
             return await this.GetSolutionItemFilesAsync(solutionItem);
         }
