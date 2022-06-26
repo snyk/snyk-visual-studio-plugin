@@ -14,6 +14,7 @@
 	using static Microsoft.VisualStudio.Shell.Interop.__VSSLNOPENOPTIONS;
 	using static Microsoft.VisualStudio.Shell.Interop.__VSSLNOPENOPTIONS3;
 
+	[IdeSettings(MinVersion = VisualStudioVersion.VS2019, MaxVersion = VisualStudioVersion.VS2022)]
 	public class ExtensionStartupTests
 	{
 		private const int testTimeout = 120;
