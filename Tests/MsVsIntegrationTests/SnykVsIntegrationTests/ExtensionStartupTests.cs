@@ -6,31 +6,58 @@
 	using Microsoft;
 	using Microsoft.VisualStudio.Shell;
 	using Microsoft.VisualStudio.Shell.Interop;
+	using Microsoft.VisualStudio.Threading;
+	using Snyk.VisualStudio.Extension.Shared;
+	using Snyk.VisualStudio.Extension.Shared.UI.Toolwindow;
 	using Xunit;
+	using Xunit.Abstractions;
 	using static Microsoft.VisualStudio.Shell.Interop.__VSSLNOPENOPTIONS;
 	using static Microsoft.VisualStudio.Shell.Interop.__VSSLNOPENOPTIONS3;
 
 	public class ExtensionStartupTests
 	{
-		[IdeFact]
-		public void Nothing_Test()
+		private const int testTimeout = 120;
+
+		private readonly ITestOutputHelper output;
+
+		public ExtensionStartupTests(ITestOutputHelper output)
 		{
-			Assert.Equal(0, 0);
+			this.output = output;
 		}
 
-		[IdeFact]
-		public async Task Nothing_Test_Async()
+		[IdeFact(Timeout = testTimeout)]
+		public async Task OpenToolWindow_ExtensionIsLoaded()
 		{
-			await Task.Delay(TimeSpan.FromSeconds(2));
-			Assert.Equal(0, 0);
-		}
+			this.output.WriteLine("Extension loading test started");
 
-		[IdeFact]
-		public async Task LoadShell()
-		{
+			this.output.WriteLine("Switching to UI thread");
 			await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
+			this.output.WriteLine("Locating shell objects");
 			var shell = ServiceProvider.GlobalProvider.GetService(typeof(SVsShell)) as IVsShell7;
-			Assert.NotNull(shell);
+			var uiShell = ServiceProvider.GlobalProvider.GetService(typeof(SVsUIShell)) as IVsUIShell;
+			Assert.True(shell != null, "Failed to load shell");
+			Assert.True(uiShell != null, "Failed to load UI shell");
+
+			
+			this.output.WriteLine("Opening Snyk tool-window");
+			uiShell.PostExecCommand(SnykGuids.SnykVSPackageCommandSet, 
+				(uint) SnykGuids.OpenToolWindowCommandId, 
+				0,
+				null);
+
+			this.output.WriteLine("Waiting 1 second");
+			await Task.Delay(TimeSpan.FromSeconds(1));
+
+			this.output.WriteLine("Switch to background thread");
+			await TaskScheduler.Default;
+
+			this.output.WriteLine("Loading Snyk package");
+			var guid = Guid.Parse(SnykVSPackage.PackageGuidString);
+			var packageObject = await shell.LoadPackageAsync(ref guid);
+			Assert.True(packageObject != null, "Failed to find Snyk package");
+			Assert.IsType<SnykVSPackage>(packageObject);
+
+			this.output.WriteLine("Test complete!");
 		}
 	}
 }
