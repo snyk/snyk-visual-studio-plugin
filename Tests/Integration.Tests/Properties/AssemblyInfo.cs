@@ -7,19 +7,19 @@ using Xunit.Harness;
 // Configure test framework - taken from https://github.com/microsoft/vs-extension-testing/blob/8d2e84bca8bf076a85081e73ac0209a33050a90d/README.md
 [assembly: TestFramework("Xunit.Harness.IdeTestFramework", "Microsoft.VisualStudio.Extensibility.Testing.Xunit")]
 #if DEBUG
-[assembly: RequireExtension("../../../../../Snyk.VisualStudio.Extension.2022/bin/Debug/Snyk.VisualStudio.Extension.vsix")]
+[assembly: RequireExtension("../../../../Snyk.VisualStudio.Extension.2022/bin/Debug/Snyk.VisualStudio.Extension.vsix")]
 #else
-[assembly: RequireExtension("../../../../../Snyk.VisualStudio.Extension.2022/bin/Release/Snyk.VisualStudio.Extension.vsix")]
+[assembly: RequireExtension("../../../../Snyk.VisualStudio.Extension.2022/bin/Release/Snyk.VisualStudio.Extension.vsix")]
 #endif
 
 // General Information about an assembly is controlled through the following
 // set of attributes. Change these attribute values to modify the information
 // associated with an assembly.
-[assembly: AssemblyTitle("SnykVsIntegrationTests")]
+[assembly: AssemblyTitle("Integration.Tests")]
 [assembly: AssemblyDescription("")]
 [assembly: AssemblyConfiguration("")]
 [assembly: AssemblyCompany("")]
-[assembly: AssemblyProduct("SnykVsIntegrationTests")]
+[assembly: AssemblyProduct("Integration.Tests")]
 [assembly: AssemblyCopyright("Copyright ©  2022")]
 [assembly: AssemblyTrademark("")]
 [assembly: AssemblyCulture("")]
@@ -30,7 +30,7 @@ using Xunit.Harness;
 [assembly: ComVisible(false)]
 
 // The following GUID is for the ID of the typelib if this project is exposed to COM
-[assembly: Guid("305e3eb9-6f5b-405e-bbcb-39b6059daf65")]
+[assembly: Guid("10cb14d3-cb55-461c-b100-70e803198a7d")]
 
 // Version information for an assembly consists of the following four values:
 //
