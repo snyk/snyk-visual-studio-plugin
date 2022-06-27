@@ -8,7 +8,7 @@
     <OutputType>Library</OutputType>
     <AppDesignerFolder>Properties</AppDesignerFolder>
     <RootNamespace>SnykVsIntegrationTests.Pre22</RootNamespace>
-    <AssemblyName>SnykVsIntegrationTests.Pre22</AssemblyName>
+    <AssemblyName>Integration.Pre22.Tests</AssemblyName>
     <TargetFrameworkVersion>v4.8</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
     <Deterministic>true</Deterministic>
