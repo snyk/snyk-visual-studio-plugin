@@ -1,6 +1,12 @@
 ﻿using System.Reflection;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
+using Xunit;
+using Xunit.Harness;
+
+// Configure test framework - taken from https://github.com/microsoft/vs-extension-testing/blob/8d2e84bca8bf076a85081e73ac0209a33050a90d/README.md
+[assembly: TestFramework("Xunit.Harness.IdeTestFramework", "Microsoft.VisualStudio.Extensibility.Testing.Xunit")]
+[assembly: RequireExtension("../../../../Snyk.VisualStudio.Extension/bin/Debug/Snyk.VisualStudio.Extension.vsix")]
 
 // General Information about an assembly is controlled through the following
 // set of attributes. Change these attribute values to modify the information

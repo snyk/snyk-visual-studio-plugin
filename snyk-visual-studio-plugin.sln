@@ -126,6 +126,7 @@ Global
 	EndGlobalSection
 	GlobalSection(SharedMSBuildProjectFiles) = preSolution
 		Tests\SnykVsIntegrationTests.Shared\SnykVsIntegrationTests.Shared.projitems*{305e3eb9-6f5b-405e-bbcb-39b6059daf65}*SharedItemsImports = 4
+		Tests\SnykVsIntegrationTests.Shared\SnykVsIntegrationTests.Shared.projitems*{5e4ebf74-fd9d-4708-9558-bbff1221d2f8}*SharedItemsImports = 4
 		Snyk.VisualStudio.Extension.Shared\Snyk.VisualStudio.Extension.Shared.projitems*{910098f4-ec69-40f2-8cf1-b2e86e30d2f8}*SharedItemsImports = 4
 		Snyk.VisualStudio.Extension.Shared\Snyk.VisualStudio.Extension.Shared.projitems*{ab050a12-200e-48ae-898d-cb5532151a66}*SharedItemsImports = 4
 		Tests\SnykVsIntegrationTests.Shared\SnykVsIntegrationTests.Shared.projitems*{c2e8c32b-bd9f-4927-b6ea-bf6e9b40cb6c}*SharedItemsImports = 13
