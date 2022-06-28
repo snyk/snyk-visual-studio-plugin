@@ -24,6 +24,7 @@
 			this.output = output;
 		}
 
+		[Trait("integration", "true")]
 		[IdeFact]
 		public async Task OpenToolWindow_ExtensionIsLoaded()
 		{
