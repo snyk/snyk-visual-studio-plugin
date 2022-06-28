@@ -64,7 +64,6 @@
 			var snykVsPackage = packageObject as SnykVSPackage;
 			Assert.True(snykVsPackage.ToolWindow != null, "Tool window failed to open");
 			Assert.True(snykVsPackage.IsInitialized, "Snyk package was not initialized");
-			this.output.WriteLine("Test complete!");
 		}
 	}
 }
