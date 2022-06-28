@@ -64,6 +64,7 @@ jobs:
       run: vstest.console.exe **\*.Tests.dll
 
   build-and-release:
+    needs: build-2019
     runs-on: windows-2022
     defaults:
       run:
