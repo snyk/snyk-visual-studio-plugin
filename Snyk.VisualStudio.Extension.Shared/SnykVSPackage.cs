@@ -90,6 +90,11 @@
         public SnykToolWindow ToolWindow => this.toolWindow;
 
         /// <summary>
+        /// True if the package was initialized successfully
+        /// </summary>
+        public bool IsInitialized { get; private set; }
+
+        /// <summary>
         /// Show Options dialog.
         /// </summary>
         public void ShowOptionPage() => this.ShowOptionPage(typeof(SnykGeneralOptionsDialogPage));
@@ -188,6 +193,7 @@
                 Logger.Information("Before call toolWindowControl.InitializeEventListeners() method.");
                 this.toolWindowControl.InitializeEventListeners(this.serviceProvider);
                 this.toolWindowControl.Initialize(this.serviceProvider);
+                this.IsInitialized = true;
             }
             catch (Exception ex)
             {
