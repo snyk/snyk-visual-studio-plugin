@@ -90,7 +90,7 @@
         public SnykToolWindow ToolWindow => this.toolWindow;
 
         /// <summary>
-        /// True if the package was initialized successfully
+        /// True if the package was initialized successfully.
         /// </summary>
         public bool IsInitialized { get; private set; }
 
