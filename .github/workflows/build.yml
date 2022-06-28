@@ -11,7 +11,7 @@ env:
 
 jobs:
   build:
-    runs-on: windows-latest
+    runs-on: windows-2022
     defaults:
       run:
         working-directory: ${{ github.workspace }} 
@@ -35,7 +35,7 @@ jobs:
     - name: Add MSBuild to PATH
       uses: microsoft/setup-msbuild@v1
       with:
-        vs-version: '[14.0, ]'
+        vs-version: '[17.0, ]'
 
     - name: Setup VSTest
       uses: darenm/Setup-VSTest@v1
