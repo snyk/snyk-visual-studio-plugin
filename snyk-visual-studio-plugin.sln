@@ -10,6 +10,8 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution 
 		.editorconfig = .editorconfig
 		.gitignore = .gitignore
 		CHANGELOG.md = CHANGELOG.md
+		CONTRIBUTING.md = CONTRIBUTING.md
+		Contributor-Agreement.md = Contributor-Agreement.md
 		README.md = README.md
 	EndProjectSection
 EndProject
@@ -17,6 +19,13 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "doc", "doc", "{9AAC9A90-42B
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "images", "images", "{99BED51B-0DEF-4CF8-9029-CFB41C24B43F}"
 	ProjectSection(SolutionItems) = preProject
+		doc\images\Contribution_screenshot_1.png = doc\images\Contribution_screenshot_1.png
+		doc\images\Contribution_screenshot_2.png = doc\images\Contribution_screenshot_2.png
+		doc\images\Contribution_screenshot_3.png = doc\images\Contribution_screenshot_3.png
+		doc\images\Contribution_screenshot_4.png = doc\images\Contribution_screenshot_4.png
+		doc\images\Contribution_screenshot_5.png = doc\images\Contribution_screenshot_5.png
+		doc\images\Contribution_screenshot_6.png = doc\images\Contribution_screenshot_6.png
+		doc\images\Contribution_screenshot_7.png = doc\images\Contribution_screenshot_7.png
 		doc\images\readme_image_3_1_3.png = doc\images\readme_image_3_1_3.png
 		doc\images\readme_image_3_1_4.png = doc\images\readme_image_3_1_4.png
 	EndProjectSection
@@ -42,11 +51,6 @@ EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Itly", "Snyk.Analytics.Itly\Itly\Itly.csproj", "{AD9ECE9E-DEF1-4976-998F-D124737994E8}"
 EndProject
 Global
-	GlobalSection(SharedMSBuildProjectFiles) = preSolution
-		Snyk.VisualStudio.Extension.Shared\Snyk.VisualStudio.Extension.Shared.projitems*{910098f4-ec69-40f2-8cf1-b2e86e30d2f8}*SharedItemsImports = 4
-		Snyk.VisualStudio.Extension.Shared\Snyk.VisualStudio.Extension.Shared.projitems*{ab050a12-200e-48ae-898d-cb5532151a66}*SharedItemsImports = 4
-		Snyk.VisualStudio.Extension.Shared\Snyk.VisualStudio.Extension.Shared.projitems*{ea4850be-70bf-4d93-ae23-aa55f2796c5e}*SharedItemsImports = 13
-	EndGlobalSection
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
 		Release|Any CPU = Release|Any CPU
@@ -99,5 +103,10 @@ Global
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {A0587AA6-C5A0-421C-B01F-ED9D91CF8AB6}
+	EndGlobalSection
+	GlobalSection(SharedMSBuildProjectFiles) = preSolution
+		Snyk.VisualStudio.Extension.Shared\Snyk.VisualStudio.Extension.Shared.projitems*{910098f4-ec69-40f2-8cf1-b2e86e30d2f8}*SharedItemsImports = 4
+		Snyk.VisualStudio.Extension.Shared\Snyk.VisualStudio.Extension.Shared.projitems*{ab050a12-200e-48ae-898d-cb5532151a66}*SharedItemsImports = 4
+		Snyk.VisualStudio.Extension.Shared\Snyk.VisualStudio.Extension.Shared.projitems*{ea4850be-70bf-4d93-ae23-aa55f2796c5e}*SharedItemsImports = 13
 	EndGlobalSection
 EndGlobal
