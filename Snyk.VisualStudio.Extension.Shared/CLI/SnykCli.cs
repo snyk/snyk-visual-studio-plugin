@@ -83,6 +83,9 @@
             return apiToken;
         }
 
+        /// <inheritdoc/>
+        public void UnsetApiToken() => this.ConsoleRunner.Run(GetSnykCliPath(), "config unset api");
+
         /// <summary>
         /// Try get Snyk API token from snyk cli config or throw <see cref="InvalidTokenException"/>.
         /// </summary>

@@ -66,6 +66,10 @@
                     return;
                 }
 
+                // When changing the API endpoint, the API token is invalidated
+                this.apiToken = String.Empty;
+                this.ServiceProvider.NewCli().UnsetApiToken();
+
                 this.customEndpoint = value;
                 this.FireSettingsChangedEvent();
             }

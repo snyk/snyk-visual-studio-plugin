@@ -24,5 +24,10 @@
         /// </summary>
         /// <returns>API token string.</returns>
         string GetApiToken();
+
+        /// <summary>
+        /// Unsets the API token stored in the config file in <code>~/.config/configstore/snyk.json</code>
+        /// </summary>
+        void UnsetApiToken();
     }
 }
