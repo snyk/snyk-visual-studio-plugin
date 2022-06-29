@@ -19,7 +19,7 @@
     /// </summary>
     public partial class SnykGeneralSettingsUserControl : UserControl
     {
-        private static readonly ILogger Logger = LogManager.ForContext<SnykGeneralSettingsUserControl>();
+        private static readonly ILogger logger = LogManager.ForContext<SnykGeneralSettingsUserControl>();
 
         /// <summary>
         /// Instance of SnykGeneralOptionsDialogPage.
@@ -51,19 +51,29 @@
         /// </summary>
         public void Initialize()
         {
-            Logger.Information("Enter Initialize method");
+            logger.Information("Enter Initialize method");
 
             this.InitializeApiToken();
+            this.UpdateViewFromOptionsDialog();
+            this.OptionsDialogPage.SettingsChanged += this.OptionsDialogPageOnSettingsChanged;
+            this.Load += new EventHandler(this.SnykGeneralSettingsUserControl_Load);
 
+            logger.Information("Leave Initialize method");
+        }
+
+        private void UpdateViewFromOptionsDialog()
+        {
             this.customEndpointTextBox.Text = this.OptionsDialogPage.CustomEndpoint;
             this.organizationTextBox.Text = this.OptionsDialogPage.Organization;
             this.ignoreUnknownCACheckBox.Checked = this.OptionsDialogPage.IgnoreUnknownCA;
             this.usageAnalyticsCheckBox.Checked = this.OptionsDialogPage.UsageAnalyticsEnabled;
             this.ossEnabledCheckBox.Checked = this.OptionsDialogPage.OssEnabled;
+        }
 
-            this.Load += new EventHandler(this.SnykGeneralSettingsUserControl_Load);
-
-            Logger.Information("Leave Initialize method");
+        private void OptionsDialogPageOnSettingsChanged(object sender, SnykSettingsChangedEventArgs e)
+        {
+            this.UpdateViewFromOptionsDialog();
+            this.InitializeApiToken();
         }
 
         /// <summary>
@@ -73,7 +83,7 @@
         /// <param name="errorCallbackAction">Callback for fail authentication.</param>
         public void Authenticate(Action<string> successCallbackAction, Action<string> errorCallbackAction)
         {
-            Logger.Information("Enter Authenticate method");
+            logger.Information("Enter Authenticate method");
 
             _ = Task.Run(() =>
             {
@@ -81,24 +91,24 @@
 
                 if (SnykCli.IsCliExists())
                 {
-                    Logger.Information("CLI exists. Calling SetupApiToken method");
+                    logger.Information("CLI exists. Calling SetupApiToken method");
 
                     this.SetupApiToken(successCallbackAction, errorCallbackAction);
                 }
                 else
                 {
-                    Logger.Information("CLI not exists. Download CLI before get Api token");
+                    logger.Information("CLI not exists. Download CLI before get Api token");
 
                     serviceProvider.TasksService.Download(new CliDownloadFinishedCallback(this.OnCliDownloadFinishedCallback));
                 }
             });
 
-            Logger.Information("Leave Authenticate method");
+            logger.Information("Leave Authenticate method");
         }
 
         private async Task OnAuthenticationSuccessfulAsync(string apiToken)
         {
-            Logger.Information("Enter authenticate successCallback");
+            logger.Information("Enter authenticate successCallback");
 
             //TODO - try to await SwitchToMainThread
             if (this.authProgressBar.IsHandleCreated)
@@ -154,7 +164,7 @@
 
         private async Task OnAuthenticationFailAsync(string errorMessage)
         {
-            Logger.Information("Enter authenticate errorCallback");
+            logger.Information("Enter authenticate errorCallback");
 
             if (this.authProgressBar.IsHandleCreated)
             {
@@ -201,26 +211,26 @@
 
         private async Task AuthenticateButtonClickAsync()
         {
-            Logger.Information("Enter authenticateButton_Click method");
+            logger.Information("Enter authenticateButton_Click method");
 
             this.authProgressBar.Visible = true;
             this.tokenTextBox.Enabled = false;
             this.authenticateButton.Enabled = false;
 
-            Logger.Information("Start run task");
+            logger.Information("Start run task");
             await TaskScheduler.Default;
 
             var serviceProvider = this.OptionsDialogPage.ServiceProvider;
 
             if (SnykCli.IsCliExists())
             {
-                Logger.Information("CLI exists. Calling SetupApiToken method");
+                logger.Information("CLI exists. Calling SetupApiToken method");
 
                 await this.SetupApiTokenAsync();
             }
             else
             {
-                Logger.Information("CLI not exists. Download CLI before get Api token");
+                logger.Information("CLI not exists. Download CLI before get Api token");
 
                 serviceProvider.TasksService.Download(this.OnCliDownloadFinishedCallback);
             }
@@ -228,38 +238,38 @@
 
         private void OnCliDownloadFinishedCallback() => ThreadHelper.JoinableTaskFactory.Run(async () =>
         {
-            Logger.Information("CLI downloaded. Calling SetupApiToken method");
+            logger.Information("CLI downloaded. Calling SetupApiToken method");
 
             await this.SetupApiTokenAsync();
         });
 
         private async Task SetupApiTokenAsync()
         {
-            Logger.Information("Enter SetupApiToken method");
+            logger.Information("Enter SetupApiToken method");
 
             string apiToken;
 
             try
             {
-                Logger.Information("Try get Api token");
+                logger.Information("Try get Api token");
 
                 apiToken = this.NewCli().GetApiToken();
 
                 if (string.IsNullOrEmpty(apiToken))
                 {
-                    Logger.Information("Api toke is null or empty. Try to authenticate via snyk auth");
+                    logger.Information("Api toke is null or empty. Try to authenticate via snyk auth");
 
                     string authResultMessage = this.NewCli().Authenticate();
 
                     if (authResultMessage.Contains("Your account has been authenticated. Snyk is now ready to be used."))
                     {
-                        Logger.Information("Snyk auth executed successfully. Try to get Api token");
+                        logger.Information("Snyk auth executed successfully. Try to get Api token");
 
                         apiToken = this.NewCli().GetApiToken();
                     }
                     else
                     {
-                        Logger.Information("Snyk auth executed with error: {AuthResultMessage}", authResultMessage);
+                        logger.Information("Snyk auth executed with error: {AuthResultMessage}", authResultMessage);
 
                         await this.OnAuthenticationFailAsync(authResultMessage);
 
@@ -267,7 +277,7 @@
                     }
                 }
 
-                Logger.Information("Validate Api token GUID");
+                logger.Information("Validate Api token GUID");
 
                 if (!Common.Guid.IsValid(apiToken))
                 {
@@ -278,11 +288,11 @@
 
                 await this.OnAuthenticationSuccessfulAsync(apiToken);
 
-                Logger.Information("Leave SetupApiToken method");
+                logger.Information("Leave SetupApiToken method");
             }
             catch (Exception e)
             {
-                Logger.Error(e, "Setup api token in general settings");
+                logger.Error(e, "Setup api token in general settings");
 
                 await this.OnAuthenticationFailAsync(e.Message);
             }
@@ -290,31 +300,31 @@
 
         private void SetupApiToken(Action<string> successCallback, Action<string> errorCallback)
         {
-            Logger.Information("Enter SetupApiToken method");
+            logger.Information("Enter SetupApiToken method");
 
             string apiToken;
 
             try
             {
-                Logger.Information("Try get Api token");
+                logger.Information("Try get Api token");
 
                 apiToken = this.NewCli().GetApiToken();
 
                 if (string.IsNullOrEmpty(apiToken))
                 {
-                    Logger.Information("Api toke is null or empty. Try to authenticate via snyk auth");
+                    logger.Information("Api toke is null or empty. Try to authenticate via snyk auth");
 
                     string authResultMessage = this.NewCli().Authenticate();
 
                     if (authResultMessage.Contains("Your account has been authenticated. Snyk is now ready to be used."))
                     {
-                        Logger.Information("Snyk auth executed successfully. Try to get Api token");
+                        logger.Information("Snyk auth executed successfully. Try to get Api token");
 
                         apiToken = this.NewCli().GetApiToken();
                     }
                     else
                     {
-                        Logger.Information("Snyk auth executed with error: {AuthResultMessage}", authResultMessage);
+                        logger.Information("Snyk auth executed with error: {AuthResultMessage}", authResultMessage);
 
                         errorCallback(authResultMessage);
 
@@ -322,7 +332,7 @@
                     }
                 }
 
-                Logger.Information("Validate Api token GUID");
+                logger.Information("Validate Api token GUID");
 
                 if (!Common.Guid.IsValid(apiToken))
                 {
@@ -333,11 +343,11 @@
 
                 successCallback(apiToken);
 
-                Logger.Information("Leave SetupApiToken method");
+                logger.Information("Leave SetupApiToken method");
             }
             catch (Exception e)
             {
-                Logger.Error(e, "Setup api token in general settings");
+                logger.Error(e, "Setup api token in general settings");
 
                 errorCallback(e.Message);
             }
@@ -352,7 +362,7 @@
             this.OptionsDialogPage.ApiToken = this.tokenTextBox.Text;
         }
 
-        private void CustomEndpointTextBox_TextChanged(object sender, EventArgs e)
+        private void CustomEndpointTextBox_LostFocus(object sender, EventArgs e)
         {
             this.ValidateChildren(ValidationConstraints.Enabled);
 
