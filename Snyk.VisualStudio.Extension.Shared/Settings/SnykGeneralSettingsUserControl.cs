@@ -61,6 +61,8 @@
             this.usageAnalyticsCheckBox.Checked = this.OptionsDialogPage.UsageAnalyticsEnabled;
             this.ossEnabledCheckBox.Checked = this.OptionsDialogPage.OssEnabled;
 
+            this.Load += new EventHandler(this.SnykGeneralSettingsUserControl_Load);
+
             Logger.Information("Leave Initialize method");
         }
 
