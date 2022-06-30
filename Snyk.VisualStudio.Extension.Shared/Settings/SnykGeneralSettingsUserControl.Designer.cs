@@ -1,4 +1,8 @@
-﻿namespace Snyk.VisualStudio.Extension.Shared.Settings
+﻿using System;
+using System.Diagnostics;
+using System.Windows.Forms;
+
+namespace Snyk.VisualStudio.Extension.Shared.Settings
 {
     partial class SnykGeneralSettingsUserControl
     {
@@ -56,6 +60,7 @@
             this.ossInfoToolTip = new System.Windows.Forms.ToolTip(this.components);
             this.snykCodeSecurityInfoToolTip = new System.Windows.Forms.ToolTip(this.components);
             this.snykCodeQualityInfoToolTip = new System.Windows.Forms.ToolTip(this.components);
+            this.orgInfoWebBrowser = new System.Windows.Forms.WebBrowser();
             ((System.ComponentModel.ISupportInitialize)(this.errorProvider)).BeginInit();
             this.generalSettingsGroupBox.SuspendLayout();
             this.productSelectionGroupBox.SuspendLayout();
@@ -65,7 +70,7 @@
             // customEndpointTextBox
             // 
             this.customEndpointTextBox.Location = new System.Drawing.Point(200, 165);
-            this.customEndpointTextBox.Margin = new System.Windows.Forms.Padding(4, 4, 4, 4);
+            this.customEndpointTextBox.Margin = new System.Windows.Forms.Padding(4);
             this.customEndpointTextBox.Name = "customEndpointTextBox";
             this.customEndpointTextBox.Size = new System.Drawing.Size(836, 31);
             this.customEndpointTextBox.TabIndex = 0;
@@ -95,9 +100,9 @@
             // organizationTextBox
             // 
             this.organizationTextBox.Location = new System.Drawing.Point(200, 258);
-            this.organizationTextBox.Margin = new System.Windows.Forms.Padding(4, 4, 4, 4);
+            this.organizationTextBox.Margin = new System.Windows.Forms.Padding(4);
             this.organizationTextBox.Name = "organizationTextBox";
-            this.organizationTextBox.Size = new System.Drawing.Size(836, 31);
+            this.organizationTextBox.Size = new System.Drawing.Size(836, 32);
             this.organizationTextBox.TabIndex = 3;
             this.organizationTextBox.TextChanged += new System.EventHandler(this.OrganizationTextBox_TextChanged);
             // 
@@ -114,7 +119,7 @@
             // tokenTextBox
             // 
             this.tokenTextBox.Location = new System.Drawing.Point(200, 104);
-            this.tokenTextBox.Margin = new System.Windows.Forms.Padding(6, 6, 6, 6);
+            this.tokenTextBox.Margin = new System.Windows.Forms.Padding(6);
             this.tokenTextBox.Name = "tokenTextBox";
             this.tokenTextBox.PasswordChar = '*';
             this.tokenTextBox.Size = new System.Drawing.Size(836, 31);
@@ -126,7 +131,7 @@
             // 
             this.ignoreUnknownCACheckBox.AutoSize = true;
             this.ignoreUnknownCACheckBox.Location = new System.Drawing.Point(200, 206);
-            this.ignoreUnknownCACheckBox.Margin = new System.Windows.Forms.Padding(4, 4, 4, 4);
+            this.ignoreUnknownCACheckBox.Margin = new System.Windows.Forms.Padding(4);
             this.ignoreUnknownCACheckBox.Name = "ignoreUnknownCACheckBox";
             this.ignoreUnknownCACheckBox.Size = new System.Drawing.Size(231, 29);
             this.ignoreUnknownCACheckBox.TabIndex = 6;
@@ -137,7 +142,7 @@
             // authenticateButton
             // 
             this.authenticateButton.Location = new System.Drawing.Point(200, 38);
-            this.authenticateButton.Margin = new System.Windows.Forms.Padding(6, 6, 6, 6);
+            this.authenticateButton.Margin = new System.Windows.Forms.Padding(6);
             this.authenticateButton.Name = "authenticateButton";
             this.authenticateButton.Size = new System.Drawing.Size(386, 38);
             this.authenticateButton.TabIndex = 7;
@@ -166,7 +171,7 @@
             this.usageAnalyticsCheckBox.Checked = true;
             this.usageAnalyticsCheckBox.CheckState = System.Windows.Forms.CheckState.Checked;
             this.usageAnalyticsCheckBox.Location = new System.Drawing.Point(24, 58);
-            this.usageAnalyticsCheckBox.Margin = new System.Windows.Forms.Padding(4, 4, 4, 4);
+            this.usageAnalyticsCheckBox.Margin = new System.Windows.Forms.Padding(4);
             this.usageAnalyticsCheckBox.Name = "usageAnalyticsCheckBox";
             this.usageAnalyticsCheckBox.Size = new System.Drawing.Size(250, 29);
             this.usageAnalyticsCheckBox.TabIndex = 9;
@@ -180,7 +185,7 @@
             this.ossEnabledCheckBox.Checked = true;
             this.ossEnabledCheckBox.CheckState = System.Windows.Forms.CheckState.Checked;
             this.ossEnabledCheckBox.Location = new System.Drawing.Point(24, 58);
-            this.ossEnabledCheckBox.Margin = new System.Windows.Forms.Padding(4, 4, 4, 4);
+            this.ossEnabledCheckBox.Margin = new System.Windows.Forms.Padding(4);
             this.ossEnabledCheckBox.Name = "ossEnabledCheckBox";
             this.ossEnabledCheckBox.Size = new System.Drawing.Size(362, 29);
             this.ossEnabledCheckBox.TabIndex = 11;
@@ -194,7 +199,7 @@
             this.codeSecurityEnabledCheckBox.Checked = true;
             this.codeSecurityEnabledCheckBox.CheckState = System.Windows.Forms.CheckState.Checked;
             this.codeSecurityEnabledCheckBox.Location = new System.Drawing.Point(24, 104);
-            this.codeSecurityEnabledCheckBox.Margin = new System.Windows.Forms.Padding(4, 4, 4, 4);
+            this.codeSecurityEnabledCheckBox.Margin = new System.Windows.Forms.Padding(4);
             this.codeSecurityEnabledCheckBox.Name = "codeSecurityEnabledCheckBox";
             this.codeSecurityEnabledCheckBox.Size = new System.Drawing.Size(371, 29);
             this.codeSecurityEnabledCheckBox.TabIndex = 12;
@@ -208,7 +213,7 @@
             this.codeQualityEnabledCheckBox.Checked = true;
             this.codeQualityEnabledCheckBox.CheckState = System.Windows.Forms.CheckState.Checked;
             this.codeQualityEnabledCheckBox.Location = new System.Drawing.Point(484, 104);
-            this.codeQualityEnabledCheckBox.Margin = new System.Windows.Forms.Padding(4, 4, 4, 4);
+            this.codeQualityEnabledCheckBox.Margin = new System.Windows.Forms.Padding(4);
             this.codeQualityEnabledCheckBox.Name = "codeQualityEnabledCheckBox";
             this.codeQualityEnabledCheckBox.Size = new System.Drawing.Size(290, 29);
             this.codeQualityEnabledCheckBox.TabIndex = 13;
@@ -218,6 +223,7 @@
             // 
             // generalSettingsGroupBox
             // 
+            this.generalSettingsGroupBox.Controls.Add(this.orgInfoWebBrowser);
             this.generalSettingsGroupBox.Controls.Add(this.tokenLabel);
             this.generalSettingsGroupBox.Controls.Add(this.tokenTextBox);
             this.generalSettingsGroupBox.Controls.Add(this.authProgressBar);
@@ -227,11 +233,11 @@
             this.generalSettingsGroupBox.Controls.Add(this.organizationLabel);
             this.generalSettingsGroupBox.Controls.Add(this.ignoreUnknownCACheckBox);
             this.generalSettingsGroupBox.Controls.Add(this.organizationTextBox);
-            this.generalSettingsGroupBox.Location = new System.Drawing.Point(20, 19);
+            this.generalSettingsGroupBox.Location = new System.Drawing.Point(20, 20);
             this.generalSettingsGroupBox.Margin = new System.Windows.Forms.Padding(16, 15, 16, 15);
             this.generalSettingsGroupBox.Name = "generalSettingsGroupBox";
-            this.generalSettingsGroupBox.Padding = new System.Windows.Forms.Padding(4, 4, 4, 4);
-            this.generalSettingsGroupBox.Size = new System.Drawing.Size(1550, 327);
+            this.generalSettingsGroupBox.Padding = new System.Windows.Forms.Padding(4);
+            this.generalSettingsGroupBox.Size = new System.Drawing.Size(1550, 440);
             this.generalSettingsGroupBox.TabIndex = 17;
             this.generalSettingsGroupBox.TabStop = false;
             this.generalSettingsGroupBox.Text = "General Settings";
@@ -247,8 +253,8 @@
             this.productSelectionGroupBox.Controls.Add(this.codeQualityEnabledCheckBox);
             this.productSelectionGroupBox.Controls.Add(this.ossEnabledCheckBox);
             this.productSelectionGroupBox.Controls.Add(this.codeSecurityEnabledCheckBox);
-            this.productSelectionGroupBox.Location = new System.Drawing.Point(20, 385);
-            this.productSelectionGroupBox.Margin = new System.Windows.Forms.Padding(4, 4, 4, 4);
+            this.productSelectionGroupBox.Location = new System.Drawing.Point(20, 475);
+            this.productSelectionGroupBox.Margin = new System.Windows.Forms.Padding(4);
             this.productSelectionGroupBox.Name = "productSelectionGroupBox";
             this.productSelectionGroupBox.Padding = new System.Windows.Forms.Padding(16, 15, 16, 15);
             this.productSelectionGroupBox.Size = new System.Drawing.Size(1550, 250);
@@ -280,7 +286,7 @@
             this.snykCodeSecurityInfoLabel.Size = new System.Drawing.Size(40, 38);
             this.snykCodeSecurityInfoLabel.TabIndex = 20;
             this.snykCodeSecurityInfoLabel.Text = "    ";
-            this.snykCodeSecurityInfoToolTip.SetToolTip(this.snykCodeSecurityInfoLabel, "Find and fix vulnerabilities in your application code in real time");
+            this.snykCodeSecurityInfoToolTip.SetToolTip(this.snykCodeSecurityInfoLabel, "Find and fix vulnerabilities in your application code in real time"); 
             // 
             // ossInfoLabel
             // 
@@ -334,8 +340,8 @@
             // userExperienceGroupBox
             // 
             this.userExperienceGroupBox.Controls.Add(this.usageAnalyticsCheckBox);
-            this.userExperienceGroupBox.Location = new System.Drawing.Point(20, 673);
-            this.userExperienceGroupBox.Margin = new System.Windows.Forms.Padding(4, 4, 4, 4);
+            this.userExperienceGroupBox.Location = new System.Drawing.Point(20, 740);
+            this.userExperienceGroupBox.Margin = new System.Windows.Forms.Padding(4);
             this.userExperienceGroupBox.Name = "userExperienceGroupBox";
             this.userExperienceGroupBox.Padding = new System.Windows.Forms.Padding(16, 15, 16, 15);
             this.userExperienceGroupBox.Size = new System.Drawing.Size(1550, 115);
@@ -358,6 +364,25 @@
             this.snykCodeQualityInfoToolTip.IsBalloon = true;
             this.snykCodeQualityInfoToolTip.ShowAlways = true;
             // 
+            // webBrowser1
+            // 
+            this.orgInfoWebBrowser.Location = new System.Drawing.Point(200, 280);
+            this.orgInfoWebBrowser.MinimumSize = new System.Drawing.Size(20, 20);
+            this.orgInfoWebBrowser.Name = "orgInfoWebBrowser";
+            this.orgInfoWebBrowser.Size = new System.Drawing.Size(836, 130);
+            this.orgInfoWebBrowser.TabIndex = 9;
+            this.orgInfoWebBrowser.ScrollBarsEnabled = false;
+            this.orgInfoWebBrowser.Anchor = (AnchorStyles.Bottom | AnchorStyles.Left | AnchorStyles.Right);
+            this.orgInfoWebBrowser.DocumentText = @"<html style='font-size:0.75em; background-color: #f0f0f0;'><p>Specify an organization slug name to run tests for that organization.
+                                                It must match the URL slug as displayed in the URL of your org in the Snyk UI: <br/><code>https://app.snyk.io/org/<b>[orgslugname]</b></code><br/><br/>
+                                                <a href='https://docs.snyk.io/ide-tools/visual-studio-extension#organization-setting'>Learn more about organization</a></p></html>";
+            this.orgInfoWebBrowser.Navigating += new WebBrowserNavigatingEventHandler((sender, eventArgs) =>
+            {
+                eventArgs.Cancel = true;
+
+                Process.Start(eventArgs.Url.ToString());
+            });
+            // 
             // SnykGeneralSettingsUserControl
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(12F, 25F);
@@ -365,11 +390,10 @@
             this.Controls.Add(this.userExperienceGroupBox);
             this.Controls.Add(this.productSelectionGroupBox);
             this.Controls.Add(this.generalSettingsGroupBox);
-            this.Margin = new System.Windows.Forms.Padding(4, 4, 4, 4);
+            this.Margin = new System.Windows.Forms.Padding(4);
             this.MinimumSize = new System.Drawing.Size(1590, 1442);
             this.Name = "SnykGeneralSettingsUserControl";
-            this.Size = new System.Drawing.Size(1590, 1442);
-            this.Load += new System.EventHandler(this.SnykGeneralSettingsUserControl_Load);
+            this.Size = new System.Drawing.Size(1590, 1442);            
             ((System.ComponentModel.ISupportInitialize)(this.errorProvider)).EndInit();
             this.generalSettingsGroupBox.ResumeLayout(false);
             this.generalSettingsGroupBox.PerformLayout();
@@ -409,5 +433,6 @@
         private System.Windows.Forms.ToolTip snykCodeSecurityInfoToolTip;
         private System.Windows.Forms.Label snykCodeQualityInfoLabel;
         private System.Windows.Forms.ToolTip snykCodeQualityInfoToolTip;
+        private System.Windows.Forms.WebBrowser orgInfoWebBrowser;
     }
 }

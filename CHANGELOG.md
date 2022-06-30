@@ -1,5 +1,10 @@
 # Snyk Changelog
 
+## [1.1.23]
+
+### Added
+ - Added organization description information.
+
 ## [1.1.22]
 
 ### Fixed
