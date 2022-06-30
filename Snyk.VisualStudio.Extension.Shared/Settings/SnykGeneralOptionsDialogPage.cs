@@ -67,7 +67,7 @@
                 }
 
                 // When changing the API endpoint, the API token is invalidated
-                this.apiToken = String.Empty;
+                this.apiToken = string.Empty;
                 var cli = this.ServiceProvider?.NewCli();
                 cli?.UnsetApiToken(); // This setter can be called before initialization, so ServiceProvider can be null
 
