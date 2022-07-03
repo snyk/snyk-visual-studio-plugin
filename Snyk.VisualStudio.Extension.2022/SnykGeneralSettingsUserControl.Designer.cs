@@ -50,8 +50,7 @@ namespace Snyk.VisualStudio.Extension.Shared.Settings
             this.codeQualityEnabledCheckBox = new System.Windows.Forms.CheckBox();
             this.generalSettingsGroupBox = new System.Windows.Forms.GroupBox();
             this.OrganizationInfoLink = new System.Windows.Forms.LinkLabel();
-            this.label2 = new System.Windows.Forms.Label();
-            this.label1 = new System.Windows.Forms.Label();
+            this.OrgDescriptionText = new System.Windows.Forms.Label();
             this.productSelectionGroupBox = new System.Windows.Forms.GroupBox();
             this.snykCodeQualityInfoLabel = new System.Windows.Forms.Label();
             this.snykCodeSecurityInfoLabel = new System.Windows.Forms.Label();
@@ -224,8 +223,7 @@ namespace Snyk.VisualStudio.Extension.Shared.Settings
             // generalSettingsGroupBox
             // 
             this.generalSettingsGroupBox.Controls.Add(this.OrganizationInfoLink);
-            this.generalSettingsGroupBox.Controls.Add(this.label2);
-            this.generalSettingsGroupBox.Controls.Add(this.label1);
+            this.generalSettingsGroupBox.Controls.Add(this.OrgDescriptionText);
             this.generalSettingsGroupBox.Controls.Add(this.tokenLabel);
             this.generalSettingsGroupBox.Controls.Add(this.tokenTextBox);
             this.generalSettingsGroupBox.Controls.Add(this.authProgressBar);
@@ -255,25 +253,16 @@ namespace Snyk.VisualStudio.Extension.Shared.Settings
             this.OrganizationInfoLink.Text = "Learn more about organization";
             this.OrganizationInfoLink.LinkClicked += new System.Windows.Forms.LinkLabelLinkClickedEventHandler(this.OrganizationInfoLink_LinkClicked);
             // 
-            // label2
+            // OrgDescriptionText
             // 
-            this.label2.AutoSize = true;
-            this.label2.Location = new System.Drawing.Point(108, 156);
-            this.label2.Name = "label2";
-            this.label2.Size = new System.Drawing.Size(376, 39);
-            this.label2.TabIndex = 10;
-            this.label2.Text = "Specify an organization slug name to run tests for that organization.\r\nIt must ma" +
+            this.OrgDescriptionText.AutoSize = true;
+            this.OrgDescriptionText.Location = new System.Drawing.Point(108, 156);
+            this.OrgDescriptionText.Name = "OrgDescriptionText";
+            this.OrgDescriptionText.Size = new System.Drawing.Size(376, 39);
+            this.OrgDescriptionText.TabIndex = 10;
+            this.OrgDescriptionText.Text = "Specify an organization slug name to run tests for that organization.\r\nIt must ma" +
     "tch the URL slug as displayed in the URL of your org in the Snyk UI:\r\nhttps://ap" +
     "p.snyk.io/org/[orgslugname]";
-            // 
-            // label1
-            // 
-            this.label1.AutoSize = true;
-            this.label1.Location = new System.Drawing.Point(2, 15);
-            this.label1.Name = "label1";
-            this.label1.Size = new System.Drawing.Size(35, 13);
-            this.label1.TabIndex = 9;
-            this.label1.Text = "label1";
             // 
             // productSelectionGroupBox
             // 
@@ -448,7 +437,6 @@ namespace Snyk.VisualStudio.Extension.Shared.Settings
         private System.Windows.Forms.Label snykCodeQualityInfoLabel;
         private System.Windows.Forms.ToolTip snykCodeQualityInfoToolTip;
         private LinkLabel OrganizationInfoLink;
-        private Label label2;
-        private Label label1;
+        private Label OrgDescriptionText;
     }
 }
