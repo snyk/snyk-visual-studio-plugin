@@ -14,19 +14,19 @@
 	[IdeSettings(MinVersion = VisualStudioVersion.VS2019, MaxVersion = VisualStudioVersion.VS2019)]
 #endif
 
-	public class ExtensionStartupTests
-	{
+    public class ExtensionStartupTests
+    {
         private const int testTimeoutInSeconds = 60;
         private readonly ITestOutputHelper output;
 
-		public ExtensionStartupTests(ITestOutputHelper output)
-		{
-			this.output = output;
-		}
+        public ExtensionStartupTests(ITestOutputHelper output)
+        {
+            this.output = output;
+        }
 
-		[Trait("integration", "true")]
-		[IdeFact]
-		public async Task OpenToolWindow_ExtensionIsLoaded()
+        [Trait("integration", "true")]
+        [IdeFact]
+        public async Task OpenToolWindow_ExtensionIsLoaded()
         {
             await Test().WithTimeout(TimeSpan.FromSeconds(testTimeoutInSeconds));
 
@@ -66,5 +66,5 @@
                 Assert.True(snykVsPackage.IsInitialized, "Snyk package was not initialized");
             }
         }
-	}
+    }
 }
