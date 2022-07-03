@@ -48,12 +48,6 @@
   </PropertyGroup>
   <ItemGroup>
     <Compile Include="Properties\AssemblyInfo.cs" />
-    <Compile Include="SnykGeneralSettingsUserControl.cs">
-      <SubType>UserControl</SubType>
-    </Compile>
-    <Compile Include="SnykGeneralSettingsUserControl.Designer.cs">
-      <DependentUpon>SnykGeneralSettingsUserControl.cs</DependentUpon>
-    </Compile>
   </ItemGroup>
   <ItemGroup>
     <None Include="source.extension.vsixmanifest">
@@ -124,11 +118,6 @@
       <Project>{7912ad6d-c154-4504-9ab3-8767d3c46e89}</Project>
       <Name>Snyk.Common</Name>
     </ProjectReference>
-  </ItemGroup>
-  <ItemGroup>
-    <EmbeddedResource Include="SnykGeneralSettingsUserControl.resx">
-      <DependentUpon>SnykGeneralSettingsUserControl.cs</DependentUpon>
-    </EmbeddedResource>
   </ItemGroup>
   <Import Project="..\Snyk.VisualStudio.Extension.Shared\Snyk.VisualStudio.Extension.Shared.projitems" Label="Shared" />
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
