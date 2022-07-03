@@ -57,7 +57,7 @@
             this.InitializeApiToken();
             this.UpdateViewFromOptionsDialog();
             this.OptionsDialogPage.SettingsChanged += this.OptionsDialogPageOnSettingsChanged;
-            this.Load += new EventHandler(this.SnykGeneralSettingsUserControl_Load);
+            this.Load += this.SnykGeneralSettingsUserControl_Load;
 
             logger.Information("Leave Initialize method");
         }
