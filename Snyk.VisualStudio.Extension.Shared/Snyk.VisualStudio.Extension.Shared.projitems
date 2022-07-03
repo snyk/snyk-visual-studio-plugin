@@ -137,13 +137,6 @@
       <SubType>Component</SubType>
       <CopyToOutputDirectory>Never</CopyToOutputDirectory>
     </Compile>
-    <Compile Include="$(MSBuildThisFileDirectory)Settings\SnykGeneralSettingsUserControl.cs">
-      <SubType>UserControl</SubType>
-      <CopyToOutputDirectory>Never</CopyToOutputDirectory>
-    </Compile>
-    <Compile Include="$(MSBuildThisFileDirectory)Settings\SnykGeneralSettingsUserControl.Designer.cs">
-      <DependentUpon>SnykGeneralSettingsUserControl.cs</DependentUpon>
-    </Compile>
     <Compile Include="$(MSBuildThisFileDirectory)Settings\SnykSolutionOptionsDialogPage.cs">
       <SubType>Component</SubType>
       <CopyToOutputDirectory>Never</CopyToOutputDirectory>
@@ -535,9 +528,6 @@
     <EmbeddedResource Include="$(MSBuildThisFileDirectory)SnykIcons.resx">
       <LastGenOutput>SnykIcons.Designer.cs</LastGenOutput>
       <Generator>ResXFileCodeGenerator</Generator>
-    </EmbeddedResource>
-    <EmbeddedResource Include="$(MSBuildThisFileDirectory)Settings\SnykGeneralSettingsUserControl.resx">
-      <DependentUpon>SnykGeneralSettingsUserControl.cs</DependentUpon>
     </EmbeddedResource>
     <EmbeddedResource Include="$(MSBuildThisFileDirectory)Settings\SnykSolutionOptionsUserControl.resx">
       <DependentUpon>SnykSolutionOptionsUserControl.cs</DependentUpon>
