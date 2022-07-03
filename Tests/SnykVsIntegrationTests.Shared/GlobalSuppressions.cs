@@ -7,6 +7,6 @@ using System.Diagnostics.CodeAnalysis;
 
 [assembly: SuppressMessage("Style",
 	"VSTHRD200:Use \"Async\" suffix for async methods",
-	Justification = "<Pending>",
+	Justification = "Unnecessary for tests",
 	Scope = "namespaceanddescendants",
 	Target = "SnykVsIntegrationTests")]
