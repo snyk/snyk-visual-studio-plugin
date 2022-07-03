@@ -37,6 +37,12 @@
     <Compile Include="$(MSBuildThisFileDirectory)Service\IOssService.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Service\OssScanException.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Service\OssService.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Settings\SnykGeneralSettingsUserControl.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="$(MSBuildThisFileDirectory)Settings\SnykGeneralSettingsUserControl.Designer.cs">
+      <DependentUpon>SnykGeneralSettingsUserControl.cs</DependentUpon>
+    </Compile>
     <Compile Include="$(MSBuildThisFileDirectory)SnykIcons.Designer.cs">
       <DependentUpon>SnykIcons.resx</DependentUpon>
       <DesignTime>True</DesignTime>
@@ -525,6 +531,9 @@
     <Content Include="$(MSBuildThisFileDirectory)Resources\StatusInformationNoColor.png">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>
+    <EmbeddedResource Include="$(MSBuildThisFileDirectory)Settings\SnykGeneralSettingsUserControl.resx">
+      <DependentUpon>SnykGeneralSettingsUserControl.cs</DependentUpon>
+    </EmbeddedResource>
     <EmbeddedResource Include="$(MSBuildThisFileDirectory)SnykIcons.resx">
       <LastGenOutput>SnykIcons.Designer.cs</LastGenOutput>
       <Generator>ResXFileCodeGenerator</Generator>
