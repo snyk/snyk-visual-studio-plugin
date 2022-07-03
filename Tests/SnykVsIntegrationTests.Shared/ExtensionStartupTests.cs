@@ -29,7 +29,6 @@
 		public async Task OpenToolWindow_ExtensionIsLoaded()
 		{
 			// Arrange
-			const int waitAfterOpen = 10;
 			this.output.WriteLine("Extension loading test started");
 			this.output.WriteLine("Switching to UI thread");
 			await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
@@ -46,12 +45,9 @@
 				0,
 				null);
 
-			// It's necessary to wait here because when the test finishes too fast, the "Xunit.Instances.VisuaStudio (...)"
-			// pseudo-test will keep running after VS has already been closed, leading to a VS exp instance being open
-			// after the test finished.
-			this.output.WriteLine($"Waiting {waitAfterOpen} second");
-			await Task.Delay(TimeSpan.FromSeconds(waitAfterOpen));
-			this.output.WriteLine("Switch to background thread");
+            this.output.WriteLine("Asynchronously waiting for package to be initialized...");
+			await SnykVSPackage.PackageInitializedAwaiter;
+			this.output.WriteLine("Package initialized, switching to background thread");
 			await TaskScheduler.Default;
 			
 			this.output.WriteLine("Loading Snyk package");

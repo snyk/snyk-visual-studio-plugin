@@ -54,6 +54,8 @@
 
         private static readonly ILogger Logger = LogManager.ForContext<SnykVSPackage>();
 
+        private static TaskCompletionSource<bool> initializationTaskCompletionSource = new TaskCompletionSource<bool>();
+
         private static SnykVSPackage instance;
 
         private SnykGeneralOptionsDialogPage generalOptionsDialogPage;
@@ -73,6 +75,11 @@
         /// Gets a value indicating whether ServiceProvider.
         /// </summary>
         public static ISnykServiceProvider ServiceProvider => instance.serviceProvider;
+
+        /// <summary>
+        /// Gets a task that completes once the Snyk extension has been initialized.
+        /// </summary>
+        public static Task PackageInitializedAwaiter => initializationTaskCompletionSource.Task;
 
         /// <summary>
         /// Gets a value indicating whether ToolWindow Control.
@@ -193,7 +200,10 @@
                 Logger.Information("Before call toolWindowControl.InitializeEventListeners() method.");
                 this.toolWindowControl.InitializeEventListeners(this.serviceProvider);
                 this.toolWindowControl.Initialize(this.serviceProvider);
+
+                // Notify package has been initialized
                 this.IsInitialized = true;
+                initializationTaskCompletionSource.SetResult(true);
             }
             catch (Exception ex)
             {
