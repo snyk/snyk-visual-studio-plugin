@@ -66,6 +66,11 @@
                     return;
                 }
 
+                // When changing the API endpoint, the API token is invalidated
+                this.apiToken = string.Empty;
+                var cli = this.ServiceProvider?.NewCli();
+                cli?.UnsetApiToken(); // This setter can be called before initialization, so ServiceProvider can be null
+
                 this.customEndpoint = value;
                 this.FireSettingsChangedEvent();
             }

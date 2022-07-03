@@ -197,7 +197,7 @@
         /// <inheritdoc/>
         public void Clean()
         {
-            this.fileProvider.ClearHistory();
+            this.fileProvider?.ClearHistory();
 
             this.ServiceProvider.SnykCodeService.Clean();
 

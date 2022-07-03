@@ -1,5 +1,13 @@
 # Snyk Changelog
 
+## [1.1.23]
+
+### Added
+ - Organization description information in settings.
+ 
+### Fixed
+- Changing custom endpoint settings leads to authentication errors.
+
 ## [1.1.22]
 
 ### Fixed
