@@ -590,5 +590,10 @@
             this.OrganizationInfoLink.LinkVisited = true;
             Process.Start("https://docs.snyk.io/ide-tools/visual-studio-extension#organization-setting");
         }
+
+        private void CliAutoUpdate_CheckedChanged(object sender, EventArgs e)
+        {
+            this.OptionsDialogPage.CliAutoUpdate = this.CliAutoUpdate.Checked;
+        }
     }
 }

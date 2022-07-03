@@ -678,13 +678,17 @@
 
         private async Task DownloadAsync(CliDownloadFinishedCallback downloadFinishedCallback, ISnykProgressWorker progressWorker)
         {
+            var userSettingsStorageService = this.serviceProvider.UserStorageSettingsService;
+            if (!userSettingsStorageService.CliAutoUpdate)
+            {
+                Logger.Information("CLI auto-update is disabled, CLI download is skipped.");
+                return;
+            }
+
             this.isCliDownloading = true;
+            string currentCliVersion = userSettingsStorageService.GetCurrentCliVersion();
 
-            var userStorageService = this.serviceProvider.UserStorageSettingsService;
-
-            string currentCliVersion = userStorageService.GetCurrentCliVersion();
-
-            DateTime lastCliReleaseDate = userStorageService.GetCliReleaseLastCheckDate();
+            DateTime lastCliReleaseDate = userSettingsStorageService.GetCliReleaseLastCheckDate();
 
             var cliDownloader = new SnykCliDownloader(currentCliVersion);
 
@@ -695,15 +699,15 @@
                 downloadFinishedCallbacks.Add(downloadFinishedCallback);
             }
 
-            downloadFinishedCallbacks.Add(new CliDownloadFinishedCallback(() =>
+            downloadFinishedCallbacks.Add(() =>
             {
-                userStorageService.SaveCurrentCliVersion(cliDownloader.GetLatestReleaseInfo().Name);
-                userStorageService.SaveCliReleaseLastCheckDate(DateTime.UtcNow);
+                userSettingsStorageService.SaveCurrentCliVersion(cliDownloader.GetLatestReleaseInfo().Name);
+                userSettingsStorageService.SaveCliReleaseLastCheckDate(DateTime.UtcNow);
 
                 this.isCliDownloading = false;
 
                 this.DisposeCancellationTokenSource(this.downloadCliTokenSource);
-            }));
+            });
 
             await cliDownloader.AutoUpdateCliAsync(
                 progressWorker,

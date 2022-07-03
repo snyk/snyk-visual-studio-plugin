@@ -64,6 +64,11 @@
         bool UsageAnalyticsEnabled { get; set; }
 
         /// <summary>
+        /// Gets or sets a value indicating whether the CLI should be automatically updated.
+        /// </summary>
+        bool CliAutoUpdate { get; set; }
+
+        /// <summary>
         /// Gets a value indicating whether additional options.
         /// Get this data using <see cref="SnykUserStorageSettingsService"/>.
         /// </summary>

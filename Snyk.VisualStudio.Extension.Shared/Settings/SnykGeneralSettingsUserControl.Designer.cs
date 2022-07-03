@@ -49,6 +49,8 @@ namespace Snyk.VisualStudio.Extension.Shared.Settings
             this.codeSecurityEnabledCheckBox = new System.Windows.Forms.CheckBox();
             this.codeQualityEnabledCheckBox = new System.Windows.Forms.CheckBox();
             this.generalSettingsGroupBox = new System.Windows.Forms.GroupBox();
+            this.CliAutoUpdate = new System.Windows.Forms.CheckBox();
+            this.label1 = new System.Windows.Forms.Label();
             this.OrganizationInfoLink = new System.Windows.Forms.LinkLabel();
             this.OrgDescriptionText = new System.Windows.Forms.Label();
             this.productSelectionGroupBox = new System.Windows.Forms.GroupBox();
@@ -222,6 +224,8 @@ namespace Snyk.VisualStudio.Extension.Shared.Settings
             // 
             // generalSettingsGroupBox
             // 
+            this.generalSettingsGroupBox.Controls.Add(this.CliAutoUpdate);
+            this.generalSettingsGroupBox.Controls.Add(this.label1);
             this.generalSettingsGroupBox.Controls.Add(this.OrganizationInfoLink);
             this.generalSettingsGroupBox.Controls.Add(this.OrgDescriptionText);
             this.generalSettingsGroupBox.Controls.Add(this.tokenLabel);
@@ -237,10 +241,31 @@ namespace Snyk.VisualStudio.Extension.Shared.Settings
             this.generalSettingsGroupBox.Margin = new System.Windows.Forms.Padding(8);
             this.generalSettingsGroupBox.Name = "generalSettingsGroupBox";
             this.generalSettingsGroupBox.Padding = new System.Windows.Forms.Padding(2);
-            this.generalSettingsGroupBox.Size = new System.Drawing.Size(775, 229);
+            this.generalSettingsGroupBox.Size = new System.Drawing.Size(775, 276);
             this.generalSettingsGroupBox.TabIndex = 17;
             this.generalSettingsGroupBox.TabStop = false;
             this.generalSettingsGroupBox.Text = "General Settings";
+            // 
+            // CliAutoUpdate
+            // 
+            this.CliAutoUpdate.AutoSize = true;
+            this.CliAutoUpdate.Location = new System.Drawing.Point(100, 240);
+            this.CliAutoUpdate.Margin = new System.Windows.Forms.Padding(2);
+            this.CliAutoUpdate.Name = "CliAutoUpdate";
+            this.CliAutoUpdate.Size = new System.Drawing.Size(15, 14);
+            this.CliAutoUpdate.TabIndex = 13;
+            this.CliAutoUpdate.UseVisualStyleBackColor = true;
+            this.CliAutoUpdate.CheckedChanged += new System.EventHandler(this.CliAutoUpdate_CheckedChanged);
+            // 
+            // label1
+            // 
+            this.label1.AutoSize = true;
+            this.label1.Location = new System.Drawing.Point(4, 240);
+            this.label1.Margin = new System.Windows.Forms.Padding(2, 0, 2, 0);
+            this.label1.Name = "label1";
+            this.label1.Size = new System.Drawing.Size(86, 13);
+            this.label1.TabIndex = 12;
+            this.label1.Text = "CLI auto-update:";
             // 
             // OrganizationInfoLink
             // 
@@ -275,7 +300,7 @@ namespace Snyk.VisualStudio.Extension.Shared.Settings
             this.productSelectionGroupBox.Controls.Add(this.codeQualityEnabledCheckBox);
             this.productSelectionGroupBox.Controls.Add(this.ossEnabledCheckBox);
             this.productSelectionGroupBox.Controls.Add(this.codeSecurityEnabledCheckBox);
-            this.productSelectionGroupBox.Location = new System.Drawing.Point(10, 247);
+            this.productSelectionGroupBox.Location = new System.Drawing.Point(10, 296);
             this.productSelectionGroupBox.Margin = new System.Windows.Forms.Padding(2);
             this.productSelectionGroupBox.Name = "productSelectionGroupBox";
             this.productSelectionGroupBox.Padding = new System.Windows.Forms.Padding(8);
@@ -362,7 +387,7 @@ namespace Snyk.VisualStudio.Extension.Shared.Settings
             // userExperienceGroupBox
             // 
             this.userExperienceGroupBox.Controls.Add(this.usageAnalyticsCheckBox);
-            this.userExperienceGroupBox.Location = new System.Drawing.Point(10, 385);
+            this.userExperienceGroupBox.Location = new System.Drawing.Point(10, 434);
             this.userExperienceGroupBox.Margin = new System.Windows.Forms.Padding(2);
             this.userExperienceGroupBox.Name = "userExperienceGroupBox";
             this.userExperienceGroupBox.Padding = new System.Windows.Forms.Padding(8);
@@ -438,5 +463,7 @@ namespace Snyk.VisualStudio.Extension.Shared.Settings
         private System.Windows.Forms.ToolTip snykCodeQualityInfoToolTip;
         private LinkLabel OrganizationInfoLink;
         private Label OrgDescriptionText;
+        private Label label1;
+        private CheckBox CliAutoUpdate;
     }
 }

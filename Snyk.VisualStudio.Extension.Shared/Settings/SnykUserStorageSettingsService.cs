@@ -29,6 +29,17 @@
             this.settingsLoader = new SnykSettingsLoader(settingsPath);
         }
 
+        public bool CliAutoUpdate
+        {
+            get => this.LoadSettings().CliAutoUpdateEnabled;
+            set
+            {
+                var settings = this.LoadSettings();
+                settings.CliAutoUpdateEnabled = value;
+                this.settingsLoader.Save(settings);
+            }
+        }
+
         /// <summary>
         /// Get CLI additional options string.
         /// </summary>

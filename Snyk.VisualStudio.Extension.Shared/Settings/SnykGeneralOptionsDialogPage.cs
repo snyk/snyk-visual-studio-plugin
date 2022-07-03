@@ -162,6 +162,18 @@
             set => this.userStorageSettingsService?.SaveUsageAnalyticsEnabled(value);
         }
 
+        public bool CliAutoUpdate
+        {
+            get => this.userStorageSettingsService.CliAutoUpdate;
+            set
+            {
+                if (this.userStorageSettingsService != null)
+                {
+                    this.userStorageSettingsService.CliAutoUpdate = value;
+                }
+            }
+        }
+
         /// <inheritdoc/>
         public string AnonymousId
         {
