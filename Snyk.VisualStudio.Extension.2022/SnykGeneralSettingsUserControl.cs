@@ -1,6 +1,7 @@
 ﻿namespace Snyk.VisualStudio.Extension.Shared.Settings
 {
     using System;
+    using System.Diagnostics;
     using System.Diagnostics.CodeAnalysis;
     using System.Threading.Tasks;
     using System.Windows.Forms;
@@ -582,6 +583,12 @@
         private void CheckAgainLinkLabel_LinkClicked(object sender, LinkLabelLinkClickedEventArgs e)
         {
             _ = this.StartSastEnablementCheckLoopAsync();
+        }
+
+        private void OrganizationInfoLink_LinkClicked(object sender, LinkLabelLinkClickedEventArgs e)
+        {
+            this.OrganizationInfoLink.LinkVisited = true;
+            Process.Start("https://docs.snyk.io/ide-tools/visual-studio-extension#organization-setting");
         }
     }
 }
