@@ -376,12 +376,12 @@ namespace Snyk.VisualStudio.Extension.Shared.Settings
             this.orgInfoWebBrowser.DocumentText = @"<html style='font-size:0.75em; background-color: #f0f0f0;'><p>Specify an organization slug name to run tests for that organization.
                                                 It must match the URL slug as displayed in the URL of your org in the Snyk UI: <br/><code>https://app.snyk.io/org/<b>[orgslugname]</b></code><br/><br/>
                                                 <a href='https://docs.snyk.io/ide-tools/visual-studio-extension#organization-setting'>Learn more about organization</a></p></html>";
-            this.orgInfoWebBrowser.Navigating += new WebBrowserNavigatingEventHandler((sender, eventArgs) =>
-            {
-                eventArgs.Cancel = true;
+            //this.orgInfoWebBrowser.Navigating += new WebBrowserNavigatingEventHandler((sender, eventArgs) =>
+            //{
+            //    eventArgs.Cancel = true;
 
-                Process.Start(eventArgs.Url.ToString());
-            });
+            //    Process.Start(eventArgs.Url.ToString());
+            //});
             // 
             // SnykGeneralSettingsUserControl
             // 
