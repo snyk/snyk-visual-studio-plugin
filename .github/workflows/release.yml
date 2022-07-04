@@ -13,8 +13,50 @@ env:
   DEFAULT_BRANCH: main
 
 jobs:
-  build:
-    runs-on: windows-latest
+  build-and-test-vs19:
+    runs-on: windows-2019
+    defaults:
+      run:
+        working-directory: ${{ github.workspace }}
+    environment: snyk-msbuild-envs
+    env:
+      TEST_API_TOKEN: ${{ secrets.TEST_API_TOKEN }}
+      VsixManifestPath: .\Snyk.VisualStudio.Extension\source.extension.vsixmanifest
+
+    steps:
+    - uses: actions/checkout@v2
+      with:
+        fetch-depth: 0
+
+    - uses: actions/cache@v2
+      with:
+        path: ~/.nuget/packages
+        key: ${{ runner.os }}-nuget-${{ hashFiles('**/packages.config') }}
+        restore-keys: |
+          ${{ runner.os }}-nuget-
+
+    - name: Add MSBuild to PATH
+      uses: microsoft/setup-msbuild@v1
+      with:
+        vs-version: '[16.0, 17.0)'
+
+    - name: Setup VSTest
+      uses: darenm/Setup-VSTest@v1
+
+    - name: Restore NuGet packages
+      run: nuget restore ${{env.SOLUTION_FILE_PATH}}
+    
+    - name: Build
+      run: |
+        msbuild ${{env.SOLUTION_FILE_PATH}} /p:configuration=Release /p:DeployExtension=false /p:ZipPackageCompressionLevel=normal /v:m
+      shell: powershell
+
+    - name: Tests
+      run: vstest.console.exe **\*.Tests.dll
+
+  build-test-and-release-vs22:
+    needs: build-and-test-vs19
+    runs-on: windows-2022
     defaults:
       run:
         working-directory: ${{ github.workspace }}
@@ -47,7 +89,7 @@ jobs:
     - name: Add MSBuild to PATH
       uses: microsoft/setup-msbuild@v1
       with:
-        vs-version: '[14.0, ]'
+        vs-version: '[17.0, )'
 
     - name: Setup VSTest
       uses: darenm/Setup-VSTest@v1

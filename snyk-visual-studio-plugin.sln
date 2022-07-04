@@ -12,6 +12,7 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution 
 		CHANGELOG.md = CHANGELOG.md
 		CONTRIBUTING.md = CONTRIBUTING.md
 		Contributor-Agreement.md = Contributor-Agreement.md
+		nuget.config = nuget.config
 		README.md = README.md
 	EndProjectSection
 EndProject
@@ -49,6 +50,14 @@ EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Analytics", "Analytics", "{A20AC810-EB68-4C27-951E-B2C29A0E8960}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Itly", "Snyk.Analytics.Itly\Itly\Itly.csproj", "{AD9ECE9E-DEF1-4976-998F-D124737994E8}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Tests", "Tests", "{ADBE502B-B340-41A1-AC16-41E00AE86D55}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Integration.Tests", "Tests\Integration.Tests\Integration.Tests.csproj", "{10CB14D3-CB55-461C-B100-70E803198A7D}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Integration.Pre22.Tests", "Tests\Integration.Pre22.Tests\Integration.Pre22.Tests.csproj", "{5E4EBF74-FD9D-4708-9558-BBFF1221D2F8}"
+EndProject
+Project("{D954291E-2A0B-460D-934E-DC6B0785DB48}") = "Integration.Tests.Shared", "Tests\Integration.Tests.Shared\Integration.Tests.Shared.shproj", "{C2E8C32B-BD9F-4927-B6EA-BF6E9B40CB6C}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -92,6 +101,14 @@ Global
 		{AD9ECE9E-DEF1-4976-998F-D124737994E8}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{AD9ECE9E-DEF1-4976-998F-D124737994E8}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{AD9ECE9E-DEF1-4976-998F-D124737994E8}.Release|Any CPU.Build.0 = Release|Any CPU
+		{10CB14D3-CB55-461C-B100-70E803198A7D}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{10CB14D3-CB55-461C-B100-70E803198A7D}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{10CB14D3-CB55-461C-B100-70E803198A7D}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{10CB14D3-CB55-461C-B100-70E803198A7D}.Release|Any CPU.Build.0 = Release|Any CPU
+		{5E4EBF74-FD9D-4708-9558-BBFF1221D2F8}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{5E4EBF74-FD9D-4708-9558-BBFF1221D2F8}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{5E4EBF74-FD9D-4708-9558-BBFF1221D2F8}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{5E4EBF74-FD9D-4708-9558-BBFF1221D2F8}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -100,13 +117,19 @@ Global
 		{99BED51B-0DEF-4CF8-9029-CFB41C24B43F} = {9AAC9A90-42B0-464D-B4D5-4E30E148954C}
 		{3A46A46D-2ED2-46EE-A005-77BC30336686} = {A20AC810-EB68-4C27-951E-B2C29A0E8960}
 		{AD9ECE9E-DEF1-4976-998F-D124737994E8} = {A20AC810-EB68-4C27-951E-B2C29A0E8960}
+		{10CB14D3-CB55-461C-B100-70E803198A7D} = {ADBE502B-B340-41A1-AC16-41E00AE86D55}
+		{5E4EBF74-FD9D-4708-9558-BBFF1221D2F8} = {ADBE502B-B340-41A1-AC16-41E00AE86D55}
+		{C2E8C32B-BD9F-4927-B6EA-BF6E9B40CB6C} = {ADBE502B-B340-41A1-AC16-41E00AE86D55}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {A0587AA6-C5A0-421C-B01F-ED9D91CF8AB6}
 	EndGlobalSection
 	GlobalSection(SharedMSBuildProjectFiles) = preSolution
+		Tests\Integration.Tests.Shared\SnykVsIntegrationTests.Shared.projitems*{10cb14d3-cb55-461c-b100-70e803198a7d}*SharedItemsImports = 4
+		Tests\Integration.Tests.Shared\SnykVsIntegrationTests.Shared.projitems*{5e4ebf74-fd9d-4708-9558-bbff1221d2f8}*SharedItemsImports = 4
 		Snyk.VisualStudio.Extension.Shared\Snyk.VisualStudio.Extension.Shared.projitems*{910098f4-ec69-40f2-8cf1-b2e86e30d2f8}*SharedItemsImports = 4
 		Snyk.VisualStudio.Extension.Shared\Snyk.VisualStudio.Extension.Shared.projitems*{ab050a12-200e-48ae-898d-cb5532151a66}*SharedItemsImports = 4
+		Tests\Integration.Tests.Shared\SnykVsIntegrationTests.Shared.projitems*{c2e8c32b-bd9f-4927-b6ea-bf6e9b40cb6c}*SharedItemsImports = 13
 		Snyk.VisualStudio.Extension.Shared\Snyk.VisualStudio.Extension.Shared.projitems*{ea4850be-70bf-4d93-ae23-aa55f2796c5e}*SharedItemsImports = 13
 	EndGlobalSection
 EndGlobal
