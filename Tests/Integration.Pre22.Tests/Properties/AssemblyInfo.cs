@@ -15,11 +15,11 @@ using Xunit.Harness;
 // General Information about an assembly is controlled through the following
 // set of attributes. Change these attribute values to modify the information
 // associated with an assembly.
-[assembly: AssemblyTitle("SnykVsIntegrationTests.Pre22")]
+[assembly: AssemblyTitle("Integration.Pre22.Tests")]
 [assembly: AssemblyDescription("")]
 [assembly: AssemblyConfiguration("")]
 [assembly: AssemblyCompany("")]
-[assembly: AssemblyProduct("SnykVsIntegrationTests.Pre22")]
+[assembly: AssemblyProduct("Integration.Pre22.Tests")]
 [assembly: AssemblyCopyright("Copyright ©  2022")]
 [assembly: AssemblyTrademark("")]
 [assembly: AssemblyCulture("")]

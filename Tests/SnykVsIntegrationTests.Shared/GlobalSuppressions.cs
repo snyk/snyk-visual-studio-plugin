@@ -9,4 +9,4 @@ using System.Diagnostics.CodeAnalysis;
 	"VSTHRD200:Use \"Async\" suffix for async methods",
 	Justification = "Unnecessary for tests",
 	Scope = "namespaceanddescendants",
-	Target = "SnykVsIntegrationTests")]
+	Target = "Integration.Tests.Shared")]

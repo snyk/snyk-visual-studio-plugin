@@ -6,7 +6,7 @@
     <SharedGUID>c2e8c32b-bd9f-4927-b6ea-bf6e9b40cb6c</SharedGUID>
   </PropertyGroup>
   <PropertyGroup Label="Configuration">
-    <Import_RootNamespace>SnykVsIntegrationTests.Shared</Import_RootNamespace>
+    <Import_RootNamespace>Integration.Tests.Shared</Import_RootNamespace>
   </PropertyGroup>
   <ItemGroup>
     <Compile Include="$(MSBuildThisFileDirectory)ExtensionStartupTests.cs" />

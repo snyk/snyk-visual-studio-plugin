@@ -1,4 +1,4 @@
-﻿namespace SnykVsIntegrationTests
+﻿namespace Integration.Tests.Shared
 {
 	using System;
 	using System.Threading.Tasks;
