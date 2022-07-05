@@ -1,5 +1,10 @@
 # Snyk Changelog
 
+## [1.1.24]
+
+### Changed
+ - Pre-VS2022 extension title in marketplace renamed to "Snyk Security - Code and Open Source Dependencies (VS 2015-2019)".
+
 ## [1.1.23]
 
 ### Added
