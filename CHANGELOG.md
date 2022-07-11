@@ -1,5 +1,10 @@
 # Snyk Changelog
 
+## [1.1.24]
+
+### Fixed
+ - Extension errors on VS2017.
+
 ## [1.1.23]
 
 ### Added
