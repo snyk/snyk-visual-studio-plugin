@@ -162,6 +162,7 @@
             set => this.userStorageSettingsService?.SaveUsageAnalyticsEnabled(value);
         }
 
+        /// <inheritdoc/>
         public bool CliAutoUpdate
         {
             get => this.userStorageSettingsService.CliAutoUpdate;

@@ -69,6 +69,11 @@
         bool CliAutoUpdate { get; set; }
 
         /// <summary>
+        /// Gets or sets the value of the CLI custom path. If empty, the default path from AppData would be used.
+        /// </summary>
+        string CliCustomPath { get; set; }
+
+        /// <summary>
         /// Gets a value indicating whether additional options.
         /// Get this data using <see cref="SnykUserStorageSettingsService"/>.
         /// </summary>

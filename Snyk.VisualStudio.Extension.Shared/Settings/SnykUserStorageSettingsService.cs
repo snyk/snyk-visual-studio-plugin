@@ -40,6 +40,17 @@
             }
         }
 
+        public string CliCustomPath
+        {
+            get => this.LoadSettings().CustomCliPath;
+            set
+            {
+                var settings = this.LoadSettings();
+                settings.CustomCliPath = value;
+                this.settingsLoader.Save(settings);
+            }
+        }
+
         /// <summary>
         /// Get CLI additional options string.
         /// </summary>

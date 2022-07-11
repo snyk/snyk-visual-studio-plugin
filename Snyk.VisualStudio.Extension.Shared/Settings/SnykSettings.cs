@@ -59,5 +59,10 @@
         /// Gets or sets a value indicating whether CLI auto update is enabled.
         /// </summary>
         public bool CliAutoUpdateEnabled { get; set; } = true;
+
+        /// <summary>
+        /// Gets or sets the value of the custom CLI path
+        /// </summary>
+        public string CustomCliPath { get; set; } = string.Empty;
     }
 }
