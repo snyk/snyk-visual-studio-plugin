@@ -142,4 +142,9 @@
     </Exec>
   </Target>  
   -->
+  <Target Name="IncludePackageReferenceDependencies" AfterTargets="GetVsixSourceItems">
+      <ItemGroup>
+          <VSIXSourceItem Include="@(ReferencePath)" />
+      </ItemGroup>
+  </Target>
 </Project>
