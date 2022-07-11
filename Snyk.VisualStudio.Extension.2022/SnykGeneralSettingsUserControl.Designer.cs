@@ -64,6 +64,8 @@ namespace Snyk.VisualStudio.Extension.Shared.Settings
             this.ossInfoToolTip = new System.Windows.Forms.ToolTip(this.components);
             this.snykCodeSecurityInfoToolTip = new System.Windows.Forms.ToolTip(this.components);
             this.snykCodeQualityInfoToolTip = new System.Windows.Forms.ToolTip(this.components);
+            this.CliCustomPathLabel = new System.Windows.Forms.Label();
+            this.CliCustomPathTextBox = new System.Windows.Forms.TextBox();
             ((System.ComponentModel.ISupportInitialize)(this.errorProvider)).BeginInit();
             this.generalSettingsGroupBox.SuspendLayout();
             this.productSelectionGroupBox.SuspendLayout();
@@ -224,6 +226,8 @@ namespace Snyk.VisualStudio.Extension.Shared.Settings
             // 
             // generalSettingsGroupBox
             // 
+            this.generalSettingsGroupBox.Controls.Add(this.CliCustomPathTextBox);
+            this.generalSettingsGroupBox.Controls.Add(this.CliCustomPathLabel);
             this.generalSettingsGroupBox.Controls.Add(this.CliAutoUpdate);
             this.generalSettingsGroupBox.Controls.Add(this.label1);
             this.generalSettingsGroupBox.Controls.Add(this.OrganizationInfoLink);
@@ -241,7 +245,7 @@ namespace Snyk.VisualStudio.Extension.Shared.Settings
             this.generalSettingsGroupBox.Margin = new System.Windows.Forms.Padding(8);
             this.generalSettingsGroupBox.Name = "generalSettingsGroupBox";
             this.generalSettingsGroupBox.Padding = new System.Windows.Forms.Padding(2);
-            this.generalSettingsGroupBox.Size = new System.Drawing.Size(775, 276);
+            this.generalSettingsGroupBox.Size = new System.Drawing.Size(775, 311);
             this.generalSettingsGroupBox.TabIndex = 17;
             this.generalSettingsGroupBox.TabStop = false;
             this.generalSettingsGroupBox.Text = "General Settings";
@@ -300,7 +304,7 @@ namespace Snyk.VisualStudio.Extension.Shared.Settings
             this.productSelectionGroupBox.Controls.Add(this.codeQualityEnabledCheckBox);
             this.productSelectionGroupBox.Controls.Add(this.ossEnabledCheckBox);
             this.productSelectionGroupBox.Controls.Add(this.codeSecurityEnabledCheckBox);
-            this.productSelectionGroupBox.Location = new System.Drawing.Point(10, 296);
+            this.productSelectionGroupBox.Location = new System.Drawing.Point(10, 331);
             this.productSelectionGroupBox.Margin = new System.Windows.Forms.Padding(2);
             this.productSelectionGroupBox.Name = "productSelectionGroupBox";
             this.productSelectionGroupBox.Padding = new System.Windows.Forms.Padding(8);
@@ -387,7 +391,7 @@ namespace Snyk.VisualStudio.Extension.Shared.Settings
             // userExperienceGroupBox
             // 
             this.userExperienceGroupBox.Controls.Add(this.usageAnalyticsCheckBox);
-            this.userExperienceGroupBox.Location = new System.Drawing.Point(10, 434);
+            this.userExperienceGroupBox.Location = new System.Drawing.Point(10, 469);
             this.userExperienceGroupBox.Margin = new System.Windows.Forms.Padding(2);
             this.userExperienceGroupBox.Name = "userExperienceGroupBox";
             this.userExperienceGroupBox.Padding = new System.Windows.Forms.Padding(8);
@@ -410,6 +414,24 @@ namespace Snyk.VisualStudio.Extension.Shared.Settings
             // 
             this.snykCodeQualityInfoToolTip.IsBalloon = true;
             this.snykCodeQualityInfoToolTip.ShowAlways = true;
+            // 
+            // CliCustomPathLabel
+            // 
+            this.CliCustomPathLabel.AutoSize = true;
+            this.CliCustomPathLabel.Location = new System.Drawing.Point(4, 271);
+            this.CliCustomPathLabel.Margin = new System.Windows.Forms.Padding(2, 0, 2, 0);
+            this.CliCustomPathLabel.Name = "CliCustomPathLabel";
+            this.CliCustomPathLabel.Size = new System.Drawing.Size(89, 13);
+            this.CliCustomPathLabel.TabIndex = 14;
+            this.CliCustomPathLabel.Text = "CLI Custom Path:";
+            // 
+            // CliCustomPathTextBox
+            // 
+            this.CliCustomPathTextBox.Location = new System.Drawing.Point(100, 271);
+            this.CliCustomPathTextBox.Margin = new System.Windows.Forms.Padding(2);
+            this.CliCustomPathTextBox.Name = "CliCustomPathTextBox";
+            this.CliCustomPathTextBox.Size = new System.Drawing.Size(420, 20);
+            this.CliCustomPathTextBox.TabIndex = 15;
             // 
             // SnykGeneralSettingsUserControl
             // 
@@ -465,5 +487,7 @@ namespace Snyk.VisualStudio.Extension.Shared.Settings
         private Label OrgDescriptionText;
         private Label label1;
         private CheckBox CliAutoUpdate;
+        private TextBox CliCustomPathTextBox;
+        private Label CliCustomPathLabel;
     }
 }
