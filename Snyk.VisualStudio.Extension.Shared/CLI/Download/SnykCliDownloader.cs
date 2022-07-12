@@ -291,6 +291,8 @@
             string cliFileDestinationPath,
             List<CliDownloadFinishedCallback> downloadFinishedCallbacks = null)
         {
+            const int bufferSize = 8192;
+
             using (var client = new HttpClient())
             {
                 client.Timeout = TimeSpan.FromMinutes(5);
@@ -301,13 +303,13 @@
 
                 string tempCliFile = Path.GetTempFileName();
 
-                using (var fileStream = new FileStream(tempCliFile, FileMode.Create, FileAccess.Write, FileShare.ReadWrite, 8192, true))
+                using (var fileStream = new FileStream(tempCliFile, FileMode.Create, FileAccess.Write, FileShare.ReadWrite, bufferSize, true))
                 {
                     using (Stream contentStream = await response.Content.ReadAsStreamAsync())
                     {
-                        var totalBytes = response.Content.Headers.ContentLength;
+                        var totalBytes = response.Content.Headers.ContentLength ?? long.MaxValue; // Avoid dividing by null when calculating progress
                         var totalRead = 0L;
-                        var buffer = new byte[8192];
+                        var buffer = new byte[bufferSize];
                         var isMoreToRead = true;
                         var lastProgressPercentage = 0;
 
