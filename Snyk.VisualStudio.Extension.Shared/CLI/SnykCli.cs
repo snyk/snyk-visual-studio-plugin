@@ -28,7 +28,11 @@
         /// <summary>
         /// Initializes a new instance of the <see cref="SnykCli"/> class.
         /// </summary>
-        public SnykCli() => this.ConsoleRunner = new SnykConsoleRunner();
+        public SnykCli(ISnykOptions options)
+        {
+            this.ConsoleRunner = new SnykConsoleRunner();
+            this.options = options;
+        }
 
         /// <summary>
         /// Gets or sets a value indicating whether <see cref="ISnykOptions"/> (settings).
@@ -39,7 +43,6 @@
             {
                 return this.options;
             }
-
             set
             {
                 this.options = value;
@@ -53,13 +56,21 @@
         /// Get Snyk CLI file path.
         /// </summary>
         /// <returns>CLI path string.</returns>
-        public static string GetSnykCliPath() => Path.Combine(SnykDirectory.GetSnykAppDataDirectoryPath(), CliFileName);
+        public static string GetSnykCliDefaultPath()
+        {
+            return Path.Combine(SnykDirectory.GetSnykAppDataDirectoryPath(), CliFileName);
+        }
 
         /// <summary>
-        /// Check is CLI file exists in $UserDirectory\.AppData\Snyk.
+        /// Check is CLI file exists.
         /// </summary>
+        /// <param name="customCliPath">Custom CLI path. If null or empty, the default path from AppData will be used.</param>
         /// <returns>True if CLI file exists.</returns>
-        public static bool IsCliExists() => File.Exists(GetSnykCliPath());
+        public static bool DoesCliExist(string customCliPath)
+        {
+            var path = string.IsNullOrEmpty(customCliPath) ? GetSnykCliDefaultPath() : customCliPath;
+            return File.Exists(path);
+        }
 
         /// <summary>
         /// Safely get Snyk API token from settings.
@@ -84,7 +95,7 @@
         }
 
         /// <inheritdoc/>
-        public void UnsetApiToken() => this.ConsoleRunner.Run(GetSnykCliPath(), "config unset api");
+        public void UnsetApiToken() => this.ConsoleRunner.Run(GetSnykCliDefaultPath(), "config unset api");
 
         /// <summary>
         /// Try get Snyk API token from snyk cli config or throw <see cref="InvalidTokenException"/>.
@@ -92,7 +103,7 @@
         /// <returns>API token string.</returns>
         public string GetApiTokenOrThrowException()
         {
-            string apiToken = this.ConsoleRunner.Run(GetSnykCliPath(), "config get api");
+            string apiToken = this.ConsoleRunner.Run(GetSnykCliDefaultPath(), "config get api");
 
             if (!Guid.IsValid(apiToken))
             {
@@ -120,7 +131,7 @@
                 environmentVariables.Add(ApiEnvironmentVariableName, this.Options.CustomEndpoint);
             }
 
-            return this.ConsoleRunner.Run(GetSnykCliPath(), string.Join(" ", args), environmentVariables);
+            return this.ConsoleRunner.Run(GetSnykCliDefaultPath(), string.Join(" ", args), environmentVariables);
         }
 
         /// <inheritdoc/>
@@ -128,7 +139,7 @@
         {
             Logger.Information("Path to scan {BasePath}", basePath);
 
-            var cliPath = GetSnykCliPath();
+            var cliPath = GetSnykCliDefaultPath();
 
             Logger.Information("CLI path is {CliPath}", cliPath);
 

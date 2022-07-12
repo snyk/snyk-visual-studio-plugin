@@ -432,6 +432,7 @@ namespace Snyk.VisualStudio.Extension.Shared.Settings
             this.CliCustomPathTextBox.Name = "CliCustomPathTextBox";
             this.CliCustomPathTextBox.Size = new System.Drawing.Size(420, 20);
             this.CliCustomPathTextBox.TabIndex = 15;
+            this.CliCustomPathTextBox.TextChanged += new System.EventHandler(this.CliCustomPathTextBox_TextChanged);
             // 
             // SnykGeneralSettingsUserControl
             // 

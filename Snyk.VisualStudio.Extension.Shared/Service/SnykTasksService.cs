@@ -709,9 +709,11 @@
                 this.DisposeCancellationTokenSource(this.downloadCliTokenSource);
             });
 
+            var downloadPath = this.serviceProvider.Options.CliCustomPath;
             await cliDownloader.AutoUpdateCliAsync(
                 progressWorker,
                 lastCliReleaseDate,
+                downloadPath,
                 downloadFinishedCallbacks: downloadFinishedCallbacks);
         }
 

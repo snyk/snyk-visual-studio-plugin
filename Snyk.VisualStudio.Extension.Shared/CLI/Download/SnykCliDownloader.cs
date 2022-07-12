@@ -158,7 +158,7 @@
         /// <param name="lastCheckDate">Last check date.</param>
         /// <returns>True if new version CLI exists</returns>
         public bool IsCliUpdateExists(DateTime lastCheckDate) => this.IsFourDaysPassedAfterLastCheck(lastCheckDate)
-                    && this.IsNewVersionAvailable(this.currentCliVersion, this.GetLatestReleaseInfo().Name);
+                    && this.IsNewVersionAvailable(this.currentCliVersion, this.GetLatestReleaseInfo().Version);
 
         /// <summary>
         /// Check is there a new version on the server and if there is, download it.
@@ -179,9 +179,9 @@
             if (this.IsCliDownloadNeeded(lastCheckDate, fileDestinationPath))
             {
                 await this.DownloadAsync(
-                    fileDestinationPath: fileDestinationPath,
-                    progressWorker: progressWorker,
-                    downloadFinishedCallbacks: downloadFinishedCallbacks);
+                    progressWorker,
+                    fileDestinationPath,
+                    downloadFinishedCallbacks);
             }
             else
             {
@@ -196,7 +196,7 @@
         /// <param name="fileDestinationPath">Path to destination cli file.</param>
         /// <param name="downloadFinishedCallbacks">List of Callbacks for download finished event.</param>
         /// <returns>A <see cref="Task"/> representing the asynchronous operation.</returns>
-        public async Task DownloadAsync(
+        private async Task DownloadAsync(
             ISnykProgressWorker progressWorker,
             string fileDestinationPath = null,
             List<CliDownloadFinishedCallback> downloadFinishedCallbacks = null)
@@ -214,8 +214,6 @@
             Logger.Information("Got latest relase information");
 
             LatestReleaseInfo latestReleaseInfo = this.GetLatestReleaseInfo();
-
-            string cliDownloadUrl = string.Format(LatestReleaseDownloadUrl, latestReleaseInfo.Version, SnykCli.CliFileName);
 
             Logger.Information("Latest relase information: version {Version} and url {Url}", latestReleaseInfo.Version, latestReleaseInfo.Url);
 
@@ -400,6 +398,6 @@
             }
         }
 
-        private string GetCliFilePath(string filePath) => string.IsNullOrEmpty(filePath) ? SnykCli.GetSnykCliPath() : filePath;
+        private string GetCliFilePath(string filePath) => string.IsNullOrEmpty(filePath) ? SnykCli.GetSnykCliDefaultPath() : filePath;
     }
 }

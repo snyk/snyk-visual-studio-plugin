@@ -90,7 +90,7 @@
             {
                 var serviceProvider = this.OptionsDialogPage.ServiceProvider;
 
-                if (SnykCli.IsCliExists())
+                if (SnykCli.DoesCliExist(this.OptionsDialogPage.CliCustomPath))
                 {
                     logger.Information("CLI exists. Calling SetupApiToken method");
 
@@ -205,7 +205,7 @@
             await this.OptionsDialogPage.ServiceProvider.ToolWindow.UpdateScreenStateAsync();
         }
 
-        private SnykCli NewCli() => new SnykCli { Options = this.OptionsDialogPage };
+        private SnykCli NewCli() => new SnykCli(this.OptionsDialogPage);
 
         private void AuthenticateButton_Click(object sender, EventArgs eventArgs) => ThreadHelper.JoinableTaskFactory
             .RunAsync(this.AuthenticateButtonClickAsync);
@@ -223,7 +223,7 @@
 
             var serviceProvider = this.OptionsDialogPage.ServiceProvider;
 
-            if (SnykCli.IsCliExists())
+            if (SnykCli.DoesCliExist(this.OptionsDialogPage.CliCustomPath))
             {
                 logger.Information("CLI exists. Calling SetupApiToken method");
 
@@ -594,6 +594,11 @@
         private void CliAutoUpdate_CheckedChanged(object sender, EventArgs e)
         {
             this.OptionsDialogPage.CliAutoUpdate = this.CliAutoUpdate.Checked;
+        }
+
+        private void CliCustomPathTextBox_TextChanged(object sender, EventArgs e)
+        {
+            this.OptionsDialogPage.CliCustomPath = this.CliCustomPathTextBox.Text;
         }
     }
 }

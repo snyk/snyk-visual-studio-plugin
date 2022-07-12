@@ -175,6 +175,18 @@
             }
         }
 
+        public string CliCustomPath
+        {
+            get => this.userStorageSettingsService.CliCustomPath;
+            set
+            {
+                if (this.userStorageSettingsService != null)
+                {
+                    this.userStorageSettingsService.CliCustomPath = value;
+                }
+            }
+        }
+
         /// <inheritdoc/>
         public string AnonymousId
         {
