@@ -69,6 +69,8 @@
             this.ignoreUnknownCACheckBox.Checked = this.OptionsDialogPage.IgnoreUnknownCA;
             this.usageAnalyticsCheckBox.Checked = this.OptionsDialogPage.UsageAnalyticsEnabled;
             this.ossEnabledCheckBox.Checked = this.OptionsDialogPage.OssEnabled;
+            this.CliAutoUpdate.Checked = this.OptionsDialogPage.CliAutoUpdate;
+            this.CliCustomPathTextBox.Text = this.OptionsDialogPage.CliCustomPath;
         }
 
         private void OptionsDialogPageOnSettingsChanged(object sender, SnykSettingsChangedEventArgs e)
@@ -596,9 +598,14 @@
             this.OptionsDialogPage.CliAutoUpdate = this.CliAutoUpdate.Checked;
         }
 
-        private void CliCustomPathTextBox_TextChanged(object sender, EventArgs e)
+        private void CliCustomPathBrowseButton_Click(object sender, EventArgs e)
         {
-            this.OptionsDialogPage.CliCustomPath = this.CliCustomPathTextBox.Text;
+            if (this.customCliPathFileDialog.ShowDialog() == DialogResult.OK)
+            {
+                var selectedCliPath = this.customCliPathFileDialog.FileName;
+                this.OptionsDialogPage.CliCustomPath = selectedCliPath;
+                this.CliCustomPathTextBox.Text = selectedCliPath;
+            }
         }
     }
 }
