@@ -263,7 +263,7 @@
             }
         }
 
-        private async Task DownloadAsync(
+        public async Task DownloadAsync(
             ISnykProgressWorker progressWorker,
             string cliFileDestinationPath,
             string cliDownloadUrl,

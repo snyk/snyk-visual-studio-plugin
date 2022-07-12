@@ -95,7 +95,7 @@
         }
 
         /// <inheritdoc/>
-        public void UnsetApiToken() => this.ConsoleRunner.Run(GetSnykCliDefaultPath(), "config unset api");
+        public void UnsetApiToken() => this.ConsoleRunner.Run(this.GetCliPath(), "config unset api");
 
         /// <summary>
         /// Try get Snyk API token from snyk cli config or throw <see cref="InvalidTokenException"/>.
@@ -103,7 +103,7 @@
         /// <returns>API token string.</returns>
         public string GetApiTokenOrThrowException()
         {
-            string apiToken = this.ConsoleRunner.Run(GetSnykCliDefaultPath(), "config get api");
+            string apiToken = this.ConsoleRunner.Run(this.GetCliPath(), "config get api");
 
             if (!Guid.IsValid(apiToken))
             {
@@ -131,7 +131,7 @@
                 environmentVariables.Add(ApiEnvironmentVariableName, this.Options.CustomEndpoint);
             }
 
-            return this.ConsoleRunner.Run(GetSnykCliDefaultPath(), string.Join(" ", args), environmentVariables);
+            return this.ConsoleRunner.Run(this.GetCliPath(), string.Join(" ", args), environmentVariables);
         }
 
         /// <inheritdoc/>
@@ -139,7 +139,7 @@
         {
             Logger.Information("Path to scan {BasePath}", basePath);
 
-            var cliPath = GetSnykCliDefaultPath();
+            var cliPath = this.GetCliPath();
 
             Logger.Information("CLI path is {CliPath}", cliPath);
 
@@ -154,6 +154,13 @@
             Logger.Information("Start convert console string result to CliResult and return value");
 
             return ConvertRawCliStringToCliResult(consoleResult);
+        }
+
+        private string GetCliPath()
+        {
+            var snykCliCustomPath = this.options?.CliCustomPath;
+            var cliPath = string.IsNullOrEmpty(snykCliCustomPath) ? GetSnykCliDefaultPath() : snykCliCustomPath;
+            return cliPath;
         }
 
         public StringDictionary BuildScanEnvironmentVariables()
