@@ -32,7 +32,7 @@
         void CancelIfCancellationRequested();
 
         /// <summary>
-        /// Notify donwload cancelled.
+        /// Notify download cancelled.
         /// </summary>
         /// <param name="message">Cancelled message.</param>
         void DownloadCancelled(string message);

@@ -114,7 +114,7 @@
             {
                 await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
                 this.authenticateSnykProgressBar.Visibility = Visibility.Collapsed;
-                this.Text = "Snyk CLI not found. You can specify a CLI executable from the settings.";
+                this.Text = "Snyk CLI not found. You can specify a path to a Snyk CLI executable from the settings.";
                 return;
             }
 
