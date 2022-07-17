@@ -682,35 +682,39 @@
             }
 
             this.isCliDownloading = true;
-            string currentCliVersion = userSettingsStorageService.GetCurrentCliVersion();
-
-            DateTime lastCliReleaseDate = userSettingsStorageService.GetCliReleaseLastCheckDate();
-
-            var cliDownloader = new SnykCliDownloader(currentCliVersion);
-
-            List<CliDownloadFinishedCallback> downloadFinishedCallbacks = new List<CliDownloadFinishedCallback>();
-
-            if (downloadFinishedCallback != null)
+            try
             {
-                downloadFinishedCallbacks.Add(downloadFinishedCallback);
+                string currentCliVersion = userSettingsStorageService.GetCurrentCliVersion();
+
+                DateTime lastCliReleaseDate = userSettingsStorageService.GetCliReleaseLastCheckDate();
+
+                var cliDownloader = new SnykCliDownloader(currentCliVersion);
+
+                List<CliDownloadFinishedCallback> downloadFinishedCallbacks = new List<CliDownloadFinishedCallback>();
+
+                if (downloadFinishedCallback != null)
+                {
+                    downloadFinishedCallbacks.Add(downloadFinishedCallback);
+                }
+
+                downloadFinishedCallbacks.Add(() =>
+                {
+                    userSettingsStorageService.SaveCurrentCliVersion(cliDownloader.GetLatestReleaseInfo().Name);
+                    userSettingsStorageService.SaveCliReleaseLastCheckDate(DateTime.UtcNow);
+                    this.DisposeCancellationTokenSource(this.downloadCliTokenSource);
+                });
+
+                var downloadPath = this.serviceProvider.Options.CliCustomPath;
+                await cliDownloader.AutoUpdateCliAsync(
+                    progressWorker,
+                    lastCliReleaseDate,
+                    downloadPath,
+                    downloadFinishedCallbacks: downloadFinishedCallbacks);
             }
-
-            downloadFinishedCallbacks.Add(() =>
+            finally
             {
-                userSettingsStorageService.SaveCurrentCliVersion(cliDownloader.GetLatestReleaseInfo().Name);
-                userSettingsStorageService.SaveCliReleaseLastCheckDate(DateTime.UtcNow);
-
                 this.isCliDownloading = false;
-
-                this.DisposeCancellationTokenSource(this.downloadCliTokenSource);
-            });
-
-            var downloadPath = this.serviceProvider.Options.CliCustomPath;
-            await cliDownloader.AutoUpdateCliAsync(
-                progressWorker,
-                lastCliReleaseDate,
-                downloadPath,
-                downloadFinishedCallbacks: downloadFinishedCallbacks);
+            }
         }
 
         private async Task RetryDownloadAsync(CliDownloadFinishedCallback downloadFinishedCallback, SnykProgressWorker progressWorker)
