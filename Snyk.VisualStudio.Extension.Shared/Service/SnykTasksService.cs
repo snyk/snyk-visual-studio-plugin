@@ -241,8 +241,7 @@
                 };
 
                 Logger.Information("Start run task");
-
-                _ = Task.Run(
+                ThreadHelper.JoinableTaskFactory.RunAsync(
                     async () =>
                     {
                         try
@@ -252,6 +251,8 @@
                         catch (ChecksumVerificationException e)
                         {
                             Logger.Error(e, "Cli download failed due to failed checksum. {Expected} (expected) != {Actual}", e.ExpectedHash, e.ActualHash);
+                            this.OnDownloadCancelled(e.Message);
+                            //await this.RetryDownloadAsync(downloadFinishedCallback, progressWorker);
                         }
                         catch (Exception e)
                         {
@@ -270,7 +271,7 @@
                                 this.FireTaskFinished();
                             }
                         }
-                    }, progressWorker.TokenSource.Token);
+                    }).FireAndForget();
             }
             catch (Exception ex)
             {
