@@ -271,10 +271,10 @@
                         }
                         finally
                         {
+                            this.isCliDownloading = false;
+
                             if (progressWorker.IsWorkFinished)
                             {
-                                this.isCliDownloading = false;
-
                                 this.DisposeCancellationTokenSource(this.downloadCliTokenSource);
 
                                 this.FireTaskFinished();
@@ -719,18 +719,23 @@
             {
                 await this.DownloadAsync(downloadFinishedCallback, progressWorker);
             }
-            catch (Exception e)
+            catch (ChecksumVerificationException exception)
             {
-                Logger.Error(e, "Cli retry download failed");
+                Logger.Error(exception, "Cli retry download failed");
 
-                this.OnDownloadCancelled($"The download of the Snyk CLI was not successful. The integrity check failed ({e.Message})");
+                this.OnDownloadCancelled(
+                    $"The download of the Snyk CLI was not successful. The integrity check failed ({exception.Message})");
+            }
+            catch (Exception exception)
+            {
+                Logger.Error(exception, "Cli retry download failed");
+                this.OnDownloadCancelled($"The download of the Snyk CLI was not successful: {exception.Message}");
             }
             finally
             {
+                this.isCliDownloading = false;
                 if (progressWorker.IsWorkFinished)
                 {
-                    this.isCliDownloading = false;
-
                     this.DisposeCancellationTokenSource(this.downloadCliTokenSource);
                 }
             }
