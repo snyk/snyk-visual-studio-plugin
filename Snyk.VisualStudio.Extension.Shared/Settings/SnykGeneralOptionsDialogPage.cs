@@ -183,6 +183,7 @@
                 if (this.userStorageSettingsService != null)
                 {
                     this.userStorageSettingsService.CliCustomPath = value;
+                    this.FireSettingsChangedEvent();
                 }
             }
         }
