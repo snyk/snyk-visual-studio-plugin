@@ -14,7 +14,7 @@
     /// </summary>
     public partial class MessagePanel : UserControl
     {
-        private IList<StackPanel> panels;
+        private readonly IList<StackPanel> panels;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="MessagePanel"/> class.
