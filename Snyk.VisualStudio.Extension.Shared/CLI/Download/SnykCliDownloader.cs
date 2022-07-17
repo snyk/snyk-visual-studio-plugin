@@ -176,7 +176,9 @@
         {
             string fileDestinationPath = this.GetCliFilePath(filePath);
 
-            if (this.IsCliDownloadNeeded(lastCheckDate, fileDestinationPath))
+            var isCliDownloadNeeded = this.IsCliDownloadNeeded(lastCheckDate, fileDestinationPath);
+
+            if (isCliDownloadNeeded)
             {
                 await this.DownloadAsync(
                     progressWorker,

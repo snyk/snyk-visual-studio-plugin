@@ -97,6 +97,13 @@
         /// <inheritdoc/>
         public void UnsetApiToken() => this.ConsoleRunner.Run(this.GetCliPath(), "config unset api");
 
+        /// <inheritdoc />
+        public bool IsCliFileFound()
+        {
+            var customPath = this.Options.CliCustomPath;
+            return DoesCliExist(customPath);
+        }
+
         /// <summary>
         /// Try get Snyk API token from snyk cli config or throw <see cref="InvalidTokenException"/>.
         /// </summary>

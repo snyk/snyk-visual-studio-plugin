@@ -354,7 +354,7 @@
         /// <summary>
         /// Fire download cancelled event.
         /// </summary>
-        /// <param name="exception">The exception that caused the download to fail</param>
+        /// <param name="exception">The exception that caused the download to fail.</param>
         protected internal void OnDownloadFailed(Exception exception) => this.DownloadFailed?.Invoke(this, exception);
 
         /// <summary>

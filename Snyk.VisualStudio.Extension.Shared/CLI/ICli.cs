@@ -29,5 +29,12 @@
         /// Unsets the API token stored in the config file in <code>~/.config/configstore/snyk.json</code>
         /// </summary>
         void UnsetApiToken();
+
+        /// <summary>
+        /// Checks if the CLI executable exists.
+        /// Checks the custom path specified in the settings, or the default path if the custom path is not specified.
+        /// </summary>
+        /// <returns>true if CLI executable is found, false otherwise.</returns>
+        bool IsCliFileFound();
     }
 }

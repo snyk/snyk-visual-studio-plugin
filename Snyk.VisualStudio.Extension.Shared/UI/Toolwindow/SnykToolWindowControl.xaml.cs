@@ -15,6 +15,7 @@
     using Snyk.Code.Library.Domain.Analysis;
     using Snyk.Common;
     using Snyk.VisualStudio.Extension.Shared.CLI;
+    using Snyk.VisualStudio.Extension.Shared.CLI.Download;
     using Snyk.VisualStudio.Extension.Shared.Commands;
     using Snyk.VisualStudio.Extension.Shared.Model;
     using Snyk.VisualStudio.Extension.Shared.Service;
@@ -314,9 +315,20 @@
         /// <param name="sender">Source object.</param>
         /// <param name="eventArgs">Event args.</param>
         public void OnDownloadCancelled(object sender, SnykCliDownloadEventArgs eventArgs) => this.ShowWelcomeOrRunScanScreen();
-
-        private void OnDownloadFailed(object sender, Exception e) => this.messagePanel.Text =
-            "Failed to download Snyk CLI. You can specify a path to a Snyk CLI executable from the settings.";
+        
+        private void OnDownloadFailed(object sender, Exception e)
+        {
+            var snykCli = this.serviceProvider.NewCli();
+            if (snykCli.IsCliFileFound())
+            {
+                this.ShowWelcomeOrRunScanScreen();
+            }
+            else
+            {
+                this.messagePanel.Text =
+                "Failed to download Snyk CLI. You can specify a path to a Snyk CLI executable from the settings.";
+            }
+        }
 
         /// <summary>
         /// VsThemeChanged event handler. Call Adapt methods for <see cref="HtmlRichTextBox"/> controls.
