@@ -3,6 +3,7 @@
     using System;
     using System.Diagnostics;
     using System.Diagnostics.CodeAnalysis;
+    using System.IO;
     using System.Threading.Tasks;
     using System.Windows.Forms;
     using Microsoft.VisualStudio.Shell;
@@ -112,18 +113,16 @@
         /// <summary>
         /// Authenticate user via cli auth.
         /// </summary>
+        /// <exception cref="FileNotFoundException">Thrown when the CLI could not be found.</exception>
         /// <returns>Returns true if authenticated successfully, false otherwise.</returns>
         public bool Authenticate()
         {
             logger.Information("Enter Authenticate method");
 
-            var serviceProvider = this.OptionsDialogPage.ServiceProvider;
-
             if (!SnykCli.DoesCliExist(this.OptionsDialogPage.CliCustomPath))
             {
                 logger.Information("CLI not exists. Download CLI before get Api token");
-                //serviceProvider.TasksService.Download(this.OnCliDownloadFinishedCallback); // TODO - remove this?
-                return false;
+                throw new FileNotFoundException("CLI was not found");
             }
 
             logger.Information("CLI exists. Calling SetupApiToken method");
