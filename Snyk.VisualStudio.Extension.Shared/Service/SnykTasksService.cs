@@ -111,9 +111,14 @@
         public event EventHandler<SnykCliDownloadEventArgs> DownloadUpdate;
 
         /// <summary>
-        /// Download cancelled event handler.
+        /// Download cancelled event handler. Raised when the user cancels the download intentionally.
         /// </summary>
         public event EventHandler<SnykCliDownloadEventArgs> DownloadCancelled;
+
+        /// <summary>
+        /// Download failed event handler. Raised when the download fails due to an error.
+        /// </summary>
+        public event EventHandler<Exception> DownloadFailed;
 
         /// <summary>
         /// Task finished event.
