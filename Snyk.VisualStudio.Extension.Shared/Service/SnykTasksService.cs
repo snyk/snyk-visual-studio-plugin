@@ -251,8 +251,6 @@
                         }
                         catch (ChecksumVerificationException e)
                         {
-
-                            await this.RetryDownloadAsync(downloadFinishedCallback, progressWorker);
                             Logger.Error(e, "Cli download failed due to failed checksum. {Expected} (expected) != {Actual}", e.ExpectedHash, e.ActualHash);
                         }
                         catch (Exception e)
@@ -709,32 +707,5 @@
             }
         }
 
-        private async Task RetryDownloadAsync(CliDownloadFinishedCallback downloadFinishedCallback, SnykProgressWorker progressWorker)
-        {
-            try
-            {
-                await this.DownloadAsync(downloadFinishedCallback, progressWorker);
-            }
-            catch (ChecksumVerificationException exception)
-            {
-                Logger.Error(exception, "Cli retry download failed");
-
-                this.OnDownloadCancelled(
-                    $"The download of the Snyk CLI was not successful. The integrity check failed ({exception.Message})");
-            }
-            catch (Exception exception)
-            {
-                Logger.Error(exception, "Cli retry download failed");
-                this.OnDownloadCancelled($"The download of the Snyk CLI was not successful: {exception.Message}");
-            }
-            finally
-            {
-                this.isCliDownloading = false;
-                if (progressWorker.IsWorkFinished)
-                {
-                    DisposeCancellationTokenSource(this.downloadCliTokenSource);
-                }
-            }
-        }
     }
 }
