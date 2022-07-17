@@ -9,6 +9,9 @@
              mc:Ignorable="d" 
              d:DesignHeight="450" d:DesignWidth="800">
     <Grid VerticalAlignment="Center">
+        <Grid.Resources>
+            <ImageSource x:Key="SnykDogLogo">pack://application:,,,/Snyk.VisualStudio.Extension;component/SnykDogLogoFullSize.png</ImageSource>
+        </Grid.Resources>
         <StackPanel Name="selectIssueMessagePanel" HorizontalAlignment="Center" Visibility="Collapsed">
             <c:TextField>Select an issue and start improving your project.</c:TextField>
         </StackPanel>
@@ -31,11 +34,12 @@
         </StackPanel>
         
         <StackPanel Name="messagePanel" Visibility="Collapsed" HorizontalAlignment="Center">
+            <Image Source="{StaticResource SnykDogLogo}" Width="48"/>
             <c:TextField x:Name="message"></c:TextField>
         </StackPanel>
         
         <StackPanel Name="overviewPanel" Visibility="Collapsed" HorizontalAlignment="Center" Orientation="Horizontal">
-            <Image Source="pack://application:,,,/Snyk.VisualStudio.Extension;component/SnykDogLogoFullSize.png" Width="48" Margin="0,-30,0,30"/>
+            <Image Source="{StaticResource SnykDogLogo}" Width="48" Margin="0,-30,0,30"/>
 
             <StackPanel HorizontalAlignment="Center" Orientation="Vertical" Margin="40,20,20,20">
                 <TextBlock FontWeight="Bold">
