@@ -267,7 +267,7 @@
 
                             if (progressWorker.IsWorkFinished)
                             {
-                                this.DisposeCancellationTokenSource(this.downloadCliTokenSource);
+                                DisposeCancellationTokenSource(this.downloadCliTokenSource);
 
                                 this.FireTaskFinished();
                             }
@@ -343,6 +343,18 @@
         /// </summary>
         /// <param name="progress">Donwload progress form 0..100$.</param>
         protected internal void OnDownloadUpdate(int progress) => this.DownloadUpdate?.Invoke(this, new SnykCliDownloadEventArgs(progress));
+
+        private static void DisposeCancellationTokenSource(CancellationTokenSource tokenSource)
+        {
+            try
+            {
+                tokenSource?.Dispose();
+            }
+            catch (Exception e)
+            {
+                Logger.Error(e, "Error when trying to dispose cancellation token source");
+            }
+        }
 
         private async Task ScanOssAsync(FeaturesSettings featuresSettings)
         {
@@ -431,7 +443,7 @@
             }
             finally
             {
-                this.DisposeCancellationTokenSource(this.ossScanTokenSource);
+                DisposeCancellationTokenSource(this.ossScanTokenSource);
 
                 this.isOssScanning = false;
 
@@ -513,7 +525,7 @@
             }
             finally
             {
-                this.DisposeCancellationTokenSource(this.snykCodeScanTokenSource);
+                DisposeCancellationTokenSource(this.snykCodeScanTokenSource);
 
                 this.isSnykCodeScanning = false;
 
@@ -652,18 +664,6 @@
             }
         }
 
-        private void DisposeCancellationTokenSource(CancellationTokenSource tokenSource)
-        {
-            try
-            {
-                tokenSource?.Dispose();
-            }
-            catch (Exception e)
-            {
-                Logger.Error(e, "Try to dispose token source.");
-            }
-        }
-
         private async Task DownloadAsync(CliDownloadFinishedCallback downloadFinishedCallback, ISnykProgressWorker progressWorker)
         {
             var userSettingsStorageService = this.serviceProvider.UserStorageSettingsService;
@@ -693,7 +693,7 @@
                 {
                     userSettingsStorageService.SaveCurrentCliVersion(cliDownloader.GetLatestReleaseInfo().Name);
                     userSettingsStorageService.SaveCliReleaseLastCheckDate(DateTime.UtcNow);
-                    this.DisposeCancellationTokenSource(this.downloadCliTokenSource);
+                    DisposeCancellationTokenSource(this.downloadCliTokenSource);
                 });
 
                 var downloadPath = this.serviceProvider.Options.CliCustomPath;
@@ -732,7 +732,7 @@
                 this.isCliDownloading = false;
                 if (progressWorker.IsWorkFinished)
                 {
-                    this.DisposeCancellationTokenSource(this.downloadCliTokenSource);
+                    DisposeCancellationTokenSource(this.downloadCliTokenSource);
                 }
             }
         }
