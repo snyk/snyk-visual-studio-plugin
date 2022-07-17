@@ -265,7 +265,7 @@ namespace Snyk.VisualStudio.Extension.Shared.Settings
             // 
             // CliCustomPathTextBox
             // 
-            this.CliCustomPathTextBox.Enabled = false;
+            this.CliCustomPathTextBox.Enabled = true;
             this.CliCustomPathTextBox.Location = new System.Drawing.Point(100, 291);
             this.CliCustomPathTextBox.Margin = new System.Windows.Forms.Padding(2);
             this.CliCustomPathTextBox.Name = "CliCustomPathTextBox";
