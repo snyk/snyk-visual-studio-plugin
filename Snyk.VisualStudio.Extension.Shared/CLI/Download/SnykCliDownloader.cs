@@ -237,14 +237,14 @@
         {
             if (!this.IsCliFileExists(cliPath))
             {
-                throw new ChecksumVerificationException("Cli file not exists, can't verify checksum");
+                throw new FileNotFoundException($"Cli file not found in {cliPath}");
             }
 
             string currentSha = Sha256.Checksum(cliPath);
 
             if (this.expectedSha.ToLower() != currentSha.ToLower())
             {
-                throw new ChecksumVerificationException($"Expected {this.expectedSha}, but downloaded file has {currentSha}");
+                throw new ChecksumVerificationException(this.expectedSha, currentSha);
             }
         }
 

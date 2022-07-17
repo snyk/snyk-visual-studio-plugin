@@ -15,5 +15,10 @@
             : base(message)
         {
         }
+
+        public ChecksumVerificationException(string expectedHash, string receivedHash)
+            : base($"Expected {expectedHash}, but downloaded file has {receivedHash}")
+        {
+        }
     }
 }
