@@ -305,13 +305,11 @@
         {
             logger.Information("Enter SetupApiToken method");
 
-            string apiToken;
-
             try
             {
                 logger.Information("Try get Api token");
 
-                apiToken = this.NewCli().GetApiToken();
+                var apiToken = this.NewCli().GetApiToken();
 
                 if (string.IsNullOrEmpty(apiToken))
                 {
@@ -344,6 +342,7 @@
                     return;
                 }
 
+                this.OptionsDialogPage.ApiToken = apiToken;
                 successCallback(apiToken);
 
                 logger.Information("Leave SetupApiToken method");
