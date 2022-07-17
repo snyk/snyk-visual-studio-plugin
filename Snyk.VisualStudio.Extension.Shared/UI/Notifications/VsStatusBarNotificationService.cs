@@ -1,5 +1,6 @@
 ﻿namespace Snyk.VisualStudio.Extension.Shared.UI.Notifications
 {
+    using System;
     using Snyk.Code.Library.Service;
     using Snyk.VisualStudio.Extension.Shared.Service;
     using Snyk.VisualStudio.Extension.Shared.Settings;
@@ -48,6 +49,7 @@
             tasksService.DownloadStarted += this.OnDownloadStarted;
             tasksService.DownloadFinished += this.OnDownloadFinished;
             tasksService.DownloadCancelled += this.OnDownloadCancelled;
+            tasksService.DownloadFailed += this.OnDownloadFailed;
 
             tasksService.ScanningCancelled += this.OnScanningCancelled;
             tasksService.CliScanningStarted += this.OnCliScanningStarted;
@@ -127,5 +129,8 @@
 
         private void OnDownloadCancelled(object sender, SnykCliDownloadEventArgs eventArgs)
             => this.statusBar.ShowDownloadFinishedMessage("Snyk CLI download cancelled");
+
+        private void OnDownloadFailed(object sender, Exception exception)
+            => this.statusBar.ShowDownloadFinishedMessage("Snyk CLI download failed");
     }
 }

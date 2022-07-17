@@ -104,6 +104,7 @@
             tasksService.DownloadFinished += this.OnDownloadFinished;
             tasksService.DownloadUpdate += (sender, args) => ThreadHelper.JoinableTaskFactory.RunAsync(() => this.OnDownloadUpdateAsync(sender, args));
             tasksService.DownloadCancelled += this.OnDownloadCancelled;
+            tasksService.DownloadFailed += this.OnDownloadFailed;
 
             this.Loaded += (sender, args) => tasksService.Download();
 
@@ -313,6 +314,9 @@
         /// <param name="sender">Source object.</param>
         /// <param name="eventArgs">Event args.</param>
         public void OnDownloadCancelled(object sender, SnykCliDownloadEventArgs eventArgs) => this.ShowWelcomeOrRunScanScreen();
+
+        private void OnDownloadFailed(object sender, Exception e) => this.messagePanel.Text =
+            "Failed to download Snyk CLI. You can specify a path to a Snyk CLI executable from the settings.";
 
         /// <summary>
         /// VsThemeChanged event handler. Call Adapt methods for <see cref="HtmlRichTextBox"/> controls.

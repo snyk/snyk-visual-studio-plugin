@@ -255,15 +255,24 @@
                         }
                         catch (ChecksumVerificationException e)
                         {
-                            Logger.Error(e, "Cli download failed due to failed checksum. {Expected} (expected) != {Actual}", e.ExpectedHash, e.ActualHash);
+                            Logger.Error(
+                                e,
+                                "Cli download failed due to failed checksum. {Expected} (expected) != {Actual}",
+                                e.ExpectedHash,
+                                e.ActualHash);
+
+                            this.OnDownloadFailed(e);
+                        }
+                        catch (OperationCanceledException e)
+                        {
+                            Logger.Information("CLI Download cancelled");
                             this.OnDownloadCancelled(e.Message);
-                            //await this.RetryDownloadAsync(downloadFinishedCallback, progressWorker);
                         }
                         catch (Exception e)
                         {
                             Logger.Error(e, "Error on cli download");
 
-                            this.OnDownloadCancelled(e.Message);
+                            this.OnDownloadFailed(e);
                         }
                         finally
                         {
@@ -341,6 +350,12 @@
         /// </summary>
         /// <param name="message">Cancel message.</param>
         protected internal void OnDownloadCancelled(string message) => this.DownloadCancelled?.Invoke(this, new SnykCliDownloadEventArgs(message));
+
+        /// <summary>
+        /// Fire download cancelled event.
+        /// </summary>
+        /// <param name="exception">The exception that caused the download to fail</param>
+        protected internal void OnDownloadFailed(Exception exception) => this.DownloadFailed?.Invoke(this, exception);
 
         /// <summary>
         /// Fire download update (on download progress update) event.
