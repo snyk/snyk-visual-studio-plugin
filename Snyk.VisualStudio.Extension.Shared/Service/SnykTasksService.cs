@@ -670,10 +670,6 @@
             {
                 Logger.Error(e, "Try to dispose token source.");
             }
-            finally
-            {
-                tokenSource = null;
-            }
         }
 
         private async Task DownloadAsync(CliDownloadFinishedCallback downloadFinishedCallback, ISnykProgressWorker progressWorker)
