@@ -251,9 +251,9 @@
                         }
                         catch (ChecksumVerificationException e)
                         {
-                            Logger.Error(e, "Cli download failed. Checksum don't match. Try to download again...");
 
                             await this.RetryDownloadAsync(downloadFinishedCallback, progressWorker);
+                            Logger.Error(e, "Cli download failed due to failed checksum. {Expected} (expected) != {Actual}", e.ExpectedHash, e.ActualHash);
                         }
                         catch (Exception e)
                         {
