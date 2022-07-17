@@ -114,6 +114,7 @@
             {
                 await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
                 this.authenticateSnykProgressBar.Visibility = Visibility.Collapsed;
+                this.Text = "CLI not found";
                 return;
             }
 
