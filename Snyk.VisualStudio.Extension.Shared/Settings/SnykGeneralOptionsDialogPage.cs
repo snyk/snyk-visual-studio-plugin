@@ -242,11 +242,10 @@
             this.userStorageSettingsService = this.serviceProvider.UserStorageSettingsService;
         }
 
-        /// <summary>
-        /// Authenticate CLI.
-        /// </summary>
-        /// <param name="successCallbackAction">Success callback.</param>
-        /// <param name="errorCallbackAction">Error callback.</param>
+        /// <inheritdoc />
+        public bool Authenticate() => this.GeneralSettingsUserControl.Authenticate();
+
+        /// <inheritdoc />
         public void Authenticate(Action<string> successCallbackAction, Action<string> errorCallbackAction)
             => this.GeneralSettingsUserControl.Authenticate(successCallbackAction, errorCallbackAction);
 

@@ -3,9 +3,11 @@
     using System;
     using System.Collections.Generic;
     using System.Diagnostics;
+    using System.Threading.Tasks;
     using System.Windows;
     using System.Windows.Controls;
     using Microsoft.VisualStudio.Shell;
+    using Microsoft.VisualStudio.Threading;
     using Snyk.VisualStudio.Extension.Shared.Service;
     using Snyk.VisualStudio.Extension.Shared.UI.Notifications;
 
@@ -46,7 +48,7 @@
         public ToolWindowContext Context { get; set; }
 
         /// <summary>
-        /// Sets text on panel.
+        /// Sets text on the <see cref="messagePanel"/> and shows it.
         /// </summary>
         public string Text
         {
@@ -95,50 +97,21 @@
             panel.Visibility = Visibility.Visible;
         }
 
-        private void TestCodeNow_Click(object sender, RoutedEventArgs e)
+        private async void TestCodeNow_Click(object sender, RoutedEventArgs e)
         {
-            Action<string> successCallbackAction = (apiToken) =>
-            {
-                ThreadHelper.JoinableTaskFactory.RunAsync(async () =>
-                {
-                    await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
+            await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
+            this.testCodeNowButton.IsEnabled = false;
+            this.connectVSToSnykProgressBar.Visibility = Visibility.Visible;
 
-                    this.testCodeNowButton.IsEnabled = true;
+            await TaskScheduler.Default;
+            var authenticationSucceeded = this.ServiceProvider.Options.Authenticate();
 
-                    this.connectVSToSnykProgressBar.Visibility = Visibility.Collapsed;
-                });
+            await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
+            this.connectVSToSnykProgressBar.Visibility = Visibility.Collapsed;
+            this.testCodeNowButton.IsEnabled = true;
 
-                this.ServiceProvider.Options.ApiToken = apiToken;
-
-                this.Context.TransitionTo(RunScanState.Instance);
-            };
-
-            Action<string> errorCallbackAction = (error) =>
-            {
-                ThreadHelper.JoinableTaskFactory.RunAsync(async () =>
-                {
-                    await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
-
-                    this.testCodeNowButton.IsEnabled = true;
-
-                    this.connectVSToSnykProgressBar.Visibility = Visibility.Collapsed;
-
-                    NotificationService.Instance.ShowErrorInfoBar(error);
-                });
-
-                this.Context.TransitionTo(OverviewState.Instance);
-            };
-
-            ThreadHelper.JoinableTaskFactory.RunAsync(async () =>
-            {
-                await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
-
-                this.testCodeNowButton.IsEnabled = false;
-
-                this.connectVSToSnykProgressBar.Visibility = Visibility.Visible;
-            });
-
-            this.ServiceProvider.Options.Authenticate(successCallbackAction, errorCallbackAction);
+            var nextPanel = authenticationSucceeded ? (ToolWindowState)RunScanState.Instance : OverviewState.Instance;
+            this.Context.TransitionTo(nextPanel);
         }
 
         private void Hyperlink_RequestNavigate(object sender, System.Windows.Navigation.RequestNavigateEventArgs args)

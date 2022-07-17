@@ -109,6 +109,28 @@
             logger.Information("Leave Authenticate method");
         }
 
+        /// <summary>
+        /// Authenticate user via cli auth.
+        /// </summary>
+        /// <returns>Returns true if authenticated successfully, false otherwise.</returns>
+        public bool Authenticate()
+        {
+            logger.Information("Enter Authenticate method");
+
+            var serviceProvider = this.OptionsDialogPage.ServiceProvider;
+
+            if (!SnykCli.DoesCliExist(this.OptionsDialogPage.CliCustomPath))
+            {
+                logger.Information("CLI not exists. Download CLI before get Api token");
+                //serviceProvider.TasksService.Download(this.OnCliDownloadFinishedCallback); // TODO - remove this?
+                return false;
+            }
+
+            logger.Information("CLI exists. Calling SetupApiToken method");
+
+            return this.SetupApiToken();
+        }
+
         private async Task OnAuthenticationSuccessfulAsync(string apiToken)
         {
             logger.Information("Enter authenticate successCallback");
@@ -298,6 +320,51 @@
                 logger.Error(e, "Setup api token in general settings");
 
                 await this.OnAuthenticationFailAsync(e.Message);
+            }
+        }
+
+        private bool SetupApiToken()
+        {
+            logger.Information("Enter SetupApiToken method");
+            try
+            {
+                logger.Information("Try get Api token");
+                var apiToken = this.NewCli().GetApiToken();
+
+                if (string.IsNullOrEmpty(apiToken))
+                {
+                    logger.Information("Api toke is null or empty. Try to authenticate via snyk auth");
+                    string authResultMessage = this.NewCli().Authenticate();
+
+                    if (authResultMessage.Contains("Your account has been authenticated. Snyk is now ready to be used."))
+                    {
+                        logger.Information("Snyk auth executed successfully. Try to get Api token");
+                        apiToken = this.NewCli().GetApiToken();
+                    }
+                    else
+                    {
+                        logger.Information("Snyk auth executed with error: {AuthResultMessage}", authResultMessage);
+                        NotificationService.Instance.ShowErrorInfoBar(authResultMessage);
+                        return false;
+                    }
+                }
+
+                logger.Information("Validate Api token GUID");
+
+                if (!Common.Guid.IsValid(apiToken))
+                {
+                    NotificationService.Instance.ShowErrorInfoBar($"Invalid API Token: {apiToken}");
+                    return false;
+                }
+
+                this.OptionsDialogPage.ApiToken = apiToken;
+                return true;
+
+            }
+            catch (Exception e)
+            {
+                logger.Error(e, "Setup api token in general settings");
+                return false;
             }
         }
 

@@ -90,6 +90,12 @@
         /// <summary>
         /// Call CLI auth for user authentication at Snyk and get user api token.
         /// </summary>
+        /// <returns>Returns true if authenticated successfully, false otherwise.</returns>
+        bool Authenticate();
+
+        /// <summary>
+        /// Call CLI auth for user authentication at Snyk and get user api token.
+        /// </summary>
         /// <param name="successCallbackAction">Callback for success authentication case.</param>
         /// <param name="errorCallbackAction">Callback for error on authentication case.</param>
         void Authenticate(Action<string> successCallbackAction, Action<string> errorCallbackAction);
