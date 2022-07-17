@@ -3,6 +3,7 @@
     using System;
     using System.Collections.Generic;
     using System.Diagnostics;
+    using System.IO;
     using System.Threading.Tasks;
     using System.Windows;
     using System.Windows.Controls;
@@ -101,13 +102,23 @@
         {
             await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
             this.testCodeNowButton.IsEnabled = false;
-            this.connectVSToSnykProgressBar.Visibility = Visibility.Visible;
+            this.authenticateSnykProgressBar.Visibility = Visibility.Visible;
 
             await TaskScheduler.Default;
-            var authenticationSucceeded = this.ServiceProvider.Options.Authenticate();
+            bool authenticationSucceeded;
+            try
+            {
+                authenticationSucceeded = this.ServiceProvider.Options.Authenticate();
+            }
+            catch (FileNotFoundException)
+            {
+                await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
+                this.authenticateSnykProgressBar.Visibility = Visibility.Collapsed;
+                return;
+            }
 
             await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
-            this.connectVSToSnykProgressBar.Visibility = Visibility.Collapsed;
+            this.authenticateSnykProgressBar.Visibility = Visibility.Collapsed;
             this.testCodeNowButton.IsEnabled = true;
 
             var nextPanel = authenticationSucceeded ? (ToolWindowState)RunScanState.Instance : OverviewState.Instance;

@@ -60,7 +60,7 @@
                         Test code now
                     </Button>
                 </StackPanel>
-                <ProgressBar Name="connectVSToSnykProgressBar" Visibility="Collapsed" IsIndeterminate="True" Height="3" Padding="0,2" Margin="0, 5, 0, 0"/>
+                <ProgressBar Name="authenticateSnykProgressBar" Visibility="Collapsed" IsIndeterminate="True" Height="3" Padding="0,2" Margin="0, 5, 0, 0"/>
                 <TextBlock Margin="0, 20, 0, 0" FontSize="11">
                     By connecting your account with Snyk, you agree
                 </TextBlock>
