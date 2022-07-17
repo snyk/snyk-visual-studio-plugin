@@ -233,7 +233,7 @@
         /// </summary>
         /// <param name="cliPath">CLI file full path.</param>
         /// <exception cref="ChecksumVerificationException">Exception if cli sha not correct.</exception>
-        public void VerifyCliFile(string cliPath)
+        private void VerifyCliFile(string cliPath)
         {
             if (!this.IsCliFileExists(cliPath))
             {

@@ -102,7 +102,7 @@
                 {
                     logger.Information("CLI not exists. Download CLI before get Api token");
 
-                    serviceProvider.TasksService.Download(new CliDownloadFinishedCallback(this.OnCliDownloadFinishedCallback));
+                    serviceProvider.TasksService.Download(this.OnCliDownloadFinishedCallback);
                 }
             });
 
