@@ -5,6 +5,7 @@
     using Microsoft.VisualStudio.Shell;
     using Microsoft.VisualStudio.Shell.Interop;
     using Snyk.VisualStudio.Extension.Shared.Service;
+    using Task = System.Threading.Tasks.Task;
 
     /// <summary>
     /// Wrapper for Visual Studio status bar.
