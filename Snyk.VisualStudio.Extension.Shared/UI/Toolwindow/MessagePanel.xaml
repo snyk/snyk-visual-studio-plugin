@@ -35,7 +35,7 @@
         
         <StackPanel Name="messagePanel" Visibility="Collapsed" HorizontalAlignment="Center">
             <Image Source="{StaticResource SnykDogLogo}" Width="48"/>
-            <c:TextField x:Name="message"></c:TextField>
+            <c:TextField x:Name="message"/>
         </StackPanel>
         
         <StackPanel Name="overviewPanel" Visibility="Collapsed" HorizontalAlignment="Center" Orientation="Horizontal">
