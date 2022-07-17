@@ -4,7 +4,6 @@
     using System.Collections.Generic;
     using System.Threading;
     using System.Threading.Tasks;
-    using System.Windows;
     using Microsoft.VisualStudio.Shell;
     using Serilog;
     using Snyk.Analytics;
@@ -181,13 +180,6 @@
                 Logger.Error(ex, "Error on cancel tasks");
             }
         }
-
-        /// <summary>
-        /// Handle UI loaded event. Check CLI download on this event.
-        /// </summary>
-        /// <param name="sender">Source object.</param>
-        /// <param name="eventArgs">Event arguments.</param>
-        public void OnUiLoaded(object sender, RoutedEventArgs eventArgs) => this.Download();
 
         /// <summary>
         /// Start scan in background task.

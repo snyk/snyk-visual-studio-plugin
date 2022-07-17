@@ -105,7 +105,7 @@
             tasksService.DownloadUpdate += (sender, args) => ThreadHelper.JoinableTaskFactory.RunAsync(() => this.OnDownloadUpdateAsync(sender, args));
             tasksService.DownloadCancelled += this.OnDownloadCancelled;
 
-            this.Loaded += tasksService.OnUiLoaded;
+            this.Loaded += (sender, args) => tasksService.Download();
 
             serviceProvider.VsThemeService.ThemeChanged += this.OnVsThemeChanged;
 
