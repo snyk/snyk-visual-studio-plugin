@@ -198,7 +198,7 @@
         /// <param name="fileDestinationPath">Path to destination cli file.</param>
         /// <param name="downloadFinishedCallbacks">List of Callbacks for download finished event.</param>
         /// <returns>A <see cref="Task"/> representing the asynchronous operation.</returns>
-        private async Task DownloadAsync(
+        public async Task DownloadAsync(
             ISnykProgressWorker progressWorker,
             string fileDestinationPath = null,
             List<CliDownloadFinishedCallback> downloadFinishedCallbacks = null)
@@ -235,7 +235,7 @@
         /// </summary>
         /// <param name="cliPath">CLI file full path.</param>
         /// <exception cref="ChecksumVerificationException">Exception if cli sha not correct.</exception>
-        private void VerifyCliFile(string cliPath)
+        public void VerifyCliFile(string cliPath)
         {
             if (!this.IsCliFileExists(cliPath))
             {
