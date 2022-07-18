@@ -246,10 +246,6 @@
         /// <inheritdoc />
         public bool Authenticate() => this.GeneralSettingsUserControl.Authenticate();
 
-        /// <inheritdoc />
-        public void Authenticate(Action<string> successCallbackAction, Action<string> errorCallbackAction)
-            => this.GeneralSettingsUserControl.Authenticate(successCallbackAction, errorCallbackAction);
-
         private void FireSettingsChangedEvent() => this.SettingsChanged?.Invoke(this, new SnykSettingsChangedEventArgs());
 
         private string GetAppCustomEndpoint()

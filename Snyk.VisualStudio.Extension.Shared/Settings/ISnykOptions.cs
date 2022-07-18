@@ -94,13 +94,6 @@
         bool Authenticate();
 
         /// <summary>
-        /// Call CLI auth for user authentication at Snyk and get user api token.
-        /// </summary>
-        /// <param name="successCallbackAction">Callback for success authentication case.</param>
-        /// <param name="errorCallbackAction">Callback for error on authentication case.</param>
-        void Authenticate(Action<string> successCallbackAction, Action<string> errorCallbackAction);
-
-        /// <summary>
         /// Force Visual Studio to load Settings from storage.
         /// </summary>
         void LoadSettingsFromStorage();
