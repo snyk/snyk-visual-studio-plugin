@@ -68,6 +68,7 @@ namespace Snyk.VisualStudio.Extension.Shared.Settings
             this.snykCodeSecurityInfoToolTip = new System.Windows.Forms.ToolTip(this.components);
             this.snykCodeQualityInfoToolTip = new System.Windows.Forms.ToolTip(this.components);
             this.customCliPathFileDialog = new System.Windows.Forms.OpenFileDialog();
+            this.clearCliCustomPathButton = new System.Windows.Forms.Button();
             ((System.ComponentModel.ISupportInitialize)(this.errorProvider)).BeginInit();
             this.generalSettingsGroupBox.SuspendLayout();
             this.productSelectionGroupBox.SuspendLayout();
@@ -228,6 +229,7 @@ namespace Snyk.VisualStudio.Extension.Shared.Settings
             // 
             // generalSettingsGroupBox
             // 
+            this.generalSettingsGroupBox.Controls.Add(this.clearCliCustomPathButton);
             this.generalSettingsGroupBox.Controls.Add(this.CliCustomPathBrowseButton);
             this.generalSettingsGroupBox.Controls.Add(this.CliCustomPathTextBox);
             this.generalSettingsGroupBox.Controls.Add(this.CliCustomPathLabel);
@@ -265,10 +267,10 @@ namespace Snyk.VisualStudio.Extension.Shared.Settings
             // 
             // CliCustomPathTextBox
             // 
-            this.CliCustomPathTextBox.Enabled = true;
             this.CliCustomPathTextBox.Location = new System.Drawing.Point(100, 291);
             this.CliCustomPathTextBox.Margin = new System.Windows.Forms.Padding(2);
             this.CliCustomPathTextBox.Name = "CliCustomPathTextBox";
+            this.CliCustomPathTextBox.ReadOnly = true;
             this.CliCustomPathTextBox.Size = new System.Drawing.Size(420, 20);
             this.CliCustomPathTextBox.TabIndex = 15;
             // 
@@ -449,7 +451,18 @@ namespace Snyk.VisualStudio.Extension.Shared.Settings
             // 
             // customCliPathFileDialog
             // 
+            this.customCliPathFileDialog.Filter = "Snyk CLI|snyk-win.exe";
             this.customCliPathFileDialog.SupportMultiDottedExtensions = true;
+            // 
+            // clearCliCustomPathButton
+            // 
+            this.clearCliCustomPathButton.Location = new System.Drawing.Point(179, 266);
+            this.clearCliCustomPathButton.Name = "clearCliCustomPathButton";
+            this.clearCliCustomPathButton.Size = new System.Drawing.Size(75, 23);
+            this.clearCliCustomPathButton.TabIndex = 17;
+            this.clearCliCustomPathButton.Text = "Clear";
+            this.clearCliCustomPathButton.UseVisualStyleBackColor = true;
+            this.clearCliCustomPathButton.Click += new System.EventHandler(this.ClearCliCustomPathButton_Click);
             // 
             // SnykGeneralSettingsUserControl
             // 
@@ -510,5 +523,6 @@ namespace Snyk.VisualStudio.Extension.Shared.Settings
         private TextBox CliCustomPathTextBox;
         private Button CliCustomPathBrowseButton;
         private OpenFileDialog customCliPathFileDialog;
+        private Button clearCliCustomPathButton;
     }
 }

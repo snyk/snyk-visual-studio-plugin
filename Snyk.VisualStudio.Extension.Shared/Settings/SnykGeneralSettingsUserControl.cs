@@ -668,9 +668,19 @@
             if (this.customCliPathFileDialog.ShowDialog() == DialogResult.OK)
             {
                 var selectedCliPath = this.customCliPathFileDialog.FileName;
-                this.OptionsDialogPage.CliCustomPath = selectedCliPath;
-                this.CliCustomPathTextBox.Text = selectedCliPath;
+                this.SetCliCustomPathValue(selectedCliPath);
             }
+        }
+
+        private void SetCliCustomPathValue(string selectedCliPath)
+        {
+            this.OptionsDialogPage.CliCustomPath = selectedCliPath;
+            this.CliCustomPathTextBox.Text = selectedCliPath;
+        }
+
+        private void ClearCliCustomPathButton_Click(object sender, EventArgs e)
+        {
+            this.SetCliCustomPathValue(string.Empty);
         }
     }
 }
