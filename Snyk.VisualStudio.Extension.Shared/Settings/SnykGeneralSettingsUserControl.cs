@@ -89,7 +89,9 @@
         {
             logger.Information("Enter Authenticate method");
 
-            if (!SnykCli.DoesCliExist(this.OptionsDialogPage.CliCustomPath))
+            var cli = this.OptionsDialogPage.ServiceProvider.NewCli();
+
+            if (!cli.IsCliFileFound())
             {
                 logger.Information("CLI not exists. Download CLI before get Api token");
                 throw new FileNotFoundException("CLI was not found");
@@ -216,7 +218,8 @@
 
             var serviceProvider = this.OptionsDialogPage.ServiceProvider;
 
-            if (SnykCli.DoesCliExist(this.OptionsDialogPage.CliCustomPath))
+            var cli = this.OptionsDialogPage.ServiceProvider.NewCli();
+            if (cli.IsCliFileFound())
             {
                 logger.Information("CLI exists. Calling SetupApiToken method");
 

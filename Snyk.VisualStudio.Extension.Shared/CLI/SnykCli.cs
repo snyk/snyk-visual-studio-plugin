@@ -62,17 +62,6 @@
         }
 
         /// <summary>
-        /// Check is CLI file exists.
-        /// </summary>
-        /// <param name="customCliPath">Custom CLI path. If null or empty, the default path from AppData will be used.</param>
-        /// <returns>True if CLI file exists.</returns>
-        public static bool DoesCliExist(string customCliPath)
-        {
-            var path = string.IsNullOrEmpty(customCliPath) ? GetSnykCliDefaultPath() : customCliPath;
-            return File.Exists(path);
-        }
-
-        /// <summary>
         /// Safely get Snyk API token from settings.
         /// </summary>
         /// <returns>API token string.</returns>
@@ -101,7 +90,8 @@
         public bool IsCliFileFound()
         {
             var customPath = this.Options.CliCustomPath;
-            return DoesCliExist(customPath);
+            var path = string.IsNullOrEmpty(customPath) ? GetSnykCliDefaultPath() : customPath;
+            return File.Exists(path);
         }
 
         /// <summary>
