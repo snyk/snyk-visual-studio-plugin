@@ -314,8 +314,19 @@
         /// </summary>
         /// <param name="sender">Source object.</param>
         /// <param name="eventArgs">Event args.</param>
-        public void OnDownloadCancelled(object sender, SnykCliDownloadEventArgs eventArgs) => this.ShowWelcomeOrRunScanScreen();
-        
+        public void OnDownloadCancelled(object sender, SnykCliDownloadEventArgs eventArgs)
+        {
+            var snykCli = this.serviceProvider.NewCli();
+            if (snykCli.IsCliFileFound())
+            {
+                this.ShowWelcomeOrRunScanScreen();
+            }
+            else
+            {
+                this.messagePanel.Text = "Snyk CLI not found. You can specify a path to a Snyk CLI executable from the settings.";
+            }
+        }
+
         private void OnDownloadFailed(object sender, Exception e)
         {
             var snykCli = this.serviceProvider.NewCli();
