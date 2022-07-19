@@ -3,7 +3,6 @@
     using System;
     using System.Diagnostics;
     using System.Threading;
-    using System.Threading.Tasks;
     using System.Windows;
     using System.Windows.Controls;
     using System.Windows.Documents;
@@ -15,7 +14,6 @@
     using Snyk.Code.Library.Domain.Analysis;
     using Snyk.Common;
     using Snyk.VisualStudio.Extension.Shared.CLI;
-    using Snyk.VisualStudio.Extension.Shared.CLI.Download;
     using Snyk.VisualStudio.Extension.Shared.Commands;
     using Snyk.VisualStudio.Extension.Shared.Model;
     using Snyk.VisualStudio.Extension.Shared.Service;

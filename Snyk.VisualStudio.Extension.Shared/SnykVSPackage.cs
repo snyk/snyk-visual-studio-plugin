@@ -5,10 +5,8 @@
     using System.Runtime.InteropServices;
     using System.Threading;
     using System.Threading.Tasks;
-    using System.Windows;
     using Microsoft.VisualStudio.Shell;
     using Microsoft.VisualStudio.Shell.Interop;
-    using Microsoft.VisualStudio.Threading;
     using Serilog;
     using Snyk.Common;
     using Snyk.VisualStudio.Extension.Shared.Commands;

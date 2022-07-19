@@ -3,7 +3,6 @@
     using System;
     using System.ComponentModel.Design;
     using Microsoft.VisualStudio.Shell;
-    using Snyk.VisualStudio.Extension.Shared.UI.Notifications;
     using Task = System.Threading.Tasks.Task;
 
     /// <summary>

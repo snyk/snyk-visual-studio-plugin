@@ -1,6 +1,5 @@
 ﻿namespace Snyk.VisualStudio.Extension.Shared.UI.Toolwindow
 {
-    using System;
     using System.Collections.Generic;
     using System.Diagnostics;
     using System.IO;
@@ -10,7 +9,6 @@
     using Microsoft.VisualStudio.Shell;
     using Microsoft.VisualStudio.Threading;
     using Snyk.VisualStudio.Extension.Shared.Service;
-    using Snyk.VisualStudio.Extension.Shared.UI.Notifications;
 
     /// <summary>
     /// Interaction logic for MessagePanel.xaml.
