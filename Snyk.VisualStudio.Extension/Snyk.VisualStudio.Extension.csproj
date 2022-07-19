@@ -26,6 +26,7 @@
     <StartAction>Program</StartAction>
     <StartProgram Condition="'$(DevEnvDir)' != ''">$(DevEnvDir)devenv.exe</StartProgram>
     <StartArguments>/rootsuffix Exp</StartArguments>
+	<DeployVsixExtensionFilesDependsOn>$(DeployVsixExtensionFilesDependsOn);SaveSettingsJsonFile</DeployVsixExtensionFilesDependsOn>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
     <DebugSymbols>true</DebugSymbols>
@@ -146,5 +147,27 @@
       <ItemGroup>
           <VSIXSourceItem Include="@(ReferencePath)" />
       </ItemGroup>
+  </Target>
+  <Target Name="SaveSettingsJsonFile"
+          DependsOnTargets="GetVsixDeploymentPath">
+	<Message Condition="!Exists('$(VsixDeploymentPath)settings.json')"
+	  Importance="High" 
+      Text="settings.json does not exist, skipping step"/>
+    <Message Condition="Exists('$(VsixDeploymentPath)settings.json')"
+      Importance="High" 
+      Text="Saving settings.json file from $(VsixDeploymentPath)settings.json"/>
+    <Move Condition="Exists('$(VsixDeploymentPath)settings.json')"
+          SourceFiles="$(VsixDeploymentPath)settings.json"
+          DestinationFiles="$(IntermediateOutputPath)settings.json"/>
+  </Target>
+  <Target Name="AfterBuild" 
+          DependsOnTargets="GetVsixDeploymentPath">
+    <Message 
+      Condition="Exists('$(IntermediateOutputPath)settings.json')"
+      Text="Copying settings.json back to $(VsixDeploymentPath)" 
+      Importance="High"/>
+    <Move Condition="Exists('$(IntermediateOutputPath)settings.json')"
+          DestinationFiles="$(VsixDeploymentPath)settings.json"
+          SourceFiles="$(IntermediateOutputPath)settings.json"/>
   </Target>
 </Project>
