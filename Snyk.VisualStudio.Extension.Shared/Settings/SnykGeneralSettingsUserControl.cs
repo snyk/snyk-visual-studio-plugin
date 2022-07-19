@@ -47,6 +47,8 @@
             this.apiService = apiService;
         }
 
+        private ISnykServiceProvider ServiceProvider => this.OptionsDialogPage.ServiceProvider;
+
         /// <summary>
         /// Initialize elements and actions.
         /// </summary>
@@ -69,8 +71,13 @@
             this.ignoreUnknownCACheckBox.Checked = this.OptionsDialogPage.IgnoreUnknownCA;
             this.usageAnalyticsCheckBox.Checked = this.OptionsDialogPage.UsageAnalyticsEnabled;
             this.ossEnabledCheckBox.Checked = this.OptionsDialogPage.OssEnabled;
-            this.CliAutoUpdate.Checked = this.OptionsDialogPage.CliAutoUpdate;
-            this.CliCustomPathTextBox.Text = this.OptionsDialogPage.CliCustomPath;
+            this.ManageBinariesAutomaticallyCheckbox.Checked = this.OptionsDialogPage.CliAutoUpdate;
+
+            var cliPath = string.IsNullOrEmpty(this.OptionsDialogPage.CliCustomPath)
+                ? SnykCli.GetSnykCliDefaultPath()
+                : this.OptionsDialogPage.CliCustomPath;
+
+            this.CliPathTextBox.Text = cliPath;
         }
 
         private void OptionsDialogPageOnSettingsChanged(object sender, SnykSettingsChangedEventArgs e)
@@ -88,7 +95,7 @@
         {
             logger.Information("Enter Authenticate method");
 
-            var cli = this.OptionsDialogPage.ServiceProvider.NewCli();
+            var cli = this.ServiceProvider.NewCli();
 
             if (!cli.IsCliFileFound())
             {
@@ -139,7 +146,7 @@
                 }));
             }
 
-            await this.OptionsDialogPage.ServiceProvider.ToolWindow.UpdateScreenStateAsync();
+            await this.ServiceProvider.ToolWindow.UpdateScreenStateAsync();
         }
 
         private void InitializeApiToken()
@@ -192,11 +199,11 @@
                 Path = string.Empty,
             };
 
-            this.OptionsDialogPage.ServiceProvider.TasksService.FireOssError(cliError);
+            this.ServiceProvider.TasksService.FireOssError(cliError);
 
-            this.OptionsDialogPage.ServiceProvider.ToolWindow.Show();
+            this.ServiceProvider.ToolWindow.Show();
 
-            await this.OptionsDialogPage.ServiceProvider.ToolWindow.UpdateScreenStateAsync();
+            await this.ServiceProvider.ToolWindow.UpdateScreenStateAsync();
         }
 
         private SnykCli NewCli() => new SnykCli(this.OptionsDialogPage);
@@ -215,9 +222,9 @@
             logger.Information("Start run task");
             await TaskScheduler.Default;
 
-            var serviceProvider = this.OptionsDialogPage.ServiceProvider;
+            var serviceProvider = this.ServiceProvider;
 
-            var cli = this.OptionsDialogPage.ServiceProvider.NewCli();
+            var cli = this.ServiceProvider.NewCli();
             if (cli.IsCliFileFound())
             {
                 logger.Information("CLI exists. Calling SetupApiToken method");
@@ -368,7 +375,7 @@
         private void TokenTextBox_Validating(object sender, System.ComponentModel.CancelEventArgs cancelEventArgs) =>
             ThreadHelper.JoinableTaskFactory.RunAsync(async () =>
             {
-                await this.OptionsDialogPage.ServiceProvider.ToolWindow.UpdateScreenStateAsync();
+                await this.ServiceProvider.ToolWindow.UpdateScreenStateAsync();
 
                 if (string.IsNullOrEmpty(this.tokenTextBox.Text))
                 {
@@ -539,7 +546,7 @@
             {
                 this.OptionsDialogPage.UsageAnalyticsEnabled = this.usageAnalyticsCheckBox.Checked;
 
-                var serviceProvider = this.OptionsDialogPage.ServiceProvider;
+                var serviceProvider = this.ServiceProvider;
 
                 serviceProvider.AnalyticsService.AnalyticsEnabledOption = this.usageAnalyticsCheckBox.Checked;
 
@@ -576,12 +583,12 @@
             Process.Start("https://docs.snyk.io/ide-tools/visual-studio-extension#organization-setting");
         }
 
-        private void CliAutoUpdate_CheckedChanged(object sender, EventArgs e)
+        private void ManageBinariesAutomaticallyCheckbox_CheckedChanged(object sender, EventArgs e)
         {
-            this.OptionsDialogPage.CliAutoUpdate = this.CliAutoUpdate.Checked;
+            this.OptionsDialogPage.CliAutoUpdate = this.ManageBinariesAutomaticallyCheckbox.Checked;
         }
 
-        private void CliCustomPathBrowseButton_Click(object sender, EventArgs e)
+        private void CliPathBrowseButton_Click(object sender, EventArgs e)
         {
             if (this.customCliPathFileDialog.ShowDialog() == DialogResult.OK)
             {
@@ -593,7 +600,9 @@
         private void SetCliCustomPathValue(string selectedCliPath)
         {
             this.OptionsDialogPage.CliCustomPath = selectedCliPath;
-            this.CliCustomPathTextBox.Text = selectedCliPath;
+            this.CliPathTextBox.Text = string.IsNullOrEmpty(this.OptionsDialogPage.CliCustomPath)
+                ? SnykCli.GetSnykCliDefaultPath()
+                : selectedCliPath;
         }
 
         private void ClearCliCustomPathButton_Click(object sender, EventArgs e)

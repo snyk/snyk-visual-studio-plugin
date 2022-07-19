@@ -49,13 +49,15 @@ namespace Snyk.VisualStudio.Extension.Shared.Settings
             this.codeSecurityEnabledCheckBox = new System.Windows.Forms.CheckBox();
             this.codeQualityEnabledCheckBox = new System.Windows.Forms.CheckBox();
             this.generalSettingsGroupBox = new System.Windows.Forms.GroupBox();
-            this.CliCustomPathBrowseButton = new System.Windows.Forms.Button();
-            this.CliCustomPathTextBox = new System.Windows.Forms.TextBox();
-            this.CliCustomPathLabel = new System.Windows.Forms.Label();
-            this.CliAutoUpdate = new System.Windows.Forms.CheckBox();
-            this.label1 = new System.Windows.Forms.Label();
             this.OrganizationInfoLink = new System.Windows.Forms.LinkLabel();
             this.OrgDescriptionText = new System.Windows.Forms.Label();
+            this.richTextBox1 = new System.Windows.Forms.RichTextBox();
+            this.resetCliPathToDefaultButton = new System.Windows.Forms.Button();
+            this.CliPathBrowseButton = new System.Windows.Forms.Button();
+            this.CliPathTextBox = new System.Windows.Forms.TextBox();
+            this.CliPathLabel = new System.Windows.Forms.Label();
+            this.ManageBinariesAutomaticallyCheckbox = new System.Windows.Forms.CheckBox();
+            this.label1 = new System.Windows.Forms.Label();
             this.productSelectionGroupBox = new System.Windows.Forms.GroupBox();
             this.snykCodeQualityInfoLabel = new System.Windows.Forms.Label();
             this.snykCodeSecurityInfoLabel = new System.Windows.Forms.Label();
@@ -68,11 +70,12 @@ namespace Snyk.VisualStudio.Extension.Shared.Settings
             this.snykCodeSecurityInfoToolTip = new System.Windows.Forms.ToolTip(this.components);
             this.snykCodeQualityInfoToolTip = new System.Windows.Forms.ToolTip(this.components);
             this.customCliPathFileDialog = new System.Windows.Forms.OpenFileDialog();
-            this.clearCliCustomPathButton = new System.Windows.Forms.Button();
+            this.ExecutablesGroupBox = new System.Windows.Forms.GroupBox();
             ((System.ComponentModel.ISupportInitialize)(this.errorProvider)).BeginInit();
             this.generalSettingsGroupBox.SuspendLayout();
             this.productSelectionGroupBox.SuspendLayout();
             this.userExperienceGroupBox.SuspendLayout();
+            this.ExecutablesGroupBox.SuspendLayout();
             this.SuspendLayout();
             // 
             // customEndpointTextBox
@@ -229,12 +232,6 @@ namespace Snyk.VisualStudio.Extension.Shared.Settings
             // 
             // generalSettingsGroupBox
             // 
-            this.generalSettingsGroupBox.Controls.Add(this.clearCliCustomPathButton);
-            this.generalSettingsGroupBox.Controls.Add(this.CliCustomPathBrowseButton);
-            this.generalSettingsGroupBox.Controls.Add(this.CliCustomPathTextBox);
-            this.generalSettingsGroupBox.Controls.Add(this.CliCustomPathLabel);
-            this.generalSettingsGroupBox.Controls.Add(this.CliAutoUpdate);
-            this.generalSettingsGroupBox.Controls.Add(this.label1);
             this.generalSettingsGroupBox.Controls.Add(this.OrganizationInfoLink);
             this.generalSettingsGroupBox.Controls.Add(this.OrgDescriptionText);
             this.generalSettingsGroupBox.Controls.Add(this.tokenLabel);
@@ -250,60 +247,10 @@ namespace Snyk.VisualStudio.Extension.Shared.Settings
             this.generalSettingsGroupBox.Margin = new System.Windows.Forms.Padding(8);
             this.generalSettingsGroupBox.Name = "generalSettingsGroupBox";
             this.generalSettingsGroupBox.Padding = new System.Windows.Forms.Padding(2);
-            this.generalSettingsGroupBox.Size = new System.Drawing.Size(560, 329);
+            this.generalSettingsGroupBox.Size = new System.Drawing.Size(560, 233);
             this.generalSettingsGroupBox.TabIndex = 17;
             this.generalSettingsGroupBox.TabStop = false;
             this.generalSettingsGroupBox.Text = "General Settings";
-            // 
-            // CliCustomPathBrowseButton
-            // 
-            this.CliCustomPathBrowseButton.Location = new System.Drawing.Point(98, 266);
-            this.CliCustomPathBrowseButton.Name = "CliCustomPathBrowseButton";
-            this.CliCustomPathBrowseButton.Size = new System.Drawing.Size(75, 23);
-            this.CliCustomPathBrowseButton.TabIndex = 16;
-            this.CliCustomPathBrowseButton.Text = "Browse";
-            this.CliCustomPathBrowseButton.UseVisualStyleBackColor = true;
-            this.CliCustomPathBrowseButton.Click += new System.EventHandler(this.CliCustomPathBrowseButton_Click);
-            // 
-            // CliCustomPathTextBox
-            // 
-            this.CliCustomPathTextBox.Location = new System.Drawing.Point(100, 291);
-            this.CliCustomPathTextBox.Margin = new System.Windows.Forms.Padding(2);
-            this.CliCustomPathTextBox.Name = "CliCustomPathTextBox";
-            this.CliCustomPathTextBox.ReadOnly = true;
-            this.CliCustomPathTextBox.Size = new System.Drawing.Size(420, 20);
-            this.CliCustomPathTextBox.TabIndex = 15;
-            // 
-            // CliCustomPathLabel
-            // 
-            this.CliCustomPathLabel.AutoSize = true;
-            this.CliCustomPathLabel.Location = new System.Drawing.Point(4, 271);
-            this.CliCustomPathLabel.Margin = new System.Windows.Forms.Padding(2, 0, 2, 0);
-            this.CliCustomPathLabel.Name = "CliCustomPathLabel";
-            this.CliCustomPathLabel.Size = new System.Drawing.Size(89, 13);
-            this.CliCustomPathLabel.TabIndex = 14;
-            this.CliCustomPathLabel.Text = "Snyk CLI Path:";
-            // 
-            // CliAutoUpdate
-            // 
-            this.CliAutoUpdate.AutoSize = true;
-            this.CliAutoUpdate.Location = new System.Drawing.Point(100, 240);
-            this.CliAutoUpdate.Margin = new System.Windows.Forms.Padding(2);
-            this.CliAutoUpdate.Name = "CliAutoUpdate";
-            this.CliAutoUpdate.Size = new System.Drawing.Size(15, 14);
-            this.CliAutoUpdate.TabIndex = 13;
-            this.CliAutoUpdate.UseVisualStyleBackColor = true;
-            this.CliAutoUpdate.CheckedChanged += new System.EventHandler(this.CliAutoUpdate_CheckedChanged);
-            // 
-            // label1
-            // 
-            this.label1.AutoSize = true;
-            this.label1.Location = new System.Drawing.Point(4, 240);
-            this.label1.Margin = new System.Windows.Forms.Padding(2, 0, 2, 0);
-            this.label1.Name = "label1";
-            this.label1.Size = new System.Drawing.Size(86, 13);
-            this.label1.TabIndex = 12;
-            this.label1.Text = "Update and install Snyk dependencies automatically:";
             // 
             // OrganizationInfoLink
             // 
@@ -327,6 +274,77 @@ namespace Snyk.VisualStudio.Extension.Shared.Settings
     "tch the URL slug as displayed in the URL of your org in the Snyk UI:\r\nhttps://ap" +
     "p.snyk.io/org/[OrgSlugName]";
             // 
+            // richTextBox1
+            // 
+            this.richTextBox1.BorderStyle = System.Windows.Forms.BorderStyle.None;
+            this.richTextBox1.Location = new System.Drawing.Point(7, 106);
+            this.richTextBox1.Name = "richTextBox1";
+            this.richTextBox1.ReadOnly = true;
+            this.richTextBox1.Size = new System.Drawing.Size(513, 32);
+            this.richTextBox1.TabIndex = 18;
+            this.richTextBox1.Text = "Snyk will download, install and update the dependencies for you. If this option i" +
+    "s disabled, make sure valid paths to the dependencies are provided.";
+            // 
+            // resetCliPathToDefaultButton
+            // 
+            this.resetCliPathToDefaultButton.Location = new System.Drawing.Point(179, 26);
+            this.resetCliPathToDefaultButton.Name = "resetCliPathToDefaultButton";
+            this.resetCliPathToDefaultButton.Size = new System.Drawing.Size(97, 23);
+            this.resetCliPathToDefaultButton.TabIndex = 17;
+            this.resetCliPathToDefaultButton.Text = "Reset to default";
+            this.resetCliPathToDefaultButton.UseVisualStyleBackColor = true;
+            this.resetCliPathToDefaultButton.Click += new System.EventHandler(this.ClearCliCustomPathButton_Click);
+            // 
+            // CliPathBrowseButton
+            // 
+            this.CliPathBrowseButton.Location = new System.Drawing.Point(98, 26);
+            this.CliPathBrowseButton.Name = "CliPathBrowseButton";
+            this.CliPathBrowseButton.Size = new System.Drawing.Size(75, 23);
+            this.CliPathBrowseButton.TabIndex = 16;
+            this.CliPathBrowseButton.Text = "Browse";
+            this.CliPathBrowseButton.UseVisualStyleBackColor = true;
+            this.CliPathBrowseButton.Click += new System.EventHandler(this.CliPathBrowseButton_Click);
+            // 
+            // CliPathTextBox
+            // 
+            this.CliPathTextBox.Location = new System.Drawing.Point(100, 51);
+            this.CliPathTextBox.Margin = new System.Windows.Forms.Padding(2);
+            this.CliPathTextBox.Name = "CliPathTextBox";
+            this.CliPathTextBox.ReadOnly = true;
+            this.CliPathTextBox.Size = new System.Drawing.Size(420, 20);
+            this.CliPathTextBox.TabIndex = 15;
+            // 
+            // CliPathLabel
+            // 
+            this.CliPathLabel.AutoSize = true;
+            this.CliPathLabel.Location = new System.Drawing.Point(4, 31);
+            this.CliPathLabel.Margin = new System.Windows.Forms.Padding(2, 0, 2, 0);
+            this.CliPathLabel.Name = "CliPathLabel";
+            this.CliPathLabel.Size = new System.Drawing.Size(78, 13);
+            this.CliPathLabel.TabIndex = 14;
+            this.CliPathLabel.Text = "Snyk CLI Path:";
+            // 
+            // ManageBinariesAutomaticallyCheckbox
+            // 
+            this.ManageBinariesAutomaticallyCheckbox.AutoSize = true;
+            this.ManageBinariesAutomaticallyCheckbox.Location = new System.Drawing.Point(12, 87);
+            this.ManageBinariesAutomaticallyCheckbox.Margin = new System.Windows.Forms.Padding(2);
+            this.ManageBinariesAutomaticallyCheckbox.Name = "ManageBinariesAutomaticallyCheckbox";
+            this.ManageBinariesAutomaticallyCheckbox.Size = new System.Drawing.Size(15, 14);
+            this.ManageBinariesAutomaticallyCheckbox.TabIndex = 13;
+            this.ManageBinariesAutomaticallyCheckbox.UseVisualStyleBackColor = true;
+            this.ManageBinariesAutomaticallyCheckbox.CheckedChanged += new System.EventHandler(this.ManageBinariesAutomaticallyCheckbox_CheckedChanged);
+            // 
+            // label1
+            // 
+            this.label1.AutoSize = true;
+            this.label1.Location = new System.Drawing.Point(31, 87);
+            this.label1.Margin = new System.Windows.Forms.Padding(2, 0, 2, 0);
+            this.label1.Name = "label1";
+            this.label1.Size = new System.Drawing.Size(253, 13);
+            this.label1.TabIndex = 12;
+            this.label1.Text = "Update and install Snyk dependencies automatically";
+            // 
             // productSelectionGroupBox
             // 
             this.productSelectionGroupBox.Controls.Add(this.snykCodeQualityInfoLabel);
@@ -338,7 +356,7 @@ namespace Snyk.VisualStudio.Extension.Shared.Settings
             this.productSelectionGroupBox.Controls.Add(this.codeQualityEnabledCheckBox);
             this.productSelectionGroupBox.Controls.Add(this.ossEnabledCheckBox);
             this.productSelectionGroupBox.Controls.Add(this.codeSecurityEnabledCheckBox);
-            this.productSelectionGroupBox.Location = new System.Drawing.Point(10, 360);
+            this.productSelectionGroupBox.Location = new System.Drawing.Point(10, 409);
             this.productSelectionGroupBox.Margin = new System.Windows.Forms.Padding(2);
             this.productSelectionGroupBox.Name = "productSelectionGroupBox";
             this.productSelectionGroupBox.Padding = new System.Windows.Forms.Padding(8);
@@ -425,7 +443,7 @@ namespace Snyk.VisualStudio.Extension.Shared.Settings
             // userExperienceGroupBox
             // 
             this.userExperienceGroupBox.Controls.Add(this.usageAnalyticsCheckBox);
-            this.userExperienceGroupBox.Location = new System.Drawing.Point(10, 498);
+            this.userExperienceGroupBox.Location = new System.Drawing.Point(10, 547);
             this.userExperienceGroupBox.Margin = new System.Windows.Forms.Padding(2);
             this.userExperienceGroupBox.Name = "userExperienceGroupBox";
             this.userExperienceGroupBox.Padding = new System.Windows.Forms.Padding(8);
@@ -454,21 +472,28 @@ namespace Snyk.VisualStudio.Extension.Shared.Settings
             this.customCliPathFileDialog.Filter = "Snyk CLI|snyk-win.exe";
             this.customCliPathFileDialog.SupportMultiDottedExtensions = true;
             // 
-            // clearCliCustomPathButton
+            // ExecutablesGroupBox
             // 
-            this.clearCliCustomPathButton.Location = new System.Drawing.Point(179, 266);
-            this.clearCliCustomPathButton.Name = "clearCliCustomPathButton";
-            this.clearCliCustomPathButton.Size = new System.Drawing.Size(75, 23);
-            this.clearCliCustomPathButton.TabIndex = 17;
-            this.clearCliCustomPathButton.Text = "Clear";
-            this.clearCliCustomPathButton.UseVisualStyleBackColor = true;
-            this.clearCliCustomPathButton.Click += new System.EventHandler(this.ClearCliCustomPathButton_Click);
+            this.ExecutablesGroupBox.Controls.Add(this.richTextBox1);
+            this.ExecutablesGroupBox.Controls.Add(this.CliPathLabel);
+            this.ExecutablesGroupBox.Controls.Add(this.resetCliPathToDefaultButton);
+            this.ExecutablesGroupBox.Controls.Add(this.label1);
+            this.ExecutablesGroupBox.Controls.Add(this.CliPathBrowseButton);
+            this.ExecutablesGroupBox.Controls.Add(this.ManageBinariesAutomaticallyCheckbox);
+            this.ExecutablesGroupBox.Controls.Add(this.CliPathTextBox);
+            this.ExecutablesGroupBox.Location = new System.Drawing.Point(10, 254);
+            this.ExecutablesGroupBox.Name = "ExecutablesGroupBox";
+            this.ExecutablesGroupBox.Size = new System.Drawing.Size(560, 152);
+            this.ExecutablesGroupBox.TabIndex = 19;
+            this.ExecutablesGroupBox.TabStop = false;
+            this.ExecutablesGroupBox.Text = "Executables Settings";
             // 
             // SnykGeneralSettingsUserControl
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.AutoScroll = true;
+            this.Controls.Add(this.ExecutablesGroupBox);
             this.Controls.Add(this.userExperienceGroupBox);
             this.Controls.Add(this.productSelectionGroupBox);
             this.Controls.Add(this.generalSettingsGroupBox);
@@ -483,6 +508,8 @@ namespace Snyk.VisualStudio.Extension.Shared.Settings
             this.productSelectionGroupBox.PerformLayout();
             this.userExperienceGroupBox.ResumeLayout(false);
             this.userExperienceGroupBox.PerformLayout();
+            this.ExecutablesGroupBox.ResumeLayout(false);
+            this.ExecutablesGroupBox.PerformLayout();
             this.ResumeLayout(false);
 
         }
@@ -518,11 +545,13 @@ namespace Snyk.VisualStudio.Extension.Shared.Settings
         private LinkLabel OrganizationInfoLink;
         private Label OrgDescriptionText;
         private Label label1;
-        private CheckBox CliAutoUpdate;
-        private Label CliCustomPathLabel;
-        private TextBox CliCustomPathTextBox;
-        private Button CliCustomPathBrowseButton;
+        private CheckBox ManageBinariesAutomaticallyCheckbox;
+        private Label CliPathLabel;
+        private TextBox CliPathTextBox;
+        private Button CliPathBrowseButton;
         private OpenFileDialog customCliPathFileDialog;
-        private Button clearCliCustomPathButton;
+        private Button resetCliPathToDefaultButton;
+        private RichTextBox richTextBox1;
+        private GroupBox ExecutablesGroupBox;
     }
 }
