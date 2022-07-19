@@ -138,7 +138,7 @@
     <Message Condition="Exists('$(VsixDeploymentPath)settings.json')"
       Importance="High" 
       Text="Saving settings.json file from $(VsixDeploymentPath)settings.json"/>
-    <Copy Condition="Exists('$(VsixDeploymentPath)settings.json')"
+    <Move Condition="Exists('$(VsixDeploymentPath)settings.json')"
           SourceFiles="$(VsixDeploymentPath)settings.json"
           DestinationFiles="$(IntermediateOutputPath)settings.json"/>
   </Target>
@@ -148,7 +148,7 @@
       Condition="Exists('$(IntermediateOutputPath)settings.json')"
       Text="Copying settings.json back to $(VsixDeploymentPath)" 
       Importance="High"/>
-    <Copy Condition="Exists('$(IntermediateOutputPath)settings.json')"
+    <Move Condition="Exists('$(IntermediateOutputPath)settings.json')"
           DestinationFiles="$(VsixDeploymentPath)settings.json"
           SourceFiles="$(IntermediateOutputPath)settings.json"/>
   </Target>
