@@ -282,7 +282,7 @@ namespace Snyk.VisualStudio.Extension.Shared.Settings
             this.CliCustomPathLabel.Name = "CliCustomPathLabel";
             this.CliCustomPathLabel.Size = new System.Drawing.Size(89, 13);
             this.CliCustomPathLabel.TabIndex = 14;
-            this.CliCustomPathLabel.Text = "CLI Custom Path:";
+            this.CliCustomPathLabel.Text = "Snyk CLI Path:";
             // 
             // CliAutoUpdate
             // 
@@ -303,7 +303,7 @@ namespace Snyk.VisualStudio.Extension.Shared.Settings
             this.label1.Name = "label1";
             this.label1.Size = new System.Drawing.Size(86, 13);
             this.label1.TabIndex = 12;
-            this.label1.Text = "CLI auto-update:";
+            this.label1.Text = "Update and install Snyk dependencies automatically:";
             // 
             // OrganizationInfoLink
             // 
