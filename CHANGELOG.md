@@ -8,7 +8,7 @@
 - Improved UI/UX when the CLI is missing.
 
 ### Fixed
-- Several issues with auto-updating
+- Several issues with auto-updating the CLI executable.
 
 ## [1.1.24]
 
