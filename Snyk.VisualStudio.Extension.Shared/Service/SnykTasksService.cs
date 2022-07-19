@@ -689,6 +689,7 @@
             if (!userSettingsStorageService.CliAutoUpdate)
             {
                 Logger.Information("CLI auto-update is disabled, CLI download is skipped.");
+                this.DownloadCancelled?.Invoke(this, new SnykCliDownloadEventArgs());
                 return;
             }
 
