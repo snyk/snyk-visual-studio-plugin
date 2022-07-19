@@ -174,9 +174,9 @@
                 this.isSnykCodeScanning = false;
                 this.isCliDownloading = false;
 
-                this.CancelTask(this.ossScanTokenSource);
-                this.CancelTask(this.snykCodeScanTokenSource);
-                this.CancelTask(this.downloadCliTokenSource);
+                this.CancelTask(ref this.ossScanTokenSource);
+                this.CancelTask(ref this.snykCodeScanTokenSource);
+                this.CancelTask(ref this.downloadCliTokenSource);
 
                 this.serviceProvider.OssService.StopScan();
             }
@@ -280,7 +280,7 @@
 
                             if (progressWorker.IsWorkFinished)
                             {
-                                DisposeCancellationTokenSource(this.downloadCliTokenSource);
+                                DisposeCancellationTokenSource(ref this.downloadCliTokenSource);
 
                                 this.FireTaskFinished();
                             }
@@ -363,7 +363,7 @@
         /// <param name="progress">Donwload progress form 0..100$.</param>
         protected internal void OnDownloadUpdate(int progress) => this.DownloadUpdate?.Invoke(this, new SnykCliDownloadEventArgs(progress));
 
-        private static void DisposeCancellationTokenSource(CancellationTokenSource tokenSource)
+        private static void DisposeCancellationTokenSource(ref CancellationTokenSource tokenSource)
         {
             try
             {
@@ -372,6 +372,10 @@
             catch (Exception e)
             {
                 Logger.Error(e, "Error when trying to dispose cancellation token source");
+            }
+            finally
+            {
+                tokenSource = null;
             }
         }
 
@@ -462,7 +466,7 @@
             }
             finally
             {
-                DisposeCancellationTokenSource(this.ossScanTokenSource);
+                DisposeCancellationTokenSource(ref this.ossScanTokenSource);
 
                 this.isOssScanning = false;
 
@@ -544,7 +548,7 @@
             }
             finally
             {
-                DisposeCancellationTokenSource(this.snykCodeScanTokenSource);
+                DisposeCancellationTokenSource(ref this.snykCodeScanTokenSource);
 
                 this.isSnykCodeScanning = false;
 
@@ -662,7 +666,7 @@
             return selectedProducts;
         }
 
-        private void CancelTask(CancellationTokenSource tokenSource)
+        private void CancelTask(ref CancellationTokenSource tokenSource)
         {
             try
             {
@@ -713,7 +717,7 @@
                 {
                     userSettingsStorageService.SaveCurrentCliVersion(cliDownloader.GetLatestReleaseInfo().Name);
                     userSettingsStorageService.SaveCliReleaseLastCheckDate(DateTime.UtcNow);
-                    DisposeCancellationTokenSource(this.downloadCliTokenSource);
+                    DisposeCancellationTokenSource(ref this.downloadCliTokenSource);
                 });
 
                 var downloadPath = this.serviceProvider.Options.CliCustomPath;
