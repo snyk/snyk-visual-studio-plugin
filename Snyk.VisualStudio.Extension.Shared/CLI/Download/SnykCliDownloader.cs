@@ -23,25 +23,15 @@
 
         private static readonly ILogger Logger = LogManager.ForContext<SnykCliDownloader>();
 
-        private string currentCliVersion;
+        private readonly string currentCliVersion;
 
         private string expectedSha;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="SnykCliDownloader"/> class.
         /// </summary>
-        /// <param name="logger">ActivityLogger parameter.</param>
-        public SnykCliDownloader()
-        {
-        }
-
-        /// <summary>
-        /// Initializes a new instance of the <see cref="SnykCliDownloader"/> class.
-        /// </summary>
         /// <param name="currentCliVersion">Initial CLI version parameter.</param>
-        /// <param name="logger">ActivityLogger parameter.</param>
-        public SnykCliDownloader(string currentCliVersion)
-            : this() => this.currentCliVersion = currentCliVersion;
+        public SnykCliDownloader(string currentCliVersion) => this.currentCliVersion = currentCliVersion;
 
         /// <summary>
         /// Callback on download finished event.
@@ -49,10 +39,19 @@
         public delegate void CliDownloadFinishedCallback();
 
         /// <summary>
+        /// Gets the valid CLI path. When a custom CLI path is specified, it returns the custom path.
+        /// When the Custom CLI path is null or empty, it returns the default CLI path.
+        /// </summary>
+        /// <param name="customCliPath">The custom CLI path from the settings.</param>
+        /// <returns>If <paramref name="customCliPath"/> is null or empty, the default path would be returned.</returns>
+        private static string GetCliFilePath(string customCliPath) => string.IsNullOrEmpty(customCliPath)
+            ? SnykCli.GetSnykCliDefaultPath()
+            : customCliPath;
+
+        /// <summary>
         /// Request last cli information.
         /// </summary>
         /// <returns>Latest CLI relaese information.</returns>
-        /// <summary>
         public LatestReleaseInfo GetLatestReleaseInfo()
         {
             Logger.Information("Enter GetLatestReleaseInfo method");
@@ -76,7 +75,6 @@
         /// Request last cli sha.
         /// </summary>
         /// <returns>CLI sha string.</returns>
-        /// <summary>
         public string GetLatestCliSha()
         {
             Logger.Information("Enter GetLatestCliSha method");
@@ -174,7 +172,7 @@
             string filePath = null,
             List<CliDownloadFinishedCallback> downloadFinishedCallbacks = null)
         {
-            string fileDestinationPath = this.GetCliFilePath(filePath);
+            string fileDestinationPath = GetCliFilePath(filePath);
 
             var isCliDownloadNeeded = this.IsCliDownloadNeeded(lastCheckDate, fileDestinationPath);
 
@@ -205,7 +203,7 @@
         {
             Logger.Information("Enter Download method");
 
-            string cliFileDestinationPath = this.GetCliFilePath(fileDestinationPath);
+            string cliFileDestinationPath = GetCliFilePath(fileDestinationPath);
 
             Logger.Information("CLI File Destination Path: {Path}", cliFileDestinationPath);
 
@@ -396,12 +394,10 @@
             {
                 return int.Parse(cliVersion.Replace(".", string.Empty));
             }
-            catch (FormatException e)
+            catch (FormatException)
             {
                 return -1;
             }
         }
-
-        private string GetCliFilePath(string filePath) => string.IsNullOrEmpty(filePath) ? SnykCli.GetSnykCliDefaultPath() : filePath;
     }
 }
