@@ -29,13 +29,13 @@
             this.settingsLoader = new SnykSettingsLoader(settingsPath);
         }
 
-        public bool CliAutoUpdate
+        public bool BinariesAutoUpdate
         {
-            get => this.LoadSettings().CliAutoUpdateEnabled;
+            get => this.LoadSettings().BinariesAutoUpdateEnabled;
             set
             {
                 var settings = this.LoadSettings();
-                settings.CliAutoUpdateEnabled = value;
+                settings.BinariesAutoUpdateEnabled = value;
                 this.settingsLoader.Save(settings);
             }
         }

@@ -71,7 +71,7 @@
             this.ignoreUnknownCACheckBox.Checked = this.OptionsDialogPage.IgnoreUnknownCA;
             this.usageAnalyticsCheckBox.Checked = this.OptionsDialogPage.UsageAnalyticsEnabled;
             this.ossEnabledCheckBox.Checked = this.OptionsDialogPage.OssEnabled;
-            this.ManageBinariesAutomaticallyCheckbox.Checked = this.OptionsDialogPage.CliAutoUpdate;
+            this.ManageBinariesAutomaticallyCheckbox.Checked = this.OptionsDialogPage.BinariesAutoUpdate;
 
             var cliPath = string.IsNullOrEmpty(this.OptionsDialogPage.CliCustomPath)
                 ? SnykCli.GetSnykCliDefaultPath()
@@ -585,7 +585,7 @@
 
         private void ManageBinariesAutomaticallyCheckbox_CheckedChanged(object sender, EventArgs e)
         {
-            this.OptionsDialogPage.CliAutoUpdate = this.ManageBinariesAutomaticallyCheckbox.Checked;
+            this.OptionsDialogPage.BinariesAutoUpdate = this.ManageBinariesAutomaticallyCheckbox.Checked;
         }
 
         private void CliPathBrowseButton_Click(object sender, EventArgs e)

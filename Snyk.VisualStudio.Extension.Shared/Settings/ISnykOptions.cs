@@ -66,7 +66,7 @@
         /// <summary>
         /// Gets or sets a value indicating whether the CLI should be automatically updated.
         /// </summary>
-        bool CliAutoUpdate { get; set; }
+        bool BinariesAutoUpdate { get; set; }
 
         /// <summary>
         /// Gets or sets the value of the CLI custom path. If empty, the default path from AppData would be used.

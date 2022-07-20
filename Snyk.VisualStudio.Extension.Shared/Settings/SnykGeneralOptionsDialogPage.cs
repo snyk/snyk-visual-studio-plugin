@@ -163,14 +163,14 @@
         }
 
         /// <inheritdoc/>
-        public bool CliAutoUpdate
+        public bool BinariesAutoUpdate
         {
-            get => this.userStorageSettingsService.CliAutoUpdate;
+            get => this.userStorageSettingsService.BinariesAutoUpdate;
             set
             {
                 if (this.userStorageSettingsService != null)
                 {
-                    this.userStorageSettingsService.CliAutoUpdate = value;
+                    this.userStorageSettingsService.BinariesAutoUpdate = value;
                 }
             }
         }

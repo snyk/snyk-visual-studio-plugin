@@ -686,7 +686,7 @@
         private async Task DownloadAsync(CliDownloadFinishedCallback downloadFinishedCallback, ISnykProgressWorker progressWorker)
         {
             var userSettingsStorageService = this.serviceProvider.UserStorageSettingsService;
-            if (!userSettingsStorageService.CliAutoUpdate)
+            if (!userSettingsStorageService.BinariesAutoUpdate)
             {
                 Logger.Information("CLI auto-update is disabled, CLI download is skipped.");
                 this.DownloadCancelled?.Invoke(this, new SnykCliDownloadEventArgs());
