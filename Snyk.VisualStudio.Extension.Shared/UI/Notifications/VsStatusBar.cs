@@ -5,6 +5,7 @@
     using Microsoft.VisualStudio.Shell;
     using Microsoft.VisualStudio.Shell.Interop;
     using Snyk.VisualStudio.Extension.Shared.Service;
+    using Task = System.Threading.Tasks.Task;
 
     /// <summary>
     /// Wrapper for Visual Studio status bar.
@@ -38,11 +39,11 @@
         /// <param name="title">Message box title.</param>
         /// <param name="message">Message box message.</param>
         /// <returns>Task</returns>
-        public System.Threading.Tasks.Task ShowMessageBoxAsync(string title, string message)
+        public Task ShowMessageBoxAsync(string title, string message)
         {
             MessageBox.Show(message, title);
 
-            return System.Threading.Tasks.Task.CompletedTask;
+            return Task.CompletedTask;
         }
 
         /// <summary>
@@ -79,7 +80,7 @@
             _ = this.ShowMessageWithProgressIconAsync(message, (short)Constants.SBAI_Build, 0);
         }
 
-        private async System.Threading.Tasks.Task ShowMessageWithProgressIconAsync(string message, object icon, int showIcon)
+        private async Task ShowMessageWithProgressIconAsync(string message, object icon, int showIcon)
         {
             await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
 
@@ -89,7 +90,7 @@
             statusBar.Animation(showIcon, ref icon);
         }
 
-        private async System.Threading.Tasks.Task ShowMessageAsync(string message)
+        private async Task ShowMessageAsync(string message)
         {
             await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
 

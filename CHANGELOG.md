@@ -1,14 +1,24 @@
 # Snyk Changelog
 
+## [1.1.25]
+
+### Added
+- Option to disable CLI auto-update.
+- Option to select CLI custom path.
+- Improved UI/UX when the CLI is missing.
+
+### Fixed
+- Several issues with auto-updating the CLI executable.
+
 ## [1.1.24]
 
 ### Fixed
- - Extension errors on VS2017.
+- Extension fails to load on VS2017.
 
 ## [1.1.23]
 
 ### Added
- - Organization description information in settings.
+- Organization description information in settings.
  
 ### Fixed
 - Changing custom endpoint settings leads to authentication errors.

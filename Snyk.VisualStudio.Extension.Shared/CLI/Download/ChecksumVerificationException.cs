@@ -7,13 +7,14 @@
     /// </summary>
     public class ChecksumVerificationException : Exception
     {
-        /// <summary>
-        /// Initializes a new instance of the <see cref="ChecksumVerificationException"/> class.
-        /// </summary>
-        /// <param name="message">Exception message.</param>
-        public ChecksumVerificationException(string message)
-            : base(message)
+        public string ExpectedHash { get; }
+        public string ActualHash { get; }
+
+        public ChecksumVerificationException(string expectedHash, string actualHash)
+            : base($"Expected {expectedHash}, but downloaded file has {actualHash}")
         {
+            this.ExpectedHash = expectedHash;
+            this.ActualHash = actualHash;
         }
     }
 }

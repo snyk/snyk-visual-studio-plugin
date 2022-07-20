@@ -1,7 +1,9 @@
 ﻿namespace Snyk.VisualStudio.Extension.Shared.Settings
 {
     using System;
+    using System.Diagnostics;
     using System.Diagnostics.CodeAnalysis;
+    using System.IO;
     using System.Threading.Tasks;
     using System.Windows.Forms;
     using Microsoft.VisualStudio.Shell;
@@ -11,7 +13,6 @@
     using Snyk.VisualStudio.Extension.Shared.CLI;
     using Snyk.VisualStudio.Extension.Shared.Service;
     using Snyk.VisualStudio.Extension.Shared.UI.Notifications;
-    using static Snyk.VisualStudio.Extension.Shared.CLI.Download.SnykCliDownloader;
     using Task = System.Threading.Tasks.Task;
 
     /// <summary>
@@ -46,6 +47,8 @@
             this.apiService = apiService;
         }
 
+        private ISnykServiceProvider ServiceProvider => this.OptionsDialogPage.ServiceProvider;
+
         /// <summary>
         /// Initialize elements and actions.
         /// </summary>
@@ -56,7 +59,7 @@
             this.InitializeApiToken();
             this.UpdateViewFromOptionsDialog();
             this.OptionsDialogPage.SettingsChanged += this.OptionsDialogPageOnSettingsChanged;
-            this.Load += new EventHandler(this.SnykGeneralSettingsUserControl_Load);
+            this.Load += this.SnykGeneralSettingsUserControl_Load;
 
             logger.Information("Leave Initialize method");
         }
@@ -68,6 +71,13 @@
             this.ignoreUnknownCACheckBox.Checked = this.OptionsDialogPage.IgnoreUnknownCA;
             this.usageAnalyticsCheckBox.Checked = this.OptionsDialogPage.UsageAnalyticsEnabled;
             this.ossEnabledCheckBox.Checked = this.OptionsDialogPage.OssEnabled;
+            this.ManageBinariesAutomaticallyCheckbox.Checked = this.OptionsDialogPage.BinariesAutoUpdate;
+
+            var cliPath = string.IsNullOrEmpty(this.OptionsDialogPage.CliCustomPath)
+                ? SnykCli.GetSnykCliDefaultPath()
+                : this.OptionsDialogPage.CliCustomPath;
+
+            this.CliPathTextBox.Text = cliPath;
         }
 
         private void OptionsDialogPageOnSettingsChanged(object sender, SnykSettingsChangedEventArgs e)
@@ -79,31 +89,23 @@
         /// <summary>
         /// Authenticate user via cli auth.
         /// </summary>
-        /// <param name="successCallbackAction">Callback for success authentication.</param>
-        /// <param name="errorCallbackAction">Callback for fail authentication.</param>
-        public void Authenticate(Action<string> successCallbackAction, Action<string> errorCallbackAction)
+        /// <exception cref="FileNotFoundException">Thrown when the CLI could not be found.</exception>
+        /// <returns>Returns true if authenticated successfully, false otherwise.</returns>
+        public bool Authenticate()
         {
             logger.Information("Enter Authenticate method");
 
-            _ = Task.Run(() =>
+            var cli = this.ServiceProvider.NewCli();
+
+            if (!cli.IsCliFileFound())
             {
-                var serviceProvider = this.OptionsDialogPage.ServiceProvider;
+                logger.Information("CLI not exists. Download CLI before get Api token");
+                throw new FileNotFoundException("CLI was not found");
+            }
 
-                if (SnykCli.IsCliExists())
-                {
-                    logger.Information("CLI exists. Calling SetupApiToken method");
+            logger.Information("CLI exists. Calling SetupApiToken method");
 
-                    this.SetupApiToken(successCallbackAction, errorCallbackAction);
-                }
-                else
-                {
-                    logger.Information("CLI not exists. Download CLI before get Api token");
-
-                    serviceProvider.TasksService.Download(new CliDownloadFinishedCallback(this.OnCliDownloadFinishedCallback));
-                }
-            });
-
-            logger.Information("Leave Authenticate method");
+            return this.SetupApiToken();
         }
 
         private async Task OnAuthenticationSuccessfulAsync(string apiToken)
@@ -144,7 +146,7 @@
                 }));
             }
 
-            await this.OptionsDialogPage.ServiceProvider.ToolWindow.UpdateScreenStateAsync();
+            await this.ServiceProvider.ToolWindow.UpdateScreenStateAsync();
         }
 
         private void InitializeApiToken()
@@ -197,14 +199,14 @@
                 Path = string.Empty,
             };
 
-            this.OptionsDialogPage.ServiceProvider.TasksService.FireOssError(cliError);
+            this.ServiceProvider.TasksService.FireOssError(cliError);
 
-            this.OptionsDialogPage.ServiceProvider.ToolWindow.Show();
+            this.ServiceProvider.ToolWindow.Show();
 
-            await this.OptionsDialogPage.ServiceProvider.ToolWindow.UpdateScreenStateAsync();
+            await this.ServiceProvider.ToolWindow.UpdateScreenStateAsync();
         }
 
-        private SnykCli NewCli() => new SnykCli { Options = this.OptionsDialogPage };
+        private SnykCli NewCli() => new SnykCli(this.OptionsDialogPage);
 
         private void AuthenticateButton_Click(object sender, EventArgs eventArgs) => ThreadHelper.JoinableTaskFactory
             .RunAsync(this.AuthenticateButtonClickAsync);
@@ -220,9 +222,10 @@
             logger.Information("Start run task");
             await TaskScheduler.Default;
 
-            var serviceProvider = this.OptionsDialogPage.ServiceProvider;
+            var serviceProvider = this.ServiceProvider;
 
-            if (SnykCli.IsCliExists())
+            var cli = this.ServiceProvider.NewCli();
+            if (cli.IsCliFileFound())
             {
                 logger.Information("CLI exists. Calling SetupApiToken method");
 
@@ -298,37 +301,29 @@
             }
         }
 
-        private void SetupApiToken(Action<string> successCallback, Action<string> errorCallback)
+        private bool SetupApiToken()
         {
             logger.Information("Enter SetupApiToken method");
-
-            string apiToken;
-
             try
             {
                 logger.Information("Try get Api token");
-
-                apiToken = this.NewCli().GetApiToken();
+                var apiToken = this.NewCli().GetApiToken();
 
                 if (string.IsNullOrEmpty(apiToken))
                 {
                     logger.Information("Api toke is null or empty. Try to authenticate via snyk auth");
-
                     string authResultMessage = this.NewCli().Authenticate();
 
                     if (authResultMessage.Contains("Your account has been authenticated. Snyk is now ready to be used."))
                     {
                         logger.Information("Snyk auth executed successfully. Try to get Api token");
-
                         apiToken = this.NewCli().GetApiToken();
                     }
                     else
                     {
                         logger.Information("Snyk auth executed with error: {AuthResultMessage}", authResultMessage);
-
-                        errorCallback(authResultMessage);
-
-                        return;
+                        NotificationService.Instance.ShowErrorInfoBar(authResultMessage);
+                        return false;
                     }
                 }
 
@@ -336,20 +331,18 @@
 
                 if (!Common.Guid.IsValid(apiToken))
                 {
-                    errorCallback($"Invalid GUID: {apiToken}");
-
-                    return;
+                    NotificationService.Instance.ShowErrorInfoBar($"Invalid API Token: {apiToken}");
+                    return false;
                 }
 
-                successCallback(apiToken);
+                this.OptionsDialogPage.ApiToken = apiToken;
+                return true;
 
-                logger.Information("Leave SetupApiToken method");
             }
             catch (Exception e)
             {
                 logger.Error(e, "Setup api token in general settings");
-
-                errorCallback(e.Message);
+                return false;
             }
         }
 
@@ -382,7 +375,7 @@
         private void TokenTextBox_Validating(object sender, System.ComponentModel.CancelEventArgs cancelEventArgs) =>
             ThreadHelper.JoinableTaskFactory.RunAsync(async () =>
             {
-                await this.OptionsDialogPage.ServiceProvider.ToolWindow.UpdateScreenStateAsync();
+                await this.ServiceProvider.ToolWindow.UpdateScreenStateAsync();
 
                 if (string.IsNullOrEmpty(this.tokenTextBox.Text))
                 {
@@ -553,7 +546,7 @@
             {
                 this.OptionsDialogPage.UsageAnalyticsEnabled = this.usageAnalyticsCheckBox.Checked;
 
-                var serviceProvider = this.OptionsDialogPage.ServiceProvider;
+                var serviceProvider = this.ServiceProvider;
 
                 serviceProvider.AnalyticsService.AnalyticsEnabledOption = this.usageAnalyticsCheckBox.Checked;
 
@@ -582,6 +575,39 @@
         private void CheckAgainLinkLabel_LinkClicked(object sender, LinkLabelLinkClickedEventArgs e)
         {
             _ = this.StartSastEnablementCheckLoopAsync();
+        }
+
+        private void OrganizationInfoLink_LinkClicked(object sender, LinkLabelLinkClickedEventArgs e)
+        {
+            this.OrganizationInfoLink.LinkVisited = true;
+            Process.Start("https://docs.snyk.io/ide-tools/visual-studio-extension#organization-setting");
+        }
+
+        private void ManageBinariesAutomaticallyCheckbox_CheckedChanged(object sender, EventArgs e)
+        {
+            this.OptionsDialogPage.BinariesAutoUpdate = this.ManageBinariesAutomaticallyCheckbox.Checked;
+        }
+
+        private void CliPathBrowseButton_Click(object sender, EventArgs e)
+        {
+            if (this.customCliPathFileDialog.ShowDialog() == DialogResult.OK)
+            {
+                var selectedCliPath = this.customCliPathFileDialog.FileName;
+                this.SetCliCustomPathValue(selectedCliPath);
+            }
+        }
+
+        private void SetCliCustomPathValue(string selectedCliPath)
+        {
+            this.OptionsDialogPage.CliCustomPath = selectedCliPath;
+            this.CliPathTextBox.Text = string.IsNullOrEmpty(this.OptionsDialogPage.CliCustomPath)
+                ? SnykCli.GetSnykCliDefaultPath()
+                : selectedCliPath;
+        }
+
+        private void ClearCliCustomPathButton_Click(object sender, EventArgs e)
+        {
+            this.SetCliCustomPathValue(string.Empty);
         }
     }
 }

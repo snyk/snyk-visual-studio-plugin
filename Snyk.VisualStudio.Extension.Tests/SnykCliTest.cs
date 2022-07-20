@@ -25,9 +25,8 @@
         [Fact]
         public void SnykCliTest_CliReturnError_GetApiTokenThrowException()
         {
-            var cli = new SnykCli
+            var cli = new SnykCli(this.optionsMock.Object)
             {
-                Options = this.optionsMock.Object,
                 ConsoleRunner = new SnykMockConsoleRunner("cli file note exists"),
             };
 
@@ -37,11 +36,6 @@
         [Fact]
         public void SnykCliTest_ConvertRawCliStringToCliResultWithCriticalSeverity_CriticalSeverityVulnExists()
         {
-            var cli = new SnykCli
-            {
-                Options = this.optionsMock.Object,
-            };
-
             var cliResult = SnykCli.ConvertRawCliStringToCliResult(this.GetFileContent("CriticalSeverityObject.json"));
 
             bool isCriticalSeverityVulnExists = false;
@@ -60,9 +54,9 @@
         [Fact]
         public async Task SnykCliTest_RunScan_SuccessfulCliResultAsync()
         {
-            var cli = new SnykCli
+            var cli = new SnykCli(this.optionsMock.Object)
             {
-                Options = this.optionsMock.Object,
+                
                 ConsoleRunner = new SnykMockConsoleRunner(this.GetFileContent("VulnerabilitiesSingleObject.json")),
             };
 
@@ -76,9 +70,9 @@
         {
             string testGuid = Guid.NewGuid().ToString();
 
-            var cli = new SnykCli
+            var cli = new SnykCli(this.optionsMock.Object)
             {
-                Options = this.optionsMock.Object,
+                
                 ConsoleRunner = new SnykMockConsoleRunner(testGuid),
             };
 
@@ -88,9 +82,9 @@
         [Fact]
         public void SnykCliTest_Authenticate_Successful()
         {
-            var cli = new SnykCli
+            var cli = new SnykCli(this.optionsMock.Object)
             {
-                Options = this.optionsMock.Object,
+                
                 ConsoleRunner = new SnykMockConsoleRunner("Your account has been authenticated. Snyk is now ready to be used."),
             };
 
@@ -100,10 +94,7 @@
         [Fact]
         public async Task SnykCliTest_BuildArguments_WithoutOptionsAsync()
         {
-            var cli = new SnykCli
-            {
-                Options = this.optionsMock.Object,
-            };
+            var cli = new SnykCli(this.optionsMock.Object);
 
             Assert.Equal("--json test", await cli.BuildScanArgumentsAsync());
         }
@@ -115,7 +106,7 @@
                 .Setup(options => options.CustomEndpoint)
                 .Returns("https://github.com/snyk/");
 
-            var cli = new SnykCli { Options = this.optionsMock.Object, };
+            var cli = new SnykCli(this.optionsMock.Object);
 
             Assert.Equal("--json test --API=https://github.com/snyk/", await cli.BuildScanArgumentsAsync());
         }
@@ -127,7 +118,7 @@
                 .Setup(options => options.IgnoreUnknownCA)
                 .Returns(true);
 
-            var cli = new SnykCli { Options = this.optionsMock.Object, };
+            var cli = new SnykCli(this.optionsMock.Object);
 
             Assert.Equal("--json test --insecure", await cli.BuildScanArgumentsAsync());
         }
@@ -139,7 +130,7 @@
                 .Setup(options => options.Organization)
                 .Returns("test-snyk-organization");
 
-            var cli = new SnykCli { Options = this.optionsMock.Object, };
+            var cli = new SnykCli(this.optionsMock.Object);
 
             Assert.Equal("--json test --org=test-snyk-organization", await cli.BuildScanArgumentsAsync());
         }
@@ -151,7 +142,7 @@
                 .Setup(options => options.GetAdditionalOptionsAsync())
                 .ReturnsAsync("--file=C:\build.pom");
 
-            var cli = new SnykCli { Options = this.optionsMock.Object, };
+            var cli = new SnykCli(this.optionsMock.Object);
 
             Assert.Equal("--json test --file=C:\build.pom", await cli.BuildScanArgumentsAsync());
         }
@@ -163,7 +154,7 @@
                 .Setup(options => options.IsScanAllProjectsAsync())
                 .ReturnsAsync(true);
 
-            var cli = new SnykCli { Options = this.optionsMock.Object, };
+            var cli = new SnykCli(this.optionsMock.Object);
 
             Assert.Equal("--json test --all-projects", await cli.BuildScanArgumentsAsync());
         }
@@ -195,7 +186,7 @@
                    .Setup(options => options.IsScanAllProjectsAsync())
                    .ReturnsAsync(true);
 
-            var cli = new SnykCli { Options = this.optionsMock.Object, };
+            var cli = new SnykCli(this.optionsMock.Object);
 
             Assert.Equal(
                 "--json test --API=https://github.com/snyk/ --insecure --org=test-snyk-organization --ignore-policy --all-projects --DISABLE_ANALYTICS",
@@ -209,7 +200,7 @@
                 .Setup(options => options.UsageAnalyticsEnabled)
                 .Returns(false);
 
-            var cli = new SnykCli { Options = this.optionsMock.Object, };
+            var cli = new SnykCli(this.optionsMock.Object);
 
             Assert.Equal("--json test --DISABLE_ANALYTICS", await cli.BuildScanArgumentsAsync());
         }
@@ -245,7 +236,7 @@
                    .Setup(options => options.ApiToken)
                    .Returns("test-token");
 
-            var cli = new SnykCli { Options = this.optionsMock.Object, };
+            var cli = new SnykCli(this.optionsMock.Object);
 
             var result = cli.BuildScanEnvironmentVariables();
 
@@ -295,7 +286,7 @@
         [Fact]
         public void SnykCliTest_ConvertRawCliStringToCliResult_PlainTextError()
         {
-            var cli = new SnykCli { Options = this.optionsMock.Object, };
+            var cli = new SnykCli(this.optionsMock.Object);
 
             var cliResult = SnykCli.ConvertRawCliStringToCliResult(this.GetFileContent("ErrorPlainText.json"));
 

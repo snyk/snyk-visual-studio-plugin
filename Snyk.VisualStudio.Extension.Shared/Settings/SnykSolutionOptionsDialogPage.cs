@@ -1,6 +1,5 @@
 ﻿namespace Snyk.VisualStudio.Extension.Shared.Settings
 {
-    using System;
     using System.Runtime.InteropServices;
     using System.Windows.Forms;
     using Microsoft.VisualStudio.Shell;

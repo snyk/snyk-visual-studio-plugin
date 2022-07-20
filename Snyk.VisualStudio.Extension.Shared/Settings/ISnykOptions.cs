@@ -64,6 +64,16 @@
         bool UsageAnalyticsEnabled { get; set; }
 
         /// <summary>
+        /// Gets or sets a value indicating whether the CLI should be automatically updated.
+        /// </summary>
+        bool BinariesAutoUpdate { get; set; }
+
+        /// <summary>
+        /// Gets or sets the value of the CLI custom path. If empty, the default path from AppData would be used.
+        /// </summary>
+        string CliCustomPath { get; set; }
+
+        /// <summary>
         /// Gets a value indicating whether additional options.
         /// Get this data using <see cref="SnykUserStorageSettingsService"/>.
         /// </summary>
@@ -80,9 +90,8 @@
         /// <summary>
         /// Call CLI auth for user authentication at Snyk and get user api token.
         /// </summary>
-        /// <param name="successCallbackAction">Callback for success authentication case.</param>
-        /// <param name="errorCallbackAction">Callback for error on authentication case.</param>
-        void Authenticate(Action<string> successCallbackAction, Action<string> errorCallbackAction);
+        /// <returns>Returns true if authenticated successfully, false otherwise.</returns>
+        bool Authenticate();
 
         /// <summary>
         /// Force Visual Studio to load Settings from storage.

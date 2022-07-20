@@ -9,6 +9,9 @@
              mc:Ignorable="d" 
              d:DesignHeight="450" d:DesignWidth="800">
     <Grid VerticalAlignment="Center">
+        <Grid.Resources>
+            <ImageSource x:Key="SnykDogLogo">pack://application:,,,/Snyk.VisualStudio.Extension;component/SnykDogLogoFullSize.png</ImageSource>
+        </Grid.Resources>
         <StackPanel Name="selectIssueMessagePanel" HorizontalAlignment="Center" Visibility="Collapsed">
             <c:TextField>Select an issue and start improving your project.</c:TextField>
         </StackPanel>
@@ -31,11 +34,11 @@
         </StackPanel>
         
         <StackPanel Name="messagePanel" Visibility="Collapsed" HorizontalAlignment="Center">
-            <c:TextField x:Name="message"></c:TextField>
+            <c:TextField x:Name="message" FontWeight="Bold"/>
         </StackPanel>
         
         <StackPanel Name="overviewPanel" Visibility="Collapsed" HorizontalAlignment="Center" Orientation="Horizontal">
-            <Image Source="pack://application:,,,/Snyk.VisualStudio.Extension;component/SnykDogLogoFullSize.png" Width="48" Margin="0,-30,0,30"/>
+            <Image Source="{StaticResource SnykDogLogo}" Width="48" Margin="0,-30,0,30"/>
 
             <StackPanel HorizontalAlignment="Center" Orientation="Vertical" Margin="40,20,20,20">
                 <TextBlock FontWeight="Bold">
@@ -60,7 +63,7 @@
                         Test code now
                     </Button>
                 </StackPanel>
-                <ProgressBar Name="connectVSToSnykProgressBar" Visibility="Collapsed" IsIndeterminate="True" Height="3" Padding="0,2" Margin="0, 5, 0, 0"/>
+                <ProgressBar Name="authenticateSnykProgressBar" Visibility="Collapsed" IsIndeterminate="True" Height="3" Padding="0,2" Margin="0, 5, 0, 0"/>
                 <TextBlock Margin="0, 20, 0, 0" FontSize="11">
                     By connecting your account with Snyk, you agree
                 </TextBlock>
@@ -77,7 +80,7 @@
             </StackPanel>
         </StackPanel>
 
-        <StackPanel Name="localCodeEngineIsEnabledPanel" Visibility="Collapsed" HorizontalAlignment="Center">
+        <StackPanel Name="localCodeEngineIsDisabledPanel" Visibility="Collapsed" HorizontalAlignment="Center">
             <c:TextField TextAlignment="Center" Padding="0,5">
                 Snyk Code is configured to use a Local Code Engine instance. This setup is not yet supported by the extension.
             </c:TextField>

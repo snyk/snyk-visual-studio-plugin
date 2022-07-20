@@ -13,19 +13,12 @@
         /// </summary>
         public SnykSettings()
         {
-            this.SolutionSettingsDict = new Dictionary<int, SnykSolutionSettings>();
-
-            this.UsageAnalyticsEnabled = true;
-
-            this.OssEnabled = true;
-            this.SnykCodeQualityEnabled = true;
-            this.SnykCodeSecurityEnabled = true;
         }
 
         /// <summary>
         /// Gets or sets a value indicating whether usage analytics enabled.
         /// </summary>
-        public bool UsageAnalyticsEnabled { get; set; }
+        public bool UsageAnalyticsEnabled { get; set; } = true;
 
         /// <summary>
         /// Gets or sets current Cli version.
@@ -45,21 +38,31 @@
         /// <summary>
         /// Gets or sets solution settings dictionary.
         /// </summary>
-        public IDictionary<int, SnykSolutionSettings> SolutionSettingsDict { get; set; }
+        public IDictionary<int, SnykSolutionSettings> SolutionSettingsDict { get; set; } = new Dictionary<int, SnykSolutionSettings>();
 
         /// <summary>
         /// Gets or sets a value indicating whether snyk code security enabled.
         /// </summary>
-        public bool SnykCodeSecurityEnabled { get; set; }
+        public bool SnykCodeSecurityEnabled { get; set; } = true;
 
         /// <summary>
         /// Gets or sets a value indicating whether snyk code quality enabled.
         /// </summary>
-        public bool SnykCodeQualityEnabled { get; set; }
+        public bool SnykCodeQualityEnabled { get; set; } = true;
 
         /// <summary>
         /// Gets or sets a value indicating whether oss enabled.
         /// </summary>
-        public bool OssEnabled { get; set; }
+        public bool OssEnabled { get; set; } = true;
+
+        /// <summary>
+        /// Gets or sets a value indicating whether binaries auto update is enabled.
+        /// </summary>
+        public bool BinariesAutoUpdateEnabled { get; set; } = true;
+
+        /// <summary>
+        /// Gets or sets the value of the custom CLI path
+        /// </summary>
+        public string CustomCliPath { get; set; } = string.Empty;
     }
 }

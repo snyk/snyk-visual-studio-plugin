@@ -4,7 +4,6 @@
     using System.Collections.Generic;
     using System.Threading;
     using System.Threading.Tasks;
-    using System.Windows;
     using Microsoft.VisualStudio.Shell;
     using Serilog;
     using Snyk.Analytics;
@@ -112,9 +111,14 @@
         public event EventHandler<SnykCliDownloadEventArgs> DownloadUpdate;
 
         /// <summary>
-        /// Download cancelled event handler.
+        /// Download cancelled event handler. Raised when the user cancels the download intentionally.
         /// </summary>
         public event EventHandler<SnykCliDownloadEventArgs> DownloadCancelled;
+
+        /// <summary>
+        /// Download failed event handler. Raised when the download fails due to an error.
+        /// </summary>
+        public event EventHandler<Exception> DownloadFailed;
 
         /// <summary>
         /// Task finished event.
@@ -183,13 +187,6 @@
         }
 
         /// <summary>
-        /// Handle UI loaded event. Check CLI download on this event.
-        /// </summary>
-        /// <param name="sender">Source object.</param>
-        /// <param name="eventArgs">Event arguments.</param>
-        public void OnUiLoaded(object sender, RoutedEventArgs eventArgs) => this.Download();
-
-        /// <summary>
         /// Start scan in background task.
         /// </summary>
         /// <returns>A <see cref="Task"/> representing the asynchronous operation.</returns>
@@ -224,7 +221,7 @@
         }
 
         /// <summary>
-        /// Start download task in background thread.
+        /// Start a CLI download task in background thread.
         /// </summary>
         /// <param name="downloadFinishedCallback"><see cref="CliDownloadFinishedCallback"/> callback object.</param>
         public void Download(CliDownloadFinishedCallback downloadFinishedCallback = null)
@@ -249,8 +246,7 @@
                 };
 
                 Logger.Information("Start run task");
-
-                _ = Task.Run(
+                ThreadHelper.JoinableTaskFactory.RunAsync(
                     async () =>
                     {
                         try
@@ -259,28 +255,37 @@
                         }
                         catch (ChecksumVerificationException e)
                         {
-                            Logger.Error(e, "Cli download failed. Checksum don't match. Try to download again...");
+                            Logger.Error(
+                                e,
+                                "Cli download failed due to failed checksum. {Expected} (expected) != {Actual}",
+                                e.ExpectedHash,
+                                e.ActualHash);
 
-                            await this.RetryDownloadAsync(downloadFinishedCallback, progressWorker);
+                            this.OnDownloadFailed(e);
+                        }
+                        catch (OperationCanceledException e)
+                        {
+                            Logger.Information("CLI Download cancelled");
+                            this.OnDownloadCancelled(e.Message);
                         }
                         catch (Exception e)
                         {
                             Logger.Error(e, "Error on cli download");
 
-                            this.OnDownloadCancelled(e.Message);
+                            this.OnDownloadFailed(e);
                         }
                         finally
                         {
+                            this.isCliDownloading = false;
+
                             if (progressWorker.IsWorkFinished)
                             {
-                                this.isCliDownloading = false;
-
-                                this.DisposeCancellationTokenSource(this.downloadCliTokenSource);
+                                DisposeCancellationTokenSource(this.downloadCliTokenSource);
 
                                 this.FireTaskFinished();
                             }
                         }
-                    }, progressWorker.TokenSource.Token);
+                    }).FireAndForget();
             }
             catch (Exception ex)
             {
@@ -347,10 +352,28 @@
         protected internal void OnDownloadCancelled(string message) => this.DownloadCancelled?.Invoke(this, new SnykCliDownloadEventArgs(message));
 
         /// <summary>
+        /// Fire download cancelled event.
+        /// </summary>
+        /// <param name="exception">The exception that caused the download to fail.</param>
+        protected internal void OnDownloadFailed(Exception exception) => this.DownloadFailed?.Invoke(this, exception);
+
+        /// <summary>
         /// Fire download update (on download progress update) event.
         /// </summary>
         /// <param name="progress">Donwload progress form 0..100$.</param>
         protected internal void OnDownloadUpdate(int progress) => this.DownloadUpdate?.Invoke(this, new SnykCliDownloadEventArgs(progress));
+
+        private static void DisposeCancellationTokenSource(CancellationTokenSource tokenSource)
+        {
+            try
+            {
+                tokenSource?.Dispose();
+            }
+            catch (Exception e)
+            {
+                Logger.Error(e, "Error when trying to dispose cancellation token source");
+            }
+        }
 
         private async Task ScanOssAsync(FeaturesSettings featuresSettings)
         {
@@ -439,7 +462,7 @@
             }
             finally
             {
-                this.DisposeCancellationTokenSource(this.ossScanTokenSource);
+                DisposeCancellationTokenSource(this.ossScanTokenSource);
 
                 this.isOssScanning = false;
 
@@ -521,7 +544,7 @@
             }
             finally
             {
-                this.DisposeCancellationTokenSource(this.snykCodeScanTokenSource);
+                DisposeCancellationTokenSource(this.snykCodeScanTokenSource);
 
                 this.isSnykCodeScanning = false;
 
@@ -660,78 +683,51 @@
             }
         }
 
-        private void DisposeCancellationTokenSource(CancellationTokenSource tokenSource)
-        {
-            try
-            {
-                tokenSource?.Dispose();
-            }
-            catch (Exception e)
-            {
-                Logger.Error(e, "Try to dispose token source.");
-            }
-            finally
-            {
-                tokenSource = null;
-            }
-        }
-
         private async Task DownloadAsync(CliDownloadFinishedCallback downloadFinishedCallback, ISnykProgressWorker progressWorker)
         {
-            this.isCliDownloading = true;
-
-            var userStorageService = this.serviceProvider.UserStorageSettingsService;
-
-            string currentCliVersion = userStorageService.GetCurrentCliVersion();
-
-            DateTime lastCliReleaseDate = userStorageService.GetCliReleaseLastCheckDate();
-
-            var cliDownloader = new SnykCliDownloader(currentCliVersion);
-
-            List<CliDownloadFinishedCallback> downloadFinishedCallbacks = new List<CliDownloadFinishedCallback>();
-
-            if (downloadFinishedCallback != null)
+            var userSettingsStorageService = this.serviceProvider.UserStorageSettingsService;
+            if (!userSettingsStorageService.BinariesAutoUpdate)
             {
-                downloadFinishedCallbacks.Add(downloadFinishedCallback);
+                Logger.Information("CLI auto-update is disabled, CLI download is skipped.");
+                this.DownloadCancelled?.Invoke(this, new SnykCliDownloadEventArgs());
+                return;
             }
 
-            downloadFinishedCallbacks.Add(new CliDownloadFinishedCallback(() =>
-            {
-                userStorageService.SaveCurrentCliVersion(cliDownloader.GetLatestReleaseInfo().Name);
-                userStorageService.SaveCliReleaseLastCheckDate(DateTime.UtcNow);
-
-                this.isCliDownloading = false;
-
-                this.DisposeCancellationTokenSource(this.downloadCliTokenSource);
-            }));
-
-            await cliDownloader.AutoUpdateCliAsync(
-                progressWorker,
-                lastCliReleaseDate,
-                downloadFinishedCallbacks: downloadFinishedCallbacks);
-        }
-
-        private async Task RetryDownloadAsync(CliDownloadFinishedCallback downloadFinishedCallback, SnykProgressWorker progressWorker)
-        {
+            this.isCliDownloading = true;
             try
             {
-                await this.DownloadAsync(downloadFinishedCallback, progressWorker);
-            }
-            catch (Exception e)
-            {
-                Logger.Error(e, "Cli retry download failed");
+                string currentCliVersion = userSettingsStorageService.GetCurrentCliVersion();
 
-                this.OnDownloadCancelled($"The download of the Snyk CLI was not successful. The integrity check failed ({e.Message})");
+                DateTime lastCliReleaseDate = userSettingsStorageService.GetCliReleaseLastCheckDate();
+
+                var cliDownloader = new SnykCliDownloader(currentCliVersion);
+
+                List<CliDownloadFinishedCallback> downloadFinishedCallbacks = new List<CliDownloadFinishedCallback>();
+
+                if (downloadFinishedCallback != null)
+                {
+                    downloadFinishedCallbacks.Add(downloadFinishedCallback);
+                }
+
+                downloadFinishedCallbacks.Add(() =>
+                {
+                    userSettingsStorageService.SaveCurrentCliVersion(cliDownloader.GetLatestReleaseInfo().Name);
+                    userSettingsStorageService.SaveCliReleaseLastCheckDate(DateTime.UtcNow);
+                    DisposeCancellationTokenSource(this.downloadCliTokenSource);
+                });
+
+                var downloadPath = this.serviceProvider.Options.CliCustomPath;
+                await cliDownloader.AutoUpdateCliAsync(
+                    progressWorker,
+                    lastCliReleaseDate,
+                    downloadPath,
+                    downloadFinishedCallbacks: downloadFinishedCallbacks);
             }
             finally
             {
-                if (progressWorker.IsWorkFinished)
-                {
-                    this.isCliDownloading = false;
-
-                    this.DisposeCancellationTokenSource(this.downloadCliTokenSource);
-                }
+                this.isCliDownloading = false;
             }
         }
+
     }
 }

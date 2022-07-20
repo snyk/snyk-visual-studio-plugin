@@ -37,6 +37,30 @@
     <Compile Include="$(MSBuildThisFileDirectory)Service\IOssService.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Service\OssScanException.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Service\OssService.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Settings\ISnykOptions.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Settings\SnykGeneralOptionsDialogPage.cs">
+      <SubType>Component</SubType>
+    </Compile>
+    <Compile Include="$(MSBuildThisFileDirectory)Settings\SnykGeneralSettingsUserControl.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="$(MSBuildThisFileDirectory)Settings\SnykGeneralSettingsUserControl.Designer.cs">
+      <DependentUpon>SnykGeneralSettingsUserControl.cs</DependentUpon>
+    </Compile>
+    <Compile Include="$(MSBuildThisFileDirectory)Settings\SnykSettings.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Settings\SnykSettingsChangedEventArgs.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Settings\SnykSettingsLoader.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Settings\SnykSolutionOptionsDialogPage.cs">
+      <SubType>Component</SubType>
+    </Compile>
+    <Compile Include="$(MSBuildThisFileDirectory)Settings\SnykSolutionOptionsUserControl.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="$(MSBuildThisFileDirectory)Settings\SnykSolutionOptionsUserControl.Designer.cs">
+      <DependentUpon>SnykSolutionOptionsUserControl.cs</DependentUpon>
+    </Compile>
+    <Compile Include="$(MSBuildThisFileDirectory)Settings\SnykSolutionSettings.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Settings\SnykUserStorageSettingsService.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)SnykIcons.Designer.cs">
       <DependentUpon>SnykIcons.resx</DependentUpon>
       <DesignTime>True</DesignTime>
@@ -128,40 +152,6 @@
       <CopyToOutputDirectory>Never</CopyToOutputDirectory>
     </Compile>
     <Compile Include="$(MSBuildThisFileDirectory)Service\VsCodeService.cs">
-      <CopyToOutputDirectory>Never</CopyToOutputDirectory>
-    </Compile>
-    <Compile Include="$(MSBuildThisFileDirectory)Settings\ISnykOptions.cs">
-      <CopyToOutputDirectory>Never</CopyToOutputDirectory>
-    </Compile>
-    <Compile Include="$(MSBuildThisFileDirectory)Settings\SnykGeneralOptionsDialogPage.cs">
-      <SubType>Component</SubType>
-      <CopyToOutputDirectory>Never</CopyToOutputDirectory>
-    </Compile>
-    <Compile Include="$(MSBuildThisFileDirectory)Settings\SnykGeneralSettingsUserControl.cs">
-      <SubType>UserControl</SubType>
-      <CopyToOutputDirectory>Never</CopyToOutputDirectory>
-    </Compile>
-    <Compile Include="$(MSBuildThisFileDirectory)Settings\SnykGeneralSettingsUserControl.Designer.cs">
-      <DependentUpon>SnykGeneralSettingsUserControl.cs</DependentUpon>
-    </Compile>
-    <Compile Include="$(MSBuildThisFileDirectory)Settings\SnykSolutionOptionsDialogPage.cs">
-      <SubType>Component</SubType>
-      <CopyToOutputDirectory>Never</CopyToOutputDirectory>
-    </Compile>
-    <Compile Include="$(MSBuildThisFileDirectory)Settings\SnykSolutionOptionsUserControl.cs">
-      <SubType>UserControl</SubType>
-      <CopyToOutputDirectory>Never</CopyToOutputDirectory>
-    </Compile>
-    <Compile Include="$(MSBuildThisFileDirectory)Settings\SnykSolutionOptionsUserControl.Designer.cs">
-      <DependentUpon>SnykSolutionOptionsUserControl.cs</DependentUpon>
-    </Compile>
-    <Compile Include="$(MSBuildThisFileDirectory)Settings\SnykSolutionSettings.cs" />
-    <Compile Include="$(MSBuildThisFileDirectory)Settings\SnykSettings.cs" />
-    <Compile Include="$(MSBuildThisFileDirectory)Settings\SnykSettingsChangedEventArgs.cs">
-      <CopyToOutputDirectory>Never</CopyToOutputDirectory>
-    </Compile>
-    <Compile Include="$(MSBuildThisFileDirectory)Settings\SnykSettingsLoader.cs" />
-    <Compile Include="$(MSBuildThisFileDirectory)Settings\SnykUserStorageSettingsService.cs">
       <CopyToOutputDirectory>Never</CopyToOutputDirectory>
     </Compile>
     <Compile Include="$(MSBuildThisFileDirectory)Cache\CodeCacheHierarchyEvents.cs">
@@ -532,15 +522,15 @@
     <Content Include="$(MSBuildThisFileDirectory)Resources\StatusInformationNoColor.png">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>
-    <EmbeddedResource Include="$(MSBuildThisFileDirectory)SnykIcons.resx">
-      <LastGenOutput>SnykIcons.Designer.cs</LastGenOutput>
-      <Generator>ResXFileCodeGenerator</Generator>
-    </EmbeddedResource>
     <EmbeddedResource Include="$(MSBuildThisFileDirectory)Settings\SnykGeneralSettingsUserControl.resx">
       <DependentUpon>SnykGeneralSettingsUserControl.cs</DependentUpon>
     </EmbeddedResource>
     <EmbeddedResource Include="$(MSBuildThisFileDirectory)Settings\SnykSolutionOptionsUserControl.resx">
       <DependentUpon>SnykSolutionOptionsUserControl.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="$(MSBuildThisFileDirectory)SnykIcons.resx">
+      <LastGenOutput>SnykIcons.Designer.cs</LastGenOutput>
+      <Generator>ResXFileCodeGenerator</Generator>
     </EmbeddedResource>
     <EmbeddedResource Include="$(MSBuildThisFileDirectory)VSPackage.resx">
       <LastGenOutput>VSPackage.Designer.cs</LastGenOutput>

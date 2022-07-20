@@ -6,7 +6,6 @@
     using Serilog;
     using Snyk.Common;
     using Snyk.VisualStudio.Extension.Shared.Service;
-    using Task = System.Threading.Tasks.Task;
 
     /// <summary>
     /// Solution settings control.

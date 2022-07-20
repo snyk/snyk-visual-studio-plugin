@@ -163,6 +163,32 @@
         }
 
         /// <inheritdoc/>
+        public bool BinariesAutoUpdate
+        {
+            get => this.userStorageSettingsService.BinariesAutoUpdate;
+            set
+            {
+                if (this.userStorageSettingsService != null)
+                {
+                    this.userStorageSettingsService.BinariesAutoUpdate = value;
+                }
+            }
+        }
+
+        public string CliCustomPath
+        {
+            get => this.userStorageSettingsService.CliCustomPath;
+            set
+            {
+                if (this.userStorageSettingsService != null)
+                {
+                    this.userStorageSettingsService.CliCustomPath = value;
+                    this.FireSettingsChangedEvent();
+                }
+            }
+        }
+
+        /// <inheritdoc/>
         public string AnonymousId
         {
             get => this.userStorageSettingsService.GetAnonymousId();
@@ -217,13 +243,8 @@
             this.userStorageSettingsService = this.serviceProvider.UserStorageSettingsService;
         }
 
-        /// <summary>
-        /// Authenticate CLI.
-        /// </summary>
-        /// <param name="successCallbackAction">Success callback.</param>
-        /// <param name="errorCallbackAction">Error callback.</param>
-        public void Authenticate(Action<string> successCallbackAction, Action<string> errorCallbackAction)
-            => this.GeneralSettingsUserControl.Authenticate(successCallbackAction, errorCallbackAction);
+        /// <inheritdoc />
+        public bool Authenticate() => this.GeneralSettingsUserControl.Authenticate();
 
         private void FireSettingsChangedEvent() => this.SettingsChanged?.Invoke(this, new SnykSettingsChangedEventArgs());
 

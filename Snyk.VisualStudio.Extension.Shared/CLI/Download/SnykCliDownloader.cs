@@ -23,25 +23,15 @@
 
         private static readonly ILogger Logger = LogManager.ForContext<SnykCliDownloader>();
 
-        private string currentCliVersion;
+        private readonly string currentCliVersion;
 
         private string expectedSha;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="SnykCliDownloader"/> class.
         /// </summary>
-        /// <param name="logger">ActivityLogger parameter.</param>
-        public SnykCliDownloader()
-        {
-        }
-
-        /// <summary>
-        /// Initializes a new instance of the <see cref="SnykCliDownloader"/> class.
-        /// </summary>
         /// <param name="currentCliVersion">Initial CLI version parameter.</param>
-        /// <param name="logger">ActivityLogger parameter.</param>
-        public SnykCliDownloader(string currentCliVersion)
-            : this() => this.currentCliVersion = currentCliVersion;
+        public SnykCliDownloader(string currentCliVersion) => this.currentCliVersion = currentCliVersion;
 
         /// <summary>
         /// Callback on download finished event.
@@ -49,10 +39,19 @@
         public delegate void CliDownloadFinishedCallback();
 
         /// <summary>
+        /// Gets the valid CLI path. When a custom CLI path is specified, it returns the custom path.
+        /// When the Custom CLI path is null or empty, it returns the default CLI path.
+        /// </summary>
+        /// <param name="customCliPath">The custom CLI path from the settings.</param>
+        /// <returns>If <paramref name="customCliPath"/> is null or empty, the default path would be returned.</returns>
+        private static string GetCliFilePath(string customCliPath) => string.IsNullOrEmpty(customCliPath)
+            ? SnykCli.GetSnykCliDefaultPath()
+            : customCliPath;
+
+        /// <summary>
         /// Request last cli information.
         /// </summary>
         /// <returns>Latest CLI relaese information.</returns>
-        /// <summary>
         public LatestReleaseInfo GetLatestReleaseInfo()
         {
             Logger.Information("Enter GetLatestReleaseInfo method");
@@ -76,7 +75,6 @@
         /// Request last cli sha.
         /// </summary>
         /// <returns>CLI sha string.</returns>
-        /// <summary>
         public string GetLatestCliSha()
         {
             Logger.Information("Enter GetLatestCliSha method");
@@ -158,7 +156,7 @@
         /// <param name="lastCheckDate">Last check date.</param>
         /// <returns>True if new version CLI exists</returns>
         public bool IsCliUpdateExists(DateTime lastCheckDate) => this.IsFourDaysPassedAfterLastCheck(lastCheckDate)
-                    && this.IsNewVersionAvailable(this.currentCliVersion, this.GetLatestReleaseInfo().Name);
+                    && this.IsNewVersionAvailable(this.currentCliVersion, this.GetLatestReleaseInfo().Version);
 
         /// <summary>
         /// Check is there a new version on the server and if there is, download it.
@@ -174,14 +172,16 @@
             string filePath = null,
             List<CliDownloadFinishedCallback> downloadFinishedCallbacks = null)
         {
-            string fileDestinationPath = this.GetCliFilePath(filePath);
+            string fileDestinationPath = GetCliFilePath(filePath);
 
-            if (this.IsCliDownloadNeeded(lastCheckDate, fileDestinationPath))
+            var isCliDownloadNeeded = this.IsCliDownloadNeeded(lastCheckDate, fileDestinationPath);
+
+            if (isCliDownloadNeeded)
             {
                 await this.DownloadAsync(
-                    fileDestinationPath: fileDestinationPath,
-                    progressWorker: progressWorker,
-                    downloadFinishedCallbacks: downloadFinishedCallbacks);
+                    progressWorker,
+                    fileDestinationPath,
+                    downloadFinishedCallbacks);
             }
             else
             {
@@ -203,7 +203,7 @@
         {
             Logger.Information("Enter Download method");
 
-            string cliFileDestinationPath = this.GetCliFilePath(fileDestinationPath);
+            string cliFileDestinationPath = GetCliFilePath(fileDestinationPath);
 
             Logger.Information("CLI File Destination Path: {Path}", cliFileDestinationPath);
 
@@ -214,8 +214,6 @@
             Logger.Information("Got latest relase information");
 
             LatestReleaseInfo latestReleaseInfo = this.GetLatestReleaseInfo();
-
-            string cliDownloadUrl = string.Format(LatestReleaseDownloadUrl, latestReleaseInfo.Version, SnykCli.CliFileName);
 
             Logger.Information("Latest relase information: version {Version} and url {Url}", latestReleaseInfo.Version, latestReleaseInfo.Url);
 
@@ -239,14 +237,14 @@
         {
             if (!this.IsCliFileExists(cliPath))
             {
-                throw new ChecksumVerificationException("Cli file not exists, can't verify checksum");
+                throw new FileNotFoundException($"Cli file not found in {cliPath}");
             }
 
             string currentSha = Sha256.Checksum(cliPath);
 
             if (this.expectedSha.ToLower() != currentSha.ToLower())
             {
-                throw new ChecksumVerificationException($"Expected {this.expectedSha}, but downloaded file has {currentSha}");
+                throw new ChecksumVerificationException(this.expectedSha, currentSha);
             }
         }
 
@@ -265,7 +263,7 @@
             }
         }
 
-        private async Task DownloadAsync(
+        public async Task DownloadAsync(
             ISnykProgressWorker progressWorker,
             string cliFileDestinationPath,
             string cliDownloadUrl,
@@ -293,6 +291,8 @@
             string cliFileDestinationPath,
             List<CliDownloadFinishedCallback> downloadFinishedCallbacks = null)
         {
+            const int bufferSize = 8192;
+
             using (var client = new HttpClient())
             {
                 client.Timeout = TimeSpan.FromMinutes(5);
@@ -303,13 +303,13 @@
 
                 string tempCliFile = Path.GetTempFileName();
 
-                using (var fileStream = new FileStream(tempCliFile, FileMode.Create, FileAccess.Write, FileShare.ReadWrite, 8192, true))
+                using (var fileStream = new FileStream(tempCliFile, FileMode.Create, FileAccess.Write, FileShare.ReadWrite, bufferSize, true))
                 {
                     using (Stream contentStream = await response.Content.ReadAsStreamAsync())
                     {
-                        var totalBytes = response.Content.Headers.ContentLength;
+                        var totalBytes = response.Content.Headers.ContentLength ?? long.MaxValue; // Avoid dividing by null when calculating progress
                         var totalRead = 0L;
-                        var buffer = new byte[8192];
+                        var buffer = new byte[bufferSize];
                         var isMoreToRead = true;
                         var lastProgressPercentage = 0;
 
@@ -394,12 +394,10 @@
             {
                 return int.Parse(cliVersion.Replace(".", string.Empty));
             }
-            catch (FormatException e)
+            catch (FormatException)
             {
                 return -1;
             }
         }
-
-        private string GetCliFilePath(string filePath) => string.IsNullOrEmpty(filePath) ? SnykCli.GetSnykCliPath() : filePath;
     }
 }

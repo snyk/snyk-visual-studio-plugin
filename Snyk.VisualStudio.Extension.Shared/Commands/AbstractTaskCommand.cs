@@ -3,7 +3,6 @@
     using System;
     using Microsoft.VisualStudio.Shell;
     using Snyk.VisualStudio.Extension.Shared.CLI;
-    using Snyk.VisualStudio.Extension.Shared.Service;
 
     /// <summary>
     /// Common class for <see cref="SnykScanCommand"/> and <see cref="SnykStopCurrentTaskCommand"/> task commands.

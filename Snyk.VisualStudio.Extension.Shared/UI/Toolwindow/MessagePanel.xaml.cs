@@ -1,20 +1,21 @@
 ﻿namespace Snyk.VisualStudio.Extension.Shared.UI.Toolwindow
 {
-    using System;
     using System.Collections.Generic;
     using System.Diagnostics;
+    using System.IO;
+    using System.Threading.Tasks;
     using System.Windows;
     using System.Windows.Controls;
     using Microsoft.VisualStudio.Shell;
+    using Microsoft.VisualStudio.Threading;
     using Snyk.VisualStudio.Extension.Shared.Service;
-    using Snyk.VisualStudio.Extension.Shared.UI.Notifications;
 
     /// <summary>
     /// Interaction logic for MessagePanel.xaml.
     /// </summary>
     public partial class MessagePanel : UserControl
     {
-        private IList<StackPanel> panels;
+        private readonly IList<StackPanel> panels;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="MessagePanel"/> class.
@@ -31,7 +32,7 @@
                 this.messagePanel,
                 this.overviewPanel,
                 this.scanningProjectMessagePanel,
-                this.localCodeEngineIsEnabledPanel,
+                this.localCodeEngineIsDisabledPanel,
             };
         }
 
@@ -46,7 +47,7 @@
         public ToolWindowContext Context { get; set; }
 
         /// <summary>
-        /// Sets text on panel.
+        /// Sets text on the <see cref="messagePanel"/> and shows it.
         /// </summary>
         public string Text
         {
@@ -69,9 +70,9 @@
         public void ShowSelectIssueMessage() => this.ShowPanel(this.selectIssueMessagePanel);
 
         /// <summary>
-        /// 
+        /// Shows the "local code engine is disabled" message.
         /// </summary>
-        public void ShowDisabledDueToLocalCodeEngineMessage() => this.ShowPanel(this.localCodeEngineIsEnabledPanel);
+        public void ShowDisabledDueToLocalCodeEngineMessage() => this.ShowPanel(this.localCodeEngineIsDisabledPanel);
 
         /// <summary>
         /// Show scanning message.
@@ -95,50 +96,32 @@
             panel.Visibility = Visibility.Visible;
         }
 
-        private void TestCodeNow_Click(object sender, RoutedEventArgs e)
+        private async void TestCodeNow_Click(object sender, RoutedEventArgs e)
         {
-            Action<string> successCallbackAction = (apiToken) =>
+            await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
+            this.testCodeNowButton.IsEnabled = false;
+            this.authenticateSnykProgressBar.Visibility = Visibility.Visible;
+
+            await TaskScheduler.Default;
+            bool authenticationSucceeded;
+            try
             {
-                ThreadHelper.JoinableTaskFactory.RunAsync(async () =>
-                {
-                    await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
-
-                    this.testCodeNowButton.IsEnabled = true;
-
-                    this.connectVSToSnykProgressBar.Visibility = Visibility.Collapsed;
-                });
-
-                this.ServiceProvider.Options.ApiToken = apiToken;
-
-                this.Context.TransitionTo(RunScanState.Instance);
-            };
-
-            Action<string> errorCallbackAction = (error) =>
-            {
-                ThreadHelper.JoinableTaskFactory.RunAsync(async () =>
-                {
-                    await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
-
-                    this.testCodeNowButton.IsEnabled = true;
-
-                    this.connectVSToSnykProgressBar.Visibility = Visibility.Collapsed;
-
-                    NotificationService.Instance.ShowErrorInfoBar(error);
-                });
-
-                this.Context.TransitionTo(OverviewState.Instance);
-            };
-
-            ThreadHelper.JoinableTaskFactory.RunAsync(async () =>
+                authenticationSucceeded = this.ServiceProvider.Options.Authenticate();
+            }
+            catch (FileNotFoundException)
             {
                 await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
+                this.authenticateSnykProgressBar.Visibility = Visibility.Collapsed;
+                this.Text = "Snyk CLI not found. You can specify a path to a Snyk CLI executable from the settings.";
+                return;
+            }
 
-                this.testCodeNowButton.IsEnabled = false;
+            await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
+            this.authenticateSnykProgressBar.Visibility = Visibility.Collapsed;
+            this.testCodeNowButton.IsEnabled = true;
 
-                this.connectVSToSnykProgressBar.Visibility = Visibility.Visible;
-            });
-
-            this.ServiceProvider.Options.Authenticate(successCallbackAction, errorCallbackAction);
+            var nextPanel = authenticationSucceeded ? (ToolWindowState)RunScanState.Instance : OverviewState.Instance;
+            this.Context.TransitionTo(nextPanel);
         }
 
         private void Hyperlink_RequestNavigate(object sender, System.Windows.Navigation.RequestNavigateEventArgs args)
