@@ -25,7 +25,7 @@ Search for _Snyk_ and select **Download** to download the Snyk Security - Code a
 
 Once installed, use Snyk via the **Extensions > Snyk** menu (on Visual Studio versions older than 2019, Snyk will be part of the top menu bar).
 
-![](<https://github.com/snyk/user-docs/raw/HEAD/docs/.gitbook/assets/image (76) (1) (1).png>)
+<img src="https://github.com/snyk/user-docs/raw/HEAD/docs/.gitbook/assets/image (76) (1) (1) (3).png" alt="" />
 
 You can also open the Snyk tool window using **View > Other Windows > Snyk**_._
 
@@ -165,41 +165,19 @@ In the settings, you can also choose which results you want to receive:
 
 **Solution** Check .gitignore and .dcignore file rules. Check if there are any rules that exclude your project's source files.
 
-## How tos
+## Useful links
 
-### How to find the log files
+* This plugin works with projects written in .NET, Java, JavaScript, and many more languages. [See the full list of languages and package managers Snyk supports](https://support.snyk.io/hc/en-us/sections/360001087857-Language-package-manager-support)
+* [Bug tracker](https://github.com/snyk/snyk-visual-studio-plugin/issues)
+* [Github repository](https://github.com/snyk/snyk-visual-studio-plugin)
+
+## Troubleshooting
 
 Logs can be found in the user AppData directory:
 
 ```
 %HOMEPATH%\AppData\Local\Snyk\snyk-extension.log
 ```
-
-### Build process
-
-Clone this repository locally:
-
-```
-git clone https://github.com/snyk/snyk-visual-studio-plugin.git
-```
-
-Restore Nuget packages:
-
-```
-nuget restore
-```
-
-Run build:
-
-```
-msbuild -t:Build
-```
-
-## Useful links
-
-* This plugin works with projects written in .NET, Java, JavaScript, and many more languages. [See the full list of languages and package managers Snyk supports](https://support.snyk.io/hc/en-us/sections/360001087857-Language-package-manager-support)
-* [Bug tracker](https://github.com/snyk/snyk-visual-studio-plugin/issues)
-* [Github repository](https://github.com/snyk/snyk-visual-studio-plugin)
 
 ## Support and contact information
 
