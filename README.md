@@ -126,7 +126,7 @@ After the plugin is installed, you can set the following configurations for the 
 * **Custom endpoint**: Specify the custom Snyk API endpoint for your organization. Use this field for Single Tenant setups as well instead of https://app.snyk.io.
 * **Ignore unknown CA**: Ignore unknown certificate authorities.
 * **Organization**: Specify the ORG\_ID to run Snyk commands tied to a specific organization. This setting also allows you to specify the ORG\_NAME, that is, the organization slug name, to run tests for that organization. If you specify the ORG\_NAME, the value must match the URL slug as displayed in the URL of your org in the Snyk UI: https://app.snyk.io/org/\[orgslugname]. If an ORG is not specified, the preferred organization as defined in your web account settings is used to run tests.
-* **Send usage analytics**: To help Snyk improve the extension, let your Visual Studio send Snyk information about how the extension is working.
+* **Send usage statistics to Snyk**: To help Snyk improve the extension, let your Visual Studio send Snyk information about how the extension is working.
 * **Project settings**: Specify any additional Snyk CLI parameters.
 * **Scan all projects**: Auto-detect all projects in the working directory, enabled by default.
 
