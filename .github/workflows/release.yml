@@ -5,8 +5,6 @@ on:
     tags:
     - 'v*'
   workflow_dispatch:
-  schedule:
-    - cron: '0 9 * * 2'  # every Tuesday at 10 am UTC
 
 env:
   SOLUTION_FILE_PATH: .
