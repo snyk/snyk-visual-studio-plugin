@@ -184,7 +184,7 @@ namespace Snyk.VisualStudio.Extension.Shared.Settings
             this.usageAnalyticsCheckBox.Name = "usageAnalyticsCheckBox";
             this.usageAnalyticsCheckBox.Size = new System.Drawing.Size(127, 17);
             this.usageAnalyticsCheckBox.TabIndex = 9;
-            this.usageAnalyticsCheckBox.Text = "Send usage analytics";
+            this.usageAnalyticsCheckBox.Text = "Send usage statistics to Snyk";
             this.usageAnalyticsCheckBox.UseVisualStyleBackColor = true;
             this.usageAnalyticsCheckBox.CheckedChanged += new System.EventHandler(this.UsageAnalyticsCheckBox_CheckedChanged);
             // 

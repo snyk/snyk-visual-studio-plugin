@@ -1,5 +1,10 @@
 # Snyk Changelog
 
+## [1.1.26]
+
+### Changed
+- Update wording in settings menu for collecting analytics.
+
 ## [1.1.25]
 
 ### Added
