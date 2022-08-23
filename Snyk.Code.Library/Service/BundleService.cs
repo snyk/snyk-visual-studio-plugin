@@ -552,20 +552,20 @@
         private int CalculateFilePairSize(KeyValuePair<string, (string, string)> filePair) => this.CalculatePayloadSize(Json.Serialize(filePair));
 
         /// <summary>
-        /// Claculate file pairs size.
+        /// Calculate file pairs size.
         /// </summary>
         /// <param name="files">Source dictionary with file info.</param>
         /// <returns>Size of dictionary.</returns>
         private int CalculateFilesSize(IDictionary<string, string> files) => this.CalculatePayloadSize(Json.Serialize(files));
 
         /// <summary>
-        /// Claculate file pairs size.
+        /// Calculate file pairs size.
         /// </summary>
         /// <param name="files">Source dictionary with file info.</param>
         private int CalculateFilesSize(IDictionary<string, (string, string)> files) => this.CalculatePayloadSize(Json.Serialize(files));
 
         /// <summary>
-        /// Claculate file pairs size.
+        /// Calculate file pairs size.
         /// </summary>
         /// <param name="files">Source dictionary with file info.</param>
         /// <returns>Size of dictionary.</returns>

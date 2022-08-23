@@ -56,7 +56,7 @@
             int requestAttempts,
             CancellationToken cancellationToken = default)
         {
-            Logger.Debug("Try get analysis DTO object {RequestAttempts} times.", RequestAttempts);
+            Logger.Debug("Try get analysis DTO object {RequestAttempts} times.", requestAttempts);
 
             cancellationToken.ThrowIfCancellationRequested();
 
