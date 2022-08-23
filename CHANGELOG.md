@@ -2,6 +2,9 @@
 
 ## [1.1.26]
 
+### Fixed
+- Rare bug in Code scans encoding.
+
 ### Changed
 - Update wording in settings menu for collecting analytics.
 
