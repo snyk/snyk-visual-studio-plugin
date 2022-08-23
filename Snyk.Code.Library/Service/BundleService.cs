@@ -123,7 +123,7 @@
 
                 fireScanCodeProgressUpdate(SnykCodeScanState.Preparing, 100);
 
-                return bundle.MissingFiles.Count() == 0;
+                return !bundle.MissingFiles.Any();
             }
             else
             {
@@ -315,12 +315,17 @@
 
             foreach (var filePair in pathToHashFileDict)
             {
+                var filename = filePair.Key;
+
                 cancellationToken.ThrowIfCancellationRequested();
-
-                int fileSize = this.CalculateFilePairSize(filePair);
-
+                var fileSize = this.CalculateFilePairSize(filePair);
                 if (fileSize > maxChunkSize)
                 {
+                    Logger.Information(
+                        "Skipping file {Filename} because it's size is larger than the Snyk Code limit ({FileSize} > {MaxChunkSize})",
+                        filename,
+                        fileSize,
+                        maxChunkSize);
                     continue; // If file too big it skip it and continue to upload other files.
                 }
 
@@ -334,7 +339,7 @@
                     bundleSize = 0;
                 }
 
-                fileDictionary.Add(filePair.Key, filePair.Value);
+                fileDictionary.Add(filename, filePair.Value);
 
                 bundleSize += fileSize;
             }
