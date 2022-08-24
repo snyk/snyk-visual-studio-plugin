@@ -174,9 +174,9 @@
                 this.isSnykCodeScanning = false;
                 this.isCliDownloading = false;
 
-                this.CancelTask(this.ossScanTokenSource);
-                this.CancelTask(this.snykCodeScanTokenSource);
-                this.CancelTask(this.downloadCliTokenSource);
+                this.CancelTask(ref this.ossScanTokenSource);
+                this.CancelTask(ref this.snykCodeScanTokenSource);
+                this.CancelTask(ref this.downloadCliTokenSource);
 
                 this.serviceProvider.OssService.StopScan();
             }
@@ -662,7 +662,7 @@
             return selectedProducts;
         }
 
-        private void CancelTask(CancellationTokenSource tokenSource)
+        private void CancelTask(ref CancellationTokenSource tokenSource)
         {
             try
             {

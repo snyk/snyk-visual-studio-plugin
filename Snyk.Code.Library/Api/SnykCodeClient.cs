@@ -17,7 +17,7 @@
         /// <summary>
         /// Maximum bundle size per one upload is 4 Mb. 4 Mb in bytes.
         /// </summary>
-        public const int MaxBundleSize = 4000000;
+        public const int MaxBundleSize = 4_000_000;
 
         private const string FiltersApiUrl = "filters";
 
@@ -269,10 +269,15 @@
             // Snyk Code PUT and POST requests must be base64 encoded and deflated for certain environments (ROAD-909)
             if (method == HttpMethod.Put || method == HttpMethod.Post)
             {
+                Logger.Information("Encoding and compressing {Length} bytes...", System.Text.Encoding.UTF8.GetByteCount(payload));
                 var encodedPayload = await Encoder.EncodeAndCompressAsync(payload);
-                return new ByteArrayContent(encodedPayload.ToArray());
+                var byteContent = encodedPayload.ToArray();
+                Logger.Information("Sending {Length} bytes", byteContent.Length);
+
+                return new ByteArrayContent(byteContent);
             }
 
+            Logger.Information("Sending {Length} bytes...", System.Text.Encoding.UTF8.GetByteCount(payload));
             return new StringContent(payload, System.Text.Encoding.UTF8, "application/json");
         }
     }

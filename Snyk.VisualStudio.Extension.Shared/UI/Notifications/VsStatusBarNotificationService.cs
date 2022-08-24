@@ -75,6 +75,11 @@
 
         private void OnOssScanError(object sender, SnykCliScanEventArgs eventArgs)
         {
+            if (this.options == null || this.statusBar == null)
+            {
+                return;
+            }
+
             if (!this.options.SnykCodeSecurityEnabled && !this.options.SnykCodeQualityEnabled)
             {
                 this.statusBar.ShowSnykCodeUpdateMessage("Snyk Open Source scan error");
