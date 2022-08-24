@@ -3,7 +3,7 @@
 ## [1.1.26]
 
 ### Fixed
-- Rare bug in Code scans encoding.
+- Bug in Snyk Code messages encoding resulting in failed Snyk Code scans.
 
 ### Changed
 - Update wording in settings menu for collecting analytics.
