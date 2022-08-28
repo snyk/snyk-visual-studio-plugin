@@ -38,6 +38,8 @@
 
         private ISnykServiceProvider serviceProvider;
 
+        private object cancelTasksLock;
+
         /// <summary>
         /// Initializes a new instance of the <see cref="SnykTasksService"/> class.
         /// </summary>
@@ -168,21 +170,24 @@
         /// </summary>
         public void CancelTasks()
         {
-            try
+            lock (this.cancelTasksLock)
             {
-                this.isOssScanning = false;
-                this.isSnykCodeScanning = false;
-                this.isCliDownloading = false;
+                try
+                {
+                    this.isOssScanning = false;
+                    this.isSnykCodeScanning = false;
+                    this.isCliDownloading = false;
 
-                this.CancelTask(ref this.ossScanTokenSource);
-                this.CancelTask(ref this.snykCodeScanTokenSource);
-                this.CancelTask(ref this.downloadCliTokenSource);
+                    this.CancelTask(ref this.ossScanTokenSource);
+                    this.CancelTask(ref this.snykCodeScanTokenSource);
+                    this.CancelTask(ref this.downloadCliTokenSource);
 
-                this.serviceProvider.OssService.StopScan();
-            }
-            catch (Exception ex)
-            {
-                Logger.Error(ex, "Error on cancel tasks");
+                    this.serviceProvider.OssService.StopScan();
+                }
+                catch (Exception ex)
+                {
+                    Logger.Error(ex, "Error on cancel tasks");
+                }
             }
         }
 
