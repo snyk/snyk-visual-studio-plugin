@@ -1,5 +1,10 @@
 # Snyk Changelog
 
+## [1.1.27]
+
+### Fixed
+- Bug in VS2022 when loading the extension
+
 ## [1.1.26]
 
 ### Fixed
