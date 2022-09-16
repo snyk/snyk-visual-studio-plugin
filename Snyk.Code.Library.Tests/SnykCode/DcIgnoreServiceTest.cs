@@ -96,20 +96,21 @@
 
             var projectFiles = new List<string>
             {
-                "/Bin/Main.cs",
-                "/bin/Main.cs",
+                "/Bin/Main.cs", // Excluded by "[Bb]in/"
+                "/bin/Main.cs", // Excluded by "[Bb]in/"
                 "/Src/Main.cs",
-                "/.vs/App.cs",
-                "/DocProject/Help/html/index.js",
+                "/.vs/App.cs", // Excluded by ".vs/"
+                "/DocProject/Help/html/index.js", // Excluded by "DocProject/Help/html"
                 "/App.cs",
-                "/build/Service.cs",
+                "/build/Service.cs", // Excluded by one of the many rules that exclude "build"
             };
+            var expectedFiles = new[] { projectFiles[2], projectFiles[5] }.ToHashSet();
 
             var dcIgnoreService = new DcIgnoreService();
             var filteredFiles = dcIgnoreService.FilterFiles(folderPath, projectFiles).ToList();
 
-            Assert.Equal(3, filteredFiles.Count);
-
+            Assert.Equal(2, filteredFiles.Count);
+            Assert.Equal(expectedFiles, filteredFiles);
             Assert.True(File.Exists(dcIGnorePath));
 
             File.Delete(dcIGnorePath);
@@ -142,19 +143,21 @@
         {
             var projectFiles = new List<string>
             {
-                "/Bin/Main.cs",
-                "/bin/Main.cs",
+                "/Bin/Main.cs", // Excluded by "[Bb]in/"
+                "/bin/Main.cs", // Excluded by "[Bb]in/"
                 "/Src/Main.cs",
-                "/.vs/App.cs",
-                "/DocProject/Help/html/index.js",
+                "/.vs/App.cs", // Excluded by ".vs/"
+                "/DocProject/Help/html/index.js", // Excluded by "DocProject/Help/html" (no / at the end means both files and directories)
                 "/App.cs",
                 "/build/Service.cs",
             };
+            var expectedElements = new[] { projectFiles[2], projectFiles[5], projectFiles[6] };
 
             var dcIgnoreService = new DcIgnoreService();
             var filteredFiles = dcIgnoreService.FilterFilesByGitIgnore(TestResource.GetResourcesPath(), projectFiles).ToList();
 
-            Assert.Equal(4, filteredFiles.Count);
+            Assert.Equal(3, filteredFiles.Count);
+            Assert.Equal(expectedElements.ToHashSet(), filteredFiles.ToHashSet());
         }
 
         [Fact]
