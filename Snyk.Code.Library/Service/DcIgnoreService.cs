@@ -117,11 +117,11 @@
             var ignoreFileDirectory = new FileInfo(ignoreFilePath).Directory.FullName;
             var ignores = new IgnoreList(ignoreFilePath);
 
-            return filePaths.Where(path =>
-            {
-                var relativePath = path.Replace(ignoreFileDirectory, string.Empty);
-                return !ignores.IsIgnored(relativePath, false);
-            }).ToArray();
+            // Ignore rules are relative to the directory of the ignore file,
+            // so IsIgnored is called with relative paths
+            return filePaths
+                .Where(path => !ignores.IsIgnored(path.Replace(ignoreFileDirectory, string.Empty), false))
+                .ToArray();
         }
     }
 }
