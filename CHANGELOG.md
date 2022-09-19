@@ -1,5 +1,10 @@
 # Snyk Changelog
 
+## [1.1.28]
+
+### Fixed
+- Snyk Code scans sometimes skips files unnecessarily, leading to missing results or "No supported code available" erros
+
 ## [1.1.27]
 
 ### Fixed
