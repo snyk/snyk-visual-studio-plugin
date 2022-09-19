@@ -18,7 +18,6 @@
         {
         }
 
-        /// <inheritdoc/>
         public void CreateDcIgnoreIfNeeded(string folderPath)
         {
             string gitIGnorePath = Path.Combine(folderPath, ".gitignore");
@@ -58,17 +57,16 @@
             return this.FilterFilesByDcIgnore(folderPath, filteredFiles, cancellationToken);
         }
 
-        /// <inheritdoc/>
         public IEnumerable<string> FilterFilesByDcIgnore(string folderPath, IEnumerable<string> filePaths, CancellationToken cancellationToken = default) => this.FilterFilesByIgnoreFile(folderPath, ".dcignore", filePaths);
 
-        /// <inheritdoc/>
         public IEnumerable<string> FilterFilesByGitIgnore(string folderPath, IEnumerable<string> filePaths, CancellationToken cancellationToken = default) => this.FilterFilesByIgnoreFile(folderPath, ".gitignore", filePaths);
 
-        private IEnumerable<string> FilterFilesByIgnoreFile(string folderPath, string ignoreFileName, IEnumerable<string> filePaths, CancellationToken cancellationToken = default)
+        private IEnumerable<string> FilterFilesByIgnoreFile(string folderPath, string ignoreFileName, IEnumerable<string> filePathsParam, CancellationToken cancellationToken = default)
         {
             var gitIgnoreFiles = Directory.EnumerateFiles(folderPath, ignoreFileName, SearchOption.AllDirectories).ToList();
-            string rootGitIgnoreFile = Path.Combine(folderPath, ignoreFileName);
+            var rootGitIgnoreFile = Path.Combine(folderPath, ignoreFileName);
 
+            var filePaths = filePathsParam.ToArray();
             var projectFiles = filePaths;
             var filteredFiles = new List<string>();
 
@@ -76,7 +74,7 @@
 
             if (gitIgnoreFiles.Contains(rootGitIgnoreFile))
             {
-                projectFiles = this.FilterFilesByFileIgnoreList(rootGitIgnoreFile, filePaths);
+                projectFiles = this.FilterFilesByFileIgnoreList(rootGitIgnoreFile, projectFiles).ToArray();
 
                 gitIgnoreFiles.Remove(rootGitIgnoreFile);
             }
@@ -84,17 +82,15 @@
             foreach (string gitIgnoreFullPath in gitIgnoreFiles)
             {
                 cancellationToken.ThrowIfCancellationRequested();
-
-                string gitIgnoreDir = Directory.GetParent(gitIgnoreFullPath).FullName;
-                string gitIgnoreRelativeDir = gitIgnoreDir
+                string gitIgnoreRelativeDir = Directory.GetParent(gitIgnoreFullPath).FullName
                     .Replace(folderPath, string.Empty)
                     .Replace(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar);
 
                 var dirFiles = projectFiles
                     .Where(file => file.StartsWith(gitIgnoreRelativeDir))
-                    .ToList();
+                    .ToArray();
 
-                if (dirFiles.Count == 0)
+                if (dirFiles.Length == 0)
                 {
                     continue;
                 }
@@ -103,7 +99,7 @@
 
                 filteredFiles.AddRange(files);
 
-                projectFiles = projectFiles.Except(dirFiles);
+                projectFiles = projectFiles.Except(dirFiles).ToArray();
             }
 
             filteredFiles.AddRange(projectFiles);
@@ -111,16 +107,21 @@
             return filteredFiles;
         }
 
-        private IEnumerable<string> FilterFilesByFileIgnoreList(string ignoreFilePath, IEnumerable<string> filePaths)
+        private string[] FilterFilesByFileIgnoreList(string ignoreFilePath, string[] filePaths)
         {
             if (!File.Exists(ignoreFilePath))
             {
                 return filePaths;
             }
 
+            var ignoreFileDirectory = new FileInfo(ignoreFilePath).Directory.FullName;
             var ignores = new IgnoreList(ignoreFilePath);
 
-            return filePaths.Where(path => !ignores.IsIgnored(new FileInfo(path)));
+            // Ignore rules are relative to the directory of the ignore file,
+            // so IsIgnored is called with relative paths
+            return filePaths
+                .Where(path => !ignores.IsIgnored(path.Replace(ignoreFileDirectory, string.Empty), false))
+                .ToArray();
         }
     }
 }
