@@ -52,6 +52,8 @@ namespace Snyk.VisualStudio.Extension.Shared.Service
 
         private ISentryService sentryService;
 
+        private IWorkspaceTrustService workspaceTrustService;
+
         /// <summary>
         /// Initializes a new instance of the <see cref="SnykService"/> class.
         /// </summary>
@@ -67,6 +69,11 @@ namespace Snyk.VisualStudio.Extension.Shared.Service
         /// Gets solution service.
         /// </summary>
         public ISolutionService SolutionService => SnykSolutionService.Instance;
+
+        /// <summary>
+        /// Gets solution service.
+        /// </summary>
+        public IWorkspaceTrustService WorkspaceTrustService => this.workspaceTrustService;
 
         /// <summary>
         /// Gets Tasks service.
@@ -241,6 +248,7 @@ namespace Snyk.VisualStudio.Extension.Shared.Service
                 this.dte = await this.serviceProvider.GetServiceAsync(typeof(DTE)) as DTE2;
                 await SnykSolutionService.Instance.InitializeAsync(this);
                 this.tasksService = SnykTasksService.Instance;
+                this.workspaceTrustService = new WorkspaceTrustService(this.UserStorageSettingsService);
 
                 NotificationService.Initialize(this);
                 VsStatusBar.Initialize(this);
