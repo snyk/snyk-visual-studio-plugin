@@ -1,9 +1,15 @@
 # Snyk Changelog
 
+## [1.1.29]
+
+### Fixed
+- Compatibility with VS2022 versions smaller than 17.3
+- Stop button raising an error message
+
 ## [1.1.28]
 
 ### Fixed
-- Snyk Code scans sometimes skips files unnecessarily, leading to missing results or "No supported code available" erros
+- Snyk Code scans sometimes skips files unnecessarily, leading to missing results or "No supported code available" errors.
 
 ## [1.1.27]
 
