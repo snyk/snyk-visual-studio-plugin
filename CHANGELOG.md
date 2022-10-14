@@ -3,7 +3,7 @@
 ## [1.1.29]
 
 ### Fixed
-- Compatibility with VS2022 versions smaller than 17.3
+- Extension failed to load with VS2022 versions smaller than 17.3
 - Stop button raising an error message
 
 ## [1.1.28]
