@@ -38,7 +38,7 @@
 
         private ISnykServiceProvider serviceProvider;
 
-        private object cancelTasksLock;
+        private readonly object cancelTasksLock = new object();
 
         /// <summary>
         /// Initializes a new instance of the <see cref="SnykTasksService"/> class.
