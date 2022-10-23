@@ -1,6 +1,7 @@
 ﻿namespace Snyk.VisualStudio.Extension.Shared.UI
 {
     using System.Collections.Generic;
+    using System.Diagnostics;
     using System.Linq;
     using Microsoft.VisualStudio.Imaging;
     using Microsoft.VisualStudio.Shell;
@@ -13,6 +14,10 @@
     /// </summary>
     public class VsInfoBarService : IVsInfoBarUIEvents
     {
+        private const string ContactSupport = "contactSupport";
+        private const string KnownCaveats = "knownCaveats";
+        private const string SupportLink = "https://support.snyk.io/hc/en-us/requests/new";
+        private const string KnownCaveatsLink = "https://docs.snyk.io/ide-tools/visual-studio-extension/troubleshooting-and-known-issues-with-visual-studio-extension";
         private readonly ISnykServiceProvider serviceProvider;
 
         private uint cookie;
@@ -20,7 +25,7 @@
         /// <summary>
         /// Cache/save all displayed messages for prevent display same message multiple times.
         /// </summary>
-        private IDictionary<string, IVsInfoBarUIElement> messagesCache;
+        private readonly IDictionary<string, IVsInfoBarUIElement> messagesCache;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="VsInfoBarService"/> class.
@@ -56,14 +61,14 @@
             {
                 await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
 
-                if (actionItem.ActionContext == "submitIssue")
+                if (actionItem.ActionContext == ContactSupport)
                 {
-                    System.Diagnostics.Process.Start("https://github.com/snyk/snyk-visual-studio-plugin/issues");
+                    Process.Start(SupportLink);
                 }
 
-                if (actionItem.ActionContext == "knownCaveats")
+                if (actionItem.ActionContext == KnownCaveats)
                 {
-                    System.Diagnostics.Process.Start("https://github.com/snyk/snyk-visual-studio-plugin#known-caveats");
+                    Process.Start(KnownCaveatsLink);
                 }
 
                 return Task.CompletedTask;
@@ -83,8 +88,8 @@
             }
 
             var text = new InfoBarTextSpan(message);
-            var submitIssueLink = new InfoBarHyperlink("Submit an issue", "submitIssue");
-            var knownCaveatsLink = new InfoBarHyperlink("Known Caveats", "knownCaveats");
+            var submitIssueLink = new InfoBarHyperlink("Contact support", ContactSupport);
+            var knownCaveatsLink = new InfoBarHyperlink("Known Caveats", KnownCaveats);
 
             var spans = new InfoBarTextSpan[] { text };
             var actions = new InfoBarActionItem[] { knownCaveatsLink, submitIssueLink, };
