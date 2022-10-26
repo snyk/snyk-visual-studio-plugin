@@ -1,10 +1,15 @@
 # Snyk Changelog
 
+## [1.1.30]
+
+### Changed
+- Link to GH issues in the error notification bar is replaced with a link to Snyk support.
+
 ## [1.1.29]
 
 ### Fixed
-- Extension failed to load with VS2022 versions smaller than 17.3
-- Stop button raising an error message
+- Extension failed to load with VS2022 versions smaller than 17.3.
+- Stop button raising an error message.
 
 ## [1.1.28]
 
