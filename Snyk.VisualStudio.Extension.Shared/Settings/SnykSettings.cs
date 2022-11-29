@@ -61,8 +61,13 @@
         public bool BinariesAutoUpdateEnabled { get; set; } = true;
 
         /// <summary>
-        /// Gets or sets the value of the custom CLI path
+        /// Gets or sets the value of the custom CLI path.
         /// </summary>
         public string CustomCliPath { get; set; } = string.Empty;
+
+        /// <summary>
+        /// Gets or sets an array of workspace trusted folders.
+        /// </summary>
+        public ISet<string> TrustedFolders { get; set; } = new HashSet<string>();
     }
 }

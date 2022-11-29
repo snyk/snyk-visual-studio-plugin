@@ -38,6 +38,8 @@
         /// </summary>
         ISolutionService SolutionService { get; }
 
+        IWorkspaceTrustService WorkspaceTrustService { get; }
+
         /// <summary>
         /// Gets Tasks service instance.
         /// </summary>

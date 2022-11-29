@@ -1,5 +1,10 @@
 # Snyk Changelog
 
+## [1.1.31]
+
+### Added
+- Adds workspace trust mechanism to ensure scans are run on the trusted projects.
+
 ## [1.1.30]
 
 ### Changed
@@ -48,7 +53,7 @@
 
 ### Added
 - Organization description information in settings.
- 
+
 ### Fixed
 - Changing custom endpoint settings leads to authentication errors.
 

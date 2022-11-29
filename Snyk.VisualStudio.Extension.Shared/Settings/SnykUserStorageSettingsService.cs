@@ -1,6 +1,7 @@
 ﻿namespace Snyk.VisualStudio.Extension.Shared.Settings
 {
     using System;
+    using System.Collections.Generic;
     using System.Threading.Tasks;
     using Serilog;
     using Snyk.Common;
@@ -9,7 +10,7 @@
     /// <summary>
     /// Service for solution settings.
     /// </summary>
-    public class SnykUserStorageSettingsService
+    public class SnykUserStorageSettingsService : IUserStorageSettingsService
     {
         private static readonly ILogger Logger = LogManager.ForContext<SnykUserStorageSettingsService>();
 
@@ -47,6 +48,20 @@
             {
                 var settings = this.LoadSettings();
                 settings.CustomCliPath = value;
+                this.settingsLoader.Save(settings);
+            }
+        }
+
+        /// <summary>
+        /// Gets or sets trusted folders list.
+        /// </summary>
+        public ISet<string> TrustedFolders
+        {
+            get => this.LoadSettings().TrustedFolders;
+            set
+            {
+                var settings = this.LoadSettings();
+                settings.TrustedFolders = value;
                 this.settingsLoader.Save(settings);
             }
         }

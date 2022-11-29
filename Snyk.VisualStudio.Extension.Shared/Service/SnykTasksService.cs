@@ -4,7 +4,9 @@
     using System.Collections.Generic;
     using System.Threading;
     using System.Threading.Tasks;
+    using Community.VisualStudio.Toolkit;
     using Microsoft.VisualStudio.Shell;
+    using Microsoft.VisualStudio.Shell.Interop;
     using Serilog;
     using Snyk.Analytics;
     using Snyk.Code.Library.Domain.Analysis;
@@ -12,6 +14,7 @@
     using Snyk.VisualStudio.Extension.Shared.CLI;
     using Snyk.VisualStudio.Extension.Shared.CLI.Download;
     using Snyk.VisualStudio.Extension.Shared.Service.Domain;
+    using Snyk.VisualStudio.Extension.Shared.UI;
     using static Snyk.VisualStudio.Extension.Shared.CLI.Download.SnykCliDownloader;
     using Task = System.Threading.Tasks.Task;
 
@@ -198,7 +201,6 @@
         public async Task ScanAsync()
         {
             Logger.Information("Enter Scan method");
-
             try
             {
                 var selectedFeatures = await this.GetFeaturesSettingsAsync();
@@ -212,6 +214,13 @@
                     return;
                 }
 
+                var isFolderTrusted = await this.IsFolderTrustedAsync();
+                if (!isFolderTrusted)
+                {
+                    Logger.Information("Workspace folder was not trusted for scanning.");
+                    return;
+                }
+
                 this.serviceProvider.AnalyticsService.LogAnalysisIsTriggeredEvent(this.GetSelectedFeatures(selectedFeatures));
 
                 var ossScanTask = this.ScanOssAsync(selectedFeatures);
@@ -222,6 +231,41 @@
             catch (Exception ex)
             {
                 Logger.Error(ex, "Error on scan");
+            }
+        }
+
+        /// <summary>
+        /// Checks if opened solution folder is trusted. If not, prompts a user with trust permission.
+        /// </summary>
+        /// <returns>Folder is trusted or not.</returns>
+        public async Task<bool> IsFolderTrustedAsync()
+        {
+            var solutionFolderPath = await this.serviceProvider.SolutionService.GetSolutionFolderAsync();
+            var isFolderTrusted = this.serviceProvider.WorkspaceTrustService.IsFolderTrusted(solutionFolderPath);
+
+            if (string.IsNullOrEmpty(solutionFolderPath) || isFolderTrusted)
+            {
+                return true;
+            }
+
+            var trustDialog = new TrustDialogWindow(solutionFolderPath);
+            var trusted = trustDialog.ShowModal();
+
+            if (trusted != true)
+            {
+                return false;
+            }
+
+            try
+            {
+                this.serviceProvider.WorkspaceTrustService.AddFolderToTrusted(solutionFolderPath);
+                Logger.Information("Workspace folder was trusted: {SolutionFolderPath}", solutionFolderPath);
+                return true;
+            }
+            catch (ArgumentException e)
+            {
+                Logger.Error(e, "Failed to add folder to trusted list.");
+                throw;
             }
         }
 

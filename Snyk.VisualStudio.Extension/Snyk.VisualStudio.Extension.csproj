@@ -26,7 +26,7 @@
     <StartAction>Program</StartAction>
     <StartProgram Condition="'$(DevEnvDir)' != ''">$(DevEnvDir)devenv.exe</StartProgram>
     <StartArguments>/rootsuffix Exp</StartArguments>
-	<DeployVsixExtensionFilesDependsOn>$(DeployVsixExtensionFilesDependsOn);SaveSettingsJsonFile</DeployVsixExtensionFilesDependsOn>
+    <DeployVsixExtensionFilesDependsOn>$(DeployVsixExtensionFilesDependsOn);SaveSettingsJsonFile</DeployVsixExtensionFilesDependsOn>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
     <DebugSymbols>true</DebugSymbols>
@@ -121,9 +121,17 @@
       <Version>4.5.4</Version>
     </PackageReference>
   </ItemGroup>
-  <ItemGroup />
+  <ItemGroup>
+    <Page Include="TrustDialogWindow.xaml">
+      <Generator>MSBuild:Compile</Generator>
+      <SubType>Designer</SubType>
+    </Page>
+  </ItemGroup>
   <ItemGroup>
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="TrustDialogWindow.xaml.cs">
+      <DependentUpon>TrustDialogWindow.xaml</DependentUpon>
+    </Compile>
   </ItemGroup>
   <Import Project="..\Snyk.VisualStudio.Extension.Shared\Snyk.VisualStudio.Extension.Shared.projitems" Label="Shared" />
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
@@ -144,30 +152,17 @@
   </Target>  
   -->
   <Target Name="IncludePackageReferenceDependencies" AfterTargets="GetVsixSourceItems">
-      <ItemGroup>
-          <VSIXSourceItem Include="@(ReferencePath)" />
-      </ItemGroup>
+    <ItemGroup>
+      <VSIXSourceItem Include="@(ReferencePath)" />
+    </ItemGroup>
   </Target>
-  <Target Name="SaveSettingsJsonFile"
-          DependsOnTargets="GetVsixDeploymentPath">
-	<Message Condition="!Exists('$(VsixDeploymentPath)settings.json')"
-	  Importance="High" 
-      Text="settings.json does not exist, skipping step"/>
-    <Message Condition="Exists('$(VsixDeploymentPath)settings.json')"
-      Importance="High" 
-      Text="Saving settings.json file from $(VsixDeploymentPath)settings.json"/>
-    <Move Condition="Exists('$(VsixDeploymentPath)settings.json')"
-          SourceFiles="$(VsixDeploymentPath)settings.json"
-          DestinationFiles="$(IntermediateOutputPath)settings.json"/>
+  <Target Name="SaveSettingsJsonFile" DependsOnTargets="GetVsixDeploymentPath">
+    <Message Condition="!Exists('$(VsixDeploymentPath)settings.json')" Importance="High" Text="settings.json does not exist, skipping step" />
+    <Message Condition="Exists('$(VsixDeploymentPath)settings.json')" Importance="High" Text="Saving settings.json file from $(VsixDeploymentPath)settings.json" />
+    <Move Condition="Exists('$(VsixDeploymentPath)settings.json')" SourceFiles="$(VsixDeploymentPath)settings.json" DestinationFiles="$(IntermediateOutputPath)settings.json" />
   </Target>
-  <Target Name="AfterBuild" 
-          DependsOnTargets="GetVsixDeploymentPath">
-    <Message 
-      Condition="Exists('$(IntermediateOutputPath)settings.json')"
-      Text="Copying settings.json back to $(VsixDeploymentPath)" 
-      Importance="High"/>
-    <Move Condition="Exists('$(IntermediateOutputPath)settings.json')"
-          DestinationFiles="$(VsixDeploymentPath)settings.json"
-          SourceFiles="$(IntermediateOutputPath)settings.json"/>
+  <Target Name="AfterBuild" DependsOnTargets="GetVsixDeploymentPath">
+    <Message Condition="Exists('$(IntermediateOutputPath)settings.json')" Text="Copying settings.json back to $(VsixDeploymentPath)" Importance="High" />
+    <Move Condition="Exists('$(IntermediateOutputPath)settings.json')" DestinationFiles="$(VsixDeploymentPath)settings.json" SourceFiles="$(IntermediateOutputPath)settings.json" />
   </Target>
 </Project>

@@ -1,13 +1,19 @@
 ﻿namespace Snyk.VisualStudio.Extension.Shared.UI.Toolwindow
 {
+    using System;
     using System.Collections.Generic;
     using System.Diagnostics;
     using System.IO;
     using System.Threading.Tasks;
     using System.Windows;
     using System.Windows.Controls;
+    using Community.VisualStudio.Toolkit;
     using Microsoft.VisualStudio.Shell;
+    using Microsoft.VisualStudio.Shell.Interop;
     using Microsoft.VisualStudio.Threading;
+    using Serilog;
+    using Serilog.Core;
+    using Snyk.Common;
     using Snyk.VisualStudio.Extension.Shared.Service;
 
     /// <summary>
@@ -15,6 +21,7 @@
     /// </summary>
     public partial class MessagePanel : UserControl
     {
+        private static readonly ILogger Logger = LogManager.ForContext<MessagePanel>();
         private readonly IList<StackPanel> panels;
 
         /// <summary>
@@ -119,6 +126,36 @@
             await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
             this.authenticateSnykProgressBar.Visibility = Visibility.Collapsed;
             this.testCodeNowButton.IsEnabled = true;
+
+            // Add folder to trusted
+            var solutionFolderPath = await this.ServiceProvider.SolutionService.GetSolutionFolderAsync();
+            if (!string.IsNullOrEmpty(solutionFolderPath))
+            {
+                try
+                {
+                    this.ServiceProvider.WorkspaceTrustService.AddFolderToTrusted(solutionFolderPath);
+                    Logger.Information("Workspace folder was trusted: {SolutionFolderPath}", solutionFolderPath);
+                }
+                catch (ArgumentException ex)
+                {
+                    Logger.Error(ex, "Failed to add folder to trusted list.");
+                    throw ex;
+                }
+            }
+
+            // Issue scan
+            if (authenticationSucceeded)
+            {
+                var uiShell = Microsoft.VisualStudio.Shell.ServiceProvider.GlobalProvider.GetService(typeof(SVsUIShell)) as IVsUIShell;
+                if (uiShell != null)
+                {
+                    uiShell.PostExecCommand(
+                        SnykGuids.SnykVSPackageCommandSet,
+                        SnykGuids.RunScanCommandId,
+                        0,
+                        null);
+                }
+            }
 
             var nextPanel = authenticationSucceeded ? (ToolWindowState)RunScanState.Instance : OverviewState.Instance;
             this.Context.TransitionTo(nextPanel);
