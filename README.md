@@ -1,6 +1,6 @@
 # Visual Studio extension
 
-The Snyk Visual Studio extension provides analysis of your code and open source dependencies.
+The Snyk Visual Studio extension provides analysis of your code and open source dependencies. Download the plugin at any time free of charge and use it with any Snyk account. Scan your code early in the development lifecycle to help you pass security reviews and avoid costly fixes later in the development cycle.
 
 Snyk scans for vulnerabilities and returns results with security issues categorized by issue type and severity.
 
@@ -10,10 +10,12 @@ This single plugin provides a Java vulnerability scanner, a custom code vulnerab
 
 Snyk scans for the following types of issues:
 
-* [**Open Source Security**](https://snyk.io/product/open-source-security-management/) - security vulnerabilities and license issues in both direct and indirect (transitive) open-source dependencies pulled into the Snyk Project. \
+* [**Open Source Security**](https://snyk.io/product/open-source-security-management/) - security vulnerabilities and license issues in both direct and indirect (transitive) open-source dependencies pulled into the Snyk Project.\
   See also the [Open Source docs](https://docs.snyk.io/products/snyk-open-source).
-* [**Code Security and Code Quality**](https://snyk.io/product/snyk-code/) - security vulnerabilities and quality issues in your code. See also the Snyk Code docs. \
+* [**Code Security and Code Quality**](https://snyk.io/product/snyk-code/) - security vulnerabilities and quality issues in your code. See also the Snyk Code docs.\
   See also the [Snyk Code docs](https://docs.snyk.io/products/snyk-code).
+
+In using the Visual Studio Code extension, you have the advantage of relying on the [Snyk Vulnerability Database](https://docs.snyk.io/introducing-snyk/getting-started-snyk-intel-vuln-db-access). You also have available the [Snyk Code AI Engine](https://docs.snyk.io/products/snyk-code/introducing-snyk-code/key-features/ai-engine).
 
 This page explains installation of the Visual Studio extension. **After you complete the steps on this page**, you will continue by following the instructions in the other Visual studio extension docs:
 
@@ -50,7 +52,7 @@ Search for _Snyk_ and select **Download** to download the Snyk Security - Code a
 
 Once installed, use Snyk through the **Extensions > Snyk** menu (on Visual Studio versions older than 2019, Snyk is part of the top menu bar).
 
-<img src="https://github.com/snyk/user-docs/raw/HEAD/docs/.gitbook/assets/image (351) (1) (1) (1).png" alt="" />
+<img src="https://github.com/snyk/user-docs/raw/HEAD/docs/.gitbook/assets/image (253).png" alt="" />
 
 You can also open the Snyk tool window using **View > Other Windows > Snyk**_._
 
