@@ -19,6 +19,8 @@
                  toolkit:Themes.UseVsTheme="True"
                  Title="Snyk - This folder has not been trusted"
                  MouseDown="TrustDialogWindow_OnMouseDown">
+    <!--This file is duplicated between the extension projects rather than shared in the shared project.
+        This is due to differences in imports versions that cannot be resolved without duplication.-->
     <DockPanel Margin="10">
         <Button DockPanel.Dock="Top" HorizontalAlignment="Right" Click="DoNotTrustButton_OnClick" MinWidth="1"
                 MinHeight="1" Width="35" Margin="0" Padding="0">
