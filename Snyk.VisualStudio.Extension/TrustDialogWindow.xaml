@@ -1,5 +1,5 @@
 ﻿<ui:DialogWindow x:Class="Snyk.VisualStudio.Extension.TrustDialogWindow"
-                 x:Name="trustDialogWindow"
+                 x:Name="TrustWindow"
                  xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
                  xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
                  xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
@@ -10,7 +10,7 @@
                  WindowStartupLocation="CenterScreen"
                  IsCloseButtonEnabled="True"
                  HasHelpButton="False"
-                MinHeight="290" Height="290"
+                 MinHeight="290" Height="290"
                  MinWidth="500" Width="500"
                  BorderBrush="{x:Static SystemColors.WindowFrameBrush}" BorderThickness="1"
                  WindowStyle="None" ResizeMode="NoResize" AllowsTransparency="True"
@@ -20,27 +20,30 @@
                  Title="Snyk - This folder has not been trusted"
                  MouseDown="TrustDialogWindow_OnMouseDown">
     <DockPanel Margin="10">
-        <Button DockPanel.Dock="Top" HorizontalAlignment="Right" Click="DoNotTrustButton_OnClick" MinWidth="1" MinHeight="1" Width="35" Margin="0" Padding="0">
-            <imaging:CrispImage Moniker="{x:Static catalog:KnownMonikers.Close}"/>
+        <Button DockPanel.Dock="Top" HorizontalAlignment="Right" Click="DoNotTrustButton_OnClick" MinWidth="1"
+                MinHeight="1" Width="35" Margin="0" Padding="0">
+            <imaging:CrispImage Moniker="{x:Static catalog:KnownMonikers.Close}" />
         </Button>
         <StackPanel HorizontalAlignment="Right" DockPanel.Dock="Bottom" Orientation="Horizontal">
-            <Button x:Name="TrustButton" Margin="5, 5" Content="Trust folder and continue" Click="TrustButton_OnClick"/>
-            <Button x:Name="DoNotTrustButton" Margin="5, 5" Content="Don't scan" Click="DoNotTrustButton_OnClick"/>
+            <Button x:Name="TrustButton" Margin="5, 5" Content="Trust folder and continue" Click="TrustButton_OnClick" />
+            <Button x:Name="DoNotTrustButton" Margin="5, 5" Content="Don't scan" Click="DoNotTrustButton_OnClick" />
         </StackPanel>
         <Grid>
             <Grid.RowDefinitions>
-                <RowDefinition Height="auto"/>
-                <RowDefinition Height="auto"/>
+                <RowDefinition Height="auto" />
+                <RowDefinition Height="auto" />
             </Grid.RowDefinitions>
             <Grid Grid.Row="0">
                 <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="*"/>
-                    <ColumnDefinition Width="5*"/>
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="5*" />
                 </Grid.ColumnDefinitions>
-                <imaging:CrispImage Grid.Column="0" Width="50" Moniker="{x:Static catalog:KnownMonikers.StatusSecurityWarning}"/>
+                <imaging:CrispImage Grid.Column="0" Width="50"
+                                    Moniker="{x:Static catalog:KnownMonikers.StatusSecurityWarning}" />
                 <StackPanel VerticalAlignment="Center" Grid.Column="1" Margin="0, 0, 5, 0">
                     <TextBlock FontSize="14">This folder has not been trusted:</TextBlock>
-                    <TextBlock FontSize="14" FontWeight="Bold" TextWrapping="Wrap" Text="{Binding ElementName=TrustWindow, Path=FolderPath}"/>
+                    <TextBlock FontSize="14" FontWeight="Bold" TextWrapping="Wrap"
+                               Text="{Binding ElementName=TrustWindow, Path=FolderPath}" />
                 </StackPanel>
             </Grid>
             <StackPanel Grid.Row="1" Margin="5">
@@ -48,8 +51,9 @@
                     When scanning folder files for vulnerabilities, Snyk may automatically execute code such as invoking the package manager to get dependency information. You should only scan folders you trust.
                 </TextBlock>
                 <TextBlock>
-                    <LineBreak/>
-                    <Hyperlink NavigateUri="https://docs.snyk.io/ide-tools/visual-studio-extension/workspace-trust" RequestNavigate="Hyperlink_OnRequestNavigate">
+                    <LineBreak />
+                    <Hyperlink NavigateUri="https://docs.snyk.io/ide-tools/visual-studio-extension/workspace-trust"
+                               RequestNavigate="Hyperlink_OnRequestNavigate">
                         More information
                     </Hyperlink>
                 </TextBlock>
