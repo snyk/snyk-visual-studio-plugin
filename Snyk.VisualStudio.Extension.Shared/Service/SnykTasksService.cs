@@ -270,7 +270,7 @@
         }
 
         /// <summary>
-        /// Start a CLI download task in background thread.
+        /// Start a CLI download task in background thread. Will only download the CLI if it's missing or outdated.
         /// </summary>
         /// <param name="downloadFinishedCallback"><see cref="CliDownloadFinishedCallback"/> callback object.</param>
         public void Download(CliDownloadFinishedCallback downloadFinishedCallback = null)

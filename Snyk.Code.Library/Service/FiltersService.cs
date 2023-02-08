@@ -50,8 +50,7 @@
             return filePaths
                     .Where(path =>
                     {
-                        if (configFileFilters.Contains(Path.GetFileName(path))
-                            || this.IsFileInIgnoredDirectory(path)
+                        if (this.IsFileInIgnoredDirectory(path)
                             || this.IsFileSizeLargerThanMaximum(path))
                         {
                             return false;

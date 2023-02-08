@@ -1,5 +1,16 @@
 # Snyk Changelog
 
+## [1.1.32]
+
+### Added
+- Arm64 support.
+
+### Changed
+- Snyk Code no longer filters configuration files.
+
+### Fixed
+- Missing paths in the trust dialog in older VS versions.
+
 ## [1.1.31]
 
 ### Added
