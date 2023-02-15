@@ -15,8 +15,9 @@
         /// </summary>
         /// <param name="token">User API token.</param>
         /// <param name="baseUrl">Base URL.</param>
+        /// <param name="orgName">User organization name.</param>
         /// <returns>New HttpClient instance.</returns>
-        public static HttpClient NewHttpClient(string token, string baseUrl = null)
+        public static HttpClient NewHttpClient(string token, string baseUrl = null, string orgName = null)
         {
             var httpClient = new HttpClient(new HttpClientHandler
             {
@@ -31,6 +32,13 @@
             {
                 httpClient.BaseAddress = new Uri(baseUrl);
             }
+
+            if (!string.IsNullOrEmpty(orgName))
+            {
+                httpClient.DefaultRequestHeaders.Add("snyk-org-name", orgName);
+            }
+
+            // TODO: Add snyk-request-id header logic
 
             httpClient.DefaultRequestHeaders.Add("Session-Token", token);
             httpClient.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));

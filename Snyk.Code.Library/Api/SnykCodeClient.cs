@@ -42,7 +42,7 @@
         /// <param name="orgName">User organization name.</param>
         public SnykCodeClient(string baseUrl, string token, string flowName, string orgName)
         {
-            this.httpClient = HttpClientFactory.NewHttpClient(token, baseUrl);
+            this.httpClient = HttpClientFactory.NewHttpClient(token, baseUrl, orgName);
 
             Logger.Information("Create http client with with url {BaseUrl}.", baseUrl);
 
