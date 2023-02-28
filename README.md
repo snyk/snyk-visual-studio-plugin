@@ -1,4 +1,3 @@
-Change to platform-hammerhead
 # Visual Studio extension
 
 The Snyk Visual Studio extension provides analysis of your code and open source dependencies. Download the plugin at any time free of charge and use it with any Snyk account. Scan your code early in the development lifecycle to help you pass security reviews and avoid costly fixes later in the development cycle.
