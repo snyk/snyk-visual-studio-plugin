@@ -249,3 +249,4 @@ Snyk.Code.Library.Tests/settings.json
 Thumbs.db
 .directory
 .DS_Store
+.idea
