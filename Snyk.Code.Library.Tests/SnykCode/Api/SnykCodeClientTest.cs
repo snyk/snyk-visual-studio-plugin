@@ -30,12 +30,6 @@
                 ContextOrgName);
         }
 
-        public async Task SnykCodeClient_HttpClient() {
-            Assert.Equal(4, this.snykCodeClient.httpClient.DefaultRequestHeaders.Count);
-            
-            // Check special header for organization name.
-            Assert.Equal(this.snykCodeClient.contextOrgName, this.snykCodeClient.httpClient.DefaultRequestHeaders.Get("snyk-org-name"));
-        }
         [Fact]
         public async Task SnykCodeClient_TwoFilesWithIssuesProvided_GetAnalysisSuccessAsync()
         {
