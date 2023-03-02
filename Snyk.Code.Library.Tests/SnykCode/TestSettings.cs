@@ -10,7 +10,7 @@
         /// <summary>
         /// SnykCode development API URL.
         /// </summary>
-        public const string SnykCodeApiUrl = "https://deeproxy.dev.snyk.io/";
+        public const string SnykCodeApiUrl = "https://deeproxy.snyk.io/";
 
         private static TestSettings instance;
 

@@ -20,7 +20,7 @@
 
             optionsMock
                 .Setup(options => options.CustomEndpoint)
-                .Returns("https://dev.snyk.io/api");
+                .Returns("https://snyk.io/api");
 
             optionsMock
                 .Setup(options => options.ApiToken)
@@ -65,7 +65,7 @@
 
             optionsMock
                 .Setup(options => options.CustomEndpoint)
-                .Returns("https://dev.snyk.io/api");
+                .Returns("https://snyk.io/api");
 
             optionsMock
                 .Setup(options => options.ApiToken)

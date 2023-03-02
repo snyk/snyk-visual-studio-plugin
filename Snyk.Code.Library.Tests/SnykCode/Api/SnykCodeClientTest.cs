@@ -16,8 +16,8 @@
     /// </summary>
     public class SnykCodeClientTest
     {
-        private const string ContextFlowName = "test-vs-snyk-code-library-ide";
-        private const string ContextOrgName = "test-vs-snyk-code-library-org";
+        private const string ContextFlowName = "test-visual-studio-plugin-ide";
+        private const string ContextOrgName = "platform_hammerhead";
 
         private SnykCodeClient snykCodeClient;
 
