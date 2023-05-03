@@ -8,6 +8,9 @@
     using Snyk.Analytics;
     using Snyk.Code.Library.Service;
     using Snyk.Common;
+    using Snyk.Common.Authentication;
+    using Snyk.Common.Service;
+    using Snyk.Common.Settings;
     using Snyk.VisualStudio.Extension.Shared.CLI;
     using Snyk.VisualStudio.Extension.Shared.Settings;
     using Snyk.VisualStudio.Extension.Shared.Theme;
@@ -101,12 +104,6 @@
         /// </summary>
         /// <returns>SnykCli.</returns>
         ICli NewCli();
-
-        /// <summary>
-        /// Get User Snyk API token.
-        /// </summary>
-        /// <returns>User API token string.</returns>
-        string GetApiToken();
 
         /// <summary>
         /// Get Visual Studio service (async).

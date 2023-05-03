@@ -9,6 +9,7 @@
     using Snyk.Code.Library.Api.Dto.Analysis;
     using Snyk.Code.Library.Tests.Api;
     using Snyk.Common;
+    using Snyk.Common.Authentication;
     using Xunit;
 
     /// <summary>
@@ -383,7 +384,7 @@
         [Fact]
         public void SnykCodeClient_GetAnalysisResultRequestPayload_JsonContainsFlowNameAndOrgName()
         {
-            var snykCodeClient = new SnykCodeClient(string.Empty, string.Empty, "test-flow-name", "test-org");
+            var snykCodeClient = new SnykCodeClient(string.Empty, AuthenticationToken.EmptyToken, "test-flow-name", "test-org");
 
             var payload = snykCodeClient.GetAnalysisResultRequestPayload("test-bundle-id");
 

@@ -3,13 +3,14 @@
     using System;
     using System.Diagnostics;
     using System.Diagnostics.CodeAnalysis;
-    using System.IO;
     using System.Threading.Tasks;
     using System.Windows.Forms;
     using Microsoft.VisualStudio.Shell;
     using Microsoft.VisualStudio.Threading;
     using Serilog;
     using Snyk.Common;
+    using Snyk.Common.Service;
+    using Snyk.Common.Settings;
     using Snyk.VisualStudio.Extension.Shared.CLI;
     using Snyk.VisualStudio.Extension.Shared.Service;
     using Snyk.VisualStudio.Extension.Shared.UI.Notifications;
@@ -80,38 +81,19 @@
             this.CliPathTextBox.Text = cliPath;
         }
 
-        private void OptionsDialogPageOnSettingsChanged(object sender, SnykSettingsChangedEventArgs e)
-        {
-            this.UpdateViewFromOptionsDialog();
-            this.InitializeApiToken();
-        }
-
-        /// <summary>
-        /// Authenticate user via cli auth.
-        /// </summary>
-        /// <exception cref="FileNotFoundException">Thrown when the CLI could not be found.</exception>
-        /// <returns>Returns true if authenticated successfully, false otherwise.</returns>
-        public bool Authenticate()
-        {
-            logger.Information("Enter Authenticate method");
-
-            var cli = this.ServiceProvider.NewCli();
-
-            if (!cli.IsCliFileFound())
+        private void OptionsDialogPageOnSettingsChanged(object sender, SnykSettingsChangedEventArgs e) =>
+            ThreadHelper.JoinableTaskFactory.RunAsync(async () =>
             {
-                logger.Information("CLI not exists. Download CLI before get Api token");
-                throw new FileNotFoundException("CLI was not found");
-            }
-
-            logger.Information("CLI exists. Calling SetupApiToken method");
-
-            return this.SetupApiToken();
-        }
+                await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
+                this.UpdateViewFromOptionsDialog();
+                this.InitializeApiToken();
+            }).FireAndForget();
 
         private async Task OnAuthenticationSuccessfulAsync(string apiToken)
         {
             logger.Information("Enter authenticate successCallback");
 
+            await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
             //TODO - try to await SwitchToMainThread
             if (this.authProgressBar.IsHandleCreated)
             {
@@ -151,23 +133,24 @@
 
         private void InitializeApiToken()
         {
-            if (string.IsNullOrEmpty(this.OptionsDialogPage.ApiToken))
+            if (!this.OptionsDialogPage.ApiToken.IsValid())
             {
                 string apiToken = this.NewCli().GetApiToken();
 
-                if (Common.Guid.IsValid(apiToken))
+                if (!apiToken.IsNullOrEmpty())
                 {
-                    this.OptionsDialogPage.ApiToken = apiToken;
+                    this.OptionsDialogPage.SetApiToken(apiToken);
                 }
             }
 
-            this.tokenTextBox.Text = this.OptionsDialogPage.ApiToken;
+            this.tokenTextBox.Text = this.OptionsDialogPage.ApiToken.ToString();
         }
 
         private async Task OnAuthenticationFailAsync(string errorMessage)
         {
             logger.Information("Enter authenticate errorCallback");
 
+            await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
             if (this.authProgressBar.IsHandleCreated)
             {
                 this.authProgressBar.Invoke(new Action(() =>
@@ -206,7 +189,7 @@
             await this.ServiceProvider.ToolWindow.UpdateScreenStateAsync();
         }
 
-        private SnykCli NewCli() => new SnykCli(this.OptionsDialogPage);
+        private ICli NewCli() => this.ServiceProvider.NewCli();
 
         private void AuthenticateButton_Click(object sender, EventArgs eventArgs) => ThreadHelper.JoinableTaskFactory
             .RunAsync(this.AuthenticateButtonClickAsync);
@@ -228,121 +211,23 @@
             if (cli.IsCliFileFound())
             {
                 logger.Information("CLI exists. Calling SetupApiToken method");
-
-                await this.SetupApiTokenAsync();
+                var authenticated = serviceProvider.Options.Authenticate();
+                if (authenticated)
+                {
+                    var token = cli.GetApiToken();
+                    await OnAuthenticationSuccessfulAsync(token);
+                }
+                else
+                {
+                    await OnAuthenticationFailAsync("Authentication failed");
+                }
             }
             else
             {
                 logger.Information("CLI not exists. Download CLI before get Api token");
 
-                serviceProvider.TasksService.Download(this.OnCliDownloadFinishedCallback);
-            }
-        }
-
-        private void OnCliDownloadFinishedCallback() => ThreadHelper.JoinableTaskFactory.Run(async () =>
-        {
-            logger.Information("CLI downloaded. Calling SetupApiToken method");
-
-            await this.SetupApiTokenAsync();
-        });
-
-        private async Task SetupApiTokenAsync()
-        {
-            logger.Information("Enter SetupApiToken method");
-
-            string apiToken;
-
-            try
-            {
-                logger.Information("Try get Api token");
-
-                apiToken = this.NewCli().GetApiToken();
-
-                if (string.IsNullOrEmpty(apiToken))
-                {
-                    logger.Information("Api toke is null or empty. Try to authenticate via snyk auth");
-
-                    string authResultMessage = this.NewCli().Authenticate();
-
-                    if (authResultMessage.Contains("Your account has been authenticated. Snyk is now ready to be used."))
-                    {
-                        logger.Information("Snyk auth executed successfully. Try to get Api token");
-
-                        apiToken = this.NewCli().GetApiToken();
-                    }
-                    else
-                    {
-                        logger.Information("Snyk auth executed with error: {AuthResultMessage}", authResultMessage);
-
-                        await this.OnAuthenticationFailAsync(authResultMessage);
-
-                        return;
-                    }
-                }
-
-                logger.Information("Validate Api token GUID");
-
-                if (!Common.Guid.IsValid(apiToken))
-                {
-                    await this.OnAuthenticationFailAsync($"Invalid GUID: {apiToken}");
-
-                    return;
-                }
-
-                await this.OnAuthenticationSuccessfulAsync(apiToken);
-
-                logger.Information("Leave SetupApiToken method");
-            }
-            catch (Exception e)
-            {
-                logger.Error(e, "Setup api token in general settings");
-
-                await this.OnAuthenticationFailAsync(e.Message);
-            }
-        }
-
-        private bool SetupApiToken()
-        {
-            logger.Information("Enter SetupApiToken method");
-            try
-            {
-                logger.Information("Try get Api token");
-                var apiToken = this.NewCli().GetApiToken();
-
-                if (string.IsNullOrEmpty(apiToken))
-                {
-                    logger.Information("Api toke is null or empty. Try to authenticate via snyk auth");
-                    string authResultMessage = this.NewCli().Authenticate();
-
-                    if (authResultMessage.Contains("Your account has been authenticated. Snyk is now ready to be used."))
-                    {
-                        logger.Information("Snyk auth executed successfully. Try to get Api token");
-                        apiToken = this.NewCli().GetApiToken();
-                    }
-                    else
-                    {
-                        logger.Information("Snyk auth executed with error: {AuthResultMessage}", authResultMessage);
-                        NotificationService.Instance.ShowErrorInfoBar(authResultMessage);
-                        return false;
-                    }
-                }
-
-                logger.Information("Validate Api token GUID");
-
-                if (!Common.Guid.IsValid(apiToken))
-                {
-                    NotificationService.Instance.ShowErrorInfoBar($"Invalid API Token: {apiToken}");
-                    return false;
-                }
-
-                this.OptionsDialogPage.ApiToken = apiToken;
-                return true;
-
-            }
-            catch (Exception e)
-            {
-                logger.Error(e, "Setup api token in general settings");
-                return false;
+                //serviceProvider.TasksService.Download(() => this.OptionsDialogPage.Authenticate());
+                await serviceProvider.TasksService.DownloadAsync(() => this.OptionsDialogPage.Authenticate());
             }
         }
 
@@ -352,7 +237,7 @@
         {
             this.ValidateChildren(ValidationConstraints.Enabled);
 
-            this.OptionsDialogPage.ApiToken = this.tokenTextBox.Text;
+            this.OptionsDialogPage.SetApiToken(this.tokenTextBox.Text);
         }
 
         private void CustomEndpointTextBox_LostFocus(object sender, EventArgs e)
@@ -384,7 +269,7 @@
                     return;
                 }
 
-                if (!Common.Guid.IsValid(this.tokenTextBox.Text))
+                if (this.tokenTextBox.Text.IsNullOrEmpty())
                 {
                     cancelEventArgs.Cancel = true;
 
@@ -550,7 +435,7 @@
 
                 serviceProvider.AnalyticsService.AnalyticsEnabledOption = this.usageAnalyticsCheckBox.Checked;
 
-                await serviceProvider.AnalyticsService.ObtainUserAsync(serviceProvider.GetApiToken());
+                await serviceProvider.AnalyticsService.ObtainUserAsync(this.OptionsDialogPage.ApiToken);
                 await serviceProvider.SentryService.SetupAsync();
             });
 

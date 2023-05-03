@@ -11,7 +11,7 @@
         /// <summary>
         /// Gets a value indicating whether new <see cref="ScanResultsState"/> object.
         /// </summary>
-        public static ScanResultsState Instance => new ScanResultsState();
+        public static ScanResultsState Instance { get; } = new ScanResultsState();
 
         /// <summary>
         /// Display results grid, tree and enable execute actions.

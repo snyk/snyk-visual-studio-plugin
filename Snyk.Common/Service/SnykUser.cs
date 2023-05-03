@@ -1,11 +1,5 @@
-﻿namespace Snyk.Analytics
+﻿namespace Snyk.Common.Service
 {
-    using System;
-    using System.Net.Http;
-    using System.Net.Http.Headers;
-    using System.Threading.Tasks;
-    using Snyk.Common;
-
     /// <summary>
     /// User for Snyk Analytics.
     /// </summary>

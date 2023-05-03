@@ -14,6 +14,9 @@ namespace Snyk.VisualStudio.Extension.Shared.Service
     using Snyk.Analytics;
     using Snyk.Code.Library.Service;
     using Snyk.Common;
+    using Snyk.Common.Authentication;
+    using Snyk.Common.Service;
+    using Snyk.Common.Settings;
     using Snyk.VisualStudio.Extension.Shared.CLI;
     using Snyk.VisualStudio.Extension.Shared.Settings;
     using Snyk.VisualStudio.Extension.Shared.Theme;
@@ -268,20 +271,6 @@ namespace Snyk.VisualStudio.Extension.Shared.Service
         /// <returns>New SnykCli instance.</returns>
         public ICli NewCli() => new SnykCli(this.Options);
 
-        /// <summary>
-        /// Check is Options.ApiToken initialized. But if it's empty it will call CLI.GetApiToken() method.
-        /// </summary>
-        /// <returns>User API token string</returns>
-        public string GetApiToken()
-        {
-            if (!string.IsNullOrEmpty(this.Options.ApiToken))
-            {
-                return this.Options.ApiToken;
-            }
-
-            return this.NewCli().GetApiToken();
-        }
-
         private void OnSettingsChanged(object sender, SnykSettingsChangedEventArgs e) => this.SetupSnykCodeService();
 
         private void SetupSnykCodeService()
@@ -323,7 +312,7 @@ namespace Snyk.VisualStudio.Extension.Shared.Service
             var endpoint = this.ApiEndpointResolver.UserMeEndpoint;
 
             Logger.Information("analytics enabled = {Enabled}, endpoint = {Endpoint}", enabled, endpoint);
-            SnykAnalyticsService.Initialize(this.Options.AnonymousId, writeKey, enabled, endpoint);
+            SnykAnalyticsService.Initialize(this.Options.AnonymousId, writeKey, enabled, this.ApiService);
             this.analyticsService = SnykAnalyticsService.Instance;
             Logger.Information("Analytics service initialized");
         }

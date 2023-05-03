@@ -4,10 +4,16 @@
     using System.Collections.Specialized;
     using System.IO;
     using System.Linq;
+    using System.Security.Authentication;
     using System.Threading.Tasks;
     using Serilog;
     using Snyk.Common;
+    using Snyk.Common.Authentication;
+    using Snyk.Common.Service;
+    using Snyk.Common.Settings;
+    using Snyk.VisualStudio.Extension.Shared.Service;
     using Snyk.VisualStudio.Extension.Shared.Settings;
+    using Snyk.VisualStudio.Extension.Shared.UI.Notifications;
 
     /// <summary>
     /// Incapsulate work logic with Snyk CLI.
@@ -83,8 +89,21 @@
             return apiToken;
         }
 
+        private string GetTokenKey()
+        {
+            var apiEndpointResolver = new ApiEndpointResolver(this.options);
+
+            var tokenKey = "api";
+            if (apiEndpointResolver.AuthenticationMethod == AuthenticationType.OAuth)
+            {
+                tokenKey = "INTERNAL_OAUTH_TOKEN_STORAGE";
+            }
+
+            return tokenKey;
+        }
+
         /// <inheritdoc/>
-        public void UnsetApiToken() => this.ConsoleRunner.Run(this.GetCliPath(), "config unset api");
+        public void UnsetApiToken() => this.ConsoleRunner.Run(this.GetCliPath(), "config unset " + this.GetTokenKey());
 
         /// <inheritdoc />
         public bool IsCliFileFound()
@@ -100,9 +119,9 @@
         /// <returns>API token string.</returns>
         public string GetApiTokenOrThrowException()
         {
-            string apiToken = this.ConsoleRunner.Run(this.GetCliPath(), "config get api");
+            string apiToken = this.ConsoleRunner.Run(this.GetCliPath(), "config get " + this.GetTokenKey());
 
-            if (!Guid.IsValid(apiToken))
+            if (apiToken.IsNullOrEmpty())
             {
                 throw new InvalidTokenException(string.IsNullOrEmpty(apiToken) ? string.Empty : apiToken);
             }
@@ -110,25 +129,37 @@
             return apiToken;
         }
 
-        /// <summary>
-        /// Call Snyk CLI auth for authentication. This will open authentication web page and store token in config file.
-        /// </summary>
-        /// <returns>Snyk API token.</returns>
-        public string Authenticate()
+        public void Authenticate()
         {
+            var apiEndpointResolver = new ApiEndpointResolver(this.options);
+            var environmentVariables = new StringDictionary();
+
             var args = new List<string> { "auth" };
             if (this.Options.IgnoreUnknownCA)
             {
                 args.Add("--insecure");
             }
 
-            var environmentVariables = new StringDictionary();
-            if (!string.IsNullOrEmpty(this.Options.CustomEndpoint))
+            if (apiEndpointResolver.AuthenticationMethod == AuthenticationType.OAuth)
             {
-                environmentVariables.Add(ApiEnvironmentVariableName, this.Options.CustomEndpoint);
+                args.Add("--auth-type=oauth");
+                environmentVariables.Add("INTERNAL_SNYK_OAUTH_ENABLED", "1");
+
             }
 
-            return this.ConsoleRunner.Run(this.GetCliPath(), string.Join(" ", args), environmentVariables);
+            environmentVariables.Add(ApiEnvironmentVariableName, apiEndpointResolver.SnykApiEndpoint);
+
+            var authResultMessage = this.ConsoleRunner.Run(this.GetCliPath(), string.Join(" ", args), environmentVariables);
+            var authenticated = authResultMessage.Contains("Your account has been authenticated.");
+            if (authenticated)
+            {
+                Logger.Information("Snyk auth executed successfully.");
+            }
+            else
+            {
+                var message = $"The `snyk auth` command failed to authenticate";
+                throw new AuthenticationException(message);
+            }
         }
 
         /// <inheritdoc/>
@@ -153,6 +184,28 @@
             return ConvertRawCliStringToCliResult(consoleResult);
         }
 
+        /// <inheritdoc/>
+        public string RunCommand(string arguments)
+        {
+            var cliPath = this.GetCliPath();
+
+            Logger.Information("CLI path is {CliPath}", cliPath);
+
+            var environmentVariables = new StringDictionary();
+            var apiEndpointResolver = new ApiEndpointResolver(this.options);
+            environmentVariables.Add(ApiEnvironmentVariableName, apiEndpointResolver.SnykApiEndpoint);
+
+            this.ConsoleRunner.CreateProcess(cliPath, arguments, environmentVariables);
+
+            Logger.Information("Start run console process");
+
+            var consoleResult = this.ConsoleRunner.Execute();
+
+            Logger.Information("Start convert console string result to CliResult and return value");
+
+            return consoleResult;
+        }
+
         private string GetCliPath()
         {
             var snykCliCustomPath = this.options?.CliCustomPath;
@@ -163,18 +216,24 @@
         public StringDictionary BuildScanEnvironmentVariables()
         {
             var environmentVariables = new StringDictionary();
-            if (!string.IsNullOrEmpty(this.Options.ApiToken))
+            if (this.Options.ApiToken.IsValid())
             {
-                environmentVariables.Add("SNYK_TOKEN", this.Options.ApiToken);
+                var token = this.Options.ApiToken.ToString();
+                var tokenEnvVar = "SNYK_TOKEN";
+
+                if (this.Options.ApiToken.Type == AuthenticationType.OAuth)
+                {
+                    tokenEnvVar = "INTERNAL_OAUTH_TOKEN_STORAGE";
+                    environmentVariables.Add("INTERNAL_SNYK_OAUTH_ENABLED", "1");
+                }
+
+                environmentVariables.Add(tokenEnvVar, token);
                 Logger.Information("Token added from Options");
             }
 
-            if (!string.IsNullOrEmpty(this.Options.CustomEndpoint))
-            {
-                environmentVariables.Add(ApiEnvironmentVariableName, this.Options.CustomEndpoint);
-                Logger.Information("Custom endpoint added from Options");
-            }
-
+            var apiEndpointResolver = new ApiEndpointResolver(this.options);
+            environmentVariables.Add(ApiEnvironmentVariableName, apiEndpointResolver.SnykApiEndpoint);
+            
             return environmentVariables;
         }
 
@@ -191,11 +250,6 @@
                 "--json",
                 "test",
             };
-
-            if (!string.IsNullOrEmpty(this.Options.CustomEndpoint))
-            {
-                arguments.Add($"--API={this.Options.CustomEndpoint}");
-            }
 
             if (this.Options.IgnoreUnknownCA)
             {

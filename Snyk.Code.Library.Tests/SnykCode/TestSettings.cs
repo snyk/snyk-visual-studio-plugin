@@ -1,6 +1,8 @@
 ﻿namespace Snyk.Code.Library.Tests.Api
 {
     using System;
+    using Snyk.Common;
+    using Snyk.Common.Authentication;
 
     /// <summary>
     /// Test settings.
@@ -26,7 +28,7 @@
                 {
                     instance = new TestSettings
                     {
-                        ApiToken = Environment.GetEnvironmentVariable("TEST_API_TOKEN"),
+                        ApiToken = new AuthenticationToken(AuthenticationType.Token, Environment.GetEnvironmentVariable("TEST_API_TOKEN")),
                     };
                 }
 
@@ -37,6 +39,6 @@
         /// <summary>
         /// Gets or sets a value indicating whether Api token.
         /// </summary>
-        public string ApiToken { get; set; }
+        public AuthenticationToken ApiToken { get; set; }
     }
 }

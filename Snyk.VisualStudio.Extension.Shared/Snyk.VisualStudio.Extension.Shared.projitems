@@ -28,18 +28,14 @@
     <Compile Include="$(MSBuildThisFileDirectory)Microsoft\HtmlParser\HtmlTokenType.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Microsoft\HtmlParser\HtmlToXamlConverter.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Microsoft\UI\HtmlRichTextBoxBehavior.cs" />
-    <Compile Include="$(MSBuildThisFileDirectory)Service\ApiEndpointResolver.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Service\ISentryService.cs" />
-    <Compile Include="$(MSBuildThisFileDirectory)Service\ISnykApiService.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Service\IWorkspaceTrustService.cs" />
-    <Compile Include="$(MSBuildThisFileDirectory)Service\LocalCodeEngine.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Service\SentryService.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Service\SolutionType.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Service\IOssService.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Service\OssScanException.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Service\OssService.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Service\WorkspaceTrustService.cs" />
-    <Compile Include="$(MSBuildThisFileDirectory)Settings\ISnykOptions.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Settings\IUserStorageSettingsService.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Settings\SnykGeneralOptionsDialogPage.cs">
       <SubType>Component</SubType>
@@ -51,7 +47,6 @@
       <DependentUpon>SnykGeneralSettingsUserControl.cs</DependentUpon>
     </Compile>
     <Compile Include="$(MSBuildThisFileDirectory)Settings\SnykSettings.cs" />
-    <Compile Include="$(MSBuildThisFileDirectory)Settings\SnykSettingsChangedEventArgs.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Settings\SnykSettingsLoader.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Settings\SnykSolutionOptionsDialogPage.cs">
       <SubType>Component</SubType>
@@ -122,12 +117,6 @@
       <CopyToOutputDirectory>Never</CopyToOutputDirectory>
     </Compile>
     <Compile Include="$(MSBuildThisFileDirectory)Service\ISnykServiceProvider.cs">
-      <CopyToOutputDirectory>Never</CopyToOutputDirectory>
-    </Compile>
-    <Compile Include="$(MSBuildThisFileDirectory)Service\SastSettings.cs">
-      <CopyToOutputDirectory>Never</CopyToOutputDirectory>
-    </Compile>
-    <Compile Include="$(MSBuildThisFileDirectory)Service\SnykApiService.cs">
       <CopyToOutputDirectory>Never</CopyToOutputDirectory>
     </Compile>
     <Compile Include="$(MSBuildThisFileDirectory)Service\SnykCliDownloadEventArgs.cs">

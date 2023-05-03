@@ -1,7 +1,8 @@
-﻿namespace Snyk.VisualStudio.Extension.Shared.Settings
+﻿namespace Snyk.Common.Settings
 {
     using System;
     using System.Threading.Tasks;
+    using Snyk.Common.Authentication;
 
     /// <summary>
     /// Interface for Snyk Options/Settings in Visual Studio.
@@ -9,14 +10,9 @@
     public interface ISnykOptions
     {
         /// <summary>
-        /// Settings changed event.
-        /// </summary>
-        event EventHandler<SnykSettingsChangedEventArgs> SettingsChanged;
-
-        /// <summary>
         /// Gets or sets a value indicating whether Snyk user API token.
         /// </summary>
-        string ApiToken { get; set; }
+        AuthenticationToken ApiToken { get; }
 
         /// <summary>
         /// Gets or sets a value indicating whether CLI custom endpoint parameter.
@@ -74,6 +70,13 @@
         string CliCustomPath { get; set; }
 
         /// <summary>
+        /// Settings changed event.
+        /// </summary>
+        event EventHandler<SnykSettingsChangedEventArgs> SettingsChanged;
+
+        void SetApiToken(string apiToken);
+
+        /// <summary>
         /// Gets a value indicating whether additional options.
         /// Get this data using <see cref="SnykUserStorageSettingsService"/>.
         /// </summary>
@@ -88,9 +91,10 @@
         Task<bool> IsScanAllProjectsAsync();
 
         /// <summary>
-        /// Call CLI auth for user authentication at Snyk and get user api token.
+        /// Attempts to pull the token from the CLI config storage, and validates the token.
+        /// If the token is invalid, attempts to run the authentication command.
         /// </summary>
-        /// <returns>Returns true if authenticated successfully, false otherwise.</returns>
+        /// <returns>Returns true if authenticated successfully, or if a valid token was loaded from storage.</returns>
         bool Authenticate();
 
         /// <summary>

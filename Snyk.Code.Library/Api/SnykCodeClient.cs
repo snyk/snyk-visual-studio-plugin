@@ -10,6 +10,7 @@
     using Snyk.Code.Library.Api.Dto.Analysis;
     using Snyk.Code.Library.Api.Encoding;
     using Snyk.Common;
+    using Snyk.Common.Authentication;
 
     /// <inheritdoc />
     public class SnykCodeClient : ISnykCodeClient
@@ -40,7 +41,7 @@
         /// <param name="token">User token.</param>
         /// <param name="flowName">Context flow name.</param>
         /// <param name="orgName">User organization name.</param>
-        public SnykCodeClient(string baseUrl, string token, string flowName, string orgName)
+        public SnykCodeClient(string baseUrl, AuthenticationToken token, string flowName, string orgName)
         {
             this.httpClient = HttpClientFactory.NewHttpClient(token, baseUrl);
 

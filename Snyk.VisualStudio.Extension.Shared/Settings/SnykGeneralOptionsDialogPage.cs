@@ -1,12 +1,20 @@
 ﻿namespace Snyk.VisualStudio.Extension.Shared.Settings
 {
     using System;
+    using System.IO;
     using System.Runtime.InteropServices;
+    using System.Security.Authentication;
     using System.Threading.Tasks;
     using System.Windows.Forms;
     using Microsoft.VisualStudio.Shell;
+    using Serilog;
+    using Snyk.Analytics;
     using Snyk.Common;
+    using Snyk.Common.Authentication;
+    using Snyk.Common.Service;
+    using Snyk.Common.Settings;
     using Snyk.VisualStudio.Extension.Shared.Service;
+    using Snyk.VisualStudio.Extension.Shared.UI.Notifications;
 
     /// <summary>
     /// Snyk general settings page.
@@ -21,11 +29,13 @@
 
         private SnykGeneralSettingsUserControl generalSettingsUserControl;
 
-        private string apiToken;
+        private AuthenticationToken apiToken;
 
         private string customEndpoint;
 
         private string organization;
+
+        private static readonly ILogger Logger = LogManager.ForContext<SnykGeneralOptionsDialogPage>();
 
         /// <inheritdoc/>
         public event EventHandler<SnykSettingsChangedEventArgs> SettingsChanged;
@@ -38,19 +48,41 @@
         /// <summary>
         /// Gets or sets a value indicating whether API token.
         /// </summary>
-        public string ApiToken
-        {
-            get => this.apiToken;
-            set
-            {
-                if (this.apiToken == value)
-                {
-                    return;
-                }
+        public AuthenticationToken ApiToken => this.apiToken ?? AuthenticationToken.EmptyToken;
 
-                this.apiToken = value;
-                this.FireSettingsChangedEvent();
+        private string RefreshToken()
+        {
+            var cli = this.ServiceProvider?.NewCli();
+            cli.RunCommand("whoami --experimental");
+            var token = cli.GetApiToken();
+            return token;
+        }
+
+        public void SetApiToken(string apiTokenString)
+        {
+            if (this.apiToken?.ToString() == apiTokenString)
+            {
+                return;
             }
+
+            SetApiToken(CreateAuthenticationToken(apiTokenString));
+        }
+
+        private void SetApiToken(AuthenticationToken token)
+        {
+            this.apiToken = token;
+            this.apiToken.TokenRefresher = RefreshToken;
+            this.FireSettingsChangedEvent();
+        }
+
+        private AuthenticationToken CreateAuthenticationToken(string token)
+        {
+            var apiEndpointResolver = new ApiEndpointResolver(this);
+            var type = apiEndpointResolver.AuthenticationMethod;
+
+            var tokenObj = new AuthenticationToken(type, token);
+            tokenObj.TokenRefresher = RefreshToken;
+            return tokenObj;
         }
 
         /// <summary>
@@ -67,7 +99,7 @@
                 }
 
                 // When changing the API endpoint, the API token is invalidated
-                this.apiToken = string.Empty;
+                this.apiToken = AuthenticationToken.EmptyToken;
                 var cli = this.ServiceProvider?.NewCli();
                 cli?.UnsetApiToken(); // This setter can be called before initialization, so ServiceProvider can be null
 
@@ -244,7 +276,64 @@
         }
 
         /// <inheritdoc />
-        public bool Authenticate() => this.GeneralSettingsUserControl.Authenticate();
+        public bool Authenticate()
+        {
+            const int errorMessageMaxLength = 100;
+
+            Logger.Information("Enter Authenticate method");
+            var cli = this.ServiceProvider.NewCli();
+            if (!cli.IsCliFileFound())
+            {
+                ThrowFileNotFoundException();
+            }
+            try
+            {
+                // Pull token from configuration. If the token is invalid, attempt to authenticate and get a new token.
+                var apiTokenString = cli.GetApiToken();
+                var token = CreateAuthenticationToken(apiTokenString);
+                if (!token.IsValid())
+                {
+                    Logger.Information("Api token is invalid. Attempting to authenticate via snyk auth");
+                    try
+                    {
+                        this.ServiceProvider.NewCli().Authenticate();
+                    }
+                    catch (AuthenticationException e)
+                    {
+                        var shortMessage = e.Message.Length > errorMessageMaxLength ? e.Message.Substring(0, errorMessageMaxLength) + "..." : e.Message;
+                        Logger.Information("Snyk failed to authenticate: {Message}", e.Message);
+                        NotificationService.Instance.ShowErrorInfoBar($"Snyk failed to authenticate: {shortMessage}");
+                        return false;
+                    }
+                    catch (Exception e)
+                    {
+                        var shortMessage = e.Message.Length > errorMessageMaxLength ? e.Message.Substring(0, errorMessageMaxLength) + "..." : e.Message;
+                        Logger.Information("Error in Snyk authentication: {Message}", e.Message);
+                        NotificationService.Instance.ShowErrorInfoBar($"Snyk failed to authenticate: {shortMessage}");
+                        return false;
+                    }
+
+                    apiTokenString = this.ServiceProvider.NewCli().GetApiToken();
+                    token = CreateAuthenticationToken(apiTokenString);
+                    
+                    if (!token.IsValid()) // Token is still invalid after the authentication attempt.
+                    {
+                        NotificationService.Instance.ShowErrorInfoBar("Snyk failed to authenticate");
+                        return false;
+                    }
+                }
+
+                // Token is valid, store it and return true
+                this.SetApiToken(token);
+                return true;
+
+            }
+            catch (Exception e)
+            {
+                Logger.Error(e, "Setup api token in general settings");
+                return false;
+            }
+        }
 
         private void FireSettingsChangedEvent() => this.SettingsChanged?.Invoke(this, new SnykSettingsChangedEventArgs());
 
@@ -265,6 +354,13 @@
             {
                 return "https://app.snyk.io/";
             }
+        }
+
+        private void ThrowFileNotFoundException()
+        {
+            const string cliNotFound = "CLI not found";
+            Logger.Information(cliNotFound);
+            throw new FileNotFoundException(cliNotFound);
         }
     }
 }

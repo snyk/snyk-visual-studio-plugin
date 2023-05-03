@@ -342,6 +342,61 @@
             }
         }
 
+        public async Task DownloadAsync(CliDownloadFinishedCallback downloadFinishedCallback = null)
+        {
+            if (this.IsTaskRunning())
+            {
+                Logger.Information("There is already a task in progress");
+
+                return;
+            }
+
+            this.downloadCliTokenSource = new CancellationTokenSource();
+
+            var progressWorker = new SnykProgressWorker
+            {
+                TasksService = this,
+                TokenSource = this.downloadCliTokenSource,
+            };
+
+            try
+            {
+                await this.DownloadAsync(downloadFinishedCallback, progressWorker);
+            }
+            catch (ChecksumVerificationException e)
+            {
+                Logger.Error(
+                    e,
+                    "Cli download failed due to failed checksum. {Expected} (expected) != {Actual}",
+                    e.ExpectedHash,
+                    e.ActualHash);
+
+                this.OnDownloadFailed(e);
+            }
+            catch (OperationCanceledException e)
+            {
+                Logger.Information("CLI Download cancelled");
+                this.OnDownloadCancelled(e.Message);
+            }
+            catch (Exception e)
+            {
+                Logger.Error(e, "Error on cli download");
+
+                this.OnDownloadFailed(e);
+            }
+            finally
+            {
+                this.isCliDownloading = false;
+
+                if (progressWorker.IsWorkFinished)
+                {
+                    DisposeCancellationTokenSource(this.downloadCliTokenSource);
+
+                    this.FireTaskFinished();
+                }
+            }
+        }
+
         /// <summary>
         /// Fire on task finished (oss scan or snykcode scan or cli download).
         /// </summary>

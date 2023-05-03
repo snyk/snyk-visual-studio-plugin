@@ -1,5 +1,6 @@
 ﻿namespace Snyk.VisualStudio.Extension.Shared.CLI
 {
+    using System.Security.Authentication;
     using System.Threading.Tasks;
 
     /// <summary>
@@ -36,5 +37,15 @@
         /// </summary>
         /// <returns>true if CLI executable is found, false otherwise.</returns>
         bool IsCliFileFound();
+        
+        /// <summary>
+        /// Call Snyk CLI auth for authentication. This will open authentication web page and store token in config file.
+        /// </summary>
+        /// <exception cref="AuthenticationException">
+        /// Thrown if the authentication failed. The message contains the CLI output.
+        /// </exception>
+        void Authenticate();
+
+        string RunCommand(string basePath);
     }
 }

@@ -11,7 +11,7 @@
         /// <summary>
         /// Gets a value indicating whether new <see cref="UpdateDownloadState"/>.
         /// </summary>
-        public static UpdateDownloadState Instance => new UpdateDownloadState();
+        public static UpdateDownloadState Instance { get; } = new UpdateDownloadState();
 
         /// <summary>
         /// Hide progress bar and download message components.

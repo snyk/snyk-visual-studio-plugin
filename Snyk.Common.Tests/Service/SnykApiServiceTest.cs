@@ -4,8 +4,9 @@
     using System.Net.Http;
     using System.Threading.Tasks;
     using Moq;
-    using Snyk.VisualStudio.Extension.Shared.Service;
-    using Snyk.VisualStudio.Extension.Shared.Settings;
+    using Snyk.Common.Authentication;
+    using Snyk.Common.Service;
+    using Snyk.Common.Settings;
     using Xunit;
 
     /// <summary>
@@ -13,6 +14,29 @@
     /// </summary>
     public class SnykApiServiceTest
     {
+        private static readonly AuthenticationToken TestToken = new AuthenticationToken(AuthenticationType.Token, Environment.GetEnvironmentVariable("TEST_API_TOKEN"));
+
+        [Fact]
+        public async Task SnykApiService_GetUserAsync_ReturnsUserAsync()
+        {
+            var optionsMock = new Mock<ISnykOptions>();
+
+            optionsMock
+                .Setup(options => options.CustomEndpoint)
+                .Returns("https://snyk.io/api");
+            optionsMock
+                .Setup(options => options.ApiToken)
+                .Returns(TestToken);
+
+            var apiService = new SnykApiService(optionsMock.Object);
+
+            var snykUser = await apiService.GetUserAsync();
+
+            Assert.NotNull(snykUser);
+            Assert.NotNull(snykUser.Id);
+            Assert.NotEqual("", snykUser.Id);
+        }
+
         [Fact]
         public async Task SnykApiService_CallSastEnabled_TrueAsync()
         {
@@ -24,7 +48,7 @@
 
             optionsMock
                 .Setup(options => options.ApiToken)
-                .Returns(Environment.GetEnvironmentVariable("TEST_API_TOKEN"));
+                .Returns(TestToken);
 
             var apiService = new SnykApiService(optionsMock.Object);
 
@@ -46,7 +70,7 @@
                 .Returns("https://dev.snyk.io/api");
             optionsMock
                 .Setup(options => options.ApiToken)
-                .Returns(Environment.GetEnvironmentVariable("TEST_API_TOKEN"));
+                .Returns(TestToken);
             optionsMock
                 .Setup(options => options.Organization)
                 .Returns("my-super-org");
@@ -69,7 +93,7 @@
 
             optionsMock
                 .Setup(options => options.ApiToken)
-                .Returns("bad api token");
+                .Returns(AuthenticationToken.EmptyToken);
 
             var apiService = new SnykApiService(optionsMock.Object);
 
@@ -89,7 +113,7 @@
 
             optionsMock
                 .Setup(options => options.ApiToken)
-                .Returns(Environment.GetEnvironmentVariable("TEST_API_TOKEN"));
+                .Returns(TestToken);
 
             var apiService = new SnykApiService(optionsMock.Object);
 
