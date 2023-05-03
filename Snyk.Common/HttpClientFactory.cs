@@ -42,7 +42,6 @@ public class HttpClientFactory
             authorizationString = "bearer " + accessToken;
         }
 
-        httpClient.DefaultRequestHeaders.Add("Session-Token", authorizationString);
         httpClient.DefaultRequestHeaders.Add("Authorization", authorizationString);
 
         httpClient.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
