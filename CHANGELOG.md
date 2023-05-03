@@ -1,5 +1,10 @@
 # Snyk Changelog
 
+## [1.1.33]
+
+### Added
+- OAuth2 support when using OAuth2 endpoints.
+
 ## [1.1.32]
 
 ### Added
