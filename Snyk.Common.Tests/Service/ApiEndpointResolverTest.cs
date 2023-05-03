@@ -1,12 +1,10 @@
-namespace Snyk.VisualStudio.Extension.Shared.Tests
+namespace Snyk.Common.Tests.Service
 {
-    using System;
-    using System.Net.Http;
-    using System.Threading.Tasks;
     using Moq;
-    using Snyk.VisualStudio.Extension.Shared.Service;
-    using Snyk.VisualStudio.Extension.Shared.Settings;
     using Xunit;
+    using Snyk.Common.Authentication;
+    using Snyk.Common.Settings;
+    using Snyk.Common.Service;
 
     /// <summary>
     /// Tests for <see cref="ApiEndpointResolver"/>.
@@ -50,6 +48,38 @@ namespace Snyk.VisualStudio.Extension.Shared.Tests
             var snykCodeApiUrl = apiEndpointResolver.GetSnykCodeApiUrl();
 
             Assert.Equal("https://deeproxy.random-uuid.polaris.snyk.io/", snykCodeApiUrl);
+        }
+
+        [Fact]
+        public void ApiEndpointResolver_GetSnykCodeApiUrl_Snykgov()
+        {
+            var optionsMock = new Mock<ISnykOptions>();
+            optionsMock
+                 .Setup(options => options.CustomEndpoint)
+                 .Returns("https://app.random-uuid.polaris.snykgov.io/api");
+            var apiEndpointResolver = new ApiEndpointResolver(optionsMock.Object);
+
+            var snykCodeApiUrl = apiEndpointResolver.GetSnykCodeApiUrl();
+
+            Assert.Equal("https://deeproxy.random-uuid.polaris.snykgov.io/", snykCodeApiUrl);
+        }
+
+        [Fact]
+        public void AuthenticationMethod()
+        {
+            // Arrange
+            var optionsMock = new Mock<ISnykOptions>();
+            var apiEndpointResolver = new ApiEndpointResolver(optionsMock.Object);
+
+            // Assert
+            Assert.Equal(AuthenticationType.Token, apiEndpointResolver.AuthenticationMethod);
+
+            optionsMock
+                 .Setup(options => options.CustomEndpoint)
+                 .Returns("https://app.snykgov.io/api");
+
+            // Assert
+            Assert.Equal(AuthenticationType.OAuth, apiEndpointResolver.AuthenticationMethod);
         }
     }
 }

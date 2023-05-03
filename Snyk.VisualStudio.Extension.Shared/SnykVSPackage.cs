@@ -30,14 +30,17 @@
     /// utility what data to put into .pkgdef file.
     /// </para>
     /// <para>
-    /// To get loaded into VS, the package must be referred by &lt;Asset Type="Microsoft.VisualStudio.VsPackage" ...&gt; in .vsixmanifest file.
+    /// To get loaded into VS, the package must be referred by &lt;Asset Type="Microsoft.VisualStudio.VsPackage" ...&gt; in
+    /// .vsixmanifest file.
     /// </para>
     /// </remarks>
-    /// [PackageRegistration(UseManagedResourcesOnly = true)]    
+    /// [PackageRegistration(UseManagedResourcesOnly = true)]
     [PackageRegistration(UseManagedResourcesOnly = true, AllowsBackgroundLoading = true)]
     [InstalledProductRegistration("#110", "#112", "1.0", IconResourceID = 400)] // Info on this package for Help/About
-    [Guid(SnykVSPackage.PackageGuidString)]
-    [SuppressMessage("StyleCop.CSharp.DocumentationRules", "SA1650:ElementDocumentationMustBeSpelledCorrectly", Justification = "pkgdef, VS and vsixmanifest are valid VS terms")]
+    [Guid(PackageGuidString)]
+    [SuppressMessage("StyleCop.CSharp.DocumentationRules",
+        "SA1650:ElementDocumentationMustBeSpelledCorrectly",
+        Justification = "pkgdef, VS and vsixmanifest are valid VS terms")]
     [ProvideService(typeof(ISnykService), IsAsyncQueryable = true)]
     [ProvideMenuResource("Menus.ctmenu", 1)]
     [ProvideToolWindow(typeof(SnykToolWindow), Style = VsDockStyle.Tabbed)]
@@ -52,22 +55,20 @@
 
         private static readonly ILogger Logger = LogManager.ForContext<SnykVSPackage>();
 
-        private static TaskCompletionSource<bool> initializationTaskCompletionSource = new TaskCompletionSource<bool>();
+        private static readonly TaskCompletionSource<bool> initializationTaskCompletionSource =
+            new TaskCompletionSource<bool>();
 
         private static SnykVSPackage instance;
 
-        private SnykGeneralOptionsDialogPage generalOptionsDialogPage;
-
         private ISnykServiceProvider serviceProvider;
-
-        private SnykToolWindow toolWindow;
-
-        private SnykToolWindowControl toolWindowControl;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="SnykVSPackage"/> class.
         /// </summary>
-        public SnykVSPackage() => instance = this;
+        public SnykVSPackage()
+        {
+            instance = this;
+        }
 
         /// <summary>
         /// Gets a value indicating whether ServiceProvider.
@@ -82,17 +83,17 @@
         /// <summary>
         /// Gets a value indicating whether ToolWindow Control.
         /// </summary>
-        public SnykToolWindowControl ToolWindowControl => this.toolWindowControl;
+        public SnykToolWindowControl ToolWindowControl { get; private set; }
 
         /// <summary>
         /// Gets a value indicating whether general Options dialog.
         /// </summary>
-        public SnykGeneralOptionsDialogPage GeneralOptionsDialogPage => this.generalOptionsDialogPage;
+        public SnykGeneralOptionsDialogPage GeneralOptionsDialogPage { get; private set; }
 
         /// <summary>
         /// Gets <see cref="SnykToolWindow"/> instance.
         /// </summary>
-        public SnykToolWindow ToolWindow => this.toolWindow;
+        public SnykToolWindow ToolWindow { get; private set; }
 
         /// <summary>
         /// True if the package was initialized successfully.
@@ -102,7 +103,7 @@
         /// <summary>
         /// Show Options dialog.
         /// </summary>
-        public void ShowOptionPage() => this.ShowOptionPage(typeof(SnykGeneralOptionsDialogPage));
+        public void ShowOptionPage() => ShowOptionPage(typeof(SnykGeneralOptionsDialogPage));
 
         /// <summary>
         /// Create <see cref="SnykService"/> object.
@@ -111,7 +112,8 @@
         /// <param name="cancellationToken">Cancellation token.</param>
         /// <param name="serviceType">Service type.</param>
         /// <returns>Task.</returns>
-        public async Task<object> CreateSnykServiceAsync(IAsyncServiceContainer container, CancellationToken cancellationToken, Type serviceType)
+        public async Task<object> CreateSnykServiceAsync(IAsyncServiceContainer container,
+            CancellationToken cancellationToken, Type serviceType)
         {
             var service = new SnykService(this);
 
@@ -126,32 +128,34 @@
         /// <returns>Task.</returns>
         public async Task InitializeToolWindowAsync()
         {
-            if (this.toolWindow == null)
+            if (ToolWindow == null)
             {
-                Logger.Information("ToolWindow is not initialized. Call await JoinableTaskFactory.SwitchToMainThreadAsync().");
+                Logger.Information(
+                    "ToolWindow is not initialized. Call await JoinableTaskFactory.SwitchToMainThreadAsync().");
 
-                await this.JoinableTaskFactory.SwitchToMainThreadAsync();
+                await JoinableTaskFactory.SwitchToMainThreadAsync();
 
                 Logger.Information("Call FindToolWindow().");
 
-                this.toolWindow = this.FindToolWindow(typeof(SnykToolWindow), 0, true) as SnykToolWindow;
+                ToolWindow = FindToolWindow(typeof(SnykToolWindow), 0, true) as SnykToolWindow;
 
-                Logger.Information($"Check ToolWindow is not null {this.toolWindow}.");
+                Logger.Information($"Check ToolWindow is not null {ToolWindow}.");
 
-                if (this.toolWindow == null || this.toolWindow.Frame == null)
+                if (ToolWindow == null || ToolWindow.Frame == null)
                 {
                     Logger.Error("Exception: Cannot find Snyk tool window.");
 
                     throw new NotSupportedException("Cannot find Snyk tool window.");
                 }
 
-                Logger.Information("Initialize ToolWindow.Content. Call await JoinableTaskFactory.SwitchToMainThreadAsync().");
+                Logger.Information(
+                    "Initialize ToolWindow.Content. Call await JoinableTaskFactory.SwitchToMainThreadAsync().");
 
-                await this.JoinableTaskFactory.SwitchToMainThreadAsync();
+                await JoinableTaskFactory.SwitchToMainThreadAsync();
 
                 Logger.Information("Call ToolWindow.Content.");
 
-                this.toolWindowControl = (SnykToolWindowControl)this.toolWindow.Content;
+                ToolWindowControl = (SnykToolWindowControl) ToolWindow.Content;
 
                 Logger.Information("Leave InitializeToolWindowControlAsync() method");
             }
@@ -163,25 +167,31 @@
         /// <param name="cancellationToken">Cancellation token.</param>
         /// <param name="progress">Progress.</param>
         /// <returns>Task.</returns>
-        protected override async Task InitializeAsync(CancellationToken cancellationToken, IProgress<ServiceProgressData> progress)
+        protected override async Task InitializeAsync(CancellationToken cancellationToken,
+            IProgress<ServiceProgressData> progress)
         {
             try
             {
                 await base.InitializeAsync(cancellationToken, progress);
 
-                this.AddService(typeof(SnykService), this.CreateSnykServiceAsync, true);
+                AddService(typeof(SnykService), CreateSnykServiceAsync, true);
 
-                this.serviceProvider = await this.GetServiceAsync(typeof(SnykService)) as SnykService ?? throw new InvalidOperationException("Could not find Snyk Service");
+                this.serviceProvider = await GetServiceAsync(typeof(SnykService)) as SnykService ??
+                                       throw new InvalidOperationException("Could not find Snyk Service");
 
                 Logger.Information("Get SnykService as ServiceProvider.");
                 Logger.Information("Start InitializeGeneralOptionsAsync.");
 
-                await this.InitializeGeneralOptionsAsync();
+                await InitializeGeneralOptionsAsync();
 
                 // Initialize analytics
-                var vsVersion = await this.GetVsVersion();
+                var vsVersion = await GetVsVersion();
 
-                await this.serviceProvider.AnalyticsService.ObtainUserAsync(this.serviceProvider.GetApiToken(), vsVersion);
+                var tokenString = this.serviceProvider.NewCli().GetApiToken();
+                this.serviceProvider.Options.SetApiToken(tokenString);
+                var token = this.serviceProvider.Options.ApiToken;
+
+                await this.serviceProvider.AnalyticsService.ObtainUserAsync(token, vsVersion);
                 await this.serviceProvider.SentryService.SetupAsync();
 
                 // Initialize commands
@@ -193,14 +203,14 @@
 
                 // Initialize tool-window
                 Logger.Information("Initializing tool window");
-                await this.InitializeToolWindowAsync();
+                await InitializeToolWindowAsync();
                 VsStatusBarNotificationService.Instance.InitializeEventListeners(this.serviceProvider);
                 Logger.Information("Before call toolWindowControl.InitializeEventListeners() method.");
-                this.toolWindowControl.InitializeEventListeners(this.serviceProvider);
-                this.toolWindowControl.Initialize(this.serviceProvider);
+                ToolWindowControl.InitializeEventListeners(this.serviceProvider);
+                ToolWindowControl.Initialize(this.serviceProvider);
 
                 // Notify package has been initialized
-                this.IsInitialized = true;
+                IsInitialized = true;
                 initializationTaskCompletionSource.SetResult(true);
             }
             catch (Exception ex)
@@ -222,21 +232,23 @@
 
         private async Task InitializeGeneralOptionsAsync()
         {
-            if (this.generalOptionsDialogPage == null)
+            if (GeneralOptionsDialogPage == null)
             {
-                Logger.Information("Call GetDialogPage to create. await JoinableTaskFactory.SwitchToMainThreadAsync().");
+                Logger.Information(
+                    "Call GetDialogPage to create. await JoinableTaskFactory.SwitchToMainThreadAsync().");
 
-                await this.JoinableTaskFactory.SwitchToMainThreadAsync();
+                await JoinableTaskFactory.SwitchToMainThreadAsync();
 
                 Logger.Information("GeneralOptionsDialogPage not created yet. Call GetDialogPage to create.");
 
-                this.generalOptionsDialogPage = (SnykGeneralOptionsDialogPage)this.GetDialogPage(typeof(SnykGeneralOptionsDialogPage));
+                GeneralOptionsDialogPage =
+                    (SnykGeneralOptionsDialogPage) GetDialogPage(typeof(SnykGeneralOptionsDialogPage));
 
-                this.generalOptionsDialogPage.LoadSettingsFromStorage();
+                GeneralOptionsDialogPage.LoadSettingsFromStorage();
 
                 Logger.Information("Call generalOptionsDialogPage.Initialize()");
 
-                this.generalOptionsDialogPage.Initialize(serviceProvider);
+                GeneralOptionsDialogPage.Initialize(this.serviceProvider);
             }
         }
 
@@ -244,35 +256,23 @@
         {
             await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
             var shell = await this.serviceProvider.GetServiceAsync(typeof(SVsShell)) as IVsShell;
-            shell.GetProperty((int)__VSSPROPID5.VSSPROPID_ReleaseVersion, out object vsVersion);
+            if (shell is null)
+            {
+                return string.Empty;
+            }
+
+            shell.GetProperty((int) __VSSPROPID5.VSSPROPID_ReleaseVersion, out var vsVersion);
 
             var vsVersionString = vsVersion as string ?? string.Empty;
-            if (vsVersionString.StartsWith("17"))
-            {
-                return $"Visual Studio 2022";
-            }
-            else if (vsVersionString.StartsWith("16"))
-            {
-                return $"Visual Studio 2019";
-            }
-            else if (vsVersionString.StartsWith("15"))
-            {
-                return $"Visual Studio 2017";
-            }
-            else if (vsVersionString.StartsWith("14"))
-            {
-                return $"Visual Studio 2015";
-            }
 
-            return vsVersionString;
+            return vsVersionString.Substring(0, 2) switch
+            {
+                "17" => "Visual Studio 2022",
+                "16" => "Visual Studio 2019",
+                "15" => "Visual Studio 2017",
+                "14" => "Visual Studio 2015",
+                _ => "Unknown Visual Studio version"
+            };
         }
-
-        #region Package Members
-
-        /// <summary>
-        /// Initialization of the package; this method is called right after the package is sited, so this is the place
-        /// where you can put all the initialization code that rely on services provided by VisualStudio.
-        /// </summary>
-        #endregion
     }
 }

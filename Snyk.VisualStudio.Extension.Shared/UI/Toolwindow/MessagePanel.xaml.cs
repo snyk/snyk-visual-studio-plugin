@@ -106,7 +106,7 @@
         private async void TestCodeNow_Click(object sender, RoutedEventArgs e)
         {
             await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
-            this.testCodeNowButton.IsEnabled = false;
+            this.testCodeNowButton.IsEnabled = false; // Disable the button while authenticating
             this.authenticateSnykProgressBar.Visibility = Visibility.Visible;
 
             await TaskScheduler.Default;
@@ -139,7 +139,7 @@
                 catch (ArgumentException ex)
                 {
                     Logger.Error(ex, "Failed to add folder to trusted list.");
-                    throw ex;
+                    throw;
                 }
             }
 

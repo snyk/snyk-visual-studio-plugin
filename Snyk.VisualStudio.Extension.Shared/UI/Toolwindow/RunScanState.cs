@@ -11,7 +11,7 @@
         /// <summary>
         /// Gets a value indicating whether new <see cref="RunScanState"/> object.
         /// </summary>
-        public static RunScanState Instance => new RunScanState();
+        public static RunScanState Instance { get; } = new RunScanState();
 
         /// <summary>
         /// Hide run scan message and disable stop actions.

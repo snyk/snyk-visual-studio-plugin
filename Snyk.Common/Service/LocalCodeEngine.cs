@@ -1,4 +1,4 @@
-﻿namespace Snyk.VisualStudio.Extension.Shared.Service
+﻿namespace Snyk.Common.Service
 {
     /// <summary>
     /// Sast local code engine settings.

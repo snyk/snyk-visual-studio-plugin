@@ -1,4 +1,4 @@
-﻿namespace Snyk.VisualStudio.Extension.Shared.Service
+﻿namespace Snyk.Common.Service
 {
     using System.Net.Http;
     using System.Threading.Tasks;
@@ -8,6 +8,8 @@
     /// </summary>
     public interface ISnykApiService
     {
+        Task<SnykUser> GetUserAsync();
+
         /// <summary>
         /// Request Sast settings by Settings custom endpoint and user token.
         /// </summary>

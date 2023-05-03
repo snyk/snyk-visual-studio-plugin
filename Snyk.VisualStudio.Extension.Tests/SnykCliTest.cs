@@ -4,14 +4,16 @@
     using System.IO;
     using System.Threading.Tasks;
     using Moq;
+    using Snyk.Common;
+    using Snyk.Common.Authentication;
+    using Snyk.Common.Settings;
     using Snyk.VisualStudio.Extension.Shared.CLI;
     using Snyk.VisualStudio.Extension.Shared.Model;
-    using Snyk.VisualStudio.Extension.Shared.Settings;
     using Xunit;
 
     public class SnykCliTest
     {
-        private Mock<ISnykOptions> optionsMock;
+        private readonly Mock<ISnykOptions> optionsMock;
 
         public SnykCliTest()
         {
@@ -20,6 +22,10 @@
             this.optionsMock
                 .Setup(options => options.UsageAnalyticsEnabled)
                 .Returns(true);
+
+            this.optionsMock
+                .Setup(options => options.ApiToken)
+                .Returns(AuthenticationToken.EmptyToken);
         }
 
         [Fact]
@@ -27,7 +33,7 @@
         {
             var cli = new SnykCli(this.optionsMock.Object)
             {
-                ConsoleRunner = new SnykMockConsoleRunner("cli file note exists"),
+                ConsoleRunner = new SnykMockConsoleRunner(""),
             };
 
             Assert.Throws<InvalidTokenException>(() => cli.GetApiTokenOrThrowException());
@@ -80,18 +86,6 @@
         }
 
         [Fact]
-        public void SnykCliTest_Authenticate_Successful()
-        {
-            var cli = new SnykCli(this.optionsMock.Object)
-            {
-                
-                ConsoleRunner = new SnykMockConsoleRunner("Your account has been authenticated. Snyk is now ready to be used."),
-            };
-
-            Assert.Equal("Your account has been authenticated. Snyk is now ready to be used.", cli.Authenticate());
-        }
-
-        [Fact]
         public async Task SnykCliTest_BuildArguments_WithoutOptionsAsync()
         {
             var cli = new SnykCli(this.optionsMock.Object);
@@ -108,7 +102,7 @@
 
             var cli = new SnykCli(this.optionsMock.Object);
 
-            Assert.Equal("--json test --API=https://github.com/snyk/", await cli.BuildScanArgumentsAsync());
+            Assert.Equal("--json test", await cli.BuildScanArgumentsAsync());
         }
 
         [Fact]
@@ -189,7 +183,7 @@
             var cli = new SnykCli(this.optionsMock.Object);
 
             Assert.Equal(
-                "--json test --API=https://github.com/snyk/ --insecure --org=test-snyk-organization --ignore-policy --all-projects --DISABLE_ANALYTICS",
+                "--json test --insecure --org=test-snyk-organization --ignore-policy --all-projects --DISABLE_ANALYTICS",
                 await cli.BuildScanArgumentsAsync());
         }
 
@@ -232,16 +226,61 @@
                    .Setup(options => options.IsScanAllProjectsAsync())
                    .ReturnsAsync(true);
 
+            var tokenMock = new AuthenticationToken(AuthenticationType.Token, Guid.NewGuid().ToString());
             this.optionsMock
                    .Setup(options => options.ApiToken)
-                   .Returns("test-token");
+                   .Returns(tokenMock);
 
             var cli = new SnykCli(this.optionsMock.Object);
 
             var result = cli.BuildScanEnvironmentVariables();
 
-            Assert.Equal(result["SNYK_API"], cli.Options.CustomEndpoint);
-            Assert.Equal(result["SNYK_TOKEN"], cli.Options.ApiToken);
+            Assert.Equal(cli.Options.CustomEndpoint.RemoveTrailingSlashes(), result["SNYK_API"]);
+            Assert.Equal(tokenMock.ToString(), result["SNYK_TOKEN"]);
+        }
+
+        [Fact]
+        public void SnykCliTest_BuildEnvironmentVariables_InvalidToken()
+        {
+            this.optionsMock
+                   .Setup(options => options.ApiToken)
+                   .Returns(AuthenticationToken.EmptyToken);
+
+            var cli = new SnykCli(this.optionsMock.Object);
+
+            var result = cli.BuildScanEnvironmentVariables();
+
+            Assert.Equal(1, result.Count);
+        }
+
+        [Fact]
+        public void SnykCliTest_BuildEnvironmentVariables_OAuthToken()
+        {
+            var tokenMock = new AuthenticationToken(AuthenticationType.OAuth, "{\"access_token\":\"at\",\"token_type\":\"Bearer\",\"refresh_token\":\"rt\",\"expiry\":\"3023-04-13T19:07:08.8871+02:00\"}");
+            this.optionsMock
+                   .Setup(options => options.ApiToken)
+                   .Returns(tokenMock);
+
+            var cli = new SnykCli(this.optionsMock.Object);
+
+            var result = cli.BuildScanEnvironmentVariables();
+
+            Assert.Equal(tokenMock.ToString(), result["INTERNAL_OAUTH_TOKEN_STORAGE"]);
+        }
+
+        [Fact]
+        public void SnykCliTest_BuildEnvironmentVariables_Token()
+        {
+            var tokenMock = new AuthenticationToken(AuthenticationType.Token, Guid.NewGuid().ToString());
+            this.optionsMock
+                   .Setup(options => options.ApiToken)
+                   .Returns(tokenMock);
+
+            var cli = new SnykCli(this.optionsMock.Object);
+
+            var result = cli.BuildScanEnvironmentVariables();
+
+            Assert.Equal(tokenMock.ToString(), result["SNYK_TOKEN"]);
         }
 
         [Fact]

@@ -1,21 +1,18 @@
-﻿namespace Snyk.VisualStudio.Extension.Shared.Service
+﻿namespace Snyk.Common.Service
 {
     using System;
     using System.Net.Http;
     using System.Threading.Tasks;
-    using Snyk.Common;
-    using Snyk.VisualStudio.Extension.Shared.Settings;
+    using Snyk.Common.Settings;
 
     /// <summary>
     /// Service for remote endpoint API work.
     /// </summary>
     public class SnykApiService : ISnykApiService
     {
-        private const string SastSettingsApiName = "cli-config/settings/sast";
+        private const string SastSettingsApiName = "v1/cli-config/settings/sast";
 
-        private ISnykOptions options;
-
-        private HttpClient httpClient;
+        private readonly ISnykOptions options;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="SnykApiService"/> class.
@@ -24,19 +21,33 @@
         public SnykApiService(ISnykOptions options)
         {
             this.options = options;
+        }
 
-            this.httpClient = HttpClientFactory.NewHttpClient(this.options.ApiToken);
+        private HttpClient HttpClient => HttpClientFactory.NewHttpClient(this.options.ApiToken);
+
+        /// <inheritdoc/>
+        public async Task<SnykUser> GetUserAsync()
+        {
+            var endpoint = new ApiEndpointResolver(this.options).UserMeEndpoint;
+
+            using (var httpRequest = new HttpRequestMessage(HttpMethod.Get, endpoint))
+            {
+                var response = await HttpClient.SendAsync(httpRequest);
+                var responseContent = await response.Content.ReadAsStringAsync();
+
+                return Json.Deserialize<SnykUser>(responseContent);
+            }
         }
 
         /// <inheritdoc/>
         public async Task<SastSettings> GetSastSettingsAsync()
         {
-            if (!Common.Guid.IsValid(this.options.ApiToken))
+            if (!this.options.ApiToken.IsValid())
             {
                 return null;
             }
 
-            var response = await this.SendSastSettingsRequestAsync();
+            var response = await SendSastSettingsRequestAsync();
             var responseContent = await response.Content.ReadAsStringAsync();
 
             try
@@ -63,10 +74,9 @@
 
             using (var httpRequest = new HttpRequestMessage(HttpMethod.Get, builder.Uri))
             {
-                httpRequest.Headers.Add("Authorization", $"token {this.options.ApiToken}");
                 httpRequest.Headers.Add("x-snyk-ide", $"{SnykExtension.IntegrationName}-{SnykExtension.Version}");
 
-                return await this.httpClient.SendAsync(httpRequest);
+                return await HttpClient.SendAsync(httpRequest);
             }
         }
     }

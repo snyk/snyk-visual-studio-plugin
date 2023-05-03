@@ -11,7 +11,7 @@
         /// <summary>
         /// Gets a value indicating whether new <see cref="OverviewState"/> object.
         /// </summary>
-        public static OverviewState Instance => new OverviewState();
+        public static OverviewState Instance { get; } = new OverviewState();
 
         /// <summary>
         /// Display overview grid component.

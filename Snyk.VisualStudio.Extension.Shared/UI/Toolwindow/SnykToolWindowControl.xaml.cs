@@ -13,6 +13,8 @@
     using Snyk.Analytics;
     using Snyk.Code.Library.Domain.Analysis;
     using Snyk.Common;
+    using Snyk.Common.Service;
+    using Snyk.Common.Settings;
     using Snyk.VisualStudio.Extension.Shared.CLI;
     using Snyk.VisualStudio.Extension.Shared.Commands;
     using Snyk.VisualStudio.Extension.Shared.Model;
@@ -116,6 +118,12 @@
                 await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
 
                 this.messagePanel.runScanButton.IsEnabled = isEnabled;
+
+                // When the run button is disabled, we need to show the welcome screen that prompts the user to authenticate.
+                if (!isEnabled)
+                {
+                    this.context.TransitionTo(OverviewState.Instance);
+                }
             });
 
             Logger.Information("Leave InitializeEventListenersAsync() method.");
@@ -426,7 +434,7 @@
 
         public async Task UpdateScreenStateAsync()
         {
-            await Task.Delay(1500);
+            await Task.Delay(200);
             this.ShowWelcomeOrRunScanScreen();
         }
 
@@ -465,7 +473,7 @@
         });
 
         private RootTreeNodeState GetOssRootTreeNodeState(ISnykOptions options) =>
-            Common.Guid.IsValid(options.ApiToken) && options.OssEnabled ? RootTreeNodeState.Enabled : RootTreeNodeState.Disabled;
+            options.ApiToken.IsValid() && options.OssEnabled ? RootTreeNodeState.Enabled : RootTreeNodeState.Disabled;
 
         private RootTreeNodeState GetSnykCodeRootNodeState(SastSettings sastSettings, bool enabledInOptions)
         {
@@ -684,13 +692,13 @@
         }
 
         /// <summary>
-        /// If api token is not empty it will show run scan screen. If api token is invalid or empty it will show Welcome screen.
+        /// If api token is valid it will show run scan screen. If api token is invalid it will show Welcome screen.
         /// </summary>
         private void ShowWelcomeOrRunScanScreen()
         {
             this.serviceProvider.AnalyticsService.AnalyticsEnabledOption = this.serviceProvider.Options.UsageAnalyticsEnabled;
 
-            if (Common.Guid.IsValid(this.serviceProvider.Options.ApiToken))
+            if (this.serviceProvider.Options.ApiToken.IsValid())
             {
                 this.context.TransitionTo(RunScanState.Instance);
 

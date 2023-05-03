@@ -33,6 +33,11 @@
         /// <param name="state">New state.</param>
         public void TransitionTo(ToolWindowState state)
         {
+            if (this.state == state)
+            {
+                return;
+            }
+
             this.state.HideComponents();
 
             this.state = state;

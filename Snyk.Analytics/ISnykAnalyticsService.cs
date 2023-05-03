@@ -1,9 +1,9 @@
 ﻿namespace Snyk.Analytics
 {
+    using Snyk.Common.Authentication;
     using System;
     using System.Collections.Generic;
     using System.Threading.Tasks;
-
 
     public interface ISnykAnalyticsService : IDisposable
     {
@@ -37,14 +37,14 @@
         /// Fetch user information for event tracking
         /// </summary>
         /// <param name="apiToken">The API token that's used in authentication</param>
-        Task ObtainUserAsync(string apiToken);
+        Task ObtainUserAsync(AuthenticationToken apiToken);
 
         /// <summary>
         /// Fetch user information for event tracking
         /// </summary>
         /// <param name="apiToken">The API token that's used in authentication</param>
         /// <param name="vsVersion">The Visual Studio version</param>
-        Task ObtainUserAsync(string apiToken, string vsVersion);
+        Task ObtainUserAsync(AuthenticationToken apiToken, string vsVersion);
 
         /// <summary>
         /// Gets or sets a value indicating whether is analytics enabled.

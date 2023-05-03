@@ -2,9 +2,9 @@
 {
     using System.Threading;
     using Moq;
+    using Snyk.Common.Settings;
     using Snyk.VisualStudio.Extension.Shared.CLI;
     using Snyk.VisualStudio.Extension.Shared.Service;
-    using Snyk.VisualStudio.Extension.Shared.Settings;
     using Xunit;
 
     /// <summary>

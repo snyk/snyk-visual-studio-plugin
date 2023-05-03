@@ -8,7 +8,7 @@
         /// <summary>
         /// Gets a value indicating whether new <see cref="EmptyState"/>.
         /// </summary>
-        public static EmptyState Instance => new EmptyState();
+        public static EmptyState Instance { get; } = new EmptyState();
 
         /// <summary>
         /// This method does nothing.

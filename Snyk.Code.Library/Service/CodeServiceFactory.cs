@@ -2,6 +2,7 @@
 {
     using Snyk.Code.Library.Api;
     using Snyk.Common;
+    using Snyk.Common.Authentication;
 
     /// <summary>
     /// Factory to create SnykCode services. This class hide intance createtion.
@@ -18,7 +19,7 @@
         /// <param name="orgName">User organization name.</param>
         /// <returns>ISnykCodeService instance.</returns>
         public static ISnykCodeService CreateSnykCodeService(
-            string apiToken,
+            AuthenticationToken apiToken,
             string endpoint,
             IFileProvider fileProvider,
             string flowName,

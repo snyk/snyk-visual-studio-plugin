@@ -3,12 +3,13 @@
     using System;
     using System.Collections.Generic;
     using System.Linq;
-    using System.Threading;
     using System.Threading.Tasks;
     using Iteratively;
     using Segment;
     using Segment.Model;
     using Snyk.Common;
+    using Snyk.Common.Authentication;
+    using Snyk.Common.Service;
     using Guid = System.Guid;
     using ILogger = Serilog.ILogger;
 
@@ -20,16 +21,16 @@
 
         private readonly string anonymousId;
         private readonly Client segmentClient;
-        private Uri userMeEndpoint;
         private string userId;
         private string userIdAsHash;
         private bool analyticsEnabledOption;
+        private readonly ISnykApiService snykApiService;
 
-        private SnykAnalyticsService(string anonymousId, Client segmentClient, Uri userMeEndpoint)
+        private SnykAnalyticsService(string anonymousId, Client segmentClient, ISnykApiService apiService)
         {
             this.anonymousId = anonymousId;
             this.segmentClient = segmentClient;
-            this.userMeEndpoint = userMeEndpoint;
+            this.snykApiService = apiService;
         }
 
         public static SnykAnalyticsService Instance { get; private set; }
@@ -49,11 +50,9 @@
             }
         }
 
-        private bool ValidApiEndpoint => this.userMeEndpoint != null;
+        private bool Disabled => !this.AnalyticsEnabledOption || this.segmentClient == null || !ItlyLoaded || string.IsNullOrEmpty(this.userId);
 
-        private bool Disabled => !this.AnalyticsEnabledOption || this.segmentClient == null || !this.ValidApiEndpoint || !ItlyLoaded || string.IsNullOrEmpty(this.userId);
-
-        public static void Initialize(string anonymousId, string writeKey, bool enabled, string userMeApiEndpoint)
+        public static void Initialize(string anonymousId, string writeKey, bool enabled, ISnykApiService apiService)
         {
             Logger.Information("Initializing analytics service instance");
 
@@ -62,7 +61,7 @@
             {
                 // Write key cannot change during execution, so leave the service in invalid state.
                 // "Disabled" should be true because the segment client is missing
-                Instance = new SnykAnalyticsService(anonymousId, null, null);
+                Instance = new SnykAnalyticsService(anonymousId, null, apiService);
                 Logger.Information("Analytics disabled because of empty write key");
                 return;
             }
@@ -78,20 +77,6 @@
                 anonymousId = Guid.NewGuid().ToString();
             }
 
-            // Verify endpoint
-            Uri endpoint;
-            try
-            {
-                endpoint = new Uri(userMeApiEndpoint);
-            }
-            catch (UriFormatException exception)
-            {
-                Logger.Error($"Analytics disabled because of invalid api endpoint: \"{userMeApiEndpoint}\"");
-                Logger.Error(exception.Message);
-                Instance = new SnykAnalyticsService(anonymousId, segmentClient, null);
-                return;
-            }
-
             // Load Itly
             if(!ItlyLoaded)
             {
@@ -105,7 +90,7 @@
             }
 
             // Create analytics service instance
-            Instance = new SnykAnalyticsService(anonymousId, segmentClient, endpoint);
+            Instance = new SnykAnalyticsService(anonymousId, segmentClient, apiService);
             Instance.AnalyticsEnabledOption = enabled;
             Logger.Information("Analytics service instance initialized");
         }
@@ -179,17 +164,17 @@
             Itly.IssueInTreeIsClicked(this.userId, IssueInTreeIsClicked.Ide.VisualStudio, id, issueType, severity);
         }
 
-        public async Task ObtainUserAsync(string apiToken, string vsVersion)
+        public async Task ObtainUserAsync(AuthenticationToken apiToken, string vsVersion)
         {
             VsVersion = vsVersion;
             await ObtainUserAsync(apiToken);
         }
 
-        public async Task ObtainUserAsync(string apiToken)
+        public async Task ObtainUserAsync(AuthenticationToken apiToken)
         {
             Logger.Information("Identifying user");
             
-            if (this.segmentClient == null || !this.ValidApiEndpoint)
+            if (this.segmentClient == null)
             {
                 Logger.Information("Analytics service not initialized, identification stopped");
                 return;
@@ -201,7 +186,7 @@
                 return;
             }
 
-            if (string.IsNullOrEmpty(apiToken))
+            if (!apiToken.IsValid())
             {
                 Logger.Information("Analytics disabled - API token is missing");
                 this.userId = null;
@@ -211,7 +196,7 @@
             SnykUser user = null;
             try
             {
-                user = await GetSnykUserAsync(apiToken);
+                user = await this.snykApiService.GetUserAsync();
             }
             catch (Exception exception)
             {
@@ -270,20 +255,6 @@
             Logger.Information("Shutting down analytics service...");
             Itly.Dispose();
             Logger.Information("Analytics service shut down complete");
-        }
-
-        private async Task<SnykUser> GetSnykUserAsync(string token)
-        {
-            using (var webClient = new SnykWebClient())
-            {
-                webClient.Headers.Add("Authorization", $"token {token}");
-                webClient.Headers.Add("Accept", "application/json");
-                webClient.Headers.Add("Content-Type", "application/json");
-
-                var userInfoJson = await webClient.DownloadStringTaskAsync(this.userMeEndpoint);
-
-                return Json.Deserialize<SnykUser>(userInfoJson);
-            }
         }
     }
 }

@@ -58,8 +58,12 @@
             await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
             bool isEnabled = this.IsButtonAvailable() && !SnykTasksService.Instance.IsTaskRunning();
 
-            this.MenuCommand.Enabled = isEnabled;
+            if (this.MenuCommand.Enabled == isEnabled)
+            {
+                return;
+            }
 
+            this.MenuCommand.Enabled = isEnabled;
             if (this.UpdateControlsStateCallback != null)
             {
                 this.UpdateControlsStateCallback(isEnabled);

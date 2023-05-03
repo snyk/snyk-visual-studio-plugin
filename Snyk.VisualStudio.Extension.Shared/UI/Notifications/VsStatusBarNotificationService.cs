@@ -2,6 +2,7 @@
 {
     using System;
     using Snyk.Code.Library.Service;
+    using Snyk.Common.Settings;
     using Snyk.VisualStudio.Extension.Shared.Service;
     using Snyk.VisualStudio.Extension.Shared.Settings;
 
