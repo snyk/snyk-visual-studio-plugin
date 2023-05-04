@@ -48,7 +48,7 @@
       <Version>0.1.137-beta</Version>
     </PackageReference>
     <PackageReference Include="Microsoft.VisualStudio.Shell.15.0">
-      <Version>17.5.33428.388</Version>
+      <Version>17.2.32505.113</Version>
     </PackageReference>
     <PackageReference Include="xunit.runner.utility">
       <Version>2.4.2</Version>
