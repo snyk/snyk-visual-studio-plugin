@@ -48,10 +48,15 @@
       <Version>0.1.137-beta</Version>
     </PackageReference>
     <PackageReference Include="Microsoft.VisualStudio.Shell.15.0">
-      <Version>17.2.32505.113</Version>
+      <Version>17.5.33428.388</Version>
     </PackageReference>
     <PackageReference Include="xunit.runner.utility">
-      <Version>2.4.1</Version>
+      <Version>2.4.2</Version>
+    </PackageReference>
+    <PackageReference Include="xunit.runner.visualstudio">
+      <Version>2.4.5</Version>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+      <PrivateAssets>all</PrivateAssets>
     </PackageReference>
   </ItemGroup>
   <ItemGroup>
