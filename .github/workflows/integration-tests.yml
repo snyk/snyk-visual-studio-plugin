@@ -1,9 +1,8 @@
 name: Integration Tests
 
 on:
-  push:
-    branches:
-      - 'fix/release-flow'
+  workflow_call:
+  workflow_dispatch:
 
 jobs:
   build:
@@ -15,9 +14,6 @@ jobs:
       TEST_API_TOKEN: ${{ secrets.TEST_API_TOKEN }}
     steps:
     - uses: actions/checkout@v2
-      with:
-        fetch-depth: 0
-        
     - uses: microsoft/variable-substitution@v1 
       with:
         files: '.\Snyk.Common\appsettings.json'
@@ -64,7 +60,6 @@ jobs:
       TEST_API_TOKEN: ${{ secrets.TEST_API_TOKEN }}
     steps:
     - uses: actions/checkout@v2
-
     - name: Download build artifacts
       uses: actions/download-artifact@v2
       with:
@@ -86,14 +81,11 @@ jobs:
       TEST_API_TOKEN: ${{ secrets.TEST_API_TOKEN }}
     steps:
     - uses: actions/checkout@v2
-
     - name: Download build artifacts
       uses: actions/download-artifact@v2
       with:
         name: build-artifacts
-
     - name: Setup VSTest
       uses: darenm/Setup-VSTest@v1
-
     - name: Tests
       run: vstest.console.exe **\bin\**\*Integration.Tests.dll
