@@ -1,0 +1,84 @@
+name: test-changes
+
+on:
+  push:
+    branches:
+      - 'fix/release-flow'
+
+jobs:
+  build:
+    runs-on: windows-2022
+    defaults:
+      run:
+        working-directory: ${{ github.workspace }}
+    steps:
+    - uses: actions/checkout@v2
+      with:
+        fetch-depth: 0
+
+    - uses: actions/cache@v2
+      with:
+        path: ~/.nuget/packages
+        key: ${{ runner.os }}-nuget-${{ hashFiles('**/packages.config') }}
+        restore-keys: |
+          ${{ runner.os }}-nuget-
+
+    - name: Add MSBuild to PATH
+      uses: microsoft/setup-msbuild@v1
+      with:
+        vs-version: '[17.0, )'
+
+    - name: Restore NuGet packages
+      run: nuget restore ${{env.SOLUTION_FILE_PATH}}
+
+    - name: Build
+      run: |
+        msbuild ${{env.SOLUTION_FILE_PATH}} /p:configuration=Release /p:DeployExtension=false /p:ZipPackageCompressionLevel=normal /v:m
+      shell: powershell
+
+    - name: Upload build artifacts
+      uses: actions/upload-artifact@v2
+      with:
+        name: build-artifacts
+        path: |
+          **/*.dll
+          **/*.pdb
+  test-vs19:
+    needs: build
+    runs-on: windows-2019
+    defaults:
+      run:
+        working-directory: ${{ github.workspace }}
+    steps:
+    - uses: actions/checkout@v2
+
+    - name: Download build artifacts
+      uses: actions/download-artifact@v2
+      with:
+        name: build-artifacts
+
+    - name: Setup VSTest
+      uses: darenm/Setup-VSTest@v1
+
+    - name: Tests
+      run: vstest.console.exe **\*.Tests.dll
+
+  test-vs22:
+    needs: build
+    runs-on: windows-2022
+    defaults:
+      run:
+        working-directory: ${{ github.workspace }}
+    steps:
+    - uses: actions/checkout@v2
+
+    - name: Download build artifacts
+      uses: actions/download-artifact@v2
+      with:
+        name: build-artifacts
+
+    - name: Setup VSTest
+      uses: darenm/Setup-VSTest@v1
+
+    - name: Tests
+      run: vstest.console.exe **\*.Tests.dll
