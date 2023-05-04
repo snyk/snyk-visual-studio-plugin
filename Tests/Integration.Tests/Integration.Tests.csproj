@@ -45,7 +45,7 @@
   </ItemGroup>
   <ItemGroup>
     <PackageReference Include="Microsoft.VisualStudio.Extensibility.Testing.Xunit">
-      <Version>0.1.169-beta</Version>
+      <Version>0.1.137-beta</Version>
     </PackageReference>
     <PackageReference Include="Microsoft.VisualStudio.Shell.15.0">
       <Version>17.2.32505.113</Version>

@@ -45,7 +45,7 @@
   </ItemGroup>
   <ItemGroup>
     <PackageReference Include="Microsoft.VisualStudio.Extensibility.Testing.Xunit.Legacy">
-      <Version>0.1.169-beta</Version>
+      <Version>0.1.137-beta</Version>
     </PackageReference>
     <PackageReference Include="System.Collections.Immutable">
       <Version>1.1.36</Version>
