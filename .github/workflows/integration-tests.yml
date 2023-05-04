@@ -1,4 +1,4 @@
-name: test-changes
+name: Integration Tests
 
 on:
   push:
@@ -41,8 +41,8 @@ jobs:
       with:
         name: build-artifacts
         path: |
-          **/*.dll
-          **/*.pdb
+          **/bin
+          **/obj
   test-vs19:
     needs: build
     runs-on: windows-2019
