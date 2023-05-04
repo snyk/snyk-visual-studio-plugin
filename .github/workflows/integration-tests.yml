@@ -11,6 +11,8 @@ jobs:
     defaults:
       run:
         working-directory: ${{ github.workspace }}
+    env:
+      TEST_API_TOKEN: ${{ secrets.TEST_API_TOKEN }}
     steps:
     - uses: actions/checkout@v2
       with:
@@ -58,6 +60,8 @@ jobs:
     defaults:
       run:
         working-directory: ${{ github.workspace }}
+    env:
+      TEST_API_TOKEN: ${{ secrets.TEST_API_TOKEN }}
     steps:
     - uses: actions/checkout@v2
 
@@ -70,7 +74,7 @@ jobs:
       uses: darenm/Setup-VSTest@v1
 
     - name: Tests
-      run: vstest.console.exe **\bin\**\*.Tests.dll
+      run: vstest.console.exe **\bin\**\*Integration.Tests.dll
 
   test-vs22:
     needs: build
@@ -78,6 +82,8 @@ jobs:
     defaults:
       run:
         working-directory: ${{ github.workspace }}
+    env:
+      TEST_API_TOKEN: ${{ secrets.TEST_API_TOKEN }}
     steps:
     - uses: actions/checkout@v2
 
@@ -90,4 +96,4 @@ jobs:
       uses: darenm/Setup-VSTest@v1
 
     - name: Tests
-      run: vstest.console.exe **\bin\**\*.Tests.dll
+      run: vstest.console.exe **\bin\**\*Integration.Tests.dll
