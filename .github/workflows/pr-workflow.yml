@@ -1,8 +1,6 @@
 name: Pull Request Workflow
 
 on:
-  push:
-    branches: [ main ]
   pull_request:
 
 env:
@@ -12,7 +10,6 @@ env:
 jobs:
   build-project:
     uses: snyk/snyk-visual-studio-plugin/.github/workflows/build-project.yml@fix/release-flow
-
     with:
       solution-file-path: .
     secrets: inherit
