@@ -18,6 +18,7 @@ jobs:
         with:
           solution-file-path: ${{ env.SOLUTION_FILE_PATH }}
   test:
+    needs: build-project
     name: Run Unit-Tests
     runs-on: windows-2022
     defaults:
