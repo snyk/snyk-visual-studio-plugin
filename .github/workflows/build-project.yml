@@ -18,8 +18,13 @@ jobs:
     - name: Check if secrets exist
       env: 
         Secret: ${{ secrets.SNYK_CODE_API_ENDPOINT_URL }}
-      if: ${{ env.Secret == '' }}
-      run: echo "MISSING SECRET"
+      run: |
+        if [ -z "$Secret" ]; then
+          echo "MISSING SECRET"
+          echo "::warning::Missing secret SNYK_CODE_API_ENDPOINT_URL"
+        else
+          echo "SECRET EXISTS"
+        fi
     - uses: microsoft/variable-substitution@v1 
       with:
         files: '.\Snyk.Common\appsettings.json'
