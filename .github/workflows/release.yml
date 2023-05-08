@@ -1,4 +1,4 @@
-name: release
+name: Release Extension
 
 on:
   workflow_dispatch:
@@ -15,7 +15,7 @@ jobs:
     secrets: inherit
   run-integration-tests:
     needs: build-project
-    uses: ./.github/workflows/integration-tests.yml@main
+    uses: snyk/snyk-visual-studio-plugin/.github/workflows/integration-tests.yml@main
     secrets: inherit
   release:
     needs: run-integration-tests
