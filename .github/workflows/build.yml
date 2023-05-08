@@ -14,6 +14,9 @@ jobs:
     runs-on: windows-2022
     environment: snyk-msbuild-envs
     steps:
+      - uses: actions/checkout@v2
+        with:
+          fetch-depth: 0
       - uses: ./.github/workflows/build-project.yml@fix/release-flow
         with:
           solution-file-path: ${{ env.SOLUTION_FILE_PATH }}
