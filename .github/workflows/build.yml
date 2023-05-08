@@ -11,15 +11,9 @@ env:
 
 jobs:
   build-project:
-    runs-on: windows-2022
-    environment: snyk-msbuild-envs
-    steps:
-      - uses: actions/checkout@v2
-        with:
-          fetch-depth: 0
-      - uses: ./.github/workflows/build-project.yml@fix/release-flow
-        with:
-          solution-file-path: ${{ env.SOLUTION_FILE_PATH }}
+    uses: snyk/snyk-visual-studio-plugin/.github/workflows/build-project.yml@fix/release-flow
+    with:
+      solution-file-path: ${{ env.SOLUTION_FILE_PATH }}
   test:
     needs: build-project
     name: Run Unit-Tests
