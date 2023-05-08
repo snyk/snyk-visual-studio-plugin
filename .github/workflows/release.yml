@@ -1,9 +1,6 @@
 name: release
 
 on:
-  push:
-    tags:
-    - 'v*'
   workflow_dispatch:
 
 env:
@@ -11,8 +8,17 @@ env:
   DEFAULT_BRANCH: main
 
 jobs:
+  build-project:
+    runs-on: windows-2022
+    environment: snyk-msbuild-envs
+    steps:
+      - uses: ./.github/workflows/build-project.yml@main
+        with:
+          solution-file-path: ${{ env.SOLUTION_FILE_PATH }}
   run-integration-tests:
-    uses: ./.github/workflows/integration-tests.yml
+    needs: build-project
+    uses: ./.github/workflows/integration-tests.yml@main
+    secrets: inherit
   release:
     needs: run-integration-tests
     runs-on: windows-2022
