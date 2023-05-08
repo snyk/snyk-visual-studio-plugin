@@ -13,7 +13,8 @@ jobs:
   build-project:
     uses: snyk/snyk-visual-studio-plugin/.github/workflows/build-project.yml@fix/release-flow
     with:
-      solution-file-path: ${{ env.SOLUTION_FILE_PATH }}
+      solution-file-path: .
+    secrets: inherit
   test:
     needs: build-project
     name: Run Unit-Tests

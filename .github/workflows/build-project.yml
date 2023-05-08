@@ -6,21 +6,13 @@ on:
       solution-file-path:
         required: true
         type: string
-    secrets:
-      SEGMENT_ANALYTICS_WRITE_KEY:
-        required: true
-      SNYK_CODE_API_ENDPOINT_URL:
-        required: true
-      SENTRY_DSN:
-        required: true
-      SENTRY_ENVIRONMENT:
-        required: true
 jobs:
   build:
     runs-on: windows-2022
     defaults:
       run:
         working-directory: ${{ github.workspace }}
+    environment: snyk-msbuild-envs
     steps:
     - uses: actions/checkout@v2
     - uses: microsoft/variable-substitution@v1 
