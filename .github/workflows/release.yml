@@ -9,12 +9,10 @@ env:
 
 jobs:
   build-project:
-    runs-on: windows-2022
-    environment: snyk-msbuild-envs
-    steps:
-      - uses: ./.github/workflows/build-project.yml@main
-        with:
-          solution-file-path: ${{ env.SOLUTION_FILE_PATH }}
+    uses: snyk/snyk-visual-studio-plugin/.github/workflows/build-project.yml@main
+    with:
+      solution-file-path: .
+    secrets: inherit
   run-integration-tests:
     needs: build-project
     uses: ./.github/workflows/integration-tests.yml@main
