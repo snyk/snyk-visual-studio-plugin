@@ -1,0 +1,64 @@
+name: Build Project
+
+on:
+  workflow_call:
+    inputs:
+      solution-file-path:
+        required: true
+        type: string
+jobs:
+  build:
+    runs-on: windows-2022
+    defaults:
+      run:
+        working-directory: ${{ github.workspace }}
+    environment: snyk-msbuild-envs
+    steps:
+    - uses: actions/checkout@v2
+    - name: Check if secrets exist
+      env: 
+        Secret: ${{ secrets.SNYK_CODE_API_ENDPOINT_URL }}
+      run: |
+        if ([string]::IsNullOrEmpty($env:Secret)) {
+          Write-Host "MISSING SECRET"
+          Write-Host "::warning::Missing secret SNYK_CODE_API_ENDPOINT_URL"
+        }
+        else {
+          Write-Host "SECRET EXISTS"
+        }
+    - uses: microsoft/variable-substitution@v1 
+      with:
+        files: '.\Snyk.Common\appsettings.json'
+      env:
+        SegmentAnalyticsWriteKey: ${{ secrets.SEGMENT_ANALYTICS_WRITE_KEY }}
+        SnykCodeApiEndpointUrl: ${{ secrets.SNYK_CODE_API_ENDPOINT_URL }}
+        SentryDsn: ${{ secrets.SENTRY_DSN }}
+        Environment: ${{ secrets.SENTRY_ENVIRONMENT }}
+
+    - uses: actions/cache@v2
+      with:
+        path: ~/.nuget/packages
+        key: ${{ runner.os }}-nuget-${{ hashFiles('**/packages.config') }}
+        restore-keys: |
+          ${{ runner.os }}-nuget-
+
+    - name: Add MSBuild to PATH
+      uses: microsoft/setup-msbuild@v1
+      with:
+        vs-version: '[17.0, )'
+
+    - name: Restore NuGet packages
+      run: nuget restore ${{ inputs.solution-file-path }}
+
+    - name: Build
+      run: |
+        msbuild ${{ inputs.solution-file-path }} /p:configuration=Release /p:DeployExtension=false /p:ZipPackageCompressionLevel=normal /v:m
+      shell: powershell
+
+    - name: Upload build artifacts
+      uses: actions/upload-artifact@v2
+      with:
+        name: build-artifacts
+        path: |
+          **/bin
+          **/obj

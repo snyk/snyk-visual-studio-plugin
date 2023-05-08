@@ -1,0 +1,38 @@
+name: Pull Request Workflow
+
+on:
+  pull_request:
+
+env:
+  SOLUTION_FILE_PATH: .
+  DEFAULT_BRANCH: main
+
+jobs:
+  build-project:
+    uses: snyk/snyk-visual-studio-plugin/.github/workflows/build-project.yml@main
+    with:
+      solution-file-path: .
+    secrets: inherit
+  test:
+    needs: build-project
+    name: Run Unit-Tests
+    runs-on: windows-2022
+    defaults:
+      run:
+        working-directory: ${{ github.workspace }} 
+    env:
+      TEST_API_TOKEN: ${{ secrets.TEST_API_TOKEN }}
+
+    steps:
+    - uses: actions/checkout@v2
+      with:
+        fetch-depth: 0
+    - name: Download build artifacts
+      uses: actions/download-artifact@v2
+      with:
+        name: build-artifacts
+
+    - name: Setup VSTest
+      uses: darenm/Setup-VSTest@v1
+    - name: Tests
+      run: vstest.console.exe **\*.Tests.dll /TestCaseFilter:"FullyQualifiedName!=Xunit.Instances.VisualStudio&integration!=true" #exclude integration tests and the psuedo-tests that launch a VS instance
