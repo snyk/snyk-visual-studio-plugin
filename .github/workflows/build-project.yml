@@ -19,12 +19,13 @@ jobs:
       env: 
         Secret: ${{ secrets.SNYK_CODE_API_ENDPOINT_URL }}
       run: |
-        if [ -z "$Secret" ]; then
-          echo "MISSING SECRET"
-          echo "::warning::Missing secret SNYK_CODE_API_ENDPOINT_URL"
-        else
-          echo "SECRET EXISTS"
-        fi
+        if ([string]::IsNullOrEmpty($env:Secret)) {
+          Write-Host "MISSING SECRET"
+          Write-Host "::warning::Missing secret SNYK_CODE_API_ENDPOINT_URL"
+        }
+        else {
+          Write-Host "SECRET EXISTS"
+        }
     - uses: microsoft/variable-substitution@v1 
       with:
         files: '.\Snyk.Common\appsettings.json'
