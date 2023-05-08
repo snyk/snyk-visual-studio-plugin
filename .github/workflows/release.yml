@@ -1,4 +1,4 @@
-name: release
+name: Release Extension
 
 on:
   workflow_dispatch:
@@ -15,8 +15,31 @@ jobs:
     secrets: inherit
   run-integration-tests:
     needs: build-project
-    uses: ./.github/workflows/integration-tests.yml@main
+    uses: snyk/snyk-visual-studio-plugin/.github/workflows/integration-tests.yml@main
     secrets: inherit
+  run-unit-tests:
+    needs: build-project
+    name: Run Unit-Tests
+    runs-on: windows-2022
+    defaults:
+      run:
+        working-directory: ${{ github.workspace }} 
+    env:
+      TEST_API_TOKEN: ${{ secrets.TEST_API_TOKEN }}
+
+    steps:
+    - uses: actions/checkout@v2
+      with:
+        fetch-depth: 0
+    - name: Download build artifacts
+      uses: actions/download-artifact@v2
+      with:
+        name: build-artifacts
+
+    - name: Setup VSTest
+      uses: darenm/Setup-VSTest@v1
+    - name: Tests
+      run: vstest.console.exe **\*.Tests.dll /TestCaseFilter:"FullyQualifiedName!=Xunit.Instances.VisualStudio&integration!=true" #exclude integration tests and the psuedo-tests that launch a VS instance
   release:
     needs: run-integration-tests
     runs-on: windows-2022
