@@ -1,4 +1,4 @@
-name: build
+name: Pull Request Workflow
 
 on:
   push:
@@ -12,6 +12,7 @@ env:
 jobs:
   build-project:
     uses: snyk/snyk-visual-studio-plugin/.github/workflows/build-project.yml@fix/release-flow
+
     with:
       solution-file-path: .
     secrets: inherit
@@ -33,5 +34,8 @@ jobs:
       uses: actions/download-artifact@v2
       with:
         name: build-artifacts
+
+    - name: Setup VSTest
+      uses: darenm/Setup-VSTest@v1
     - name: Tests
       run: vstest.console.exe **\*.Tests.dll /TestCaseFilter:"FullyQualifiedName!=Xunit.Instances.VisualStudio&integration!=true" #exclude integration tests and the psuedo-tests that launch a VS instance
