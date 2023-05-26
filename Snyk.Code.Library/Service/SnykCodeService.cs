@@ -75,7 +75,6 @@
             try
             {
                 var snykCodeError = Json.Deserialize<SnykCodeError>(sourceException.Message);
-
                 return $"Message: {snykCodeError.Message}. Code: {snykCodeError.Code}";
             }
             catch (Exception e)
@@ -83,7 +82,13 @@
                 Logger.Error(sourceException, "Failed to obtain Snyk Code error message");
                 Logger.Error(e, string.Empty);
 
-                return sourceException.Message;
+                if (false == sourceException.Message.IsNullOrEmpty())
+                {
+                    return sourceException.Message;
+                }
+                else {
+                    return $"Error: {sourceException.ToString()}";
+                }
             }
         }
 

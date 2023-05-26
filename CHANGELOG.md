@@ -1,5 +1,10 @@
 # Snyk Changelog
 
+## [1.1.34]
+
+### Fixed
+- Improved error handling for Code & Quality scans
+
 ## [1.1.33]
 
 ### Added
