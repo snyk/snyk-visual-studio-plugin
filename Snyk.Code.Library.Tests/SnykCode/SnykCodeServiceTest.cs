@@ -223,6 +223,14 @@
         }
 
         [Fact]
+        public void SnykCodeServic_EmptyMessage_GetSnykCodeErrorMessageReturn()
+        {
+            string error = this.snykCodeService.GetSnykCodeErrorMessage(new Exception("", new ArgumentOutOfRangeException()));
+
+            Assert.NotEmpty(error);
+        }
+
+        [Fact]
         public async Task SnykCodeService_TwoFilesWithIssuesProvided_ScanSuccessAsync()
         {
             var analysisResults = new AnalysisResult
