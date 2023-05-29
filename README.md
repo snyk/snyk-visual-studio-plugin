@@ -1,6 +1,6 @@
 # Visual Studio extension
 
-The Snyk Visual Studio extension provides analysis of your code and open source dependencies. Download the plugin at any time free of charge and use it with any Snyk account. Scan your code early in the development lifecycle to help you pass security reviews and avoid costly fixes later in the development cycle.
+The Snyk Visual Studio extension provides analysis of your code and open-source dependencies. Download the plugin at any time free of charge and use it with any Snyk account. Scan your code early in the development lifecycle to help you pass security reviews and avoid costly fixes later in the development cycle.
 
 Snyk scans for vulnerabilities and returns results with security issues categorized by issue type and severity.
 
@@ -30,6 +30,12 @@ The following are also available:
 * [Bug tracker](https://github.com/snyk/snyk-visual-studio-plugin/issues)
 * [Github repository](https://github.com/snyk/snyk-visual-studio-plugin)
 
+The plugin runs on Windows.
+
+## Supported Visual Studio versions
+
+Supported versions of Visual Studio are 2015, 2017, 2019, and 2022 (version 17.0.5 and above).
+
 ## Supported languages, package managers, and frameworks
 
 Supported languages and frameworks include C#, JavaScript, TypeScript, Java, Go , Ruby, Python, PHP, Scala, Swift, Objective-C, unmanaged C/C++ and .NET.
@@ -37,31 +43,33 @@ Supported languages and frameworks include C#, JavaScript, TypeScript, Java, Go 
 * For Snyk Open Source: the Visual Studio extension supports all the languages and package managers supported by Snyk Open Source and the CLI. See the full list [in the docs](https://docs.snyk.io/products/snyk-open-source/language-and-package-manager-support).
 * For Snyk Code: the Visual Studio extension supports all the [languages and frameworks supported by Snyk Code](https://docs.snyk.io/products/snyk-code/snyk-code-language-and-framework-support#language-support-with-snyk-code-ai-engine).
 
-## Software requirements
+## Supported operating systems and architecture
 
-* Operating system - Windows
-* Supported versions of Visual Studio: 2015, 2017, 2019, 2022 (version 17.0.5 and above). The extension is compatible with Community, Professional, and Enterprise plans.
+You can use the Snyk Visual Studio extension in the following environments:
+
+* Windows: 386, AMD64, and ARM64
+* MacOS: Visual Studio Windows plugin in a Windows virtual machine inside a Mac with an ARM64 processor
 
 ## Install the extension
 
 You can install the Snyk extension directly from the IDE; open **Extensions > Manage Extensions**.
 
-![Manage extensions menu](https://github.com/snyk/user-docs/raw/HEAD/docs/.gitbook/assets/readme\_image\_2\_1\_1.png)
+<figure><img src="https://github.com/snyk/user-docs/raw/HEAD/docs/.gitbook/assets/readme_image_2_1_1.png" alt="Manage extensions menu"><figcaption><p>Manage extensions menu</p></figcaption></figure>
 
 Search for _Snyk_ and select **Download** to download the Snyk Security - Code and Open Source Dependencies extension.
 
-Once installed, use Snyk through the **Extensions > Snyk** menu (on Visual Studio versions older than 2019, Snyk is part of the top menu bar).
+After you install, use Snyk through the **Extensions > Snyk** menu. (On Visual Studio versions older than 2019, Snyk is part of the top menu bar).
 
-<img src="https://github.com/snyk/user-docs/raw/HEAD/docs/.gitbook/assets/image (253).png" alt="" />
+<figure><img src="https://github.com/snyk/user-docs/raw/HEAD/docs/.gitbook/assets/image (351) (1) (1) (1) (1) (1) (1) (1) (1).png" alt="Snyk extensions menu"><figcaption><p>Snyk extensions menu</p></figcaption></figure>
 
 You can also open the Snyk tool window using **View > Other Windows > Snyk**_._
 
 Once the tool window opens, wait while the Snyk extension downloads the latest Snyk CLI version.
 
-![Snyk tool window, CLI downloading](https://github.com/snyk/user-docs/raw/HEAD/docs/.gitbook/assets/readme\_image\_2\_3.png)
+<figure><img src="https://github.com/snyk/user-docs/raw/HEAD/docs/.gitbook/assets/readme_image_2_3.png" alt="Snyk tool window, CLI downloading"><figcaption><p>Snyk tool window, CLI downloading</p></figcaption></figure>
 
 After you install the extension and the CLI you must authenticate. You can use the **Connect Visual Studio to Snyk** link. For more information and additional ways to authenticate see [Visual Studio extension authentication](https://docs.snyk.io/ide-tools/visual-studio-extension/visual-studio-extension-authentication).
 
 ## Support
 
-If you need help, submit a [request](https://support.snyk.io/hc/en-us/requests/new) to Snyk Support.
+If you need help, submit a request to [Snyk Support](https://support.snyk.io/hc/en-us/requests/new).
