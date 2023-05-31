@@ -13,6 +13,6 @@
         /// </summary>
         /// <param name="collection">Source collection for check.</param>
         /// <returns>True if collection is empty.</returns>
-        public static bool IsNullOrEmpty<T>(this IEnumerable<T> collection) => collection?.Any() == true;
+        public static bool IsNullOrEmpty<T>(this IEnumerable<T> collection) => collection == null || !collection.Any();
     }
 }
