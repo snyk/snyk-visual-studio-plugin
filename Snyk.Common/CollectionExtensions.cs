@@ -14,5 +14,7 @@
         /// <param name="collection">Source collection for check.</param>
         /// <returns>True if collection is empty.</returns>
         public static bool IsNullOrEmpty<T>(this IEnumerable<T> collection) => collection == null || collection.Count() == 0;
+
+        public static bool IsNullOrEmpty(this string target) => string.IsNullOrEmpty(target);
     }
 }
