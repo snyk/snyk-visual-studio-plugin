@@ -82,7 +82,7 @@
                 Logger.Error(sourceException, "Failed to obtain Snyk Code error message");
                 Logger.Error(e, string.Empty);
 
-                return sourceException.Message.IsNullOrEmpty()
+                return !sourceException.Message.IsNullOrEmpty()
                     ? sourceException.Message
                     : $"Error {sourceException}";
             }
