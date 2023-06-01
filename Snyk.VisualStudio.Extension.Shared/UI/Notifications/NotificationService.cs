@@ -1,5 +1,6 @@
 ﻿namespace Snyk.VisualStudio.Extension.Shared.UI.Notifications
 {
+    using Snyk.Common;
     using Snyk.VisualStudio.Extension.Shared.Service;
 
     /// <summary>
@@ -7,6 +8,7 @@
     /// </summary>
     public class NotificationService
     {
+        private const int MaxErrorLength = 300;
         private VsInfoBarService infoBarService;
 
         private NotificationService(ISnykServiceProvider serviceProvider) => this.infoBarService = new VsInfoBarService(serviceProvider);
@@ -22,6 +24,18 @@
         /// Show error info bar with provided message.
         /// </summary>
         /// <param name="message">Message to show.</param>
-        public void ShowErrorInfoBar(string message) => this.infoBarService.ShowErrorInfoBar(message);
+        public void ShowErrorInfoBar(string message)
+        {
+            if (message.IsNullOrEmpty()) // Calling ShowErrorInfoBar with empty message will cause exception.
+            {
+                message = "Unknown error";
+            }
+            else if (message.Length > MaxErrorLength)
+            {
+                message = message.Substring(0, MaxErrorLength) + "...";
+            }
+
+            this.infoBarService.ShowErrorInfoBar(message);
+        }
     }
 }

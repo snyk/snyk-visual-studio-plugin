@@ -50,5 +50,7 @@
 
             return source.Substring(0, index) + newValue + source.Substring(index + oldValue.Length);
         }
+
+        public static bool IsNullOrEmpty(this string target) => string.IsNullOrEmpty(target);
     }
 }
