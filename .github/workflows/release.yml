@@ -41,7 +41,7 @@ jobs:
     - name: Tests
       run: vstest.console.exe **\*.Tests.dll /TestCaseFilter:"FullyQualifiedName!=Xunit.Instances.VisualStudio&integration!=true" #exclude integration tests and the psuedo-tests that launch a VS instance
   release:
-    needs: [build-project, run-integration-tests]
+    needs: [build-project, run-integration-tests, run-unit-tests]
     runs-on: windows-2022
     defaults:
       run:

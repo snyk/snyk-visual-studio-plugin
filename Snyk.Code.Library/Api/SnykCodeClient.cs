@@ -115,6 +115,17 @@
                     return Json.Deserialize<BundleResponseDto>(responseText);
                 }
 
+                const int maxResponseLengthInLog = 1000;
+                var loggedResponse = responseText;
+                if (responseText == null)
+                {
+                    loggedResponse = "Empty response";
+                }
+                else if(responseText.Length > maxResponseLengthInLog)
+                {
+                    loggedResponse = responseText.Substring(0, maxResponseLengthInLog);
+                }
+                Logger.Error("Error during bundle extension. Status code: {StatusCode}. Response: {Response}", response.StatusCode, loggedResponse);
                 throw new SnykCodeException((int)response.StatusCode, responseText);
             }
         }
