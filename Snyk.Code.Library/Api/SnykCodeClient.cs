@@ -41,9 +41,9 @@
         /// <param name="token">User token.</param>
         /// <param name="flowName">Context flow name.</param>
         /// <param name="orgName">User organization name.</param>
-        public SnykCodeClient(string baseUrl, AuthenticationToken token, string flowName, string orgName)
+        public SnykCodeClient(string baseUrl, AuthenticationToken token, string flowName, string orgName, HttpClient httpClient = null)
         {
-            this.httpClient = HttpClientFactory.NewHttpClient(token, baseUrl);
+            this.httpClient = httpClient ?? HttpClientFactory.NewHttpClient(token, baseUrl);
 
             Logger.Information("Create http client with with url {BaseUrl}.", baseUrl);
 

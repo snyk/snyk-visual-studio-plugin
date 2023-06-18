@@ -3,6 +3,7 @@
     using Snyk.Code.Library.Api;
     using Snyk.Common;
     using Snyk.Common.Authentication;
+    using System.Net.Http;
 
     /// <summary>
     /// Factory to create SnykCode services. This class hide intance createtion.
@@ -23,9 +24,10 @@
             string endpoint,
             IFileProvider fileProvider,
             string flowName,
-            string orgName)
+            string orgName,
+            HttpClient httpClient = null)
         {
-            var codeClient = new SnykCodeClient(endpoint, apiToken, flowName, orgName);
+            var codeClient = new SnykCodeClient(endpoint, apiToken, flowName, orgName, httpClient);
 
             var filterService = new FiltersService(codeClient);
 
