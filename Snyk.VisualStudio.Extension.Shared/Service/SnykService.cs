@@ -13,6 +13,7 @@ namespace Snyk.VisualStudio.Extension.Shared.Service
     using EnvDTE;
     using EnvDTE80;
     using Microsoft.VisualStudio.Settings;
+    using Microsoft.VisualStudio.Shell.Interop;
     using Microsoft.VisualStudio.Shell.Settings;
     using Newtonsoft.Json.Linq;
     using Serilog;
@@ -40,7 +41,6 @@ namespace Snyk.VisualStudio.Extension.Shared.Service
 
         private readonly IAsyncServiceProvider serviceProvider;
         private readonly string vsVersion;
-        private readonly string pluginVersion;
         private SettingsManager settingsManager;
 
         private SnykVsThemeService vsThemeService;
@@ -72,7 +72,6 @@ namespace Snyk.VisualStudio.Extension.Shared.Service
         {
             this.serviceProvider = serviceProvider;
             this.vsVersion = vsVersion;
-            this.pluginVersion = GetPluginVersion();
         }
 
         /// <summary>
@@ -184,7 +183,7 @@ namespace Snyk.VisualStudio.Extension.Shared.Service
             {
                 if (this.apiService == null)
                 {
-                    this.apiService = new SnykApiService(this.Options, this.vsVersion, this.pluginVersion);
+                    this.apiService = new SnykApiService(this.Options, this.vsVersion, SnykExtension.Version);
 
                     this.Options.SettingsChanged += this.OnSettingsChanged;
                 }
@@ -243,7 +242,7 @@ namespace Snyk.VisualStudio.Extension.Shared.Service
             try
             {
                 Logger.Information("Initialize Snyk services");
-                Logger.Information("Plugin version is {Version}", this.pluginVersion);
+                Logger.Information("Plugin version is {Version}", SnykExtension.Version);
                 await this.Package.JoinableTaskFactory.SwitchToMainThreadAsync(cancellationToken);
 
                 this.settingsManager = new ShellSettingsManager(this.Package);
@@ -285,7 +284,7 @@ namespace Snyk.VisualStudio.Extension.Shared.Service
                 var options = this.Options;
                 string endpoint = new ApiEndpointResolver(this.Options).GetSnykCodeApiUrl();
                 var httpClient = HttpClientFactory.NewHttpClient(options.ApiToken, endpoint)
-                    .WithUserAgent(this.vsVersion, this.pluginVersion);
+                    .WithUserAgent(this.vsVersion, SnykExtension.Version);
 
                 this.snykCodeService = CodeServiceFactory.CreateSnykCodeService(
                     options.ApiToken,
@@ -322,35 +321,6 @@ namespace Snyk.VisualStudio.Extension.Shared.Service
             SnykAnalyticsService.Initialize(this.Options.AnonymousId, writeKey, enabled, this.ApiService);
             this.analyticsService = SnykAnalyticsService.Instance;
             Logger.Information("Analytics service initialized");
-        }
-
-        private static string GetPluginVersion()
-        {
-            var version = "Unknown";
-            try
-            {
-                var assembly = Assembly.GetExecutingAssembly();
-                var resourceName = assembly.GetManifestResourceNames()
-                    .Single(str => str.EndsWith("source.extension.vsixmanifest"));
-
-                using var stream = assembly.GetManifestResourceStream(resourceName);
-                using var reader = new StreamReader(stream);
-
-                var vsixManifest = XDocument.Load(reader);
-                XNamespace ns = "http://schemas.microsoft.com/developer/vsx-schema/2011";
-
-                version = vsixManifest
-                    .Element(ns + "PackageManifest")
-                    ?.Element(ns + "Metadata")
-                    ?.Element(ns + "Identity")
-                    ?.Attribute("Version")?.Value ?? "Unknown";
-            }
-            catch (Exception)
-            {
-                return "Unknown";
-            }
-
-            return version;
         }
     }
 }

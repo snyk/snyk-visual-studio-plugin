@@ -14,7 +14,6 @@
 
         private readonly ISnykOptions options;
         private readonly string vsVersion;
-        private readonly string pluginVersion;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="SnykApiService"/> class.
@@ -26,11 +25,10 @@
         {
             this.options = options;
             this.vsVersion = vsVersion ?? "";
-            this.pluginVersion = pluginVersion ?? "";
         }
 
         private HttpClient HttpClient => HttpClientFactory.NewHttpClient(this.options.ApiToken)
-            .WithUserAgent(this.vsVersion, this.pluginVersion);
+            .WithUserAgent(this.vsVersion, SnykExtension.Version);
 
         /// <inheritdoc/>
         public async Task<SnykUser> GetUserAsync()

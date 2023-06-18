@@ -18,16 +18,14 @@
         private const string AppSettingsDevelopmentFileName = "appsettings.development.json";
         private const string AppSettingsFileName = "appsettings.json";
 
-        private static string version = string.Empty;
-
         private static string extensionDirectoryPath;
-
         private static SnykAppSettings appSettings;
+        private static readonly Lazy<string> versionLazy = new(GetIntegrationVersion);
 
         /// <summary>
         /// Gets extension version.
         /// </summary>
-        public static string Version => GetIntegrationVersion();
+        public static string Version => versionLazy.Value;
 
         /// <summary>
         /// Gets <see cref="SnykAppSettings"/> from the appsettings.json file.
@@ -81,36 +79,33 @@
         /// <returns>String.</returns>
         private static string GetIntegrationVersion()
         {
-            if (string.IsNullOrEmpty(version))
+            try
             {
-                try
+                var extensionPath = GetExtensionDirectoryPath();
+
+                var manifestPath = Path.Combine(extensionPath, "extension.vsixmanifest");
+
+                var xmlDocument = new XmlDocument();
+                xmlDocument.Load(manifestPath);
+
+                if (xmlDocument.DocumentElement?.Name != "PackageManifest")
                 {
-                    string extensionPath = GetExtensionDirectoryPath();
-
-                    string manifestPath = Path.Combine(extensionPath, "extension.vsixmanifest");
-
-                    var xmlDocument = new XmlDocument();
-                    xmlDocument.Load(manifestPath);
-
-                    if (xmlDocument.DocumentElement == null || xmlDocument.DocumentElement.Name != "PackageManifest")
-                    {
-                        return "UNKNOWN";
-                    }
-
-                    var metaData = xmlDocument.DocumentElement.ChildNodes.Cast<XmlElement>().First(x => x.Name == "Metadata");
-                    var identity = metaData.ChildNodes.Cast<XmlElement>().First(x => x.Name == "Identity");
-
-                    version = identity.GetAttribute("Version");
+                    return "UNKNOWN";
                 }
-                catch (Exception e)
-                {
-                    // The Exception.ToString() containing the exception type, message,
-                    // stack trace, and all of these things again for nested/inner exceptions.
-                    Console.Error.WriteLine(e.ToString());
-                }
+
+                var metaData = xmlDocument.DocumentElement.ChildNodes.Cast<XmlElement>().First(x => x.Name == "Metadata");
+                var identity = metaData.ChildNodes.Cast<XmlElement>().First(x => x.Name == "Identity");
+
+                return identity.GetAttribute("Version");
             }
-
-            return version;
+            catch (Exception e)
+            {
+                // The Exception.ToString() containing the exception type, message,
+                // stack trace, and all of these things again for nested/inner exceptions.
+                Console.Error.WriteLine(e.ToString());
+                
+                return string.Empty;
+            }
         }
     }
 }

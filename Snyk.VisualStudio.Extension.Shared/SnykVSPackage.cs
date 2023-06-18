@@ -3,6 +3,7 @@
     using System;
     using System.Diagnostics.CodeAnalysis;
     using System.Linq;
+    using System.Reflection;
     using System.Runtime.InteropServices;
     using System.Threading;
     using System.Threading.Tasks;
@@ -116,8 +117,8 @@
         public async Task<object> CreateSnykServiceAsync(IAsyncServiceContainer container,
             CancellationToken cancellationToken, Type serviceType)
         {
-            var version = await GetVsMajorVersion();
-            var service = new SnykService(this, version);
+            var ideVersion = await GetVsMajorMinorVersion();
+            var service = new SnykService(this, ideVersion);
 
             await service.InitializeAsync(cancellationToken);
 
@@ -259,7 +260,7 @@
             try
             {
                 await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
-                var shell = await this.serviceProvider.GetServiceAsync(typeof(SVsShell)) as IVsShell;
+                var shell = await this.GetServiceAsync(typeof(SVsShell)) as IVsShell;
                 if (shell is null)
                 {
                     return "0.0.0";
@@ -274,17 +275,17 @@
             }
         }
 
-        private async Task<string> GetVsMajorVersion()
+        private async Task<string> GetVsMajorMinorVersion()
         {
             try
             {
-                var vsVersionString = await GetVsVersion();
+                var vsVersionString = (await GetVsVersion()).Split('.');
 
-                return vsVersionString.Split('.').FirstOrDefault() ?? "0";
+                return $"{vsVersionString[0]}.{vsVersionString[1]}";
             }
             catch
             {
-                return "0";
+                return "0.0";
             }
         }
 
