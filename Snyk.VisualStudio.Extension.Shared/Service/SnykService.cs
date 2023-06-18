@@ -273,7 +273,7 @@ namespace Snyk.VisualStudio.Extension.Shared.Service
         /// Create new instance of SnykCli class with Options and Logger parameters.
         /// </summary>
         /// <returns>New SnykCli instance.</returns>
-        public ICli NewCli() => new SnykCli(this.Options);
+        public ICli NewCli() => new SnykCli(this.Options, this.vsVersion);
 
         private void OnSettingsChanged(object sender, SnykSettingsChangedEventArgs e) => this.SetupSnykCodeService();
 

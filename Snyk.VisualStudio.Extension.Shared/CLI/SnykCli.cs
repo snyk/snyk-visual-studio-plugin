@@ -34,9 +34,9 @@
         /// <summary>
         /// Initializes a new instance of the <see cref="SnykCli"/> class.
         /// </summary>
-        public SnykCli(ISnykOptions options)
+        public SnykCli(ISnykOptions options, string ideVersion = "")
         {
-            this.ConsoleRunner = new SnykConsoleRunner();
+            this.ConsoleRunner = new SnykConsoleRunner(ideVersion);
             this.options = options;
         }
 

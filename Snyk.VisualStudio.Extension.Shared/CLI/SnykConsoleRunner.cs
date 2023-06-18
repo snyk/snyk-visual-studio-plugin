@@ -16,6 +16,12 @@
         private static readonly ILogger Logger = LogManager.ForContext<SnykConsoleRunner>();
 
         private bool isStopped = false;
+        private readonly string ideVersion;
+
+        public SnykConsoleRunner(string ideVersion = "")
+        {
+            this.ideVersion = ideVersion;
+        }
 
         /// <summary>
         /// Gets or sets a value indicating whether process.
@@ -70,6 +76,8 @@
 
             processStartInfo.EnvironmentVariables["SNYK_INTEGRATION_NAME"] = SnykExtension.IntegrationName;
             processStartInfo.EnvironmentVariables["SNYK_INTEGRATION_VERSION"] = SnykExtension.Version;
+            processStartInfo.EnvironmentVariables["SNYK_INTEGRATION_ENVIRONMENT"] = SnykExtension.IntegrationName;
+            processStartInfo.EnvironmentVariables["SNYK_INTEGRATION_ENVIRONMENT_VERSION"] = this.ideVersion;
 
             processStartInfo.WorkingDirectory = workingDirectory;
 
