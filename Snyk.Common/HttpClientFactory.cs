@@ -62,7 +62,7 @@ public static class HttpClientFactory
         var os = RuntimeInformation.OSDescription;
         var arch = RuntimeInformation.ProcessArchitecture.ToString();
         
-        var header = $"VISUAL_STUDIO/{ideVersion} ({os};{arch}) VISUAL_STUDIO/{pluginVersionString}";
+        var header = $"VISUAL_STUDIO/{ideVersion} ({os};{arch}) VISUAL_STUDIO/{pluginVersionString} (VISUAL_STUDIO/{ideVersion})";
 
         httpClient.DefaultRequestHeaders.UserAgent.ParseAdd(header);
         return httpClient;
