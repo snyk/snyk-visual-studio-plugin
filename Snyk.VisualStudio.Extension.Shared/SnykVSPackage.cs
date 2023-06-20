@@ -2,6 +2,8 @@
 {
     using System;
     using System.Diagnostics.CodeAnalysis;
+    using System.Linq;
+    using System.Reflection;
     using System.Runtime.InteropServices;
     using System.Threading;
     using System.Threading.Tasks;
@@ -115,7 +117,8 @@
         public async Task<object> CreateSnykServiceAsync(IAsyncServiceContainer container,
             CancellationToken cancellationToken, Type serviceType)
         {
-            var service = new SnykService(this);
+            var ideVersion = await GetVsMajorMinorVersion();
+            var service = new SnykService(this, ideVersion);
 
             await service.InitializeAsync(cancellationToken);
 
@@ -185,7 +188,7 @@
                 await InitializeGeneralOptionsAsync();
 
                 // Initialize analytics
-                var vsVersion = await GetVsVersion();
+                var vsVersion = await GetReadableVsVersion();
 
                 var tokenString = this.serviceProvider.NewCli().GetApiToken();
                 this.serviceProvider.Options.SetApiToken(tokenString);
@@ -254,25 +257,58 @@
 
         private async Task<string> GetVsVersion()
         {
-            await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
-            var shell = await this.serviceProvider.GetServiceAsync(typeof(SVsShell)) as IVsShell;
-            if (shell is null)
+            try
             {
-                return string.Empty;
+                await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
+                var shell = await this.GetServiceAsync(typeof(SVsShell)) as IVsShell;
+                if (shell is null)
+                {
+                    return "0.0.0";
+                }
+
+                shell.GetProperty((int)__VSSPROPID5.VSSPROPID_ReleaseVersion, out var vsVersion);
+                return vsVersion as string ?? "0.0.0";
             }
-
-            shell.GetProperty((int) __VSSPROPID5.VSSPROPID_ReleaseVersion, out var vsVersion);
-
-            var vsVersionString = vsVersion as string ?? string.Empty;
-
-            return vsVersionString.Substring(0, 2) switch
+            catch
             {
-                "17" => "Visual Studio 2022",
-                "16" => "Visual Studio 2019",
-                "15" => "Visual Studio 2017",
-                "14" => "Visual Studio 2015",
-                _ => "Unknown Visual Studio version"
-            };
+                return "0.0.0";
+            }
+        }
+
+        private async Task<string> GetVsMajorMinorVersion()
+        {
+            try
+            {
+                var vsVersionString = (await GetVsVersion()).Split('.');
+
+                return $"{vsVersionString[0]}.{vsVersionString[1]}";
+            }
+            catch
+            {
+                return "0.0";
+            }
+        }
+
+        private async Task<string> GetReadableVsVersion()
+        {
+            try
+            {
+                var vsVersionString = await GetVsVersion();
+                var major = vsVersionString.Split('.').FirstOrDefault();
+
+                return major switch
+                {
+                    "17" => "Visual Studio 2022",
+                    "16" => "Visual Studio 2019",
+                    "15" => "Visual Studio 2017",
+                    "14" => "Visual Studio 2015",
+                    _ => "Unknown Visual Studio version"
+                };
+            }
+            catch
+            {
+                return "Unknown Visual Studio version";
+            }
         }
     }
 }

@@ -4,12 +4,14 @@ using System;
 using System.Net;
 using System.Net.Http;
 using System.Net.Http.Headers;
+using System.Runtime.InteropServices;
+using global::Sentry;
 using Snyk.Common.Authentication;
 
 /// <summary>
 /// Factory for <see cref="HttpClient"/>.
 /// </summary>
-public class HttpClientFactory
+public static class HttpClientFactory
 {
     /// <summary>
     /// Create new <see cref="HttpClient"/> by base URL and API token.
@@ -47,6 +49,22 @@ public class HttpClientFactory
         httpClient.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
         httpClient.DefaultRequestHeaders.AcceptEncoding.Add(new StringWithQualityHeaderValue("gzip"));
 
+        return httpClient;
+    }
+
+    public static HttpClient WithUserAgent(this HttpClient httpClient, string ideVersion, string pluginVersionString)
+    {
+        if (string.IsNullOrEmpty(ideVersion) || string.IsNullOrEmpty(pluginVersionString))
+        {
+            return httpClient;
+        }
+
+        var os = RuntimeInformation.OSDescription;
+        var arch = RuntimeInformation.ProcessArchitecture.ToString();
+        
+        var header = $"VISUAL_STUDIO/{ideVersion} ({os};{arch}) VISUAL_STUDIO/{pluginVersionString} (VISUAL_STUDIO/{ideVersion})";
+
+        httpClient.DefaultRequestHeaders.UserAgent.ParseAdd(header);
         return httpClient;
     }
 }

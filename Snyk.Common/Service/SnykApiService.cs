@@ -13,17 +13,22 @@
         private const string SastSettingsApiName = "v1/cli-config/settings/sast";
 
         private readonly ISnykOptions options;
+        private readonly string vsVersion;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="SnykApiService"/> class.
         /// </summary>
         /// <param name="options">Options instance.</param>
-        public SnykApiService(ISnykOptions options)
+        /// <param name="vsVersion">The IDE major version (17 for vs22)</param>
+        /// <param name="pluginVersion">The full plugin version</param>
+        public SnykApiService(ISnykOptions options, string vsVersion = "", string pluginVersion = "")
         {
             this.options = options;
+            this.vsVersion = vsVersion ?? "";
         }
 
-        private HttpClient HttpClient => HttpClientFactory.NewHttpClient(this.options.ApiToken);
+        private HttpClient HttpClient => HttpClientFactory.NewHttpClient(this.options.ApiToken)
+            .WithUserAgent(this.vsVersion, SnykExtension.Version);
 
         /// <inheritdoc/>
         public async Task<SnykUser> GetUserAsync()

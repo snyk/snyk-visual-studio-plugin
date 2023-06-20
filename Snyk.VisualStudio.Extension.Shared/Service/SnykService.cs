@@ -4,12 +4,18 @@ namespace Snyk.VisualStudio.Extension.Shared.Service
 {
     using System;
     using System.IO;
+    using System.Linq;
+    using System.Reflection;
     using System.Threading;
     using System.Threading.Tasks;
+    using System.Xml;
+    using System.Xml.Linq;
     using EnvDTE;
     using EnvDTE80;
     using Microsoft.VisualStudio.Settings;
+    using Microsoft.VisualStudio.Shell.Interop;
     using Microsoft.VisualStudio.Shell.Settings;
+    using Newtonsoft.Json.Linq;
     using Serilog;
     using Snyk.Analytics;
     using Snyk.Code.Library.Service;
@@ -34,7 +40,7 @@ namespace Snyk.VisualStudio.Extension.Shared.Service
         private static readonly ILogger Logger = LogManager.ForContext<SnykService>();
 
         private readonly IAsyncServiceProvider serviceProvider;
-
+        private readonly string vsVersion;
         private SettingsManager settingsManager;
 
         private SnykVsThemeService vsThemeService;
@@ -61,7 +67,12 @@ namespace Snyk.VisualStudio.Extension.Shared.Service
         /// Initializes a new instance of the <see cref="SnykService"/> class.
         /// </summary>
         /// <param name="serviceProvider">Snyk service provider implementation.</param>
-        public SnykService(IAsyncServiceProvider serviceProvider) => this.serviceProvider = serviceProvider;
+        /// <param name="vsVersion">The version of the IDE</param>
+        public SnykService(IAsyncServiceProvider serviceProvider, string vsVersion = "")
+        {
+            this.serviceProvider = serviceProvider;
+            this.vsVersion = vsVersion;
+        }
 
         /// <summary>
         /// Gets Snyk options implementation.
@@ -172,7 +183,7 @@ namespace Snyk.VisualStudio.Extension.Shared.Service
             {
                 if (this.apiService == null)
                 {
-                    this.apiService = new SnykApiService(this.Options);
+                    this.apiService = new SnykApiService(this.Options, this.vsVersion, SnykExtension.Version);
 
                     this.Options.SettingsChanged += this.OnSettingsChanged;
                 }
@@ -222,13 +233,6 @@ namespace Snyk.VisualStudio.Extension.Shared.Service
         public async Task<object> GetServiceAsync(Type serviceType) => await this.serviceProvider.GetServiceAsync(serviceType);
 
         /// <summary>
-        /// Get Visual Studio service by type (not async method).
-        /// </summary>
-        /// <param name="serviceType">Needed service type.</param>
-        /// <returns>Result VS service instance</returns>
-        public object GetService(Type serviceType) => null;
-
-        /// <summary>
         /// Initialize service.
         /// </summary>
         /// <param name="cancellationToken">Cancellation token instance.</param>
@@ -238,7 +242,7 @@ namespace Snyk.VisualStudio.Extension.Shared.Service
             try
             {
                 Logger.Information("Initialize Snyk services");
-
+                Logger.Information("Plugin version is {Version}", SnykExtension.Version);
                 await this.Package.JoinableTaskFactory.SwitchToMainThreadAsync(cancellationToken);
 
                 this.settingsManager = new ShellSettingsManager(this.Package);
@@ -269,7 +273,7 @@ namespace Snyk.VisualStudio.Extension.Shared.Service
         /// Create new instance of SnykCli class with Options and Logger parameters.
         /// </summary>
         /// <returns>New SnykCli instance.</returns>
-        public ICli NewCli() => new SnykCli(this.Options);
+        public ICli NewCli() => new SnykCli(this.Options, this.vsVersion);
 
         private void OnSettingsChanged(object sender, SnykSettingsChangedEventArgs e) => this.SetupSnykCodeService();
 
@@ -278,15 +282,17 @@ namespace Snyk.VisualStudio.Extension.Shared.Service
             try
             {
                 var options = this.Options;
-
                 string endpoint = new ApiEndpointResolver(this.Options).GetSnykCodeApiUrl();
+                var httpClient = HttpClientFactory.NewHttpClient(options.ApiToken, endpoint)
+                    .WithUserAgent(this.vsVersion, SnykExtension.Version);
 
                 this.snykCodeService = CodeServiceFactory.CreateSnykCodeService(
                     options.ApiToken,
                     endpoint,
                     this.SolutionService.FileProvider,
                     SnykExtension.IntegrationName,
-                    options.Organization ?? string.Empty);
+                    options.Organization ?? string.Empty,
+                    httpClient);
 
                 VsStatusBarNotificationService.Instance.InitializeEventListeners(this.snykCodeService, options);
             }
