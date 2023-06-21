@@ -36,7 +36,7 @@
         /// <inheritdoc/>
         public async Task<IList<string>> FilterFilesAsync(IEnumerable<string> filePaths, CancellationToken cancellationToken = default)
         {
-            Logger.Information("Filter {Count} files.", filePaths.Count());
+            var initialFileCount = filePaths.Count();
 
             cancellationToken.ThrowIfCancellationRequested();
 
@@ -44,21 +44,16 @@
 
             cancellationToken.ThrowIfCancellationRequested();
 
-            var extensionFilters = filters.Extensions;
-            var configFileFilters = filters.ConfigFiles;
+            var extensionFilters = filters.Extensions.Select(x => x.ToLower()).ToHashSet();
+            var configFileFilters = filters.ConfigFiles.Select(x => x.ToLower()).ToHashSet();
 
-            return filePaths
-                    .Where(path =>
-                    {
-                        if (this.IsFileInIgnoredDirectory(path)
-                            || this.IsFileSizeLargerThanMaximum(path))
-                        {
-                            return false;
-                        }
+            filePaths = filePaths.Where(path => !IsFileInIgnoredDirectory(path));
+            filePaths = filePaths.Where(path => !IsFileSizeLargerThanMaximum(path));
+            filePaths = filePaths.Where(path => extensionFilters.Contains(Path.GetExtension(path).ToLower()) || configFileFilters.Contains(Path.GetFileName(path).ToLower()));
+            var filteredPaths = filePaths.ToList();
+            Logger.Information("File filtering completed. {RemainingFiles} out of {InitialCount}", filteredPaths.Count, initialFileCount);
 
-                        return extensionFilters.Contains(Path.GetExtension(path));
-                    })
-                    .ToList();
+            return filteredPaths;
         }
 
         private bool IsFileInIgnoredDirectory(string filePath)
