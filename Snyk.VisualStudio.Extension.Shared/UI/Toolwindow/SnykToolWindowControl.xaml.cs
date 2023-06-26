@@ -109,8 +109,6 @@
 
             this.Loaded += (sender, args) => tasksService.Download();
 
-            serviceProvider.VsThemeService.ThemeChanged += this.OnVsThemeChanged;
-
             serviceProvider.Options.SettingsChanged += this.OnSettingsChanged;
 
             SnykScanCommand.Instance.UpdateControlsStateCallback = (isEnabled) => ThreadHelper.JoinableTaskFactory.Run(async () =>
@@ -346,13 +344,6 @@
                 "Failed to download Snyk CLI. You can specify a path to a Snyk CLI executable from the settings.";
             }
         }
-
-        /// <summary>
-        /// VsThemeChanged event handler. Call Adapt methods for <see cref="HtmlRichTextBox"/> controls.
-        /// </summary>
-        /// <param name="sender">Source object.</param>
-        /// <param name="eventArgs">Event args.</param>
-        public void OnVsThemeChanged(object sender, SnykVsThemeChangedEventArgs eventArgs) => this.descriptionPanel.AdaptComponentsForThemeChange();
 
         /// <summary>
         /// Show tool window.

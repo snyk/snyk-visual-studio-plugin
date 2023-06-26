@@ -41,10 +41,5 @@
             this.descriptionHeaderPanel.Suggestion = value;
             await this.snykCodeDescriptionControl.SetSuggestionAsync(value);
         }
-
-        /// <summary>
-        /// Adapt components for VS theme change.
-        /// </summary>
-        public void AdaptComponentsForThemeChange() => this.ossDescriptionControl.AdaptComponentsForThemeChange();
     }
 }

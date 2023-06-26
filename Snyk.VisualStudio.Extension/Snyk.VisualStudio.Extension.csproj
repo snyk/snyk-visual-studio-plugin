@@ -94,8 +94,8 @@
     <PackageReference Include="Community.VisualStudio.Toolkit.14">
       <Version>14.0.355</Version>
     </PackageReference>
-    <PackageReference Include="MarkdownSharp">
-      <Version>2.0.5</Version>
+    <PackageReference Include="MdXaml">
+      <Version>1.19.2</Version>
     </PackageReference>
     <PackageReference Include="Microsoft.VisualStudio.Shell.14.0">
       <Version>14.3.25407</Version>
