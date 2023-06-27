@@ -1,9 +1,14 @@
 # Snyk Changelog
 
+## [1.1.37]
+
+### Fixed
+- Rendering of code blocks in OSS description panel markdown.
+
 ## [1.1.34]
 
 ### Fixed
-- Improved error handling for Code & Quality scans
+- Improved error handling for Code & Quality scans.
 
 ## [1.1.33]
 
