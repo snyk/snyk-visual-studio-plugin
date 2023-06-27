@@ -90,8 +90,8 @@
     <PackageReference Include="Community.VisualStudio.Toolkit.17">
       <Version>17.0.394</Version>
     </PackageReference>
-    <PackageReference Include="MarkdownSharp">
-      <Version>2.0.5</Version>
+    <PackageReference Include="MdXaml">
+      <Version>1.19.2</Version>
     </PackageReference>
     <PackageReference Include="Microsoft.VisualStudio.SDK" Version="17.0.32112.339" ExcludeAssets="runtime">
       <IncludeAssets>compile; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>

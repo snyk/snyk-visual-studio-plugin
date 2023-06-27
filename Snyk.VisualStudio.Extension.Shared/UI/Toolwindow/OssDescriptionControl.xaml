@@ -6,6 +6,7 @@
              xmlns:html="clr-namespace:Snyk.VisualStudio.Extension.Shared.UI"
              xmlns:c="clr-namespace:Snyk.VisualStudio.Extension.Shared.UI.Controls"
              xmlns:toolkit="clr-namespace:Community.VisualStudio.Toolkit;assembly=Community.VisualStudio.Toolkit"
+             xmlns:mdXaml="clr-namespace:MdXaml;assembly=MdXaml"
              toolkit:Themes.UseVsTheme="True"
              mc:Ignorable="d" 
              d:DesignHeight="450" d:DesignWidth="800">
@@ -49,11 +50,12 @@
         <c:TextField Grid.Row="7" Grid.Column="0" Text="Fixed in:" FontWeight="Bold" FontSize="12" Margin="5, 5, 5, 5"/>
         <c:TextField Grid.Row="7" Grid.Column="1" x:Name="fixedIn" Text="" FontSize="12" Margin="5, 5, 5, 5" TextWrapping="Wrap"/>
 
-        <html:HtmlRichTextBox Grid.Row="8" Grid.ColumnSpan="2" x:Name="overview" IsDocumentEnabled="True" 
-                                        IsReadOnly="True"
-                                        BorderThickness="0, 0, 0, 0"                                        
-                                        Background="{DynamicResource VsBrush.Window}" 
-                                        HorizontalContentAlignment="Stretch" VerticalContentAlignment="Stretch" Margin="0,25,0,0"/>
+        <mdXaml:MarkdownScrollViewer  x:Name="Overview" MarkdownStyle="{x:Static mdXaml:MarkdownStyle.Sasabune}"
+                                      Grid.Row="8" Grid.ColumnSpan="2" Grid.Column="0" 
+                                      HorizontalScrollBarVisibility="Disabled" VerticalScrollBarVisibility="Disabled"
+                                      ClickAction="OpenBrowser"
+                                      BorderThickness="1"
+                                      HorizontalContentAlignment="Stretch" VerticalContentAlignment="Stretch" Margin="0,25,0,0"/>
 
         <TextBlock Grid.Row="9" Grid.Column="0" FontSize="12" Margin="5, 20, 5, 5" TextWrapping="Wrap" MaxWidth="1000">
             <Hyperlink Name="moreAboutThisIssue" RequestNavigate="MoreAboutThisIssue_RequestNavigate">More about this issue</Hyperlink >

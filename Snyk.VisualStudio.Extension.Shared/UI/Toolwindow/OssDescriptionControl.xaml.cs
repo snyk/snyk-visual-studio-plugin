@@ -2,8 +2,14 @@
 {
     using System;
     using System.Diagnostics;
+    using System.Linq;
     using System.Windows;
     using System.Windows.Controls;
+    using System.Windows.Documents;
+    using System.Windows.Input;
+    using MdXaml;
+    using Serilog;
+    using Snyk.Common;
     using Snyk.VisualStudio.Extension.Shared.CLI;
 
     /// <summary>
@@ -11,6 +17,7 @@
     /// </summary>
     public partial class OssDescriptionControl : UserControl
     {
+        private static readonly ILogger Logger = LogManager.ForContext<OssDescriptionControl>();
         /// <summary>
         /// Initializes a new instance of the <see cref="OssDescriptionControl"/> class.
         /// </summary>
@@ -45,18 +52,10 @@
                 this.fix.Text = vulnerability.FixedIn != null && vulnerability.FixedIn.Length != 0
                                          ? "Upgrade to " + string.Join(" > ", vulnerability.FixedIn) : string.Empty;
 
-                this.overview.Html = new MarkdownSharp.Markdown().Transform(vulnerability.Description);
+                this.Overview.Markdown = vulnerability.Description;
 
                 this.moreAboutThisIssue.NavigateUri = new Uri(vulnerability.Url);
             }
-        }
-
-        /// <summary>
-        /// Adapt components for VS theme change.
-        /// </summary>
-        public void AdaptComponentsForThemeChange()
-        {
-            this.overview.AdaptForeground();
         }
 
         private void MoreAboutThisIssue_RequestNavigate(object sender, System.Windows.Navigation.RequestNavigateEventArgs args)
