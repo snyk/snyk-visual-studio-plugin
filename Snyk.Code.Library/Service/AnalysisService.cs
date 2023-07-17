@@ -17,7 +17,7 @@
     public class AnalysisService : IAnalysisService
     {
         private static readonly TimeSpan MaxScanDuration = TimeSpan.FromHours(6);
-        private const int RequestTimeout = 1000;
+        private static readonly TimeSpan WaitBetweenRequest = TimeSpan.FromSeconds(1);
 
         private static readonly ILogger Logger = LogManager.ForContext<AnalysisService>();
 
@@ -96,7 +96,7 @@
                     case AnalysisStatus.Waiting:
                     default:
                         Logger.Information("SnykCode service return {Status} status. Sleep for 1 second timeout.", analysisResultDto.Status);
-                        await Task.Delay(RequestTimeout, cancellationToken);
+                        await Task.Delay(WaitBetweenRequest, cancellationToken);
                         break;
                 }
             }
