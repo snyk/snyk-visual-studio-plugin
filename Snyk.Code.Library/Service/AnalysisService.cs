@@ -16,8 +16,7 @@
     /// <inheritdoc/>
     public class AnalysisService : IAnalysisService
     {
-        public const int RequestAttempts = 900;
-
+        private static readonly TimeSpan MaxScanDuration = TimeSpan.FromHours(6);
         private const int RequestTimeout = 1000;
 
         private static readonly ILogger Logger = LogManager.ForContext<AnalysisService>();
@@ -27,10 +26,8 @@
         public AnalysisService(ISnykCodeClient codeClient) => this.codeClient = codeClient;
 
         /// <inheritdoc/>
-        public async Task<AnalysisResult> GetAnalysisAsync(
-            string bundleHash,
+        public async Task<AnalysisResult> GetAnalysisAsync(string bundleHash,
             FireScanCodeProgressUpdate scanCodeProgressUpdate,
-            int requestAttempts = RequestAttempts,
             CancellationToken cancellationToken = default)
         {
             if (string.IsNullOrEmpty(bundleHash))
@@ -40,7 +37,7 @@
 
             cancellationToken.ThrowIfCancellationRequested();
 
-            var analysisResultDto = await this.TryGetAnalysisDtoAsync(bundleHash, scanCodeProgressUpdate, requestAttempts, cancellationToken);
+            var analysisResultDto = await this.TryGetAnalysisDtoAsync(bundleHash, scanCodeProgressUpdate, cancellationToken);
 
             return this.MapDtoAnalysisResultToDomain(analysisResultDto);
         }
@@ -49,18 +46,17 @@
         /// Try get analysis DTO 'RequestAttempts' attempts.
         /// </summary>
         /// <param name="bundleHash">Source bundle id.</param>
+        /// <param name="scanCodeProgressUpdate"></param>
+        /// <param name="cancellationToken"></param>
         /// <returns><see cref="AnalysisResultDto"/> object.</returns>
-        private async Task<AnalysisResultDto> TryGetAnalysisDtoAsync(
-            string bundleHash,
+        private async Task<AnalysisResultDto> TryGetAnalysisDtoAsync(string bundleHash,
             FireScanCodeProgressUpdate scanCodeProgressUpdate,
-            int requestAttempts,
             CancellationToken cancellationToken = default)
         {
-            Logger.Debug("Try get analysis DTO object {RequestAttempts} times.", requestAttempts);
-
             cancellationToken.ThrowIfCancellationRequested();
 
-            for (int counter = 0; counter < requestAttempts; counter++)
+            var startTime = DateTime.Now;
+            while(DateTime.Now - startTime < MaxScanDuration)
             {
                 cancellationToken.ThrowIfCancellationRequested();
 
@@ -83,8 +79,6 @@
                     };
                 }
 
-                Logger.Debug($"Request analysis status {analysisResultDto.Status}");
-
                 int progress = (int)analysisResultDto.Progress * 100;
 
                 scanCodeProgressUpdate(SnykCodeScanState.Analysing, progress);
@@ -97,18 +91,17 @@
                         return analysisResultDto;
 
                     case AnalysisStatus.Failed:
-                        throw new SnykCodeException("SnykCode Analysis failed.");
+                        throw new SnykCodeException("SnykCode Analysis failed with status code " + analysisResultDto.Status);
 
                     case AnalysisStatus.Waiting:
                     default:
                         Logger.Information("SnykCode service return {Status} status. Sleep for 1 second timeout.", analysisResultDto.Status);
-
-                        Thread.Sleep(RequestTimeout);
+                        await Task.Delay(RequestTimeout, cancellationToken);
                         break;
                 }
             }
 
-            Logger.Warning("Can't Get analysis after {requestAttempts} attepts. Return AnalysisResultDto with Failed status.", requestAttempts);
+            Logger.Warning("Snyk Code scan timed out on the client side.");
 
             return new AnalysisResultDto { Status = AnalysisStatus.Failed, };
         }

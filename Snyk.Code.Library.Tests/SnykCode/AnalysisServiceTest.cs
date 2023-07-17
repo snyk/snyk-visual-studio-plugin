@@ -37,7 +37,7 @@
                 .Setup(codeClient => codeClient.GetAnalysisAsync(dummyBundleId, It.IsAny<CancellationToken>()))
                 .ReturnsAsync(dummyAnalysisResultDto);
 
-            _ = Assert.ThrowsAsync<AggregateException>(() => analysisService.GetAnalysisAsync(dummyBundleId, scanCodeProgressUpdate));
+            _ = Assert.ThrowsAsync<AggregateException>(() => analysisService.GetAnalysisAsync(dummyBundleId, this.scanCodeProgressUpdate));
 
             codeClientMock
                 .Verify(codeClient => codeClient.GetAnalysisAsync(dummyBundleId, It.IsAny<CancellationToken>()), Times.Exactly(1));
@@ -103,7 +103,7 @@
                 .Setup(codeClient => codeClient.GetAnalysisAsync(dummyBundleId, It.IsAny<CancellationToken>()))
                 .ReturnsAsync(dummyAnalysisResultDto);
 
-            var analysisResult = await analysisService.GetAnalysisAsync(dummyBundleId, this.scanCodeProgressUpdate, requestAttempts: 5);
+            var analysisResult = await analysisService.GetAnalysisAsync(dummyBundleId, this.scanCodeProgressUpdate);
 
             Assert.NotNull(analysisResult);
             Assert.Equal(AnalysisStatus.Failed, analysisResult.Status);

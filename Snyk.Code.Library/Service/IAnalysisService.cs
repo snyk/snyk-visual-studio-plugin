@@ -25,13 +25,10 @@
         /// </summary>
         /// <param name="bundleId">Source bundle id to analysy.</param>
         /// <param name="scanCodeProgressUpdate">Scan code progress update delegate.</param>
-        /// <param name="requestAttempts">Request attempts.</param>
         /// <param name="cancellationToken"><see cref="CancellationToken"/> token to cancel request.</param>
         /// <returns>Analysis results with suggestions and the relative positions.</returns>
-        Task<AnalysisResult> GetAnalysisAsync(
-            string bundleId,
+        Task<AnalysisResult> GetAnalysisAsync(string bundleId,
             FireScanCodeProgressUpdate scanCodeProgressUpdate,
-            int requestAttempts = AnalysisService.RequestAttempts,
             CancellationToken cancellationToken = default);
     }
 }
