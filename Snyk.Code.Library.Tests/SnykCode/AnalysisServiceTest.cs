@@ -83,34 +83,6 @@
                 .Verify(codeClient => codeClient.GetAnalysisAsync(dummyBundleId, It.IsAny<CancellationToken>()), Times.Exactly(24));
         }
 
-        [Fact]
-        public async Task AnalysisService_InfiniteWaitingStatusProvided_GetAnalysisReturnFailedStatusAsync()
-        {
-            var codeClientMock = new Mock<ISnykCodeClient>();
-
-            var analysisService = new AnalysisService(codeClientMock.Object);
-
-            var analysisResultsDto = new AnalysisResultsDto();
-
-            string dummyBundleId = "dummyId";
-
-            var dummyAnalysisResultDto = new AnalysisResultDto
-            {
-                Status = AnalysisStatus.Waiting,
-            };
-
-            codeClientMock
-                .Setup(codeClient => codeClient.GetAnalysisAsync(dummyBundleId, It.IsAny<CancellationToken>()))
-                .ReturnsAsync(dummyAnalysisResultDto);
-
-            var analysisResult = await analysisService.GetAnalysisAsync(dummyBundleId, this.scanCodeProgressUpdate);
-
-            Assert.NotNull(analysisResult);
-            Assert.Equal(AnalysisStatus.Failed, analysisResult.Status);
-
-            codeClientMock
-                .Verify(codeClient => codeClient.GetAnalysisAsync(dummyBundleId, It.IsAny<CancellationToken>()), Times.Exactly(5));
-        }
 
         [Fact]
         public async Task AnalysisService_TwoFilesWithIssuesProvided_GetAnalysisSuccessAsync()

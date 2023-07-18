@@ -16,7 +16,7 @@
     /// <inheritdoc/>
     public class AnalysisService : IAnalysisService
     {
-        private static readonly TimeSpan MaxScanDuration = TimeSpan.FromHours(6);
+        private static readonly TimeSpan MaxScanDuration = TimeSpan.FromHours(3);
         private static readonly TimeSpan WaitBetweenRequest = TimeSpan.FromSeconds(1);
 
         private static readonly ILogger Logger = LogManager.ForContext<AnalysisService>();
