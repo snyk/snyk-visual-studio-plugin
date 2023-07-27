@@ -36,6 +36,7 @@
     <Compile Include="$(MSBuildThisFileDirectory)Service\OssScanException.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Service\OssService.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Service\WorkspaceTrustService.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Settings\ErrorProviderExtensions.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Settings\IUserStorageSettingsService.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Settings\SnykGeneralOptionsDialogPage.cs">
       <SubType>Component</SubType>
@@ -244,6 +245,7 @@
     <Compile Include="$(MSBuildThisFileDirectory)UI\Toolwindow\SnykToolWindowControl.xaml.cs">
       <DependentUpon>SnykToolWindowControl.xaml</DependentUpon>
     </Compile>
+    <Compile Include="$(MSBuildThisFileDirectory)UI\Toolwindow\ToolErrorState.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)UI\Toolwindow\ToolWindowContext.cs">
       <CopyToOutputDirectory>Never</CopyToOutputDirectory>
     </Compile>

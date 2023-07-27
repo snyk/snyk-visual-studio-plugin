@@ -83,7 +83,7 @@ namespace Snyk.VisualStudio.Extension.Shared.Settings
             this.customEndpointTextBox.Location = new System.Drawing.Point(100, 86);
             this.customEndpointTextBox.Margin = new System.Windows.Forms.Padding(2);
             this.customEndpointTextBox.Name = "customEndpointTextBox";
-            this.customEndpointTextBox.Size = new System.Drawing.Size(420, 20);
+            this.customEndpointTextBox.Size = new System.Drawing.Size(300, 20);
             this.customEndpointTextBox.TabIndex = 0;
             this.customEndpointTextBox.LostFocus += new System.EventHandler(this.CustomEndpointTextBox_LostFocus);
             this.customEndpointTextBox.Validating += new System.ComponentModel.CancelEventHandler(this.CustomEndpointTextBox_Validating);
@@ -113,7 +113,7 @@ namespace Snyk.VisualStudio.Extension.Shared.Settings
             this.organizationTextBox.Location = new System.Drawing.Point(100, 134);
             this.organizationTextBox.Margin = new System.Windows.Forms.Padding(2);
             this.organizationTextBox.Name = "organizationTextBox";
-            this.organizationTextBox.Size = new System.Drawing.Size(420, 20);
+            this.organizationTextBox.Size = new System.Drawing.Size(300, 20);
             this.organizationTextBox.TabIndex = 3;
             this.organizationTextBox.TextChanged += new System.EventHandler(this.OrganizationTextBox_TextChanged);
             // 
@@ -132,7 +132,7 @@ namespace Snyk.VisualStudio.Extension.Shared.Settings
             this.tokenTextBox.Location = new System.Drawing.Point(100, 54);
             this.tokenTextBox.Name = "tokenTextBox";
             this.tokenTextBox.PasswordChar = '*';
-            this.tokenTextBox.Size = new System.Drawing.Size(420, 20);
+            this.tokenTextBox.Size = new System.Drawing.Size(300, 20);
             this.tokenTextBox.TabIndex = 5;
             this.tokenTextBox.TextChanged += new System.EventHandler(this.TokenTextBox_TextChanged);
             this.tokenTextBox.Validating += new System.ComponentModel.CancelEventHandler(this.TokenTextBox_Validating);
@@ -165,7 +165,7 @@ namespace Snyk.VisualStudio.Extension.Shared.Settings
             this.authProgressBar.Margin = new System.Windows.Forms.Padding(2, 3, 2, 3);
             this.authProgressBar.MarqueeAnimationSpeed = 10;
             this.authProgressBar.Name = "authProgressBar";
-            this.authProgressBar.Size = new System.Drawing.Size(420, 5);
+            this.authProgressBar.Size = new System.Drawing.Size(300, 5);
             this.authProgressBar.Style = System.Windows.Forms.ProgressBarStyle.Marquee;
             this.authProgressBar.TabIndex = 8;
             this.authProgressBar.Visible = false;
@@ -311,7 +311,7 @@ namespace Snyk.VisualStudio.Extension.Shared.Settings
             this.CliPathTextBox.Margin = new System.Windows.Forms.Padding(2);
             this.CliPathTextBox.Name = "CliPathTextBox";
             this.CliPathTextBox.ReadOnly = true;
-            this.CliPathTextBox.Size = new System.Drawing.Size(420, 20);
+            this.CliPathTextBox.Size = new System.Drawing.Size(300, 20);
             this.CliPathTextBox.TabIndex = 15;
             // 
             // CliPathLabel

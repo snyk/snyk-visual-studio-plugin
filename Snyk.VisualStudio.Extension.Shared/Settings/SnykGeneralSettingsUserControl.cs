@@ -231,20 +231,22 @@
             }
         }
 
-        private bool IsValidUrl(string url) => Uri.IsWellFormedUriString(url, UriKind.RelativeOrAbsolute);
+        private bool IsValidUrl(string url) => Uri.IsWellFormedUriString(url, UriKind.Absolute);
 
         private void TokenTextBox_TextChanged(object sender, EventArgs e)
         {
-            this.ValidateChildren(ValidationConstraints.Enabled);
-
-            this.OptionsDialogPage.SetApiToken(this.tokenTextBox.Text);
+            if (this.ValidateChildren(ValidationConstraints.Enabled))
+            {
+                this.OptionsDialogPage.SetApiToken(this.tokenTextBox.Text);
+            }
         }
 
         private void CustomEndpointTextBox_LostFocus(object sender, EventArgs e)
         {
-            this.ValidateChildren(ValidationConstraints.Enabled);
-
-            this.OptionsDialogPage.CustomEndpoint = this.customEndpointTextBox.Text;
+            if (this.ValidateChildren(ValidationConstraints.Enabled))
+            {
+                this.OptionsDialogPage.CustomEndpoint = this.customEndpointTextBox.Text;
+            }
         }
 
         private void OrganizationTextBox_TextChanged(object sender, EventArgs e)
@@ -286,27 +288,15 @@
 
         private void CustomEndpointTextBox_Validating(object sender, System.ComponentModel.CancelEventArgs cancelEventArgs)
         {
-            if (string.IsNullOrEmpty(this.tokenTextBox.Text))
+            if (string.IsNullOrWhiteSpace(this.customEndpointTextBox.Text) || this.IsValidUrl(this.customEndpointTextBox.Text))
             {
-                this.errorProvider.SetError(this.tokenTextBox, string.Empty);
-
+                this.errorProvider.SetNoError(this.customEndpointTextBox);
                 return;
             }
 
-            if (!string.IsNullOrWhiteSpace(this.customEndpointTextBox.Text) && !this.IsValidUrl(this.customEndpointTextBox.Text))
-            {
-                cancelEventArgs.Cancel = true;
-
-                this.customEndpointTextBox.Focus();
-
-                this.errorProvider.SetError(this.customEndpointTextBox, "Not valid URL.");
-            }
-            else
-            {
-                cancelEventArgs.Cancel = false;
-
-                this.errorProvider.SetError(this.customEndpointTextBox, string.Empty);
-            }
+            cancelEventArgs.Cancel = true;
+            //this.customEndpointTextBox.Focus();
+            this.errorProvider.SetError(this.customEndpointTextBox, "Needs to be a full absolute well-formed URL (including protocol)");
         }
 
         private void SnykGeneralSettingsUserControl_Load(object sender, EventArgs e)
