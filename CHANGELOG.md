@@ -1,5 +1,10 @@
 # Snyk Changelog
 
+## [1.1.38]
+
+### Fixed
+- Custom endpoints validation in the settings page did not work correctly and led to crashes.
+
 ## [1.1.37]
 
 ### Fixed

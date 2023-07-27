@@ -93,6 +93,12 @@
             get => this.customEndpoint;
             set
             {
+                if (!Uri.IsWellFormedUriString(value, UriKind.Absolute))
+                {
+                    Logger.Warning("Custom endpoint value is not a well-formed URI. Setting custom endpoint to empty string");
+                    value = string.Empty;
+                }
+
                 if (this.customEndpoint == value)
                 {
                     return;

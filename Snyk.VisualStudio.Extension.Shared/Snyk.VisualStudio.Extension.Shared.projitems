@@ -36,6 +36,7 @@
     <Compile Include="$(MSBuildThisFileDirectory)Service\OssScanException.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Service\OssService.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Service\WorkspaceTrustService.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Settings\ErrorProviderExtensions.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Settings\IUserStorageSettingsService.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Settings\SnykGeneralOptionsDialogPage.cs">
       <SubType>Component</SubType>
