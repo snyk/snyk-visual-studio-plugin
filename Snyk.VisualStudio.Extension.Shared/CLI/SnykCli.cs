@@ -81,7 +81,7 @@
             }
             catch (InvalidTokenException e)
             {
-                Logger.Warning(e, "Error on get api token via cli for settings");
+                Logger.Warning(e, "Failed to retrieve api token from CLI configuration");
 
                 apiToken = string.Empty;
             }
