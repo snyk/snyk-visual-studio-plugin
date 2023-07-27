@@ -245,7 +245,6 @@
     <Compile Include="$(MSBuildThisFileDirectory)UI\Toolwindow\SnykToolWindowControl.xaml.cs">
       <DependentUpon>SnykToolWindowControl.xaml</DependentUpon>
     </Compile>
-    <Compile Include="$(MSBuildThisFileDirectory)UI\Toolwindow\ToolErrorState.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)UI\Toolwindow\ToolWindowContext.cs">
       <CopyToOutputDirectory>Never</CopyToOutputDirectory>
     </Compile>
