@@ -12,7 +12,7 @@ namespace Snyk.VisualStudio.Extension.Shared.Tests
         private string consoleResult;
 
 
-        public SnykMockConsoleRunner(string result) : base(new SnykGeneralOptionsDialogPage())
+        public SnykMockConsoleRunner(ISnykOptions options, string result) : base(options)
         {
             this.consoleResult = result;
         }
