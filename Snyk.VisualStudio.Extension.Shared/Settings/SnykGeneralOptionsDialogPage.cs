@@ -84,6 +84,22 @@
             tokenObj.TokenRefresher = RefreshToken;
             return tokenObj;
         }
+        
+        /// <summary>
+        /// Checks if the current endpoint is a fedramp endpoint
+        /// </summary>
+        /// <returns></returns>
+        public bool IsFedramp()
+        {
+            var endpoint = this.customEndpoint;
+            if (endpoint.IsNullOrEmpty())
+            {
+                return false;
+            }
+
+            var endpointUri = new Uri(endpoint);
+            return endpoint.ToLower().Contains("fedramp") && endpointUri.Host.EndsWith("snykgov.io");
+        }
 
         /// <summary>
         /// Gets or sets a value indicating whether Custom endpoint.
@@ -102,6 +118,11 @@
                 if (this.customEndpoint == value)
                 {
                     return;
+                }
+
+                if (IsFedramp())
+                {
+                    this.UsageAnalyticsEnabled = false;
                 }
 
                 // When changing the API endpoint, the API token is invalidated

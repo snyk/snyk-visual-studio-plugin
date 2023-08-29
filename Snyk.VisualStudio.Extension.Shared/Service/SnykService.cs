@@ -301,7 +301,6 @@ namespace Snyk.VisualStudio.Extension.Shared.Service
                 Logger.Error(e, string.Empty);
             }
         }
-
         private void InitializeAnalyticsService()
         {
             Logger.Information("Initialize Analytics Service...");
@@ -314,7 +313,7 @@ namespace Snyk.VisualStudio.Extension.Shared.Service
                 this.Options.AnonymousId = anonymousId;
             }
 
-            var enabled = this.Options.UsageAnalyticsEnabled;
+            var enabled = this.Options.UsageAnalyticsEnabled && !this.Options.IsFedramp();
             var endpoint = this.ApiEndpointResolver.UserMeEndpoint;
 
             Logger.Information("analytics enabled = {Enabled}, endpoint = {Endpoint}", enabled, endpoint);

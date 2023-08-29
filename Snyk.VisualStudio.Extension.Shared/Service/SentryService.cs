@@ -34,17 +34,34 @@
                 scope.SetTag("vs.version", vsVersion.ToString());
                 scope.SetTag("vs.edition", this.serviceProvider.DTE.Edition);
             });
+
+            // disable sentry if no usage analytics or fedramp 
+            if (!this.serviceProvider.Options.UsageAnalyticsEnabled || this.serviceProvider.Options.IsFedramp())
+            {
+                DiscardEventCallback();
+            }
         }
 
         /// <inheritdoc/>
         public void SetSolutionType(SolutionType solutionType)
         {
-            LogManager.SentryConfiguration.BeforeSend = sentryEvent =>
+            if (!this.serviceProvider.Options.UsageAnalyticsEnabled || this.serviceProvider.Options.IsFedramp())
             {
-                sentryEvent.SetTag("vs.project.type", solutionType.ToString());
+                DiscardEventCallback();
+            }
+            else
+            {
+                LogManager.SentryConfiguration.BeforeSend = sentryEvent =>
+                {
+                    sentryEvent.SetTag("vs.project.type", solutionType.ToString());
+                    return sentryEvent;
+                };
+            }
+        }
 
-                return sentryEvent;
-            };
+        private static void DiscardEventCallback()
+        {
+            LogManager.SentryConfiguration.BeforeSend = _ => { return null; };
         }
     }
 }
