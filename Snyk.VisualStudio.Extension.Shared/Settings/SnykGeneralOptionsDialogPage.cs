@@ -98,7 +98,7 @@
             }
 
             var endpointUri = new Uri(endpoint);
-            return endpoint.ToLower().Contains("fedramp") && endpointUri.Host.EndsWith("snykgov.io");
+            return endpointUri.Host.ToLower().EndsWith("snykgov.io");
         }
 
         /// <summary>
