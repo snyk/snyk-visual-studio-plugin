@@ -689,7 +689,7 @@
         {
             var options = this.serviceProvider.Options;
             this.serviceProvider.AnalyticsService.AnalyticsEnabledOption = 
-                options.UsageAnalyticsEnabled && options.IsFedramp();
+                options.UsageAnalyticsEnabled && !options.IsFedramp();
 
             if (options.ApiToken.IsValid())
             {
