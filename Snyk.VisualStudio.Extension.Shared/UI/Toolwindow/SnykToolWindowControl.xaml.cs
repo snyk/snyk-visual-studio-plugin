@@ -687,9 +687,11 @@
         /// </summary>
         private void ShowWelcomeOrRunScanScreen()
         {
-            this.serviceProvider.AnalyticsService.AnalyticsEnabledOption = this.serviceProvider.Options.UsageAnalyticsEnabled;
+            var options = this.serviceProvider.Options;
+            this.serviceProvider.AnalyticsService.AnalyticsEnabledOption = 
+                options.UsageAnalyticsEnabled && options.IsFedramp();
 
-            if (this.serviceProvider.Options.ApiToken.IsValid())
+            if (options.ApiToken.IsValid())
             {
                 this.context.TransitionTo(RunScanState.Instance);
 
