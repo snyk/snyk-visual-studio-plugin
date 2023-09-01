@@ -120,11 +120,6 @@
                     return;
                 }
 
-                if (IsFedramp())
-                {
-                    this.UsageAnalyticsEnabled = false;
-                }
-
                 // When changing the API endpoint, the API token is invalidated
                 this.apiToken = AuthenticationToken.EmptyToken;
                 var cli = this.ServiceProvider?.NewCli();
