@@ -5,6 +5,36 @@ ignore:
   SNYK-DOTNET-NEWTONSOFTJSON-2774678:
     - '*':
         reason: Only relevant for IIS apps
-        expires: 2023-06-01T00:00:00.000Z
+        expires: 2024-06-01T00:00:00.000Z
         created: 2022-06-02T11:45:31.420Z
+  SNYK-DOTNET-SYSTEMNETHTTP-60045:
+    - '*':
+        reason: Runtime vulnerability see - https://docs.snyk.io/scan-applications/supported-languages-and-frameworks/.net#tackling-vulnerabilities-from-runtime-dependencies
+        expires: 2024-09-21T00:00:00.000Z
+        created: 2023-09-21T11:45:31.420Z
+  SNYK-DOTNET-SYSTEMNETHTTP-60046:
+    - '*':
+        reason: Runtime vulnerability see - https://docs.snyk.io/scan-applications/supported-languages-and-frameworks/.net#tackling-vulnerabilities-from-runtime-dependencies
+        expires: 2024-09-21T00:00:00.000Z
+        created: 2023-09-21T11:45:31.420Z
+  SNYK-DOTNET-SYSTEMNETHTTP-72439:
+    - '*':
+        reason: Runtime vulnerability see - https://docs.snyk.io/scan-applications/supported-languages-and-frameworks/.net#tackling-vulnerabilities-from-runtime-dependencies
+        expires: 2024-09-21T00:00:00.000Z
+        created: 2023-09-21T11:45:31.420Z
+  SNYK-DOTNET-SYSTEMTEXTREGULAREXPRESSIONS-174708:
+    - '*':
+        reason: Runtime vulnerability see - https://docs.snyk.io/scan-applications/supported-languages-and-frameworks/.net#tackling-vulnerabilities-from-runtime-dependencies
+        expires: 2024-09-21T00:00:00.000Z
+        created: 2023-09-21T11:45:31.420Z
+  SNYK-DOTNET-SYSTEMNETHTTP-60047:
+    - '*':
+        reason: Runtime vulnerability see - https://docs.snyk.io/scan-applications/supported-languages-and-frameworks/.net#tackling-vulnerabilities-from-runtime-dependencies
+        expires: 2024-09-21T00:00:00.000Z
+        created: 2023-09-21T11:45:31.420Z
+  SNYK-DOTNET-SYSTEMNETHTTP-60048:
+    - '*':
+        reason: Runtime vulnerability see - https://docs.snyk.io/scan-applications/supported-languages-and-frameworks/.net#tackling-vulnerabilities-from-runtime-dependencies
+        expires: 2024-09-21T00:00:00.000Z
+        created: 2023-09-21T11:45:31.420Z
 patch: {}
