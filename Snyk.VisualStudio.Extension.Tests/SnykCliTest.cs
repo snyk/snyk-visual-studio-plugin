@@ -24,6 +24,10 @@
                 .Returns(true);
 
             this.optionsMock
+                .Setup(options => options.IsFedramp())
+                .Returns(false);
+
+            this.optionsMock
                 .Setup(options => options.ApiToken)
                 .Returns(AuthenticationToken.EmptyToken);
         }
@@ -33,7 +37,7 @@
         {
             var cli = new SnykCli(this.optionsMock.Object)
             {
-                ConsoleRunner = new SnykMockConsoleRunner(""),
+                ConsoleRunner = new SnykMockConsoleRunner(this.optionsMock.Object, ""),
             };
 
             Assert.Throws<InvalidTokenException>(() => cli.GetApiTokenOrThrowException());
@@ -62,8 +66,8 @@
         {
             var cli = new SnykCli(this.optionsMock.Object)
             {
-                
-                ConsoleRunner = new SnykMockConsoleRunner(this.GetFileContent("VulnerabilitiesSingleObject.json")),
+                ConsoleRunner = new SnykMockConsoleRunner(optionsMock.Object,
+                    this.GetFileContent("VulnerabilitiesSingleObject.json")),
             };
 
             var cliResult = await cli.ScanAsync(string.Empty);
@@ -78,8 +82,7 @@
 
             var cli = new SnykCli(this.optionsMock.Object)
             {
-                
-                ConsoleRunner = new SnykMockConsoleRunner(testGuid),
+                ConsoleRunner = new SnykMockConsoleRunner(this.optionsMock.Object, testGuid),
             };
 
             Assert.Equal(testGuid, cli.GetApiToken());
@@ -177,26 +180,14 @@
                 .ReturnsAsync("--ignore-policy");
 
             this.optionsMock
-                   .Setup(options => options.IsScanAllProjectsAsync())
-                   .ReturnsAsync(true);
+                .Setup(options => options.IsScanAllProjectsAsync())
+                .ReturnsAsync(true);
 
             var cli = new SnykCli(this.optionsMock.Object);
 
             Assert.Equal(
-                "--json test --insecure --org=test-snyk-organization --ignore-policy --all-projects --DISABLE_ANALYTICS",
+                "--json test --insecure --org=test-snyk-organization --ignore-policy --all-projects",
                 await cli.BuildScanArgumentsAsync());
-        }
-
-        [Fact]
-        public async Task SnykCliTest_BuildArguments_WithDisableAnalyticsAsync()
-        {
-            this.optionsMock
-                .Setup(options => options.UsageAnalyticsEnabled)
-                .Returns(false);
-
-            var cli = new SnykCli(this.optionsMock.Object);
-
-            Assert.Equal("--json test --DISABLE_ANALYTICS", await cli.BuildScanArgumentsAsync());
         }
 
         [Fact]
@@ -223,13 +214,13 @@
                 .ReturnsAsync("--ignore-policy");
 
             this.optionsMock
-                   .Setup(options => options.IsScanAllProjectsAsync())
-                   .ReturnsAsync(true);
+                .Setup(options => options.IsScanAllProjectsAsync())
+                .ReturnsAsync(true);
 
             var tokenMock = new AuthenticationToken(AuthenticationType.Token, Guid.NewGuid().ToString());
             this.optionsMock
-                   .Setup(options => options.ApiToken)
-                   .Returns(tokenMock);
+                .Setup(options => options.ApiToken)
+                .Returns(tokenMock);
 
             var cli = new SnykCli(this.optionsMock.Object);
 
@@ -243,8 +234,8 @@
         public void SnykCliTest_BuildEnvironmentVariables_InvalidToken()
         {
             this.optionsMock
-                   .Setup(options => options.ApiToken)
-                   .Returns(AuthenticationToken.EmptyToken);
+                .Setup(options => options.ApiToken)
+                .Returns(AuthenticationToken.EmptyToken);
 
             var cli = new SnykCli(this.optionsMock.Object);
 
@@ -256,10 +247,11 @@
         [Fact]
         public void SnykCliTest_BuildEnvironmentVariables_OAuthToken()
         {
-            var tokenMock = new AuthenticationToken(AuthenticationType.OAuth, "{\"access_token\":\"at\",\"token_type\":\"Bearer\",\"refresh_token\":\"rt\",\"expiry\":\"3023-04-13T19:07:08.8871+02:00\"}");
+            var tokenMock = new AuthenticationToken(AuthenticationType.OAuth,
+                "{\"access_token\":\"at\",\"token_type\":\"Bearer\",\"refresh_token\":\"rt\",\"expiry\":\"3023-04-13T19:07:08.8871+02:00\"}");
             this.optionsMock
-                   .Setup(options => options.ApiToken)
-                   .Returns(tokenMock);
+                .Setup(options => options.ApiToken)
+                .Returns(tokenMock);
 
             var cli = new SnykCli(this.optionsMock.Object);
 
@@ -273,8 +265,8 @@
         {
             var tokenMock = new AuthenticationToken(AuthenticationType.Token, Guid.NewGuid().ToString());
             this.optionsMock
-                   .Setup(options => options.ApiToken)
-                   .Returns(tokenMock);
+                .Setup(options => options.ApiToken)
+                .Returns(tokenMock);
 
             var cli = new SnykCli(this.optionsMock.Object);
 
@@ -306,7 +298,8 @@
         [Fact]
         public void ConvertRawCliStringToCliResult_VulnerabilitiesSingleJson()
         {
-            var cliResult = SnykCli.ConvertRawCliStringToCliResult(this.GetFileContent("VulnerabilitiesSingleObject.json"));
+            var cliResult =
+                SnykCli.ConvertRawCliStringToCliResult(this.GetFileContent("VulnerabilitiesSingleObject.json"));
 
             Assert.Single(cliResult.CliVulnerabilitiesList);
         }
@@ -318,7 +311,9 @@
 
             Assert.NotNull(cliResult.Error);
             Assert.False(cliResult.Error.IsSuccess);
-            Assert.Contains("Could not detect supported target files in C:\\Users\\Test\\Documents\\MultiProjectConsoleApplication.", cliResult.Error.Message);
+            Assert.Contains(
+                "Could not detect supported target files in C:\\Users\\Test\\Documents\\MultiProjectConsoleApplication.",
+                cliResult.Error.Message);
             Assert.Equal("C:\\Users\\Test\\Documents\\MultiProjectConsoleApplication", cliResult.Error.Path);
         }
 
@@ -331,7 +326,8 @@
 
             Assert.NotNull(cliResult.Error);
             Assert.False(cliResult.Error.IsSuccess);
-            Assert.Contains("Please see our documentation for supported languages and target files:", cliResult.Error.Message);
+            Assert.Contains("Please see our documentation for supported languages and target files:",
+                cliResult.Error.Message);
             Assert.Equal(string.Empty, cliResult.Error.Path);
         }
 

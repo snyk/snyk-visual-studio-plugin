@@ -1,4 +1,8 @@
-﻿namespace Snyk.VisualStudio.Extension.Shared.Tests
+﻿using Segment.Model;
+using Snyk.Common.Settings;
+using Snyk.VisualStudio.Extension.Shared.Settings;
+
+namespace Snyk.VisualStudio.Extension.Shared.Tests
 {
     using System.Collections.Specialized;
     using Snyk.VisualStudio.Extension.Shared.CLI;
@@ -7,7 +11,8 @@
     {
         private string consoleResult;
 
-        public SnykMockConsoleRunner(string result)
+
+        public SnykMockConsoleRunner(ISnykOptions options, string result) : base(options)
         {
             this.consoleResult = result;
         }

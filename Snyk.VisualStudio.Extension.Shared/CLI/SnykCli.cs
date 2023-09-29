@@ -36,7 +36,7 @@
         /// </summary>
         public SnykCli(ISnykOptions options, string ideVersion = "")
         {
-            this.ConsoleRunner = new SnykConsoleRunner(ideVersion);
+            this.ConsoleRunner = new SnykConsoleRunner(options, ideVersion);
             this.options = options;
         }
 
@@ -273,11 +273,6 @@
             if (isScanAllProjects)
             {
                 arguments.Add("--all-projects");
-            }
-
-            if (!this.Options.UsageAnalyticsEnabled)
-            {
-                arguments.Add("--DISABLE_ANALYTICS");
             }
 
             string cliOptions = string.Join(" ", arguments.ToArray());

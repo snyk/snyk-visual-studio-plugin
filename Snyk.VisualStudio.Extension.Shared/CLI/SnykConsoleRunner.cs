@@ -1,4 +1,6 @@
-﻿namespace Snyk.VisualStudio.Extension.Shared.CLI
+﻿using Snyk.Common.Settings;
+
+namespace Snyk.VisualStudio.Extension.Shared.CLI
 {
     using System;
     using System.Collections;
@@ -17,10 +19,12 @@
 
         private bool isStopped = false;
         private readonly string ideVersion;
+        private readonly ISnykOptions options;
 
-        public SnykConsoleRunner(string ideVersion = "")
+        public SnykConsoleRunner(ISnykOptions options, string ideVersion = "")
         {
             this.ideVersion = ideVersion;
+            this.options = options;
         }
 
         /// <summary>
@@ -74,6 +78,11 @@
                 }
             }
 
+            if (!this.options.UsageAnalyticsEnabled || this.options.IsFedramp())
+            {
+                processStartInfo.EnvironmentVariables["SNYK_CFG_DISABLE_ANALYTICS"] = "1";
+            }
+            
             processStartInfo.EnvironmentVariables["SNYK_INTEGRATION_NAME"] = SnykExtension.IntegrationName;
             processStartInfo.EnvironmentVariables["SNYK_INTEGRATION_VERSION"] = SnykExtension.Version;
             processStartInfo.EnvironmentVariables["SNYK_INTEGRATION_ENVIRONMENT_NAME"] = SnykExtension.IntegrationName;

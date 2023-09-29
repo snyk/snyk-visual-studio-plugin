@@ -14,6 +14,8 @@
         /// </summary>
         AuthenticationToken ApiToken { get; }
 
+        bool IsFedramp();
+
         /// <summary>
         /// Gets or sets a value indicating whether CLI custom endpoint parameter.
         /// </summary>
