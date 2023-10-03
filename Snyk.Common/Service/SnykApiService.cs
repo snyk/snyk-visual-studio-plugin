@@ -57,7 +57,9 @@
 
             try
             {
-                return Json.Deserialize<SastSettings>(responseContent);
+                SastSettings sastSettings = Json.Deserialize<SastSettings>(responseContent);
+                this.options.SastSettings = sastSettings;
+                return sastSettings;
             }
             catch (Exception e)
             {

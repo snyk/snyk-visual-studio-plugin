@@ -1,5 +1,10 @@
 # Snyk Changelog
 
+## [1.2.0]
+
+### Added
+- Support for Snyk Code Local Engine
+
 ## [1.1.38]
 
 ### Fixed

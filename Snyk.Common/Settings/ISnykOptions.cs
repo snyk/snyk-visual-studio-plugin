@@ -3,6 +3,7 @@
     using System;
     using System.Threading.Tasks;
     using Snyk.Common.Authentication;
+    using Snyk.Common.Service;
 
     /// <summary>
     /// Interface for Snyk Options/Settings in Visual Studio.
@@ -103,5 +104,7 @@
         /// Force Visual Studio to load Settings from storage.
         /// </summary>
         void LoadSettingsFromStorage();
+
+        SastSettings SastSettings { get; set;  }
     }
 }

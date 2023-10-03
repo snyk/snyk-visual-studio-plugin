@@ -63,6 +63,11 @@
         /// </summary>
         public string GetSnykCodeApiUrl()
         {
+            if (this.IsLocalEngine())
+            {
+                return this.options.SastSettings.LocalCodeEngine.Url + "/";
+            }
+
             var endpoint = ResolveCustomEndpoint(this.options.CustomEndpoint);
             var uri = new Uri(endpoint);
 
@@ -106,5 +111,7 @@
         /// </summary>
         private bool IsSingleTenant(Uri uri) =>
             uri.Host.StartsWith("app") && uri.Host.EndsWith("snyk.io");
+
+        private bool IsLocalEngine() => this.options.SastSettings?.LocalCodeEngineEnabled ?? false;
     }
 }

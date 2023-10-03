@@ -48,9 +48,6 @@
                     case RootTreeNodeState.Error:
                         title = this.GetTitlePrefix() + " (error)";
                         break;
-                    case RootTreeNodeState.LocalCodeEngineIsEnabled:
-                        title = this.GetTitlePrefix() + " (disabled due to Local Code Engine)";
-                        break;
                     case RootTreeNodeState.NoFilesForSnykCodeScan:
                         title = this.GetTitlePrefix() + " (no supported code available)";
                         break;

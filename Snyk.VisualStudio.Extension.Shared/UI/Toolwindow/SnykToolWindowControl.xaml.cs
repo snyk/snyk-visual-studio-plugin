@@ -262,8 +262,7 @@
         {
             await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
 
-            var disabledNodeState = eventArgs.LocalCodeEngineEnabled
-                ? RootTreeNodeState.LocalCodeEngineIsEnabled : RootTreeNodeState.DisabledForOrganization;
+            var disabledNodeState = RootTreeNodeState.DisabledForOrganization;
 
             this.resultsTree.CodeQualityRootNode.State = disabledNodeState;
             this.resultsTree.CodeSecurityRootNode.State = disabledNodeState;
@@ -473,11 +472,6 @@
                 return RootTreeNodeState.Disabled;
             }
 
-            if (sastSettings.LocalCodeEngineEnabled)
-            {
-                return RootTreeNodeState.LocalCodeEngineIsEnabled;
-            }
-
             if (!sastSettings.SastEnabled)
             {
                 return RootTreeNodeState.DisabledForOrganization;
@@ -608,13 +602,6 @@
             if (selectedItem is SnykCodeQualityRootTreeNode || selectedItem is SnykCodeSecurityRootTreeNode)
             {
                 var rootTreeNode = selectedItem as RootTreeNode;
-
-                if (rootTreeNode.State == RootTreeNodeState.LocalCodeEngineIsEnabled)
-                {
-                    this.messagePanel.ShowDisabledDueToLocalCodeEngineMessage();
-
-                    return;
-                }
             }
 
             this.messagePanel.ShowSelectIssueMessage();

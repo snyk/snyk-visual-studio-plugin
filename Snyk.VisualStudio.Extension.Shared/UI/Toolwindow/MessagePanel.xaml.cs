@@ -39,7 +39,6 @@
                 this.messagePanel,
                 this.overviewPanel,
                 this.scanningProjectMessagePanel,
-                this.localCodeEngineIsDisabledPanel,
             };
         }
 
@@ -75,11 +74,6 @@
         /// Show select issue message.
         /// </summary>
         public void ShowSelectIssueMessage() => this.ShowPanel(this.selectIssueMessagePanel);
-
-        /// <summary>
-        /// Shows the "local code engine is disabled" message.
-        /// </summary>
-        public void ShowDisabledDueToLocalCodeEngineMessage() => this.ShowPanel(this.localCodeEngineIsDisabledPanel);
 
         /// <summary>
         /// Show scanning message.

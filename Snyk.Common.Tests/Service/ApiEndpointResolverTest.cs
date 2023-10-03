@@ -81,5 +81,31 @@ namespace Snyk.Common.Tests.Service
             // Assert
             Assert.Equal(AuthenticationType.OAuth, apiEndpointResolver.AuthenticationMethod);
         }
+
+        [Fact]
+        public void ApiEndpointResolver_GetSnykCodeApiUrl_LocalEngine()
+        {
+            SastSettings mockedSettings = new SastSettings
+            {
+                SastEnabled = true,
+                LocalCodeEngine = new LocalCodeEngine
+                {
+                    Enabled = true,
+                    Url = "http://foo.bar/api"
+                }
+            };
+
+
+            var optionsMock = new Mock<ISnykOptions>();
+            optionsMock
+                .Setup(options => options.SastSettings)
+                .Returns(mockedSettings);
+
+            var apiEndpointResolver = new ApiEndpointResolver(optionsMock.Object);
+
+            var snykCodeApiUrl = apiEndpointResolver.GetSnykCodeApiUrl();
+
+            Assert.Equal("http://foo.bar/api/", snykCodeApiUrl);
+        }
     }
 }
