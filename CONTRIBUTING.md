@@ -14,6 +14,10 @@ Please, check the "Visual Studio extension development" checkbox to install exte
 
 ![Visual Studio Installer Visual Studio extension development](./doc/images/Contribution_screenshot_2.png)
 
+## Execute snyk-visual-studio-plugin
+
+Double click on `snyk-visual-studio-plugin.sln` ![snyk-visual-studio-plugin.sln](doc/images/Contribution_screenshot_8.png)
+
 ## Solution organization
 
 Snyk Visual Studio extension consists of several main projects:

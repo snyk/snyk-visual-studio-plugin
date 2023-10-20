@@ -50,6 +50,8 @@
         /// </summary>
         public AuthenticationToken ApiToken => this.apiToken ?? AuthenticationToken.EmptyToken;
 
+        private SastSettings sastSettings;
+
         private string RefreshToken()
         {
             var cli = this.ServiceProvider?.NewCli();
@@ -133,6 +135,20 @@
         /// <inheritdoc/>
         public string SnykCodeSettingsUrl => $"{this.GetAppCustomEndpoint()}/manage/snyk-code";
 
+        public SastSettings SastSettings
+        {
+            get => this.sastSettings;
+
+            set
+            {
+                if (this.sastSettings == value)
+                {
+                    return;
+                }
+
+                this.sastSettings = value;
+            }
+        }
 
         /// <summary>
         /// Gets or sets a value indicating whether organization.

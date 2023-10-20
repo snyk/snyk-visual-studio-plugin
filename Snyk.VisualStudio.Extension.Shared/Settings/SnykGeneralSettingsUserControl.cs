@@ -322,16 +322,7 @@
             this.codeSecurityEnabledCheckBox.Enabled = snykCodeEnabled;
             this.codeQualityEnabledCheckBox.Enabled = snykCodeEnabled;
 
-            if (sastSettings?.LocalCodeEngineEnabled ?? false)
-            {
-                this.snykCodeDisabledInfoLabel.Text =
-                    "Snyk Code is configured to use a Local Code Engine instance. This setup is not yet supported by the extension.";
-
-                this.snykCodeDisabledInfoLabel.Visible = true;
-                this.snykCodeSettingsLinkLabel.Visible = false;
-                this.checkAgainLinkLabel.Visible = false;
-            }
-            else
+            if (!snykCodeEnabled)
             {
                 this.snykCodeDisabledInfoLabel.Text = "Snyk Code is disabled by your organisation\'s configuration:";
 

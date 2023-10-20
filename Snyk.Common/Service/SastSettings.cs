@@ -19,8 +19,7 @@
         /// Gets a value indicating whether Snyk Code enabled.
         /// Snyk Code enabled if SastEnabled = true and LocalCodeEngine.Enabled = false.
         /// </summary>
-        public bool SnykCodeEnabled => this.SastEnabled && !this.LocalCodeEngineEnabled;
-
+        public bool SnykCodeEnabled => this.SastEnabled;
         /// <summary>
         /// Gets a value indicating whether local code engine enabled/disabled.
         /// </summary>
