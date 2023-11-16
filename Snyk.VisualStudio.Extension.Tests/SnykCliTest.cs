@@ -186,7 +186,7 @@
             var cli = new SnykCli(this.optionsMock.Object);
 
             Assert.Equal(
-                "--json test --insecure --org=test-snyk-organization --ignore-policy --all-projects",
+                "--json test --org=test-snyk-organization --insecure --ignore-policy --all-projects",
                 await cli.BuildScanArgumentsAsync());
         }
 

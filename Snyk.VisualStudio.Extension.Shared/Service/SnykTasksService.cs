@@ -21,7 +21,7 @@
     /// <summary>
     /// Incapsulate logic with background tasks work.
     /// </summary>
-    public class SnykTasksService
+    public class SnykTasksService : ISnykScanTopicProvider
     {
         private static readonly ILogger Logger = LogManager.ForContext<SnykTasksService>();
 
@@ -222,7 +222,6 @@
                 }
 
                 this.serviceProvider.AnalyticsService.LogAnalysisIsTriggeredEvent(this.GetSelectedFeatures(selectedFeatures));
-
                 var ossScanTask = this.ScanOssAsync(selectedFeatures);
                 var snykCodeScanTask = this.ScanSnykCodeAsync(selectedFeatures);
 
@@ -423,14 +422,16 @@
         /// Fire error event with <see cref="SnykCodeScanEventArgs"/>.
         /// </summary>
         /// <param name="message">Error message</param>
-        public void OnSnykCodeError(string message) => this.SnykCodeScanError?.Invoke(this, new SnykCodeScanEventArgs(message));
+        public void OnSnykCodeError(string message) =>
+            this.SnykCodeScanError?.Invoke(this, new SnykCodeScanEventArgs(message));
 
         /// <summary>
         /// Fire SnykCode disabled event with <see cref="SnykCodeScanEventArgs"/>.
         /// </summary>
         /// <param name="localCodeEngineEnabled">Send local code engine enabled/disabled on server in event.</param>
         public void FireSnykCodeDisabledError(bool localCodeEngineEnabled)
-            => this.SnykCodeDisabled?.Invoke(this, new SnykCodeScanEventArgs { LocalCodeEngineEnabled = localCodeEngineEnabled, });
+            => this.SnykCodeDisabled?.Invoke(this,
+                new SnykCodeScanEventArgs { LocalCodeEngineEnabled = localCodeEngineEnabled, });
 
         /// <summary>
         /// Fire download started.
@@ -447,13 +448,15 @@
         /// <summary>
         /// Fire download finished event.
         /// </summary>
-        protected internal void OnDownloadFinished() => this.DownloadFinished?.Invoke(this, new SnykCliDownloadEventArgs());
+        protected internal void OnDownloadFinished() =>
+            this.DownloadFinished?.Invoke(this, new SnykCliDownloadEventArgs());
 
         /// <summary>
         /// Fire download cancelled event.
         /// </summary>
         /// <param name="message">Cancel message.</param>
-        protected internal void OnDownloadCancelled(string message) => this.DownloadCancelled?.Invoke(this, new SnykCliDownloadEventArgs(message));
+        protected internal void OnDownloadCancelled(string message) =>
+            this.DownloadCancelled?.Invoke(this, new SnykCliDownloadEventArgs(message));
 
         /// <summary>
         /// Fire download cancelled event.
@@ -465,7 +468,8 @@
         /// Fire download update (on download progress update) event.
         /// </summary>
         /// <param name="progress">Donwload progress form 0..100$.</param>
-        protected internal void OnDownloadUpdate(int progress) => this.DownloadUpdate?.Invoke(this, new SnykCliDownloadEventArgs(progress));
+        protected internal void OnDownloadUpdate(int progress) =>
+            this.DownloadUpdate?.Invoke(this, new SnykCliDownloadEventArgs(progress));
 
         private static void DisposeCancellationTokenSource(CancellationTokenSource tokenSource)
         {
@@ -625,7 +629,8 @@
 
                 var fileProvider = this.serviceProvider.SolutionService.FileProvider;
 
-                var analysisResult = await this.serviceProvider.SnykCodeService.ScanAsync(fileProvider, cancellationToken);
+                var analysisResult =
+                    await this.serviceProvider.SnykCodeService.ScanAsync(fileProvider, cancellationToken);
 
                 this.FireScanningUpdateEvent(analysisResult);
 
@@ -692,31 +697,36 @@
         /// <summary>
         /// Fire SnykCode scanning started event.
         /// </summary>
-        private void FireSnykCodeScanningStartedEvent() => this.SnykCodeScanningStarted?.Invoke(this, new SnykCodeScanEventArgs());
+        private void FireSnykCodeScanningStartedEvent() =>
+            this.SnykCodeScanningStarted?.Invoke(this, new SnykCodeScanEventArgs());
 
         /// <summary>
         /// Fire scanning update with <see cref="SnykCliScanEventArgs"/> object.
         /// </summary>
         /// <param name="cliResult"><see cref="CliResult"/> object with vulnerabilities.</param>
-        private void FireOssScanningUpdateEvent(CliResult cliResult) => this.OssScanningUpdate?.Invoke(this, new SnykCliScanEventArgs(cliResult));
+        private void FireOssScanningUpdateEvent(CliResult cliResult) =>
+            this.OssScanningUpdate?.Invoke(this, new SnykCliScanEventArgs(cliResult));
 
         /// <summary>
         /// Fire scanning update with <see cref="SnykCodeScanEventArgs"/> object.
         /// </summary>
         /// <param name="analysisResult"><see cref="AnalysisResult"/> object with vulnerabilities.</param>
-        private void FireScanningUpdateEvent(AnalysisResult analysisResult) => this.SnykCodeScanningUpdate?.Invoke(this, new SnykCodeScanEventArgs(analysisResult));
+        private void FireScanningUpdateEvent(AnalysisResult analysisResult) =>
+            this.SnykCodeScanningUpdate?.Invoke(this, new SnykCodeScanEventArgs(analysisResult));
 
         /// <summary>
         /// Fire OSS scanning finished event.
         /// </summary>
         private void FireOssScanningFinishedEvent()
-            => this.OssScanningFinished?.Invoke(this, new SnykCliScanEventArgs { SnykCodeScanRunning = this.isSnykCodeScanning });
+            => this.OssScanningFinished?.Invoke(this,
+                new SnykCliScanEventArgs { SnykCodeScanRunning = this.isSnykCodeScanning });
 
         /// <summary>
         /// Fire SnykCode scanning finished event.
         /// </summary>
         private void FireSnykCodeScanningFinishedEvent()
-            => this.SnykCodeScanningFinished?.Invoke(this, new SnykCodeScanEventArgs { OssScanRunning = this.isOssScanning });
+            => this.SnykCodeScanningFinished?.Invoke(this,
+                new SnykCodeScanEventArgs { OssScanRunning = this.isOssScanning });
 
         /// <summary>
         /// Fire scanning cancelled event.
@@ -787,7 +797,8 @@
             }
         }
 
-        private async Task DownloadAsync(CliDownloadFinishedCallback downloadFinishedCallback, ISnykProgressWorker progressWorker)
+        private async Task DownloadAsync(CliDownloadFinishedCallback downloadFinishedCallback,
+            ISnykProgressWorker progressWorker)
         {
             var userSettingsStorageService = this.serviceProvider.UserStorageSettingsService;
             if (!userSettingsStorageService.BinariesAutoUpdate)
@@ -832,6 +843,58 @@
                 this.isCliDownloading = false;
             }
         }
+    }
 
+    public interface ISnykScanTopicProvider
+    {
+        /// <summary>
+        /// Cli scanning started event handler.
+        /// </summary>
+        public event EventHandler<SnykCliScanEventArgs> CliScanningStarted;
+
+        /// <summary>
+        /// SnykCode scanning started event handler.
+        /// </summary>
+        public event EventHandler<SnykCodeScanEventArgs> SnykCodeScanningStarted;
+
+        /// <summary>
+        /// Scanning OSS finished event handler.
+        /// </summary>
+        public event EventHandler<SnykCliScanEventArgs> OssScanningFinished;
+
+        /// <summary>
+        /// Scanning SnykCode finished event handler.
+        /// </summary>
+        public event EventHandler<SnykCodeScanEventArgs> SnykCodeScanningFinished;
+
+        /// <summary>
+        /// Cli Scanning update event handler.
+        /// </summary>
+        public event EventHandler<SnykCliScanEventArgs> OssScanningUpdate;
+
+        /// <summary>
+        /// SnykCode scanning update event handler.
+        /// </summary>
+        public event EventHandler<SnykCodeScanEventArgs> SnykCodeScanningUpdate;
+
+        /// <summary>
+        /// Sli scan error event handler.
+        /// </summary>
+        public event EventHandler<SnykCliScanEventArgs> OssScanError;
+
+        /// <summary>
+        /// SnykCode scan error event handler.
+        /// </summary>
+        public event EventHandler<SnykCodeScanEventArgs> SnykCodeScanError;
+
+        /// <summary>
+        /// SnykCode disabled event handler.
+        /// </summary>
+        public event EventHandler<SnykCodeScanEventArgs> SnykCodeDisabled;
+
+        /// <summary>
+        /// Scanning cancelled event handler.
+        /// </summary>
+        public event EventHandler<SnykCliScanEventArgs> ScanningCancelled;
     }
 }

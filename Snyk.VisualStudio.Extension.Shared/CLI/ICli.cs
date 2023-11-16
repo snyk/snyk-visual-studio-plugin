@@ -47,5 +47,6 @@
         void Authenticate();
 
         string RunCommand(string basePath);
+        Task ReportAnalyticsAsync(string data);
     }
 }

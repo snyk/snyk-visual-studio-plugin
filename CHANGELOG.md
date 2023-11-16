@@ -1,5 +1,8 @@
 # Snyk Changelog
 
+## [1.1.44]
+- Support for IDE analytics
+
 ## [1.1.43]
 
 ### Added

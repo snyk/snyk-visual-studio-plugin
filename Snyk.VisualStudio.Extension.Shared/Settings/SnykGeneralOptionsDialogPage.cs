@@ -23,6 +23,14 @@
     [ComVisible(true)]
     public class SnykGeneralOptionsDialogPage : DialogPage, ISnykOptions
     {
+        
+        public String Application { get; set; }
+        public String ApplicationVersion { get; set; }
+        public String IntegrationName { get; } = SnykExtension.IntegrationName;
+        public String IntegrationVersion { get; } = SnykExtension.Version;
+        public String IntegrationEnvironment { get; set; }
+        public String IntegrationEnvironmentVersion { get; set;}
+        
         private ISnykServiceProvider serviceProvider;
 
         private SnykUserStorageSettingsService userStorageSettingsService;
