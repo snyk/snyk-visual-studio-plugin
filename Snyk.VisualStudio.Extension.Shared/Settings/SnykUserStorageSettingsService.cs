@@ -205,8 +205,23 @@
         /// <summary>
         /// Get Sentry anonymous user id.
         /// </summary>
-        /// <returns>String Sentry anonymous user id.</returns>
-        public string GetAnonymousId() => this.settingsLoader.Load()?.AnonymousId;
+        /// <returns>String anonymous user id.</returns>
+        public string GetAnonymousId()
+        {
+            var snykSettings = settingsLoader.Load();
+            if (snykSettings == null)
+            {
+                snykSettings = new SnykSettings();
+            }
+
+            if (string.IsNullOrEmpty(snykSettings.AnonymousId))
+            {
+                snykSettings.AnonymousId = System.Guid.NewGuid().ToString();
+                settingsLoader.Save(snykSettings);
+            }
+
+            return snykSettings.AnonymousId;
+        }
 
         /// <summary>
         /// Get current CLI version.
@@ -350,6 +365,7 @@
             return settings;
         }
 
-        private async Task<int> GetSolutionPathHashAsync() => (await this.solutionService.GetSolutionFolderAsync()).ToLower().GetHashCode();
+        private async Task<int> GetSolutionPathHashAsync() =>
+            (await this.solutionService.GetSolutionFolderAsync()).ToLower().GetHashCode();
     }
 }

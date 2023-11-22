@@ -1,4 +1,6 @@
-﻿namespace Snyk.VisualStudio.Extension.Shared
+﻿using Snyk.Common.Settings;
+
+namespace Snyk.VisualStudio.Extension.Shared
 {
     using System;
     using System.Diagnostics.CodeAnalysis;
@@ -48,7 +50,7 @@
     [ProvideToolWindow(typeof(SnykToolWindow), Style = VsDockStyle.Tabbed)]
     [ProvideOptionPage(typeof(SnykGeneralOptionsDialogPage), "Snyk", "General settings", 1000, 1001, true)]
     [ProvideOptionPage(typeof(SnykSolutionOptionsDialogPage), "Snyk", "Solution settings", 1000, 1002, true)]
-    public sealed class SnykVSPackage : AsyncPackage
+    public sealed class SnykVSPackage : AsyncPackage, ISnykOptionsProvider
     {
         /// <summary>
         /// SnykVSPackage GUID string.
@@ -91,6 +93,11 @@
         /// Gets a value indicating whether general Options dialog.
         /// </summary>
         public SnykGeneralOptionsDialogPage GeneralOptionsDialogPage { get; private set; }
+        
+        // <summary>
+        /// Gets the Options
+        /// </summary>
+        public ISnykOptions Options => GeneralOptionsDialogPage;
 
         /// <summary>
         /// Gets <see cref="SnykToolWindow"/> instance.
@@ -184,7 +191,7 @@
 
                 Logger.Information("Get SnykService as ServiceProvider.");
                 Logger.Information("Start InitializeGeneralOptionsAsync.");
-
+                
                 await InitializeGeneralOptionsAsync();
 
                 // Initialize analytics
@@ -252,6 +259,12 @@
                 Logger.Information("Call generalOptionsDialogPage.Initialize()");
 
                 GeneralOptionsDialogPage.Initialize(this.serviceProvider);
+                var readableVsVersion = await this.GetReadableVsVersion();
+                var vsMajorMinorVersion = await this.GetVsMajorMinorVersion();
+                GeneralOptionsDialogPage.Application = readableVsVersion;
+                GeneralOptionsDialogPage.ApplicationVersion = vsMajorMinorVersion;
+                GeneralOptionsDialogPage.IntegrationEnvironment = readableVsVersion;
+                GeneralOptionsDialogPage.IntegrationEnvironmentVersion = vsMajorMinorVersion;
             }
         }
 
@@ -310,5 +323,11 @@
                 return "Unknown Visual Studio version";
             }
         }
+    }
+
+    // Interface to enable testing with mocks
+    public interface ISnykOptionsProvider
+    {
+        ISnykOptions Options { get; }
     }
 }

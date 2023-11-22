@@ -9,6 +9,8 @@
     <Import_RootNamespace>Snyk.VisualStudio.Extension.Shared</Import_RootNamespace>
   </PropertyGroup>
   <ItemGroup>
+    <Compile Include="$(MSBuildThisFileDirectory)analytics\ScanDoneEvent.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)analytics\SnykIDEAnalyticsService.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)CLI\Download\ChecksumVerificationException.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Cache\AbstractCacheHierarchyEvents.cs">
       <CopyToOutputDirectory>Never</CopyToOutputDirectory>
@@ -17,6 +19,7 @@
       <CopyToOutputDirectory>Never</CopyToOutputDirectory>
     </Compile>
     <Compile Include="$(MSBuildThisFileDirectory)CLI\ICli.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)CLI\ICliProvider.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)CLI\InvalidTokenException.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Commands\AbstractTaskCommand.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Microsoft\HtmlParser\CssStylesheet.cs" />

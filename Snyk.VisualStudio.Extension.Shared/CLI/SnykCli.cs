@@ -7,13 +7,10 @@
     using System.Security.Authentication;
     using System.Threading.Tasks;
     using Serilog;
-    using Snyk.Common;
-    using Snyk.Common.Authentication;
+    using Common;
+    using Common.Authentication;
     using Snyk.Common.Service;
     using Snyk.Common.Settings;
-    using Snyk.VisualStudio.Extension.Shared.Service;
-    using Snyk.VisualStudio.Extension.Shared.Settings;
-    using Snyk.VisualStudio.Extension.Shared.UI.Notifications;
 
     /// <summary>
     /// Incapsulate work logic with Snyk CLI.
@@ -45,14 +42,8 @@
         /// </summary>
         public ISnykOptions Options
         {
-            get
-            {
-                return this.options;
-            }
-            set
-            {
-                this.options = value;
-            }
+            get { return this.options; }
+            set { this.options = value; }
         }
 
         /// <inheritdoc/>
@@ -144,12 +135,12 @@
             {
                 args.Add("--auth-type=oauth");
                 environmentVariables.Add("INTERNAL_SNYK_OAUTH_ENABLED", "1");
-
             }
 
             environmentVariables.Add(ApiEnvironmentVariableName, apiEndpointResolver.SnykApiEndpoint);
 
-            var authResultMessage = this.ConsoleRunner.Run(this.GetCliPath(), string.Join(" ", args), environmentVariables);
+            var authResultMessage =
+                this.ConsoleRunner.Run(this.GetCliPath(), string.Join(" ", args), environmentVariables);
             var authenticated = authResultMessage.Contains("Your account has been authenticated.");
             if (authenticated)
             {
@@ -165,23 +156,20 @@
         /// <inheritdoc/>
         public async Task<CliResult> ScanAsync(string basePath)
         {
-            Logger.Information("Path to scan {BasePath}", basePath);
-
             var cliPath = this.GetCliPath();
 
+            Logger.Information("Path to scan {BasePath}", basePath);
             Logger.Information("CLI path is {CliPath}", cliPath);
 
             var arguments = await this.BuildScanArgumentsAsync();
-
-            this.ConsoleRunner.CreateProcess(cliPath, arguments, this.BuildScanEnvironmentVariables(), basePath);
+            ConsoleRunner.CreateProcess(cliPath, arguments, this.BuildScanEnvironmentVariables(), basePath);
 
             Logger.Information("Start run console process");
-
             var consoleResult = this.ConsoleRunner.Execute();
 
             Logger.Information("Start convert console string result to CliResult and return value");
-
-            return ConvertRawCliStringToCliResult(consoleResult);
+            var result = ConvertRawCliStringToCliResult(consoleResult);
+            return result;
         }
 
         /// <inheritdoc/>
@@ -204,6 +192,25 @@
             Logger.Information("Start convert console string result to CliResult and return value");
 
             return consoleResult;
+        }
+
+        public async Task ReportAnalyticsAsync(string data)
+        {
+            var escapedData = "\"" + data.Replace("\"", "\\\"") + "\"";
+            List<string> args = new()
+            {
+                "analytics",
+                "report",
+                "--experimental",
+                "-i",
+                escapedData
+            };
+            await AddGeneralArgsFromConfigAsync(args);
+            ConsoleRunner.CreateProcess(GetCliPath(), string.Join(" ", args),
+                BuildScanEnvironmentVariables());
+
+            var result = ConsoleRunner.Execute();
+            if (result.Length > 0) Logger.Warning("ReportAnalyticsAsync: Unexpected output: {Result}", result);
         }
 
         private string GetCliPath()
@@ -233,7 +240,7 @@
 
             var apiEndpointResolver = new ApiEndpointResolver(this.options);
             environmentVariables.Add(ApiEnvironmentVariableName, apiEndpointResolver.SnykApiEndpoint);
-            
+
             return environmentVariables;
         }
 
@@ -251,22 +258,7 @@
                 "test",
             };
 
-            if (this.Options.IgnoreUnknownCA)
-            {
-                arguments.Add("--insecure");
-            }
-
-            if (!string.IsNullOrEmpty(this.Options.Organization))
-            {
-                arguments.Add($"--org={this.Options.Organization}");
-            }
-
-            var additionalOptions = await this.Options.GetAdditionalOptionsAsync();
-
-            if (!string.IsNullOrEmpty(additionalOptions))
-            {
-                arguments.Add($"{additionalOptions}");
-            }
+            await AddGeneralArgsFromConfigAsync(arguments);
 
             var isScanAllProjects = await this.Options.IsScanAllProjectsAsync();
 
@@ -281,6 +273,26 @@
             Logger.Information("Leave BuildArguments method");
 
             return cliOptions;
+        }
+
+        private async Task AddGeneralArgsFromConfigAsync(ICollection<string> arguments)
+        {
+            if (!string.IsNullOrEmpty(this.Options.Organization))
+            {
+                arguments.Add($"--org={this.Options.Organization}");
+            }
+
+            if (this.Options.IgnoreUnknownCA)
+            {
+                arguments.Add("--insecure");
+            }
+
+            var additionalOptions = await this.Options.GetAdditionalOptionsAsync();
+
+            if (!string.IsNullOrEmpty(additionalOptions))
+            {
+                arguments.Add($"{additionalOptions}");
+            }
         }
 
         /// <summary>
@@ -299,7 +311,8 @@
                 {
                     CliVulnerabilitiesList = Json.Deserialize<List<CliVulnerabilities>>(rawResult),
                 };
-            } else if (rawResult.First() == '{')
+            }
+            else if (rawResult.First() == '{')
             {
                 if (IsSuccessCliJsonString(rawResult))
                 {
@@ -311,14 +324,16 @@
                     {
                         CliVulnerabilitiesList = cliVulnerabilitiesList,
                     };
-                } else
+                }
+                else
                 {
                     return new CliResult
                     {
                         Error = Json.Deserialize<CliError>(rawResult),
                     };
                 }
-            } else
+            }
+            else
             {
                 return new CliResult
                 {
@@ -337,6 +352,7 @@
         /// </summary>
         /// <param name="json">Source json string.</param>
         /// <returns>True if json string contains vulnerabilities object(s).</returns>
-        public static bool IsSuccessCliJsonString(string json) => json.Contains("\"vulnerabilities\":") && !json.Contains("\"error\":");
+        public static bool IsSuccessCliJsonString(string json) =>
+            json.Contains("\"vulnerabilities\":") && !json.Contains("\"error\":");
     }
 }

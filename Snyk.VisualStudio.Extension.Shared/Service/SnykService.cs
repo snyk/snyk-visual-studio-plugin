@@ -1,41 +1,32 @@
-﻿using Microsoft.VisualStudio.Shell;
-
-namespace Snyk.VisualStudio.Extension.Shared.Service
+﻿namespace Snyk.VisualStudio.Extension.Shared.Service
 {
     using System;
     using System.IO;
-    using System.Linq;
-    using System.Reflection;
     using System.Threading;
     using System.Threading.Tasks;
-    using System.Xml;
-    using System.Xml.Linq;
     using EnvDTE;
     using EnvDTE80;
     using Microsoft.VisualStudio.Settings;
-    using Microsoft.VisualStudio.Shell.Interop;
+    using Microsoft.VisualStudio.Shell;
     using Microsoft.VisualStudio.Shell.Settings;
-    using Newtonsoft.Json.Linq;
     using Serilog;
-    using Snyk.Analytics;
+    using Analytics;
     using Snyk.Code.Library.Service;
-    using Snyk.Common;
-    using Snyk.Common.Authentication;
+    using Common;
     using Snyk.Common.Service;
     using Snyk.Common.Settings;
-    using Snyk.VisualStudio.Extension.Shared.CLI;
-    using Snyk.VisualStudio.Extension.Shared.Settings;
-    using Snyk.VisualStudio.Extension.Shared.Theme;
-    using Snyk.VisualStudio.Extension.Shared.UI;
-    using Snyk.VisualStudio.Extension.Shared.UI.Notifications;
-    using Snyk.VisualStudio.Extension.Shared.UI.Toolwindow;
-    using IAsyncServiceProvider = Microsoft.VisualStudio.Shell.IAsyncServiceProvider;
+    using CLI;
+    using Settings;
+    using Theme;
+    using UI;
+    using UI.Notifications;
+    using UI.Toolwindow;
     using Task = System.Threading.Tasks.Task;
-
+    
     /// <summary>
     /// Main logic for Snyk extension.
     /// </summary>
-    public class SnykService : ISnykServiceProvider, ISnykService
+    public class SnykService : ISnykServiceProvider, ISnykService, ICliProvider
     {
         private static readonly ILogger Logger = LogManager.ForContext<SnykService>();
 
@@ -50,6 +41,8 @@ namespace Snyk.VisualStudio.Extension.Shared.Service
         private DTE2 dte;
 
         private ISnykAnalyticsService analyticsService;
+
+        private SnykIdeAnalyticsService ideAnalyticsService;
 
         private SnykUserStorageSettingsService userStorageSettingsService;
 
@@ -119,6 +112,20 @@ namespace Snyk.VisualStudio.Extension.Shared.Service
         /// </summary>
         public SnykVsThemeService VsThemeService => this.vsThemeService;
 
+        public SnykIdeAnalyticsService SnykIdeAnalyticsService
+        {
+            get
+            {
+                if (ideAnalyticsService == null)
+                {
+                    ideAnalyticsService =
+                        new SnykIdeAnalyticsService(Package,  this, TasksService);
+                }
+
+                return ideAnalyticsService;
+            }
+        }
+
         /// <summary>
         /// Gets Analytics service instance. If analytics service not created yet it will create it and return.
         /// </summary>
@@ -135,7 +142,8 @@ namespace Snyk.VisualStudio.Extension.Shared.Service
                     {
                         Logger.Information("Notifying analytics service after settings change");
                         this.InitializeAnalyticsService();
-                        ThreadHelper.JoinableTaskFactory.Run(async () => await this.analyticsService.ObtainUserAsync(this.Options.ApiToken));
+                        ThreadHelper.JoinableTaskFactory.Run(async () =>
+                            await this.analyticsService.ObtainUserAsync(this.Options.ApiToken));
                         Logger.Information("Analytics service re-initialized");
                     };
                 }
@@ -230,7 +238,8 @@ namespace Snyk.VisualStudio.Extension.Shared.Service
         /// </summary>
         /// <param name="serviceType">Needed service type.</param>
         /// <returns>Result VS service instance</returns>
-        public async Task<object> GetServiceAsync(Type serviceType) => await this.serviceProvider.GetServiceAsync(serviceType);
+        public async Task<object> GetServiceAsync(Type serviceType) =>
+            await this.serviceProvider.GetServiceAsync(serviceType);
 
         /// <summary>
         /// Initialize service.
@@ -260,7 +269,8 @@ namespace Snyk.VisualStudio.Extension.Shared.Service
                 NotificationService.Initialize(this);
                 VsStatusBar.Initialize(this);
                 VsCodeService.Initialize();
-
+                
+                SnykIdeAnalyticsService.Initialize();
                 Logger.Information("Leave SnykService.InitializeAsync");
             }
             catch (Exception ex)
@@ -301,17 +311,13 @@ namespace Snyk.VisualStudio.Extension.Shared.Service
                 Logger.Error(e, string.Empty);
             }
         }
+
         private void InitializeAnalyticsService()
         {
             Logger.Information("Initialize Analytics Service...");
             var writeKey = SnykExtension.AppSettings?.SegmentAnalyticsWriteKey;
 
             string anonymousId = this.Options.AnonymousId;
-            if (string.IsNullOrEmpty(anonymousId))
-            {
-                anonymousId = System.Guid.NewGuid().ToString();
-                this.Options.AnonymousId = anonymousId;
-            }
 
             var enabled = this.Options.UsageAnalyticsEnabled && !this.Options.IsFedramp();
             var endpoint = this.ApiEndpointResolver.UserMeEndpoint;
@@ -321,5 +327,7 @@ namespace Snyk.VisualStudio.Extension.Shared.Service
             this.analyticsService = SnykAnalyticsService.Instance;
             Logger.Information("Analytics service initialized");
         }
+
+        public ICli Cli => NewCli();
     }
 }

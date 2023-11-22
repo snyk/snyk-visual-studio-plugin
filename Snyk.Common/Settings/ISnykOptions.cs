@@ -10,6 +10,13 @@
     /// </summary>
     public interface ISnykOptions
     {
+        String Application { get; set; }
+        String ApplicationVersion { get; set; }
+        String IntegrationName { get; }
+        String IntegrationVersion { get; }
+        String IntegrationEnvironment { get; set; }
+        String IntegrationEnvironmentVersion { get; set; }
+
         /// <summary>
         /// Gets or sets a value indicating whether Snyk user API token.
         /// </summary>
@@ -105,6 +112,6 @@
         /// </summary>
         void LoadSettingsFromStorage();
 
-        SastSettings SastSettings { get; set;  }
+        SastSettings SastSettings { get; set; }
     }
 }
