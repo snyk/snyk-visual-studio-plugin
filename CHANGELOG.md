@@ -1,5 +1,10 @@
 # Snyk Changelog
 
+## [1.1.45]
+
+### Changed
+- Streamlined `.dcignore` to avoid accidental exclusion of project files.
+
 ## [1.1.44]
 - Support for IDE analytics
 
