@@ -319,7 +319,7 @@
 
             string anonymousId = this.Options.AnonymousId;
 
-            var enabled = this.Options.UsageAnalyticsEnabled && !this.Options.IsFedramp();
+            var enabled = this.Options.UsageAnalyticsEnabled && this.Options.IsAnalyticsPermitted();
             var endpoint = this.ApiEndpointResolver.UserMeEndpoint;
 
             Logger.Information("analytics enabled = {Enabled}, endpoint = {Endpoint}", enabled, endpoint);

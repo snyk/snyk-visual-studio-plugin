@@ -2,6 +2,7 @@
 {
     using System;
     using System.IO;
+    using System.Linq;
     using System.Runtime.InteropServices;
     using System.Security.Authentication;
     using System.Threading.Tasks;
@@ -109,6 +110,18 @@
 
             var endpointUri = new Uri(endpoint);
             return endpointUri.Host.ToLower().EndsWith("snykgov.io");
+        }
+
+        /// <summary>
+        /// Checks if the current endpoint permits sending external analytics events
+        /// </summary>
+        /// <returns></returns>
+        public bool IsAnalyticsPermitted()
+        {
+            var endpointUri = new Uri(this.GetAppCustomEndpoint());
+
+            string[] permittedHosts = ["app.snyk.io", "app.us.snyk.io"];
+            return permittedHosts.Contains(endpointUri.Host.ToLower());
         }
 
         /// <summary>

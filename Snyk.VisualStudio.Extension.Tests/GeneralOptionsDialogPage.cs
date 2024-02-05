@@ -26,5 +26,41 @@
             // Assert
             cliMock.Verify(mock => mock.UnsetApiToken());
         }
+
+        [Fact]
+        public void IsAnalyticsPermitted_True()
+        {
+            var optionsDialogPage = new SnykGeneralOptionsDialogPage();
+
+            string[] endpoints = {
+                "https://app.snyk.io/api",
+                "https://snyk.io/api",
+                "https://app.us.snyk.io/api",
+            };
+
+            foreach (var endpoint in endpoints)
+            {
+                optionsDialogPage.CustomEndpoint = endpoint;
+                Assert.True(optionsDialogPage.IsAnalyticsPermitted());
+            }
+        }
+
+        [Fact]
+        public void IsAnalyticsPermitted_False()
+        {
+            var optionsDialogPage = new SnykGeneralOptionsDialogPage();
+
+            string[] endpoints = {
+                "https://app.eu.snyk.io/api",
+                "https://app.au.snyk.io/api",
+                "https://app.snykgov.io/api",
+            };
+
+            foreach (var endpoint in endpoints)
+            {
+                optionsDialogPage.CustomEndpoint = endpoint;
+                Assert.False(optionsDialogPage.IsAnalyticsPermitted());
+            }
+        }
     }
 }
