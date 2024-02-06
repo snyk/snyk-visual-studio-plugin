@@ -401,11 +401,11 @@
             var endpoint = this.customEndpoint.IsNullOrEmpty() ? "https://app.snyk.io" : this.customEndpoint.RemoveTrailingSlashes();
             Uri uri = new Uri(endpoint);
 
-            if (!uri.Host.StartsWith("app") && uri.Host.EndsWith("snyk.io"))
+            if (!uri.Host.StartsWith("app") && (uri.Host.EndsWith("snyk.io") || uri.Host.EndsWith("snykgov.io")))
             {
                 return endpoint.Replace("https://", "https://app.").RemoveFromEnd("api");
             }
-            else if (uri.Host.StartsWith("app") && uri.Host.EndsWith("snyk.io"))
+            else if (uri.Host.StartsWith("app") && (uri.Host.EndsWith("snyk.io") || uri.Host.EndsWith("snykgov.io")))
             {
                 return endpoint.RemoveFromEnd("api");
             }
