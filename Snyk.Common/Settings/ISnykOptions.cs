@@ -24,6 +24,8 @@
 
         bool IsFedramp();
 
+        bool IsAnalyticsPermitted();
+
         /// <summary>
         /// Gets or sets a value indicating whether CLI custom endpoint parameter.
         /// </summary>

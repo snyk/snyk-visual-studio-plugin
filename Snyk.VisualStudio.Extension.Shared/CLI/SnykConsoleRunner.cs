@@ -78,7 +78,7 @@ namespace Snyk.VisualStudio.Extension.Shared.CLI
                 }
             }
 
-            if (!this.options.UsageAnalyticsEnabled || this.options.IsFedramp())
+            if (!this.options.UsageAnalyticsEnabled || !this.options.IsAnalyticsPermitted())
             {
                 processStartInfo.EnvironmentVariables["SNYK_CFG_DISABLE_ANALYTICS"] = "1";
             }

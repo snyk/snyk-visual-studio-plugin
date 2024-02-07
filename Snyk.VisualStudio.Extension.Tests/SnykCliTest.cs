@@ -28,6 +28,10 @@
                 .Returns(false);
 
             this.optionsMock
+                .Setup(options => options.IsAnalyticsPermitted())
+                .Returns(true);
+
+            this.optionsMock
                 .Setup(options => options.ApiToken)
                 .Returns(AuthenticationToken.EmptyToken);
         }

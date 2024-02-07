@@ -1,5 +1,8 @@
 # Snyk Changelog
 
+## [1.1.46]
+- Only send Amplitude analytics events when connected to an MT US environment
+
 ## [1.1.45]
 
 ### Changed
