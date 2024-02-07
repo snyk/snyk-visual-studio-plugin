@@ -118,7 +118,7 @@
         /// <returns></returns>
         public bool IsAnalyticsPermitted()
         {
-            var endpointUri = new Uri(this.GetAppCustomEndpoint());
+            var endpointUri = new Uri(this.GetBaseAppURL());
 
             string[] permittedHosts = ["app.snyk.io", "app.us.snyk.io"];
             return permittedHosts.Contains(endpointUri.Host.ToLower());
@@ -154,7 +154,7 @@
         }
 
         /// <inheritdoc/>
-        public string SnykCodeSettingsUrl => $"{this.GetAppCustomEndpoint()}/manage/snyk-code";
+        public string SnykCodeSettingsUrl => $"{this.GetBaseAppURL()}/manage/snyk-code";
 
         public SastSettings SastSettings
         {
@@ -396,22 +396,22 @@
 
         private void FireSettingsChangedEvent() => this.SettingsChanged?.Invoke(this, new SnykSettingsChangedEventArgs());
 
-        private string GetAppCustomEndpoint()
+        private string GetBaseAppURL()
         {
             var endpoint = this.customEndpoint.IsNullOrEmpty() ? "https://app.snyk.io" : this.customEndpoint.RemoveTrailingSlashes();
             Uri uri = new Uri(endpoint);
 
             if (!uri.Host.StartsWith("app") && (uri.Host.EndsWith("snyk.io") || uri.Host.EndsWith("snykgov.io")))
             {
-                return endpoint.Replace("https://", "https://app.").RemoveFromEnd("api");
+                return endpoint.Replace("https://", "https://app.").RemoveFromEnd("/api");
             }
             else if (uri.Host.StartsWith("app") && (uri.Host.EndsWith("snyk.io") || uri.Host.EndsWith("snykgov.io")))
             {
-                return endpoint.RemoveFromEnd("api");
+                return endpoint.RemoveFromEnd("/api");
             }
             else
             {
-                return "https://app.snyk.io/";
+                return "https://app.snyk.io";
             }
         }
 
