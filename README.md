@@ -56,7 +56,7 @@ You can install the Snyk extension directly from the IDE; open **Extensions > Ma
 
 <figure><img src="https://github.com/snyk/user-docs/raw/HEAD/docs/.gitbook/assets/readme_image_2_1_1.png" alt="Manage extensions menu"><figcaption><p>Manage extensions menu</p></figcaption></figure>
 
-Search for _Snyk_ and select **Download** to download the Snyk Security - Code and Open Source Dependencies extension.
+Search for _Snyk_ and select **Download** to download the Snyk Security extension.
 
 After you install, use Snyk through the **Extensions > Snyk** menu. (On Visual Studio versions older than 2019, Snyk is part of the top menu bar).
 

@@ -2,7 +2,7 @@
 
 ### Introduction
 
-Snyk Security - Code and Open Source Dependencies extension helps you find and fix security vulnerabilities in your projects. Within a few seconds, the extension will provide a list of all the different types of issues identified, bucketed into categories, together with actionable fix advice:
+Snyk Security extension helps you find and fix security vulnerabilities in your projects. Within a few seconds, the extension will provide a list of all the different types of issues identified, bucketed into categories, together with actionable fix advice:
 
 - Open Source Security - known vulnerabilities in both the direct and in-direct (transitive) open source dependencies you are pulling into the project.
 
