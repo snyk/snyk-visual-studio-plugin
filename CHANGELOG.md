@@ -1,4 +1,9 @@
-# Snyk Changelog
+# Snyk Security Changelog
+
+## [1.1.47]
+
+### Fixed
+- shortened extension name to just Snyk Security
 
 ## [1.1.46]
 - Only send Amplitude analytics events when connected to an MT US environment
