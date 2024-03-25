@@ -1,5 +1,10 @@
 # Snyk Security Changelog
 
+## [1.1.48]
+
+### Fixed
+- Upgraded the version of Newtonsoft dependency.
+
 ## [1.1.47]
 
 ### Fixed
