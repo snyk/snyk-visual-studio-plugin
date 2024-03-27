@@ -1,16 +1,21 @@
 # Snyk Security Changelog
 
-## [1.1.48]
+## [1.1.50]
+
+### Fixed
+- Upgraded the version of the Analytics dependency.
+
+## [1.1.49]
 
 ### Fixed
 - Upgraded the version of Newtonsoft dependency.
 
-## [1.1.47]
+## [1.1.48]
 
 ### Fixed
 - shortened extension name to just Snyk Security
 
-## [1.1.46]
+## [1.1.47]
 - Only send Amplitude analytics events when connected to an MT US environment
 
 ## [1.1.45]
