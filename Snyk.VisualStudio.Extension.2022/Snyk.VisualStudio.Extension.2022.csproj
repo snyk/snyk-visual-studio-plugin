@@ -109,7 +109,7 @@
       <PrivateAssets>all</PrivateAssets>
     </PackageReference>
     <PackageReference Include="Analytics">
-      <Version>3.8.0</Version>
+      <Version>3.8.1</Version>
     </PackageReference>
     <PackageReference Include="Sentry">
       <Version>3.13.0</Version>
