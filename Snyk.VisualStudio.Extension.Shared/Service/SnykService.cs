@@ -22,7 +22,7 @@
     using UI.Notifications;
     using UI.Toolwindow;
     using Task = System.Threading.Tasks.Task;
-    
+
     /// <summary>
     /// Main logic for Snyk extension.
     /// </summary>
@@ -328,6 +328,12 @@
             Logger.Information("Analytics service initialized");
         }
 
-        public ICli Cli => NewCli();
+        private ICli _cli;
+        public ICli Cli {
+            get {
+                _cli ??= NewCli();
+                return _cli;
+            } 
+        }
     }
 }

@@ -62,6 +62,11 @@
     <LangVersion>latest</LangVersion>
   </PropertyGroup>
   <ItemGroup>
+    <Compile Include="Language\CustomInitializationOptions.cs" />
+    <Compile Include="Language\ILanguageClientManager.cs" />
+    <Compile Include="Language\SnykContentDefinition.cs" />
+    <Compile Include="Language\SnykLanguageClient.cs" />
+    <Compile Include="Language\SnykLanguageClientMiddleware.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="TrustDialogWindow.xaml.cs">
       <DependentUpon>TrustDialogWindow.xaml</DependentUpon>
@@ -93,7 +98,10 @@
     <PackageReference Include="MdXaml">
       <Version>1.19.2</Version>
     </PackageReference>
-    <PackageReference Include="Microsoft.VisualStudio.SDK" Version="17.0.32112.339" ExcludeAssets="runtime">
+    <PackageReference Include="Microsoft.VisualStudio.LanguageServer.Client">
+      <Version>17.4.1068</Version>
+    </PackageReference>
+    <PackageReference Include="Microsoft.VisualStudio.SDK" Version="17.4.33103.184" ExcludeAssets="runtime">
       <IncludeAssets>compile; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
     </PackageReference>
     <PackageReference Include="Microsoft.VSSDK.BuildTools" Version="17.5.4074">
@@ -138,6 +146,12 @@
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
     </Page>
+  </ItemGroup>
+  <ItemGroup>
+    <Content Include="snyk-ls_2.exe">
+      <IncludeInVSIX>true</IncludeInVSIX>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
   </ItemGroup>
   <Import Project="..\Snyk.VisualStudio.Extension.Shared\Snyk.VisualStudio.Extension.Shared.projitems" Label="Shared" />
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />

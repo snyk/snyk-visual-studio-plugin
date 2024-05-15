@@ -7,13 +7,15 @@
     using System.Security.Authentication;
     using System.Threading.Tasks;
     using System.Windows.Forms;
+    using Microsoft.VisualStudio.ComponentModelHost;
+    using Microsoft;
     using Microsoft.VisualStudio.Shell;
     using Serilog;
-    using Snyk.Analytics;
     using Snyk.Common;
     using Snyk.Common.Authentication;
     using Snyk.Common.Service;
     using Snyk.Common.Settings;
+    using Snyk.VisualStudio.Extension.Shared.Language;
     using Snyk.VisualStudio.Extension.Shared.Service;
     using Snyk.VisualStudio.Extension.Shared.UI.Notifications;
 
@@ -24,7 +26,6 @@
     [ComVisible(true)]
     public class SnykGeneralOptionsDialogPage : DialogPage, ISnykOptions
     {
-        
         public String Application { get; set; }
         public String ApplicationVersion { get; set; }
         public String IntegrationName { get; } = SnykExtension.IntegrationName;
@@ -120,7 +121,7 @@
         {
             var endpointUri = new Uri(this.GetBaseAppURL());
 
-            string[] permittedHosts = ["app.snyk.io", "app.us.snyk.io"];
+            var permittedHosts = new string[] { "app.snyk.io", "app.us.snyk.io" };
             return permittedHosts.Contains(endpointUri.Host.ToLower());
         }
 
@@ -337,6 +338,10 @@
         /// <inheritdoc />
         public bool Authenticate()
         {
+
+            var componentModel = Package.GetGlobalService(typeof(SComponentModel)) as IComponentModel;
+            Assumes.Present(componentModel);
+
             const int errorMessageMaxLength = 100;
 
             Logger.Information("Enter Authenticate method");
@@ -384,6 +389,13 @@
 
                 // Token is valid, store it and return true
                 this.SetApiToken(token);
+                
+
+                var languageServerClientManager = componentModel.GetService<ILanguageClientManager>();
+
+                languageServerClientManager.SetOptions(cli.GetCliPath(), token.ToString());
+                ThreadHelper.JoinableTaskFactory.Run(languageServerClientManager.StartServerAsync);
+
                 return true;
 
             }

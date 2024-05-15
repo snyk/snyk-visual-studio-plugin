@@ -22,6 +22,7 @@
     <Compile Include="$(MSBuildThisFileDirectory)CLI\ICliProvider.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)CLI\InvalidTokenException.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Commands\AbstractTaskCommand.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Extension\SatisfyImportExtension.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Microsoft\HtmlParser\CssStylesheet.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Microsoft\HtmlParser\HtmlCssParser.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Microsoft\HtmlParser\HtmlFromXamlConverter.cs" />
