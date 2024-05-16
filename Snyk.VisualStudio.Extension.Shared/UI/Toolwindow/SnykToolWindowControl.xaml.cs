@@ -92,6 +92,7 @@
             tasksService.SnykCodeDisabled += this.OnSnykCodeDisabledHandler;
             tasksService.ScanningCancelled += this.OnScanningCancelled;
             tasksService.CliScanningStarted += this.OnCliScanningStarted;
+            tasksService.OssScanningDisabled += this.OnOssScanningDisabled;
             tasksService.SnykCodeScanningStarted += this.OnSnykCodeScanningStarted;
             tasksService.OssScanningUpdate += this.OnCliScanningUpdate;
             tasksService.SnykCodeScanningUpdate += this.OnSnykCodeScanningUpdate;
@@ -125,6 +126,18 @@
             });
 
             Logger.Information("Leave InitializeEventListenersAsync() method.");
+        }
+
+        private void OnOssScanningDisabled(object sender, SnykCliScanEventArgs e)
+        {
+            ThreadHelper.JoinableTaskFactory.Run(async () =>
+            {
+                await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
+
+
+                this.resultsTree.CliRootNode.State = RootTreeNodeState.Disabled;
+                this.resultsTree.CliRootNode.Clean();
+            });
         }
 
         /// <summary>
@@ -186,11 +199,24 @@
 
             this.messagePanel.ShowScanningMessage();
 
-            this.resultsTree.CodeSecurityRootNode.State = RootTreeNodeState.Scanning;
-            this.resultsTree.CodeQualityRootNode.State = RootTreeNodeState.Scanning;
+            SetScanNodeState(resultsTree.CodeSecurityRootNode, eventArgs.CodeScanEnabled);
+            SetScanNodeState(resultsTree.CodeQualityRootNode, eventArgs.QualityScanEnabled);
 
             await this.UpdateActionsStateAsync();
         });
+
+        private void SetScanNodeState(RootTreeNode node, bool isEnabled)
+        {
+            if (node == null) 
+                return;
+            if (!isEnabled)
+            {
+                node.State = RootTreeNodeState.Disabled;
+                node.Clean();
+                return;
+            }
+            node.State = RootTreeNodeState.Scanning;
+        }
 
         /// <summary>
         /// ScanningFinished event handler. Switch context to ScanResultsState.
