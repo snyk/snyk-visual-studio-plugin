@@ -135,7 +135,7 @@
 
                         toolWindowControl.VulnerabilitiesTree.FilterBy(this.SearchQuery.SearchString);
                     }
-                    catch (Exception e)
+                    catch (Exception)
                     {
                         this.ErrorCode = VSConstants.E_FAIL;
                     }

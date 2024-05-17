@@ -97,7 +97,12 @@
             panel.Visibility = Visibility.Visible;
         }
 
-        private async void TestCodeNow_Click(object sender, RoutedEventArgs e)
+        private void TestCodeNow_Click(object sender, RoutedEventArgs e)
+        {
+            ThreadHelper.JoinableTaskFactory.Run(RunTestCodeNowAsync);
+        }
+
+        private async Task RunTestCodeNowAsync()
         {
             await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
             this.testCodeNowButton.IsEnabled = false; // Disable the button while authenticating

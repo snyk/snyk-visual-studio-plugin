@@ -570,8 +570,6 @@
 
                 this.messagePanel.Visibility = Visibility.Collapsed;
 
-                TreeNode treeNode = null;
-
                 if (this.resultsTree.SelectedItem is OssVulnerabilityTreeNode)
                 {
                     this.HandleOssTreeNodeSelected();

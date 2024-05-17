@@ -61,7 +61,7 @@
                 this.options.SastSettings = sastSettings;
                 return sastSettings;
             }
-            catch (Exception e)
+            catch (Exception)
             {
                 // In case of invalid json string return null.
                 return null;
