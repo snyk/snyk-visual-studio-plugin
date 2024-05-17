@@ -29,7 +29,7 @@
 
             SentrySdk.ConfigureScope(scope =>
             {
-                scope.User = new User { Id = this.serviceProvider.AnalyticsService.UserIdAsHash, };
+                scope.User = new SentryUser { Id = this.serviceProvider.AnalyticsService.UserIdAsHash, };
 
                 scope.SetTag("vs.version", vsVersion.ToString());
                 scope.SetTag("vs.edition", this.serviceProvider.DTE.Edition);
@@ -51,17 +51,17 @@
             }
             else
             {
-                LogManager.SentryConfiguration.BeforeSend = sentryEvent =>
+                LogManager.SentryConfiguration.SetBeforeSend(sentryEvent =>
                 {
                     sentryEvent.SetTag("vs.project.type", solutionType.ToString());
                     return sentryEvent;
-                };
+                });
             }
         }
 
         private static void DiscardEventCallback()
         {
-            LogManager.SentryConfiguration.BeforeSend = _ => { return null; };
+            LogManager.SentryConfiguration.SetBeforeSend(_ => { return null; });
         }
     }
 }
