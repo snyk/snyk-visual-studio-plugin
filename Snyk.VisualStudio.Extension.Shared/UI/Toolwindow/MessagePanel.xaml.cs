@@ -1,21 +1,19 @@
-﻿namespace Snyk.VisualStudio.Extension.Shared.UI.Toolwindow
-{
-    using System;
-    using System.Collections.Generic;
-    using System.Diagnostics;
-    using System.IO;
-    using System.Threading.Tasks;
-    using System.Windows;
-    using System.Windows.Controls;
-    using Community.VisualStudio.Toolkit;
-    using Microsoft.VisualStudio.Shell;
-    using Microsoft.VisualStudio.Shell.Interop;
-    using Microsoft.VisualStudio.Threading;
-    using Serilog;
-    using Serilog.Core;
-    using Snyk.Common;
-    using Snyk.VisualStudio.Extension.Shared.Service;
+﻿using System;
+using System.Collections.Generic;
+using System.Diagnostics;
+using System.IO;
+using System.Threading.Tasks;
+using System.Windows;
+using System.Windows.Controls;
+using Microsoft.VisualStudio.Shell;
+using Microsoft.VisualStudio.Shell.Interop;
+using Microsoft.VisualStudio.Threading;
+using Serilog;
+using Snyk.Common;
+using Snyk.VisualStudio.Extension.Shared.Service;
 
+namespace Snyk.VisualStudio.Extension.Shared.UI.Toolwindow
+{
     /// <summary>
     /// Interaction logic for MessagePanel.xaml.
     /// </summary>
@@ -102,7 +100,7 @@
             ThreadHelper.JoinableTaskFactory.Run(RunTestCodeNowAsync);
         }
 
-        private async Task RunTestCodeNowAsync()
+        private async System.Threading.Tasks.Task RunTestCodeNowAsync()
         {
             await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
             this.testCodeNowButton.IsEnabled = false; // Disable the button while authenticating

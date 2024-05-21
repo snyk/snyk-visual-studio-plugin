@@ -345,9 +345,9 @@
         }
 
         [Fact]
-        public void SnykCodeClient_WrongBundleProvided_CheckBundleFailed()
+        public async Task SnykCodeClient_WrongBundleProvided_CheckBundleFailed()
         {
-            _ = Assert.ThrowsAsync<AggregateException>(() => this.snykCodeClient.CheckBundleAsync("dummy"));
+            await Assert.ThrowsAsync<SnykCodeException>(async () => await this.snykCodeClient.CheckBundleAsync("dummy"));
         }
 
         [Fact]
