@@ -1,6 +1,6 @@
 using System;
-using System.Diagnostics.CodeAnalysis;
 using System.Text.Json;
+using Microsoft.VisualStudio.Shell;
 using Serilog;
 using Snyk.Code.Library.Domain.Analysis;
 using Snyk.Common;
@@ -69,7 +69,6 @@ namespace Snyk.VisualStudio.Extension.Shared.CLI
             ossScanningStarted = DateTime.UtcNow;
         }
 
-        [SuppressMessage("Usage", "VSTHRD110:Observe result of async calls")]
         public void OnOssScanningUpdate(object sender, SnykCliScanEventArgs e)
         {
             try
@@ -87,7 +86,7 @@ namespace Snyk.VisualStudio.Extension.Shared.CLI
                 }
 
                 var payload = GetAnalyticsPayload("Snyk Open Source", durationMs, critical, high, medium, low);
-                cliProvider.Cli.ReportAnalyticsAsync(payload);
+                ThreadHelper.JoinableTaskFactory.Run(async () => await cliProvider.Cli.ReportAnalyticsAsync(payload));
             }
             catch (Exception exception)
             {
@@ -105,7 +104,6 @@ namespace Snyk.VisualStudio.Extension.Shared.CLI
             codeScanningStarted = DateTime.UtcNow;
         }
 
-        [SuppressMessage("Usage", "VSTHRD110:Observe result of async calls")]
         public void OnSnykCodeScanningUpdate(object sender, SnykCodeScanEventArgs e)
         {
             try
@@ -139,7 +137,7 @@ namespace Snyk.VisualStudio.Extension.Shared.CLI
                 }
 
                 var payload = GetAnalyticsPayload("Snyk Code", durationMs, critical, high, medium, low);
-                cliProvider.Cli.ReportAnalyticsAsync(payload);
+                ThreadHelper.JoinableTaskFactory.Run(async () => await cliProvider.Cli.ReportAnalyticsAsync(payload));
             }
             catch (Exception ex)
             {
