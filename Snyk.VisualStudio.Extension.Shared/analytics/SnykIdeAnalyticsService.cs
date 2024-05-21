@@ -86,7 +86,7 @@ namespace Snyk.VisualStudio.Extension.Shared.CLI
                 }
 
                 var payload = GetAnalyticsPayload("Snyk Open Source", durationMs, critical, high, medium, low);
-                ThreadHelper.JoinableTaskFactory.Run(async () => await cliProvider.Cli.ReportAnalyticsAsync(payload));
+                ThreadHelper.JoinableTaskFactory.RunAsync(async () => await cliProvider.Cli.ReportAnalyticsAsync(payload)).FireAndForget();
             }
             catch (Exception exception)
             {
@@ -137,7 +137,7 @@ namespace Snyk.VisualStudio.Extension.Shared.CLI
                 }
 
                 var payload = GetAnalyticsPayload("Snyk Code", durationMs, critical, high, medium, low);
-                ThreadHelper.JoinableTaskFactory.Run(async () => await cliProvider.Cli.ReportAnalyticsAsync(payload));
+                ThreadHelper.JoinableTaskFactory.RunAsync(async () => await cliProvider.Cli.ReportAnalyticsAsync(payload)).FireAndForget();
             }
             catch (Exception ex)
             {
