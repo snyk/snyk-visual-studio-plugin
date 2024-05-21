@@ -56,6 +56,11 @@
         public event EventHandler<SnykCliScanEventArgs> CliScanningStarted;
 
         /// <summary>
+        /// OSS Scanning Disabled event handler.
+        /// </summary>
+        public event EventHandler<SnykCliScanEventArgs> OssScanningDisabled;
+        
+        /// <summary>
         /// SnykCode scanning started event handler.
         /// </summary>
         public event EventHandler<SnykCodeScanEventArgs> SnykCodeScanningStarted;
@@ -489,6 +494,7 @@
             {
                 if (!featuresSettings.OssEnabled)
                 {
+                    FireOssScanningDisabledEvent();
                     return;
                 }
 
@@ -611,7 +617,7 @@
 
                 Logger.Information("Start scan task");
 
-                await Task.Run(() => this.RunSnykCodeScanAsync(progressWorker.TokenSource.Token));
+                await Task.Run(() => this.RunSnykCodeScanAsync(progressWorker.TokenSource.Token, featuresSettings));
             }
             catch (Exception ex)
             {
@@ -619,13 +625,13 @@
             }
         }
 
-        private async Task RunSnykCodeScanAsync(CancellationToken cancellationToken)
+        private async Task RunSnykCodeScanAsync(CancellationToken cancellationToken, FeaturesSettings featuresSettings)
         {
             try
             {
                 this.isSnykCodeScanning = true;
 
-                this.FireSnykCodeScanningStartedEvent();
+                this.FireSnykCodeScanningStartedEvent(featuresSettings);
 
                 var fileProvider = this.serviceProvider.SolutionService.FileProvider;
 
@@ -694,11 +700,20 @@
         /// </summary>
         private void FireOssScanningStartedEvent() => this.CliScanningStarted?.Invoke(this, new SnykCliScanEventArgs());
 
+
+        /// <summary>
+        /// Fire OSS scanning disabled event.
+        /// </summary>
+        private void FireOssScanningDisabledEvent() => this.OssScanningDisabled?.Invoke(this, new SnykCliScanEventArgs());
+
+
         /// <summary>
         /// Fire SnykCode scanning started event.
         /// </summary>
-        private void FireSnykCodeScanningStartedEvent() =>
-            this.SnykCodeScanningStarted?.Invoke(this, new SnykCodeScanEventArgs());
+        private void FireSnykCodeScanningStartedEvent(FeaturesSettings featuresSettings) =>
+            this.SnykCodeScanningStarted?.Invoke(this, 
+                new SnykCodeScanEventArgs { QualityScanEnabled = featuresSettings.CodeQualityEnabled, 
+                                            CodeScanEnabled = featuresSettings.CodeSecurityEnabled});
 
         /// <summary>
         /// Fire scanning update with <see cref="SnykCliScanEventArgs"/> object.

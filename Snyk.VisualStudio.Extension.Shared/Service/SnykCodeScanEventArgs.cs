@@ -33,6 +33,16 @@
         public bool OssScanRunning { get; set; }
 
         /// <summary>
+        /// Gets or sets a value indicating whether Code scan is enabled.
+        /// </summary>
+        public bool CodeScanEnabled { get; set; }
+
+        /// <summary>
+        /// Gets or sets a value indicating whether Quality scan is enabled.
+        /// </summary>
+        public bool QualityScanEnabled { get; set; }
+
+        /// <summary>
         /// Gets or sets a value indicating whether local code engine enabled.
         /// </summary>
         public bool LocalCodeEngineEnabled { get; set; }

@@ -1,5 +1,10 @@
 # Snyk Security Changelog
 
+## [1.1.51]
+
+### Fixed
+- Fixed a UI issue when toggling Code and Quality Scans in Settings page.
+
 ## [1.1.50]
 
 ### Fixed
