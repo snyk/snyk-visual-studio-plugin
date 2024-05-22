@@ -4,6 +4,8 @@ on:
   pull_request:
     paths-ignore:
       - '*.md'
+      - '*.yml'
+      - '*.yaml'      
 
 concurrency: 
   group: ${{ github.head_ref }}
