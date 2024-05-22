@@ -34,9 +34,9 @@ namespace Snyk.VisualStudio.Extension.Shared.CLI
         {
             scanTopicProvider.OssScanningFinished += OnOssScanningFinished;
             scanTopicProvider.CliScanningStarted += OnCliScanningStarted;
-            scanTopicProvider.OssScanningUpdate += OnOssScanningUpdate;
+            scanTopicProvider.OssScanningUpdate += (sender, args) => ThreadHelper.JoinableTaskFactory.RunAsync(async () => await OnOssScanningUpdateAsync(sender, args)).FireAndForget();
+            scanTopicProvider.SnykCodeScanningUpdate += (sender, args) => ThreadHelper.JoinableTaskFactory.RunAsync(async () => await OnSnykCodeScanningUpdateAsync(sender, args)).FireAndForget();
             scanTopicProvider.SnykCodeScanningStarted += OnSnykCodeScanningStarted;
-            scanTopicProvider.SnykCodeScanningUpdate += OnSnykCodeScanningUpdate;
             scanTopicProvider.SnykCodeScanningFinished += OnSnykCodeScanningFinished;
         }
 
@@ -69,7 +69,7 @@ namespace Snyk.VisualStudio.Extension.Shared.CLI
             ossScanningStarted = DateTime.UtcNow;
         }
 
-        public void OnOssScanningUpdate(object sender, SnykCliScanEventArgs e)
+        public async System.Threading.Tasks.Task OnOssScanningUpdateAsync(object sender, SnykCliScanEventArgs e)
         {
             try
             {
@@ -86,7 +86,7 @@ namespace Snyk.VisualStudio.Extension.Shared.CLI
                 }
 
                 var payload = GetAnalyticsPayload("Snyk Open Source", durationMs, critical, high, medium, low);
-                ThreadHelper.JoinableTaskFactory.Run(async () => await cliProvider.Cli.ReportAnalyticsAsync(payload));
+                await cliProvider.Cli.ReportAnalyticsAsync(payload);
             }
             catch (Exception exception)
             {
@@ -104,7 +104,7 @@ namespace Snyk.VisualStudio.Extension.Shared.CLI
             codeScanningStarted = DateTime.UtcNow;
         }
 
-        public void OnSnykCodeScanningUpdate(object sender, SnykCodeScanEventArgs e)
+        public async System.Threading.Tasks.Task OnSnykCodeScanningUpdateAsync(object sender, SnykCodeScanEventArgs e)
         {
             try
             {
@@ -137,7 +137,7 @@ namespace Snyk.VisualStudio.Extension.Shared.CLI
                 }
 
                 var payload = GetAnalyticsPayload("Snyk Code", durationMs, critical, high, medium, low);
-                ThreadHelper.JoinableTaskFactory.Run(async () => await cliProvider.Cli.ReportAnalyticsAsync(payload));
+                await cliProvider.Cli.ReportAnalyticsAsync(payload);
             }
             catch (Exception ex)
             {
