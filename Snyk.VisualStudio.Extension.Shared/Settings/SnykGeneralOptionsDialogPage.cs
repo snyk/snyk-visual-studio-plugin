@@ -391,10 +391,10 @@
                 this.SetApiToken(token);
                 
 
-                var languageServerClientManager = componentModel.GetService<ILanguageClientManager>();
+                //var languageServerClientManager = componentModel.GetService<ILanguageClientManager>();
 
-                languageServerClientManager.SetOptions(cli.GetCliPath(), token.ToString());
-                ThreadHelper.JoinableTaskFactory.Run(languageServerClientManager.StartServerAsync);
+                //languageServerClientManager.SetOptions(cli.GetCliPath(), token.ToString());
+                //ThreadHelper.JoinableTaskFactory.Run(languageServerClientManager.StartServerAsync);
 
                 return true;
 

@@ -22,6 +22,9 @@
     using UI.Notifications;
     using UI.Toolwindow;
     using Task = System.Threading.Tasks.Task;
+    using Microsoft.VisualStudio.ComponentModelHost;
+    using Snyk.VisualStudio.Extension.Shared.Language;
+    using Microsoft;
 
     /// <summary>
     /// Main logic for Snyk extension.
@@ -55,6 +58,8 @@
         private ISentryService sentryService;
 
         private IWorkspaceTrustService workspaceTrustService;
+        
+        private ILanguageClientManager languageClientManager;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="SnykService"/> class.
@@ -269,8 +274,9 @@
                 NotificationService.Initialize(this);
                 VsStatusBar.Initialize(this);
                 VsCodeService.Initialize();
-                
+
                 SnykIdeAnalyticsService.Initialize();
+
                 Logger.Information("Leave SnykService.InitializeAsync");
             }
             catch (Exception ex)

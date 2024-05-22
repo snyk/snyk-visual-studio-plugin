@@ -14,6 +14,11 @@ using Microsoft.VisualStudio.Shell;
 using Task = System.Threading.Tasks.Task;
 using Snyk.Common;
 using Serilog;
+using System.Security.Policy;
+using LSP = Microsoft.VisualStudio.LanguageServer.Protocol;
+using System.Windows.Documents;
+using Snyk.Common.Settings;
+using Snyk.VisualStudio.Extension.Shared.CLI;
 
 namespace Snyk.VisualStudio.Extension.Shared.Language
 {
@@ -23,6 +28,8 @@ namespace Snyk.VisualStudio.Extension.Shared.Language
     public partial class SnykLanguageClient : ILanguageClient, ILanguageClientCustomMessage2, ILanguageClientManager
     {
         private static readonly ILogger _logger = LogManager.ForContext<SnykLanguageClient>();
+        private object _lock = new object();
+        private bool _isReady = false;
 
         [ImportingConstructor]
         public SnykLanguageClient([Import(typeof(SVsServiceProvider))]
@@ -41,11 +48,17 @@ namespace Snyk.VisualStudio.Extension.Shared.Language
                 yield return "snyk";
             }
         }
-        public bool IsReady { get; set; }
+        public bool IsReady
+        {
+            get { return _isReady; }
+            set
+            {
+                _isReady = value;
+            }
+        }
 
         private SnykLSInitializationOptions _initializationOptions;
-        private string _cliPath = string.Empty;
-        private string _token = string.Empty;
+        private ISnykOptions _options;
 
         private readonly IServiceProvider _serviceProvider;
 
@@ -83,8 +96,8 @@ namespace Snyk.VisualStudio.Extension.Shared.Language
                 },
                 ScanningMode = "auto",
                 AuthenticationMethod = "oauth",
-                CliPath = _cliPath,
-                Token = _token
+                CliPath = _options.CliCustomPath,
+                Token = _options.ApiToken.ToString(),
             };
             return _initializationOptions;
         }
@@ -96,7 +109,7 @@ namespace Snyk.VisualStudio.Extension.Shared.Language
         public JsonRpc Rpc { get; set; }
         public object MiddleLayer => SnykLanguageClientMiddleware.Instance;
 
-        public object CustomMessageTarget => null;
+        public object CustomMessageTarget { get; private set; }
 
         public event AsyncEventHandler<EventArgs> StartAsync;
         public event AsyncEventHandler<EventArgs> StopAsync;
@@ -104,11 +117,11 @@ namespace Snyk.VisualStudio.Extension.Shared.Language
         public async Task<Connection> ActivateAsync(CancellationToken token)
         {
             await Task.Yield();
-            if (string.IsNullOrWhiteSpace(_cliPath) || string.IsNullOrWhiteSpace(_token)) return null;
+            if (_options == null) return null;
             var info = new ProcessStartInfo
             {
-                FileName = GetSnykLsPath(),
-                Arguments = "-l trace",
+                FileName = string.IsNullOrEmpty(_options.CliCustomPath) ? SnykCli.GetSnykCliDefaultPath() : _options.CliCustomPath,
+                Arguments = "language-server -l trace",
                 RedirectStandardInput = true,
                 RedirectStandardOutput = true,
                 UseShellExecute = false
@@ -122,32 +135,23 @@ namespace Snyk.VisualStudio.Extension.Shared.Language
             return isStarted ? new Connection(process.StandardOutput.BaseStream, process.StandardInput.BaseStream) : null;
         }
 
-        public void SetOptions(string cliPath, string token)
+        public void SetSnykOptions(ISnykOptions snykOptions)
         {
-            _cliPath = cliPath;
-            _token = token;
-        }
-
-
-        private static string GetSnykLsPath()
-        {
-            var vsixRootPath = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location);
-            var snykLsExePath = Path.Combine(vsixRootPath, "Resources", "snyk-ls_2.exe");
-
-            return snykLsExePath;
+           _options = snykOptions;
         }
 
         public async Task OnLoadedAsync()
         {
-           
+            var customTarget = new SnykLanguageClientCustomTarget();
+            CustomMessageTarget = customTarget;
             await StartServerAsync();
         }
+
         public async Task StartServerAsync()
         {
             if (StartAsync != null)
             {
                 await StartAsync.InvokeAsync(this, EventArgs.Empty);
-                IsReady = IsReloading = true;
             }
         }
 
@@ -177,7 +181,6 @@ namespace Snyk.VisualStudio.Extension.Shared.Language
         public Task OnServerInitializedAsync()
         {
             Rpc.Disconnected += Rpc_Disconnected;
-            IsReady = true;
             return Task.CompletedTask;
         }
 
@@ -193,12 +196,12 @@ namespace Snyk.VisualStudio.Extension.Shared.Language
             Rpc.AllowModificationWhileListening = true;
             Rpc.ActivityTracingStrategy = null;
             Rpc.AllowModificationWhileListening = false;
+            IsReady = true;
         }
 
         protected void OnStopping() { }
         protected void OnStopped() { }
         public bool IsReloading { get; set; }
-        public bool IsRunning => true;
 
         private async Task RestartAsync(bool isReload)
         {
@@ -227,9 +230,38 @@ namespace Snyk.VisualStudio.Extension.Shared.Language
             }
         }
 
+        public async Task<object> InvokeWorkspaceScanAsync(CancellationToken cancellationToken)
+        {
+            var param = new LSP.ExecuteCommandParams {
+                Command = "snyk.workspace.scan"
+            };
+            var res = await InvokeWithParametersAsync<object>("workspace/executeCommand", param, cancellationToken);
+            return res;
+        }
+
         public async Task RestartServerAsync()
         {
             await RestartAsync(true);
+        }
+
+        // TODO: Add Logging
+
+        private async Task<T> InvokeAsync<T>(string request, CancellationToken t) where T : class
+        {
+            if (!IsReady) return default;
+            return await Rpc.InvokeAsync<T>(request, t).ConfigureAwait(false);
+        }
+
+        private async Task<T> InvokeWithParametersAsync<T>(string request, object parameters, CancellationToken t) where T : class
+        {
+            if (!IsReady) return default;
+            return await Rpc.InvokeWithParameterObjectAsync<T>(request, parameters, t).ConfigureAwait(false);
+        }
+
+        private async Task NotifyWithParametersAsync(string request, object parameters)
+        {
+            if (!IsReady) return;
+            await Rpc.NotifyWithParameterObjectAsync(request, parameters).ConfigureAwait(false);
         }
     }
 }

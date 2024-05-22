@@ -5,6 +5,7 @@
     using System.Threading;
     using System.Threading.Tasks;
     using Community.VisualStudio.Toolkit;
+    using Microsoft.VisualStudio.ComponentModelHost;
     using Microsoft.VisualStudio.Shell;
     using Microsoft.VisualStudio.Shell.Interop;
     using Serilog;
@@ -13,6 +14,7 @@
     using Snyk.Common;
     using Snyk.VisualStudio.Extension.Shared.CLI;
     using Snyk.VisualStudio.Extension.Shared.CLI.Download;
+    using Snyk.VisualStudio.Extension.Shared.Language;
     using Snyk.VisualStudio.Extension.Shared.Service.Domain;
     using Snyk.VisualStudio.Extension.Shared.UI;
     using static Snyk.VisualStudio.Extension.Shared.CLI.Download.SnykCliDownloader;
@@ -624,15 +626,19 @@
             try
             {
                 this.isSnykCodeScanning = true;
+                //this.FireSnykCodeScanningStartedEvent();
+                var componentModel = Package.GetGlobalService(typeof(SComponentModel)) as IComponentModel;
+                //Assumes.Present(componentModel);
+                var languageServerClientManager = componentModel.GetService<ILanguageClientManager>();
 
-                this.FireSnykCodeScanningStartedEvent();
+                var res = await languageServerClientManager.InvokeWorkspaceScanAsync(cancellationToken);
 
                 var fileProvider = this.serviceProvider.SolutionService.FileProvider;
 
                 var analysisResult =
                     await this.serviceProvider.SnykCodeService.ScanAsync(fileProvider, cancellationToken);
 
-                this.FireScanningUpdateEvent(analysisResult);
+                //this.FireScanningUpdateEvent(analysisResult);
 
                 this.FireSnykCodeScanningFinishedEvent();
             }
