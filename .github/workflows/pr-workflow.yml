@@ -2,6 +2,8 @@ name: Pull Request Workflow
 
 on:
   pull_request:
+    paths-ignore:
+      - '*.md'
 
 concurrency: 
   group: ${{ github.head_ref }}
