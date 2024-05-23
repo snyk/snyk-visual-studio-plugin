@@ -61,12 +61,12 @@
             {
                 await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
 
-                if (actionItem.ActionContext == ContactSupport)
+                if (ContactSupport == actionItem.ActionContext.ToString())
                 {
                     Process.Start(SupportLink);
                 }
 
-                if (actionItem.ActionContext == KnownCaveats)
+                if (KnownCaveats == actionItem.ActionContext.ToString())
                 {
                     Process.Start(KnownCaveatsLink);
                 }

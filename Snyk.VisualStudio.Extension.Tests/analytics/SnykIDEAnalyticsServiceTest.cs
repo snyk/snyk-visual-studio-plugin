@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using System.Threading.Tasks;
 using Moq;
 using Snyk.Code.Library.Api.Dto.Analysis;
 using Snyk.Code.Library.Domain.Analysis;
@@ -58,7 +59,7 @@ namespace Snyk.VisualStudio.Extension.Tests.analytics
         }
 
         [Fact]
-        public void SnykIdeAnalyticsServiceTest_shouldReportAnalyticsOnSnykCodeScanningUpdate()
+        public async Task SnykIdeAnalyticsServiceTest_shouldReportAnalyticsOnSnykCodeScanningUpdateAsync()
         {
             var optionsProviderMock = new Mock<ISnykOptionsProvider>();
             var optionsMock = new Mock<ISnykOptions>();
@@ -71,7 +72,7 @@ namespace Snyk.VisualStudio.Extension.Tests.analytics
             var analysisResult = SetupAnalysisResult();
             var e = new SnykCodeScanEventArgs(analysisResult);
 
-            service.OnSnykCodeScanningUpdate(this, e);
+            await service.OnSnykCodeScanningUpdateAsync(this, e);
 
             // assert payload is generated (anonymousID called) and cli reportAnalytics is called
             optionsMock.VerifyGet(options => options.AnonymousId, Times.Once);
@@ -80,7 +81,7 @@ namespace Snyk.VisualStudio.Extension.Tests.analytics
         }
 
         [Fact]
-        public void SnykIdeAnalyticsServiceTest_shouldReportAnalyticsOnOssScanningUpdate()
+        public async Task SnykIdeAnalyticsServiceTest_shouldReportAnalyticsOnOssScanningUpdateAsync()
         {
             var optionsProviderMock = new Mock<ISnykOptionsProvider>();
             var optionsMock = new Mock<ISnykOptions>();
@@ -93,7 +94,7 @@ namespace Snyk.VisualStudio.Extension.Tests.analytics
             var cliResult = SetupCliResult();
 
             var e = new SnykCliScanEventArgs(cliResult);
-            service.OnOssScanningUpdate(this, e);
+            await service.OnOssScanningUpdateAsync(this, e);
 
             // assert payload is generated (anonymousID called) and cli reportAnalytics is called
             optionsMock.VerifyGet(options => options.AnonymousId, Times.Once);

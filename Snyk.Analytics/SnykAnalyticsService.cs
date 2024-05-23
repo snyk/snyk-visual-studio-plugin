@@ -46,7 +46,7 @@
                 }
 
                 this.analyticsEnabledOption = value;
-                Logger.Information(value ? "Analytics set to enabled" : "Analytics set to disabled");
+                Logger.Information("{V}", value ? "Analytics set to enabled" : "Analytics set to disabled");
             }
         }
 

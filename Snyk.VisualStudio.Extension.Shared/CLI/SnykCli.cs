@@ -1,17 +1,16 @@
-﻿namespace Snyk.VisualStudio.Extension.Shared.CLI
+﻿using System.Collections.Generic;
+using System.Collections.Specialized;
+using System.IO;
+using System.Linq;
+using System.Security.Authentication;
+using System.Threading.Tasks;
+using Serilog;
+using Snyk.Common;
+using Snyk.Common.Authentication;
+using Snyk.Common.Service;
+using Snyk.Common.Settings;
+namespace Snyk.VisualStudio.Extension.Shared.CLI
 {
-    using System.Collections.Generic;
-    using System.Collections.Specialized;
-    using System.IO;
-    using System.Linq;
-    using System.Security.Authentication;
-    using System.Threading.Tasks;
-    using Serilog;
-    using Common;
-    using Common.Authentication;
-    using Snyk.Common.Service;
-    using Snyk.Common.Settings;
-
     /// <summary>
     /// Incapsulate work logic with Snyk CLI.
     /// </summary>

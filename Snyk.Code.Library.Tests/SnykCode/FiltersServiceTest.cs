@@ -178,7 +178,7 @@
                 var filteredFiles = await filtersService.FilterFilesAsync(new[] { smallFile.FilePath, largeFile.FilePath });
 
                 // Assert
-                Assert.Equal(1, filteredFiles.Count);
+                Assert.Single(filteredFiles);
                 Assert.Contains(smallFile.FilePath, filteredFiles);
                 Assert.DoesNotContain(largeFile.FilePath, filteredFiles);
             }

@@ -26,7 +26,7 @@ public class OAuthToken
         {
             result = JsonSerializer.Deserialize<OAuthToken>(token);
         }
-        catch (Exception ex)
+        catch (Exception)
         {
             // nothing
         }
