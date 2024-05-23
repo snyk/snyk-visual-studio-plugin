@@ -110,7 +110,7 @@
             var filteredFiles = dcIgnoreService.FilterFiles(folderPath, projectFiles).ToList();
 
             Assert.Equal(2, filteredFiles.Count);
-            Assert.Equal(expectedFiles, filteredFiles);
+            Assert.Equal(expectedFiles.OrderBy(x => x), filteredFiles.OrderBy(x => x));
             Assert.True(File.Exists(dcIGnorePath));
 
             File.Delete(dcIGnorePath);

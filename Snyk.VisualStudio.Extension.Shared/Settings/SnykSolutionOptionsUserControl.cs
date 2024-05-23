@@ -1,12 +1,12 @@
-﻿namespace Snyk.VisualStudio.Extension.Shared.Settings
-{
-    using System;
-    using System.Windows.Forms;
-    using Microsoft.VisualStudio.Shell;
-    using Serilog;
-    using Snyk.Common;
-    using Snyk.VisualStudio.Extension.Shared.Service;
+﻿using System;
+using System.Windows.Forms;
+using Microsoft.VisualStudio.Shell;
+using Serilog;
+using Snyk.Common;
+using Snyk.VisualStudio.Extension.Shared.Service;
 
+namespace Snyk.VisualStudio.Extension.Shared.Settings
+{
     /// <summary>
     /// Solution settings control.
     /// </summary>

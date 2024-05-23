@@ -17,7 +17,11 @@
             this.Headers.Add("User-Agent", "Snyk.VisualStudio.Extension");
 
             ServicePointManager.Expect100Continue = true;
+            
+            // TODO: Get back to this and find an alternative
+#pragma warning disable RS0030 // Do not used banned APIs
             ServicePointManager.SecurityProtocol = SecurityProtocolType.Tls12;
+#pragma warning restore RS0030 // Do not used banned APIs
         }
     }
 }

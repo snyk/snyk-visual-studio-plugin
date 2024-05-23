@@ -18,7 +18,7 @@
         private FireScanCodeProgressUpdate scanCodeProgressUpdate = (state, progress) => { };
 
         [Fact]
-        public void AnalysisService_FailedStatusProvided_GetAnalysisThrowException()
+        public async Task AnalysisService_FailedStatusProvided_GetAnalysisThrowException()
         {
             var codeClientMock = new Mock<ISnykCodeClient>();
 
@@ -37,7 +37,7 @@
                 .Setup(codeClient => codeClient.GetAnalysisAsync(dummyBundleId, It.IsAny<CancellationToken>()))
                 .ReturnsAsync(dummyAnalysisResultDto);
 
-            _ = Assert.ThrowsAsync<AggregateException>(() => analysisService.GetAnalysisAsync(dummyBundleId, this.scanCodeProgressUpdate));
+            await Assert.ThrowsAsync<SnykCodeException>(() => analysisService.GetAnalysisAsync(dummyBundleId, this.scanCodeProgressUpdate));
 
             codeClientMock
                 .Verify(codeClient => codeClient.GetAnalysisAsync(dummyBundleId, It.IsAny<CancellationToken>()), Times.Exactly(1));
@@ -397,7 +397,7 @@
             var analysisResult = await analysisService.GetAnalysisAsync(dummyBundleId, this.scanCodeProgressUpdate);
 
             Assert.NotNull(analysisResult);
-            Assert.Equal(1, analysisResult.FileAnalyses.Count);
+            Assert.Single(analysisResult.FileAnalyses);
             Assert.Equal(3, analysisResult.FileAnalyses.First().Suggestions.Count);
 
             codeClientMock

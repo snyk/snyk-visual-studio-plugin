@@ -211,8 +211,11 @@
             Logger.Information("Enter InitializeSolutionEvents method");
 
             IVsSolution vsSolution = await this.ServiceProvider.GetServiceAsync(typeof(SVsSolution)) as IVsSolution;
-
+            
+            // TODO: Revisit this and find if it's necessary.
+#pragma warning disable CS0618 // Type or member is obsolete
             vsSolution.SetProperty((int)__VSPROPID4.VSPROPID_ActiveSolutionLoadManager, this);
+#pragma warning restore CS0618 // Type or member is obsolete
 
             this.SolutionEvents = new SnykVsSolutionLoadEvents(this, this.ServiceProvider.OssService, this.ServiceProvider.SentryService);
 
@@ -258,7 +261,7 @@
 
                 return files;
             }
-            catch (Exception ignore)
+            catch (Exception)
             {
                 // SolutionItem.Children inside Children can throw parameter incorrect exception.
                 // In this case return empty list.

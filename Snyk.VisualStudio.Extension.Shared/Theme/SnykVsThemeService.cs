@@ -49,11 +49,11 @@
             }
             catch (COMException comException)
             {
-                Logger.Error(comException.Message);
+                Logger.Error("{Message}", comException.Message);
             }
             catch (InvalidComObjectException comObjectException)
             {
-                Logger.Error(comObjectException.Message);
+                Logger.Error("{Message}", comObjectException.Message);
             }
         }
 

@@ -1,6 +1,7 @@
 ﻿namespace Snyk.VisualStudio.Extension.Tests
 {
     using System.Threading;
+    using System.Threading.Tasks;
     using Moq;
     using Snyk.Common.Settings;
     using Snyk.VisualStudio.Extension.Shared.CLI;
@@ -80,7 +81,7 @@
         }
 
         [Fact]
-        public void OssServiceTest_ClearCache_ReturnNewValue()
+        public async Task OssServiceTest_ClearCache_ReturnNewValueAsync()
         {
             var serviceProviderMock = new Mock<ISnykServiceProvider>();
             var cliMock = new Mock<ICli>();
@@ -104,7 +105,7 @@
 
             var tokenSource = new CancellationTokenSource();
 
-            ossService.ScanAsync(string.Empty, tokenSource.Token);
+            await ossService.ScanAsync(string.Empty, tokenSource.Token);
 
             ossService.ClearCache();
 
