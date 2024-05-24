@@ -3,7 +3,9 @@
     using System;
     using System.Collections.Generic;
     using System.Diagnostics;
+    using System.Drawing;
     using System.IO;
+    using System.Runtime.InteropServices;
     using System.Threading.Tasks;
     using System.Windows;
     using System.Windows.Controls;
@@ -15,6 +17,16 @@
     using Serilog.Core;
     using Snyk.Common;
     using Snyk.VisualStudio.Extension.Shared.Service;
+
+
+    //[ComVisible(true)]
+    //public class ScriptManager
+    //{
+    //    public void OpenFileInEditor(string filePath, int lineNumber, int columnNumber)
+    //    {
+    //        // DTE stuff
+    //    }
+    //}
 
     /// <summary>
     /// Interaction logic for MessagePanel.xaml.
@@ -30,6 +42,11 @@
         public MessagePanel()
         {
             this.InitializeComponent();
+            //Testbrowser.ObjectForScripting = new ScriptManager();
+            //Testbrowser.ContextMenu.IsEnabled = false;
+            //Testbrowser.= true;
+            // To Execute from Javascript window.external.OpenFileInEditor(filePath, int lineNumber, int columnNumber)
+            //Testbrowser.DataContext = "<html></html>";
 
             this.panels = new List<StackPanel>
             {

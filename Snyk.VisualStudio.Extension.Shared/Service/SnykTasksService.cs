@@ -638,12 +638,12 @@
                 var languageServerClientManager = componentModel.GetService<ILanguageClientManager>();
 
                 var res = await languageServerClientManager.InvokeWorkspaceScanAsync(cancellationToken);
-                //this.FireSnykCodeScanningStartedEvent(featuresSettings);
+                this.FireSnykCodeScanningStartedEvent(featuresSettings);
 
                 // var fileProvider = this.serviceProvider.SolutionService.FileProvider;
 
-                // var analysisResult =
-                //     await this.serviceProvider.SnykCodeService.ScanAsync(fileProvider, cancellationToken);
+                 //var analysisResult =
+                   //  await this.serviceProvider.SnykCodeService.ScanAsync(fileProvider, cancellationToken);
 
                 //this.FireScanningUpdateEvent(analysisResult);
 
