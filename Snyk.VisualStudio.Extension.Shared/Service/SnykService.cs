@@ -10,7 +10,6 @@
     using Microsoft.VisualStudio.Shell;
     using Microsoft.VisualStudio.Shell.Settings;
     using Serilog;
-    using Analytics;
     using Snyk.Code.Library.Service;
     using Common;
     using Snyk.Common.Service;
@@ -39,8 +38,6 @@
         private SnykTasksService tasksService;
 
         private DTE2 dte;
-
-        private ISnykAnalyticsService analyticsService;
 
         private SnykIdeAnalyticsService ideAnalyticsService;
 
@@ -123,32 +120,6 @@
                 }
 
                 return ideAnalyticsService;
-            }
-        }
-
-        /// <summary>
-        /// Gets Analytics service instance. If analytics service not created yet it will create it and return.
-        /// </summary>
-        public ISnykAnalyticsService AnalyticsService
-        {
-            get
-            {
-                if (this.analyticsService == null)
-                {
-                    this.InitializeAnalyticsService();
-
-                    // When settings change (API endpoint/analytics enabling), re-initialize the service
-                    this.Options.SettingsChanged += (sender, args) =>
-                    {
-                        Logger.Information("Notifying analytics service after settings change");
-                        this.InitializeAnalyticsService();
-                        ThreadHelper.JoinableTaskFactory.Run(async () =>
-                            await this.analyticsService.ObtainUserAsync(this.Options.ApiToken));
-                        Logger.Information("Analytics service re-initialized");
-                    };
-                }
-
-                return this.analyticsService;
             }
         }
 
@@ -310,22 +281,6 @@
             {
                 Logger.Error(e, string.Empty);
             }
-        }
-
-        private void InitializeAnalyticsService()
-        {
-            Logger.Information("Initialize Analytics Service...");
-            var writeKey = SnykExtension.AppSettings?.SegmentAnalyticsWriteKey;
-
-            string anonymousId = this.Options.AnonymousId;
-
-            var enabled = this.Options.UsageAnalyticsEnabled && this.Options.IsAnalyticsPermitted();
-            var endpoint = this.ApiEndpointResolver.UserMeEndpoint;
-
-            Logger.Information("analytics enabled = {Enabled}, endpoint = {Endpoint}", enabled, endpoint);
-            SnykAnalyticsService.Initialize(this.Options.AnonymousId, writeKey, enabled, this.ApiService);
-            this.analyticsService = SnykAnalyticsService.Instance;
-            Logger.Information("Analytics service initialized");
         }
 
         public ICli Cli => NewCli();

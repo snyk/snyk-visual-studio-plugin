@@ -29,7 +29,7 @@
 
             SentrySdk.ConfigureScope(scope =>
             {
-                scope.User = new SentryUser { Id = this.serviceProvider.AnalyticsService.UserIdAsHash, };
+                scope.User = new SentryUser { Id = this.serviceProvider.Options.SnykUser.IdHash };
 
                 scope.SetTag("vs.version", vsVersion.ToString());
                 scope.SetTag("vs.edition", this.serviceProvider.DTE.Edition);

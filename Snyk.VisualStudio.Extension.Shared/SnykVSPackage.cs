@@ -200,8 +200,8 @@ namespace Snyk.VisualStudio.Extension.Shared
                 var tokenString = this.serviceProvider.NewCli().GetApiToken();
                 this.serviceProvider.Options.SetApiToken(tokenString);
                 var token = this.serviceProvider.Options.ApiToken;
-
-                await this.serviceProvider.AnalyticsService.ObtainUserAsync(token, vsVersion);
+                
+                serviceProvider.Options.SnykUser = await serviceProvider.ApiService.GetUserAsync();
                 await this.serviceProvider.SentryService.SetupAsync();
 
                 // Initialize commands
@@ -235,8 +235,6 @@ namespace Snyk.VisualStudio.Extension.Shared
         /// <param name="disposing">Bool.</param>
         protected override void Dispose(bool disposing)
         {
-            this.serviceProvider.AnalyticsService?.Dispose();
-
             base.Dispose(disposing);
         }
 

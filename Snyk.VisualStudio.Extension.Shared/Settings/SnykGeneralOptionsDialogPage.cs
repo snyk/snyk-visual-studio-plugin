@@ -9,7 +9,6 @@
     using System.Windows.Forms;
     using Microsoft.VisualStudio.Shell;
     using Serilog;
-    using Snyk.Analytics;
     using Snyk.Common;
     using Snyk.Common.Authentication;
     using Snyk.Common.Service;
@@ -309,6 +308,8 @@
             }
         }
 
+        public SnykUser SnykUser { get; set; }
+
         /// <summary>
         /// Gets a value indicating whether additional options.
         /// Get this data using <see cref="SnykUserStorageSettingsService"/>.
@@ -384,6 +385,10 @@
 
                 // Token is valid, store it and return true
                 this.SetApiToken(token);
+                ThreadHelper.JoinableTaskFactory.Run(async () =>
+                {
+                    SnykUser = await serviceProvider.ApiService.GetUserAsync();
+                });
                 return true;
 
             }

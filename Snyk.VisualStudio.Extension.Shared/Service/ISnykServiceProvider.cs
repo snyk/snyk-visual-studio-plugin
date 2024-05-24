@@ -5,10 +5,8 @@
     using EnvDTE80;
     using Microsoft.VisualStudio.Settings;
     using Microsoft.VisualStudio.Shell;
-    using Snyk.Analytics;
     using Snyk.Code.Library.Service;
     using Snyk.Common;
-    using Snyk.Common.Authentication;
     using Snyk.Common.Service;
     using Snyk.Common.Settings;
     using Snyk.VisualStudio.Extension.Shared.CLI;
@@ -72,11 +70,6 @@
         /// Gets OssService service instance.
         /// </summary>
         IOssService OssService { get; }
-
-        /// <summary>
-        /// Gets Analytics service instance.
-        /// </summary>
-        ISnykAnalyticsService AnalyticsService { get; }
 
         /// <summary>
         /// Gets user storage settings service instance.

@@ -120,10 +120,6 @@
     </PackageReference>
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\Snyk.Analytics\Snyk.Analytics.csproj">
-      <Project>{3a46a46d-2ed2-46ee-a005-77bc30336686}</Project>
-      <Name>Snyk.Analytics</Name>
-    </ProjectReference>
     <ProjectReference Include="..\Snyk.Code.Library\Snyk.Code.Library.csproj">
       <Project>{73df907b-a3bc-4176-a4e0-04bbd2fa924c}</Project>
       <Name>Snyk.Code.Library</Name>
