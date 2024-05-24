@@ -22,6 +22,8 @@
         /// </summary>
         AuthenticationToken ApiToken { get; }
 
+        SnykUser SnykUser { get; set; }
+
         bool IsFedramp();
 
         bool IsAnalyticsPermitted();

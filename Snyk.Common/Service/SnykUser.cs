@@ -9,5 +9,19 @@
         /// Gets or sets the user ID.
         /// </summary>
         public string Id { get; set; }
+
+        private string idHash = string.Empty;
+        public string IdHash
+        {
+            get
+            {
+                if (string.IsNullOrEmpty(idHash))
+                {
+                    idHash =  Sha256.ComputeHash(Id);
+                }
+
+                return idHash;
+            }
+        }
     }
 }
