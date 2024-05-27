@@ -1,5 +1,10 @@
 # Snyk Security Changelog
 
+## [1.1.53]
+
+### Fixed
+- Use dynamic colors for the suggestion fix textbox.
+
 ## [1.1.52]
 
 ### Fixed
