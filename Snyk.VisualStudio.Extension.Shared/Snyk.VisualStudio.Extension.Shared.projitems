@@ -159,6 +159,7 @@
     <Compile Include="$(MSBuildThisFileDirectory)SnykVSPackage.cs">
       <CopyToOutputDirectory>Never</CopyToOutputDirectory>
     </Compile>
+    <Compile Include="$(MSBuildThisFileDirectory)Theme\ColorExtension.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Theme\SnykVsThemeService.cs">
       <CopyToOutputDirectory>Never</CopyToOutputDirectory>
     </Compile>
