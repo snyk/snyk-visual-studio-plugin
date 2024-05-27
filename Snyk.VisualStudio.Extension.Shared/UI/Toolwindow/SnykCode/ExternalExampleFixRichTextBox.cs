@@ -5,7 +5,9 @@
     using System.Windows.Controls;
     using System.Windows.Documents;
     using System.Windows.Media;
+    using Microsoft.VisualStudio.PlatformUI;
     using Snyk.Code.Library.Domain.Analysis;
+    using Snyk.VisualStudio.Extension.Shared.Theme;
 
     /// <summary>
     /// Extended <see cref="RichTextBox"/> for display code example with red/green highlite rows.
@@ -14,6 +16,8 @@
     {
         public static readonly DependencyProperty LinesProperty =
             DependencyProperty.Register("Lines", typeof(ObservableCollection<FixLine>), typeof(ExternalExampleFixRichTextBox), new PropertyMetadata(OnLinesChanged));
+        private static readonly SolidColorBrush redBrush = VSColorTheme.GetThemedColor(EnvironmentColors.VizSurfaceRedDarkBrushKey).ToBrush();
+        private static readonly SolidColorBrush greenBrush = VSColorTheme.GetThemedColor(EnvironmentColors.VizSurfaceGreenDarkBrushKey).ToBrush();
 
         /// <summary>
         /// Gets or sets lines of code in editor.
@@ -47,7 +51,7 @@
                 foreach (var line in lines)
                 {
                     var lineDecorations = GetLineDecorations(line.LineChange);
-
+                    
                     var paragraph = new Paragraph();
                     paragraph.Margin = new Thickness(0);
                     paragraph.Padding = new Thickness(2);
@@ -75,18 +79,16 @@
         {
             string lineChangeSymbol = string.Empty;
             SolidColorBrush backgroundBrush = null;
-
             switch (lineChange)
             {
                 case "added":
                     lineChangeSymbol = "+";
-                    backgroundBrush = Brushes.DarkSeaGreen;
+                    backgroundBrush = greenBrush;
 
                     break;
                 case "removed":
                     lineChangeSymbol = "-";
-                    backgroundBrush = Brushes.PaleVioletRed;
-
+                    backgroundBrush = redBrush;
                     break;
                 default:
                     break;
