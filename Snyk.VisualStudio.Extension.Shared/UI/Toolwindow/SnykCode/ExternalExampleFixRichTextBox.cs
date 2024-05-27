@@ -41,10 +41,7 @@
 
                 var lines = evenArgs.NewValue as ObservableCollection<FixLine>;
 
-                if (lines == null)
-                {
-                    return;
-                }
+                if (lines == null) return;
 
                 FlowDocument flowDocument = new FlowDocument();
 
@@ -84,7 +81,6 @@
                 case "added":
                     lineChangeSymbol = "+";
                     backgroundBrush = greenBrush;
-
                     break;
                 case "removed":
                     lineChangeSymbol = "-";
