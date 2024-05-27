@@ -1,5 +1,11 @@
 # Snyk Security Changelog
 
+## [1.1.52]
+
+### Fixed
+- Upgraded several dependencies.
+- Removed legacy analytics implementation.
+
 ## [1.1.51]
 
 ### Fixed
