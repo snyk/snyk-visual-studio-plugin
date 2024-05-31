@@ -1,43 +1,40 @@
-﻿namespace Snyk.Common.Authentication;
-
+﻿using Newtonsoft.Json;
+using Newtonsoft.Json.Serialization;
 using System;
-using System.Text.Json;
-using System.Text.Json.Serialization;
-
-public class OAuthToken
+namespace Snyk.Common.Authentication
 {
-    [JsonPropertyName("access_token")]
-    public string AccessToken { get; set; }
-
-    [JsonPropertyName("token_type")]
-    public string TokenType { get; set; }
-
-    [JsonPropertyName("refresh_token")]
-    public string RefreshToken { get; set; }
-
-    [JsonPropertyName("expiry")]
-    public string Expiry { get; set; }
-
-    public static OAuthToken FromJson(string token)
+    [JsonObject(NamingStrategyType = typeof(SnakeCaseNamingStrategy))]
+    public class OAuthToken
     {
-        OAuthToken result = null;
+        public string AccessToken { get; set; }
 
-        try
+        public string TokenType { get; set; }
+
+        public string RefreshToken { get; set; }
+
+        public string Expiry { get; set; }
+
+        public static OAuthToken FromJson(string token)
         {
-            result = JsonSerializer.Deserialize<OAuthToken>(token);
+            OAuthToken result = null;
+
+            try
+            {
+                result = JsonConvert.DeserializeObject<OAuthToken>(token);
+            }
+            catch (Exception)
+            {
+                // nothing
+            }
+
+            return result;
         }
-        catch (Exception)
+
+        public bool IsExpired()
         {
-            // nothing
+            var expiryDate = DateTime.Parse(Expiry).ToUniversalTime();
+            expiryDate = expiryDate.AddSeconds(10);
+            return expiryDate < DateTime.UtcNow;
         }
-
-        return result;
-    }
-
-    public bool IsExpired()
-    {
-        var expiryDate = DateTime.Parse(Expiry).ToUniversalTime();
-        expiryDate = expiryDate.AddSeconds(10);
-        return expiryDate < DateTime.UtcNow;
     }
 }

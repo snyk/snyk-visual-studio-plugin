@@ -2,26 +2,25 @@ using System;
 using System.Diagnostics.CodeAnalysis;
 using System.Globalization;
 using System.Runtime.InteropServices;
-using System.Text.Json.Serialization;
+using Newtonsoft.Json;
+using Newtonsoft.Json.Serialization;
 using Snyk.Common.Settings;
 
 namespace Snyk.VisualStudio.Extension.Shared.CLI
 {
+    [JsonObject(NamingStrategyType = typeof(SnakeCaseNamingStrategy))]
     public class UniqueIssueCount
     {
-        [JsonPropertyName("critical")]
         public int Critical { get; set; }
         
-        [JsonPropertyName("high")]
         public int High { get; set; }
         
-        [JsonPropertyName("medium")]
         public int Medium { get; set; }
         
-        [JsonPropertyName("low")]
         public int Low { get; set; }
     }
 
+    [JsonObject(NamingStrategyType = typeof(SnakeCaseNamingStrategy))]
     [SuppressMessage("ReSharper", "UnusedMember.Global")]
     public class Attributes
     {
@@ -36,19 +35,14 @@ namespace Snyk.VisualStudio.Extension.Shared.CLI
             IntegrationEnvironmentVersion = options.IntegrationEnvironmentVersion;
         }
 
-        [JsonPropertyName("device_id")]
         public string DeviceId { get;  }
         
-        [JsonPropertyName("application")]
         public string Application { get;  }
         
-        [JsonPropertyName("application_version")]
         public string ApplicationVersion { get;  }
         
-        [JsonPropertyName("os")]
         public string Os => "windows";
         
-        [JsonPropertyName("arch")]
         public string Arch
         {
             get
@@ -69,34 +63,24 @@ namespace Snyk.VisualStudio.Extension.Shared.CLI
             }
         }
 
-        [JsonPropertyName("integration_name")]
         public string IntegrationName { get;  }
         
-        [JsonPropertyName("integration_version")]
         public string IntegrationVersion { get;  }
         
-        [JsonPropertyName("integration_environment")]
         public string IntegrationEnvironment { get;  }
         
-        [JsonPropertyName("integration_environment_version")]
         public string IntegrationEnvironmentVersion { get;  }
         
-        [JsonPropertyName("event_type")]
         public string EventType => "Scan done";
         
-        [JsonPropertyName("status")]
         public string Status => "Succeeded";
         
-        [JsonPropertyName("scan_type")]
         public string ScanType { get; set; }
         
-        [JsonPropertyName("unique_issue_count")]
         public UniqueIssueCount UniqueIssueCount { get; set; }
         
-        [JsonPropertyName("duration_ms")]
         public string DurationMs { get; set; }
 
-        [JsonPropertyName("timestamp_finished")]
         public string TimestampFinished { get; } = DateTime.Now.ToUniversalTime()
             .ToString(DateTimeFormat, CultureInfo.InvariantCulture);
 
@@ -104,18 +88,17 @@ namespace Snyk.VisualStudio.Extension.Shared.CLI
         private const string DateTimeFormat = "yyyy-MM-ddTHH:mm:ss.fffZ";
     }
 
+    [JsonObject(NamingStrategyType = typeof(SnakeCaseNamingStrategy))]
     public class Data
     {
-        [JsonPropertyName("type")]
         public string Type { get; set; } = "analytics";
         
-        [JsonPropertyName("attributes")]
         public Attributes Attributes { get; set; }
     }
 
+    [JsonObject(NamingStrategyType = typeof(SnakeCaseNamingStrategy))]
     public class ScanDoneEvent
     {
-        [JsonPropertyName("data")]
         public Data Data { get; set; }
     }
 }

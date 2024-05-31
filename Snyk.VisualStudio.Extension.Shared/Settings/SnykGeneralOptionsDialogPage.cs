@@ -119,7 +119,7 @@
         {
             var endpointUri = new Uri(this.GetBaseAppURL());
 
-            string[] permittedHosts = ["app.snyk.io", "app.us.snyk.io"];
+            string[] permittedHosts = new string[] { "app.snyk.io", "app.us.snyk.io" };
             return permittedHosts.Contains(endpointUri.Host.ToLower());
         }
 
