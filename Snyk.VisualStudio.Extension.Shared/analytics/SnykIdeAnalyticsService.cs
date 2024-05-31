@@ -1,11 +1,12 @@
 using System;
-using System.Text.Json;
 using Microsoft.VisualStudio.Shell;
+using Newtonsoft.Json;
 using Serilog;
 using Snyk.Code.Library.Domain.Analysis;
 using Snyk.Common;
 using Snyk.VisualStudio.Extension.Shared.Model;
 using Snyk.VisualStudio.Extension.Shared.Service;
+using Task = System.Threading.Tasks.Task;
 
 namespace Snyk.VisualStudio.Extension.Shared.CLI
 {
@@ -61,7 +62,7 @@ namespace Snyk.VisualStudio.Extension.Shared.CLI
                 }
             };
             
-            return JsonSerializer.Serialize(e);
+            return JsonConvert.SerializeObject(e);
         }
 
         public void OnCliScanningStarted(object sender, SnykCliScanEventArgs e)
@@ -69,7 +70,7 @@ namespace Snyk.VisualStudio.Extension.Shared.CLI
             ossScanningStarted = DateTime.UtcNow;
         }
 
-        public async System.Threading.Tasks.Task OnOssScanningUpdateAsync(object sender, SnykCliScanEventArgs e)
+        public async Task OnOssScanningUpdateAsync(object sender, SnykCliScanEventArgs e)
         {
             try
             {
@@ -104,7 +105,7 @@ namespace Snyk.VisualStudio.Extension.Shared.CLI
             codeScanningStarted = DateTime.UtcNow;
         }
 
-        public async System.Threading.Tasks.Task OnSnykCodeScanningUpdateAsync(object sender, SnykCodeScanEventArgs e)
+        public async Task OnSnykCodeScanningUpdateAsync(object sender, SnykCodeScanEventArgs e)
         {
             try
             {

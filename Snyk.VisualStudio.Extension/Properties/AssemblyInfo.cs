@@ -32,4 +32,6 @@ using Microsoft.VisualStudio.Shell;
 [assembly: AssemblyVersion("1.0.0.0")]
 [assembly: AssemblyFileVersion("1.0.0.0")]
 
-
+[assembly: ProvideBindingRedirection(AssemblyName = "System.Diagnostics.DiagnosticSource",
+      NewVersion = "8.0.0.0", OldVersionLowerBound = "7.0.0.0",
+      OldVersionUpperBound = "8.0.0.0")]
