@@ -3,6 +3,7 @@
     using System;
     using System.Net.Http;
     using System.Threading.Tasks;
+    using Serilog;
     using Snyk.Common.Settings;
 
     /// <summary>
@@ -11,6 +12,7 @@
     public class SnykApiService : ISnykApiService
     {
         private const string SastSettingsApiName = "v1/cli-config/settings/sast";
+        private static readonly ILogger Logger = LogManager.ForContext<SnykApiService>();
 
         private readonly ISnykOptions options;
         private readonly string vsVersion;
@@ -39,8 +41,16 @@
             {
                 var response = await HttpClient.SendAsync(httpRequest);
                 var responseContent = await response.Content.ReadAsStringAsync();
-
-                return Json.Deserialize<SnykUser>(responseContent);
+                SnykUser snykUser = null;
+                try
+                {
+                    snykUser = Json.Deserialize<SnykUser>(responseContent);
+                }
+                catch (Exception ex)
+                {
+                    Logger.Error("Couldn't deserialize UserResponse. ResponseContent is {Content} {Ex}", responseContent, ex);
+                }
+                return snykUser;
             }
         }
 
