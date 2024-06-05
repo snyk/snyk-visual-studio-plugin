@@ -160,6 +160,7 @@
     <Compile Include="$(MSBuildThisFileDirectory)SnykVSPackage.cs">
       <CopyToOutputDirectory>Never</CopyToOutputDirectory>
     </Compile>
+    <Compile Include="$(MSBuildThisFileDirectory)Theme\ColorExtension.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)Theme\SnykVsThemeService.cs">
       <CopyToOutputDirectory>Never</CopyToOutputDirectory>
     </Compile>
@@ -169,6 +170,7 @@
     <Compile Include="$(MSBuildThisFileDirectory)Theme\VsBroadcastMessageEvents.cs">
       <CopyToOutputDirectory>Never</CopyToOutputDirectory>
     </Compile>
+    <Compile Include="$(MSBuildThisFileDirectory)ui\ResourceLoader.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)UI\Toolwindow\SnykCode\ExampleFixTab.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)UI\Toolwindow\SnykCode\ExternalExampleFixRichTextBox.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)UI\Controls\TextField.xaml.cs">

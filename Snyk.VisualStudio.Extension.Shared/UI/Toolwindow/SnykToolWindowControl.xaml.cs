@@ -10,17 +10,13 @@
     using Microsoft.VisualStudio.Shell;
     using Microsoft.VisualStudio.Shell.Interop;
     using Serilog;
-    using Snyk.Analytics;
     using Snyk.Code.Library.Domain.Analysis;
     using Snyk.Common;
     using Snyk.Common.Service;
     using Snyk.Common.Settings;
     using Snyk.VisualStudio.Extension.Shared.CLI;
     using Snyk.VisualStudio.Extension.Shared.Commands;
-    using Snyk.VisualStudio.Extension.Shared.Model;
     using Snyk.VisualStudio.Extension.Shared.Service;
-    using Snyk.VisualStudio.Extension.Shared.Settings;
-    using Snyk.VisualStudio.Extension.Shared.Theme;
     using Snyk.VisualStudio.Extension.Shared.UI.Notifications;
     using Snyk.VisualStudio.Extension.Shared.UI.Tree;
     using Task = System.Threading.Tasks.Task;
@@ -235,8 +231,6 @@
         {
             await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
 
-            this.serviceProvider.AnalyticsService.LogAnalysisReadyEvent(AnalysisType.SnykOpenSource, AnalyticsAnalysisResult.Error);
-
             this.resultsTree.CliRootNode.State = RootTreeNodeState.Error;
 
             NotificationService.Instance.ShowErrorInfoBar(eventArgs.Error.Message);
@@ -263,8 +257,6 @@
         public void OnSnykCodeDisplayError(object sender, SnykCodeScanEventArgs eventArgs) => ThreadHelper.JoinableTaskFactory.Run(async () =>
         {
             await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
-
-            this.serviceProvider.AnalyticsService.LogAnalysisReadyEvent(AnalysisType.SnykCodeSecurity, AnalyticsAnalysisResult.Error);
 
             this.resultsTree.CodeQualityRootNode.State = RootTreeNodeState.Error;
             this.resultsTree.CodeSecurityRootNode.State = RootTreeNodeState.Error;
@@ -546,9 +538,6 @@
                 await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
 
                 this.resultsTree.OssResult = cliResult;
-
-                this.serviceProvider.AnalyticsService
-                    .LogAnalysisReadyEvent(AnalysisType.SnykOpenSource, AnalyticsAnalysisResult.Success);
             });
         }
 
@@ -596,8 +585,6 @@
 
                 this.messagePanel.Visibility = Visibility.Collapsed;
 
-                TreeNode treeNode = null;
-
                 if (this.resultsTree.SelectedItem is OssVulnerabilityTreeNode)
                 {
                     this.HandleOssTreeNodeSelected();
@@ -644,12 +631,6 @@
                 this.descriptionPanel.Visibility = Visibility.Visible;
 
                 this.descriptionPanel.Vulnerability = vulnerability;
-
-                var issueType = vulnerability.IsLicense() ? ScanResultIssueType.LicenceIssue : ScanResultIssueType.OpenSourceVulnerability;
-                this.serviceProvider.AnalyticsService.LogIssueIsViewedEvent(
-                    vulnerability.Id,
-                    issueType,
-                    vulnerability.Severity);
             }
             else
             {
@@ -673,12 +654,6 @@
                 suggestion.Columns.Item1 - 1,
                 suggestion.Rows.Item2 - 1,
                 suggestion.Columns.Item2);
-
-            var issueType = suggestion.Categories.Contains("Security") ? ScanResultIssueType.CodeSecurityVulnerability : ScanResultIssueType.CodeQualityIssue;
-            this.serviceProvider.AnalyticsService.LogIssueIsViewedEvent(
-                    suggestion.Id,
-                    issueType,
-                    Severity.FromInt(suggestion.Severity));
         }
 
         private void StopButton_Click(object sender, RoutedEventArgs e) => SnykTasksService.Instance.CancelTasks();
@@ -701,8 +676,6 @@
         private void ShowWelcomeOrRunScanScreen()
         {
             var options = this.serviceProvider.Options;
-            this.serviceProvider.AnalyticsService.AnalyticsEnabledOption = 
-                options.UsageAnalyticsEnabled && options.IsAnalyticsPermitted();
 
             if (options.ApiToken.IsValid())
             {
@@ -712,8 +685,6 @@
             }
 
             this.context.TransitionTo(OverviewState.Instance);
-
-            this.serviceProvider.AnalyticsService.LogWelcomeIsViewedEvent();
         }
     }
 }

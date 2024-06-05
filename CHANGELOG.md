@@ -1,5 +1,26 @@
 # Snyk Security Changelog
 
+## [1.1.55]
+
+### Fixed
+- Fixed an issue with resource loading in 17.10.
+
+## [1.1.54]
+
+### Fixed
+- Fixed an issue affecting old IDEs.
+
+## [1.1.53]
+
+### Fixed
+- Use dynamic colors for the suggestion fix textbox.
+
+## [1.1.52]
+
+### Fixed
+- Upgraded several dependencies.
+- Removed legacy analytics implementation.
+
 ## [1.1.51]
 
 ### Fixed

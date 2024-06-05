@@ -85,7 +85,7 @@
             {
                 return new FileInfo(path).Length > MaxFileSize;
             }
-            catch (Exception e)
+            catch (Exception)
             {
                 return true;
             }

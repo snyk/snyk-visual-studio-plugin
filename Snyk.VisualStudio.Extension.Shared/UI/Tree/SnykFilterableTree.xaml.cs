@@ -6,7 +6,6 @@
     using System.Windows.Controls;
     using System.Windows.Data;
     using Microsoft.VisualStudio.Shell;
-    using Snyk.Analytics;
     using Snyk.Code.Library.Domain.Analysis;
     using Snyk.VisualStudio.Extension.Shared.CLI;
     using Snyk.VisualStudio.Extension.Shared.Model;
@@ -133,17 +132,11 @@
                 if (this.codeSecurityRootNode.Enabled)
                 {
                     this.AppendSnykCodeIssues(this.codeSecurityRootNode, value, suggestion => suggestion.Categories.Contains("Security"));
-
-                    SnykAnalyticsService.Instance
-                        .LogAnalysisReadyEvent(AnalysisType.SnykCodeSecurity, AnalyticsAnalysisResult.Success);
                 }
 
                 if (this.codeQualityRootNode.Enabled)
                 {
                     this.AppendSnykCodeIssues(this.codeQualityRootNode, value, suggestion => !suggestion.Categories.Contains("Security"));
-
-                    SnykAnalyticsService.Instance
-                        .LogAnalysisReadyEvent(AnalysisType.SnykCodeQuality, AnalyticsAnalysisResult.Success);
                 }
             }
         }

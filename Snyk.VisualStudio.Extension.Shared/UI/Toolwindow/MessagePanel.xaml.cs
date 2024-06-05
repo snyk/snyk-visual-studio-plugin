@@ -1,23 +1,29 @@
-﻿namespace Snyk.VisualStudio.Extension.Shared.UI.Toolwindow
-{
-    using System;
-    using System.Collections.Generic;
-    using System.Diagnostics;
-    using System.Drawing;
-    using System.IO;
-    using System.Runtime.InteropServices;
-    using System.Threading.Tasks;
-    using System.Windows;
-    using System.Windows.Controls;
-    using Community.VisualStudio.Toolkit;
-    using Microsoft.VisualStudio.Shell;
-    using Microsoft.VisualStudio.Shell.Interop;
-    using Microsoft.VisualStudio.Threading;
-    using Serilog;
-    using Serilog.Core;
-    using Snyk.Common;
-    using Snyk.VisualStudio.Extension.Shared.Service;
+using System;
+using System.Collections.Generic;
+using System.Diagnostics;
+using System.Drawing;
+using System.IO;
+using System.Runtime.InteropServices;
+using System.Threading.Tasks;
+using System.Windows;
+using System.Windows.Controls;
+using Community.VisualStudio.Toolkit;
+using Microsoft.VisualStudio.Shell;
+using Microsoft.VisualStudio.Shell.Interop;
+using Microsoft.VisualStudio.Threading;
+using Serilog;
+using Serilog.Core;
+using Snyk.Common;
+using Snyk.VisualStudio.Extension.Shared.Service;
 
+namespace Snyk.VisualStudio.Extension.Shared.UI.Toolwindow
+{
+    /// <summary>
+    /// Interaction logic for MessagePanel.xaml.
+    /// </summary>
+    public partial class MessagePanel : UserControl
+    {
+        
 
     //[ComVisible(true)]
     //public class ScriptManager
@@ -27,12 +33,6 @@
     //        // DTE stuff
     //    }
     //}
-
-    /// <summary>
-    /// Interaction logic for MessagePanel.xaml.
-    /// </summary>
-    public partial class MessagePanel : UserControl
-    {
         private static readonly ILogger Logger = LogManager.ForContext<MessagePanel>();
         private readonly IList<StackPanel> panels;
 
@@ -57,6 +57,7 @@
                 this.overviewPanel,
                 this.scanningProjectMessagePanel,
             };
+            snykDogLogo.Source = SnykIconProvider.GetImageSourceFromPath(SnykIconProvider.SnykDogLogoIconPath);
         }
 
         /// <summary>
@@ -114,7 +115,12 @@
             panel.Visibility = Visibility.Visible;
         }
 
-        private async void TestCodeNow_Click(object sender, RoutedEventArgs e)
+        private void TestCodeNow_Click(object sender, RoutedEventArgs e)
+        {
+            ThreadHelper.JoinableTaskFactory.Run(RunTestCodeNowAsync);
+        }
+
+        private async System.Threading.Tasks.Task RunTestCodeNowAsync()
         {
             await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
             this.testCodeNowButton.IsEnabled = false; // Disable the button while authenticating

@@ -10,7 +10,6 @@
     using Microsoft.VisualStudio.Shell;
     using Microsoft.VisualStudio.Shell.Settings;
     using Serilog;
-    using Analytics;
     using Snyk.Code.Library.Service;
     using Common;
     using Snyk.Common.Service;
@@ -42,8 +41,6 @@
         private SnykTasksService tasksService;
 
         private DTE2 dte;
-
-        private ISnykAnalyticsService analyticsService;
 
         private SnykIdeAnalyticsService ideAnalyticsService;
 
@@ -128,32 +125,6 @@
                 }
 
                 return ideAnalyticsService;
-            }
-        }
-
-        /// <summary>
-        /// Gets Analytics service instance. If analytics service not created yet it will create it and return.
-        /// </summary>
-        public ISnykAnalyticsService AnalyticsService
-        {
-            get
-            {
-                if (this.analyticsService == null)
-                {
-                    this.InitializeAnalyticsService();
-
-                    // When settings change (API endpoint/analytics enabling), re-initialize the service
-                    this.Options.SettingsChanged += (sender, args) =>
-                    {
-                        Logger.Information("Notifying analytics service after settings change");
-                        this.InitializeAnalyticsService();
-                        ThreadHelper.JoinableTaskFactory.Run(async () =>
-                            await this.analyticsService.ObtainUserAsync(this.Options.ApiToken));
-                        Logger.Information("Analytics service re-initialized");
-                    };
-                }
-
-                return this.analyticsService;
             }
         }
 

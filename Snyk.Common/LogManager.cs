@@ -58,7 +58,7 @@
                     config.AttachStacktrace = true;
 
                     // Disable default Sentry integrations for capture TaskUnobservedTaskException and AppDomainUnhandledException exceptions.
-                    config.DisableTaskUnobservedTaskExceptionCapture();
+                    config.DisableUnobservedTaskExceptionCapture();
                     config.DisableAppDomainUnhandledExceptionCapture();
 
                     // Register Snyk integrations for capture only Snyk related TaskUnobservedTaskException and AppDomainUnhandledException exceptions.

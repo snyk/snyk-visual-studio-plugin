@@ -19,7 +19,7 @@
         /// <summary>
         /// Gets a value indicating whether icon for open source node.
         /// </summary>
-        public string Icon => SnykIconProvider.SnykCodeIconPath;
+        public override string Icon => SnykIconProvider.SnykCodeIconPath;
 
         protected override string GetIssuesTypeName() => "issues";
 

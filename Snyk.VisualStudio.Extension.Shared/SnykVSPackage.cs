@@ -126,7 +126,7 @@ namespace Snyk.VisualStudio.Extension.Shared
         public async Task<object> CreateSnykServiceAsync(IAsyncServiceContainer container,
             CancellationToken cancellationToken, Type serviceType)
         {
-            var ideVersion = await GetVsMajorMinorVersion();
+            var ideVersion = await GetVsMajorMinorVersionAsync();
             var service = new SnykService(this, ideVersion);
 
             await service.InitializeAsync(cancellationToken);
@@ -151,7 +151,7 @@ namespace Snyk.VisualStudio.Extension.Shared
 
                 ToolWindow = FindToolWindow(typeof(SnykToolWindow), 0, true) as SnykToolWindow;
 
-                Logger.Information($"Check ToolWindow is not null {ToolWindow}.");
+                Logger.Information("Check ToolWindow is not null {ToolWindow}.", ToolWindow);
 
                 if (ToolWindow == null || ToolWindow.Frame == null)
                 {
@@ -197,13 +197,13 @@ namespace Snyk.VisualStudio.Extension.Shared
                 await InitializeGeneralOptionsAsync();
 
                 // Initialize analytics
-                var vsVersion = await GetReadableVsVersion();
+                var vsVersion = await GetReadableVsVersionAsync();
 
                 var tokenString = this.serviceProvider.NewCli().GetApiToken();
                 this.serviceProvider.Options.SetApiToken(tokenString);
                 var token = this.serviceProvider.Options.ApiToken;
-
-                await this.serviceProvider.AnalyticsService.ObtainUserAsync(token, vsVersion);
+                
+                serviceProvider.Options.SnykUser = await serviceProvider.ApiService.GetUserAsync();
                 await this.serviceProvider.SentryService.SetupAsync();
 
                 // Initialize commands
@@ -238,8 +238,6 @@ namespace Snyk.VisualStudio.Extension.Shared
         /// <param name="disposing">Bool.</param>
         protected override void Dispose(bool disposing)
         {
-            this.serviceProvider.AnalyticsService?.Dispose();
-
             base.Dispose(disposing);
         }
 
@@ -283,8 +281,8 @@ namespace Snyk.VisualStudio.Extension.Shared
                 Logger.Information("Call generalOptionsDialogPage.Initialize()");
 
                 GeneralOptionsDialogPage.Initialize(this.serviceProvider);
-                var readableVsVersion = await this.GetReadableVsVersion();
-                var vsMajorMinorVersion = await this.GetVsMajorMinorVersion();
+                var readableVsVersion = await this.GetReadableVsVersionAsync();
+                var vsMajorMinorVersion = await this.GetVsMajorMinorVersionAsync();
                 GeneralOptionsDialogPage.Application = readableVsVersion;
                 GeneralOptionsDialogPage.ApplicationVersion = vsMajorMinorVersion;
                 GeneralOptionsDialogPage.IntegrationEnvironment = readableVsVersion;
@@ -292,7 +290,7 @@ namespace Snyk.VisualStudio.Extension.Shared
             }
         }
 
-        private async Task<string> GetVsVersion()
+        private async Task<string> GetVsVersionAsync()
         {
             try
             {
@@ -312,11 +310,11 @@ namespace Snyk.VisualStudio.Extension.Shared
             }
         }
 
-        private async Task<string> GetVsMajorMinorVersion()
+        private async Task<string> GetVsMajorMinorVersionAsync()
         {
             try
             {
-                var vsVersionString = (await GetVsVersion()).Split('.');
+                var vsVersionString = (await GetVsVersionAsync()).Split('.');
 
                 return $"{vsVersionString[0]}.{vsVersionString[1]}";
             }
@@ -326,11 +324,11 @@ namespace Snyk.VisualStudio.Extension.Shared
             }
         }
 
-        private async Task<string> GetReadableVsVersion()
+        private async Task<string> GetReadableVsVersionAsync()
         {
             try
             {
-                var vsVersionString = await GetVsVersion();
+                var vsVersionString = await GetVsVersionAsync();
                 var major = vsVersionString.Split('.').FirstOrDefault();
 
                 return major switch

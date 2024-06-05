@@ -310,6 +310,8 @@
             }
         }
 
+        public SnykUser SnykUser { get; set; }
+
         /// <summary>
         /// Gets a value indicating whether additional options.
         /// Get this data using <see cref="SnykUserStorageSettingsService"/>.
@@ -396,6 +398,10 @@
                 //languageServerClientManager.SetOptions(cli.GetCliPath(), token.ToString());
                 //ThreadHelper.JoinableTaskFactory.Run(languageServerClientManager.StartServerAsync);
 
+                ThreadHelper.JoinableTaskFactory.Run(async () =>
+                {
+                    SnykUser = await serviceProvider.ApiService.GetUserAsync();
+                });
                 return true;
 
             }

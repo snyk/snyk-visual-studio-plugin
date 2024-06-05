@@ -1,92 +1,93 @@
-﻿namespace Snyk.Common.Authentication;
+﻿using System;
 
-using System;
-
-public delegate string TokenRefresher();
-
-/// <summary>
-/// Util for AuthenticationToken strings.
-/// </summary>
-public class AuthenticationToken
+namespace Snyk.Common.Authentication
 {
-    public static readonly AuthenticationToken EmptyToken = new(AuthenticationType.Token, string.Empty);
+    public delegate string TokenRefresher();
 
-    public TokenRefresher TokenRefresher;
-
-    private string value;
-
-    public AuthenticationToken(AuthenticationType type, string value)
+    /// <summary>
+    /// Util for AuthenticationToken strings.
+    /// </summary>
+    public class AuthenticationToken
     {
-        this.value = value;
-        Type = type;
-        this.TokenRefresher = null;
-    }
+        public static readonly AuthenticationToken EmptyToken = new(AuthenticationType.Token, string.Empty);
 
-    public AuthenticationType Type { get; }
+        public TokenRefresher TokenRefresher;
 
-    public override string ToString()
-    {
-        // if possible and required, update the token before using it
-        if (this.TokenRefresher != null && Type == AuthenticationType.OAuth)
+        private string value;
+
+        public AuthenticationToken(AuthenticationType type, string value)
         {
-            var oauthToken = OAuthToken.FromJson(this.value);
-            if (oauthToken != null)
+            this.value = value;
+            Type = type;
+            this.TokenRefresher = null;
+        }
+
+        public AuthenticationType Type { get; }
+
+        public override string ToString()
+        {
+            // if possible and required, update the token before using it
+            if (this.TokenRefresher != null && Type == AuthenticationType.OAuth)
             {
-                var expired = oauthToken.IsExpired();
-                if (expired)
+                var oauthToken = OAuthToken.FromJson(this.value);
+                if (oauthToken != null)
                 {
-                    this.value = this.TokenRefresher();
+                    var expired = oauthToken.IsExpired();
+                    if (expired)
+                    {
+                        this.value = this.TokenRefresher();
+                    }
                 }
+            }
+
+            return this.value;
+        }
+
+        public bool IsValid()
+        {
+            if (string.IsNullOrWhiteSpace(this.value))
+            {
+                return false;
+            }
+
+            switch (Type)
+            {
+                case AuthenticationType.Token:
+                    return Guid.TryParse(this.value, out _);
+                case AuthenticationType.OAuth:
+                    {
+                        var tokenState = GetTokenState(this.value);
+                        if (tokenState == OAuthTokenState.Expired)
+                        {
+                            this.value = this.TokenRefresher();
+                            tokenState = GetTokenState(this.value);
+                        }
+
+                        return tokenState == OAuthTokenState.Valid;
+                    }
+                default:
+                    throw new ArgumentOutOfRangeException();
             }
         }
 
-        return this.value;
-    }
-
-    public bool IsValid()
-    {
-        if (string.IsNullOrWhiteSpace(this.value))
+        private static OAuthTokenState GetTokenState(string value)
         {
-            return false;
-        }
+            var oauthToken = OAuthToken.FromJson(value);
+            var expired = oauthToken?.IsExpired() == true;
 
-        switch (Type)
-        {
-            case AuthenticationType.Token:
-                return Guid.TryParse(this.value, out _);
-            case AuthenticationType.OAuth:
+            return (oauthToken, expired) switch
             {
-                var tokenState = GetTokenState(this.value);
-                if (tokenState == OAuthTokenState.Expired)
-                {
-                    this.value = this.TokenRefresher();
-                    tokenState = GetTokenState(this.value);
-                }
-
-                return tokenState == OAuthTokenState.Valid;
-            }
-            default:
-                throw new ArgumentOutOfRangeException();
+                (null, _) => OAuthTokenState.Invalid,
+                (_, true) => OAuthTokenState.Expired,
+                (_, false) => OAuthTokenState.Valid
+            };
         }
-    }
 
-    private static OAuthTokenState GetTokenState(string value)
-    {
-        var oauthToken = OAuthToken.FromJson(value);
-        var expired = oauthToken?.IsExpired() == true;
-
-        return (oauthToken, expired) switch
+        private enum OAuthTokenState
         {
-            (null, _) => OAuthTokenState.Invalid,
-            (_, true) => OAuthTokenState.Expired,
-            (_, false) => OAuthTokenState.Valid
-        };
-    }
-
-    private enum OAuthTokenState
-    {
-        Invalid,
-        Expired,
-        Valid
+            Invalid,
+            Expired,
+            Valid
+        }
     }
 }

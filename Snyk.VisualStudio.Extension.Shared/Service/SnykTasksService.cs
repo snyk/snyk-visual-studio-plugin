@@ -1,25 +1,19 @@
-﻿namespace Snyk.VisualStudio.Extension.Shared.Service
-{
-    using System;
-    using System.Collections.Generic;
-    using System.Threading;
-    using System.Threading.Tasks;
-    using Community.VisualStudio.Toolkit;
-    using Microsoft.VisualStudio.ComponentModelHost;
-    using Microsoft.VisualStudio.Shell;
-    using Microsoft.VisualStudio.Shell.Interop;
-    using Serilog;
-    using Snyk.Analytics;
-    using Snyk.Code.Library.Domain.Analysis;
-    using Snyk.Common;
-    using Snyk.VisualStudio.Extension.Shared.CLI;
-    using Snyk.VisualStudio.Extension.Shared.CLI.Download;
-    using Snyk.VisualStudio.Extension.Shared.Language;
-    using Snyk.VisualStudio.Extension.Shared.Service.Domain;
-    using Snyk.VisualStudio.Extension.Shared.UI;
-    using static Snyk.VisualStudio.Extension.Shared.CLI.Download.SnykCliDownloader;
-    using Task = System.Threading.Tasks.Task;
+﻿using System;
+using System.Collections.Generic;
+using System.Threading;
+using System.Threading.Tasks;
+using Microsoft.VisualStudio.Shell;
+using Serilog;
+using Snyk.Code.Library.Domain.Analysis;
+using Snyk.Common;
+using Snyk.VisualStudio.Extension.Shared.CLI;
+using Snyk.VisualStudio.Extension.Shared.CLI.Download;
+using Snyk.VisualStudio.Extension.Shared.Service.Domain;
+using static Snyk.VisualStudio.Extension.Shared.CLI.Download.SnykCliDownloader;
+using Task = System.Threading.Tasks.Task;
 
+namespace Snyk.VisualStudio.Extension.Shared.Service
+{
     /// <summary>
     /// Incapsulate logic with background tasks work.
     /// </summary>
@@ -228,7 +222,6 @@
                     return;
                 }
 
-                this.serviceProvider.AnalyticsService.LogAnalysisIsTriggeredEvent(this.GetSelectedFeatures(selectedFeatures));
                 var ossScanTask = this.ScanOssAsync(selectedFeatures);
                 var snykCodeScanTask = this.ScanSnykCodeAsync(selectedFeatures);
 
@@ -771,31 +764,6 @@
                 CodeQualityEnabled = snykCodeEnabled && options.SnykCodeQualityEnabled,
                 LocalCodeEngineEnabled = sastSettings?.LocalCodeEngineEnabled ?? false,
             };
-        }
-
-        private IList<AnalysisType> GetSelectedFeatures(FeaturesSettings featuresSettings)
-        {
-            var selectedProducts = new List<AnalysisType>();
-
-            if (featuresSettings.OssEnabled)
-            {
-                selectedProducts.Add(AnalysisType.SnykOpenSource);
-            }
-
-            if (featuresSettings.SastOnServerEnabled)
-            {
-                if (featuresSettings.CodeSecurityEnabled)
-                {
-                    selectedProducts.Add(AnalysisType.SnykCodeSecurity);
-                }
-
-                if (featuresSettings.CodeQualityEnabled)
-                {
-                    selectedProducts.Add(AnalysisType.SnykCodeQuality);
-                }
-            }
-
-            return selectedProducts;
         }
 
         private void CancelTask(ref CancellationTokenSource tokenSource)

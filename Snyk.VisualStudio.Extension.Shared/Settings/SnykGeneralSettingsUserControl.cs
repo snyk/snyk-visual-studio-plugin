@@ -413,10 +413,7 @@
                 this.OptionsDialogPage.UsageAnalyticsEnabled = this.usageAnalyticsCheckBox.Checked;
 
                 var serviceProvider = this.ServiceProvider;
-
-                serviceProvider.AnalyticsService.AnalyticsEnabledOption = this.usageAnalyticsCheckBox.Checked;
-
-                await serviceProvider.AnalyticsService.ObtainUserAsync(this.OptionsDialogPage.ApiToken);
+                
                 await serviceProvider.SentryService.SetupAsync();
             });
 
