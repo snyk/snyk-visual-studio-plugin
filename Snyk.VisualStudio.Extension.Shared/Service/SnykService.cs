@@ -1,30 +1,28 @@
-﻿namespace Snyk.VisualStudio.Extension.Shared.Service
-{
-    using System;
-    using System.IO;
-    using System.Threading;
-    using System.Threading.Tasks;
-    using EnvDTE;
-    using EnvDTE80;
-    using Microsoft.VisualStudio.Settings;
-    using Microsoft.VisualStudio.Shell;
-    using Microsoft.VisualStudio.Shell.Settings;
-    using Serilog;
-    using Snyk.Code.Library.Service;
-    using Common;
-    using Snyk.Common.Service;
-    using Snyk.Common.Settings;
-    using CLI;
-    using Settings;
-    using Theme;
-    using UI;
-    using UI.Notifications;
-    using UI.Toolwindow;
-    using Task = System.Threading.Tasks.Task;
-    using Microsoft.VisualStudio.ComponentModelHost;
-    using Snyk.VisualStudio.Extension.Shared.Language;
-    using Microsoft;
+﻿using System;
+using System.IO;
+using System.Threading;
+using System.Threading.Tasks;
+using EnvDTE;
+using EnvDTE80;
+using Microsoft.VisualStudio.Settings;
+using Microsoft.VisualStudio.Shell;
+using Microsoft.VisualStudio.Shell.Settings;
+using Serilog;
+using Snyk.Code.Library.Service;
+using Snyk.Common;
+using Snyk.Common.Service;
+using Snyk.Common.Settings;
+using Snyk.VisualStudio.Extension.Shared.CLI;
+using Snyk.VisualStudio.Extension.Shared.Settings;
+using Snyk.VisualStudio.Extension.Shared.Theme;
+using Snyk.VisualStudio.Extension.Shared.UI;
+using Snyk.VisualStudio.Extension.Shared.UI.Notifications;
+using Snyk.VisualStudio.Extension.Shared.UI.Toolwindow;
+using Task = System.Threading.Tasks.Task;
+using Snyk.VisualStudio.Extension.Shared.Language;
 
+namespace Snyk.VisualStudio.Extension.Shared.Service
+{
     /// <summary>
     /// Main logic for Snyk extension.
     /// </summary>
@@ -287,22 +285,6 @@
             {
                 Logger.Error(e, string.Empty);
             }
-        }
-
-        private void InitializeAnalyticsService()
-        {
-            Logger.Information("Initialize Analytics Service...");
-            var writeKey = SnykExtension.AppSettings?.SegmentAnalyticsWriteKey;
-
-            string anonymousId = this.Options.AnonymousId;
-
-            var enabled = this.Options.UsageAnalyticsEnabled && this.Options.IsAnalyticsPermitted();
-            var endpoint = this.ApiEndpointResolver.UserMeEndpoint;
-
-            Logger.Information("analytics enabled = {Enabled}, endpoint = {Endpoint}", enabled, endpoint);
-            SnykAnalyticsService.Initialize(this.Options.AnonymousId, writeKey, enabled, this.ApiService);
-            this.analyticsService = SnykAnalyticsService.Instance;
-            Logger.Information("Analytics service initialized");
         }
 
         private ICli _cli;

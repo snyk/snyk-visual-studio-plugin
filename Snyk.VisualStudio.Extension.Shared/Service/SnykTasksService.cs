@@ -2,12 +2,14 @@
 using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
+using Microsoft.VisualStudio.ComponentModelHost;
 using Microsoft.VisualStudio.Shell;
 using Serilog;
 using Snyk.Code.Library.Domain.Analysis;
 using Snyk.Common;
 using Snyk.VisualStudio.Extension.Shared.CLI;
 using Snyk.VisualStudio.Extension.Shared.CLI.Download;
+using Snyk.VisualStudio.Extension.Shared.Language;
 using Snyk.VisualStudio.Extension.Shared.Service.Domain;
 using static Snyk.VisualStudio.Extension.Shared.CLI.Download.SnykCliDownloader;
 using Task = System.Threading.Tasks.Task;

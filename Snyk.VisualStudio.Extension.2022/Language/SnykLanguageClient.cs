@@ -149,7 +149,7 @@ namespace Snyk.VisualStudio.Extension.Shared.Language
 
         public async Task StartServerAsync()
         {
-            if (StartAsync != null)
+            if (StartAsync != null && _options != null)
             {
                 await StartAsync.InvokeAsync(this, EventArgs.Empty);
             }
