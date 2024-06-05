@@ -1,5 +1,10 @@
 # Snyk Security Changelog
 
+## [1.1.56]
+
+### Fixed
+- Send current solution folder path when sending Analytics.
+
 ## [1.1.55]
 
 ### Fixed
