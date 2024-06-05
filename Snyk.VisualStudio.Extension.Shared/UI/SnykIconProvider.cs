@@ -1,10 +1,10 @@
-﻿namespace Snyk.VisualStudio.Extension.Shared.UI
-{
-    using System;
-    using System.Windows.Media;
-    using System.Windows.Media.Imaging;
-    using Snyk.VisualStudio.Extension.Shared.Model;
+﻿using System;
+using System.Windows.Media;
+using System.Windows.Media.Imaging;
+using Snyk.VisualStudio.Extension.Shared.Model;
 
+namespace Snyk.VisualStudio.Extension.Shared.UI
+{
     /// <summary>
     /// Provide icon path.
     /// </summary>
@@ -13,57 +13,53 @@
         /// <summary>
         /// Open source security icon path.
         /// </summary>
-        public const string OpenSourceSecurityIconPath = ResourcesDirectoryPath + "OpenSourceSecurity.png";
+        public static string OpenSourceSecurityIconPath = ResourceLoader.GetResourcePath("OpenSourceSecurity.png");
 
         /// <summary>
         /// SnykCode icon path.
         /// </summary>
-        public const string SnykCodeIconPath = ResourcesDirectoryPath + "SnykCode.png";
+        public static string SnykCodeIconPath = ResourceLoader.GetResourcePath("SnykCode.png");
 
         /// <summary>
         /// Default file icon path.
         /// </summary>
-        public const string DefaultFileIconPath = ResourcesDirectoryPath + "DefaultFileIcon.png";
+        public static string DefaultFileIconPath = ResourceLoader.GetResourcePath("DefaultFileIcon.png");
 
         /// <summary>
         /// Open source security icon path for dark mode.
         /// </summary>
-        public const string OpenSourceSecurityDarkIconPath = ResourcesDirectoryPath + "OpenSourceSecurityDark.png";
-
+        public static string OpenSourceSecurityDarkIconPath = ResourceLoader.GetResourcePath("OpenSourceSecurityDark.png");
         /// <summary>
-        /// Path from this class folder to Resources folder.
+        /// Snyk Dog Icon.
         /// </summary>
-        private const string ResourcesDirectoryPath = "pack://application:,,,/Snyk.VisualStudio.Extension;component/";
+        public static string SnykDogLogoIconPath = ResourceLoader.GetResourcePath("SnykDogLogoFullSize.png");
 
-        private const string NugetIconPath = ResourcesDirectoryPath + "NugetLogo.png";
-        private const string NpmIconPath = ResourcesDirectoryPath + "NpmLogo.png";
-        private const string JsIconPath = ResourcesDirectoryPath + "JsLogo.png";
-        private const string JavaIconPath = ResourcesDirectoryPath + "JavaLogo.png";
-        private const string PythonIconPath = ResourcesDirectoryPath + "PythonLogo.png";
-        private const string DefaultIconPath = ResourcesDirectoryPath + "DefaultFileIcon.png";
-
-        private const string SeverityCriticalIconPath = ResourcesDirectoryPath + "SeverityCritical.png";
-        private const string SeverityHighIconPath = ResourcesDirectoryPath + "SeverityHigh.png";
-        private const string SeverityMediumIconPath = ResourcesDirectoryPath + "SeverityMedium.png";
-        private const string SeverityLowIconPath = ResourcesDirectoryPath + "SeverityLow.png";
-
-        private const string SeverityCritical24IconName = ResourcesDirectoryPath + "SeverityCritical24.png";
-        private const string SeverityHigh24IconName = ResourcesDirectoryPath + "SeverityHigh24.png";
-        private const string SeverityMedium24IconName = ResourcesDirectoryPath + "SeverityMedium24.png";
-        private const string SeverityLow24IconName = ResourcesDirectoryPath + "SeverityLow24.png";
-
-        private const string JsFileIconPath = ResourcesDirectoryPath + "JSScript.png";
-        private const string CsFileIconPath = ResourcesDirectoryPath + "CSFileNode.png";
-        private const string TsFileIconPath = ResourcesDirectoryPath + "TSFileNode.png";
-        private const string AspFileIconPath = ResourcesDirectoryPath + "ASPFile.png";
-        private const string CFileIconPath = ResourcesDirectoryPath + "CFile.png";
-        private const string CppFileIconPath = ResourcesDirectoryPath + "CPPFileNode.png";
-        private const string CppHeaderFileIconPath = ResourcesDirectoryPath + "CPPHeaderFile.png";
-        private const string HtmlFileIconPath = ResourcesDirectoryPath + "HTMLFile.png";
-        private const string JavaFileIconPath = ResourcesDirectoryPath + "JavaSource.png";
-        private const string JsxFileIconPath = ResourcesDirectoryPath + "JSXScript.png";
-        private const string PhpFileIconPath = ResourcesDirectoryPath + "PHPFile.png";
-        private const string PythonFileIconPath = ResourcesDirectoryPath + "PyFileNode.png";
+        private static string NugetIconPath = ResourceLoader.GetResourcePath("NugetLogo.png");
+        private static string NpmIconPath = ResourceLoader.GetResourcePath("NpmLogo.png");
+        private static string JsIconPath = ResourceLoader.GetResourcePath("JsLogo.png");
+        private static string JavaIconPath = ResourceLoader.GetResourcePath("JavaLogo.png");
+        private static string PythonIconPath = ResourceLoader.GetResourcePath("PythonLogo.png");
+        private static string DefaultIconPath = ResourceLoader.GetResourcePath("DefaultFileIcon.png");
+        private static string SeverityCriticalIconPath = ResourceLoader.GetResourcePath("SeverityCritical.png");
+        private static string SeverityHighIconPath = ResourceLoader.GetResourcePath("SeverityHigh.png");
+        private static string SeverityMediumIconPath = ResourceLoader.GetResourcePath("SeverityMedium.png");
+        private static string SeverityLowIconPath = ResourceLoader.GetResourcePath("SeverityLow.png");
+        private static string SeverityCritical24IconName = ResourceLoader.GetResourcePath("SeverityCritical24.png");
+        private static string SeverityHigh24IconName = ResourceLoader.GetResourcePath("SeverityHigh24.png");
+        private static string SeverityMedium24IconName = ResourceLoader.GetResourcePath("SeverityMedium24.png");
+        private static string SeverityLow24IconName = ResourceLoader.GetResourcePath("SeverityLow24.png");
+        private static string JsFileIconPath = ResourceLoader.GetResourcePath("JSScript.png");
+        private static string CsFileIconPath = ResourceLoader.GetResourcePath("CSFileNode.png");
+        private static string TsFileIconPath = ResourceLoader.GetResourcePath("TSFileNode.png");
+        private static string AspFileIconPath = ResourceLoader.GetResourcePath("ASPFile.png");
+        private static string CFileIconPath = ResourceLoader.GetResourcePath("CFile.png");
+        private static string CppFileIconPath = ResourceLoader.GetResourcePath("CPPFileNode.png");
+        private static string CppHeaderFileIconPath = ResourceLoader.GetResourcePath("CPPHeaderFile.png");
+        private static string HtmlFileIconPath = ResourceLoader.GetResourcePath("HTMLFile.png");
+        private static string JavaFileIconPath = ResourceLoader.GetResourcePath("JavaSource.png");
+        private static string JsxFileIconPath = ResourceLoader.GetResourcePath("JSXScript.png");
+        private static string PhpFileIconPath = ResourceLoader.GetResourcePath("PHPFile.png");
+        private static string PythonFileIconPath = ResourceLoader.GetResourcePath("PyFileNode.png");
 
         /// <summary>
         /// Get package manager icon by name.
@@ -246,10 +242,20 @@
                     break;
             }
 
-            BitmapImage bitmapImage = new BitmapImage();
+            return ConvertPathToBitmap(iconPath);
+        }
 
+        public static ImageSource GetImageSourceFromPath(string imagePath)
+        {
+            var image = ConvertPathToBitmap(imagePath);
+            return image;
+        }
+
+        private static BitmapImage ConvertPathToBitmap(string path)
+        {
+            var bitmapImage = new BitmapImage();
             bitmapImage.BeginInit();
-            bitmapImage.UriSource = new Uri(iconPath, UriKind.RelativeOrAbsolute);
+            bitmapImage.UriSource = new Uri(path, UriKind.RelativeOrAbsolute);
             bitmapImage.EndInit();
 
             return bitmapImage;

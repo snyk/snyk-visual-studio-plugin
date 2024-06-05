@@ -28,7 +28,6 @@ namespace Snyk.VisualStudio.Extension.Shared.UI.Toolwindow
         public MessagePanel()
         {
             this.InitializeComponent();
-
             this.panels = new List<StackPanel>
             {
                 this.selectIssueMessagePanel,
@@ -38,6 +37,7 @@ namespace Snyk.VisualStudio.Extension.Shared.UI.Toolwindow
                 this.overviewPanel,
                 this.scanningProjectMessagePanel,
             };
+            snykDogLogo.Source = SnykIconProvider.GetImageSourceFromPath(SnykIconProvider.SnykDogLogoIconPath);
         }
 
         /// <summary>
