@@ -51,4 +51,10 @@
     <ProjectReference Include="..\Snyk.VisualStudio.Extension\Snyk.VisualStudio.Extension.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Resource Include="Resources\TestImage.png">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Resource>
+  </ItemGroup>
+
 </Project>
