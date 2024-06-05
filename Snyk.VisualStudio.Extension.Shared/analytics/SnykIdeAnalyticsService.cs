@@ -16,6 +16,7 @@ namespace Snyk.VisualStudio.Extension.Shared.CLI
         private readonly ISnykOptionsProvider optionsProvider;
         private readonly ICliProvider cliProvider;
         private readonly ISnykScanTopicProvider scanTopicProvider;
+        private readonly ISolutionService solutionService;
 
         private DateTime codeScanningStarted;
         private DateTime ossScanningStarted;
@@ -23,12 +24,14 @@ namespace Snyk.VisualStudio.Extension.Shared.CLI
         public SnykIdeAnalyticsService(
             ISnykOptionsProvider optionsProvider,
             ICliProvider cliProvider,
-            ISnykScanTopicProvider scanTopicProvider
+            ISnykScanTopicProvider scanTopicProvider,
+            ISolutionService solutionService
         )
         {
             this.optionsProvider = optionsProvider;
             this.cliProvider = cliProvider;
             this.scanTopicProvider = scanTopicProvider;
+            this.solutionService = solutionService;
         }
 
         public void Initialize()
@@ -41,7 +44,7 @@ namespace Snyk.VisualStudio.Extension.Shared.CLI
             scanTopicProvider.SnykCodeScanningFinished += OnSnykCodeScanningFinished;
         }
 
-        public string GetAnalyticsPayload(string product, int durationMs, int critical, int high, int medium, int low)
+        public string GetAnalyticsPayload(string product, int durationMs, int critical, int high, int medium, int low, string directoryPath)
         {
             ScanDoneEvent e = new()
             {
@@ -51,6 +54,7 @@ namespace Snyk.VisualStudio.Extension.Shared.CLI
                     {
                         DurationMs = durationMs.ToString(),
                         ScanType = product,
+                        Path = directoryPath,
                         UniqueIssueCount = new UniqueIssueCount
                         {
                             Critical = critical,
@@ -86,7 +90,8 @@ namespace Snyk.VisualStudio.Extension.Shared.CLI
                     low = e.Result.LowSeverityCount;
                 }
 
-                var payload = GetAnalyticsPayload("Snyk Open Source", durationMs, critical, high, medium, low);
+                var directoryPath = await solutionService.GetSolutionFolderAsync();
+                var payload = GetAnalyticsPayload("Snyk Open Source", durationMs, critical, high, medium, low, directoryPath);
                 await cliProvider.Cli.ReportAnalyticsAsync(payload);
             }
             catch (Exception exception)
@@ -137,7 +142,8 @@ namespace Snyk.VisualStudio.Extension.Shared.CLI
                     }
                 }
 
-                var payload = GetAnalyticsPayload("Snyk Code", durationMs, critical, high, medium, low);
+                var directoryPath = await solutionService.GetSolutionFolderAsync();
+                var payload = GetAnalyticsPayload("Snyk Code", durationMs, critical, high, medium, low, directoryPath);
                 await cliProvider.Cli.ReportAnalyticsAsync(payload);
             }
             catch (Exception ex)
