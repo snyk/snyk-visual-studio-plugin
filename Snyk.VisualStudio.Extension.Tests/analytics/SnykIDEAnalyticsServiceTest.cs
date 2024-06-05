@@ -3,6 +3,7 @@ using System.Threading.Tasks;
 using Moq;
 using Snyk.Code.Library.Api.Dto.Analysis;
 using Snyk.Code.Library.Domain.Analysis;
+using Snyk.Common;
 using Snyk.Common.Settings;
 using Snyk.VisualStudio.Extension.Shared;
 using Snyk.VisualStudio.Extension.Shared.CLI;
@@ -36,10 +37,13 @@ namespace Snyk.VisualStudio.Extension.Tests.analytics
             var optionsMock = new Mock<ISnykOptions>();
             var scanTopicMock = new Mock<ISnykScanTopicProvider>();
             var cliProviderMock = new Mock<ICliProvider>();
-            var service = new SnykIdeAnalyticsService(optionsProviderMock.Object, cliProviderMock.Object, scanTopicMock.Object);
+            var solutionServiceMock = new Mock<ISolutionService>();
+            const string folderPath = "C:\\Users\\user\\project";
+
+            var service = new SnykIdeAnalyticsService(optionsProviderMock.Object, cliProviderMock.Object, scanTopicMock.Object, solutionServiceMock.Object);
             SetupOptionsMock(optionsProviderMock, optionsMock);
 
-            var payload = service.GetAnalyticsPayload("product", 100, 1, 2, 3, 4);
+            var payload = service.GetAnalyticsPayload("product", 100, 1, 2, 3, 4, folderPath);
 
             // assert payload json
             Assert.Contains("\"device_id\":\"anonymousId\"", payload);
@@ -56,6 +60,7 @@ namespace Snyk.VisualStudio.Extension.Tests.analytics
             Assert.Contains("\"unique_issue_count\":{\"critical\":1,\"high\":2,\"medium\":3,\"low\":4}", payload);
             Assert.Contains("\"duration_ms\":\"100\"", payload);
             Assert.Contains("\"type\":\"analytics\"", payload);
+            Assert.Contains("\"path\":\"C:\\\\Users\\\\user\\\\project\"", payload);
         }
 
         [Fact]
@@ -66,9 +71,15 @@ namespace Snyk.VisualStudio.Extension.Tests.analytics
             var scanTopicMock = new Mock<ISnykScanTopicProvider>();
             var cliProviderMock = new Mock<ICliProvider>();
             var cliMock = new Mock<ICli>();
+            var solutionServiceMock = new Mock<ISolutionService>();
+            const string folderPath = "C:\\Users\\user\\project";
+
             cliProviderMock.SetupGet(cli => cli.Cli).Returns(cliMock.Object);
-            var service = new SnykIdeAnalyticsService(optionsProviderMock.Object, cliProviderMock.Object, scanTopicMock.Object);
+            var service = new SnykIdeAnalyticsService(optionsProviderMock.Object, cliProviderMock.Object, scanTopicMock.Object, solutionServiceMock.Object);
             SetupOptionsMock(optionsProviderMock, optionsMock);
+            solutionServiceMock.Setup(solutionService => solutionService.GetSolutionFolderAsync())
+                .ReturnsAsync(folderPath);
+
             var analysisResult = SetupAnalysisResult();
             var e = new SnykCodeScanEventArgs(analysisResult);
 
@@ -77,7 +88,8 @@ namespace Snyk.VisualStudio.Extension.Tests.analytics
             // assert payload is generated (anonymousID called) and cli reportAnalytics is called
             optionsMock.VerifyGet(options => options.AnonymousId, Times.Once);
             cliProviderMock.Verify(cli => cli.Cli, Times.Once);
-            cliMock.Verify( c => c.ReportAnalyticsAsync(It.IsAny<string>()), Times.Once);
+            cliMock.Verify(c => c.ReportAnalyticsAsync(It.IsAny<string>()), Times.Once);
+            solutionServiceMock.Verify(s => s.GetSolutionFolderAsync(), Times.Once);
         }
 
         [Fact]
@@ -88,9 +100,14 @@ namespace Snyk.VisualStudio.Extension.Tests.analytics
             var scanTopicMock = new Mock<ISnykScanTopicProvider>();
             var cliProviderMock = new Mock<ICliProvider>();
             var cliMock = new Mock<ICli>();
+            var solutionServiceMock = new Mock<ISolutionService>();
+            const string folderPath = "C:\\Users\\user\\project";
+
             cliProviderMock.SetupGet(cli => cli.Cli).Returns(cliMock.Object);
-            var service = new SnykIdeAnalyticsService(optionsProviderMock.Object, cliProviderMock.Object, scanTopicMock.Object);
+            var service = new SnykIdeAnalyticsService(optionsProviderMock.Object, cliProviderMock.Object, scanTopicMock.Object, solutionServiceMock.Object);
             SetupOptionsMock(optionsProviderMock, optionsMock);
+            solutionServiceMock.Setup(solutionService => solutionService.GetSolutionFolderAsync())
+                .ReturnsAsync(folderPath);
             var cliResult = SetupCliResult();
 
             var e = new SnykCliScanEventArgs(cliResult);
@@ -99,7 +116,8 @@ namespace Snyk.VisualStudio.Extension.Tests.analytics
             // assert payload is generated (anonymousID called) and cli reportAnalytics is called
             optionsMock.VerifyGet(options => options.AnonymousId, Times.Once);
             cliProviderMock.Verify(cli => cli.Cli, Times.Once);
-            cliMock.Verify( c => c.ReportAnalyticsAsync(It.IsAny<string>()), Times.Once);
+            cliMock.Verify(c => c.ReportAnalyticsAsync(It.IsAny<string>()), Times.Once);
+            solutionServiceMock.Verify(s => s.GetSolutionFolderAsync(), Times.Once);
         }
 
         private static CliResult SetupCliResult()

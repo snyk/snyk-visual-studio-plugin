@@ -119,7 +119,7 @@ namespace Snyk.VisualStudio.Extension.Shared.Service
                 if (ideAnalyticsService == null)
                 {
                     ideAnalyticsService =
-                        new SnykIdeAnalyticsService(Package,  this, TasksService);
+                        new SnykIdeAnalyticsService(Package,  this, TasksService, SolutionService);
                 }
 
                 return ideAnalyticsService;
