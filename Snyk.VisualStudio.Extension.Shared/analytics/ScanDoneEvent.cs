@@ -75,7 +75,7 @@ namespace Snyk.VisualStudio.Extension.Shared.CLI
         
         public string EventType => "Scan done";
         
-        public string Status => "Succeeded";
+        public string Status => "Success";
         
         public string ScanType { get; set; }
         
