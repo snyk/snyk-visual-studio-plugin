@@ -1,5 +1,10 @@
 # Snyk Security Changelog
 
+## [1.1.58]
+
+### Fixed
+- Rendering issue in Settings page.
+
 ## [1.1.57]
 
 ### Fixed
