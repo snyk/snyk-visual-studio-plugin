@@ -55,7 +55,7 @@ namespace Snyk.VisualStudio.Extension.Tests.analytics
             Assert.Contains("\"integration_environment\":\"integrationEnvironment\"", payload);
             Assert.Contains("\"integration_environment_version\":\"1.0.0\"", payload);
             Assert.Contains("\"event_type\":\"Scan done\"", payload);
-            Assert.Contains("\"status\":\"Succeeded\"", payload);
+            Assert.Contains("\"status\":\"Success\"", payload);
             Assert.Contains("\"scan_type\":\"product\"", payload);
             Assert.Contains("\"unique_issue_count\":{\"critical\":1,\"high\":2,\"medium\":3,\"low\":4}", payload);
             Assert.Contains("\"duration_ms\":\"100\"", payload);
