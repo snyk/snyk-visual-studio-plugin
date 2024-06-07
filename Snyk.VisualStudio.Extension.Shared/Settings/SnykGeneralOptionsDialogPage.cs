@@ -290,6 +290,21 @@
         /// </summary>
         protected override IWin32Window Window => this.GeneralSettingsUserControl;
 
+        protected override void OnClosed(EventArgs e)
+        {
+            base.OnClosed(e);
+            if (generalSettingsUserControl == null)
+                return;
+            ResetControlScrollSettings(generalSettingsUserControl);
+        }
+
+        private void ResetControlScrollSettings(UserControl control)
+        {
+            control.VerticalScroll.Value = 0;
+            control.HorizontalScroll.Value = 0;
+            control.AutoScroll = true;
+        }
+
         private SnykGeneralSettingsUserControl GeneralSettingsUserControl
         {
             get
