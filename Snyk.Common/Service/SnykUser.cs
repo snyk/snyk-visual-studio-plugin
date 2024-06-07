@@ -15,7 +15,7 @@
         {
             get
             {
-                if (string.IsNullOrEmpty(idHash))
+                if (string.IsNullOrEmpty(idHash) && !string.IsNullOrEmpty(Id))
                 {
                     idHash =  Sha256.ComputeHash(Id);
                 }
