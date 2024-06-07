@@ -1,5 +1,10 @@
 # Snyk Security Changelog
 
+## [1.1.57]
+
+### Fixed
+- Change analytics scan status from "Succeeded" to "Success" .
+
 ## [1.1.56]
 
 ### Fixed
