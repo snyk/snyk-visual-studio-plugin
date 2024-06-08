@@ -1,25 +1,26 @@
 ﻿using Snyk.Common.Settings;
+using System;
+using System.Diagnostics.CodeAnalysis;
+using System.Linq;
+using System.Runtime.InteropServices;
+using System.Threading;
+using System.Threading.Tasks;
+using Microsoft.VisualStudio.Shell;
+using Microsoft.VisualStudio.Shell.Interop;
+using Serilog;
+using Snyk.Common;
+using Snyk.VisualStudio.Extension.Shared.Commands;
+using Snyk.VisualStudio.Extension.Shared.Service;
+using Snyk.VisualStudio.Extension.Shared.Settings;
+using Snyk.VisualStudio.Extension.Shared.UI.Notifications;
+using Snyk.VisualStudio.Extension.Shared.UI.Toolwindow;
+using Task = System.Threading.Tasks.Task;
+using Microsoft.VisualStudio.ComponentModelHost;
+using Microsoft;
+using Snyk.VisualStudio.Extension.Shared.Language;
 
 namespace Snyk.VisualStudio.Extension.Shared
 {
-    using System;
-    using System.Diagnostics.CodeAnalysis;
-    using System.Linq;
-    using System.Reflection;
-    using System.Runtime.InteropServices;
-    using System.Threading;
-    using System.Threading.Tasks;
-    using Microsoft.VisualStudio.Shell;
-    using Microsoft.VisualStudio.Shell.Interop;
-    using Serilog;
-    using Snyk.Common;
-    using Snyk.VisualStudio.Extension.Shared.Commands;
-    using Snyk.VisualStudio.Extension.Shared.Service;
-    using Snyk.VisualStudio.Extension.Shared.Settings;
-    using Snyk.VisualStudio.Extension.Shared.UI.Notifications;
-    using Snyk.VisualStudio.Extension.Shared.UI.Toolwindow;
-    using Task = System.Threading.Tasks.Task;
-
     /// <summary>
     /// This is the class that implements the package exposed by this assembly.
     /// </summary>
@@ -113,6 +114,7 @@ namespace Snyk.VisualStudio.Extension.Shared
         /// Show Options dialog.
         /// </summary>
         public void ShowOptionPage() => ShowOptionPage(typeof(SnykGeneralOptionsDialogPage));
+        public ILanguageClientManager LanguageClientManager { get; private set; }
 
         /// <summary>
         /// Create <see cref="SnykService"/> object.
@@ -185,7 +187,7 @@ namespace Snyk.VisualStudio.Extension.Shared
                 await base.InitializeAsync(cancellationToken, progress);
 
                 AddService(typeof(SnykService), CreateSnykServiceAsync, true);
-
+                
                 this.serviceProvider = await GetServiceAsync(typeof(SnykService)) as SnykService ??
                                        throw new InvalidOperationException("Could not find Snyk Service");
 
@@ -218,7 +220,8 @@ namespace Snyk.VisualStudio.Extension.Shared
                 Logger.Information("Before call toolWindowControl.InitializeEventListeners() method.");
                 ToolWindowControl.InitializeEventListeners(this.serviceProvider);
                 ToolWindowControl.Initialize(this.serviceProvider);
-
+                await InitializeLanguageClientAsync();
+                
                 // Notify package has been initialized
                 IsInitialized = true;
                 initializationTaskCompletionSource.SetResult(true);
@@ -236,6 +239,27 @@ namespace Snyk.VisualStudio.Extension.Shared
         protected override void Dispose(bool disposing)
         {
             base.Dispose(disposing);
+        }
+
+        private async Task InitializeLanguageClientAsync()
+        {
+            try
+            {
+                var options = this.Options;
+                var componentModel = GetGlobalService(typeof(SComponentModel)) as IComponentModel;
+                Assumes.Present(componentModel);
+                var languageServerClientManager = componentModel.GetService<ILanguageClientManager>();
+                if(languageServerClientManager != null && !languageServerClientManager.IsReady)
+                {
+                    LanguageClientManager = languageServerClientManager;
+                    languageServerClientManager.SetSnykOptions(options);
+                    await languageServerClientManager.StartServerAsync();
+                }
+            }
+            catch (Exception e)
+            {
+                Logger.Error(e, string.Empty);
+            }
         }
 
         private async Task InitializeGeneralOptionsAsync()

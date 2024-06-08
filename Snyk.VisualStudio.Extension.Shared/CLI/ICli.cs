@@ -48,5 +48,6 @@
 
         string RunCommand(string basePath);
         Task ReportAnalyticsAsync(string data);
+        string GetCliPath();
     }
 }

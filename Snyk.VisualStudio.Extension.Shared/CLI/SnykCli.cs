@@ -212,7 +212,7 @@ namespace Snyk.VisualStudio.Extension.Shared.CLI
             if (result.Length > 0) Logger.Warning("ReportAnalyticsAsync: Unexpected output: {Result}", result);
         }
 
-        private string GetCliPath()
+        public string GetCliPath()
         {
             var snykCliCustomPath = this.options?.CliCustomPath;
             var cliPath = string.IsNullOrEmpty(snykCliCustomPath) ? GetSnykCliDefaultPath() : snykCliCustomPath;
