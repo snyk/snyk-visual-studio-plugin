@@ -1,5 +1,10 @@
 # Snyk Security Changelog
 
+## [1.1.59]
+
+### Fixed
+- Change Default API Endpoint to https://api.snyk.io.
+
 ## [1.1.58]
 
 ### Fixed
