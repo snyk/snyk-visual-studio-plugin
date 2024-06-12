@@ -1,21 +1,21 @@
-﻿namespace Snyk.VisualStudio.Extension.Shared.Settings
-{
-    using System;
-    using System.IO;
-    using System.Linq;
-    using System.Runtime.InteropServices;
-    using System.Security.Authentication;
-    using System.Threading.Tasks;
-    using System.Windows.Forms;
-    using Microsoft.VisualStudio.Shell;
-    using Serilog;
-    using Snyk.Common;
-    using Snyk.Common.Authentication;
-    using Snyk.Common.Service;
-    using Snyk.Common.Settings;
-    using Snyk.VisualStudio.Extension.Shared.Service;
-    using Snyk.VisualStudio.Extension.Shared.UI.Notifications;
+﻿using System;
+using System.IO;
+using System.Linq;
+using System.Runtime.InteropServices;
+using System.Security.Authentication;
+using System.Threading.Tasks;
+using System.Windows.Forms;
+using Microsoft.VisualStudio.Shell;
+using Serilog;
+using Snyk.Common;
+using Snyk.Common.Authentication;
+using Snyk.Common.Service;
+using Snyk.Common.Settings;
+using Snyk.VisualStudio.Extension.Shared.Service;
+using Snyk.VisualStudio.Extension.Shared.UI.Notifications;
 
+namespace Snyk.VisualStudio.Extension.Shared.Settings
+{
     /// <summary>
     /// Snyk general settings page.
     /// </summary>
@@ -23,14 +23,13 @@
     [ComVisible(true)]
     public class SnykGeneralOptionsDialogPage : DialogPage, ISnykOptions
     {
-        
-        public String Application { get; set; }
-        public String ApplicationVersion { get; set; }
-        public String IntegrationName { get; } = SnykExtension.IntegrationName;
-        public String IntegrationVersion { get; } = SnykExtension.Version;
-        public String IntegrationEnvironment { get; set; }
-        public String IntegrationEnvironmentVersion { get; set;}
-        
+        public string Application { get; set; }
+        public string ApplicationVersion { get; set; }
+        public string IntegrationName { get; } = SnykExtension.IntegrationName;
+        public string IntegrationVersion { get; } = SnykExtension.Version;
+        public string IntegrationEnvironment { get; set; }
+        public string IntegrationEnvironmentVersion { get; set;}
+            
         private ISnykServiceProvider serviceProvider;
 
         private SnykUserStorageSettingsService userStorageSettingsService;
@@ -117,9 +116,9 @@
         /// <returns></returns>
         public bool IsAnalyticsPermitted()
         {
-            var endpointUri = new Uri(this.GetBaseAppURL());
+            var endpointUri = new Uri(this.GetBaseAppUrl());
 
-            string[] permittedHosts = new string[] { "app.snyk.io", "app.us.snyk.io" };
+            var permittedHosts = new string[] { "app.snyk.io", "app.us.snyk.io" };
             return permittedHosts.Contains(endpointUri.Host.ToLower());
         }
 
@@ -153,7 +152,7 @@
         }
 
         /// <inheritdoc/>
-        public string SnykCodeSettingsUrl => $"{this.GetBaseAppURL()}/manage/snyk-code";
+        public string SnykCodeSettingsUrl => $"{this.GetBaseAppUrl()}/manage/snyk-code";
 
         public SastSettings SastSettings
         {
@@ -416,23 +415,14 @@
 
         private void FireSettingsChangedEvent() => this.SettingsChanged?.Invoke(this, new SnykSettingsChangedEventArgs());
 
-        private string GetBaseAppURL()
+        private string GetBaseAppUrl()
         {
-            var endpoint = this.customEndpoint.IsNullOrEmpty() ? "https://app.snyk.io" : this.customEndpoint.RemoveTrailingSlashes();
-            Uri uri = new Uri(endpoint);
+            if (string.IsNullOrEmpty(customEndpoint))
+                return ApiEndpointResolver.DefaultAppEndpoint;
 
-            if (!uri.Host.StartsWith("app") && (uri.Host.EndsWith("snyk.io") || uri.Host.EndsWith("snykgov.io")))
-            {
-                return endpoint.Replace("https://", "https://app.").RemoveFromEnd("/api");
-            }
-            else if (uri.Host.StartsWith("app") && (uri.Host.EndsWith("snyk.io") || uri.Host.EndsWith("snykgov.io")))
-            {
-                return endpoint.RemoveFromEnd("/api");
-            }
-            else
-            {
-                return "https://app.snyk.io";
-            }
+            var result = ApiEndpointResolver.GetCustomEndpointUrlFromSnykApi(customEndpoint, "app");
+
+            return string.IsNullOrEmpty(result) ? ApiEndpointResolver.DefaultAppEndpoint : result;
         }
 
         private void ThrowFileNotFoundException()
