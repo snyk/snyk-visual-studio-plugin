@@ -11,7 +11,7 @@ namespace Snyk.Common.Service
     public class ApiEndpointResolver
     {
         private readonly ISnykOptions options;
-        private const string DefaultApiEndpoint = "https://api.snyk.io";
+        public const string DefaultApiEndpoint = "https://api.snyk.io";
         public const string DefaultAppEndpoint = "https://app.snyk.io";
 
         /// <summary>
@@ -105,6 +105,19 @@ namespace Snyk.Common.Service
             var uriBuilder = new UriBuilder(endpointUri.Scheme, host);
             return uriBuilder.ToString().RemoveTrailingSlashes();
         }
+
+        public static string TranslateOldApiToNewApiEndpoint(string apiEndpoint)
+        {
+            if (!apiEndpoint.Contains("app.") || !apiEndpoint.RemoveTrailingSlashes().EndsWith("/api"))
+                return apiEndpoint;
+
+            var endpointUri = new Uri(apiEndpoint);
+
+            var newEndpoint = endpointUri.Host.Replace("app.", "api.");
+            var uriBuilder = new UriBuilder(endpointUri.Scheme, newEndpoint);
+            return uriBuilder.ToString().RemoveTrailingSlashes();
+        }
+
 
         private bool IsLocalEngine() => this.options.SastSettings?.LocalCodeEngineEnabled ?? false;
     }
