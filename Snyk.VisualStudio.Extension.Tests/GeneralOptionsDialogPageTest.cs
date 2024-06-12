@@ -1,14 +1,12 @@
-﻿namespace Snyk.VisualStudio.Extension.Tests
-{
-    using System.Collections.Generic;
-    using System.Net;
-    using Moq;
-    using Snyk.VisualStudio.Extension.Shared.CLI;
-    using Snyk.VisualStudio.Extension.Shared.Service;
-    using Snyk.VisualStudio.Extension.Shared.Settings;
-    using Xunit;
+﻿using Moq;
+using Snyk.VisualStudio.Extension.Shared.CLI;
+using Snyk.VisualStudio.Extension.Shared.Service;
+using Snyk.VisualStudio.Extension.Shared.Settings;
+using Xunit;
 
-    public class GeneralOptionsDialogPage
+namespace Snyk.VisualStudio.Extension.Tests
+{
+    public class GeneralOptionsDialogPageTest
     {
         [Fact]
         public void ApiEndpointChanged_InvalidatesCliToken()
@@ -30,7 +28,6 @@
         }
 
         [Theory]
-        [InlineData("https://snyk.io/api", true)]
         [InlineData("https://app.snyk.io/api", true)]
         [InlineData("https://app.us.snyk.io/api", true)]
         [InlineData("https://app.eu.snyk.io/api", false)]
@@ -68,6 +65,38 @@
             var optionsDialogPage = new SnykGeneralOptionsDialogPage();
             optionsDialogPage.CustomEndpoint = endpoint;
             Assert.Equal(expected, optionsDialogPage.SnykCodeSettingsUrl);
+        }
+
+        [Theory]
+        [InlineData(null, "https://api.snyk.io")]
+        [InlineData("", "https://api.snyk.io")]
+        [InlineData("https://app.snyk.io/api", "https://api.snyk.io")]
+        [InlineData("https://app.snykgov.io/api", "https://api.snykgov.io")]
+        [InlineData("https://app.eu.snyk.io/api", "https://api.eu.snyk.io")]
+        [InlineData("https://api.snyk.io", "https://api.snyk.io")]
+        [InlineData("https://api.snykgov.io", "https://api.snykgov.io")]
+        [InlineData("https://api.eu.snyk.io", "https://api.eu.snyk.io")]
+        public void TransformApiToNewSchema(string endpoint, string expected)
+        {
+            var optionsDialogPage = new SnykGeneralOptionsDialogPage();
+            optionsDialogPage.CustomEndpoint = endpoint;
+            Assert.Equal(expected, optionsDialogPage.GetCustomApiEndpoint());
+        }
+
+        [Theory]
+        [InlineData(null, "https://app.snyk.io")]
+        [InlineData("", "https://app.snyk.io")]
+        [InlineData("https://app.snyk.io/api", "https://app.snyk.io")]
+        [InlineData("https://app.snykgov.io/api", "https://app.snykgov.io")]
+        [InlineData("https://app.eu.snyk.io/api", "https://app.eu.snyk.io")]
+        [InlineData("https://api.snyk.io", "https://app.snyk.io")]
+        [InlineData("https://api.snykgov.io", "https://app.snykgov.io")]
+        [InlineData("https://api.eu.snyk.io", "https://app.eu.snyk.io")]
+        public void GetBaseAppUrl(string endpoint, string expected)
+        {
+            var optionsDialogPage = new SnykGeneralOptionsDialogPage();
+            optionsDialogPage.CustomEndpoint = endpoint;
+            Assert.Equal(expected, optionsDialogPage.GetBaseAppUrl());
         }
     }
 }

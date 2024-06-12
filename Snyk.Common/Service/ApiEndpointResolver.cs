@@ -118,7 +118,6 @@ namespace Snyk.Common.Service
             return uriBuilder.ToString().RemoveTrailingSlashes();
         }
 
-
         private bool IsLocalEngine() => this.options.SastSettings?.LocalCodeEngineEnabled ?? false;
     }
 }

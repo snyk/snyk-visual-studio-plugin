@@ -416,12 +416,12 @@ namespace Snyk.VisualStudio.Extension.Shared.Settings
 
         private void FireSettingsChangedEvent() => this.SettingsChanged?.Invoke(this, new SnykSettingsChangedEventArgs());
 
-        private string GetCustomApiEndpoint()
+        public string GetCustomApiEndpoint()
         {
             return string.IsNullOrEmpty(customEndpoint) ? ApiEndpointResolver.DefaultApiEndpoint : ApiEndpointResolver.TranslateOldApiToNewApiEndpoint(customEndpoint);
         }
 
-        private string GetBaseAppUrl()
+        public string GetBaseAppUrl()
         {
             if (string.IsNullOrEmpty(customEndpoint))
                 return ApiEndpointResolver.DefaultAppEndpoint;
