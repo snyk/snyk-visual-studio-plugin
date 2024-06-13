@@ -116,9 +116,9 @@ namespace Snyk.VisualStudio.Extension.Shared.Settings
         /// <returns></returns>
         public bool IsAnalyticsPermitted()
         {
-            var endpointUri = new Uri(this.GetBaseAppUrl());
+            var endpointUri = new Uri(this.GetCustomApiEndpoint());
 
-            var permittedHosts = new string[] { "app.snyk.io", "app.us.snyk.io" };
+            var permittedHosts = new string[] { "api.snyk.io", "api.us.snyk.io" };
             return permittedHosts.Contains(endpointUri.Host.ToLower());
         }
 
@@ -136,7 +136,8 @@ namespace Snyk.VisualStudio.Extension.Shared.Settings
                     value = string.Empty;
                 }
 
-                if (this.customEndpoint == value)
+                var newApiEndpoint = ApiEndpointResolver.TranslateOldApiToNewApiEndpoint(value);
+                if (this.customEndpoint == newApiEndpoint)
                 {
                     return;
                 }
@@ -146,7 +147,7 @@ namespace Snyk.VisualStudio.Extension.Shared.Settings
                 var cli = this.ServiceProvider?.NewCli();
                 cli?.UnsetApiToken(); // This setter can be called before initialization, so ServiceProvider can be null
 
-                this.customEndpoint = value;
+                this.customEndpoint = newApiEndpoint;
                 this.FireSettingsChangedEvent();
             }
         }
@@ -415,12 +416,17 @@ namespace Snyk.VisualStudio.Extension.Shared.Settings
 
         private void FireSettingsChangedEvent() => this.SettingsChanged?.Invoke(this, new SnykSettingsChangedEventArgs());
 
-        private string GetBaseAppUrl()
+        public string GetCustomApiEndpoint()
+        {
+            return string.IsNullOrEmpty(customEndpoint) ? ApiEndpointResolver.DefaultApiEndpoint : ApiEndpointResolver.TranslateOldApiToNewApiEndpoint(customEndpoint);
+        }
+
+        public string GetBaseAppUrl()
         {
             if (string.IsNullOrEmpty(customEndpoint))
                 return ApiEndpointResolver.DefaultAppEndpoint;
 
-            var result = ApiEndpointResolver.GetCustomEndpointUrlFromSnykApi(customEndpoint, "app");
+            var result = ApiEndpointResolver.GetCustomEndpointUrlFromSnykApi(GetCustomApiEndpoint(), "app");
 
             return string.IsNullOrEmpty(result) ? ApiEndpointResolver.DefaultAppEndpoint : result;
         }
