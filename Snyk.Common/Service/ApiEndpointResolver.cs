@@ -108,6 +108,9 @@ namespace Snyk.Common.Service
 
         public static string TranslateOldApiToNewApiEndpoint(string apiEndpoint)
         {
+            if (apiEndpoint.Contains("https://snyk.io/api"))
+                apiEndpoint = "https://app.snyk.io/api";
+
             if (!apiEndpoint.Contains("app.") || !apiEndpoint.RemoveTrailingSlashes().EndsWith("/api"))
                 return apiEndpoint;
 

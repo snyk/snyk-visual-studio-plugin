@@ -70,6 +70,7 @@ namespace Snyk.VisualStudio.Extension.Tests
         [Theory]
         [InlineData(null, "https://api.snyk.io")]
         [InlineData("", "https://api.snyk.io")]
+        [InlineData("https://snyk.io/api", "https://api.snyk.io")]
         [InlineData("https://app.snyk.io/api", "https://api.snyk.io")]
         [InlineData("https://app.snykgov.io/api", "https://api.snykgov.io")]
         [InlineData("https://app.eu.snyk.io/api", "https://api.eu.snyk.io")]
