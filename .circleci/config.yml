@@ -12,6 +12,7 @@ jobs:
       - checkout
       - prodsec/security_scans:
           mode: auto
+          open-source-additional-arguments: --exclude=Snyk.Code.Library.Tests,Snyk.Common.Tests,Snyk.VisualStudio.Extension.Tests
           iac-scan: disabled
 
 workflows:
