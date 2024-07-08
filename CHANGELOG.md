@@ -1,5 +1,10 @@
 # Snyk Security Changelog
 
+## [1.1.60]
+
+### Fixed
+- Fix an issue with extension failing to load in VS 2022 < 17.10.
+
 ## [1.1.59]
 
 ### Fixed

@@ -103,7 +103,7 @@
       <Version>4.6.2</Version>
     </PackageReference>
     <PackageReference Include="Serilog">
-      <Version>3.1.1</Version>
+      <Version>3.0.1</Version>
     </PackageReference>
     <PackageReference Include="SerilogAnalyzer">
       <Version>0.15.0</Version>

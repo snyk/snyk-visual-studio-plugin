@@ -308,28 +308,18 @@
 
         private void UpdateSnykCodeEnablementSettings(SastSettings sastSettings)
         {
-            if (sastSettings == null)
-            {
-                this.snykCodeDisabledInfoLabel.Text = "Snyk Code is disabled.";
-
-                this.snykCodeDisabledInfoLabel.Visible = true;
-                this.snykCodeSettingsLinkLabel.Visible = true;
-                this.checkAgainLinkLabel.Visible = true;
-            }
-
             bool snykCodeEnabled = sastSettings?.SnykCodeEnabled ?? false;
-
-            this.codeSecurityEnabledCheckBox.Enabled = snykCodeEnabled;
-            this.codeQualityEnabledCheckBox.Enabled = snykCodeEnabled;
 
             if (!snykCodeEnabled)
             {
                 this.snykCodeDisabledInfoLabel.Text = "Snyk Code is disabled by your organisation\'s configuration:";
-
-                this.snykCodeDisabledInfoLabel.Visible = !snykCodeEnabled;
-                this.snykCodeSettingsLinkLabel.Visible = !snykCodeEnabled;
-                this.checkAgainLinkLabel.Visible = !snykCodeEnabled;
             }
+
+            this.codeSecurityEnabledCheckBox.Enabled = snykCodeEnabled;
+            this.codeQualityEnabledCheckBox.Enabled = snykCodeEnabled;
+            this.snykCodeDisabledInfoLabel.Visible = !snykCodeEnabled;
+            this.snykCodeSettingsLinkLabel.Visible = !snykCodeEnabled;
+            this.checkAgainLinkLabel.Visible = !snykCodeEnabled;
         }
 
         private async Task StartSastEnablementCheckLoopAsync()
