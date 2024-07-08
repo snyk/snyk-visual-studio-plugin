@@ -1,6 +1,7 @@
 name: Integration Tests
 
 on:
+  workflow_dispatch:
   workflow_call:
     secrets:
       TEST_API_TOKEN:
