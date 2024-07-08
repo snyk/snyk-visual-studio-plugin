@@ -6,7 +6,8 @@ orbs:
 jobs:
   security-scans:
     machine:
-      image: windows-default
+      image: windows-server-2019-vs2019:2024.05.1
+      resource_class: windows.medium
     steps:
       - checkout
       - prodsec/security_scans:
@@ -26,6 +27,6 @@ workflows:
             branches:
               ignore:
                 - main
-                
+
       - security-scans:
           context: devex_ide
