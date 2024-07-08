@@ -7,12 +7,12 @@ jobs:
   security-scans:
     resource_class: small
     docker:
-      - image: cimg/base:2024.07
+      - image: cimg/base:stable
     steps:
       - checkout
       - prodsec/security_scans:
           mode: auto
-          open-source-additional-arguments: --exclude=Snyk.Code.Library.Tests,Snyk.Common.Tests,Snyk.VisualStudio.Extension.Tests
+          open-source-additional-arguments: --exclude=Snyk.Code.Library.Tests,Snyk.Common.Tests,Snyk.VisualStudio.Extension.Tests,Tests
           iac-scan: disabled
 
 workflows:
