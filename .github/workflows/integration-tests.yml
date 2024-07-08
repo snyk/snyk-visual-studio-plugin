@@ -20,10 +20,12 @@ jobs:
       uses: actions/download-artifact@v2
       with:
         name: build-artifacts
-    - name: Setup VSTest
-      uses: darenm/Setup-VSTest@v1
-    - name: Tests
-      run: vstest.console.exe **\bin\**\*Integration.Pre22.Tests.dll
+    - name: Run tests
+      uses: microsoft/vstest-action@main
+      with:
+        testAssembly: Integration.Pre22.Tests.dll
+        searchFolder: .\Tests\Integration.Pre22.Tests\bin\Debug
+        runInParallel: true
 
   test-vs22:
     runs-on: windows-2022
@@ -38,7 +40,9 @@ jobs:
       uses: actions/download-artifact@v2
       with:
         name: build-artifacts
-    - name: Setup VSTest
-      uses: darenm/Setup-VSTest@v1
-    - name: Tests
-      run: vstest.console.exe **\bin\**\*Integration.Tests.dll
+    - name: Run tests
+      uses: microsoft/vstest-action@main
+      with:
+        testAssembly: Integration.Tests.dll
+        searchFolder: .\Tests\Integration.Tests\bin\Debug
+        runInParallel: true
