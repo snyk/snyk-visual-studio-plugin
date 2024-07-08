@@ -5,9 +5,9 @@ orbs:
 
 jobs:
   security-scans:
-    machine:
-      image: windows-server-2019-vs2019:2024.05.1
-      resource_class: windows.medium
+    resource_class: small
+    docker:
+      - image: cimg/base:2024.07
     steps:
       - checkout
       - prodsec/security_scans:
