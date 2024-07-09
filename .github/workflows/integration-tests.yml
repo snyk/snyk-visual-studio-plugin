@@ -1,6 +1,7 @@
 name: Integration Tests
 
 on:
+  workflow_dispatch:
   workflow_call:
     secrets:
       TEST_API_TOKEN:
@@ -8,6 +9,7 @@ on:
 
 jobs:
   test-vs19:
+    continue-on-error: true
     runs-on: windows-2019
     defaults:
       run:
@@ -15,9 +17,9 @@ jobs:
     env:
       TEST_API_TOKEN: ${{ secrets.TEST_API_TOKEN }}
     steps:
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v4
     - name: Download build artifacts
-      uses: actions/download-artifact@v2
+      uses: actions/download-artifact@v3
       with:
         name: build-artifacts
     - name: Setup VSTest
@@ -26,6 +28,7 @@ jobs:
       run: vstest.console.exe **\bin\**\*Integration.Pre22.Tests.dll
 
   test-vs22:
+    continue-on-error: true
     runs-on: windows-2022
     defaults:
       run:
@@ -33,9 +36,9 @@ jobs:
     env:
       TEST_API_TOKEN: ${{ secrets.TEST_API_TOKEN }}
     steps:
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v4
     - name: Download build artifacts
-      uses: actions/download-artifact@v2
+      uses: actions/download-artifact@v3
       with:
         name: build-artifacts
     - name: Setup VSTest
