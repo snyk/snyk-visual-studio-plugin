@@ -12,7 +12,7 @@ jobs:
       -run:
         name: Install dotnet
         command: |
-        sudo apt-get update &&
+        sudo apt-get update
         sudo apt-get install -y dotnet-sdk-8.0
       - checkout
       - prodsec/security_scans:
