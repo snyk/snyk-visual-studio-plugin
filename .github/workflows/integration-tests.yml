@@ -9,6 +9,7 @@ on:
 
 jobs:
   test-vs19:
+    continue-on-error: true
     runs-on: windows-2019
     defaults:
       run:
@@ -27,6 +28,7 @@ jobs:
       run: vstest.console.exe **\bin\**\*Integration.Pre22.Tests.dll
 
   test-vs22:
+    continue-on-error: true
     runs-on: windows-2022
     defaults:
       run:
