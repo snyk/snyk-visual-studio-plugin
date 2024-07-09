@@ -20,7 +20,7 @@ jobs:
     outputs:
       version: ${{ steps.vsix_version.outputs.next-tag }}
     steps:
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v4
       with:
         fetch-depth: 0
     - name: Calculate next semantic version Git tag (vsix version)
