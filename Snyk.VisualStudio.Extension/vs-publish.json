@@ -6,7 +6,7 @@
   },
   "assetFiles": [
   ],
-  "overview": "../README.md",
+  "overview": "../README-LEGACY.md",
   "publisher": "snyk-security",
   "repo": "http://github.com/snyk/snyk-visual-studio-plugin/"
 }
