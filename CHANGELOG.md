@@ -1,5 +1,10 @@
 # Snyk Security Changelog
 
+## [1.1.61]
+
+### Fixed
+- Added a deprecation notice for VS 2015,2017 and 2019.
+
 ## [1.1.60]
 
 ### Fixed
