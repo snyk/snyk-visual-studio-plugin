@@ -1,6 +1,12 @@
 # Snyk (https://snyk.io) policy file, patches or ignores known vulnerabilities.
 version: v1.25.0
 # ignores vulnerabilities until expiry date; change duration by modifying expiry date
+exclude:
+    global:
+        #Exclude test directory for snyk code scan
+        - Snyk.Code.Library.Tests
+        - Snyk.Common.Tests
+        - Snyk.VisualStudio.Extension.Tests
 ignore:
   SNYK-DOTNET-NEWTONSOFTJSON-2774678:
     - '*':

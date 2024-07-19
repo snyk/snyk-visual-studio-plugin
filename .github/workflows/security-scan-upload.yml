@@ -1,0 +1,42 @@
+name: Security Scan Upload
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  security-open-source-monitor:
+    runs-on: ubuntu-latest
+    environment: snyk-msbuild-envs
+    steps:
+      - uses: actions/checkout@v4
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+      - name: Restore dependencies
+        run: dotnet restore /home/runner/work/snyk-visual-studio-plugin/snyk-visual-studio-plugin
+      - name: Run snyk monitor
+        uses: snyk/actions/dotnet@master
+        continue-on-error: true
+        env:
+          SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
+        with:
+          command: monitor
+          args: 
+            --all-projects
+            --exclude=Snyk.VisualStudio.Extension.Tests,Snyk.Common.Tests,Snyk.Code.Library.Tests,Tests
+  security-code-monitor:
+    runs-on: ubuntu-latest
+    environment: snyk-msbuild-envs
+    steps:
+      - uses: actions/checkout@v4
+      - name: Run snyk monitor
+        uses: snyk/actions/dotnet@master
+        continue-on-error: true
+        env:
+          SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
+        with:
+          command: code test 
+          args:
+            --report
+            --project-name="snyk/${{ github.event.repository.name }}"
