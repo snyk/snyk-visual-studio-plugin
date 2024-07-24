@@ -3,6 +3,20 @@ version: 2.1
 orbs:
   prodsec: snyk/prodsec-orb@1
 
+
+jobs:
+  # Security scans have been implemented fully as GitHub actions in .github/workflows
+  security-scans:
+    resource_class: small
+    docker:
+      - image: cimg/go:1.21
+    steps:
+      - prodsec/security_scans:
+          mode: auto
+          code-scan: disabled
+          open-source-scan: disabled
+          iac-scan: disabled
+
 workflows:
   version: 2
   CICD:
@@ -15,3 +29,6 @@ workflows:
           filters:
             branches:
               ignore: main
+      - security-scans:
+          context: devex_ide
+
