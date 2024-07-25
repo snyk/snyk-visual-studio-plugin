@@ -39,8 +39,6 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Snyk.Common", "Snyk.Common\
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Snyk.VisualStudio.Extension.Tests", "Snyk.VisualStudio.Extension.Tests\Snyk.VisualStudio.Extension.Tests.csproj", "{42A7C4CF-C297-4F07-B8F1-832C48AA1F5F}"
 EndProject
-Project("{D954291E-2A0B-460D-934E-DC6B0785DB48}") = "Snyk.VisualStudio.Extension.Shared", "Snyk.VisualStudio.Extension.Shared\Snyk.VisualStudio.Extension.Shared.shproj", "{EA4850BE-70BF-4D93-AE23-AA55F2796C5E}"
-EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Snyk.VisualStudio.Extension.2022", "Snyk.VisualStudio.Extension.2022\Snyk.VisualStudio.Extension.2022.csproj", "{AB050A12-200E-48AE-898D-CB5532151A66}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Snyk.Common.Tests", "Snyk.Common.Tests\Snyk.Common.Tests.csproj", "{F3FC7A42-F53F-4938-8D37-D1ABAF6A8A90}"
@@ -111,9 +109,6 @@ Global
 	GlobalSection(SharedMSBuildProjectFiles) = preSolution
 		Tests\Integration.Tests.Shared\SnykVsIntegrationTests.Shared.projitems*{10cb14d3-cb55-461c-b100-70e803198a7d}*SharedItemsImports = 4
 		Tests\Integration.Tests.Shared\SnykVsIntegrationTests.Shared.projitems*{5e4ebf74-fd9d-4708-9558-bbff1221d2f8}*SharedItemsImports = 4
-		Snyk.VisualStudio.Extension.Shared\Snyk.VisualStudio.Extension.Shared.projitems*{910098f4-ec69-40f2-8cf1-b2e86e30d2f8}*SharedItemsImports = 4
-		Snyk.VisualStudio.Extension.Shared\Snyk.VisualStudio.Extension.Shared.projitems*{ab050a12-200e-48ae-898d-cb5532151a66}*SharedItemsImports = 4
 		Tests\Integration.Tests.Shared\SnykVsIntegrationTests.Shared.projitems*{c2e8c32b-bd9f-4927-b6ea-bf6e9b40cb6c}*SharedItemsImports = 13
-		Snyk.VisualStudio.Extension.Shared\Snyk.VisualStudio.Extension.Shared.projitems*{ea4850be-70bf-4d93-ae23-aa55f2796c5e}*SharedItemsImports = 13
 	EndGlobalSection
 EndGlobal
