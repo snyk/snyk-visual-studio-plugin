@@ -1,4 +1,4 @@
-﻿namespace Snyk.VisualStudio.Extension.Shared.Tests
+﻿namespace Snyk.VisualStudio.Extension.Tests
 {
     using System;
     using System.Net.Http;

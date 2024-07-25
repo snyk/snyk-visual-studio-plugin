@@ -1,11 +1,11 @@
 ﻿using Segment.Model;
 using Snyk.Common.Settings;
-using Snyk.VisualStudio.Extension.Shared.Settings;
+using Snyk.VisualStudio.Extension.Settings;
 
-namespace Snyk.VisualStudio.Extension.Shared.Tests
+namespace Snyk.VisualStudio.Extension.Tests
 {
     using System.Collections.Specialized;
-    using Snyk.VisualStudio.Extension.Shared.CLI;
+    using Snyk.VisualStudio.Extension.CLI;
 
     public class SnykMockConsoleRunner : SnykConsoleRunner
     {

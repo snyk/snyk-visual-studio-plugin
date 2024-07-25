@@ -1,4 +1,4 @@
-﻿namespace Snyk.VisualStudio.Extension.Shared.UI.Toolwindow
+﻿namespace Snyk.VisualStudio.Extension.UI.Toolwindow
 {
     using System;
     using System.Diagnostics;
@@ -10,7 +10,7 @@
     using MdXaml;
     using Serilog;
     using Snyk.Common;
-    using Snyk.VisualStudio.Extension.Shared.CLI;
+    using Snyk.VisualStudio.Extension.CLI;
 
     /// <summary>
     /// Interaction logic for OssDescriptionControl.xaml.

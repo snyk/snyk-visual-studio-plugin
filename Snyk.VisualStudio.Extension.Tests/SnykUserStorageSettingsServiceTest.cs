@@ -4,8 +4,8 @@
     using System.Threading.Tasks;
     using Moq;
     using Snyk.Common;
-    using Snyk.VisualStudio.Extension.Shared.Service;
-    using Snyk.VisualStudio.Extension.Shared.Settings;
+    using Snyk.VisualStudio.Extension.Service;
+    using Snyk.VisualStudio.Extension.Settings;
     using Xunit;
 
     /// <summary>

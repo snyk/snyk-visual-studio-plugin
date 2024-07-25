@@ -1,4 +1,4 @@
-﻿namespace Snyk.VisualStudio.Extension.Shared.UI.Toolwindow.SnykCode
+﻿namespace Snyk.VisualStudio.Extension.UI.Toolwindow.SnykCode
 {
     using System.Collections.ObjectModel;
 

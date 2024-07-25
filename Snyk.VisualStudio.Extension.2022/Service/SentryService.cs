@@ -1,4 +1,4 @@
-﻿namespace Snyk.VisualStudio.Extension.Shared.Service
+﻿namespace Snyk.VisualStudio.Extension.Service
 {
     using Microsoft.VisualStudio.Shell;
     using Microsoft.VisualStudio.Shell.Interop;

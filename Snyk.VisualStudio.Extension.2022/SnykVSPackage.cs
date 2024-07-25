@@ -1,6 +1,6 @@
 ﻿using Snyk.Common.Settings;
 
-namespace Snyk.VisualStudio.Extension.Shared
+namespace Snyk.VisualStudio.Extension
 {
     using System;
     using System.Diagnostics.CodeAnalysis;
@@ -13,11 +13,11 @@ namespace Snyk.VisualStudio.Extension.Shared
     using Microsoft.VisualStudio.Shell.Interop;
     using Serilog;
     using Snyk.Common;
-    using Snyk.VisualStudio.Extension.Shared.Commands;
-    using Snyk.VisualStudio.Extension.Shared.Service;
-    using Snyk.VisualStudio.Extension.Shared.Settings;
-    using Snyk.VisualStudio.Extension.Shared.UI.Notifications;
-    using Snyk.VisualStudio.Extension.Shared.UI.Toolwindow;
+    using Snyk.VisualStudio.Extension.Commands;
+    using Snyk.VisualStudio.Extension.Service;
+    using Snyk.VisualStudio.Extension.Settings;
+    using Snyk.VisualStudio.Extension.UI.Notifications;
+    using Snyk.VisualStudio.Extension.UI.Toolwindow;
     using Task = System.Threading.Tasks.Task;
 
     /// <summary>

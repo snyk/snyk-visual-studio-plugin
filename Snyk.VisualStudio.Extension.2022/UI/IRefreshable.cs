@@ -1,4 +1,4 @@
-﻿namespace Snyk.VisualStudio.Extension.Shared.UI
+﻿namespace Snyk.VisualStudio.Extension.UI
 {
     /// <summary>
     /// Common interface for call refresh on component.

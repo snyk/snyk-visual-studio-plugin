@@ -4,8 +4,8 @@
     using System.Collections.Generic;
     using System.IO;
     using Moq;
-    using Snyk.VisualStudio.Extension.Shared.Service;
-    using Snyk.VisualStudio.Extension.Shared.Settings;
+    using Snyk.VisualStudio.Extension.Service;
+    using Snyk.VisualStudio.Extension.Settings;
     using Xunit;
 
     public class WorkspaceTrustServiceTest

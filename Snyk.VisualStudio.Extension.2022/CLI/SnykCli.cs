@@ -9,7 +9,7 @@ using Snyk.Common;
 using Snyk.Common.Authentication;
 using Snyk.Common.Service;
 using Snyk.Common.Settings;
-namespace Snyk.VisualStudio.Extension.Shared.CLI
+namespace Snyk.VisualStudio.Extension.CLI
 {
     /// <summary>
     /// Incapsulate work logic with Snyk CLI.

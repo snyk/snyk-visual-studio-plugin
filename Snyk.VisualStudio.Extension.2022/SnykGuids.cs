@@ -1,7 +1,7 @@
-﻿namespace Snyk.VisualStudio.Extension.Shared
+﻿namespace Snyk.VisualStudio.Extension
 {
     using System;
-    using Snyk.VisualStudio.Extension.Shared.UI;
+    using Snyk.VisualStudio.Extension.UI;
 
     /// <summary>
     /// Contains all Guids for Snyk extension.

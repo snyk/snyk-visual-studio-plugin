@@ -1,4 +1,4 @@
-﻿namespace Snyk.VisualStudio.Extension.Shared.CLI.Download
+﻿namespace Snyk.VisualStudio.Extension.CLI.Download
 {
     /// <summary>
     /// Represents latest CLI release information.

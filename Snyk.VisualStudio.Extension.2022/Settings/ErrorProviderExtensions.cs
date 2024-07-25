@@ -1,7 +1,7 @@
 ﻿using System.Data.SqlClient;
 using System.Windows.Forms;
 
-namespace Snyk.VisualStudio.Extension.Shared.Settings
+namespace Snyk.VisualStudio.Extension.Settings
 {
     public static class ErrorProviderExtensions
     {

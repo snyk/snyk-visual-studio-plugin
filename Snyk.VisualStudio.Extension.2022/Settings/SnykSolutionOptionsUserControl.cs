@@ -3,9 +3,9 @@ using System.Windows.Forms;
 using Microsoft.VisualStudio.Shell;
 using Serilog;
 using Snyk.Common;
-using Snyk.VisualStudio.Extension.Shared.Service;
+using Snyk.VisualStudio.Extension.Service;
 
-namespace Snyk.VisualStudio.Extension.Shared.Settings
+namespace Snyk.VisualStudio.Extension.Settings
 {
     /// <summary>
     /// Solution settings control.

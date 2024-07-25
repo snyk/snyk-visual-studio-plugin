@@ -5,9 +5,9 @@ using Snyk.Code.Library.Api.Dto.Analysis;
 using Snyk.Code.Library.Domain.Analysis;
 using Snyk.Common;
 using Snyk.Common.Settings;
-using Snyk.VisualStudio.Extension.Shared;
-using Snyk.VisualStudio.Extension.Shared.CLI;
-using Snyk.VisualStudio.Extension.Shared.Service;
+using Snyk.VisualStudio.Extension;
+using Snyk.VisualStudio.Extension.CLI;
+using Snyk.VisualStudio.Extension.Service;
 using Xunit;
 
 namespace Snyk.VisualStudio.Extension.Tests.analytics

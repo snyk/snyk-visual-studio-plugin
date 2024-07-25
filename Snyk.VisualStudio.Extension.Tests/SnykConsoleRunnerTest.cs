@@ -3,10 +3,10 @@ using System.IO;
 using Moq;
 using Snyk.Common.Authentication;
 using Snyk.Common.Settings;
-using Snyk.VisualStudio.Extension.Shared.CLI;
+using Snyk.VisualStudio.Extension.CLI;
 using Xunit;
 
-namespace Snyk.VisualStudio.Extension.Shared.Tests
+namespace Snyk.VisualStudio.Extension.Tests
 {
     public class SnykConsoleRunnerTest
     {

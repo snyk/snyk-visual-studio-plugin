@@ -1,4 +1,4 @@
-﻿namespace Snyk.VisualStudio.Extension.Shared.Service
+﻿namespace Snyk.VisualStudio.Extension.Service
 {
     /// <summary>
     /// Solution type enum.

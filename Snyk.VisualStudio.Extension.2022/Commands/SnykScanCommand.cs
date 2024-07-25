@@ -1,9 +1,9 @@
-﻿namespace Snyk.VisualStudio.Extension.Shared.Commands
+﻿namespace Snyk.VisualStudio.Extension.Commands
 {
     using System;
     using System.ComponentModel.Design;
     using Microsoft.VisualStudio.Shell;
-    using Snyk.VisualStudio.Extension.Shared.Service;
+    using Snyk.VisualStudio.Extension.Service;
     using Task = System.Threading.Tasks.Task;
 
     /// <summary>

@@ -1,7 +1,7 @@
-﻿namespace Snyk.VisualStudio.Extension.Shared.UI.Notifications
+﻿namespace Snyk.VisualStudio.Extension.UI.Notifications
 {
     using Snyk.Common;
-    using Snyk.VisualStudio.Extension.Shared.Service;
+    using Snyk.VisualStudio.Extension.Service;
 
     /// <summary>
     /// Snyk VS notification service.

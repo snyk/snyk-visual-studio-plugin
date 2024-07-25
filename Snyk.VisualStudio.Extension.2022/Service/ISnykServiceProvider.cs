@@ -1,4 +1,4 @@
-﻿namespace Snyk.VisualStudio.Extension.Shared.Service
+﻿namespace Snyk.VisualStudio.Extension.Service
 {
     using System;
     using System.Threading.Tasks;
@@ -9,10 +9,10 @@
     using Snyk.Common;
     using Snyk.Common.Service;
     using Snyk.Common.Settings;
-    using Snyk.VisualStudio.Extension.Shared.CLI;
-    using Snyk.VisualStudio.Extension.Shared.Settings;
-    using Snyk.VisualStudio.Extension.Shared.Theme;
-    using Snyk.VisualStudio.Extension.Shared.UI.Toolwindow;
+    using Snyk.VisualStudio.Extension.CLI;
+    using Snyk.VisualStudio.Extension.Settings;
+    using Snyk.VisualStudio.Extension.Theme;
+    using Snyk.VisualStudio.Extension.UI.Toolwindow;
 
     /// <summary>
     /// ServiceProvider interface for Snyk extension. Provide all needed services for this extension.

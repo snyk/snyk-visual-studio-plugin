@@ -5,7 +5,7 @@
 	using Microsoft.VisualStudio.Shell;
 	using Microsoft.VisualStudio.Shell.Interop;
 	using Microsoft.VisualStudio.Threading;
-	using Snyk.VisualStudio.Extension.Shared;
+	using Snyk.VisualStudio.Extension;
 	using Xunit;
 	using Xunit.Abstractions;
 	using Task = System.Threading.Tasks.Task;

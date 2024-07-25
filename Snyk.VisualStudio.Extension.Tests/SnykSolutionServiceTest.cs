@@ -1,7 +1,7 @@
 ﻿namespace Snyk.VisualStudio.Extension.Tests
 {
     using System.Collections.Generic;
-    using Snyk.VisualStudio.Extension.Shared.CLI;
+    using Snyk.VisualStudio.Extension.CLI;
     using Xunit;
 
     /// <summary>

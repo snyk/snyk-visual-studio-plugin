@@ -1,4 +1,4 @@
-﻿namespace Snyk.VisualStudio.Extension.Shared.UI.Tree
+﻿namespace Snyk.VisualStudio.Extension.UI.Tree
 {
     using System.Collections.Generic;
     using System.Linq;

@@ -1,11 +1,11 @@
-﻿namespace Snyk.VisualStudio.Extension.Shared.Cache
+﻿namespace Snyk.VisualStudio.Extension.Cache
 {
     using System;
     using System.Collections.Generic;
     using System.IO;
     using Community.VisualStudio.Toolkit;
     using Microsoft.VisualStudio.Shell.Interop;
-    using Snyk.VisualStudio.Extension.Shared.Service;
+    using Snyk.VisualStudio.Extension.Service;
 
     /// <summary>
     /// Impleemnts <see cref="IVsHierarchyEvents"/> for SnykCode cache.

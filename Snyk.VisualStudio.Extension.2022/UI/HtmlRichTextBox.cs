@@ -1,4 +1,4 @@
-﻿namespace Snyk.VisualStudio.Extension.Shared.UI
+﻿namespace Snyk.VisualStudio.Extension.UI
 {
     using System.Collections.Generic;
     using System.Diagnostics;

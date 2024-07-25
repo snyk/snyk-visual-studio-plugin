@@ -1,11 +1,11 @@
-﻿namespace Snyk.VisualStudio.Extension.Shared.UI
+﻿namespace Snyk.VisualStudio.Extension.UI
 {
     using System;
     using System.ComponentModel.Design;
     using Microsoft.VisualStudio.Shell;
     using Serilog;
     using Snyk.Common;
-    using Snyk.VisualStudio.Extension.Shared.Service;
+    using Snyk.VisualStudio.Extension.Service;
     using Task = System.Threading.Tasks.Task;
 
     /// <summary>

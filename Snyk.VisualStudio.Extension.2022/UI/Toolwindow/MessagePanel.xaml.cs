@@ -10,9 +10,9 @@ using Microsoft.VisualStudio.Shell.Interop;
 using Microsoft.VisualStudio.Threading;
 using Serilog;
 using Snyk.Common;
-using Snyk.VisualStudio.Extension.Shared.Service;
+using Snyk.VisualStudio.Extension.Service;
 
-namespace Snyk.VisualStudio.Extension.Shared.UI.Toolwindow
+namespace Snyk.VisualStudio.Extension.UI.Toolwindow
 {
     /// <summary>
     /// Interaction logic for MessagePanel.xaml.

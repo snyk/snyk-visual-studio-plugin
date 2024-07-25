@@ -1,4 +1,4 @@
-﻿namespace Snyk.VisualStudio.Extension.Shared.UI.Toolwindow
+﻿namespace Snyk.VisualStudio.Extension.UI.Toolwindow
 {
     using System;
     using System.Diagnostics;
@@ -14,11 +14,11 @@
     using Snyk.Common;
     using Snyk.Common.Service;
     using Snyk.Common.Settings;
-    using Snyk.VisualStudio.Extension.Shared.CLI;
-    using Snyk.VisualStudio.Extension.Shared.Commands;
-    using Snyk.VisualStudio.Extension.Shared.Service;
-    using Snyk.VisualStudio.Extension.Shared.UI.Notifications;
-    using Snyk.VisualStudio.Extension.Shared.UI.Tree;
+    using Snyk.VisualStudio.Extension.CLI;
+    using Snyk.VisualStudio.Extension.Commands;
+    using Snyk.VisualStudio.Extension.Service;
+    using Snyk.VisualStudio.Extension.UI.Notifications;
+    using Snyk.VisualStudio.Extension.UI.Tree;
     using Task = System.Threading.Tasks.Task;
 
     /// <summary>

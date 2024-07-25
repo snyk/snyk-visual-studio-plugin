@@ -1,4 +1,4 @@
-﻿namespace Snyk.VisualStudio.Extension.Shared.Settings
+﻿namespace Snyk.VisualStudio.Extension.Settings
 {
     partial class SnykSolutionOptionsUserControl
     {

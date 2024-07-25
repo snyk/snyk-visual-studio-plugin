@@ -122,15 +122,23 @@
     <Compile Include="Service\WorkspaceTrustService.cs" />
     <Compile Include="Settings\ErrorProviderExtensions.cs" />
     <Compile Include="Settings\IUserStorageSettingsService.cs" />
-    <Compile Include="Settings\SnykGeneralOptionsDialogPage.cs" />
-    <Compile Include="Settings\SnykGeneralSettingsUserControl.cs" />
+    <Compile Include="Settings\SnykGeneralOptionsDialogPage.cs">
+      <SubType>Component</SubType>
+    </Compile>
+    <Compile Include="Settings\SnykGeneralSettingsUserControl.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
     <Compile Include="Settings\SnykGeneralSettingsUserControl.Designer.cs">
       <DependentUpon>SnykGeneralSettingsUserControl.cs</DependentUpon>
     </Compile>
     <Compile Include="Settings\SnykSettings.cs" />
     <Compile Include="Settings\SnykSettingsLoader.cs" />
-    <Compile Include="Settings\SnykSolutionOptionsDialogPage.cs" />
-    <Compile Include="Settings\SnykSolutionOptionsUserControl.cs" />
+    <Compile Include="Settings\SnykSolutionOptionsDialogPage.cs">
+      <SubType>Component</SubType>
+    </Compile>
+    <Compile Include="Settings\SnykSolutionOptionsUserControl.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
     <Compile Include="Settings\SnykSolutionOptionsUserControl.Designer.cs">
       <DependentUpon>SnykSolutionOptionsUserControl.cs</DependentUpon>
     </Compile>

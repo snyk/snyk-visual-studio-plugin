@@ -1,11 +1,11 @@
-﻿namespace Snyk.VisualStudio.Extension.Shared.Settings
+﻿namespace Snyk.VisualStudio.Extension.Settings
 {
     using System;
     using System.Collections.Generic;
     using System.Threading.Tasks;
     using Serilog;
     using Snyk.Common;
-    using Snyk.VisualStudio.Extension.Shared.Service;
+    using Snyk.VisualStudio.Extension.Service;
 
     /// <summary>
     /// Service for solution settings.

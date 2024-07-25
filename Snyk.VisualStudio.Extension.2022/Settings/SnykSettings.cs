@@ -1,4 +1,4 @@
-﻿namespace Snyk.VisualStudio.Extension.Shared.Settings
+﻿namespace Snyk.VisualStudio.Extension.Settings
 {
     using System;
     using System.Collections.Generic;

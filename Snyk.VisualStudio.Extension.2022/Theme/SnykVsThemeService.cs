@@ -1,4 +1,4 @@
-﻿namespace Snyk.VisualStudio.Extension.Shared.Theme
+﻿namespace Snyk.VisualStudio.Extension.Theme
 {
     using System;
     using System.Runtime.InteropServices;
@@ -7,7 +7,7 @@
     using Microsoft.VisualStudio.Shell.Interop;
     using Serilog;
     using Snyk.Common;
-    using Snyk.VisualStudio.Extension.Shared.Service;
+    using Snyk.VisualStudio.Extension.Service;
     using Task = System.Threading.Tasks.Task;
 
     /// <summary>

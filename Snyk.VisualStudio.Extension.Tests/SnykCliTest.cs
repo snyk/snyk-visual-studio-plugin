@@ -1,4 +1,4 @@
-﻿namespace Snyk.VisualStudio.Extension.Shared.Tests
+﻿namespace Snyk.VisualStudio.Extension.Tests
 {
     using System;
     using System.IO;
@@ -7,8 +7,8 @@
     using Snyk.Common;
     using Snyk.Common.Authentication;
     using Snyk.Common.Settings;
-    using Snyk.VisualStudio.Extension.Shared.CLI;
-    using Snyk.VisualStudio.Extension.Shared.Model;
+    using Snyk.VisualStudio.Extension.CLI;
+    using Snyk.VisualStudio.Extension.Model;
     using Xunit;
 
     public class SnykCliTest

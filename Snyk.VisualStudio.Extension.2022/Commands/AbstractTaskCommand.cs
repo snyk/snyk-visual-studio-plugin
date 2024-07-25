@@ -1,8 +1,8 @@
-﻿namespace Snyk.VisualStudio.Extension.Shared.Commands
+﻿namespace Snyk.VisualStudio.Extension.Commands
 {
     using System;
     using Microsoft.VisualStudio.Shell;
-    using Snyk.VisualStudio.Extension.Shared.CLI;
+    using Snyk.VisualStudio.Extension.CLI;
 
     /// <summary>
     /// Common class for <see cref="SnykScanCommand"/> and <see cref="SnykStopCurrentTaskCommand"/> task commands.

@@ -1,4 +1,4 @@
-﻿namespace Snyk.VisualStudio.Extension.Shared.Commands
+﻿namespace Snyk.VisualStudio.Extension.Commands
 {
     using System;
     using System.ComponentModel.Design;

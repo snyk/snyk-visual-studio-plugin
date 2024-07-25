@@ -1,4 +1,4 @@
-﻿namespace Snyk.VisualStudio.Extension.Shared.Service
+﻿namespace Snyk.VisualStudio.Extension.Service
 {
     /// <summary>
     /// Progress woker interface to use in low level APIs.

@@ -1,4 +1,4 @@
-﻿namespace Snyk.VisualStudio.Extension.Shared.Model
+﻿namespace Snyk.VisualStudio.Extension.Model
 {
     /// <summary>
     /// Severity class.

@@ -6,7 +6,7 @@ using Newtonsoft.Json;
 using Newtonsoft.Json.Serialization;
 using Snyk.Common.Settings;
 
-namespace Snyk.VisualStudio.Extension.Shared.CLI
+namespace Snyk.VisualStudio.Extension.CLI
 {
     [JsonObject(NamingStrategyType = typeof(SnakeCaseNamingStrategy))]
     public class UniqueIssueCount

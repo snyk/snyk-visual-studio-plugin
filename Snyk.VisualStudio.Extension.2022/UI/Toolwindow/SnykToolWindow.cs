@@ -1,4 +1,4 @@
-﻿namespace Snyk.VisualStudio.Extension.Shared.UI.Toolwindow
+﻿namespace Snyk.VisualStudio.Extension.UI.Toolwindow
 {
     using System;
     using System.Collections.Generic;
@@ -9,7 +9,7 @@
     using Microsoft.VisualStudio.Shell;
     using Microsoft.VisualStudio.Shell.Interop;
     using Microsoft.Internal.VisualStudio.PlatformUI;
-    using Snyk.VisualStudio.Extension.Shared.Model;
+    using Snyk.VisualStudio.Extension.Model;
 
     /// <summary>
     /// This class implements the tool window exposed by this package and hosts a user control.

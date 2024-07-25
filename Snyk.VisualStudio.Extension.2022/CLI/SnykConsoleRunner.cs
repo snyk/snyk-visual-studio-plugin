@@ -1,6 +1,6 @@
 ﻿using Snyk.Common.Settings;
 
-namespace Snyk.VisualStudio.Extension.Shared.CLI
+namespace Snyk.VisualStudio.Extension.CLI
 {
     using System;
     using System.Collections;

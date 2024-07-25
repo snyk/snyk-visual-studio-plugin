@@ -1,9 +1,9 @@
-﻿namespace Snyk.VisualStudio.Extension.Shared.UI.Toolwindow
+﻿namespace Snyk.VisualStudio.Extension.UI.Toolwindow
 {
     using System.Windows;
     using System.Windows.Controls;
     using Snyk.Code.Library.Domain.Analysis;
-    using Snyk.VisualStudio.Extension.Shared.CLI;
+    using Snyk.VisualStudio.Extension.CLI;
     using Task = System.Threading.Tasks.Task;
 
     /// <summary>

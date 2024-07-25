@@ -1,10 +1,10 @@
-﻿namespace Snyk.VisualStudio.Extension.Shared.UI.Notifications
+﻿namespace Snyk.VisualStudio.Extension.UI.Notifications
 {
     using System;
     using Snyk.Code.Library.Service;
     using Snyk.Common.Settings;
-    using Snyk.VisualStudio.Extension.Shared.Service;
-    using Snyk.VisualStudio.Extension.Shared.Settings;
+    using Snyk.VisualStudio.Extension.Service;
+    using Snyk.VisualStudio.Extension.Settings;
 
     /// <summary>
     /// Display notifications in Visual Studio status bar.

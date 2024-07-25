@@ -1,4 +1,4 @@
-﻿namespace Snyk.VisualStudio.Extension.Shared.Cache
+﻿namespace Snyk.VisualStudio.Extension.Cache
 {
     using System.Collections.Generic;
     using Microsoft.VisualStudio.Shell.Interop;

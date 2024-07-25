@@ -1,4 +1,4 @@
-﻿namespace Snyk.VisualStudio.Extension.Shared.UI
+﻿namespace Snyk.VisualStudio.Extension.UI
 {
     using System.Collections.Generic;
     using System.Diagnostics;
@@ -6,7 +6,7 @@
     using Microsoft.VisualStudio.Imaging;
     using Microsoft.VisualStudio.Shell;
     using Microsoft.VisualStudio.Shell.Interop;
-    using Snyk.VisualStudio.Extension.Shared.Service;
+    using Snyk.VisualStudio.Extension.Service;
     using Task = System.Threading.Tasks.Task;
 
     /// <summary>

@@ -1,8 +1,8 @@
-﻿namespace Snyk.VisualStudio.Extension.Shared.Service
+﻿namespace Snyk.VisualStudio.Extension.Service
 {
     using System.Threading;
     using System.Threading.Tasks;
-    using Snyk.VisualStudio.Extension.Shared.CLI;
+    using Snyk.VisualStudio.Extension.CLI;
 
     /// <summary>
     /// Service for OSS vulnerability scan.

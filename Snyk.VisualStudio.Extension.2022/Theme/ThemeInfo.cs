@@ -1,4 +1,4 @@
-﻿namespace Snyk.VisualStudio.Extension.Shared.Theme
+﻿namespace Snyk.VisualStudio.Extension.Theme
 {
     using System.IO;
     using System.Runtime.InteropServices;

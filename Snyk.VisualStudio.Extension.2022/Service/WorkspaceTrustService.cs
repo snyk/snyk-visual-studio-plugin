@@ -1,4 +1,4 @@
-﻿namespace Snyk.VisualStudio.Extension.Shared.Service
+﻿namespace Snyk.VisualStudio.Extension.Service
 {
     using System;
     using System.Collections.Generic;
@@ -6,7 +6,7 @@
     using System.Linq;
     using Serilog;
     using Snyk.Common;
-    using Snyk.VisualStudio.Extension.Shared.Settings;
+    using Snyk.VisualStudio.Extension.Settings;
 
     public class WorkspaceTrustService : IWorkspaceTrustService
     {

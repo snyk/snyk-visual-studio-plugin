@@ -2,7 +2,7 @@
 using System.Diagnostics;
 using System.Windows.Forms;
 
-namespace Snyk.VisualStudio.Extension.Shared.Settings
+namespace Snyk.VisualStudio.Extension.Settings
 {
     partial class SnykGeneralSettingsUserControl
     {

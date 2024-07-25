@@ -1,4 +1,4 @@
-﻿namespace Snyk.VisualStudio.Extension.Shared.CLI.Download
+﻿namespace Snyk.VisualStudio.Extension.CLI.Download
 {
     using System;
     using System.Collections.Generic;
@@ -7,7 +7,7 @@
     using System.Threading.Tasks;
     using Serilog;
     using Snyk.Common;
-    using Snyk.VisualStudio.Extension.Shared.Service;
+    using Snyk.VisualStudio.Extension.Service;
 
     /// <summary>
     /// Donwnload last Snyk CLI version.

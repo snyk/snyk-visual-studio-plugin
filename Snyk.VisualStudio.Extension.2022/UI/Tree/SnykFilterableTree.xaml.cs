@@ -1,4 +1,4 @@
-﻿namespace Snyk.VisualStudio.Extension.Shared.UI.Tree
+﻿namespace Snyk.VisualStudio.Extension.UI.Tree
 {
     using System;
     using System.Linq;
@@ -7,8 +7,8 @@
     using System.Windows.Data;
     using Microsoft.VisualStudio.Shell;
     using Snyk.Code.Library.Domain.Analysis;
-    using Snyk.VisualStudio.Extension.Shared.CLI;
-    using Snyk.VisualStudio.Extension.Shared.Model;
+    using Snyk.VisualStudio.Extension.CLI;
+    using Snyk.VisualStudio.Extension.Model;
 
     /// <summary>
     /// Interaction logic for SnykFilterableComboBox.xaml.

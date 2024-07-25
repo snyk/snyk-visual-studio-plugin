@@ -4,11 +4,11 @@ using Newtonsoft.Json;
 using Serilog;
 using Snyk.Code.Library.Domain.Analysis;
 using Snyk.Common;
-using Snyk.VisualStudio.Extension.Shared.Model;
-using Snyk.VisualStudio.Extension.Shared.Service;
+using Snyk.VisualStudio.Extension.Model;
+using Snyk.VisualStudio.Extension.Service;
 using Task = System.Threading.Tasks.Task;
 
-namespace Snyk.VisualStudio.Extension.Shared.CLI
+namespace Snyk.VisualStudio.Extension.CLI
 {
     public class SnykIdeAnalyticsService
     {

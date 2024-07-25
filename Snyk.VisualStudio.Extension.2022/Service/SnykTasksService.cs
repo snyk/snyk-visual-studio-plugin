@@ -6,13 +6,13 @@ using Microsoft.VisualStudio.Shell;
 using Serilog;
 using Snyk.Code.Library.Domain.Analysis;
 using Snyk.Common;
-using Snyk.VisualStudio.Extension.Shared.CLI;
-using Snyk.VisualStudio.Extension.Shared.CLI.Download;
-using Snyk.VisualStudio.Extension.Shared.Service.Domain;
-using static Snyk.VisualStudio.Extension.Shared.CLI.Download.SnykCliDownloader;
+using Snyk.VisualStudio.Extension.CLI;
+using Snyk.VisualStudio.Extension.CLI.Download;
+using Snyk.VisualStudio.Extension.Service.Domain;
+using static Snyk.VisualStudio.Extension.CLI.Download.SnykCliDownloader;
 using Task = System.Threading.Tasks.Task;
 
-namespace Snyk.VisualStudio.Extension.Shared.Service
+namespace Snyk.VisualStudio.Extension.Service
 {
     /// <summary>
     /// Incapsulate logic with background tasks work.

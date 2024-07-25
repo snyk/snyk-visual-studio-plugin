@@ -1,10 +1,10 @@
-﻿namespace Snyk.VisualStudio.Extension.Shared.Service
+﻿namespace Snyk.VisualStudio.Extension.Service
 {
     using System.Threading;
     using System.Threading.Tasks;
     using Serilog;
     using Snyk.Common;
-    using Snyk.VisualStudio.Extension.Shared.CLI;
+    using Snyk.VisualStudio.Extension.CLI;
 
     /// <inheritdoc/>
     public class OssService : IOssService

@@ -1,4 +1,4 @@
-﻿namespace Snyk.VisualStudio.Extension.Shared.CLI
+﻿namespace Snyk.VisualStudio.Extension.CLI
 {
     using Newtonsoft.Json;
 

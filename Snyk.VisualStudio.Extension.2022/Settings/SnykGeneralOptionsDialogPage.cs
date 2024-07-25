@@ -11,10 +11,10 @@ using Snyk.Common;
 using Snyk.Common.Authentication;
 using Snyk.Common.Service;
 using Snyk.Common.Settings;
-using Snyk.VisualStudio.Extension.Shared.Service;
-using Snyk.VisualStudio.Extension.Shared.UI.Notifications;
+using Snyk.VisualStudio.Extension.Service;
+using Snyk.VisualStudio.Extension.UI.Notifications;
 
-namespace Snyk.VisualStudio.Extension.Shared.Settings
+namespace Snyk.VisualStudio.Extension.Settings
 {
     /// <summary>
     /// Snyk general settings page.

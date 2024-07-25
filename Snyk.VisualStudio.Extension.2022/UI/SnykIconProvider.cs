@@ -1,9 +1,9 @@
 ﻿using System;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
-using Snyk.VisualStudio.Extension.Shared.Model;
+using Snyk.VisualStudio.Extension.Model;
 
-namespace Snyk.VisualStudio.Extension.Shared.UI
+namespace Snyk.VisualStudio.Extension.UI
 {
     /// <summary>
     /// Provide icon path.

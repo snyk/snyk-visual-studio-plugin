@@ -1,4 +1,4 @@
-﻿namespace Snyk.VisualStudio.Extension.Shared.UI.Toolwindow.SnykCode
+﻿namespace Snyk.VisualStudio.Extension.UI.Toolwindow.SnykCode
 {
     using System.Collections.ObjectModel;
     using System.Windows;
@@ -7,7 +7,7 @@
     using System.Windows.Media;
     using Microsoft.VisualStudio.PlatformUI;
     using Snyk.Code.Library.Domain.Analysis;
-    using Snyk.VisualStudio.Extension.Shared.Theme;
+    using Snyk.VisualStudio.Extension.Theme;
 
     /// <summary>
     /// Extended <see cref="RichTextBox"/> for display code example with red/green highlite rows.
