@@ -1,4 +1,4 @@
-﻿namespace Integration.Tests.Shared
+﻿namespace Integration.Tests
 {
 	using System;
 	using System.Threading.Tasks;
