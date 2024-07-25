@@ -1,26 +1,26 @@
-﻿namespace Snyk.VisualStudio.Extension.UI.Toolwindow
-{
-    using System;
-    using System.Diagnostics;
-    using System.Threading;
-    using System.Windows;
-    using System.Windows.Controls;
-    using System.Windows.Documents;
-    using Microsoft.VisualStudio;
-    using Microsoft.VisualStudio.Shell;
-    using Microsoft.VisualStudio.Shell.Interop;
-    using Serilog;
-    using Snyk.Code.Library.Domain.Analysis;
-    using Snyk.Common;
-    using Snyk.Common.Service;
-    using Snyk.Common.Settings;
-    using Snyk.VisualStudio.Extension.CLI;
-    using Snyk.VisualStudio.Extension.Commands;
-    using Snyk.VisualStudio.Extension.Service;
-    using Snyk.VisualStudio.Extension.UI.Notifications;
-    using Snyk.VisualStudio.Extension.UI.Tree;
-    using Task = System.Threading.Tasks.Task;
+﻿using System;
+using System.Diagnostics;
+using System.Threading;
+using System.Windows;
+using System.Windows.Controls;
+using System.Windows.Documents;
+using Microsoft.VisualStudio;
+using Microsoft.VisualStudio.Shell;
+using Microsoft.VisualStudio.Shell.Interop;
+using Serilog;
+using Snyk.Code.Library.Domain.Analysis;
+using Snyk.Common;
+using Snyk.Common.Service;
+using Snyk.Common.Settings;
+using Snyk.VisualStudio.Extension.CLI;
+using Snyk.VisualStudio.Extension.Commands;
+using Snyk.VisualStudio.Extension.Service;
+using Snyk.VisualStudio.Extension.UI.Notifications;
+using Snyk.VisualStudio.Extension.UI.Tree;
+using Task = System.Threading.Tasks.Task;
 
+namespace Snyk.VisualStudio.Extension.UI.Toolwindow
+{
     /// <summary>
     /// Interaction logic for SnykToolWindowControl.
     /// </summary>

@@ -1,7 +1,7 @@
 using System;
 using System.Windows;
 
-namespace Snyk.VisualStudio.Extension
+namespace Snyk.VisualStudio.Extension.UI
 {
     public static class ResourceLoader
     {

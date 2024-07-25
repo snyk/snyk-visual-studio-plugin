@@ -1,7 +1,7 @@
-﻿namespace Snyk.VisualStudio.Extension.UI.Controls
-{
-    using System.Windows.Controls;
+﻿using System.Windows.Controls;
 
+namespace Snyk.VisualStudio.Extension.UI.Controls
+{
     /// <summary>
     /// TextField.xaml support display text in dark and light theme.
     /// </summary>

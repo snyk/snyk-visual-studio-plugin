@@ -1,16 +1,12 @@
-﻿using Segment.Model;
-using Snyk.Common.Settings;
-using Snyk.VisualStudio.Extension.Settings;
+﻿using Snyk.Common.Settings;
+using System.Collections.Specialized;
+using Snyk.VisualStudio.Extension.CLI;
 
 namespace Snyk.VisualStudio.Extension.Tests
 {
-    using System.Collections.Specialized;
-    using Snyk.VisualStudio.Extension.CLI;
-
     public class SnykMockConsoleRunner : SnykConsoleRunner
     {
         private string consoleResult;
-
 
         public SnykMockConsoleRunner(ISnykOptions options, string result) : base(options)
         {

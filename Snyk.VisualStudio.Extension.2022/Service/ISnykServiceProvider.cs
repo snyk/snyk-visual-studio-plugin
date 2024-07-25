@@ -1,19 +1,19 @@
-﻿namespace Snyk.VisualStudio.Extension.Service
-{
-    using System;
-    using System.Threading.Tasks;
-    using EnvDTE80;
-    using Microsoft.VisualStudio.Settings;
-    using Microsoft.VisualStudio.Shell;
-    using Snyk.Code.Library.Service;
-    using Snyk.Common;
-    using Snyk.Common.Service;
-    using Snyk.Common.Settings;
-    using Snyk.VisualStudio.Extension.CLI;
-    using Snyk.VisualStudio.Extension.Settings;
-    using Snyk.VisualStudio.Extension.Theme;
-    using Snyk.VisualStudio.Extension.UI.Toolwindow;
+﻿using System;
+using System.Threading.Tasks;
+using EnvDTE80;
+using Microsoft.VisualStudio.Settings;
+using Microsoft.VisualStudio.Shell;
+using Snyk.Code.Library.Service;
+using Snyk.Common;
+using Snyk.Common.Service;
+using Snyk.Common.Settings;
+using Snyk.VisualStudio.Extension.CLI;
+using Snyk.VisualStudio.Extension.Settings;
+using Snyk.VisualStudio.Extension.Theme;
+using Snyk.VisualStudio.Extension.UI.Toolwindow;
 
+namespace Snyk.VisualStudio.Extension.Service
+{
     /// <summary>
     /// ServiceProvider interface for Snyk extension. Provide all needed services for this extension.
     /// </summary>

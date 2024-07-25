@@ -1,7 +1,4 @@
-﻿using System;
-using System.IO;
-using Moq;
-using Snyk.Common.Authentication;
+﻿using Moq;
 using Snyk.Common.Settings;
 using Snyk.VisualStudio.Extension.CLI;
 using Xunit;

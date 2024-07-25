@@ -1,25 +1,24 @@
 ﻿using Snyk.Common.Settings;
+using System;
+using System.Diagnostics.CodeAnalysis;
+using System.Linq;
+using System.Reflection;
+using System.Runtime.InteropServices;
+using System.Threading;
+using System.Threading.Tasks;
+using Microsoft.VisualStudio.Shell;
+using Microsoft.VisualStudio.Shell.Interop;
+using Serilog;
+using Snyk.Common;
+using Snyk.VisualStudio.Extension.Commands;
+using Snyk.VisualStudio.Extension.Service;
+using Snyk.VisualStudio.Extension.Settings;
+using Snyk.VisualStudio.Extension.UI.Notifications;
+using Snyk.VisualStudio.Extension.UI.Toolwindow;
+using Task = System.Threading.Tasks.Task;
 
 namespace Snyk.VisualStudio.Extension
 {
-    using System;
-    using System.Diagnostics.CodeAnalysis;
-    using System.Linq;
-    using System.Reflection;
-    using System.Runtime.InteropServices;
-    using System.Threading;
-    using System.Threading.Tasks;
-    using Microsoft.VisualStudio.Shell;
-    using Microsoft.VisualStudio.Shell.Interop;
-    using Serilog;
-    using Snyk.Common;
-    using Snyk.VisualStudio.Extension.Commands;
-    using Snyk.VisualStudio.Extension.Service;
-    using Snyk.VisualStudio.Extension.Settings;
-    using Snyk.VisualStudio.Extension.UI.Notifications;
-    using Snyk.VisualStudio.Extension.UI.Toolwindow;
-    using Task = System.Threading.Tasks.Task;
-
     /// <summary>
     /// This is the class that implements the package exposed by this assembly.
     /// </summary>

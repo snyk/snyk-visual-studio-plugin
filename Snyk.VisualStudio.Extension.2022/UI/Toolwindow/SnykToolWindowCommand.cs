@@ -1,13 +1,13 @@
-﻿namespace Snyk.VisualStudio.Extension.UI
-{
-    using System;
-    using System.ComponentModel.Design;
-    using Microsoft.VisualStudio.Shell;
-    using Serilog;
-    using Snyk.Common;
-    using Snyk.VisualStudio.Extension.Service;
-    using Task = System.Threading.Tasks.Task;
+﻿using System;
+using System.ComponentModel.Design;
+using Microsoft.VisualStudio.Shell;
+using Serilog;
+using Snyk.Common;
+using Snyk.VisualStudio.Extension.Service;
+using Task = System.Threading.Tasks.Task;
 
+namespace Snyk.VisualStudio.Extension.UI
+{
     /// <summary>
     /// Command handler.
     /// </summary>
@@ -17,8 +17,6 @@
         /// Command ID.
         /// </summary>
         public const int CommandId = 0x1021;
-
-        private static readonly ILogger Logger = LogManager.ForContext<SnykToolWindowCommand>();
 
         /// <summary>
         /// Command menu group (command set GUID).

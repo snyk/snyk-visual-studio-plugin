@@ -1,7 +1,7 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFramework>net472</TargetFramework>
+    <TargetFramework>net48</TargetFramework>
 
     <IsPackable>false</IsPackable>
   </PropertyGroup>
@@ -48,7 +48,9 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\Snyk.VisualStudio.Extension\Snyk.VisualStudio.Extension.csproj" />
+    <ProjectReference Include="..\Snyk.Code.Library\Snyk.Code.Library.csproj" />
+    <ProjectReference Include="..\Snyk.Common\Snyk.Common.csproj" />
+    <ProjectReference Include="..\Snyk.VisualStudio.Extension.2022\Snyk.VisualStudio.Extension.2022.csproj" />
   </ItemGroup>
 
   <ItemGroup>

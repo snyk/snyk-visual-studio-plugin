@@ -1,13 +1,13 @@
-﻿namespace Snyk.VisualStudio.Extension.Tests.Service
-{
-    using System;
-    using System.Collections.Generic;
-    using System.IO;
-    using Moq;
-    using Snyk.VisualStudio.Extension.Service;
-    using Snyk.VisualStudio.Extension.Settings;
-    using Xunit;
+﻿using System;
+using System.Collections.Generic;
+using System.IO;
+using Moq;
+using Snyk.VisualStudio.Extension.Service;
+using Snyk.VisualStudio.Extension.Settings;
+using Xunit;
 
+namespace Snyk.VisualStudio.Extension.Tests.Service
+{
     public class WorkspaceTrustServiceTest
     {
         [Fact]

@@ -1,9 +1,9 @@
-﻿namespace Snyk.VisualStudio.Extension.Tests
-{
-    using System.Collections.Generic;
-    using Snyk.VisualStudio.Extension.CLI;
-    using Xunit;
+﻿using System.Collections.Generic;
+using Snyk.VisualStudio.Extension.CLI;
+using Xunit;
 
+namespace Snyk.VisualStudio.Extension.Tests
+{
     /// <summary>
     /// Test case for <see cref="SnykSolutionService"/>.
     /// </summary>

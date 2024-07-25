@@ -1,17 +1,17 @@
-﻿namespace Snyk.VisualStudio.Extension.UI.Toolwindow
-{
-    using System;
-    using System.Diagnostics;
-    using System.Linq;
-    using System.Windows;
-    using System.Windows.Controls;
-    using System.Windows.Documents;
-    using System.Windows.Input;
-    using MdXaml;
-    using Serilog;
-    using Snyk.Common;
-    using Snyk.VisualStudio.Extension.CLI;
+﻿using System;
+using System.Diagnostics;
+using System.Linq;
+using System.Windows;
+using System.Windows.Controls;
+using System.Windows.Documents;
+using System.Windows.Input;
+using MdXaml;
+using Serilog;
+using Snyk.Common;
+using Snyk.VisualStudio.Extension.CLI;
 
+namespace Snyk.VisualStudio.Extension.UI.Toolwindow
+{
     /// <summary>
     /// Interaction logic for OssDescriptionControl.xaml.
     /// </summary>

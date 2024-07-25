@@ -1,8 +1,8 @@
-﻿namespace Snyk.VisualStudio.Extension.UI.Toolwindow
-{
-    using System.Windows;
-    using Microsoft.VisualStudio.Shell;
+﻿using System.Windows;
+using Microsoft.VisualStudio.Shell;
 
+namespace Snyk.VisualStudio.Extension.UI.Toolwindow
+{
     /// <summary>
     /// Implements Scan results state for tool window.
     /// </summary>

@@ -1,14 +1,14 @@
-﻿namespace Snyk.VisualStudio.Extension.Tests
-{
-    using System;
-    using System.IO;
-    using System.Threading.Tasks;
-    using Moq;
-    using Snyk.VisualStudio.Extension.CLI;
-    using Snyk.VisualStudio.Extension.CLI.Download;
-    using Snyk.VisualStudio.Extension.Service;
-    using Xunit;
+﻿using System;
+using System.IO;
+using System.Threading.Tasks;
+using Moq;
+using Snyk.VisualStudio.Extension.CLI;
+using Snyk.VisualStudio.Extension.CLI.Download;
+using Snyk.VisualStudio.Extension.Service;
+using Xunit;
 
+namespace Snyk.VisualStudio.Extension.Tests
+{
     public class SnykCliDownloaderTest
     {
         private Mock<ISnykProgressWorker> progressWorkerMock;

@@ -1,16 +1,16 @@
-﻿namespace Snyk.VisualStudio.Extension.UI.Toolwindow
-{
-    using System;
-    using System.Collections.Generic;
-    using System.ComponentModel.Design;
-    using System.Runtime.InteropServices;
-    using Microsoft.VisualStudio;
-    using Microsoft.VisualStudio.PlatformUI;
-    using Microsoft.VisualStudio.Shell;
-    using Microsoft.VisualStudio.Shell.Interop;
-    using Microsoft.Internal.VisualStudio.PlatformUI;
-    using Snyk.VisualStudio.Extension.Model;
+﻿using System;
+using System.Collections.Generic;
+using System.ComponentModel.Design;
+using System.Runtime.InteropServices;
+using Microsoft.VisualStudio;
+using Microsoft.VisualStudio.PlatformUI;
+using Microsoft.VisualStudio.Shell;
+using Microsoft.VisualStudio.Shell.Interop;
+using Microsoft.Internal.VisualStudio.PlatformUI;
+using Snyk.VisualStudio.Extension.Model;
 
+namespace Snyk.VisualStudio.Extension.UI.Toolwindow
+{
     /// <summary>
     /// This class implements the tool window exposed by this package and hosts a user control.
     /// </summary>
