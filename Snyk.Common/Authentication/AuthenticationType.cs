@@ -4,9 +4,9 @@ namespace Snyk.Common.Authentication
 {
     public enum AuthenticationType
     {
-        [Description("Token Authentication")]
+        [Description("Token authentication")]
         Token,
-        [Description("OAuth2 Authentication")]
+        [Description("OAuth2 authentication")]
         OAuth,
     }
 }
