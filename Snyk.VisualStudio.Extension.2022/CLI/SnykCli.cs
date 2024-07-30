@@ -177,11 +177,7 @@ namespace Snyk.VisualStudio.Extension.CLI
             var cliPath = this.GetCliPath();
 
             Logger.Information("CLI path is {CliPath}", cliPath);
-
-            var environmentVariables = new StringDictionary();
-            var apiEndpointResolver = new ApiEndpointResolver(this.options);
-            environmentVariables.Add(ApiEnvironmentVariableName, apiEndpointResolver.SnykApiEndpoint); 
-            
+            var environmentVariables = this.BuildScanEnvironmentVariables(false);
             this.ConsoleRunner.CreateProcess(cliPath, arguments, environmentVariables);
 
             Logger.Information("Start run console process");
@@ -192,6 +188,7 @@ namespace Snyk.VisualStudio.Extension.CLI
             {
                 throw new AuthenticationException(consoleResult);
             }
+
             return consoleResult;
         }
 
@@ -221,27 +218,21 @@ namespace Snyk.VisualStudio.Extension.CLI
             return cliPath;
         }
 
-        public StringDictionary BuildScanEnvironmentVariables()
+        public StringDictionary BuildScanEnvironmentVariables(bool shouldRefreshToken = true)
         {
             var environmentVariables = new StringDictionary();
             if (this.Options.ApiToken.IsValid())
             {
-                var token = this.Options.ApiToken.ToString();
+                var token = shouldRefreshToken ? this.Options.ApiToken.GetRefreshedToken() : this.Options.ApiToken.ToString();
 
-                // TODO: else set to 0
-                if (this.Options.ApiToken.Type == AuthenticationType.OAuth)
-                {
-                    environmentVariables.Add("INTERNAL_SNYK_OAUTH_ENABLED", "1");
-                    environmentVariables.Add("INTERNAL_OAUTH_TOKEN_STORAGE", token);
-                }
-                else
-                {
-                    environmentVariables.Add("INTERNAL_SNYK_OAUTH_ENABLED", "0");
-                    environmentVariables.Add("SNYK_TOKEN", token);
-                }
-
-                Logger.Information("Token added from Options");
+                var internalTokenKey = this.Options.ApiToken.Type == AuthenticationType.OAuth
+                    ? "INTERNAL_OAUTH_TOKEN_STORAGE"
+                    : "SNYK_TOKEN";
+                environmentVariables.Add(internalTokenKey, token);
             }
+            environmentVariables.Add("INTERNAL_SNYK_OAUTH_ENABLED", this.Options.ApiToken.Type == AuthenticationType.OAuth ? "1" : "0");
+
+            Logger.Information("Token added from Options");
 
             var apiEndpointResolver = new ApiEndpointResolver(this.options);
             environmentVariables.Add(ApiEnvironmentVariableName, apiEndpointResolver.SnykApiEndpoint);

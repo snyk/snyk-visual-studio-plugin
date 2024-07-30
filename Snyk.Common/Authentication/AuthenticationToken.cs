@@ -24,7 +24,7 @@ namespace Snyk.Common.Authentication
 
         public AuthenticationType Type { get; }
 
-        public override string ToString()
+        public string GetRefreshedToken()
         {
             // if possible and required, update the token before using it
             if (this.TokenRefresher != null && Type == AuthenticationType.OAuth)
@@ -43,6 +43,11 @@ namespace Snyk.Common.Authentication
             return this.value;
         }
 
+        public override string ToString()
+        {
+            return this.value;
+        }
+
         public bool IsValid()
         {
             if (string.IsNullOrWhiteSpace(this.value))
@@ -57,12 +62,6 @@ namespace Snyk.Common.Authentication
                 case AuthenticationType.OAuth:
                     {
                         var tokenState = GetTokenState(this.value);
-                        if (tokenState == OAuthTokenState.Expired)
-                        {
-                            this.value = this.TokenRefresher();
-                            tokenState = GetTokenState(this.value);
-                        }
-
                         return tokenState == OAuthTokenState.Valid;
                     }
                 default:
