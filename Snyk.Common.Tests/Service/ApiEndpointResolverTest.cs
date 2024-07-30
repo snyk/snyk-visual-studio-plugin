@@ -77,6 +77,9 @@ namespace Snyk.Common.Tests.Service
             optionsMock
                  .Setup(options => options.CustomEndpoint)
                  .Returns("https://app.snykgov.io/api");
+            optionsMock
+                .Setup(option => option.AuthenticationMethod)
+                .Returns(AuthenticationType.OAuth);
 
             // Assert
             Assert.Equal(AuthenticationType.OAuth, apiEndpointResolver.AuthenticationMethod);
