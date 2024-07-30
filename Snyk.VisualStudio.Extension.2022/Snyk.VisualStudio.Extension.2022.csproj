@@ -541,7 +541,7 @@
       <IncludeInVSIX>true</IncludeInVSIX>
     </Content>
     <Content Include="stylesheet.css">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>      
     </Content>
   </ItemGroup>
   <ItemGroup>
