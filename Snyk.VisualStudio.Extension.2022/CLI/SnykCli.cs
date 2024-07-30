@@ -135,6 +135,10 @@ namespace Snyk.VisualStudio.Extension.CLI
                 args.Add("--auth-type=oauth");
                 environmentVariables.Add("INTERNAL_SNYK_OAUTH_ENABLED", "1");
             }
+            else
+            {
+                environmentVariables.Add("INTERNAL_SNYK_OAUTH_ENABLED", "0");
+            }
 
             environmentVariables.Add(ApiEnvironmentVariableName, apiEndpointResolver.SnykApiEndpoint);
 
@@ -221,14 +225,9 @@ namespace Snyk.VisualStudio.Extension.CLI
         public StringDictionary BuildScanEnvironmentVariables(bool shouldRefreshToken = true)
         {
             var environmentVariables = new StringDictionary();
-            if (this.Options.ApiToken.IsValid())
+            if (this.Options.ApiToken.IsValid() || shouldRefreshToken)
             {
-                var token = shouldRefreshToken ? this.Options.ApiToken.GetRefreshedToken() : this.Options.ApiToken.ToString();
-
-                var internalTokenKey = this.Options.ApiToken.Type == AuthenticationType.OAuth
-                    ? "INTERNAL_OAUTH_TOKEN_STORAGE"
-                    : "SNYK_TOKEN";
-                environmentVariables.Add(internalTokenKey, token);
+                AddTokenToEnvVar(shouldRefreshToken, environmentVariables);
             }
             environmentVariables.Add("INTERNAL_SNYK_OAUTH_ENABLED", this.Options.ApiToken.Type == AuthenticationType.OAuth ? "1" : "0");
 
@@ -238,6 +237,17 @@ namespace Snyk.VisualStudio.Extension.CLI
             environmentVariables.Add(ApiEnvironmentVariableName, apiEndpointResolver.SnykApiEndpoint);
 
             return environmentVariables;
+        }
+
+        private void AddTokenToEnvVar(bool shouldRefreshToken, StringDictionary environmentVariables)
+        {
+            var token = shouldRefreshToken ? this.Options.ApiToken.Refresh() : this.Options.ApiToken.ToString();
+            if (string.IsNullOrEmpty(token)) return;
+
+            var internalTokenKey = this.Options.ApiToken.Type == AuthenticationType.OAuth
+                ? "INTERNAL_OAUTH_TOKEN_STORAGE"
+                : "SNYK_TOKEN";
+            environmentVariables.Add(internalTokenKey, token);
         }
 
         /// <summary>

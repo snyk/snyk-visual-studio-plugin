@@ -245,7 +245,7 @@ namespace Snyk.VisualStudio.Extension.Tests
 
             var result = cli.BuildScanEnvironmentVariables();
 
-            Assert.Equal(1, result.Count);
+            Assert.Equal(2, result.Count);
         }
 
         [Fact]

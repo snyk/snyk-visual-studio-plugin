@@ -167,7 +167,7 @@ namespace Snyk.VisualStudio.Extension.Settings
                 }
             }
 
-            this.tokenTextBox.Text = this.OptionsDialogPage.ApiToken.ToString();
+            this.tokenTextBox.Text = this.OptionsDialogPage.ApiToken.Refresh();
         }
 
         private async Task OnAuthenticationFailAsync(string errorMessage)
@@ -490,6 +490,19 @@ namespace Snyk.VisualStudio.Extension.Settings
         private void authType_SelectionChangeCommitted(object sender, EventArgs e)
         {
             this.OptionsDialogPage.AuthenticationMethod = (AuthenticationType)authType.SelectedValue;
+            if (this.OptionsDialogPage.AuthenticationMethod == AuthenticationType.OAuth)
+            {
+                authMethodDescription.Text =
+                    """
+                    Specifies whether to authenticate with OAuth2 or with an API token.
+                    Note: OAuth2 is currently experimental. Once it is fully supported, using OAuth2 authentication is recommended as it provides enhanced security.
+                    """;
+            }
+            else
+            {
+                authMethodDescription.Text =
+                    "It is recommended to use OAuth2 authentication method as it provides enhanced security.";
+            }
         }
     }
 }

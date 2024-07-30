@@ -24,7 +24,7 @@ namespace Snyk.Common.Authentication
 
         public AuthenticationType Type { get; }
 
-        public string GetRefreshedToken()
+        public string Refresh()
         {
             // if possible and required, update the token before using it
             if (this.TokenRefresher != null && Type == AuthenticationType.OAuth)
