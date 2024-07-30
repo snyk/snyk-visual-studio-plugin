@@ -48,7 +48,7 @@ jobs:
         working-directory: ${{ github.workspace }}
     environment: snyk-msbuild-envs
     env:
-      VsixManifestPath: .\Snyk.VisualStudio.Extension\source.extension.vsixmanifest
+      VsixManifestPath: .\Snyk.VisualStudio.Extension.2022\source.extension.vsixmanifest
 
     steps:
     - uses: actions/checkout@v4
@@ -79,16 +79,6 @@ jobs:
         draft: false
         prerelease: false
 
-    - name: Upload GitHub Release 2015-2019 Asset
-      uses: actions/upload-release-asset@v1
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      with:
-        upload_url: ${{ steps.create_release.outputs.upload_url }}
-        asset_path: .\Snyk.VisualStudio.Extension\bin\Release\Snyk.VisualStudio.Extension.vsix
-        asset_name: Snyk_Vulnerability_Scanner-${{ needs.build-project.outputs.version }}.vsix
-        asset_content_type: application/zip
-
     - name: Upload GitHub Release 2022 Asset
       uses: actions/upload-release-asset@v1
       env:
@@ -98,13 +88,6 @@ jobs:
         asset_path: .\Snyk.VisualStudio.Extension.2022\bin\Release\Snyk.VisualStudio.Extension.vsix
         asset_name: Snyk_Vulnerability_Scanner-${{ needs.build-project.outputs.version }}-2022.vsix
         asset_content_type: application/zip
-
-    - name: Publish 2015-2019 extension to Marketplace
-      uses: cezarypiatek/VsixPublisherAction@0.2
-      with:
-        extension-file: '.\Snyk.VisualStudio.Extension\bin\Release\Snyk.VisualStudio.Extension.vsix'
-        publish-manifest-file: '.\Snyk.VisualStudio.Extension\vs-publish.json'
-        personal-access-code: ${{ secrets.VS_PUBLISHER_ACCESS_TOKEN }}
 
     - name: Publish 2022 extension to Marketplace
       uses: cezarypiatek/VsixPublisherAction@0.2

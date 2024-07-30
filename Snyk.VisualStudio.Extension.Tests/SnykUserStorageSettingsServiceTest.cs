@@ -1,13 +1,13 @@
-﻿namespace Snyk.VisualStudio.Extension.Tests
-{
-    using System.IO;
-    using System.Threading.Tasks;
-    using Moq;
-    using Snyk.Common;
-    using Snyk.VisualStudio.Extension.Shared.Service;
-    using Snyk.VisualStudio.Extension.Shared.Settings;
-    using Xunit;
+﻿using System.IO;
+using System.Threading.Tasks;
+using Moq;
+using Snyk.Common;
+using Snyk.VisualStudio.Extension.Service;
+using Snyk.VisualStudio.Extension.Settings;
+using Xunit;
 
+namespace Snyk.VisualStudio.Extension.Tests
+{
     /// <summary>
     /// Test case for <see cref="SnykUserStorageSettingsService"/>.
     /// </summary>

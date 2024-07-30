@@ -1,16 +1,16 @@
-﻿namespace Snyk.VisualStudio.Extension.Shared.Tests
-{
-    using System;
-    using System.IO;
-    using System.Threading.Tasks;
-    using Moq;
-    using Snyk.Common;
-    using Snyk.Common.Authentication;
-    using Snyk.Common.Settings;
-    using Snyk.VisualStudio.Extension.Shared.CLI;
-    using Snyk.VisualStudio.Extension.Shared.Model;
-    using Xunit;
+﻿using System;
+using System.IO;
+using System.Threading.Tasks;
+using Moq;
+using Snyk.Common;
+using Snyk.Common.Authentication;
+using Snyk.Common.Settings;
+using Snyk.VisualStudio.Extension.CLI;
+using Snyk.VisualStudio.Extension.Model;
+using Xunit;
 
+namespace Snyk.VisualStudio.Extension.Tests
+{
     public class SnykCliTest
     {
         private readonly Mock<ISnykOptions> optionsMock;

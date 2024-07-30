@@ -1,0 +1,466 @@
+﻿namespace Snyk.VisualStudio.Extension.Settings
+{
+    using System;
+    using System.Diagnostics;
+    using System.Diagnostics.CodeAnalysis;
+    using System.Threading.Tasks;
+    using System.Windows.Forms;
+    using Microsoft.VisualStudio.Shell;
+    using Microsoft.VisualStudio.Threading;
+    using Serilog;
+    using Snyk.Common;
+    using Snyk.Common.Service;
+    using Snyk.Common.Settings;
+    using Snyk.VisualStudio.Extension.CLI;
+    using Snyk.VisualStudio.Extension.Service;
+    using Snyk.VisualStudio.Extension.UI.Notifications;
+    using Task = System.Threading.Tasks.Task;
+
+    /// <summary>
+    /// Control for Snyk General Settings.
+    /// </summary>
+    public partial class SnykGeneralSettingsUserControl : UserControl
+    {
+        private static readonly ILogger logger = LogManager.ForContext<SnykGeneralSettingsUserControl>();
+
+        /// <summary>
+        /// Instance of SnykGeneralOptionsDialogPage.
+        /// </summary>
+        [SuppressMessage("StyleCop.CSharp.MaintainabilityRules", "SA1401:FieldsMustBePrivate", Justification = "Reviewed.")]
+        internal SnykGeneralOptionsDialogPage OptionsDialogPage;
+
+        private static readonly int TwoSecondsDelay = 2000;
+
+        private static readonly int MaxSastRequestAttempts = 20;
+
+        private ISnykApiService apiService;
+
+        private Timer snykCodeEnableTimer = new Timer();
+
+        /// <summary>
+        /// Initializes a new instance of the <see cref="SnykGeneralSettingsUserControl"/> class.
+        /// </summary>
+        /// <param name="apiService">Snyk API service instance.</param>
+        public SnykGeneralSettingsUserControl(ISnykApiService apiService)
+        {
+            this.InitializeComponent();
+
+            this.apiService = apiService;
+        }
+
+        private ISnykServiceProvider ServiceProvider => this.OptionsDialogPage.ServiceProvider;
+
+        /// <summary>
+        /// Initialize elements and actions.
+        /// </summary>
+        public void Initialize()
+        {
+            logger.Information("Enter Initialize method");
+
+            this.InitializeApiToken();
+            this.UpdateViewFromOptionsDialog();
+            this.OptionsDialogPage.SettingsChanged += this.OptionsDialogPageOnSettingsChanged;
+            this.Load += this.SnykGeneralSettingsUserControl_Load;
+
+            logger.Information("Leave Initialize method");
+        }
+
+        private void UpdateViewFromOptionsDialog()
+        {
+            this.customEndpointTextBox.Text = this.OptionsDialogPage.CustomEndpoint;
+            this.organizationTextBox.Text = this.OptionsDialogPage.Organization;
+            this.ignoreUnknownCACheckBox.Checked = this.OptionsDialogPage.IgnoreUnknownCA;
+            this.usageAnalyticsCheckBox.Checked = this.OptionsDialogPage.UsageAnalyticsEnabled;
+            this.ossEnabledCheckBox.Checked = this.OptionsDialogPage.OssEnabled;
+            this.ManageBinariesAutomaticallyCheckbox.Checked = this.OptionsDialogPage.BinariesAutoUpdate;
+
+            var cliPath = string.IsNullOrEmpty(this.OptionsDialogPage.CliCustomPath)
+                ? SnykCli.GetSnykCliDefaultPath()
+                : this.OptionsDialogPage.CliCustomPath;
+
+            this.CliPathTextBox.Text = cliPath;
+        }
+
+        private void OptionsDialogPageOnSettingsChanged(object sender, SnykSettingsChangedEventArgs e) =>
+            ThreadHelper.JoinableTaskFactory.RunAsync(async () =>
+            {
+                await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
+                this.UpdateViewFromOptionsDialog();
+                this.InitializeApiToken();
+            }).FireAndForget();
+
+        private async Task OnAuthenticationSuccessfulAsync(string apiToken)
+        {
+            logger.Information("Enter authenticate successCallback");
+
+            await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
+            //TODO - try to await SwitchToMainThread
+            if (this.authProgressBar.IsHandleCreated)
+            {
+                this.authProgressBar.Invoke(new Action(() =>
+                {
+                    this.authProgressBar.Visible = false;
+                }));
+            }
+
+            if (this.tokenTextBox.IsHandleCreated)
+            {
+                this.tokenTextBox.Invoke(new Action(() =>
+                {
+                    this.tokenTextBox.Text = apiToken;
+                    this.tokenTextBox.Enabled = true;
+                }));
+            }
+
+            if (this.authenticateButton.IsHandleCreated)
+            {
+                this.authenticateButton.Invoke(new Action(() =>
+                {
+                    this.authenticateButton.Enabled = true;
+                }));
+            }
+
+            if (this.authenticateButton.IsHandleCreated)
+            {
+                this.authenticateButton.Invoke(new Action(() =>
+                {
+                    this.errorProvider.SetError(this.tokenTextBox, string.Empty);
+                }));
+            }
+
+            await this.ServiceProvider.ToolWindow.UpdateScreenStateAsync();
+        }
+
+        private void InitializeApiToken()
+        {
+            if (!this.OptionsDialogPage.ApiToken.IsValid())
+            {
+                string apiToken = this.NewCli().GetApiToken();
+
+                if (!apiToken.IsNullOrEmpty())
+                {
+                    this.OptionsDialogPage.SetApiToken(apiToken);
+                }
+            }
+
+            this.tokenTextBox.Text = this.OptionsDialogPage.ApiToken.ToString();
+        }
+
+        private async Task OnAuthenticationFailAsync(string errorMessage)
+        {
+            logger.Information("Enter authenticate errorCallback");
+
+            await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
+            if (this.authProgressBar.IsHandleCreated)
+            {
+                this.authProgressBar.Invoke(new Action(() =>
+                {
+                    this.authProgressBar.Visible = false;
+                }));
+            }
+
+            if (this.tokenTextBox.IsHandleCreated)
+            {
+                this.tokenTextBox.Invoke(new Action(() =>
+                {
+                    this.tokenTextBox.Enabled = true;
+                }));
+            }
+
+            if (this.authenticateButton.IsHandleCreated)
+            {
+                this.authenticateButton.Invoke(new Action(() =>
+                {
+                    this.authenticateButton.Enabled = true;
+                }));
+            }
+
+            CliError cliError = new CliError
+            {
+                IsSuccess = false,
+                Message = errorMessage,
+                Path = string.Empty,
+            };
+
+            this.ServiceProvider.TasksService.FireOssError(cliError);
+
+            this.ServiceProvider.ToolWindow.Show();
+
+            await this.ServiceProvider.ToolWindow.UpdateScreenStateAsync();
+        }
+
+        private ICli NewCli() => this.ServiceProvider.NewCli();
+
+        private void AuthenticateButton_Click(object sender, EventArgs eventArgs) => ThreadHelper.JoinableTaskFactory
+            .RunAsync(this.AuthenticateButtonClickAsync);
+
+        private async Task AuthenticateButtonClickAsync()
+        {
+            logger.Information("Enter authenticateButton_Click method");
+
+            this.authProgressBar.Visible = true;
+            this.tokenTextBox.Enabled = false;
+            this.authenticateButton.Enabled = false;
+
+            logger.Information("Start run task");
+            await TaskScheduler.Default;
+
+            var serviceProvider = this.ServiceProvider;
+
+            var cli = this.ServiceProvider.NewCli();
+            if (cli.IsCliFileFound())
+            {
+                logger.Information("CLI exists. Calling SetupApiToken method");
+                var authenticated = serviceProvider.Options.Authenticate();
+                if (authenticated)
+                {
+                    var token = cli.GetApiToken();
+                    await OnAuthenticationSuccessfulAsync(token);
+                }
+                else
+                {
+                    await OnAuthenticationFailAsync("Authentication failed");
+                }
+            }
+            else
+            {
+                logger.Information("CLI not exists. Download CLI before get Api token");
+
+                //serviceProvider.TasksService.Download(() => this.OptionsDialogPage.Authenticate());
+                await serviceProvider.TasksService.DownloadAsync(() => this.OptionsDialogPage.Authenticate());
+            }
+        }
+
+        private bool IsValidUrl(string url) => Uri.IsWellFormedUriString(url, UriKind.Absolute);
+
+        private void TokenTextBox_TextChanged(object sender, EventArgs e)
+        {
+            if (this.ValidateChildren(ValidationConstraints.Enabled))
+            {
+                this.OptionsDialogPage.SetApiToken(this.tokenTextBox.Text);
+            }
+        }
+
+        private void CustomEndpointTextBox_LostFocus(object sender, EventArgs e)
+        {
+            if (this.ValidateChildren(ValidationConstraints.Enabled))
+            {
+                this.OptionsDialogPage.CustomEndpoint = this.customEndpointTextBox.Text;
+            }
+        }
+
+        private void OrganizationTextBox_TextChanged(object sender, EventArgs e)
+        {
+            this.OptionsDialogPage.Organization = this.organizationTextBox.Text;
+        }
+
+        private void IgnoreUnknownCACheckBox_CheckedChanged(object sender, EventArgs e)
+        {
+            this.OptionsDialogPage.IgnoreUnknownCA = this.ignoreUnknownCACheckBox.Checked;
+        }
+
+        private void TokenTextBox_Validating(object sender, System.ComponentModel.CancelEventArgs cancelEventArgs) =>
+            ThreadHelper.JoinableTaskFactory.RunAsync(async () =>
+            {
+                await this.ServiceProvider.ToolWindow.UpdateScreenStateAsync();
+
+                if (string.IsNullOrEmpty(this.tokenTextBox.Text))
+                {
+                    this.errorProvider.SetError(this.tokenTextBox, string.Empty);
+
+                    return;
+                }
+
+                if (this.tokenTextBox.Text.IsNullOrEmpty())
+                {
+                    cancelEventArgs.Cancel = true;
+
+                    this.tokenTextBox.Focus();
+
+                    this.errorProvider.SetError(this.tokenTextBox, "Not valid GUID.");
+                }
+                else
+                {
+                    cancelEventArgs.Cancel = false;
+                    this.errorProvider.SetError(this.tokenTextBox, string.Empty);
+                }
+            });
+
+        private void CustomEndpointTextBox_Validating(object sender, System.ComponentModel.CancelEventArgs cancelEventArgs)
+        {
+            if (string.IsNullOrWhiteSpace(this.customEndpointTextBox.Text) || this.IsValidUrl(this.customEndpointTextBox.Text))
+            {
+                this.errorProvider.SetNoError(this.customEndpointTextBox);
+                return;
+            }
+
+            cancelEventArgs.Cancel = true;
+            //this.customEndpointTextBox.Focus();
+            this.errorProvider.SetError(this.customEndpointTextBox, "Needs to be a full absolute well-formed URL (including protocol)");
+        }
+
+        private void SnykGeneralSettingsUserControl_Load(object sender, EventArgs e)
+        {
+            this.InitializeApiToken();
+
+            _ = this.StartSastEnablementCheckLoopAsync();
+        }
+
+        private void UpdateSnykCodeEnablementSettings(SastSettings sastSettings)
+        {
+            bool snykCodeEnabled = sastSettings?.SnykCodeEnabled ?? false;
+
+            if (!snykCodeEnabled)
+            {
+                this.snykCodeDisabledInfoLabel.Text = "Snyk Code is disabled by your organisation\'s configuration:";
+            }
+
+            this.codeSecurityEnabledCheckBox.Enabled = snykCodeEnabled;
+            this.codeQualityEnabledCheckBox.Enabled = snykCodeEnabled;
+            this.snykCodeDisabledInfoLabel.Visible = !snykCodeEnabled;
+            this.snykCodeSettingsLinkLabel.Visible = !snykCodeEnabled;
+            this.checkAgainLinkLabel.Visible = !snykCodeEnabled;
+        }
+
+        private async Task StartSastEnablementCheckLoopAsync()
+        {
+            try
+            {
+                if (this.snykCodeEnableTimer.Enabled)
+                {
+                    this.snykCodeEnableTimer.Stop();
+                }
+
+                var sastSettings = await this.apiService.GetSastSettingsAsync();
+
+                this.UpdateSnykCodeEnablementSettings(sastSettings);
+
+                if (sastSettings != null && sastSettings.SastEnabled)
+                {
+                    return;
+                }
+
+                int currentRequestAttempt = 1;
+
+                this.snykCodeEnableTimer.Interval = TwoSecondsDelay;
+
+                this.snykCodeEnableTimer.Tick += (sender, args) => ThreadHelper.JoinableTaskFactory.RunAsync(async () =>
+                {
+                    try
+                    {
+                        sastSettings = await this.apiService.GetSastSettingsAsync();
+
+                        bool snykCodeEnabled = sastSettings != null ? sastSettings.SnykCodeEnabled : false;
+
+                        this.UpdateSnykCodeEnablementSettings(sastSettings);
+
+                        if (snykCodeEnabled)
+                        {
+                            this.snykCodeEnableTimer.Stop();
+                        }
+                        else if (currentRequestAttempt < MaxSastRequestAttempts)
+                        {
+                            currentRequestAttempt++;
+
+                            this.snykCodeEnableTimer.Interval = TwoSecondsDelay * currentRequestAttempt;
+                        }
+                        else
+                        {
+                            this.snykCodeEnableTimer.Stop();
+                        }
+                    }
+                    catch (Exception e)
+                    {
+                        this.HandleSastError(e);
+                    }
+                });
+
+                this.snykCodeEnableTimer.Start();
+            }
+            catch (Exception e)
+            {
+                this.HandleSastError(e);
+            }
+        }
+
+        private void HandleSastError(Exception e)
+        {
+            this.snykCodeEnableTimer.Stop();
+
+            NotificationService.Instance.ShowErrorInfoBar(e.Message);
+
+            this.codeSecurityEnabledCheckBox.Enabled = false;
+            this.codeQualityEnabledCheckBox.Enabled = false;
+
+            this.snykCodeDisabledInfoLabel.Visible = false;
+            this.snykCodeSettingsLinkLabel.Visible = false;
+            this.checkAgainLinkLabel.Visible = false;
+        }
+
+        private void UsageAnalyticsCheckBox_CheckedChanged(object sender, EventArgs e) =>
+            ThreadHelper.JoinableTaskFactory.RunAsync(async () =>
+            {
+                this.OptionsDialogPage.UsageAnalyticsEnabled = this.usageAnalyticsCheckBox.Checked;
+
+                var serviceProvider = this.ServiceProvider;
+                
+                await serviceProvider.SentryService.SetupAsync();
+            });
+
+        private void OssEnabledCheckBox_CheckedChanged(object sender, EventArgs e)
+        {
+            this.OptionsDialogPage.OssEnabled = this.ossEnabledCheckBox.Checked;
+        }
+
+        private void CodeSecurityEnabledCheckBox_CheckedChanged(object sender, EventArgs e)
+        {
+            this.OptionsDialogPage.SnykCodeSecurityEnabled = this.codeSecurityEnabledCheckBox.Checked;
+        }
+
+        private void CodeQualityEnabledCheckBox_CheckedChanged(object sender, EventArgs e)
+        {
+            this.OptionsDialogPage.SnykCodeQualityEnabled = this.codeQualityEnabledCheckBox.Checked;
+        }
+
+        private void SnykCodeSettingsLinkLabel_LinkClicked(object sender, LinkLabelLinkClickedEventArgs e)
+            => System.Diagnostics.Process.Start(this.OptionsDialogPage.SnykCodeSettingsUrl);
+
+        private void CheckAgainLinkLabel_LinkClicked(object sender, LinkLabelLinkClickedEventArgs e)
+        {
+            _ = this.StartSastEnablementCheckLoopAsync();
+        }
+
+        private void OrganizationInfoLink_LinkClicked(object sender, LinkLabelLinkClickedEventArgs e)
+        {
+            this.OrganizationInfoLink.LinkVisited = true;
+            Process.Start("https://docs.snyk.io/ide-tools/visual-studio-extension#organization-setting");
+        }
+
+        private void ManageBinariesAutomaticallyCheckbox_CheckedChanged(object sender, EventArgs e)
+        {
+            this.OptionsDialogPage.BinariesAutoUpdate = this.ManageBinariesAutomaticallyCheckbox.Checked;
+        }
+
+        private void CliPathBrowseButton_Click(object sender, EventArgs e)
+        {
+            if (this.customCliPathFileDialog.ShowDialog() == DialogResult.OK)
+            {
+                var selectedCliPath = this.customCliPathFileDialog.FileName;
+                this.SetCliCustomPathValue(selectedCliPath);
+            }
+        }
+
+        private void SetCliCustomPathValue(string selectedCliPath)
+        {
+            this.OptionsDialogPage.CliCustomPath = selectedCliPath;
+            this.CliPathTextBox.Text = string.IsNullOrEmpty(this.OptionsDialogPage.CliCustomPath)
+                ? SnykCli.GetSnykCliDefaultPath()
+                : selectedCliPath;
+        }
+
+        private void ClearCliCustomPathButton_Click(object sender, EventArgs e)
+        {
+            this.SetCliCustomPathValue(string.Empty);
+        }
+    }
+}

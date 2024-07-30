@@ -26,11 +26,6 @@ jobs:
     - name: Calculate next semantic version Git tag (vsix version)
       id: vsix_version
       uses: ./.github/actions/next-git-tag
-    - name: Set VSIX version for 2015-2019
-      uses: cezarypiatek/VsixVersionAction@1.0
-      with:
-        version: ${{ steps.vsix_version.outputs.next-tag }}
-        vsix-manifest-file: .\Snyk.VisualStudio.Extension\source.extension.vsixmanifest
     - name: Set VSIX version for 2022
       uses: cezarypiatek/VsixVersionAction@1.0
       with:

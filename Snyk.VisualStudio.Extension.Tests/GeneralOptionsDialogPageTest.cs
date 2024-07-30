@@ -1,13 +1,20 @@
-﻿using Moq;
-using Snyk.VisualStudio.Extension.Shared.CLI;
-using Snyk.VisualStudio.Extension.Shared.Service;
-using Snyk.VisualStudio.Extension.Shared.Settings;
+﻿using Microsoft.VisualStudio.Sdk.TestFramework;
+using Moq;
+using Snyk.VisualStudio.Extension.CLI;
+using Snyk.VisualStudio.Extension.Service;
+using Snyk.VisualStudio.Extension.Settings;
 using Xunit;
 
 namespace Snyk.VisualStudio.Extension.Tests
 {
+    [Collection(MockedVS.Collection)]
     public class GeneralOptionsDialogPageTest
     {
+        public GeneralOptionsDialogPageTest(GlobalServiceProvider sp)
+        {
+            sp.Reset();
+        }
+
         [Fact]
         public void ApiEndpointChanged_InvalidatesCliToken()
         {

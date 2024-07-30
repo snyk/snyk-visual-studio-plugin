@@ -1,13 +1,13 @@
-﻿namespace Snyk.VisualStudio.Extension.Tests
-{
-    using System.Threading;
-    using System.Threading.Tasks;
-    using Moq;
-    using Snyk.Common.Settings;
-    using Snyk.VisualStudio.Extension.Shared.CLI;
-    using Snyk.VisualStudio.Extension.Shared.Service;
-    using Xunit;
+﻿using System.Threading;
+using System.Threading.Tasks;
+using Moq;
+using Snyk.Common.Settings;
+using Snyk.VisualStudio.Extension.CLI;
+using Snyk.VisualStudio.Extension.Service;
+using Xunit;
 
+namespace Snyk.VisualStudio.Extension.Tests
+{
     /// <summary>
     /// Unit tests for <see cref="OssService"/>.
     /// </summary>
