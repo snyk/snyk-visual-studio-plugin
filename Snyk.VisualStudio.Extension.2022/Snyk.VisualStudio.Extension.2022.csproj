@@ -541,12 +541,13 @@
       <IncludeInVSIX>true</IncludeInVSIX>
     </Content>
     <Content Include="stylesheet.css">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>      
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>
   </ItemGroup>
   <ItemGroup>
     <EmbeddedResource Include="Settings\SnykGeneralSettingsUserControl.resx">
       <DependentUpon>SnykGeneralSettingsUserControl.cs</DependentUpon>
+      <SubType>Designer</SubType>
     </EmbeddedResource>
     <EmbeddedResource Include="Settings\SnykSolutionOptionsUserControl.resx">
       <DependentUpon>SnykSolutionOptionsUserControl.cs</DependentUpon>

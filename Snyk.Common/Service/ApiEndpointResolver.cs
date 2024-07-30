@@ -33,20 +33,7 @@ namespace Snyk.Common.Service
         /// </summary>
         public string UserMeEndpoint => SnykApiEndpoint + "/v1/user/me";
 
-        public AuthenticationType AuthenticationMethod
-        {
-            get
-            {
-                var endpoint = ResolveCustomEndpoint(this.options.CustomEndpoint);
-                var endpointUri = new Uri(endpoint);
-                if (endpointUri.Host.Contains("snykgov.io"))
-                {
-                    return AuthenticationType.OAuth;
-                }
-
-                return AuthenticationType.Token;
-            }
-        }
+        public AuthenticationType AuthenticationMethod => this.options.AuthenticationMethod;
 
         /// <summary>
         /// Get SnykCode Settings url.

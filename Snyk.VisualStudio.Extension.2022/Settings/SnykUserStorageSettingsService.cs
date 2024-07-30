@@ -1,12 +1,13 @@
-﻿namespace Snyk.VisualStudio.Extension.Settings
-{
-    using System;
-    using System.Collections.Generic;
-    using System.Threading.Tasks;
-    using Serilog;
-    using Snyk.Common;
-    using Snyk.VisualStudio.Extension.Service;
+﻿using System;
+using System.Collections.Generic;
+using System.Threading.Tasks;
+using Serilog;
+using Snyk.Common;
+using Snyk.Common.Authentication;
+using Snyk.VisualStudio.Extension.Service;
 
+namespace Snyk.VisualStudio.Extension.Settings
+{
     /// <summary>
     /// Service for solution settings.
     /// </summary>
@@ -48,6 +49,17 @@
             {
                 var settings = this.LoadSettings();
                 settings.CustomCliPath = value;
+                this.settingsLoader.Save(settings);
+            }
+        }
+
+        public AuthenticationType AuthenticationMethod
+        {
+            get => this.LoadSettings().AuthenticationMethod;
+            set
+            {
+                var settings = this.LoadSettings();
+                settings.AuthenticationMethod = value;
                 this.settingsLoader.Save(settings);
             }
         }

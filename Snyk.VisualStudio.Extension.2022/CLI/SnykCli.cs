@@ -147,7 +147,7 @@ namespace Snyk.VisualStudio.Extension.CLI
             }
             else
             {
-                var message = $"The `snyk auth` command failed to authenticate";
+                var message = "The `snyk auth` command failed to authenticate";
                 throw new AuthenticationException(message);
             }
         }
@@ -180,16 +180,18 @@ namespace Snyk.VisualStudio.Extension.CLI
 
             var environmentVariables = new StringDictionary();
             var apiEndpointResolver = new ApiEndpointResolver(this.options);
-            environmentVariables.Add(ApiEnvironmentVariableName, apiEndpointResolver.SnykApiEndpoint);
-
+            environmentVariables.Add(ApiEnvironmentVariableName, apiEndpointResolver.SnykApiEndpoint); 
+            
             this.ConsoleRunner.CreateProcess(cliPath, arguments, environmentVariables);
 
             Logger.Information("Start run console process");
 
             var consoleResult = this.ConsoleRunner.Execute();
 
-            Logger.Information("Start convert console string result to CliResult and return value");
-
+            if (consoleResult.ToLower().Contains("error"))
+            {
+                throw new AuthenticationException(consoleResult);
+            }
             return consoleResult;
         }
 
@@ -225,15 +227,19 @@ namespace Snyk.VisualStudio.Extension.CLI
             if (this.Options.ApiToken.IsValid())
             {
                 var token = this.Options.ApiToken.ToString();
-                var tokenEnvVar = "SNYK_TOKEN";
 
+                // TODO: else set to 0
                 if (this.Options.ApiToken.Type == AuthenticationType.OAuth)
                 {
-                    tokenEnvVar = "INTERNAL_OAUTH_TOKEN_STORAGE";
                     environmentVariables.Add("INTERNAL_SNYK_OAUTH_ENABLED", "1");
+                    environmentVariables.Add("INTERNAL_OAUTH_TOKEN_STORAGE", token);
+                }
+                else
+                {
+                    environmentVariables.Add("INTERNAL_SNYK_OAUTH_ENABLED", "0");
+                    environmentVariables.Add("SNYK_TOKEN", token);
                 }
 
-                environmentVariables.Add(tokenEnvVar, token);
                 Logger.Information("Token added from Options");
             }
 

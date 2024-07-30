@@ -1,4 +1,6 @@
-﻿namespace Snyk.VisualStudio.Extension.Settings
+﻿using Snyk.Common.Authentication;
+
+namespace Snyk.VisualStudio.Extension.Settings
 {
     using System;
     using System.Collections.Generic;
@@ -69,5 +71,10 @@
         /// Gets or sets an array of workspace trusted folders.
         /// </summary>
         public ISet<string> TrustedFolders { get; set; } = new HashSet<string>();
+
+        /// <summary>
+        /// Gets or sets Authentication Type.
+        /// </summary>
+        public AuthenticationType AuthenticationMethod { get; set; }
     }
 }
