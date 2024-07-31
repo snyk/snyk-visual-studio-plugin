@@ -33,20 +33,7 @@ namespace Snyk.Common.Service
         /// </summary>
         public string UserMeEndpoint => SnykApiEndpoint + "/v1/user/me";
 
-        public AuthenticationType AuthenticationMethod
-        {
-            get
-            {
-                var endpoint = ResolveCustomEndpoint(this.options.CustomEndpoint);
-                var endpointUri = new Uri(endpoint);
-                if (endpointUri.Host.Contains("snykgov.io"))
-                {
-                    return AuthenticationType.OAuth;
-                }
-
-                return AuthenticationType.Token;
-            }
-        }
+        public AuthenticationType AuthenticationMethod => this.options.AuthenticationMethod;
 
         /// <summary>
         /// Get SnykCode Settings url.
@@ -73,8 +60,18 @@ namespace Snyk.Common.Service
 
             var endpoint = ResolveCustomEndpoint(this.options.CustomEndpoint);
 
-            var result = GetCustomEndpointUrlFromSnykApi(endpoint, "deeproxy");
-            
+            var isFedramp = this.options.IsFedramp();
+
+            if (isFedramp && string.IsNullOrEmpty(this.options.Organization))
+                throw new InvalidOperationException("Organization is required in a fedramp environment");
+
+            var subDomain = isFedramp ? "api" : "deeproxy";
+
+            var result = GetCustomEndpointUrlFromSnykApi(endpoint, subDomain);
+
+            if (isFedramp)
+                result += $"/hidden/orgs/{this.options.Organization}/code";
+
             return result + "/";
         }
 

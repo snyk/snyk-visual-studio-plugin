@@ -81,11 +81,9 @@
         public void ShowErrorInfoBar(string message) => ThreadHelper.JoinableTaskFactory.Run(async () =>
         {
             await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
-
-            if (this.messagesCache.ContainsKey(message))
-            {
+            
+            if (this.serviceProvider.Package.ToolWindow == null || this.messagesCache.ContainsKey(message))
                 return;
-            }
 
             var text = new InfoBarTextSpan(message);
             var submitIssueLink = new InfoBarHyperlink("Contact support", ContactSupport);
@@ -102,7 +100,7 @@
             element.Advise(this, out this.cookie);
 
             this.messagesCache.Add(message, element);
-
+            
             this.serviceProvider.Package.ToolWindow.AddInfoBar(element);
         });
     }

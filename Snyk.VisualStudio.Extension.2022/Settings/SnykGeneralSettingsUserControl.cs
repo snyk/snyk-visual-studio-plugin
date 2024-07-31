@@ -1,21 +1,25 @@
-﻿namespace Snyk.VisualStudio.Extension.Settings
-{
-    using System;
-    using System.Diagnostics;
-    using System.Diagnostics.CodeAnalysis;
-    using System.Threading.Tasks;
-    using System.Windows.Forms;
-    using Microsoft.VisualStudio.Shell;
-    using Microsoft.VisualStudio.Threading;
-    using Serilog;
-    using Snyk.Common;
-    using Snyk.Common.Service;
-    using Snyk.Common.Settings;
-    using Snyk.VisualStudio.Extension.CLI;
-    using Snyk.VisualStudio.Extension.Service;
-    using Snyk.VisualStudio.Extension.UI.Notifications;
-    using Task = System.Threading.Tasks.Task;
+﻿using System;
+using System.Collections.Generic;
+using System.ComponentModel;
+using System.Diagnostics;
+using System.Diagnostics.CodeAnalysis;
+using System.Linq;
+using System.Threading.Tasks;
+using System.Windows.Forms;
+using Microsoft.VisualStudio.Shell;
+using Microsoft.VisualStudio.Threading;
+using Serilog;
+using Snyk.Common;
+using Snyk.Common.Authentication;
+using Snyk.Common.Service;
+using Snyk.Common.Settings;
+using Snyk.VisualStudio.Extension.CLI;
+using Snyk.VisualStudio.Extension.Service;
+using Snyk.VisualStudio.Extension.UI.Notifications;
+using Task = System.Threading.Tasks.Task;
 
+namespace Snyk.VisualStudio.Extension.Settings
+{
     /// <summary>
     /// Control for Snyk General Settings.
     /// </summary>
@@ -79,6 +83,26 @@
                 : this.OptionsDialogPage.CliCustomPath;
 
             this.CliPathTextBox.Text = cliPath;
+
+            if (authType.SelectedIndex == -1)
+            {
+                this.authType.DataSource = AuthenticationMethodList();
+                this.authType.DisplayMember = "Description";
+                this.authType.ValueMember = "Value";
+            }
+            this.authType.SelectedValue = this.OptionsDialogPage.AuthenticationMethod;
+        }
+
+        private static IEnumerable<object> AuthenticationMethodList()
+        {
+            return Enum.GetValues(typeof(AuthenticationType))
+                .Cast<Enum>()
+                .Select(value => new
+                {
+                    (Attribute.GetCustomAttribute(value.GetType().GetField(value.ToString()), typeof(DescriptionAttribute)) as DescriptionAttribute)?.Description,
+                    Value = value
+                })
+                .ToList();
         }
 
         private void OptionsDialogPageOnSettingsChanged(object sender, SnykSettingsChangedEventArgs e) =>
@@ -143,7 +167,7 @@
                 }
             }
 
-            this.tokenTextBox.Text = this.OptionsDialogPage.ApiToken.ToString();
+            this.tokenTextBox.Text = this.OptionsDialogPage.ApiToken.Refresh();
         }
 
         private async Task OnAuthenticationFailAsync(string errorMessage)
@@ -461,6 +485,11 @@
         private void ClearCliCustomPathButton_Click(object sender, EventArgs e)
         {
             this.SetCliCustomPathValue(string.Empty);
+        }
+
+        private void authType_SelectionChangeCommitted(object sender, EventArgs e)
+        {
+            this.OptionsDialogPage.AuthenticationMethod = (AuthenticationType)authType.SelectedValue;
         }
     }
 }

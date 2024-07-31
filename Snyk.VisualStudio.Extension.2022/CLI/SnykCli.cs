@@ -135,6 +135,10 @@ namespace Snyk.VisualStudio.Extension.CLI
                 args.Add("--auth-type=oauth");
                 environmentVariables.Add("INTERNAL_SNYK_OAUTH_ENABLED", "1");
             }
+            else
+            {
+                environmentVariables.Add("INTERNAL_SNYK_OAUTH_ENABLED", "0");
+            }
 
             environmentVariables.Add(ApiEnvironmentVariableName, apiEndpointResolver.SnykApiEndpoint);
 
@@ -147,7 +151,7 @@ namespace Snyk.VisualStudio.Extension.CLI
             }
             else
             {
-                var message = $"The `snyk auth` command failed to authenticate";
+                var message = "The `snyk auth` command failed to authenticate";
                 throw new AuthenticationException(message);
             }
         }
@@ -177,18 +181,17 @@ namespace Snyk.VisualStudio.Extension.CLI
             var cliPath = this.GetCliPath();
 
             Logger.Information("CLI path is {CliPath}", cliPath);
-
-            var environmentVariables = new StringDictionary();
-            var apiEndpointResolver = new ApiEndpointResolver(this.options);
-            environmentVariables.Add(ApiEnvironmentVariableName, apiEndpointResolver.SnykApiEndpoint);
-
+            var environmentVariables = this.BuildScanEnvironmentVariables(false);
             this.ConsoleRunner.CreateProcess(cliPath, arguments, environmentVariables);
 
             Logger.Information("Start run console process");
 
             var consoleResult = this.ConsoleRunner.Execute();
 
-            Logger.Information("Start convert console string result to CliResult and return value");
+            if (consoleResult.ToLower().Contains("error"))
+            {
+                throw new AuthenticationException(consoleResult);
+            }
 
             return consoleResult;
         }
@@ -219,28 +222,32 @@ namespace Snyk.VisualStudio.Extension.CLI
             return cliPath;
         }
 
-        public StringDictionary BuildScanEnvironmentVariables()
+        public StringDictionary BuildScanEnvironmentVariables(bool shouldRefreshToken = true)
         {
             var environmentVariables = new StringDictionary();
-            if (this.Options.ApiToken.IsValid())
+            if (this.Options.ApiToken.IsValid() || shouldRefreshToken)
             {
-                var token = this.Options.ApiToken.ToString();
-                var tokenEnvVar = "SNYK_TOKEN";
-
-                if (this.Options.ApiToken.Type == AuthenticationType.OAuth)
-                {
-                    tokenEnvVar = "INTERNAL_OAUTH_TOKEN_STORAGE";
-                    environmentVariables.Add("INTERNAL_SNYK_OAUTH_ENABLED", "1");
-                }
-
-                environmentVariables.Add(tokenEnvVar, token);
-                Logger.Information("Token added from Options");
+                AddTokenToEnvVar(shouldRefreshToken, environmentVariables);
             }
+            environmentVariables.Add("INTERNAL_SNYK_OAUTH_ENABLED", this.Options.ApiToken.Type == AuthenticationType.OAuth ? "1" : "0");
+
+            Logger.Information("Token added from Options");
 
             var apiEndpointResolver = new ApiEndpointResolver(this.options);
             environmentVariables.Add(ApiEnvironmentVariableName, apiEndpointResolver.SnykApiEndpoint);
 
             return environmentVariables;
+        }
+
+        private void AddTokenToEnvVar(bool shouldRefreshToken, StringDictionary environmentVariables)
+        {
+            var token = shouldRefreshToken ? this.Options.ApiToken.Refresh() : this.Options.ApiToken.ToString();
+            if (string.IsNullOrEmpty(token)) return;
+
+            var internalTokenKey = this.Options.ApiToken.Type == AuthenticationType.OAuth
+                ? "INTERNAL_OAUTH_TOKEN_STORAGE"
+                : "SNYK_TOKEN";
+            environmentVariables.Add(internalTokenKey, token);
         }
 
         /// <summary>

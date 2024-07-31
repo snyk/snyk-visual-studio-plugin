@@ -9,7 +9,6 @@ on:
 
 jobs:
   test-vs22:
-    continue-on-error: true
     runs-on: windows-2022
     defaults:
       run:
