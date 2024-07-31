@@ -58,7 +58,10 @@ namespace Snyk.Common.Tests.Service
             optionsMock
                  .Setup(options => options.CustomEndpoint)
                  .Returns("https://app.random-uuid.polaris.snykgov.io/api");
-            
+            optionsMock
+                .Setup(options => options.IsFedramp())
+                .Returns(true);
+
             var apiEndpointResolver = new ApiEndpointResolver(optionsMock.Object);
             
             Assert.Throws<InvalidOperationException>(() => apiEndpointResolver.GetSnykCodeApiUrl());
@@ -71,6 +74,9 @@ namespace Snyk.Common.Tests.Service
             optionsMock
                 .Setup(options => options.CustomEndpoint)
                 .Returns("https://app.random-uuid.polaris.snykgov.io/api");
+            optionsMock
+                .Setup(options => options.IsFedramp())
+                .Returns(true);
             optionsMock
                 .Setup(options => options.Organization)
                 .Returns("dummy-org-name");
