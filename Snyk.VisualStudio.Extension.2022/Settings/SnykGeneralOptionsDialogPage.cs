@@ -120,11 +120,12 @@ namespace Snyk.VisualStudio.Extension.Settings
         {
             var apiEndpointResolver = new ApiEndpointResolver(this);
             var type = apiEndpointResolver.AuthenticationMethod;
-
+            
             var tokenObj = new AuthenticationToken(type, token)
             {
                 TokenRefresher = RefreshToken
             };
+
             return tokenObj;
         }
         
@@ -404,6 +405,11 @@ namespace Snyk.VisualStudio.Extension.Settings
                 // Pull token from configuration. If the token is invalid, attempt to authenticate and get a new token.
                 var apiTokenString = cli.GetApiToken();
                 var token = CreateAuthenticationToken(apiTokenString);
+                if (!token.IsValid() && token.Type == AuthenticationType.OAuth)
+                {
+                    // Before re-authenticating attempt to refresh current token
+                    token = CreateAuthenticationToken(token.Refresh());
+                }
                 if (!token.IsValid())
                 {
                     Logger.Information("Api token is invalid. Attempting to authenticate via snyk auth");

@@ -27,7 +27,7 @@
         protected bool IsButtonAvailable()
         {
             ThreadHelper.ThrowIfNotOnUIThread();
-            return SnykVSPackage.ServiceProvider.Options.ApiToken.IsValid()
+            return SnykVSPackage.ServiceProvider.Options.ApiToken.IsValidAfterRefresh()
                    && SnykSolutionService.Instance.IsSolutionOpen();
         }
 

@@ -1,5 +1,10 @@
 # Snyk Security Changelog
 
+## [1.1.62]
+
+### Fixed
+- Added OAuth2 authentication Option to settings window.
+
 ## [1.1.61]
 
 ### Fixed

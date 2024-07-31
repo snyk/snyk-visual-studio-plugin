@@ -48,6 +48,12 @@ namespace Snyk.Common.Authentication
             return this.value;
         }
 
+        public bool IsValidAfterRefresh()
+        {
+            this.value = Refresh();
+            return IsValid();
+        }
+
         public bool IsValid()
         {
             if (string.IsNullOrWhiteSpace(this.value))
