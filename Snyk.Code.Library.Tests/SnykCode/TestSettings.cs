@@ -1,9 +1,8 @@
-﻿namespace Snyk.Code.Library.Tests.Api
-{
-    using System;
-    using Snyk.Common;
-    using Snyk.Common.Authentication;
+﻿using System;
+using Snyk.Common.Authentication;
 
+namespace Snyk.Code.Library.Tests.SnykCode
+{
     /// <summary>
     /// Test settings.
     /// </summary>
