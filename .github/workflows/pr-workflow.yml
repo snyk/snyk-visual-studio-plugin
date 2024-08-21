@@ -12,6 +12,38 @@ env:
   DEFAULT_BRANCH: main
 
 jobs:
+  security-open-source-scan:
+      runs-on: ubuntu-latest
+      environment: snyk-msbuild-envs
+      steps:
+        - uses: actions/checkout@v4
+        - name: Setup .NET
+          uses: actions/setup-dotnet@v4
+        - name: Restore dependencies
+          run: dotnet restore /home/runner/work/snyk-visual-studio-plugin/snyk-visual-studio-plugin
+        - name: Run Snyk to check for vulnerabilities
+          uses: snyk/actions/dotnet@master
+          env:
+            SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
+          with:
+            command: test
+            args: 
+              --all-projects
+              --exclude=Snyk.VisualStudio.Extension.Tests,Snyk.Common.Tests,Snyk.Code.Library.Tests,Tests
+              --severity-threshold=high
+  security-code-scan:
+      runs-on: ubuntu-latest
+      environment: snyk-msbuild-envs
+      steps:
+        - uses: actions/checkout@v4
+        - name: Run Snyk to check for vulnerabilities
+          uses: snyk/actions/dotnet@master
+          env:
+            SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
+          with:
+            command: code test
+            args:
+              --severity-threshold=high
   build-project:
     uses: snyk/snyk-visual-studio-plugin/.github/workflows/build-project.yml@main
     with:
@@ -28,11 +60,11 @@ jobs:
       TEST_API_TOKEN: ${{ secrets.TEST_API_TOKEN }}
 
     steps:
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v4
       with:
         fetch-depth: 0
     - name: Download build artifacts
-      uses: actions/download-artifact@v2
+      uses: actions/download-artifact@v3
       with:
         name: build-artifacts
 
@@ -40,3 +72,7 @@ jobs:
       uses: darenm/Setup-VSTest@v1
     - name: Tests
       run: vstest.console.exe **\*.Tests.dll /TestCaseFilter:"FullyQualifiedName!=Xunit.Instances.VisualStudio&integration!=true" #exclude integration tests and the psuedo-tests that launch a VS instance
+  run-integration-tests:
+    needs: build-project
+    uses: snyk/snyk-visual-studio-plugin/.github/workflows/integration-tests.yml@main
+    secrets: inherit      

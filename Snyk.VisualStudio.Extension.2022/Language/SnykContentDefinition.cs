@@ -1,11 +1,12 @@
-﻿using Microsoft.VisualStudio.LanguageServer.Client;
+﻿using System.ComponentModel.Composition;
+using Microsoft.VisualStudio.LanguageServer.Client;
 using Microsoft.VisualStudio.Utilities;
-using System.ComponentModel.Composition;
 
-namespace Snyk.VisualStudio.Extension.Shared.Language
+namespace Snyk.VisualStudio.Extension.Language
 {
     public class SnykContentDefinitions
     {
+#pragma warning disable 0649
         [Export]
         [FileExtension(".yaml")]
         [ContentType("yaml")]
@@ -215,6 +216,7 @@ namespace Snyk.VisualStudio.Extension.Shared.Language
         [Name("CoffeeScript")]
         [BaseDefinition(CodeRemoteContentDefinition.CodeRemoteBaseTypeName)]
         internal static ContentTypeDefinition CoffeeScriptContentTypeDefinition;
+#pragma warning restore 0649
     }
 
     [ContentType("RazorCoreCSharp")]

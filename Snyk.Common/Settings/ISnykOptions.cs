@@ -1,26 +1,31 @@
-﻿namespace Snyk.Common.Settings
-{
-    using System;
-    using System.Threading.Tasks;
-    using Snyk.Common.Authentication;
-    using Snyk.Common.Service;
+﻿using System;
+using System.Threading.Tasks;
+using Snyk.Common.Authentication;
+using Snyk.Common.Service;
 
+namespace Snyk.Common.Settings
+{
     /// <summary>
     /// Interface for Snyk Options/Settings in Visual Studio.
     /// </summary>
     public interface ISnykOptions
     {
-        String Application { get; set; }
-        String ApplicationVersion { get; set; }
-        String IntegrationName { get; }
-        String IntegrationVersion { get; }
-        String IntegrationEnvironment { get; set; }
-        String IntegrationEnvironmentVersion { get; set; }
+        string Application { get; set; }
+        string ApplicationVersion { get; set; }
+        string IntegrationName { get; }
+        string IntegrationVersion { get; }
+        string IntegrationEnvironment { get; set; }
+        string IntegrationEnvironmentVersion { get; set; }
 
         /// <summary>
         /// Gets or sets a value indicating whether Snyk user API token.
         /// </summary>
         AuthenticationToken ApiToken { get; }
+
+        /// <summary>
+        /// Gets Value of Authentication Token Type.
+        /// </summary>
+        AuthenticationType AuthenticationMethod { get; }
 
         SnykUser SnykUser { get; set; }
 

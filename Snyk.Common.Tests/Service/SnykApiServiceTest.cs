@@ -1,14 +1,14 @@
-﻿namespace Snyk.VisualStudio.Extension.Shared.Tests
-{
-    using System;
-    using System.Net.Http;
-    using System.Threading.Tasks;
-    using Moq;
-    using Snyk.Common.Authentication;
-    using Snyk.Common.Service;
-    using Snyk.Common.Settings;
-    using Xunit;
+﻿using System;
+using System.Net.Http;
+using System.Threading.Tasks;
+using Moq;
+using Snyk.Common.Authentication;
+using Snyk.Common.Service;
+using Snyk.Common.Settings;
+using Xunit;
 
+namespace Snyk.Common.Tests.Service
+{
     /// <summary>
     /// Tests for <see cref="SnykApiService"/>.
     /// </summary>

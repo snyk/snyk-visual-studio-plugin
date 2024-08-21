@@ -1,35 +1,28 @@
-﻿namespace Snyk.Code.Library.Tests.SnykCode.Api
-{
-    using System;
-    using System.Collections.Generic;
-    using System.IO;
-    using System.Threading.Tasks;
-    using Snyk.Code.Library.Api;
-    using Snyk.Code.Library.Api.Dto;
-    using Snyk.Code.Library.Api.Dto.Analysis;
-    using Snyk.Code.Library.Tests.Api;
-    using Snyk.Common;
-    using Snyk.Common.Authentication;
-    using Xunit;
+﻿using System.Collections.Generic;
+using System.IO;
+using System.Threading.Tasks;
+using Snyk.Code.Library.Api;
+using Snyk.Code.Library.Api.Dto;
+using Snyk.Code.Library.Api.Dto.Analysis;
+using Snyk.Common;
+using Snyk.Common.Authentication;
+using Xunit;
 
+namespace Snyk.Code.Library.Tests.SnykCode.Api
+{
     /// <summary>
     /// Tests for <see cref="SnykCodeClient"/>.
     /// </summary>
     public class SnykCodeClientTest
     {
         private const string ContextFlowName = "test-visual-studio-plugin-ide";
-        private const string ContextOrgName = "platform_hammerhead";
+        private const string ContextOrgName = "devex_ide";
 
-        private SnykCodeClient snykCodeClient;
-
-        public SnykCodeClientTest()
-        {
-            this.snykCodeClient = new SnykCodeClient(
-                TestSettings.SnykCodeApiUrl,
-                TestSettings.Instance.ApiToken,
-                ContextFlowName,
-                ContextOrgName);
-        }
+        private readonly SnykCodeClient snykCodeClient = new SnykCodeClient(
+            TestSettings.SnykCodeApiUrl,
+            TestSettings.Instance.ApiToken,
+            ContextFlowName,
+            ContextOrgName);
 
         [Fact]
         public async Task SnykCodeClient_TwoFilesWithIssuesProvided_GetAnalysisSuccessAsync()

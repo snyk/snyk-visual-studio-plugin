@@ -1,9 +1,9 @@
-﻿using Snyk.Common.Settings;
-using StreamJsonRpc;
-using System.Threading;
+﻿using System.Threading;
 using System.Threading.Tasks;
+using Snyk.Common.Settings;
+using StreamJsonRpc;
 
-namespace Snyk.VisualStudio.Extension.Shared.Language
+namespace Snyk.VisualStudio.Extension.Language
 {
     public interface ILanguageClientManager
     {

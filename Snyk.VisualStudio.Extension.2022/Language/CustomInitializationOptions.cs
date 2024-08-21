@@ -1,8 +1,8 @@
-﻿using Newtonsoft.Json;
+﻿using System.Collections.Generic;
+using Newtonsoft.Json;
 using Newtonsoft.Json.Serialization;
-using System.Collections.Generic;
 
-namespace Snyk.VisualStudio.Extension.Shared.Language
+namespace Snyk.VisualStudio.Extension.Language
 {
     [JsonObject(NamingStrategyType = typeof(CamelCaseNamingStrategy))]
     public class SnykLSInitializationOptions

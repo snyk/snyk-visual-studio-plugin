@@ -1,18 +1,20 @@
 ﻿using System.Reflection;
 using System;
+using Snyk.VisualStudio.Extension.UI;
 using Xunit;
+using Microsoft.VisualStudio.Sdk.TestFramework;
 
 namespace Snyk.VisualStudio.Extension.Tests.UI
 {
     /// <summary>
     /// Unit tests for <see cref="ResourceLoader"/>.
     /// </summary>
+    [Collection(MockedVS.Collection)]
     public class ResourceLoaderTest
     {
         private const string AssemblyName = "Snyk.VisualStudio.Extension.Tests";
         private const string ResourcesDirectory = "/Resources";
-
-        public ResourceLoaderTest()
+        public ResourceLoaderTest(GlobalServiceProvider sp)
         {
             var resourcesType = typeof(ResourceLoader);
 
@@ -26,10 +28,8 @@ namespace Snyk.VisualStudio.Extension.Tests.UI
             resourcesType.GetField("_resourcesDirectory", BindingFlags.NonPublic | BindingFlags.Static)?
                 .SetValue(null, ResourcesDirectory);
 
+            sp.Reset();
 
-            if (!UriParser.IsKnownScheme("pack")) 
-                // ReSharper disable once ObjectCreationAsStatement
-                new System.Windows.Application();
         }
 
         [Fact]

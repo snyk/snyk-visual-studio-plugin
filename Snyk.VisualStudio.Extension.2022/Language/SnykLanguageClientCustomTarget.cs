@@ -1,9 +1,9 @@
 ﻿using Newtonsoft.Json.Linq;
-using StreamJsonRpc;
 using Serilog;
 using Snyk.Common;
+using StreamJsonRpc;
 
-namespace Snyk.VisualStudio.Extension.Shared.Language
+namespace Snyk.VisualStudio.Extension.Language
 {
     public class SnykLanguageClientCustomTarget
     {

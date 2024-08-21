@@ -1,33 +1,28 @@
-﻿using Microsoft.VisualStudio.LanguageServer.Client;
-using Microsoft.VisualStudio.Threading;
-using Microsoft.VisualStudio.Utilities;
+﻿using System;
 using System.Collections.Generic;
-using System.Diagnostics;
-using System.Threading.Tasks;
-using System.Threading;
-using System;
 using System.ComponentModel.Composition;
-using StreamJsonRpc;
-using System.IO;
-using System.Reflection;
+using System.Diagnostics;
+using System.Threading;
+using System.Threading.Tasks;
+using Microsoft.VisualStudio.LanguageServer.Client;
 using Microsoft.VisualStudio.Shell;
-using Task = System.Threading.Tasks.Task;
-using Snyk.Common;
+using Microsoft.VisualStudio.Threading;
 using Serilog;
-using System.Security.Policy;
-using LSP = Microsoft.VisualStudio.LanguageServer.Protocol;
-using System.Windows.Documents;
+using Snyk.Common;
 using Snyk.Common.Settings;
-using Snyk.VisualStudio.Extension.Shared.CLI;
+using Snyk.VisualStudio.Extension.CLI;
+using StreamJsonRpc;
+using Task = System.Threading.Tasks.Task;
+using LSP = Microsoft.VisualStudio.LanguageServer.Protocol;
 
-namespace Snyk.VisualStudio.Extension.Shared.Language
+namespace Snyk.VisualStudio.Extension.Language
 {
     [Export(typeof(ILanguageClient))]
     [Export(typeof(ILanguageClientManager))]
     [RunOnContext(RunningContext.RunOnHost)]
     public partial class SnykLanguageClient : ILanguageClient, ILanguageClientCustomMessage2, ILanguageClientManager
     {
-        private static readonly ILogger _logger = LogManager.ForContext<SnykLanguageClient>();
+        private static readonly ILogger Logger = LogManager.ForContext<SnykLanguageClient>();
         private object _lock = new object();
         private bool _isReady = false;
 
@@ -219,7 +214,7 @@ namespace Snyk.VisualStudio.Extension.Shared.Language
             }
             catch (Exception ex)
             {
-                _logger.Error(ex.Message);
+                Logger.Error(ex, "Error in restarting Language client");
             }
             finally
             {

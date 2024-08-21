@@ -1,5 +1,40 @@
 # Snyk Security Changelog
 
+## [1.1.62]
+
+### Fixed
+- Added OAuth2 authentication Option to settings window.
+
+## [1.1.61]
+
+### Fixed
+- Added a deprecation notice for VS 2015,2017 and 2019.
+
+## [1.1.60]
+
+### Fixed
+- Fix an issue with extension failing to load in VS 2022 < 17.10.
+
+## [1.1.59]
+
+### Fixed
+- Change Default API Endpoint to https://api.snyk.io.
+
+## [1.1.58]
+
+### Fixed
+- Rendering issue in Settings page.
+
+## [1.1.57]
+
+### Fixed
+- Change analytics scan status from "Succeeded" to "Success".
+
+## [1.1.56]
+
+### Fixed
+- Send current solution folder path when sending Analytics.
+
 ## [1.1.55]
 
 ### Fixed

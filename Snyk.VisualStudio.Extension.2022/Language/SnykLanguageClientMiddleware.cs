@@ -1,13 +1,13 @@
-﻿using Microsoft.VisualStudio.LanguageServer.Client;
+﻿using System;
 using System.Threading.Tasks;
-using System;
+using Microsoft.VisualStudio.LanguageServer.Client;
 using Newtonsoft.Json.Linq;
 
-namespace Snyk.VisualStudio.Extension.Shared.Language
+namespace Snyk.VisualStudio.Extension.Language
 {
     public class SnykLanguageClientMiddleware : ILanguageClientMiddleLayer
     {
-        internal readonly static SnykLanguageClientMiddleware Instance =
+        internal static readonly SnykLanguageClientMiddleware Instance =
             new SnykLanguageClientMiddleware();
         private SnykLanguageClientMiddleware() { }
 

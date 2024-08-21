@@ -1,15 +1,18 @@
-﻿namespace Snyk.Common.Service
-{
-    using System;
-    using Snyk.Common.Authentication;
-    using Snyk.Common.Settings;
+﻿using System;
+using System.Text.RegularExpressions;
+using Snyk.Common.Authentication;
+using Snyk.Common.Settings;
 
+namespace Snyk.Common.Service
+{
     /// <summary>
     /// Helper class for resolve API endpoints. It's one place for all endpoint calculations.
     /// </summary>
     public class ApiEndpointResolver
     {
         private readonly ISnykOptions options;
+        public const string DefaultApiEndpoint = "https://api.snyk.io";
+        public const string DefaultAppEndpoint = "https://app.snyk.io";
 
         /// <summary>
         /// Initializes a new instance of the <see cref="ApiEndpointResolver"/> class.
@@ -30,20 +33,7 @@
         /// </summary>
         public string UserMeEndpoint => SnykApiEndpoint + "/v1/user/me";
 
-        public AuthenticationType AuthenticationMethod
-        {
-            get
-            {
-                var endpoint = ResolveCustomEndpoint(this.options.CustomEndpoint);
-                var endpointUri = new Uri(endpoint);
-                if (endpointUri.Host.Contains("snykgov.io"))
-                {
-                    return AuthenticationType.OAuth;
-                }
-
-                return AuthenticationType.Token;
-            }
-        }
+        public AuthenticationType AuthenticationMethod => this.options.AuthenticationMethod;
 
         /// <summary>
         /// Get SnykCode Settings url.
@@ -53,7 +43,7 @@
         {
             var customEndpoint = ResolveCustomEndpoint(this.options.CustomEndpoint);
 
-            var sastUrl = string.IsNullOrEmpty(customEndpoint) ? "https://snyk.io/api/" : customEndpoint;
+            var sastUrl = string.IsNullOrEmpty(customEndpoint) ? DefaultApiEndpoint : customEndpoint;
 
             return !sastUrl.EndsWith("/") ? $"{sastUrl}/" : sastUrl;
         }
@@ -63,54 +53,70 @@
         /// </summary>
         public string GetSnykCodeApiUrl()
         {
-            if (this.IsLocalEngine())
+            if (IsLocalEngine())
             {
-                return this.options.SastSettings.LocalCodeEngine.Url + "/";
+                return options.SastSettings.LocalCodeEngine.Url + "/";
             }
 
             var endpoint = ResolveCustomEndpoint(this.options.CustomEndpoint);
-            var uri = new Uri(endpoint);
 
-            var result = uri.Scheme + "://" + uri.Host.Replace("api.", "deeproxy.").Replace("app.", "deeproxy.");
+            var isFedramp = this.options.IsFedramp();
 
-            if (!result.Contains("deeproxy."))
-            {
-                result = uri.Scheme + "://" + "deeproxy." + uri.Host;
-            }
+            if (isFedramp && string.IsNullOrEmpty(this.options.Organization))
+                throw new InvalidOperationException("Organization is required in a fedramp environment");
+
+            var subDomain = isFedramp ? "api" : "deeproxy";
+
+            var result = GetCustomEndpointUrlFromSnykApi(endpoint, subDomain);
+
+            if (isFedramp)
+                result += $"/hidden/orgs/{this.options.Organization}/code";
 
             return result + "/";
         }
 
-        private bool IsSnykCodeAvailable(string endpointUrl)
-        {
-            var endpoint = ResolveCustomEndpoint(endpointUrl);
-            var uri = new Uri(endpoint);
-            return IsSaaS(uri) || IsSingleTenant(uri);
-        }
-
         /// <summary>
         /// Resolves the custom endpoint.
-        /// If the endpointUrl is null or empty, then https://snyk.io/api" will be used.
+        /// If the endpointUrl is null or empty, then https://api.snyk.io" will be used.
         /// </summary>
         private string ResolveCustomEndpoint(string endpointUrl)
         {
             var resolvedEndpoint = string.IsNullOrEmpty(endpointUrl)
-                ? "https://snyk.io/api"
+                ? DefaultApiEndpoint
                 : endpointUrl.RemoveTrailingSlashes().Trim().ReplaceFirst("/v1", string.Empty);
             return resolvedEndpoint;
         }
 
-        /// <summary>
-        /// Checks if the deployment type is SaaS (production or development).
-        /// </summary>
-        private bool IsSaaS(Uri uri) =>
-            !uri.Host.StartsWith("app") && uri.Host.EndsWith("snyk.io");
+        public static string GetCustomEndpointUrlFromSnykApi(string apiEndpoint, string subdomain)
+        {
+            const string regex = @"^(ap[pi]\.)?";
+            if (string.IsNullOrEmpty(subdomain))
+                throw new ArgumentException("subdomain must have a value to calculate the result endpoint");
 
-        /// <summary>
-        /// Checks if the deployment type is Single Tenant.
-        /// </summary>
-        private bool IsSingleTenant(Uri uri) =>
-            uri.Host.StartsWith("app") && uri.Host.EndsWith("snyk.io");
+            if (string.IsNullOrEmpty(apiEndpoint) || !Uri.IsWellFormedUriString(apiEndpoint, UriKind.Absolute))
+                return string.Empty;
+
+            var endpointUri = new Uri(apiEndpoint);
+            
+            var host = Regex.Replace(endpointUri.Host, regex, $"{subdomain}.");
+            var uriBuilder = new UriBuilder(endpointUri.Scheme, host);
+            return uriBuilder.ToString().RemoveTrailingSlashes();
+        }
+
+        public static string TranslateOldApiToNewApiEndpoint(string apiEndpoint)
+        {
+            if (apiEndpoint.Contains("https://snyk.io/api"))
+                apiEndpoint = "https://app.snyk.io/api";
+
+            if (!apiEndpoint.Contains("app.") || !apiEndpoint.RemoveTrailingSlashes().EndsWith("/api"))
+                return apiEndpoint;
+
+            var endpointUri = new Uri(apiEndpoint);
+
+            var newEndpoint = endpointUri.Host.Replace("app.", "api.");
+            var uriBuilder = new UriBuilder(endpointUri.Scheme, newEndpoint);
+            return uriBuilder.ToString().RemoveTrailingSlashes();
+        }
 
         private bool IsLocalEngine() => this.options.SastSettings?.LocalCodeEngineEnabled ?? false;
     }
