@@ -5,17 +5,17 @@ on:
 
 env:
   SOLUTION_FILE_PATH: .
-  DEFAULT_BRANCH: main
+  DEFAULT_BRANCH: release/1
 
 jobs:
   build-project:
-    uses: snyk/snyk-visual-studio-plugin/.github/workflows/build-project.yml@main
+    uses: snyk/snyk-visual-studio-plugin/.github/workflows/build-project.yml@${{ env.DEFAULT_BRANCH }}
     with:
       solution-file-path: .
     secrets: inherit
   run-integration-tests:
     needs: build-project
-    uses: snyk/snyk-visual-studio-plugin/.github/workflows/integration-tests.yml@main
+    uses: snyk/snyk-visual-studio-plugin/.github/workflows/integration-tests.yml@${{ env.DEFAULT_BRANCH }}
     secrets: inherit
   run-unit-tests:
     needs: build-project
@@ -65,8 +65,8 @@ jobs:
     - name: Create and push Git tag release
       run: |
         git tag ${{ needs.build-project.outputs.version }}
-        git push origin main
-        git push origin main --tags
+        git push origin ${{ env.DEFAULT_BRANCH }}
+        git push origin ${{ env.DEFAULT_BRANCH }} --tags
 
     - name: Create GitHub Release
       id: create_release
