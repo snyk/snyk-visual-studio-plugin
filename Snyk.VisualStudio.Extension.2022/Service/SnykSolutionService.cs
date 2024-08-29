@@ -1,21 +1,20 @@
-﻿namespace Snyk.VisualStudio.Extension.CLI
-{
-    using System;
-    using System.Collections.Generic;
-    using System.IO;
-    using System.Linq;
-    using EnvDTE;
-    using EnvDTE80;
-    using Microsoft.VisualStudio;
-    using Microsoft.VisualStudio.Shell;
-    using Microsoft.VisualStudio.Shell.Interop;
-    using Serilog;
-    using Snyk.Code.Library.Service;
-    using Snyk.Common;
-    using Snyk.VisualStudio.Extension.Service;
-    using Task = System.Threading.Tasks.Task;
-    using Toolkit = Community.VisualStudio.Toolkit;
+﻿using System;
+using System.Collections.Generic;
+using System.IO;
+using System.Linq;
+using EnvDTE;
+using EnvDTE80;
+using Microsoft.VisualStudio;
+using Microsoft.VisualStudio.Shell;
+using Microsoft.VisualStudio.Shell.Interop;
+using Serilog;
+using Snyk.Code.Library.Service;
+using Snyk.Common;
+using Task = System.Threading.Tasks.Task;
+using Toolkit = Community.VisualStudio.Toolkit;
 
+namespace Snyk.VisualStudio.Extension.Service
+{
     /// <summary>
     /// Incapsulate logic for work with Visual Studio solutions.
     /// </summary>

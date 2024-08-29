@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
+using Microsoft;
 using Microsoft.VisualStudio.ComponentModelHost;
 using Microsoft.VisualStudio.Shell;
 using Serilog;
@@ -629,7 +630,8 @@ namespace Snyk.VisualStudio.Extension.Service
                 this.isSnykCodeScanning = true;
                 //this.FireSnykCodeScanningStartedEvent();
                 var componentModel = Package.GetGlobalService(typeof(SComponentModel)) as IComponentModel;
-                //Assumes.Present(componentModel);
+                
+                Assumes.Present(componentModel);
                 var languageServerClientManager = componentModel.GetService<ILanguageClientManager>();
 
                 var res = await languageServerClientManager.InvokeWorkspaceScanAsync(cancellationToken);

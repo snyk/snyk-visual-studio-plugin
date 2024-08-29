@@ -63,7 +63,7 @@ namespace Snyk.VisualStudio.Extension
         private static readonly TaskCompletionSource<bool> initializationTaskCompletionSource =
             new TaskCompletionSource<bool>();
 
-        private static SnykVSPackage instance;
+        public static SnykVSPackage Instance;
 
         private ISnykServiceProvider serviceProvider;
 
@@ -72,13 +72,13 @@ namespace Snyk.VisualStudio.Extension
         /// </summary>
         public SnykVSPackage()
         {
-            instance = this;
+            Instance = this;
         }
 
         /// <summary>
         /// Gets a value indicating whether ServiceProvider.
         /// </summary>
-        public static ISnykServiceProvider ServiceProvider => instance.serviceProvider;
+        public static ISnykServiceProvider ServiceProvider => Instance.serviceProvider;
 
         /// <summary>
         /// Gets a task that completes once the Snyk extension has been initialized.
@@ -252,7 +252,6 @@ namespace Snyk.VisualStudio.Extension
                 if(languageServerClientManager != null && !languageServerClientManager.IsReady)
                 {
                     LanguageClientManager = languageServerClientManager;
-                    languageServerClientManager.SetSnykOptions(options);
                     await languageServerClientManager.StartServerAsync();
                 }
             }

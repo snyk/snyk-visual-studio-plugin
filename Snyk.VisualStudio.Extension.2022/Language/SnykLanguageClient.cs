@@ -1,15 +1,15 @@
 ﻿using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.ComponentModel.Composition;
 using System.Diagnostics;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.VisualStudio.LanguageServer.Client;
-using Microsoft.VisualStudio.Shell;
 using Microsoft.VisualStudio.Threading;
 using Serilog;
 using Snyk.Common;
-using Snyk.Common.Settings;
+using Snyk.Common.Authentication;
 using Snyk.VisualStudio.Extension.CLI;
 using StreamJsonRpc;
 using Task = System.Threading.Tasks.Task;
@@ -24,17 +24,17 @@ namespace Snyk.VisualStudio.Extension.Language
     {
         private static readonly ILogger Logger = LogManager.ForContext<SnykLanguageClient>();
         private object _lock = new object();
-        private bool _isReady = false;
+        private ConcurrentDictionary<string, object> snykIssues = new ConcurrentDictionary<string, object>();
+
+        private SnykLSInitializationOptions initializationOptions;
 
         [ImportingConstructor]
-        public SnykLanguageClient([Import(typeof(SVsServiceProvider))]
-        IServiceProvider serviceProvider
-            )
+        public SnykLanguageClient()
         {
-            _serviceProvider = serviceProvider;
+            middleware = new SnykLanguageClientMiddleware();
         }
 
-        public string Name => "Snyk LSP";
+        public string Name => "SnykLS";
 
         public IEnumerable<string> ConfigurationSections
         {
@@ -43,44 +43,27 @@ namespace Snyk.VisualStudio.Extension.Language
                 yield return "snyk";
             }
         }
-        public bool IsReady
-        {
-            get { return _isReady; }
-            set
-            {
-                _isReady = value;
-            }
-        }
+        public bool IsReady { get; set; }
 
-        private SnykLSInitializationOptions _initializationOptions;
-        private ISnykOptions _options;
-
-        private readonly IServiceProvider _serviceProvider;
-
-        public object InitializationOptions
-        {
-            get
-            {
-                return GetInitializationOptions();
-            }
-        }
+        public object InitializationOptions => GetInitializationOptions();
 
         public object GetInitializationOptions()
         {
-            if (_initializationOptions != null)
+            if (SnykVSPackage.ServiceProvider == null || initializationOptions != null)
             {
-                return _initializationOptions;
+                return initializationOptions;
             }
 
-            _initializationOptions = new SnykLSInitializationOptions
+            var options = SnykVSPackage.ServiceProvider.Options;
+            initializationOptions = new SnykLSInitializationOptions
             {
-                ActivateSnykCode = "true",
-                ActivateSnykCodeQuality = "true",
-                ActivateSnykCodeSecurity = "true",
-                SendErrorReports = "true",
-                ManageBinariesAutomatically = "true",
+                ActivateSnykCode = options.SnykCodeSecurityEnabled.ToString(),
+                ActivateSnykCodeQuality = options.SnykCodeQualityEnabled.ToString(),
+                ActivateSnykCodeSecurity = options.SnykCodeQualityEnabled.ToString(),
+                SendErrorReports = options.UsageAnalyticsEnabled.ToString(),
+                ManageBinariesAutomatically = options.BinariesAutoUpdate.ToString(),
                 EnableTrustedFoldersFeature = "false",
-                ActivateSnykOpenSource = "true",
+                ActivateSnykOpenSource = options.OssEnabled.ToString(),
                 IntegrationName = "Visual Studio",
                 FilterSeverity = new FilterSeverityOptions
                 {
@@ -90,11 +73,12 @@ namespace Snyk.VisualStudio.Extension.Language
                     Medium = false,
                 },
                 ScanningMode = "auto",
-                AuthenticationMethod = "oauth",
-                CliPath = _options.CliCustomPath,
-                Token = _options.ApiToken.ToString(),
+                //AdditionalParams = options.GetAdditionalOptionsAsync()
+                AuthenticationMethod = options.AuthenticationMethod == AuthenticationType.OAuth ? "oauth" : "token",
+                CliPath = options.CliCustomPath,
+                Token = options.ApiToken.ToString(),
             };
-            return _initializationOptions;
+            return initializationOptions;
         }
 
         public IEnumerable<string> FilesToWatch => null;
@@ -102,7 +86,9 @@ namespace Snyk.VisualStudio.Extension.Language
         public bool ShowNotificationOnInitializeFailed => true;
 
         public JsonRpc Rpc { get; set; }
-        public object MiddleLayer => SnykLanguageClientMiddleware.Instance;
+        private readonly SnykLanguageClientMiddleware middleware;
+
+        public object MiddleLayer => middleware;
 
         public object CustomMessageTarget { get; private set; }
 
@@ -112,10 +98,11 @@ namespace Snyk.VisualStudio.Extension.Language
         public async Task<Connection> ActivateAsync(CancellationToken token)
         {
             await Task.Yield();
-            if (_options == null) return null;
+            if (SnykVSPackage.ServiceProvider?.Options == null) return null;
+            var options = SnykVSPackage.ServiceProvider.Options;
             var info = new ProcessStartInfo
             {
-                FileName = string.IsNullOrEmpty(_options.CliCustomPath) ? SnykCli.GetSnykCliDefaultPath() : _options.CliCustomPath,
+                FileName = string.IsNullOrEmpty(options.CliCustomPath) ? SnykCli.GetSnykCliDefaultPath() : options.CliCustomPath,
                 Arguments = "language-server -l trace",
                 RedirectStandardInput = true,
                 RedirectStandardOutput = true,
@@ -130,22 +117,19 @@ namespace Snyk.VisualStudio.Extension.Language
             return isStarted ? new Connection(process.StandardOutput.BaseStream, process.StandardInput.BaseStream) : null;
         }
 
-        public void SetSnykOptions(ISnykOptions snykOptions)
-        {
-           _options = snykOptions;
-        }
-
         public async Task OnLoadedAsync()
         {
-            var customTarget = new SnykLanguageClientCustomTarget();
-            CustomMessageTarget = customTarget;
             await StartServerAsync();
         }
 
         public async Task StartServerAsync()
         {
-            if (StartAsync != null && _options != null)
+            if (StartAsync != null && SnykVSPackage.Instance?.Options != null)
             {
+                if (CustomMessageTarget == null)
+                {
+                    CustomMessageTarget = new SnykLanguageClientCustomTarget(SnykVSPackage.ServiceProvider);
+                }
                 await StartAsync.InvokeAsync(this, EventArgs.Empty);
             }
         }
@@ -200,6 +184,8 @@ namespace Snyk.VisualStudio.Extension.Language
 
         private async Task RestartAsync(bool isReload)
         {
+            if (StopAsync == null || StartAsync == null)
+                return;
             try
             {
                 if (isReload)
@@ -207,9 +193,9 @@ namespace Snyk.VisualStudio.Extension.Language
                     IsReloading = true;
                 }
                 OnStopping();
-                await StopAsync?.InvokeAsync(this, EventArgs.Empty);
+                await StopAsync.InvokeAsync(this, EventArgs.Empty);
                 OnStopped();
-                await StartAsync?.InvokeAsync(this, EventArgs.Empty);
+                await StartAsync.InvokeAsync(this, EventArgs.Empty);
 
             }
             catch (Exception ex)

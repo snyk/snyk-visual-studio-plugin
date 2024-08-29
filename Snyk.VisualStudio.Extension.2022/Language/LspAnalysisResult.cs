@@ -10,7 +10,6 @@ namespace Snyk.VisualStudio.Extension.Language
     {
         public string Status { get; set; }
         public string Product { get; set; }
-        public List<Issue> Issues { get; set; }
     }
 
     public class AdditionalData

@@ -1,5 +1,5 @@
 ﻿using System.Collections.Generic;
-using Snyk.VisualStudio.Extension.CLI;
+using Snyk.VisualStudio.Extension.Service;
 using Xunit;
 
 namespace Snyk.VisualStudio.Extension.Tests

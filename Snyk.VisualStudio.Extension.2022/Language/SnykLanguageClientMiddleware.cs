@@ -7,9 +7,7 @@ namespace Snyk.VisualStudio.Extension.Language
 {
     public class SnykLanguageClientMiddleware : ILanguageClientMiddleLayer
     {
-        internal static readonly SnykLanguageClientMiddleware Instance =
-            new SnykLanguageClientMiddleware();
-        private SnykLanguageClientMiddleware() { }
+        public SnykLanguageClientMiddleware() { }
 
         public bool CanHandle(string methodName)
         {
