@@ -1,5 +1,10 @@
 # Snyk Security Changelog
 
+## [1.1.63]
+
+### Fixed
+- Change default auth type to OAuth.
+
 ## [1.1.62]
 
 ### Fixed

@@ -96,7 +96,7 @@ namespace Snyk.Common.Tests.Service
             var apiEndpointResolver = new ApiEndpointResolver(optionsMock.Object);
 
             // Assert
-            Assert.Equal(AuthenticationType.Token, apiEndpointResolver.AuthenticationMethod);
+            Assert.Equal(AuthenticationType.OAuth, apiEndpointResolver.AuthenticationMethod);
 
             optionsMock
                  .Setup(options => options.CustomEndpoint)
