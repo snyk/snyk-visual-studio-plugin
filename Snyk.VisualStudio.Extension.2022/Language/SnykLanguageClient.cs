@@ -119,6 +119,17 @@ namespace Snyk.VisualStudio.Extension.Language
 
         public async Task OnLoadedAsync()
         {
+            //await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
+            //var myPackage = Package.GetGlobalService(typeof(SnykVSPackage)) as SnykVSPackage;
+            //if (myPackage == null)
+            //{
+            //    // Force package loading
+            //    var shell = (IVsShell)GetServiceAsync(typeof(SVsShell));
+            //    IVsPackage package;
+            //    Guid packageGuid = typeof(SnykVSPackage).GUID;
+            //    shell.LoadPackage(ref packageGuid, out package);
+            //}
+
             await StartServerAsync();
         }
 

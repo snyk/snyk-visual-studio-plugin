@@ -1,8 +1,10 @@
-﻿namespace Snyk.VisualStudio.Extension.UI.Tree
-{
-    using System.IO;
-    using Snyk.Code.Library.Domain.Analysis;
+﻿using System.Collections.Generic;
+using System.IO;
+using Snyk.Code.Library.Domain.Analysis;
+using Snyk.VisualStudio.Extension.Language;
 
+namespace Snyk.VisualStudio.Extension.UI.Tree
+{
     /// <summary>
     /// SnykCode file tree node.
     /// </summary>
@@ -11,7 +13,7 @@
         /// <summary>
         /// Gets a value indicating whether title.
         /// </summary>
-        public override string Title => this.FileAnalysis.FileName;
+        public override string Title { get; set; }
 
         /// <summary>
         /// Gets a value indicating whether icon for node.
@@ -29,6 +31,6 @@
         /// <summary>
         /// Gets or sets SnykCode <see cref="FileAnalysis"/> object.
         /// </summary>
-        public FileAnalysis FileAnalysis { get; set; }
+        public IEnumerable<FileAnalysis> FileAnalysis { get; set; }
     }
 }

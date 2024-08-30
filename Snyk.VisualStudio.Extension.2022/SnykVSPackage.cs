@@ -220,6 +220,7 @@ namespace Snyk.VisualStudio.Extension
                 Logger.Information("Before call toolWindowControl.InitializeEventListeners() method.");
                 ToolWindowControl.InitializeEventListeners(this.serviceProvider);
                 ToolWindowControl.Initialize(this.serviceProvider);
+                
                 await InitializeLanguageClientAsync();
                 
                 // Notify package has been initialized

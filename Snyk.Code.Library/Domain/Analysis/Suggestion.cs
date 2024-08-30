@@ -38,85 +38,89 @@
             }).ToList();
         }
 
+        public Suggestion()
+        {
+
+        }
         /// <summary>
         /// Gets a value indicating analysis suggestion id. Id for this (local) result.
         /// </summary>
-        public string Id { get; }
+        public string Id { get; set; }
 
         /// <summary>
         /// Gets tuple of rows.
         /// </summary>
-        public Tuple<int, int> Rows { get; }
+        public Tuple<int, int> Rows { get; set; }
 
         /// <summary>
         /// Gets tuple of columns.
         /// </summary>
-        public Tuple<int, int> Columns { get; }
+        public Tuple<int, int> Columns { get; set; }
 
         /// <summary>
         /// Gets a value indicating analysis rule.
         /// </summary>
-        public string Rule { get; }
+        public string Rule { get; set; }
 
         /// <summary>
         /// Gets a value indicating suggestion message.
         /// </summary>
-        public string Message { get; }
+        public string Message { get; set; }
 
         /// <summary>
         /// Gets file name (relative path).
         /// </summary>
-        public string FileName { get; }
+        public string FileName { get; set; }
 
         /// <summary>
         /// Gets a value indicating analysis severity value (from 1 to 4).
         /// </summary>
-        public int Severity { get; }
+        public int Severity { get; set; }
 
         /// <summary>
         /// Gets position markers.
         /// </summary>
-        public IList<Marker> Markers { get; }
+        public IList<Marker> Markers { get; set; }
 
         /// <summary>
         /// Gets a value indicating analysis categories.
         /// </summary>
-        public IList<string> Categories { get; }
+        public IList<string> Categories { get; set; }
 
         /// <summary>
         /// Gets a value indicating analysis tags.
         /// </summary>
-        public IList<string> Tags { get; }
+        public IList<string> Tags { get; set; }
 
         /// <summary>
         /// Gets a value indicating suggestion title.
         /// </summary>
-        public string Title { get; }
+        public string Title { get; set; }
 
         /// <summary>
         /// Gets repo dataset size.
         /// </summary>
-        public int RepoDatasetSize { get; }
+        public int RepoDatasetSize { get; set; }
 
         /// <summary>
         /// Gets a value indicating analysis CWE list.
         /// </summary>
-        public IList<string> Cwe { get; }
+        public IList<string> Cwe { get; set; }
 
         /// <summary>
         /// Gets a value indicating suggestion description.
         /// </summary>
-        public string Text { get; }
+        public string Text { get; set; }
 
         /// <summary>
         /// Gets a value indicating suggestion examples.
         /// </summary>
-        public IList<string> ExampleCommitDescriptions { get; }
+        public IList<string> ExampleCommitDescriptions { get; set; }
 
         /// <summary>
         /// Gets a value indicating suggestion list of proposed fixes and examples.
         /// </summary>
-        public IList<SuggestionFix> Fixes { get; } = new List<SuggestionFix>();
+        public IList<SuggestionFix> Fixes { get; set; } = new List<SuggestionFix>();
 
         /// <summary>
         /// Get row line and title (if title is null it use message).

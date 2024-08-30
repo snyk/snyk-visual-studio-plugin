@@ -80,9 +80,12 @@
         internal async Task DisplayAsync(IList<Marker> markers)
         {
             this.Clear();
-
+            
             this.Visibility = markers != null && markers.Count > 0 ? Visibility.Visible : Visibility.Collapsed;
-
+            if (markers == null)
+            {
+                return;
+            }
             var index = 1;
 
             var dataFlowSteps = new HashSet<DataFlowStep>();
@@ -127,7 +130,7 @@
             try
             {
                 VsCodeService.Instance.OpenAndNavigate(
-                    await this.solutionService.GetFileFullPathAsync(fileName),
+                    fileName,
                     startLine,
                     startColumn,
                     endLine,
@@ -135,21 +138,19 @@
             }
             catch (Exception e)
             {
-                Logger.Error(e, "Error on open and nagigate to source code");
+                Logger.Error(e, "Error on open and navigate to source code");
             }
         }
 
         private async Task<string> GetLineContentAsync(string file, long lineNumber)
         {
-            string filePath = await this.solutionService.GetFileFullPathAsync(file);
-
-            string line = string.Empty;
+            var line = string.Empty;
 
             try
             {
-                int fileLineNumber = 0;
+                var fileLineNumber = 0;
 
-                using (var reader = new StreamReader(filePath))
+                using (var reader = new StreamReader(file))
                 {
                     while ((line = await reader.ReadLineAsync()) != null)
                     {

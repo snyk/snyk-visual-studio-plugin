@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.Threading;
 using System.Windows;
@@ -14,6 +15,7 @@ using Snyk.Common.Service;
 using Snyk.Common.Settings;
 using Snyk.VisualStudio.Extension.CLI;
 using Snyk.VisualStudio.Extension.Commands;
+using Snyk.VisualStudio.Extension.Language;
 using Snyk.VisualStudio.Extension.Service;
 using Snyk.VisualStudio.Extension.UI.Notifications;
 using Snyk.VisualStudio.Extension.UI.Tree;
@@ -541,7 +543,7 @@ namespace Snyk.VisualStudio.Extension.UI.Toolwindow
             });
         }
 
-        private void AppendSnykCodeResultToTree(AnalysisResult analysisResult)
+        private void AppendSnykCodeResultToTree(IDictionary<string, IEnumerable<Issue>> analysisResult)
         {
             this.context.TransitionTo(ScanResultsState.Instance);
 
@@ -649,7 +651,7 @@ namespace Snyk.VisualStudio.Extension.UI.Toolwindow
             var suggestion = snykCodeTreeNode.Suggestion;
 
             VsCodeService.Instance.OpenAndNavigate(
-                await this.serviceProvider.SolutionService.GetFileFullPathAsync(suggestion.FileName),
+                suggestion.FileName,
                 suggestion.Rows.Item1 - 1,
                 suggestion.Columns.Item1 - 1,
                 suggestion.Rows.Item2 - 1,

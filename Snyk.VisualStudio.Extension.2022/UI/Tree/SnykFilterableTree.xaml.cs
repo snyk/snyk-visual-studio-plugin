@@ -1,4 +1,7 @@
-﻿namespace Snyk.VisualStudio.Extension.UI.Tree
+﻿using System.Collections.Generic;
+using Snyk.VisualStudio.Extension.Language;
+
+namespace Snyk.VisualStudio.Extension.UI.Tree
 {
     using System;
     using System.Linq;
@@ -125,7 +128,7 @@
         /// Sets <see cref="AnalysisResult"/> data to tree.
         /// </summary>
         /// <param name="analysisResult"><see cref="AnalysisResult"/> object.</param>
-        public AnalysisResult AnalysisResults
+        public IDictionary<string, IEnumerable<Issue>> AnalysisResults
         {
             set
             {
@@ -253,7 +256,7 @@
 
         private void TreeViewItem_Selected(object sender, RoutedEventArgs eventArgs) => MessageBox.Show(eventArgs.ToString());
 
-        private void AppendSnykCodeIssues(RootTreeNode rootNode, AnalysisResult analysisResult, Func<Suggestion, bool> conditionFunction)
+        private void AppendSnykCodeIssues(RootTreeNode rootNode, IDictionary<string, IEnumerable<Issue>> analysisResult, Func<Suggestion, bool> conditionFunction)
         {
             int crititcalSeverityCount = 0;
             int highSeverityCount = 0;
@@ -262,8 +265,11 @@
 
             rootNode.Clean();
 
-            foreach (var fileAnalyses in analysisResult.FileAnalyses)
+            foreach (var kv in analysisResult)
             {
+                var filePath = kv.Key;
+                var issueList = kv.Value;
+
                 var issueNode = new SnykCodeFileTreeNode { FileAnalysis = fileAnalyses, };
 
                 var suggestions = fileAnalyses.Suggestions.Where(conditionFunction).ToList();

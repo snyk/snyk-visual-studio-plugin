@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
@@ -628,21 +629,13 @@ namespace Snyk.VisualStudio.Extension.Service
             try
             {
                 this.isSnykCodeScanning = true;
-                //this.FireSnykCodeScanningStartedEvent();
                 var componentModel = Package.GetGlobalService(typeof(SComponentModel)) as IComponentModel;
                 
                 Assumes.Present(componentModel);
                 var languageServerClientManager = componentModel.GetService<ILanguageClientManager>();
 
-                var res = await languageServerClientManager.InvokeWorkspaceScanAsync(cancellationToken);
                 this.FireSnykCodeScanningStartedEvent(featuresSettings);
-
-                // var fileProvider = this.serviceProvider.SolutionService.FileProvider;
-
-                 //var analysisResult =
-                   //  await this.serviceProvider.SnykCodeService.ScanAsync(fileProvider, cancellationToken);
-
-                //this.FireScanningUpdateEvent(analysisResult);
+                var res = await languageServerClientManager.InvokeWorkspaceScanAsync(cancellationToken);
 
                 this.FireSnykCodeScanningFinishedEvent();
             }
@@ -702,7 +695,7 @@ namespace Snyk.VisualStudio.Extension.Service
         /// <summary>
         /// Fire Cli scanning started event.
         /// </summary>
-        private void FireOssScanningStartedEvent() => this.CliScanningStarted?.Invoke(this, new SnykCliScanEventArgs());
+        public void FireOssScanningStartedEvent() => this.CliScanningStarted?.Invoke(this, new SnykCliScanEventArgs());
 
 
         /// <summary>
@@ -714,7 +707,7 @@ namespace Snyk.VisualStudio.Extension.Service
         /// <summary>
         /// Fire SnykCode scanning started event.
         /// </summary>
-        private void FireSnykCodeScanningStartedEvent(FeaturesSettings featuresSettings) =>
+        public void FireSnykCodeScanningStartedEvent(FeaturesSettings featuresSettings) =>
             this.SnykCodeScanningStarted?.Invoke(this, 
                 new SnykCodeScanEventArgs { QualityScanEnabled = featuresSettings.CodeQualityEnabled, 
                                             CodeScanEnabled = featuresSettings.CodeSecurityEnabled});
@@ -730,7 +723,7 @@ namespace Snyk.VisualStudio.Extension.Service
         /// Fire scanning update with <see cref="SnykCodeScanEventArgs"/> object.
         /// </summary>
         /// <param name="analysisResult"><see cref="AnalysisResult"/> object with vulnerabilities.</param>
-        private void FireScanningUpdateEvent(AnalysisResult analysisResult) =>
+        public void FireScanningUpdateEvent(IDictionary<string, IEnumerable<Issue>> analysisResult) =>
             this.SnykCodeScanningUpdate?.Invoke(this, new SnykCodeScanEventArgs(analysisResult));
 
         /// <summary>
@@ -752,7 +745,7 @@ namespace Snyk.VisualStudio.Extension.Service
         /// </summary>
         private void FireScanningCancelledEvent() => this.ScanningCancelled?.Invoke(this, new SnykCliScanEventArgs());
 
-        private async Task<FeaturesSettings> GetFeaturesSettingsAsync()
+        public async Task<FeaturesSettings> GetFeaturesSettingsAsync()
         {
             var options = this.serviceProvider.Options;
 
@@ -890,5 +883,7 @@ namespace Snyk.VisualStudio.Extension.Service
         /// Scanning cancelled event handler.
         /// </summary>
         public event EventHandler<SnykCliScanEventArgs> ScanningCancelled;
+
+        public void FireScanningUpdateEvent(AnalysisResult analysisResult);
     }
 }

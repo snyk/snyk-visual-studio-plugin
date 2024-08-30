@@ -10,6 +10,9 @@ namespace Snyk.VisualStudio.Extension.Language
     {
         public string Status { get; set; }
         public string Product { get; set; }
+        public string FolderPath { get; set; }
+        public string ErrorMessage { get; set; }
+        public IEnumerable<Issue> Issues { get; set; }
     }
 
     public class AdditionalData
@@ -18,16 +21,16 @@ namespace Snyk.VisualStudio.Extension.Language
         public string Rule { get; set; }
         public string RuleId { get; set; }
         public int RepoDatasetSize { get; set; }
-        public List<ExampleCommitFix> ExampleCommitFixes { get; set; }
-        public List<string> Cwe { get; set; }
+        public IList<ExampleCommitFix> ExampleCommitFixes { get; set; }
+        public IList<string> Cwe { get; set; }
         public string Text { get; set; }
-        public List<Marker> Markers { get; set; }
-        public List<int> Cols { get; set; }
-        public List<int> Rows { get; set; }
+        public IList<Marker> Markers { get; set; }
+        public IList<int> Cols { get; set; }
+        public IList<int> Rows { get; set; }
         public bool IsSecurityType { get; set; }
         public int PriorityScore { get; set; }
         public bool HasAIFix { get; set; }
-        public List<DataFlow> DataFlow { get; set; }
+        public IList<DataFlow> DataFlow { get; set; }
         public string Details { get; set; }
     }
 
@@ -48,7 +51,7 @@ namespace Snyk.VisualStudio.Extension.Language
     public class ExampleCommitFix
     {
         public string CommitURL { get; set; }
-        public List<LineData> Lines { get; set; }
+        public IList<LineData> Lines { get; set; }
     }
 
     public class FlowRange
@@ -74,10 +77,13 @@ namespace Snyk.VisualStudio.Extension.Language
         public string FilePath { get; set; }
         public Range Range { get; set; }
         public bool IsIgnored { get; set; }
+        public bool IsNew { get; set; }
         public IgnoreDetails IgnoreDetails { get; set; }
         public AdditionalData AdditionalData { get; set; }
+        public string Product { get; set; }
+
     }
-    
+
     public class LineData
     {
         public string Line { get; set; }
@@ -87,14 +93,14 @@ namespace Snyk.VisualStudio.Extension.Language
     
     public class Marker
     {
-        public List<int> Msg { get; set; }
-        public List<Po> Pos { get; set; }
+        public IList<int> Msg { get; set; }
+        public IList<Po> Pos { get; set; }
     }
     
     public class Po
     {
-        public List<int> Cols { get; set; }
-        public List<int> Rows { get; set; }
+        public IList<int> Cols { get; set; }
+        public IList<int> Rows { get; set; }
         public string File { get; set; }
     }
     
@@ -106,7 +112,7 @@ namespace Snyk.VisualStudio.Extension.Language
     
     public class Root
     {
-        public List<Issue> Issues { get; set; }
+        public IList<Issue> Issues { get; set; }
     }
     
     public class Start
