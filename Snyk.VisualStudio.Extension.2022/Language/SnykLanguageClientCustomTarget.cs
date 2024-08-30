@@ -23,7 +23,7 @@ namespace Snyk.VisualStudio.Extension.Language
             this.serviceProvider = serviceProvider;
         }
 
-        [JsonRpcMethod("$/snyk.publishDiagnostics316")]
+        [JsonRpcMethod(LsConstants.OnPublishDiagnostics316)]
         public void OnPublishDiagnostics316(JToken arg)
         {
             var uri = arg["uri"];
@@ -74,7 +74,7 @@ namespace Snyk.VisualStudio.Extension.Language
             }
         }
 
-        [JsonRpcMethod("$/snyk.scan")]
+        [JsonRpcMethod(LsConstants.SnykScan)]
         public async Task OnSnykScan(JToken arg)
         {
             var lspAnalysisResult = arg.TryParse<LspAnalysisResult>();
@@ -92,7 +92,29 @@ namespace Snyk.VisualStudio.Extension.Language
                     break;
             }
         }
+        [JsonRpcMethod(LsConstants.SnykCliPath)]
+        public async Task OnIsAvailableCli(JToken arg)
+        {
 
+        }
+
+        [JsonRpcMethod(LsConstants.SnykFolderConfig)]
+        public async Task OnFolderConfig(JToken arg)
+        {
+
+        }
+
+        [JsonRpcMethod(LsConstants.SnykHasAuthenticated)]
+        public async Task OnHasAuthenticated(JToken arg)
+        {
+
+        }
+
+        [JsonRpcMethod(LsConstants.SnykAddTrustedFolders)]
+        public async Task OnAddTrustedFolders(JToken arg)
+        {
+
+        }
 
         private async Task ProcessCodeScanAsnyc(LspAnalysisResult lspAnalysisResult)
         {
@@ -132,12 +154,6 @@ namespace Snyk.VisualStudio.Extension.Language
         private async Task ProcessIacScanAsnyc(LspAnalysisResult lspAnalysisResult)
         {
           
-        }
-
-        [JsonRpcMethod("$/snyk.getFeatureFlagStatus")]
-        public void OnSnykGetFeatureFlagStatus(JToken arg)
-        {
-
         }
 
         private string LspSourceToProduct(string source)

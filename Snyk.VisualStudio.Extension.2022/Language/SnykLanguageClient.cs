@@ -82,7 +82,7 @@ namespace Snyk.VisualStudio.Extension.Language
                 AutomaticAuthentication = "false",
                 Endpoint = options.CustomEndpoint,
                 IntegrationVersion = options.IntegrationVersion,
-                RequiredProtocolVersion = "13"
+                RequiredProtocolVersion = LsConstants.ProtocolVersion.ToString()
             };
             return initializationOptions;
         }

@@ -66,6 +66,7 @@
     <Compile Include="Language\ILanguageClientManager.cs" />
     <Compile Include="Language\InvalidProductTypeException.cs" />
     <Compile Include="Language\JTokenExtension.cs" />
+    <Compile Include="Language\LsConstants.cs" />
     <Compile Include="Language\LspAnalysisResult.cs" />
     <Compile Include="Language\SnykContentDefinition.cs" />
     <Compile Include="Language\SnykLanguageClient.cs" />
