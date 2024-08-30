@@ -81,7 +81,8 @@ namespace Snyk.VisualStudio.Extension.Language
         public IgnoreDetails IgnoreDetails { get; set; }
         public AdditionalData AdditionalData { get; set; }
         public string Product { get; set; }
-
+        public string GetDisplayTitle() => string.IsNullOrEmpty(this.Title) ? this.AdditionalData?.Message : this.Title;
+        public string GetDisplayTitleWithLineNumber() => "line " + this.Range?.End?.Line + ": " + this.GetDisplayTitle();
     }
 
     public class LineData

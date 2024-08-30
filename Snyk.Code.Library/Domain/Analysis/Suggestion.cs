@@ -121,17 +121,5 @@
         /// Gets a value indicating suggestion list of proposed fixes and examples.
         /// </summary>
         public IList<SuggestionFix> Fixes { get; set; } = new List<SuggestionFix>();
-
-        /// <summary>
-        /// Get row line and title (if title is null it use message).
-        /// </summary>
-        /// <returns>Title for display.</returns>
-        public string GetDisplayTitleWithLineNumber() => "line " + this.Rows.Item1 + ": " + this.GetDisplayTitle();
-
-        /// <summary>
-        /// Get title. If title is null or empty it will return message as title.
-        /// </summary>
-        /// <returns>Title for display.</returns>
-        public string GetDisplayTitle() => string.IsNullOrEmpty(this.Title) ? this.Message : this.Title;
     }
 }

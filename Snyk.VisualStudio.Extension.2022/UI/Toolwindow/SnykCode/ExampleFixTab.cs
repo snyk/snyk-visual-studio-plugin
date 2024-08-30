@@ -1,8 +1,8 @@
-﻿namespace Snyk.VisualStudio.Extension.UI.Toolwindow.SnykCode
-{
-    using System.Collections.ObjectModel;
-    using Snyk.Code.Library.Domain.Analysis;
+﻿using Snyk.VisualStudio.Extension.Language;
+using System.Collections.ObjectModel;
 
+namespace Snyk.VisualStudio.Extension.UI.Toolwindow.SnykCode
+{
     /// <summary>
     /// Domain object for Example fix tab.
     /// </summary>
@@ -16,6 +16,6 @@
         /// <summary>
         /// Gets or sets a lines list.
         /// </summary>
-        public ObservableCollection<FixLine> Lines { get; set; }
+        public ObservableCollection<LineData> Lines { get; set; }
     }
 }

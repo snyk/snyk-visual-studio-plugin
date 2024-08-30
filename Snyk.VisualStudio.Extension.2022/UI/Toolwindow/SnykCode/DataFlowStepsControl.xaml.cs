@@ -1,21 +1,21 @@
-﻿namespace Snyk.VisualStudio.Extension.UI.Toolwindow.SnykCode
+﻿using System;
+using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
+using System.IO;
+using System.Linq;
+using System.Threading.Tasks;
+using System.Windows;
+using System.Windows.Controls;
+using Microsoft.VisualStudio.PlatformUI;
+using Microsoft.VisualStudio.Shell;
+using Serilog;
+using Snyk.Common;
+using Snyk.VisualStudio.Extension.Language;
+using Snyk.VisualStudio.Extension.Service;
+using Task = System.Threading.Tasks.Task;
+
+namespace Snyk.VisualStudio.Extension.UI.Toolwindow.SnykCode
 {
-    using System;
-    using System.Collections.Generic;
-    using System.Diagnostics.CodeAnalysis;
-    using System.IO;
-    using System.Linq;
-    using System.Threading.Tasks;
-    using System.Windows;
-    using System.Windows.Controls;
-    using Microsoft.VisualStudio.PlatformUI;
-    using Microsoft.VisualStudio.Shell;
-    using Serilog;
-    using Snyk.Code.Library.Domain.Analysis;
-    using Snyk.Common;
-    using Snyk.VisualStudio.Extension.CLI;
-    using Snyk.VisualStudio.Extension.Service;
-    using Task = System.Threading.Tasks.Task;
 
     /// <summary>
     /// Interaction logic for DataFlowStepsControl.xaml.
@@ -92,28 +92,28 @@
 
             foreach (var marker in markers)
             {
-                foreach (var position in marker.Positions)
+                foreach (var position in marker.Pos)
                 {
-                    string filePosition = position.FileName;
-                    int fileSeparatorIndex = filePosition.LastIndexOf("/") + 1;
+                    var filePosition = position.File;
+                    var fileSeparatorIndex = filePosition.LastIndexOf("/") + 1;
                     filePosition = filePosition.Substring(fileSeparatorIndex, filePosition.Length - fileSeparatorIndex);
 
                     long startLineNumber = position.Rows.ElementAt(0);
 
                     filePosition = filePosition + ":" + startLineNumber;
 
-                    var startLine = (int)position.Rows.ElementAt(0) - 1;
-                    var endLine = (int)position.Rows.ElementAt(1) - 1;
-                    var startColumn = (int)position.Columns.ElementAt(0) - 1;
-                    var endColumn = (int)position.Columns.ElementAt(1);
+                    var startLine = (int)position.Rows.ElementAt(0);
+                    var endLine = (int)position.Rows.ElementAt(1);
+                    var startColumn = (int)position.Cols.ElementAt(0);
+                    var endColumn = (int)position.Cols.ElementAt(1);
 
                     var dataFlowStep = new DataFlowStep
                     {
                         FileName = filePosition,
                         RowNumber = index.ToString(),
-                        LineContent = await this.GetLineContentAsync(position.FileName, startLineNumber),
+                        LineContent = await this.GetLineContentAsync(position.File, startLineNumber),
                         NavigateCommand = new DelegateCommand((obj) =>
-                            this.NavigateToCodeAsync(position.FileName, startLine, startColumn, endLine, endColumn).FireAndForget()),
+                            this.NavigateToCodeAsync(position.File, startLine, startColumn, endLine, endColumn).FireAndForget()),
                     };
 
                     index++;
@@ -154,7 +154,7 @@
                 {
                     while ((line = await reader.ReadLineAsync()) != null)
                     {
-                        if (fileLineNumber == (lineNumber - 1))
+                        if (fileLineNumber == lineNumber)
                         {
                             return line.Trim();
                         }

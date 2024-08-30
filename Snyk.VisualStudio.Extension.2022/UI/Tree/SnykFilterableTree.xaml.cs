@@ -134,12 +134,12 @@ namespace Snyk.VisualStudio.Extension.UI.Tree
             {
                 if (this.codeSecurityRootNode.Enabled)
                 {
-                    this.AppendSnykCodeIssues(this.codeSecurityRootNode, value, suggestion => suggestion.Categories.Contains("Security"));
+                    this.AppendSnykCodeIssues(this.codeSecurityRootNode, value, issue => issue.AdditionalData.IsSecurityType);
                 }
 
                 if (this.codeQualityRootNode.Enabled)
                 {
-                    this.AppendSnykCodeIssues(this.codeQualityRootNode, value, suggestion => !suggestion.Categories.Contains("Security"));
+                    this.AppendSnykCodeIssues(this.codeQualityRootNode, value, issue => !issue.AdditionalData.IsSecurityType);
                 }
             }
         }
@@ -237,13 +237,15 @@ namespace Snyk.VisualStudio.Extension.UI.Tree
                 CollectionViewSource.GetDefaultView(treeNode.Items).Filter = filterObject =>
                 {
                     var filteredTreeNode = filterObject as SnykCodeVulnerabilityTreeNode;
-                    var suggestion = filteredTreeNode.Suggestion;
+                    if (filteredTreeNode == null) return false;
 
-                    bool isVulnIncluded = severityFilter.IsVulnerabilityIncluded(Severity.FromInt(suggestion.Severity));
+                    var issue = filteredTreeNode.Issue;
 
-                    if (searchString != null && searchString != string.Empty)
+                    var isVulnIncluded = severityFilter.IsVulnerabilityIncluded(issue.Severity);
+
+                    if (!string.IsNullOrEmpty(searchString))
                     {
-                        isVulnIncluded = isVulnIncluded && suggestion.GetDisplayTitleWithLineNumber().ToLowerInvariant().Contains(searchString.ToLowerInvariant());
+                        isVulnIncluded = isVulnIncluded && issue.GetDisplayTitleWithLineNumber().ToLowerInvariant().Contains(searchString.ToLowerInvariant());
                     }
 
                     return isVulnIncluded;
@@ -256,34 +258,34 @@ namespace Snyk.VisualStudio.Extension.UI.Tree
 
         private void TreeViewItem_Selected(object sender, RoutedEventArgs eventArgs) => MessageBox.Show(eventArgs.ToString());
 
-        private void AppendSnykCodeIssues(RootTreeNode rootNode, IDictionary<string, IEnumerable<Issue>> analysisResult, Func<Suggestion, bool> conditionFunction)
+        private void AppendSnykCodeIssues(RootTreeNode rootNode, IDictionary<string, IEnumerable<Issue>> analysisResult, Func<Issue, bool> conditionFunction)
         {
-            int crititcalSeverityCount = 0;
-            int highSeverityCount = 0;
-            int mediumSeverityCount = 0;
-            int lowSeverityCount = 0;
+            var crititcalSeverityCount = 0;
+            var highSeverityCount = 0;
+            var mediumSeverityCount = 0;
+            var lowSeverityCount = 0;
 
             rootNode.Clean();
 
             foreach (var kv in analysisResult)
             {
                 var filePath = kv.Key;
-                var issueList = kv.Value;
+                var issueList = kv.Value.ToList();
 
-                var issueNode = new SnykCodeFileTreeNode { FileAnalysis = fileAnalyses, };
+                var issueNode = new SnykCodeFileTreeNode { IssueList = issueList, FileName = filePath};
 
-                var suggestions = fileAnalyses.Suggestions.Where(conditionFunction).ToList();
+                var issues = issueList.Where(conditionFunction).ToList();
 
-                crititcalSeverityCount += suggestions.Count(suggestion => Severity.FromInt(suggestion.Severity) == Severity.Critical);
-                highSeverityCount += suggestions.Count(suggestion => Severity.FromInt(suggestion.Severity) == Severity.High);
-                mediumSeverityCount += suggestions.Count(suggestion => Severity.FromInt(suggestion.Severity) == Severity.Medium);
-                lowSeverityCount += suggestions.Count(suggestion => Severity.FromInt(suggestion.Severity) == Severity.Low);
+                crititcalSeverityCount += issues.Count(suggestion => suggestion.Severity == Severity.Critical);
+                highSeverityCount += issues.Count(suggestion => suggestion.Severity == Severity.High);
+                mediumSeverityCount += issues.Count(suggestion => suggestion.Severity == Severity.Medium);
+                lowSeverityCount += issues.Count(suggestion => suggestion.Severity == Severity.Low);
 
-                suggestions.Sort((suggestion1, suggestion2) => suggestion2.Severity.CompareTo(suggestion1.Severity));
+                issues.Sort((suggestion1, suggestion2) => string.Compare(suggestion2.Severity, suggestion1.Severity, StringComparison.Ordinal));
 
-                foreach (var suggestion in suggestions)
+                foreach (var suggestion in issues)
                 {
-                    issueNode.Items.Add(new SnykCodeVulnerabilityTreeNode { Suggestion = suggestion, });
+                    issueNode.Items.Add(new SnykCodeVulnerabilityTreeNode { Issue = suggestion });
                 }
 
                 if (issueNode.Items.Count > 0)

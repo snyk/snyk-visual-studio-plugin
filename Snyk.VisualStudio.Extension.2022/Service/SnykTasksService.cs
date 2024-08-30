@@ -716,27 +716,27 @@ namespace Snyk.VisualStudio.Extension.Service
         /// Fire scanning update with <see cref="SnykCliScanEventArgs"/> object.
         /// </summary>
         /// <param name="cliResult"><see cref="CliResult"/> object with vulnerabilities.</param>
-        private void FireOssScanningUpdateEvent(CliResult cliResult) =>
+        public void FireOssScanningUpdateEvent(CliResult cliResult) =>
             this.OssScanningUpdate?.Invoke(this, new SnykCliScanEventArgs(cliResult));
 
         /// <summary>
         /// Fire scanning update with <see cref="SnykCodeScanEventArgs"/> object.
         /// </summary>
         /// <param name="analysisResult"><see cref="AnalysisResult"/> object with vulnerabilities.</param>
-        public void FireScanningUpdateEvent(IDictionary<string, IEnumerable<Issue>> analysisResult) =>
+        public void FireCodeScanningUpdateEvent(IDictionary<string, IEnumerable<Issue>> analysisResult) =>
             this.SnykCodeScanningUpdate?.Invoke(this, new SnykCodeScanEventArgs(analysisResult));
 
         /// <summary>
         /// Fire OSS scanning finished event.
         /// </summary>
-        private void FireOssScanningFinishedEvent()
+        public void FireOssScanningFinishedEvent()
             => this.OssScanningFinished?.Invoke(this,
                 new SnykCliScanEventArgs { SnykCodeScanRunning = this.isSnykCodeScanning });
 
         /// <summary>
         /// Fire SnykCode scanning finished event.
         /// </summary>
-        private void FireSnykCodeScanningFinishedEvent()
+        public void FireSnykCodeScanningFinishedEvent()
             => this.SnykCodeScanningFinished?.Invoke(this,
                 new SnykCodeScanEventArgs { OssScanRunning = this.isOssScanning });
 
@@ -884,6 +884,9 @@ namespace Snyk.VisualStudio.Extension.Service
         /// </summary>
         public event EventHandler<SnykCliScanEventArgs> ScanningCancelled;
 
-        public void FireScanningUpdateEvent(AnalysisResult analysisResult);
+        public void FireCodeScanningUpdateEvent(IDictionary<string, IEnumerable<Issue>> analysisResult);
+        public void FireOssScanningUpdateEvent(CliResult cliResult);
+        public void FireOssScanningFinishedEvent();
+        public void FireSnykCodeScanningFinishedEvent();
     }
 }

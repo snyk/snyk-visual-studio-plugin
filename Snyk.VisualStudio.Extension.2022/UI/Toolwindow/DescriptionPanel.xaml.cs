@@ -1,4 +1,6 @@
-﻿namespace Snyk.VisualStudio.Extension.UI.Toolwindow
+﻿using Snyk.VisualStudio.Extension.Language;
+
+namespace Snyk.VisualStudio.Extension.UI.Toolwindow
 {
     using System.Windows;
     using System.Windows.Controls;
@@ -34,12 +36,12 @@
             }
         }
 
-        public async Task SetSuggestionAsync(Suggestion value)
+        public async Task SetIssueAsync(Issue value)
         {
             this.ossDescriptionControl.Visibility = Visibility.Collapsed;
             this.snykCodeDescriptionControl.Visibility = Visibility.Visible;
-            this.descriptionHeaderPanel.Suggestion = value;
-            await this.snykCodeDescriptionControl.SetSuggestionAsync(value);
+            this.descriptionHeaderPanel.Issue = value;
+            await this.snykCodeDescriptionControl.SetIssueAsync(value);
         }
     }
 }

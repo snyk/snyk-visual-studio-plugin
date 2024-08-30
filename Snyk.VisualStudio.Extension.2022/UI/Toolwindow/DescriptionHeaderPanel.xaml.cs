@@ -6,6 +6,7 @@ using System.Windows.Controls;
 using System.Windows.Documents;
 using Snyk.Code.Library.Domain.Analysis;
 using Snyk.VisualStudio.Extension.CLI;
+using Snyk.VisualStudio.Extension.Language;
 using Snyk.VisualStudio.Extension.Model;
 
 namespace Snyk.VisualStudio.Extension.UI.Toolwindow
@@ -83,34 +84,27 @@ namespace Snyk.VisualStudio.Extension.UI.Toolwindow
             }
         }
 
-        public Suggestion Suggestion
+        public Issue Issue
         {
             set
             {
-                var suggestion = value;
+                var issue = value;
 
                 this.cvePanel.Visibility = Visibility.Collapsed;
                 this.cvssLinkBlock.Visibility = Visibility.Collapsed;
                 this.vulnerabilityIdLinkBlock.Visibility = Visibility.Collapsed;
 
-                this.severityImage.Source = SnykIconProvider.GetSeverityIconSource(Severity.FromInt(suggestion.Severity));
+                this.severityImage.Source = SnykIconProvider.GetSeverityIconSource(issue.Severity);
 
-                this.issueTitle.Text = suggestion.GetDisplayTitle();
+                this.issueTitle.Text = issue.GetDisplayTitle();
 
-                if (suggestion.Categories.Contains("Security"))
-                {
-                    this.metaType.Text = "Vulnerability";
-                }
-                else
-                {
-                    this.metaType.Text = "Code Issue";
-                }
+                this.metaType.Text = issue.AdditionalData?.IsSecurityType ?? false ? "Vulnerability" : "Code Issue";
 
-                if (suggestion.Cwe != null && suggestion.Cwe.Count > 0)
+                if (issue.AdditionalData?.Cwe != null && issue.AdditionalData.Cwe.Count > 0)
                 {
                     this.AddLinksToPanel(
                             this.cwePanel,
-                            suggestion.Cwe.ToArray(),
+                            issue.AdditionalData.Cwe.ToArray(),
                             "CWE-",
                             "https://cwe.mitre.org/data/definitions/{0}.html");
                 }

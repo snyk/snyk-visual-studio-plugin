@@ -1,30 +1,30 @@
-﻿namespace Snyk.VisualStudio.Extension.UI.Toolwindow.SnykCode
-{
-    using System.Collections.ObjectModel;
-    using System.Windows;
-    using System.Windows.Controls;
-    using System.Windows.Documents;
-    using System.Windows.Media;
-    using Microsoft.VisualStudio.PlatformUI;
-    using Snyk.Code.Library.Domain.Analysis;
-    using Snyk.VisualStudio.Extension.Theme;
+﻿using System.Collections.ObjectModel;
+using System.Windows;
+using System.Windows.Controls;
+using System.Windows.Documents;
+using System.Windows.Media;
+using Microsoft.VisualStudio.PlatformUI;
+using Snyk.VisualStudio.Extension.Language;
+using Snyk.VisualStudio.Extension.Theme;
 
+namespace Snyk.VisualStudio.Extension.UI.Toolwindow.SnykCode
+{
     /// <summary>
     /// Extended <see cref="RichTextBox"/> for display code example with red/green highlite rows.
     /// </summary>
     public class ExternalExampleFixRichTextBox : RichTextBox
     {
         public static readonly DependencyProperty LinesProperty =
-            DependencyProperty.Register("Lines", typeof(ObservableCollection<FixLine>), typeof(ExternalExampleFixRichTextBox), new PropertyMetadata(OnLinesChanged));
+            DependencyProperty.Register("Lines", typeof(ObservableCollection<LineData>), typeof(ExternalExampleFixRichTextBox), new PropertyMetadata(OnLinesChanged));
         private static readonly SolidColorBrush redBrush = VSColorTheme.GetThemedColor(EnvironmentColors.VizSurfaceRedDarkBrushKey).ToBrush();
         private static readonly SolidColorBrush greenBrush = VSColorTheme.GetThemedColor(EnvironmentColors.VizSurfaceGreenDarkBrushKey).ToBrush();
 
         /// <summary>
         /// Gets or sets lines of code in editor.
         /// </summary>
-        public ObservableCollection<FixLine> Lines
+        public ObservableCollection<LineData> Lines
         {
-            get => this.GetValue(LinesProperty) as ObservableCollection<FixLine>;
+            get => this.GetValue(LinesProperty) as ObservableCollection<LineData>;
             set => this.SetValue(LinesProperty, value);
         }
 
@@ -39,7 +39,7 @@
             {
                 richTextBox.Document.Blocks.Clear();
 
-                var lines = evenArgs.NewValue as ObservableCollection<FixLine>;
+                var lines = evenArgs.NewValue as ObservableCollection<LineData>;
 
                 if (lines == null) return;
 

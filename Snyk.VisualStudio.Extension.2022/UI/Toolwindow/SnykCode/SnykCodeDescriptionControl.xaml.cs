@@ -1,9 +1,10 @@
-﻿namespace Snyk.VisualStudio.Extension.UI.Toolwindow.SnykCode
-{
-    using System.Threading.Tasks;
-    using System.Windows.Controls;
-    using Snyk.Code.Library.Domain.Analysis;
+﻿using Snyk.VisualStudio.Extension.Language;
+using System.Threading.Tasks;
+using System.Windows.Controls;
 
+namespace Snyk.VisualStudio.Extension.UI.Toolwindow.SnykCode
+{
+    
     /// <summary>
     /// Interaction logic for SnykCodeDescriptionControl.xaml.
     /// </summary>
@@ -17,11 +18,11 @@
             this.InitializeComponent();
         }
 
-        public async Task SetSuggestionAsync(Suggestion suggestion)
+        public async Task SetIssueAsync(Issue issue)
         {
-            this.snykCodeDescription.Text = suggestion.Message;
-            await this.dataFlowStepsControl.DisplayAsync(suggestion.Markers);
-            this.externalExampleFixesControl.Display(suggestion.RepoDatasetSize, suggestion.Fixes);
+            this.snykCodeDescription.Text = issue.AdditionalData?.Message ?? "";
+            await this.dataFlowStepsControl.DisplayAsync(issue.AdditionalData?.Markers);
+            this.externalExampleFixesControl.Display(issue.AdditionalData?.RepoDatasetSize ?? 0, issue.AdditionalData?.ExampleCommitFixes);
         }
     }
 }

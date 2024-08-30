@@ -7,6 +7,7 @@ namespace Snyk.VisualStudio.Extension.Language
     [JsonObject(NamingStrategyType = typeof(CamelCaseNamingStrategy))]
     public class SnykLSInitializationOptions
     {
+        public string RequiredProtocolVersion { get; set; }
         public string ActivateSnykOpenSource { get; set; }
         public string ActivateSnykCode { get; set; }
         public string ActivateSnykIac { get; set; }

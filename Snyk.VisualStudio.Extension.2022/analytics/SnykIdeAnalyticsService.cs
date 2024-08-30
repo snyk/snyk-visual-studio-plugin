@@ -114,17 +114,15 @@ namespace Snyk.VisualStudio.Extension.CLI
         {
             try
             {
-                if (e.Result is not { Status: AnalysisStatus.Complete }) return;
-
                 Logger.Information("Reporting analytics");
                 var durationMs = DateTime.UtcNow.Subtract(codeScanningStarted).Milliseconds;
                 int critical = 0, high = 0, medium = 0, low = 0;
-                var fileAnalyses = e.Result.FileAnalyses;
+                var fileAnalyses = e.Result;
                 foreach (var fileAnalysis in fileAnalyses)
                 {
-                    foreach (var suggestion in fileAnalysis.Suggestions)
+                    foreach (var suggestion in fileAnalysis.Value)
                     {
-                        switch (Severity.FromInt(suggestion.Severity))
+                        switch (suggestion.Severity)
                         {
                             case Severity.Critical:
                                 critical++;

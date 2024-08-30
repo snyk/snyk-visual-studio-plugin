@@ -6,6 +6,7 @@ using System.Diagnostics;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.VisualStudio.LanguageServer.Client;
+using Microsoft.VisualStudio.Shell;
 using Microsoft.VisualStudio.Threading;
 using Serilog;
 using Snyk.Common;
@@ -60,10 +61,10 @@ namespace Snyk.VisualStudio.Extension.Language
                 ActivateSnykCode = options.SnykCodeSecurityEnabled.ToString(),
                 ActivateSnykCodeQuality = options.SnykCodeQualityEnabled.ToString(),
                 ActivateSnykCodeSecurity = options.SnykCodeQualityEnabled.ToString(),
+                ActivateSnykOpenSource = options.OssEnabled.ToString(),
                 SendErrorReports = options.UsageAnalyticsEnabled.ToString(),
                 ManageBinariesAutomatically = options.BinariesAutoUpdate.ToString(),
                 EnableTrustedFoldersFeature = "false",
-                ActivateSnykOpenSource = options.OssEnabled.ToString(),
                 IntegrationName = "Visual Studio",
                 FilterSeverity = new FilterSeverityOptions
                 {
@@ -73,10 +74,15 @@ namespace Snyk.VisualStudio.Extension.Language
                     Medium = false,
                 },
                 ScanningMode = "auto",
-                //AdditionalParams = options.GetAdditionalOptionsAsync()
+                AdditionalParams = ThreadHelper.JoinableTaskFactory.Run(() => options.GetAdditionalOptionsAsync()),
                 AuthenticationMethod = options.AuthenticationMethod == AuthenticationType.OAuth ? "oauth" : "token",
                 CliPath = options.CliCustomPath,
+                Organization = options.Organization,
                 Token = options.ApiToken.ToString(),
+                AutomaticAuthentication = "false",
+                Endpoint = options.CustomEndpoint,
+                IntegrationVersion = options.IntegrationVersion,
+                RequiredProtocolVersion = "13"
             };
             return initializationOptions;
         }

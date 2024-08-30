@@ -645,17 +645,18 @@ namespace Snyk.VisualStudio.Extension.UI.Toolwindow
             this.descriptionPanel.Visibility = Visibility.Visible;
 
             var snykCodeTreeNode = this.resultsTree.SelectedItem as SnykCodeVulnerabilityTreeNode;
+            if (snykCodeTreeNode == null) return;
+            
+            await this.descriptionPanel.SetIssueAsync(snykCodeTreeNode.Issue);
 
-            await this.descriptionPanel.SetSuggestionAsync(snykCodeTreeNode.Suggestion);
-
-            var suggestion = snykCodeTreeNode.Suggestion;
+            var issue = snykCodeTreeNode.Issue;
 
             VsCodeService.Instance.OpenAndNavigate(
-                suggestion.FileName,
-                suggestion.Rows.Item1 - 1,
-                suggestion.Columns.Item1 - 1,
-                suggestion.Rows.Item2 - 1,
-                suggestion.Columns.Item2);
+                issue.FilePath,
+                issue.Range.Start.Line,
+                issue.Range.Start.Character,
+                issue.Range.End.Line,
+                issue.Range.End.Character);
         }
 
         private void StopButton_Click(object sender, RoutedEventArgs e) => SnykTasksService.Instance.CancelTasks();

@@ -1,23 +1,25 @@
-﻿namespace Snyk.VisualStudio.Extension.CLI.Download
-{
-    using System;
-    using System.Collections.Generic;
-    using System.IO;
-    using System.Net.Http;
-    using System.Threading.Tasks;
-    using Serilog;
-    using Snyk.Common;
-    using Snyk.VisualStudio.Extension.Service;
+﻿using System;
+using System.Collections.Generic;
+using System.IO;
+using System.Net.Http;
+using System.Threading.Tasks;
+using Serilog;
+using Snyk.Common;
+using Snyk.VisualStudio.Extension.Service;
 
+namespace Snyk.VisualStudio.Extension.CLI.Download
+{
     /// <summary>
     /// Donwnload last Snyk CLI version.
     /// </summary>
     public class SnykCliDownloader
     {
-        private const string BaseUrl = "https://static.snyk.io";
-        private const string LatestReleaseVersionUrl = BaseUrl + "/cli/stable/version";
-        private const string LatestReleaseDownloadUrl = BaseUrl + "/cli/stable/{0}";
-        private const string Sha256DownloadUrl = BaseUrl + "/cli/stable/snyk-win.exe.sha256";
+        private const string BaseUrl = "https://downloads.snyk.io";
+
+        private const string ReleaseChannel = "stable";
+        private const string LatestReleaseVersionUrl = BaseUrl + "/cli/"+ReleaseChannel+"/version";
+        private const string LatestReleaseDownloadUrl = BaseUrl + "/cli/"+ReleaseChannel+"/{0}";
+        private const string Sha256DownloadUrl = BaseUrl + "/cli/"+ReleaseChannel+"/snyk-win.exe.sha256";
 
         private const int FourDays = 4;
 
