@@ -246,7 +246,6 @@ namespace Snyk.VisualStudio.Extension
         {
             try
             {
-                var options = this.Options;
                 var componentModel = GetGlobalService(typeof(SComponentModel)) as IComponentModel;
                 Assumes.Present(componentModel);
                 var languageServerClientManager = componentModel.GetService<ILanguageClientManager>();

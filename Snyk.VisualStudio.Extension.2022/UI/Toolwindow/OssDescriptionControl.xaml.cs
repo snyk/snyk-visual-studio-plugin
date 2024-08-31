@@ -1,14 +1,10 @@
 ﻿using System;
 using System.Diagnostics;
-using System.Linq;
 using System.Windows;
 using System.Windows.Controls;
-using System.Windows.Documents;
-using System.Windows.Input;
-using MdXaml;
 using Serilog;
 using Snyk.Common;
-using Snyk.VisualStudio.Extension.CLI;
+using Snyk.VisualStudio.Extension.Language;
 
 namespace Snyk.VisualStudio.Extension.UI.Toolwindow
 {
@@ -24,37 +20,38 @@ namespace Snyk.VisualStudio.Extension.UI.Toolwindow
         public OssDescriptionControl() => this.InitializeComponent();
 
         /// <summary>
-        /// Sets <see cref="Vulnerability"/> information and update corresponding UI elements.
+        /// Sets <see cref="OssIssue"/> information and update corresponding UI elements.
         /// </summary>
-        public Vulnerability Vulnerability
+        public Issue OssIssue
         {
             set
             {
                 var vulnerability = value;
 
                 this.vulnerabilityDescriptionGrid.Visibility = Visibility.Visible;
+                if (vulnerability.AdditionalData == null) return;
 
-                this.vulnerableModule.Text = vulnerability.Name;
+                this.vulnerableModule.Text = vulnerability.AdditionalData.Name;
 
-                string introducedThroughText = vulnerability.From != null && vulnerability.From.Length != 0
-                            ? string.Join(", ", vulnerability.From) : string.Empty;
+                string introducedThroughText = vulnerability.AdditionalData.From != null && vulnerability.AdditionalData.From.Count != 0
+                            ? string.Join(", ", vulnerability.AdditionalData.From) : string.Empty;
 
                 this.introducedThrough.Text = introducedThroughText;
-                this.exploitMaturity.Text = vulnerability.Exploit;
+                this.exploitMaturity.Text = vulnerability.AdditionalData.Exploit;
                 this.fixedIn.Text = string.IsNullOrWhiteSpace(vulnerability.FixedInDisplayText)
-                    ? $"There is no fixed version for {vulnerability.Name}" : vulnerability.FixedInDisplayText;
+                    ? $"There is no fixed version for {vulnerability.AdditionalData.Name}" : vulnerability.FixedInDisplayText;
 
-                string detaiedIntroducedThroughText = vulnerability.From != null && vulnerability.From.Length != 0
-                            ? string.Join(" > ", vulnerability.From) : string.Empty;
+                string detaiedIntroducedThroughText = vulnerability.AdditionalData.From != null && vulnerability.AdditionalData.From.Count != 0
+                            ? string.Join(" > ", vulnerability.AdditionalData.From) : string.Empty;
 
                 this.detaiedIntroducedThrough.Text = detaiedIntroducedThroughText;
 
-                this.fix.Text = vulnerability.FixedIn != null && vulnerability.FixedIn.Length != 0
-                                         ? "Upgrade to " + string.Join(" > ", vulnerability.FixedIn) : string.Empty;
+                this.fix.Text = vulnerability.AdditionalData.FixedIn != null && vulnerability.AdditionalData.FixedIn.Count != 0
+                                         ? "Upgrade to " + string.Join(" > ", vulnerability.AdditionalData.FixedIn) : string.Empty;
 
-                this.Overview.Markdown = vulnerability.Description;
-
-                this.moreAboutThisIssue.NavigateUri = new Uri(vulnerability.Url);
+                this.Overview.Markdown = vulnerability.AdditionalData.Description;
+                
+                this.moreAboutThisIssue.NavigateUri = new Uri(vulnerability.GetVulnerabilityUrl());
             }
         }
 

@@ -5,7 +5,7 @@ using Newtonsoft.Json.Serialization;
 namespace Snyk.VisualStudio.Extension.Language
 {
     [JsonObject(NamingStrategyType = typeof(CamelCaseNamingStrategy))]
-    public class SnykLSInitializationOptions
+    public class SnykLsInitializationOptions
     {
         public string RequiredProtocolVersion { get; set; }
         public string ActivateSnykOpenSource { get; set; }

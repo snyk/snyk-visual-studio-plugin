@@ -37,7 +37,7 @@ namespace Snyk.VisualStudio.Extension.CLI
         public void Initialize()
         {
             scanTopicProvider.OssScanningFinished += OnOssScanningFinished;
-            scanTopicProvider.CliScanningStarted += OnCliScanningStarted;
+            scanTopicProvider.OssScanningStarted += OnCliScanningStarted;
             scanTopicProvider.OssScanningUpdate += (sender, args) => ThreadHelper.JoinableTaskFactory.RunAsync(async () => await OnOssScanningUpdateAsync(sender, args)).FireAndForget();
             scanTopicProvider.SnykCodeScanningUpdate += (sender, args) => ThreadHelper.JoinableTaskFactory.RunAsync(async () => await OnSnykCodeScanningUpdateAsync(sender, args)).FireAndForget();
             scanTopicProvider.SnykCodeScanningStarted += OnSnykCodeScanningStarted;
@@ -69,38 +69,17 @@ namespace Snyk.VisualStudio.Extension.CLI
             return JsonConvert.SerializeObject(e);
         }
 
-        public void OnCliScanningStarted(object sender, SnykCliScanEventArgs e)
+        public void OnCliScanningStarted(object sender, SnykOssScanEventArgs e)
         {
             ossScanningStarted = DateTime.UtcNow;
         }
 
-        public async Task OnOssScanningUpdateAsync(object sender, SnykCliScanEventArgs e)
+        public async Task OnOssScanningUpdateAsync(object sender, SnykOssScanEventArgs e)
         {
-            try
-            {
-                var durationMs = DateTime.UtcNow.Subtract(ossScanningStarted).Milliseconds;
-                int critical = 0, high = 0, medium = 0, low = 0;
-                if (e.Result != null)
-                {
-                    // we just want to make sure that it's calculated
-                    var unused = e.Result.GroupVulnerabilities;
-                    critical = e.Result.CriticalSeverityCount;
-                    high = e.Result.HighSeverityCount;
-                    medium = e.Result.MediumSeverityCount;
-                    low = e.Result.LowSeverityCount;
-                }
 
-                var directoryPath = await solutionService.GetSolutionFolderAsync();
-                var payload = GetAnalyticsPayload("Snyk Open Source", durationMs, critical, high, medium, low, directoryPath);
-                await cliProvider.Cli.ReportAnalyticsAsync(payload);
-            }
-            catch (Exception exception)
-            {
-                Logger.Warning(exception, "Failed to report analytics");
-            }
         }
 
-        public void OnOssScanningFinished(object sender, SnykCliScanEventArgs e)
+        public void OnOssScanningFinished(object sender, SnykOssScanEventArgs e)
         {
             // do nothing for now
         }

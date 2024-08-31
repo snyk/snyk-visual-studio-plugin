@@ -1,4 +1,7 @@
-﻿namespace Snyk.VisualStudio.Extension.Service
+﻿using System.Collections.Generic;
+using Snyk.VisualStudio.Extension.Language;
+
+namespace Snyk.VisualStudio.Extension.Service
 {
     using System;
     using Snyk.VisualStudio.Extension.CLI;
@@ -7,31 +10,31 @@
     /// <summary>
     /// CLI scan event args.
     /// </summary>
-    public class SnykCliScanEventArgs : EventArgs
+    public class SnykOssScanEventArgs : EventArgs
     {
         /// <summary>
-        /// Initializes a new instance of the <see cref="SnykCliScanEventArgs"/> class.
+        /// Initializes a new instance of the <see cref="SnykOssScanEventArgs"/> class.
         /// </summary>
-        public SnykCliScanEventArgs()
+        public SnykOssScanEventArgs()
         {
         }
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="SnykCliScanEventArgs"/> class.
+        /// Initializes a new instance of the <see cref="SnykOssScanEventArgs"/> class.
         /// </summary>
         /// <param name="cliError"><see cref="CliError"/> object.</param>
         /// <param name="featuresSettings">Features settings.</param>
-        public SnykCliScanEventArgs(CliError cliError, FeaturesSettings featuresSettings)
+        public SnykOssScanEventArgs(CliError cliError, FeaturesSettings featuresSettings)
         {
             this.Error = cliError;
             this.FeaturesSettings = featuresSettings;
         }
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="SnykCliScanEventArgs"/> class.
+        /// Initializes a new instance of the <see cref="SnykOssScanEventArgs"/> class.
         /// </summary>
         /// <param name="cliResult"><see cref="CliResult"/> object.</param>
-        public SnykCliScanEventArgs(CliResult cliResult)
+        public SnykOssScanEventArgs(IDictionary<string, IEnumerable<Issue>> cliResult)
         {
             this.Result = cliResult;
         }
@@ -54,6 +57,6 @@
         /// <summary>
         /// Gets or sets a value indicating whether <see cref="CliResult"/> object.
         /// </summary>
-        public CliResult Result { get; set; }
+        public IDictionary<string, IEnumerable<Issue>> Result { get; set; }
     }
 }

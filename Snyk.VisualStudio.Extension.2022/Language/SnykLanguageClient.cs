@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.ComponentModel.Composition;
 using System.Diagnostics;
@@ -25,9 +24,8 @@ namespace Snyk.VisualStudio.Extension.Language
     {
         private static readonly ILogger Logger = LogManager.ForContext<SnykLanguageClient>();
         private object _lock = new object();
-        private ConcurrentDictionary<string, object> snykIssues = new ConcurrentDictionary<string, object>();
 
-        private SnykLSInitializationOptions initializationOptions;
+        private SnykLsInitializationOptions initializationOptions;
 
         [ImportingConstructor]
         public SnykLanguageClient()
@@ -56,7 +54,7 @@ namespace Snyk.VisualStudio.Extension.Language
             }
 
             var options = SnykVSPackage.ServiceProvider.Options;
-            initializationOptions = new SnykLSInitializationOptions
+            initializationOptions = new SnykLsInitializationOptions
             {
                 ActivateSnykCode = options.SnykCodeSecurityEnabled.ToString(),
                 ActivateSnykCodeQuality = options.SnykCodeQualityEnabled.ToString(),
@@ -65,7 +63,7 @@ namespace Snyk.VisualStudio.Extension.Language
                 SendErrorReports = options.UsageAnalyticsEnabled.ToString(),
                 ManageBinariesAutomatically = options.BinariesAutoUpdate.ToString(),
                 EnableTrustedFoldersFeature = "false",
-                IntegrationName = "Visual Studio",
+                IntegrationName = options.IntegrationName,
                 FilterSeverity = new FilterSeverityOptions
                 {
                     Critical = false,
@@ -74,7 +72,9 @@ namespace Snyk.VisualStudio.Extension.Language
                     Medium = false,
                 },
                 ScanningMode = "auto",
+#pragma warning disable VSTHRD104
                 AdditionalParams = ThreadHelper.JoinableTaskFactory.Run(() => options.GetAdditionalOptionsAsync()),
+#pragma warning restore VSTHRD104
                 AuthenticationMethod = options.AuthenticationMethod == AuthenticationType.OAuth ? "oauth" : "token",
                 CliPath = options.CliCustomPath,
                 Organization = options.Organization,

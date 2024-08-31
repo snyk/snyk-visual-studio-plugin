@@ -53,8 +53,6 @@ namespace Snyk.VisualStudio.Extension.Service
 
         private IWorkspaceTrustService workspaceTrustService;
         
-        private ILanguageClientManager languageClientManager;
-
         /// <summary>
         /// Initializes a new instance of the <see cref="SnykService"/> class.
         /// </summary>

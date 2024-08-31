@@ -17,9 +17,9 @@ namespace Snyk.VisualStudio.Extension.Language
 
     public class AdditionalData
     {
+        // Code
         public string Message { get; set; }
         public string Rule { get; set; }
-        public string RuleId { get; set; }
         public int RepoDatasetSize { get; set; }
         public IList<ExampleCommitFix> ExampleCommitFixes { get; set; }
         public IList<string> Cwe { get; set; }
@@ -31,7 +31,54 @@ namespace Snyk.VisualStudio.Extension.Language
         public int PriorityScore { get; set; }
         public bool HasAIFix { get; set; }
         public IList<DataFlow> DataFlow { get; set; }
+
+        // OSS + Code
         public string Details { get; set; }
+        public string RuleId { get; set; }
+
+        // OSS
+        public string License { get; set; }
+        public Identifiers Identifiers { get; set; }
+        public string Description { get; set; }
+        public string Language { get; set; }
+        public string PackageManager { get; set; }
+        public string PackageName { get; set; }
+        public string Name { get; set; }
+        public string Version { get; set; }
+        public string Exploit { get; set; }
+        public string CVSSv3 { get; set; }
+        public string CvssScore { get; set; }
+        public IList<string> FixedIn { get; set; }
+        public IList<string> From { get; set; }
+        public IList<string> UpgradePath { get; set; }
+        public bool IsPatchable { get; set; }
+        public bool IsUpgradable { get; set; }
+        public string ProjectName { get; set; }
+        public string DisplayTargetFile { get; set; }
+
+        // IaC
+        public string PublicId { get; set; }
+        public string Documentation { get; set; }
+        public int LineNumber { get; set; }
+        public string Issue { get; set; }
+        public string Impact { get; set; }
+        public IList<string> Path { get; set; }
+        public string Resolve { get; set; }
+        public IList<string> References { get; set; }
+        public string CustomUIContent { get; set; }
+    }
+
+    public class Identifiers
+    {
+        /// <summary>
+        /// Gets or sets Cve identifiers.
+        /// </summary>
+        public string[] CVE { get; set; }
+
+        /// <summary>
+        /// Gets or sets Cwe identifiers.
+        /// </summary>
+        public string[] CWE { get; set; }
     }
 
     public class DataFlow
@@ -81,8 +128,13 @@ namespace Snyk.VisualStudio.Extension.Language
         public IgnoreDetails IgnoreDetails { get; set; }
         public AdditionalData AdditionalData { get; set; }
         public string Product { get; set; }
+
         public string GetDisplayTitle() => string.IsNullOrEmpty(this.Title) ? this.AdditionalData?.Message : this.Title;
         public string GetDisplayTitleWithLineNumber() => "line " + this.Range?.End?.Line + ": " + this.GetDisplayTitle();
+        public string GetPackageNameTitle() => $"{this.AdditionalData?.PackageName}@{this.AdditionalData?.Version}: {this.Title}";
+        public string FixedInDisplayText => this.AdditionalData?.FixedIn == null ? string.Empty : string.Join(", ", this.AdditionalData.FixedIn);
+        private const string VulnerabilityDbUrl = "https://snyk.io/vuln/";
+        public string GetVulnerabilityUrl() => $"{VulnerabilityDbUrl}{this.AdditionalData?.RuleId ?? ""}";
     }
 
     public class LineData

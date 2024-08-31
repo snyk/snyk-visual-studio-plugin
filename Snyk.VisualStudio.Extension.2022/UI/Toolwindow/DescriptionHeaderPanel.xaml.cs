@@ -21,17 +21,17 @@ namespace Snyk.VisualStudio.Extension.UI.Toolwindow
         /// </summary>
         public DescriptionHeaderPanel() => this.InitializeComponent();
 
-        public Vulnerability Vulnerability
+        public Issue OssIssue
         {
             set
             {
-                var vulnerability = value;
+                var issue = value;
 
-                this.severityImage.Source = SnykIconProvider.GetSeverityIconSource(vulnerability.Severity);
+                this.severityImage.Source = SnykIconProvider.GetSeverityIconSource(issue.Severity);
 
-                this.issueTitle.Text = vulnerability.Title;
+                this.issueTitle.Text = issue.Title;
 
-                if (vulnerability.IsLicense())
+                if (!string.IsNullOrEmpty(issue.AdditionalData?.License))
                 {
                     this.metaType.Text = "License"; // todo: Vulnerability or License or Issue.
                 }
@@ -40,7 +40,7 @@ namespace Snyk.VisualStudio.Extension.UI.Toolwindow
                     this.metaType.Text = "Vulnerability";
                 }
 
-                var identifiers = vulnerability.Identifiers;
+                var identifiers = issue.AdditionalData.Identifiers;
 
                 if (identifiers != null)
                 {
@@ -65,12 +65,12 @@ namespace Snyk.VisualStudio.Extension.UI.Toolwindow
                 this.cwePanel.Visibility = this.cwePanel.Children.Count > 0 ? Visibility.Visible : Visibility.Collapsed;
                 this.cvePanel.Visibility = this.cvePanel.Children.Count > 0 ? Visibility.Visible : Visibility.Collapsed;
 
-                if (!string.IsNullOrEmpty(vulnerability.CVSSv3) && vulnerability.CvssScore > -1)
+                if (!string.IsNullOrEmpty(issue.AdditionalData.CVSSv3) && (float.TryParse(issue.AdditionalData.CvssScore, out var cvssScore) && cvssScore > -1))
                 {
                     this.cvssLinkBlock.Visibility = Visibility.Visible;
 
-                    this.cvssLink.NavigateUri = new Uri("https://www.first.org/cvss/calculator/3.1#" + vulnerability.CVSSv3);
-                    this.cvssLinkText.Text = "CVSS " + vulnerability.CvssScore;
+                    this.cvssLink.NavigateUri = new Uri("https://www.first.org/cvss/calculator/3.1#" + issue.AdditionalData.CvssScore);
+                    this.cvssLinkText.Text = "CVSS " + issue.AdditionalData.CvssScore;
                 }
                 else
                 {
@@ -79,12 +79,12 @@ namespace Snyk.VisualStudio.Extension.UI.Toolwindow
 
                 this.vulnerabilityIdLinkBlock.Visibility = Visibility.Visible;
 
-                this.cvssLink.NavigateUri = new Uri(vulnerability.Url);
-                this.cvssLinkText.Text = vulnerability.Id;
+                this.cvssLink.NavigateUri = new Uri(issue.GetVulnerabilityUrl());
+                this.cvssLinkText.Text = issue.AdditionalData.RuleId;
             }
         }
 
-        public Issue Issue
+        public Issue CodeIssue
         {
             set
             {

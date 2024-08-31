@@ -23,8 +23,9 @@ namespace Snyk.VisualStudio.Extension.Language
             this.serviceProvider = serviceProvider;
         }
 
+#pragma warning disable CS1998 // Async method lacks 'await' operators and will run synchronously
         [JsonRpcMethod(LsConstants.OnPublishDiagnostics316)]
-        public void OnPublishDiagnostics316(JToken arg)
+        public async Task OnPublishDiagnostics316(JToken arg)
         {
             var uri = arg["uri"];
             var diagnosticsArray = (JArray)arg["diagnostics"];
@@ -92,6 +93,7 @@ namespace Snyk.VisualStudio.Extension.Language
                     break;
             }
         }
+
         [JsonRpcMethod(LsConstants.SnykCliPath)]
         public async Task OnIsAvailableCli(JToken arg)
         {
@@ -127,28 +129,32 @@ namespace Snyk.VisualStudio.Extension.Language
             if (lspAnalysisResult.Status == "error")
             {
                 serviceProvider.TasksService.OnSnykCodeError(lspAnalysisResult.ErrorMessage);
+                serviceProvider.TasksService.FireTaskFinished();
                 return;
             }
 
             serviceProvider.TasksService.FireCodeScanningUpdateEvent(snykCodeIssueDictionary);
             serviceProvider.TasksService.FireSnykCodeScanningFinishedEvent();
+            serviceProvider.TasksService.FireTaskFinished();
         }
 
         private async Task ProcessOssScanAsnyc(LspAnalysisResult lspAnalysisResult)
         {
-            //if (lspAnalysisResult.Status == "inProgress")
-            //{
-            //    serviceProvider.TasksService.FireOssScanningStartedEvent();
-            //    return;
-            //}
-            //if (lspAnalysisResult.Status == "error")
-            //{
-            //    serviceProvider.TasksService.FireOssError(lspAnalysisResult.ErrorMessage);
-            //    return;
-            //}
+            if (lspAnalysisResult.Status == "inProgress")
+            {
+                serviceProvider.TasksService.FireOssScanningStartedEvent();
+                return;
+            }
+            if (lspAnalysisResult.Status == "error")
+            {
+                serviceProvider.TasksService.FireOssError(lspAnalysisResult.ErrorMessage);
+                serviceProvider.TasksService.FireTaskFinished();
+                return;
+            }
 
-            //serviceProvider.TasksService.FireOssScanningUpdateEvent(snykCodeIssueDictionary);
-            //serviceProvider.TasksService.FireOssScanningFinishedEvent();
+            serviceProvider.TasksService.FireOssScanningUpdateEvent(snykOssIssueDictionary);
+            serviceProvider.TasksService.FireOssScanningFinishedEvent();
+            serviceProvider.TasksService.FireTaskFinished();
         }
 
         private async Task ProcessIacScanAsnyc(LspAnalysisResult lspAnalysisResult)
@@ -166,5 +172,6 @@ namespace Snyk.VisualStudio.Extension.Language
                 _ => ""
             };
         }
+#pragma warning restore CS1998 // Async method lacks 'await' operators and will run synchronously
     }
 }

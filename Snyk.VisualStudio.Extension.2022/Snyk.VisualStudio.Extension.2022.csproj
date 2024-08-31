@@ -121,7 +121,7 @@
     <Compile Include="Service\OssService.cs" />
     <Compile Include="Service\SentryService.cs" />
     <Compile Include="Service\SnykCliDownloadEventArgs.cs" />
-    <Compile Include="Service\SnykCliScanEventArgs.cs" />
+    <Compile Include="Service\SnykOssScanEventArgs.cs" />
     <Compile Include="Service\SnykCodeScanEventArgs.cs" />
     <Compile Include="Service\SnykProgressWorker.cs" />
     <Compile Include="Service\SnykService.cs" />

@@ -53,7 +53,7 @@
             tasksService.DownloadFailed += this.OnDownloadFailed;
 
             tasksService.ScanningCancelled += this.OnScanningCancelled;
-            tasksService.CliScanningStarted += this.OnCliScanningStarted;
+            tasksService.OssScanningStarted += this.OnOssScanningStarted;
             tasksService.SnykCodeScanningStarted += this.OnSnykCodeScanningStarted;
             tasksService.OssScanningFinished += this.OnOssScanningFinished;
             tasksService.SnykCodeScanningFinished += this.OnSnykCodeScanningFinished;
@@ -74,7 +74,7 @@
             this.options = options;
         }
 
-        private void OnOssScanError(object sender, SnykCliScanEventArgs eventArgs)
+        private void OnOssScanError(object sender, SnykOssScanEventArgs eventArgs)
         {
             if (this.options == null || this.statusBar == null)
             {
@@ -98,7 +98,7 @@
         private void OnSnykCodeScanUpdate(object sender, SnykCodeEventArgs eventArgs)
             => this.statusBar.ShowSnykCodeUpdateMessage($"{eventArgs.ScanState} {eventArgs.Progress}%");
 
-        private void OnOssScanningFinished(object sender, SnykCliScanEventArgs eventArgs)
+        private void OnOssScanningFinished(object sender, SnykOssScanEventArgs eventArgs)
         {
             if (eventArgs.SnykCodeScanRunning)
             {
@@ -118,13 +118,13 @@
             this.statusBar.ShowFinishedSearchMessage("Snyk scan finished");
         }
 
-        private void OnCliScanningStarted(object sender, SnykCliScanEventArgs eventArgs)
+        private void OnOssScanningStarted(object sender, SnykOssScanEventArgs eventArgs)
             => this.statusBar.ShowStartSearchMessage("Snyk is scanning...");
 
         private void OnSnykCodeScanningStarted(object sender, SnykCodeScanEventArgs eventArgs)
             => this.statusBar.ShowStartSearchMessage("Snyk is scanning...");
 
-        private void OnScanningCancelled(object sender, SnykCliScanEventArgs eventArgs)
+        private void OnScanningCancelled(object sender, SnykOssScanEventArgs eventArgs)
             => this.statusBar.ShowFinishedSearchMessage("Snyk scan cancelled");
 
         private void OnDownloadFinished(object sender, SnykCliDownloadEventArgs eventArgs)

@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Linq;
 using System.Threading;
 using System.Windows;
 using System.Windows.Controls;
@@ -89,7 +90,7 @@ namespace Snyk.VisualStudio.Extension.UI.Toolwindow
             tasksService.SnykCodeScanError += this.OnSnykCodeDisplayError;
             tasksService.SnykCodeDisabled += this.OnSnykCodeDisabledHandler;
             tasksService.ScanningCancelled += this.OnScanningCancelled;
-            tasksService.CliScanningStarted += this.OnCliScanningStarted;
+            tasksService.OssScanningStarted += this.OnOssScanningStarted;
             tasksService.OssScanningDisabled += this.OnOssScanningDisabled;
             tasksService.SnykCodeScanningStarted += this.OnSnykCodeScanningStarted;
             tasksService.OssScanningUpdate += this.OnCliScanningUpdate;
@@ -126,7 +127,7 @@ namespace Snyk.VisualStudio.Extension.UI.Toolwindow
             Logger.Information("Leave InitializeEventListenersAsync() method.");
         }
 
-        private void OnOssScanningDisabled(object sender, SnykCliScanEventArgs e)
+        private void OnOssScanningDisabled(object sender, SnykOssScanEventArgs e)
         {
             ThreadHelper.JoinableTaskFactory.Run(async () =>
             {
@@ -159,7 +160,7 @@ namespace Snyk.VisualStudio.Extension.UI.Toolwindow
         /// </summary>
         /// <param name="sender">Source object.</param>
         /// <param name="eventArgs">Event args.</param>
-        public void OnCliScanningUpdate(object sender, SnykCliScanEventArgs eventArgs) => this.AppendCliResultToTree(eventArgs.Result);
+        public void OnCliScanningUpdate(object sender, SnykOssScanEventArgs eventArgs) => this.AppendCliResultToTree(eventArgs.Result);
 
         /// <summary>
         /// Scanning update event handler. Append CLI results to tree.
@@ -173,7 +174,7 @@ namespace Snyk.VisualStudio.Extension.UI.Toolwindow
         /// </summary>
         /// <param name="sender">Source object.</param>
         /// <param name="eventArgs">Event args.</param>
-        public void OnCliScanningStarted(object sender, SnykCliScanEventArgs eventArgs) => ThreadHelper.JoinableTaskFactory.Run(async () =>
+        public void OnOssScanningStarted(object sender, SnykOssScanEventArgs eventArgs) => ThreadHelper.JoinableTaskFactory.Run(async () =>
         {
             await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
 
@@ -221,7 +222,7 @@ namespace Snyk.VisualStudio.Extension.UI.Toolwindow
         /// </summary>
         /// <param name="sender">Source object.</param>
         /// <param name="eventArgs">Event args.</param>
-        public void OnScanningFinished(object sender, SnykCliScanEventArgs eventArgs) => this.context.TransitionTo(ScanResultsState.Instance);
+        public void OnScanningFinished(object sender, SnykOssScanEventArgs eventArgs) => this.context.TransitionTo(ScanResultsState.Instance);
 
         /// <summary>
         /// Handle Cli error.
@@ -229,7 +230,7 @@ namespace Snyk.VisualStudio.Extension.UI.Toolwindow
         /// <param name="sender">Source object.</param>
         /// <param name="eventArgs">Event args.</param>
         /// <returns>A <see cref="Task"/> representing the asynchronous operation.</returns>
-        public async Task OnCliDisplayErrorAsync(object sender, SnykCliScanEventArgs eventArgs)
+        public async Task OnCliDisplayErrorAsync(object sender, SnykOssScanEventArgs eventArgs)
         {
             await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
 
@@ -293,7 +294,7 @@ namespace Snyk.VisualStudio.Extension.UI.Toolwindow
         /// </summary>
         /// <param name="sender">Source object.</param>
         /// <param name="eventArgs">Event args.</param>
-        public void OnScanningCancelled(object sender, SnykCliScanEventArgs eventArgs)
+        public void OnScanningCancelled(object sender, SnykOssScanEventArgs eventArgs)
         {
             this.context.TransitionTo(RunScanState.Instance);
 
@@ -526,9 +527,9 @@ namespace Snyk.VisualStudio.Extension.UI.Toolwindow
         /// Append CLI results to tree.
         /// </summary>
         /// <param name="cliResult">CLI result.</param>
-        private void AppendCliResultToTree(CliResult cliResult)
+        private void AppendCliResultToTree(IDictionary<string, IEnumerable<Issue>> cliResult)
         {
-            if (cliResult.CliVulnerabilitiesList == null)
+            if (!cliResult.Any())
             {
                 return;
             }
@@ -626,13 +627,13 @@ namespace Snyk.VisualStudio.Extension.UI.Toolwindow
         {
             var ossTreeNode = this.resultsTree.SelectedItem as OssVulnerabilityTreeNode;
 
-            var vulnerability = ossTreeNode.Vulnerability;
+            var issue = ossTreeNode?.Issue;
 
-            if (vulnerability != null)
+            if (issue != null)
             {
                 this.descriptionPanel.Visibility = Visibility.Visible;
 
-                this.descriptionPanel.Vulnerability = vulnerability;
+                this.descriptionPanel.SetOssIssue(issue);
             }
             else
             {
@@ -647,7 +648,7 @@ namespace Snyk.VisualStudio.Extension.UI.Toolwindow
             var snykCodeTreeNode = this.resultsTree.SelectedItem as SnykCodeVulnerabilityTreeNode;
             if (snykCodeTreeNode == null) return;
             
-            await this.descriptionPanel.SetIssueAsync(snykCodeTreeNode.Issue);
+            await this.descriptionPanel.SetCodeIssueAsync(snykCodeTreeNode.Issue);
 
             var issue = snykCodeTreeNode.Issue;
 
@@ -683,7 +684,6 @@ namespace Snyk.VisualStudio.Extension.UI.Toolwindow
             if (options.ApiToken.IsValid())
             {
                 this.context.TransitionTo(RunScanState.Instance);
-
                 return;
             }
 
