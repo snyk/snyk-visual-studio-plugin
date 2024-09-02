@@ -199,14 +199,14 @@ namespace Snyk.VisualStudio.Extension.Settings
                 }));
             }
 
-            CliError cliError = new CliError
+            OssError ossError = new OssError
             {
                 IsSuccess = false,
                 Message = errorMessage,
                 Path = string.Empty,
             };
 
-            this.ServiceProvider.TasksService.FireOssError(cliError);
+            this.ServiceProvider.TasksService.FireOssError(ossError);
 
             this.ServiceProvider.ToolWindow.Show();
 

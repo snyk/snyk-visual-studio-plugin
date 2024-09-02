@@ -78,6 +78,12 @@ namespace Snyk.VisualStudio.Extension.Language
         [JsonRpcMethod(LsConstants.SnykScan)]
         public async Task OnSnykScan(JToken arg)
         {
+            if (serviceProvider.TasksService.SnykScanTokenSource?.IsCancellationRequested ?? false)
+            {
+                serviceProvider.TasksService.FireScanningCancelledEvent();
+                return;
+            }
+
             var lspAnalysisResult = arg.TryParse<LspAnalysisResult>();
             if (lspAnalysisResult == null) return;
             switch (lspAnalysisResult.Product)

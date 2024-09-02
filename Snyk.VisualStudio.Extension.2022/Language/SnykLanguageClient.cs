@@ -81,6 +81,7 @@ namespace Snyk.VisualStudio.Extension.Language
                 Token = options.ApiToken.ToString(),
                 AutomaticAuthentication = "false",
                 Endpoint = options.CustomEndpoint,
+                Insecure = options.IgnoreUnknownCA.ToString(),
                 IntegrationVersion = options.IntegrationVersion,
                 RequiredProtocolVersion = LsConstants.ProtocolVersion.ToString()
             };
@@ -112,9 +113,12 @@ namespace Snyk.VisualStudio.Extension.Language
                 Arguments = "language-server -l trace",
                 RedirectStandardInput = true,
                 RedirectStandardOutput = true,
-                UseShellExecute = false
+                UseShellExecute = false,
+                CreateNoWindow = true
             };
-            //info.CreateNoWindow = true;
+#if DEBUG
+            info.CreateNoWindow = false;
+#endif
             var process = new Process
             {
                 StartInfo = info
@@ -156,7 +160,7 @@ namespace Snyk.VisualStudio.Extension.Language
             if (StopAsync != null)
             {
                 await StopAsync.InvokeAsync(this, EventArgs.Empty);
-                IsReady = IsReloading = false;
+                IsReady = false;
             }
         }
 
@@ -213,7 +217,6 @@ namespace Snyk.VisualStudio.Extension.Language
                 await StopAsync.InvokeAsync(this, EventArgs.Empty);
                 OnStopped();
                 await StartAsync.InvokeAsync(this, EventArgs.Empty);
-
             }
             catch (Exception ex)
             {

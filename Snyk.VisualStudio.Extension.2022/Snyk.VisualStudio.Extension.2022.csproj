@@ -77,7 +77,7 @@
     <Compile Include="Cache\AbstractCacheHierarchyEvents.cs" />
     <Compile Include="Cache\CodeCacheHierarchyEvents.cs" />
     <Compile Include="Cache\OssCacheHierarchyEvents.cs" />
-    <Compile Include="CLI\CLIError.cs" />
+    <Compile Include="CLI\OssError.cs" />
     <Compile Include="CLI\CliGroupedVulnerabilities.cs" />
     <Compile Include="CLI\CLIResult.cs" />
     <Compile Include="CLI\CliVulnerabilities.cs" />
@@ -114,6 +114,7 @@
     <Compile Include="Service\IOssService.cs" />
     <Compile Include="Service\ISentryService.cs" />
     <Compile Include="Service\ISnykProgressWorker.cs" />
+    <Compile Include="Service\ISnykScanTopicProvider.cs" />
     <Compile Include="Service\ISnykService.cs" />
     <Compile Include="Service\ISnykServiceProvider.cs" />
     <Compile Include="Service\IWorkspaceTrustService.cs" />

@@ -73,9 +73,9 @@
         }
 
         /// <summary>
-        /// Gets or sets a value indicating whether instance of <see cref="CliError"/>.
+        /// Gets or sets a value indicating whether instance of <see cref="OssError"/>.
         /// </summary>
-        public CliError Error { get; set; }
+        public OssError Error { get; set; }
 
         /// <summary>
         /// Check is response successfull or there is an error.

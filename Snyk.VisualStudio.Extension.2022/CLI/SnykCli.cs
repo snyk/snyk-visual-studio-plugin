@@ -305,7 +305,7 @@ namespace Snyk.VisualStudio.Extension.CLI
         /// Convert raw json string to <see cref="CliResult"/> object.
         /// Check is json object is array. If it's array of cli vulnerability objects it will create <see cref="CliVulnerabilities"/> list.
         /// If json string is single object it will create <see cref="CliVulnerabilities"/> object.
-        /// If json string is error it will create <see cref="CliError"/> object.
+        /// If json string is error it will create <see cref="OssError"/> object.
         /// </summary>
         /// <param name="rawResult">Json string.</param>
         /// <returns>Result <see cref="CliResult"/> object.</returns>
@@ -335,7 +335,7 @@ namespace Snyk.VisualStudio.Extension.CLI
                 {
                     return new CliResult
                     {
-                        Error = Json.Deserialize<CliError>(rawResult),
+                        Error = Json.Deserialize<OssError>(rawResult),
                     };
                 }
             }
@@ -343,7 +343,7 @@ namespace Snyk.VisualStudio.Extension.CLI
             {
                 return new CliResult
                 {
-                    Error = new CliError
+                    Error = new OssError
                     {
                         IsSuccess = false,
                         Message = rawResult,

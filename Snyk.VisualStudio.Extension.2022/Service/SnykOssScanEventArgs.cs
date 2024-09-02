@@ -1,12 +1,11 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using Snyk.VisualStudio.Extension.Language;
+using Snyk.VisualStudio.Extension.CLI;
+using Snyk.VisualStudio.Extension.Service.Domain;
 
 namespace Snyk.VisualStudio.Extension.Service
 {
-    using System;
-    using Snyk.VisualStudio.Extension.CLI;
-    using Snyk.VisualStudio.Extension.Service.Domain;
-
     /// <summary>
     /// CLI scan event args.
     /// </summary>
@@ -22,11 +21,11 @@ namespace Snyk.VisualStudio.Extension.Service
         /// <summary>
         /// Initializes a new instance of the <see cref="SnykOssScanEventArgs"/> class.
         /// </summary>
-        /// <param name="cliError"><see cref="CliError"/> object.</param>
+        /// <param name="ossError"><see cref="OssError"/> object.</param>
         /// <param name="featuresSettings">Features settings.</param>
-        public SnykOssScanEventArgs(CliError cliError, FeaturesSettings featuresSettings)
+        public SnykOssScanEventArgs(OssError ossError, FeaturesSettings featuresSettings)
         {
-            this.Error = cliError;
+            this.Error = ossError;
             this.FeaturesSettings = featuresSettings;
         }
 
@@ -50,9 +49,9 @@ namespace Snyk.VisualStudio.Extension.Service
         public bool SnykCodeScanRunning { get; set; }
 
         /// <summary>
-        /// Gets or sets a value indicating whether <see cref="CliError"/> object.
+        /// Gets or sets a value indicating whether <see cref="OssError"/> object.
         /// </summary>
-        public CliError Error { get; set; }
+        public OssError Error { get; set; }
 
         /// <summary>
         /// Gets or sets a value indicating whether <see cref="CliResult"/> object.
