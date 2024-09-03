@@ -1,8 +1,13 @@
-﻿namespace Snyk.Common.Service
+﻿using Newtonsoft.Json.Serialization;
+using Newtonsoft.Json;
+using System.Collections.Generic;
+
+namespace Snyk.Common.Service
 {
     /// <summary>
     /// Sast settings.
     /// </summary>
+    [JsonObject(NamingStrategyType = typeof(CamelCaseNamingStrategy))]
     public class SastSettings
     {
         /// <summary>
@@ -20,6 +25,11 @@
         /// Snyk Code enabled if SastEnabled = true and LocalCodeEngine.Enabled = false.
         /// </summary>
         public bool SnykCodeEnabled => this.SastEnabled;
+
+        public string Org { get; set; }
+        public IList<string> SupportedLanguages { get; set; }
+        public bool ReportFalsePositivesEnabled { get; set; }
+        public bool AutofixEnabled { get; set; }
         /// <summary>
         /// Gets a value indicating whether local code engine enabled/disabled.
         /// </summary>

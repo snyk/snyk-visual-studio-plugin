@@ -244,6 +244,9 @@ namespace Snyk.VisualStudio.Extension
 
         private async Task InitializeLanguageClientAsync()
         {
+            await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
+            this.SatisfyImportsOnce();
+
             try
             {
                 var componentModel = GetGlobalService(typeof(SComponentModel)) as IComponentModel;
@@ -252,7 +255,7 @@ namespace Snyk.VisualStudio.Extension
                 if(languageServerClientManager != null && !languageServerClientManager.IsReady)
                 {
                     LanguageClientManager = languageServerClientManager;
-                    await languageServerClientManager.StartServerAsync();
+                    await LanguageClientManager.StartServerAsync(true);
                 }
             }
             catch (Exception e)

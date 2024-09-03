@@ -68,6 +68,7 @@
     <Compile Include="Language\JTokenExtension.cs" />
     <Compile Include="Language\LsConstants.cs" />
     <Compile Include="Language\LspAnalysisResult.cs" />
+    <Compile Include="Language\SatisfyImportExtension.cs" />
     <Compile Include="Language\SnykContentDefinition.cs" />
     <Compile Include="Language\SnykLanguageClient.cs" />
     <Compile Include="Language\SnykLanguageClientCustomTarget.cs" />

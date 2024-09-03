@@ -16,7 +16,7 @@ namespace Snyk.VisualStudio.Extension.CLI.Download
     {
         private const string BaseUrl = "https://downloads.snyk.io";
 
-        private const string ReleaseChannel = "stable";
+        private const string ReleaseChannel = "preview";
         private const string LatestReleaseVersionUrl = BaseUrl + "/cli/"+ReleaseChannel+"/version";
         private const string LatestReleaseDownloadUrl = BaseUrl + "/cli/"+ReleaseChannel+"/{0}";
         private const string Sha256DownloadUrl = BaseUrl + "/cli/"+ReleaseChannel+"/snyk-win.exe.sha256";
@@ -95,31 +95,6 @@ namespace Snyk.VisualStudio.Extension.CLI.Download
         }
 
         /// <summary>
-        /// Compare CLI versions and if new version string is more new to current version method will return true.
-        /// </summary>
-        /// <param name="currentVersionStr">Current CLI version.</param>
-        /// <param name="newVersionStr">New CLI version.</param>
-        /// <returns>True if there is more new version.</returns>
-        public bool IsNewVersionAvailable(string currentVersionStr, string newVersionStr)
-        {
-            int newVersion = this.CliVersionAsInt(newVersionStr);
-
-            if (newVersion == -1)
-            {
-                return false;
-            }
-
-            int currentVersion = this.CliVersionAsInt(currentVersionStr);
-
-            if (currentVersion == -1)
-            {
-                return true;
-            }
-
-            return newVersion > currentVersion;
-        }
-
-        /// <summary>
         /// Check is four days passed after lact check.
         /// </summary>
         /// <param name="lastCheckDate">Last check date value.</param>
@@ -157,8 +132,7 @@ namespace Snyk.VisualStudio.Extension.CLI.Download
         /// </summary>
         /// <param name="lastCheckDate">Last check date.</param>
         /// <returns>True if new version CLI exists</returns>
-        public bool IsCliUpdateExists(DateTime lastCheckDate) => this.IsFourDaysPassedAfterLastCheck(lastCheckDate)
-                    && this.IsNewVersionAvailable(this.currentCliVersion, this.GetLatestReleaseInfo().Version);
+        public bool IsCliUpdateExists(DateTime lastCheckDate) => this.IsFourDaysPassedAfterLastCheck(lastCheckDate);
 
         /// <summary>
         /// Check is there a new version on the server and if there is, download it.

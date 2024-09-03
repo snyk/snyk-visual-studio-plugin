@@ -6,11 +6,12 @@ namespace Snyk.VisualStudio.Extension.Language
 {
     public interface ILanguageClientManager
     {
-        Task StartServerAsync();
+        Task StartServerAsync(bool manualTrigger = false);
         Task RestartServerAsync();
         Task StopServerAsync();
         bool IsReady { get; set; }
         JsonRpc Rpc { get; set; }
         Task<object> InvokeWorkspaceScanAsync(CancellationToken cancellationToken);
+        Task<object> InvokeGetSastEnabled(CancellationToken cancellationToken);
     }
 }

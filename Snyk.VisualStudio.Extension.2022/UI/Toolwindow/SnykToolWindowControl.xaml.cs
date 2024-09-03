@@ -101,8 +101,18 @@ namespace Snyk.VisualStudio.Extension.UI.Toolwindow
 
             Logger.Information("Initialize Download Event Listeners");
 
-            tasksService.DownloadStarted += this.OnDownloadStarted;
-            tasksService.DownloadFinished += this.OnDownloadFinished;
+            tasksService.DownloadStarted += (sender, args) =>
+            {
+                if (serviceProvider.Package?.LanguageClientManager != null)
+                    ThreadHelper.JoinableTaskFactory.RunAsync(serviceProvider.Package.LanguageClientManager.StopServerAsync).FireAndForget();
+                this.OnDownloadStarted(sender, args);
+            };
+            tasksService.DownloadFinished += (sender, args) =>
+            {
+                if (serviceProvider.Package?.LanguageClientManager != null)
+                    ThreadHelper.JoinableTaskFactory.RunAsync(async ()=> await serviceProvider.Package.LanguageClientManager.StartServerAsync(true)).FireAndForget();
+                this.OnDownloadFinished(sender, args);
+            };
             tasksService.DownloadUpdate += (sender, args) => ThreadHelper.JoinableTaskFactory.RunAsync(() => this.OnDownloadUpdateAsync(sender, args));
             tasksService.DownloadCancelled += this.OnDownloadCancelled;
             tasksService.DownloadFailed += this.OnDownloadFailed;

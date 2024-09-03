@@ -14,6 +14,7 @@ using Snyk.VisualStudio.Extension.CLI;
 using StreamJsonRpc;
 using Task = System.Threading.Tasks.Task;
 using LSP = Microsoft.VisualStudio.LanguageServer.Protocol;
+using Process = System.Diagnostics.Process;
 
 namespace Snyk.VisualStudio.Extension.Language
 {
@@ -43,7 +44,6 @@ namespace Snyk.VisualStudio.Extension.Language
             }
         }
         public bool IsReady { get; set; }
-
         public object InitializationOptions => GetInitializationOptions();
 
         public object GetInitializationOptions()
@@ -143,9 +143,9 @@ namespace Snyk.VisualStudio.Extension.Language
             await StartServerAsync();
         }
 
-        public async Task StartServerAsync()
+        public async Task StartServerAsync(bool manualTrigger = false)
         {
-            if (StartAsync != null && SnykVSPackage.Instance?.Options != null)
+            if (!IsReady && StartAsync != null && SnykVSPackage.Instance?.Options != null)
             {
                 if (CustomMessageTarget == null)
                 {
@@ -230,14 +230,24 @@ namespace Snyk.VisualStudio.Extension.Language
                 }
             }
         }
-
+        
         public async Task<object> InvokeWorkspaceScanAsync(CancellationToken cancellationToken)
         {
             var param = new LSP.ExecuteCommandParams {
-                Command = "snyk.workspace.scan"
+                Command = LsConstants.SnykWorkspaceScan
             };
             var res = await InvokeWithParametersAsync<object>("workspace/executeCommand", param, cancellationToken);
             return res;
+        }
+
+        public async Task<object> InvokeGetSastEnabled(CancellationToken cancellationToken)
+        {
+            var param = new LSP.ExecuteCommandParams
+            {
+                Command = LsConstants.SnykSastEnabled
+            };
+            var isEnabled = await InvokeWithParametersAsync<object>("workspace/executeCommand", param, cancellationToken);
+            return isEnabled;
         }
 
         public async Task RestartServerAsync()
@@ -247,13 +257,13 @@ namespace Snyk.VisualStudio.Extension.Language
 
         // TODO: Add Logging
 
-        private async Task<T> InvokeAsync<T>(string request, CancellationToken t) where T : class
+        private async Task<T> InvokeAsync<T>(string request, CancellationToken t)
         {
             if (!IsReady) return default;
             return await Rpc.InvokeAsync<T>(request, t).ConfigureAwait(false);
         }
 
-        private async Task<T> InvokeWithParametersAsync<T>(string request, object parameters, CancellationToken t) where T : class
+        private async Task<T> InvokeWithParametersAsync<T>(string request, object parameters, CancellationToken t)
         {
             if (!IsReady) return default;
             return await Rpc.InvokeWithParameterObjectAsync<T>(request, parameters, t).ConfigureAwait(false);
