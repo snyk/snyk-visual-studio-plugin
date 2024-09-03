@@ -34,7 +34,7 @@ namespace Snyk.VisualStudio.Extension.Language
             middleware = new SnykLanguageClientMiddleware();
         }
 
-        public string Name => "SnykLS";
+        public string Name => "Snyk Language Server";
 
         public IEnumerable<string> ConfigurationSections
         {
