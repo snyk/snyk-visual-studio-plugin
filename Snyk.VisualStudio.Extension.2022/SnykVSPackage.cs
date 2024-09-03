@@ -255,6 +255,11 @@ namespace Snyk.VisualStudio.Extension
                 if(languageServerClientManager != null && !languageServerClientManager.IsReady)
                 {
                     LanguageClientManager = languageServerClientManager;
+                    // If CLI download is necessary, Skip initializing.
+                    if (this.serviceProvider.TasksService.ShouldDownloadCli())
+                    {
+                        return;
+                    }
                     await LanguageClientManager.StartServerAsync(true);
                 }
             }

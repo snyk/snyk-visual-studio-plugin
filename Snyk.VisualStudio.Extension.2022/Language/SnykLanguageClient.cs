@@ -10,6 +10,7 @@ using Microsoft.VisualStudio.Threading;
 using Serilog;
 using Snyk.Common;
 using Snyk.Common.Authentication;
+using Snyk.Common.Settings;
 using Snyk.VisualStudio.Extension.CLI;
 using StreamJsonRpc;
 using Task = System.Threading.Tasks.Task;
@@ -107,10 +108,14 @@ namespace Snyk.VisualStudio.Extension.Language
             await Task.Yield();
             if (SnykVSPackage.ServiceProvider?.Options == null) return null;
             var options = SnykVSPackage.ServiceProvider.Options;
+            var lsDebugLevel = await GetLsDebugLevelAsync(options);
+#if DEBUG
+            lsDebugLevel = "trace";
+#endif
             var info = new ProcessStartInfo
             {
                 FileName = string.IsNullOrEmpty(options.CliCustomPath) ? SnykCli.GetSnykCliDefaultPath() : options.CliCustomPath,
-                Arguments = "language-server -l trace",
+                Arguments = "language-server -l "+ lsDebugLevel,
                 RedirectStandardInput = true,
                 RedirectStandardOutput = true,
                 UseShellExecute = false,
@@ -139,13 +144,14 @@ namespace Snyk.VisualStudio.Extension.Language
             //    Guid packageGuid = typeof(SnykVSPackage).GUID;
             //    shell.LoadPackage(ref packageGuid, out package);
             //}
-
-            await StartServerAsync();
+            var isPackageInitialized = SnykVSPackage.Instance?.IsInitialized ?? false;
+            var shouldStart =  isPackageInitialized && !SnykVSPackage.ServiceProvider.TasksService.ShouldDownloadCli();
+            await StartServerAsync(shouldStart);
         }
 
-        public async Task StartServerAsync(bool manualTrigger = false)
+        public async Task StartServerAsync(bool shouldStart = false)
         {
-            if (!IsReady && StartAsync != null && SnykVSPackage.Instance?.Options != null)
+            if (!IsReady && StartAsync != null && SnykVSPackage.Instance?.Options != null && shouldStart)
             {
                 if (CustomMessageTarget == null)
                 {
@@ -182,6 +188,18 @@ namespace Snyk.VisualStudio.Extension.Language
         {
             Rpc.Disconnected += Rpc_Disconnected;
             return Task.CompletedTask;
+        }
+
+        private async Task<string> GetLsDebugLevelAsync(ISnykOptions options)
+        {
+            var logLevel = "info";
+            var additionalCliParameters = await options.GetAdditionalOptionsAsync();
+            if (!string.IsNullOrEmpty(additionalCliParameters) && (additionalCliParameters.Contains("-d") || additionalCliParameters.Contains("--debug")))
+            {
+                logLevel = "debug";
+            }
+
+            return logLevel;
         }
 
         private void Rpc_Disconnected(object sender, JsonRpcDisconnectedEventArgs e)
@@ -239,6 +257,18 @@ namespace Snyk.VisualStudio.Extension.Language
             var res = await InvokeWithParametersAsync<object>("workspace/executeCommand", param, cancellationToken);
             return res;
         }
+
+        public async Task<object> InvokeFolderScanAsync(string folderPath, CancellationToken cancellationToken)
+        {
+            var param = new LSP.ExecuteCommandParams
+            {
+                Command = LsConstants.SnykWorkspaceFolderScan,
+                Arguments = new object[]{folderPath}
+            };
+            var res = await InvokeWithParametersAsync<object>("workspace/executeCommand", param, cancellationToken);
+            return res;
+        }
+
 
         public async Task<object> InvokeGetSastEnabled(CancellationToken cancellationToken)
         {

@@ -6,7 +6,7 @@ namespace Snyk.VisualStudio.Extension.Language
 {
     public interface ILanguageClientManager
     {
-        Task StartServerAsync(bool manualTrigger = false);
+        Task StartServerAsync(bool shouldStart = false);
         Task RestartServerAsync();
         Task StopServerAsync();
         bool IsReady { get; set; }

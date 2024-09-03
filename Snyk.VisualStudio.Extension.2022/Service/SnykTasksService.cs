@@ -646,6 +646,34 @@ namespace Snyk.VisualStudio.Extension.Service
             }
         }
 
+        public bool ShouldDownloadCli()
+        {
+            var userSettingsStorageService = this.serviceProvider.UserStorageSettingsService;
+            if (!userSettingsStorageService.BinariesAutoUpdate)
+            {
+                return false;
+            }
+            try
+            {
+                var currentCliVersion = userSettingsStorageService.GetCurrentCliVersion();
+
+                var lastCliReleaseDate = userSettingsStorageService.GetCliReleaseLastCheckDate();
+
+                var cliDownloader = new SnykCliDownloader(currentCliVersion);
+
+                var downloadPath = this.serviceProvider.Options.CliCustomPath;
+                var fileDestinationPath = GetCliFilePath(downloadPath);
+
+                return cliDownloader.IsCliDownloadNeeded(lastCliReleaseDate, fileDestinationPath);
+
+            }
+            catch (Exception)
+            {
+                return true;
+            }
+        }
+
+
         private async Task DownloadAsync(CliDownloadFinishedCallback downloadFinishedCallback,
             ISnykProgressWorker progressWorker)
         {

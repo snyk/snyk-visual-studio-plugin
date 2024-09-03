@@ -355,7 +355,7 @@ namespace Snyk.VisualStudio.Extension.Settings
                     this.snykCodeEnableTimer.Stop();
                 }
 
-                var res =  await this.ServiceProvider.Package.LanguageClientManager.InvokeGetSastEnabled(CancellationToken.None);
+                //var res =  await this.ServiceProvider.Package.LanguageClientManager.InvokeGetSastEnabled(CancellationToken.None);
                 var sastSettings = await this.apiService.GetSastSettingsAsync();
 
                 this.UpdateSnykCodeEnablementSettings(sastSettings);

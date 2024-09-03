@@ -16,6 +16,7 @@
         
         // Requests
         public const string SnykWorkspaceScan = "snyk.workspace.scan";
+        public const string SnykWorkspaceFolderScan = "snyk.workspaceFolder.scan";
         public const string SnykSastEnabled = "snyk.getSettingsSastEnabled";
     }
 }

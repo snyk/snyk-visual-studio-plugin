@@ -46,7 +46,7 @@ namespace Snyk.VisualStudio.Extension.CLI.Download
         /// </summary>
         /// <param name="customCliPath">The custom CLI path from the settings.</param>
         /// <returns>If <paramref name="customCliPath"/> is null or empty, the default path would be returned.</returns>
-        private static string GetCliFilePath(string customCliPath) => string.IsNullOrEmpty(customCliPath)
+        public static string GetCliFilePath(string customCliPath) => string.IsNullOrEmpty(customCliPath)
             ? SnykCli.GetSnykCliDefaultPath()
             : customCliPath;
 
