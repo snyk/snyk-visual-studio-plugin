@@ -450,12 +450,6 @@ namespace Snyk.VisualStudio.Extension.Settings
 
                 // Token is valid, store it and return true
                 this.SetApiToken(token);
-                
-
-                //var languageServerClientManager = componentModel.GetService<ILanguageClientManager>();
-
-                //languageServerClientManager.SetOptions(cli.GetCliPath(), token.ToString());
-                //ThreadHelper.JoinableTaskFactory.Run(languageServerClientManager.StartServerAsync);
 
                 ThreadHelper.JoinableTaskFactory.Run(async () =>
                 {

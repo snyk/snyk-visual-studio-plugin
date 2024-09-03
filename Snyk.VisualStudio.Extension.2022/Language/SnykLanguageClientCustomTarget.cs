@@ -100,12 +100,6 @@ namespace Snyk.VisualStudio.Extension.Language
             }
         }
 
-        [JsonRpcMethod(LsConstants.SnykCliPath)]
-        public async Task OnIsAvailableCli(JToken arg)
-        {
-
-        }
-
         [JsonRpcMethod(LsConstants.SnykFolderConfig)]
         public async Task OnFolderConfig(JToken arg)
         {

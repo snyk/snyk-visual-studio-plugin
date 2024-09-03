@@ -89,7 +89,7 @@ namespace Snyk.VisualStudio.Extension.UI.Tree
 
                 this.ossRootNode.Items.Clear();
 
-                var crititcalSeverityCount = 0;
+                var criticalSeverityCount = 0;
                 var highSeverityCount = 0;
                 var mediumSeverityCount = 0;
                 var lowSeverityCount = 0;
@@ -107,7 +107,7 @@ namespace Snyk.VisualStudio.Extension.UI.Tree
                         fileNode.DisplayTargetFile = Path.GetFileName(firstIssue.AdditionalData.DisplayTargetFile);
                         fileNode.ProjectName = firstIssue.AdditionalData.ProjectName;
                     }
-                    crititcalSeverityCount += issueList.Count(suggestion => suggestion.Severity == Severity.Critical);
+                    criticalSeverityCount += issueList.Count(suggestion => suggestion.Severity == Severity.Critical);
                     highSeverityCount += issueList.Count(suggestion => suggestion.Severity == Severity.High);
                     mediumSeverityCount += issueList.Count(suggestion => suggestion.Severity == Severity.Medium);
                     lowSeverityCount += issueList.Count(suggestion => suggestion.Severity == Severity.Low);
@@ -130,7 +130,7 @@ namespace Snyk.VisualStudio.Extension.UI.Tree
                     }
                 }
 
-                this.ossRootNode.CriticalSeverityCount = crititcalSeverityCount;
+                this.ossRootNode.CriticalSeverityCount = criticalSeverityCount;
                 this.ossRootNode.HighSeverityCount = highSeverityCount;
                 this.ossRootNode.MediumSeverityCount = mediumSeverityCount;
                 this.ossRootNode.LowSeverityCount = lowSeverityCount;
@@ -275,7 +275,7 @@ namespace Snyk.VisualStudio.Extension.UI.Tree
 
         private void AppendSnykCodeIssues(RootTreeNode rootNode, IDictionary<string, IEnumerable<Issue>> analysisResult, Func<Issue, bool> conditionFunction)
         {
-            var crititcalSeverityCount = 0;
+            var criticalSeverityCount = 0;
             var highSeverityCount = 0;
             var mediumSeverityCount = 0;
             var lowSeverityCount = 0;
@@ -291,7 +291,7 @@ namespace Snyk.VisualStudio.Extension.UI.Tree
 
                 var issues = issueList.Where(conditionFunction).ToList();
 
-                crititcalSeverityCount += issues.Count(suggestion => suggestion.Severity == Severity.Critical);
+                criticalSeverityCount += issues.Count(suggestion => suggestion.Severity == Severity.Critical);
                 highSeverityCount += issues.Count(suggestion => suggestion.Severity == Severity.High);
                 mediumSeverityCount += issues.Count(suggestion => suggestion.Severity == Severity.Medium);
                 lowSeverityCount += issues.Count(suggestion => suggestion.Severity == Severity.Low);
@@ -309,7 +309,7 @@ namespace Snyk.VisualStudio.Extension.UI.Tree
                 }
             }
 
-            rootNode.CriticalSeverityCount = crititcalSeverityCount;
+            rootNode.CriticalSeverityCount = criticalSeverityCount;
             rootNode.HighSeverityCount = highSeverityCount;
             rootNode.MediumSeverityCount = mediumSeverityCount;
             rootNode.LowSeverityCount = lowSeverityCount;

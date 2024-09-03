@@ -265,6 +265,16 @@ namespace Snyk.VisualStudio.Extension.Language
     [ContentType("CoffeeScript")]
     [ContentType("TerraformContentType")]
     [ContentType("YAML")]
+    [ContentType("Apex")]
+    [ContentType("C++")]
+    [ContentType("Go")]
+    [ContentType("Java")]
+    [ContentType("Kotlin")]
+    [ContentType("VB")]
+    [ContentType("PHP")]
+    [ContentType("Ruby")]
+    [ContentType("Scala")]
+    [ContentType("Swift")]
     public partial class SnykLanguageClient
     {
     }

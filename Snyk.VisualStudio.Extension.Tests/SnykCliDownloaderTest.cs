@@ -126,34 +126,6 @@ namespace Snyk.VisualStudio.Extension.Tests
         }
 
         [Fact]
-        public void SnykCliDownloader_WrongNewVersionProvided_ChecksFail()
-        {
-            var cliDownloader = new SnykCliDownloader(null);
-
-            Assert.False(cliDownloader.IsNewVersionAvailable("1.342.1", string.Empty));
-            Assert.False(cliDownloader.IsNewVersionAvailable(string.Empty, "test"));
-            Assert.False(cliDownloader.IsNewVersionAvailable("2.342.2", "1.342.1"));
-            Assert.False(cliDownloader.IsNewVersionAvailable("1.345.2", "1.342.9"));
-            Assert.False(cliDownloader.IsNewVersionAvailable("1.345.2", "1.345.1"));
-
-            Assert.True(cliDownloader.IsNewVersionAvailable(string.Empty, "1.342.1"));
-            Assert.True(cliDownloader.IsNewVersionAvailable("1.342.2", "1.345.1"));
-            Assert.True(cliDownloader.IsNewVersionAvailable("1.342.2", "2.345.1"));
-            Assert.True(cliDownloader.IsNewVersionAvailable("1.345.2", "1.345.9"));
-        }
-
-        [Fact]
-        public void SnykCliDownloader_CorrectNewVersionProvided_ChecksPass()
-        {
-            var cliDownloader = new SnykCliDownloader(null);
-
-            Assert.True(cliDownloader.IsNewVersionAvailable(string.Empty, "1.342.1"));
-            Assert.True(cliDownloader.IsNewVersionAvailable("1.342.2", "1.345.1"));
-            Assert.True(cliDownloader.IsNewVersionAvailable("1.342.2", "2.345.1"));
-            Assert.True(cliDownloader.IsNewVersionAvailable("1.345.2", "1.345.9"));
-        }
-
-        [Fact]
         public void SnykCliDownloader_CorrectLastCheckDatePassed_CheckPass()
         {
             var cliDownloader = new SnykCliDownloader(null);
@@ -200,7 +172,8 @@ namespace Snyk.VisualStudio.Extension.Tests
 
             var cliDownloader = new SnykCliDownloader(null);
 
-            await cliDownloader.AutoUpdateCliAsync(this.progressWorkerMock.Object, DateTime.Now.AddDays(-5), tempCliPath);
+            var lastCheckDate = DateTime.Now.AddDays(-5);
+            await cliDownloader.AutoUpdateCliAsync(this.progressWorkerMock.Object, lastCheckDate, tempCliPath);
 
             string newCliVersion = cliDownloader.GetLatestReleaseInfo().Version;
 
@@ -209,7 +182,7 @@ namespace Snyk.VisualStudio.Extension.Tests
             File.Delete(tempCliPath);
 
             Assert.False(string.IsNullOrEmpty(newCliVersion));
-            Assert.True(cliDownloader.IsNewVersionAvailable(string.Empty, newCliVersion));
+            Assert.True(cliDownloader.IsCliDownloadNeeded(lastCheckDate, tempCliPath));
         }
 
         [Fact]
@@ -225,39 +198,15 @@ namespace Snyk.VisualStudio.Extension.Tests
 
             var cliDownloader = new SnykCliDownloader(currentCliVersion);
 
-            await cliDownloader.AutoUpdateCliAsync(this.progressWorkerMock.Object, DateTime.Now.AddDays(-5), tempCliPath);
+            var lastCheckDate = DateTime.Now.AddDays(-5);
+            await cliDownloader.AutoUpdateCliAsync(this.progressWorkerMock.Object, lastCheckDate, tempCliPath);
 
             string newCliVersion = cliDownloader.GetLatestReleaseInfo().Version;
 
             Assert.True(File.Exists(tempCliPath));
 
             File.Delete(tempCliPath);
-
-            Assert.True(cliDownloader.IsNewVersionAvailable(currentCliVersion, newCliVersion));
-        }
-
-        [Fact]
-        public async Task SnykCliDownloader_PreviousVersionOlderAndFourDaysPassedProvided_CliDownloadSuccessfulAsync()
-        {
-            string tempCliPath = Path.Combine(Path.GetTempPath(), SnykCli.CliFileName);
-
-            File.Delete(tempCliPath);
-
-            Assert.False(File.Exists(tempCliPath));
-
-            string currentCliVersion = "1.234.2";
-
-            var cliDownloader = new SnykCliDownloader(currentCliVersion);
-
-            await cliDownloader.AutoUpdateCliAsync(this.progressWorkerMock.Object, DateTime.Now.AddDays(-5), tempCliPath);
-
-            string newCliVersion = cliDownloader.GetLatestReleaseInfo().Version;
-
-            Assert.True(File.Exists(tempCliPath));
-
-            File.Delete(tempCliPath);
-
-            Assert.True(cliDownloader.IsNewVersionAvailable(currentCliVersion, newCliVersion));
+            Assert.True(cliDownloader.IsCliDownloadNeeded(lastCheckDate, tempCliPath));
         }
     }
 }

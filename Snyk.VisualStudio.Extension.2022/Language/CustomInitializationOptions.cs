@@ -34,6 +34,15 @@ namespace Snyk.VisualStudio.Extension.Language
         public string ScanningMode { get; set; }
         public string AuthenticationMethod { get; set; }
         public string SnykCodeApi { get; set; }
+        public FolderConfig FolderConfigs { get; set; }
+    }
+
+    public class FolderConfig
+    {
+        public string BaseBranch { get; set; }
+        public string FolderPath { get; set; }
+        public IList<string> LocalBranches { get; set; }
+        public IList<string> AdditionalParameters { get; set; }
     }
 
     public class FilterSeverityOptions
