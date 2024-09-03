@@ -95,6 +95,31 @@ namespace Snyk.VisualStudio.Extension.CLI.Download
         }
 
         /// <summary>
+        /// Compare CLI versions and if new version string is more new to current version method will return true.
+        /// </summary>
+        /// <param name="currentVersionStr">Current CLI version.</param>
+        /// <param name="newVersionStr">New CLI version.</param>
+        /// <returns>True if there is more new version.</returns>
+        public bool IsNewVersionAvailable(string currentVersionStr, string newVersionStr)
+        {
+            int newVersion = this.CliVersionAsInt(newVersionStr);
+
+            if (newVersion == -1)
+            {
+                return false;
+            }
+
+            int currentVersion = this.CliVersionAsInt(currentVersionStr);
+
+            if (currentVersion == -1)
+            {
+                return true;
+            }
+
+            return newVersion > currentVersion;
+        }
+
+        /// <summary>
         /// Check is four days passed after lact check.
         /// </summary>
         /// <param name="lastCheckDate">Last check date value.</param>
