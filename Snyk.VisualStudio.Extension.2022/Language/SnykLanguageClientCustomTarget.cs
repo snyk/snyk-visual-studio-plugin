@@ -48,6 +48,8 @@ namespace Snyk.VisualStudio.Extension.Language
                 return;
             }
 
+            // TODO: handle the case when source is: 'Snyk Error'
+
             var source = LspSourceToProduct(diagnosticsArray[0]["source"].ToString());
             var dataList = diagnosticsArray.Where(x => x["data"] != null)
                 .Select(x =>
