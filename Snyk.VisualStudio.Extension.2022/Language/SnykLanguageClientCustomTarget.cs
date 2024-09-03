@@ -111,7 +111,12 @@ namespace Snyk.VisualStudio.Extension.Language
         [JsonRpcMethod(LsConstants.SnykHasAuthenticated)]
         public async Task OnHasAuthenticated(JToken arg)
         {
-
+            if (arg == null || arg["token"] == null)
+            {
+                return;
+            }
+            var token = arg["token"].ToString();
+            serviceProvider.Options.SetApiToken(token);
         }
 
         [JsonRpcMethod(LsConstants.SnykAddTrustedFolders)]

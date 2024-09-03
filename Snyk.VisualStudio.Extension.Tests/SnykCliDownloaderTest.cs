@@ -93,8 +93,8 @@ namespace Snyk.VisualStudio.Extension.Tests
         public void SnykCliDownloader_GetLatestSha_SuccessfulRequest()
         {
             var cliDownloader = new SnykCliDownloader(null);
-
-            Assert.False(string.IsNullOrWhiteSpace(cliDownloader.GetLatestCliSha()));
+            const string url = "https://static.snyk.io/cli/latest/snyk-win.exe";
+            Assert.False(string.IsNullOrWhiteSpace(cliDownloader.GetLatestCliSha(url)));
         }
 
         [Fact]
