@@ -5,11 +5,14 @@ using System.Linq;
 using System.Runtime.InteropServices;
 using System.Threading;
 using System.Threading.Tasks;
+using Microsoft;
+using Microsoft.VisualStudio.ComponentModelHost;
 using Microsoft.VisualStudio.Shell;
 using Microsoft.VisualStudio.Shell.Interop;
 using Serilog;
 using Snyk.Common;
 using Snyk.VisualStudio.Extension.Commands;
+using Snyk.VisualStudio.Extension.Language;
 using Snyk.VisualStudio.Extension.Service;
 using Snyk.VisualStudio.Extension.Settings;
 using Snyk.VisualStudio.Extension.UI.Notifications;
@@ -60,7 +63,7 @@ namespace Snyk.VisualStudio.Extension
         private static readonly TaskCompletionSource<bool> initializationTaskCompletionSource =
             new TaskCompletionSource<bool>();
 
-        private static SnykVSPackage instance;
+        public static SnykVSPackage Instance;
 
         private ISnykServiceProvider serviceProvider;
 
@@ -69,13 +72,13 @@ namespace Snyk.VisualStudio.Extension
         /// </summary>
         public SnykVSPackage()
         {
-            instance = this;
+            Instance = this;
         }
 
         /// <summary>
         /// Gets a value indicating whether ServiceProvider.
         /// </summary>
-        public static ISnykServiceProvider ServiceProvider => instance.serviceProvider;
+        public static ISnykServiceProvider ServiceProvider => Instance.serviceProvider;
 
         /// <summary>
         /// Gets a task that completes once the Snyk extension has been initialized.
@@ -111,6 +114,7 @@ namespace Snyk.VisualStudio.Extension
         /// Show Options dialog.
         /// </summary>
         public void ShowOptionPage() => ShowOptionPage(typeof(SnykGeneralOptionsDialogPage));
+        public ILanguageClientManager LanguageClientManager { get; private set; }
 
         /// <summary>
         /// Create <see cref="SnykService"/> object.
@@ -183,7 +187,7 @@ namespace Snyk.VisualStudio.Extension
                 await base.InitializeAsync(cancellationToken, progress);
 
                 AddService(typeof(SnykService), CreateSnykServiceAsync, true);
-
+                
                 this.serviceProvider = await GetServiceAsync(typeof(SnykService)) as SnykService ??
                                        throw new InvalidOperationException("Could not find Snyk Service");
 
@@ -216,7 +220,9 @@ namespace Snyk.VisualStudio.Extension
                 Logger.Information("Before call toolWindowControl.InitializeEventListeners() method.");
                 ToolWindowControl.InitializeEventListeners(this.serviceProvider);
                 ToolWindowControl.Initialize(this.serviceProvider);
-
+                
+                await InitializeLanguageClientAsync();
+                
                 // Notify package has been initialized
                 IsInitialized = true;
                 initializationTaskCompletionSource.SetResult(true);
@@ -234,6 +240,33 @@ namespace Snyk.VisualStudio.Extension
         protected override void Dispose(bool disposing)
         {
             base.Dispose(disposing);
+        }
+
+        private async Task InitializeLanguageClientAsync()
+        {
+            await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
+            this.SatisfyImportsOnce();
+
+            try
+            {
+                var componentModel = GetGlobalService(typeof(SComponentModel)) as IComponentModel;
+                Assumes.Present(componentModel);
+                var languageServerClientManager = componentModel.GetService<ILanguageClientManager>();
+                if(languageServerClientManager != null && !languageServerClientManager.IsReady)
+                {
+                    LanguageClientManager = languageServerClientManager;
+                    // If CLI download is necessary, Skip initializing.
+                    if (this.serviceProvider.TasksService.ShouldDownloadCli())
+                    {
+                        return;
+                    }
+                    await LanguageClientManager.StartServerAsync(true);
+                }
+            }
+            catch (Exception e)
+            {
+                Logger.Error(e, string.Empty);
+            }
         }
 
         private async Task InitializeGeneralOptionsAsync()

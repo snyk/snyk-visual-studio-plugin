@@ -98,7 +98,7 @@
 
             return new CliGroupedVulnerabilities
             {
-                VulnerabilitiesMap = vulnerabilitiesDictionary,
+                //VulnerabilitiesMap = vulnerabilitiesDictionary,
                 UniqueCount = uniqueCount,
                 PathsCount = pathsCount,
                 ProjectName = this.ProjectName,

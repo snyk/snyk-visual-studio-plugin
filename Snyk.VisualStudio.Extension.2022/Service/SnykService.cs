@@ -1,27 +1,27 @@
-﻿namespace Snyk.VisualStudio.Extension.Service
+﻿using System;
+using System.IO;
+using System.Threading;
+using System.Threading.Tasks;
+using EnvDTE;
+using EnvDTE80;
+using Microsoft.VisualStudio.Settings;
+using Microsoft.VisualStudio.Shell;
+using Microsoft.VisualStudio.Shell.Settings;
+using Serilog;
+using Snyk.Code.Library.Service;
+using Snyk.Common;
+using Snyk.Common.Service;
+using Snyk.Common.Settings;
+using Snyk.VisualStudio.Extension.CLI;
+using Snyk.VisualStudio.Extension.Language;
+using Snyk.VisualStudio.Extension.Settings;
+using Snyk.VisualStudio.Extension.Theme;
+using Snyk.VisualStudio.Extension.UI;
+using Snyk.VisualStudio.Extension.UI.Notifications;
+using Snyk.VisualStudio.Extension.UI.Toolwindow;
+
+namespace Snyk.VisualStudio.Extension.Service
 {
-    using System;
-    using System.IO;
-    using System.Threading;
-    using System.Threading.Tasks;
-    using EnvDTE;
-    using EnvDTE80;
-    using Microsoft.VisualStudio.Settings;
-    using Microsoft.VisualStudio.Shell;
-    using Microsoft.VisualStudio.Shell.Settings;
-    using Serilog;
-    using Snyk.Code.Library.Service;
-    using Common;
-    using Snyk.Common.Service;
-    using Snyk.Common.Settings;
-    using CLI;
-    using Settings;
-    using Theme;
-    using UI;
-    using UI.Notifications;
-    using UI.Toolwindow;
-    using Task = System.Threading.Tasks.Task;
-    
     /// <summary>
     /// Main logic for Snyk extension.
     /// </summary>
@@ -52,7 +52,7 @@
         private ISentryService sentryService;
 
         private IWorkspaceTrustService workspaceTrustService;
-
+        
         /// <summary>
         /// Initializes a new instance of the <see cref="SnykService"/> class.
         /// </summary>
@@ -234,14 +234,17 @@
 
                 this.dte = await this.serviceProvider.GetServiceAsync(typeof(DTE)) as DTE2;
                 await SnykSolutionService.Instance.InitializeAsync(this);
+
+
                 this.tasksService = SnykTasksService.Instance;
                 this.workspaceTrustService = new WorkspaceTrustService(this.UserStorageSettingsService);
 
                 NotificationService.Initialize(this);
                 VsStatusBar.Initialize(this);
                 VsCodeService.Initialize();
-                
+
                 SnykIdeAnalyticsService.Initialize();
+
                 Logger.Information("Leave SnykService.InitializeAsync");
             }
             catch (Exception ex)
@@ -283,6 +286,12 @@
             }
         }
 
-        public ICli Cli => NewCli();
+        private ICli _cli;
+        public ICli Cli {
+            get {
+                _cli ??= NewCli();
+                return _cli;
+            } 
+        }
     }
 }

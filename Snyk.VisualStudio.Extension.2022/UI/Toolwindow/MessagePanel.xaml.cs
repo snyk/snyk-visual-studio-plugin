@@ -1,14 +1,18 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Drawing;
 using System.IO;
+using System.Runtime.InteropServices;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
+using Community.VisualStudio.Toolkit;
 using Microsoft.VisualStudio.Shell;
 using Microsoft.VisualStudio.Shell.Interop;
 using Microsoft.VisualStudio.Threading;
 using Serilog;
+using Serilog.Core;
 using Snyk.Common;
 using Snyk.VisualStudio.Extension.Service;
 
@@ -19,6 +23,16 @@ namespace Snyk.VisualStudio.Extension.UI.Toolwindow
     /// </summary>
     public partial class MessagePanel : UserControl
     {
+        
+
+    //[ComVisible(true)]
+    //public class ScriptManager
+    //{
+    //    public void OpenFileInEditor(string filePath, int lineNumber, int columnNumber)
+    //    {
+    //        // DTE stuff
+    //    }
+    //}
         private static readonly ILogger Logger = LogManager.ForContext<MessagePanel>();
         private readonly IList<StackPanel> panels;
 
@@ -28,6 +42,12 @@ namespace Snyk.VisualStudio.Extension.UI.Toolwindow
         public MessagePanel()
         {
             this.InitializeComponent();
+            //Testbrowser.ObjectForScripting = new ScriptManager();
+            //Testbrowser.ContextMenu.IsEnabled = false;
+            //Testbrowser.= true;
+            // To Execute from Javascript window.external.OpenFileInEditor(filePath, int lineNumber, int columnNumber)
+            //Testbrowser.DataContext = "<html></html>";
+
             this.panels = new List<StackPanel>
             {
                 this.selectIssueMessagePanel,

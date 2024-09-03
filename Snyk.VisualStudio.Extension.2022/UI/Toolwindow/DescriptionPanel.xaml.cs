@@ -1,11 +1,10 @@
-﻿namespace Snyk.VisualStudio.Extension.UI.Toolwindow
-{
-    using System.Windows;
-    using System.Windows.Controls;
-    using Snyk.Code.Library.Domain.Analysis;
-    using Snyk.VisualStudio.Extension.CLI;
-    using Task = System.Threading.Tasks.Task;
+﻿using Snyk.VisualStudio.Extension.Language;
+using System.Windows;
+using System.Windows.Controls;
+using Task = System.Threading.Tasks.Task;
 
+namespace Snyk.VisualStudio.Extension.UI.Toolwindow
+{
     /// <summary>
     /// Interaction logic for DescriptionPanel.xaml.
     /// </summary>
@@ -19,27 +18,21 @@
             this.InitializeComponent();
         }
 
-        /// <summary>
-        /// Sets <see cref="Vulnerability"/> information and update corresponding UI elements.
-        /// </summary>
-        public Vulnerability Vulnerability
+        public void SetOssIssue(Issue value)
         {
-            set
-            {
-                this.snykCodeDescriptionControl.Visibility = Visibility.Collapsed;
-                this.ossDescriptionControl.Visibility = Visibility.Visible;
+            this.snykCodeDescriptionControl.Visibility = Visibility.Collapsed;
+            this.ossDescriptionControl.Visibility = Visibility.Visible;
 
-                this.descriptionHeaderPanel.Vulnerability = value;
-                this.ossDescriptionControl.Vulnerability = value;
-            }
+            this.descriptionHeaderPanel.OssIssue = value;
+            this.ossDescriptionControl.OssIssue = value;
         }
 
-        public async Task SetSuggestionAsync(Suggestion value)
+        public async Task SetCodeIssueAsync(Issue value)
         {
             this.ossDescriptionControl.Visibility = Visibility.Collapsed;
             this.snykCodeDescriptionControl.Visibility = Visibility.Visible;
-            this.descriptionHeaderPanel.Suggestion = value;
-            await this.snykCodeDescriptionControl.SetSuggestionAsync(value);
+            this.descriptionHeaderPanel.CodeIssue = value;
+            await this.snykCodeDescriptionControl.SetIssueAsync(value);
         }
     }
 }

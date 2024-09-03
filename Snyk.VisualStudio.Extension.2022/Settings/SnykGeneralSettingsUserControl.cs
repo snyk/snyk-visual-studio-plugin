@@ -4,6 +4,7 @@ using System.ComponentModel;
 using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 using System.Windows.Forms;
 using Microsoft.VisualStudio.Shell;
@@ -17,6 +18,7 @@ using Snyk.VisualStudio.Extension.CLI;
 using Snyk.VisualStudio.Extension.Service;
 using Snyk.VisualStudio.Extension.UI.Notifications;
 using Task = System.Threading.Tasks.Task;
+using Timer = System.Windows.Forms.Timer;
 
 namespace Snyk.VisualStudio.Extension.Settings
 {
@@ -199,14 +201,14 @@ namespace Snyk.VisualStudio.Extension.Settings
                 }));
             }
 
-            CliError cliError = new CliError
+            OssError ossError = new OssError
             {
                 IsSuccess = false,
                 Message = errorMessage,
                 Path = string.Empty,
             };
 
-            this.ServiceProvider.TasksService.FireOssError(cliError);
+            this.ServiceProvider.TasksService.FireOssError(ossError);
 
             this.ServiceProvider.ToolWindow.Show();
 
@@ -249,8 +251,6 @@ namespace Snyk.VisualStudio.Extension.Settings
             else
             {
                 logger.Information("CLI not exists. Download CLI before get Api token");
-
-                //serviceProvider.TasksService.Download(() => this.OptionsDialogPage.Authenticate());
                 await serviceProvider.TasksService.DownloadAsync(() => this.OptionsDialogPage.Authenticate());
             }
         }
@@ -355,6 +355,7 @@ namespace Snyk.VisualStudio.Extension.Settings
                     this.snykCodeEnableTimer.Stop();
                 }
 
+                //var res =  await this.ServiceProvider.Package.LanguageClientManager.InvokeGetSastEnabled(CancellationToken.None);
                 var sastSettings = await this.apiService.GetSastSettingsAsync();
 
                 this.UpdateSnykCodeEnablementSettings(sastSettings);

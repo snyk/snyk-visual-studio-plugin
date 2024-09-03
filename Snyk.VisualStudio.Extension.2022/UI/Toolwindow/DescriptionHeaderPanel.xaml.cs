@@ -6,6 +6,7 @@ using System.Windows.Controls;
 using System.Windows.Documents;
 using Snyk.Code.Library.Domain.Analysis;
 using Snyk.VisualStudio.Extension.CLI;
+using Snyk.VisualStudio.Extension.Language;
 using Snyk.VisualStudio.Extension.Model;
 
 namespace Snyk.VisualStudio.Extension.UI.Toolwindow
@@ -20,17 +21,17 @@ namespace Snyk.VisualStudio.Extension.UI.Toolwindow
         /// </summary>
         public DescriptionHeaderPanel() => this.InitializeComponent();
 
-        public Vulnerability Vulnerability
+        public Issue OssIssue
         {
             set
             {
-                var vulnerability = value;
+                var issue = value;
 
-                this.severityImage.Source = SnykIconProvider.GetSeverityIconSource(vulnerability.Severity);
+                this.severityImage.Source = SnykIconProvider.GetSeverityIconSource(issue.Severity);
 
-                this.issueTitle.Text = vulnerability.Title;
+                this.issueTitle.Text = issue.Title;
 
-                if (vulnerability.IsLicense())
+                if (!string.IsNullOrEmpty(issue.AdditionalData?.License))
                 {
                     this.metaType.Text = "License"; // todo: Vulnerability or License or Issue.
                 }
@@ -39,7 +40,7 @@ namespace Snyk.VisualStudio.Extension.UI.Toolwindow
                     this.metaType.Text = "Vulnerability";
                 }
 
-                var identifiers = vulnerability.Identifiers;
+                var identifiers = issue.AdditionalData.Identifiers;
 
                 if (identifiers != null)
                 {
@@ -64,12 +65,12 @@ namespace Snyk.VisualStudio.Extension.UI.Toolwindow
                 this.cwePanel.Visibility = this.cwePanel.Children.Count > 0 ? Visibility.Visible : Visibility.Collapsed;
                 this.cvePanel.Visibility = this.cvePanel.Children.Count > 0 ? Visibility.Visible : Visibility.Collapsed;
 
-                if (!string.IsNullOrEmpty(vulnerability.CVSSv3) && vulnerability.CvssScore > -1)
+                if (!string.IsNullOrEmpty(issue.AdditionalData.CVSSv3) && (float.TryParse(issue.AdditionalData.CvssScore, out var cvssScore) && cvssScore > -1))
                 {
                     this.cvssLinkBlock.Visibility = Visibility.Visible;
 
-                    this.cvssLink.NavigateUri = new Uri("https://www.first.org/cvss/calculator/3.1#" + vulnerability.CVSSv3);
-                    this.cvssLinkText.Text = "CVSS " + vulnerability.CvssScore;
+                    this.cvssLink.NavigateUri = new Uri("https://www.first.org/cvss/calculator/3.1#" + issue.AdditionalData.CvssScore);
+                    this.cvssLinkText.Text = "CVSS " + issue.AdditionalData.CvssScore;
                 }
                 else
                 {
@@ -78,39 +79,32 @@ namespace Snyk.VisualStudio.Extension.UI.Toolwindow
 
                 this.vulnerabilityIdLinkBlock.Visibility = Visibility.Visible;
 
-                this.cvssLink.NavigateUri = new Uri(vulnerability.Url);
-                this.cvssLinkText.Text = vulnerability.Id;
+                this.cvssLink.NavigateUri = new Uri(issue.GetVulnerabilityUrl());
+                this.cvssLinkText.Text = issue.AdditionalData.RuleId;
             }
         }
 
-        public Suggestion Suggestion
+        public Issue CodeIssue
         {
             set
             {
-                var suggestion = value;
+                var issue = value;
 
                 this.cvePanel.Visibility = Visibility.Collapsed;
                 this.cvssLinkBlock.Visibility = Visibility.Collapsed;
                 this.vulnerabilityIdLinkBlock.Visibility = Visibility.Collapsed;
 
-                this.severityImage.Source = SnykIconProvider.GetSeverityIconSource(Severity.FromInt(suggestion.Severity));
+                this.severityImage.Source = SnykIconProvider.GetSeverityIconSource(issue.Severity);
 
-                this.issueTitle.Text = suggestion.GetDisplayTitle();
+                this.issueTitle.Text = issue.GetDisplayTitle();
 
-                if (suggestion.Categories.Contains("Security"))
-                {
-                    this.metaType.Text = "Vulnerability";
-                }
-                else
-                {
-                    this.metaType.Text = "Code Issue";
-                }
+                this.metaType.Text = issue.AdditionalData?.IsSecurityType ?? false ? "Vulnerability" : "Code Issue";
 
-                if (suggestion.Cwe != null && suggestion.Cwe.Count > 0)
+                if (issue.AdditionalData?.Cwe != null && issue.AdditionalData.Cwe.Count > 0)
                 {
                     this.AddLinksToPanel(
                             this.cwePanel,
-                            suggestion.Cwe.ToArray(),
+                            issue.AdditionalData.Cwe.ToArray(),
                             "CWE-",
                             "https://cwe.mitre.org/data/definitions/{0}.html");
                 }

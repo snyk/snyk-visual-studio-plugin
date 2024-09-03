@@ -498,7 +498,6 @@ namespace Snyk.VisualStudio.Extension.Settings
             // 
             // customCliPathFileDialog
             // 
-            this.customCliPathFileDialog.Filter = "Snyk CLI|snyk-win.exe";
             this.customCliPathFileDialog.SupportMultiDottedExtensions = true;
             // 
             // ExecutablesGroupBox

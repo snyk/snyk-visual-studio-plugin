@@ -5,6 +5,8 @@ using System.Runtime.InteropServices;
 using System.Security.Authentication;
 using System.Threading.Tasks;
 using System.Windows.Forms;
+using Microsoft;
+using Microsoft.VisualStudio.ComponentModelHost;
 using Microsoft.VisualStudio.Shell;
 using Serilog;
 using Snyk.Common;
@@ -392,6 +394,10 @@ namespace Snyk.VisualStudio.Extension.Settings
         /// <inheritdoc />
         public bool Authenticate()
         {
+
+            var componentModel = Package.GetGlobalService(typeof(SComponentModel)) as IComponentModel;
+            Assumes.Present(componentModel);
+
             const int errorMessageMaxLength = 100;
 
             Logger.Information("Enter Authenticate method");
@@ -444,6 +450,7 @@ namespace Snyk.VisualStudio.Extension.Settings
 
                 // Token is valid, store it and return true
                 this.SetApiToken(token);
+
                 ThreadHelper.JoinableTaskFactory.Run(async () =>
                 {
                     SnykUser = await serviceProvider.ApiService.GetUserAsync();

@@ -1,8 +1,9 @@
-﻿namespace Snyk.VisualStudio.Extension.UI.Tree
-{
-    using System.IO;
-    using Snyk.Code.Library.Domain.Analysis;
+﻿using System.Collections.Generic;
+using System.IO;
+using Snyk.VisualStudio.Extension.Language;
 
+namespace Snyk.VisualStudio.Extension.UI.Tree
+{
     /// <summary>
     /// SnykCode file tree node.
     /// </summary>
@@ -11,7 +12,8 @@
         /// <summary>
         /// Gets a value indicating whether title.
         /// </summary>
-        public override string Title => this.FileAnalysis.FileName;
+        public override string Title => this.FileName;
+        public string FileName { get; set; }
 
         /// <summary>
         /// Gets a value indicating whether icon for node.
@@ -20,15 +22,15 @@
         {
             get
             {
-                string fileExtension = Path.GetExtension(this.FileAnalysis.FileName);
+                var fileExtension = Path.GetExtension(this.FileName);
 
                 return SnykIconProvider.GetFileIconByExtension(fileExtension);
             }
         }
 
         /// <summary>
-        /// Gets or sets SnykCode <see cref="FileAnalysis"/> object.
+        /// Gets or sets SnykCode <see cref="IssueList"/> object.
         /// </summary>
-        public FileAnalysis FileAnalysis { get; set; }
+        public IEnumerable<Issue> IssueList { get; set; }
     }
 }

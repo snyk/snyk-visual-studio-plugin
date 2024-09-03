@@ -1,13 +1,17 @@
 ﻿using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
+using Microsoft;
+using Microsoft.VisualStudio.ComponentModelHost;
 using Microsoft.VisualStudio.Shell;
 using Serilog;
 using Snyk.Code.Library.Domain.Analysis;
 using Snyk.Common;
 using Snyk.VisualStudio.Extension.CLI;
 using Snyk.VisualStudio.Extension.CLI.Download;
+using Snyk.VisualStudio.Extension.Language;
 using Snyk.VisualStudio.Extension.Service.Domain;
 using static Snyk.VisualStudio.Extension.CLI.Download.SnykCliDownloader;
 using Task = System.Threading.Tasks.Task;
@@ -23,15 +27,13 @@ namespace Snyk.VisualStudio.Extension.Service
 
         private static SnykTasksService instance;
 
-        private CancellationTokenSource ossScanTokenSource;
-
-        private CancellationTokenSource snykCodeScanTokenSource;
+        public CancellationTokenSource SnykScanTokenSource { get; set; } = new CancellationTokenSource();
 
         private CancellationTokenSource downloadCliTokenSource;
 
-        private bool isOssScanning;
+        public bool IsOssScanning { get; set; }
 
-        private bool isSnykCodeScanning;
+        public bool IsSnykCodeScanning { get; set; }
 
         private bool isCliDownloading;
 
@@ -49,12 +51,12 @@ namespace Snyk.VisualStudio.Extension.Service
         /// <summary>
         /// Cli scanning started event handler.
         /// </summary>
-        public event EventHandler<SnykCliScanEventArgs> CliScanningStarted;
+        public event EventHandler<SnykOssScanEventArgs> OssScanningStarted;
 
         /// <summary>
         /// OSS Scanning Disabled event handler.
         /// </summary>
-        public event EventHandler<SnykCliScanEventArgs> OssScanningDisabled;
+        public event EventHandler<SnykOssScanEventArgs> OssScanningDisabled;
         
         /// <summary>
         /// SnykCode scanning started event handler.
@@ -64,7 +66,7 @@ namespace Snyk.VisualStudio.Extension.Service
         /// <summary>
         /// Scanning OSS finished event handler.
         /// </summary>
-        public event EventHandler<SnykCliScanEventArgs> OssScanningFinished;
+        public event EventHandler<SnykOssScanEventArgs> OssScanningFinished;
 
         /// <summary>
         /// Scanning SnykCode finished event handler.
@@ -74,7 +76,7 @@ namespace Snyk.VisualStudio.Extension.Service
         /// <summary>
         /// Cli Scanning update event handler.
         /// </summary>
-        public event EventHandler<SnykCliScanEventArgs> OssScanningUpdate;
+        public event EventHandler<SnykOssScanEventArgs> OssScanningUpdate;
 
         /// <summary>
         /// SnykCode scanning update event handler.
@@ -84,7 +86,7 @@ namespace Snyk.VisualStudio.Extension.Service
         /// <summary>
         /// Sli scan error event handler.
         /// </summary>
-        public event EventHandler<SnykCliScanEventArgs> OssScanError;
+        public event EventHandler<SnykOssScanEventArgs> OssScanError;
 
         /// <summary>
         /// SnykCode scan error event handler.
@@ -99,7 +101,7 @@ namespace Snyk.VisualStudio.Extension.Service
         /// <summary>
         /// Scanning cancelled event handler.
         /// </summary>
-        public event EventHandler<SnykCliScanEventArgs> ScanningCancelled;
+        public event EventHandler<SnykOssScanEventArgs> ScanningCancelled;
 
         /// <summary>
         /// Download started event handler.
@@ -167,7 +169,7 @@ namespace Snyk.VisualStudio.Extension.Service
         /// Check is Scan running (oss or snykcode) or CLI download.
         /// </summary>
         /// <returns>True if Oss or SnykCode scan running.</returns>
-        public bool IsTaskRunning() => this.isOssScanning || this.isSnykCodeScanning || this.isCliDownloading;
+        public bool IsTaskRunning() => this.IsOssScanning || this.IsSnykCodeScanning || this.isCliDownloading;
 
         /// <summary>
         /// Cancel current task.
@@ -178,15 +180,12 @@ namespace Snyk.VisualStudio.Extension.Service
             {
                 try
                 {
-                    this.isOssScanning = false;
-                    this.isSnykCodeScanning = false;
+                    this.IsOssScanning = false;
+                    this.IsSnykCodeScanning = false;
                     this.isCliDownloading = false;
 
-                    this.CancelTask(ref this.ossScanTokenSource);
-                    this.CancelTask(ref this.snykCodeScanTokenSource);
-                    this.CancelTask(ref this.downloadCliTokenSource);
-
-                    this.serviceProvider.OssService.StopScan();
+                    this.CancelTask(this.SnykScanTokenSource);
+                    this.CancelTask(this.downloadCliTokenSource);
                 }
                 catch (Exception ex)
                 {
@@ -222,10 +221,27 @@ namespace Snyk.VisualStudio.Extension.Service
                     return;
                 }
 
-                var ossScanTask = this.ScanOssAsync(selectedFeatures);
-                var snykCodeScanTask = this.ScanSnykCodeAsync(selectedFeatures);
+                if (!selectedFeatures.OssEnabled)
+                {
+                    FireOssScanningDisabledEvent();
+                }
 
-                await Task.WhenAll(ossScanTask, snykCodeScanTask);
+                if (!selectedFeatures.SastOnServerEnabled)
+                {
+                    FireSnykCodeDisabledError(selectedFeatures.LocalCodeEngineEnabled);
+                }
+
+                var componentModel = Package.GetGlobalService(typeof(SComponentModel)) as IComponentModel;
+
+                Assumes.Present(componentModel);
+                var languageServerClientManager = componentModel.GetService<ILanguageClientManager>();
+                var progressWorker = new SnykProgressWorker
+                {
+                    TasksService = this,
+                    TokenSource = this.SnykScanTokenSource,
+                };
+
+                await languageServerClientManager.InvokeWorkspaceScanAsync(progressWorker.TokenSource.Token);
             }
             catch (Exception ex)
             {
@@ -403,27 +419,33 @@ namespace Snyk.VisualStudio.Extension.Service
         public void FireTaskFinished() => this.TaskFinished?.Invoke(this, new EventArgs());
 
         /// <summary>
-        /// Fire error event. Create <see cref="CliError"/> instance.
+        /// Fire error event. Create <see cref="OssError"/> instance.
         /// </summary>
         /// <param name="message">Error message.</param>
         /// <param name="featuresSettings">Features settings.</param>
         public void FireOssError(string message, FeaturesSettings featuresSettings = null)
-            => this.FireOssError(new CliError(message), featuresSettings);
+        {
+            this.IsOssScanning = false;
+            this.FireOssError(new OssError(message), featuresSettings);
+        }
 
         /// <summary>
-        /// Fire error event with <see cref="SnykCliScanEventArgs"/>.
+        /// Fire error event with <see cref="SnykOssScanEventArgs"/>.
         /// </summary>
-        /// <param name="error"><see cref="CliError"/> object.</param>
+        /// <param name="error"><see cref="OssError"/> object.</param>
         /// <param name="featuresSettings">Features settings.</param>
-        public void FireOssError(CliError error, FeaturesSettings featuresSettings = null)
-            => this.OssScanError?.Invoke(this, new SnykCliScanEventArgs(error, featuresSettings));
+        public void FireOssError(OssError error, FeaturesSettings featuresSettings = null)
+            => this.OssScanError?.Invoke(this, new SnykOssScanEventArgs(error, featuresSettings));
 
         /// <summary>
         /// Fire error event with <see cref="SnykCodeScanEventArgs"/>.
         /// </summary>
         /// <param name="message">Error message</param>
-        public void OnSnykCodeError(string message) =>
+        public void OnSnykCodeError(string message)
+        {
+            this.IsSnykCodeScanning = false;
             this.SnykCodeScanError?.Invoke(this, new SnykCodeScanEventArgs(message));
+        }
 
         /// <summary>
         /// Fire SnykCode disabled event with <see cref="SnykCodeScanEventArgs"/>.
@@ -483,185 +505,6 @@ namespace Snyk.VisualStudio.Extension.Service
             }
         }
 
-        private async Task ScanOssAsync(FeaturesSettings featuresSettings)
-        {
-            try
-            {
-                if (!featuresSettings.OssEnabled)
-                {
-                    FireOssScanningDisabledEvent();
-                    return;
-                }
-
-                if (this.isOssScanning)
-                {
-                    Logger.Information("There is already a task in progress");
-
-                    return;
-                }
-
-                this.ossScanTokenSource = new CancellationTokenSource();
-                var token = this.ossScanTokenSource.Token;
-
-                Logger.Information("Start scan task");
-
-                await Task.Run(() => this.RunOssScanAsync(featuresSettings));
-            }
-            catch (Exception ex)
-            {
-                Logger.Error(ex, "Error on oss scan");
-            }
-        }
-
-        private async Task RunOssScanAsync(FeaturesSettings featuresSettings)
-        {
-            this.isOssScanning = true;
-
-            this.FireOssScanningStartedEvent();
-
-            var ossService = this.serviceProvider.OssService;
-
-            try
-            {
-                var token = this.ossScanTokenSource.Token;
-
-                token.ThrowIfCancellationRequested();
-
-                try
-                {
-                    var directoryPath = await this.serviceProvider.SolutionService.GetSolutionFolderAsync();
-
-                    var cliResult = await ossService.ScanAsync(directoryPath, token);
-
-                    this.FireOssScanningUpdateEvent(cliResult);
-
-                    this.FireOssScanningFinishedEvent();
-
-                    Logger.Information("Scan finished");
-                }
-                catch (OssScanException e)
-                {
-                    Logger.Error(e, "Oss scan exception");
-
-                    this.FireOssError(e.Error, featuresSettings);
-                }
-                catch (Exception e)
-                {
-                    if (ossService.IsCurrentScanProcessCanceled() || this.IsTaskCancelled(e))
-                    {
-                        this.FireScanningCancelledEvent();
-
-                        return;
-                    }
-
-                    this.FireOssError(e.Message, featuresSettings);
-                }
-                finally
-                {
-                    this.isOssScanning = false;
-
-                    this.FireTaskFinished();
-                }
-            }
-            catch (Exception e)
-            {
-                Logger.Error(e, "Error on oss scan");
-
-                this.FireScanningCancelledEvent();
-            }
-            finally
-            {
-                DisposeCancellationTokenSource(this.ossScanTokenSource);
-
-                this.isOssScanning = false;
-
-                this.FireTaskFinished();
-            }
-        }
-
-        private async Task ScanSnykCodeAsync(FeaturesSettings featuresSettings)
-        {
-            try
-            {
-                if (!featuresSettings.SastOnServerEnabled)
-                {
-                    this.FireSnykCodeDisabledError(featuresSettings.LocalCodeEngineEnabled);
-
-                    return;
-                }
-
-                if (!featuresSettings.CodeQualityEnabled && !featuresSettings.CodeSecurityEnabled)
-                {
-                    return;
-                }
-
-                if (this.isSnykCodeScanning)
-                {
-                    Logger.Information("There is already a task in progress for SnykCode scan.");
-
-                    return;
-                }
-
-                this.snykCodeScanTokenSource = new CancellationTokenSource();
-
-                var progressWorker = new SnykProgressWorker
-                {
-                    TasksService = this,
-                    TokenSource = this.snykCodeScanTokenSource,
-                };
-
-                Logger.Information("Start scan task");
-
-                await Task.Run(() => this.RunSnykCodeScanAsync(progressWorker.TokenSource.Token, featuresSettings));
-            }
-            catch (Exception ex)
-            {
-                Logger.Error(ex, "Error on SnykCode scan");
-            }
-        }
-
-        private async Task RunSnykCodeScanAsync(CancellationToken cancellationToken, FeaturesSettings featuresSettings)
-        {
-            try
-            {
-                this.isSnykCodeScanning = true;
-
-                this.FireSnykCodeScanningStartedEvent(featuresSettings);
-
-                var fileProvider = this.serviceProvider.SolutionService.FileProvider;
-
-                var analysisResult =
-                    await this.serviceProvider.SnykCodeService.ScanAsync(fileProvider, cancellationToken);
-
-                this.FireScanningUpdateEvent(analysisResult);
-
-                this.FireSnykCodeScanningFinishedEvent();
-            }
-            catch (Exception e)
-            {
-                if (this.IsTaskCancelled(e))
-                {
-                    this.FireScanningCancelledEvent();
-
-                    return;
-                }
-
-                Logger.Error(e, "Error on Run Snyk Code scan");
-
-                string errorMessage = this.serviceProvider.SnykCodeService.GetSnykCodeErrorMessage(e);
-
-                this.OnSnykCodeError(errorMessage);
-            }
-            finally
-            {
-                DisposeCancellationTokenSource(this.snykCodeScanTokenSource);
-
-                this.isSnykCodeScanning = false;
-
-                this.FireTaskFinished();
-            }
-        }
-
         private bool IsTaskCancelled(Exception sourceException)
         {
             if (sourceException is AggregateException)
@@ -693,57 +536,78 @@ namespace Snyk.VisualStudio.Extension.Service
         /// <summary>
         /// Fire Cli scanning started event.
         /// </summary>
-        private void FireOssScanningStartedEvent() => this.CliScanningStarted?.Invoke(this, new SnykCliScanEventArgs());
+        public void FireOssScanningStartedEvent()
+        {
+            this.IsOssScanning = true;
+            this.OssScanningStarted?.Invoke(this, new SnykOssScanEventArgs());
+        }
 
 
         /// <summary>
         /// Fire OSS scanning disabled event.
         /// </summary>
-        private void FireOssScanningDisabledEvent() => this.OssScanningDisabled?.Invoke(this, new SnykCliScanEventArgs());
+        private void FireOssScanningDisabledEvent() => this.OssScanningDisabled?.Invoke(this, new SnykOssScanEventArgs());
 
 
         /// <summary>
         /// Fire SnykCode scanning started event.
         /// </summary>
-        private void FireSnykCodeScanningStartedEvent(FeaturesSettings featuresSettings) =>
-            this.SnykCodeScanningStarted?.Invoke(this, 
-                new SnykCodeScanEventArgs { QualityScanEnabled = featuresSettings.CodeQualityEnabled, 
-                                            CodeScanEnabled = featuresSettings.CodeSecurityEnabled});
+        public void FireSnykCodeScanningStartedEvent(FeaturesSettings featuresSettings)
+        {
+            this.IsSnykCodeScanning = true;
+            this.SnykCodeScanningStarted?.Invoke(this,
+                new SnykCodeScanEventArgs
+                {
+                    QualityScanEnabled = featuresSettings.CodeQualityEnabled,
+                    CodeScanEnabled = featuresSettings.CodeSecurityEnabled
+                });
+        }
 
         /// <summary>
-        /// Fire scanning update with <see cref="SnykCliScanEventArgs"/> object.
+        /// Fire scanning update with <see cref="SnykOssScanEventArgs"/> object.
         /// </summary>
-        /// <param name="cliResult"><see cref="CliResult"/> object with vulnerabilities.</param>
-        private void FireOssScanningUpdateEvent(CliResult cliResult) =>
-            this.OssScanningUpdate?.Invoke(this, new SnykCliScanEventArgs(cliResult));
+        public void FireOssScanningUpdateEvent(IDictionary<string, IEnumerable<Issue>> scanResult)
+        {
+            this.IsOssScanning = true;
+            this.OssScanningUpdate?.Invoke(this, new SnykOssScanEventArgs(scanResult));
+        }
 
         /// <summary>
         /// Fire scanning update with <see cref="SnykCodeScanEventArgs"/> object.
         /// </summary>
         /// <param name="analysisResult"><see cref="AnalysisResult"/> object with vulnerabilities.</param>
-        private void FireScanningUpdateEvent(AnalysisResult analysisResult) =>
+        public void FireCodeScanningUpdateEvent(IDictionary<string, IEnumerable<Issue>> analysisResult)
+        {
+            this.IsSnykCodeScanning = true;
             this.SnykCodeScanningUpdate?.Invoke(this, new SnykCodeScanEventArgs(analysisResult));
+        }
 
         /// <summary>
         /// Fire OSS scanning finished event.
         /// </summary>
-        private void FireOssScanningFinishedEvent()
-            => this.OssScanningFinished?.Invoke(this,
-                new SnykCliScanEventArgs { SnykCodeScanRunning = this.isSnykCodeScanning });
+        public void FireOssScanningFinishedEvent()
+        {
+            this.IsOssScanning = false;
+            this.OssScanningFinished?.Invoke(this,
+                new SnykOssScanEventArgs { SnykCodeScanRunning = this.IsSnykCodeScanning });
+        }
 
         /// <summary>
         /// Fire SnykCode scanning finished event.
         /// </summary>
-        private void FireSnykCodeScanningFinishedEvent()
-            => this.SnykCodeScanningFinished?.Invoke(this,
-                new SnykCodeScanEventArgs { OssScanRunning = this.isOssScanning });
+        public void FireSnykCodeScanningFinishedEvent()
+        {
+            this.IsSnykCodeScanning = false;
+            this.SnykCodeScanningFinished?.Invoke(this,
+                new SnykCodeScanEventArgs { OssScanRunning = this.IsOssScanning });
+        }
 
         /// <summary>
         /// Fire scanning cancelled event.
         /// </summary>
-        private void FireScanningCancelledEvent() => this.ScanningCancelled?.Invoke(this, new SnykCliScanEventArgs());
+        public void FireScanningCancelledEvent() => this.ScanningCancelled?.Invoke(this, new SnykOssScanEventArgs());
 
-        private async Task<FeaturesSettings> GetFeaturesSettingsAsync()
+        public async Task<FeaturesSettings> GetFeaturesSettingsAsync()
         {
             var options = this.serviceProvider.Options;
 
@@ -761,7 +625,7 @@ namespace Snyk.VisualStudio.Extension.Service
             };
         }
 
-        private void CancelTask(ref CancellationTokenSource tokenSource)
+        private void CancelTask(CancellationTokenSource tokenSource)
         {
             try
             {
@@ -781,6 +645,34 @@ namespace Snyk.VisualStudio.Extension.Service
                 tokenSource = null;
             }
         }
+
+        public bool ShouldDownloadCli()
+        {
+            var userSettingsStorageService = this.serviceProvider.UserStorageSettingsService;
+            if (!userSettingsStorageService.BinariesAutoUpdate)
+            {
+                return false;
+            }
+            try
+            {
+                var currentCliVersion = userSettingsStorageService.GetCurrentCliVersion();
+
+                var lastCliReleaseDate = userSettingsStorageService.GetCliReleaseLastCheckDate();
+
+                var cliDownloader = new SnykCliDownloader(currentCliVersion);
+
+                var downloadPath = this.serviceProvider.Options.CliCustomPath;
+                var fileDestinationPath = GetCliFilePath(downloadPath);
+
+                return cliDownloader.IsCliDownloadNeeded(lastCliReleaseDate, fileDestinationPath);
+
+            }
+            catch (Exception)
+            {
+                return true;
+            }
+        }
+
 
         private async Task DownloadAsync(CliDownloadFinishedCallback downloadFinishedCallback,
             ISnykProgressWorker progressWorker)
@@ -828,58 +720,5 @@ namespace Snyk.VisualStudio.Extension.Service
                 this.isCliDownloading = false;
             }
         }
-    }
-
-    public interface ISnykScanTopicProvider
-    {
-        /// <summary>
-        /// Cli scanning started event handler.
-        /// </summary>
-        public event EventHandler<SnykCliScanEventArgs> CliScanningStarted;
-
-        /// <summary>
-        /// SnykCode scanning started event handler.
-        /// </summary>
-        public event EventHandler<SnykCodeScanEventArgs> SnykCodeScanningStarted;
-
-        /// <summary>
-        /// Scanning OSS finished event handler.
-        /// </summary>
-        public event EventHandler<SnykCliScanEventArgs> OssScanningFinished;
-
-        /// <summary>
-        /// Scanning SnykCode finished event handler.
-        /// </summary>
-        public event EventHandler<SnykCodeScanEventArgs> SnykCodeScanningFinished;
-
-        /// <summary>
-        /// Cli Scanning update event handler.
-        /// </summary>
-        public event EventHandler<SnykCliScanEventArgs> OssScanningUpdate;
-
-        /// <summary>
-        /// SnykCode scanning update event handler.
-        /// </summary>
-        public event EventHandler<SnykCodeScanEventArgs> SnykCodeScanningUpdate;
-
-        /// <summary>
-        /// Sli scan error event handler.
-        /// </summary>
-        public event EventHandler<SnykCliScanEventArgs> OssScanError;
-
-        /// <summary>
-        /// SnykCode scan error event handler.
-        /// </summary>
-        public event EventHandler<SnykCodeScanEventArgs> SnykCodeScanError;
-
-        /// <summary>
-        /// SnykCode disabled event handler.
-        /// </summary>
-        public event EventHandler<SnykCodeScanEventArgs> SnykCodeDisabled;
-
-        /// <summary>
-        /// Scanning cancelled event handler.
-        /// </summary>
-        public event EventHandler<SnykCliScanEventArgs> ScanningCancelled;
     }
 }

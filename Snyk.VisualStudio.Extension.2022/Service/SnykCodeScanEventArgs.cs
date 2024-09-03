@@ -1,4 +1,7 @@
-﻿namespace Snyk.VisualStudio.Extension.Service
+﻿using System.Collections.Generic;
+using Snyk.VisualStudio.Extension.Language;
+
+namespace Snyk.VisualStudio.Extension.Service
 {
     using System;
     using Snyk.Code.Library.Domain.Analysis;
@@ -25,7 +28,7 @@
         /// Initializes a new instance of the <see cref="SnykCodeScanEventArgs"/> class.
         /// </summary>
         /// <param name="analysisResult"><see cref="AnalysisResult"/> object.</param>
-        public SnykCodeScanEventArgs(AnalysisResult analysisResult) => this.Result = analysisResult;
+        public SnykCodeScanEventArgs(IDictionary<string, IEnumerable<Issue>> analysisResult) => this.Result = analysisResult;
 
         /// <summary>
         /// Gets or sets a value indicating whether OSS scan still running or not.
@@ -55,6 +58,6 @@
         /// <summary>
         /// Gets or sets a value indicating whether <see cref="AnalysisResult"/> object.
         /// </summary>
-        public AnalysisResult Result { get; set; }
+        public IDictionary<string, IEnumerable<Issue>> Result { get; set; }
     }
 }

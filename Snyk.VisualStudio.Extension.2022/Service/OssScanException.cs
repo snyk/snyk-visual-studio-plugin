@@ -19,7 +19,7 @@
         /// <summary>
         /// Gets or sets a value indicating whether cli error with details.
         /// </summary>
-        public CliError Error { get; set; }
+        public OssError Error { get; set; }
 
         /// <summary>
         /// Gets or sets a value indicating whether cli run process is cancelled.

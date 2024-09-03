@@ -5,18 +5,18 @@
     /// <summary>
     /// Snyk Open source error object.
     /// </summary>
-    public class CliError
+    public class OssError
     {
         /// <summary>
-        /// Initializes a new instance of the <see cref="CliError"/> class.
+        /// Initializes a new instance of the <see cref="OssError"/> class.
         /// </summary>
-        public CliError() { }
+        public OssError() { }
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="CliError"/> class.
+        /// Initializes a new instance of the <see cref="OssError"/> class.
         /// </summary>
         /// <param name="message">Error message string.</param>
-        public CliError(string message) => this.Message = message;
+        public OssError(string message) => this.Message = message;
 
         /// <summary>
         /// Gets or sets a value indicating whether is success. In Json it's "ok" property.

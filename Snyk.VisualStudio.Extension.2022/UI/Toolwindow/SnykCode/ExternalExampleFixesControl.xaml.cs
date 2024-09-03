@@ -1,4 +1,6 @@
-﻿namespace Snyk.VisualStudio.Extension.UI.Toolwindow.SnykCode
+﻿using Snyk.VisualStudio.Extension.Language;
+
+namespace Snyk.VisualStudio.Extension.UI.Toolwindow.SnykCode
 {
     using System.Collections.Generic;
     using System.Collections.ObjectModel;
@@ -29,7 +31,7 @@
         /// </summary>
         /// <param name="repoDatasetSize">Count of repositories with fixed this issue.</param>
         /// <param name="fixes">Suggestion fixes.</param>
-        internal void Display(int repoDatasetSize, IList<SuggestionFix> fixes)
+        internal void Display(int repoDatasetSize, IList<ExampleCommitFix> fixes)
         {
             this.tabs.Clear();
 
@@ -53,7 +55,7 @@
                 this.tabs.Add(new ExampleFixTab
                 {
                     Title = this.GetGithubRepositoryName(fix.CommitURL),
-                    Lines = new ObservableCollection<FixLine>(fix.Lines),
+                    Lines = new ObservableCollection<LineData>(fix.Lines),
                 });
             }
 

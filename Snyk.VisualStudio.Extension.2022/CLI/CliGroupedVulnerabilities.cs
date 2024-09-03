@@ -1,6 +1,8 @@
-﻿namespace Snyk.VisualStudio.Extension.CLI
+﻿using Snyk.VisualStudio.Extension.Language;
+using System.Collections.Generic;
+
+namespace Snyk.VisualStudio.Extension.CLI
 {
-    using System.Collections.Generic;
 
     /// <summary>
     /// Grouped CLI vulnerabilities.
@@ -10,7 +12,7 @@
         /// <summary>
         /// Gets or sets a value indicating whether vulnerabilities dictionary.
         /// </summary>
-        public Dictionary<string, List<Vulnerability>> VulnerabilitiesMap { get; set; }
+        public Dictionary<string, List<Issue>> VulnerabilitiesMap { get; set; }
 
         /// <summary>
         /// Gets or sets a value indicating whether unique vulnerabilities count.

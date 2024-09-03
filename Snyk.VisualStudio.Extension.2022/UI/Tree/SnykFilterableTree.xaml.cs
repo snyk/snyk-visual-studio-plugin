@@ -1,4 +1,8 @@
-﻿namespace Snyk.VisualStudio.Extension.UI.Tree
+﻿using System.Collections.Generic;
+using System.IO;
+using Snyk.VisualStudio.Extension.Language;
+
+namespace Snyk.VisualStudio.Extension.UI.Tree
 {
     using System;
     using System.Linq;
@@ -74,7 +78,7 @@
         /// <summary>
         /// Sets <see cref="OssResult"/> instance.
         /// </summary>
-        public CliResult OssResult
+        public IDictionary<string, IEnumerable<Issue>> OssResult
         {
             set
             {
@@ -85,39 +89,53 @@
 
                 this.ossRootNode.Items.Clear();
 
-                var cliResult = value;
+                var criticalSeverityCount = 0;
+                var highSeverityCount = 0;
+                var mediumSeverityCount = 0;
+                var lowSeverityCount = 0;
 
-                var groupVulnerabilities = cliResult.GroupVulnerabilities;
-
-                groupVulnerabilities.ForEach(delegate (CliGroupedVulnerabilities groupedVulnerabilities)
+                foreach (var kv in value)
                 {
-                    var fileNode = new OssVulnerabilityTreeNode
-                    {
-                        Vulnerabilities = groupedVulnerabilities,
-                    };
+                    var filePath = kv.Key;
+                    var issueList = kv.Value.ToList();
 
-                    foreach (string key in groupedVulnerabilities.VulnerabilitiesMap.Keys)
+                    var fileNode = new OssVulnerabilityTreeNode { IssueList = issueList };
+                    if (issueList.Any() && issueList.Any() && issueList.First().AdditionalData != null)
                     {
-                        var node = new OssVulnerabilityTreeNode
-                        {
-                            Vulnerability = groupedVulnerabilities.VulnerabilitiesMap[key][0],
-                        };
+                        var firstIssue = issueList.First();
+                        fileNode.PackageManager = firstIssue.AdditionalData.PackageManager;
+                        fileNode.DisplayTargetFile = Path.GetFileName(firstIssue.AdditionalData.DisplayTargetFile);
+                        fileNode.ProjectName = firstIssue.AdditionalData.ProjectName;
+                    }
+                    criticalSeverityCount += issueList.Count(suggestion => suggestion.Severity == Severity.Critical);
+                    highSeverityCount += issueList.Count(suggestion => suggestion.Severity == Severity.High);
+                    mediumSeverityCount += issueList.Count(suggestion => suggestion.Severity == Severity.Medium);
+                    lowSeverityCount += issueList.Count(suggestion => suggestion.Severity == Severity.Low);
 
-                        fileNode.Items.Add(node);
+                    issueList.Sort((issue1, issue2) => Severity.ToInt(issue2.Severity) - Severity.ToInt(issue1.Severity));
+
+                    foreach (var issue in issueList)
+                    {
+                        var vulNode = new OssVulnerabilityTreeNode { Issue = issue };
+                        fileNode.Items.Add(vulNode);
+                        if (issue.AdditionalData == null) continue;
+                        vulNode.PackageManager = issue.AdditionalData.PackageManager;
+                        vulNode.DisplayTargetFile = issue.AdditionalData.DisplayTargetFile;
+                        vulNode.ProjectName = issue.AdditionalData.ProjectName;
                     }
 
                     if (fileNode.Items.Count > 0)
                     {
                         this.ossRootNode.Items.Add(fileNode);
                     }
-                });
+                }
 
-                this.ossRootNode.CriticalSeverityCount = cliResult.CriticalSeverityCount;
-                this.ossRootNode.HighSeverityCount = cliResult.HighSeverityCount;
-                this.ossRootNode.MediumSeverityCount = cliResult.MediumSeverityCount;
-                this.ossRootNode.LowSeverityCount = cliResult.LowSeverityCount;
+                this.ossRootNode.CriticalSeverityCount = criticalSeverityCount;
+                this.ossRootNode.HighSeverityCount = highSeverityCount;
+                this.ossRootNode.MediumSeverityCount = mediumSeverityCount;
+                this.ossRootNode.LowSeverityCount = lowSeverityCount;
 
-                this.CliRootNode.State = RootTreeNodeState.ResultDetails;
+                this.ossRootNode.State = RootTreeNodeState.ResultDetails;
             }
         }
 
@@ -125,18 +143,18 @@
         /// Sets <see cref="AnalysisResult"/> data to tree.
         /// </summary>
         /// <param name="analysisResult"><see cref="AnalysisResult"/> object.</param>
-        public AnalysisResult AnalysisResults
+        public IDictionary<string, IEnumerable<Issue>> AnalysisResults
         {
             set
             {
                 if (this.codeSecurityRootNode.Enabled)
                 {
-                    this.AppendSnykCodeIssues(this.codeSecurityRootNode, value, suggestion => suggestion.Categories.Contains("Security"));
+                    this.AppendSnykCodeIssues(this.codeSecurityRootNode, value, issue => issue.AdditionalData.IsSecurityType);
                 }
 
                 if (this.codeQualityRootNode.Enabled)
                 {
-                    this.AppendSnykCodeIssues(this.codeQualityRootNode, value, suggestion => !suggestion.Categories.Contains("Security"));
+                    this.AppendSnykCodeIssues(this.codeQualityRootNode, value, issue => !issue.AdditionalData.IsSecurityType);
                 }
             }
         }
@@ -213,7 +231,7 @@
                 CollectionViewSource.GetDefaultView(treeNode.Items).Filter = filterObject =>
                 {
                     var filteredTreeNode = filterObject as OssVulnerabilityTreeNode;
-                    var vulnerability = filteredTreeNode.Vulnerability;
+                    var vulnerability = filteredTreeNode.Issue;
 
                     bool isVulnIncluded = severityFilter.IsVulnerabilityIncluded(vulnerability.Severity);
 
@@ -234,13 +252,15 @@
                 CollectionViewSource.GetDefaultView(treeNode.Items).Filter = filterObject =>
                 {
                     var filteredTreeNode = filterObject as SnykCodeVulnerabilityTreeNode;
-                    var suggestion = filteredTreeNode.Suggestion;
+                    if (filteredTreeNode == null) return false;
 
-                    bool isVulnIncluded = severityFilter.IsVulnerabilityIncluded(Severity.FromInt(suggestion.Severity));
+                    var issue = filteredTreeNode.Issue;
 
-                    if (searchString != null && searchString != string.Empty)
+                    var isVulnIncluded = severityFilter.IsVulnerabilityIncluded(issue.Severity);
+
+                    if (!string.IsNullOrEmpty(searchString))
                     {
-                        isVulnIncluded = isVulnIncluded && suggestion.GetDisplayTitleWithLineNumber().ToLowerInvariant().Contains(searchString.ToLowerInvariant());
+                        isVulnIncluded = isVulnIncluded && issue.GetDisplayTitleWithLineNumber().ToLowerInvariant().Contains(searchString.ToLowerInvariant());
                     }
 
                     return isVulnIncluded;
@@ -253,31 +273,34 @@
 
         private void TreeViewItem_Selected(object sender, RoutedEventArgs eventArgs) => MessageBox.Show(eventArgs.ToString());
 
-        private void AppendSnykCodeIssues(RootTreeNode rootNode, AnalysisResult analysisResult, Func<Suggestion, bool> conditionFunction)
+        private void AppendSnykCodeIssues(RootTreeNode rootNode, IDictionary<string, IEnumerable<Issue>> analysisResult, Func<Issue, bool> conditionFunction)
         {
-            int crititcalSeverityCount = 0;
-            int highSeverityCount = 0;
-            int mediumSeverityCount = 0;
-            int lowSeverityCount = 0;
+            var criticalSeverityCount = 0;
+            var highSeverityCount = 0;
+            var mediumSeverityCount = 0;
+            var lowSeverityCount = 0;
 
             rootNode.Clean();
 
-            foreach (var fileAnalyses in analysisResult.FileAnalyses)
+            foreach (var kv in analysisResult)
             {
-                var issueNode = new SnykCodeFileTreeNode { FileAnalysis = fileAnalyses, };
+                var filePath = kv.Key;
+                var issueList = kv.Value.ToList();
 
-                var suggestions = fileAnalyses.Suggestions.Where(conditionFunction).ToList();
+                var issueNode = new SnykCodeFileTreeNode { IssueList = issueList, FileName = filePath};
 
-                crititcalSeverityCount += suggestions.Count(suggestion => Severity.FromInt(suggestion.Severity) == Severity.Critical);
-                highSeverityCount += suggestions.Count(suggestion => Severity.FromInt(suggestion.Severity) == Severity.High);
-                mediumSeverityCount += suggestions.Count(suggestion => Severity.FromInt(suggestion.Severity) == Severity.Medium);
-                lowSeverityCount += suggestions.Count(suggestion => Severity.FromInt(suggestion.Severity) == Severity.Low);
+                var issues = issueList.Where(conditionFunction).ToList();
 
-                suggestions.Sort((suggestion1, suggestion2) => suggestion2.Severity.CompareTo(suggestion1.Severity));
+                criticalSeverityCount += issues.Count(suggestion => suggestion.Severity == Severity.Critical);
+                highSeverityCount += issues.Count(suggestion => suggestion.Severity == Severity.High);
+                mediumSeverityCount += issues.Count(suggestion => suggestion.Severity == Severity.Medium);
+                lowSeverityCount += issues.Count(suggestion => suggestion.Severity == Severity.Low);
 
-                foreach (var suggestion in suggestions)
+                issues.Sort((issue1,issue2)=> Severity.ToInt(issue2.Severity) - Severity.ToInt(issue1.Severity));
+
+                foreach (var suggestion in issues)
                 {
-                    issueNode.Items.Add(new SnykCodeVulnerabilityTreeNode { Suggestion = suggestion, });
+                    issueNode.Items.Add(new SnykCodeVulnerabilityTreeNode { Issue = suggestion });
                 }
 
                 if (issueNode.Items.Count > 0)
@@ -286,7 +309,7 @@
                 }
             }
 
-            rootNode.CriticalSeverityCount = crititcalSeverityCount;
+            rootNode.CriticalSeverityCount = criticalSeverityCount;
             rootNode.HighSeverityCount = highSeverityCount;
             rootNode.MediumSeverityCount = mediumSeverityCount;
             rootNode.LowSeverityCount = lowSeverityCount;
