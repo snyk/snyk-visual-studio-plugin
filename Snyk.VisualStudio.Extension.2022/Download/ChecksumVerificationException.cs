@@ -1,7 +1,7 @@
-﻿namespace Snyk.VisualStudio.Extension.CLI.Download
-{
-    using System;
+﻿using System;
 
+namespace Snyk.VisualStudio.Extension.Download
+{
     /// <summary>
     /// Exception for CLI download verification.
     /// </summary>

@@ -80,10 +80,9 @@
     <Compile Include="CLI\CliGroupedVulnerabilities.cs" />
     <Compile Include="CLI\CLIResult.cs" />
     <Compile Include="CLI\CliVulnerabilities.cs" />
-    <Compile Include="CLI\Download\ChecksumVerificationException.cs" />
-    <Compile Include="CLI\Download\LatestReleaseInfo.cs" />
-    <Compile Include="CLI\Download\SnykCliDownloader.cs" />
-    <Compile Include="CLI\Dto\Identifiers.cs" />
+    <Compile Include="Download\ChecksumVerificationException.cs" />
+    <Compile Include="Download\LatestReleaseInfo.cs" />
+    <Compile Include="Download\SnykCliDownloader.cs" />
     <Compile Include="CLI\ICli.cs" />
     <Compile Include="CLI\ICliProvider.cs" />
     <Compile Include="CLI\InvalidTokenException.cs" />
