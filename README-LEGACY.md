@@ -1,7 +1,3 @@
-# Deprecation Notice
-## Effective Date: 20 August 2024
-As of 20 August 2024, we will no longer support Visual Studio 2015, 2017, and 2019. Please upgrade to Visual Studio 2022 to continue receiving updates, security patches, and technical support.
-
 # Visual Studio extension
 
 The Snyk Visual Studio extension provides analysis of your code and open-source dependencies. Download the plugin at any time free of charge and use it with any Snyk account. Scan your code early in the development lifecycle to help you pass security reviews and avoid costly fixes later in the development cycle.
@@ -30,9 +26,13 @@ The following are also available:
 
 The plugin runs on Windows.
 
-## Supported Visual Studio versions
+## Supported Visual Studio IDE versions
+This extension version was explicitly built for compatibility with Visual Studio 2015, 2017, and 2019. These VS IDE versions are outdated and are reaching their End Of Life.
 
-Supported versions of Visual Studio are 2015, 2017, 2019, and 2022 (version 17.0.5 and above).
+Due to their technical limitations, Snyk will not update this particular extension with new features in the future. It will remain fully functional for some time, but we encourage upgrading to VS 2022 to continue receiving updates.
+
+VS 2022 has its compatible extension [Snyk Security](https://marketplace.visualstudio.com/items?itemName=snyk-security.snyk-vulnerability-scanner-vs-2022)
+
 
 ## Supported languages, package managers, and frameworks
 
