@@ -157,6 +157,7 @@ namespace Snyk.VisualStudio.Extension.Settings
                 }
 
                 this.customEndpoint = newApiEndpoint;
+                this.SetApiToken(AuthenticationToken.EmptyToken);
                 this.FireSettingsChangedEvent();
             }
         }

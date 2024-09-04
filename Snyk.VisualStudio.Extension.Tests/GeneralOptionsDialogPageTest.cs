@@ -1,5 +1,6 @@
 ﻿using Microsoft.VisualStudio.Sdk.TestFramework;
 using Moq;
+using Snyk.Common.Authentication;
 using Snyk.VisualStudio.Extension.CLI;
 using Snyk.VisualStudio.Extension.Service;
 using Snyk.VisualStudio.Extension.Settings;
@@ -31,7 +32,7 @@ namespace Snyk.VisualStudio.Extension.Tests
             optionsDialogPage.CustomEndpoint = "https://app.some.mock.address.snyk.io/api";
 
             // Assert
-            cliMock.Verify(mock => mock.UnsetApiToken());
+            Assert.Equal(optionsDialogPage.ApiToken, AuthenticationToken.EmptyToken);
         }
 
         [Theory]
