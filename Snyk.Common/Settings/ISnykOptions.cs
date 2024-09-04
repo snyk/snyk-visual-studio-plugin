@@ -21,7 +21,7 @@ namespace Snyk.Common.Settings
         /// <summary>
         /// Gets or sets a value indicating whether Snyk user API token.
         /// </summary>
-        AuthenticationToken ApiToken { get; }
+        AuthenticationToken ApiToken { get; set; }
 
         /// <summary>
         /// Gets Value of Authentication Token Type.
@@ -82,8 +82,6 @@ namespace Snyk.Common.Settings
         /// Settings changed event.
         /// </summary>
         event EventHandler<SnykSettingsChangedEventArgs> SettingsChanged;
-
-        void SetApiToken(string apiToken);
 
         /// <summary>
         /// Gets a value indicating whether additional options.

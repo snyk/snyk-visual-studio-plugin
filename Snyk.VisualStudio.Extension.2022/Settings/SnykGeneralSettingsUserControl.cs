@@ -248,7 +248,7 @@ namespace Snyk.VisualStudio.Extension.Settings
         {
             if (this.ValidateChildren(ValidationConstraints.Enabled))
             {
-                this.OptionsDialogPage.SetApiToken(this.tokenTextBox.Text);
+                this.OptionsDialogPage.ApiToken = new AuthenticationToken(this.OptionsDialogPage.AuthenticationMethod, this.tokenTextBox.Text);
             }
         }
 

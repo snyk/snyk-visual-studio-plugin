@@ -7,6 +7,7 @@ using System.Threading.Tasks;
 using Newtonsoft.Json.Linq;
 using Serilog;
 using Snyk.Common;
+using Snyk.Common.Authentication;
 using Snyk.VisualStudio.Extension.Service;
 using StreamJsonRpc;
 
@@ -126,7 +127,7 @@ namespace Snyk.VisualStudio.Extension.Language
                 return;
             }
 
-            serviceProvider.Options.SetApiToken(token);
+            serviceProvider.Options.ApiToken = new AuthenticationToken(serviceProvider.Options.AuthenticationMethod, token);
             await serviceProvider.Options.OnAuthenticationSuccessfulAsync(token);
 
             if (serviceProvider.Options.AutoScan)

@@ -78,5 +78,6 @@ namespace Snyk.VisualStudio.Extension.Settings
         public AuthenticationType AuthenticationMethod { get; set; }
 
         public bool AutoScan { get; set; } = true;
+        public string Token { get; set; } = string.Empty;
     }
 }

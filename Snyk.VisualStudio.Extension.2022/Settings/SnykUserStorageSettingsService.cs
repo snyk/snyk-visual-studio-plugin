@@ -115,6 +115,22 @@ namespace Snyk.VisualStudio.Extension.Settings
         }
 
         /// <summary>
+        /// Get Auto Scan option
+        /// </summary>
+        /// <returns>bool.</returns>
+
+        public string Token
+        {
+            get => this.LoadSettings().Token;
+            set
+            {
+                var settings = this.LoadSettings();
+                settings.Token = value;
+                this.settingsLoader.Save(settings);
+            }
+        }
+
+        /// <summary>
         /// Get is all projects enabled.
         /// </summary>
         /// <returns>Bool.</returns>

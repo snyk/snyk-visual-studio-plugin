@@ -1,7 +1,6 @@
 ﻿using System;
 using System.IO;
 using System.Runtime.InteropServices;
-using System.Security.Authentication;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Windows.Forms;
@@ -12,7 +11,6 @@ using Snyk.Common.Authentication;
 using Snyk.Common.Service;
 using Snyk.Common.Settings;
 using Snyk.VisualStudio.Extension.Service;
-using Snyk.VisualStudio.Extension.UI.Notifications;
 
 namespace Snyk.VisualStudio.Extension.Settings
 {
@@ -36,8 +34,6 @@ namespace Snyk.VisualStudio.Extension.Settings
 
         private SnykGeneralSettingsUserControl generalSettingsUserControl;
 
-        private AuthenticationToken apiToken;
-
         private string customEndpoint;
 
         private string organization;
@@ -55,7 +51,18 @@ namespace Snyk.VisualStudio.Extension.Settings
         /// <summary>
         /// Gets or sets a value indicating whether API token.
         /// </summary>
-        public AuthenticationToken ApiToken => this.apiToken ?? AuthenticationToken.EmptyToken;
+        public AuthenticationToken ApiToken
+        {
+            get => CreateAuthenticationToken(this.userStorageSettingsService.Token);
+            set
+            {
+                var tokenAsString = value.ToString();
+                if (this.userStorageSettingsService == null || this.userStorageSettingsService.Token == tokenAsString)
+                    return;
+                this.userStorageSettingsService.Token = tokenAsString;
+                this.FireSettingsChangedEvent();
+            }
+        }
         
         public AuthenticationType AuthenticationMethod
         {
@@ -65,7 +72,7 @@ namespace Snyk.VisualStudio.Extension.Settings
                 if (this.userStorageSettingsService == null || this.userStorageSettingsService.AuthenticationMethod == value)
                     return;
                 this.userStorageSettingsService.AuthenticationMethod = value;
-                this.SetApiToken(AuthenticationToken.EmptyToken);
+                ApiToken = AuthenticationToken.EmptyToken;
                 this.FireSettingsChangedEvent();
             }
         }
@@ -79,21 +86,6 @@ namespace Snyk.VisualStudio.Extension.Settings
                     return;
                 this.userStorageSettingsService.AutoScan = value;
             }
-        }
-
-        public void SetApiToken(string apiTokenString)
-        {
-            if (this.apiToken?.ToString() == apiTokenString)
-            {
-                return;
-            }
-
-            SetApiToken(CreateAuthenticationToken(apiTokenString));
-        }
-
-        private void SetApiToken(AuthenticationToken token)
-        {
-            this.apiToken = token;
         }
 
         private AuthenticationToken CreateAuthenticationToken(string token)
@@ -123,7 +115,7 @@ namespace Snyk.VisualStudio.Extension.Settings
                 }
 
                 this.customEndpoint = newApiEndpoint;
-                this.SetApiToken(AuthenticationToken.EmptyToken);
+                ApiToken = AuthenticationToken.EmptyToken;
                 this.FireSettingsChangedEvent();
             }
         }
@@ -353,7 +345,7 @@ namespace Snyk.VisualStudio.Extension.Settings
                     {
                         await ServiceProvider.Package.LanguageClientManager.InvokeLogout(CancellationToken.None);
                         var token = await ServiceProvider.Package.LanguageClientManager.InvokeLogin(CancellationToken.None);
-                        SetApiToken(token);
+                        ApiToken = CreateAuthenticationToken(token);
                     });
                 }
                 return true;
