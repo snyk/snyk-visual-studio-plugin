@@ -75,7 +75,7 @@ namespace Snyk.Common.Settings
         string AnonymousId { get; set; }
 
         /// <summary>
-        /// Gets or sets a value indicating whether Analytics enabled or disabled. By default it's enabled.
+        /// Gets or sets a value indicating whether Error reports enabled or disabled. By default it's enabled.
         /// </summary>
         bool ErrorReportsEnabled { get; set; }
 

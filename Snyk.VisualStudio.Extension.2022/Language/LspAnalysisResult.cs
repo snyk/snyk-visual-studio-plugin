@@ -130,7 +130,18 @@ namespace Snyk.VisualStudio.Extension.Language
         public string Product { get; set; }
 
         public string GetDisplayTitle() => string.IsNullOrEmpty(this.Title) ? this.AdditionalData?.Message : this.Title;
-        public string GetDisplayTitleWithLineNumber() => "line " + this.Range?.End?.Line + ": " + this.GetDisplayTitle();
+
+        public string GetDisplayTitleWithLineNumber()
+        {
+            var line = "line " + this.Range?.End?.Line + ": " + this.GetDisplayTitle();
+            if (this.AdditionalData?.HasAIFix ?? false)
+            {
+                line = "⚡" + line;
+            }
+
+            return line;
+        }
+
         public string GetPackageNameTitle() => $"{this.AdditionalData?.PackageName}@{this.AdditionalData?.Version}: {this.Title}";
         public string FixedInDisplayText => this.AdditionalData?.FixedIn == null ? string.Empty : string.Join(", ", this.AdditionalData.FixedIn);
         private const string VulnerabilityDbUrl = "https://snyk.io/vuln/";

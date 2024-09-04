@@ -73,8 +73,6 @@
     <Compile Include="Language\SnykLanguageClient.cs" />
     <Compile Include="Language\SnykLanguageClientCustomTarget.cs" />
     <Compile Include="Language\SnykLanguageClientMiddleware.cs" />
-    <Compile Include="analytics\ScanDoneEvent.cs" />
-    <Compile Include="analytics\SnykIdeAnalyticsService.cs" />
     <Compile Include="Cache\AbstractCacheHierarchyEvents.cs" />
     <Compile Include="Cache\CodeCacheHierarchyEvents.cs" />
     <Compile Include="Cache\OssCacheHierarchyEvents.cs" />
@@ -584,6 +582,7 @@
       <IncludeInVSIX>true</IncludeInVSIX>
     </Content>
   </ItemGroup>
+  <ItemGroup />
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <Import Project="$(VSToolsPath)\VSSDK\Microsoft.VsSDK.targets" Condition="'$(VSToolsPath)' != ''" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 

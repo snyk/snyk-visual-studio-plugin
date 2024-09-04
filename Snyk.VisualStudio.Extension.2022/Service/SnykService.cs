@@ -39,8 +39,6 @@ namespace Snyk.VisualStudio.Extension.Service
 
         private DTE2 dte;
 
-        private SnykIdeAnalyticsService ideAnalyticsService;
-
         private SnykUserStorageSettingsService userStorageSettingsService;
 
         private ISnykCodeService snykCodeService;
@@ -106,20 +104,6 @@ namespace Snyk.VisualStudio.Extension.Service
         /// Gets VS theme service.
         /// </summary>
         public SnykVsThemeService VsThemeService => this.vsThemeService;
-
-        public SnykIdeAnalyticsService SnykIdeAnalyticsService
-        {
-            get
-            {
-                if (ideAnalyticsService == null)
-                {
-                    ideAnalyticsService =
-                        new SnykIdeAnalyticsService(Package,  this, TasksService, SolutionService);
-                }
-
-                return ideAnalyticsService;
-            }
-        }
 
         /// <summary>
         /// Gets user storage settings service instance.
@@ -226,8 +210,6 @@ namespace Snyk.VisualStudio.Extension.Service
                 NotificationService.Initialize(this);
                 VsStatusBar.Initialize(this);
                 VsCodeService.Initialize();
-
-                SnykIdeAnalyticsService.Initialize();
 
                 Logger.Information("Leave SnykService.InitializeAsync");
             }
