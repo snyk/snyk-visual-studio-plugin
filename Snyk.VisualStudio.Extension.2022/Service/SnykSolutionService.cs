@@ -23,8 +23,6 @@ namespace Snyk.VisualStudio.Extension.Service
 
         private static SnykSolutionService instance;
 
-        private IFileProvider fileProvider;
-
         /// <summary>
         /// Initializes a new instance of the <see cref="SnykSolutionService"/> class.
         /// </summary>

@@ -74,9 +74,6 @@
     <Compile Include="Language\SnykLanguageClientCustomTarget.cs" />
     <Compile Include="Language\SnykLanguageClientMiddleware.cs" />
     <Compile Include="CLI\OssError.cs" />
-    <Compile Include="CLI\CliGroupedVulnerabilities.cs" />
-    <Compile Include="CLI\CLIResult.cs" />
-    <Compile Include="CLI\CliVulnerabilities.cs" />
     <Compile Include="Download\ChecksumVerificationException.cs" />
     <Compile Include="Download\LatestReleaseInfo.cs" />
     <Compile Include="Download\SnykCliDownloader.cs" />
@@ -84,8 +81,6 @@
     <Compile Include="CLI\ICliProvider.cs" />
     <Compile Include="CLI\InvalidTokenException.cs" />
     <Compile Include="CLI\SnykCli.cs" />
-    <Compile Include="CLI\SnykConsoleRunner.cs" />
-    <Compile Include="CLI\Vulnerability.cs" />
     <Compile Include="Commands\AbstractSnykCommand.cs" />
     <Compile Include="Commands\AbstractTaskCommand.cs" />
     <Compile Include="Commands\SnykCleanPanelCommand.cs" />

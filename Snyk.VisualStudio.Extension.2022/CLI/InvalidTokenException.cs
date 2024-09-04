@@ -1,6 +1,7 @@
-﻿namespace Snyk.VisualStudio.Extension.CLI
+﻿using System;
+
+namespace Snyk.VisualStudio.Extension.CLI
 {
-    using System;
 
     /// <summary>
     /// Invalid Snyk api token guid exception.
