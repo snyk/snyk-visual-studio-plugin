@@ -13,7 +13,6 @@ using Snyk.Common;
 using Snyk.Common.Service;
 using Snyk.Common.Settings;
 using Snyk.VisualStudio.Extension.CLI;
-using Snyk.VisualStudio.Extension.Language;
 using Snyk.VisualStudio.Extension.Settings;
 using Snyk.VisualStudio.Extension.Theme;
 using Snyk.VisualStudio.Extension.UI;
@@ -44,8 +43,6 @@ namespace Snyk.VisualStudio.Extension.Service
         private ISnykCodeService snykCodeService;
 
         private IOssService ossService;
-
-        private ISnykApiService apiService;
 
         private IWorkspaceTrustService workspaceTrustService;
         
@@ -134,22 +131,6 @@ namespace Snyk.VisualStudio.Extension.Service
                 }
 
                 return this.snykCodeService;
-            }
-        }
-
-        /// <inheritdoc/>
-        public ISnykApiService ApiService
-        {
-            get
-            {
-                if (this.apiService == null)
-                {
-                    this.apiService = new SnykApiService(this.Options, this.vsVersion, SnykExtension.Version);
-
-                    this.Options.SettingsChanged += this.OnSettingsChanged;
-                }
-
-                return this.apiService;
             }
         }
 

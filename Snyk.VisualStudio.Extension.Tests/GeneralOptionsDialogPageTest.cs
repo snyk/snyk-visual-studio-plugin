@@ -35,25 +35,6 @@ namespace Snyk.VisualStudio.Extension.Tests
         }
 
         [Theory]
-        [InlineData("https://app.snyk.io/api", true)]
-        [InlineData("https://app.us.snyk.io/api", true)]
-        [InlineData("https://app.eu.snyk.io/api", false)]
-        [InlineData("https://app.au.snyk.io/api", false)]
-        [InlineData("https://app.snykgov.io/api", false)]
-
-        [InlineData("https://api.snyk.io", true)]
-        [InlineData("https://api.us.snyk.io", true)]
-        [InlineData("https://api.eu.snyk.io", false)]
-        [InlineData("https://api.au.snyk.io", false)]
-        [InlineData("https://api.snykgov.io", false)]
-        public void IsAnalyticsPermitted(string endpoint, bool expected)
-        {
-            var optionsDialogPage = new SnykGeneralOptionsDialogPage();
-            optionsDialogPage.CustomEndpoint = endpoint;
-            Assert.Equal(expected, optionsDialogPage.IsAnalyticsPermitted());
-        }
-
-        [Theory]
         [InlineData(null, "https://app.snyk.io/manage/snyk-code")]
         [InlineData("", "https://app.snyk.io/manage/snyk-code")]
         [InlineData("https://snyk.io", "https://app.snyk.io/manage/snyk-code")]

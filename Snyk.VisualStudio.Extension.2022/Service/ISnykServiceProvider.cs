@@ -77,11 +77,6 @@ namespace Snyk.VisualStudio.Extension.Service
         SnykUserStorageSettingsService UserStorageSettingsService { get; }
 
         /// <summary>
-        /// Gets <see cref="ISnykApiService"/> service instance.
-        /// </summary>
-        ISnykApiService ApiService { get; }
-
-        /// <summary>
         /// Gets <see cref="SnykToolWindowControl"/> instance.
         /// </summary>
         SnykToolWindowControl ToolWindow { get; }

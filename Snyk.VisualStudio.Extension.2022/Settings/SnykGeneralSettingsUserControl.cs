@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.ComponentModel;
 using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
+using System.IO;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -12,7 +13,6 @@ using Microsoft.VisualStudio.Threading;
 using Serilog;
 using Snyk.Common;
 using Snyk.Common.Authentication;
-using Snyk.Common.Service;
 using Snyk.Common.Settings;
 using Snyk.VisualStudio.Extension.CLI;
 using Snyk.VisualStudio.Extension.Service;
@@ -39,19 +39,15 @@ namespace Snyk.VisualStudio.Extension.Settings
 
         private static readonly int MaxSastRequestAttempts = 20;
 
-        private ISnykApiService apiService;
-
         private Timer snykCodeEnableTimer = new Timer();
 
         /// <summary>
         /// Initializes a new instance of the <see cref="SnykGeneralSettingsUserControl"/> class.
         /// </summary>
         /// <param name="apiService">Snyk API service instance.</param>
-        public SnykGeneralSettingsUserControl(ISnykApiService apiService)
+        public SnykGeneralSettingsUserControl()
         {
             this.InitializeComponent();
-
-            this.apiService = apiService;
         }
 
         private ISnykServiceProvider ServiceProvider => this.OptionsDialogPage.ServiceProvider;
@@ -113,9 +109,10 @@ namespace Snyk.VisualStudio.Extension.Settings
                 await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
                 this.UpdateViewFromOptionsDialog();
                 this.InitializeApiToken();
+                await ServiceProvider.Package.LanguageClientManager.DidChangeConfigurationAsync(CancellationToken.None);
             }).FireAndForget();
 
-        private async Task OnAuthenticationSuccessfulAsync(string apiToken)
+        public async Task OnAuthenticationSuccessfulAsync(string apiToken)
         {
             logger.Information("Enter authenticate successCallback");
 
@@ -159,20 +156,10 @@ namespace Snyk.VisualStudio.Extension.Settings
 
         private void InitializeApiToken()
         {
-            if (!this.OptionsDialogPage.ApiToken.IsValid())
-            {
-                string apiToken = this.NewCli().GetApiToken();
-
-                if (!apiToken.IsNullOrEmpty())
-                {
-                    this.OptionsDialogPage.SetApiToken(apiToken);
-                }
-            }
-
-            this.tokenTextBox.Text = this.OptionsDialogPage.ApiToken.Refresh();
+            this.tokenTextBox.Text = this.OptionsDialogPage.ApiToken.ToString();
         }
 
-        private async Task OnAuthenticationFailAsync(string errorMessage)
+        public async Task OnAuthenticationFailAsync(string errorMessage)
         {
             logger.Information("Enter authenticate errorCallback");
 
@@ -215,8 +202,6 @@ namespace Snyk.VisualStudio.Extension.Settings
             await this.ServiceProvider.ToolWindow.UpdateScreenStateAsync();
         }
 
-        private ICli NewCli() => this.ServiceProvider.NewCli();
-
         private void AuthenticateButton_Click(object sender, EventArgs eventArgs) => ThreadHelper.JoinableTaskFactory
             .RunAsync(this.AuthenticateButtonClickAsync);
 
@@ -233,15 +218,12 @@ namespace Snyk.VisualStudio.Extension.Settings
 
             var serviceProvider = this.ServiceProvider;
 
-            var cli = this.ServiceProvider.NewCli();
-            if (cli.IsCliFileFound())
+            if (IsCliFileFound(serviceProvider.Options.CliCustomPath))
             {
-                logger.Information("CLI exists. Calling SetupApiToken method");
                 var authenticated = serviceProvider.Options.Authenticate();
                 if (authenticated)
                 {
-                    var token = cli.GetApiToken();
-                    await OnAuthenticationSuccessfulAsync(token);
+                    await OnAuthenticationSuccessfulAsync(serviceProvider.Options.ApiToken.ToString());
                 }
                 else
                 {
@@ -250,9 +232,15 @@ namespace Snyk.VisualStudio.Extension.Settings
             }
             else
             {
-                logger.Information("CLI not exists. Download CLI before get Api token");
+                logger.Information("CLI doesn't exists. Download CLI before get Api token");
                 await serviceProvider.TasksService.DownloadAsync(() => this.OptionsDialogPage.Authenticate());
             }
+        }
+
+        public bool IsCliFileFound(string cliCustomPath)
+        {
+            var path = string.IsNullOrEmpty(cliCustomPath) ? SnykCli.GetSnykCliDefaultPath() : cliCustomPath;
+            return File.Exists(path);
         }
 
         private bool IsValidUrl(string url) => Uri.IsWellFormedUriString(url, UriKind.Absolute);
@@ -310,7 +298,7 @@ namespace Snyk.VisualStudio.Extension.Settings
                 }
             });
 
-        private void CustomEndpointTextBox_Validating(object sender, System.ComponentModel.CancelEventArgs cancelEventArgs)
+        private void CustomEndpointTextBox_Validating(object sender, CancelEventArgs cancelEventArgs)
         {
             if (string.IsNullOrWhiteSpace(this.customEndpointTextBox.Text) || this.IsValidUrl(this.customEndpointTextBox.Text))
             {
@@ -319,7 +307,6 @@ namespace Snyk.VisualStudio.Extension.Settings
             }
 
             cancelEventArgs.Cancel = true;
-            //this.customEndpointTextBox.Focus();
             this.errorProvider.SetError(this.customEndpointTextBox, "Needs to be a full absolute well-formed URL (including protocol)");
         }
 
@@ -327,12 +314,12 @@ namespace Snyk.VisualStudio.Extension.Settings
         {
             this.InitializeApiToken();
 
-            _ = this.StartSastEnablementCheckLoopAsync();
+            this.StartSastEnablementCheckLoop();
         }
 
         private void UpdateSnykCodeEnablementSettings(SastSettings sastSettings)
         {
-            bool snykCodeEnabled = sastSettings?.SnykCodeEnabled ?? false;
+            var snykCodeEnabled = sastSettings?.SnykCodeEnabled ?? false;
 
             if (!snykCodeEnabled)
             {
@@ -346,7 +333,7 @@ namespace Snyk.VisualStudio.Extension.Settings
             this.checkAgainLinkLabel.Visible = !snykCodeEnabled;
         }
 
-        private async Task StartSastEnablementCheckLoopAsync()
+        private void StartSastEnablementCheckLoop()
         {
             try
             {
@@ -355,17 +342,7 @@ namespace Snyk.VisualStudio.Extension.Settings
                     this.snykCodeEnableTimer.Stop();
                 }
 
-                //var res =  await this.ServiceProvider.Package.LanguageClientManager.InvokeGetSastEnabled(CancellationToken.None);
-                var sastSettings = await this.apiService.GetSastSettingsAsync();
-
-                this.UpdateSnykCodeEnablementSettings(sastSettings);
-
-                if (sastSettings != null && sastSettings.SastEnabled)
-                {
-                    return;
-                }
-
-                int currentRequestAttempt = 1;
+                var currentRequestAttempt = 1;
 
                 this.snykCodeEnableTimer.Interval = TwoSecondsDelay;
 
@@ -373,7 +350,8 @@ namespace Snyk.VisualStudio.Extension.Settings
                 {
                     try
                     {
-                        sastSettings = await this.apiService.GetSastSettingsAsync();
+                        if (this.ServiceProvider?.Package?.LanguageClientManager == null || this.ServiceProvider.Package.LanguageClientManager.IsReady == false) return;
+                        var sastSettings = await this.ServiceProvider.Package.LanguageClientManager.InvokeGetSastEnabled(CancellationToken.None);
 
                         bool snykCodeEnabled = sastSettings != null ? sastSettings.SnykCodeEnabled : false;
 
@@ -447,7 +425,7 @@ namespace Snyk.VisualStudio.Extension.Settings
 
         private void CheckAgainLinkLabel_LinkClicked(object sender, LinkLabelLinkClickedEventArgs e)
         {
-            _ = this.StartSastEnablementCheckLoopAsync();
+            this.StartSastEnablementCheckLoop();
         }
 
         private void OrganizationInfoLink_LinkClicked(object sender, LinkLabelLinkClickedEventArgs e)

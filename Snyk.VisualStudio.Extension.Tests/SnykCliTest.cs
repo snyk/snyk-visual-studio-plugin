@@ -24,14 +24,6 @@ namespace Snyk.VisualStudio.Extension.Tests
                 .Returns(true);
 
             this.optionsMock
-                .Setup(options => options.IsFedramp())
-                .Returns(false);
-
-            this.optionsMock
-                .Setup(options => options.IsAnalyticsPermitted())
-                .Returns(true);
-
-            this.optionsMock
                 .Setup(options => options.ApiToken)
                 .Returns(AuthenticationToken.EmptyToken);
         }

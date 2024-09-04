@@ -52,43 +52,6 @@ namespace Snyk.Common.Tests.Service
         }
 
         [Fact]
-        public void ApiEndpointResolver_GetSnykCodeApiUrl_Snykgov_NoOrg()
-        {
-            var optionsMock = new Mock<ISnykOptions>();
-            optionsMock
-                 .Setup(options => options.CustomEndpoint)
-                 .Returns("https://app.random-uuid.polaris.snykgov.io/api");
-            optionsMock
-                .Setup(options => options.IsFedramp())
-                .Returns(true);
-
-            var apiEndpointResolver = new ApiEndpointResolver(optionsMock.Object);
-            
-            Assert.Throws<InvalidOperationException>(() => apiEndpointResolver.GetSnykCodeApiUrl());
-        }
-
-        [Fact]
-        public void ApiEndpointResolver_GetSnykCodeApiUrl_Snykgov()
-        {
-            var optionsMock = new Mock<ISnykOptions>();
-            optionsMock
-                .Setup(options => options.CustomEndpoint)
-                .Returns("https://app.random-uuid.polaris.snykgov.io/api");
-            optionsMock
-                .Setup(options => options.IsFedramp())
-                .Returns(true);
-            optionsMock
-                .Setup(options => options.Organization)
-                .Returns("dummy-org-name");
-
-            var apiEndpointResolver = new ApiEndpointResolver(optionsMock.Object);
-
-            var snykCodeApiUrl = apiEndpointResolver.GetSnykCodeApiUrl();
-
-            Assert.Equal("https://api.random-uuid.polaris.snykgov.io/hidden/orgs/dummy-org-name/code/", snykCodeApiUrl);
-        }
-
-        [Fact]
         public void AuthenticationMethod()
         {
             // Arrange

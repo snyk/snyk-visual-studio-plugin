@@ -60,17 +60,10 @@ namespace Snyk.Common.Service
 
             var endpoint = ResolveCustomEndpoint(this.options.CustomEndpoint);
 
-            var isFedramp = this.options.IsFedramp();
 
-            if (isFedramp && string.IsNullOrEmpty(this.options.Organization))
-                throw new InvalidOperationException("Organization is required in a fedramp environment");
-
-            var subDomain = isFedramp ? "api" : "deeproxy";
+            var subDomain = "deeproxy";
 
             var result = GetCustomEndpointUrlFromSnykApi(endpoint, subDomain);
-
-            if (isFedramp)
-                result += $"/hidden/orgs/{this.options.Organization}/code";
 
             return result + "/";
         }

@@ -78,7 +78,7 @@ namespace Snyk.VisualStudio.Extension.CLI
                 }
             }
 
-            if (!this.options.ErrorReportsEnabled || !this.options.IsAnalyticsPermitted())
+            if (!this.options.ErrorReportsEnabled)
             {
                 processStartInfo.EnvironmentVariables["SNYK_CFG_DISABLE_ANALYTICS"] = "1";
             }

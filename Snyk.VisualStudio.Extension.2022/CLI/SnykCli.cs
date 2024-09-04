@@ -227,7 +227,7 @@ namespace Snyk.VisualStudio.Extension.CLI
             var environmentVariables = new StringDictionary();
             if (this.Options.ApiToken.IsValid() || shouldRefreshToken)
             {
-                AddTokenToEnvVar(shouldRefreshToken, environmentVariables);
+                AddTokenToEnvVar(environmentVariables);
             }
             environmentVariables.Add("INTERNAL_SNYK_OAUTH_ENABLED", this.Options.ApiToken.Type == AuthenticationType.OAuth ? "1" : "0");
 
@@ -239,9 +239,9 @@ namespace Snyk.VisualStudio.Extension.CLI
             return environmentVariables;
         }
 
-        private void AddTokenToEnvVar(bool shouldRefreshToken, StringDictionary environmentVariables)
+        private void AddTokenToEnvVar(StringDictionary environmentVariables)
         {
-            var token = shouldRefreshToken ? this.Options.ApiToken.Refresh() : this.Options.ApiToken.ToString();
+            var token = this.Options.ApiToken.ToString();
             if (string.IsNullOrEmpty(token)) return;
 
             var internalTokenKey = this.Options.ApiToken.Type == AuthenticationType.OAuth

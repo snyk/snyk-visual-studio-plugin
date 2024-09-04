@@ -49,7 +49,7 @@ namespace Snyk.VisualStudio.Extension.Language
 
         public object GetInitializationOptions()
         {
-            if (SnykVSPackage.ServiceProvider == null || initializationOptions != null)
+            if (SnykVSPackage.ServiceProvider == null)
             {
                 return initializationOptions;
             }
@@ -270,14 +270,47 @@ namespace Snyk.VisualStudio.Extension.Language
         }
 
 
-        public async Task<object> InvokeGetSastEnabled(CancellationToken cancellationToken)
+        public async Task<SastSettings> InvokeGetSastEnabled(CancellationToken cancellationToken)
         {
             var param = new LSP.ExecuteCommandParams
             {
                 Command = LsConstants.SnykSastEnabled
             };
+            var sastSettings = await InvokeWithParametersAsync<SastSettings>("workspace/executeCommand", param, cancellationToken);
+            return sastSettings;
+        }
+
+        public async Task<string> InvokeLogin(CancellationToken cancellationToken)
+        {
+            var param = new LSP.ExecuteCommandParams
+            {
+                Command = LsConstants.SnykLogin
+            };
+            var token = await InvokeWithParametersAsync<string>("workspace/executeCommand", param, cancellationToken);
+            return token;
+        }
+
+        public async Task<object> InvokeLogout(CancellationToken cancellationToken)
+        {
+            var param = new LSP.ExecuteCommandParams
+            {
+                Command = LsConstants.SnykLogout
+            };
             var isEnabled = await InvokeWithParametersAsync<object>("workspace/executeCommand", param, cancellationToken);
             return isEnabled;
+        }
+
+
+        public async Task<object> DidChangeConfigurationAsync(CancellationToken cancellationToken)
+        {
+            if (!IsReady) return default;
+
+            var param = new LSP.DidChangeConfigurationParams
+            {
+                Settings = GetInitializationOptions()
+            };
+            
+            return await Rpc.InvokeWithParameterObjectAsync<object>(LsConstants.SnykWorkspaceChangeConfiguration, param, cancellationToken).ConfigureAwait(false);
         }
 
         public async Task RestartServerAsync()

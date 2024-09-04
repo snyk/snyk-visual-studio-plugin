@@ -56,6 +56,8 @@
     <Compile Include="Authentication\AuthenticationToken.cs" />
     <Compile Include="HttpClientFactory.cs" />
     <Compile Include="IFileProvider.cs" />
+    <Compile Include="LocalCodeEngine.cs" />
+    <Compile Include="SastSettings.cs" />
     <Compile Include="Settings\ISnykOptions.cs" />
     <Compile Include="ISolutionService.cs" />
     <Compile Include="Json.cs" />
@@ -67,10 +69,6 @@
     <Compile Include="Sentry\IAppDomain.cs" />
     <Compile Include="Sentry\TaskUnobservedTaskExceptionIntegration.cs" />
     <Compile Include="Service\ApiEndpointResolver.cs" />
-    <Compile Include="Service\ISnykApiService.cs" />
-    <Compile Include="Service\LocalCodeEngine.cs" />
-    <Compile Include="Service\SastSettings.cs" />
-    <Compile Include="Service\SnykApiService.cs" />
     <Compile Include="Service\SnykUser.cs" />
     <Compile Include="Sha256.cs" />
     <Compile Include="SnykAppSettings.cs" />

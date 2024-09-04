@@ -18,5 +18,8 @@
         public const string SnykWorkspaceScan = "snyk.workspace.scan";
         public const string SnykWorkspaceFolderScan = "snyk.workspaceFolder.scan";
         public const string SnykSastEnabled = "snyk.getSettingsSastEnabled";
+        public const string SnykLogin = "snyk.login";
+        public const string SnykLogout = "snyk.logout";
+        public const string SnykWorkspaceChangeConfiguration = "workspace/didChangeConfiguration";
     }
 }

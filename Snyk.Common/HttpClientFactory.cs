@@ -37,8 +37,7 @@ namespace Snyk.Common
             var authorizationString = "token " + token;
             if (token.Type == AuthenticationType.OAuth)
             {
-                var rawToken = token.Refresh();
-                var oauthToken = OAuthToken.FromJson(rawToken);
+                var oauthToken = OAuthToken.FromJson(token.ToString());
                 var accessToken = oauthToken?.AccessToken;
                 authorizationString = "bearer " + accessToken;
             }

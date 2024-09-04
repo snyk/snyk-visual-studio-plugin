@@ -203,8 +203,6 @@ namespace Snyk.VisualStudio.Extension
                 this.serviceProvider.Options.SetApiToken(tokenString);
                 var token = this.serviceProvider.Options.ApiToken;
                 
-                serviceProvider.Options.SnykUser = await serviceProvider.ApiService.GetUserAsync();
-                
                 // Initialize commands
                 Logger.Information("Initialize Commands()");
                 await SnykScanCommand.InitializeAsync(this);

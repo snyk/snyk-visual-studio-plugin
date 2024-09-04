@@ -86,14 +86,14 @@ namespace Snyk.VisualStudio.Extension.UI.Toolwindow
 
             SnykTasksService tasksService = serviceProvider.TasksService;
 
-            tasksService.OssScanError += (sender, args) => ThreadHelper.JoinableTaskFactory.RunAsync(() => this.OnCliDisplayErrorAsync(sender, args));
+            tasksService.OssScanError += (sender, args) => ThreadHelper.JoinableTaskFactory.RunAsync(() => this.OnOssDisplayErrorAsync(sender, args));
             tasksService.SnykCodeScanError += this.OnSnykCodeDisplayError;
             tasksService.SnykCodeDisabled += this.OnSnykCodeDisabledHandler;
             tasksService.ScanningCancelled += this.OnScanningCancelled;
             tasksService.OssScanningStarted += this.OnOssScanningStarted;
             tasksService.OssScanningDisabled += this.OnOssScanningDisabled;
             tasksService.SnykCodeScanningStarted += this.OnSnykCodeScanningStarted;
-            tasksService.OssScanningUpdate += this.OnCliScanningUpdate;
+            tasksService.OssScanningUpdate += this.OnOssScanningUpdate;
             tasksService.SnykCodeScanningUpdate += this.OnSnykCodeScanningUpdate;
             tasksService.SnykCodeScanningFinished += (sender, args) => ThreadHelper.JoinableTaskFactory.RunAsync(this.OnSnykCodeScanningFinishedAsync);
             tasksService.OssScanningFinished += (sender, args) => ThreadHelper.JoinableTaskFactory.RunAsync(this.OnOssScanningFinishedAsync);
@@ -170,7 +170,7 @@ namespace Snyk.VisualStudio.Extension.UI.Toolwindow
         /// </summary>
         /// <param name="sender">Source object.</param>
         /// <param name="eventArgs">Event args.</param>
-        public void OnCliScanningUpdate(object sender, SnykOssScanEventArgs eventArgs) => this.AppendCliResultToTree(eventArgs.Result);
+        public void OnOssScanningUpdate(object sender, SnykOssScanEventArgs eventArgs) => this.AppendCliResultToTree(eventArgs.Result);
 
         /// <summary>
         /// Scanning update event handler. Append CLI results to tree.
@@ -240,7 +240,7 @@ namespace Snyk.VisualStudio.Extension.UI.Toolwindow
         /// <param name="sender">Source object.</param>
         /// <param name="eventArgs">Event args.</param>
         /// <returns>A <see cref="Task"/> representing the asynchronous operation.</returns>
-        public async Task OnCliDisplayErrorAsync(object sender, SnykOssScanEventArgs eventArgs)
+        public async Task OnOssDisplayErrorAsync(object sender, SnykOssScanEventArgs eventArgs)
         {
             await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
 
@@ -273,7 +273,8 @@ namespace Snyk.VisualStudio.Extension.UI.Toolwindow
 
             this.resultsTree.CodeQualityRootNode.State = RootTreeNodeState.Error;
             this.resultsTree.CodeSecurityRootNode.State = RootTreeNodeState.Error;
-
+            this.resultsTree.CodeQualityRootNode.Clean();
+            this.resultsTree.CodeSecurityRootNode.Clean();
             NotificationService.Instance.ShowErrorInfoBar(eventArgs.Error);
 
             if (!this.serviceProvider.Options.OssEnabled)
@@ -297,6 +298,9 @@ namespace Snyk.VisualStudio.Extension.UI.Toolwindow
 
             this.resultsTree.CodeQualityRootNode.State = disabledNodeState;
             this.resultsTree.CodeSecurityRootNode.State = disabledNodeState;
+
+            this.resultsTree.CodeQualityRootNode.Clean();
+            this.resultsTree.CodeSecurityRootNode.Clean();
         });
 
         /// <summary>
@@ -477,7 +481,11 @@ namespace Snyk.VisualStudio.Extension.UI.Toolwindow
 
             try
             {
-                var sastSettings = await this.serviceProvider.ApiService.GetSastSettingsAsync();
+                SastSettings sastSettings = null;
+                if (this.serviceProvider.Package.LanguageClientManager != null)
+                {
+                    sastSettings = await this.serviceProvider.Package.LanguageClientManager.InvokeGetSastEnabled(CancellationToken.None);
+                }
 
                 this.resultsTree.CodeQualityRootNode.State = this.GetSnykCodeRootNodeState(sastSettings, options.SnykCodeQualityEnabled);
                 this.resultsTree.CodeSecurityRootNode.State = this.GetSnykCodeRootNodeState(sastSettings, options.SnykCodeSecurityEnabled);

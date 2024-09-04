@@ -28,12 +28,6 @@ namespace Snyk.Common.Settings
         /// </summary>
         AuthenticationType AuthenticationMethod { get; }
 
-        SnykUser SnykUser { get; set; }
-
-        bool IsFedramp();
-
-        bool IsAnalyticsPermitted();
-
         /// <summary>
         /// Gets or sets a value indicating whether CLI custom endpoint parameter.
         /// </summary>
@@ -68,11 +62,6 @@ namespace Snyk.Common.Settings
         /// Gets a value indicating whether is Oss scan enabled.
         /// </summary>
         bool SnykCodeQualityEnabled { get; }
-
-        /// <summary>
-        /// Gets or sets a value indicating whether Sentry anonymous user id.
-        /// </summary>
-        string AnonymousId { get; set; }
 
         /// <summary>
         /// Gets or sets a value indicating whether Error reports enabled or disabled. By default it's enabled.
@@ -123,5 +112,7 @@ namespace Snyk.Common.Settings
         void LoadSettingsFromStorage();
 
         SastSettings SastSettings { get; set; }
+        Task OnAuthenticationSuccessfulAsync(string token);
+        Task OnAuthenticationFailedAsync(string errorMessage);
     }
 }

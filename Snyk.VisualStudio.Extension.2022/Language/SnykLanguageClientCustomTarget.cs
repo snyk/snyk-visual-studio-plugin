@@ -116,6 +116,7 @@ namespace Snyk.VisualStudio.Extension.Language
         {
             if (arg?["token"] == null)
             {
+                await serviceProvider.Options.OnAuthenticationFailedAsync("Authentication failed");
                 return;
             }
 
@@ -126,6 +127,8 @@ namespace Snyk.VisualStudio.Extension.Language
             }
 
             serviceProvider.Options.SetApiToken(token);
+            await serviceProvider.Options.OnAuthenticationSuccessfulAsync(token);
+
             if (serviceProvider.Options.AutoScan)
             {
                 await this.languageClientManager.InvokeWorkspaceScanAsync(CancellationToken.None);
