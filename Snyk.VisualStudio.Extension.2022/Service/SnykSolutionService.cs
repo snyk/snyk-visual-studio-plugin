@@ -216,7 +216,7 @@ namespace Snyk.VisualStudio.Extension.Service
             vsSolution.SetProperty((int)__VSPROPID4.VSPROPID_ActiveSolutionLoadManager, this);
 #pragma warning restore CS0618 // Type or member is obsolete
 
-            this.SolutionEvents = new SnykVsSolutionLoadEvents(this, this.ServiceProvider.OssService, this.ServiceProvider.SentryService);
+            this.SolutionEvents = new SnykVsSolutionLoadEvents(this, this.ServiceProvider.OssService);
 
             vsSolution.AdviseSolutionEvents(this.SolutionEvents, out _);
 

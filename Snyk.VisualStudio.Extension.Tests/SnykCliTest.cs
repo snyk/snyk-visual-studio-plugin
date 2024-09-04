@@ -20,7 +20,7 @@ namespace Snyk.VisualStudio.Extension.Tests
             this.optionsMock = new Mock<ISnykOptions>();
 
             this.optionsMock
-                .Setup(options => options.UsageAnalyticsEnabled)
+                .Setup(options => options.ErrorReportsEnabled)
                 .Returns(true);
 
             this.optionsMock
@@ -176,7 +176,7 @@ namespace Snyk.VisualStudio.Extension.Tests
                 .Returns("test-snyk-organization");
 
             this.optionsMock
-                .Setup(options => options.UsageAnalyticsEnabled)
+                .Setup(options => options.ErrorReportsEnabled)
                 .Returns(false);
 
             this.optionsMock
@@ -210,7 +210,7 @@ namespace Snyk.VisualStudio.Extension.Tests
                 .Returns("test-snyk-organization");
 
             this.optionsMock
-                .Setup(options => options.UsageAnalyticsEnabled)
+                .Setup(options => options.ErrorReportsEnabled)
                 .Returns(false);
 
             this.optionsMock

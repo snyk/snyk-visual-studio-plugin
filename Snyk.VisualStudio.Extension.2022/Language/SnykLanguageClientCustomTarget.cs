@@ -2,6 +2,7 @@
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 using Newtonsoft.Json.Linq;
 using Serilog;
@@ -18,9 +19,11 @@ namespace Snyk.VisualStudio.Extension.Language
         private readonly ConcurrentDictionary<string, IEnumerable<Issue>> snykOssIssueDictionary = new();
         private readonly ConcurrentDictionary<string, IEnumerable<Issue>> snykIaCIssueDictionary = new();
         private static readonly ILogger _logger = LogManager.ForContext<SnykLanguageClientCustomTarget>();
-        public SnykLanguageClientCustomTarget(ISnykServiceProvider serviceProvider)
+        private readonly ILanguageClientManager languageClientManager;
+        public SnykLanguageClientCustomTarget(ISnykServiceProvider serviceProvider, ILanguageClientManager languageClientManager)
         {
             this.serviceProvider = serviceProvider;
+            this.languageClientManager = languageClientManager;
         }
 
 #pragma warning disable CS1998 // Async method lacks 'await' operators and will run synchronously
@@ -111,12 +114,22 @@ namespace Snyk.VisualStudio.Extension.Language
         [JsonRpcMethod(LsConstants.SnykHasAuthenticated)]
         public async Task OnHasAuthenticated(JToken arg)
         {
-            if (arg == null || arg["token"] == null)
+            if (arg?["token"] == null)
             {
                 return;
             }
+
             var token = arg["token"].ToString();
+            if (string.IsNullOrEmpty(token))
+            {
+                return;
+            }
+
             serviceProvider.Options.SetApiToken(token);
+            if (serviceProvider.Options.AutoScan)
+            {
+                await this.languageClientManager.InvokeWorkspaceScanAsync(CancellationToken.None);
+            }
         }
 
         [JsonRpcMethod(LsConstants.SnykAddTrustedFolders)]

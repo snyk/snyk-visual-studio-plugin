@@ -20,7 +20,7 @@ namespace Snyk.VisualStudio.Extension.Settings
         /// <summary>
         /// Gets or sets a value indicating whether usage analytics enabled.
         /// </summary>
-        public bool UsageAnalyticsEnabled { get; set; } = true;
+        public bool ErrorReportsEnabled { get; set; } = true;
 
         /// <summary>
         /// Gets or sets current Cli version.
@@ -76,5 +76,7 @@ namespace Snyk.VisualStudio.Extension.Settings
         /// Gets or sets Authentication Type.
         /// </summary>
         public AuthenticationType AuthenticationMethod { get; set; }
+
+        public bool AutoScan { get; set; } = true;
     }
 }

@@ -76,7 +76,7 @@ namespace Snyk.VisualStudio.Extension.Settings
             this.customEndpointTextBox.Text = this.OptionsDialogPage.CustomEndpoint;
             this.organizationTextBox.Text = this.OptionsDialogPage.Organization;
             this.ignoreUnknownCACheckBox.Checked = this.OptionsDialogPage.IgnoreUnknownCA;
-            this.usageAnalyticsCheckBox.Checked = this.OptionsDialogPage.UsageAnalyticsEnabled;
+            this.errorReportsCheckBox.Checked = this.OptionsDialogPage.ErrorReportsEnabled;
             this.ossEnabledCheckBox.Checked = this.OptionsDialogPage.OssEnabled;
             this.ManageBinariesAutomaticallyCheckbox.Checked = this.OptionsDialogPage.BinariesAutoUpdate;
 
@@ -422,15 +422,10 @@ namespace Snyk.VisualStudio.Extension.Settings
             this.checkAgainLinkLabel.Visible = false;
         }
 
-        private void UsageAnalyticsCheckBox_CheckedChanged(object sender, EventArgs e) =>
-            ThreadHelper.JoinableTaskFactory.RunAsync(async () =>
-            {
-                this.OptionsDialogPage.UsageAnalyticsEnabled = this.usageAnalyticsCheckBox.Checked;
-
-                var serviceProvider = this.ServiceProvider;
-                
-                await serviceProvider.SentryService.SetupAsync();
-            });
+        private void errorReportsCheckBox_CheckedChanged(object sender, EventArgs e)
+        {
+            this.OptionsDialogPage.ErrorReportsEnabled = this.errorReportsCheckBox.Checked;
+        }
 
         private void OssEnabledCheckBox_CheckedChanged(object sender, EventArgs e)
         {
@@ -491,6 +486,11 @@ namespace Snyk.VisualStudio.Extension.Settings
         private void authType_SelectionChangeCommitted(object sender, EventArgs e)
         {
             this.OptionsDialogPage.AuthenticationMethod = (AuthenticationType)authType.SelectedValue;
+        }
+
+        private void autoScanCheckBox_CheckedChanged(object sender, EventArgs e)
+        {
+            this.OptionsDialogPage.AutoScan = autoScanCheckBox.Checked;
         }
     }
 }

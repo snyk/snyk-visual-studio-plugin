@@ -113,7 +113,6 @@
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Service\Domain\FeaturesSettings.cs" />
     <Compile Include="Service\IOssService.cs" />
-    <Compile Include="Service\ISentryService.cs" />
     <Compile Include="Service\ISnykProgressWorker.cs" />
     <Compile Include="Service\ISnykScanTopicProvider.cs" />
     <Compile Include="Service\ISnykService.cs" />
@@ -121,7 +120,6 @@
     <Compile Include="Service\IWorkspaceTrustService.cs" />
     <Compile Include="Service\OssScanException.cs" />
     <Compile Include="Service\OssService.cs" />
-    <Compile Include="Service\SentryService.cs" />
     <Compile Include="Service\SnykCliDownloadEventArgs.cs" />
     <Compile Include="Service\SnykOssScanEventArgs.cs" />
     <Compile Include="Service\SnykCodeScanEventArgs.cs" />
