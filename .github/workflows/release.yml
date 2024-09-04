@@ -5,17 +5,13 @@ on:
 
 env:
   SOLUTION_FILE_PATH: .
-  DEFAULT_BRANCH: main
+  DEFAULT_BRANCH: legacy-vs-extension
 
 jobs:
   build-project:
-    uses: snyk/snyk-visual-studio-plugin/.github/workflows/build-project.yml@main
+    uses: snyk/snyk-visual-studio-plugin/.github/workflows/build-project.yml@legacy-vs-extension
     with:
       solution-file-path: .
-    secrets: inherit
-  run-integration-tests:
-    needs: build-project
-    uses: snyk/snyk-visual-studio-plugin/.github/workflows/integration-tests.yml@main
     secrets: inherit
   run-unit-tests:
     needs: build-project
@@ -41,7 +37,7 @@ jobs:
     - name: Tests
       run: vstest.console.exe **\*.Tests.dll /TestCaseFilter:"FullyQualifiedName!=Xunit.Instances.VisualStudio&integration!=true" #exclude integration tests and the psuedo-tests that launch a VS instance
   release:
-    needs: [build-project, run-integration-tests, run-unit-tests]
+    needs: [build-project, run-unit-tests]
     runs-on: windows-2022
     defaults:
       run:
@@ -89,26 +85,9 @@ jobs:
         asset_name: Snyk_Vulnerability_Scanner-${{ needs.build-project.outputs.version }}.vsix
         asset_content_type: application/zip
 
-    - name: Upload GitHub Release 2022 Asset
-      uses: actions/upload-release-asset@v1
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      with:
-        upload_url: ${{ steps.create_release.outputs.upload_url }}
-        asset_path: .\Snyk.VisualStudio.Extension.2022\bin\Release\Snyk.VisualStudio.Extension.vsix
-        asset_name: Snyk_Vulnerability_Scanner-${{ needs.build-project.outputs.version }}-2022.vsix
-        asset_content_type: application/zip
-
     - name: Publish 2015-2019 extension to Marketplace
       uses: cezarypiatek/VsixPublisherAction@0.2
       with:
         extension-file: '.\Snyk.VisualStudio.Extension\bin\Release\Snyk.VisualStudio.Extension.vsix'
         publish-manifest-file: '.\Snyk.VisualStudio.Extension\vs-publish.json'
-        personal-access-code: ${{ secrets.VS_PUBLISHER_ACCESS_TOKEN }}
-
-    - name: Publish 2022 extension to Marketplace
-      uses: cezarypiatek/VsixPublisherAction@0.2
-      with:
-        extension-file: '.\Snyk.VisualStudio.Extension.2022\bin\Release\Snyk.VisualStudio.Extension.vsix'
-        publish-manifest-file: '.\Snyk.VisualStudio.Extension.2022\vs-publish.json'
         personal-access-code: ${{ secrets.VS_PUBLISHER_ACCESS_TOKEN }}
