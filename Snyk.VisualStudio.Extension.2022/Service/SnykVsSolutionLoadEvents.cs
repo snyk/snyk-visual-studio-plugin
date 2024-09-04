@@ -2,7 +2,6 @@
 using Microsoft.VisualStudio;
 using Microsoft.VisualStudio.Shell.Interop;
 using Snyk.Common;
-using Snyk.VisualStudio.Extension.Cache;
 
 namespace Snyk.VisualStudio.Extension.Service
 {
@@ -13,17 +12,14 @@ namespace Snyk.VisualStudio.Extension.Service
     {
         private ISolutionService solutionService;
 
-        private IOssService ossService;
-
         /// <summary>
         /// Initializes a new instance of the <see cref="SnykVsSolutionLoadEvents"/> class.
         /// </summary>
         /// <param name="solutionService">Solution serviceinstance.</param>
         /// <param name="sentryService">Sentry service instance.</param>
-        public SnykVsSolutionLoadEvents(ISolutionService solutionService, IOssService ossService)
+        public SnykVsSolutionLoadEvents(ISolutionService solutionService)
         {
             this.solutionService = solutionService;
-            this.ossService = ossService;
         }
 
         /// <summary>
@@ -44,8 +40,6 @@ namespace Snyk.VisualStudio.Extension.Service
         {
             this.AfterBackgroundSolutionLoadComplete?.Invoke(this, EventArgs.Empty);
 
-            this.solutionService.Clean();
-
             return VSConstants.S_OK;
         }
 
@@ -55,8 +49,6 @@ namespace Snyk.VisualStudio.Extension.Service
         /// <param name="folderPath">Folder path.</param>
         public void OnAfterCloseFolder(string folderPath)
         {
-            this.solutionService.Clean();
-
             this.AfterCloseSolution?.Invoke(this, EventArgs.Empty);
         }
 
@@ -67,8 +59,6 @@ namespace Snyk.VisualStudio.Extension.Service
         /// <returns>VSConstants.S_OK</returns>
         public int OnAfterCloseSolution(object pUnkReserved)
         {
-            this.solutionService.Clean();
-
             this.AfterCloseSolution?.Invoke(this, EventArgs.Empty);
 
             return VSConstants.S_OK;
@@ -87,8 +77,6 @@ namespace Snyk.VisualStudio.Extension.Service
         /// <returns>VSConstants.S_OK.</returns>
         public int OnAfterLoadProject(IVsHierarchy pStubHierarchy, IVsHierarchy pRealHierarchy)
         {
-            this.solutionService.Clean();
-
             return VSConstants.S_OK;
         }
 
@@ -99,8 +87,6 @@ namespace Snyk.VisualStudio.Extension.Service
         /// <returns>VSConstants.S_OK.</returns>
         public int OnAfterLoadProjectBatch(bool fIsBackgroundIdleBatch)
         {
-            this.solutionService.Clean();
-
             return VSConstants.S_OK;
         }
 
@@ -111,8 +97,6 @@ namespace Snyk.VisualStudio.Extension.Service
         public void OnAfterOpenFolder(string folderPath)
         {
             this.AfterBackgroundSolutionLoadComplete?.Invoke(this, EventArgs.Empty);
-
-            this.solutionService.Clean();
         }
 
         /// <summary>
@@ -123,10 +107,6 @@ namespace Snyk.VisualStudio.Extension.Service
         /// <returns>VSConstants.S_OK.</returns>
         public int OnAfterOpenProject(IVsHierarchy vsHierarchy, int fAdded)
         {
-            new CodeCacheHierarchyEvents(this.solutionService.FileProvider);
-            new OssCacheHierarchyEvents(this.ossService);
-
-            this.solutionService.Clean();
             return VSConstants.S_OK;
         }
 
@@ -138,8 +118,6 @@ namespace Snyk.VisualStudio.Extension.Service
         /// <returns>VSConstants.S_OK.</returns>
         public int OnAfterOpenSolution(object pUnkReserved, int fNewSolution)
         {
-            this.solutionService.Clean();
-
             return VSConstants.S_OK;
         }
 

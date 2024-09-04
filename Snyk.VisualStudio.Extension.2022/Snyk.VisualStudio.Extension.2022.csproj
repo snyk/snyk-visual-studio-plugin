@@ -73,9 +73,6 @@
     <Compile Include="Language\SnykLanguageClient.cs" />
     <Compile Include="Language\SnykLanguageClientCustomTarget.cs" />
     <Compile Include="Language\SnykLanguageClientMiddleware.cs" />
-    <Compile Include="Cache\AbstractCacheHierarchyEvents.cs" />
-    <Compile Include="Cache\CodeCacheHierarchyEvents.cs" />
-    <Compile Include="Cache\OssCacheHierarchyEvents.cs" />
     <Compile Include="CLI\OssError.cs" />
     <Compile Include="CLI\CliGroupedVulnerabilities.cs" />
     <Compile Include="CLI\CLIResult.cs" />
@@ -109,14 +106,11 @@
     <Compile Include="Product.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Service\Domain\FeaturesSettings.cs" />
-    <Compile Include="Service\IOssService.cs" />
     <Compile Include="Service\ISnykProgressWorker.cs" />
-    <Compile Include="Service\ISnykScanTopicProvider.cs" />
     <Compile Include="Service\ISnykService.cs" />
     <Compile Include="Service\ISnykServiceProvider.cs" />
     <Compile Include="Service\IWorkspaceTrustService.cs" />
     <Compile Include="Service\OssScanException.cs" />
-    <Compile Include="Service\OssService.cs" />
     <Compile Include="Service\SnykCliDownloadEventArgs.cs" />
     <Compile Include="Service\SnykOssScanEventArgs.cs" />
     <Compile Include="Service\SnykCodeScanEventArgs.cs" />
@@ -293,10 +287,6 @@
     </PackageReference>
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\Snyk.Code.Library\Snyk.Code.Library.csproj">
-      <Project>{73df907b-a3bc-4176-a4e0-04bbd2fa924c}</Project>
-      <Name>Snyk.Code.Library</Name>
-    </ProjectReference>
     <ProjectReference Include="..\Snyk.Common\Snyk.Common.csproj">
       <Project>{7912ad6d-c154-4504-9ab3-8767d3c46e89}</Project>
       <Name>Snyk.Common</Name>

@@ -98,13 +98,7 @@ namespace Snyk.VisualStudio.Extension.Settings
 
         private AuthenticationToken CreateAuthenticationToken(string token)
         {
-            var apiEndpointResolver = new ApiEndpointResolver(this);
-            var type = apiEndpointResolver.AuthenticationMethod;
-            
-            var tokenObj = new AuthenticationToken(type, token)
-            {
-            };
-
+            var tokenObj = new AuthenticationToken(this.AuthenticationMethod, token);
             return tokenObj;
         }
 

@@ -3,9 +3,7 @@ using System.Threading.Tasks;
 using EnvDTE80;
 using Microsoft.VisualStudio.Settings;
 using Microsoft.VisualStudio.Shell;
-using Snyk.Code.Library.Service;
 using Snyk.Common;
-using Snyk.Common.Service;
 using Snyk.Common.Settings;
 using Snyk.VisualStudio.Extension.CLI;
 using Snyk.VisualStudio.Extension.Settings;
@@ -60,16 +58,6 @@ namespace Snyk.VisualStudio.Extension.Service
         /// Gets Theme service instance.
         /// </summary>
         SnykVsThemeService VsThemeService { get; }
-
-        /// <summary>
-        /// Gets SnykCodeService service instance.
-        /// </summary>
-        ISnykCodeService SnykCodeService { get; }
-
-        /// <summary>
-        /// Gets OssService service instance.
-        /// </summary>
-        IOssService OssService { get; }
 
         /// <summary>
         /// Gets user storage settings service instance.

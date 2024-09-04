@@ -108,7 +108,6 @@ namespace Snyk.VisualStudio.Extension.Settings
             {
                 await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
                 this.UpdateViewFromOptionsDialog();
-                this.InitializeApiToken();
                 await ServiceProvider.Package.LanguageClientManager.DidChangeConfigurationAsync(CancellationToken.None);
             }).FireAndForget();
 

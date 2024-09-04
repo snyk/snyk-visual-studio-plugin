@@ -1,11 +1,9 @@
-﻿namespace Snyk.VisualStudio.Extension.UI.Notifications
-{
-    using System;
-    using Snyk.Code.Library.Service;
-    using Snyk.Common.Settings;
-    using Snyk.VisualStudio.Extension.Service;
-    using Snyk.VisualStudio.Extension.Settings;
+﻿using System;
+using Snyk.Common.Settings;
+using Snyk.VisualStudio.Extension.Service;
 
+namespace Snyk.VisualStudio.Extension.UI.Notifications
+{
     /// <summary>
     /// Display notifications in Visual Studio status bar.
     /// </summary>
@@ -65,12 +63,9 @@
         /// <summary>
         /// Initialize SnykCode event listeners for this service.
         /// </summary>
-        /// <param name="codeService">SnykCode service instance</param>
         /// <param name="options">Extension options.</param>
-        public void InitializeEventListeners(ISnykCodeService codeService, ISnykOptions options)
+        public void InitializeEventListeners(ISnykOptions options)
         {
-            codeService.ScanEventHandler += this.OnSnykCodeScanUpdate;
-
             this.options = options;
         }
 
@@ -94,9 +89,6 @@
                 this.statusBar.ShowSnykCodeUpdateMessage("Snyk Code scan error");
             }
         }
-
-        private void OnSnykCodeScanUpdate(object sender, SnykCodeEventArgs eventArgs)
-            => this.statusBar.ShowSnykCodeUpdateMessage($"{eventArgs.ScanState} {eventArgs.Progress}%");
 
         private void OnOssScanningFinished(object sender, SnykOssScanEventArgs eventArgs)
         {

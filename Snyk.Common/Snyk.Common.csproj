@@ -54,7 +54,6 @@
     <Compile Include="CollectionExtensions.cs" />
     <Compile Include="FileUtil.cs" />
     <Compile Include="Authentication\AuthenticationToken.cs" />
-    <Compile Include="HttpClientFactory.cs" />
     <Compile Include="IFileProvider.cs" />
     <Compile Include="LocalCodeEngine.cs" />
     <Compile Include="SastSettings.cs" />

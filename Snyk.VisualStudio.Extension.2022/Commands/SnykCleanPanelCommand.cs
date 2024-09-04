@@ -58,8 +58,6 @@
         protected override void Execute(object sender, EventArgs eventArgs)
         {
             this.VsPackage.ToolWindowControl.Clean();
-
-            SnykVSPackage.ServiceProvider.SolutionService.Clean();
         }
 
         /// <summary>

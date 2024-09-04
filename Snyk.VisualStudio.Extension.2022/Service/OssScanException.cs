@@ -1,8 +1,8 @@
-﻿namespace Snyk.VisualStudio.Extension.Service
-{
-    using System;
-    using Snyk.VisualStudio.Extension.CLI;
+﻿using System;
+using Snyk.VisualStudio.Extension.CLI;
 
+namespace Snyk.VisualStudio.Extension.Service
+{
      /// <summary>
      /// Exception for OSS scan errors.
      /// </summary>

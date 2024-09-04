@@ -32,4 +32,8 @@
     <ProjectReference Include="..\Snyk.Common\Snyk.Common.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Folder Include="Service\" />
+  </ItemGroup>
+
 </Project>

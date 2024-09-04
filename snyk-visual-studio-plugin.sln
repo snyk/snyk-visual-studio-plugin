@@ -29,10 +29,6 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "images", "images", "{99BED5
 		doc\images\readme_image_3_1_4.png = doc\images\readme_image_3_1_4.png
 	EndProjectSection
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Snyk.Code.Library", "Snyk.Code.Library\Snyk.Code.Library.csproj", "{73DF907B-A3BC-4176-A4E0-04BBD2FA924C}"
-EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Snyk.Code.Library.Tests", "Snyk.Code.Library.Tests\Snyk.Code.Library.Tests.csproj", "{01631B74-705C-46B2-B6FB-DDD8C358F951}"
-EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Snyk.Common", "Snyk.Common\Snyk.Common.csproj", "{7912AD6D-C154-4504-9AB3-8767D3C46E89}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Snyk.VisualStudio.Extension.Tests", "Snyk.VisualStudio.Extension.Tests\Snyk.VisualStudio.Extension.Tests.csproj", "{42A7C4CF-C297-4F07-B8F1-832C48AA1F5F}"
@@ -51,14 +47,6 @@ Global
 		Release|Any CPU = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(ProjectConfigurationPlatforms) = postSolution
-		{73DF907B-A3BC-4176-A4E0-04BBD2FA924C}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{73DF907B-A3BC-4176-A4E0-04BBD2FA924C}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{73DF907B-A3BC-4176-A4E0-04BBD2FA924C}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{73DF907B-A3BC-4176-A4E0-04BBD2FA924C}.Release|Any CPU.Build.0 = Release|Any CPU
-		{01631B74-705C-46B2-B6FB-DDD8C358F951}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{01631B74-705C-46B2-B6FB-DDD8C358F951}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{01631B74-705C-46B2-B6FB-DDD8C358F951}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{01631B74-705C-46B2-B6FB-DDD8C358F951}.Release|Any CPU.Build.0 = Release|Any CPU
 		{7912AD6D-C154-4504-9AB3-8767D3C46E89}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{7912AD6D-C154-4504-9AB3-8767D3C46E89}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{7912AD6D-C154-4504-9AB3-8767D3C46E89}.Release|Any CPU.ActiveCfg = Release|Any CPU

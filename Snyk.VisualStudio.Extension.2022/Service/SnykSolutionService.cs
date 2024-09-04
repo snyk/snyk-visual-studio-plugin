@@ -8,7 +8,6 @@ using Microsoft.VisualStudio;
 using Microsoft.VisualStudio.Shell;
 using Microsoft.VisualStudio.Shell.Interop;
 using Serilog;
-using Snyk.Code.Library.Service;
 using Snyk.Common;
 using Task = System.Threading.Tasks.Task;
 using Toolkit = Community.VisualStudio.Toolkit;
@@ -68,20 +67,6 @@ namespace Snyk.VisualStudio.Extension.Service
         /// Gets or sets a value indicating whether Solution events instance.
         /// </summary>
         public SnykVsSolutionLoadEvents SolutionEvents { get; set; }
-
-        /// <inheritdoc/>
-        public IFileProvider FileProvider
-        {
-            get
-            {
-                if (this.fileProvider == null)
-                {
-                    this.fileProvider = new SnykCodeFileProvider(this);
-                }
-
-                return this.fileProvider;
-            }
-        }
 
         /// <summary>
         /// Initialize service.
@@ -193,16 +178,6 @@ namespace Snyk.VisualStudio.Extension.Service
             return await this.GetSolutionFilesAsync();
         }
 
-        /// <inheritdoc/>
-        public void Clean()
-        {
-            this.fileProvider?.ClearHistory();
-
-            this.ServiceProvider.SnykCodeService?.Clean();
-
-            this.ServiceProvider.OssService?.ClearCache();
-        }
-
         private async Task InitializeSolutionEventsAsync()
         {
             await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
@@ -216,7 +191,7 @@ namespace Snyk.VisualStudio.Extension.Service
             vsSolution.SetProperty((int)__VSPROPID4.VSPROPID_ActiveSolutionLoadManager, this);
 #pragma warning restore CS0618 // Type or member is obsolete
 
-            this.SolutionEvents = new SnykVsSolutionLoadEvents(this, this.ServiceProvider.OssService);
+            this.SolutionEvents = new SnykVsSolutionLoadEvents(this);
 
             vsSolution.AdviseSolutionEvents(this.SolutionEvents, out _);
 

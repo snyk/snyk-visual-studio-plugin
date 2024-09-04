@@ -8,9 +8,7 @@ using Microsoft.VisualStudio.Settings;
 using Microsoft.VisualStudio.Shell;
 using Microsoft.VisualStudio.Shell.Settings;
 using Serilog;
-using Snyk.Code.Library.Service;
 using Snyk.Common;
-using Snyk.Common.Service;
 using Snyk.Common.Settings;
 using Snyk.VisualStudio.Extension.CLI;
 using Snyk.VisualStudio.Extension.Settings;
@@ -39,10 +37,6 @@ namespace Snyk.VisualStudio.Extension.Service
         private DTE2 dte;
 
         private SnykUserStorageSettingsService userStorageSettingsService;
-
-        private ISnykCodeService snykCodeService;
-
-        private IOssService ossService;
 
         private IWorkspaceTrustService workspaceTrustService;
         
@@ -121,37 +115,7 @@ namespace Snyk.VisualStudio.Extension.Service
         }
 
         /// <inheritdoc/>
-        public ISnykCodeService SnykCodeService
-        {
-            get
-            {
-                if (this.snykCodeService == null)
-                {
-                    this.SetupSnykCodeService();
-                }
-
-                return this.snykCodeService;
-            }
-        }
-
-        /// <inheritdoc/>
-        public IOssService OssService
-        {
-            get
-            {
-                if (this.ossService == null)
-                {
-                    this.ossService = new OssService(this);
-                }
-
-                return this.ossService;
-            }
-        }
-
-        /// <inheritdoc/>
         public SnykToolWindowControl ToolWindow => this.Package.ToolWindowControl;
-
-        public ApiEndpointResolver ApiEndpointResolver => new ApiEndpointResolver(this.Options);
 
         /// <summary>
         /// Get Visual Studio service by type.
@@ -205,33 +169,6 @@ namespace Snyk.VisualStudio.Extension.Service
         /// </summary>
         /// <returns>New SnykCli instance.</returns>
         public ICli NewCli() => new SnykCli(this.Options, this.vsVersion);
-
-        private void OnSettingsChanged(object sender, SnykSettingsChangedEventArgs e) => this.SetupSnykCodeService();
-
-        private void SetupSnykCodeService()
-        {
-            try
-            {
-                var options = this.Options;
-                string endpoint = new ApiEndpointResolver(this.Options).GetSnykCodeApiUrl();
-                var httpClient = HttpClientFactory.NewHttpClient(options.ApiToken, endpoint)
-                    .WithUserAgent(this.vsVersion, SnykExtension.Version);
-
-                this.snykCodeService = CodeServiceFactory.CreateSnykCodeService(
-                    options.ApiToken,
-                    endpoint,
-                    this.SolutionService.FileProvider,
-                    SnykExtension.IntegrationName,
-                    options.Organization ?? string.Empty,
-                    httpClient);
-
-                VsStatusBarNotificationService.Instance.InitializeEventListeners(this.snykCodeService, options);
-            }
-            catch (Exception e)
-            {
-                Logger.Error(e, string.Empty);
-            }
-        }
 
         private ICli _cli;
         public ICli Cli {

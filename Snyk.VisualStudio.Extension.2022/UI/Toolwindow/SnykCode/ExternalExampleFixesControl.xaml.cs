@@ -1,14 +1,12 @@
-﻿using Snyk.VisualStudio.Extension.Language;
+﻿using System.Collections.Generic;
+using System.Collections.ObjectModel;
+using System.Linq;
+using System.Windows;
+using System.Windows.Controls;
+using Snyk.VisualStudio.Extension.Language;
 
 namespace Snyk.VisualStudio.Extension.UI.Toolwindow.SnykCode
 {
-    using System.Collections.Generic;
-    using System.Collections.ObjectModel;
-    using System.Linq;
-    using System.Windows;
-    using System.Windows.Controls;
-    using Snyk.Code.Library.Domain.Analysis;
-
     /// <summary>
     /// Interaction logic for ExternalExampleFixesControl.xaml.
     /// </summary>

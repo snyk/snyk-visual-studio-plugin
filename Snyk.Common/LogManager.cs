@@ -1,15 +1,14 @@
-﻿namespace Snyk.Common
-{
-    using System;
-    using System.IO;
-    using global::Sentry;
-    using global::Sentry.Serilog;
-    using Serilog;
-    using Serilog.Core;
-    using Serilog.Events;
-    using Serilog.Exceptions;
-    using Snyk.Common.Sentry;
+﻿using System;
+using System.IO;
+using Sentry.Serilog;
+using Serilog;
+using Serilog.Core;
+using Serilog.Events;
+using Serilog.Exceptions;
+using Snyk.Common.Sentry;
 
+namespace Snyk.Common
+{
     /// <summary>
     /// Logger manager for create logger per class.
     /// </summary>

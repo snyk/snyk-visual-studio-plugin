@@ -6,7 +6,6 @@ using Microsoft;
 using Microsoft.VisualStudio.ComponentModelHost;
 using Microsoft.VisualStudio.Shell;
 using Serilog;
-using Snyk.Code.Library.Domain.Analysis;
 using Snyk.Common;
 using Snyk.VisualStudio.Extension.CLI;
 using Snyk.VisualStudio.Extension.Download;
@@ -20,7 +19,7 @@ namespace Snyk.VisualStudio.Extension.Service
     /// <summary>
     /// Incapsulate logic with background tasks work.
     /// </summary>
-    public class SnykTasksService : ISnykScanTopicProvider
+    public class SnykTasksService
     {
         private static readonly ILogger Logger = LogManager.ForContext<SnykTasksService>();
 

@@ -4,10 +4,7 @@ using System.Linq;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Documents;
-using Snyk.Code.Library.Domain.Analysis;
-using Snyk.VisualStudio.Extension.CLI;
 using Snyk.VisualStudio.Extension.Language;
-using Snyk.VisualStudio.Extension.Model;
 
 namespace Snyk.VisualStudio.Extension.UI.Toolwindow
 {
