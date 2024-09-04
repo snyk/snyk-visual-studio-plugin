@@ -421,7 +421,7 @@ namespace Snyk.VisualStudio.Extension.Settings
         }
 
         private void SnykCodeSettingsLinkLabel_LinkClicked(object sender, LinkLabelLinkClickedEventArgs e)
-            => System.Diagnostics.Process.Start(this.OptionsDialogPage.SnykCodeSettingsUrl);
+            => Process.Start(this.OptionsDialogPage.SnykCodeSettingsUrl);
 
         private void CheckAgainLinkLabel_LinkClicked(object sender, LinkLabelLinkClickedEventArgs e)
         {

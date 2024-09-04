@@ -81,34 +81,6 @@ namespace Snyk.VisualStudio.Extension.Settings
             }
         }
 
-
-        private SastSettings sastSettings;
-
-        private string RefreshToken()
-        {
-            Logger.Information("Attempting to refresh OAuth token");
-            var cli = this.ServiceProvider?.NewCli();
-            if (cli == null)
-            {
-                Logger.Information("Couldn't get CLI. Aborting");
-                return string.Empty;
-            }
-
-            try
-            {
-                cli.RunCommand("whoami --experimental");
-            }
-            catch (AuthenticationException ex)
-            {
-                Logger.Error("Failed to refresh access token: {Message}", ex.Message);
-                NotificationService.Instance?.ShowErrorInfoBar("Failed to refresh Access token");
-                return string.Empty;
-            }
-
-            var token = cli.GetApiToken();
-            return token;
-        }
-
         public void SetApiToken(string apiTokenString)
         {
             if (this.apiToken?.ToString() == apiTokenString)
@@ -164,7 +136,8 @@ namespace Snyk.VisualStudio.Extension.Settings
 
         /// <inheritdoc/>
         public string SnykCodeSettingsUrl => $"{this.GetBaseAppUrl()}/manage/snyk-code";
-
+        
+        private SastSettings sastSettings;
         public SastSettings SastSettings
         {
             get => this.sastSettings;
