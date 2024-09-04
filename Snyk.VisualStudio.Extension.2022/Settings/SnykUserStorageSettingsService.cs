@@ -115,9 +115,9 @@ namespace Snyk.VisualStudio.Extension.Settings
         }
 
         /// <summary>
-        /// Get Auto Scan option
+        /// Get Or Set Auth Token
         /// </summary>
-        /// <returns>bool.</returns>
+        /// <returns>string.</returns>
 
         public string Token
         {
