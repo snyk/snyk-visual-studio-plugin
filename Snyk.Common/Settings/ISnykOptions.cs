@@ -16,6 +16,7 @@ namespace Snyk.Common.Settings
         string IntegrationVersion { get; }
         string IntegrationEnvironment { get; set; }
         string IntegrationEnvironmentVersion { get; set; }
+        bool AutoScan { get; set; }
 
         /// <summary>
         /// Gets or sets a value indicating whether Snyk user API token.
@@ -76,7 +77,7 @@ namespace Snyk.Common.Settings
         /// <summary>
         /// Gets or sets a value indicating whether Analytics enabled or disabled. By default it's enabled.
         /// </summary>
-        bool UsageAnalyticsEnabled { get; set; }
+        bool ErrorReportsEnabled { get; set; }
 
         /// <summary>
         /// Gets or sets a value indicating whether the CLI should be automatically updated.

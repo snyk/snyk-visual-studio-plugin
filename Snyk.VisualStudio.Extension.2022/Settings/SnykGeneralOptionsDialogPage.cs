@@ -31,7 +31,7 @@ namespace Snyk.VisualStudio.Extension.Settings
         public string IntegrationVersion { get; } = SnykExtension.Version;
         public string IntegrationEnvironment { get; set; }
         public string IntegrationEnvironmentVersion { get; set;}
-            
+
         private ISnykServiceProvider serviceProvider;
 
         private SnykUserStorageSettingsService userStorageSettingsService;
@@ -72,6 +72,18 @@ namespace Snyk.VisualStudio.Extension.Settings
                 this.FireSettingsChangedEvent();
             }
         }
+
+        public bool AutoScan
+        {
+            get => this.userStorageSettingsService.AutoScan;
+            set
+            {
+                if (this.userStorageSettingsService == null || this.userStorageSettingsService.AutoScan == value)
+                    return;
+                this.userStorageSettingsService.AutoScan = value;
+            }
+        }
+
 
         private SastSettings sastSettings;
 
@@ -287,10 +299,10 @@ namespace Snyk.VisualStudio.Extension.Settings
         /// Gets or sets a value indicating whether use analytics enabled.
         /// Save data via <see cref="SnykUserStorageSettingsService"/>.
         /// </summary>
-        public bool UsageAnalyticsEnabled
+        public bool ErrorReportsEnabled
         {
-            get => this.userStorageSettingsService.IsUsageAnalyticsEnabled();
-            set => this.userStorageSettingsService?.SaveUsageAnalyticsEnabled(value);
+            get => this.userStorageSettingsService.IsErrorReportsEnabled();
+            set => this.userStorageSettingsService?.SaveErrorReportsEnabled(value);
         }
 
         /// <inheritdoc/>

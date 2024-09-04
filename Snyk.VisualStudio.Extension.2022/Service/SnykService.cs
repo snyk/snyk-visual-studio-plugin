@@ -49,8 +49,6 @@ namespace Snyk.VisualStudio.Extension.Service
 
         private ISnykApiService apiService;
 
-        private ISentryService sentryService;
-
         private IWorkspaceTrustService workspaceTrustService;
         
         /// <summary>
@@ -182,20 +180,6 @@ namespace Snyk.VisualStudio.Extension.Service
                 }
 
                 return this.ossService;
-            }
-        }
-
-        /// <inheritdoc/>
-        public ISentryService SentryService
-        {
-            get
-            {
-                if (this.sentryService == null)
-                {
-                    this.sentryService = new SentryService(this);
-                }
-
-                return this.sentryService;
             }
         }
 

@@ -82,12 +82,6 @@ namespace Snyk.VisualStudio.Extension.Service
         ISnykApiService ApiService { get; }
 
         /// <summary>
-        /// Gets <see cref="SentryService"/> instance.
-        /// </summary>
-        /// <returns>Task.</returns>
-        ISentryService SentryService { get; }
-
-        /// <summary>
         /// Gets <see cref="SnykToolWindowControl"/> instance.
         /// </summary>
         SnykToolWindowControl ToolWindow { get; }

@@ -5,6 +5,7 @@ using System.Net.Http;
 using System.Threading.Tasks;
 using Serilog;
 using Snyk.Common;
+using Snyk.VisualStudio.Extension.Language;
 using Snyk.VisualStudio.Extension.Service;
 
 namespace Snyk.VisualStudio.Extension.CLI.Download
@@ -17,9 +18,9 @@ namespace Snyk.VisualStudio.Extension.CLI.Download
         private const string BaseUrl = "https://downloads.snyk.io";
 
         private const string ReleaseChannel = "preview";
-        private const string LatestReleaseVersionUrl = BaseUrl + "/cli/"+ReleaseChannel+"/version";
-        private const string LatestReleaseDownloadUrl = BaseUrl + "/cli/"+ReleaseChannel+"/{0}";
-        private const string Sha256DownloadUrl = BaseUrl + "/cli/"+ReleaseChannel+"/snyk-win.exe.sha256";
+        private const string LatestReleaseVersionUrl = BaseUrl + "/cli/" + ReleaseChannel + "/ls-protocol-version-" + LsConstants.ProtocolVersion;
+        private const string LatestReleaseDownloadUrl = BaseUrl + "/cli/{0}/" + SnykCli.CliFileName;
+        private const string Sha256DownloadUrl = "{0}.sha256";
 
         private const int FourDays = 4;
 
@@ -67,25 +68,37 @@ namespace Snyk.VisualStudio.Extension.CLI.Download
                 return new LatestReleaseInfo
                 {
                     Version = latestVersion,
-                    Url = string.Format(LatestReleaseDownloadUrl, SnykCli.CliFileName),
+                    Url = string.Format(LatestReleaseDownloadUrl, "v"+latestVersion),
                     Name = "v" + latestVersion,
                 };
             }
+        }
+
+
+        /// <summary>
+        /// Compare CLI versions and if new version string is more new to current version method will return true.
+        /// </summary>
+        /// <param name="currentVersionStr">Current CLI version.</param>
+        /// <param name="newVersionStr">New CLI version.</param>
+        /// <returns>True if there is more new version.</returns>
+        public bool IsNewVersionAvailable(string currentVersionStr, string newVersionStr)
+        {
+            return currentVersionStr != newVersionStr;
         }
 
         /// <summary>
         /// Request last cli sha.
         /// </summary>
         /// <returns>CLI sha string.</returns>
-        public string GetLatestCliSha()
+        public string GetLatestCliSha(string cliDownloadUrl)
         {
             Logger.Information("Enter GetLatestCliSha method");
 
             using (var webClient = new SnykWebClient())
             {
                 Logger.Information("Get latest CLI sha");
-
-                string result = webClient.DownloadString(Sha256DownloadUrl)
+                var shaDownloadUrl = string.Format(Sha256DownloadUrl, cliDownloadUrl);
+                var result = webClient.DownloadString(shaDownloadUrl)
                     .Replace(SnykCli.CliFileName, string.Empty)
                     .Replace("\n", string.Empty)
                     .Trim();
@@ -132,7 +145,7 @@ namespace Snyk.VisualStudio.Extension.CLI.Download
         /// </summary>
         /// <param name="lastCheckDate">Last check date.</param>
         /// <returns>True if new version CLI exists</returns>
-        public bool IsCliUpdateExists(DateTime lastCheckDate) => this.IsFourDaysPassedAfterLastCheck(lastCheckDate);
+        public bool IsCliUpdateExists(DateTime lastCheckDate) => this.IsNewVersionAvailable(this.currentCliVersion, this.GetLatestReleaseInfo().Version) && this.IsFourDaysPassedAfterLastCheck(lastCheckDate);
 
         /// <summary>
         /// Check is there a new version on the server and if there is, download it.
@@ -227,7 +240,7 @@ namespace Snyk.VisualStudio.Extension.CLI.Download
         /// <summary>
         /// Initialize extectedSha property with latest value from server.
         /// </summary>
-        public void SaveLatestCliSha() => this.expectedSha = this.GetLatestCliSha();
+        public void SaveLatestCliSha(string cliDownloadUrl) => this.expectedSha = this.GetLatestCliSha(cliDownloadUrl);
 
         private void PrepareSnykCliDirectory()
         {
@@ -249,7 +262,7 @@ namespace Snyk.VisualStudio.Extension.CLI.Download
 
             try
             {
-                this.SaveLatestCliSha();
+                this.SaveLatestCliSha(cliDownloadUrl);
 
                 await this.DownloadFileAsync(progressWorker, cliDownloadUrl, cliFileDestinationPath, downloadFinishedCallbacks);
             }

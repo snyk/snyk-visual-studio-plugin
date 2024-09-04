@@ -44,11 +44,12 @@ namespace Snyk.VisualStudio.Extension.Settings
             this.authenticateButton = new System.Windows.Forms.Button();
             this.authProgressBar = new System.Windows.Forms.ProgressBar();
             this.errorProvider = new System.Windows.Forms.ErrorProvider(this.components);
-            this.usageAnalyticsCheckBox = new System.Windows.Forms.CheckBox();
+            this.errorReportsCheckBox = new System.Windows.Forms.CheckBox();
             this.ossEnabledCheckBox = new System.Windows.Forms.CheckBox();
             this.codeSecurityEnabledCheckBox = new System.Windows.Forms.CheckBox();
             this.codeQualityEnabledCheckBox = new System.Windows.Forms.CheckBox();
             this.generalSettingsGroupBox = new System.Windows.Forms.GroupBox();
+            this.authMethodDescription = new System.Windows.Forms.RichTextBox();
             this.authType = new System.Windows.Forms.ComboBox();
             this.label2 = new System.Windows.Forms.Label();
             this.OrganizationInfoLink = new System.Windows.Forms.LinkLabel();
@@ -68,12 +69,12 @@ namespace Snyk.VisualStudio.Extension.Settings
             this.snykCodeSettingsLinkLabel = new System.Windows.Forms.LinkLabel();
             this.snykCodeDisabledInfoLabel = new System.Windows.Forms.Label();
             this.userExperienceGroupBox = new System.Windows.Forms.GroupBox();
+            this.autoScanCheckBox = new System.Windows.Forms.CheckBox();
             this.ossInfoToolTip = new System.Windows.Forms.ToolTip(this.components);
             this.snykCodeSecurityInfoToolTip = new System.Windows.Forms.ToolTip(this.components);
             this.snykCodeQualityInfoToolTip = new System.Windows.Forms.ToolTip(this.components);
             this.customCliPathFileDialog = new System.Windows.Forms.OpenFileDialog();
             this.ExecutablesGroupBox = new System.Windows.Forms.GroupBox();
-            this.authMethodDescription = new System.Windows.Forms.RichTextBox();
             ((System.ComponentModel.ISupportInitialize)(this.errorProvider)).BeginInit();
             this.generalSettingsGroupBox.SuspendLayout();
             this.productSelectionGroupBox.SuspendLayout();
@@ -177,19 +178,19 @@ namespace Snyk.VisualStudio.Extension.Settings
             // 
             this.errorProvider.ContainerControl = this;
             // 
-            // usageAnalyticsCheckBox
+            // errorReportsCheckBox
             // 
-            this.usageAnalyticsCheckBox.AutoSize = true;
-            this.usageAnalyticsCheckBox.Checked = true;
-            this.usageAnalyticsCheckBox.CheckState = System.Windows.Forms.CheckState.Checked;
-            this.usageAnalyticsCheckBox.Location = new System.Drawing.Point(12, 30);
-            this.usageAnalyticsCheckBox.Margin = new System.Windows.Forms.Padding(2);
-            this.usageAnalyticsCheckBox.Name = "usageAnalyticsCheckBox";
-            this.usageAnalyticsCheckBox.Size = new System.Drawing.Size(165, 17);
-            this.usageAnalyticsCheckBox.TabIndex = 9;
-            this.usageAnalyticsCheckBox.Text = "Send usage statistics to Snyk";
-            this.usageAnalyticsCheckBox.UseVisualStyleBackColor = true;
-            this.usageAnalyticsCheckBox.CheckedChanged += new System.EventHandler(this.UsageAnalyticsCheckBox_CheckedChanged);
+            this.errorReportsCheckBox.AutoSize = true;
+            this.errorReportsCheckBox.Checked = true;
+            this.errorReportsCheckBox.CheckState = System.Windows.Forms.CheckState.Checked;
+            this.errorReportsCheckBox.Location = new System.Drawing.Point(12, 44);
+            this.errorReportsCheckBox.Margin = new System.Windows.Forms.Padding(2);
+            this.errorReportsCheckBox.Name = "errorReportsCheckBox";
+            this.errorReportsCheckBox.Size = new System.Drawing.Size(149, 17);
+            this.errorReportsCheckBox.TabIndex = 9;
+            this.errorReportsCheckBox.Text = "Send error reports to Snyk";
+            this.errorReportsCheckBox.UseVisualStyleBackColor = true;
+            this.errorReportsCheckBox.CheckedChanged += new System.EventHandler(this.errorReportsCheckBox_CheckedChanged);
             // 
             // ossEnabledCheckBox
             // 
@@ -257,6 +258,18 @@ namespace Snyk.VisualStudio.Extension.Settings
             this.generalSettingsGroupBox.TabIndex = 17;
             this.generalSettingsGroupBox.TabStop = false;
             this.generalSettingsGroupBox.Text = "General Settings";
+            // 
+            // authMethodDescription
+            // 
+            this.authMethodDescription.BackColor = System.Drawing.SystemColors.Control;
+            this.authMethodDescription.BorderStyle = System.Windows.Forms.BorderStyle.None;
+            this.authMethodDescription.Location = new System.Drawing.Point(127, 53);
+            this.authMethodDescription.Name = "authMethodDescription";
+            this.authMethodDescription.ReadOnly = true;
+            this.authMethodDescription.Size = new System.Drawing.Size(428, 45);
+            this.authMethodDescription.TabIndex = 19;
+            this.authMethodDescription.Text = "Specifies whether to authenticate with OAuth2 or with an API token.\nNote: OAuth2 " +
+    "authentication is recommended as it provides enhanced security.";
             // 
             // authType
             // 
@@ -471,15 +484,30 @@ namespace Snyk.VisualStudio.Extension.Settings
             // 
             // userExperienceGroupBox
             // 
-            this.userExperienceGroupBox.Controls.Add(this.usageAnalyticsCheckBox);
+            this.userExperienceGroupBox.Controls.Add(this.autoScanCheckBox);
+            this.userExperienceGroupBox.Controls.Add(this.errorReportsCheckBox);
             this.userExperienceGroupBox.Location = new System.Drawing.Point(10, 643);
             this.userExperienceGroupBox.Margin = new System.Windows.Forms.Padding(2);
             this.userExperienceGroupBox.Name = "userExperienceGroupBox";
             this.userExperienceGroupBox.Padding = new System.Windows.Forms.Padding(8);
-            this.userExperienceGroupBox.Size = new System.Drawing.Size(560, 60);
+            this.userExperienceGroupBox.Size = new System.Drawing.Size(560, 83);
             this.userExperienceGroupBox.TabIndex = 19;
             this.userExperienceGroupBox.TabStop = false;
             this.userExperienceGroupBox.Text = "User experience";
+            // 
+            // autoScanCheckBox
+            // 
+            this.autoScanCheckBox.AutoSize = true;
+            this.autoScanCheckBox.Checked = true;
+            this.autoScanCheckBox.CheckState = System.Windows.Forms.CheckState.Checked;
+            this.autoScanCheckBox.Location = new System.Drawing.Point(12, 23);
+            this.autoScanCheckBox.Margin = new System.Windows.Forms.Padding(2);
+            this.autoScanCheckBox.Name = "autoScanCheckBox";
+            this.autoScanCheckBox.Size = new System.Drawing.Size(215, 17);
+            this.autoScanCheckBox.TabIndex = 10;
+            this.autoScanCheckBox.Text = "Scan automatically on start-up and save";
+            this.autoScanCheckBox.UseVisualStyleBackColor = true;
+            this.autoScanCheckBox.CheckedChanged += new System.EventHandler(this.autoScanCheckBox_CheckedChanged);
             // 
             // ossInfoToolTip
             // 
@@ -515,17 +543,6 @@ namespace Snyk.VisualStudio.Extension.Settings
             this.ExecutablesGroupBox.TabIndex = 19;
             this.ExecutablesGroupBox.TabStop = false;
             this.ExecutablesGroupBox.Text = "Executables Settings";
-            // 
-            // authMethodDescription
-            // 
-            this.authMethodDescription.BackColor = System.Drawing.SystemColors.Control;
-            this.authMethodDescription.BorderStyle = System.Windows.Forms.BorderStyle.None;
-            this.authMethodDescription.Location = new System.Drawing.Point(127, 53);
-            this.authMethodDescription.Name = "authMethodDescription";
-            this.authMethodDescription.ReadOnly = true;
-            this.authMethodDescription.Size = new System.Drawing.Size(428, 45);
-            this.authMethodDescription.TabIndex = 19;
-            this.authMethodDescription.Text = resources.GetString("authMethodDescription.Text");
             // 
             // SnykGeneralSettingsUserControl
             // 
@@ -565,7 +582,7 @@ namespace Snyk.VisualStudio.Extension.Settings
         private System.Windows.Forms.Button authenticateButton;
         private System.Windows.Forms.ProgressBar authProgressBar;
         private System.Windows.Forms.ErrorProvider errorProvider;
-        private System.Windows.Forms.CheckBox usageAnalyticsCheckBox;
+        private System.Windows.Forms.CheckBox errorReportsCheckBox;
         private System.Windows.Forms.CheckBox codeQualityEnabledCheckBox;
         private System.Windows.Forms.CheckBox codeSecurityEnabledCheckBox;
         private System.Windows.Forms.CheckBox ossEnabledCheckBox;
@@ -595,5 +612,6 @@ namespace Snyk.VisualStudio.Extension.Settings
         private Label label2;
         private ComboBox authType;
         private RichTextBox authMethodDescription;
+        private CheckBox autoScanCheckBox;
     }
 }

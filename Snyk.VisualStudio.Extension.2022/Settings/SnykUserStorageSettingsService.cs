@@ -99,6 +99,22 @@ namespace Snyk.VisualStudio.Extension.Settings
         }
 
         /// <summary>
+        /// Get Auto Scan option
+        /// </summary>
+        /// <returns>bool.</returns>
+
+        public bool AutoScan
+        {
+            get => this.LoadSettings().AutoScan;
+            set
+            {
+                var settings = this.LoadSettings();
+                settings.AutoScan = value;
+                this.settingsLoader.Save(settings);
+            }
+        }
+
+        /// <summary>
         /// Get is all projects enabled.
         /// </summary>
         /// <returns>Bool.</returns>
@@ -181,17 +197,17 @@ namespace Snyk.VisualStudio.Extension.Settings
         /// Get usage analytics enabled.
         /// </summary>
         /// <returns>Bool.</returns>
-        public bool IsUsageAnalyticsEnabled() => this.LoadSettings().UsageAnalyticsEnabled;
+        public bool IsErrorReportsEnabled() => this.LoadSettings().ErrorReportsEnabled;
 
         /// <summary>
         /// Save usage analytics enabled option.
         /// </summary>
-        /// <param name="usageAnalyticsEnabled">Bool param.</param>
-        public void SaveUsageAnalyticsEnabled(bool usageAnalyticsEnabled)
+        /// <param name="errorReportsEnabled">Bool param.</param>
+        public void SaveErrorReportsEnabled(bool errorReportsEnabled)
         {
             var settings = this.LoadSettings();
 
-            settings.UsageAnalyticsEnabled = usageAnalyticsEnabled;
+            settings.ErrorReportsEnabled = errorReportsEnabled;
 
             this.settingsLoader.Save(settings);
         }

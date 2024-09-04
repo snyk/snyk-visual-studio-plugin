@@ -61,7 +61,7 @@ namespace Snyk.VisualStudio.Extension.Language
                 ActivateSnykCodeSecurity = options.SnykCodeSecurityEnabled.ToString(),
                 ActivateSnykCodeQuality = options.SnykCodeQualityEnabled.ToString(),
                 ActivateSnykOpenSource = options.OssEnabled.ToString(),
-                SendErrorReports = options.UsageAnalyticsEnabled.ToString(),
+                SendErrorReports = options.ErrorReportsEnabled.ToString(),
                 ManageBinariesAutomatically = options.BinariesAutoUpdate.ToString(),
                 EnableTrustedFoldersFeature = "false",
                 IntegrationName = options.IntegrationName,
@@ -72,7 +72,7 @@ namespace Snyk.VisualStudio.Extension.Language
                     Low = false,
                     Medium = false,
                 },
-                ScanningMode = "auto",
+                ScanningMode = options.AutoScan ? "auto" : "manual",
 #pragma warning disable VSTHRD104
                 AdditionalParams = ThreadHelper.JoinableTaskFactory.Run(() => options.GetAdditionalOptionsAsync()),
 #pragma warning restore VSTHRD104
@@ -84,7 +84,7 @@ namespace Snyk.VisualStudio.Extension.Language
                 Endpoint = options.CustomEndpoint,
                 Insecure = options.IgnoreUnknownCA.ToString(),
                 IntegrationVersion = options.IntegrationVersion,
-                RequiredProtocolVersion = LsConstants.ProtocolVersion.ToString()
+                RequiredProtocolVersion = LsConstants.ProtocolVersion
             };
             return initializationOptions;
         }
@@ -155,7 +155,7 @@ namespace Snyk.VisualStudio.Extension.Language
             {
                 if (CustomMessageTarget == null)
                 {
-                    CustomMessageTarget = new SnykLanguageClientCustomTarget(SnykVSPackage.ServiceProvider);
+                    CustomMessageTarget = new SnykLanguageClientCustomTarget(SnykVSPackage.ServiceProvider, this);
                 }
                 await StartAsync.InvokeAsync(this, EventArgs.Empty);
             }

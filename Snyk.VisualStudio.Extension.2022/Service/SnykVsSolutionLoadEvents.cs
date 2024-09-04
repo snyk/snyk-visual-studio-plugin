@@ -1,11 +1,11 @@
-﻿namespace Snyk.VisualStudio.Extension.Service
-{
-    using System;
-    using Microsoft.VisualStudio;
-    using Microsoft.VisualStudio.Shell.Interop;
-    using Snyk.Common;
-    using Snyk.VisualStudio.Extension.Cache;
+﻿using System;
+using Microsoft.VisualStudio;
+using Microsoft.VisualStudio.Shell.Interop;
+using Snyk.Common;
+using Snyk.VisualStudio.Extension.Cache;
 
+namespace Snyk.VisualStudio.Extension.Service
+{
     /// <summary>
     /// Visual Studio solution load events implementation.
     /// </summary>
@@ -15,17 +15,14 @@
 
         private IOssService ossService;
 
-        private ISentryService sentryService;
-
         /// <summary>
         /// Initializes a new instance of the <see cref="SnykVsSolutionLoadEvents"/> class.
         /// </summary>
         /// <param name="solutionService">Solution serviceinstance.</param>
         /// <param name="sentryService">Sentry service instance.</param>
-        public SnykVsSolutionLoadEvents(ISolutionService solutionService, IOssService ossService, ISentryService sentryService)
+        public SnykVsSolutionLoadEvents(ISolutionService solutionService, IOssService ossService)
         {
             this.solutionService = solutionService;
-            this.sentryService = sentryService;
             this.ossService = ossService;
         }
 
@@ -49,8 +46,6 @@
 
             this.solutionService.Clean();
 
-            this.sentryService.SetSolutionType(SolutionType.Solution);
-
             return VSConstants.S_OK;
         }
 
@@ -61,8 +56,6 @@
         public void OnAfterCloseFolder(string folderPath)
         {
             this.solutionService.Clean();
-
-            this.sentryService.SetSolutionType(SolutionType.NoOpenSolution);
 
             this.AfterCloseSolution?.Invoke(this, EventArgs.Empty);
         }
@@ -75,8 +68,6 @@
         public int OnAfterCloseSolution(object pUnkReserved)
         {
             this.solutionService.Clean();
-
-            this.sentryService.SetSolutionType(SolutionType.NoOpenSolution);
 
             this.AfterCloseSolution?.Invoke(this, EventArgs.Empty);
 
@@ -122,8 +113,6 @@
             this.AfterBackgroundSolutionLoadComplete?.Invoke(this, EventArgs.Empty);
 
             this.solutionService.Clean();
-
-            this.sentryService.SetSolutionType(SolutionType.Folder);
         }
 
         /// <summary>
@@ -138,9 +127,6 @@
             new OssCacheHierarchyEvents(this.ossService);
 
             this.solutionService.Clean();
-
-            this.sentryService.SetSolutionType(SolutionType.Project);
-
             return VSConstants.S_OK;
         }
 
@@ -152,8 +138,6 @@
         /// <returns>VSConstants.S_OK.</returns>
         public int OnAfterOpenSolution(object pUnkReserved, int fNewSolution)
         {
-            this.sentryService.SetSolutionType(SolutionType.Solution);
-
             this.solutionService.Clean();
 
             return VSConstants.S_OK;

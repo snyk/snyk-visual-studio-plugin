@@ -51,8 +51,8 @@ namespace Snyk.VisualStudio.Extension.Tests
         public void SnykCliDownloader_VerifyCliFile_Failed()
         {
             var cliDownloader = new SnykCliDownloader(null);
-
-            cliDownloader.SaveLatestCliSha();
+            const string url = "https://static.snyk.io/cli/latest/snyk-win.exe";
+            cliDownloader.SaveLatestCliSha(url);
 
             string tempCliPath = Path.Combine(Path.GetTempPath(), SnykCli.CliFileName);
 
@@ -93,8 +93,8 @@ namespace Snyk.VisualStudio.Extension.Tests
         public void SnykCliDownloader_GetLatestSha_SuccessfulRequest()
         {
             var cliDownloader = new SnykCliDownloader(null);
-
-            Assert.False(string.IsNullOrWhiteSpace(cliDownloader.GetLatestCliSha()));
+            const string url = "https://static.snyk.io/cli/latest/snyk-win.exe";
+            Assert.False(string.IsNullOrWhiteSpace(cliDownloader.GetLatestCliSha(url)));
         }
 
         [Fact]
