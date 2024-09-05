@@ -106,7 +106,11 @@ namespace Snyk.VisualStudio.Extension.Language
         public async Task<Connection> ActivateAsync(CancellationToken token)
         {
             await Task.Yield();
-            if (SnykVSPackage.ServiceProvider?.Options == null) return null;
+            if (SnykVSPackage.ServiceProvider?.Options == null)
+            {
+                Logger.Error("Could not activate Language Server because ServiceProvider is null. Is the extension initialized?");
+                return null;
+            }
             var options = SnykVSPackage.ServiceProvider.Options;
             var lsDebugLevel = await GetLsDebugLevelAsync(options);
 #if DEBUG
@@ -146,6 +150,8 @@ namespace Snyk.VisualStudio.Extension.Language
             //}
             var isPackageInitialized = SnykVSPackage.Instance?.IsInitialized ?? false;
             var shouldStart =  isPackageInitialized && !SnykVSPackage.ServiceProvider.TasksService.ShouldDownloadCli();
+            Logger.Debug("OnLoadedAsync Called and shouldStart is: " + shouldStart);
+
             await StartServerAsync(shouldStart);
         }
 
@@ -157,7 +163,12 @@ namespace Snyk.VisualStudio.Extension.Language
                 {
                     CustomMessageTarget = new SnykLanguageClientCustomTarget(SnykVSPackage.ServiceProvider, this);
                 }
+                Logger.Information("Starting Language Server");
                 await StartAsync.InvokeAsync(this, EventArgs.Empty);
+            }
+            else
+            {
+                Logger.Debug("Couldn't Start Language Server");
             }
         }
 
@@ -167,6 +178,10 @@ namespace Snyk.VisualStudio.Extension.Language
             {
                 await StopAsync.InvokeAsync(this, EventArgs.Empty);
                 IsReady = false;
+            }
+            else
+            {
+                Logger.Debug("Could not stop Language Server because StopAsync is null");
             }
         }
 
@@ -180,6 +195,8 @@ namespace Snyk.VisualStudio.Extension.Language
             {
                 FailureMessage = message,
             };
+
+            Logger.Error(message);
 
             return Task.FromResult(failureContext);
         }
