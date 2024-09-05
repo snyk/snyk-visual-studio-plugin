@@ -61,7 +61,7 @@ namespace Snyk.VisualStudio.Extension.Language
                 ActivateSnykCodeSecurity = options.SnykCodeSecurityEnabled.ToString(),
                 ActivateSnykCodeQuality = options.SnykCodeQualityEnabled.ToString(),
                 ActivateSnykOpenSource = options.OssEnabled.ToString(),
-                SendErrorReports = options.ErrorReportsEnabled.ToString(),
+                SendErrorReports = "true",
                 ManageBinariesAutomatically = options.BinariesAutoUpdate.ToString(),
                 EnableTrustedFoldersFeature = "false",
                 IntegrationName = options.IntegrationName,
@@ -150,7 +150,7 @@ namespace Snyk.VisualStudio.Extension.Language
             //}
             var isPackageInitialized = SnykVSPackage.Instance?.IsInitialized ?? false;
             var shouldStart =  isPackageInitialized && !SnykVSPackage.ServiceProvider.TasksService.ShouldDownloadCli();
-            Logger.Debug("OnLoadedAsync Called and shouldStart is: " + shouldStart);
+            Logger.Debug("OnLoadedAsync Called and shouldStart is: {ShouldStart}", shouldStart);
 
             await StartServerAsync(shouldStart);
         }
@@ -196,7 +196,7 @@ namespace Snyk.VisualStudio.Extension.Language
                 FailureMessage = message,
             };
 
-            Logger.Error(message);
+            Logger.Error("{Ex}",message);
 
             return Task.FromResult(failureContext);
         }

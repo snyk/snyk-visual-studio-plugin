@@ -37,8 +37,10 @@
                 this.output.WriteLine("Switching to UI thread");
                 await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
                 this.output.WriteLine("Locating shell objects");
+#pragma warning disable VSSDK006
                 var shell = ServiceProvider.GlobalProvider.GetService(typeof(SVsShell)) as IVsShell7;
                 var uiShell = ServiceProvider.GlobalProvider.GetService(typeof(SVsUIShell)) as IVsUIShell;
+#pragma warning restore VSSDK006
                 Assert.True(shell != null, "Failed to load shell");
                 Assert.True(uiShell != null, "Failed to load UI shell");
 

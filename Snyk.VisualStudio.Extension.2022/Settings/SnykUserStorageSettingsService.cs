@@ -210,25 +210,6 @@ namespace Snyk.VisualStudio.Extension.Settings
         public bool IsOssEnabled() => this.LoadSettings().OssEnabled;
 
         /// <summary>
-        /// Get usage analytics enabled.
-        /// </summary>
-        /// <returns>Bool.</returns>
-        public bool IsErrorReportsEnabled() => this.LoadSettings().ErrorReportsEnabled;
-
-        /// <summary>
-        /// Save usage analytics enabled option.
-        /// </summary>
-        /// <param name="errorReportsEnabled">Bool param.</param>
-        public void SaveErrorReportsEnabled(bool errorReportsEnabled)
-        {
-            var settings = this.LoadSettings();
-
-            settings.ErrorReportsEnabled = errorReportsEnabled;
-
-            this.settingsLoader.Save(settings);
-        }
-
-        /// <summary>
         /// Save Sentry anonymous user id.
         /// </summary>
         /// <param name="anonymousUserId">Anonymous user id to save.</param>

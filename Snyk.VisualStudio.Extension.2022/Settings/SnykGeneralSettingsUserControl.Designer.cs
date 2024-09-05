@@ -44,7 +44,6 @@ namespace Snyk.VisualStudio.Extension.Settings
             this.authenticateButton = new System.Windows.Forms.Button();
             this.authProgressBar = new System.Windows.Forms.ProgressBar();
             this.errorProvider = new System.Windows.Forms.ErrorProvider(this.components);
-            this.errorReportsCheckBox = new System.Windows.Forms.CheckBox();
             this.ossEnabledCheckBox = new System.Windows.Forms.CheckBox();
             this.codeSecurityEnabledCheckBox = new System.Windows.Forms.CheckBox();
             this.codeQualityEnabledCheckBox = new System.Windows.Forms.CheckBox();
@@ -177,20 +176,6 @@ namespace Snyk.VisualStudio.Extension.Settings
             // errorProvider
             // 
             this.errorProvider.ContainerControl = this;
-            // 
-            // errorReportsCheckBox
-            // 
-            this.errorReportsCheckBox.AutoSize = true;
-            this.errorReportsCheckBox.Checked = true;
-            this.errorReportsCheckBox.CheckState = System.Windows.Forms.CheckState.Checked;
-            this.errorReportsCheckBox.Location = new System.Drawing.Point(12, 44);
-            this.errorReportsCheckBox.Margin = new System.Windows.Forms.Padding(2);
-            this.errorReportsCheckBox.Name = "errorReportsCheckBox";
-            this.errorReportsCheckBox.Size = new System.Drawing.Size(149, 17);
-            this.errorReportsCheckBox.TabIndex = 9;
-            this.errorReportsCheckBox.Text = "Send error reports to Snyk";
-            this.errorReportsCheckBox.UseVisualStyleBackColor = true;
-            this.errorReportsCheckBox.CheckedChanged += new System.EventHandler(this.errorReportsCheckBox_CheckedChanged);
             // 
             // ossEnabledCheckBox
             // 
@@ -485,12 +470,11 @@ namespace Snyk.VisualStudio.Extension.Settings
             // userExperienceGroupBox
             // 
             this.userExperienceGroupBox.Controls.Add(this.autoScanCheckBox);
-            this.userExperienceGroupBox.Controls.Add(this.errorReportsCheckBox);
             this.userExperienceGroupBox.Location = new System.Drawing.Point(10, 643);
             this.userExperienceGroupBox.Margin = new System.Windows.Forms.Padding(2);
             this.userExperienceGroupBox.Name = "userExperienceGroupBox";
             this.userExperienceGroupBox.Padding = new System.Windows.Forms.Padding(8);
-            this.userExperienceGroupBox.Size = new System.Drawing.Size(560, 83);
+            this.userExperienceGroupBox.Size = new System.Drawing.Size(560, 90);
             this.userExperienceGroupBox.TabIndex = 19;
             this.userExperienceGroupBox.TabStop = false;
             this.userExperienceGroupBox.Text = "User experience";
@@ -582,7 +566,6 @@ namespace Snyk.VisualStudio.Extension.Settings
         private System.Windows.Forms.Button authenticateButton;
         private System.Windows.Forms.ProgressBar authProgressBar;
         private System.Windows.Forms.ErrorProvider errorProvider;
-        private System.Windows.Forms.CheckBox errorReportsCheckBox;
         private System.Windows.Forms.CheckBox codeQualityEnabledCheckBox;
         private System.Windows.Forms.CheckBox codeSecurityEnabledCheckBox;
         private System.Windows.Forms.CheckBox ossEnabledCheckBox;

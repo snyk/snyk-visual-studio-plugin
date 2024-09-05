@@ -16,12 +16,6 @@ namespace Snyk.VisualStudio.Extension.Settings
         public SnykSettings()
         {
         }
-
-        /// <summary>
-        /// Gets or sets a value indicating whether usage analytics enabled.
-        /// </summary>
-        public bool ErrorReportsEnabled { get; set; } = true;
-
         /// <summary>
         /// Gets or sets current Cli version.
         /// </summary>

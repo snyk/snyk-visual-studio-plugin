@@ -73,9 +73,9 @@ namespace Snyk.VisualStudio.Extension.Settings
             this.customEndpointTextBox.Text = this.OptionsDialogPage.CustomEndpoint;
             this.organizationTextBox.Text = this.OptionsDialogPage.Organization;
             this.ignoreUnknownCACheckBox.Checked = this.OptionsDialogPage.IgnoreUnknownCA;
-            this.errorReportsCheckBox.Checked = this.OptionsDialogPage.ErrorReportsEnabled;
             this.ossEnabledCheckBox.Checked = this.OptionsDialogPage.OssEnabled;
             this.ManageBinariesAutomaticallyCheckbox.Checked = this.OptionsDialogPage.BinariesAutoUpdate;
+            this.autoScanCheckBox.Checked = this.OptionsDialogPage.AutoScan;
 
             var cliPath = string.IsNullOrEmpty(this.OptionsDialogPage.CliCustomPath)
                 ? SnykCli.GetSnykCliDefaultPath()
@@ -403,11 +403,6 @@ namespace Snyk.VisualStudio.Extension.Settings
             this.snykCodeDisabledInfoLabel.Visible = false;
             this.snykCodeSettingsLinkLabel.Visible = false;
             this.checkAgainLinkLabel.Visible = false;
-        }
-
-        private void errorReportsCheckBox_CheckedChanged(object sender, EventArgs e)
-        {
-            this.OptionsDialogPage.ErrorReportsEnabled = this.errorReportsCheckBox.Checked;
         }
 
         private void OssEnabledCheckBox_CheckedChanged(object sender, EventArgs e)

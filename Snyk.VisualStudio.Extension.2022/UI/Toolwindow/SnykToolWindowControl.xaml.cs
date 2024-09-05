@@ -106,8 +106,7 @@ namespace Snyk.VisualStudio.Extension.UI.Toolwindow
             };
             tasksService.DownloadFinished += (sender, args) =>
             {
-                if (LanguageClientHelper.IsLanguageServerReady())
-                    ThreadHelper.JoinableTaskFactory.RunAsync(async ()=> await serviceProvider.Package.LanguageClientManager.StartServerAsync(true)).FireAndForget();
+                ThreadHelper.JoinableTaskFactory.RunAsync(async ()=> await serviceProvider.Package.LanguageClientManager.StartServerAsync(true)).FireAndForget();
                 this.OnDownloadFinished(sender, args);
             };
             tasksService.DownloadUpdate += (sender, args) => ThreadHelper.JoinableTaskFactory.RunAsync(() => this.OnDownloadUpdateAsync(sender, args));

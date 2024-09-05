@@ -64,11 +64,6 @@ namespace Snyk.Common.Settings
         bool SnykCodeQualityEnabled { get; }
 
         /// <summary>
-        /// Gets or sets a value indicating whether Error reports enabled or disabled. By default it's enabled.
-        /// </summary>
-        bool ErrorReportsEnabled { get; set; }
-
-        /// <summary>
         /// Gets or sets a value indicating whether the CLI should be automatically updated.
         /// </summary>
         bool BinariesAutoUpdate { get; set; }

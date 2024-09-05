@@ -84,7 +84,7 @@ namespace Snyk.VisualStudio.Extension.Settings
             get => this.userStorageSettingsService.AutoScan;
             set
             {
-                if (this.userStorageSettingsService == null || this.userStorageSettingsService.AutoScan == value)
+                if (this.userStorageSettingsService == null)
                     return;
                 this.userStorageSettingsService.AutoScan = value;
             }
@@ -218,22 +218,6 @@ namespace Snyk.VisualStudio.Extension.Settings
                 }
 
                 this.userStorageSettingsService?.SaveSnykCodeQualityEnabled(value);
-                this.FireSettingsChangedEvent();
-            }
-        }
-
-        /// <summary>
-        /// Gets or sets a value indicating whether use analytics enabled.
-        /// Save data via <see cref="SnykUserStorageSettingsService"/>.
-        /// </summary>
-        public bool ErrorReportsEnabled
-        {
-            get => this.userStorageSettingsService.IsErrorReportsEnabled();
-            set
-            {
-                if (this.userStorageSettingsService?.IsErrorReportsEnabled() == value)
-                    return;
-                this.userStorageSettingsService?.SaveErrorReportsEnabled(value);
                 this.FireSettingsChangedEvent();
             }
         }
