@@ -211,7 +211,6 @@ namespace Snyk.VisualStudio.Extension
                 await SnykStopCurrentTaskCommand.InitializeAsync(this);
                 await SnykCleanPanelCommand.InitializeAsync(this);
                 await SnykOpenSettingsCommand.InitializeAsync(this);
-                await SnykRestartLanguageServerCommand.InitializeAsync(this);
 
                 // Initialize tool-window
                 Logger.Information("Initializing tool window");
