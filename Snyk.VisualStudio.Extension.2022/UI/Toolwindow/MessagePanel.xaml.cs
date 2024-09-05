@@ -1,19 +1,16 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
-using System.Drawing;
 using System.IO;
-using System.Runtime.InteropServices;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
-using Community.VisualStudio.Toolkit;
 using Microsoft.VisualStudio.Shell;
 using Microsoft.VisualStudio.Shell.Interop;
 using Microsoft.VisualStudio.Threading;
 using Serilog;
-using Serilog.Core;
 using Snyk.Common;
+using Snyk.VisualStudio.Extension.Language;
 using Snyk.VisualStudio.Extension.Service;
 
 namespace Snyk.VisualStudio.Extension.UI.Toolwindow
@@ -23,16 +20,6 @@ namespace Snyk.VisualStudio.Extension.UI.Toolwindow
     /// </summary>
     public partial class MessagePanel : UserControl
     {
-        
-
-    //[ComVisible(true)]
-    //public class ScriptManager
-    //{
-    //    public void OpenFileInEditor(string filePath, int lineNumber, int columnNumber)
-    //    {
-    //        // DTE stuff
-    //    }
-    //}
         private static readonly ILogger Logger = LogManager.ForContext<MessagePanel>();
         private readonly IList<StackPanel> panels;
 
@@ -42,11 +29,6 @@ namespace Snyk.VisualStudio.Extension.UI.Toolwindow
         public MessagePanel()
         {
             this.InitializeComponent();
-            //Testbrowser.ObjectForScripting = new ScriptManager();
-            //Testbrowser.ContextMenu.IsEnabled = false;
-            //Testbrowser.= true;
-            // To Execute from Javascript window.external.OpenFileInEditor(filePath, int lineNumber, int columnNumber)
-            //Testbrowser.DataContext = "<html></html>";
 
             this.panels = new List<StackPanel>
             {
@@ -58,6 +40,17 @@ namespace Snyk.VisualStudio.Extension.UI.Toolwindow
                 this.scanningProjectMessagePanel,
             };
             snykDogLogo.Source = SnykIconProvider.GetImageSourceFromPath(SnykIconProvider.SnykDogLogoIconPath);
+            var languageClientManager = LanguageClientHelper.LanguageClientManager();
+            if (languageClientManager != null)
+            {
+                languageClientManager.OnLanguageServerReadyAsync += LanguageClientManagerOnOnLanguageServerReady;
+            }
+        }
+
+        private async Task LanguageClientManagerOnOnLanguageServerReady(object sender, SnykLanguageServerEventArgs e)
+        {
+            await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
+            testCodeNowButton.IsEnabled = true;
         }
 
         /// <summary>
@@ -101,7 +94,15 @@ namespace Snyk.VisualStudio.Extension.UI.Toolwindow
         /// <summary>
         /// Show overview screen message.
         /// </summary>
-        public void ShowOverviewScreenMessage() => this.ShowPanel(this.overviewPanel);
+        public void ShowOverviewScreenMessage()
+        {
+            if (!LanguageClientHelper.IsLanguageServerReady())
+            {
+                testCodeNowButton.IsEnabled = false;
+            }
+
+            this.ShowPanel(this.overviewPanel);
+        }
 
         private void RunButton_Click(object sender, RoutedEventArgs e) => ThreadHelper.JoinableTaskFactory.RunAsync(SnykTasksService.Instance.ScanAsync);
 
@@ -120,7 +121,7 @@ namespace Snyk.VisualStudio.Extension.UI.Toolwindow
             ThreadHelper.JoinableTaskFactory.Run(RunTestCodeNowAsync);
         }
 
-        private async System.Threading.Tasks.Task RunTestCodeNowAsync()
+        private async Task RunTestCodeNowAsync()
         {
             await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
             this.testCodeNowButton.IsEnabled = false; // Disable the button while authenticating
