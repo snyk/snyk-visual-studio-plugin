@@ -1,20 +1,17 @@
 ﻿using System;
 using System.IO;
-using System.Linq;
 using System.Runtime.InteropServices;
-using System.Security.Authentication;
+using System.Threading;
 using System.Threading.Tasks;
 using System.Windows.Forms;
-using Microsoft;
-using Microsoft.VisualStudio.ComponentModelHost;
 using Microsoft.VisualStudio.Shell;
 using Serilog;
 using Snyk.Common;
 using Snyk.Common.Authentication;
 using Snyk.Common.Service;
 using Snyk.Common.Settings;
+using Snyk.VisualStudio.Extension.Language;
 using Snyk.VisualStudio.Extension.Service;
-using Snyk.VisualStudio.Extension.UI.Notifications;
 
 namespace Snyk.VisualStudio.Extension.Settings
 {
@@ -38,8 +35,6 @@ namespace Snyk.VisualStudio.Extension.Settings
 
         private SnykGeneralSettingsUserControl generalSettingsUserControl;
 
-        private AuthenticationToken apiToken;
-
         private string customEndpoint;
 
         private string organization;
@@ -57,7 +52,18 @@ namespace Snyk.VisualStudio.Extension.Settings
         /// <summary>
         /// Gets or sets a value indicating whether API token.
         /// </summary>
-        public AuthenticationToken ApiToken => this.apiToken ?? AuthenticationToken.EmptyToken;
+        public AuthenticationToken ApiToken
+        {
+            get => CreateAuthenticationToken(this.userStorageSettingsService.Token);
+            set
+            {
+                var tokenAsString = value.ToString();
+                if (this.userStorageSettingsService == null || this.userStorageSettingsService.Token == tokenAsString)
+                    return;
+                this.userStorageSettingsService.Token = tokenAsString;
+                this.FireSettingsChangedEvent();
+            }
+        }
         
         public AuthenticationType AuthenticationMethod
         {
@@ -67,8 +73,8 @@ namespace Snyk.VisualStudio.Extension.Settings
                 if (this.userStorageSettingsService == null || this.userStorageSettingsService.AuthenticationMethod == value)
                     return;
                 this.userStorageSettingsService.AuthenticationMethod = value;
-                // When changing the Token Type, the token is invalidated
-                InvalidateCurrentToken();
+                this.GeneralSettingsUserControl.InvalidateApiToken();
+                ApiToken = AuthenticationToken.EmptyToken;
                 this.FireSettingsChangedEvent();
             }
         }
@@ -78,97 +84,16 @@ namespace Snyk.VisualStudio.Extension.Settings
             get => this.userStorageSettingsService.AutoScan;
             set
             {
-                if (this.userStorageSettingsService == null || this.userStorageSettingsService.AutoScan == value)
+                if (this.userStorageSettingsService == null)
                     return;
                 this.userStorageSettingsService.AutoScan = value;
             }
         }
 
-
-        private SastSettings sastSettings;
-
-        private string RefreshToken()
-        {
-            Logger.Information("Attempting to refresh OAuth token");
-            var cli = this.ServiceProvider?.NewCli();
-            if (cli == null)
-            {
-                Logger.Information("Couldn't get CLI. Aborting");
-                return string.Empty;
-            }
-
-            try
-            {
-                cli.RunCommand("whoami --experimental");
-            }
-            catch (AuthenticationException ex)
-            {
-                Logger.Error("Failed to refresh access token: {Message}", ex.Message);
-                InvalidateCurrentToken();
-                NotificationService.Instance?.ShowErrorInfoBar("Failed to refresh Access token");
-                return string.Empty;
-            }
-
-            var token = cli.GetApiToken();
-            return token;
-        }
-
-        public void SetApiToken(string apiTokenString)
-        {
-            if (this.apiToken?.ToString() == apiTokenString)
-            {
-                return;
-            }
-
-            SetApiToken(CreateAuthenticationToken(apiTokenString));
-        }
-
-        private void SetApiToken(AuthenticationToken token)
-        {
-            this.apiToken = token;
-            this.apiToken.TokenRefresher = RefreshToken;
-            this.FireSettingsChangedEvent();
-        }
-
         private AuthenticationToken CreateAuthenticationToken(string token)
         {
-            var apiEndpointResolver = new ApiEndpointResolver(this);
-            var type = apiEndpointResolver.AuthenticationMethod;
-            
-            var tokenObj = new AuthenticationToken(type, token)
-            {
-                TokenRefresher = RefreshToken
-            };
-
+            var tokenObj = new AuthenticationToken(this.AuthenticationMethod, token);
             return tokenObj;
-        }
-        
-        /// <summary>
-        /// Checks if the current endpoint is a fedramp endpoint
-        /// </summary>
-        /// <returns></returns>
-        public bool IsFedramp()
-        {
-            var endpoint = this.customEndpoint;
-            if (endpoint.IsNullOrEmpty())
-            {
-                return false;
-            }
-
-            var endpointUri = new Uri(endpoint);
-            return endpointUri.Host.ToLower().EndsWith("snykgov.io");
-        }
-
-        /// <summary>
-        /// Checks if the current endpoint permits sending external analytics events
-        /// </summary>
-        /// <returns></returns>
-        public bool IsAnalyticsPermitted()
-        {
-            var endpointUri = new Uri(this.GetCustomApiEndpoint());
-
-            var permittedHosts = new string[] { "api.snyk.io", "api.us.snyk.io" };
-            return permittedHosts.Contains(endpointUri.Host.ToLower());
         }
 
         /// <summary>
@@ -190,24 +115,17 @@ namespace Snyk.VisualStudio.Extension.Settings
                 {
                     return;
                 }
-                // When changing the API endpoint, the API token is invalidated
-                InvalidateCurrentToken();
 
                 this.customEndpoint = newApiEndpoint;
+                ApiToken = AuthenticationToken.EmptyToken;
                 this.FireSettingsChangedEvent();
             }
         }
 
-        private void InvalidateCurrentToken()
-        {
-            this.apiToken = AuthenticationToken.EmptyToken;
-            var cli = this.ServiceProvider?.NewCli();
-            cli?.UnsetApiToken();
-        }
-
         /// <inheritdoc/>
         public string SnykCodeSettingsUrl => $"{this.GetBaseAppUrl()}/manage/snyk-code";
-
+        
+        private SastSettings sastSettings;
         public SastSettings SastSettings
         {
             get => this.sastSettings;
@@ -221,6 +139,16 @@ namespace Snyk.VisualStudio.Extension.Settings
 
                 this.sastSettings = value;
             }
+        }
+
+        public async Task OnAuthenticationSuccessfulAsync(string token)
+        {
+            await this.GeneralSettingsUserControl.OnAuthenticationSuccessfulAsync(token);
+        }
+
+        public async Task OnAuthenticationFailedAsync(string errorMessage)
+        {
+            await this.GeneralSettingsUserControl.OnAuthenticationFailAsync(errorMessage);
         }
 
         /// <summary>
@@ -237,7 +165,6 @@ namespace Snyk.VisualStudio.Extension.Settings
                 }
 
                 this.organization = value;
-
                 this.FireSettingsChangedEvent();
             }
         }
@@ -295,26 +222,17 @@ namespace Snyk.VisualStudio.Extension.Settings
             }
         }
 
-        /// <summary>
-        /// Gets or sets a value indicating whether use analytics enabled.
-        /// Save data via <see cref="SnykUserStorageSettingsService"/>.
-        /// </summary>
-        public bool ErrorReportsEnabled
-        {
-            get => this.userStorageSettingsService.IsErrorReportsEnabled();
-            set => this.userStorageSettingsService?.SaveErrorReportsEnabled(value);
-        }
-
         /// <inheritdoc/>
         public bool BinariesAutoUpdate
         {
             get => this.userStorageSettingsService.BinariesAutoUpdate;
             set
             {
-                if (this.userStorageSettingsService != null)
+                if (this.userStorageSettingsService == null || this.userStorageSettingsService.BinariesAutoUpdate == value)
                 {
-                    this.userStorageSettingsService.BinariesAutoUpdate = value;
+                    return;
                 }
+                this.userStorageSettingsService.BinariesAutoUpdate = value;
             }
         }
 
@@ -323,19 +241,13 @@ namespace Snyk.VisualStudio.Extension.Settings
             get => this.userStorageSettingsService.CliCustomPath;
             set
             {
-                if (this.userStorageSettingsService != null)
+                if (this.userStorageSettingsService == null || this.userStorageSettingsService.CliCustomPath == value)
                 {
-                    this.userStorageSettingsService.CliCustomPath = value;
-                    this.FireSettingsChangedEvent();
+                    return;
                 }
+                this.userStorageSettingsService.CliCustomPath = value;
+                // TODO: Handle CLI Path Change
             }
-        }
-
-        /// <inheritdoc/>
-        public string AnonymousId
-        {
-            get => this.userStorageSettingsService.GetAnonymousId();
-            set => this.userStorageSettingsService?.SaveAnonymousId(value);
         }
 
         /// <summary>
@@ -364,7 +276,7 @@ namespace Snyk.VisualStudio.Extension.Settings
             {
                 if (this.generalSettingsUserControl == null)
                 {
-                    this.generalSettingsUserControl = new SnykGeneralSettingsUserControl(this.serviceProvider.ApiService)
+                    this.generalSettingsUserControl = new SnykGeneralSettingsUserControl()
                     {
                         OptionsDialogPage = this,
                     };
@@ -375,8 +287,6 @@ namespace Snyk.VisualStudio.Extension.Settings
                 return this.generalSettingsUserControl;
             }
         }
-
-        public SnykUser SnykUser { get; set; }
 
         /// <summary>
         /// Gets a value indicating whether additional options.
@@ -406,12 +316,6 @@ namespace Snyk.VisualStudio.Extension.Settings
         /// <inheritdoc />
         public bool Authenticate()
         {
-
-            var componentModel = Package.GetGlobalService(typeof(SComponentModel)) as IComponentModel;
-            Assumes.Present(componentModel);
-
-            const int errorMessageMaxLength = 100;
-
             Logger.Information("Enter Authenticate method");
             var cli = this.ServiceProvider.NewCli();
             if (!cli.IsCliFileFound())
@@ -420,63 +324,30 @@ namespace Snyk.VisualStudio.Extension.Settings
             }
             try
             {
-                // Pull token from configuration. If the token is invalid, attempt to authenticate and get a new token.
-                var apiTokenString = cli.GetApiToken();
-                var token = CreateAuthenticationToken(apiTokenString);
-                if (!token.IsValid() && token.Type == AuthenticationType.OAuth)
+                if (!LanguageClientHelper.IsLanguageServerReady())
                 {
-                    // Before re-authenticating attempt to refresh current token
-                    token = CreateAuthenticationToken(token.Refresh());
+                    Logger.Error("Language Server is not initialized yet.");
+                    return false;
                 }
-                if (!token.IsValid())
+                if (ApiToken.IsValid()) 
+                    return true;
+                
+                Logger.Information("Api token is invalid. Attempting to authenticate via snyk auth");
+                ThreadHelper.JoinableTaskFactory.Run(async ()=>
                 {
-                    Logger.Information("Api token is invalid. Attempting to authenticate via snyk auth");
-                    try
-                    {
-                        this.ServiceProvider.NewCli().Authenticate();
-                    }
-                    catch (AuthenticationException e)
-                    {
-                        var shortMessage = e.Message.Length > errorMessageMaxLength ? e.Message.Substring(0, errorMessageMaxLength) + "..." : e.Message;
-                        Logger.Information("Snyk failed to authenticate: {Message}", e.Message);
-                        NotificationService.Instance.ShowErrorInfoBar($"Snyk failed to authenticate: {shortMessage}");
-                        return false;
-                    }
-                    catch (Exception e)
-                    {
-                        var shortMessage = e.Message.Length > errorMessageMaxLength ? e.Message.Substring(0, errorMessageMaxLength) + "..." : e.Message;
-                        Logger.Information("Error in Snyk authentication: {Message}", e.Message);
-                        NotificationService.Instance.ShowErrorInfoBar($"Snyk failed to authenticate: {shortMessage}");
-                        return false;
-                    }
-
-                    apiTokenString = this.ServiceProvider.NewCli().GetApiToken();
-                    token = CreateAuthenticationToken(apiTokenString);
-                    
-                    if (!token.IsValid()) // Token is still invalid after the authentication attempt.
-                    {
-                        NotificationService.Instance.ShowErrorInfoBar("Snyk failed to authenticate");
-                        return false;
-                    }
-                }
-
-                // Token is valid, store it and return true
-                this.SetApiToken(token);
-
-                ThreadHelper.JoinableTaskFactory.Run(async () =>
-                {
-                    SnykUser = await serviceProvider.ApiService.GetUserAsync();
+                    await ServiceProvider.Package.LanguageClientManager.InvokeLogout(CancellationToken.None);
+                    var token = await ServiceProvider.Package.LanguageClientManager.InvokeLogin(CancellationToken.None);
+                    ApiToken = CreateAuthenticationToken(token);
                 });
                 return true;
 
             }
             catch (Exception e)
             {
-                Logger.Error(e, "Setup api token in general settings");
+                Logger.Error(e, "Couldn't execute Invoke Login through LS.");
                 return false;
             }
         }
-
         private void FireSettingsChangedEvent() => this.SettingsChanged?.Invoke(this, new SnykSettingsChangedEventArgs());
 
         public string GetCustomApiEndpoint()

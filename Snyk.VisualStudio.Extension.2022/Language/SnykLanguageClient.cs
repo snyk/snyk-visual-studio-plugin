@@ -49,9 +49,9 @@ namespace Snyk.VisualStudio.Extension.Language
 
         public object GetInitializationOptions()
         {
-            if (SnykVSPackage.ServiceProvider == null || initializationOptions != null)
+            if (SnykVSPackage.ServiceProvider == null)
             {
-                return initializationOptions;
+                return null;
             }
 
             var options = SnykVSPackage.ServiceProvider.Options;
@@ -61,7 +61,7 @@ namespace Snyk.VisualStudio.Extension.Language
                 ActivateSnykCodeSecurity = options.SnykCodeSecurityEnabled.ToString(),
                 ActivateSnykCodeQuality = options.SnykCodeQualityEnabled.ToString(),
                 ActivateSnykOpenSource = options.OssEnabled.ToString(),
-                SendErrorReports = options.ErrorReportsEnabled.ToString(),
+                SendErrorReports = "true",
                 ManageBinariesAutomatically = options.BinariesAutoUpdate.ToString(),
                 EnableTrustedFoldersFeature = "false",
                 IntegrationName = options.IntegrationName,
@@ -106,7 +106,11 @@ namespace Snyk.VisualStudio.Extension.Language
         public async Task<Connection> ActivateAsync(CancellationToken token)
         {
             await Task.Yield();
-            if (SnykVSPackage.ServiceProvider?.Options == null) return null;
+            if (SnykVSPackage.ServiceProvider?.Options == null)
+            {
+                Logger.Error("Could not activate Language Server because ServiceProvider is null. Is the extension initialized?");
+                return null;
+            }
             var options = SnykVSPackage.ServiceProvider.Options;
             var lsDebugLevel = await GetLsDebugLevelAsync(options);
 #if DEBUG
@@ -146,6 +150,8 @@ namespace Snyk.VisualStudio.Extension.Language
             //}
             var isPackageInitialized = SnykVSPackage.Instance?.IsInitialized ?? false;
             var shouldStart =  isPackageInitialized && !SnykVSPackage.ServiceProvider.TasksService.ShouldDownloadCli();
+            Logger.Debug("OnLoadedAsync Called and shouldStart is: {ShouldStart}", shouldStart);
+
             await StartServerAsync(shouldStart);
         }
 
@@ -157,7 +163,12 @@ namespace Snyk.VisualStudio.Extension.Language
                 {
                     CustomMessageTarget = new SnykLanguageClientCustomTarget(SnykVSPackage.ServiceProvider, this);
                 }
+                Logger.Information("Starting Language Server");
                 await StartAsync.InvokeAsync(this, EventArgs.Empty);
+            }
+            else
+            {
+                Logger.Debug("Couldn't Start Language Server");
             }
         }
 
@@ -167,6 +178,10 @@ namespace Snyk.VisualStudio.Extension.Language
             {
                 await StopAsync.InvokeAsync(this, EventArgs.Empty);
                 IsReady = false;
+            }
+            else
+            {
+                Logger.Debug("Could not stop Language Server because StopAsync is null");
             }
         }
 
@@ -180,6 +195,8 @@ namespace Snyk.VisualStudio.Extension.Language
             {
                 FailureMessage = message,
             };
+
+            Logger.Error("{Ex}",message);
 
             return Task.FromResult(failureContext);
         }
@@ -254,7 +271,7 @@ namespace Snyk.VisualStudio.Extension.Language
             var param = new LSP.ExecuteCommandParams {
                 Command = LsConstants.SnykWorkspaceScan
             };
-            var res = await InvokeWithParametersAsync<object>("workspace/executeCommand", param, cancellationToken);
+            var res = await InvokeWithParametersAsync<object>(LsConstants.WorkspaceExecuteCommand, param, cancellationToken);
             return res;
         }
 
@@ -265,19 +282,71 @@ namespace Snyk.VisualStudio.Extension.Language
                 Command = LsConstants.SnykWorkspaceFolderScan,
                 Arguments = new object[]{folderPath}
             };
-            var res = await InvokeWithParametersAsync<object>("workspace/executeCommand", param, cancellationToken);
+            var res = await InvokeWithParametersAsync<object>(LsConstants.WorkspaceExecuteCommand, param, cancellationToken);
             return res;
         }
 
 
-        public async Task<object> InvokeGetSastEnabled(CancellationToken cancellationToken)
+        public async Task<SastSettings> InvokeGetSastEnabled(CancellationToken cancellationToken)
         {
             var param = new LSP.ExecuteCommandParams
             {
                 Command = LsConstants.SnykSastEnabled
             };
-            var isEnabled = await InvokeWithParametersAsync<object>("workspace/executeCommand", param, cancellationToken);
+            var sastSettings = await InvokeWithParametersAsync<SastSettings>(LsConstants.WorkspaceExecuteCommand, param, cancellationToken);
+            return sastSettings;
+        }
+
+        public async Task<string> InvokeLogin(CancellationToken cancellationToken)
+        {
+            var param = new LSP.ExecuteCommandParams
+            {
+                Command = LsConstants.SnykLogin
+            };
+            var token = await InvokeWithParametersAsync<string>(LsConstants.WorkspaceExecuteCommand, param, cancellationToken);
+            return token;
+        }
+
+        public async Task<object> InvokeLogout(CancellationToken cancellationToken)
+        {
+            var param = new LSP.ExecuteCommandParams
+            {
+                Command = LsConstants.SnykLogout
+            };
+            var isEnabled = await InvokeWithParametersAsync<object>(LsConstants.WorkspaceExecuteCommand, param, cancellationToken);
             return isEnabled;
+        }
+
+        public async Task<string> InvokeCopyLink(CancellationToken cancellationToken)
+        {
+            var param = new LSP.ExecuteCommandParams
+            {
+                Command = LsConstants.SnykCopyAuthLink
+            };
+            var authLin = await InvokeWithParametersAsync<string>(LsConstants.WorkspaceExecuteCommand, param, cancellationToken);
+            return authLin;
+        }
+
+        public async Task<object> InvokeGetFeatureFlagStatus(string featureFlag, CancellationToken cancellationToken)
+        {
+            var param = new LSP.ExecuteCommandParams
+            {
+                Command = LsConstants.SnykGetFeatureFlagStatus
+            };
+            var featureFlagStatus = await InvokeWithParametersAsync<object>(LsConstants.WorkspaceExecuteCommand, param, cancellationToken);
+            return featureFlagStatus;
+        }
+
+        public async Task<object> DidChangeConfigurationAsync(CancellationToken cancellationToken)
+        {
+            if (!IsReady) return default;
+
+            var param = new LSP.DidChangeConfigurationParams
+            {
+                Settings = GetInitializationOptions()
+            };
+            
+            return await InvokeWithParametersAsync<object>(LsConstants.WorkspaceChangeConfiguration, param, cancellationToken).ConfigureAwait(false);
         }
 
         public async Task RestartServerAsync()

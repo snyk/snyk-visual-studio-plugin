@@ -9,11 +9,6 @@
     public interface ISolutionService
     {
         /// <summary>
-        /// Gets file provider instance.
-        /// </summary>
-        IFileProvider FileProvider { get; }
-
-        /// <summary>
         /// Get solution folder path.
         /// </summary>
         /// <returns>Path string.</returns>
@@ -24,11 +19,6 @@
         /// </summary>
         /// <returns>List of solution files.</returns>
         Task<IEnumerable<string>> GetFilesAsync();
-
-        /// <summary>
-        /// Clean solution related variables.
-        /// </summary>
-        void Clean();
 
         /// <summary>
         /// Check is folder opened as solution.

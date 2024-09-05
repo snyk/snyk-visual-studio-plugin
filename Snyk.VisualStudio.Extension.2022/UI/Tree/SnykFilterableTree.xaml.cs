@@ -1,19 +1,16 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Linq;
+using System.Windows;
+using System.Windows.Controls;
+using System.Windows.Data;
+using Microsoft.VisualStudio.Shell;
+using Snyk.VisualStudio.Extension.Model;
+using System.Collections.Generic;
 using System.IO;
 using Snyk.VisualStudio.Extension.Language;
 
 namespace Snyk.VisualStudio.Extension.UI.Tree
 {
-    using System;
-    using System.Linq;
-    using System.Windows;
-    using System.Windows.Controls;
-    using System.Windows.Data;
-    using Microsoft.VisualStudio.Shell;
-    using Snyk.Code.Library.Domain.Analysis;
-    using Snyk.VisualStudio.Extension.CLI;
-    using Snyk.VisualStudio.Extension.Model;
-
     /// <summary>
     /// Interaction logic for SnykFilterableComboBox.xaml.
     /// </summary>

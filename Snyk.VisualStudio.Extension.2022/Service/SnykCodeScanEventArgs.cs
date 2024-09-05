@@ -1,11 +1,9 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using Snyk.VisualStudio.Extension.Language;
 
 namespace Snyk.VisualStudio.Extension.Service
 {
-    using System;
-    using Snyk.Code.Library.Domain.Analysis;
-
     /// <summary>
     /// CLI scan event args.
     /// </summary>

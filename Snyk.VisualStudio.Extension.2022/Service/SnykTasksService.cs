@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
@@ -7,13 +6,12 @@ using Microsoft;
 using Microsoft.VisualStudio.ComponentModelHost;
 using Microsoft.VisualStudio.Shell;
 using Serilog;
-using Snyk.Code.Library.Domain.Analysis;
 using Snyk.Common;
 using Snyk.VisualStudio.Extension.CLI;
-using Snyk.VisualStudio.Extension.CLI.Download;
+using Snyk.VisualStudio.Extension.Download;
 using Snyk.VisualStudio.Extension.Language;
 using Snyk.VisualStudio.Extension.Service.Domain;
-using static Snyk.VisualStudio.Extension.CLI.Download.SnykCliDownloader;
+using static Snyk.VisualStudio.Extension.Download.SnykCliDownloader;
 using Task = System.Threading.Tasks.Task;
 
 namespace Snyk.VisualStudio.Extension.Service
@@ -21,7 +19,7 @@ namespace Snyk.VisualStudio.Extension.Service
     /// <summary>
     /// Incapsulate logic with background tasks work.
     /// </summary>
-    public class SnykTasksService : ISnykScanTopicProvider
+    public class SnykTasksService
     {
         private static readonly ILogger Logger = LogManager.ForContext<SnykTasksService>();
 
@@ -611,7 +609,11 @@ namespace Snyk.VisualStudio.Extension.Service
         {
             var options = this.serviceProvider.Options;
 
-            var sastSettings = await this.serviceProvider.ApiService.GetSastSettingsAsync();
+            SastSettings sastSettings = null;
+            if (LanguageClientHelper.IsLanguageServerReady())
+            {
+                sastSettings = await this.serviceProvider.Package.LanguageClientManager.InvokeGetSastEnabled(CancellationToken.None);
+            }
 
             bool snykCodeEnabled = sastSettings?.SnykCodeEnabled ?? false;
 

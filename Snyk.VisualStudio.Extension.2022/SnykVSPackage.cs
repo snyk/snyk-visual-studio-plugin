@@ -199,12 +199,6 @@ namespace Snyk.VisualStudio.Extension
                 // Initialize analytics
                 var vsVersion = await GetReadableVsVersionAsync();
 
-                var tokenString = this.serviceProvider.NewCli().GetApiToken();
-                this.serviceProvider.Options.SetApiToken(tokenString);
-                var token = this.serviceProvider.Options.ApiToken;
-                
-                serviceProvider.Options.SnykUser = await serviceProvider.ApiService.GetUserAsync();
-                
                 // Initialize commands
                 Logger.Information("Initialize Commands()");
                 await SnykScanCommand.InitializeAsync(this);

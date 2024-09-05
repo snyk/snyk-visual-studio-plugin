@@ -28,52 +28,7 @@ namespace Snyk.Common.Service
         /// </summary>
         public string SnykApiEndpoint => ResolveCustomEndpoint(this.options.CustomEndpoint);
 
-        /// <summary>
-        /// The /user/me full URL without trailing backslash.
-        /// </summary>
-        public string UserMeEndpoint => SnykApiEndpoint + "/v1/user/me";
-
         public AuthenticationType AuthenticationMethod => this.options.AuthenticationMethod;
-
-        /// <summary>
-        /// Get SnykCode Settings url.
-        /// </summary>
-        /// <returns>Path to Snyk Code settings url.</returns>
-        public string GetSnykApiEndpoint()
-        {
-            var customEndpoint = ResolveCustomEndpoint(this.options.CustomEndpoint);
-
-            var sastUrl = string.IsNullOrEmpty(customEndpoint) ? DefaultApiEndpoint : customEndpoint;
-
-            return !sastUrl.EndsWith("/") ? $"{sastUrl}/" : sastUrl;
-        }
-
-        /// <summary>
-        /// Get correct Deeproxy URL for SaaS and Single Tenant deployment types.
-        /// </summary>
-        public string GetSnykCodeApiUrl()
-        {
-            if (IsLocalEngine())
-            {
-                return options.SastSettings.LocalCodeEngine.Url + "/";
-            }
-
-            var endpoint = ResolveCustomEndpoint(this.options.CustomEndpoint);
-
-            var isFedramp = this.options.IsFedramp();
-
-            if (isFedramp && string.IsNullOrEmpty(this.options.Organization))
-                throw new InvalidOperationException("Organization is required in a fedramp environment");
-
-            var subDomain = isFedramp ? "api" : "deeproxy";
-
-            var result = GetCustomEndpointUrlFromSnykApi(endpoint, subDomain);
-
-            if (isFedramp)
-                result += $"/hidden/orgs/{this.options.Organization}/code";
-
-            return result + "/";
-        }
 
         /// <summary>
         /// Resolves the custom endpoint.
@@ -117,7 +72,5 @@ namespace Snyk.Common.Service
             var uriBuilder = new UriBuilder(endpointUri.Scheme, newEndpoint);
             return uriBuilder.ToString().RemoveTrailingSlashes();
         }
-
-        private bool IsLocalEngine() => this.options.SastSettings?.LocalCodeEngineEnabled ?? false;
     }
 }

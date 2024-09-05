@@ -1,7 +1,4 @@
 ﻿using Microsoft.VisualStudio.Sdk.TestFramework;
-using Moq;
-using Snyk.VisualStudio.Extension.CLI;
-using Snyk.VisualStudio.Extension.Service;
 using Snyk.VisualStudio.Extension.Settings;
 using Xunit;
 
@@ -13,44 +10,6 @@ namespace Snyk.VisualStudio.Extension.Tests
         public GeneralOptionsDialogPageTest(GlobalServiceProvider sp)
         {
             sp.Reset();
-        }
-
-        [Fact]
-        public void ApiEndpointChanged_InvalidatesCliToken()
-        {
-            // Arrange
-            var serviceProviderMock = new Mock<ISnykServiceProvider>();
-            var optionsDialogPage = new SnykGeneralOptionsDialogPage();
-            var cliMock = new Mock<ICli>();
-            serviceProviderMock.Setup(provider => provider.NewCli())
-                .Returns(cliMock.Object);
-            optionsDialogPage.Initialize(serviceProviderMock.Object);
-            cliMock.VerifyNoOtherCalls();
-
-            // Act
-            optionsDialogPage.CustomEndpoint = "https://app.some.mock.address.snyk.io/api";
-
-            // Assert
-            cliMock.Verify(mock => mock.UnsetApiToken());
-        }
-
-        [Theory]
-        [InlineData("https://app.snyk.io/api", true)]
-        [InlineData("https://app.us.snyk.io/api", true)]
-        [InlineData("https://app.eu.snyk.io/api", false)]
-        [InlineData("https://app.au.snyk.io/api", false)]
-        [InlineData("https://app.snykgov.io/api", false)]
-
-        [InlineData("https://api.snyk.io", true)]
-        [InlineData("https://api.us.snyk.io", true)]
-        [InlineData("https://api.eu.snyk.io", false)]
-        [InlineData("https://api.au.snyk.io", false)]
-        [InlineData("https://api.snykgov.io", false)]
-        public void IsAnalyticsPermitted(string endpoint, bool expected)
-        {
-            var optionsDialogPage = new SnykGeneralOptionsDialogPage();
-            optionsDialogPage.CustomEndpoint = endpoint;
-            Assert.Equal(expected, optionsDialogPage.IsAnalyticsPermitted());
         }
 
         [Theory]

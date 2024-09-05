@@ -27,8 +27,9 @@ namespace Snyk.VisualStudio.Extension.Commands
         protected bool IsButtonAvailable()
         {
             ThreadHelper.ThrowIfNotOnUIThread();
-            return SnykVSPackage.ServiceProvider.Options.ApiToken.IsValidAfterRefresh()
-                   && SnykSolutionService.Instance.IsSolutionOpen();
+            var isLsReady = SnykVSPackage.Instance?.LanguageClientManager?.IsReady ?? false;
+            return SnykVSPackage.ServiceProvider.Options.ApiToken.IsValid()
+                   && SnykSolutionService.Instance.IsSolutionOpen() && isLsReady;
         }
 
         /// <inheritdoc/>

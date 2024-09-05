@@ -115,6 +115,22 @@ namespace Snyk.VisualStudio.Extension.Settings
         }
 
         /// <summary>
+        /// Get Or Set Auth Token
+        /// </summary>
+        /// <returns>string.</returns>
+
+        public string Token
+        {
+            get => this.LoadSettings().Token;
+            set
+            {
+                var settings = this.LoadSettings();
+                settings.Token = value;
+                this.settingsLoader.Save(settings);
+            }
+        }
+
+        /// <summary>
         /// Get is all projects enabled.
         /// </summary>
         /// <returns>Bool.</returns>
@@ -192,25 +208,6 @@ namespace Snyk.VisualStudio.Extension.Settings
         /// </summary>
         /// <returns>Bool.</returns>
         public bool IsOssEnabled() => this.LoadSettings().OssEnabled;
-
-        /// <summary>
-        /// Get usage analytics enabled.
-        /// </summary>
-        /// <returns>Bool.</returns>
-        public bool IsErrorReportsEnabled() => this.LoadSettings().ErrorReportsEnabled;
-
-        /// <summary>
-        /// Save usage analytics enabled option.
-        /// </summary>
-        /// <param name="errorReportsEnabled">Bool param.</param>
-        public void SaveErrorReportsEnabled(bool errorReportsEnabled)
-        {
-            var settings = this.LoadSettings();
-
-            settings.ErrorReportsEnabled = errorReportsEnabled;
-
-            this.settingsLoader.Save(settings);
-        }
 
         /// <summary>
         /// Save Sentry anonymous user id.

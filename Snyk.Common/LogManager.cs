@@ -1,15 +1,12 @@
-﻿namespace Snyk.Common
-{
-    using System;
-    using System.IO;
-    using global::Sentry;
-    using global::Sentry.Serilog;
-    using Serilog;
-    using Serilog.Core;
-    using Serilog.Events;
-    using Serilog.Exceptions;
-    using Snyk.Common.Sentry;
+﻿using System;
+using System.IO;
+using Serilog;
+using Serilog.Core;
+using Serilog.Events;
+using Serilog.Exceptions;
 
+namespace Snyk.Common
+{
     /// <summary>
     /// Logger manager for create logger per class.
     /// </summary>
@@ -31,8 +28,6 @@
 
         private static LoggingLevelSwitch loggingLevelSwitch = new LoggingLevelSwitch(defaultLoggingLevel);
 
-        public static SentrySerilogOptions SentryConfiguration { get; private set; }
-
         private static Lazy<Logger> Logger { get; } = new Lazy<Logger>(CreateLogger);
 
         /// <summary>
@@ -47,26 +42,6 @@
                 .Enrich.WithThreadId()
                 .Enrich.WithExceptionDetails()
                 .MinimumLevel.ControlledBy(loggingLevelSwitch)
-                .WriteTo.Sentry(config =>
-                {
-                    var appSettings = SnykExtension.AppSettings;
-
-                    config.Release = SnykExtension.Version;
-                    config.Environment = appSettings.Environment;
-                    config.Dsn = appSettings.SentryDsn;
-
-                    config.AttachStacktrace = true;
-
-                    // Disable default Sentry integrations for capture TaskUnobservedTaskException and AppDomainUnhandledException exceptions.
-                    config.DisableUnobservedTaskExceptionCapture();
-                    config.DisableAppDomainUnhandledExceptionCapture();
-
-                    // Register Snyk integrations for capture only Snyk related TaskUnobservedTaskException and AppDomainUnhandledException exceptions.
-                    config.AddIntegration(new TaskUnobservedTaskExceptionIntegration());
-                    config.AddIntegration(new AppDomainUnhandledExceptionIntegration());
-
-                    SentryConfiguration = config;
-                })
                 .WriteTo.File(
                     Path.Combine(SnykDirectory.GetSnykAppDataDirectoryPath(), "snyk-extension.log"),
                     fileSizeLimitBytes: LogFileSize,

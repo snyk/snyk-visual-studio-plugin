@@ -1,8 +1,8 @@
-﻿using Newtonsoft.Json.Serialization;
+﻿using System.Collections.Generic;
 using Newtonsoft.Json;
-using System.Collections.Generic;
+using Newtonsoft.Json.Serialization;
 
-namespace Snyk.Common.Service
+namespace Snyk.Common
 {
     /// <summary>
     /// Sast settings.

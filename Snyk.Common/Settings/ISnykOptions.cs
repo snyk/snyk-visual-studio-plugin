@@ -21,18 +21,12 @@ namespace Snyk.Common.Settings
         /// <summary>
         /// Gets or sets a value indicating whether Snyk user API token.
         /// </summary>
-        AuthenticationToken ApiToken { get; }
+        AuthenticationToken ApiToken { get; set; }
 
         /// <summary>
         /// Gets Value of Authentication Token Type.
         /// </summary>
         AuthenticationType AuthenticationMethod { get; }
-
-        SnykUser SnykUser { get; set; }
-
-        bool IsFedramp();
-
-        bool IsAnalyticsPermitted();
 
         /// <summary>
         /// Gets or sets a value indicating whether CLI custom endpoint parameter.
@@ -70,16 +64,6 @@ namespace Snyk.Common.Settings
         bool SnykCodeQualityEnabled { get; }
 
         /// <summary>
-        /// Gets or sets a value indicating whether Sentry anonymous user id.
-        /// </summary>
-        string AnonymousId { get; set; }
-
-        /// <summary>
-        /// Gets or sets a value indicating whether Analytics enabled or disabled. By default it's enabled.
-        /// </summary>
-        bool ErrorReportsEnabled { get; set; }
-
-        /// <summary>
         /// Gets or sets a value indicating whether the CLI should be automatically updated.
         /// </summary>
         bool BinariesAutoUpdate { get; set; }
@@ -93,8 +77,6 @@ namespace Snyk.Common.Settings
         /// Settings changed event.
         /// </summary>
         event EventHandler<SnykSettingsChangedEventArgs> SettingsChanged;
-
-        void SetApiToken(string apiToken);
 
         /// <summary>
         /// Gets a value indicating whether additional options.
@@ -123,5 +105,7 @@ namespace Snyk.Common.Settings
         void LoadSettingsFromStorage();
 
         SastSettings SastSettings { get; set; }
+        Task OnAuthenticationSuccessfulAsync(string token);
+        Task OnAuthenticationFailedAsync(string errorMessage);
     }
 }

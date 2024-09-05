@@ -5,10 +5,11 @@ using System.Net.Http;
 using System.Threading.Tasks;
 using Serilog;
 using Snyk.Common;
+using Snyk.VisualStudio.Extension.CLI;
 using Snyk.VisualStudio.Extension.Language;
 using Snyk.VisualStudio.Extension.Service;
 
-namespace Snyk.VisualStudio.Extension.CLI.Download
+namespace Snyk.VisualStudio.Extension.Download
 {
     /// <summary>
     /// Donwnload last Snyk CLI version.
@@ -161,7 +162,7 @@ namespace Snyk.VisualStudio.Extension.CLI.Download
             string filePath = null,
             List<CliDownloadFinishedCallback> downloadFinishedCallbacks = null)
         {
-            string fileDestinationPath = GetCliFilePath(filePath);
+            var fileDestinationPath = GetCliFilePath(filePath);
 
             var isCliDownloadNeeded = this.IsCliDownloadNeeded(lastCheckDate, fileDestinationPath);
 
@@ -192,7 +193,7 @@ namespace Snyk.VisualStudio.Extension.CLI.Download
         {
             Logger.Information("Enter Download method");
 
-            string cliFileDestinationPath = GetCliFilePath(fileDestinationPath);
+            var cliFileDestinationPath = GetCliFilePath(fileDestinationPath);
 
             Logger.Information("CLI File Destination Path: {Path}", cliFileDestinationPath);
 
@@ -229,7 +230,7 @@ namespace Snyk.VisualStudio.Extension.CLI.Download
                 throw new FileNotFoundException($"Cli file not found in {cliPath}");
             }
 
-            string currentSha = Sha256.Checksum(cliPath);
+            var currentSha = Sha256.Checksum(cliPath);
 
             if (this.expectedSha.ToLower() != currentSha.ToLower())
             {
@@ -244,7 +245,7 @@ namespace Snyk.VisualStudio.Extension.CLI.Download
 
         private void PrepareSnykCliDirectory()
         {
-            string snykDirectoryPath = SnykDirectory.GetSnykAppDataDirectoryPath();
+            var snykDirectoryPath = SnykDirectory.GetSnykAppDataDirectoryPath();
 
             if (!Directory.Exists(snykDirectoryPath))
             {
@@ -290,7 +291,7 @@ namespace Snyk.VisualStudio.Extension.CLI.Download
 
                 response.EnsureSuccessStatusCode();
 
-                string tempCliFile = Path.GetTempFileName();
+                var tempCliFile = Path.GetTempFileName();
 
                 using (var fileStream = new FileStream(tempCliFile, FileMode.Create, FileAccess.Write, FileShare.ReadWrite, bufferSize, true))
                 {
@@ -365,28 +366,6 @@ namespace Snyk.VisualStudio.Extension.CLI.Download
             }
 
             progressWorker.DownloadFinished();
-        }
-
-        /// <summary>
-        /// Convert String cli version to int value.
-        /// </summary>
-        /// <param name="cliVersion">Source CLI version</param>
-        /// <returns>Int value, if CLI version string is incorrect it will return -1.</returns>
-        private int CliVersionAsInt(string cliVersion)
-        {
-            if (string.IsNullOrEmpty(cliVersion))
-            {
-                return -1;
-            }
-
-            try
-            {
-                return int.Parse(cliVersion.Replace(".", string.Empty));
-            }
-            catch (FormatException)
-            {
-                return -1;
-            }
         }
     }
 }

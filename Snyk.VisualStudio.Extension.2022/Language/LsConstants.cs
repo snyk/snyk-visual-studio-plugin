@@ -15,8 +15,16 @@
         public const string OnPublishDiagnostics316 = "$/snyk.publishDiagnostics316";
         
         // Requests
+        public const string WorkspaceChangeConfiguration = "workspace/didChangeConfiguration";
+        public const string WorkspaceExecuteCommand = "workspace/executeCommand";
+
         public const string SnykWorkspaceScan = "snyk.workspace.scan";
         public const string SnykWorkspaceFolderScan = "snyk.workspaceFolder.scan";
         public const string SnykSastEnabled = "snyk.getSettingsSastEnabled";
+        public const string SnykLogin = "snyk.login";
+        public const string SnykLogout = "snyk.logout";
+        
+        public const string SnykCopyAuthLink = "snyk.copyAuthLink";
+        public const string SnykGetFeatureFlagStatus = "snyk.getFeatureFlagStatus";
     }
 }

@@ -2,8 +2,6 @@
 
 namespace Snyk.Common.Authentication
 {
-    public delegate string TokenRefresher();
-
     /// <summary>
     /// Util for AuthenticationToken strings.
     /// </summary>
@@ -11,47 +9,19 @@ namespace Snyk.Common.Authentication
     {
         public static readonly AuthenticationToken EmptyToken = new(AuthenticationType.Token, string.Empty);
 
-        public TokenRefresher TokenRefresher;
-
         private string value;
 
         public AuthenticationToken(AuthenticationType type, string value)
         {
             this.value = value;
             Type = type;
-            this.TokenRefresher = null;
         }
 
         public AuthenticationType Type { get; }
 
-        public string Refresh()
-        {
-            // if possible and required, update the token before using it
-            if (this.TokenRefresher != null && Type == AuthenticationType.OAuth)
-            {
-                var oauthToken = OAuthToken.FromJson(this.value);
-                if (oauthToken != null)
-                {
-                    var expired = oauthToken.IsExpired();
-                    if (expired)
-                    {
-                        this.value = this.TokenRefresher();
-                    }
-                }
-            }
-
-            return this.value;
-        }
-
         public override string ToString()
         {
             return this.value;
-        }
-
-        public bool IsValidAfterRefresh()
-        {
-            this.value = Refresh();
-            return IsValid();
         }
 
         public bool IsValid()

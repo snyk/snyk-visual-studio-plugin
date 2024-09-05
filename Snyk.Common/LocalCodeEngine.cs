@@ -1,4 +1,4 @@
-﻿namespace Snyk.Common.Service
+﻿namespace Snyk.Common
 {
     /// <summary>
     /// Sast local code engine settings.
