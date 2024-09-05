@@ -51,7 +51,7 @@ namespace Snyk.VisualStudio.Extension.Language
         {
             if (SnykVSPackage.ServiceProvider == null)
             {
-                return initializationOptions;
+                return null;
             }
 
             var options = SnykVSPackage.ServiceProvider.Options;
@@ -254,7 +254,7 @@ namespace Snyk.VisualStudio.Extension.Language
             var param = new LSP.ExecuteCommandParams {
                 Command = LsConstants.SnykWorkspaceScan
             };
-            var res = await InvokeWithParametersAsync<object>("workspace/executeCommand", param, cancellationToken);
+            var res = await InvokeWithParametersAsync<object>(LsConstants.WorkspaceExecuteCommand, param, cancellationToken);
             return res;
         }
 
@@ -265,7 +265,7 @@ namespace Snyk.VisualStudio.Extension.Language
                 Command = LsConstants.SnykWorkspaceFolderScan,
                 Arguments = new object[]{folderPath}
             };
-            var res = await InvokeWithParametersAsync<object>("workspace/executeCommand", param, cancellationToken);
+            var res = await InvokeWithParametersAsync<object>(LsConstants.WorkspaceExecuteCommand, param, cancellationToken);
             return res;
         }
 
@@ -276,7 +276,7 @@ namespace Snyk.VisualStudio.Extension.Language
             {
                 Command = LsConstants.SnykSastEnabled
             };
-            var sastSettings = await InvokeWithParametersAsync<SastSettings>("workspace/executeCommand", param, cancellationToken);
+            var sastSettings = await InvokeWithParametersAsync<SastSettings>(LsConstants.WorkspaceExecuteCommand, param, cancellationToken);
             return sastSettings;
         }
 
@@ -286,7 +286,7 @@ namespace Snyk.VisualStudio.Extension.Language
             {
                 Command = LsConstants.SnykLogin
             };
-            var token = await InvokeWithParametersAsync<string>("workspace/executeCommand", param, cancellationToken);
+            var token = await InvokeWithParametersAsync<string>(LsConstants.WorkspaceExecuteCommand, param, cancellationToken);
             return token;
         }
 
@@ -296,10 +296,29 @@ namespace Snyk.VisualStudio.Extension.Language
             {
                 Command = LsConstants.SnykLogout
             };
-            var isEnabled = await InvokeWithParametersAsync<object>("workspace/executeCommand", param, cancellationToken);
+            var isEnabled = await InvokeWithParametersAsync<object>(LsConstants.WorkspaceExecuteCommand, param, cancellationToken);
             return isEnabled;
         }
 
+        public async Task<string> InvokeCopyLink(CancellationToken cancellationToken)
+        {
+            var param = new LSP.ExecuteCommandParams
+            {
+                Command = LsConstants.SnykCopyAuthLink
+            };
+            var authLin = await InvokeWithParametersAsync<string>(LsConstants.WorkspaceExecuteCommand, param, cancellationToken);
+            return authLin;
+        }
+
+        public async Task<object> InvokeGetFeatureFlagStatus(string featureFlag, CancellationToken cancellationToken)
+        {
+            var param = new LSP.ExecuteCommandParams
+            {
+                Command = LsConstants.SnykGetFeatureFlagStatus
+            };
+            var featureFlagStatus = await InvokeWithParametersAsync<object>(LsConstants.WorkspaceExecuteCommand, param, cancellationToken);
+            return featureFlagStatus;
+        }
 
         public async Task<object> DidChangeConfigurationAsync(CancellationToken cancellationToken)
         {
@@ -310,7 +329,7 @@ namespace Snyk.VisualStudio.Extension.Language
                 Settings = GetInitializationOptions()
             };
             
-            return await Rpc.InvokeWithParameterObjectAsync<object>(LsConstants.SnykWorkspaceChangeConfiguration, param, cancellationToken).ConfigureAwait(false);
+            return await InvokeWithParametersAsync<object>(LsConstants.WorkspaceChangeConfiguration, param, cancellationToken).ConfigureAwait(false);
         }
 
         public async Task RestartServerAsync()

@@ -10,6 +10,7 @@ using Snyk.Common;
 using Snyk.Common.Authentication;
 using Snyk.Common.Service;
 using Snyk.Common.Settings;
+using Snyk.VisualStudio.Extension.Language;
 using Snyk.VisualStudio.Extension.Service;
 
 namespace Snyk.VisualStudio.Extension.Settings
@@ -72,6 +73,7 @@ namespace Snyk.VisualStudio.Extension.Settings
                 if (this.userStorageSettingsService == null || this.userStorageSettingsService.AuthenticationMethod == value)
                     return;
                 this.userStorageSettingsService.AuthenticationMethod = value;
+                this.GeneralSettingsUserControl.InvalidateApiToken();
                 ApiToken = AuthenticationToken.EmptyToken;
                 this.FireSettingsChangedEvent();
             }
@@ -141,12 +143,12 @@ namespace Snyk.VisualStudio.Extension.Settings
 
         public async Task OnAuthenticationSuccessfulAsync(string token)
         {
-            await this.generalSettingsUserControl.OnAuthenticationSuccessfulAsync(token);
+            await this.GeneralSettingsUserControl.OnAuthenticationSuccessfulAsync(token);
         }
 
         public async Task OnAuthenticationFailedAsync(string errorMessage)
         {
-            await this.generalSettingsUserControl.OnAuthenticationFailAsync(errorMessage);
+            await this.GeneralSettingsUserControl.OnAuthenticationFailAsync(errorMessage);
         }
 
         /// <summary>
@@ -338,16 +340,21 @@ namespace Snyk.VisualStudio.Extension.Settings
             }
             try
             {
-                if (!ApiToken.IsValid())
+                if (!LanguageClientHelper.IsLanguageServerReady())
                 {
-                    Logger.Information("Api token is invalid. Attempting to authenticate via snyk auth");
-                    ThreadHelper.JoinableTaskFactory.Run(async ()=>
-                    {
-                        await ServiceProvider.Package.LanguageClientManager.InvokeLogout(CancellationToken.None);
-                        var token = await ServiceProvider.Package.LanguageClientManager.InvokeLogin(CancellationToken.None);
-                        ApiToken = CreateAuthenticationToken(token);
-                    });
+                    Logger.Error("Language Server is not initialized yet.");
+                    return false;
                 }
+                if (ApiToken.IsValid()) 
+                    return true;
+                
+                Logger.Information("Api token is invalid. Attempting to authenticate via snyk auth");
+                ThreadHelper.JoinableTaskFactory.Run(async ()=>
+                {
+                    await ServiceProvider.Package.LanguageClientManager.InvokeLogout(CancellationToken.None);
+                    var token = await ServiceProvider.Package.LanguageClientManager.InvokeLogin(CancellationToken.None);
+                    ApiToken = CreateAuthenticationToken(token);
+                });
                 return true;
 
             }

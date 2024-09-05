@@ -70,6 +70,7 @@
     <Compile Include="Language\LspAnalysisResult.cs" />
     <Compile Include="Language\SatisfyImportExtension.cs" />
     <Compile Include="Language\SnykContentDefinition.cs" />
+    <Compile Include="Language\LanguageClientHelper.cs" />
     <Compile Include="Language\SnykLanguageClient.cs" />
     <Compile Include="Language\SnykLanguageClientCustomTarget.cs" />
     <Compile Include="Language\SnykLanguageClientMiddleware.cs" />

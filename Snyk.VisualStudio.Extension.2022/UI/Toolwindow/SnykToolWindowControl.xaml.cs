@@ -100,13 +100,13 @@ namespace Snyk.VisualStudio.Extension.UI.Toolwindow
 
             tasksService.DownloadStarted += (sender, args) =>
             {
-                if (serviceProvider.Package?.LanguageClientManager != null)
+                if (LanguageClientHelper.IsLanguageServerReady())
                     ThreadHelper.JoinableTaskFactory.RunAsync(serviceProvider.Package.LanguageClientManager.StopServerAsync).FireAndForget();
                 this.OnDownloadStarted(sender, args);
             };
             tasksService.DownloadFinished += (sender, args) =>
             {
-                if (serviceProvider.Package?.LanguageClientManager != null)
+                if (LanguageClientHelper.IsLanguageServerReady())
                     ThreadHelper.JoinableTaskFactory.RunAsync(async ()=> await serviceProvider.Package.LanguageClientManager.StartServerAsync(true)).FireAndForget();
                 this.OnDownloadFinished(sender, args);
             };
@@ -479,7 +479,7 @@ namespace Snyk.VisualStudio.Extension.UI.Toolwindow
             try
             {
                 SastSettings sastSettings = null;
-                if (this.serviceProvider.Package.LanguageClientManager != null)
+                if (LanguageClientHelper.IsLanguageServerReady())
                 {
                     sastSettings = await this.serviceProvider.Package.LanguageClientManager.InvokeGetSastEnabled(CancellationToken.None);
                 }

@@ -15,6 +15,7 @@ using Snyk.Common;
 using Snyk.Common.Authentication;
 using Snyk.Common.Settings;
 using Snyk.VisualStudio.Extension.CLI;
+using Snyk.VisualStudio.Extension.Language;
 using Snyk.VisualStudio.Extension.Service;
 using Snyk.VisualStudio.Extension.UI.Notifications;
 using Task = System.Threading.Tasks.Task;
@@ -108,7 +109,8 @@ namespace Snyk.VisualStudio.Extension.Settings
             {
                 await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
                 this.UpdateViewFromOptionsDialog();
-                await ServiceProvider.Package.LanguageClientManager.DidChangeConfigurationAsync(CancellationToken.None);
+                if (LanguageClientHelper.IsLanguageServerReady())
+                    await ServiceProvider.Package.LanguageClientManager.DidChangeConfigurationAsync(CancellationToken.None);
             }).FireAndForget();
 
         public async Task OnAuthenticationSuccessfulAsync(string apiToken)
@@ -116,7 +118,6 @@ namespace Snyk.VisualStudio.Extension.Settings
             logger.Information("Enter authenticate successCallback");
 
             await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
-            //TODO - try to await SwitchToMainThread
             if (this.authProgressBar.IsHandleCreated)
             {
                 this.authProgressBar.Invoke(new Action(() =>
@@ -158,6 +159,11 @@ namespace Snyk.VisualStudio.Extension.Settings
             this.tokenTextBox.Text = this.OptionsDialogPage.ApiToken.ToString();
         }
 
+        public void InvalidateApiToken()
+        {
+            this.tokenTextBox.Text = string.Empty;
+        }
+
         public async Task OnAuthenticationFailAsync(string errorMessage)
         {
             logger.Information("Enter authenticate errorCallback");
@@ -187,7 +193,7 @@ namespace Snyk.VisualStudio.Extension.Settings
                 }));
             }
 
-            OssError ossError = new OssError
+            var ossError = new OssError
             {
                 IsSuccess = false,
                 Message = errorMessage,
@@ -349,7 +355,7 @@ namespace Snyk.VisualStudio.Extension.Settings
                 {
                     try
                     {
-                        if (this.ServiceProvider?.Package?.LanguageClientManager == null || this.ServiceProvider.Package.LanguageClientManager.IsReady == false) return;
+                        if (!LanguageClientHelper.IsLanguageServerReady()) return;
                         var sastSettings = await this.ServiceProvider.Package.LanguageClientManager.InvokeGetSastEnabled(CancellationToken.None);
 
                         bool snykCodeEnabled = sastSettings != null ? sastSettings.SnykCodeEnabled : false;
