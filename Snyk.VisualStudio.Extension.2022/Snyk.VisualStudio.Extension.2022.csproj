@@ -266,12 +266,6 @@
     <PackageReference Include="Analytics">
       <Version>3.8.1</Version>
     </PackageReference>
-    <PackageReference Include="Sentry">
-      <Version>4.6.2</Version>
-    </PackageReference>
-    <PackageReference Include="Sentry.Serilog">
-      <Version>4.6.2</Version>
-    </PackageReference>
     <PackageReference Include="Serilog">
       <Version>3.0.1</Version>
     </PackageReference>

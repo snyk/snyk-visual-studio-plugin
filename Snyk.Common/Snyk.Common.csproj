@@ -61,11 +61,6 @@
     <Compile Include="Json.cs" />
     <Compile Include="LogManager.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
-    <Compile Include="Sentry\AbstractIntegration.cs" />
-    <Compile Include="Sentry\AppDomainAdapter.cs" />
-    <Compile Include="Sentry\AppDomainUnhandledExceptionIntegration.cs" />
-    <Compile Include="Sentry\IAppDomain.cs" />
-    <Compile Include="Sentry\TaskUnobservedTaskExceptionIntegration.cs" />
     <Compile Include="Service\ApiEndpointResolver.cs" />
     <Compile Include="Service\SnykUser.cs" />
     <Compile Include="Sha256.cs" />
@@ -105,12 +100,6 @@
     <PackageReference Include="Newtonsoft.Json">
       <Version>13.0.1</Version>
     </PackageReference>
-    <PackageReference Include="Sentry">
-      <Version>4.6.2</Version>
-    </PackageReference>
-    <PackageReference Include="Sentry.Serilog">
-      <Version>4.6.2</Version>
-    </PackageReference>
     <PackageReference Include="Serilog.Enrichers.Process">
       <Version>2.0.2</Version>
     </PackageReference>
@@ -130,5 +119,6 @@
       <Version>0.15.0</Version>
     </PackageReference>
   </ItemGroup>
+  <ItemGroup />
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>
