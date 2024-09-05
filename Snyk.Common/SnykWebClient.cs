@@ -17,9 +17,6 @@
             this.Headers.Add("User-Agent", "Snyk.VisualStudio.Extension");
 
             ServicePointManager.Expect100Continue = true;
-            
-            // TODO: Get back to this and find an alternative
-            ServicePointManager.SecurityProtocol = SecurityProtocolType.Tls12;
         }
     }
 }
