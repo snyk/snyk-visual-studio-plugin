@@ -1,4 +1,4 @@
 ﻿/* 
- Snyk Security is being loaded.
- Please wait a few moments.
+ Snyk Security is loading...
+ Please hold on for a moment.
 */
