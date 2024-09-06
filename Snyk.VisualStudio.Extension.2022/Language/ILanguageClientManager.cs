@@ -1,7 +1,8 @@
-﻿using System.Threading;
+﻿using System;
+using System.Threading;
 using System.Threading.Tasks;
+using Microsoft.VisualStudio.Threading;
 using Snyk.Common;
-using Snyk.Common.Service;
 using StreamJsonRpc;
 
 namespace Snyk.VisualStudio.Extension.Language
@@ -18,5 +19,7 @@ namespace Snyk.VisualStudio.Extension.Language
         Task<string> InvokeLogin(CancellationToken cancellationToken);
         Task<object> InvokeLogout(CancellationToken cancellationToken);
         Task<object> DidChangeConfigurationAsync(CancellationToken cancellationToken);
+        event AsyncEventHandler<SnykLanguageServerEventArgs> OnLanguageServerReadyAsync;
+        event AsyncEventHandler<SnykLanguageServerEventArgs> OnLanguageClientNotInitializedAsync;
     }
 }

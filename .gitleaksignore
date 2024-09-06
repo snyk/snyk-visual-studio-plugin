@@ -4,6 +4,9 @@
 9a05faae741fbfab2a0dbcc3df3452dbb031afef:Snyk.VisualStudio.Extension.Shared/Settings/SnykGeneralSettingsUserControl.resx:generic-api-key:126
 9a05faae741fbfab2a0dbcc3df3452dbb031afef:Snyk.VisualStudio.Extension.Shared/Settings/SnykGeneralSettingsUserControl.resx:generic-api-key:129
 9a05faae741fbfab2a0dbcc3df3452dbb031afef:Snyk.VisualStudio.Extension.Shared/Settings/SnykGeneralSettingsUserControl.resx:generic-api-key:132
+b600b71041ea07c6aae3f1fe451a25680b0db4d7:Snyk.VisualStudio.Extension.2022/Settings/SnykGeneralSettingsUserControl.resx:generic-api-key:126
+b600b71041ea07c6aae3f1fe451a25680b0db4d7:Snyk.VisualStudio.Extension.2022/Settings/SnykGeneralSettingsUserControl.resx:generic-api-key:129
+b600b71041ea07c6aae3f1fe451a25680b0db4d7:Snyk.VisualStudio.Extension.2022/Settings/SnykGeneralSettingsUserControl.resx:generic-api-key:132
 7920b3fa9f77f5461cd7648e6414db7d3e1c766b:snyk-visual-studio-plugin/VSPackage.resx:generic-api-key:130
 
 # file no longer exists

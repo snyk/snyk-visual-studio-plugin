@@ -102,6 +102,8 @@ namespace Snyk.VisualStudio.Extension.Language
 
         public event AsyncEventHandler<EventArgs> StartAsync;
         public event AsyncEventHandler<EventArgs> StopAsync;
+        public event AsyncEventHandler<SnykLanguageServerEventArgs> OnLanguageServerReadyAsync;
+        public event AsyncEventHandler<SnykLanguageServerEventArgs> OnLanguageClientNotInitializedAsync;
 
         public async Task<Connection> ActivateAsync(CancellationToken token)
         {
@@ -157,6 +159,11 @@ namespace Snyk.VisualStudio.Extension.Language
 
         public async Task StartServerAsync(bool shouldStart = false)
         {
+            if (StartAsync == null)
+            {
+                FireOnLanguageClientNotInitializedAsync();
+                return;
+            }
             if (!IsReady && StartAsync != null && SnykVSPackage.Instance?.Options != null && shouldStart)
             {
                 if (CustomMessageTarget == null)
@@ -165,6 +172,8 @@ namespace Snyk.VisualStudio.Extension.Language
                 }
                 Logger.Information("Starting Language Server");
                 await StartAsync.InvokeAsync(this, EventArgs.Empty);
+                IsReady = true;
+                FireOnLanguageServerReadyAsyncEvent();
             }
             else
             {
@@ -231,7 +240,6 @@ namespace Snyk.VisualStudio.Extension.Language
             Rpc.AllowModificationWhileListening = true;
             Rpc.ActivityTracingStrategy = null;
             Rpc.AllowModificationWhileListening = false;
-            IsReady = true;
         }
 
         protected void OnStopping() { }
@@ -354,7 +362,14 @@ namespace Snyk.VisualStudio.Extension.Language
             await RestartAsync(true);
         }
 
-        // TODO: Add Logging
+        public void FireOnLanguageServerReadyAsyncEvent()
+        {
+            this.OnLanguageServerReadyAsync?.InvokeAsync(this, new SnykLanguageServerEventArgs{IsReady = true}).FireAndForget();
+        }
+        public void FireOnLanguageClientNotInitializedAsync()
+        {
+            this.OnLanguageClientNotInitializedAsync?.InvokeAsync(this, new SnykLanguageServerEventArgs { IsReady = false }).FireAndForget();
+        }
 
         private async Task<T> InvokeAsync<T>(string request, CancellationToken t)
         {

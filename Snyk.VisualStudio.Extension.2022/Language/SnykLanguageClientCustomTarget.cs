@@ -132,7 +132,7 @@ namespace Snyk.VisualStudio.Extension.Language
 
             if (serviceProvider.Options.AutoScan)
             {
-                await this.languageClientManager.InvokeWorkspaceScanAsync(CancellationToken.None);
+                await this.languageClientManager.InvokeWorkspaceScanAsync(SnykVSPackage.Instance.DisposalToken);
             }
         }
 

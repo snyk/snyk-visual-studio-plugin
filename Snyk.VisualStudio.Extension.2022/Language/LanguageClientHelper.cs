@@ -2,9 +2,14 @@
 {
     public static class LanguageClientHelper
     {
+        public static ILanguageClientManager LanguageClientManager()
+        {
+            return SnykVSPackage.Instance?.LanguageClientManager;
+        }
+
         public static bool IsLanguageServerReady()
         {
-            return SnykVSPackage.Instance?.LanguageClientManager != null && SnykVSPackage.Instance.LanguageClientManager.IsReady;
+            return LanguageClientManager() != null && LanguageClientManager().IsReady;
         }
     }
 }

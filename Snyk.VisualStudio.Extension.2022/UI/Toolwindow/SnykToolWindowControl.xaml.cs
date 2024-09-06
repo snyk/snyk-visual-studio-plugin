@@ -480,7 +480,7 @@ namespace Snyk.VisualStudio.Extension.UI.Toolwindow
                 SastSettings sastSettings = null;
                 if (LanguageClientHelper.IsLanguageServerReady())
                 {
-                    sastSettings = await this.serviceProvider.Package.LanguageClientManager.InvokeGetSastEnabled(CancellationToken.None);
+                    sastSettings = await this.serviceProvider.Package.LanguageClientManager.InvokeGetSastEnabled(SnykVSPackage.Instance.DisposalToken);
                 }
 
                 this.resultsTree.CodeQualityRootNode.State = this.GetSnykCodeRootNodeState(sastSettings, options.SnykCodeQualityEnabled);
@@ -695,7 +695,7 @@ namespace Snyk.VisualStudio.Extension.UI.Toolwindow
         {
             var options = this.serviceProvider.Options;
 
-            if (options.ApiToken.IsValid())
+            if (options.ApiToken.IsValid() && LanguageClientHelper.IsLanguageServerReady())
             {
                 this.context.TransitionTo(RunScanState.Instance);
                 return;

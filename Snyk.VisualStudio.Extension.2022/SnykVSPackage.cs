@@ -1,10 +1,13 @@
 ﻿using Snyk.Common.Settings;
 using System;
 using System.Diagnostics.CodeAnalysis;
+using System.IO;
 using System.Linq;
+using System.Reflection;
 using System.Runtime.InteropServices;
 using System.Threading;
 using System.Threading.Tasks;
+using EnvDTE;
 using Microsoft;
 using Microsoft.VisualStudio.ComponentModelHost;
 using Microsoft.VisualStudio.Shell;
@@ -18,6 +21,7 @@ using Snyk.VisualStudio.Extension.Settings;
 using Snyk.VisualStudio.Extension.UI.Notifications;
 using Snyk.VisualStudio.Extension.UI.Toolwindow;
 using Task = System.Threading.Tasks.Task;
+using Thread = EnvDTE.Thread;
 
 namespace Snyk.VisualStudio.Extension
 {
@@ -196,8 +200,10 @@ namespace Snyk.VisualStudio.Extension
                 
                 await InitializeGeneralOptionsAsync();
 
-                // Initialize analytics
-                var vsVersion = await GetReadableVsVersionAsync();
+
+                // Initialize LS
+                Logger.Information("Initializing Language Server");
+                await InitializeLanguageClientAsync();
 
                 // Initialize commands
                 Logger.Information("Initialize Commands()");
@@ -213,8 +219,6 @@ namespace Snyk.VisualStudio.Extension
                 Logger.Information("Before call toolWindowControl.InitializeEventListeners() method.");
                 ToolWindowControl.InitializeEventListeners(this.serviceProvider);
                 ToolWindowControl.Initialize(this.serviceProvider);
-                
-                await InitializeLanguageClientAsync();
                 
                 // Notify package has been initialized
                 IsInitialized = true;
@@ -245,9 +249,11 @@ namespace Snyk.VisualStudio.Extension
                 var componentModel = GetGlobalService(typeof(SComponentModel)) as IComponentModel;
                 Assumes.Present(componentModel);
                 var languageServerClientManager = componentModel.GetService<ILanguageClientManager>();
-                if(languageServerClientManager != null && !languageServerClientManager.IsReady)
+                LanguageClientManager = languageServerClientManager;
+                LanguageClientManager.OnLanguageClientNotInitializedAsync += LanguageClientManagerOnOnLanguageClientNotInitializedAsync;
+                LanguageClientManager.OnLanguageServerReadyAsync += LanguageClientManagerOnOnLanguageServerReadyAsync;
+                if (languageServerClientManager != null && !languageServerClientManager.IsReady)
                 {
-                    LanguageClientManager = languageServerClientManager;
                     // If CLI download is necessary, Skip initializing.
                     if (this.serviceProvider.TasksService.ShouldDownloadCli())
                     {
@@ -260,6 +266,33 @@ namespace Snyk.VisualStudio.Extension
             {
                 Logger.Error(e, string.Empty);
             }
+        }
+
+        private async Task LanguageClientManagerOnOnLanguageServerReadyAsync(object sender, SnykLanguageServerEventArgs args)
+        {
+            // Sleep for three seconds before closing the temp window
+            await Task.Delay(3000);
+            await JoinableTaskFactory.SwitchToMainThreadAsync();
+            tempOpenedFileWindow?.Close(vsSaveChanges.vsSaveChangesNo);
+        }
+
+        private Window tempOpenedFileWindow;
+        private async Task LanguageClientManagerOnOnLanguageClientNotInitializedAsync(object sender, SnykLanguageServerEventArgs args)
+        {
+            await JoinableTaskFactory.SwitchToMainThreadAsync();
+
+            var dte = (DTE)await GetServiceAsync(typeof(DTE));
+            if (dte == null)
+            {
+                return;
+            }
+
+            // Get the path to the file within the installed extension directory
+            var assemblyLocation = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location);
+            var filePath = Path.Combine(assemblyLocation, "Resources", "SnykLsInit.cs");
+
+            // Open the file
+            tempOpenedFileWindow = dte.ItemOperations.OpenFile(filePath, EnvDTE.Constants.vsViewKindTextView);
         }
 
         private async Task InitializeGeneralOptionsAsync()

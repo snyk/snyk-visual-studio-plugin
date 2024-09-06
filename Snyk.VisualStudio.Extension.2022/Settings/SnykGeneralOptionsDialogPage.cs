@@ -335,8 +335,8 @@ namespace Snyk.VisualStudio.Extension.Settings
                 Logger.Information("Api token is invalid. Attempting to authenticate via snyk auth");
                 ThreadHelper.JoinableTaskFactory.Run(async ()=>
                 {
-                    await ServiceProvider.Package.LanguageClientManager.InvokeLogout(CancellationToken.None);
-                    var token = await ServiceProvider.Package.LanguageClientManager.InvokeLogin(CancellationToken.None);
+                    await ServiceProvider.Package.LanguageClientManager.InvokeLogout(SnykVSPackage.Instance.DisposalToken);
+                    var token = await ServiceProvider.Package.LanguageClientManager.InvokeLogin(SnykVSPackage.Instance.DisposalToken);
                     ApiToken = CreateAuthenticationToken(token);
                 });
                 return true;

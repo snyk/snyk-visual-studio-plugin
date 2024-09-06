@@ -110,7 +110,7 @@ namespace Snyk.VisualStudio.Extension.Settings
                 await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
                 this.UpdateViewFromOptionsDialog();
                 if (LanguageClientHelper.IsLanguageServerReady())
-                    await ServiceProvider.Package.LanguageClientManager.DidChangeConfigurationAsync(CancellationToken.None);
+                    await ServiceProvider.Package.LanguageClientManager.DidChangeConfigurationAsync(SnykVSPackage.Instance.DisposalToken);
             }).FireAndForget();
 
         public async Task OnAuthenticationSuccessfulAsync(string apiToken)
@@ -356,7 +356,7 @@ namespace Snyk.VisualStudio.Extension.Settings
                     try
                     {
                         if (!LanguageClientHelper.IsLanguageServerReady()) return;
-                        var sastSettings = await this.ServiceProvider.Package.LanguageClientManager.InvokeGetSastEnabled(CancellationToken.None);
+                        var sastSettings = await this.ServiceProvider.Package.LanguageClientManager.InvokeGetSastEnabled(SnykVSPackage.Instance.DisposalToken);
 
                         bool snykCodeEnabled = sastSettings != null ? sastSettings.SnykCodeEnabled : false;
 
