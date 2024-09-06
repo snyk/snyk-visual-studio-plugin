@@ -176,6 +176,9 @@
     <Compile Include="UI\Toolwindow\DescriptionHeaderPanel.xaml.cs">
       <DependentUpon>DescriptionHeaderPanel.xaml</DependentUpon>
     </Compile>
+    <Compile Include="UI\Toolwindow\HtmlDescriptionPanel.xaml.cs">
+      <DependentUpon>HtmlDescriptionPanel.xaml</DependentUpon>
+    </Compile>
     <Compile Include="UI\Toolwindow\DescriptionPanel.xaml.cs">
       <DependentUpon>DescriptionPanel.xaml</DependentUpon>
     </Compile>
@@ -203,6 +206,7 @@
     <Compile Include="UI\Toolwindow\SnykCode\SnykCodeDescriptionControl.xaml.cs">
       <DependentUpon>SnykCodeDescriptionControl.xaml</DependentUpon>
     </Compile>
+    <Compile Include="UI\Toolwindow\SnykScriptManager.cs" />
     <Compile Include="UI\Toolwindow\SnykToolWindow.cs" />
     <Compile Include="UI\Toolwindow\SnykToolWindowCommand.cs" />
     <Compile Include="UI\Toolwindow\SnykToolWindowControl.xaml.cs">
@@ -297,6 +301,10 @@
       <SubType>Designer</SubType>
     </Page>
     <Page Include="UI\Toolwindow\DescriptionHeaderPanel.xaml">
+      <Generator>MSBuild:Compile</Generator>
+      <SubType>Designer</SubType>
+    </Page>
+    <Page Include="UI\Toolwindow\HtmlDescriptionPanel.xaml">
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
     </Page>

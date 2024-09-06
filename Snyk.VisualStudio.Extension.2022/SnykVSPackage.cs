@@ -203,7 +203,7 @@ namespace Snyk.VisualStudio.Extension
 
                 // Initialize LS
                 Logger.Information("Initializing Language Server");
-                await InitializeLanguageClientAsync();
+                InitializeLanguageClientAsync().FireAndForget();
 
                 // Initialize commands
                 Logger.Information("Initialize Commands()");

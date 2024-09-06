@@ -410,7 +410,7 @@ namespace Snyk.VisualStudio.Extension.UI.Toolwindow
             this.messagePanel.Text = text;
 
             this.messagePanel.Visibility = Visibility.Visible;
-            this.descriptionPanel.Visibility = Visibility.Collapsed;
+            this.DescriptionPanel.Visibility = Visibility.Collapsed;
         });
 
         /// <summary>
@@ -591,7 +591,7 @@ namespace Snyk.VisualStudio.Extension.UI.Toolwindow
             this.messagePanel.Text = $"Downloading latest Snyk CLI release {value}%...";
 
             this.messagePanel.Visibility = Visibility.Visible;
-            this.descriptionPanel.Visibility = Visibility.Collapsed;
+            this.DescriptionPanel.Visibility = Visibility.Collapsed;
         }
 
         private void VulnerabilitiesTree_SelectetVulnerabilityChanged(object sender, RoutedEventArgs args)
@@ -622,7 +622,7 @@ namespace Snyk.VisualStudio.Extension.UI.Toolwindow
 
         private void HandleRootTreeNodeSelected()
         {
-            this.descriptionPanel.Visibility = Visibility.Collapsed;
+            this.DescriptionPanel.Visibility = Visibility.Collapsed;
             this.messagePanel.Visibility = Visibility.Visible;
 
             var selectedItem = this.resultsTree.SelectedItem;
@@ -645,24 +645,24 @@ namespace Snyk.VisualStudio.Extension.UI.Toolwindow
 
             if (issue != null)
             {
-                this.descriptionPanel.Visibility = Visibility.Visible;
+                this.DescriptionPanel.Visibility = Visibility.Visible;
 
-                this.descriptionPanel.SetOssIssue(issue);
+                this.DescriptionPanel.SetContent(issue, Product.Oss);
             }
             else
             {
-                this.descriptionPanel.Visibility = Visibility.Collapsed;
+                this.DescriptionPanel.Visibility = Visibility.Collapsed;
             }
         }
 
         private async Task HandleSnykCodeTreeNodeSelectedAsync()
         {
-            this.descriptionPanel.Visibility = Visibility.Visible;
+            this.DescriptionPanel.Visibility = Visibility.Visible;
 
             var snykCodeTreeNode = this.resultsTree.SelectedItem as SnykCodeVulnerabilityTreeNode;
             if (snykCodeTreeNode == null) return;
             
-            await this.descriptionPanel.SetCodeIssueAsync(snykCodeTreeNode.Issue);
+            this.DescriptionPanel.SetContent(snykCodeTreeNode.Issue, Product.Code);
 
             var issue = snykCodeTreeNode.Issue;
 
