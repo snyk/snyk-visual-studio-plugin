@@ -498,8 +498,6 @@
     </Content>
     <VSCTCompile Include="SnykVSPackage.vsct">
       <ResourceName>Menus.ctmenu</ResourceName>
-      <Generator>VsctGenerator</Generator>
-      <LastGenOutput>SnykVSPackage1.cs</LastGenOutput>
     </VSCTCompile>
   </ItemGroup>
   <ItemGroup>
