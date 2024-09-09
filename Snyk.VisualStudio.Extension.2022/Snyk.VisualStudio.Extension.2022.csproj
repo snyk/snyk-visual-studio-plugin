@@ -102,6 +102,9 @@
     <Compile Include="Model\Severity.cs" />
     <Compile Include="Product.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Resource Include="Resources\SnykIac.png">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Resource>
     <Content Include="Resources\SnykLsInit.cs">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
       <IncludeInVSIX>true</IncludeInVSIX>
@@ -226,6 +229,7 @@
     <Compile Include="UI\Tree\RootTreeNode.cs" />
     <Compile Include="UI\Tree\RootTreeNodeState.cs" />
     <Compile Include="UI\Tree\SnykCodeFileTreeNode.cs" />
+    <Compile Include="UI\Tree\SnykIacRootTreeNode.cs" />
     <Compile Include="UI\Tree\SnykCodeQualityRootTreeNode.cs" />
     <Compile Include="UI\Tree\SnykCodeSecurityRootTreeNode.cs" />
     <Compile Include="UI\Tree\SnykCodeVulnerabilityTreeNode.cs" />

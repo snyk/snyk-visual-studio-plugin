@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Windows.Media;
+using Microsoft.Internal.VisualStudio.Shell.Interop;
 using Microsoft.VisualStudio.PlatformUI;
 using Snyk.VisualStudio.Extension.Theme;
 
@@ -34,7 +35,9 @@ namespace Snyk.VisualStudio.Extension.UI.Html
                        position: relative;
                        top: -5%;
                      }
-
+                     .code-issue-container {
+                       margin-top: 20px;
+                     }
                      .summary .summary-item {
                        margin-bottom: 0.8em;
                      }
@@ -66,7 +69,7 @@ namespace Snyk.VisualStudio.Extension.UI.Html
                        padding: 5px 10px;
                        border-bottom: 1px solid transparent;
                        font-size: 0.8rem;
-                       color: #cccccc;
+                       color: var(--text-color);
                        text-transform: uppercase;
                      }
                      
@@ -152,19 +155,9 @@ namespace Snyk.VisualStudio.Extension.UI.Html
         {
             html = base.ReplaceCssVariables(html);
 
-            html = html.Replace("var(--data-flow-body-color)", "#2b2d30");
-            html = html.Replace("var(--example-line-added-color)", "#202d24");
-            html = html.Replace("var(--example-line-removed-color)", "#352628");
-            html = html.Replace("var(--tab-item-github-icon-color)", "#dfe1e5");
-            html = html.Replace("var(--tab-item-hover-color)", "#313438");
-            html = html.Replace("var(--scrollbar-thumb-color)", "#555555");
-            html = html.Replace("var(--tabs-bottom-color)", "#555555");
-            html = html.Replace("var(--editor-color)", "#2b2d30");
-            html = html.Replace("var(--label-color)", "#dfe1e5");
-            html = html.Replace("var(--container-background-color)", "#1f1f1f");
-            html = html.Replace("var(--generated-ai-fix-button-background-color)", "#3376CD");
-            html = html.Replace("var(--line-removed)", "#542426");
-            html = html.Replace("var(--line-added)", "#1c4428");
+            html = html.Replace("var(--container-background-color)", VSColorTheme.GetThemedColor(EnvironmentColors.BrandedUIBackgroundBrushKey).ToHex());
+            html = html.Replace("var(--line-removed)", VSColorTheme.GetThemedColor(EnvironmentColors.VizSurfaceRedDarkBrushKey).ToHex());
+            html = html.Replace("var(--line-added)", VSColorTheme.GetThemedColor(EnvironmentColors.VizSurfaceGreenDarkBrushKey).ToHex());
 
             return html;
         }

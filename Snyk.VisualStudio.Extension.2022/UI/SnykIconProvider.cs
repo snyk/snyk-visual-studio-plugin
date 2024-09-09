@@ -21,6 +21,11 @@ namespace Snyk.VisualStudio.Extension.UI
         public static string SnykCodeIconPath = ResourceLoader.GetResourcePath("SnykCode.png");
 
         /// <summary>
+        /// SnykIaC icon path.
+        /// </summary>
+        public static string SnykIacIconPath = ResourceLoader.GetResourcePath("SnykIac.png");
+
+        /// <summary>
         /// Default file icon path.
         /// </summary>
         public static string DefaultFileIconPath = ResourceLoader.GetResourcePath("DefaultFileIcon.png");

@@ -1,5 +1,6 @@
 ﻿using System.Linq;
 using System;
+using Microsoft.VisualStudio.PlatformUI;
 
 namespace Snyk.VisualStudio.Extension.UI.Html
 {
@@ -37,9 +38,6 @@ namespace Snyk.VisualStudio.Extension.UI.Html
                        color: var(--link-color);
                      }
 
-                     .delimiter {
-                       border-right: 1px solid var(--border-color);
-                     }
                     .delimiter-top {
                            border-top: 1px solid var(--horizontal-border-color);
                     }
@@ -85,11 +83,11 @@ namespace Snyk.VisualStudio.Extension.UI.Html
             css += "</style>";
             html = html.Replace("${ideStyle}", css);
             html = html.Replace("var(--default-font)", " ui-sans-serif, \"SF Pro Text\", \"Segoe UI\", \"Ubuntu\", Tahoma, Geneva, Verdana, sans-serif;");
-            html = html.Replace("var(--text-color)", "#dfe1e5");
-            html = html.Replace("var(--background-color)", "#333");
-            html = html.Replace("var(--border-color)", "#393b40");
-            html = html.Replace("var(--link-color)", "#4daafc");
-            html = html.Replace("var(--horizontal-border-color)", "rgba(255, 255, 255, 0.075)");
+            html = html.Replace("var(--text-color)", VSColorTheme.GetThemedColor(EnvironmentColors.BrandedUITextBrushKey).ToHex());
+            html = html.Replace("var(--background-color)", VSColorTheme.GetThemedColor(EnvironmentColors.ToolWindowFloatingFrameBrushKey).ToHex());
+            html = html.Replace("var(--border-color)", VSColorTheme.GetThemedColor(EnvironmentColors.AccessKeyToolTipColorKey).ToHex()); 
+            html = html.Replace("var(--link-color)", VSColorTheme.GetThemedColor(EnvironmentColors.PanelHyperlinkBrushKey).ToHex());
+            html = html.Replace("var(--horizontal-border-color)", VSColorTheme.GetThemedColor(EnvironmentColors.ClassDesignerDefaultShapeTextBrushKey).ToHex());
 
             var ideHeaders = """
                              <head>
