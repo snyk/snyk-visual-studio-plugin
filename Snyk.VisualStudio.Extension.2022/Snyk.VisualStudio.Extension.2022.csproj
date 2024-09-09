@@ -165,6 +165,12 @@
       <DependentUpon>TextField.xaml</DependentUpon>
     </Compile>
     <Compile Include="UI\HtmlRichTextBox.cs" />
+    <Compile Include="UI\Html\BaseHtmlProvider.cs" />
+    <Compile Include="UI\Html\IacHtmlProvider.cs" />
+    <Compile Include="UI\Html\IHtmlProvider.cs" />
+    <Compile Include="UI\Html\OssHtmlProvider.cs" />
+    <Compile Include="UI\Html\CodeHtmlProvider.cs" />
+    <Compile Include="UI\Html\HtmlProviderFactory.cs" />
     <Compile Include="UI\IRefreshable.cs" />
     <Compile Include="UI\Notifications\NotificationService.cs" />
     <Compile Include="UI\Notifications\VsInfoBarService.cs" />
