@@ -1,8 +1,5 @@
 ﻿using System;
-using System.Windows.Media;
-using Microsoft.Internal.VisualStudio.Shell.Interop;
 using Microsoft.VisualStudio.PlatformUI;
-using Snyk.VisualStudio.Extension.Theme;
 
 namespace Snyk.VisualStudio.Extension.UI.Html
 {
@@ -161,15 +158,5 @@ namespace Snyk.VisualStudio.Extension.UI.Html
 
             return html;
         }
-    }
-
-    public static class ColorExtension
-    {
-        public static string ToHex(this System.Drawing.Color c)
-            => $"#{c.R:X2}{c.G:X2}{c.B:X2}";
-
-
-        private static string ToRGB(this System.Drawing.Color c)
-            => $"rgb({c.R},{c.G},{c.B}, {c.A})";
     }
 }

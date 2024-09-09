@@ -90,15 +90,6 @@
     <Compile Include="Commands\SnykStopCurrentTaskCommand.cs" />
     <Compile Include="Language\SnykLanguageServerEventArgs.cs" />
     <Compile Include="ManualAssemblyResolver.cs" />
-    <Compile Include="Microsoft\HtmlParser\CssStylesheet.cs" />
-    <Compile Include="Microsoft\HtmlParser\HtmlCssParser.cs" />
-    <Compile Include="Microsoft\HtmlParser\HtmlFromXamlConverter.cs" />
-    <Compile Include="Microsoft\HtmlParser\HtmlLexicalAnalyzer.cs" />
-    <Compile Include="Microsoft\HtmlParser\HtmlParser.cs" />
-    <Compile Include="Microsoft\HtmlParser\HtmlSchema.cs" />
-    <Compile Include="Microsoft\HtmlParser\HtmlTokenType.cs" />
-    <Compile Include="Microsoft\HtmlParser\HtmlToXamlConverter.cs" />
-    <Compile Include="Microsoft\UI\HtmlRichTextBoxBehavior.cs" />
     <Compile Include="Model\Severity.cs" />
     <Compile Include="Product.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
@@ -167,8 +158,8 @@
     <Compile Include="UI\Controls\TextField.xaml.cs">
       <DependentUpon>TextField.xaml</DependentUpon>
     </Compile>
-    <Compile Include="UI\HtmlRichTextBox.cs" />
     <Compile Include="UI\Html\BaseHtmlProvider.cs" />
+    <Compile Include="UI\Html\ColorExtension.cs" />
     <Compile Include="UI\Html\IacHtmlProvider.cs" />
     <Compile Include="UI\Html\IHtmlProvider.cs" />
     <Compile Include="UI\Html\OssHtmlProvider.cs" />
@@ -182,39 +173,17 @@
     <Compile Include="UI\ResourceLoader.cs" />
     <Compile Include="UI\SeverityFilter.cs" />
     <Compile Include="UI\SnykIconProvider.cs" />
-    <Compile Include="UI\Toolwindow\DescriptionHeaderPanel.xaml.cs">
-      <DependentUpon>DescriptionHeaderPanel.xaml</DependentUpon>
-    </Compile>
     <Compile Include="UI\Toolwindow\HtmlDescriptionPanel.xaml.cs">
       <DependentUpon>HtmlDescriptionPanel.xaml</DependentUpon>
-    </Compile>
-    <Compile Include="UI\Toolwindow\DescriptionPanel.xaml.cs">
-      <DependentUpon>DescriptionPanel.xaml</DependentUpon>
     </Compile>
     <Compile Include="UI\Toolwindow\DownloadState.cs" />
     <Compile Include="UI\Toolwindow\EmptyState.cs" />
     <Compile Include="UI\Toolwindow\MessagePanel.xaml.cs">
       <DependentUpon>MessagePanel.xaml</DependentUpon>
     </Compile>
-    <Compile Include="UI\Toolwindow\OssDescriptionControl.xaml.cs">
-      <DependentUpon>OssDescriptionControl.xaml</DependentUpon>
-    </Compile>
     <Compile Include="UI\Toolwindow\OverviewState.cs" />
     <Compile Include="UI\Toolwindow\RunScanState.cs" />
     <Compile Include="UI\Toolwindow\ScanResultsState.cs" />
-    <Compile Include="UI\Toolwindow\SnykCode\DataFlowStep.cs" />
-    <Compile Include="UI\Toolwindow\SnykCode\DataFlowStepsControl.xaml.cs">
-      <DependentUpon>DataFlowStepsControl.xaml</DependentUpon>
-    </Compile>
-    <Compile Include="UI\Toolwindow\SnykCode\DataFlowStepsViewModel.cs" />
-    <Compile Include="UI\Toolwindow\SnykCode\ExampleFixTab.cs" />
-    <Compile Include="UI\Toolwindow\SnykCode\ExternalExampleFixesControl.xaml.cs">
-      <DependentUpon>ExternalExampleFixesControl.xaml</DependentUpon>
-    </Compile>
-    <Compile Include="UI\Toolwindow\SnykCode\ExternalExampleFixRichTextBox.cs" />
-    <Compile Include="UI\Toolwindow\SnykCode\SnykCodeDescriptionControl.xaml.cs">
-      <DependentUpon>SnykCodeDescriptionControl.xaml</DependentUpon>
-    </Compile>
     <Compile Include="UI\Toolwindow\SnykScriptManager.cs" />
     <Compile Include="UI\Toolwindow\SnykToolWindow.cs" />
     <Compile Include="UI\Toolwindow\SnykToolWindowCommand.cs" />
@@ -310,35 +279,11 @@
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
     </Page>
-    <Page Include="UI\Toolwindow\DescriptionHeaderPanel.xaml">
-      <Generator>MSBuild:Compile</Generator>
-      <SubType>Designer</SubType>
-    </Page>
     <Page Include="UI\Toolwindow\HtmlDescriptionPanel.xaml">
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
     </Page>
-    <Page Include="UI\Toolwindow\DescriptionPanel.xaml">
-      <Generator>MSBuild:Compile</Generator>
-      <SubType>Designer</SubType>
-    </Page>
     <Page Include="UI\Toolwindow\MessagePanel.xaml">
-      <Generator>MSBuild:Compile</Generator>
-      <SubType>Designer</SubType>
-    </Page>
-    <Page Include="UI\Toolwindow\OssDescriptionControl.xaml">
-      <Generator>MSBuild:Compile</Generator>
-      <SubType>Designer</SubType>
-    </Page>
-    <Page Include="UI\Toolwindow\SnykCode\DataFlowStepsControl.xaml">
-      <Generator>MSBuild:Compile</Generator>
-      <SubType>Designer</SubType>
-    </Page>
-    <Page Include="UI\Toolwindow\SnykCode\ExternalExampleFixesControl.xaml">
-      <Generator>MSBuild:Compile</Generator>
-      <SubType>Designer</SubType>
-    </Page>
-    <Page Include="UI\Toolwindow\SnykCode\SnykCodeDescriptionControl.xaml">
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
     </Page>

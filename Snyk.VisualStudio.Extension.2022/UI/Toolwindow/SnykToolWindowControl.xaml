@@ -36,11 +36,6 @@
                 </Grid>
             </StackPanel>
 
-            <!--<window:DescriptionPanel Grid.Column="4" 
-                                     x:Name="descriptionPanel" 
-                                     Visibility="Collapsed" 
-                                     HorizontalContentAlignment="Stretch" 
-                                     VerticalContentAlignment="Stretch"/>-->
             <window:HtmlDescriptionPanel Grid.Column="4" 
                                      x:Name="DescriptionPanel" 
                                      Visibility="Collapsed" 
