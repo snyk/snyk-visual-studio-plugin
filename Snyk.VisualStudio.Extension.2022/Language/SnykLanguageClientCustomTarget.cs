@@ -183,7 +183,22 @@ namespace Snyk.VisualStudio.Extension.Language
 
         private async Task ProcessIacScanAsnyc(LspAnalysisResult lspAnalysisResult)
         {
-          
+            if (lspAnalysisResult.Status == "inProgress")
+            {
+                var featuresSettings = await serviceProvider.TasksService.GetFeaturesSettingsAsync();
+                serviceProvider.TasksService.FireIacScanningStartedEvent(featuresSettings);
+                return;
+            }
+            if (lspAnalysisResult.Status == "error")
+            {
+                serviceProvider.TasksService.OnIacError(lspAnalysisResult.ErrorMessage);
+                serviceProvider.TasksService.FireTaskFinished();
+                return;
+            }
+
+            serviceProvider.TasksService.FireIacScanningUpdateEvent(snykIaCIssueDictionary);
+            serviceProvider.TasksService.FireIacScanningFinishedEvent();
+            serviceProvider.TasksService.FireTaskFinished();
         }
 
         private string LspSourceToProduct(string source)

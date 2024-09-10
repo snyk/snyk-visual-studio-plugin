@@ -61,6 +61,7 @@ namespace Snyk.VisualStudio.Extension.Language
                 ActivateSnykCodeSecurity = options.SnykCodeSecurityEnabled.ToString(),
                 ActivateSnykCodeQuality = options.SnykCodeQualityEnabled.ToString(),
                 ActivateSnykOpenSource = options.OssEnabled.ToString(),
+                ActivateSnykIac = options.IacEnabled.ToString(),
                 SendErrorReports = "true",
                 ManageBinariesAutomatically = options.BinariesAutoUpdate.ToString(),
                 EnableTrustedFoldersFeature = "false",
@@ -84,7 +85,9 @@ namespace Snyk.VisualStudio.Extension.Language
                 Endpoint = options.CustomEndpoint,
                 Insecure = options.IgnoreUnknownCA.ToString(),
                 IntegrationVersion = options.IntegrationVersion,
-                RequiredProtocolVersion = LsConstants.ProtocolVersion
+                RequiredProtocolVersion = LsConstants.ProtocolVersion,
+                HoverVerbosity = 1,
+                OutputFormat = "plain"
             };
             return initializationOptions;
         }

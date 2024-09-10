@@ -73,5 +73,6 @@ namespace Snyk.VisualStudio.Extension.Settings
 
         public bool AutoScan { get; set; } = true;
         public string Token { get; set; } = string.Empty;
+        public bool IacEnabled { get; set; } = true;
     }
 }

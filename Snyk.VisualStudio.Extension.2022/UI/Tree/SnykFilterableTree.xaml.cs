@@ -53,7 +53,7 @@ namespace Snyk.VisualStudio.Extension.UI.Tree
         /// <summary>
         /// Gets Cli root node.
         /// </summary>
-        public RootTreeNode CliRootNode => this.ossRootNode;
+        public RootTreeNode OssRootNode => this.ossRootNode;
 
         /// <summary>
         /// Gets code sequrity root node.
@@ -165,15 +165,49 @@ namespace Snyk.VisualStudio.Extension.UI.Tree
         {
             set
             {
-                //if (this.codeSecurityRootNode.Enabled)
-                //{
-                //    this.AppendSnykCodeIssues(this.codeSecurityRootNode, value, issue => issue.AdditionalData.IsSecurityType);
-                //}
+                if (!this.iacRootNode.Enabled)
+                {
+                    return;
+                }
 
-                //if (this.codeQualityRootNode.Enabled)
-                //{
-                //    this.AppendSnykCodeIssues(this.codeQualityRootNode, value, issue => !issue.AdditionalData.IsSecurityType);
-                //}
+                this.iacRootNode.Items.Clear();
+
+                var criticalSeverityCount = 0;
+                var highSeverityCount = 0;
+                var mediumSeverityCount = 0;
+                var lowSeverityCount = 0;
+
+                foreach (var kv in value)
+                {
+                    var filePath = kv.Key;
+                    var issues = kv.Value.ToList();
+
+                    var issueNode = new SnykIacFileTreeNode { IssueList = issues, FileName = filePath };
+
+                    criticalSeverityCount += issues.Count(suggestion => suggestion.Severity == Severity.Critical);
+                    highSeverityCount += issues.Count(suggestion => suggestion.Severity == Severity.High);
+                    mediumSeverityCount += issues.Count(suggestion => suggestion.Severity == Severity.Medium);
+                    lowSeverityCount += issues.Count(suggestion => suggestion.Severity == Severity.Low);
+
+                    issues.Sort((issue1, issue2) => Severity.ToInt(issue2.Severity) - Severity.ToInt(issue1.Severity));
+
+                    foreach (var suggestion in issues)
+                    {
+                        issueNode.Items.Add(new IacVulnerabilityTreeNode { Issue = suggestion });
+                    }
+
+                    if (issueNode.Items.Count > 0)
+                    {
+                        this.iacRootNode.Items.Add(issueNode);
+                    }
+                }
+
+                this.iacRootNode.CriticalSeverityCount = criticalSeverityCount;
+                this.iacRootNode.HighSeverityCount = highSeverityCount;
+                this.iacRootNode.MediumSeverityCount = mediumSeverityCount;
+                this.iacRootNode.LowSeverityCount = lowSeverityCount;
+
+                this.iacRootNode.State = RootTreeNodeState.ResultDetails;
             }
         }
 

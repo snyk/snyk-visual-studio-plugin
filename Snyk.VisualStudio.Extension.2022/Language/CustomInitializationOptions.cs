@@ -34,6 +34,9 @@ namespace Snyk.VisualStudio.Extension.Language
         public string ScanningMode { get; set; }
         public string AuthenticationMethod { get; set; }
         public string SnykCodeApi { get; set; }
+        public int HoverVerbosity { get; set; }
+        public string OutputFormat { get; set; }
+
         public FolderConfig FolderConfigs { get; set; }
     }
 

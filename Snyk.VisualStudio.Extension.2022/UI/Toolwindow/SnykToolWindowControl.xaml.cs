@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Diagnostics.Tracing;
 using System.Linq;
 using System.Threading;
 using System.Windows;
@@ -58,7 +59,7 @@ namespace Snyk.VisualStudio.Extension.UI.Toolwindow
         /// Gets a value indicating whether tree content not empty.
         /// </summary>
         /// <returns>True if result tree not empty.</returns>
-        public bool IsTreeContentNotEmpty() => this.resultsTree.CliRootNode.HasContent
+        public bool IsTreeContentNotEmpty() => this.resultsTree.OssRootNode.HasContent
             || this.resultsTree.CodeSecurityRootNode.HasContent
             || this.resultsTree.CodeQualityRootNode.HasContent;
 
@@ -83,17 +84,26 @@ namespace Snyk.VisualStudio.Extension.UI.Toolwindow
 
             SnykTasksService tasksService = serviceProvider.TasksService;
 
-            tasksService.OssScanError += (sender, args) => ThreadHelper.JoinableTaskFactory.RunAsync(() => this.OnOssDisplayErrorAsync(sender, args));
+            tasksService.SnykCodeScanningStarted += this.OnSnykCodeScanningStarted;
             tasksService.SnykCodeScanError += this.OnSnykCodeDisplayError;
             tasksService.SnykCodeDisabled += this.OnSnykCodeDisabledHandler;
-            tasksService.ScanningCancelled += this.OnScanningCancelled;
-            tasksService.OssScanningStarted += this.OnOssScanningStarted;
-            tasksService.OssScanningDisabled += this.OnOssScanningDisabled;
-            tasksService.SnykCodeScanningStarted += this.OnSnykCodeScanningStarted;
-            tasksService.OssScanningUpdate += this.OnOssScanningUpdate;
             tasksService.SnykCodeScanningUpdate += this.OnSnykCodeScanningUpdate;
             tasksService.SnykCodeScanningFinished += (sender, args) => ThreadHelper.JoinableTaskFactory.RunAsync(this.OnSnykCodeScanningFinishedAsync);
+            
+            tasksService.OssScanningStarted += this.OnOssScanningStarted;
+            tasksService.OssScanError += (sender, args) => ThreadHelper.JoinableTaskFactory.RunAsync(() => this.OnOssDisplayErrorAsync(sender, args));
+            tasksService.OssScanningDisabled += this.OnOssScanningDisabled;
+            tasksService.OssScanningUpdate += this.OnOssScanningUpdate;
             tasksService.OssScanningFinished += (sender, args) => ThreadHelper.JoinableTaskFactory.RunAsync(this.OnOssScanningFinishedAsync);
+
+            tasksService.IacScanningStarted += OnIacScanningStarted;
+            tasksService.IacScanError += OnIacScanError;
+            tasksService.IacScanningDisabled += OnIacScanningDisabled;
+            tasksService.IacScanningUpdate += OnIacScanningUpdate;
+            tasksService.IacScanningFinished += (sender, args) => ThreadHelper.JoinableTaskFactory.RunAsync(this.OnIacScanningFinishedAsync);
+
+
+            tasksService.ScanningCancelled += this.OnScanningCancelled;
             tasksService.TaskFinished += (sender, args) => ThreadHelper.JoinableTaskFactory.RunAsync(this.OnTaskFinishedAsync);
 
             Logger.Information("Initialize Download Event Listeners");
@@ -133,6 +143,53 @@ namespace Snyk.VisualStudio.Extension.UI.Toolwindow
             Logger.Information("Leave InitializeEventListenersAsync() method.");
         }
 
+        private void OnIacScanError(object sender, SnykCodeScanEventArgs e)
+        {
+            ThreadHelper.JoinableTaskFactory.Run(async () =>
+            {
+                await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
+
+                this.resultsTree.IacRootNode.State = RootTreeNodeState.Error;
+                this.resultsTree.IacRootNode.Clean();
+                NotificationService.Instance.ShowErrorInfoBar(e.Error);
+
+                if (!this.serviceProvider.Options.OssEnabled)
+                {
+                    this.context.TransitionTo(RunScanState.Instance);
+                }
+
+                await this.UpdateActionsStateAsync();
+            });
+        }
+
+        private void OnIacScanningStarted(object sender, SnykCodeScanEventArgs e)
+        {
+            ThreadHelper.JoinableTaskFactory.Run(async () =>
+            {
+                await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
+
+                this.messagePanel.ShowScanningMessage();
+                this.Show();
+                this.mainGrid.Visibility = Visibility.Visible;
+
+                this.resultsTree.IacRootNode.State = RootTreeNodeState.Scanning;
+
+                await this.UpdateActionsStateAsync();
+            });
+        }
+
+        private void OnIacScanningDisabled(object sender, SnykCodeScanEventArgs e)
+        {
+            ThreadHelper.JoinableTaskFactory.Run(async () =>
+            {
+                await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
+
+
+                this.resultsTree.IacRootNode.State = RootTreeNodeState.Disabled;
+                this.resultsTree.IacRootNode.Clean();
+            });
+        }
+
         private void OnOssScanningDisabled(object sender, SnykOssScanEventArgs e)
         {
             ThreadHelper.JoinableTaskFactory.Run(async () =>
@@ -140,10 +197,11 @@ namespace Snyk.VisualStudio.Extension.UI.Toolwindow
                 await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
 
 
-                this.resultsTree.CliRootNode.State = RootTreeNodeState.Disabled;
-                this.resultsTree.CliRootNode.Clean();
+                this.resultsTree.OssRootNode.State = RootTreeNodeState.Disabled;
+                this.resultsTree.OssRootNode.Clean();
             });
         }
+
 
         /// <summary>
         /// AfterBackgroundSolutionLoadComplete event handler. Switch context to RunScanState.
@@ -162,18 +220,26 @@ namespace Snyk.VisualStudio.Extension.UI.Toolwindow
         public void OnAfterCloseSolution(object sender, EventArgs eventArgs) => this.Clean();
 
         /// <summary>
-        /// Scanning update event handler. Append CLI results to tree.
+        /// Scanning update event handler. Append Code results to tree.
         /// </summary>
         /// <param name="sender">Source object.</param>
         /// <param name="eventArgs">Event args.</param>
-        public void OnOssScanningUpdate(object sender, SnykOssScanEventArgs eventArgs) => this.AppendCliResultToTree(eventArgs.Result);
+        public void OnOssScanningUpdate(object sender, SnykOssScanEventArgs eventArgs) => this.AppendOssResultToTree(eventArgs.Result);
 
         /// <summary>
-        /// Scanning update event handler. Append CLI results to tree.
+        /// Scanning update event handler. Append Code results to tree.
         /// </summary>
         /// <param name="sender">Source object.</param>
         /// <param name="eventArgs">Event args.</param>
         public void OnSnykCodeScanningUpdate(object sender, SnykCodeScanEventArgs eventArgs) => this.AppendSnykCodeResultToTree(eventArgs.Result);
+
+        /// <summary>
+        /// Scanning update event handler. Append IaC results to tree.
+        /// </summary>
+        /// <param name="sender">Source object.</param>
+        /// <param name="eventArgs">Event args.</param>
+        public void OnIacScanningUpdate(object sender, SnykCodeScanEventArgs eventArgs) => this.AppendSnykIacResultToTree(eventArgs.Result);
+
 
         /// <summary>
         /// Cli ScanningStarted event handler..
@@ -188,7 +254,7 @@ namespace Snyk.VisualStudio.Extension.UI.Toolwindow
             this.Show();
             this.mainGrid.Visibility = Visibility.Visible;
 
-            this.resultsTree.CliRootNode.State = RootTreeNodeState.Scanning;
+            this.resultsTree.OssRootNode.State = RootTreeNodeState.Scanning;
 
             await this.UpdateActionsStateAsync();
         });
@@ -240,7 +306,7 @@ namespace Snyk.VisualStudio.Extension.UI.Toolwindow
         {
             await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
 
-            this.resultsTree.CliRootNode.State = RootTreeNodeState.Error;
+            this.resultsTree.OssRootNode.State = RootTreeNodeState.Error;
 
             NotificationService.Instance.ShowErrorInfoBar(eventArgs.Error.Message);
 
@@ -462,6 +528,7 @@ namespace Snyk.VisualStudio.Extension.UI.Toolwindow
         private async Task OnOssScanningFinishedAsync() => await this.UpdateActionsStateAsync();
 
         private async Task OnSnykCodeScanningFinishedAsync() => await this.UpdateActionsStateAsync();
+        private async Task OnIacScanningFinishedAsync() => await this.UpdateActionsStateAsync();
 
         private void OnSettingsChanged(object sender, SnykSettingsChangedEventArgs e) => this.UpdateTreeNodeItemsState();
 
@@ -472,9 +539,10 @@ namespace Snyk.VisualStudio.Extension.UI.Toolwindow
             await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
 
             var options = this.serviceProvider.Options;
-
-            this.resultsTree.CliRootNode.State = this.GetOssRootTreeNodeState(options);
-
+            
+            this.resultsTree.OssRootNode.State = this.GetTreeNodeState(options);
+            this.resultsTree.IacRootNode.State = this.GetTreeNodeState(options);
+            
             try
             {
                 SastSettings sastSettings = null;
@@ -482,9 +550,8 @@ namespace Snyk.VisualStudio.Extension.UI.Toolwindow
                 {
                     sastSettings = await this.serviceProvider.Package.LanguageClientManager.InvokeGetSastEnabled(SnykVSPackage.Instance.DisposalToken);
                 }
-
-                this.resultsTree.CodeQualityRootNode.State = this.GetSnykCodeRootNodeState(sastSettings, options.SnykCodeQualityEnabled);
-                this.resultsTree.CodeSecurityRootNode.State = this.GetSnykCodeRootNodeState(sastSettings, options.SnykCodeSecurityEnabled);
+                this.resultsTree.CodeQualityRootNode.State = this.GetSastRootNodeState(sastSettings, options.SnykCodeQualityEnabled);
+                this.resultsTree.CodeSecurityRootNode.State = this.GetSastRootNodeState(sastSettings, options.SnykCodeSecurityEnabled);
             }
             catch (Exception e)
             {
@@ -492,15 +559,18 @@ namespace Snyk.VisualStudio.Extension.UI.Toolwindow
 
                 this.resultsTree.CodeQualityRootNode.State = RootTreeNodeState.Error;
                 this.resultsTree.CodeSecurityRootNode.State = RootTreeNodeState.Error;
+                this.resultsTree.OssRootNode.State = RootTreeNodeState.Error;
+                this.resultsTree.IacRootNode.State = RootTreeNodeState.Error;
 
                 NotificationService.Instance.ShowErrorInfoBar(e.Message);
             }
         });
 
-        private RootTreeNodeState GetOssRootTreeNodeState(ISnykOptions options) =>
-            options.ApiToken.IsValid() && options.OssEnabled ? RootTreeNodeState.Enabled : RootTreeNodeState.Disabled;
+        private RootTreeNodeState GetTreeNodeState(ISnykOptions options) =>
+            options.ApiToken.IsValid() && options.IacEnabled ? RootTreeNodeState.Enabled : RootTreeNodeState.Disabled;
 
-        private RootTreeNodeState GetSnykCodeRootNodeState(SastSettings sastSettings, bool enabledInOptions)
+
+        private RootTreeNodeState GetSastRootNodeState(SastSettings sastSettings, bool enabledInOptions)
         {
             if (sastSettings == null)
             {
@@ -516,32 +586,10 @@ namespace Snyk.VisualStudio.Extension.UI.Toolwindow
         }
 
         /// <summary>
-        /// On link click handler. It open provided link.
-        /// </summary>
-        /// <param name="sender">Source object.</param>
-        /// <param name="e">Event args.</param>
-        private void OnHyperlinkClick(object sender, RoutedEventArgs e)
-        {
-            var destination = ((Hyperlink)e.OriginalSource).NavigateUri;
-
-            using (Process browser = new Process())
-            {
-                browser.StartInfo = new ProcessStartInfo
-                {
-                    FileName = destination.ToString(),
-                    UseShellExecute = true,
-                    ErrorDialog = true,
-                };
-
-                browser.Start();
-            }
-        }
-
-        /// <summary>
         /// Append CLI results to tree.
         /// </summary>
         /// <param name="cliResult">CLI result.</param>
-        private void AppendCliResultToTree(IDictionary<string, IEnumerable<Issue>> cliResult)
+        private void AppendOssResultToTree(IDictionary<string, IEnumerable<Issue>> cliResult)
         {
             if (!cliResult.Any())
             {
@@ -577,6 +625,26 @@ namespace Snyk.VisualStudio.Extension.UI.Toolwindow
                 }
             });
         }
+
+        private void AppendSnykIacResultToTree(IDictionary<string, IEnumerable<Issue>> analysisResult)
+        {
+            this.context.TransitionTo(ScanResultsState.Instance);
+
+            ThreadHelper.JoinableTaskFactory.Run(async () =>
+            {
+                await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
+
+                if (analysisResult != null)
+                {
+                    this.resultsTree.IacResults = analysisResult;
+                }
+                else
+                {
+                    this.resultsTree.IacRootNode.State = RootTreeNodeState.NoFilesForSnykCodeScan;
+                }
+            });
+        }
+
 
         /// <summary>
         /// Update progress bar.
@@ -616,6 +684,14 @@ namespace Snyk.VisualStudio.Extension.UI.Toolwindow
                     return;
                 }
 
+                if (this.resultsTree.SelectedItem is IacVulnerabilityTreeNode)
+                {
+                    await this.HandleIacTreeNodeSelectedAsync();
+
+                    return;
+                }
+
+
                 this.HandleRootTreeNodeSelected();
             });
         }
@@ -647,7 +723,7 @@ namespace Snyk.VisualStudio.Extension.UI.Toolwindow
             {
                 this.DescriptionPanel.Visibility = Visibility.Visible;
 
-                this.DescriptionPanel.SetContent(issue, Product.Oss);
+                this.DescriptionPanel.SetContent(issue.AdditionalData?.Details, Product.Oss);
             }
             else
             {
@@ -662,9 +738,28 @@ namespace Snyk.VisualStudio.Extension.UI.Toolwindow
             var snykCodeTreeNode = this.resultsTree.SelectedItem as SnykCodeVulnerabilityTreeNode;
             if (snykCodeTreeNode == null) return;
             
-            this.DescriptionPanel.SetContent(snykCodeTreeNode.Issue, Product.Code);
+            this.DescriptionPanel.SetContent(snykCodeTreeNode.Issue.AdditionalData?.Details, Product.Code);
 
             var issue = snykCodeTreeNode.Issue;
+
+            VsCodeService.Instance.OpenAndNavigate(
+                issue.FilePath,
+                issue.Range.Start.Line,
+                issue.Range.Start.Character,
+                issue.Range.End.Line,
+                issue.Range.End.Character);
+        }
+
+        private async Task HandleIacTreeNodeSelectedAsync()
+        {
+            this.DescriptionPanel.Visibility = Visibility.Visible;
+
+            var iacTreeNode = this.resultsTree.SelectedItem as IacVulnerabilityTreeNode;
+            if (iacTreeNode == null) return;
+
+            this.DescriptionPanel.SetContent(iacTreeNode.Issue.AdditionalData?.CustomUIContent, Product.Iac);
+
+            var issue = iacTreeNode.Issue;
 
             VsCodeService.Instance.OpenAndNavigate(
                 issue.FilePath,
