@@ -164,7 +164,7 @@ namespace Snyk.VisualStudio.Extension.Language
                 FireOnLanguageClientNotInitializedAsync();
                 return;
             }
-            if (!IsReady && StartAsync != null && SnykVSPackage.Instance?.Options != null && shouldStart)
+            if (StartAsync != null && SnykVSPackage.Instance?.Options != null && shouldStart)
             {
                 if (CustomMessageTarget == null)
                 {
@@ -248,8 +248,6 @@ namespace Snyk.VisualStudio.Extension.Language
 
         private async Task RestartAsync(bool isReload)
         {
-            if (StopAsync == null || StartAsync == null)
-                return;
             try
             {
                 if (isReload)
@@ -257,9 +255,9 @@ namespace Snyk.VisualStudio.Extension.Language
                     IsReloading = true;
                 }
                 OnStopping();
-                await StopAsync.InvokeAsync(this, EventArgs.Empty);
+                await StopServerAsync();
                 OnStopped();
-                await StartAsync.InvokeAsync(this, EventArgs.Empty);
+                await StartServerAsync(true);
             }
             catch (Exception ex)
             {

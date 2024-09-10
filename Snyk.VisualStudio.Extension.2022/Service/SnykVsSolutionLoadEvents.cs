@@ -1,7 +1,9 @@
 ﻿using System;
 using Microsoft.VisualStudio;
+using Microsoft.VisualStudio.Shell;
 using Microsoft.VisualStudio.Shell.Interop;
 using Snyk.Common;
+using Snyk.VisualStudio.Extension.Language;
 
 namespace Snyk.VisualStudio.Extension.Service
 {
@@ -107,6 +109,27 @@ namespace Snyk.VisualStudio.Extension.Service
         /// <returns>VSConstants.S_OK.</returns>
         public int OnAfterOpenProject(IVsHierarchy vsHierarchy, int fAdded)
         {
+            var languageClientManager = LanguageClientHelper.LanguageClientManager();
+            if (languageClientManager == null)
+                return VSConstants.S_OK;
+            if (languageClientManager.IsReady)
+            {
+                languageClientManager.RestartServerAsync().FireAndForget();
+                return VSConstants.S_OK;
+            }
+            
+            bool shouldDownloadCli;
+            try
+            {
+                shouldDownloadCli = SnykVSPackage.ServiceProvider.TasksService.ShouldDownloadCli();
+            }
+            finally
+            {
+            }
+            if (shouldDownloadCli)
+                return VSConstants.S_OK;
+
+            languageClientManager.StartServerAsync(true).FireAndForget();
             return VSConstants.S_OK;
         }
 
