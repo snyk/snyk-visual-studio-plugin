@@ -23,6 +23,7 @@ namespace Snyk.VisualStudio.Extension.UI.Tree
         private readonly SnykCodeSecurityRootTreeNode codeSecurityRootNode;
 
         private readonly SnykCodeQualityRootTreeNode codeQualityRootNode;
+        private readonly SnykIacRootTreeNode iacRootNode;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="SnykFilterableTree"/> class.
@@ -36,10 +37,12 @@ namespace Snyk.VisualStudio.Extension.UI.Tree
             this.ossRootNode = new OssRootTreeNode(this);
             this.codeSecurityRootNode = new SnykCodeSecurityRootTreeNode(this);
             this.codeQualityRootNode = new SnykCodeQualityRootTreeNode(this);
+            this.iacRootNode = new SnykIacRootTreeNode(this);
 
             this.vulnerabilitiesTree.Items.Add(this.ossRootNode);
             this.vulnerabilitiesTree.Items.Add(this.codeSecurityRootNode);
             this.vulnerabilitiesTree.Items.Add(this.codeQualityRootNode);
+            this.vulnerabilitiesTree.Items.Add(this.iacRootNode);
         }
 
         /// <summary>
@@ -61,6 +64,7 @@ namespace Snyk.VisualStudio.Extension.UI.Tree
         /// Gets code quality root node.
         /// </summary>
         public SnykCodeQualityRootTreeNode CodeQualityRootNode => this.codeQualityRootNode;
+        public SnykIacRootTreeNode IacRootNode => this.iacRootNode;
 
         /// <summary>
         /// Gets a value indicating whether tree items.
@@ -156,6 +160,23 @@ namespace Snyk.VisualStudio.Extension.UI.Tree
             }
         }
 
+
+        public IDictionary<string, IEnumerable<Issue>> IacResults
+        {
+            set
+            {
+                //if (this.codeSecurityRootNode.Enabled)
+                //{
+                //    this.AppendSnykCodeIssues(this.codeSecurityRootNode, value, issue => issue.AdditionalData.IsSecurityType);
+                //}
+
+                //if (this.codeQualityRootNode.Enabled)
+                //{
+                //    this.AppendSnykCodeIssues(this.codeQualityRootNode, value, issue => !issue.AdditionalData.IsSecurityType);
+                //}
+            }
+        }
+
         /// <summary>
         /// Find resource by key.
         /// </summary>
@@ -174,6 +195,7 @@ namespace Snyk.VisualStudio.Extension.UI.Tree
             this.ossRootNode.Clean();
             this.codeSecurityRootNode.Clean();
             this.codeQualityRootNode.Clean();
+            this.iacRootNode.Clean();
         }
 
         /// <summary>
@@ -186,9 +208,10 @@ namespace Snyk.VisualStudio.Extension.UI.Tree
             var restoreOssItemsTask = this.DisplayAllVulnerabilitiesAsync(this.ossRootNode);
             var restoreCodeSecurityItemsTask = this.DisplayAllVulnerabilitiesAsync(this.codeSecurityRootNode);
             var restoreCodeQualityItemsTask = this.DisplayAllVulnerabilitiesAsync(this.codeQualityRootNode);
+            var restoreIacItemsTask = this.DisplayAllVulnerabilitiesAsync(this.iacRootNode);
 
             await System.Threading.Tasks.Task
-                .WhenAll(restoreOssItemsTask, restoreCodeSecurityItemsTask, restoreCodeQualityItemsTask);
+                .WhenAll(restoreOssItemsTask, restoreCodeSecurityItemsTask, restoreCodeQualityItemsTask, restoreIacItemsTask);
         });
 
         /// <summary>

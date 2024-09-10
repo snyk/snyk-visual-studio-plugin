@@ -159,7 +159,7 @@ namespace Snyk.VisualStudio.Extension.Language
 
         public async Task StartServerAsync(bool shouldStart = false)
         {
-            if (StartAsync == null)
+            if (StartAsync == null && shouldStart)
             {
                 FireOnLanguageClientNotInitializedAsync();
                 return;
