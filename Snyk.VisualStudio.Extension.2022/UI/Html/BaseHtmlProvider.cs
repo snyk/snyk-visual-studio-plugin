@@ -98,7 +98,9 @@ namespace Snyk.VisualStudio.Extension.UI.Html
                              """;
             html = html.Replace("<head>", ideHeaders);
             html = html.Replace("${headerEnd}", "");
-            html = html.Replace("${nonce}", GetNonce());
+            var nonce = GetNonce();
+            html = html.Replace("${nonce}", nonce);
+            html = html.Replace("ideNonce", nonce);
             html = html.Replace("${ideScript}", "");
 
             return html;

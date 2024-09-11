@@ -31,7 +31,9 @@ namespace Snyk.VisualStudio.Extension.UI.Html
                   position: relative;
                   top: -5%;
                 }
-
+                .suggestion {
+                display: block;
+                }
                 .summary .summary-item {
                   margin-bottom: 0.8em;
                 }

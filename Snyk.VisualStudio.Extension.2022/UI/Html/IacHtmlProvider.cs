@@ -60,6 +60,10 @@ namespace Snyk.VisualStudio.Extension.UI.Html
 				.vulnerability-overview table {
 				background-color: var(--container-background-color);
 				}
+                p {
+                margin-top: 0;
+                margin-bottom: 2rem;
+                }
                 ";
         }
 

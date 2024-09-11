@@ -692,7 +692,7 @@ namespace Snyk.VisualStudio.Extension.Service
                 CodeSecurityEnabled = snykCodeEnabled && options.SnykCodeSecurityEnabled,
                 CodeQualityEnabled = snykCodeEnabled && options.SnykCodeQualityEnabled,
                 LocalCodeEngineEnabled = sastSettings?.LocalCodeEngineEnabled ?? false,
-                IacEnabled = true
+                IacEnabled = options.IacEnabled
             };
         }
 
