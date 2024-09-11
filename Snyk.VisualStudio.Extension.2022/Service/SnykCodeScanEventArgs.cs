@@ -47,6 +47,7 @@ namespace Snyk.VisualStudio.Extension.Service
         /// Gets or sets a value indicating whether local code engine enabled.
         /// </summary>
         public bool LocalCodeEngineEnabled { get; set; }
+        public bool IacEnabled { get; set; }
 
         /// <summary>
         /// Gets or sets a value indicating error message.

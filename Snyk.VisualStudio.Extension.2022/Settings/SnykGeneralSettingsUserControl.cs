@@ -74,6 +74,7 @@ namespace Snyk.VisualStudio.Extension.Settings
             this.organizationTextBox.Text = this.OptionsDialogPage.Organization;
             this.ignoreUnknownCACheckBox.Checked = this.OptionsDialogPage.IgnoreUnknownCA;
             this.ossEnabledCheckBox.Checked = this.OptionsDialogPage.OssEnabled;
+            this.iacEnabledCheckbox.Checked = this.OptionsDialogPage.IacEnabled;
             this.ManageBinariesAutomaticallyCheckbox.Checked = this.OptionsDialogPage.BinariesAutoUpdate;
             this.autoScanCheckBox.Checked = this.OptionsDialogPage.AutoScan;
 
@@ -469,6 +470,11 @@ namespace Snyk.VisualStudio.Extension.Settings
         private void autoScanCheckBox_CheckedChanged(object sender, EventArgs e)
         {
             this.OptionsDialogPage.AutoScan = autoScanCheckBox.Checked;
+        }
+
+        private void iacEnabledCheckbox_CheckedChanged(object sender, EventArgs e)
+        {
+            this.OptionsDialogPage.IacEnabled = iacEnabledCheckbox.Checked;
         }
     }
 }

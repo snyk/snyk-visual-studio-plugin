@@ -197,7 +197,9 @@
     <Compile Include="UI\Tree\OssVulnerabilityTreeNode.cs" />
     <Compile Include="UI\Tree\RootTreeNode.cs" />
     <Compile Include="UI\Tree\RootTreeNodeState.cs" />
+    <Compile Include="UI\Tree\SnykIacFileTreeNode.cs" />
     <Compile Include="UI\Tree\SnykCodeFileTreeNode.cs" />
+    <Compile Include="UI\Tree\IacVulnerabilityTreeNode.cs" />
     <Compile Include="UI\Tree\SnykIacRootTreeNode.cs" />
     <Compile Include="UI\Tree\SnykCodeQualityRootTreeNode.cs" />
     <Compile Include="UI\Tree\SnykCodeSecurityRootTreeNode.cs" />

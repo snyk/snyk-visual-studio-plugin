@@ -61,6 +61,7 @@ namespace Snyk.VisualStudio.Extension.Language
                 ActivateSnykCodeSecurity = options.SnykCodeSecurityEnabled.ToString(),
                 ActivateSnykCodeQuality = options.SnykCodeQualityEnabled.ToString(),
                 ActivateSnykOpenSource = options.OssEnabled.ToString(),
+                ActivateSnykIac = options.IacEnabled.ToString(),
                 SendErrorReports = "true",
                 ManageBinariesAutomatically = options.BinariesAutoUpdate.ToString(),
                 EnableTrustedFoldersFeature = "false",
@@ -84,7 +85,9 @@ namespace Snyk.VisualStudio.Extension.Language
                 Endpoint = options.CustomEndpoint,
                 Insecure = options.IgnoreUnknownCA.ToString(),
                 IntegrationVersion = options.IntegrationVersion,
-                RequiredProtocolVersion = LsConstants.ProtocolVersion
+                RequiredProtocolVersion = LsConstants.ProtocolVersion,
+                HoverVerbosity = 1,
+                OutputFormat = "plain"
             };
             return initializationOptions;
         }
@@ -164,7 +167,7 @@ namespace Snyk.VisualStudio.Extension.Language
                 FireOnLanguageClientNotInitializedAsync();
                 return;
             }
-            if (!IsReady && StartAsync != null && SnykVSPackage.Instance?.Options != null && shouldStart)
+            if (StartAsync != null && SnykVSPackage.Instance?.Options != null && shouldStart)
             {
                 if (CustomMessageTarget == null)
                 {
@@ -248,8 +251,6 @@ namespace Snyk.VisualStudio.Extension.Language
 
         private async Task RestartAsync(bool isReload)
         {
-            if (StopAsync == null || StartAsync == null)
-                return;
             try
             {
                 if (isReload)
@@ -257,9 +258,9 @@ namespace Snyk.VisualStudio.Extension.Language
                     IsReloading = true;
                 }
                 OnStopping();
-                await StopAsync.InvokeAsync(this, EventArgs.Empty);
+                await StopServerAsync();
                 OnStopped();
-                await StartAsync.InvokeAsync(this, EventArgs.Empty);
+                await StartServerAsync(true);
             }
             catch (Exception ex)
             {

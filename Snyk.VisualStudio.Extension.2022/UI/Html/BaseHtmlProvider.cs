@@ -82,6 +82,7 @@ namespace Snyk.VisualStudio.Extension.UI.Html
 
             css += "</style>";
             html = html.Replace("${ideStyle}", css);
+            html = html.Replace("<style nonce=\"ideNonce\" data-ide-style></style>", css);
             html = html.Replace("var(--default-font)", " ui-sans-serif, \"SF Pro Text\", \"Segoe UI\", \"Ubuntu\", Tahoma, Geneva, Verdana, sans-serif;");
             html = html.Replace("var(--text-color)", VSColorTheme.GetThemedColor(EnvironmentColors.BrandedUITextBrushKey).ToHex());
             html = html.Replace("var(--background-color)", VSColorTheme.GetThemedColor(EnvironmentColors.ComboBoxPopupBackgroundEndBrushKey).ToHex());
@@ -97,7 +98,9 @@ namespace Snyk.VisualStudio.Extension.UI.Html
                              """;
             html = html.Replace("<head>", ideHeaders);
             html = html.Replace("${headerEnd}", "");
-            html = html.Replace("${nonce}", GetNonce());
+            var nonce = GetNonce();
+            html = html.Replace("${nonce}", nonce);
+            html = html.Replace("ideNonce", nonce);
             html = html.Replace("${ideScript}", "");
 
             return html;

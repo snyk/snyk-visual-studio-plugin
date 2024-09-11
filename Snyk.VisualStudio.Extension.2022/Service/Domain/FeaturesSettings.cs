@@ -11,6 +11,12 @@
         public bool OssEnabled { get; set; }
 
         /// <summary>
+        /// Gets or sets a value indicating whether IaC enabled.
+        /// </summary>
+        public bool IacEnabled { get; set; }
+
+
+        /// <summary>
         /// Gets or sets a value indicating whether Sast on server enabled.
         /// </summary>
         public bool SastOnServerEnabled { get; set; }

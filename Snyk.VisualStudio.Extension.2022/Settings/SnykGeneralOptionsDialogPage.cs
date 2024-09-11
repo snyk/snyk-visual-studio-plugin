@@ -190,6 +190,21 @@ namespace Snyk.VisualStudio.Extension.Settings
             }
         }
 
+        public bool IacEnabled
+        {
+            get => this.userStorageSettingsService.IsIacEnabled();
+            set
+            {
+                if (this.userStorageSettingsService?.IsIacEnabled() == value)
+                {
+                    return;
+                }
+
+                this.userStorageSettingsService?.SaveIacEnabled(value);
+                this.FireSettingsChangedEvent();
+            }
+        }
+
         /// <inheritdoc/>
         public bool SnykCodeSecurityEnabled
         {

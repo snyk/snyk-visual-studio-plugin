@@ -74,6 +74,8 @@ namespace Snyk.VisualStudio.Extension.Settings
             this.snykCodeQualityInfoToolTip = new System.Windows.Forms.ToolTip(this.components);
             this.customCliPathFileDialog = new System.Windows.Forms.OpenFileDialog();
             this.ExecutablesGroupBox = new System.Windows.Forms.GroupBox();
+            this.snykIacInfoLabel = new System.Windows.Forms.Label();
+            this.iacEnabledCheckbox = new System.Windows.Forms.CheckBox();
             ((System.ComponentModel.ISupportInitialize)(this.errorProvider)).BeginInit();
             this.generalSettingsGroupBox.SuspendLayout();
             this.productSelectionGroupBox.SuspendLayout();
@@ -185,9 +187,9 @@ namespace Snyk.VisualStudio.Extension.Settings
             this.ossEnabledCheckBox.Location = new System.Drawing.Point(12, 30);
             this.ossEnabledCheckBox.Margin = new System.Windows.Forms.Padding(2);
             this.ossEnabledCheckBox.Name = "ossEnabledCheckBox";
-            this.ossEnabledCheckBox.Size = new System.Drawing.Size(182, 17);
+            this.ossEnabledCheckBox.Size = new System.Drawing.Size(116, 17);
             this.ossEnabledCheckBox.TabIndex = 11;
-            this.ossEnabledCheckBox.Text = "Snyk Open Source vulnerabilities";
+            this.ossEnabledCheckBox.Text = "Snyk Open Source";
             this.ossEnabledCheckBox.UseVisualStyleBackColor = true;
             this.ossEnabledCheckBox.CheckedChanged += new System.EventHandler(this.OssEnabledCheckBox_CheckedChanged);
             // 
@@ -196,12 +198,12 @@ namespace Snyk.VisualStudio.Extension.Settings
             this.codeSecurityEnabledCheckBox.AutoSize = true;
             this.codeSecurityEnabledCheckBox.Checked = true;
             this.codeSecurityEnabledCheckBox.CheckState = System.Windows.Forms.CheckState.Checked;
-            this.codeSecurityEnabledCheckBox.Location = new System.Drawing.Point(12, 54);
+            this.codeSecurityEnabledCheckBox.Location = new System.Drawing.Point(12, 77);
             this.codeSecurityEnabledCheckBox.Margin = new System.Windows.Forms.Padding(2);
             this.codeSecurityEnabledCheckBox.Name = "codeSecurityEnabledCheckBox";
-            this.codeSecurityEnabledCheckBox.Size = new System.Drawing.Size(185, 17);
+            this.codeSecurityEnabledCheckBox.Size = new System.Drawing.Size(119, 17);
             this.codeSecurityEnabledCheckBox.TabIndex = 12;
-            this.codeSecurityEnabledCheckBox.Text = "Snyk Code Security vulnerabilities";
+            this.codeSecurityEnabledCheckBox.Text = "Snyk Code Security";
             this.codeSecurityEnabledCheckBox.UseVisualStyleBackColor = true;
             this.codeSecurityEnabledCheckBox.CheckedChanged += new System.EventHandler(this.CodeSecurityEnabledCheckBox_CheckedChanged);
             // 
@@ -210,12 +212,12 @@ namespace Snyk.VisualStudio.Extension.Settings
             this.codeQualityEnabledCheckBox.AutoSize = true;
             this.codeQualityEnabledCheckBox.Checked = true;
             this.codeQualityEnabledCheckBox.CheckState = System.Windows.Forms.CheckState.Checked;
-            this.codeQualityEnabledCheckBox.Location = new System.Drawing.Point(242, 54);
+            this.codeQualityEnabledCheckBox.Location = new System.Drawing.Point(192, 78);
             this.codeQualityEnabledCheckBox.Margin = new System.Windows.Forms.Padding(2);
             this.codeQualityEnabledCheckBox.Name = "codeQualityEnabledCheckBox";
-            this.codeQualityEnabledCheckBox.Size = new System.Drawing.Size(145, 17);
+            this.codeQualityEnabledCheckBox.Size = new System.Drawing.Size(113, 17);
             this.codeQualityEnabledCheckBox.TabIndex = 13;
-            this.codeQualityEnabledCheckBox.Text = "Snyk Code Quality issues";
+            this.codeQualityEnabledCheckBox.Text = "Snyk Code Quality";
             this.codeQualityEnabledCheckBox.UseVisualStyleBackColor = true;
             this.codeQualityEnabledCheckBox.CheckedChanged += new System.EventHandler(this.CodeQualityEnabledCheckBox_CheckedChanged);
             // 
@@ -374,6 +376,8 @@ namespace Snyk.VisualStudio.Extension.Settings
             // 
             // productSelectionGroupBox
             // 
+            this.productSelectionGroupBox.Controls.Add(this.snykIacInfoLabel);
+            this.productSelectionGroupBox.Controls.Add(this.iacEnabledCheckbox);
             this.productSelectionGroupBox.Controls.Add(this.snykCodeQualityInfoLabel);
             this.productSelectionGroupBox.Controls.Add(this.snykCodeSecurityInfoLabel);
             this.productSelectionGroupBox.Controls.Add(this.ossInfoLabel);
@@ -387,7 +391,7 @@ namespace Snyk.VisualStudio.Extension.Settings
             this.productSelectionGroupBox.Margin = new System.Windows.Forms.Padding(2);
             this.productSelectionGroupBox.Name = "productSelectionGroupBox";
             this.productSelectionGroupBox.Padding = new System.Windows.Forms.Padding(8);
-            this.productSelectionGroupBox.Size = new System.Drawing.Size(560, 130);
+            this.productSelectionGroupBox.Size = new System.Drawing.Size(560, 157);
             this.productSelectionGroupBox.TabIndex = 18;
             this.productSelectionGroupBox.TabStop = false;
             this.productSelectionGroupBox.Text = "Product Selection";
@@ -397,7 +401,7 @@ namespace Snyk.VisualStudio.Extension.Settings
             this.snykCodeQualityInfoLabel.BackColor = System.Drawing.Color.Transparent;
             this.snykCodeQualityInfoLabel.Font = new System.Drawing.Font("Microsoft Sans Serif", 12F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(204)));
             this.snykCodeQualityInfoLabel.Image = ((System.Drawing.Image)(resources.GetObject("snykCodeQualityInfoLabel.Image")));
-            this.snykCodeQualityInfoLabel.Location = new System.Drawing.Point(384, 50);
+            this.snykCodeQualityInfoLabel.Location = new System.Drawing.Point(300, 75);
             this.snykCodeQualityInfoLabel.Margin = new System.Windows.Forms.Padding(2, 0, 2, 0);
             this.snykCodeQualityInfoLabel.Name = "snykCodeQualityInfoLabel";
             this.snykCodeQualityInfoLabel.Size = new System.Drawing.Size(20, 20);
@@ -410,7 +414,7 @@ namespace Snyk.VisualStudio.Extension.Settings
             this.snykCodeSecurityInfoLabel.BackColor = System.Drawing.Color.Transparent;
             this.snykCodeSecurityInfoLabel.Font = new System.Drawing.Font("Microsoft Sans Serif", 12F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(204)));
             this.snykCodeSecurityInfoLabel.Image = ((System.Drawing.Image)(resources.GetObject("snykCodeSecurityInfoLabel.Image")));
-            this.snykCodeSecurityInfoLabel.Location = new System.Drawing.Point(195, 50);
+            this.snykCodeSecurityInfoLabel.Location = new System.Drawing.Point(125, 74);
             this.snykCodeSecurityInfoLabel.Margin = new System.Windows.Forms.Padding(0);
             this.snykCodeSecurityInfoLabel.Name = "snykCodeSecurityInfoLabel";
             this.snykCodeSecurityInfoLabel.Size = new System.Drawing.Size(20, 20);
@@ -423,7 +427,7 @@ namespace Snyk.VisualStudio.Extension.Settings
             this.ossInfoLabel.BackColor = System.Drawing.Color.Transparent;
             this.ossInfoLabel.Font = new System.Drawing.Font("Microsoft Sans Serif", 12F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(204)));
             this.ossInfoLabel.Image = ((System.Drawing.Image)(resources.GetObject("ossInfoLabel.Image")));
-            this.ossInfoLabel.Location = new System.Drawing.Point(190, 26);
+            this.ossInfoLabel.Location = new System.Drawing.Point(125, 30);
             this.ossInfoLabel.Margin = new System.Windows.Forms.Padding(0);
             this.ossInfoLabel.MaximumSize = new System.Drawing.Size(16, 16);
             this.ossInfoLabel.MinimumSize = new System.Drawing.Size(16, 16);
@@ -436,7 +440,7 @@ namespace Snyk.VisualStudio.Extension.Settings
             // checkAgainLinkLabel
             // 
             this.checkAgainLinkLabel.AutoSize = true;
-            this.checkAgainLinkLabel.Location = new System.Drawing.Point(158, 98);
+            this.checkAgainLinkLabel.Location = new System.Drawing.Point(158, 127);
             this.checkAgainLinkLabel.Margin = new System.Windows.Forms.Padding(2, 0, 2, 0);
             this.checkAgainLinkLabel.Name = "checkAgainLinkLabel";
             this.checkAgainLinkLabel.Size = new System.Drawing.Size(67, 13);
@@ -448,7 +452,7 @@ namespace Snyk.VisualStudio.Extension.Settings
             // snykCodeSettingsLinkLabel
             // 
             this.snykCodeSettingsLinkLabel.AutoSize = true;
-            this.snykCodeSettingsLinkLabel.Location = new System.Drawing.Point(9, 98);
+            this.snykCodeSettingsLinkLabel.Location = new System.Drawing.Point(9, 127);
             this.snykCodeSettingsLinkLabel.Margin = new System.Windows.Forms.Padding(2, 0, 2, 0);
             this.snykCodeSettingsLinkLabel.Name = "snykCodeSettingsLinkLabel";
             this.snykCodeSettingsLinkLabel.Size = new System.Drawing.Size(145, 13);
@@ -460,7 +464,7 @@ namespace Snyk.VisualStudio.Extension.Settings
             // snykCodeDisabledInfoLabel
             // 
             this.snykCodeDisabledInfoLabel.AutoSize = true;
-            this.snykCodeDisabledInfoLabel.Location = new System.Drawing.Point(9, 80);
+            this.snykCodeDisabledInfoLabel.Location = new System.Drawing.Point(9, 109);
             this.snykCodeDisabledInfoLabel.Margin = new System.Windows.Forms.Padding(2, 0, 2, 0);
             this.snykCodeDisabledInfoLabel.Name = "snykCodeDisabledInfoLabel";
             this.snykCodeDisabledInfoLabel.Size = new System.Drawing.Size(282, 13);
@@ -470,7 +474,7 @@ namespace Snyk.VisualStudio.Extension.Settings
             // userExperienceGroupBox
             // 
             this.userExperienceGroupBox.Controls.Add(this.autoScanCheckBox);
-            this.userExperienceGroupBox.Location = new System.Drawing.Point(10, 643);
+            this.userExperienceGroupBox.Location = new System.Drawing.Point(10, 666);
             this.userExperienceGroupBox.Margin = new System.Windows.Forms.Padding(2);
             this.userExperienceGroupBox.Name = "userExperienceGroupBox";
             this.userExperienceGroupBox.Padding = new System.Windows.Forms.Padding(8);
@@ -484,7 +488,7 @@ namespace Snyk.VisualStudio.Extension.Settings
             this.autoScanCheckBox.AutoSize = true;
             this.autoScanCheckBox.Checked = true;
             this.autoScanCheckBox.CheckState = System.Windows.Forms.CheckState.Checked;
-            this.autoScanCheckBox.Location = new System.Drawing.Point(12, 23);
+            this.autoScanCheckBox.Location = new System.Drawing.Point(12, 46);
             this.autoScanCheckBox.Margin = new System.Windows.Forms.Padding(2);
             this.autoScanCheckBox.Name = "autoScanCheckBox";
             this.autoScanCheckBox.Size = new System.Drawing.Size(215, 17);
@@ -528,6 +532,35 @@ namespace Snyk.VisualStudio.Extension.Settings
             this.ExecutablesGroupBox.TabStop = false;
             this.ExecutablesGroupBox.Text = "Executables Settings";
             // 
+            // snykIacInfoLabel
+            // 
+            this.snykIacInfoLabel.BackColor = System.Drawing.Color.Transparent;
+            this.snykIacInfoLabel.Font = new System.Drawing.Font("Microsoft Sans Serif", 12F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(204)));
+            this.snykIacInfoLabel.Image = ((System.Drawing.Image)(resources.GetObject("snykIacInfoLabel.Image")));
+            this.snykIacInfoLabel.Location = new System.Drawing.Point(171, 54);
+            this.snykIacInfoLabel.Margin = new System.Windows.Forms.Padding(0);
+            this.snykIacInfoLabel.MaximumSize = new System.Drawing.Size(16, 16);
+            this.snykIacInfoLabel.MinimumSize = new System.Drawing.Size(16, 16);
+            this.snykIacInfoLabel.Name = "snykIacInfoLabel";
+            this.snykIacInfoLabel.Size = new System.Drawing.Size(16, 16);
+            this.snykIacInfoLabel.TabIndex = 22;
+            this.snykIacInfoLabel.Text = "   ";
+            this.ossInfoToolTip.SetToolTip(this.snykIacInfoLabel, "Find and fix insecure configurations in Terraform and Kubernetes code");
+            // 
+            // iacEnabledCheckbox
+            // 
+            this.iacEnabledCheckbox.AutoSize = true;
+            this.iacEnabledCheckbox.Checked = true;
+            this.iacEnabledCheckbox.CheckState = System.Windows.Forms.CheckState.Checked;
+            this.iacEnabledCheckbox.Location = new System.Drawing.Point(12, 54);
+            this.iacEnabledCheckbox.Margin = new System.Windows.Forms.Padding(2);
+            this.iacEnabledCheckbox.Name = "iacEnabledCheckbox";
+            this.iacEnabledCheckbox.Size = new System.Drawing.Size(157, 17);
+            this.iacEnabledCheckbox.TabIndex = 21;
+            this.iacEnabledCheckbox.Text = "Snyk Infrastructure as Code";
+            this.iacEnabledCheckbox.UseVisualStyleBackColor = true;
+            this.iacEnabledCheckbox.CheckedChanged += new System.EventHandler(this.iacEnabledCheckbox_CheckedChanged);
+            // 
             // SnykGeneralSettingsUserControl
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
@@ -540,7 +573,7 @@ namespace Snyk.VisualStudio.Extension.Settings
             this.Margin = new System.Windows.Forms.Padding(2);
             this.MinimumSize = new System.Drawing.Size(795, 750);
             this.Name = "SnykGeneralSettingsUserControl";
-            this.Size = new System.Drawing.Size(795, 750);
+            this.Size = new System.Drawing.Size(795, 788);
             ((System.ComponentModel.ISupportInitialize)(this.errorProvider)).EndInit();
             this.generalSettingsGroupBox.ResumeLayout(false);
             this.generalSettingsGroupBox.PerformLayout();
@@ -596,5 +629,7 @@ namespace Snyk.VisualStudio.Extension.Settings
         private ComboBox authType;
         private RichTextBox authMethodDescription;
         private CheckBox autoScanCheckBox;
+        private Label snykIacInfoLabel;
+        private CheckBox iacEnabledCheckbox;
     }
 }

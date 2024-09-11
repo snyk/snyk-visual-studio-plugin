@@ -52,6 +52,7 @@ namespace Snyk.Common.Settings
         /// Gets a value indicating whether is Oss scan enabled.
         /// </summary>
         bool OssEnabled { get; }
+        bool IacEnabled { get; }
 
         /// <summary>
         /// Gets a value indicating whether is Oss scan enabled.

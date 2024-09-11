@@ -32,6 +32,7 @@ namespace Snyk.VisualStudio.Extension.Service
         public bool IsOssScanning { get; set; }
 
         public bool IsSnykCodeScanning { get; set; }
+        public bool IsIacScanning { get; set; }
 
         private bool isCliDownloading;
 
@@ -52,19 +53,55 @@ namespace Snyk.VisualStudio.Extension.Service
         public event EventHandler<SnykOssScanEventArgs> OssScanningStarted;
 
         /// <summary>
+        /// Cli Scanning update event handler.
+        /// </summary>
+        public event EventHandler<SnykOssScanEventArgs> OssScanningUpdate;
+
+        /// <summary>
         /// OSS Scanning Disabled event handler.
         /// </summary>
         public event EventHandler<SnykOssScanEventArgs> OssScanningDisabled;
-        
-        /// <summary>
-        /// SnykCode scanning started event handler.
-        /// </summary>
-        public event EventHandler<SnykCodeScanEventArgs> SnykCodeScanningStarted;
 
         /// <summary>
         /// Scanning OSS finished event handler.
         /// </summary>
         public event EventHandler<SnykOssScanEventArgs> OssScanningFinished;
+
+
+        /// <summary>
+        /// Cli scan error event handler.
+        /// </summary>
+        public event EventHandler<SnykOssScanEventArgs> OssScanError;
+
+        /// <summary>
+        /// IaC scanning started event handler.
+        /// </summary>
+        public event EventHandler<SnykCodeScanEventArgs> IacScanningStarted;
+
+        /// <summary>
+        /// Iac scanning update event handler.
+        /// </summary>
+        public event EventHandler<SnykCodeScanEventArgs> IacScanningUpdate;
+
+        /// <summary>
+        /// IaC Scanning Disabled event handler.
+        /// </summary>
+        public event EventHandler<SnykCodeScanEventArgs> IacScanningDisabled;
+
+        /// <summary>
+        /// Scanning IaC finished event handler.
+        /// </summary>
+        public event EventHandler<SnykCodeScanEventArgs> IacScanningFinished;
+
+        /// <summary>
+        /// Iac scan error event handler.
+        /// </summary>
+        public event EventHandler<SnykCodeScanEventArgs> IacScanError;
+
+        /// <summary>
+        /// SnykCode scanning started event handler.
+        /// </summary>
+        public event EventHandler<SnykCodeScanEventArgs> SnykCodeScanningStarted;
 
         /// <summary>
         /// Scanning SnykCode finished event handler.
@@ -72,19 +109,9 @@ namespace Snyk.VisualStudio.Extension.Service
         public event EventHandler<SnykCodeScanEventArgs> SnykCodeScanningFinished;
 
         /// <summary>
-        /// Cli Scanning update event handler.
-        /// </summary>
-        public event EventHandler<SnykOssScanEventArgs> OssScanningUpdate;
-
-        /// <summary>
         /// SnykCode scanning update event handler.
         /// </summary>
         public event EventHandler<SnykCodeScanEventArgs> SnykCodeScanningUpdate;
-
-        /// <summary>
-        /// Sli scan error event handler.
-        /// </summary>
-        public event EventHandler<SnykOssScanEventArgs> OssScanError;
 
         /// <summary>
         /// SnykCode scan error event handler.
@@ -227,6 +254,11 @@ namespace Snyk.VisualStudio.Extension.Service
                 if (!selectedFeatures.SastOnServerEnabled)
                 {
                     FireSnykCodeDisabledError(selectedFeatures.LocalCodeEngineEnabled);
+                }
+
+                if (!selectedFeatures.IacEnabled)
+                {
+                    FireSnykIacDisabledError(selectedFeatures.IacEnabled);
                 }
 
                 var componentModel = Package.GetGlobalService(typeof(SComponentModel)) as IComponentModel;
@@ -445,6 +477,12 @@ namespace Snyk.VisualStudio.Extension.Service
             this.SnykCodeScanError?.Invoke(this, new SnykCodeScanEventArgs(message));
         }
 
+        public void OnIacError(string message)
+        {
+            this.IsIacScanning = false;
+            this.IacScanError?.Invoke(this, new SnykCodeScanEventArgs(message));
+        }
+
         /// <summary>
         /// Fire SnykCode disabled event with <see cref="SnykCodeScanEventArgs"/>.
         /// </summary>
@@ -452,6 +490,11 @@ namespace Snyk.VisualStudio.Extension.Service
         public void FireSnykCodeDisabledError(bool localCodeEngineEnabled)
             => this.SnykCodeDisabled?.Invoke(this,
                 new SnykCodeScanEventArgs { LocalCodeEngineEnabled = localCodeEngineEnabled, });
+
+        public void FireSnykIacDisabledError(bool localCodeEngineEnabled)
+            => this.IacScanningDisabled?.Invoke(this,
+                new SnykCodeScanEventArgs { LocalCodeEngineEnabled = localCodeEngineEnabled, });
+
 
         /// <summary>
         /// Fire download started.
@@ -561,6 +604,16 @@ namespace Snyk.VisualStudio.Extension.Service
                 });
         }
 
+        public void FireIacScanningStartedEvent(FeaturesSettings featuresSettings)
+        {
+            this.IsIacScanning = true;
+            this.IacScanningStarted?.Invoke(this,
+                new SnykCodeScanEventArgs
+                {
+                    IacEnabled = featuresSettings.IacEnabled
+                });
+        }
+
         /// <summary>
         /// Fire scanning update with <see cref="SnykOssScanEventArgs"/> object.
         /// </summary>
@@ -580,6 +633,13 @@ namespace Snyk.VisualStudio.Extension.Service
             this.SnykCodeScanningUpdate?.Invoke(this, new SnykCodeScanEventArgs(analysisResult));
         }
 
+        public void FireIacScanningUpdateEvent(IDictionary<string, IEnumerable<Issue>> analysisResult)
+        {
+            this.IsIacScanning = true;
+            this.IacScanningUpdate?.Invoke(this, new SnykCodeScanEventArgs(analysisResult));
+        }
+
+
         /// <summary>
         /// Fire OSS scanning finished event.
         /// </summary>
@@ -597,6 +657,14 @@ namespace Snyk.VisualStudio.Extension.Service
         {
             this.IsSnykCodeScanning = false;
             this.SnykCodeScanningFinished?.Invoke(this,
+                new SnykCodeScanEventArgs { OssScanRunning = this.IsOssScanning });
+        }
+
+
+        public void FireIacScanningFinishedEvent()
+        {
+            this.IsIacScanning = false;
+            this.IacScanningFinished?.Invoke(this,
                 new SnykCodeScanEventArgs { OssScanRunning = this.IsOssScanning });
         }
 
@@ -624,6 +692,7 @@ namespace Snyk.VisualStudio.Extension.Service
                 CodeSecurityEnabled = snykCodeEnabled && options.SnykCodeSecurityEnabled,
                 CodeQualityEnabled = snykCodeEnabled && options.SnykCodeQualityEnabled,
                 LocalCodeEngineEnabled = sastSettings?.LocalCodeEngineEnabled ?? false,
+                IacEnabled = options.IacEnabled
             };
         }
 

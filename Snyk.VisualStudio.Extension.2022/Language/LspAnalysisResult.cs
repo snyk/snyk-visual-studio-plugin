@@ -143,9 +143,6 @@ namespace Snyk.VisualStudio.Extension.Language
         }
 
         public string GetPackageNameTitle() => $"{this.AdditionalData?.PackageName}@{this.AdditionalData?.Version}: {this.Title}";
-        public string FixedInDisplayText => this.AdditionalData?.FixedIn == null ? string.Empty : string.Join(", ", this.AdditionalData.FixedIn);
-        private const string VulnerabilityDbUrl = "https://snyk.io/vuln/";
-        public string GetVulnerabilityUrl() => $"{VulnerabilityDbUrl}{this.AdditionalData?.RuleId ?? ""}";
     }
 
     public class LineData

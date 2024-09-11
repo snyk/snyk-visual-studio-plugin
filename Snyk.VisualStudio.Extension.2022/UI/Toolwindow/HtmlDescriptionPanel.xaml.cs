@@ -5,14 +5,8 @@ using Snyk.VisualStudio.Extension.UI.Html;
 
 namespace Snyk.VisualStudio.Extension.UI.Toolwindow
 {
-    /// <summary>
-    /// Interaction logic for DescriptionPanel.xaml.
-    /// </summary>
     public partial class HtmlDescriptionPanel : UserControl
     {
-        /// <summary>
-        /// Initializes a new instance of the <see cref="DescriptionPanel"/> class. For OSS scan result.
-        /// </summary>
         private IHtmlProvider htmlProvider;
         public HtmlDescriptionPanel()
         {
@@ -43,11 +37,14 @@ namespace Snyk.VisualStudio.Extension.UI.Toolwindow
             }
         }
 
-
-        public void SetContent(Issue issue, string product)
+        public void SetContent(string html, string product)
         {
+            if (string.IsNullOrEmpty(html))
+                return;
+
             this.htmlProvider = HtmlProviderFactory.GetHtmlProvider(product);
-            var html = issue.AdditionalData.Details;
+            if (this.htmlProvider == null)
+                return;
 
             html = htmlProvider.ReplaceCssVariables(html);
 

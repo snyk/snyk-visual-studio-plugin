@@ -204,11 +204,29 @@ namespace Snyk.VisualStudio.Extension.Settings
         }
 
         /// <summary>
+        /// Save IaC enabled.
+        /// </summary>
+        /// <param name="enabled">Enabled or disabled IaC.</param>
+        public void SaveIacEnabled(bool enabled)
+        {
+            var settings = this.LoadSettings();
+
+            settings.IacEnabled = enabled;
+
+            this.settingsLoader.Save(settings);
+        }
+
+        /// <summary>
         /// Get oss enabled.
         /// </summary>
         /// <returns>Bool.</returns>
         public bool IsOssEnabled() => this.LoadSettings().OssEnabled;
 
+        /// <summary>
+        /// Get IaC enabled.
+        /// </summary>
+        /// <returns>Bool.</returns>
+        public bool IsIacEnabled() => this.LoadSettings().IacEnabled;
         /// <summary>
         /// Save Sentry anonymous user id.
         /// </summary>
