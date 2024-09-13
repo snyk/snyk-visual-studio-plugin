@@ -1,10 +1,6 @@
-﻿using System.Reflection;
-using Snyk.VisualStudio.Extension.Language;
-using System.Windows.Forms;
-using System.Windows.Navigation;
+﻿using System.Windows.Forms;
 using Snyk.VisualStudio.Extension.UI.Html;
 using UserControl = System.Windows.Controls.UserControl;
-using System.Windows.Controls;
 
 namespace Snyk.VisualStudio.Extension.UI.Toolwindow
 {
@@ -18,7 +14,7 @@ namespace Snyk.VisualStudio.Extension.UI.Toolwindow
             this.InitializeComponent();
 
             //initialise the windows.forms browser component
-            HtmlViewer = new System.Windows.Forms.WebBrowser
+            HtmlViewer = new WebBrowser
             {
                 //disable the default context menu
                 IsWebBrowserContextMenuEnabled = false

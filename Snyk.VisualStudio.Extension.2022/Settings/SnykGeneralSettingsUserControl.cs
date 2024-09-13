@@ -59,16 +59,36 @@ namespace Snyk.VisualStudio.Extension.Settings
         public void Initialize()
         {
             logger.Information("Enter Initialize method");
-
+            
             this.InitializeApiToken();
             this.UpdateViewFromOptionsDialog();
             this.OptionsDialogPage.SettingsChanged += this.OptionsDialogPageOnSettingsChanged;
             this.Load += this.SnykGeneralSettingsUserControl_Load;
+
+            if (LanguageClientHelper.LanguageClientManager() != null)
+            {
+                LanguageClientHelper.LanguageClientManager().OnLanguageClientNotInitializedAsync += OnOnLanguageClientNotInitializedAsync;
+                LanguageClientHelper.LanguageClientManager().OnLanguageServerReadyAsync += OnOnLanguageServerReadyAsync;
+            }
+            
             logger.Information("Leave Initialize method");
+        }
+
+        private async Task OnOnLanguageServerReadyAsync(object sender, SnykLanguageServerEventArgs args)
+        {
+            await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
+            authenticateButton.Enabled = true;
+        }
+
+        private async Task OnOnLanguageClientNotInitializedAsync(object sender, SnykLanguageServerEventArgs args)
+        {
+            await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
+            authenticateButton.Enabled = false;
         }
 
         private void UpdateViewFromOptionsDialog()
         {
+            this.authenticateButton.Enabled = false;
             this.customEndpointTextBox.Text = this.OptionsDialogPage.CustomEndpoint;
             this.organizationTextBox.Text = this.OptionsDialogPage.Organization;
             this.ignoreUnknownCACheckBox.Checked = this.OptionsDialogPage.IgnoreUnknownCA;
