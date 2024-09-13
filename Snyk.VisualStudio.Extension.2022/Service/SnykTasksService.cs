@@ -728,8 +728,6 @@ namespace Snyk.VisualStudio.Extension.Service
             {
                 var currentCliVersion = userSettingsStorageService.GetCurrentCliVersion();
 
-                var lastCliReleaseDate = userSettingsStorageService.GetCliReleaseLastCheckDate();
-
                 var options = this.serviceProvider.Options;
                 var cliDownloader = new SnykCliDownloader(options, currentCliVersion);
 

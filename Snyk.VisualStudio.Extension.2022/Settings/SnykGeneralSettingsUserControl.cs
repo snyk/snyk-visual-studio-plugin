@@ -498,7 +498,6 @@ namespace Snyk.VisualStudio.Extension.Settings
 
         private void autoScanCheckBox_CheckedChanged(object sender, EventArgs e)
         {
-            this.OptionsDialogPage.AutoScan = autoScanCheckBox.Checked;
         }
 
         private void iacEnabledCheckbox_CheckedChanged(object sender, EventArgs e)
@@ -514,6 +513,11 @@ namespace Snyk.VisualStudio.Extension.Settings
         public string GetCliDownloadUrl()
         {
             return cliDownloadUrlTextBox.Text;
+        }
+
+        public bool GetAutoScanEnabled()
+        {
+            return autoScanCheckBox.Checked;
         }
     }
 }

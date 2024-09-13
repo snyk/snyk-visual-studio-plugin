@@ -1,7 +1,7 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Threading.Tasks;
 using Snyk.Common.Authentication;
-using Snyk.Common.Service;
 
 namespace Snyk.Common.Settings
 {
@@ -75,7 +75,7 @@ namespace Snyk.Common.Settings
         string CliCustomPath { get; set; }
         string CliReleaseChannel { get; set; }
         string CliDownloadUrl { get; set; }
-
+        ISet<string> TrustedFolders { get; set; }
         /// <summary>
         /// Settings changed event.
         /// </summary>

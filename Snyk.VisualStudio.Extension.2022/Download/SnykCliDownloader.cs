@@ -128,8 +128,9 @@ namespace Snyk.VisualStudio.Extension.Download
                     return true;
                 }
             }
-            catch
+            catch (Exception ex)
             {
+                Logger.Error("Could not fetch latest CLI release info for provided version {Ex}", ex);
                 return false;
             }
             return false;

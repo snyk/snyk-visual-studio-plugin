@@ -583,9 +583,9 @@ namespace Snyk.VisualStudio.Extension.Settings
             this.label4.Location = new System.Drawing.Point(4, 172);
             this.label4.Margin = new System.Windows.Forms.Padding(2, 0, 2, 0);
             this.label4.Name = "label4";
-            this.label4.Size = new System.Drawing.Size(160, 13);
+            this.label4.Size = new System.Drawing.Size(104, 13);
             this.label4.TabIndex = 22;
-            this.label4.Text = "Base URL to download the CLI: ";
+            this.label4.Text = "CLI release channel:";
             // 
             // label3
             // 

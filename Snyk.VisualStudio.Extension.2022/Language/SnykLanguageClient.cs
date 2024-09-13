@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.ComponentModel.Composition;
 using System.Diagnostics;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.VisualStudio.LanguageServer.Client;
@@ -65,6 +66,7 @@ namespace Snyk.VisualStudio.Extension.Language
                 SendErrorReports = "true",
                 ManageBinariesAutomatically = options.BinariesAutoUpdate.ToString(),
                 EnableTrustedFoldersFeature = "false",
+                TrustedFolders = options.TrustedFolders.ToList(),
                 IntegrationName = options.IntegrationName,
                 FilterSeverity = new FilterSeverityOptions
                 {
@@ -188,8 +190,18 @@ namespace Snyk.VisualStudio.Extension.Language
         {
             if (StopAsync != null)
             {
-                await StopAsync.InvokeAsync(this, EventArgs.Empty);
-                IsReady = false;
+                try
+                {
+                    await StopAsync.InvokeAsync(this, EventArgs.Empty);
+                }
+                catch (Exception ex)
+                {
+                    Logger.Error("Could not stop Language Server. {Ex}", ex);
+                }
+                finally
+                {
+                    IsReady = false;
+                }
             }
             else
             {

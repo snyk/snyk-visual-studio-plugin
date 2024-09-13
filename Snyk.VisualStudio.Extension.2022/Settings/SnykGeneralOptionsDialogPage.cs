@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Runtime.InteropServices;
 using System.Threading;
@@ -40,6 +41,17 @@ namespace Snyk.VisualStudio.Extension.Settings
         private string organization;
 
         private static readonly ILogger Logger = LogManager.ForContext<SnykGeneralOptionsDialogPage>();
+
+        public ISet<string> TrustedFolders
+        {
+            get => this.userStorageSettingsService.TrustedFolders;
+            set
+            {
+                if (this.userStorageSettingsService == null || this.userStorageSettingsService.TrustedFolders == value)
+                    return;
+                this.userStorageSettingsService.TrustedFolders = value;
+            }
+        }
 
         /// <inheritdoc/>
         public event EventHandler<SnykSettingsChangedEventArgs> SettingsChanged;
@@ -261,7 +273,6 @@ namespace Snyk.VisualStudio.Extension.Settings
                     return;
                 }
                 this.userStorageSettingsService.CliCustomPath = value;
-                // TODO: Handle CLI Path Change
             }
         }
 
@@ -288,7 +299,7 @@ namespace Snyk.VisualStudio.Extension.Settings
                     return;
                 }
                 this.userStorageSettingsService.CliDownloadUrl = value;
-                // TODO: Handle CLI Path Change
+                HandleCliCustomPathChange();
             }
         }
 
@@ -306,14 +317,28 @@ namespace Snyk.VisualStudio.Extension.Settings
             HandleCliDownload();
         }
 
+        private void HandleCliCustomPathChange()
+        {
+            var languageClientManager = LanguageClientHelper.LanguageClientManager();
+            if (languageClientManager == null)
+                return;
+
+            if (File.Exists(this.CliDownloadUrl))
+            {
+                ThreadHelper.JoinableTaskFactory.RunAsync(async()=> await languageClientManager.RestartServerAsync()).FireAndForget();
+            }
+        }
+
         private void HandleCliDownload()
         {
             var releaseChannel = generalSettingsUserControl.GetReleaseChannel().Trim();
             var downloadUrl = generalSettingsUserControl.GetCliDownloadUrl().Trim();
-            if (this.CliReleaseChannel != releaseChannel || this.CliDownloadUrl != downloadUrl)
+            var autoScan = generalSettingsUserControl.GetAutoScanEnabled();
+            if (this.CliReleaseChannel != releaseChannel || this.CliDownloadUrl != downloadUrl || this.AutoScan != autoScan)
             {
                 this.CliDownloadUrl = downloadUrl;
                 this.CliReleaseChannel = releaseChannel;
+                this.AutoScan = autoScan;
                 this.serviceProvider.TasksService.Download();
             }
         }
