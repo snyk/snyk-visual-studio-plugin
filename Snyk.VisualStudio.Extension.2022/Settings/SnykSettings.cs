@@ -1,4 +1,5 @@
 ﻿using Snyk.Common.Authentication;
+using Snyk.VisualStudio.Extension.Download;
 
 namespace Snyk.VisualStudio.Extension.Settings
 {
@@ -74,5 +75,7 @@ namespace Snyk.VisualStudio.Extension.Settings
         public bool AutoScan { get; set; } = true;
         public string Token { get; set; } = string.Empty;
         public bool IacEnabled { get; set; } = true;
+        public string CliReleaseChannel { get; set; } = SnykCliDownloader.DefaultReleaseChannel;
+        public string CliDownloadUrl { get; set; } = SnykCliDownloader.DefaultBaseDownloadUrl;
     }
 }

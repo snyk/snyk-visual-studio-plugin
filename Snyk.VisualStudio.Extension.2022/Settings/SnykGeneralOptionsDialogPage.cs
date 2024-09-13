@@ -265,6 +265,33 @@ namespace Snyk.VisualStudio.Extension.Settings
             }
         }
 
+        public string CliReleaseChannel
+        {
+            get => this.userStorageSettingsService.CliReleaseChannel;
+            set
+            {
+                if (this.userStorageSettingsService == null || this.userStorageSettingsService.CliReleaseChannel == value)
+                {
+                    return;
+                }
+                this.userStorageSettingsService.CliReleaseChannel = value;
+                // TODO: Handle CLI Path Change
+            }
+        }
+        public string CliDownloadUrl
+        {
+            get => this.userStorageSettingsService.CliDownloadUrl;
+            set
+            {
+                if (this.userStorageSettingsService == null || this.userStorageSettingsService.CliDownloadUrl == value)
+                {
+                    return;
+                }
+                this.userStorageSettingsService.CliDownloadUrl = value;
+                // TODO: Handle CLI Path Change
+            }
+        }
+
         /// <summary>
         /// Gets a value indicating whether General Settings control.
         /// </summary>
@@ -276,6 +303,19 @@ namespace Snyk.VisualStudio.Extension.Settings
             if (generalSettingsUserControl == null)
                 return;
             ResetControlScrollSettings(generalSettingsUserControl);
+            HandleCliDownload();
+        }
+
+        private void HandleCliDownload()
+        {
+            var releaseChannel = generalSettingsUserControl.GetReleaseChannel().Trim();
+            var downloadUrl = generalSettingsUserControl.GetCliDownloadUrl().Trim();
+            if (this.CliReleaseChannel != releaseChannel || this.CliDownloadUrl != downloadUrl)
+            {
+                this.CliDownloadUrl = downloadUrl;
+                this.CliReleaseChannel = releaseChannel;
+                this.serviceProvider.TasksService.Download();
+            }
         }
 
         private void ResetControlScrollSettings(UserControl control)

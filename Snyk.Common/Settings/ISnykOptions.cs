@@ -73,6 +73,8 @@ namespace Snyk.Common.Settings
         /// Gets or sets the value of the CLI custom path. If empty, the default path from AppData would be used.
         /// </summary>
         string CliCustomPath { get; set; }
+        string CliReleaseChannel { get; set; }
+        string CliDownloadUrl { get; set; }
 
         /// <summary>
         /// Settings changed event.

@@ -182,7 +182,7 @@ namespace Snyk.VisualStudio.Extension.Tests
             File.Delete(tempCliPath);
 
             Assert.False(string.IsNullOrEmpty(newCliVersion));
-            Assert.True(cliDownloader.IsCliDownloadNeeded(lastCheckDate, tempCliPath));
+            Assert.True(cliDownloader.IsCliDownloadNeeded(tempCliPath));
         }
 
         [Fact]
@@ -206,7 +206,7 @@ namespace Snyk.VisualStudio.Extension.Tests
             Assert.True(File.Exists(tempCliPath));
 
             File.Delete(tempCliPath);
-            Assert.True(cliDownloader.IsCliDownloadNeeded(lastCheckDate, tempCliPath));
+            Assert.True(cliDownloader.IsCliDownloadNeeded(tempCliPath));
         }
     }
 }

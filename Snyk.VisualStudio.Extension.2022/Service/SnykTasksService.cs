@@ -730,12 +730,13 @@ namespace Snyk.VisualStudio.Extension.Service
 
                 var lastCliReleaseDate = userSettingsStorageService.GetCliReleaseLastCheckDate();
 
-                var cliDownloader = new SnykCliDownloader(currentCliVersion);
+                var options = this.serviceProvider.Options;
+                var cliDownloader = new SnykCliDownloader(options, currentCliVersion);
 
-                var downloadPath = this.serviceProvider.Options.CliCustomPath;
+                var downloadPath = options.CliCustomPath;
                 var fileDestinationPath = GetCliFilePath(downloadPath);
 
-                return cliDownloader.IsCliDownloadNeeded(lastCliReleaseDate, fileDestinationPath);
+                return cliDownloader.IsCliDownloadNeeded(fileDestinationPath);
 
             }
             catch (Exception)
@@ -759,13 +760,13 @@ namespace Snyk.VisualStudio.Extension.Service
             this.isCliDownloading = true;
             try
             {
-                string currentCliVersion = userSettingsStorageService.GetCurrentCliVersion();
+                var currentCliVersion = userSettingsStorageService.GetCurrentCliVersion();
 
-                DateTime lastCliReleaseDate = userSettingsStorageService.GetCliReleaseLastCheckDate();
+                var lastCliReleaseDate = userSettingsStorageService.GetCliReleaseLastCheckDate();
 
-                var cliDownloader = new SnykCliDownloader(currentCliVersion);
+                var cliDownloader = new SnykCliDownloader(this.serviceProvider.Options, currentCliVersion);
 
-                List<CliDownloadFinishedCallback> downloadFinishedCallbacks = new List<CliDownloadFinishedCallback>();
+                var downloadFinishedCallbacks = new List<CliDownloadFinishedCallback>();
 
                 if (downloadFinishedCallback != null)
                 {

@@ -130,6 +130,28 @@ namespace Snyk.VisualStudio.Extension.Settings
             }
         }
 
+        public string CliReleaseChannel
+        {
+            get => this.LoadSettings().CliReleaseChannel;
+            set
+            {
+                var settings = this.LoadSettings();
+                settings.CliReleaseChannel = value;
+                this.settingsLoader.Save(settings);
+            }
+        }
+
+        public string CliDownloadUrl
+        {
+            get => this.LoadSettings().CliDownloadUrl;
+            set
+            {
+                var settings = this.LoadSettings();
+                settings.CliDownloadUrl = value;
+                this.settingsLoader.Save(settings);
+            }
+        }
+
         /// <summary>
         /// Get is all projects enabled.
         /// </summary>

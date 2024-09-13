@@ -64,7 +64,6 @@ namespace Snyk.VisualStudio.Extension.Settings
             this.UpdateViewFromOptionsDialog();
             this.OptionsDialogPage.SettingsChanged += this.OptionsDialogPageOnSettingsChanged;
             this.Load += this.SnykGeneralSettingsUserControl_Load;
-
             logger.Information("Leave Initialize method");
         }
 
@@ -77,12 +76,17 @@ namespace Snyk.VisualStudio.Extension.Settings
             this.iacEnabledCheckbox.Checked = this.OptionsDialogPage.IacEnabled;
             this.ManageBinariesAutomaticallyCheckbox.Checked = this.OptionsDialogPage.BinariesAutoUpdate;
             this.autoScanCheckBox.Checked = this.OptionsDialogPage.AutoScan;
+            this.cliDownloadUrlTextBox.Text = this.OptionsDialogPage.CliDownloadUrl;
 
             var cliPath = string.IsNullOrEmpty(this.OptionsDialogPage.CliCustomPath)
                 ? SnykCli.GetSnykCliDefaultPath()
                 : this.OptionsDialogPage.CliCustomPath;
 
             this.CliPathTextBox.Text = cliPath;
+            if (releaseChannel.SelectedIndex == -1)
+            {
+                this.releaseChannel.DataSource = ReleaseChannelList();
+            }
 
             if (authType.SelectedIndex == -1)
             {
@@ -90,6 +94,8 @@ namespace Snyk.VisualStudio.Extension.Settings
                 this.authType.DisplayMember = "Description";
                 this.authType.ValueMember = "Value";
             }
+            
+            this.releaseChannel.SelectedItem = this.OptionsDialogPage.CliReleaseChannel;
             this.authType.SelectedValue = this.OptionsDialogPage.AuthenticationMethod;
         }
 
@@ -104,7 +110,10 @@ namespace Snyk.VisualStudio.Extension.Settings
                 })
                 .ToList();
         }
-
+        private static IEnumerable<string> ReleaseChannelList()
+        {
+            return new string[] { "stable", "rc", "preview" };
+        }
         private void OptionsDialogPageOnSettingsChanged(object sender, SnykSettingsChangedEventArgs e) =>
             ThreadHelper.JoinableTaskFactory.RunAsync(async () =>
             {
@@ -475,6 +484,16 @@ namespace Snyk.VisualStudio.Extension.Settings
         private void iacEnabledCheckbox_CheckedChanged(object sender, EventArgs e)
         {
             this.OptionsDialogPage.IacEnabled = iacEnabledCheckbox.Checked;
+        }
+
+        public string GetReleaseChannel()
+        {
+            return releaseChannel.Text;
+        }
+
+        public string GetCliDownloadUrl()
+        {
+            return cliDownloadUrlTextBox.Text;
         }
     }
 }

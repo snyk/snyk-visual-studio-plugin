@@ -57,6 +57,7 @@ namespace Snyk.VisualStudio.Extension.UI.Html
         public virtual string GetInitScript()
         {
             return @"
+                    window.onerror = function(msg,url,line){return true;}
                     var links = document.querySelectorAll('a');
                     for(var i = 0; i < links.length; i++) {
                         links[i].onclick = function() {

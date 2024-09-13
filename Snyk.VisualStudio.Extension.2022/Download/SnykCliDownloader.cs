@@ -5,6 +5,7 @@ using System.Net.Http;
 using System.Threading.Tasks;
 using Serilog;
 using Snyk.Common;
+using Snyk.Common.Settings;
 using Snyk.VisualStudio.Extension.CLI;
 using Snyk.VisualStudio.Extension.Language;
 using Snyk.VisualStudio.Extension.Service;
@@ -16,26 +17,26 @@ namespace Snyk.VisualStudio.Extension.Download
     /// </summary>
     public class SnykCliDownloader
     {
-        private const string BaseUrl = "https://downloads.snyk.io";
+        public const string DefaultBaseDownloadUrl = "https://downloads.snyk.io";
+        public const string DefaultReleaseChannel = "preview";
 
-        private const string ReleaseChannel = "preview";
-        private const string LatestReleaseVersionUrl = BaseUrl + "/cli/" + ReleaseChannel + "/ls-protocol-version-" + LsConstants.ProtocolVersion;
-        private const string LatestReleaseDownloadUrl = BaseUrl + "/cli/{0}/" + SnykCli.CliFileName;
+        private const string LatestReleaseVersionUrlScheme = "{0}/cli/{1}/ls-protocol-version-" + LsConstants.ProtocolVersion;
+        private const string LatestReleaseDownloadUrlScheme = "{0}/cli/{1}/" + SnykCli.CliFileName;
         private const string Sha256DownloadUrl = "{0}.sha256";
 
         private const int FourDays = 4;
 
         private static readonly ILogger Logger = LogManager.ForContext<SnykCliDownloader>();
 
+        private readonly ISnykOptions SnykOptions;
         private readonly string currentCliVersion;
-
         private string expectedSha;
 
-        /// <summary>
-        /// Initializes a new instance of the <see cref="SnykCliDownloader"/> class.
-        /// </summary>
-        /// <param name="currentCliVersion">Initial CLI version parameter.</param>
-        public SnykCliDownloader(string currentCliVersion) => this.currentCliVersion = currentCliVersion;
+        public SnykCliDownloader(ISnykOptions snykOptions, string currentVersion)
+        {
+            this.SnykOptions = snykOptions;
+            this.currentCliVersion = currentVersion;
+        }
 
         /// <summary>
         /// Callback on download finished event.
@@ -64,12 +65,15 @@ namespace Snyk.VisualStudio.Extension.Download
             {
                 Logger.Information("Get latest CLI release info");
 
-                string latestVersion = webClient.DownloadString(LatestReleaseVersionUrl).Replace("\n", string.Empty);
+                var latestReleaseVersionUrl = string.Format(LatestReleaseVersionUrlScheme, SnykOptions.CliDownloadUrl, SnykOptions.CliReleaseChannel);
+                var latestVersion = webClient.DownloadString(latestReleaseVersionUrl).Replace("\n", string.Empty);
+
+                var latestReleaseDownloadUrl = string.Format(LatestReleaseDownloadUrlScheme, SnykOptions.CliDownloadUrl, "v"+latestVersion);
 
                 return new LatestReleaseInfo
                 {
-                    Version = latestVersion,
-                    Url = string.Format(LatestReleaseDownloadUrl, "v"+latestVersion),
+                    Version = "v" + latestVersion,
+                    Url = latestReleaseDownloadUrl,
                     Name = "v" + latestVersion,
                 };
             }
@@ -109,28 +113,25 @@ namespace Snyk.VisualStudio.Extension.Download
         }
 
         /// <summary>
-        /// Check is four days passed after lact check.
-        /// </summary>
-        /// <param name="lastCheckDate">Last check date value.</param>
-        /// <returns>True if four days passed after last check.</returns>
-        public bool IsFourDaysPassedAfterLastCheck(DateTime lastCheckDate)
-            => (DateTime.Now - lastCheckDate).TotalDays > FourDays;
-
-        /// <summary>
         /// Check is CLI download needed.
         /// 1. If CLI file not exists.
         /// 2. If new CLI release exists.
         /// </summary>
-        /// <param name="lastCheckDate">Last check date.</param>
         /// <param name="cliFileDestinationPath">Path to CLI file.</param>
         /// <returns>True if CLI file not exists or new release exists.</returns>
-        public bool IsCliDownloadNeeded(DateTime lastCheckDate, string cliFileDestinationPath = null)
+        public bool IsCliDownloadNeeded(string cliFileDestinationPath = null)
         {
-            if (!this.IsCliFileExists(cliFileDestinationPath) || this.IsCliUpdateExists(lastCheckDate))
+            try
             {
-                return true;
+                if (!this.IsCliFileExists(cliFileDestinationPath) || this.IsNewVersionAvailable(this.currentCliVersion, this.GetLatestReleaseInfo().Version))
+                {
+                    return true;
+                }
             }
-
+            catch
+            {
+                return false;
+            }
             return false;
         }
 
@@ -140,13 +141,6 @@ namespace Snyk.VisualStudio.Extension.Download
         /// <param name="cliFileDestinationPath">CLI location path.</param>
         /// <returns>True if CLI file not exists.</returns>
         public bool IsCliFileExists(string cliFileDestinationPath = null) => File.Exists(cliFileDestinationPath);
-
-        /// <summary>
-        /// Is CLI update exists.
-        /// </summary>
-        /// <param name="lastCheckDate">Last check date.</param>
-        /// <returns>True if new version CLI exists</returns>
-        public bool IsCliUpdateExists(DateTime lastCheckDate) => this.IsNewVersionAvailable(this.currentCliVersion, this.GetLatestReleaseInfo().Version) && this.IsFourDaysPassedAfterLastCheck(lastCheckDate);
 
         /// <summary>
         /// Check is there a new version on the server and if there is, download it.
@@ -164,7 +158,7 @@ namespace Snyk.VisualStudio.Extension.Download
         {
             var fileDestinationPath = GetCliFilePath(filePath);
 
-            var isCliDownloadNeeded = this.IsCliDownloadNeeded(lastCheckDate, fileDestinationPath);
+            var isCliDownloadNeeded = this.IsCliDownloadNeeded(fileDestinationPath);
 
             if (isCliDownloadNeeded)
             {
