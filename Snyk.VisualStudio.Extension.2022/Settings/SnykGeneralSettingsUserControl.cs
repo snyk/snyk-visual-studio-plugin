@@ -88,7 +88,7 @@ namespace Snyk.VisualStudio.Extension.Settings
 
         private void UpdateViewFromOptionsDialog()
         {
-            this.authenticateButton.Enabled = false;
+            this.authenticateButton.Enabled = LanguageClientHelper.IsLanguageServerReady();
             this.customEndpointTextBox.Text = this.OptionsDialogPage.CustomEndpoint;
             this.organizationTextBox.Text = this.OptionsDialogPage.Organization;
             this.ignoreUnknownCACheckBox.Checked = this.OptionsDialogPage.IgnoreUnknownCA;
@@ -137,10 +137,10 @@ namespace Snyk.VisualStudio.Extension.Settings
         private void OptionsDialogPageOnSettingsChanged(object sender, SnykSettingsChangedEventArgs e) =>
             ThreadHelper.JoinableTaskFactory.RunAsync(async () =>
             {
-                await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
-                this.UpdateViewFromOptionsDialog();
                 if (LanguageClientHelper.IsLanguageServerReady())
                     await ServiceProvider.Package.LanguageClientManager.DidChangeConfigurationAsync(SnykVSPackage.Instance.DisposalToken);
+                await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
+                this.UpdateViewFromOptionsDialog();
             }).FireAndForget();
 
         public async Task OnAuthenticationSuccessfulAsync(string apiToken)

@@ -28,8 +28,7 @@ namespace Snyk.VisualStudio.Extension.Commands
         {
             ThreadHelper.ThrowIfNotOnUIThread();
             var isLsReady = SnykVSPackage.Instance?.LanguageClientManager?.IsReady ?? false;
-            return SnykVSPackage.ServiceProvider.Options.ApiToken.IsValid()
-                   && SnykSolutionService.Instance.IsSolutionOpen() && isLsReady;
+            return SnykSolutionService.Instance.IsSolutionOpen() && isLsReady;
         }
 
         /// <inheritdoc/>

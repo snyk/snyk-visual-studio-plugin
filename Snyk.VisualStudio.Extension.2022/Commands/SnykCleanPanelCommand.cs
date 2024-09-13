@@ -44,10 +44,7 @@
         public override async Task UpdateStateAsync()
         {
             await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
-            var isLsReady = SnykVSPackage.Instance?.LanguageClientManager?.IsReady ?? false;
-
-            this.MenuCommand.Enabled = SnykVSPackage.ServiceProvider.Options.ApiToken.IsValid()
-                                       && this.VsPackage.ToolWindowControl.IsTreeContentNotEmpty() && isLsReady;
+            this.MenuCommand.Enabled = this.VsPackage.ToolWindowControl.IsTreeContentNotEmpty();
         }
 
         /// <summary>
