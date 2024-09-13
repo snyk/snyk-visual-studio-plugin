@@ -11,7 +11,7 @@ namespace Snyk.VisualStudio.Extension.UI.Html
             return @"
                     html, body {
                        height: 100%;
-                       font-size: 1.15rem;
+                       font-size: 0.9rem;
                        display: flex;
                        flex-direction: column;
                        margin: 0;
