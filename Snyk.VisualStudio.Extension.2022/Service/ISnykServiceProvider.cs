@@ -70,12 +70,6 @@ namespace Snyk.VisualStudio.Extension.Service
         SnykToolWindowControl ToolWindow { get; }
 
         /// <summary>
-        /// Create new instance of <see cref="SnykCli"/>.
-        /// </summary>
-        /// <returns>SnykCli.</returns>
-        ICli NewCli();
-
-        /// <summary>
         /// Get Visual Studio service (async).
         /// </summary>
         /// <param name="serviceType">Service type.</param>

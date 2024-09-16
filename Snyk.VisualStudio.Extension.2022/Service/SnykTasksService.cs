@@ -696,6 +696,11 @@ namespace Snyk.VisualStudio.Extension.Service
             };
         }
 
+        public void CancelDownloadTask()
+        {
+            this.CancelTask(downloadCliTokenSource);
+        }
+
         private void CancelTask(CancellationTokenSource tokenSource)
         {
             try
@@ -709,7 +714,7 @@ namespace Snyk.VisualStudio.Extension.Service
             }
             catch (Exception e)
             {
-                Logger.Error(e, "Try to cancel task");
+                Logger.Information(e, "Try to cancel task");
             }
             finally
             {

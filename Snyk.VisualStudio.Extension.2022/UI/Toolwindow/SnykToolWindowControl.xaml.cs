@@ -1,12 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Diagnostics;
-using System.Diagnostics.Tracing;
 using System.Linq;
 using System.Threading;
 using System.Windows;
 using System.Windows.Controls;
-using System.Windows.Documents;
 using Microsoft.VisualStudio;
 using Microsoft.VisualStudio.Shell;
 using Microsoft.VisualStudio.Shell.Interop;
@@ -14,6 +11,7 @@ using Serilog;
 using Snyk.Common;
 using Snyk.Common.Settings;
 using Snyk.VisualStudio.Extension.Commands;
+using Snyk.VisualStudio.Extension.Download;
 using Snyk.VisualStudio.Extension.Language;
 using Snyk.VisualStudio.Extension.Service;
 using Snyk.VisualStudio.Extension.UI.Notifications;
@@ -417,9 +415,10 @@ namespace Snyk.VisualStudio.Extension.UI.Toolwindow
         /// <param name="eventArgs">Event args.</param>
         public void OnDownloadCancelled(object sender, SnykCliDownloadEventArgs eventArgs)
         {
-            var snykCli = this.serviceProvider.NewCli();
-            if (snykCli.IsCliFileFound())
+            if (SnykCliDownloader.IsCliFileFound(serviceProvider.Options.CliCustomPath))
             {
+                if(!LanguageClientHelper.IsLanguageServerReady())
+                    ThreadHelper.JoinableTaskFactory.RunAsync(async () => await LanguageClientHelper.LanguageClientManager().StartServerAsync(true)).FireAndForget();
                 this.ShowWelcomeOrRunScanScreen();
             }
             else
@@ -430,9 +429,11 @@ namespace Snyk.VisualStudio.Extension.UI.Toolwindow
 
         private void OnDownloadFailed(object sender, Exception e)
         {
-            var snykCli = this.serviceProvider.NewCli();
-            if (snykCli.IsCliFileFound())
+            if (SnykCliDownloader.IsCliFileFound(serviceProvider.Options.CliCustomPath))
             {
+                if (!LanguageClientHelper.IsLanguageServerReady())
+                    ThreadHelper.JoinableTaskFactory.RunAsync(async () => await LanguageClientHelper.LanguageClientManager().StartServerAsync(true)).FireAndForget();
+                ThreadHelper.JoinableTaskFactory.RunAsync(async () => await LanguageClientHelper.LanguageClientManager().StartServerAsync(true)).FireAndForget();
                 this.ShowWelcomeOrRunScanScreen();
             }
             else

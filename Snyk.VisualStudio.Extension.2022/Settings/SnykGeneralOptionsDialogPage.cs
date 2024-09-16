@@ -36,8 +36,6 @@ namespace Snyk.VisualStudio.Extension.Settings
 
         private SnykGeneralSettingsUserControl generalSettingsUserControl;
 
-        private string organization;
-
         private static readonly ILogger Logger = LogManager.ForContext<SnykGeneralOptionsDialogPage>();
 
         public ISet<string> TrustedFolders
@@ -282,7 +280,6 @@ namespace Snyk.VisualStudio.Extension.Settings
                     return;
                 }
                 this.userStorageSettingsService.CliCustomPath = value;
-                HandleCliCustomPathChange();
             }
         }
 
@@ -324,16 +321,6 @@ namespace Snyk.VisualStudio.Extension.Settings
             HandleCliDownload();
         }
 
-        private void HandleCliCustomPathChange()
-        {
-            if (SnykCliDownloader.IsCliFileFound(this.CliCustomPath) && LanguageClientHelper.IsLanguageServerReady())
-            {
-                // Cancel running tasks
-                serviceProvider.TasksService.CancelTasks();
-                ThreadHelper.JoinableTaskFactory.RunAsync(async()=> await LanguageClientHelper.LanguageClientManager().RestartServerAsync()).FireAndForget();
-            }
-        }
-
         private void HandleCliDownload()
         {
             var releaseChannel = generalSettingsUserControl.GetReleaseChannel().Trim();
@@ -342,12 +329,18 @@ namespace Snyk.VisualStudio.Extension.Settings
             if (!manageBinariesAutomatically)
             {
                 this.userStorageSettingsService.SaveCurrentCliVersion(string.Empty);
+                this.BinariesAutoUpdate = false;
+                serviceProvider.TasksService.CancelDownloadTask();
+                if (LanguageClientHelper.LanguageClientManager() != null)
+                    ThreadHelper.JoinableTaskFactory.RunAsync(async () => await LanguageClientHelper.LanguageClientManager().RestartServerAsync()).FireAndForget();
+                return;
             }
             if (this.CliReleaseChannel != releaseChannel || this.CliDownloadUrl != downloadUrl || this.BinariesAutoUpdate != manageBinariesAutomatically)
             {
                 this.CliDownloadUrl = downloadUrl;
                 this.CliReleaseChannel = releaseChannel;
                 this.BinariesAutoUpdate = manageBinariesAutomatically;
+                serviceProvider.TasksService.CancelDownloadTask();
                 this.serviceProvider.TasksService.Download();
             }
         }
@@ -405,8 +398,7 @@ namespace Snyk.VisualStudio.Extension.Settings
         public bool Authenticate()
         {
             Logger.Information("Enter Authenticate method");
-            var cli = this.ServiceProvider.NewCli();
-            if (!cli.IsCliFileFound())
+            if (!SnykCliDownloader.IsCliFileFound(this.CliCustomPath))
             {
                 ThrowFileNotFoundException();
             }

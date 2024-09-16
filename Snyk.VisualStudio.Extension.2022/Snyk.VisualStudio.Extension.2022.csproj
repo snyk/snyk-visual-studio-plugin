@@ -79,7 +79,6 @@
     <Compile Include="Download\LatestReleaseInfo.cs" />
     <Compile Include="Download\SnykCliDownloader.cs" />
     <Compile Include="CLI\ICli.cs" />
-    <Compile Include="CLI\ICliProvider.cs" />
     <Compile Include="CLI\InvalidTokenException.cs" />
     <Compile Include="CLI\SnykCli.cs" />
     <Compile Include="Commands\AbstractSnykCommand.cs" />
