@@ -417,8 +417,8 @@ namespace Snyk.VisualStudio.Extension.UI.Toolwindow
         {
             if (SnykCliDownloader.IsCliFileFound(serviceProvider.Options.CliCustomPath))
             {
-                if(!LanguageClientHelper.IsLanguageServerReady())
-                    ThreadHelper.JoinableTaskFactory.RunAsync(async () => await LanguageClientHelper.LanguageClientManager().StartServerAsync(true)).FireAndForget();
+                if (LanguageClientHelper.LanguageClientManager() != null)
+                    ThreadHelper.JoinableTaskFactory.RunAsync(async () => await LanguageClientHelper.LanguageClientManager().RestartServerAsync()).FireAndForget();
                 this.ShowWelcomeOrRunScanScreen();
             }
             else
@@ -431,9 +431,8 @@ namespace Snyk.VisualStudio.Extension.UI.Toolwindow
         {
             if (SnykCliDownloader.IsCliFileFound(serviceProvider.Options.CliCustomPath))
             {
-                if (!LanguageClientHelper.IsLanguageServerReady())
-                    ThreadHelper.JoinableTaskFactory.RunAsync(async () => await LanguageClientHelper.LanguageClientManager().StartServerAsync(true)).FireAndForget();
-                ThreadHelper.JoinableTaskFactory.RunAsync(async () => await LanguageClientHelper.LanguageClientManager().StartServerAsync(true)).FireAndForget();
+                if (LanguageClientHelper.LanguageClientManager() != null)
+                    ThreadHelper.JoinableTaskFactory.RunAsync(async () => await LanguageClientHelper.LanguageClientManager().RestartServerAsync()).FireAndForget();
                 this.ShowWelcomeOrRunScanScreen();
             }
             else

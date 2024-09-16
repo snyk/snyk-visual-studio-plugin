@@ -331,8 +331,7 @@ namespace Snyk.VisualStudio.Extension.Settings
                 this.userStorageSettingsService.SaveCurrentCliVersion(string.Empty);
                 this.BinariesAutoUpdate = false;
                 serviceProvider.TasksService.CancelDownloadTask();
-                if (LanguageClientHelper.LanguageClientManager() != null)
-                    ThreadHelper.JoinableTaskFactory.RunAsync(async () => await LanguageClientHelper.LanguageClientManager().RestartServerAsync()).FireAndForget();
+                // Language Server restart will happen on DownloadCancelled Event.
                 return;
             }
             if (this.CliReleaseChannel != releaseChannel || this.CliDownloadUrl != downloadUrl || this.BinariesAutoUpdate != manageBinariesAutomatically)
