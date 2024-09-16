@@ -1,4 +1,8 @@
-﻿using Microsoft.VisualStudio.Sdk.TestFramework;
+﻿using System.IO;
+using Microsoft.VisualStudio.Sdk.TestFramework;
+using Moq;
+using Snyk.Common;
+using Snyk.VisualStudio.Extension.Service;
 using Snyk.VisualStudio.Extension.Settings;
 using Xunit;
 
@@ -7,9 +11,16 @@ namespace Snyk.VisualStudio.Extension.Tests
     [Collection(MockedVS.Collection)]
     public class GeneralOptionsDialogPageTest
     {
+        private ISnykServiceProvider serviceProvider;
         public GeneralOptionsDialogPageTest(GlobalServiceProvider sp)
         {
             sp.Reset();
+            var serviceProviderMock = new Mock<ISnykServiceProvider>();
+            var snykSolutionService = new SnykSolutionService();
+            serviceProviderMock.Setup(x => x.SolutionService).Returns(snykSolutionService);
+            serviceProvider = serviceProviderMock.Object;
+            var settingsFilePath = Path.Combine(SnykExtension.GetExtensionDirectoryPath(), "settings.json");
+            serviceProviderMock.Setup(x => x.UserStorageSettingsService).Returns(new SnykUserStorageSettingsService(settingsFilePath, serviceProvider));
         }
 
         [Theory]
@@ -29,6 +40,7 @@ namespace Snyk.VisualStudio.Extension.Tests
         public void SnykCodeSettingsUrl(string endpoint, string expected)
         {
             var optionsDialogPage = new SnykGeneralOptionsDialogPage();
+            optionsDialogPage.Initialize(this.serviceProvider);
             optionsDialogPage.CustomEndpoint = endpoint;
             Assert.Equal(expected, optionsDialogPage.SnykCodeSettingsUrl);
         }
@@ -46,6 +58,7 @@ namespace Snyk.VisualStudio.Extension.Tests
         public void TransformApiToNewSchema(string endpoint, string expected)
         {
             var optionsDialogPage = new SnykGeneralOptionsDialogPage();
+            optionsDialogPage.Initialize(this.serviceProvider);
             optionsDialogPage.CustomEndpoint = endpoint;
             Assert.Equal(expected, optionsDialogPage.GetCustomApiEndpoint());
         }
@@ -62,6 +75,7 @@ namespace Snyk.VisualStudio.Extension.Tests
         public void GetBaseAppUrl(string endpoint, string expected)
         {
             var optionsDialogPage = new SnykGeneralOptionsDialogPage();
+            optionsDialogPage.Initialize(this.serviceProvider);
             optionsDialogPage.CustomEndpoint = endpoint;
             Assert.Equal(expected, optionsDialogPage.GetBaseAppUrl());
         }

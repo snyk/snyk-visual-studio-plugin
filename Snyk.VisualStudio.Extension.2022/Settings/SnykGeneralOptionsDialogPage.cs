@@ -122,7 +122,7 @@ namespace Snyk.VisualStudio.Extension.Settings
                 }
 
                 var newApiEndpoint = ApiEndpointResolver.TranslateOldApiToNewApiEndpoint(value);
-                if (this.userStorageSettingsService.CustomEndpoint == newApiEndpoint)
+                if (this.userStorageSettingsService == null || this.userStorageSettingsService.CustomEndpoint == newApiEndpoint)
                 {
                     return;
                 }
@@ -401,7 +401,6 @@ namespace Snyk.VisualStudio.Extension.Settings
 
             this.userStorageSettingsService = this.serviceProvider.UserStorageSettingsService;
         }
-
         /// <inheritdoc />
         public bool Authenticate()
         {

@@ -309,8 +309,6 @@ namespace Snyk.VisualStudio.Extension
                 GeneralOptionsDialogPage =
                     (SnykGeneralOptionsDialogPage) GetDialogPage(typeof(SnykGeneralOptionsDialogPage));
 
-                GeneralOptionsDialogPage.LoadSettingsFromStorage();
-
                 Logger.Information("Call generalOptionsDialogPage.Initialize()");
 
                 GeneralOptionsDialogPage.Initialize(this.serviceProvider);
