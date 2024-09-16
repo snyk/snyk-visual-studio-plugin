@@ -2,7 +2,6 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Runtime.InteropServices;
-using System.Threading;
 using System.Threading.Tasks;
 using System.Windows.Forms;
 using Microsoft.VisualStudio.Shell;
@@ -35,8 +34,6 @@ namespace Snyk.VisualStudio.Extension.Settings
         private SnykUserStorageSettingsService userStorageSettingsService;
 
         private SnykGeneralSettingsUserControl generalSettingsUserControl;
-
-        private string customEndpoint;
 
         private string organization;
 
@@ -99,6 +96,7 @@ namespace Snyk.VisualStudio.Extension.Settings
                 if (this.userStorageSettingsService == null)
                     return;
                 this.userStorageSettingsService.AutoScan = value;
+                this.FireSettingsChangedEvent();
             }
         }
 
@@ -113,7 +111,7 @@ namespace Snyk.VisualStudio.Extension.Settings
         /// </summary>
         public string CustomEndpoint
         {
-            get => this.customEndpoint;
+            get => this.userStorageSettingsService.CustomEndpoint;
             set
             {
                 if (!Uri.IsWellFormedUriString(value, UriKind.Absolute))
@@ -123,12 +121,12 @@ namespace Snyk.VisualStudio.Extension.Settings
                 }
 
                 var newApiEndpoint = ApiEndpointResolver.TranslateOldApiToNewApiEndpoint(value);
-                if (this.customEndpoint == newApiEndpoint)
+                if (this.userStorageSettingsService.CustomEndpoint == newApiEndpoint)
                 {
                     return;
                 }
 
-                this.customEndpoint = newApiEndpoint;
+                this.userStorageSettingsService.CustomEndpoint = newApiEndpoint;
                 ApiToken = AuthenticationToken.EmptyToken;
                 this.FireSettingsChangedEvent();
             }
@@ -168,15 +166,14 @@ namespace Snyk.VisualStudio.Extension.Settings
         /// </summary>
         public string Organization
         {
-            get => this.organization;
+            get => this.userStorageSettingsService.Organization;
             set
             {
-                if (this.organization == value)
+                if (this.userStorageSettingsService == null || this.userStorageSettingsService.Organization == value)
                 {
                     return;
                 }
-
-                this.organization = value;
+                this.userStorageSettingsService.Organization = value;
                 this.FireSettingsChangedEvent();
             }
         }
@@ -184,7 +181,19 @@ namespace Snyk.VisualStudio.Extension.Settings
         /// <summary>
         /// Gets or sets a value indicating whether ignore unknown CA.
         /// </summary>
-        public bool IgnoreUnknownCA { get; set; }
+        public bool IgnoreUnknownCA
+        {
+            get => this.userStorageSettingsService.IgnoreUnknownCA;
+            set
+            {
+                if (this.userStorageSettingsService == null || this.userStorageSettingsService.IgnoreUnknownCA == value)
+                {
+                    return;
+                }
+                this.userStorageSettingsService.IgnoreUnknownCA = value;
+                this.FireSettingsChangedEvent();
+            }
+        }
 
         /// <inheritdoc/>
         public bool OssEnabled
@@ -249,7 +258,6 @@ namespace Snyk.VisualStudio.Extension.Settings
             }
         }
 
-        /// <inheritdoc/>
         public bool BinariesAutoUpdate
         {
             get => this.userStorageSettingsService.BinariesAutoUpdate;
@@ -273,6 +281,7 @@ namespace Snyk.VisualStudio.Extension.Settings
                     return;
                 }
                 this.userStorageSettingsService.CliCustomPath = value;
+                HandleCliCustomPathChange();
             }
         }
 
@@ -286,7 +295,6 @@ namespace Snyk.VisualStudio.Extension.Settings
                     return;
                 }
                 this.userStorageSettingsService.CliReleaseChannel = value;
-                // TODO: Handle CLI Path Change
             }
         }
         public string CliDownloadUrl
@@ -299,7 +307,6 @@ namespace Snyk.VisualStudio.Extension.Settings
                     return;
                 }
                 this.userStorageSettingsService.CliDownloadUrl = value;
-                HandleCliCustomPathChange();
             }
         }
 
@@ -310,7 +317,6 @@ namespace Snyk.VisualStudio.Extension.Settings
 
         protected override void OnClosed(EventArgs e)
         {
-            base.OnClosed(e);
             if (generalSettingsUserControl == null)
                 return;
             ResetControlScrollSettings(generalSettingsUserControl);
@@ -322,9 +328,10 @@ namespace Snyk.VisualStudio.Extension.Settings
             var languageClientManager = LanguageClientHelper.LanguageClientManager();
             if (languageClientManager == null)
                 return;
-
             if (File.Exists(this.CliDownloadUrl))
             {
+                // Cancel running tasks
+                serviceProvider.TasksService.CancelTasks();
                 ThreadHelper.JoinableTaskFactory.RunAsync(async()=> await languageClientManager.RestartServerAsync()).FireAndForget();
             }
         }
@@ -333,12 +340,16 @@ namespace Snyk.VisualStudio.Extension.Settings
         {
             var releaseChannel = generalSettingsUserControl.GetReleaseChannel().Trim();
             var downloadUrl = generalSettingsUserControl.GetCliDownloadUrl().Trim();
-            var autoScan = generalSettingsUserControl.GetAutoScanEnabled();
-            if (this.CliReleaseChannel != releaseChannel || this.CliDownloadUrl != downloadUrl || this.AutoScan != autoScan)
+            var manageBinariesAutomatically = generalSettingsUserControl.GetManageBinariesAutomatically();
+            if (!manageBinariesAutomatically)
+            {
+                this.userStorageSettingsService.SaveCurrentCliVersion(string.Empty);
+            }
+            if (this.CliReleaseChannel != releaseChannel || this.CliDownloadUrl != downloadUrl || this.BinariesAutoUpdate != manageBinariesAutomatically)
             {
                 this.CliDownloadUrl = downloadUrl;
                 this.CliReleaseChannel = releaseChannel;
-                this.AutoScan = autoScan;
+                this.BinariesAutoUpdate = manageBinariesAutomatically;
                 this.serviceProvider.TasksService.Download();
             }
         }
@@ -432,12 +443,12 @@ namespace Snyk.VisualStudio.Extension.Settings
 
         public string GetCustomApiEndpoint()
         {
-            return string.IsNullOrEmpty(customEndpoint) ? ApiEndpointResolver.DefaultApiEndpoint : ApiEndpointResolver.TranslateOldApiToNewApiEndpoint(customEndpoint);
+            return string.IsNullOrEmpty(CustomEndpoint) ? ApiEndpointResolver.DefaultApiEndpoint : ApiEndpointResolver.TranslateOldApiToNewApiEndpoint(CustomEndpoint);
         }
 
         public string GetBaseAppUrl()
         {
-            if (string.IsNullOrEmpty(customEndpoint))
+            if (string.IsNullOrEmpty(CustomEndpoint))
                 return ApiEndpointResolver.DefaultAppEndpoint;
 
             var result = ApiEndpointResolver.GetCustomEndpointUrlFromSnykApi(GetCustomApiEndpoint(), "app");

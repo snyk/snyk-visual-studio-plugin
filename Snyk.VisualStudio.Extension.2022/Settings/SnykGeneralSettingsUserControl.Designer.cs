@@ -80,6 +80,7 @@ namespace Snyk.VisualStudio.Extension.Settings
             this.label4 = new System.Windows.Forms.Label();
             this.label3 = new System.Windows.Forms.Label();
             this.cliDownloadUrlTextBox = new System.Windows.Forms.TextBox();
+            this.ReleaseChannelLink = new System.Windows.Forms.LinkLabel();
             ((System.ComponentModel.ISupportInitialize)(this.errorProvider)).BeginInit();
             this.generalSettingsGroupBox.SuspendLayout();
             this.productSelectionGroupBox.SuspendLayout();
@@ -366,7 +367,6 @@ namespace Snyk.VisualStudio.Extension.Settings
             this.ManageBinariesAutomaticallyCheckbox.Size = new System.Drawing.Size(15, 14);
             this.ManageBinariesAutomaticallyCheckbox.TabIndex = 13;
             this.ManageBinariesAutomaticallyCheckbox.UseVisualStyleBackColor = true;
-            this.ManageBinariesAutomaticallyCheckbox.CheckedChanged += new System.EventHandler(this.ManageBinariesAutomaticallyCheckbox_CheckedChanged);
             // 
             // label1
             // 
@@ -391,7 +391,7 @@ namespace Snyk.VisualStudio.Extension.Settings
             this.productSelectionGroupBox.Controls.Add(this.codeQualityEnabledCheckBox);
             this.productSelectionGroupBox.Controls.Add(this.ossEnabledCheckBox);
             this.productSelectionGroupBox.Controls.Add(this.codeSecurityEnabledCheckBox);
-            this.productSelectionGroupBox.Location = new System.Drawing.Point(10, 551);
+            this.productSelectionGroupBox.Location = new System.Drawing.Point(10, 578);
             this.productSelectionGroupBox.Margin = new System.Windows.Forms.Padding(2);
             this.productSelectionGroupBox.Name = "productSelectionGroupBox";
             this.productSelectionGroupBox.Padding = new System.Windows.Forms.Padding(8);
@@ -507,7 +507,7 @@ namespace Snyk.VisualStudio.Extension.Settings
             // userExperienceGroupBox
             // 
             this.userExperienceGroupBox.Controls.Add(this.autoScanCheckBox);
-            this.userExperienceGroupBox.Location = new System.Drawing.Point(10, 716);
+            this.userExperienceGroupBox.Location = new System.Drawing.Point(10, 741);
             this.userExperienceGroupBox.Margin = new System.Windows.Forms.Padding(2);
             this.userExperienceGroupBox.Name = "userExperienceGroupBox";
             this.userExperienceGroupBox.Padding = new System.Windows.Forms.Padding(8);
@@ -551,6 +551,7 @@ namespace Snyk.VisualStudio.Extension.Settings
             // 
             // ExecutablesGroupBox
             // 
+            this.ExecutablesGroupBox.Controls.Add(this.ReleaseChannelLink);
             this.ExecutablesGroupBox.Controls.Add(this.releaseChannel);
             this.ExecutablesGroupBox.Controls.Add(this.label4);
             this.ExecutablesGroupBox.Controls.Add(this.label3);
@@ -564,7 +565,7 @@ namespace Snyk.VisualStudio.Extension.Settings
             this.ExecutablesGroupBox.Controls.Add(this.CliPathTextBox);
             this.ExecutablesGroupBox.Location = new System.Drawing.Point(10, 348);
             this.ExecutablesGroupBox.Name = "ExecutablesGroupBox";
-            this.ExecutablesGroupBox.Size = new System.Drawing.Size(560, 198);
+            this.ExecutablesGroupBox.Size = new System.Drawing.Size(560, 225);
             this.ExecutablesGroupBox.TabIndex = 19;
             this.ExecutablesGroupBox.TabStop = false;
             this.ExecutablesGroupBox.Text = "Executables Settings";
@@ -604,6 +605,17 @@ namespace Snyk.VisualStudio.Extension.Settings
             this.cliDownloadUrlTextBox.Size = new System.Drawing.Size(300, 20);
             this.cliDownloadUrlTextBox.TabIndex = 21;
             // 
+            // ReleaseChannelLink
+            // 
+            this.ReleaseChannelLink.AutoSize = true;
+            this.ReleaseChannelLink.Location = new System.Drawing.Point(6, 196);
+            this.ReleaseChannelLink.Name = "ReleaseChannelLink";
+            this.ReleaseChannelLink.Size = new System.Drawing.Size(176, 13);
+            this.ReleaseChannelLink.TabIndex = 20;
+            this.ReleaseChannelLink.TabStop = true;
+            this.ReleaseChannelLink.Text = "Find out about our release channels";
+            this.ReleaseChannelLink.LinkClicked += new System.Windows.Forms.LinkLabelLinkClickedEventHandler(this.ReleaseChannelLink_LinkClicked);
+            // 
             // SnykGeneralSettingsUserControl
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
@@ -616,7 +628,7 @@ namespace Snyk.VisualStudio.Extension.Settings
             this.Margin = new System.Windows.Forms.Padding(2);
             this.MinimumSize = new System.Drawing.Size(795, 750);
             this.Name = "SnykGeneralSettingsUserControl";
-            this.Size = new System.Drawing.Size(795, 788);
+            this.Size = new System.Drawing.Size(795, 822);
             ((System.ComponentModel.ISupportInitialize)(this.errorProvider)).EndInit();
             this.generalSettingsGroupBox.ResumeLayout(false);
             this.generalSettingsGroupBox.PerformLayout();
@@ -678,5 +690,6 @@ namespace Snyk.VisualStudio.Extension.Settings
         private Label label4;
         private Label label3;
         private TextBox cliDownloadUrlTextBox;
+        private LinkLabel ReleaseChannelLink;
     }
 }

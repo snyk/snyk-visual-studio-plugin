@@ -49,6 +49,7 @@
 
                     <!-- Set tree items to expand by default -->
                     <Setter Property="IsExpanded" Value="True"/>
+                    <Setter Property="IsSelected" Value="{Binding IsSelected, Mode=TwoWay}"/>
                 </Style>
             </TreeView.ItemContainerStyle>
         </TreeView>

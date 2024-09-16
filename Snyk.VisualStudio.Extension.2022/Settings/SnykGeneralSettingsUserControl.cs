@@ -103,7 +103,7 @@ namespace Snyk.VisualStudio.Extension.Settings
                 : this.OptionsDialogPage.CliCustomPath;
 
             this.CliPathTextBox.Text = cliPath;
-            if (releaseChannel.SelectedIndex == -1)
+            if (releaseChannel.DataSource == null)
             {
                 this.releaseChannel.DataSource = ReleaseChannelList();
             }
@@ -119,7 +119,7 @@ namespace Snyk.VisualStudio.Extension.Settings
             this.authType.SelectedValue = this.OptionsDialogPage.AuthenticationMethod;
         }
 
-        private static IEnumerable<object> AuthenticationMethodList()
+        private IEnumerable<object> AuthenticationMethodList()
         {
             return Enum.GetValues(typeof(AuthenticationType))
                 .Cast<Enum>()
@@ -130,9 +130,14 @@ namespace Snyk.VisualStudio.Extension.Settings
                 })
                 .ToList();
         }
-        private static IEnumerable<string> ReleaseChannelList()
+        private IEnumerable<string> ReleaseChannelList()
         {
-            return new string[] { "stable", "rc", "preview" };
+            var defaultList =  new List<string>() { "stable", "rc", "preview" };
+            if (!defaultList.Contains(this.OptionsDialogPage.CliReleaseChannel))
+            {
+                defaultList.Add(this.OptionsDialogPage.CliReleaseChannel);
+            }
+            return defaultList;
         }
         private void OptionsDialogPageOnSettingsChanged(object sender, SnykSettingsChangedEventArgs e) =>
             ThreadHelper.JoinableTaskFactory.RunAsync(async () =>
@@ -192,6 +197,11 @@ namespace Snyk.VisualStudio.Extension.Settings
         public void InvalidateApiToken()
         {
             this.tokenTextBox.Text = string.Empty;
+            if(LanguageClientHelper.IsLanguageServerReady())
+                ThreadHelper.JoinableTaskFactory.RunAsync(async () =>
+                {
+                    await ServiceProvider.Package.LanguageClientManager.InvokeLogout(SnykVSPackage.Instance.DisposalToken);
+                }).FireAndForget();
         }
 
         public async Task OnAuthenticationFailAsync(string errorMessage)
@@ -464,11 +474,6 @@ namespace Snyk.VisualStudio.Extension.Settings
             Process.Start("https://docs.snyk.io/ide-tools/visual-studio-extension#organization-setting");
         }
 
-        private void ManageBinariesAutomaticallyCheckbox_CheckedChanged(object sender, EventArgs e)
-        {
-            this.OptionsDialogPage.BinariesAutoUpdate = this.ManageBinariesAutomaticallyCheckbox.Checked;
-        }
-
         private void CliPathBrowseButton_Click(object sender, EventArgs e)
         {
             if (this.customCliPathFileDialog.ShowDialog() == DialogResult.OK)
@@ -498,6 +503,7 @@ namespace Snyk.VisualStudio.Extension.Settings
 
         private void autoScanCheckBox_CheckedChanged(object sender, EventArgs e)
         {
+            this.OptionsDialogPage.AutoScan = autoScanCheckBox.Checked;
         }
 
         private void iacEnabledCheckbox_CheckedChanged(object sender, EventArgs e)
@@ -515,9 +521,15 @@ namespace Snyk.VisualStudio.Extension.Settings
             return cliDownloadUrlTextBox.Text;
         }
 
-        public bool GetAutoScanEnabled()
+        public bool GetManageBinariesAutomatically()
         {
-            return autoScanCheckBox.Checked;
+            return ManageBinariesAutomaticallyCheckbox.Checked;
+        }
+
+        private void ReleaseChannelLink_LinkClicked(object sender, LinkLabelLinkClickedEventArgs e)
+        {
+            this.ReleaseChannelLink.LinkVisited = true;
+            Process.Start("https://docs.snyk.io/snyk-cli/releases-and-channels-for-the-snyk-cli");
         }
     }
 }

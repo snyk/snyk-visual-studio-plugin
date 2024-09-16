@@ -152,6 +152,39 @@ namespace Snyk.VisualStudio.Extension.Settings
             }
         }
 
+        public bool IgnoreUnknownCA
+        {
+            get => this.LoadSettings().IgnoreUnknownCA;
+            set
+            {
+                var settings = this.LoadSettings();
+                settings.IgnoreUnknownCA = value;
+                this.settingsLoader.Save(settings);
+            }
+        }
+
+        public string Organization
+        {
+            get => this.LoadSettings().Organization;
+            set
+            {
+                var settings = this.LoadSettings();
+                settings.Organization = value;
+                this.settingsLoader.Save(settings);
+            }
+        }
+
+        public string CustomEndpoint
+        {
+            get => this.LoadSettings().CustomEndpoint;
+            set
+            {
+                var settings = this.LoadSettings();
+                settings.CustomEndpoint = value;
+                this.settingsLoader.Save(settings);
+            }
+        }
+
         /// <summary>
         /// Get is all projects enabled.
         /// </summary>

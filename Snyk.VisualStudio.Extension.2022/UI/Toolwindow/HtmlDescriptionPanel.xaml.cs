@@ -7,17 +7,16 @@ namespace Snyk.VisualStudio.Extension.UI.Toolwindow
     public partial class HtmlDescriptionPanel : UserControl
     {
         private IHtmlProvider htmlProvider;
-        private System.Windows.Forms.WebBrowser HtmlViewer;
+        private WebBrowser HtmlViewer;
 
         public HtmlDescriptionPanel()
         {
             this.InitializeComponent();
 
-            //initialise the windows.forms browser component
             HtmlViewer = new WebBrowser
             {
-                //disable the default context menu
-                IsWebBrowserContextMenuEnabled = false
+                IsWebBrowserContextMenuEnabled = false,
+                ScriptErrorsSuppressed = true
             };
 
             HtmlViewer.ObjectForScripting = new SnykScriptManager();

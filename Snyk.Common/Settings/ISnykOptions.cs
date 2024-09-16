@@ -102,11 +102,6 @@ namespace Snyk.Common.Settings
         /// <returns>Returns true if authenticated successfully, or if a valid token was loaded from storage.</returns>
         bool Authenticate();
 
-        /// <summary>
-        /// Force Visual Studio to load Settings from storage.
-        /// </summary>
-        void LoadSettingsFromStorage();
-
         SastSettings SastSettings { get; set; }
         Task OnAuthenticationSuccessfulAsync(string token);
         Task OnAuthenticationFailedAsync(string errorMessage);

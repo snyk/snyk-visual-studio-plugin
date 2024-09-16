@@ -392,6 +392,7 @@ namespace Snyk.VisualStudio.Extension.UI.Toolwindow
             {
                 this.context.TransitionTo(DownloadState.Instance);
             }
+            this.Show();
         }
 
         /// <summary>
@@ -603,6 +604,7 @@ namespace Snyk.VisualStudio.Extension.UI.Toolwindow
                 await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
 
                 this.resultsTree.OssResult = cliResult;
+                this.resultsTree.SetCurrentSelectedNode();
             });
         }
 
@@ -617,6 +619,7 @@ namespace Snyk.VisualStudio.Extension.UI.Toolwindow
                 if (analysisResult != null)
                 {
                     this.resultsTree.AnalysisResults = analysisResult;
+                    this.resultsTree.SetCurrentSelectedNode();
                 }
                 else
                 {
@@ -637,6 +640,7 @@ namespace Snyk.VisualStudio.Extension.UI.Toolwindow
                 if (analysisResult != null)
                 {
                     this.resultsTree.IacResults = analysisResult;
+                    this.resultsTree.SetCurrentSelectedNode();
                 }
                 else
                 {
@@ -718,12 +722,19 @@ namespace Snyk.VisualStudio.Extension.UI.Toolwindow
             var ossTreeNode = this.resultsTree.SelectedItem as OssVulnerabilityTreeNode;
 
             var issue = ossTreeNode?.Issue;
-
+            this.resultsTree.CurrentTreeNode = ossTreeNode;
             if (issue != null)
             {
                 this.DescriptionPanel.Visibility = Visibility.Visible;
 
                 this.DescriptionPanel.SetContent(issue.AdditionalData?.Details, Product.Oss);
+
+                VsCodeService.Instance.OpenAndNavigate(
+                    issue.FilePath,
+                    issue.Range.Start.Line,
+                    issue.Range.Start.Character,
+                    issue.Range.End.Line,
+                    issue.Range.End.Character);
             }
             else
             {
@@ -736,11 +747,12 @@ namespace Snyk.VisualStudio.Extension.UI.Toolwindow
             this.DescriptionPanel.Visibility = Visibility.Visible;
 
             var snykCodeTreeNode = this.resultsTree.SelectedItem as SnykCodeVulnerabilityTreeNode;
+            this.resultsTree.CurrentTreeNode = snykCodeTreeNode;
             if (snykCodeTreeNode == null) return;
-            
-            this.DescriptionPanel.SetContent(snykCodeTreeNode.Issue.AdditionalData?.Details, Product.Code);
 
             var issue = snykCodeTreeNode.Issue;
+            this.DescriptionPanel.SetContent(snykCodeTreeNode.Issue.AdditionalData?.Details, Product.Code);
+
 
             VsCodeService.Instance.OpenAndNavigate(
                 issue.FilePath,
@@ -755,11 +767,12 @@ namespace Snyk.VisualStudio.Extension.UI.Toolwindow
             this.DescriptionPanel.Visibility = Visibility.Visible;
 
             var iacTreeNode = this.resultsTree.SelectedItem as IacVulnerabilityTreeNode;
+            this.resultsTree.CurrentTreeNode = iacTreeNode;
             if (iacTreeNode == null) return;
-
+            
+            var issue = iacTreeNode.Issue;
             this.DescriptionPanel.SetContent(iacTreeNode.Issue.AdditionalData?.CustomUIContent, Product.Iac);
 
-            var issue = iacTreeNode.Issue;
 
             VsCodeService.Instance.OpenAndNavigate(
                 issue.FilePath,
