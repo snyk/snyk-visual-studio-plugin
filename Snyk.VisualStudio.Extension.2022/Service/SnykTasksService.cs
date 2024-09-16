@@ -781,7 +781,6 @@ namespace Snyk.VisualStudio.Extension.Service
                 var downloadPath = this.serviceProvider.Options.CliCustomPath;
                 await cliDownloader.AutoUpdateCliAsync(
                     progressWorker,
-                    lastCliReleaseDate,
                     downloadPath,
                     downloadFinishedCallbacks: downloadFinishedCallbacks);
             }

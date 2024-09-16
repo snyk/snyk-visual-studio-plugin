@@ -147,13 +147,10 @@ namespace Snyk.VisualStudio.Extension.Download
         /// Check is there a new version on the server and if there is, download it.
         /// </summary>
         /// <param name="progressWorker">Progress worker for update get download progress.</param>
-        /// <param name="lastCheckDate">Last date when it check for CLI updates.</param>
         /// <param name="filePath">CLI file destination path or null.</param>
         /// <param name="downloadFinishedCallbacks">List of callback for download finished event.</param>
         /// <returns>A <see cref="Task"/> representing the asynchronous operation.</returns>
-        public async Task AutoUpdateCliAsync(
-            ISnykProgressWorker progressWorker,
-            DateTime lastCheckDate,
+        public async Task AutoUpdateCliAsync(ISnykProgressWorker progressWorker,
             string filePath = null,
             List<CliDownloadFinishedCallback> downloadFinishedCallbacks = null)
         {
