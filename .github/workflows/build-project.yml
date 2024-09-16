@@ -51,7 +51,7 @@ jobs:
         SentryDsn: ${{ secrets.SENTRY_DSN }}
         Environment: ${{ secrets.SENTRY_ENVIRONMENT }}
 
-    - uses: actions/cache@v2
+    - uses: actions/cache@v4
       with:
         path: ~/.nuget/packages
         key: ${{ runner.os }}-nuget-${{ hashFiles('**/packages.config') }}
@@ -72,7 +72,7 @@ jobs:
       shell: powershell
 
     - name: Upload build artifacts
-      uses: actions/upload-artifact@v2
+      uses: actions/upload-artifact@v4
       with:
         name: build-artifacts
         path: |
