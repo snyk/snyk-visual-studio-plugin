@@ -76,11 +76,11 @@ namespace Snyk.VisualStudio.Extension.Settings
             this.snykCodeQualityInfoToolTip = new System.Windows.Forms.ToolTip(this.components);
             this.customCliPathFileDialog = new System.Windows.Forms.OpenFileDialog();
             this.ExecutablesGroupBox = new System.Windows.Forms.GroupBox();
-            this.releaseChannel = new System.Windows.Forms.ComboBox();
-            this.label4 = new System.Windows.Forms.Label();
-            this.label3 = new System.Windows.Forms.Label();
-            this.cliDownloadUrlTextBox = new System.Windows.Forms.TextBox();
             this.ReleaseChannelLink = new System.Windows.Forms.LinkLabel();
+            this.releaseChannel = new System.Windows.Forms.ComboBox();
+            this.cliReleaseChannelLabel = new System.Windows.Forms.Label();
+            this.cliBaseDownloadUrl = new System.Windows.Forms.Label();
+            this.cliDownloadUrlTextBox = new System.Windows.Forms.TextBox();
             ((System.ComponentModel.ISupportInitialize)(this.errorProvider)).BeginInit();
             this.generalSettingsGroupBox.SuspendLayout();
             this.productSelectionGroupBox.SuspendLayout();
@@ -553,8 +553,8 @@ namespace Snyk.VisualStudio.Extension.Settings
             // 
             this.ExecutablesGroupBox.Controls.Add(this.ReleaseChannelLink);
             this.ExecutablesGroupBox.Controls.Add(this.releaseChannel);
-            this.ExecutablesGroupBox.Controls.Add(this.label4);
-            this.ExecutablesGroupBox.Controls.Add(this.label3);
+            this.ExecutablesGroupBox.Controls.Add(this.cliReleaseChannelLabel);
+            this.ExecutablesGroupBox.Controls.Add(this.cliBaseDownloadUrl);
             this.ExecutablesGroupBox.Controls.Add(this.richTextBox1);
             this.ExecutablesGroupBox.Controls.Add(this.cliDownloadUrlTextBox);
             this.ExecutablesGroupBox.Controls.Add(this.CliPathLabel);
@@ -570,41 +570,6 @@ namespace Snyk.VisualStudio.Extension.Settings
             this.ExecutablesGroupBox.TabStop = false;
             this.ExecutablesGroupBox.Text = "Executables Settings";
             // 
-            // releaseChannel
-            // 
-            this.releaseChannel.FormattingEnabled = true;
-            this.releaseChannel.Location = new System.Drawing.Point(179, 169);
-            this.releaseChannel.Name = "releaseChannel";
-            this.releaseChannel.Size = new System.Drawing.Size(121, 21);
-            this.releaseChannel.TabIndex = 23;
-            // 
-            // label4
-            // 
-            this.label4.AutoSize = true;
-            this.label4.Location = new System.Drawing.Point(4, 172);
-            this.label4.Margin = new System.Windows.Forms.Padding(2, 0, 2, 0);
-            this.label4.Name = "label4";
-            this.label4.Size = new System.Drawing.Size(104, 13);
-            this.label4.TabIndex = 22;
-            this.label4.Text = "CLI release channel:";
-            // 
-            // label3
-            // 
-            this.label3.AutoSize = true;
-            this.label3.Location = new System.Drawing.Point(4, 22);
-            this.label3.Margin = new System.Windows.Forms.Padding(2, 0, 2, 0);
-            this.label3.Name = "label3";
-            this.label3.Size = new System.Drawing.Size(160, 13);
-            this.label3.TabIndex = 20;
-            this.label3.Text = "Base URL to download the CLI: ";
-            // 
-            // cliDownloadUrlTextBox
-            // 
-            this.cliDownloadUrlTextBox.Location = new System.Drawing.Point(181, 19);
-            this.cliDownloadUrlTextBox.Name = "cliDownloadUrlTextBox";
-            this.cliDownloadUrlTextBox.Size = new System.Drawing.Size(300, 20);
-            this.cliDownloadUrlTextBox.TabIndex = 21;
-            // 
             // ReleaseChannelLink
             // 
             this.ReleaseChannelLink.AutoSize = true;
@@ -615,6 +580,41 @@ namespace Snyk.VisualStudio.Extension.Settings
             this.ReleaseChannelLink.TabStop = true;
             this.ReleaseChannelLink.Text = "Find out about our release channels";
             this.ReleaseChannelLink.LinkClicked += new System.Windows.Forms.LinkLabelLinkClickedEventHandler(this.ReleaseChannelLink_LinkClicked);
+            // 
+            // releaseChannel
+            // 
+            this.releaseChannel.FormattingEnabled = true;
+            this.releaseChannel.Location = new System.Drawing.Point(179, 169);
+            this.releaseChannel.Name = "releaseChannel";
+            this.releaseChannel.Size = new System.Drawing.Size(121, 21);
+            this.releaseChannel.TabIndex = 23;
+            // 
+            // cliReleaseChannelLabel
+            // 
+            this.cliReleaseChannelLabel.AutoSize = true;
+            this.cliReleaseChannelLabel.Location = new System.Drawing.Point(4, 172);
+            this.cliReleaseChannelLabel.Margin = new System.Windows.Forms.Padding(2, 0, 2, 0);
+            this.cliReleaseChannelLabel.Name = "cliReleaseChannelLabel";
+            this.cliReleaseChannelLabel.Size = new System.Drawing.Size(104, 13);
+            this.cliReleaseChannelLabel.TabIndex = 22;
+            this.cliReleaseChannelLabel.Text = "CLI release channel:";
+            // 
+            // cliBaseDownloadUrl
+            // 
+            this.cliBaseDownloadUrl.AutoSize = true;
+            this.cliBaseDownloadUrl.Location = new System.Drawing.Point(4, 22);
+            this.cliBaseDownloadUrl.Margin = new System.Windows.Forms.Padding(2, 0, 2, 0);
+            this.cliBaseDownloadUrl.Name = "cliBaseDownloadUrl";
+            this.cliBaseDownloadUrl.Size = new System.Drawing.Size(160, 13);
+            this.cliBaseDownloadUrl.TabIndex = 20;
+            this.cliBaseDownloadUrl.Text = "Base URL to download the CLI: ";
+            // 
+            // cliDownloadUrlTextBox
+            // 
+            this.cliDownloadUrlTextBox.Location = new System.Drawing.Point(181, 19);
+            this.cliDownloadUrlTextBox.Name = "cliDownloadUrlTextBox";
+            this.cliDownloadUrlTextBox.Size = new System.Drawing.Size(300, 20);
+            this.cliDownloadUrlTextBox.TabIndex = 21;
             // 
             // SnykGeneralSettingsUserControl
             // 
@@ -687,8 +687,8 @@ namespace Snyk.VisualStudio.Extension.Settings
         private Label snykIacInfoLabel;
         private CheckBox iacEnabledCheckbox;
         private ComboBox releaseChannel;
-        private Label label4;
-        private Label label3;
+        private Label cliReleaseChannelLabel;
+        private Label cliBaseDownloadUrl;
         private TextBox cliDownloadUrlTextBox;
         private LinkLabel ReleaseChannelLink;
     }
