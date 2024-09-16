@@ -53,6 +53,13 @@ namespace Snyk.VisualStudio.Extension.Download
             ? SnykCli.GetSnykCliDefaultPath()
             : customCliPath;
 
+
+        public static bool IsCliFileFound(string cliCustomPath)
+        {
+            var path = GetCliFilePath(cliCustomPath);
+            return File.Exists(path);
+        }
+
         /// <summary>
         /// Request last cli information.
         /// </summary>

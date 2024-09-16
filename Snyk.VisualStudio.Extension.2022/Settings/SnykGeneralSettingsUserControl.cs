@@ -15,6 +15,7 @@ using Snyk.Common;
 using Snyk.Common.Authentication;
 using Snyk.Common.Settings;
 using Snyk.VisualStudio.Extension.CLI;
+using Snyk.VisualStudio.Extension.Download;
 using Snyk.VisualStudio.Extension.Language;
 using Snyk.VisualStudio.Extension.Service;
 using Snyk.VisualStudio.Extension.UI.Notifications;
@@ -263,7 +264,7 @@ namespace Snyk.VisualStudio.Extension.Settings
 
             var serviceProvider = this.ServiceProvider;
 
-            if (IsCliFileFound(serviceProvider.Options.CliCustomPath))
+            if (SnykCliDownloader.IsCliFileFound(serviceProvider.Options.CliCustomPath))
             {
                 var authenticated = serviceProvider.Options.Authenticate();
                 if (authenticated)
@@ -280,12 +281,6 @@ namespace Snyk.VisualStudio.Extension.Settings
                 logger.Information("CLI doesn't exists. Download CLI before get Api token");
                 await serviceProvider.TasksService.DownloadAsync(() => this.OptionsDialogPage.Authenticate());
             }
-        }
-
-        public bool IsCliFileFound(string cliCustomPath)
-        {
-            var path = string.IsNullOrEmpty(cliCustomPath) ? SnykCli.GetSnykCliDefaultPath() : cliCustomPath;
-            return File.Exists(path);
         }
 
         private bool IsValidUrl(string url) => Uri.IsWellFormedUriString(url, UriKind.Absolute);

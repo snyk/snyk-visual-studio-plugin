@@ -10,6 +10,7 @@ using Snyk.Common;
 using Snyk.Common.Authentication;
 using Snyk.Common.Service;
 using Snyk.Common.Settings;
+using Snyk.VisualStudio.Extension.Download;
 using Snyk.VisualStudio.Extension.Language;
 using Snyk.VisualStudio.Extension.Service;
 
@@ -325,14 +326,11 @@ namespace Snyk.VisualStudio.Extension.Settings
 
         private void HandleCliCustomPathChange()
         {
-            var languageClientManager = LanguageClientHelper.LanguageClientManager();
-            if (languageClientManager == null)
-                return;
-            if (File.Exists(this.CliDownloadUrl))
+            if (SnykCliDownloader.IsCliFileFound(this.CliCustomPath) && LanguageClientHelper.IsLanguageServerReady())
             {
                 // Cancel running tasks
                 serviceProvider.TasksService.CancelTasks();
-                ThreadHelper.JoinableTaskFactory.RunAsync(async()=> await languageClientManager.RestartServerAsync()).FireAndForget();
+                ThreadHelper.JoinableTaskFactory.RunAsync(async()=> await LanguageClientHelper.LanguageClientManager().RestartServerAsync()).FireAndForget();
             }
         }
 
