@@ -541,9 +541,9 @@ namespace Snyk.VisualStudio.Extension.UI.Toolwindow
 
             var options = this.serviceProvider.Options;
             
-            this.resultsTree.OssRootNode.State = this.GetTreeNodeState(options);
-            this.resultsTree.IacRootNode.State = this.GetTreeNodeState(options);
-            
+            this.resultsTree.OssRootNode.State = options.ApiToken.IsValid() && options.OssEnabled ? RootTreeNodeState.Enabled : RootTreeNodeState.Disabled;
+            this.resultsTree.IacRootNode.State = options.ApiToken.IsValid() && options.IacEnabled ? RootTreeNodeState.Enabled : RootTreeNodeState.Disabled;
+
             try
             {
                 SastSettings sastSettings = null;
@@ -566,10 +566,6 @@ namespace Snyk.VisualStudio.Extension.UI.Toolwindow
                 NotificationService.Instance.ShowErrorInfoBar(e.Message);
             }
         });
-
-        private RootTreeNodeState GetTreeNodeState(ISnykOptions options) =>
-            options.ApiToken.IsValid() && options.IacEnabled ? RootTreeNodeState.Enabled : RootTreeNodeState.Disabled;
-
 
         private RootTreeNodeState GetSastRootNodeState(SastSettings sastSettings, bool enabledInOptions)
         {

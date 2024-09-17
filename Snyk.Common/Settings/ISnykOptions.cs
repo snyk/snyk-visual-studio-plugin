@@ -101,6 +101,7 @@ namespace Snyk.Common.Settings
         /// </summary>
         /// <returns>Returns true if authenticated successfully, or if a valid token was loaded from storage.</returns>
         bool Authenticate();
+        public string CurrentCliVersion { get; set; }
 
         SastSettings SastSettings { get; set; }
         Task OnAuthenticationSuccessfulAsync(string token);

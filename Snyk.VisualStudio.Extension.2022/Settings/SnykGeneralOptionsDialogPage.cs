@@ -69,7 +69,6 @@ namespace Snyk.VisualStudio.Extension.Settings
                 if (this.userStorageSettingsService == null || this.userStorageSettingsService.Token == tokenAsString)
                     return;
                 this.userStorageSettingsService.Token = tokenAsString;
-                this.FireSettingsChangedEvent();
             }
         }
         
@@ -83,7 +82,6 @@ namespace Snyk.VisualStudio.Extension.Settings
                 this.userStorageSettingsService.AuthenticationMethod = value;
                 this.GeneralSettingsUserControl.InvalidateApiToken();
                 ApiToken = AuthenticationToken.EmptyToken;
-                this.FireSettingsChangedEvent();
             }
         }
 
@@ -95,7 +93,6 @@ namespace Snyk.VisualStudio.Extension.Settings
                 if (this.userStorageSettingsService == null)
                     return;
                 this.userStorageSettingsService.AutoScan = value;
-                this.FireSettingsChangedEvent();
             }
         }
 
@@ -127,7 +124,6 @@ namespace Snyk.VisualStudio.Extension.Settings
 
                 this.userStorageSettingsService.CustomEndpoint = newApiEndpoint;
                 ApiToken = AuthenticationToken.EmptyToken;
-                this.FireSettingsChangedEvent();
             }
         }
 
@@ -173,7 +169,6 @@ namespace Snyk.VisualStudio.Extension.Settings
                     return;
                 }
                 this.userStorageSettingsService.Organization = value;
-                this.FireSettingsChangedEvent();
             }
         }
 
@@ -182,78 +177,73 @@ namespace Snyk.VisualStudio.Extension.Settings
         /// </summary>
         public bool IgnoreUnknownCA
         {
-            get => this.userStorageSettingsService.IgnoreUnknownCA;
+            get => this.userStorageSettingsService.IgnoreUnknownCa;
             set
             {
-                if (this.userStorageSettingsService == null || this.userStorageSettingsService.IgnoreUnknownCA == value)
+                if (this.userStorageSettingsService == null || this.userStorageSettingsService.IgnoreUnknownCa == value)
                 {
                     return;
                 }
-                this.userStorageSettingsService.IgnoreUnknownCA = value;
-                this.FireSettingsChangedEvent();
+                this.userStorageSettingsService.IgnoreUnknownCa = value;
             }
         }
 
         /// <inheritdoc/>
         public bool OssEnabled
         {
-            get => this.userStorageSettingsService.IsOssEnabled();
+            get => this.userStorageSettingsService.OssEnabled;
             set
             {
-                if (this.userStorageSettingsService?.IsOssEnabled() == value)
+                if (this.userStorageSettingsService == null || userStorageSettingsService.OssEnabled == value)
                 {
                     return;
                 }
 
-                this.userStorageSettingsService?.SaveOssEnabled(value);
-                this.FireSettingsChangedEvent();
+                this.userStorageSettingsService.OssEnabled = value;
             }
         }
 
         public bool IacEnabled
         {
-            get => this.userStorageSettingsService.IsIacEnabled();
+            get => this.userStorageSettingsService.IacEnabled;
             set
             {
-                if (this.userStorageSettingsService?.IsIacEnabled() == value)
+                if (this.userStorageSettingsService == null || userStorageSettingsService.IacEnabled == value)
                 {
                     return;
                 }
 
-                this.userStorageSettingsService?.SaveIacEnabled(value);
-                this.FireSettingsChangedEvent();
+                this.userStorageSettingsService.IacEnabled = value;
             }
         }
 
         /// <inheritdoc/>
         public bool SnykCodeSecurityEnabled
         {
-            get => this.userStorageSettingsService.IsSnykCodeSecurityEnabled();
+            get => this.userStorageSettingsService.SnykCodeSecurityEnabled;
             set
             {
-                if (this.userStorageSettingsService?.IsSnykCodeSecurityEnabled() == value)
+                if (this.userStorageSettingsService == null || userStorageSettingsService.SnykCodeSecurityEnabled == value)
                 {
                     return;
                 }
 
-                this.userStorageSettingsService?.SaveSnykCodeSecurityEnabled(value);
-                this.FireSettingsChangedEvent();
+                this.userStorageSettingsService.SnykCodeSecurityEnabled = value;
             }
         }
 
         /// <inheritdoc/>
         public bool SnykCodeQualityEnabled
         {
-            get => this.userStorageSettingsService.IsSnykCodeQualityEnabled();
+            get => this.userStorageSettingsService.SnykCodeQualityEnabled;
             set
             {
-                if (this.userStorageSettingsService?.IsSnykCodeQualityEnabled() == value)
+                if (this.userStorageSettingsService == null || userStorageSettingsService.SnykCodeQualityEnabled == value)
                 {
                     return;
                 }
 
-                this.userStorageSettingsService?.SaveSnykCodeQualityEnabled(value);
-                this.FireSettingsChangedEvent();
+                this.userStorageSettingsService.SnykCodeQualityEnabled = value;
             }
         }
 
@@ -308,17 +298,37 @@ namespace Snyk.VisualStudio.Extension.Settings
             }
         }
 
+        public string CurrentCliVersion
+        {
+            get => this.userStorageSettingsService.CurrentCliVersion;
+            set
+            {
+                if (this.userStorageSettingsService == null || this.userStorageSettingsService.CurrentCliVersion == value)
+                {
+                    return;
+                }
+                this.userStorageSettingsService.CurrentCliVersion = value;
+            }
+        }
+
         /// <summary>
         /// Gets a value indicating whether General Settings control.
         /// </summary>
         protected override IWin32Window Window => this.GeneralSettingsUserControl;
+
+        // This method is used when the user clicks "Ok"
+        public override void SaveSettingsToStorage()
+        {
+            HandleCliDownload();
+            this.userStorageSettingsService?.SaveSettings();
+            this.FireSettingsChangedEvent();
+        }
 
         protected override void OnClosed(EventArgs e)
         {
             if (generalSettingsUserControl == null)
                 return;
             ResetControlScrollSettings(generalSettingsUserControl);
-            HandleCliDownload();
         }
 
         private void HandleCliDownload()
@@ -328,7 +338,7 @@ namespace Snyk.VisualStudio.Extension.Settings
             var manageBinariesAutomatically = generalSettingsUserControl.GetManageBinariesAutomatically();
             if (!manageBinariesAutomatically)
             {
-                this.userStorageSettingsService.SaveCurrentCliVersion(string.Empty);
+                this.userStorageSettingsService.CurrentCliVersion = string.Empty;
                 this.BinariesAutoUpdate = false;
                 serviceProvider.TasksService.CancelDownloadTask();
                 // Language Server restart will happen on DownloadCancelled Event.
@@ -393,6 +403,7 @@ namespace Snyk.VisualStudio.Extension.Settings
 
             this.userStorageSettingsService = this.serviceProvider.UserStorageSettingsService;
         }
+
         /// <inheritdoc />
         public bool Authenticate()
         {
@@ -417,9 +428,9 @@ namespace Snyk.VisualStudio.Extension.Settings
                     await ServiceProvider.Package.LanguageClientManager.InvokeLogout(SnykVSPackage.Instance.DisposalToken);
                     var token = await ServiceProvider.Package.LanguageClientManager.InvokeLogin(SnykVSPackage.Instance.DisposalToken);
                     ApiToken = CreateAuthenticationToken(token);
+                    this.userStorageSettingsService.SaveSettings();
                 });
                 return true;
-
             }
             catch (Exception e)
             {
@@ -427,6 +438,7 @@ namespace Snyk.VisualStudio.Extension.Settings
                 return false;
             }
         }
+
         private void FireSettingsChangedEvent() => this.SettingsChanged?.Invoke(this, new SnykSettingsChangedEventArgs());
 
         public string GetCustomApiEndpoint()

@@ -731,13 +731,9 @@ namespace Snyk.VisualStudio.Extension.Service
             }
             try
             {
-                var currentCliVersion = userSettingsStorageService.GetCurrentCliVersion();
-
                 var options = this.serviceProvider.Options;
-                var cliDownloader = new SnykCliDownloader(options, currentCliVersion);
-
-                var downloadPath = options.CliCustomPath;
-                var fileDestinationPath = GetCliFilePath(downloadPath);
+                var cliDownloader = new SnykCliDownloader(options);
+                var fileDestinationPath = GetCliFilePath(options.CliCustomPath);
 
                 return cliDownloader.IsCliDownloadNeeded(fileDestinationPath);
 
@@ -763,11 +759,8 @@ namespace Snyk.VisualStudio.Extension.Service
             this.isCliDownloading = true;
             try
             {
-                var currentCliVersion = userSettingsStorageService.GetCurrentCliVersion();
-
-                var lastCliReleaseDate = userSettingsStorageService.GetCliReleaseLastCheckDate();
-
-                var cliDownloader = new SnykCliDownloader(this.serviceProvider.Options, currentCliVersion);
+                var serviceProviderOptions = this.serviceProvider.Options;
+                var cliDownloader = new SnykCliDownloader(serviceProviderOptions);
 
                 var downloadFinishedCallbacks = new List<CliDownloadFinishedCallback>();
 
@@ -778,12 +771,12 @@ namespace Snyk.VisualStudio.Extension.Service
 
                 downloadFinishedCallbacks.Add(() =>
                 {
-                    userSettingsStorageService.SaveCurrentCliVersion(cliDownloader.GetLatestReleaseInfo().Name);
-                    userSettingsStorageService.SaveCliReleaseLastCheckDate(DateTime.UtcNow);
+                    serviceProviderOptions.CurrentCliVersion = cliDownloader.GetLatestReleaseInfo().Name;
+                    userSettingsStorageService.SaveSettings();
                     DisposeCancellationTokenSource(this.downloadCliTokenSource);
                 });
 
-                var downloadPath = this.serviceProvider.Options.CliCustomPath;
+                var downloadPath = serviceProviderOptions.CliCustomPath;
                 await cliDownloader.AutoUpdateCliAsync(
                     progressWorker,
                     downloadPath,

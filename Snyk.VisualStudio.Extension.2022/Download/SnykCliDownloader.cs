@@ -24,18 +24,14 @@ namespace Snyk.VisualStudio.Extension.Download
         private const string LatestReleaseDownloadUrlScheme = "{0}/cli/{1}/" + SnykCli.CliFileName;
         private const string Sha256DownloadUrl = "{0}.sha256";
 
-        private const int FourDays = 4;
-
         private static readonly ILogger Logger = LogManager.ForContext<SnykCliDownloader>();
 
         private readonly ISnykOptions SnykOptions;
-        private readonly string currentCliVersion;
         private string expectedSha;
 
-        public SnykCliDownloader(ISnykOptions snykOptions, string currentVersion)
+        public SnykCliDownloader(ISnykOptions snykOptions)
         {
             this.SnykOptions = snykOptions;
-            this.currentCliVersion = currentVersion;
         }
 
         /// <summary>
@@ -130,7 +126,7 @@ namespace Snyk.VisualStudio.Extension.Download
         {
             try
             {
-                if (!this.IsCliFileExists(cliFileDestinationPath) || this.IsNewVersionAvailable(this.currentCliVersion, this.GetLatestReleaseInfo().Version))
+                if (!this.IsCliFileExists(cliFileDestinationPath) || this.IsNewVersionAvailable(this.SnykOptions.CurrentCliVersion, this.GetLatestReleaseInfo().Version))
                 {
                     return true;
                 }
