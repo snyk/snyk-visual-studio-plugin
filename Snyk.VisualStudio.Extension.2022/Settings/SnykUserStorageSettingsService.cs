@@ -204,20 +204,13 @@ namespace Snyk.VisualStudio.Extension.Settings
         {
             Logger.Information("Enter SaveAdditionalOptions method");
 
-            int solutionPathHash = await this.GetSolutionPathHashAsync();
-
-            var settings = this.settingsLoader.Load();
-
-            if (settings == null)
-            {
-                settings = new SnykSettings();
-            }
+            var solutionPathHash = await this.GetSolutionPathHashAsync();
 
             SnykSolutionSettings projectSettings;
 
-            if (settings.SolutionSettingsDict.ContainsKey(solutionPathHash))
+            if (snykSettings.SolutionSettingsDict.ContainsKey(solutionPathHash))
             {
-                projectSettings = settings.SolutionSettingsDict[solutionPathHash];
+                projectSettings = snykSettings.SolutionSettingsDict[solutionPathHash];
             }
             else
             {
@@ -226,9 +219,9 @@ namespace Snyk.VisualStudio.Extension.Settings
 
             projectSettings.AdditionalOptions = additionalOptions;
 
-            settings.SolutionSettingsDict[solutionPathHash] = projectSettings;
+            snykSettings.SolutionSettingsDict[solutionPathHash] = projectSettings;
 
-            this.settingsLoader.Save(settings);
+            this.SaveSettings();
 
             Logger.Information("Leave SaveAdditionalOptions method");
         }
@@ -242,20 +235,13 @@ namespace Snyk.VisualStudio.Extension.Settings
         {
             Logger.Information("Enter SaveIsAllProjectsScan method");
 
-            int solutionPathHash = await this.GetSolutionPathHashAsync();
-
-            var settings = this.settingsLoader.Load();
-
-            if (settings == null)
-            {
-                settings = new SnykSettings();
-            }
+            var solutionPathHash = await this.GetSolutionPathHashAsync();
 
             SnykSolutionSettings projectSettings;
 
-            if (settings.SolutionSettingsDict.ContainsKey(solutionPathHash))
+            if (snykSettings.SolutionSettingsDict.ContainsKey(solutionPathHash))
             {
-                projectSettings = settings.SolutionSettingsDict[solutionPathHash];
+                projectSettings = snykSettings.SolutionSettingsDict[solutionPathHash];
             }
             else
             {
@@ -264,9 +250,9 @@ namespace Snyk.VisualStudio.Extension.Settings
 
             projectSettings.IsAllProjectsScanEnabled = isAllProjectsEnabled;
 
-            settings.SolutionSettingsDict[solutionPathHash] = projectSettings;
+            snykSettings.SolutionSettingsDict[solutionPathHash] = projectSettings;
 
-            this.settingsLoader.Save(settings);
+            this.SaveSettings();
 
             Logger.Information("Leave SaveIsAllProjectsScan method");
         }
