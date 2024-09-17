@@ -109,7 +109,7 @@ namespace Snyk.VisualStudio.Extension.UI.Tree
                     var filePath = kv.Key;
                     var issueList = kv.Value.ToList();
 
-                    var fileNode = new OssVulnerabilityTreeNode { IssueList = issueList };
+                    var fileNode = new OssVulnerabilityTreeNode { IssueList = issueList, IsExpanded = false };
                     if (issueList.Any() && issueList.Any() && issueList.First().AdditionalData != null)
                     {
                         var firstIssue = issueList.First();
@@ -185,13 +185,14 @@ namespace Snyk.VisualStudio.Extension.UI.Tree
                 var highSeverityCount = 0;
                 var mediumSeverityCount = 0;
                 var lowSeverityCount = 0;
+                var folderName = ThreadHelper.JoinableTaskFactory.Run(async () => await SnykVSPackage.ServiceProvider.SolutionService.GetSolutionFolderAsync());
 
                 foreach (var kv in value)
                 {
                     var filePath = kv.Key;
                     var issues = kv.Value.ToList();
 
-                    var issueNode = new SnykIacFileTreeNode { IssueList = issues, FileName = filePath };
+                    var issueNode = new SnykIacFileTreeNode { IssueList = issues, FileName = filePath, FolderName = folderName, IsExpanded = false };
 
                     criticalSeverityCount += issues.Count(suggestion => suggestion.Severity == Severity.Critical);
                     highSeverityCount += issues.Count(suggestion => suggestion.Severity == Severity.High);
@@ -369,13 +370,13 @@ namespace Snyk.VisualStudio.Extension.UI.Tree
             var lowSeverityCount = 0;
 
             rootNode.Clean();
-
+            var folderName = ThreadHelper.JoinableTaskFactory.Run(async () => await SnykVSPackage.ServiceProvider.SolutionService.GetSolutionFolderAsync());
             foreach (var kv in analysisResult)
             {
                 var filePath = kv.Key;
                 var issueList = kv.Value.ToList();
 
-                var issueNode = new SnykCodeFileTreeNode { IssueList = issueList, FileName = filePath};
+                var issueNode = new SnykCodeFileTreeNode { IssueList = issueList, FileName = filePath,FolderName = folderName, IsExpanded = false };
 
                 var issues = issueList.Where(conditionFunction).ToList();
 
