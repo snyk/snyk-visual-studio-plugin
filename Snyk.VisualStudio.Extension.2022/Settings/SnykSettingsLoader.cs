@@ -1,11 +1,11 @@
-﻿namespace Snyk.VisualStudio.Extension.Settings
-{
-    using System;
-    using System.IO;
-    using System.Text;
-    using Serilog;
-    using Snyk.Common;
+﻿using System;
+using System.IO;
+using System.Text;
+using Serilog;
+using Snyk.Common;
 
+namespace Snyk.VisualStudio.Extension.Settings
+{
     /// <summary>
     /// Load and save Snyk settings.
     /// </summary>
@@ -14,6 +14,8 @@
         private static readonly ILogger Logger = LogManager.ForContext<SnykSettingsLoader>();
 
         private readonly string settingsFilePath;
+
+        private SnykSettings snykSettings;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="SnykSettingsLoader"/> class.
@@ -30,6 +32,9 @@
         /// <returns>SnykSettings object.</returns>
         public SnykSettings Load()
         {
+            if (snykSettings != null)
+                return snykSettings;
+
             try
             {
                 if (!File.Exists(this.settingsFilePath))
@@ -37,7 +42,8 @@
                     return null;
                 }
 
-                return Json.Deserialize<SnykSettings>(File.ReadAllText(this.settingsFilePath, Encoding.UTF8));
+                snykSettings = Json.Deserialize<SnykSettings>(File.ReadAllText(this.settingsFilePath, Encoding.UTF8));
+                return snykSettings;
             }
             catch (Exception e)
             {

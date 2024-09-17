@@ -1,13 +1,11 @@
-﻿namespace Snyk.VisualStudio.Extension.Service
-{
-    using System;
-    using System.Collections.Generic;
-    using System.IO;
-    using System.Linq;
-    using Serilog;
-    using Snyk.Common;
-    using Snyk.VisualStudio.Extension.Settings;
+﻿using System;
+using System.IO;
+using Serilog;
+using Snyk.Common;
+using Snyk.VisualStudio.Extension.Settings;
 
+namespace Snyk.VisualStudio.Extension.Service
+{
     public class WorkspaceTrustService : IWorkspaceTrustService
     {
         private static readonly ILogger Logger = LogManager.ForContext<WorkspaceTrustService>();
@@ -45,6 +43,8 @@
 
         public bool IsFolderTrusted(string absoluteFolderPath)
         {
+            if (string.IsNullOrEmpty(absoluteFolderPath))
+                return true;
             var trustedFolders = this.settingsService.TrustedFolders;
 
             foreach (var trustedFolder in trustedFolders)

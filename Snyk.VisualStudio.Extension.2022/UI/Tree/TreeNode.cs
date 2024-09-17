@@ -43,5 +43,7 @@
         /// Gets or sets a value indicating whether items.
         /// </summary>
         public ObservableCollection<TreeNode> Items { get; set; }
+        public bool IsSelected { get; set; }
+        public bool IsExpanded { get; set; } = true;
     }
 }

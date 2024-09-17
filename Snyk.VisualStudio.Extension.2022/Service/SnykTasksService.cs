@@ -696,6 +696,11 @@ namespace Snyk.VisualStudio.Extension.Service
             };
         }
 
+        public void CancelDownloadTask()
+        {
+            this.CancelTask(downloadCliTokenSource);
+        }
+
         private void CancelTask(CancellationTokenSource tokenSource)
         {
             try
@@ -709,7 +714,7 @@ namespace Snyk.VisualStudio.Extension.Service
             }
             catch (Exception e)
             {
-                Logger.Error(e, "Try to cancel task");
+                Logger.Information(e, "Try to cancel task");
             }
             finally
             {
@@ -726,16 +731,11 @@ namespace Snyk.VisualStudio.Extension.Service
             }
             try
             {
-                var currentCliVersion = userSettingsStorageService.GetCurrentCliVersion();
+                var options = this.serviceProvider.Options;
+                var cliDownloader = new SnykCliDownloader(options);
+                var fileDestinationPath = GetCliFilePath(options.CliCustomPath);
 
-                var lastCliReleaseDate = userSettingsStorageService.GetCliReleaseLastCheckDate();
-
-                var cliDownloader = new SnykCliDownloader(currentCliVersion);
-
-                var downloadPath = this.serviceProvider.Options.CliCustomPath;
-                var fileDestinationPath = GetCliFilePath(downloadPath);
-
-                return cliDownloader.IsCliDownloadNeeded(lastCliReleaseDate, fileDestinationPath);
+                return cliDownloader.IsCliDownloadNeeded(fileDestinationPath);
 
             }
             catch (Exception)
@@ -759,13 +759,10 @@ namespace Snyk.VisualStudio.Extension.Service
             this.isCliDownloading = true;
             try
             {
-                string currentCliVersion = userSettingsStorageService.GetCurrentCliVersion();
+                var serviceProviderOptions = this.serviceProvider.Options;
+                var cliDownloader = new SnykCliDownloader(serviceProviderOptions);
 
-                DateTime lastCliReleaseDate = userSettingsStorageService.GetCliReleaseLastCheckDate();
-
-                var cliDownloader = new SnykCliDownloader(currentCliVersion);
-
-                List<CliDownloadFinishedCallback> downloadFinishedCallbacks = new List<CliDownloadFinishedCallback>();
+                var downloadFinishedCallbacks = new List<CliDownloadFinishedCallback>();
 
                 if (downloadFinishedCallback != null)
                 {
@@ -774,15 +771,14 @@ namespace Snyk.VisualStudio.Extension.Service
 
                 downloadFinishedCallbacks.Add(() =>
                 {
-                    userSettingsStorageService.SaveCurrentCliVersion(cliDownloader.GetLatestReleaseInfo().Name);
-                    userSettingsStorageService.SaveCliReleaseLastCheckDate(DateTime.UtcNow);
+                    serviceProviderOptions.CurrentCliVersion = cliDownloader.GetLatestReleaseInfo().Name;
+                    userSettingsStorageService.SaveSettings();
                     DisposeCancellationTokenSource(this.downloadCliTokenSource);
                 });
 
-                var downloadPath = this.serviceProvider.Options.CliCustomPath;
+                var downloadPath = serviceProviderOptions.CliCustomPath;
                 await cliDownloader.AutoUpdateCliAsync(
                     progressWorker,
-                    lastCliReleaseDate,
                     downloadPath,
                     downloadFinishedCallbacks: downloadFinishedCallbacks);
             }

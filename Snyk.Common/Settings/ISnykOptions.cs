@@ -1,7 +1,7 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Threading.Tasks;
 using Snyk.Common.Authentication;
-using Snyk.Common.Service;
 
 namespace Snyk.Common.Settings
 {
@@ -73,7 +73,9 @@ namespace Snyk.Common.Settings
         /// Gets or sets the value of the CLI custom path. If empty, the default path from AppData would be used.
         /// </summary>
         string CliCustomPath { get; set; }
-
+        string CliReleaseChannel { get; set; }
+        string CliDownloadUrl { get; set; }
+        ISet<string> TrustedFolders { get; set; }
         /// <summary>
         /// Settings changed event.
         /// </summary>
@@ -99,11 +101,7 @@ namespace Snyk.Common.Settings
         /// </summary>
         /// <returns>Returns true if authenticated successfully, or if a valid token was loaded from storage.</returns>
         bool Authenticate();
-
-        /// <summary>
-        /// Force Visual Studio to load Settings from storage.
-        /// </summary>
-        void LoadSettingsFromStorage();
+        public string CurrentCliVersion { get; set; }
 
         SastSettings SastSettings { get; set; }
         Task OnAuthenticationSuccessfulAsync(string token);

@@ -11,7 +11,7 @@ namespace Snyk.VisualStudio.Extension.UI.Html
             return @"
                     html, body {
                        height: 100%;
-                       font-size: 1.15rem;
+                       font-size: 0.9rem;
                        display: flex;
                        flex-direction: column;
                        margin: 0;
@@ -57,6 +57,7 @@ namespace Snyk.VisualStudio.Extension.UI.Html
         public virtual string GetInitScript()
         {
             return @"
+                    window.onerror = function(msg,url,line){return true;}
                     var links = document.querySelectorAll('a');
                     for(var i = 0; i < links.length; i++) {
                         links[i].onclick = function() {

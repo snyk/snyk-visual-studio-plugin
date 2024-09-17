@@ -1,10 +1,9 @@
-﻿using Snyk.Common.Authentication;
+﻿using System.Collections.Generic;
+using Snyk.Common.Authentication;
+using Snyk.VisualStudio.Extension.Download;
 
 namespace Snyk.VisualStudio.Extension.Settings
 {
-    using System;
-    using System.Collections.Generic;
-
     /// <summary>
     /// Contains Snyk extension settings.
     /// </summary>
@@ -20,16 +19,6 @@ namespace Snyk.VisualStudio.Extension.Settings
         /// Gets or sets current Cli version.
         /// </summary>
         public string CurrentCliVersion { get; set; }
-
-        /// <summary>
-        /// Gets or sets Sentry anonymous user id.
-        /// </summary>
-        public string AnonymousId { get; set; }
-
-        /// <summary>
-        /// Gets or sets Cli release last check date.
-        /// </summary>
-        public DateTime CliReleaseLastCheckDate { get; set; }
 
         /// <summary>
         /// Gets or sets solution settings dictionary.
@@ -74,5 +63,10 @@ namespace Snyk.VisualStudio.Extension.Settings
         public bool AutoScan { get; set; } = true;
         public string Token { get; set; } = string.Empty;
         public bool IacEnabled { get; set; } = true;
+        public string CliReleaseChannel { get; set; } = SnykCliDownloader.DefaultReleaseChannel;
+        public string CliDownloadUrl { get; set; } = SnykCliDownloader.DefaultBaseDownloadUrl;
+        public bool IgnoreUnknownCa { get; set; }
+        public string Organization { get; set; }
+        public string CustomEndpoint { get; set; }
     }
 }

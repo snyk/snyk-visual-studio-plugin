@@ -61,6 +61,8 @@ namespace Snyk.VisualStudio.Extension.Settings
             this.ManageBinariesAutomaticallyCheckbox = new System.Windows.Forms.CheckBox();
             this.label1 = new System.Windows.Forms.Label();
             this.productSelectionGroupBox = new System.Windows.Forms.GroupBox();
+            this.snykIacInfoLabel = new System.Windows.Forms.Label();
+            this.iacEnabledCheckbox = new System.Windows.Forms.CheckBox();
             this.snykCodeQualityInfoLabel = new System.Windows.Forms.Label();
             this.snykCodeSecurityInfoLabel = new System.Windows.Forms.Label();
             this.ossInfoLabel = new System.Windows.Forms.Label();
@@ -74,8 +76,11 @@ namespace Snyk.VisualStudio.Extension.Settings
             this.snykCodeQualityInfoToolTip = new System.Windows.Forms.ToolTip(this.components);
             this.customCliPathFileDialog = new System.Windows.Forms.OpenFileDialog();
             this.ExecutablesGroupBox = new System.Windows.Forms.GroupBox();
-            this.snykIacInfoLabel = new System.Windows.Forms.Label();
-            this.iacEnabledCheckbox = new System.Windows.Forms.CheckBox();
+            this.ReleaseChannelLink = new System.Windows.Forms.LinkLabel();
+            this.releaseChannel = new System.Windows.Forms.ComboBox();
+            this.cliReleaseChannelLabel = new System.Windows.Forms.Label();
+            this.cliBaseDownloadUrl = new System.Windows.Forms.Label();
+            this.cliDownloadUrlTextBox = new System.Windows.Forms.TextBox();
             ((System.ComponentModel.ISupportInitialize)(this.errorProvider)).BeginInit();
             this.generalSettingsGroupBox.SuspendLayout();
             this.productSelectionGroupBox.SuspendLayout();
@@ -306,7 +311,7 @@ namespace Snyk.VisualStudio.Extension.Settings
             // richTextBox1
             // 
             this.richTextBox1.BorderStyle = System.Windows.Forms.BorderStyle.None;
-            this.richTextBox1.Location = new System.Drawing.Point(7, 106);
+            this.richTextBox1.Location = new System.Drawing.Point(7, 126);
             this.richTextBox1.Name = "richTextBox1";
             this.richTextBox1.ReadOnly = true;
             this.richTextBox1.Size = new System.Drawing.Size(513, 32);
@@ -316,7 +321,7 @@ namespace Snyk.VisualStudio.Extension.Settings
             // 
             // resetCliPathToDefaultButton
             // 
-            this.resetCliPathToDefaultButton.Location = new System.Drawing.Point(208, 26);
+            this.resetCliPathToDefaultButton.Location = new System.Drawing.Point(260, 53);
             this.resetCliPathToDefaultButton.Name = "resetCliPathToDefaultButton";
             this.resetCliPathToDefaultButton.Size = new System.Drawing.Size(97, 23);
             this.resetCliPathToDefaultButton.TabIndex = 17;
@@ -326,7 +331,7 @@ namespace Snyk.VisualStudio.Extension.Settings
             // 
             // CliPathBrowseButton
             // 
-            this.CliPathBrowseButton.Location = new System.Drawing.Point(127, 26);
+            this.CliPathBrowseButton.Location = new System.Drawing.Point(179, 53);
             this.CliPathBrowseButton.Name = "CliPathBrowseButton";
             this.CliPathBrowseButton.Size = new System.Drawing.Size(75, 23);
             this.CliPathBrowseButton.TabIndex = 16;
@@ -336,7 +341,7 @@ namespace Snyk.VisualStudio.Extension.Settings
             // 
             // CliPathTextBox
             // 
-            this.CliPathTextBox.Location = new System.Drawing.Point(129, 51);
+            this.CliPathTextBox.Location = new System.Drawing.Point(181, 78);
             this.CliPathTextBox.Margin = new System.Windows.Forms.Padding(2);
             this.CliPathTextBox.Name = "CliPathTextBox";
             this.CliPathTextBox.ReadOnly = true;
@@ -346,7 +351,7 @@ namespace Snyk.VisualStudio.Extension.Settings
             // CliPathLabel
             // 
             this.CliPathLabel.AutoSize = true;
-            this.CliPathLabel.Location = new System.Drawing.Point(4, 31);
+            this.CliPathLabel.Location = new System.Drawing.Point(4, 58);
             this.CliPathLabel.Margin = new System.Windows.Forms.Padding(2, 0, 2, 0);
             this.CliPathLabel.Name = "CliPathLabel";
             this.CliPathLabel.Size = new System.Drawing.Size(78, 13);
@@ -356,18 +361,17 @@ namespace Snyk.VisualStudio.Extension.Settings
             // ManageBinariesAutomaticallyCheckbox
             // 
             this.ManageBinariesAutomaticallyCheckbox.AutoSize = true;
-            this.ManageBinariesAutomaticallyCheckbox.Location = new System.Drawing.Point(12, 87);
+            this.ManageBinariesAutomaticallyCheckbox.Location = new System.Drawing.Point(12, 107);
             this.ManageBinariesAutomaticallyCheckbox.Margin = new System.Windows.Forms.Padding(2);
             this.ManageBinariesAutomaticallyCheckbox.Name = "ManageBinariesAutomaticallyCheckbox";
             this.ManageBinariesAutomaticallyCheckbox.Size = new System.Drawing.Size(15, 14);
             this.ManageBinariesAutomaticallyCheckbox.TabIndex = 13;
             this.ManageBinariesAutomaticallyCheckbox.UseVisualStyleBackColor = true;
-            this.ManageBinariesAutomaticallyCheckbox.CheckedChanged += new System.EventHandler(this.ManageBinariesAutomaticallyCheckbox_CheckedChanged);
             // 
             // label1
             // 
             this.label1.AutoSize = true;
-            this.label1.Location = new System.Drawing.Point(31, 87);
+            this.label1.Location = new System.Drawing.Point(31, 107);
             this.label1.Margin = new System.Windows.Forms.Padding(2, 0, 2, 0);
             this.label1.Name = "label1";
             this.label1.Size = new System.Drawing.Size(253, 13);
@@ -387,7 +391,7 @@ namespace Snyk.VisualStudio.Extension.Settings
             this.productSelectionGroupBox.Controls.Add(this.codeQualityEnabledCheckBox);
             this.productSelectionGroupBox.Controls.Add(this.ossEnabledCheckBox);
             this.productSelectionGroupBox.Controls.Add(this.codeSecurityEnabledCheckBox);
-            this.productSelectionGroupBox.Location = new System.Drawing.Point(10, 505);
+            this.productSelectionGroupBox.Location = new System.Drawing.Point(10, 578);
             this.productSelectionGroupBox.Margin = new System.Windows.Forms.Padding(2);
             this.productSelectionGroupBox.Name = "productSelectionGroupBox";
             this.productSelectionGroupBox.Padding = new System.Windows.Forms.Padding(8);
@@ -395,6 +399,35 @@ namespace Snyk.VisualStudio.Extension.Settings
             this.productSelectionGroupBox.TabIndex = 18;
             this.productSelectionGroupBox.TabStop = false;
             this.productSelectionGroupBox.Text = "Product Selection";
+            // 
+            // snykIacInfoLabel
+            // 
+            this.snykIacInfoLabel.BackColor = System.Drawing.Color.Transparent;
+            this.snykIacInfoLabel.Font = new System.Drawing.Font("Microsoft Sans Serif", 12F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(204)));
+            this.snykIacInfoLabel.Image = ((System.Drawing.Image)(resources.GetObject("snykIacInfoLabel.Image")));
+            this.snykIacInfoLabel.Location = new System.Drawing.Point(171, 54);
+            this.snykIacInfoLabel.Margin = new System.Windows.Forms.Padding(0);
+            this.snykIacInfoLabel.MaximumSize = new System.Drawing.Size(16, 16);
+            this.snykIacInfoLabel.MinimumSize = new System.Drawing.Size(16, 16);
+            this.snykIacInfoLabel.Name = "snykIacInfoLabel";
+            this.snykIacInfoLabel.Size = new System.Drawing.Size(16, 16);
+            this.snykIacInfoLabel.TabIndex = 22;
+            this.snykIacInfoLabel.Text = "   ";
+            this.ossInfoToolTip.SetToolTip(this.snykIacInfoLabel, "Find and fix insecure configurations in Terraform and Kubernetes code");
+            // 
+            // iacEnabledCheckbox
+            // 
+            this.iacEnabledCheckbox.AutoSize = true;
+            this.iacEnabledCheckbox.Checked = true;
+            this.iacEnabledCheckbox.CheckState = System.Windows.Forms.CheckState.Checked;
+            this.iacEnabledCheckbox.Location = new System.Drawing.Point(12, 54);
+            this.iacEnabledCheckbox.Margin = new System.Windows.Forms.Padding(2);
+            this.iacEnabledCheckbox.Name = "iacEnabledCheckbox";
+            this.iacEnabledCheckbox.Size = new System.Drawing.Size(157, 17);
+            this.iacEnabledCheckbox.TabIndex = 21;
+            this.iacEnabledCheckbox.Text = "Snyk Infrastructure as Code";
+            this.iacEnabledCheckbox.UseVisualStyleBackColor = true;
+            this.iacEnabledCheckbox.CheckedChanged += new System.EventHandler(this.iacEnabledCheckbox_CheckedChanged);
             // 
             // snykCodeQualityInfoLabel
             // 
@@ -474,11 +507,11 @@ namespace Snyk.VisualStudio.Extension.Settings
             // userExperienceGroupBox
             // 
             this.userExperienceGroupBox.Controls.Add(this.autoScanCheckBox);
-            this.userExperienceGroupBox.Location = new System.Drawing.Point(10, 666);
+            this.userExperienceGroupBox.Location = new System.Drawing.Point(10, 741);
             this.userExperienceGroupBox.Margin = new System.Windows.Forms.Padding(2);
             this.userExperienceGroupBox.Name = "userExperienceGroupBox";
             this.userExperienceGroupBox.Padding = new System.Windows.Forms.Padding(8);
-            this.userExperienceGroupBox.Size = new System.Drawing.Size(560, 90);
+            this.userExperienceGroupBox.Size = new System.Drawing.Size(560, 52);
             this.userExperienceGroupBox.TabIndex = 19;
             this.userExperienceGroupBox.TabStop = false;
             this.userExperienceGroupBox.Text = "User experience";
@@ -488,7 +521,7 @@ namespace Snyk.VisualStudio.Extension.Settings
             this.autoScanCheckBox.AutoSize = true;
             this.autoScanCheckBox.Checked = true;
             this.autoScanCheckBox.CheckState = System.Windows.Forms.CheckState.Checked;
-            this.autoScanCheckBox.Location = new System.Drawing.Point(12, 46);
+            this.autoScanCheckBox.Location = new System.Drawing.Point(12, 23);
             this.autoScanCheckBox.Margin = new System.Windows.Forms.Padding(2);
             this.autoScanCheckBox.Name = "autoScanCheckBox";
             this.autoScanCheckBox.Size = new System.Drawing.Size(215, 17);
@@ -518,7 +551,12 @@ namespace Snyk.VisualStudio.Extension.Settings
             // 
             // ExecutablesGroupBox
             // 
+            this.ExecutablesGroupBox.Controls.Add(this.ReleaseChannelLink);
+            this.ExecutablesGroupBox.Controls.Add(this.releaseChannel);
+            this.ExecutablesGroupBox.Controls.Add(this.cliReleaseChannelLabel);
+            this.ExecutablesGroupBox.Controls.Add(this.cliBaseDownloadUrl);
             this.ExecutablesGroupBox.Controls.Add(this.richTextBox1);
+            this.ExecutablesGroupBox.Controls.Add(this.cliDownloadUrlTextBox);
             this.ExecutablesGroupBox.Controls.Add(this.CliPathLabel);
             this.ExecutablesGroupBox.Controls.Add(this.resetCliPathToDefaultButton);
             this.ExecutablesGroupBox.Controls.Add(this.label1);
@@ -527,39 +565,56 @@ namespace Snyk.VisualStudio.Extension.Settings
             this.ExecutablesGroupBox.Controls.Add(this.CliPathTextBox);
             this.ExecutablesGroupBox.Location = new System.Drawing.Point(10, 348);
             this.ExecutablesGroupBox.Name = "ExecutablesGroupBox";
-            this.ExecutablesGroupBox.Size = new System.Drawing.Size(560, 152);
+            this.ExecutablesGroupBox.Size = new System.Drawing.Size(560, 225);
             this.ExecutablesGroupBox.TabIndex = 19;
             this.ExecutablesGroupBox.TabStop = false;
             this.ExecutablesGroupBox.Text = "Executables Settings";
             // 
-            // snykIacInfoLabel
+            // ReleaseChannelLink
             // 
-            this.snykIacInfoLabel.BackColor = System.Drawing.Color.Transparent;
-            this.snykIacInfoLabel.Font = new System.Drawing.Font("Microsoft Sans Serif", 12F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(204)));
-            this.snykIacInfoLabel.Image = ((System.Drawing.Image)(resources.GetObject("snykIacInfoLabel.Image")));
-            this.snykIacInfoLabel.Location = new System.Drawing.Point(171, 54);
-            this.snykIacInfoLabel.Margin = new System.Windows.Forms.Padding(0);
-            this.snykIacInfoLabel.MaximumSize = new System.Drawing.Size(16, 16);
-            this.snykIacInfoLabel.MinimumSize = new System.Drawing.Size(16, 16);
-            this.snykIacInfoLabel.Name = "snykIacInfoLabel";
-            this.snykIacInfoLabel.Size = new System.Drawing.Size(16, 16);
-            this.snykIacInfoLabel.TabIndex = 22;
-            this.snykIacInfoLabel.Text = "   ";
-            this.ossInfoToolTip.SetToolTip(this.snykIacInfoLabel, "Find and fix insecure configurations in Terraform and Kubernetes code");
+            this.ReleaseChannelLink.AutoSize = true;
+            this.ReleaseChannelLink.Location = new System.Drawing.Point(6, 196);
+            this.ReleaseChannelLink.Name = "ReleaseChannelLink";
+            this.ReleaseChannelLink.Size = new System.Drawing.Size(176, 13);
+            this.ReleaseChannelLink.TabIndex = 20;
+            this.ReleaseChannelLink.TabStop = true;
+            this.ReleaseChannelLink.Text = "Find out about our release channels";
+            this.ReleaseChannelLink.LinkClicked += new System.Windows.Forms.LinkLabelLinkClickedEventHandler(this.ReleaseChannelLink_LinkClicked);
             // 
-            // iacEnabledCheckbox
+            // releaseChannel
             // 
-            this.iacEnabledCheckbox.AutoSize = true;
-            this.iacEnabledCheckbox.Checked = true;
-            this.iacEnabledCheckbox.CheckState = System.Windows.Forms.CheckState.Checked;
-            this.iacEnabledCheckbox.Location = new System.Drawing.Point(12, 54);
-            this.iacEnabledCheckbox.Margin = new System.Windows.Forms.Padding(2);
-            this.iacEnabledCheckbox.Name = "iacEnabledCheckbox";
-            this.iacEnabledCheckbox.Size = new System.Drawing.Size(157, 17);
-            this.iacEnabledCheckbox.TabIndex = 21;
-            this.iacEnabledCheckbox.Text = "Snyk Infrastructure as Code";
-            this.iacEnabledCheckbox.UseVisualStyleBackColor = true;
-            this.iacEnabledCheckbox.CheckedChanged += new System.EventHandler(this.iacEnabledCheckbox_CheckedChanged);
+            this.releaseChannel.FormattingEnabled = true;
+            this.releaseChannel.Location = new System.Drawing.Point(179, 169);
+            this.releaseChannel.Name = "releaseChannel";
+            this.releaseChannel.Size = new System.Drawing.Size(121, 21);
+            this.releaseChannel.TabIndex = 23;
+            // 
+            // cliReleaseChannelLabel
+            // 
+            this.cliReleaseChannelLabel.AutoSize = true;
+            this.cliReleaseChannelLabel.Location = new System.Drawing.Point(4, 172);
+            this.cliReleaseChannelLabel.Margin = new System.Windows.Forms.Padding(2, 0, 2, 0);
+            this.cliReleaseChannelLabel.Name = "cliReleaseChannelLabel";
+            this.cliReleaseChannelLabel.Size = new System.Drawing.Size(104, 13);
+            this.cliReleaseChannelLabel.TabIndex = 22;
+            this.cliReleaseChannelLabel.Text = "CLI release channel:";
+            // 
+            // cliBaseDownloadUrl
+            // 
+            this.cliBaseDownloadUrl.AutoSize = true;
+            this.cliBaseDownloadUrl.Location = new System.Drawing.Point(4, 22);
+            this.cliBaseDownloadUrl.Margin = new System.Windows.Forms.Padding(2, 0, 2, 0);
+            this.cliBaseDownloadUrl.Name = "cliBaseDownloadUrl";
+            this.cliBaseDownloadUrl.Size = new System.Drawing.Size(160, 13);
+            this.cliBaseDownloadUrl.TabIndex = 20;
+            this.cliBaseDownloadUrl.Text = "Base URL to download the CLI: ";
+            // 
+            // cliDownloadUrlTextBox
+            // 
+            this.cliDownloadUrlTextBox.Location = new System.Drawing.Point(181, 19);
+            this.cliDownloadUrlTextBox.Name = "cliDownloadUrlTextBox";
+            this.cliDownloadUrlTextBox.Size = new System.Drawing.Size(300, 20);
+            this.cliDownloadUrlTextBox.TabIndex = 21;
             // 
             // SnykGeneralSettingsUserControl
             // 
@@ -573,7 +628,7 @@ namespace Snyk.VisualStudio.Extension.Settings
             this.Margin = new System.Windows.Forms.Padding(2);
             this.MinimumSize = new System.Drawing.Size(795, 750);
             this.Name = "SnykGeneralSettingsUserControl";
-            this.Size = new System.Drawing.Size(795, 788);
+            this.Size = new System.Drawing.Size(795, 822);
             ((System.ComponentModel.ISupportInitialize)(this.errorProvider)).EndInit();
             this.generalSettingsGroupBox.ResumeLayout(false);
             this.generalSettingsGroupBox.PerformLayout();
@@ -631,5 +686,10 @@ namespace Snyk.VisualStudio.Extension.Settings
         private CheckBox autoScanCheckBox;
         private Label snykIacInfoLabel;
         private CheckBox iacEnabledCheckbox;
+        private ComboBox releaseChannel;
+        private Label cliReleaseChannelLabel;
+        private Label cliBaseDownloadUrl;
+        private TextBox cliDownloadUrlTextBox;
+        private LinkLabel ReleaseChannelLink;
     }
 }

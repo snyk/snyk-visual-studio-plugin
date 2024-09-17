@@ -25,6 +25,8 @@ namespace Snyk.VisualStudio.Extension.UI.Tree
         private readonly SnykCodeQualityRootTreeNode codeQualityRootNode;
         private readonly SnykIacRootTreeNode iacRootNode;
 
+        public TreeNode CurrentTreeNode;
+
         /// <summary>
         /// Initializes a new instance of the <see cref="SnykFilterableTree"/> class.
         /// </summary>
@@ -76,6 +78,13 @@ namespace Snyk.VisualStudio.Extension.UI.Tree
         /// </summary>
         public object SelectedItem => this.vulnerabilitiesTree.SelectedItem;
 
+        public void SetCurrentSelectedNode()
+        {
+            if (this.CurrentTreeNode == null)
+                return;
+            this.CurrentTreeNode.IsSelected = true;
+        }
+
         /// <summary>
         /// Sets <see cref="OssResult"/> instance.
         /// </summary>
@@ -100,7 +109,7 @@ namespace Snyk.VisualStudio.Extension.UI.Tree
                     var filePath = kv.Key;
                     var issueList = kv.Value.ToList();
 
-                    var fileNode = new OssVulnerabilityTreeNode { IssueList = issueList };
+                    var fileNode = new OssVulnerabilityTreeNode { IssueList = issueList, IsExpanded = false };
                     if (issueList.Any() && issueList.Any() && issueList.First().AdditionalData != null)
                     {
                         var firstIssue = issueList.First();
@@ -176,13 +185,14 @@ namespace Snyk.VisualStudio.Extension.UI.Tree
                 var highSeverityCount = 0;
                 var mediumSeverityCount = 0;
                 var lowSeverityCount = 0;
+                var folderName = ThreadHelper.JoinableTaskFactory.Run(async () => await SnykVSPackage.ServiceProvider.SolutionService.GetSolutionFolderAsync());
 
                 foreach (var kv in value)
                 {
                     var filePath = kv.Key;
                     var issues = kv.Value.ToList();
 
-                    var issueNode = new SnykIacFileTreeNode { IssueList = issues, FileName = filePath };
+                    var issueNode = new SnykIacFileTreeNode { IssueList = issues, FileName = filePath, FolderName = folderName, IsExpanded = false };
 
                     criticalSeverityCount += issues.Count(suggestion => suggestion.Severity == Severity.Critical);
                     highSeverityCount += issues.Count(suggestion => suggestion.Severity == Severity.High);
@@ -258,12 +268,13 @@ namespace Snyk.VisualStudio.Extension.UI.Tree
 
             var severityFilter = SeverityFilter.ByQueryString(filterString);
 
-            string searchString = severityFilter.GetOnlyQueryString();
+            var searchString = severityFilter.GetOnlyQueryString();
 
             this.FilterOssItems(this.ossRootNode, severityFilter, searchString);
 
             this.FilterSnykCodeItems(this.codeQualityRootNode, severityFilter, searchString);
             this.FilterSnykCodeItems(this.codeSecurityRootNode, severityFilter, searchString);
+            this.FilterIacItems(this.iacRootNode, severityFilter, searchString);
         });
 
         private async System.Threading.Tasks.Task DisplayAllVulnerabilitiesAsync(RootTreeNode rootTreeNode)
@@ -287,9 +298,9 @@ namespace Snyk.VisualStudio.Extension.UI.Tree
                     var filteredTreeNode = filterObject as OssVulnerabilityTreeNode;
                     var vulnerability = filteredTreeNode.Issue;
 
-                    bool isVulnIncluded = severityFilter.IsVulnerabilityIncluded(vulnerability.Severity);
+                    var isVulnIncluded = severityFilter.IsVulnerabilityIncluded(vulnerability.Severity);
 
-                    if (searchString != null && searchString != string.Empty)
+                    if (!string.IsNullOrEmpty(searchString))
                     {
                         isVulnIncluded = isVulnIncluded && vulnerability.GetPackageNameTitle().ToLowerInvariant().Contains(searchString.ToLowerInvariant());
                     }
@@ -322,6 +333,30 @@ namespace Snyk.VisualStudio.Extension.UI.Tree
             }
         }
 
+
+        private void FilterIacItems(RootTreeNode rootTreeNode, SeverityFilter severityFilter, string searchString)
+        {
+            foreach (var treeNode in rootTreeNode.Items)
+            {
+                CollectionViewSource.GetDefaultView(treeNode.Items).Filter = filterObject =>
+                {
+                    var filteredTreeNode = filterObject as IacVulnerabilityTreeNode;
+                    if (filteredTreeNode == null) return false;
+                    var issue = filteredTreeNode.Issue;
+
+                    var isVulnIncluded = severityFilter.IsVulnerabilityIncluded(issue.Severity);
+
+                    if (!string.IsNullOrEmpty(searchString))
+                    {
+                        isVulnIncluded = isVulnIncluded && issue.GetDisplayTitleWithLineNumber().ToLowerInvariant().Contains(searchString.ToLowerInvariant());
+                    }
+
+                    return isVulnIncluded;
+                };
+            }
+        }
+        
+
         private void VulnerabilitiesTree_SelectedItemChanged(object sender, RoutedEventArgs eventArgs) =>
             this.SelectedVulnerabilityChanged?.Invoke(this, eventArgs);
 
@@ -335,13 +370,13 @@ namespace Snyk.VisualStudio.Extension.UI.Tree
             var lowSeverityCount = 0;
 
             rootNode.Clean();
-
+            var folderName = ThreadHelper.JoinableTaskFactory.Run(async () => await SnykVSPackage.ServiceProvider.SolutionService.GetSolutionFolderAsync());
             foreach (var kv in analysisResult)
             {
                 var filePath = kv.Key;
                 var issueList = kv.Value.ToList();
 
-                var issueNode = new SnykCodeFileTreeNode { IssueList = issueList, FileName = filePath};
+                var issueNode = new SnykCodeFileTreeNode { IssueList = issueList, FileName = filePath,FolderName = folderName, IsExpanded = false };
 
                 var issues = issueList.Where(conditionFunction).ToList();
 

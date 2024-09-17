@@ -22,7 +22,7 @@ namespace Snyk.VisualStudio.Extension.Service
     /// <summary>
     /// Main logic for Snyk extension.
     /// </summary>
-    public class SnykService : ISnykServiceProvider, ISnykService, ICliProvider
+    public class SnykService : ISnykServiceProvider, ISnykService
     {
         private static readonly ILogger Logger = LogManager.ForContext<SnykService>();
 
@@ -162,20 +162,6 @@ namespace Snyk.VisualStudio.Extension.Service
             {
                 Logger.Error(ex, "Error on initialize Snyk service");
             }
-        }
-
-        /// <summary>
-        /// Create new instance of SnykCli class with Options and Logger parameters.
-        /// </summary>
-        /// <returns>New SnykCli instance.</returns>
-        public ICli NewCli() => new SnykCli(this.Options, this.vsVersion);
-
-        private ICli _cli;
-        public ICli Cli {
-            get {
-                _cli ??= NewCli();
-                return _cli;
-            } 
         }
     }
 }

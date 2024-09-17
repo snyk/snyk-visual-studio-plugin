@@ -1,35 +1,36 @@
-﻿using Snyk.VisualStudio.Extension.Language;
-using System.Windows.Controls;
-using System.Windows.Navigation;
+﻿using System.Windows.Forms;
 using Snyk.VisualStudio.Extension.UI.Html;
+using UserControl = System.Windows.Controls.UserControl;
 
 namespace Snyk.VisualStudio.Extension.UI.Toolwindow
 {
     public partial class HtmlDescriptionPanel : UserControl
     {
         private IHtmlProvider htmlProvider;
+        private WebBrowser HtmlViewer;
+
         public HtmlDescriptionPanel()
         {
             this.InitializeComponent();
-            if (HtmlViewer.ContextMenu != null)
+
+            HtmlViewer = new WebBrowser
             {
-                HtmlViewer.ContextMenu.IsEnabled = false;
-#if DEBUG
-                HtmlViewer.ContextMenu.IsEnabled = true;
-#endif
-            }
+                IsWebBrowserContextMenuEnabled = false,
+                ScriptErrorsSuppressed = true
+            };
 
             HtmlViewer.ObjectForScripting = new SnykScriptManager();
-            HtmlViewer.LoadCompleted += HtmlViewerOnLoadCompleted;
+            HtmlViewer.Navigated += HtmlViewerOnLoadCompleted;
+            windowsFormsHost.Child = HtmlViewer;
         }
 
-        private void HtmlViewerOnLoadCompleted(object sender, NavigationEventArgs e)
+        private void HtmlViewerOnLoadCompleted(object sender, WebBrowserNavigatedEventArgs e)
         {
             try
             {
                 if (htmlProvider == null)
                     return;
-                HtmlViewer.InvokeScript("eval", new string[] { htmlProvider.GetInitScript() });
+                HtmlViewer.Document?.InvokeScript("eval", new string[] { htmlProvider.GetInitScript() });
             }
             catch
             {
@@ -41,14 +42,12 @@ namespace Snyk.VisualStudio.Extension.UI.Toolwindow
         {
             if (string.IsNullOrEmpty(html))
                 return;
-
             this.htmlProvider = HtmlProviderFactory.GetHtmlProvider(product);
             if (this.htmlProvider == null)
                 return;
 
             html = htmlProvider.ReplaceCssVariables(html);
-
-            HtmlViewer.NavigateToString(html);
+            HtmlViewer.DocumentText = html;
         }
     }
 }

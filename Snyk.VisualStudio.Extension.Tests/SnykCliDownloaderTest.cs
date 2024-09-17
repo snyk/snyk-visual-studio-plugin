@@ -2,6 +2,7 @@
 using System.IO;
 using System.Threading.Tasks;
 using Moq;
+using Snyk.Common.Settings;
 using Snyk.VisualStudio.Extension.CLI;
 using Snyk.VisualStudio.Extension.Download;
 using Snyk.VisualStudio.Extension.Service;
@@ -12,18 +13,23 @@ namespace Snyk.VisualStudio.Extension.Tests
     public class SnykCliDownloaderTest
     {
         private Mock<ISnykProgressWorker> progressWorkerMock;
+        private Mock<ISnykOptions> optionsMock;
 
         public SnykCliDownloaderTest()
         {
             this.progressWorkerMock = new Mock<ISnykProgressWorker>();
+            this.optionsMock = new Mock<ISnykOptions>();
+            this.optionsMock.Setup(x => x.CliDownloadUrl).Returns(SnykCliDownloader.DefaultBaseDownloadUrl);
+            this.optionsMock.Setup(x => x.CliReleaseChannel).Returns(SnykCliDownloader.DefaultReleaseChannel);
         }
 
         [Fact]
         public async Task SnykCliDownloader_ExistingCliFilesNotCorruptedWhenDownloadFails_SuccessAsync()
         {
-            var cliDownloader = new SnykCliDownloader(null);
+            
+            var cliDownloader = new SnykCliDownloader(optionsMock.Object);
 
-            string tempCliPath = Path.Combine(Path.GetTempPath(), SnykCli.CliFileName);
+            var tempCliPath = Path.Combine(Path.GetTempPath(), SnykCli.CliFileName);
 
             File.Delete(tempCliPath);
 
@@ -50,11 +56,11 @@ namespace Snyk.VisualStudio.Extension.Tests
         [Fact]
         public void SnykCliDownloader_VerifyCliFile_Failed()
         {
-            var cliDownloader = new SnykCliDownloader(null);
+            var cliDownloader = new SnykCliDownloader(optionsMock.Object);
             const string url = "https://static.snyk.io/cli/latest/snyk-win.exe";
             cliDownloader.SaveLatestCliSha(url);
 
-            string tempCliPath = Path.Combine(Path.GetTempPath(), SnykCli.CliFileName);
+            var tempCliPath = Path.Combine(Path.GetTempPath(), SnykCli.CliFileName);
 
             File.Delete(tempCliPath);
 
@@ -72,9 +78,9 @@ namespace Snyk.VisualStudio.Extension.Tests
         [Fact]
         public async Task SnykCliDownloader_VerifyCliFile_SuccessfulAsync()
         {
-            var cliDownloader = new SnykCliDownloader(null);
+            var cliDownloader = new SnykCliDownloader(optionsMock.Object);
 
-            string tempCliPath = Path.Combine(Path.GetTempPath(), SnykCli.CliFileName);
+            var tempCliPath = Path.Combine(Path.GetTempPath(), SnykCli.CliFileName);
 
             File.Delete(tempCliPath);
 
@@ -92,7 +98,7 @@ namespace Snyk.VisualStudio.Extension.Tests
         [Fact]
         public void SnykCliDownloader_GetLatestSha_SuccessfulRequest()
         {
-            var cliDownloader = new SnykCliDownloader(null);
+            var cliDownloader = new SnykCliDownloader(optionsMock.Object);
             const string url = "https://static.snyk.io/cli/latest/snyk-win.exe";
             Assert.False(string.IsNullOrWhiteSpace(cliDownloader.GetLatestCliSha(url)));
         }
@@ -100,7 +106,7 @@ namespace Snyk.VisualStudio.Extension.Tests
         [Fact]
         public void SnykCliDownloader_CorrectInformationProvided_LatestReleaseInfoCorrect()
         {
-            var cliDownloader = new SnykCliDownloader(null);
+            var cliDownloader = new SnykCliDownloader(optionsMock.Object);
 
             LatestReleaseInfo latestReleaseInfo = cliDownloader.GetLatestReleaseInfo();
 
@@ -110,9 +116,9 @@ namespace Snyk.VisualStudio.Extension.Tests
         [Fact]
         public async Task SnykCliDownloader_CorrectInformationProvided_DownloadSuccessfulAsync()
         {
-            var cliDownloader = new SnykCliDownloader(null);
+            var cliDownloader = new SnykCliDownloader(optionsMock.Object);
 
-            string tempCliPath = Path.Combine(Path.GetTempPath(), SnykCli.CliFileName);
+            var tempCliPath = Path.Combine(Path.GetTempPath(), SnykCli.CliFileName);
 
             File.Delete(tempCliPath);
 
@@ -126,35 +132,17 @@ namespace Snyk.VisualStudio.Extension.Tests
         }
 
         [Fact]
-        public void SnykCliDownloader_CorrectLastCheckDatePassed_CheckPass()
-        {
-            var cliDownloader = new SnykCliDownloader(null);
-
-            Assert.True(cliDownloader.IsFourDaysPassedAfterLastCheck(DateTime.Now.AddDays(-5)));
-        }
-
-        [Fact]
-        public void SnykCliDownloader_WrongLastCheckDatePassed_CheckFail()
-        {
-            var cliDownloader = new SnykCliDownloader(null);
-
-            Assert.False(cliDownloader.IsFourDaysPassedAfterLastCheck(DateTime.Now.AddDays(-3)));
-        }
-
-        [Fact]
         public async Task SnykCliDownloader_CliFileNotExists_CliDownloadSuccessfulAsync()
         {
-            string tempCliPath = Path.Combine(Path.GetTempPath(), SnykCli.CliFileName);
+            var tempCliPath = Path.Combine(Path.GetTempPath(), SnykCli.CliFileName);
 
             File.Delete(tempCliPath);
 
             Assert.False(File.Exists(tempCliPath));
 
-            var cliDownloader = new SnykCliDownloader(null);
+            var cliDownloader = new SnykCliDownloader(optionsMock.Object);
 
-            await cliDownloader.AutoUpdateCliAsync(this.progressWorkerMock.Object, DateTime.Now.AddDays(-5), tempCliPath);
-
-            string newCliVersion = cliDownloader.GetLatestReleaseInfo().Name;
+            await cliDownloader.AutoUpdateCliAsync(this.progressWorkerMock.Object, tempCliPath);
 
             Assert.True(File.Exists(tempCliPath));
 
@@ -164,49 +152,44 @@ namespace Snyk.VisualStudio.Extension.Tests
         [Fact]
         public async Task SnykCliDownloader_WrongPreviousVersionProvided_CliDownloadSuccessfulAsync()
         {
-            string tempCliPath = Path.Combine(Path.GetTempPath(), SnykCli.CliFileName);
+            var tempCliPath = Path.Combine(Path.GetTempPath(), SnykCli.CliFileName);
 
             File.Delete(tempCliPath);
 
             Assert.False(File.Exists(tempCliPath));
 
-            var cliDownloader = new SnykCliDownloader(null);
+            var cliDownloader = new SnykCliDownloader(optionsMock.Object);
 
-            var lastCheckDate = DateTime.Now.AddDays(-5);
-            await cliDownloader.AutoUpdateCliAsync(this.progressWorkerMock.Object, lastCheckDate, tempCliPath);
+            await cliDownloader.AutoUpdateCliAsync(this.progressWorkerMock.Object, tempCliPath);
 
-            string newCliVersion = cliDownloader.GetLatestReleaseInfo().Version;
+            var newCliVersion = cliDownloader.GetLatestReleaseInfo().Version;
 
             Assert.True(File.Exists(tempCliPath));
 
             File.Delete(tempCliPath);
 
             Assert.False(string.IsNullOrEmpty(newCliVersion));
-            Assert.True(cliDownloader.IsCliDownloadNeeded(lastCheckDate, tempCliPath));
+            Assert.True(cliDownloader.IsCliDownloadNeeded(tempCliPath));
         }
 
         [Fact]
         public async Task SnykCliDownloader_PreviousVersionOlderProvided_CliDownloadSuccessfulAsync()
         {
-            string tempCliPath = Path.Combine(Path.GetTempPath(), SnykCli.CliFileName);
+            var tempCliPath = Path.Combine(Path.GetTempPath(), SnykCli.CliFileName);
 
             File.Delete(tempCliPath);
 
             Assert.False(File.Exists(tempCliPath));
 
-            string currentCliVersion = "1.234.2";
+            optionsMock.Object.CurrentCliVersion = "v1.234.2";
+            var cliDownloader = new SnykCliDownloader(optionsMock.Object);
 
-            var cliDownloader = new SnykCliDownloader(currentCliVersion);
-
-            var lastCheckDate = DateTime.Now.AddDays(-5);
-            await cliDownloader.AutoUpdateCliAsync(this.progressWorkerMock.Object, lastCheckDate, tempCliPath);
-
-            string newCliVersion = cliDownloader.GetLatestReleaseInfo().Version;
+            await cliDownloader.AutoUpdateCliAsync(this.progressWorkerMock.Object, tempCliPath);
 
             Assert.True(File.Exists(tempCliPath));
 
             File.Delete(tempCliPath);
-            Assert.True(cliDownloader.IsCliDownloadNeeded(lastCheckDate, tempCliPath));
+            Assert.True(cliDownloader.IsCliDownloadNeeded(tempCliPath));
         }
     }
 }
