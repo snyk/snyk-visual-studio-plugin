@@ -10,6 +10,7 @@
         <Icon>Resources\SnykDogLogo.png</Icon>
         <PreviewImage>Resources\SnykDogLogo.png</PreviewImage>
         <Tags>vulnerabilities;security;source;sast;code-analysis;code-quality;static-code-analysis</Tags>
+        <Preview>false</Preview>
     </Metadata>
     <Installation>
         <InstallationTarget Id="Microsoft.VisualStudio.Community" Version="[17.0,18.0)">
