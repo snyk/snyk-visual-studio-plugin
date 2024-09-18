@@ -45,7 +45,7 @@ jobs:
             args:
               --severity-threshold=high
   build-project:
-    uses: snyk/snyk-visual-studio-plugin/.github/workflows/build-project.yml@main
+    uses: snyk/snyk-visual-studio-plugin/.github/workflows/build-project.yml@feat/preview-release
     with:
       solution-file-path: .
     secrets: inherit
