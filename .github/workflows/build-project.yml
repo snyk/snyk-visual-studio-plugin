@@ -29,16 +29,16 @@ jobs:
 
     - name: Patch Name for vsix manifest file
       id: patch_vsix
-      run: ./.github/actions/patch-manifest.ps1 -ManifestPath ".\Snyk.VisualStudio.Extension.2022\source.extension.vsixmanifest" -PipelineType "${{ inputs.channel }}"
+      run: pwsh ./.github/actions/patch-manifest.ps1 -ManifestPath ".\Snyk.VisualStudio.Extension.2022\source.extension.vsixmanifest" -PipelineType "${{ inputs.channel }}"
 
     - name: Calculate next semantic version
       id: vsix_version
       run: |
         if ("${{ inputs.solution-file-path }}" -eq "stable") {
-          ./.github/actions/next-git-tag.ps1 -VersionType semver
+          pwsh ./.github/actions/next-git-tag.ps1 -VersionType semver
         }
         elseif ("${{ inputs.solution-file-path }}" -eq "preview") {
-          ./.github/actions/next-git-tag.ps1 -VersionType time
+          pwsh ./.github/actions/next-git-tag.ps1 -VersionType time
         }
 
     - name: Set VSIX version for 2022
