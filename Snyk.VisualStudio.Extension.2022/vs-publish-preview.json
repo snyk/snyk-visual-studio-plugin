@@ -2,7 +2,7 @@
   "$schema": "http://json.schemastore.org/vsix-publish",
   "categories": [ "Security", "Coding" ],
   "identity": {
-    "internalName": "snyk-vulnerability-scanner-vs-2022"
+    "internalName": "snyk-vulnerability-scanner-vs-2022-preview"
   },
   "assetFiles": [
   ],
