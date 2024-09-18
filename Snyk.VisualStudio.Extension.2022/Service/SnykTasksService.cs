@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft;
@@ -268,7 +269,7 @@ namespace Snyk.VisualStudio.Extension.Service
                 var progressWorker = new SnykProgressWorker
                 {
                     TasksService = this,
-                    TokenSource = this.SnykScanTokenSource,
+                    TokenSource = this.SnykScanTokenSource.IsCancellationRequested ? new CancellationTokenSource() : this.SnykScanTokenSource,
                 };
 
                 await languageServerClientManager.InvokeWorkspaceScanAsync(progressWorker.TokenSource.Token);
@@ -313,6 +314,20 @@ namespace Snyk.VisualStudio.Extension.Service
                 throw;
             }
         }
+
+        public async Task RemoveExistingFoldersFromConfiguration()
+        {
+            if (!LanguageClientHelper.IsLanguageServerReady())
+                return;
+            var currentFolder = await this.serviceProvider.SolutionService.GetSolutionFolderAsync();
+            
+            if (string.IsNullOrEmpty(currentFolder)) return;
+
+            var toBeDeletedFolders = serviceProvider.Options.TrustedFolders.Where(x => x != currentFolder).ToList();
+            await LanguageClientHelper.LanguageClientManager()
+                .DidChangeWorkspaceFoldersAsync(currentFolder, toBeDeletedFolders);
+        }
+
 
         /// <summary>
         /// Start a CLI download task in background thread. Will only download the CLI if it's missing or outdated.

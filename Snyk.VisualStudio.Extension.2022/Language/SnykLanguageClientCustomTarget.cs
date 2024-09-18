@@ -133,7 +133,7 @@ namespace Snyk.VisualStudio.Extension.Language
 
             if (serviceProvider.Options.AutoScan)
             {
-                await this.languageClientManager.InvokeWorkspaceScanAsync(SnykVSPackage.Instance.DisposalToken);
+                await this.languageClientManager.InvokeWorkspaceScanAsync(SnykVSPackage.ServiceProvider.TasksService.SnykScanTokenSource.Token);
             }
         }
 
