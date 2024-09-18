@@ -26,7 +26,6 @@ if ($PipelineType -eq "preview") {
     Write-Host "Updated Preview: true"
     # Save the modified XML back to the file
     $xml.Save($ManifestPath)
-    $xml.OuterXml | Write-Host
     Write-Host "Manifest file has been updated successfully."
 } else {
     Write-Host "Pipeline is not preview, no changes made to DisplayName."
