@@ -30,17 +30,18 @@ jobs:
     - name: Patch Name for vsix manifest file
       id: patch_vsix
       shell: pwsh
-      run: $PSScriptRoot/.github/actions/patch-manifest.ps1 -ManifestPath ".\Snyk.VisualStudio.Extension.2022\source.extension.vsixmanifest" -PipelineType "${{ inputs.channel }}"
+      run: |
+       & ".\.github\actions\next-git-tag\patch-manifest.ps1" ".\Snyk.VisualStudio.Extension.2022\source.extension.vsixmanifest" "${{ inputs.channel }}"
 
     - name: Calculate next semantic version
       shell: pwsh
       id: vsix_version
       run: |
-        if ("${{ inputs.solution-file-path }}" -eq "stable") {
-          $PSScriptRoot/.github/actions/next-git-tag.ps1 -VersionType semver
+        if ("${{ inputs.channel}}" -eq "stable") {
+          & ".\.github\actions\next-git-tag\next-git-tag.ps1" semver
         }
-        elseif ("${{ inputs.solution-file-path }}" -eq "preview") {
-          $PSScriptRoot/.github/actions/next-git-tag.ps1 -VersionType time
+        elseif ("${{ inputs.channel }}" -eq "preview") {
+          & ".\.github\actions\next-git-tag\next-git-tag.ps1" time
         }
 
     - name: Set VSIX version for 2022

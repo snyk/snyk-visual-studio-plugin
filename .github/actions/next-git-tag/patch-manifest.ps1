@@ -16,11 +16,11 @@ Param(
 # Check the pipeline type, and if it's a release, modify the DisplayName
 if ($PipelineType -eq "preview") {
     Write-Host "Pipeline is release, appending 'preview' to DisplayName."
-    $displayNameNode = $xml.VsixManifest.PackageManifest.Metadata.DisplayName
+    $displayNameNode = $xml.PackageManifest.Metadata.DisplayName
 
     # Append ' preview' to the existing DisplayName
     $displayNameNode = "(Preview) $displayNameNode"
-    $xml.VsixManifest.PackageManifest.Metadata.DisplayName = $displayNameNode
+    $xml.PackageManifest.Metadata.DisplayName = $displayNameNode
 
     Write-Host "Updated DisplayName: $displayNameNode"
 
