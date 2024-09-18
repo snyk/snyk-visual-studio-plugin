@@ -128,7 +128,6 @@ namespace Snyk.VisualStudio.Extension.Language
             }
 
             serviceProvider.Options.ApiToken = new AuthenticationToken(serviceProvider.Options.AuthenticationMethod, token);
-            serviceProvider.UserStorageSettingsService?.SaveSettings();
 
             await serviceProvider.Options.OnAuthenticationSuccessfulAsync(token);
 

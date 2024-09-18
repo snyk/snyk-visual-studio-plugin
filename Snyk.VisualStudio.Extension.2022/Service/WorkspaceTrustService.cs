@@ -34,6 +34,7 @@ namespace Snyk.VisualStudio.Extension.Service
                 var trustedFolders = this.settingsService.TrustedFolders;
                 trustedFolders.Add(absoluteFolderPath);
                 this.settingsService.TrustedFolders = trustedFolders;
+                this.settingsService.SaveSettings();
             }
             catch (Exception e)
             {
