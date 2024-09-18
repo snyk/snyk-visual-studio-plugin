@@ -71,7 +71,7 @@ namespace Snyk.VisualStudio.Extension.Settings
                 LanguageClientHelper.LanguageClientManager().OnLanguageClientNotInitializedAsync += OnOnLanguageClientNotInitializedAsync;
                 LanguageClientHelper.LanguageClientManager().OnLanguageServerReadyAsync += OnOnLanguageServerReadyAsync;
             }
-            
+            this.ServiceProvider.ToolWindow.Show();
             logger.Information("Leave Initialize method");
         }
 

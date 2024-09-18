@@ -5,5 +5,6 @@
     public interface IUserStorageSettingsService
     {
         ISet<string> TrustedFolders { get; set; }
+        void SaveSettings();
     }
 }

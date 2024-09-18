@@ -120,7 +120,7 @@ namespace Snyk.VisualStudio.Extension.UI.Toolwindow
             tasksService.DownloadUpdate += (sender, args) => ThreadHelper.JoinableTaskFactory.RunAsync(() => this.OnDownloadUpdateAsync(sender, args));
             tasksService.DownloadCancelled += this.OnDownloadCancelled;
             tasksService.DownloadFailed += this.OnDownloadFailed;
-
+            LanguageClientHelper.LanguageClientManager().OnLanguageServerReadyAsync += OnOnLanguageServerReadyAsync;
             this.Loaded += (sender, args) => tasksService.Download();
 
             serviceProvider.Options.SettingsChanged += this.OnSettingsChanged;
@@ -132,6 +132,11 @@ namespace Snyk.VisualStudio.Extension.UI.Toolwindow
                 this.messagePanel.runScanButton.IsEnabled = isEnabled;
 
                 // When the run button is disabled, we need to show the welcome screen that prompts the user to authenticate.
+                if (!LanguageClientHelper.IsLanguageServerReady())
+                {
+                    this.context.TransitionTo(InitializingState.Instance);
+                    return;
+                }
                 if (!isEnabled)
                 {
                     this.context.TransitionTo(OverviewState.Instance);
@@ -139,6 +144,12 @@ namespace Snyk.VisualStudio.Extension.UI.Toolwindow
             });
 
             Logger.Information("Leave InitializeEventListenersAsync() method.");
+        }
+
+        private Task OnOnLanguageServerReadyAsync(object sender, SnykLanguageServerEventArgs args)
+        {
+            this.ShowWelcomeOrInitializingOrRunScanScreen();
+            return Task.CompletedTask;
         }
 
         private void OnIacScanError(object sender, SnykCodeScanEventArgs e)
@@ -398,7 +409,7 @@ namespace Snyk.VisualStudio.Extension.UI.Toolwindow
         /// </summary>
         /// <param name="sender">Source object.</param>
         /// <param name="eventArgs">Event args.</param>
-        public void OnDownloadFinished(object sender, SnykCliDownloadEventArgs eventArgs) => this.ShowWelcomeOrRunScanScreen();
+        public void OnDownloadFinished(object sender, SnykCliDownloadEventArgs eventArgs) => this.ShowWelcomeOrInitializingOrRunScanScreen();
 
         /// <summary>
         /// DownloadUpdate event handler. Call UpdateDonwloadProgress() method.
@@ -419,7 +430,7 @@ namespace Snyk.VisualStudio.Extension.UI.Toolwindow
             {
                 if (LanguageClientHelper.LanguageClientManager() != null)
                     ThreadHelper.JoinableTaskFactory.RunAsync(async () => await LanguageClientHelper.LanguageClientManager().RestartServerAsync()).FireAndForget();
-                this.ShowWelcomeOrRunScanScreen();
+                this.ShowWelcomeOrInitializingOrRunScanScreen();
             }
             else
             {
@@ -433,7 +444,7 @@ namespace Snyk.VisualStudio.Extension.UI.Toolwindow
             {
                 if (LanguageClientHelper.LanguageClientManager() != null)
                     ThreadHelper.JoinableTaskFactory.RunAsync(async () => await LanguageClientHelper.LanguageClientManager().RestartServerAsync()).FireAndForget();
-                this.ShowWelcomeOrRunScanScreen();
+                this.ShowWelcomeOrInitializingOrRunScanScreen();
             }
             else
             {
@@ -502,8 +513,7 @@ namespace Snyk.VisualStudio.Extension.UI.Toolwindow
             this.resultsTree.Clear();
 
             this.UpdateTreeNodeItemsState();
-
-            this.context.TransitionTo(RunScanState.Instance);
+            this.ShowWelcomeOrInitializingOrRunScanScreen();
         });
 
         /// <summary>
@@ -523,7 +533,7 @@ namespace Snyk.VisualStudio.Extension.UI.Toolwindow
         public async Task UpdateScreenStateAsync()
         {
             await Task.Delay(200);
-            this.ShowWelcomeOrRunScanScreen();
+            this.ShowWelcomeOrInitializingOrRunScanScreen();
         }
 
         private async Task OnOssScanningFinishedAsync() => await this.UpdateActionsStateAsync();
@@ -786,7 +796,7 @@ namespace Snyk.VisualStudio.Extension.UI.Toolwindow
         {
             if (this.context.IsEmptyState())
             {
-                this.ShowWelcomeOrRunScanScreen();
+                this.ShowWelcomeOrInitializingOrRunScanScreen();
             }
 
             this.UpdateTreeNodeItemsState();
@@ -795,11 +805,17 @@ namespace Snyk.VisualStudio.Extension.UI.Toolwindow
         /// <summary>
         /// If api token is valid it will show run scan screen. If api token is invalid it will show Welcome screen.
         /// </summary>
-        private void ShowWelcomeOrRunScanScreen()
+        private void ShowWelcomeOrInitializingOrRunScanScreen()
         {
             var options = this.serviceProvider.Options;
 
-            if (options.ApiToken.IsValid() && LanguageClientHelper.IsLanguageServerReady())
+            if (!LanguageClientHelper.IsLanguageServerReady())
+            {
+                this.context.TransitionTo(InitializingState.Instance);
+                return;
+            }
+
+            if (options.ApiToken.IsValid())
             {
                 this.context.TransitionTo(RunScanState.Instance);
                 return;

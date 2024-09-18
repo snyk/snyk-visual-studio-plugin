@@ -180,6 +180,7 @@
     <Compile Include="UI\Toolwindow\MessagePanel.xaml.cs">
       <DependentUpon>MessagePanel.xaml</DependentUpon>
     </Compile>
+    <Compile Include="UI\Toolwindow\InitializingState.cs" />
     <Compile Include="UI\Toolwindow\OverviewState.cs" />
     <Compile Include="UI\Toolwindow\RunScanState.cs" />
     <Compile Include="UI\Toolwindow\ScanResultsState.cs" />

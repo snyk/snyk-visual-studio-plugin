@@ -177,6 +177,10 @@ namespace Snyk.VisualStudio.Extension.Language
                 }
                 Logger.Information("Starting Language Server");
                 await StartAsync.InvokeAsync(this, EventArgs.Empty);
+                
+                // Workaround because Visual Studio doesn't remove old folders if a new folder is opened.
+                await SnykVSPackage.ServiceProvider.TasksService.RemoveExistingFoldersFromConfiguration();
+                
                 IsReady = true;
                 FireOnLanguageServerReadyAsyncEvent();
             }
@@ -370,6 +374,28 @@ namespace Snyk.VisualStudio.Extension.Language
             return await InvokeWithParametersAsync<object>(LsConstants.WorkspaceChangeConfiguration, param, cancellationToken).ConfigureAwait(false);
         }
 
+        public async Task DidChangeWorkspaceFoldersAsync(string currentFolder, List<string> foldersToRemove)
+        {
+            if (!IsReady) return;
+            var param = new DidChangeWorkspaceFoldersParams
+            {
+                Event = new WorkspaceFoldersChangeEvent
+                {
+                    Added = new List<WorkspaceFolder>()
+                    {
+                        new WorkspaceFolder { Name = currentFolder, Uri = new Uri(currentFolder) }
+                    },
+                    Removed = foldersToRemove.Select(x =>
+                        new WorkspaceFolder
+                        {
+                            Name = x, Uri = new Uri(x)
+                        }).ToList()
+                }
+            };
+            await NotifyWithParametersAsync(LsConstants.DidChangeWorkspaceFolders, param).ConfigureAwait(false);
+        }
+
+
         public async Task RestartServerAsync()
         {
             await RestartAsync(true);
@@ -401,5 +427,22 @@ namespace Snyk.VisualStudio.Extension.Language
             if (!IsReady) return;
             await Rpc.NotifyWithParameterObjectAsync(request, parameters).ConfigureAwait(false);
         }
+    }
+
+    public class DidChangeWorkspaceFoldersParams
+    {
+        public WorkspaceFoldersChangeEvent Event { get; set; }
+    }
+
+    public class WorkspaceFoldersChangeEvent
+    {
+        public IList<WorkspaceFolder> Added { get; set; }
+        public IList<WorkspaceFolder> Removed { get; set; }
+    }
+
+    public class WorkspaceFolder
+    {
+        public Uri Uri { get; set; }
+        public string Name { get; set; }
     }
 }

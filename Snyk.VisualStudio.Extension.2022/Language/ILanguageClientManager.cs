@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.VisualStudio.Threading;
@@ -21,5 +22,6 @@ namespace Snyk.VisualStudio.Extension.Language
         Task<object> DidChangeConfigurationAsync(CancellationToken cancellationToken);
         event AsyncEventHandler<SnykLanguageServerEventArgs> OnLanguageServerReadyAsync;
         event AsyncEventHandler<SnykLanguageServerEventArgs> OnLanguageClientNotInitializedAsync;
+        Task DidChangeWorkspaceFoldersAsync(string currentFolder, List<string> foldersToRemove);
     }
 }

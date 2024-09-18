@@ -38,6 +38,7 @@ namespace Snyk.VisualStudio.Extension.UI.Toolwindow
                 this.messagePanel,
                 this.overviewPanel,
                 this.scanningProjectMessagePanel,
+                this.snykInitializing
             };
             snykDogLogo.Source = SnykIconProvider.GetImageSourceFromPath(SnykIconProvider.SnykDogLogoIconPath);
             var languageClientManager = LanguageClientHelper.LanguageClientManager();
@@ -102,6 +103,11 @@ namespace Snyk.VisualStudio.Extension.UI.Toolwindow
             }
 
             this.ShowPanel(this.overviewPanel);
+        }
+
+        public void ShowInitializingScreenMessage()
+        {
+            this.ShowPanel(this.snykInitializing);
         }
 
         private void RunButton_Click(object sender, RoutedEventArgs e) => ThreadHelper.JoinableTaskFactory.RunAsync(SnykTasksService.Instance.ScanAsync);
