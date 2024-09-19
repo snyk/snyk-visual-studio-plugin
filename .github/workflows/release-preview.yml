@@ -94,7 +94,7 @@ jobs:
         asset_content_type: application/zip
 
     - name: Publish 2022 extension to Marketplace
-      uses: cezarypiatek/VsixPublisherAction@1.1
+      uses: cezarypiatek/VsixPublisherAction@0.2
       with:
         extension-file: '.\Snyk.VisualStudio.Extension.2022\bin\Release\Snyk.VisualStudio.Extension.vsix'
         publish-manifest-file: '.\Snyk.VisualStudio.Extension.2022\vs-publish-preview.json'
