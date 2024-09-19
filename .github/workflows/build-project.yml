@@ -27,12 +27,6 @@ jobs:
       with:
         fetch-depth: 0
 
-    - name: Patch Name for vsix manifest file
-      id: patch_vsix
-      shell: pwsh
-      run: |
-       & ".\.github\actions\next-git-tag\patch-manifest.ps1" ".\Snyk.VisualStudio.Extension.2022\source.extension.vsixmanifest" "${{ inputs.channel }}"
-
     - name: Calculate next semantic version
       shell: pwsh
       id: vsix_version
@@ -44,11 +38,11 @@ jobs:
           & ".\.github\actions\next-git-tag\next-git-tag.ps1" time
         }
 
-    - name: Set VSIX version for 2022
-      uses: cezarypiatek/VsixVersionAction@1.0
-      with:
-        version: ${{ steps.vsix_version.outputs.next-tag }}
-        vsix-manifest-file: .\Snyk.VisualStudio.Extension.2022\source.extension.vsixmanifest
+    - name: Patch vsix manifest file
+      id: patch_vsix
+      shell: pwsh
+      run: |
+       & ".\.github\actions\next-git-tag\patch-manifest.ps1" ".\Snyk.VisualStudio.Extension.2022\source.extension.vsixmanifest" "${{ inputs.channel }}" "${{ steps.vsix_version.outputs.next-tag }}"
 
     - name: Check if secrets exist
       env: 

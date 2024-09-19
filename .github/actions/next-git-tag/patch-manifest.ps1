@@ -7,7 +7,9 @@ Param(
     [Parameter(Mandatory = $true)]
     [string]$ManifestPath,  # Path to extension.vsixmanifest
     [Parameter(Mandatory = $true)]
-    [string]$PipelineType   # Type of pipeline: "preview" or "stable"
+    [string]$PipelineType,   # Type of pipeline: "preview" or "stable"
+    [Parameter(Mandatory = $true)]
+    [string]$Version   # Extension Version
 )
 
 # Load the XML file
@@ -15,9 +17,9 @@ Param(
 
 # Check the pipeline type, and if it's a release, modify the DisplayName
 if ($PipelineType -eq "preview") {
-    Write-Host "Pipeline is release, appending 'preview' to DisplayName."
+    Write-Host "Pipeline is release, setting 'preview' to DisplayName."
     $displayNameNode = $xml.PackageManifest.Metadata.DisplayName
-    # Append ' preview' to the existing DisplayName
+    # Append 'preview' to the existing DisplayName
     $displayNameNode = "(Preview) $displayNameNode"
     $xml.PackageManifest.Metadata.DisplayName = $displayNameNode
     $xml.PackageManifest.Metadata.Preview = "true"
@@ -25,8 +27,9 @@ if ($PipelineType -eq "preview") {
     Write-Host "Updated DisplayName: $displayNameNode"
     Write-Host "Updated Preview: true"
     # Save the modified XML back to the file
-    $xml.Save($ManifestPath)
-    Write-Host "Manifest file has been updated successfully."
-} else {
-    Write-Host "Pipeline is not preview, no changes made to DisplayName."
 }
+
+$xml.PackageManifest.Metadata.Identity.SetAttribute("Version", $Version)
+Write-Host "Updated Version to: $Version"
+$xml.Save($ManifestPath)
+Write-Host "Manifest file has been updated successfully."
