@@ -103,8 +103,9 @@ namespace Snyk.VisualStudio.Extension.UI.Tree
                 var highSeverityCount = 0;
                 var mediumSeverityCount = 0;
                 var lowSeverityCount = 0;
-
-                foreach (var kv in value)
+                var currentFolder = ThreadHelper.JoinableTaskFactory.Run(async () =>
+                    await SnykVSPackage.ServiceProvider.SolutionService.GetSolutionFolderAsync()).Replace("\\","/");
+                foreach (var kv in value.Where(x=>x.Key.Contains(currentFolder)))
                 {
                     var filePath = kv.Key;
                     var issueList = kv.Value.ToList();
@@ -185,14 +186,14 @@ namespace Snyk.VisualStudio.Extension.UI.Tree
                 var highSeverityCount = 0;
                 var mediumSeverityCount = 0;
                 var lowSeverityCount = 0;
-                var folderName = ThreadHelper.JoinableTaskFactory.Run(async () => await SnykVSPackage.ServiceProvider.SolutionService.GetSolutionFolderAsync());
-
-                foreach (var kv in value)
+                var currentFolder = ThreadHelper.JoinableTaskFactory.Run(async () =>
+                    await SnykVSPackage.ServiceProvider.SolutionService.GetSolutionFolderAsync()).Replace("\\", "/");
+                foreach (var kv in value.Where(x => x.Key.Contains(currentFolder)))
                 {
                     var filePath = kv.Key;
                     var issues = kv.Value.ToList();
 
-                    var issueNode = new SnykIacFileTreeNode { IssueList = issues, FileName = filePath, FolderName = folderName, IsExpanded = false };
+                    var issueNode = new SnykIacFileTreeNode { IssueList = issues, FileName = filePath, FolderName = currentFolder, IsExpanded = false };
 
                     criticalSeverityCount += issues.Count(suggestion => suggestion.Severity == Severity.Critical);
                     highSeverityCount += issues.Count(suggestion => suggestion.Severity == Severity.High);
@@ -370,13 +371,14 @@ namespace Snyk.VisualStudio.Extension.UI.Tree
             var lowSeverityCount = 0;
 
             rootNode.Clean();
-            var folderName = ThreadHelper.JoinableTaskFactory.Run(async () => await SnykVSPackage.ServiceProvider.SolutionService.GetSolutionFolderAsync());
-            foreach (var kv in analysisResult)
+            var currentFolder = ThreadHelper.JoinableTaskFactory.Run(async () =>
+                await SnykVSPackage.ServiceProvider.SolutionService.GetSolutionFolderAsync()).Replace("\\", "/");
+            foreach (var kv in analysisResult.Where(x => x.Key.Contains(currentFolder)))
             {
                 var filePath = kv.Key;
                 var issueList = kv.Value.ToList();
 
-                var issueNode = new SnykCodeFileTreeNode { IssueList = issueList, FileName = filePath,FolderName = folderName, IsExpanded = false };
+                var issueNode = new SnykCodeFileTreeNode { IssueList = issueList, FileName = filePath,FolderName = currentFolder, IsExpanded = false };
 
                 var issues = issueList.Where(conditionFunction).ToList();
 

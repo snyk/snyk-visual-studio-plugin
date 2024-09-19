@@ -19,7 +19,6 @@ namespace Snyk.VisualStudio.Extension.Language
         private readonly ConcurrentDictionary<string, IEnumerable<Issue>> snykCodeIssueDictionary = new();
         private readonly ConcurrentDictionary<string, IEnumerable<Issue>> snykOssIssueDictionary = new();
         private readonly ConcurrentDictionary<string, IEnumerable<Issue>> snykIaCIssueDictionary = new();
-        private static readonly ILogger _logger = LogManager.ForContext<SnykLanguageClientCustomTarget>();
         private readonly ILanguageClientManager languageClientManager;
         public SnykLanguageClientCustomTarget(ISnykServiceProvider serviceProvider, ILanguageClientManager languageClientManager)
         {
@@ -128,7 +127,6 @@ namespace Snyk.VisualStudio.Extension.Language
             }
 
             serviceProvider.Options.ApiToken = new AuthenticationToken(serviceProvider.Options.AuthenticationMethod, token);
-            serviceProvider.UserStorageSettingsService?.SaveSettings();
 
             await serviceProvider.Options.OnAuthenticationSuccessfulAsync(token);
 

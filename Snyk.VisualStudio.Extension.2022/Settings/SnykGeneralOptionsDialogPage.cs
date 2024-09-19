@@ -69,6 +69,8 @@ namespace Snyk.VisualStudio.Extension.Settings
                 if (this.userStorageSettingsService == null || this.userStorageSettingsService.Token == tokenAsString)
                     return;
                 this.userStorageSettingsService.Token = tokenAsString;
+                userStorageSettingsService.SaveSettings();
+                FireSettingsChangedEvent();
             }
         }
         
@@ -82,6 +84,8 @@ namespace Snyk.VisualStudio.Extension.Settings
                 this.userStorageSettingsService.AuthenticationMethod = value;
                 this.GeneralSettingsUserControl.InvalidateApiToken();
                 ApiToken = AuthenticationToken.EmptyToken;
+                userStorageSettingsService.SaveSettings();
+                FireSettingsChangedEvent();
             }
         }
 
@@ -124,6 +128,8 @@ namespace Snyk.VisualStudio.Extension.Settings
 
                 this.userStorageSettingsService.CustomEndpoint = newApiEndpoint;
                 ApiToken = AuthenticationToken.EmptyToken;
+                userStorageSettingsService.SaveSettings();
+                FireSettingsChangedEvent();
             }
         }
 
@@ -169,6 +175,8 @@ namespace Snyk.VisualStudio.Extension.Settings
                     return;
                 }
                 this.userStorageSettingsService.Organization = value;
+                userStorageSettingsService.SaveSettings();
+                FireSettingsChangedEvent();
             }
         }
 
@@ -185,6 +193,8 @@ namespace Snyk.VisualStudio.Extension.Settings
                     return;
                 }
                 this.userStorageSettingsService.IgnoreUnknownCa = value;
+                userStorageSettingsService.SaveSettings();
+                FireSettingsChangedEvent();
             }
         }
 
@@ -428,7 +438,6 @@ namespace Snyk.VisualStudio.Extension.Settings
                     await ServiceProvider.Package.LanguageClientManager.InvokeLogout(SnykVSPackage.Instance.DisposalToken);
                     var token = await ServiceProvider.Package.LanguageClientManager.InvokeLogin(SnykVSPackage.Instance.DisposalToken);
                     ApiToken = CreateAuthenticationToken(token);
-                    this.userStorageSettingsService.SaveSettings();
                 });
                 return true;
             }
