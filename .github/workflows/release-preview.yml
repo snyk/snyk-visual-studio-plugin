@@ -73,7 +73,7 @@ jobs:
         git push origin main --tags
 
     - name: Publish 2022 extension to Marketplace
-      uses: cezarypiatek/VsixPublisherAction@0.2
+      uses: cezarypiatek/VsixPublisherAction@1.1
       with:
         extension-file: '.\Snyk.VisualStudio.Extension.2022\bin\Release\Snyk.VisualStudio.Extension.vsix'
         publish-manifest-file: '.\Snyk.VisualStudio.Extension.2022\vs-publish-preview.json'
