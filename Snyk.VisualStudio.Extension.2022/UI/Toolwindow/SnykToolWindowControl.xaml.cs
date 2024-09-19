@@ -139,7 +139,7 @@ namespace Snyk.VisualStudio.Extension.UI.Toolwindow
                 }
                 if (!isEnabled)
                 {
-                    this.context.TransitionTo(OverviewState.Instance);
+                    this.DetermineInitScreen();
                 }
             });
 
@@ -148,7 +148,7 @@ namespace Snyk.VisualStudio.Extension.UI.Toolwindow
 
         private Task OnOnLanguageServerReadyAsync(object sender, SnykLanguageServerEventArgs args)
         {
-            this.ShowWelcomeOrInitializingOrRunScanScreen();
+            this.DetermineInitScreen();
             return Task.CompletedTask;
         }
 
@@ -409,7 +409,7 @@ namespace Snyk.VisualStudio.Extension.UI.Toolwindow
         /// </summary>
         /// <param name="sender">Source object.</param>
         /// <param name="eventArgs">Event args.</param>
-        public void OnDownloadFinished(object sender, SnykCliDownloadEventArgs eventArgs) => this.ShowWelcomeOrInitializingOrRunScanScreen();
+        public void OnDownloadFinished(object sender, SnykCliDownloadEventArgs eventArgs) => this.DetermineInitScreen();
 
         /// <summary>
         /// DownloadUpdate event handler. Call UpdateDonwloadProgress() method.
@@ -430,7 +430,7 @@ namespace Snyk.VisualStudio.Extension.UI.Toolwindow
             {
                 if (LanguageClientHelper.LanguageClientManager() != null)
                     ThreadHelper.JoinableTaskFactory.RunAsync(async () => await LanguageClientHelper.LanguageClientManager().RestartServerAsync()).FireAndForget();
-                this.ShowWelcomeOrInitializingOrRunScanScreen();
+                this.DetermineInitScreen();
             }
             else
             {
@@ -444,7 +444,7 @@ namespace Snyk.VisualStudio.Extension.UI.Toolwindow
             {
                 if (LanguageClientHelper.LanguageClientManager() != null)
                     ThreadHelper.JoinableTaskFactory.RunAsync(async () => await LanguageClientHelper.LanguageClientManager().RestartServerAsync()).FireAndForget();
-                this.ShowWelcomeOrInitializingOrRunScanScreen();
+                this.DetermineInitScreen();
             }
             else
             {
@@ -513,7 +513,7 @@ namespace Snyk.VisualStudio.Extension.UI.Toolwindow
             this.resultsTree.Clear();
 
             this.UpdateTreeNodeItemsState();
-            this.ShowWelcomeOrInitializingOrRunScanScreen();
+            this.DetermineInitScreen();
         });
 
         /// <summary>
@@ -533,7 +533,7 @@ namespace Snyk.VisualStudio.Extension.UI.Toolwindow
         public async Task UpdateScreenStateAsync()
         {
             await Task.Delay(200);
-            this.ShowWelcomeOrInitializingOrRunScanScreen();
+            this.DetermineInitScreen();
         }
 
         private async Task OnOssScanningFinishedAsync() => await this.UpdateActionsStateAsync();
@@ -796,7 +796,7 @@ namespace Snyk.VisualStudio.Extension.UI.Toolwindow
         {
             if (this.context.IsEmptyState())
             {
-                this.ShowWelcomeOrInitializingOrRunScanScreen();
+                this.DetermineInitScreen();
             }
 
             this.UpdateTreeNodeItemsState();
@@ -805,7 +805,7 @@ namespace Snyk.VisualStudio.Extension.UI.Toolwindow
         /// <summary>
         /// If api token is valid it will show run scan screen. If api token is invalid it will show Welcome screen.
         /// </summary>
-        private void ShowWelcomeOrInitializingOrRunScanScreen()
+        private void DetermineInitScreen()
         {
             var options = this.serviceProvider.Options;
 

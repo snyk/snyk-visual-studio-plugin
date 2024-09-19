@@ -67,7 +67,7 @@
     <Compile Include="Language\InvalidProductTypeException.cs" />
     <Compile Include="Language\JTokenExtension.cs" />
     <Compile Include="Language\LsConstants.cs" />
-    <Compile Include="Language\LspAnalysisResult.cs" />
+    <Compile Include="Language\LsAnalysisResult.cs" />
     <Compile Include="Language\SatisfyImportExtension.cs" />
     <Compile Include="Language\SnykContentDefinition.cs" />
     <Compile Include="Language\LanguageClientHelper.cs" />
@@ -151,6 +151,9 @@
     <Compile Include="Theme\SnykVsThemeService.cs" />
     <Compile Include="Theme\ThemeInfo.cs" />
     <Compile Include="Theme\VsBroadcastMessageEvents.cs" />
+    <Compile Include="AuthDialogWindow.xaml.cs">
+      <DependentUpon>AuthDialogWindow.xaml</DependentUpon>
+    </Compile>
     <Compile Include="TrustDialogWindow.xaml.cs">
       <DependentUpon>TrustDialogWindow.xaml</DependentUpon>
     </Compile>
@@ -275,6 +278,10 @@
     </ProjectReference>
   </ItemGroup>
   <ItemGroup>
+    <Page Include="AuthDialogWindow.xaml">
+      <Generator>MSBuild:Compile</Generator>
+      <SubType>Designer</SubType>
+    </Page>
     <Page Include="TrustDialogWindow.xaml">
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>

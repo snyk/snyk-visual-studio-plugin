@@ -1,0 +1,61 @@
+﻿<ui:DialogWindow x:Class="Snyk.VisualStudio.Extension.AuthDialogWindow"
+                 xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                 xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+                 xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+                 xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+                 xmlns:toolkit="clr-namespace:Community.VisualStudio.Toolkit;assembly=Community.VisualStudio.Toolkit"
+                 xmlns:ui="clr-namespace:Microsoft.VisualStudio.PlatformUI;assembly=Microsoft.VisualStudio.Shell.15.0"
+                 mc:Ignorable="d"
+                 WindowStartupLocation="CenterScreen"
+                 IsCloseButtonEnabled="True"
+                 HasHelpButton="False"
+                 MinHeight="290" Height="290"
+                 MinWidth="500" Width="500"
+                 BorderBrush="{x:Static SystemColors.WindowFrameBrush}" BorderThickness="1"
+                 WindowStyle="None" ResizeMode="NoResize" AllowsTransparency="True"
+                 xmlns:catalog="clr-namespace:Microsoft.VisualStudio.Imaging;assembly=Microsoft.VisualStudio.ImageCatalog"
+                 xmlns:imaging="clr-namespace:Microsoft.VisualStudio.Imaging;assembly=Microsoft.VisualStudio.Imaging"
+                 toolkit:Themes.UseVsTheme="True"
+                 Title="Authenticating Snyk Plugin"
+                 MouseDown="AuthDialogWindow_OnMouseDown">
+    <DockPanel Margin="10">
+        <Button DockPanel.Dock="Top" HorizontalAlignment="Right" Click="CancelButton_OnClick" MinWidth="1"
+                MinHeight="1" Width="35" Margin="0" Padding="0">
+            <imaging:CrispImage Moniker="{x:Static catalog:KnownMonikers.Close}" />
+        </Button>
+        <DockPanel DockPanel.Dock="Bottom">
+            <Button x:Name="CopyLinkButton" Margin="5, 5" Content="📄Copy URL" Click="CopyLinkButton_OnClick" Width="96" />
+            <Button x:Name="CancelButton" DockPanel.Dock="Right"  HorizontalAlignment="Right" Margin="5, 5" Content="Cancel" Click="CancelButton_OnClick" Width="78" />
+        </DockPanel>
+        <Grid>
+            <Grid.RowDefinitions>
+                <RowDefinition Height="auto" />
+                <RowDefinition Height="auto" />
+            </Grid.RowDefinitions>
+            <Grid Grid.Row="0">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="5*" />
+                </Grid.ColumnDefinitions>
+                <imaging:CrispImage Grid.Column="0" Width="50"
+                                    Moniker="{x:Static catalog:KnownMonikers.StatusInformation}" />
+                <StackPanel VerticalAlignment="Center" Grid.Column="1" Margin="0, 0, 10, 0"/>
+            </Grid>
+            <StackPanel Grid.Row="1" Margin="5">
+                <TextBlock TextWrapping="Wrap">
+                    We are now redirecting you to our auth page, go ahead and log in.
+                    <LineBreak />
+                    <LineBreak />
+                    Once the authentication is complete, return to the IDE and you'll be ready to start using Snyk.
+                    <LineBreak />
+                    <LineBreak />
+                    If a browser window doesn't open after a few seconds, please copy the url using the button below and manually paste it in a browser.                
+                    <LineBreak />
+                    <LineBreak />
+
+                </TextBlock>
+                <ProgressBar Height="10" VerticalAlignment="Bottom" HorizontalAlignment="Stretch" IsIndeterminate="True" />
+            </StackPanel>
+        </Grid>
+    </DockPanel>
+</ui:DialogWindow>

@@ -282,13 +282,12 @@ namespace Snyk.VisualStudio.Extension
             await JoinableTaskFactory.SwitchToMainThreadAsync();
 
             var dte = (DTE)await GetServiceAsync(typeof(DTE));
-            if (dte == null)
-            {
-                return;
-            }
+            if (dte == null) return;
 
             // Get the path to the file within the installed extension directory
             var assemblyLocation = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location);
+            if (assemblyLocation == null) return;
+
             var filePath = Path.Combine(assemblyLocation, "Resources", "SnykLsInit.cs");
 
             // Open the file
