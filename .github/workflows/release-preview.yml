@@ -2,7 +2,9 @@ name: Release Preview Extension
 
 on:
   workflow_dispatch:
-
+  push:
+    branches:
+      - main
 env:
   SOLUTION_FILE_PATH: .
   DEFAULT_BRANCH: main
