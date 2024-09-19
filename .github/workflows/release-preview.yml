@@ -1,8 +1,10 @@
-name: Release Extension
+name: Release Preview Extension
 
 on:
   workflow_dispatch:
-
+  push:
+    branches:
+      - main
 env:
   SOLUTION_FILE_PATH: .
   DEFAULT_BRANCH: main
@@ -12,7 +14,7 @@ jobs:
     uses: snyk/snyk-visual-studio-plugin/.github/workflows/build-project.yml@main
     with:
       solution-file-path: .
-      channel: stable
+      channel: preview
     secrets: inherit
   run-integration-tests:
     needs: build-project
@@ -55,6 +57,7 @@ jobs:
     - uses: actions/checkout@v4
       with:
         fetch-depth: 0
+
     - name: Download build artifacts
       uses: actions/download-artifact@v4
       with:
@@ -69,30 +72,9 @@ jobs:
         git push origin main
         git push origin main --tags
 
-    - name: Create GitHub Release
-      id: create_release
-      uses: actions/create-release@v1
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      with:
-        tag_name: ${{ needs.build-project.outputs.version }}
-        release_name: Release ${{ needs.build-project.outputs.version }}
-        draft: false
-        prerelease: false
-
-    - name: Upload GitHub Release 2022 Asset
-      uses: actions/upload-release-asset@v1
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      with:
-        upload_url: ${{ steps.create_release.outputs.upload_url }}
-        asset_path: .\Snyk.VisualStudio.Extension.2022\bin\Release\Snyk.VisualStudio.Extension.vsix
-        asset_name: Snyk_Vulnerability_Scanner-${{ needs.build-project.outputs.version }}-2022.vsix
-        asset_content_type: application/zip
-
-    - name: Publish 2022 extension to Marketplace
-      uses: cezarypiatek/VsixPublisherAction@0.2
-      with:
-        extension-file: '.\Snyk.VisualStudio.Extension.2022\bin\Release\Snyk.VisualStudio.Extension.vsix'
-        publish-manifest-file: '.\Snyk.VisualStudio.Extension.2022\vs-publish.json'
-        personal-access-code: ${{ secrets.VS_PUBLISHER_ACCESS_TOKEN }}
+    # - name: Publish 2022 extension to Marketplace
+    #   uses: cezarypiatek/VsixPublisherAction@0.2
+    #   with:
+    #     extension-file: '.\Snyk.VisualStudio.Extension.2022\bin\Release\Snyk.VisualStudio.Extension.vsix'
+    #     publish-manifest-file: '.\Snyk.VisualStudio.Extension.2022\vs-publish-preview.json'
+    #     personal-access-code: ${{ secrets.VS_PUBLISHER_ACCESS_TOKEN }}
