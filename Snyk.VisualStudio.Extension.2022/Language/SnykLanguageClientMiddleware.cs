@@ -38,19 +38,20 @@ namespace Snyk.VisualStudio.Extension.Language
             var logMsg = methodParams.TryParse<LSP.LogMessageParams>();
             if (logMsg == null)
                 return;
+            const string msgTemplate = "Snyk Language Server {MSG}";
             switch (logMsg.MessageType)
             {
                 case LSP.MessageType.Error:
-                    Logger.Error("LSP {MSG}", logMsg.Message);
+                    Logger.Error(msgTemplate, logMsg.Message);
                     break;
                 case LSP.MessageType.Warning:
-                    Logger.Warning("LSP {MSG}", logMsg.Message);
+                    Logger.Warning(msgTemplate, logMsg.Message);
                     break;
                 case LSP.MessageType.Info:
-                    Logger.Information("LSP {MSG}", logMsg.Message);
+                    Logger.Information(msgTemplate, logMsg.Message);
                     break;
                 case LSP.MessageType.Log:
-                    Logger.Debug("LSP {MSG}", logMsg.Message);
+                    Logger.Debug(msgTemplate, logMsg.Message);
                     break;
             }
         }
