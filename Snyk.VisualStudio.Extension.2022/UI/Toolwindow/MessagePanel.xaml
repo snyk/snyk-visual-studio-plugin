@@ -88,5 +88,14 @@
                 Snyk Code is configured to use a Local Code Engine instance. This setup is not yet supported by the extension.
             </c:TextField>
         </StackPanel>
+
+        <StackPanel Name="snykInitializing" Visibility="Collapsed" HorizontalAlignment="Center">
+            <c:TextField TextAlignment="Left" Padding="0,5">
+                Snyk Security is initializing...
+            </c:TextField>
+            <c:TextField TextAlignment="Left" Padding="0,5">
+                Please hold on for a moment.
+            </c:TextField>
+        </StackPanel>
     </Grid>
 </UserControl>
