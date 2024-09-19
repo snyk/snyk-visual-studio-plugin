@@ -1,12 +1,17 @@
 ﻿using System;
 using System.Threading.Tasks;
 using Microsoft.VisualStudio.LanguageServer.Client;
+using LSP = Microsoft.VisualStudio.LanguageServer.Protocol;
 using Newtonsoft.Json.Linq;
+using Serilog;
+using Snyk.Common;
 
 namespace Snyk.VisualStudio.Extension.Language
 {
     public class SnykLanguageClientMiddleware : ILanguageClientMiddleLayer
     {
+        private static readonly ILogger Logger = LogManager.ForContext<SnykLanguageClientMiddleware>();
+
         public SnykLanguageClientMiddleware() { }
 
         public bool CanHandle(string methodName)
@@ -16,10 +21,8 @@ namespace Snyk.VisualStudio.Extension.Language
 
         public async Task HandleNotificationAsync(string methodName, JToken methodParam, Func<JToken, Task> sendNotification)
         {
-            // Testing Custom handlers for well-known already registered methods
-            // By default window/logMessage will be shown in Output Window
-            //if (methodName == "window/logMessage")
-            //    await _logger.WriteLine(methodParam);
+            if (methodName == "window/logMessage")
+                LogLspMessage(methodParam);
 
             await sendNotification(methodParam);
         }
@@ -28,6 +31,29 @@ namespace Snyk.VisualStudio.Extension.Language
         {
             var result = await sendRequest(methodParam);
             return result;
+        }
+
+        private void LogLspMessage(JToken methodParams)
+        {
+            var logMsg = methodParams.TryParse<LSP.LogMessageParams>();
+            if (logMsg == null)
+                return;
+            const string msgTemplate = "Snyk Language Server {MSG}";
+            switch (logMsg.MessageType)
+            {
+                case LSP.MessageType.Error:
+                    Logger.Error(msgTemplate, logMsg.Message);
+                    break;
+                case LSP.MessageType.Warning:
+                    Logger.Warning(msgTemplate, logMsg.Message);
+                    break;
+                case LSP.MessageType.Info:
+                    Logger.Information(msgTemplate, logMsg.Message);
+                    break;
+                case LSP.MessageType.Log:
+                    Logger.Debug(msgTemplate, logMsg.Message);
+                    break;
+            }
         }
     }
 }
