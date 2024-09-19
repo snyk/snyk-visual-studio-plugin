@@ -21,7 +21,7 @@ if ($PipelineType -eq "preview") {
     $displayNameNode = "(Preview) $displayNameNode"
     $xml.PackageManifest.Metadata.DisplayName = $displayNameNode
     $xml.PackageManifest.Metadata.Preview = "true"
-
+    $xml.PackageManifest.Metadata.Identity.SetAttribute("Id", "snyk_visual_studio_plugin_2022_preview.27b810bb-3e15-4b77-8866-e8ea515a6ee6")
     Write-Host "Updated DisplayName: $displayNameNode"
     Write-Host "Updated Preview: true"
     # Save the modified XML back to the file
