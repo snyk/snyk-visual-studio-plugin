@@ -72,6 +72,17 @@ jobs:
         git push origin main
         git push origin main --tags
 
+    - name: Create GitHub Release
+      id: create_release
+      uses: actions/create-release@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        tag_name: ${{ needs.build-project.outputs.version }}
+        release_name: Release ${{ needs.build-project.outputs.version }}
+        draft: false
+        prerelease: true
+
     - name: Upload GitHub Release 2022 Asset
       uses: actions/upload-release-asset@v1
       env:
