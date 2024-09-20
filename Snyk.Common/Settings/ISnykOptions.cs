@@ -100,7 +100,7 @@ namespace Snyk.Common.Settings
         /// If the token is invalid, attempts to run the authentication command.
         /// </summary>
         /// <returns>Returns true if authenticated successfully, or if a valid token was loaded from storage.</returns>
-        bool Authenticate();
+        void Authenticate();
         public string CurrentCliVersion { get; set; }
 
         SastSettings SastSettings { get; set; }

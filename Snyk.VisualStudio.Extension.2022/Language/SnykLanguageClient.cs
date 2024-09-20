@@ -65,7 +65,7 @@ namespace Snyk.VisualStudio.Extension.Language
                 ActivateSnykIac = options.IacEnabled.ToString(),
                 SendErrorReports = "true",
                 ManageBinariesAutomatically = options.BinariesAutoUpdate.ToString(),
-                EnableTrustedFoldersFeature = "false",
+                EnableTrustedFoldersFeature = "true",
                 TrustedFolders = options.TrustedFolders.ToList(),
                 IntegrationName = options.IntegrationName,
                 FilterSeverity = new FilterSeverityOptions
@@ -173,7 +173,7 @@ namespace Snyk.VisualStudio.Extension.Language
             {
                 if (CustomMessageTarget == null)
                 {
-                    CustomMessageTarget = new SnykLanguageClientCustomTarget(SnykVSPackage.ServiceProvider, this);
+                    CustomMessageTarget = new SnykLanguageClientCustomTarget(SnykVSPackage.ServiceProvider);
                 }
                 Logger.Information("Starting Language Server");
                 await StartAsync.InvokeAsync(this, EventArgs.Empty);
@@ -338,7 +338,7 @@ namespace Snyk.VisualStudio.Extension.Language
             return isEnabled;
         }
 
-        public async Task<string> InvokeCopyLink(CancellationToken cancellationToken)
+        public async Task<string> InvokeCopyLinkAsync(CancellationToken cancellationToken)
         {
             var param = new LSP.ExecuteCommandParams
             {

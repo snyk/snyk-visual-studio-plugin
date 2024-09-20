@@ -61,7 +61,6 @@ namespace Snyk.VisualStudio.Extension.Settings
         {
             logger.Information("Enter Initialize method");
             
-            this.InitializeApiToken();
             this.UpdateViewFromOptionsDialog();
             this.OptionsDialogPage.SettingsChanged += this.OptionsDialogPageOnSettingsChanged;
             this.Load += this.SnykGeneralSettingsUserControl_Load;
@@ -98,6 +97,7 @@ namespace Snyk.VisualStudio.Extension.Settings
             this.ManageBinariesAutomaticallyCheckbox.Checked = this.OptionsDialogPage.BinariesAutoUpdate;
             this.autoScanCheckBox.Checked = this.OptionsDialogPage.AutoScan;
             this.cliDownloadUrlTextBox.Text = this.OptionsDialogPage.CliDownloadUrl;
+            this.tokenTextBox.Text = this.OptionsDialogPage.ApiToken.ToString();
 
             var cliPath = string.IsNullOrEmpty(this.OptionsDialogPage.CliCustomPath)
                 ? SnykCli.GetSnykCliDefaultPath()
@@ -154,28 +154,12 @@ namespace Snyk.VisualStudio.Extension.Settings
             logger.Information("Enter authenticate successCallback");
 
             await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
-            if (this.authProgressBar.IsHandleCreated)
-            {
-                this.authProgressBar.Invoke(new Action(() =>
-                {
-                    this.authProgressBar.Visible = false;
-                }));
-            }
-
+            AuthDialogWindow.Instance.Hide();
             if (this.tokenTextBox.IsHandleCreated)
             {
                 this.tokenTextBox.Invoke(new Action(() =>
                 {
                     this.tokenTextBox.Text = apiToken;
-                    this.tokenTextBox.Enabled = true;
-                }));
-            }
-
-            if (this.authenticateButton.IsHandleCreated)
-            {
-                this.authenticateButton.Invoke(new Action(() =>
-                {
-                    this.authenticateButton.Enabled = true;
                 }));
             }
 
@@ -188,11 +172,6 @@ namespace Snyk.VisualStudio.Extension.Settings
             }
 
             await this.ServiceProvider.ToolWindow.UpdateScreenStateAsync();
-        }
-
-        private void InitializeApiToken()
-        {
-            this.tokenTextBox.Text = this.OptionsDialogPage.ApiToken.ToString();
         }
 
         public void InvalidateApiToken()
@@ -210,29 +189,7 @@ namespace Snyk.VisualStudio.Extension.Settings
             logger.Information("Enter authenticate errorCallback");
 
             await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
-            if (this.authProgressBar.IsHandleCreated)
-            {
-                this.authProgressBar.Invoke(new Action(() =>
-                {
-                    this.authProgressBar.Visible = false;
-                }));
-            }
-
-            if (this.tokenTextBox.IsHandleCreated)
-            {
-                this.tokenTextBox.Invoke(new Action(() =>
-                {
-                    this.tokenTextBox.Enabled = true;
-                }));
-            }
-
-            if (this.authenticateButton.IsHandleCreated)
-            {
-                this.authenticateButton.Invoke(new Action(() =>
-                {
-                    this.authenticateButton.Enabled = true;
-                }));
-            }
+            AuthDialogWindow.Instance.Hide();
 
             var ossError = new OssError
             {
@@ -254,11 +211,6 @@ namespace Snyk.VisualStudio.Extension.Settings
         private async Task AuthenticateButtonClickAsync()
         {
             logger.Information("Enter authenticateButton_Click method");
-
-            this.authProgressBar.Visible = true;
-            this.tokenTextBox.Enabled = false;
-            this.authenticateButton.Enabled = false;
-
             logger.Information("Start run task");
             await TaskScheduler.Default;
 
@@ -266,15 +218,7 @@ namespace Snyk.VisualStudio.Extension.Settings
 
             if (SnykCliDownloader.IsCliFileFound(serviceProvider.Options.CliCustomPath))
             {
-                var authenticated = serviceProvider.Options.Authenticate();
-                if (authenticated)
-                {
-                    await OnAuthenticationSuccessfulAsync(serviceProvider.Options.ApiToken.ToString());
-                }
-                else
-                {
-                    await OnAuthenticationFailAsync("Authentication failed");
-                }
+                serviceProvider.Options.Authenticate();
             }
             else
             {
@@ -311,7 +255,7 @@ namespace Snyk.VisualStudio.Extension.Settings
             this.OptionsDialogPage.IgnoreUnknownCA = this.ignoreUnknownCACheckBox.Checked;
         }
 
-        private void TokenTextBox_Validating(object sender, System.ComponentModel.CancelEventArgs cancelEventArgs) =>
+        private void TokenTextBox_Validating(object sender, CancelEventArgs cancelEventArgs) =>
             ThreadHelper.JoinableTaskFactory.RunAsync(async () =>
             {
                 await this.ServiceProvider.ToolWindow.UpdateScreenStateAsync();
@@ -329,7 +273,7 @@ namespace Snyk.VisualStudio.Extension.Settings
 
                     this.tokenTextBox.Focus();
 
-                    this.errorProvider.SetError(this.tokenTextBox, "Not valid GUID.");
+                    this.errorProvider.SetError(this.tokenTextBox, "Invalid Token");
                 }
                 else
                 {
@@ -352,8 +296,6 @@ namespace Snyk.VisualStudio.Extension.Settings
 
         private void SnykGeneralSettingsUserControl_Load(object sender, EventArgs e)
         {
-            this.InitializeApiToken();
-
             this.StartSastEnablementCheckLoop();
         }
 

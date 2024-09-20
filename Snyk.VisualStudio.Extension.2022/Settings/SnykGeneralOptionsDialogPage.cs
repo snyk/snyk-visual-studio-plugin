@@ -161,7 +161,6 @@ namespace Snyk.VisualStudio.Extension.Settings
         {
             await this.GeneralSettingsUserControl.OnAuthenticationFailAsync(errorMessage);
         }
-
         /// <summary>
         /// Gets or sets a value indicating whether organization.
         /// </summary>
@@ -415,7 +414,7 @@ namespace Snyk.VisualStudio.Extension.Settings
         }
 
         /// <inheritdoc />
-        public bool Authenticate()
+        public void Authenticate()
         {
             Logger.Information("Enter Authenticate method");
             if (!SnykCliDownloader.IsCliFileFound(this.CliCustomPath))
@@ -427,24 +426,30 @@ namespace Snyk.VisualStudio.Extension.Settings
                 if (!LanguageClientHelper.IsLanguageServerReady())
                 {
                     Logger.Error("Language Server is not initialized yet.");
-                    return false;
+                    return;
                 }
                 if (ApiToken.IsValid()) 
-                    return true;
+                    return;
                 
                 Logger.Information("Api token is invalid. Attempting to authenticate via snyk auth");
-                ThreadHelper.JoinableTaskFactory.Run(async ()=>
+
+                ThreadHelper.JoinableTaskFactory.RunAsync(async () =>
                 {
-                    await ServiceProvider.Package.LanguageClientManager.InvokeLogout(SnykVSPackage.Instance.DisposalToken);
-                    var token = await ServiceProvider.Package.LanguageClientManager.InvokeLogin(SnykVSPackage.Instance.DisposalToken);
-                    ApiToken = CreateAuthenticationToken(token);
+                    await ServiceProvider.Package.LanguageClientManager.InvokeLogout(SnykVSPackage.Instance
+                        .DisposalToken);
+                    await ServiceProvider.Package.LanguageClientManager.InvokeLogin(SnykVSPackage.Instance
+                        .DisposalToken);
+                }).FireAndForget();
+
+                ThreadHelper.JoinableTaskFactory.Run(async () =>
+                {
+                    await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
+                    AuthDialogWindow.Instance.ShowDialog();
                 });
-                return true;
             }
             catch (Exception e)
             {
                 Logger.Error(e, "Couldn't execute Invoke Login through LS.");
-                return false;
             }
         }
 

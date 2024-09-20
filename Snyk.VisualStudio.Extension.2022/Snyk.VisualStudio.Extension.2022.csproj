@@ -67,7 +67,7 @@
     <Compile Include="Language\InvalidProductTypeException.cs" />
     <Compile Include="Language\JTokenExtension.cs" />
     <Compile Include="Language\LsConstants.cs" />
-    <Compile Include="Language\LspAnalysisResult.cs" />
+    <Compile Include="Language\LsAnalysisResult.cs" />
     <Compile Include="Language\SatisfyImportExtension.cs" />
     <Compile Include="Language\SnykContentDefinition.cs" />
     <Compile Include="Language\LanguageClientHelper.cs" />
@@ -151,6 +151,9 @@
     <Compile Include="Theme\SnykVsThemeService.cs" />
     <Compile Include="Theme\ThemeInfo.cs" />
     <Compile Include="Theme\VsBroadcastMessageEvents.cs" />
+    <Compile Include="AuthDialogWindow.xaml.cs">
+      <DependentUpon>AuthDialogWindow.xaml</DependentUpon>
+    </Compile>
     <Compile Include="TrustDialogWindow.xaml.cs">
       <DependentUpon>TrustDialogWindow.xaml</DependentUpon>
     </Compile>
@@ -275,6 +278,10 @@
     </ProjectReference>
   </ItemGroup>
   <ItemGroup>
+    <Page Include="AuthDialogWindow.xaml">
+      <Generator>MSBuild:Compile</Generator>
+      <SubType>Designer</SubType>
+    </Page>
     <Page Include="TrustDialogWindow.xaml">
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
@@ -302,7 +309,7 @@
   </ItemGroup>
   <ItemGroup>
     <Resource Include="Resources\ASPFile.png">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Resource>
     <Resource Include="Resources\ASPFileDark.png">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
@@ -455,14 +462,12 @@
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
       <IncludeInVSIX>true</IncludeInVSIX>
     </Content>
-    <Content Include="Resources\TSFileNode.png">
+    <Resource Include="Resources\TSFileNode.png">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-      <IncludeInVSIX>true</IncludeInVSIX>
-    </Content>
-    <Content Include="Resources\TSFileNodeDark.png">
+    </Resource>
+    <Resource Include="Resources\TSFileNodeDark.png">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-      <IncludeInVSIX>true</IncludeInVSIX>
-    </Content>
+    </Resource>
     <VSCTCompile Include="SnykVSPackage.vsct">
       <ResourceName>Menus.ctmenu</ResourceName>
     </VSCTCompile>

@@ -130,27 +130,9 @@ namespace Snyk.VisualStudio.Extension.UI.Toolwindow
         private async Task RunTestCodeNowAsync()
         {
             await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
-            this.testCodeNowButton.IsEnabled = false; // Disable the button while authenticating
-            this.authenticateSnykProgressBar.Visibility = Visibility.Visible;
+            this.testCodeNowButton.IsEnabled = false;
 
             await TaskScheduler.Default;
-            bool authenticationSucceeded;
-            try
-            {
-                authenticationSucceeded = this.ServiceProvider.Options.Authenticate();
-            }
-            catch (FileNotFoundException)
-            {
-                await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
-                this.authenticateSnykProgressBar.Visibility = Visibility.Collapsed;
-                this.Text = "Snyk CLI not found. You can specify a path to a Snyk CLI executable from the settings.";
-                return;
-            }
-
-            await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
-            this.authenticateSnykProgressBar.Visibility = Visibility.Collapsed;
-            this.testCodeNowButton.IsEnabled = true;
-
             // Add folder to trusted
             var solutionFolderPath = await this.ServiceProvider.SolutionService.GetSolutionFolderAsync();
             if (!string.IsNullOrEmpty(solutionFolderPath))
@@ -167,22 +149,22 @@ namespace Snyk.VisualStudio.Extension.UI.Toolwindow
                 }
             }
 
-            // Issue scan
-            if (authenticationSucceeded)
+            try
             {
-                var uiShell = Microsoft.VisualStudio.Shell.ServiceProvider.GlobalProvider.GetService(typeof(SVsUIShell)) as IVsUIShell;
-                if (uiShell != null)
-                {
-                    uiShell.PostExecCommand(
-                        SnykGuids.SnykVSPackageCommandSet,
-                        SnykGuids.RunScanCommandId,
-                        0,
-                        null);
-                }
+                this.ServiceProvider.Options.Authenticate();
+            }
+            catch (FileNotFoundException)
+            {
+                await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
+                this.Text = "Snyk CLI not found. You can specify a path to a Snyk CLI executable from the settings.";
+                return;
             }
 
-            var nextPanel = authenticationSucceeded ? (ToolWindowState)RunScanState.Instance : OverviewState.Instance;
-            this.Context.TransitionTo(nextPanel);
+            await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
+            this.testCodeNowButton.IsEnabled = true;
+
+
+            this.Context.TransitionTo(OverviewState.Instance);
         }
 
         private void Hyperlink_RequestNavigate(object sender, System.Windows.Navigation.RequestNavigateEventArgs args)
@@ -190,6 +172,13 @@ namespace Snyk.VisualStudio.Extension.UI.Toolwindow
             Process.Start(new ProcessStartInfo(args.Uri.AbsoluteUri));
 
             args.Handled = true;
+        }
+
+        private void InitializeNowButton_OnClick(object sender, RoutedEventArgs e)
+        {
+            var languageClientManager = LanguageClientHelper.LanguageClientManager();
+            if (languageClientManager == null) return;
+            languageClientManager.FireOnLanguageClientNotInitializedAsync();
         }
     }
 }

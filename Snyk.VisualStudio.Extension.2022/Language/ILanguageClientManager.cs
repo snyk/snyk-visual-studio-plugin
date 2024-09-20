@@ -19,7 +19,9 @@ namespace Snyk.VisualStudio.Extension.Language
         Task<string> InvokeLogin(CancellationToken cancellationToken);
         Task<object> InvokeLogout(CancellationToken cancellationToken);
         Task<object> DidChangeConfigurationAsync(CancellationToken cancellationToken);
+        Task<string> InvokeCopyLinkAsync(CancellationToken cancellationToken);
         event AsyncEventHandler<SnykLanguageServerEventArgs> OnLanguageServerReadyAsync;
         event AsyncEventHandler<SnykLanguageServerEventArgs> OnLanguageClientNotInitializedAsync;
+        void FireOnLanguageClientNotInitializedAsync();
     }
 }

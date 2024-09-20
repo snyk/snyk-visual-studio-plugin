@@ -131,7 +131,6 @@ namespace Snyk.VisualStudio.Extension.UI.Toolwindow
 
                 this.messagePanel.runScanButton.IsEnabled = isEnabled;
 
-                // When the run button is disabled, we need to show the welcome screen that prompts the user to authenticate.
                 if (!LanguageClientHelper.IsLanguageServerReady())
                 {
                     this.context.TransitionTo(InitializingState.Instance);
@@ -139,17 +138,17 @@ namespace Snyk.VisualStudio.Extension.UI.Toolwindow
                 }
                 if (!isEnabled)
                 {
-                    this.context.TransitionTo(OverviewState.Instance);
+                    this.DetermineInitScreen();
                 }
             });
 
             Logger.Information("Leave InitializeEventListenersAsync() method.");
         }
 
-        private Task OnOnLanguageServerReadyAsync(object sender, SnykLanguageServerEventArgs args)
+        private async Task OnOnLanguageServerReadyAsync(object sender, SnykLanguageServerEventArgs args)
         {
-            this.ShowWelcomeOrInitializingOrRunScanScreen();
-            return Task.CompletedTask;
+            await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
+            this.DetermineInitScreen();
         }
 
         private void OnIacScanError(object sender, SnykCodeScanEventArgs e)
@@ -178,7 +177,6 @@ namespace Snyk.VisualStudio.Extension.UI.Toolwindow
                 await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
 
                 this.messagePanel.ShowScanningMessage();
-                this.Show();
                 this.mainGrid.Visibility = Visibility.Visible;
 
                 this.resultsTree.IacRootNode.State = RootTreeNodeState.Scanning;
@@ -260,7 +258,6 @@ namespace Snyk.VisualStudio.Extension.UI.Toolwindow
             await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
 
             this.messagePanel.ShowScanningMessage();
-            this.Show();
             this.mainGrid.Visibility = Visibility.Visible;
 
             this.resultsTree.OssRootNode.State = RootTreeNodeState.Scanning;
@@ -393,15 +390,20 @@ namespace Snyk.VisualStudio.Extension.UI.Toolwindow
         /// <param name="eventArgs">Event args.</param>
         public void OnDownloadStarted(object sender, SnykCliDownloadEventArgs eventArgs)
         {
-            if (eventArgs.IsUpdateDownload)
+            ThreadHelper.JoinableTaskFactory.Run(async () =>
             {
-                this.context.TransitionTo(UpdateDownloadState.Instance);
-            }
-            else
-            {
-                this.context.TransitionTo(DownloadState.Instance);
-            }
-            this.Show();
+                await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
+                if (eventArgs.IsUpdateDownload)
+                {
+                    this.context.TransitionTo(UpdateDownloadState.Instance);
+                }
+                else
+                {
+                    this.context.TransitionTo(DownloadState.Instance);
+                }
+
+                this.Show();
+            });
         }
 
         /// <summary>
@@ -409,7 +411,7 @@ namespace Snyk.VisualStudio.Extension.UI.Toolwindow
         /// </summary>
         /// <param name="sender">Source object.</param>
         /// <param name="eventArgs">Event args.</param>
-        public void OnDownloadFinished(object sender, SnykCliDownloadEventArgs eventArgs) => this.ShowWelcomeOrInitializingOrRunScanScreen();
+        public void OnDownloadFinished(object sender, SnykCliDownloadEventArgs eventArgs) => this.DetermineInitScreen();
 
         /// <summary>
         /// DownloadUpdate event handler. Call UpdateDonwloadProgress() method.
@@ -430,7 +432,12 @@ namespace Snyk.VisualStudio.Extension.UI.Toolwindow
             {
                 if (LanguageClientHelper.LanguageClientManager() != null)
                     ThreadHelper.JoinableTaskFactory.RunAsync(async () => await LanguageClientHelper.LanguageClientManager().RestartServerAsync()).FireAndForget();
-                this.ShowWelcomeOrInitializingOrRunScanScreen();
+                
+                ThreadHelper.JoinableTaskFactory.Run(async () =>
+                {
+                    await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
+                    this.DetermineInitScreen();
+                });
             }
             else
             {
@@ -444,7 +451,7 @@ namespace Snyk.VisualStudio.Extension.UI.Toolwindow
             {
                 if (LanguageClientHelper.LanguageClientManager() != null)
                     ThreadHelper.JoinableTaskFactory.RunAsync(async () => await LanguageClientHelper.LanguageClientManager().RestartServerAsync()).FireAndForget();
-                this.ShowWelcomeOrInitializingOrRunScanScreen();
+                this.DetermineInitScreen();
             }
             else
             {
@@ -513,7 +520,7 @@ namespace Snyk.VisualStudio.Extension.UI.Toolwindow
             this.resultsTree.Clear();
 
             this.UpdateTreeNodeItemsState();
-            this.ShowWelcomeOrInitializingOrRunScanScreen();
+            this.DetermineInitScreen();
         });
 
         /// <summary>
@@ -533,7 +540,7 @@ namespace Snyk.VisualStudio.Extension.UI.Toolwindow
         public async Task UpdateScreenStateAsync()
         {
             await Task.Delay(200);
-            this.ShowWelcomeOrInitializingOrRunScanScreen();
+            this.DetermineInitScreen();
         }
 
         private async Task OnOssScanningFinishedAsync() => await this.UpdateActionsStateAsync();
@@ -796,7 +803,7 @@ namespace Snyk.VisualStudio.Extension.UI.Toolwindow
         {
             if (this.context.IsEmptyState())
             {
-                this.ShowWelcomeOrInitializingOrRunScanScreen();
+                this.DetermineInitScreen();
             }
 
             this.UpdateTreeNodeItemsState();
@@ -805,13 +812,19 @@ namespace Snyk.VisualStudio.Extension.UI.Toolwindow
         /// <summary>
         /// If api token is valid it will show run scan screen. If api token is invalid it will show Welcome screen.
         /// </summary>
-        private void ShowWelcomeOrInitializingOrRunScanScreen()
+        private void DetermineInitScreen()
         {
             var options = this.serviceProvider.Options;
 
             if (!LanguageClientHelper.IsLanguageServerReady())
             {
                 this.context.TransitionTo(InitializingState.Instance);
+                return;
+            }
+
+            if (SnykTasksService.Instance.IsTaskRunning())
+            {
+                this.messagePanel.ShowScanningMessage();
                 return;
             }
 

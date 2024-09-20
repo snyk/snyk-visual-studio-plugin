@@ -407,5 +407,10 @@ namespace Snyk.VisualStudio.Extension.UI.Tree
 
             rootNode.State = RootTreeNodeState.ResultDetails;
         }
+
+        private void TreeView_RequestBringIntoView(object sender, RequestBringIntoViewEventArgs e)
+        {
+            e.Handled = true;
+        }
     }
 }

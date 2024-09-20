@@ -229,6 +229,7 @@ namespace Snyk.VisualStudio.Extension.Service
             try
             {
                 var selectedFeatures = await this.GetFeaturesSettingsAsync();
+                await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
 
                 if (!this.serviceProvider.SolutionService.IsSolutionOpen())
                 {
@@ -265,6 +266,8 @@ namespace Snyk.VisualStudio.Extension.Service
 
                 Assumes.Present(componentModel);
                 var languageServerClientManager = componentModel.GetService<ILanguageClientManager>();
+                this.SnykScanTokenSource = new CancellationTokenSource();
+
                 var progressWorker = new SnykProgressWorker
                 {
                     TasksService = this,

@@ -2,11 +2,8 @@
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
-using System.Threading;
 using System.Threading.Tasks;
 using Newtonsoft.Json.Linq;
-using Serilog;
-using Snyk.Common;
 using Snyk.Common.Authentication;
 using Snyk.VisualStudio.Extension.Service;
 using StreamJsonRpc;
@@ -19,11 +16,10 @@ namespace Snyk.VisualStudio.Extension.Language
         private readonly ConcurrentDictionary<string, IEnumerable<Issue>> snykCodeIssueDictionary = new();
         private readonly ConcurrentDictionary<string, IEnumerable<Issue>> snykOssIssueDictionary = new();
         private readonly ConcurrentDictionary<string, IEnumerable<Issue>> snykIaCIssueDictionary = new();
-        private readonly ILanguageClientManager languageClientManager;
-        public SnykLanguageClientCustomTarget(ISnykServiceProvider serviceProvider, ILanguageClientManager languageClientManager)
+
+        public SnykLanguageClientCustomTarget(ISnykServiceProvider serviceProvider)
         {
             this.serviceProvider = serviceProvider;
-            this.languageClientManager = languageClientManager;
         }
 
 #pragma warning disable CS1998 // Async method lacks 'await' operators and will run synchronously
@@ -50,8 +46,6 @@ namespace Snyk.VisualStudio.Extension.Language
             {
                 return;
             }
-
-            // TODO: handle the case when source is: 'Snyk Error'
 
             var source = LspSourceToProduct(diagnosticsArray[0]["source"].ToString());
             var dataList = diagnosticsArray.Where(x => x["data"] != null)
@@ -89,18 +83,18 @@ namespace Snyk.VisualStudio.Extension.Language
                 return;
             }
 
-            var lspAnalysisResult = arg.TryParse<LspAnalysisResult>();
+            var lspAnalysisResult = arg.TryParse<LsAnalysisResult>();
             if (lspAnalysisResult == null) return;
             switch (lspAnalysisResult.Product)
             {
                 case Product.Code:
-                    await ProcessCodeScanAsnyc(lspAnalysisResult);
+                    await ProcessCodeScanAsync(lspAnalysisResult);
                     break;
                 case Product.Oss:
-                    await ProcessOssScanAsnyc(lspAnalysisResult);
+                    await ProcessOssScanAsync(lspAnalysisResult);
                     break;
                 case Product.Iac:
-                    await ProcessIacScanAsnyc(lspAnalysisResult);
+                    await ProcessIacScanAsync(lspAnalysisResult);
                     break;
             }
         }
@@ -132,27 +126,31 @@ namespace Snyk.VisualStudio.Extension.Language
 
             if (serviceProvider.Options.AutoScan)
             {
-                await this.languageClientManager.InvokeWorkspaceScanAsync(SnykVSPackage.Instance.DisposalToken);
+                await serviceProvider.TasksService.ScanAsync();
             }
         }
 
         [JsonRpcMethod(LsConstants.SnykAddTrustedFolders)]
         public async Task OnAddTrustedFolders(JToken arg)
         {
+            var trustedFolders = arg.TryParse<LsTrust>();
+            if (trustedFolders == null) return;
 
+            serviceProvider.Options.TrustedFolders = new HashSet<string>(trustedFolders.TrustedFolders);
+            this.serviceProvider.UserStorageSettingsService?.SaveSettings();
         }
 
-        private async Task ProcessCodeScanAsnyc(LspAnalysisResult lspAnalysisResult)
+        private async Task ProcessCodeScanAsync(LsAnalysisResult lsAnalysisResult)
         {
-            if (lspAnalysisResult.Status == "inProgress")
+            if (lsAnalysisResult.Status == "inProgress")
             {
                 var featuresSettings = await serviceProvider.TasksService.GetFeaturesSettingsAsync();
                 serviceProvider.TasksService.FireSnykCodeScanningStartedEvent(featuresSettings);
                 return;
             }
-            if (lspAnalysisResult.Status == "error")
+            if (lsAnalysisResult.Status == "error")
             {
-                serviceProvider.TasksService.OnSnykCodeError(lspAnalysisResult.ErrorMessage);
+                serviceProvider.TasksService.OnSnykCodeError(lsAnalysisResult.ErrorMessage);
                 serviceProvider.TasksService.FireTaskFinished();
                 return;
             }
@@ -162,16 +160,16 @@ namespace Snyk.VisualStudio.Extension.Language
             serviceProvider.TasksService.FireTaskFinished();
         }
 
-        private async Task ProcessOssScanAsnyc(LspAnalysisResult lspAnalysisResult)
+        private async Task ProcessOssScanAsync(LsAnalysisResult lsAnalysisResult)
         {
-            if (lspAnalysisResult.Status == "inProgress")
+            if (lsAnalysisResult.Status == "inProgress")
             {
                 serviceProvider.TasksService.FireOssScanningStartedEvent();
                 return;
             }
-            if (lspAnalysisResult.Status == "error")
+            if (lsAnalysisResult.Status == "error")
             {
-                serviceProvider.TasksService.FireOssError(lspAnalysisResult.ErrorMessage);
+                serviceProvider.TasksService.FireOssError(lsAnalysisResult.ErrorMessage);
                 serviceProvider.TasksService.FireTaskFinished();
                 return;
             }
@@ -181,17 +179,17 @@ namespace Snyk.VisualStudio.Extension.Language
             serviceProvider.TasksService.FireTaskFinished();
         }
 
-        private async Task ProcessIacScanAsnyc(LspAnalysisResult lspAnalysisResult)
+        private async Task ProcessIacScanAsync(LsAnalysisResult lsAnalysisResult)
         {
-            if (lspAnalysisResult.Status == "inProgress")
+            if (lsAnalysisResult.Status == "inProgress")
             {
                 var featuresSettings = await serviceProvider.TasksService.GetFeaturesSettingsAsync();
                 serviceProvider.TasksService.FireIacScanningStartedEvent(featuresSettings);
                 return;
             }
-            if (lspAnalysisResult.Status == "error")
+            if (lsAnalysisResult.Status == "error")
             {
-                serviceProvider.TasksService.OnIacError(lspAnalysisResult.ErrorMessage);
+                serviceProvider.TasksService.OnIacError(lsAnalysisResult.ErrorMessage);
                 serviceProvider.TasksService.FireTaskFinished();
                 return;
             }

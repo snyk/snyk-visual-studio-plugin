@@ -6,7 +6,7 @@ using Newtonsoft.Json.Serialization;
 namespace Snyk.VisualStudio.Extension.Language
 {
     [JsonObject(NamingStrategyType = typeof(CamelCaseNamingStrategy))]
-    public class LspAnalysisResult
+    public class LsAnalysisResult
     {
         public string Status { get; set; }
         public string Product { get; set; }
@@ -180,5 +180,10 @@ namespace Snyk.VisualStudio.Extension.Language
     {
         public int Line { get; set; }
         public int Character { get; set; }
+    }
+
+    public class LsTrust
+    {
+        public IList<string> TrustedFolders { get; set; }
     }
 }
