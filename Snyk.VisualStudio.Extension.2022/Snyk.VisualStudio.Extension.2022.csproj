@@ -309,7 +309,7 @@
   </ItemGroup>
   <ItemGroup>
     <Resource Include="Resources\ASPFile.png">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Resource>
     <Resource Include="Resources\ASPFileDark.png">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
@@ -462,14 +462,12 @@
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
       <IncludeInVSIX>true</IncludeInVSIX>
     </Content>
-    <Content Include="Resources\TSFileNode.png">
+    <Resource Include="Resources\TSFileNode.png">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-      <IncludeInVSIX>true</IncludeInVSIX>
-    </Content>
-    <Content Include="Resources\TSFileNodeDark.png">
+    </Resource>
+    <Resource Include="Resources\TSFileNodeDark.png">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-      <IncludeInVSIX>true</IncludeInVSIX>
-    </Content>
+    </Resource>
     <VSCTCompile Include="SnykVSPackage.vsct">
       <ResourceName>Menus.ctmenu</ResourceName>
     </VSCTCompile>

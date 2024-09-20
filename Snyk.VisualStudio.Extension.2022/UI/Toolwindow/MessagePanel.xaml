@@ -95,6 +95,16 @@
             <c:TextField TextAlignment="Left" Padding="0,5">
                 Please hold on for a moment.
             </c:TextField>
+            <StackPanel HorizontalAlignment="Left" Margin="0,25,0,0">
+                <Button Name="InitializeNowButton" Click="InitializeNowButton_OnClick" Padding="20,6,20,8">
+                    <Button.Resources>
+                        <Style TargetType="Border">
+                            <Setter Property="CornerRadius" Value="3"/>
+                        </Style>
+                    </Button.Resources>
+                    Initialize Now
+                </Button>
+            </StackPanel>
         </StackPanel>
     </Grid>
 </UserControl>

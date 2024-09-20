@@ -173,5 +173,12 @@ namespace Snyk.VisualStudio.Extension.UI.Toolwindow
 
             args.Handled = true;
         }
+
+        private void InitializeNowButton_OnClick(object sender, RoutedEventArgs e)
+        {
+            var languageClientManager = LanguageClientHelper.LanguageClientManager();
+            if (languageClientManager == null) return;
+            languageClientManager.FireOnLanguageClientNotInitializedAsync();
+        }
     }
 }

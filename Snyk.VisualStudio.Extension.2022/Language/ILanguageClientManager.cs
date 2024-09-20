@@ -22,5 +22,6 @@ namespace Snyk.VisualStudio.Extension.Language
         Task<string> InvokeCopyLinkAsync(CancellationToken cancellationToken);
         event AsyncEventHandler<SnykLanguageServerEventArgs> OnLanguageServerReadyAsync;
         event AsyncEventHandler<SnykLanguageServerEventArgs> OnLanguageClientNotInitializedAsync;
+        void FireOnLanguageClientNotInitializedAsync();
     }
 }

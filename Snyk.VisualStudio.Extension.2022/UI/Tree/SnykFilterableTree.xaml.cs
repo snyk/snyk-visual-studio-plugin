@@ -7,6 +7,7 @@ using Microsoft.VisualStudio.Shell;
 using Snyk.VisualStudio.Extension.Model;
 using System.Collections.Generic;
 using System.IO;
+using System.Windows.Media;
 using Snyk.VisualStudio.Extension.Language;
 
 namespace Snyk.VisualStudio.Extension.UI.Tree
@@ -406,6 +407,11 @@ namespace Snyk.VisualStudio.Extension.UI.Tree
             rootNode.LowSeverityCount = lowSeverityCount;
 
             rootNode.State = RootTreeNodeState.ResultDetails;
+        }
+
+        private void TreeView_RequestBringIntoView(object sender, RequestBringIntoViewEventArgs e)
+        {
+            e.Handled = true;
         }
     }
 }
