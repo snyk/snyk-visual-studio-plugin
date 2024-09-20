@@ -7,7 +7,6 @@ using Microsoft.VisualStudio.Shell;
 using Snyk.VisualStudio.Extension.Model;
 using System.Collections.Generic;
 using System.IO;
-using System.Windows.Media;
 using Snyk.VisualStudio.Extension.Language;
 
 namespace Snyk.VisualStudio.Extension.UI.Tree
