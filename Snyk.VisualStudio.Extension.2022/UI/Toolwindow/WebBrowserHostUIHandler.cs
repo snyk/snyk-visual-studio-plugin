@@ -4,9 +4,10 @@ using System.Runtime.InteropServices;
 using System.Windows.Controls;
 using System.Windows.Navigation;
 using Microsoft.VisualStudio.OLE.Interop;
-
 namespace Snyk.VisualStudio.Extension.UI.Toolwindow
 {
+    // The class implements the IDocHostUIHandler interface,
+    // which provides low-level control over the user interface of the WebBrowser control.
     public class WebBrowserHostUIHandler : Native.IDocHostUIHandler
     {
         private const uint E_NOTIMPL = 0x80004001;
@@ -46,11 +47,13 @@ namespace Snyk.VisualStudio.Extension.UI.Toolwindow
             LoadCompleted?.Invoke(sender, e);
         }
 
+        // Controls whether the context menu is displayed when the user right-clicks in the WebBrowser.
         uint Native.IDocHostUIHandler.ShowContextMenu(int dwID, Native.POINT pt, object pcmdtReserved, object pdispReserved)
         {
             return IsWebBrowserContextMenuEnabled ? S_FALSE : S_OK;
         }
-
+        
+        // Provides information about the host application to the browser, including the flags that control the browser’s UI behavior (e.g., DPI-awareness).
         uint Native.IDocHostUIHandler.GetHostInfo(ref Native.DOCHOSTUIINFO info)
         {
             info.dwFlags = (int)Flags;
@@ -58,6 +61,36 @@ namespace Snyk.VisualStudio.Extension.UI.Toolwindow
             return S_OK;
         }
 
+        // Allows the browser to expose an external COM object to the JavaScript running in the WebBrowser.
+        // In this case, it exposes the Browser.ObjectForScripting property,
+        // which can be used for interacting between C# and JavaScript
+        uint Native.IDocHostUIHandler.GetExternal(out object ppDispatch)
+        {
+            ppDispatch = Browser.ObjectForScripting;
+            return S_OK;
+        }
+
+        // Suppresses script errors by setting the Silent property of the underlying Internet Explorer instance to true.
+        // It uses COM interop to access the internal IOleServiceProvider and then sets the Silent property via reflection on the IWebBrowser2 COM interface to suppress errors.
+        public static void SetSilent(WebBrowser browser, bool silent)
+        {
+            Native.IOleServiceProvider sp = browser.Document as Native.IOleServiceProvider;
+            if (sp != null)
+            {
+                // https://learn.microsoft.com/en-us/dotnet/api/system.windows.controls.webbrowser?view=windowsdesktop-8.0
+                Guid IID_IWebBrowserApp = new Guid("0002DF05-0000-0000-C000-000000000046");
+                // https://learn.microsoft.com/en-us/previous-versions/dynamicsusd-2/developers-guide/dn883165(v=usd.2)
+                Guid IID_IWebBrowser2 = new Guid("D30C1661-CDAF-11d0-8A3E-00C04FC9E26E");
+
+                object webBrowser;
+                sp.QueryService(ref IID_IWebBrowserApp, ref IID_IWebBrowser2, out webBrowser);
+                if (webBrowser != null)
+                {
+                    webBrowser.GetType().InvokeMember("Silent", BindingFlags.Instance | BindingFlags.Public | BindingFlags.PutDispProperty, null, webBrowser, new object[] { silent });
+                }
+            }
+        }
+#region not implemented
         uint Native.IDocHostUIHandler.ShowUI(int dwID, object activeObject, object commandTarget, object frame, object doc)
         {
             return E_NOTIMPL;
@@ -109,12 +142,6 @@ namespace Snyk.VisualStudio.Extension.UI.Toolwindow
             return E_NOTIMPL;
         }
 
-        uint Native.IDocHostUIHandler.GetExternal(out object ppDispatch)
-        {
-            ppDispatch = Browser.ObjectForScripting;
-            return S_OK;
-        }
-
         uint Native.IDocHostUIHandler.TranslateUrl(int dwTranslate, string strURLIn, out string pstrURLOut)
         {
             pstrURLOut = null;
@@ -126,27 +153,14 @@ namespace Snyk.VisualStudio.Extension.UI.Toolwindow
             ppDORet = null;
             return E_NOTIMPL;
         }
-
-        public static void SetSilent(WebBrowser browser, bool silent)
-        {
-            Native.IOleServiceProvider sp = browser.Document as Native.IOleServiceProvider;
-            if (sp != null)
-            {
-                Guid IID_IWebBrowserApp = new Guid("0002DF05-0000-0000-C000-000000000046");
-                Guid IID_IWebBrowser2 = new Guid("D30C1661-CDAF-11d0-8A3E-00C04FC9E26E");
-
-                object webBrowser;
-                sp.QueryService(ref IID_IWebBrowserApp, ref IID_IWebBrowser2, out webBrowser);
-                if (webBrowser != null)
-                {
-                    webBrowser.GetType().InvokeMember("Silent", BindingFlags.Instance | BindingFlags.Public | BindingFlags.PutDispProperty, null, webBrowser, new object[] { silent });
-                }
-            }
-        }
+#endregion
     }
 
     internal static class Native
     {
+        // IDocHostUIHandler is a native COM interface used to customize the UI for the WebBrowser control, which internally uses the Internet Explorer rendering engine.
+        // It allows the host application to control aspects of how the browser UI behaves, such as context menus, UI layout, and error handling.
+        // https://learn.microsoft.com/en-us/previous-versions/windows/internet-explorer/ie-developer/platform-apis/aa753260(v=vs.85)#remarks
         [ComImport, Guid("BD3F23C0-D43E-11CF-893B-00AA00BDCE1A"), InterfaceType(ComInterfaceType.InterfaceIsIUnknown)]
         internal interface IDocHostUIHandler
         {
@@ -221,7 +235,8 @@ namespace Snyk.VisualStudio.Extension.UI.Toolwindow
             public int x;
             public int y;
         }
-
+        
+        // https://learn.microsoft.com/en-us/visualstudio/extensibility/addressing-dpi-issues2?view=vs-2022&tabs=csharp#enabling-hdpi-support-to-the-weboc
         [ComImport, Guid("3050F3F0-98B5-11CF-BB82-00AA00BDCE0B"), InterfaceType(ComInterfaceType.InterfaceIsIUnknown)]
         internal interface ICustomDoc
         {
@@ -229,6 +244,7 @@ namespace Snyk.VisualStudio.Extension.UI.Toolwindow
             int SetUIHandler(IDocHostUIHandler pUIHandler);
         }
 
+        // https://learn.microsoft.com/en-us/dotnet/api/microsoft.uii.csr.browser.web.iserviceprovider?view=dynamics-usd-3
         [ComImport, Guid("6D5140C1-7436-11CE-8034-00AA006009FA"), InterfaceType(ComInterfaceType.InterfaceIsIUnknown)]
         internal interface IOleServiceProvider
         {
@@ -237,6 +253,8 @@ namespace Snyk.VisualStudio.Extension.UI.Toolwindow
         }
     }
 
+    // Defines various flags that control the behavior of the browser’s UI. These flags can be set using the Flags property in WebBrowserHostUIHandler.
+    // Currently only DPI_AWARE is used.
     [Flags]
     public enum HostUIFlags
     {
