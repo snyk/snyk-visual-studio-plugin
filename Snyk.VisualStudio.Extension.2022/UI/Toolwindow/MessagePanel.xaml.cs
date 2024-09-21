@@ -126,21 +126,29 @@ namespace Snyk.VisualStudio.Extension.UI.Toolwindow
         {
             ThreadHelper.JoinableTaskFactory.Run(RunTestCodeNowAsync);
         }
-
+        
         private async Task RunTestCodeNowAsync()
         {
             await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
             this.testCodeNowButton.IsEnabled = false;
 
-            // Add folder to trusted
-            var isFolderTrusted = await this.ServiceProvider.TasksService.IsFolderTrustedAsync();
-            if (!isFolderTrusted)
-            {
-                Logger.Error("Failed to add folder to trusted list.");
-                return;
-            }
-
             await TaskScheduler.Default;
+            // Add folder to trusted
+            var solutionFolderPath = await this.ServiceProvider.SolutionService.GetSolutionFolderAsync();
+            if (!string.IsNullOrEmpty(solutionFolderPath))
+            {
+                try
+                {
+                    this.ServiceProvider.WorkspaceTrustService.AddFolderToTrusted(solutionFolderPath);
+                    this.ServiceProvider.Options.FireSettingsChangedEvent();
+                    Logger.Information("Workspace folder was trusted: {SolutionFolderPath}", solutionFolderPath);
+                }
+                catch (ArgumentException ex)
+                {
+                    Logger.Error(ex, "Failed to add folder to trusted list.");
+                    throw;
+                }
+            }
 
             try
             {
@@ -159,6 +167,7 @@ namespace Snyk.VisualStudio.Extension.UI.Toolwindow
 
             this.Context.TransitionTo(OverviewState.Instance);
         }
+
 
         private void Hyperlink_RequestNavigate(object sender, System.Windows.Navigation.RequestNavigateEventArgs args)
         {
