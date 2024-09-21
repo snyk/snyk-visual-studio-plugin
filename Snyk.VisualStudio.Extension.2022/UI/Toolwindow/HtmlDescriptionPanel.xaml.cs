@@ -19,7 +19,6 @@ namespace Snyk.VisualStudio.Extension.UI.Toolwindow
                 IsWebBrowserContextMenuEnabled = false,
                 ScriptErrorsSuppressed = true,
             };
-            _wbHandler.Flags |= HostUIFlags.DPI_AWARE;
 
             HtmlViewer.ObjectForScripting = new SnykScriptManager();
             _wbHandler.LoadCompleted += HtmlViewerOnLoadCompleted;

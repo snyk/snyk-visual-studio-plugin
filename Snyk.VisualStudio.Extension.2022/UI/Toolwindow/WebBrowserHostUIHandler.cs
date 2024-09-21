@@ -4,6 +4,7 @@ using System.Runtime.InteropServices;
 using System.Windows.Controls;
 using System.Windows.Navigation;
 using Microsoft.VisualStudio.OLE.Interop;
+
 namespace Snyk.VisualStudio.Extension.UI.Toolwindow
 {
     // The class implements the IDocHostUIHandler interface,
@@ -20,7 +21,8 @@ namespace Snyk.VisualStudio.Extension.UI.Toolwindow
                 throw new ArgumentNullException("browser");
 
             Browser = browser;
-
+            
+            Flags |= HostUIFlags.DPI_AWARE;
             browser.LoadCompleted += OnLoadCompleted;
             browser.Navigated += OnNavigated;
         }
