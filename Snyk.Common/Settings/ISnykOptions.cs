@@ -106,5 +106,6 @@ namespace Snyk.Common.Settings
         SastSettings SastSettings { get; set; }
         Task OnAuthenticationSuccessfulAsync(string token);
         Task OnAuthenticationFailedAsync(string errorMessage);
+        void FireSettingsChangedEvent();
     }
 }

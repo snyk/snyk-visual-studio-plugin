@@ -453,7 +453,7 @@ namespace Snyk.VisualStudio.Extension.Settings
             }
         }
 
-        private void FireSettingsChangedEvent() => this.SettingsChanged?.Invoke(this, new SnykSettingsChangedEventArgs());
+        public void FireSettingsChangedEvent() => this.SettingsChanged?.Invoke(this, new SnykSettingsChangedEventArgs());
 
         public string GetCustomApiEndpoint()
         {

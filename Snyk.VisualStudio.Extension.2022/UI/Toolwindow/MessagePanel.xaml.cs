@@ -132,22 +132,15 @@ namespace Snyk.VisualStudio.Extension.UI.Toolwindow
             await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
             this.testCodeNowButton.IsEnabled = false;
 
-            await TaskScheduler.Default;
             // Add folder to trusted
-            var solutionFolderPath = await this.ServiceProvider.SolutionService.GetSolutionFolderAsync();
-            if (!string.IsNullOrEmpty(solutionFolderPath))
+            var isFolderTrusted = await this.ServiceProvider.TasksService.IsFolderTrustedAsync();
+            if (!isFolderTrusted)
             {
-                try
-                {
-                    this.ServiceProvider.WorkspaceTrustService.AddFolderToTrusted(solutionFolderPath);
-                    Logger.Information("Workspace folder was trusted: {SolutionFolderPath}", solutionFolderPath);
-                }
-                catch (ArgumentException ex)
-                {
-                    Logger.Error(ex, "Failed to add folder to trusted list.");
-                    throw;
-                }
+                Logger.Error("Failed to add folder to trusted list.");
+                return;
             }
+
+            await TaskScheduler.Default;
 
             try
             {

@@ -17,6 +17,7 @@ using StreamJsonRpc;
 using Task = System.Threading.Tasks.Task;
 using LSP = Microsoft.VisualStudio.LanguageServer.Protocol;
 using Process = System.Diagnostics.Process;
+using Snyk.VisualStudio.Extension.Download;
 
 namespace Snyk.VisualStudio.Extension.Language
 {
@@ -64,7 +65,7 @@ namespace Snyk.VisualStudio.Extension.Language
                 ActivateSnykIac = options.IacEnabled.ToString(),
                 SendErrorReports = "true",
                 ManageBinariesAutomatically = options.BinariesAutoUpdate.ToString(),
-                EnableTrustedFoldersFeature = "true",
+                EnableTrustedFoldersFeature = "false",
                 TrustedFolders = options.TrustedFolders.ToList(),
                 IntegrationName = options.IntegrationName,
                 FilterSeverity = new FilterSeverityOptions
@@ -79,7 +80,7 @@ namespace Snyk.VisualStudio.Extension.Language
                 AdditionalParams = ThreadHelper.JoinableTaskFactory.Run(() => options.GetAdditionalOptionsAsync()),
 #pragma warning restore VSTHRD104
                 AuthenticationMethod = options.AuthenticationMethod == AuthenticationType.OAuth ? "oauth" : "token",
-                CliPath = options.CliCustomPath,
+                CliPath = SnykCliDownloader.GetCliFilePath(options.CliCustomPath),
                 Organization = options.Organization,
                 Token = options.ApiToken.ToString(),
                 AutomaticAuthentication = "false",
