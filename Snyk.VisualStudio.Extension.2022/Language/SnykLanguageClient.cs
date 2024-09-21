@@ -26,8 +26,7 @@ namespace Snyk.VisualStudio.Extension.Language
     public partial class SnykLanguageClient : ILanguageClient, ILanguageClientCustomMessage2, ILanguageClientManager
     {
         private static readonly ILogger Logger = LogManager.ForContext<SnykLanguageClient>();
-        private object _lock = new object();
-
+        private SemaphoreSlim Semaphore = new SemaphoreSlim(1,1);
         private SnykLsInitializationOptions initializationOptions;
 
         [ImportingConstructor]
@@ -164,25 +163,35 @@ namespace Snyk.VisualStudio.Extension.Language
 
         public async Task StartServerAsync(bool shouldStart = false)
         {
-            if (StartAsync == null && shouldStart)
+            await Semaphore.WaitAsync();
+            try
             {
-                FireOnLanguageClientNotInitializedAsync();
-                return;
-            }
-            if (StartAsync != null && SnykVSPackage.Instance?.Options != null && shouldStart)
-            {
-                if (CustomMessageTarget == null)
+                if (StartAsync == null && shouldStart)
                 {
-                    CustomMessageTarget = new SnykLanguageClientCustomTarget(SnykVSPackage.ServiceProvider);
+                    FireOnLanguageClientNotInitializedAsync();
+                    return;
                 }
-                Logger.Information("Starting Language Server");
-                await StartAsync.InvokeAsync(this, EventArgs.Empty);
-                IsReady = true;
-                FireOnLanguageServerReadyAsyncEvent();
+
+                if (StartAsync != null && SnykVSPackage.Instance?.Options != null && shouldStart)
+                {
+                    if (CustomMessageTarget == null)
+                    {
+                        CustomMessageTarget = new SnykLanguageClientCustomTarget(SnykVSPackage.ServiceProvider);
+                    }
+
+                    Logger.Information("Starting Language Server");
+                    await StartAsync.InvokeAsync(this, EventArgs.Empty);
+                    IsReady = true;
+                    FireOnLanguageServerReadyAsyncEvent();
+                }
+                else
+                {
+                    Logger.Debug("Couldn't Start Language Server");
+                }
             }
-            else
+            finally
             {
-                Logger.Debug("Couldn't Start Language Server");
+                Semaphore.Release();
             }
         }
 

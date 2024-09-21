@@ -9,6 +9,6 @@
              mc:Ignorable="d" 
              d:DesignHeight="450" d:DesignWidth="800">
     <Grid>
-        <WindowsFormsHost Name="windowsFormsHost" VerticalAlignment="Stretch" HorizontalAlignment="Stretch"/>
+        <WebBrowser Name="HtmlViewer" VerticalAlignment="Stretch" HorizontalAlignment="Stretch" />
     </Grid>
 </UserControl>

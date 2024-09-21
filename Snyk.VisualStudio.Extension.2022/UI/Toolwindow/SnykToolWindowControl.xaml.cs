@@ -45,6 +45,8 @@ namespace Snyk.VisualStudio.Extension.UI.Toolwindow
 
             this.context = new ToolWindowContext(this);
 
+            this.DescriptionPanel.Init();
+
             this.messagePanel.Context = this.context;
         }
 

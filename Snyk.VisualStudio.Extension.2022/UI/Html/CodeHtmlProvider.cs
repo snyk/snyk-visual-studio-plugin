@@ -89,7 +89,9 @@ namespace Snyk.VisualStudio.Extension.UI.Html
                       background-color: var(--line-removed);
                       color: #fff;
                      }
-
+                    .lesson-link {
+                     margin-left: 3px;
+                    }
                     .added {
                       background-color: var(--line-added);
                       color: #fff;
