@@ -80,7 +80,7 @@ namespace Snyk.VisualStudio.Extension.Language
                 AdditionalParams = ThreadHelper.JoinableTaskFactory.Run(() => options.GetAdditionalOptionsAsync()),
 #pragma warning restore VSTHRD104
                 AuthenticationMethod = options.AuthenticationMethod == AuthenticationType.OAuth ? "oauth" : "token",
-                CliPath = SnykCliDownloader.GetCliFilePath(options.CliCustomPath),
+                CliPath = SnykCli.GetCliFilePath(options.CliCustomPath),
                 Organization = options.Organization,
                 Token = options.ApiToken.ToString(),
                 AutomaticAuthentication = "false",
@@ -125,7 +125,7 @@ namespace Snyk.VisualStudio.Extension.Language
 #endif
             var info = new ProcessStartInfo
             {
-                FileName = string.IsNullOrEmpty(options.CliCustomPath) ? SnykCli.GetSnykCliDefaultPath() : options.CliCustomPath,
+                FileName = SnykCli.GetCliFilePath(options.CliCustomPath),
                 Arguments = "language-server -l "+ lsDebugLevel,
                 RedirectStandardInput = true,
                 RedirectStandardOutput = true,

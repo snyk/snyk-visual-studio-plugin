@@ -39,22 +39,6 @@ namespace Snyk.VisualStudio.Extension.Download
         /// </summary>
         public delegate void CliDownloadFinishedCallback();
 
-        /// <summary>
-        /// Gets the valid CLI path. When a custom CLI path is specified, it returns the custom path.
-        /// When the Custom CLI path is null or empty, it returns the default CLI path.
-        /// </summary>
-        /// <param name="customCliPath">The custom CLI path from the settings.</param>
-        /// <returns>If <paramref name="customCliPath"/> is null or empty, the default path would be returned.</returns>
-        public static string GetCliFilePath(string customCliPath) => string.IsNullOrEmpty(customCliPath)
-            ? SnykCli.GetSnykCliDefaultPath()
-            : customCliPath;
-
-
-        public static bool IsCliFileFound(string cliCustomPath)
-        {
-            var path = GetCliFilePath(cliCustomPath);
-            return File.Exists(path);
-        }
 
         /// <summary>
         /// Request last cli information.
@@ -157,7 +141,7 @@ namespace Snyk.VisualStudio.Extension.Download
             string filePath = null,
             List<CliDownloadFinishedCallback> downloadFinishedCallbacks = null)
         {
-            var fileDestinationPath = GetCliFilePath(filePath);
+            var fileDestinationPath = SnykCli.GetCliFilePath(filePath);
 
             var isCliDownloadNeeded = this.IsCliDownloadNeeded(fileDestinationPath);
 
@@ -188,7 +172,7 @@ namespace Snyk.VisualStudio.Extension.Download
         {
             Logger.Information("Enter Download method");
 
-            var cliFileDestinationPath = GetCliFilePath(fileDestinationPath);
+            var cliFileDestinationPath = SnykCli.GetCliFilePath(fileDestinationPath);
 
             Logger.Information("CLI File Destination Path: {Path}", cliFileDestinationPath);
 
