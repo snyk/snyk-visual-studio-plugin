@@ -196,6 +196,7 @@
     <Compile Include="UI\Toolwindow\ToolWindowContext.cs" />
     <Compile Include="UI\Toolwindow\ToolWindowState.cs" />
     <Compile Include="UI\Toolwindow\UpdateDownloadState.cs" />
+    <Compile Include="UI\Toolwindow\WebBrowserHostUIHandler.cs" />
     <Compile Include="UI\Tree\OssRootTreeNode.cs" />
     <Compile Include="UI\Tree\OssVulnerabilityTreeNode.cs" />
     <Compile Include="UI\Tree\RootTreeNode.cs" />

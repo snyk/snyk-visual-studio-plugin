@@ -17,6 +17,7 @@ using StreamJsonRpc;
 using Task = System.Threading.Tasks.Task;
 using LSP = Microsoft.VisualStudio.LanguageServer.Protocol;
 using Process = System.Diagnostics.Process;
+using Snyk.VisualStudio.Extension.Download;
 
 namespace Snyk.VisualStudio.Extension.Language
 {
@@ -26,8 +27,7 @@ namespace Snyk.VisualStudio.Extension.Language
     public partial class SnykLanguageClient : ILanguageClient, ILanguageClientCustomMessage2, ILanguageClientManager
     {
         private static readonly ILogger Logger = LogManager.ForContext<SnykLanguageClient>();
-        private object _lock = new object();
-
+        private SemaphoreSlim Semaphore = new SemaphoreSlim(1,1);
         private SnykLsInitializationOptions initializationOptions;
 
         [ImportingConstructor]
@@ -65,7 +65,7 @@ namespace Snyk.VisualStudio.Extension.Language
                 ActivateSnykIac = options.IacEnabled.ToString(),
                 SendErrorReports = "true",
                 ManageBinariesAutomatically = options.BinariesAutoUpdate.ToString(),
-                EnableTrustedFoldersFeature = "true",
+                EnableTrustedFoldersFeature = "false",
                 TrustedFolders = options.TrustedFolders.ToList(),
                 IntegrationName = options.IntegrationName,
                 FilterSeverity = new FilterSeverityOptions
@@ -80,7 +80,7 @@ namespace Snyk.VisualStudio.Extension.Language
                 AdditionalParams = ThreadHelper.JoinableTaskFactory.Run(() => options.GetAdditionalOptionsAsync()),
 #pragma warning restore VSTHRD104
                 AuthenticationMethod = options.AuthenticationMethod == AuthenticationType.OAuth ? "oauth" : "token",
-                CliPath = options.CliCustomPath,
+                CliPath = SnykCli.GetCliFilePath(options.CliCustomPath),
                 Organization = options.Organization,
                 Token = options.ApiToken.ToString(),
                 AutomaticAuthentication = "false",
@@ -125,7 +125,7 @@ namespace Snyk.VisualStudio.Extension.Language
 #endif
             var info = new ProcessStartInfo
             {
-                FileName = string.IsNullOrEmpty(options.CliCustomPath) ? SnykCli.GetSnykCliDefaultPath() : options.CliCustomPath,
+                FileName = SnykCli.GetCliFilePath(options.CliCustomPath),
                 Arguments = "language-server -l "+ lsDebugLevel,
                 RedirectStandardInput = true,
                 RedirectStandardOutput = true,
@@ -164,25 +164,35 @@ namespace Snyk.VisualStudio.Extension.Language
 
         public async Task StartServerAsync(bool shouldStart = false)
         {
-            if (StartAsync == null && shouldStart)
+            await Semaphore.WaitAsync();
+            try
             {
-                FireOnLanguageClientNotInitializedAsync();
-                return;
-            }
-            if (StartAsync != null && SnykVSPackage.Instance?.Options != null && shouldStart)
-            {
-                if (CustomMessageTarget == null)
+                if (StartAsync == null && shouldStart)
                 {
-                    CustomMessageTarget = new SnykLanguageClientCustomTarget(SnykVSPackage.ServiceProvider);
+                    FireOnLanguageClientNotInitializedAsync();
+                    return;
                 }
-                Logger.Information("Starting Language Server");
-                await StartAsync.InvokeAsync(this, EventArgs.Empty);
-                IsReady = true;
-                FireOnLanguageServerReadyAsyncEvent();
+
+                if (StartAsync != null && SnykVSPackage.Instance?.Options != null && shouldStart)
+                {
+                    if (CustomMessageTarget == null)
+                    {
+                        CustomMessageTarget = new SnykLanguageClientCustomTarget(SnykVSPackage.ServiceProvider);
+                    }
+
+                    Logger.Information("Starting Language Server");
+                    await StartAsync.InvokeAsync(this, EventArgs.Empty);
+                    IsReady = true;
+                    FireOnLanguageServerReadyAsyncEvent();
+                }
+                else
+                {
+                    Logger.Debug("Couldn't Start Language Server");
+                }
             }
-            else
+            finally
             {
-                Logger.Debug("Couldn't Start Language Server");
+                Semaphore.Release();
             }
         }
 

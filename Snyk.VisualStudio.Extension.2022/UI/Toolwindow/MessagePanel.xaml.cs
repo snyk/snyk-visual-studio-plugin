@@ -126,7 +126,7 @@ namespace Snyk.VisualStudio.Extension.UI.Toolwindow
         {
             ThreadHelper.JoinableTaskFactory.Run(RunTestCodeNowAsync);
         }
-
+        
         private async Task RunTestCodeNowAsync()
         {
             await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
@@ -140,6 +140,7 @@ namespace Snyk.VisualStudio.Extension.UI.Toolwindow
                 try
                 {
                     this.ServiceProvider.WorkspaceTrustService.AddFolderToTrusted(solutionFolderPath);
+                    this.ServiceProvider.Options.FireSettingsChangedEvent();
                     Logger.Information("Workspace folder was trusted: {SolutionFolderPath}", solutionFolderPath);
                 }
                 catch (ArgumentException ex)
@@ -166,6 +167,7 @@ namespace Snyk.VisualStudio.Extension.UI.Toolwindow
 
             this.Context.TransitionTo(OverviewState.Instance);
         }
+
 
         private void Hyperlink_RequestNavigate(object sender, System.Windows.Navigation.RequestNavigateEventArgs args)
         {

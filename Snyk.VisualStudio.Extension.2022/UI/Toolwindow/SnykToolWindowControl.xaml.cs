@@ -10,8 +10,8 @@ using Microsoft.VisualStudio.Shell.Interop;
 using Serilog;
 using Snyk.Common;
 using Snyk.Common.Settings;
+using Snyk.VisualStudio.Extension.CLI;
 using Snyk.VisualStudio.Extension.Commands;
-using Snyk.VisualStudio.Extension.Download;
 using Snyk.VisualStudio.Extension.Language;
 using Snyk.VisualStudio.Extension.Service;
 using Snyk.VisualStudio.Extension.UI.Notifications;
@@ -44,6 +44,8 @@ namespace Snyk.VisualStudio.Extension.UI.Toolwindow
             this.InitializeComponent();
 
             this.context = new ToolWindowContext(this);
+
+            this.DescriptionPanel.Init();
 
             this.messagePanel.Context = this.context;
         }
@@ -428,7 +430,7 @@ namespace Snyk.VisualStudio.Extension.UI.Toolwindow
         /// <param name="eventArgs">Event args.</param>
         public void OnDownloadCancelled(object sender, SnykCliDownloadEventArgs eventArgs)
         {
-            if (SnykCliDownloader.IsCliFileFound(serviceProvider.Options.CliCustomPath))
+            if (SnykCli.IsCliFileFound(serviceProvider.Options.CliCustomPath))
             {
                 if (LanguageClientHelper.LanguageClientManager() != null)
                     ThreadHelper.JoinableTaskFactory.RunAsync(async () => await LanguageClientHelper.LanguageClientManager().RestartServerAsync()).FireAndForget();
@@ -447,7 +449,7 @@ namespace Snyk.VisualStudio.Extension.UI.Toolwindow
 
         private void OnDownloadFailed(object sender, Exception e)
         {
-            if (SnykCliDownloader.IsCliFileFound(serviceProvider.Options.CliCustomPath))
+            if (SnykCli.IsCliFileFound(serviceProvider.Options.CliCustomPath))
             {
                 if (LanguageClientHelper.LanguageClientManager() != null)
                     ThreadHelper.JoinableTaskFactory.RunAsync(async () => await LanguageClientHelper.LanguageClientManager().RestartServerAsync()).FireAndForget();

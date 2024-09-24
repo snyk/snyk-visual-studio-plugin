@@ -307,6 +307,7 @@ namespace Snyk.VisualStudio.Extension.Service
             try
             {
                 this.serviceProvider.WorkspaceTrustService.AddFolderToTrusted(solutionFolderPath);
+                this.serviceProvider.Options.FireSettingsChangedEvent();
                 Logger.Information("Workspace folder was trusted: {SolutionFolderPath}", solutionFolderPath);
                 return true;
             }
@@ -736,7 +737,7 @@ namespace Snyk.VisualStudio.Extension.Service
             {
                 var options = this.serviceProvider.Options;
                 var cliDownloader = new SnykCliDownloader(options);
-                var fileDestinationPath = GetCliFilePath(options.CliCustomPath);
+                var fileDestinationPath = SnykCli.GetCliFilePath(options.CliCustomPath);
 
                 return cliDownloader.IsCliDownloadNeeded(fileDestinationPath);
 

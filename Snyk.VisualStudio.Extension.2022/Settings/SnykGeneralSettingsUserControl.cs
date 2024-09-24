@@ -216,7 +216,7 @@ namespace Snyk.VisualStudio.Extension.Settings
 
             var serviceProvider = this.ServiceProvider;
 
-            if (SnykCliDownloader.IsCliFileFound(serviceProvider.Options.CliCustomPath))
+            if (SnykCli.IsCliFileFound(serviceProvider.Options.CliCustomPath))
             {
                 serviceProvider.Options.Authenticate();
             }

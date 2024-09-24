@@ -10,7 +10,7 @@ using Snyk.Common;
 using Snyk.Common.Authentication;
 using Snyk.Common.Service;
 using Snyk.Common.Settings;
-using Snyk.VisualStudio.Extension.Download;
+using Snyk.VisualStudio.Extension.CLI;
 using Snyk.VisualStudio.Extension.Language;
 using Snyk.VisualStudio.Extension.Service;
 
@@ -417,7 +417,7 @@ namespace Snyk.VisualStudio.Extension.Settings
         public void Authenticate()
         {
             Logger.Information("Enter Authenticate method");
-            if (!SnykCliDownloader.IsCliFileFound(this.CliCustomPath))
+            if (!SnykCli.IsCliFileFound(this.CliCustomPath))
             {
                 ThrowFileNotFoundException();
             }
@@ -453,7 +453,7 @@ namespace Snyk.VisualStudio.Extension.Settings
             }
         }
 
-        private void FireSettingsChangedEvent() => this.SettingsChanged?.Invoke(this, new SnykSettingsChangedEventArgs());
+        public void FireSettingsChangedEvent() => this.SettingsChanged?.Invoke(this, new SnykSettingsChangedEventArgs());
 
         public string GetCustomApiEndpoint()
         {
