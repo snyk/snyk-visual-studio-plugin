@@ -90,7 +90,7 @@
 
         <StackPanel Name="snykInitializing" Visibility="Collapsed" HorizontalAlignment="Center">
             <c:TextField TextAlignment="Left" Padding="0,5">
-                Snyk Security is initializing...
+                Snyk Security is waiting for Visual Studio to initialize
             </c:TextField>
             <c:TextField TextAlignment="Left" Padding="0,5">
                 Please hold on for a moment.
