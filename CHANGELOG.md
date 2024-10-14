@@ -28,6 +28,7 @@
 - Fixed Jumpy navigation when issues are rendered in the tree.
 - Fixed Disabled Authentication button and token textbox in case of failed authentication.
 - High DPI scaling rendering.
+- Fixed CLI downloader always attempting to download after extension starts.
 - Fixed State transition when Automatic download for CLI is selected.
 - Removed TLS enforcement from the extension.
 
