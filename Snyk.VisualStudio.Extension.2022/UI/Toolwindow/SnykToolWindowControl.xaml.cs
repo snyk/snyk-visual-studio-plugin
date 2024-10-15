@@ -741,8 +741,7 @@ namespace Snyk.VisualStudio.Extension.UI.Toolwindow
             if (issue != null)
             {
                 this.DescriptionPanel.Visibility = Visibility.Visible;
-
-                this.DescriptionPanel.SetContent(issue.AdditionalData?.Details, Product.Oss);
+                FillHtmlPanel(issue, Product.Oss);
 
                 VsCodeService.Instance.OpenAndNavigate(
                     issue.FilePath,
@@ -757,6 +756,19 @@ namespace Snyk.VisualStudio.Extension.UI.Toolwindow
             }
         }
 
+        private void FillHtmlPanel(Issue issue, string product)
+        {
+            var languageClientManager = LanguageClientHelper.LanguageClientManager();
+            if (languageClientManager == null) return;
+            ThreadHelper.JoinableTaskFactory.RunAsync(async () =>
+            {
+                var html = await languageClientManager.InvokeGenerateIssueDescriptionAsync(issue.Id,
+                    SnykVSPackage.Instance.DisposalToken);
+                await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
+                this.DescriptionPanel.SetContent(html, product);
+            }).FireAndForget();
+        }
+
         private async Task HandleSnykCodeTreeNodeSelectedAsync()
         {
             this.DescriptionPanel.Visibility = Visibility.Visible;
@@ -766,7 +778,7 @@ namespace Snyk.VisualStudio.Extension.UI.Toolwindow
             if (snykCodeTreeNode == null) return;
 
             var issue = snykCodeTreeNode.Issue;
-            this.DescriptionPanel.SetContent(snykCodeTreeNode.Issue.AdditionalData?.Details, Product.Code);
+            FillHtmlPanel(issue, Product.Code);
 
 
             VsCodeService.Instance.OpenAndNavigate(
@@ -786,7 +798,7 @@ namespace Snyk.VisualStudio.Extension.UI.Toolwindow
             if (iacTreeNode == null) return;
             
             var issue = iacTreeNode.Issue;
-            this.DescriptionPanel.SetContent(iacTreeNode.Issue.AdditionalData?.CustomUIContent, Product.Iac);
+            FillHtmlPanel(issue, Product.Iac);
 
 
             VsCodeService.Instance.OpenAndNavigate(

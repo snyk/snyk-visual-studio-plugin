@@ -1,123 +1,324 @@
-# Snyk Security - Code and Open Source Dependencies
+# Snyk Security Changelog
 
-### Introduction
+## [2.0.0]
+### Changed
+- Visual Studio extension is now fully integrated with Snyk Language Server protocol v16.
+- Reported issues now are highlighted in directly in your editor.
+- Reported issues are now shown in the Visual Studio Error Window.
+- Code Actions in the editor to learn about the reported issue.
+- Apply AI fixes from the text editor.
+- Added IaC Scanning.
+- Added Auto Scanning Option.
+- Plugin will scan automatically on save or when it starts.
+- New Authentication modal dialog with a copy link button in case the browser doesn't automatically open.
+- New design for all issue description panels.
+- Better support for light and dark themes.
+- Added preview release for the extension.
+- Added CLI release channels in the settings.
+- Added a new LS initialize state.
+- Added Html rendering for issues.
+- Download CLI depending on Language Server Protocol version.
+- Deleted Code Client Library.
+- Improve memory footprint by loading issue desciption on demand.
 
-Snyk Security extension helps you find and fix security vulnerabilities in your projects. Within a few seconds, the extension will provide a list of all the different types of issues identified, bucketed into categories, together with actionable fix advice:
+### Fixed
+- Fixed UI Freeze when changing authentication method.
+- Fixed UI Freeze when issues are being rendered.
+- Fixed UI Freeze when calling getSastEnabled.
+- Fixed UI Freeze after settings window is closed.  
+- Fixed Jumpy navigation when issues are rendered in the tree.
+- Fixed Disabled Authentication button and token textbox in case of failed authentication.
+- High DPI scaling rendering.
+- Fixed CLI downloader always attempting to download after extension starts.
+- Fixed State transition when Automatic download for CLI is selected.
+- Removed TLS enforcement from the extension.
 
-- Open Source Security - known vulnerabilities in both the direct and in-direct (transitive) open source dependencies you are pulling into the project.
+## [1.1.63]
 
-#### 1. Software requirements
+### Fixed
+- Change default auth type to OAuth.
 
-- Operating system - Windows.
-- Supported versions of Visual Studio: 2015, 2017, 2019. Compatible with Community, Professional and Enterprise.
+## [1.1.62]
 
-#### 2. How to install the extension?
+### Fixed
+- Added OAuth2 authentication Option to settings window.
 
-**Step 2.1.** Double click on VSIX file and install the extension on the Visual Studio of choice. Select all the versions of Visual Studio on which you want to install Snyk extension (Extension can be installed on all Visual Studio versions at once).
+## [1.1.61]
 
-![Vsix install](https://github.com/snyk/snyk-visual-studio-plugin/blob/feat/tree-view/doc/images/readme_image_2_1.png "Vsix install")
+### Fixed
+- Added a deprecation notice for VS 2015,2017 and 2019.
 
-**Step 2.2.** Once installed, open the Snyk tool window by going to View > Other Windows as shown in the screenshot below.
+## [1.1.60]
 
-![Snyk Toolwindow menu item](https://github.com/snyk/snyk-visual-studio-plugin/blob/feat/tree-view/doc/images/readme_image_2_2.png "Snyk Toolwindow menu item")
+### Fixed
+- Fix an issue with extension failing to load in VS 2022 < 17.10.
 
-**Step 2.3.** Once the tool window appears, wait while Snyk extension downloads the latest Snyk CLI version.
+## [1.1.59]
 
-![Snyk CLI download](https://github.com/snyk/snyk-visual-studio-plugin/blob/feat/tree-view/doc/images/readme_image_2_3.png "Snyk CLI download")
+### Fixed
+- Change Default API Endpoint to https://api.snyk.io.
 
-**Step 2.4.1.** By now you should have the extension installed and the Snyk CLI downloaded. Time to authenticate. The first way is to click "Connect Visual Studio to Snyk" link.
+## [1.1.58]
 
-![Authenticate from overview panel](https://github.com/snyk/snyk-visual-studio-plugin/blob/feat/tree-view/doc/images/readme_image_2_4.png "Authenticate from overview panel")
+### Fixed
+- Rendering issue in Settings page.
 
-**Step 2.4.2.** Or open Visual Studio Options to go to the General Settings of the Snyk extension.
+## [1.1.57]
 
-![Authenticate from Options](https://github.com/snyk/snyk-visual-studio-plugin/blob/feat/tree-view/doc/images/readme_image_2_5.png "Authenticate from Options")
+### Fixed
+- Change analytics scan status from "Succeeded" to "Success".
 
-**Step 2.5.** Authentication can be triggered by pressing the “Authenticate” button. If for some reason the automated way doesn’t work or input user API token by hand.
+## [1.1.56]
 
-- If, however, the automated authentication doesn’t work for some reason, please reach out to us. We would be happy to investigate!
+### Fixed
+- Send current solution folder path when sending Analytics.
 
-![Authenticate button or enter API token](https://github.com/snyk/snyk-visual-studio-plugin/blob/feat/tree-view/doc/images/readme_image_2_6.png "Authenticate button or enter API token")
+## [1.1.55]
 
-**Step 2.6.** You will be taken to the website to verify your identity and connect the IDE extension. Click the Authenticate button.
+### Fixed
+- Fixed an issue with resource loading in 17.10.
 
-![Authenticate on webseite](https://github.com/snyk/snyk-visual-studio-plugin/blob/feat/tree-view/doc/images/readme_image_2_7.png "Authenticate on webseite")
+## [1.1.54]
 
-**Step 2.7.** You will be taken to the website to verify your identity and connect the IDE extension. Click the **Authenticate** button.
+### Fixed
+- Fixed an issue affecting old IDEs.
 
-- Once the authentication has been confirmed, please feel free to close the browser and go back to the IDE extension. The Token field should have been populated with the authentication token. With that the authentication part should be done!
+## [1.1.53]
 
-![Authentication finished](https://github.com/snyk/snyk-visual-studio-plugin/blob/feat/tree-view/doc/images/readme_image_2_8.png "Authentication finished")
+### Fixed
+- Use dynamic colors for the suggestion fix textbox.
 
-#### 3. How to use the extension?
+## [1.1.52]
 
-- Thank you for installing Snyk’s Visual Studio Extension! By now it should be fully installed. If you have any questions or you feel something is not as it should be, please don’t hesitate to reach out us.
-- Let’s now see how to use the extension (continues on the next page).
+### Fixed
+- Upgraded several dependencies.
+- Removed legacy analytics implementation.
 
-**Step 3.1.** Open your solution and run Snyk scan. Depending on the size of your solution, time to build a dependency graph, it might take from less than a minute to a couple of minutes to get the vulnerabilities.
+## [1.1.51]
 
-- Note that your solution will have to successfully build in order to allow the CLI to pick up the dependencies (and find the vulnerabilities).
-- If you see only NPM vulnerabilities or vulnerabilities that are not related to your C#/.NET projects, that might mean your project is not built successfully and wasn’t detected by the CLI. Feel free to reach out to us (contacts at the end of the document) if you think something is not as expected, we are happy to help or clarify something for you.
+### Fixed
+- Fixed a UI issue when toggling Code and Quality Scans in Settings page.
 
-![Run scan](https://github.com/snyk/snyk-visual-studio-plugin/blob/feat/tree-view/doc/images/readme_image_3_1_1.png "Run scan")
+## [1.1.50]
 
-![Scan results](https://github.com/snyk/snyk-visual-studio-plugin/blob/feat/tree-view/doc/images/readme_image_3_1_2.png "Scan results")
+### Fixed
+- Upgraded the version of the Analytics dependency.
 
-**Step 3.2.** You could filter vulnerabilities by name or by severity.
+## [1.1.49]
 
-- Filter by name by typing the name of the vulnerability in the search bar.
+### Fixed
+- Upgraded the version of Newtonsoft dependency.
 
-![Filter by name](https://github.com/snyk/snyk-visual-studio-plugin/blob/feat/tree-view/doc/images/readme_image_3_2_1.png "Filter by name")
+## [1.1.48]
 
-- Filter by severity by selecting one or more of the the severities when you open the search bar filter.
+### Fixed
+- shortened extension name to just Snyk Security
 
-![Scan results](https://github.com/snyk/snyk-visual-studio-plugin/blob/feat/tree-view/doc/images/readme_image_3_2_2.png "Scan results")
+## [1.1.47]
+- Only send Amplitude analytics events when connected to an MT US environment
 
-**Step 3.3.** Users could configure Snyk extension by Solution settings.
+## [1.1.45]
 
-- Note that the “Scan all projects” option is enabled by default. It adds --all-projects option for Snyk CLI. This option scans all projects by default.
+### Changed
+- Streamlined `.dcignore` to avoid accidental exclusion of project files.
 
-![Project additional configuraton options](https://github.com/snyk/snyk-visual-studio-plugin/blob/feat/tree-view/doc/images/readme_image_3_3.png "Project additional configuraton options")
+## [1.1.44]
+- Support for IDE analytics
 
-#### 4. Known Caveats
+## [1.1.43]
 
-##### 4.1 Could not detect supported target files
+### Added
+- Support for Snyk Code Local Engine
 
-**Solution** Open Visual Studio Options to go to the Solution Settings of the Snyk extension and check Scan all projects.
+## [1.1.38]
 
-![Scan all projects option](https://github.com/snyk/snyk-visual-studio-plugin/blob/feat/tree-view/doc/images/readme_image_4_1.png "Scan all projects option")
+### Fixed
+- Custom endpoints validation in the settings page did not work correctly and led to crashes.
 
-#### 5. Contacts
+## [1.1.37]
 
-- If you have any issues please reach out to <support@snyk.io>.
+### Fixed
+- Rendering of code blocks in OSS description panel markdown.
 
-#### 6. Conclusion
+## [1.1.34]
 
-Thank you for reaching that far :)
+### Fixed
+- Improved error handling for Code & Quality scans.
 
-It either means you’ve successfully run a scan with the Visual Studio extension or you’ve encountered an issue. Either way we would love to hear about it - so go ahead and use the above contacts. We are looking forward to hearing from you!
+## [1.1.33]
 
-#### Build process
+### Added
+- OAuth2 support when using OAuth2 endpoints.
 
-Close this repository to local machine:
+## [1.1.32]
 
-```
-git clone https://github.com/snyk/snyk-visual-studio-plugin.git
-```
+### Added
+- Arm64 support.
 
-Restore Nuget packages:
+### Changed
+- Snyk Code no longer filters configuration files.
 
-```
-nuget restore
-```
+### Fixed
+- Missing paths in the trust dialog in older VS versions.
 
-Run build:
+## [1.1.31]
 
-```
-msbuild -t:Build
-```
+### Added
+- Adds workspace trust mechanism to ensure scans are run on the trusted projects.
 
-#### Useful links
+## [1.1.30]
 
-- This plugin works with projects written in .NET, Java, JavaScript, and many more languages. [See the full list of languages and package managers Snyk supports](https://support.snyk.io/hc/en-us/sections/360001087857-Language-package-manager-support)
-- [Bug tracker](https://github.com/snyk/snyk-visual-studio-plugin/issues)
+### Changed
+- Link to GH issues in the error notification bar is replaced with a link to Snyk support.
+
+## [1.1.29]
+
+### Fixed
+- Extension failed to load with VS2022 versions smaller than 17.3.
+- Stop button raising an error message.
+
+## [1.1.28]
+
+### Fixed
+- Snyk Code scans sometimes skips files unnecessarily, leading to missing results or "No supported code available" errors.
+
+## [1.1.27]
+
+### Fixed
+- Bug in VS2022 when loading the extension
+
+## [1.1.26]
+
+### Fixed
+- Bug in Snyk Code messages encoding resulting in failed Snyk Code scans.
+
+### Changed
+- Update wording in settings menu for collecting analytics.
+
+## [1.1.25]
+
+### Added
+- Option to disable CLI auto-update.
+- Option to select CLI custom path.
+- Improved UI/UX when the CLI is missing.
+
+### Fixed
+- Several issues with auto-updating the CLI executable.
+
+## [1.1.24]
+
+### Fixed
+- Extension fails to load on VS2017.
+
+## [1.1.23]
+
+### Added
+- Organization description information in settings.
+
+### Fixed
+- Changing custom endpoint settings leads to authentication errors.
+
+## [1.1.22]
+
+### Fixed
+- External example fixes tab control dark theme support.
+- Snyk Code results partially lost for WPF projecs.
+
+## [1.1.21]
+
+### Changed
+- Replace the word "Remediation" with "Fix" in OSS report.
+
+## [1.1.20]
+
+### Fixed
+- Files not detected issue.
+
+## [1.1.19]
+
+### Fixed
+- Errors when projects are nested inside solution folders.
+
+## [1.1.18]
+
+### Changed
+- Removed manually included DLLs from VSIX package.
+
+## [1.1.17]
+
+### Fixed
+- Selection of tree view items only working when clicking on the icon.
+- Background color of unfocused selected items might blend with font color on some themes.
+
+## [1.1.16]
+
+### Added
+- Base64 encoding for Snyk Code analysis file content payloads.
+
+### Fixed
+- The color of the text in the tree view does not match the color from VS theme.
+- A problem with partially lost Snyk Code results if a single file contains multiple identical suggestions.
+- Error when clicking on issues with unknown severity in the tool window.
+
+## [1.1.15]
+
+### Fixed
+- Fixed a bug in Snyk Code where files with an underscore in the path would be ignored.
+- Restore all tree items after clear search or filter.
+
+### Changed
+- Expand all scan results after completing a scan.
+
+## [1.1.14]
+
+### Fixed
+- Run a scan for OSS and for Snyk Code asynchronously.
+
+## [1.1.13]
+
+### Fixed
+- Error reporting and Snyk Code configuraton issues.
+
+## [1.1.12]
+
+### Fixed
+- Display message on main panel if error occurs.
+- Link to Snyk Code settings on app.snyk.io.
+
+### Changed
+- Added analysis context information for analysis requests.
+- Welcome screen text and added privacy policy, term of service links.
+
+## [1.1.11]
+
+### Fixed
+- Fixed CLI download blocking the UI longer than necessary.
+
+### Changed
+- Improved message text when Snyk Code is disabled.
+- Added Snyk to the "Extensions" menu in VS2019+, and to the top menu bar in older versions.
+
+## [1.1.10]
+
+### Changed
+- Snyk Code: add support for Single Tenant setups.
+
+### Fixed
+- Scan of solutions in which *.sln file is not in the root directory.
+
+## [1.1.9]
+
+### Fixed
+- "Object reference not set to an instance of an object" when launching extension in Visual Studio 2022.
+
+## [1.1.8]
+
+### Fixed
+- Clean Open Source and Snyk Code vulnerabilities cache.
+- Fixed severity icons for Snyk Code issues.
+
+## [1.1.7]
+
+### Fixed
+- Extension crash on Visual Studio 2017.
+- Cache invalidation for Open Source vulnerabilities.

@@ -26,5 +26,6 @@
         
         public const string SnykCopyAuthLink = "snyk.copyAuthLink";
         public const string SnykGetFeatureFlagStatus = "snyk.getFeatureFlagStatus";
+        public const string SnykGenerateIssueDescription = "snyk.generateIssueDescription";
     }
 }

@@ -33,7 +33,6 @@ namespace Snyk.VisualStudio.Extension.Language
         public IList<DataFlow> DataFlow { get; set; }
 
         // OSS + Code
-        public string Details { get; set; }
         public string RuleId { get; set; }
 
         // OSS
@@ -65,7 +64,6 @@ namespace Snyk.VisualStudio.Extension.Language
         public IList<string> Path { get; set; }
         public string Resolve { get; set; }
         public IList<string> References { get; set; }
-        public string CustomUIContent { get; set; }
     }
 
     public class Identifiers

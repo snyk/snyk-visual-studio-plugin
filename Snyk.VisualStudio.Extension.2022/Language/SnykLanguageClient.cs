@@ -352,7 +352,18 @@ namespace Snyk.VisualStudio.Extension.Language
         {
             var param = new LSP.ExecuteCommandParams
             {
-                Command = LsConstants.SnykCopyAuthLink
+                Command = LsConstants.SnykCopyAuthLink,
+            };
+            var authLin = await InvokeWithParametersAsync<string>(LsConstants.WorkspaceExecuteCommand, param, cancellationToken);
+            return authLin;
+        }
+
+        public async Task<string> InvokeGenerateIssueDescriptionAsync(string issueId, CancellationToken cancellationToken)
+        {
+            var param = new LSP.ExecuteCommandParams
+            {
+                Command = LsConstants.SnykGenerateIssueDescription,
+                Arguments = new object[] { issueId }
             };
             var authLin = await InvokeWithParametersAsync<string>(LsConstants.WorkspaceExecuteCommand, param, cancellationToken);
             return authLin;
@@ -362,7 +373,8 @@ namespace Snyk.VisualStudio.Extension.Language
         {
             var param = new LSP.ExecuteCommandParams
             {
-                Command = LsConstants.SnykGetFeatureFlagStatus
+                Command = LsConstants.SnykGetFeatureFlagStatus,
+                Arguments = new object[] { featureFlag }
             };
             var featureFlagStatus = await InvokeWithParametersAsync<object>(LsConstants.WorkspaceExecuteCommand, param, cancellationToken);
             return featureFlagStatus;
