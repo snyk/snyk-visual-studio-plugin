@@ -33,9 +33,9 @@ Snyk Security extension helps you find and fix security vulnerabilities in your 
 
 ![Authenticate from Options](https://github.com/snyk/snyk-visual-studio-plugin/blob/feat/tree-view/doc/images/readme_image_2_5.png "Authenticate from Options")
 
-**Step 2.5.** Authentication can be triggered by pressing the ìAuthenticateî button. If for some reason the automated way doesnít work or input user API token by hand.
+**Step 2.5.** Authentication can be triggered by pressing the ‚ÄúAuthenticate‚Äù button. If for some reason the automated way doesn‚Äôt work or input user API token by hand.
 
-- If, however, the automated authentication doesnít work for some reason, please reach out to us. We would be happy to investigate!
+- If, however, the automated authentication doesn‚Äôt work for some reason, please reach out to us. We would be happy to investigate!
 
 ![Authenticate button or enter API token](https://github.com/snyk/snyk-visual-studio-plugin/blob/feat/tree-view/doc/images/readme_image_2_6.png "Authenticate button or enter API token")
 
@@ -51,13 +51,13 @@ Snyk Security extension helps you find and fix security vulnerabilities in your 
 
 #### 3. How to use the extension?
 
-- Thank you for installing Snykís Visual Studio Extension! By now it should be fully installed. If you have any questions or you feel something is not as it should be, please donít hesitate to reach out us.
-- Letís now see how to use the extension (continues on the next page).
+- Thank you for installing Snyk‚Äôs Visual Studio Extension! By now it should be fully installed. If you have any questions or you feel something is not as it should be, please don‚Äôt hesitate to reach out us.
+- Let‚Äôs now see how to use the extension (continues on the next page).
 
 **Step 3.1.** Open your solution and run Snyk scan. Depending on the size of your solution, time to build a dependency graph, it might take from less than a minute to a couple of minutes to get the vulnerabilities.
 
 - Note that your solution will have to successfully build in order to allow the CLI to pick up the dependencies (and find the vulnerabilities).
-- If you see only NPM vulnerabilities or vulnerabilities that are not related to your C#/.NET projects, that might mean your project is not built successfully and wasnít detected by the CLI. Feel free to reach out to us (contacts at the end of the document) if you think something is not as expected, we are happy to help or clarify something for you.
+- If you see only NPM vulnerabilities or vulnerabilities that are not related to your C#/.NET projects, that might mean your project is not built successfully and wasn‚Äôt detected by the CLI. Feel free to reach out to us (contacts at the end of the document) if you think something is not as expected, we are happy to help or clarify something for you.
 
 ![Run scan](https://github.com/snyk/snyk-visual-studio-plugin/blob/feat/tree-view/doc/images/readme_image_3_1_1.png "Run scan")
 
@@ -75,7 +75,7 @@ Snyk Security extension helps you find and fix security vulnerabilities in your 
 
 **Step 3.3.** Users could configure Snyk extension by Solution settings.
 
-- Note that the ìScan all projectsî option is enabled by default. It adds --all-projects option for Snyk CLI. This option scans all projects by default.
+- Note that the ‚ÄúScan all projects‚Äù option is enabled by default. It adds --all-projects option for Snyk CLI. This option scans all projects by default.
 
 ![Project additional configuraton options](https://github.com/snyk/snyk-visual-studio-plugin/blob/feat/tree-view/doc/images/readme_image_3_3.png "Project additional configuraton options")
 
@@ -95,7 +95,7 @@ Snyk Security extension helps you find and fix security vulnerabilities in your 
 
 Thank you for reaching that far :)
 
-It either means youíve successfully run a scan with the Visual Studio extension or youíve encountered an issue. Either way we would love to hear about it - so go ahead and use the above contacts. We are looking forward to hearing from you!
+It either means you‚Äôve successfully run a scan with the Visual Studio extension or you‚Äôve encountered an issue. Either way we would love to hear about it - so go ahead and use the above contacts. We are looking forward to hearing from you!
 
 #### Build process
 
