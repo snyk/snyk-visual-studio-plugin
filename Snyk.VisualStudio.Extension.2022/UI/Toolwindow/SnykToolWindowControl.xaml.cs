@@ -741,7 +741,7 @@ namespace Snyk.VisualStudio.Extension.UI.Toolwindow
             if (issue != null)
             {
                 this.DescriptionPanel.Visibility = Visibility.Visible;
-                FillHtmlPanel(issue, Product.Oss);
+                FillHtmlPanel(issue.Id, Product.Oss, issue.AdditionalData?.Details);
 
                 VsCodeService.Instance.OpenAndNavigate(
                     issue.FilePath,
@@ -756,14 +756,18 @@ namespace Snyk.VisualStudio.Extension.UI.Toolwindow
             }
         }
 
-        private void FillHtmlPanel(Issue issue, string product)
+        private void FillHtmlPanel(string issueId, string product, string html)
         {
             var languageClientManager = LanguageClientHelper.LanguageClientManager();
             if (languageClientManager == null) return;
             ThreadHelper.JoinableTaskFactory.RunAsync(async () =>
             {
-                var html = await languageClientManager.InvokeGenerateIssueDescriptionAsync(issue.Id,
-                    SnykVSPackage.Instance.DisposalToken);
+                if (string.IsNullOrEmpty(html))
+                {
+                    html = await languageClientManager.InvokeGenerateIssueDescriptionAsync(issueId,
+                        SnykVSPackage.Instance.DisposalToken);
+                }
+
                 await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
                 this.DescriptionPanel.SetContent(html, product);
             }).FireAndForget();
@@ -778,7 +782,7 @@ namespace Snyk.VisualStudio.Extension.UI.Toolwindow
             if (snykCodeTreeNode == null) return;
 
             var issue = snykCodeTreeNode.Issue;
-            FillHtmlPanel(issue, Product.Code);
+            FillHtmlPanel(issue.Id, Product.Code, issue.AdditionalData?.Details);
 
 
             VsCodeService.Instance.OpenAndNavigate(
@@ -798,7 +802,7 @@ namespace Snyk.VisualStudio.Extension.UI.Toolwindow
             if (iacTreeNode == null) return;
             
             var issue = iacTreeNode.Issue;
-            FillHtmlPanel(issue, Product.Iac);
+            FillHtmlPanel(issue.Id, Product.Iac, issue.AdditionalData?.CustomUIContent);
 
 
             VsCodeService.Instance.OpenAndNavigate(
