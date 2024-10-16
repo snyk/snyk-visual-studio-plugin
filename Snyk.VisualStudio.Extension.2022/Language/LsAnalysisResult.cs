@@ -33,8 +33,8 @@ namespace Snyk.VisualStudio.Extension.Language
         public IList<DataFlow> DataFlow { get; set; }
 
         // OSS + Code
-        public string Details { get; set; }
         public string RuleId { get; set; }
+        public string Details { get; set; }
 
         // OSS
         public string License { get; set; }

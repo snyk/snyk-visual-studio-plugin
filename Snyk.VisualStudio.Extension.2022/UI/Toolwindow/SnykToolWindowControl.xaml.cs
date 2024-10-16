@@ -741,8 +741,7 @@ namespace Snyk.VisualStudio.Extension.UI.Toolwindow
             if (issue != null)
             {
                 this.DescriptionPanel.Visibility = Visibility.Visible;
-
-                this.DescriptionPanel.SetContent(issue.AdditionalData?.Details, Product.Oss);
+                FillHtmlPanel(issue.Id, Product.Oss, issue.AdditionalData?.Details);
 
                 VsCodeService.Instance.OpenAndNavigate(
                     issue.FilePath,
@@ -757,6 +756,23 @@ namespace Snyk.VisualStudio.Extension.UI.Toolwindow
             }
         }
 
+        private void FillHtmlPanel(string issueId, string product, string html)
+        {
+            var languageClientManager = LanguageClientHelper.LanguageClientManager();
+            if (languageClientManager == null) return;
+            ThreadHelper.JoinableTaskFactory.RunAsync(async () =>
+            {
+                if (string.IsNullOrEmpty(html))
+                {
+                    html = await languageClientManager.InvokeGenerateIssueDescriptionAsync(issueId,
+                        SnykVSPackage.Instance.DisposalToken);
+                }
+
+                await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
+                this.DescriptionPanel.SetContent(html, product);
+            }).FireAndForget();
+        }
+
         private async Task HandleSnykCodeTreeNodeSelectedAsync()
         {
             this.DescriptionPanel.Visibility = Visibility.Visible;
@@ -766,7 +782,7 @@ namespace Snyk.VisualStudio.Extension.UI.Toolwindow
             if (snykCodeTreeNode == null) return;
 
             var issue = snykCodeTreeNode.Issue;
-            this.DescriptionPanel.SetContent(snykCodeTreeNode.Issue.AdditionalData?.Details, Product.Code);
+            FillHtmlPanel(issue.Id, Product.Code, issue.AdditionalData?.Details);
 
 
             VsCodeService.Instance.OpenAndNavigate(
@@ -786,7 +802,7 @@ namespace Snyk.VisualStudio.Extension.UI.Toolwindow
             if (iacTreeNode == null) return;
             
             var issue = iacTreeNode.Issue;
-            this.DescriptionPanel.SetContent(iacTreeNode.Issue.AdditionalData?.CustomUIContent, Product.Iac);
+            FillHtmlPanel(issue.Id, Product.Iac, issue.AdditionalData?.CustomUIContent);
 
 
             VsCodeService.Instance.OpenAndNavigate(

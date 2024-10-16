@@ -1,5 +1,38 @@
 # Snyk Security Changelog
 
+## [2.0.0]
+### Changed
+- Visual Studio extension is now fully integrated with Snyk Language Server protocol v16.
+- Reported issues now are highlighted in directly in your editor.
+- Reported issues are now shown in the Visual Studio Error Window.
+- Code Actions in the editor to learn about the reported issue.
+- Apply AI fixes from the text editor.
+- Added IaC Scanning.
+- Added Auto Scanning Option.
+- Plugin will scan automatically on save or when it starts.
+- New Authentication modal dialog with a copy link button in case the browser doesn't automatically open.
+- New design for all issue description panels.
+- Better support for light and dark themes.
+- Added preview release for the extension.
+- Added CLI release channels in the settings.
+- Added a new LS initialize state.
+- Added Html rendering for issues.
+- Download CLI depending on Language Server Protocol version.
+- Deleted Code Client Library.
+- Improve memory footprint by loading issue desciption on demand.
+
+### Fixed
+- Fixed UI Freeze when changing authentication method.
+- Fixed UI Freeze when issues are being rendered.
+- Fixed UI Freeze when calling getSastEnabled.
+- Fixed UI Freeze after settings window is closed.  
+- Fixed Jumpy navigation when issues are rendered in the tree.
+- Fixed Disabled Authentication button and token textbox in case of failed authentication.
+- High DPI scaling rendering.
+- Fixed CLI downloader always attempting to download after extension starts.
+- Fixed State transition when Automatic download for CLI is selected.
+- Removed TLS enforcement from the extension.
+
 ## [1.1.63]
 
 ### Fixed
