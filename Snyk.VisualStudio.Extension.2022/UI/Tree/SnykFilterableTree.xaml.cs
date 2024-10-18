@@ -105,7 +105,7 @@ namespace Snyk.VisualStudio.Extension.UI.Tree
                 var lowSeverityCount = 0;
                 var currentFolder = ThreadHelper.JoinableTaskFactory.Run(async () =>
                     await SnykVSPackage.ServiceProvider.SolutionService.GetSolutionFolderAsync()).Replace("\\","/");
-                foreach (var kv in value.Where(x=>x.Key.Contains(currentFolder)))
+                foreach (var kv in value.Where(x=>x.Key.Replace("\\", "/").Contains(currentFolder)))
                 {
                     var filePath = kv.Key;
                     var issueList = kv.Value.ToList();
@@ -188,7 +188,7 @@ namespace Snyk.VisualStudio.Extension.UI.Tree
                 var lowSeverityCount = 0;
                 var currentFolder = ThreadHelper.JoinableTaskFactory.Run(async () =>
                     await SnykVSPackage.ServiceProvider.SolutionService.GetSolutionFolderAsync()).Replace("\\", "/");
-                foreach (var kv in value.Where(x => x.Key.Contains(currentFolder)))
+                foreach (var kv in value.Where(x => x.Key.Replace("\\", "/").Contains(currentFolder)))
                 {
                     var filePath = kv.Key;
                     var issues = kv.Value.ToList();
@@ -373,7 +373,7 @@ namespace Snyk.VisualStudio.Extension.UI.Tree
             rootNode.Clean();
             var currentFolder = ThreadHelper.JoinableTaskFactory.Run(async () =>
                 await SnykVSPackage.ServiceProvider.SolutionService.GetSolutionFolderAsync()).Replace("\\", "/");
-            foreach (var kv in analysisResult.Where(x => x.Key.Contains(currentFolder)))
+            foreach (var kv in analysisResult.Where(x => x.Key.Replace("\\", "/").Contains(currentFolder)))
             {
                 var filePath = kv.Key;
                 var issueList = kv.Value.ToList();

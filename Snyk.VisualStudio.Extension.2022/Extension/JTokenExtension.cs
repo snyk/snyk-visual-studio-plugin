@@ -1,7 +1,7 @@
 ﻿using System;
 using Newtonsoft.Json.Linq;
 
-namespace Snyk.VisualStudio.Extension.Language
+namespace Snyk.VisualStudio.Extension.Extension
 {
     public static class JTokenExtension
     {
