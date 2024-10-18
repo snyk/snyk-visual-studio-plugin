@@ -5,6 +5,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using Newtonsoft.Json.Linq;
 using Snyk.Common.Authentication;
+using Snyk.VisualStudio.Extension.Extension;
 using Snyk.VisualStudio.Extension.Service;
 using StreamJsonRpc;
 
@@ -36,9 +37,9 @@ namespace Snyk.VisualStudio.Extension.Language
             var parsedUri = new Uri(uri.ToString());
             if (diagnosticsArray == null || diagnosticsArray.Count == 0)
             {
-                snykCodeIssueDictionary.TryRemove(parsedUri.AbsolutePath, out _);
-                snykOssIssueDictionary.TryRemove(parsedUri.AbsolutePath, out _);
-                snykIaCIssueDictionary.TryRemove(parsedUri.AbsolutePath, out _);
+                snykCodeIssueDictionary.TryRemove(parsedUri.UncAwareAbsolutePath(), out _);
+                snykOssIssueDictionary.TryRemove(parsedUri.UncAwareAbsolutePath(), out _);
+                snykIaCIssueDictionary.TryRemove(parsedUri.UncAwareAbsolutePath(), out _);
                 return;
             }
 
@@ -60,13 +61,13 @@ namespace Snyk.VisualStudio.Extension.Language
             switch (source)
             {
                 case "code":
-                    snykCodeIssueDictionary.TryAdd(parsedUri.AbsolutePath, dataList);
+                    snykCodeIssueDictionary.TryAdd(parsedUri.UncAwareAbsolutePath(), dataList);
                     break;
                 case "oss":
-                     snykOssIssueDictionary.TryAdd(parsedUri.AbsolutePath, dataList);
+                     snykOssIssueDictionary.TryAdd(parsedUri.UncAwareAbsolutePath(), dataList);
                     break;
                 case "iac":
-                    snykIaCIssueDictionary.TryAdd(parsedUri.AbsolutePath, dataList);
+                    snykIaCIssueDictionary.TryAdd(parsedUri.UncAwareAbsolutePath(), dataList);
                     break;
                 default:
                     throw new InvalidProductTypeException();
