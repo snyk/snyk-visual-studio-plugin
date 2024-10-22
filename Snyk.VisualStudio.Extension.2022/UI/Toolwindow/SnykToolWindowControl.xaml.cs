@@ -764,8 +764,16 @@ namespace Snyk.VisualStudio.Extension.UI.Toolwindow
             {
                 if (string.IsNullOrEmpty(html))
                 {
-                    html = await languageClientManager.InvokeGenerateIssueDescriptionAsync(issueId,
-                        SnykVSPackage.Instance.DisposalToken);
+                    try
+                    {
+                        html = await languageClientManager.InvokeGenerateIssueDescriptionAsync(issueId,
+                            SnykVSPackage.Instance.DisposalToken);
+                    }
+                    catch
+                    {
+                        Logger.Error("couldn't load html for issue {0}", issueId);
+                        html = string.Empty;
+                    }
                 }
 
                 await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
