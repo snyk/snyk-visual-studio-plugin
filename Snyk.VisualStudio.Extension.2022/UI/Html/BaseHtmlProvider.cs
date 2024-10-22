@@ -11,7 +11,6 @@ namespace Snyk.VisualStudio.Extension.UI.Html
             return @"
                     html, body {
                        height: 100%;
-                       font-size: 0.9rem;
                        display: flex;
                        flex-direction: column;
                        margin: 0;
@@ -22,7 +21,6 @@ namespace Snyk.VisualStudio.Extension.UI.Html
                        background-color: var(--background-color);
                        color: var(--text-color);
                        font-weight: 400;
-                       font-size: 0.875rem;
                      }
 
                      section {

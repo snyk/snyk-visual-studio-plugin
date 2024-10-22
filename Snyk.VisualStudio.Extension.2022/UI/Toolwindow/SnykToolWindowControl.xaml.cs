@@ -760,7 +760,7 @@ namespace Snyk.VisualStudio.Extension.UI.Toolwindow
         {
             var languageClientManager = LanguageClientHelper.LanguageClientManager();
             if (languageClientManager == null) return;
-            ThreadHelper.JoinableTaskFactory.RunAsync(async () =>
+            ThreadHelper.JoinableTaskFactory.Run(async () =>
             {
                 if (string.IsNullOrEmpty(html))
                 {
@@ -770,7 +770,7 @@ namespace Snyk.VisualStudio.Extension.UI.Toolwindow
 
                 await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
                 this.DescriptionPanel.SetContent(html, product);
-            }).FireAndForget();
+            });
         }
 
         private async Task HandleSnykCodeTreeNodeSelectedAsync()
