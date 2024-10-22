@@ -22,7 +22,7 @@ namespace Snyk.VisualStudio.Extension.UI.Html
         public override string ReplaceCssVariables(string html)
         {
             html = base.ReplaceCssVariables(html);
-            html = html.Replace("var(--container-background-color)", VSColorTheme.GetThemedColor(EnvironmentColors.ClassDesignerConnectionRouteBorderBrushKey).ToHex());
+            html = html.Replace("var(--container-background-color)", VSColorTheme.GetThemedColor(EnvironmentColors.BrandedUIBackgroundBrushKey).ToHex());
 
             return html;
         }

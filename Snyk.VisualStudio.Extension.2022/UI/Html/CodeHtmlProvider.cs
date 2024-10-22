@@ -27,7 +27,7 @@ namespace Snyk.VisualStudio.Extension.UI.Html
                        padding-bottom: 20px;
                      }
                      .data-flow-table {
-                       background-color: var(--container-background-color);
+                       background-color: var(--code-background-color);
                        border: 1px solid transparent;
                      }
                      .tabs-nav {
@@ -135,7 +135,7 @@ namespace Snyk.VisualStudio.Extension.UI.Html
         {
             html = base.ReplaceCssVariables(html);
 
-            html = html.Replace("var(--container-background-color)", VSColorTheme.GetThemedColor(EnvironmentColors.BrandedUIBackgroundBrushKey).ToHex());
+            html = html.Replace("var(--code-background-color)", VSColorTheme.GetThemedColor(EnvironmentColors.BrandedUIBackgroundBrushKey).ToHex());
             html = html.Replace("var(--line-removed)", VSColorTheme.GetThemedColor(EnvironmentColors.VizSurfaceRedDarkBrushKey).ToHex());
             html = html.Replace("var(--line-added)", VSColorTheme.GetThemedColor(EnvironmentColors.VizSurfaceGreenDarkBrushKey).ToHex());
 
