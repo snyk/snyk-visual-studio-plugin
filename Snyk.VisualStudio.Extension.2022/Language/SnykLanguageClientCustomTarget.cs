@@ -116,27 +116,23 @@ namespace Snyk.VisualStudio.Extension.Language
                 return;
             }
 
-            if (arg?["apiUrl"] == null)
-            {
-                return;
-            }
-
             var token = arg["token"].ToString();
             if (string.IsNullOrEmpty(token))
             {
                 return;
             }
-            var apiUrl = arg["apiUrl"].ToString();
-            if (string.IsNullOrEmpty(apiUrl))
+
+            var apiUrl = arg["apiUrl"]?.ToString();
+            if (!string.IsNullOrEmpty(apiUrl))
             {
-                return;
+                if (apiUrl != serviceProvider.Options.CustomEndpoint)
+                {
+                    NotificationService.Instance.ShowInformationInfoBar(
+                        $"Api Endpoint was updated from the server to: {apiUrl}");
+                }
+                serviceProvider.Options.CustomEndpoint = apiUrl;
             }
 
-            if (apiUrl != serviceProvider.Options.CustomEndpoint)
-            {
-                NotificationService.Instance.ShowInformationInfoBar($"Api Endpoint was updated from the server to: {apiUrl}");
-            }
-            serviceProvider.Options.CustomEndpoint = apiUrl;
             serviceProvider.Options.ApiToken = new AuthenticationToken(serviceProvider.Options.AuthenticationMethod, token);
 
             await serviceProvider.Options.OnAuthenticationSuccessfulAsync(token, apiUrl);
