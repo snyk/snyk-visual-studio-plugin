@@ -11,7 +11,6 @@ namespace Snyk.VisualStudio.Extension.UI.Html
             return @"
                     html, body {
                        height: 100%;
-                       font-size: 0.9rem;
                        display: flex;
                        flex-direction: column;
                        margin: 0;
@@ -22,7 +21,6 @@ namespace Snyk.VisualStudio.Extension.UI.Html
                        background-color: var(--background-color);
                        color: var(--text-color);
                        font-weight: 400;
-                       font-size: 0.875rem;
                      }
 
                      section {
@@ -90,7 +88,7 @@ namespace Snyk.VisualStudio.Extension.UI.Html
             html = html.Replace("var(--border-color)", VSColorTheme.GetThemedColor(EnvironmentColors.AccessKeyToolTipColorKey).ToHex()); 
             html = html.Replace("var(--link-color)", VSColorTheme.GetThemedColor(EnvironmentColors.PanelHyperlinkBrushKey).ToHex());
             html = html.Replace("var(--horizontal-border-color)", VSColorTheme.GetThemedColor(EnvironmentColors.ClassDesignerDefaultShapeTextBrushKey).ToHex());
-            html = html.Replace("var(--code-background-color)", VSColorTheme.GetThemedColor(EnvironmentColors.ClassDesignerConnectionRouteBorderBrushKey).ToHex());
+            html = html.Replace("var(--code-background-color)", VSColorTheme.GetThemedColor(EnvironmentColors.EditorExpansionFillBrushKey).ToHex());
             
             var ideHeaders = """
                              <head>

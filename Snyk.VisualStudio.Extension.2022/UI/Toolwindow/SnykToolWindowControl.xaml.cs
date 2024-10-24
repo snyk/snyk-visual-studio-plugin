@@ -760,17 +760,25 @@ namespace Snyk.VisualStudio.Extension.UI.Toolwindow
         {
             var languageClientManager = LanguageClientHelper.LanguageClientManager();
             if (languageClientManager == null) return;
-            ThreadHelper.JoinableTaskFactory.RunAsync(async () =>
+            ThreadHelper.JoinableTaskFactory.Run(async () =>
             {
                 if (string.IsNullOrEmpty(html))
                 {
-                    html = await languageClientManager.InvokeGenerateIssueDescriptionAsync(issueId,
-                        SnykVSPackage.Instance.DisposalToken);
+                    try
+                    {
+                        html = await languageClientManager.InvokeGenerateIssueDescriptionAsync(issueId,
+                            SnykVSPackage.Instance.DisposalToken);
+                    }
+                    catch
+                    {
+                        Logger.Error("couldn't load html for issue {0}", issueId);
+                        html = string.Empty;
+                    }
                 }
 
                 await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
                 this.DescriptionPanel.SetContent(html, product);
-            }).FireAndForget();
+            });
         }
 
         private async Task HandleSnykCodeTreeNodeSelectedAsync()

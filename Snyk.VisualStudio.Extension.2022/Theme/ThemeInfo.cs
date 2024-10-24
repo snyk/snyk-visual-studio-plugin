@@ -1,4 +1,7 @@
-﻿namespace Snyk.VisualStudio.Extension.Theme
+﻿using System.Windows;
+using Microsoft.VisualStudio.PlatformUI;
+
+namespace Snyk.VisualStudio.Extension.Theme
 {
     using System.IO;
     using System.Runtime.InteropServices;
@@ -80,5 +83,16 @@
             int cchMaxColorChars,
             StringBuilder pszSizeBuff,
             int cchMaxSizeChars);
+        public static bool IsDarkTheme()
+        {
+            var backgroundColor = VSColorTheme.GetThemedColor(EnvironmentColors.ToolWindowBackgroundColorKey);
+            var luminance = (0.299 * backgroundColor.R + 0.587 * backgroundColor.G + 0.114 * backgroundColor.B) / 255;
+            return luminance < 0.5;
+        }
+
+        public static bool IsHighContrast()
+        {
+            return SystemParameters.HighContrast;
+        }
     }
 }
