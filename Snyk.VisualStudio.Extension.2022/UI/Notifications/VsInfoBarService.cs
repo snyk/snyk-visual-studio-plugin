@@ -103,5 +103,33 @@
             
             this.serviceProvider.Package.ToolWindow.AddInfoBar(element);
         });
+
+        /// <summary>
+        /// Show message in infobar.
+        /// </summary>
+        /// <param name="message">Message.</param>
+        public void ShowInformationInfoBar(string message) => ThreadHelper.JoinableTaskFactory.Run(async () =>
+        {
+            await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
+
+            if (this.serviceProvider.Package.ToolWindow == null || this.messagesCache.ContainsKey(message))
+                return;
+
+            var text = new InfoBarTextSpan(message);
+
+            var spans = new InfoBarTextSpan[] { text };
+            var actions = new InfoBarActionItem[]{};
+            var infoBarModel = new InfoBarModel(spans, actions, KnownMonikers.StatusInformation, isCloseButtonVisible: true);
+
+            var factory = await this.serviceProvider.GetServiceAsync(typeof(SVsInfoBarUIFactory)) as IVsInfoBarUIFactory;
+
+            var element = factory.CreateInfoBar(infoBarModel);
+
+            element.Advise(this, out this.cookie);
+
+            this.messagesCache.Add(message, element);
+
+            this.serviceProvider.Package.ToolWindow.AddInfoBar(element);
+        });
     }
 }
