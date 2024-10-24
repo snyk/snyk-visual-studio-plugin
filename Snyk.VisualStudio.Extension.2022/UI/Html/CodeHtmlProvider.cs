@@ -1,5 +1,6 @@
 ﻿using System;
 using Microsoft.VisualStudio.PlatformUI;
+using Snyk.VisualStudio.Extension.Theme;
 
 namespace Snyk.VisualStudio.Extension.UI.Html
 {
@@ -23,49 +24,30 @@ namespace Snyk.VisualStudio.Extension.UI.Html
         public override string GetCss()
         {
             return base.GetCss() + Environment.NewLine + @"
-                     .suggestion--header {
-                       padding-top: 10px;
-                     }
-
-                     .suggestion .suggestion-text {
-                       font-size: 1.5rem;
-                       position: relative;
-                       top: -5%;
-                     }
-                     .code-issue-container {
-                       margin-top: 20px;
-                     }
-                     .summary .summary-item {
-                       margin-bottom: 0.8em;
-                     }
-
-                     .summary .label {
-                       font-size: 0.8rem;
-                     }
-
-                     .suggestion--header > h2,
-                     .summary > h2 {
-                       font-size: 0.9rem;
-                       margin-bottom: 1.5em;
-                     }
-
                      .identifiers {
                        padding-bottom: 20px;
                      }
                      .data-flow-table {
-                       background-color: var(--container-background-color);
+                       background-color: var(--code-background-color);
                        border: 1px solid transparent;
                      }
                      .tabs-nav {
                        margin: 21px 0 -21px;
                      }
-                     
+                    .light .dark-only,
+                    .high-contrast.high-contrast-light .dark-only {
+                      display: none;
+                    }
+
+                    .dark .light-only,
+                    .high-contrast:not(.high-contrast-light) .light-only {
+                      display: none;
+                    }
                      .tab-item {
                        cursor: pointer;
                        display: inline-block;
                        padding: 5px 10px;
                        border-bottom: 1px solid transparent;
-                       font-size: 0.8rem;
                        color: var(--text-color);
                        text-transform: uppercase;
                      }
@@ -113,6 +95,7 @@ namespace Snyk.VisualStudio.Extension.UI.Html
 
         public override string GetInitScript()
         {
+            var themeScript = GetThemeScript();
             var initScript = base.GetInitScript();
             return initScript + Environment.NewLine + @"
                     function navigateToIssue(e, target) {
@@ -147,14 +130,23 @@ namespace Snyk.VisualStudio.Extension.UI.Html
                     if(document.getElementsByClassName('ignore-action-container') && document.getElementsByClassName('ignore-action-container')[0]){
                         document.getElementsByClassName('ignore-action-container')[0].className = 'hidden';
                      }
-                ";
+                " + themeScript;
+        }
+
+        private string GetThemeScript()
+        {
+            var isDarkTheme = ThemeInfo.IsDarkTheme();
+            var isHighContrast = ThemeInfo.IsHighContrast();
+            var themeScript = $"var isDarkTheme = {isDarkTheme.ToString().ToLowerInvariant()};\n" +
+                              $"var isHighContrast = {isHighContrast.ToString().ToLowerInvariant()};\n" +
+                              "document.body.classList.add(isHighContrast ? 'high-contrast' : (isDarkTheme ? 'dark' : 'light'));";
+            return themeScript;
         }
 
         public override string ReplaceCssVariables(string html)
         {
             html = base.ReplaceCssVariables(html);
 
-            html = html.Replace("var(--container-background-color)", VSColorTheme.GetThemedColor(EnvironmentColors.BrandedUIBackgroundBrushKey).ToHex());
             html = html.Replace("var(--line-removed)", VSColorTheme.GetThemedColor(EnvironmentColors.VizSurfaceRedDarkBrushKey).ToHex());
             html = html.Replace("var(--line-added)", VSColorTheme.GetThemedColor(EnvironmentColors.VizSurfaceGreenDarkBrushKey).ToHex());
 

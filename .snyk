@@ -1,12 +1,11 @@
 # Snyk (https://snyk.io) policy file, patches or ignores known vulnerabilities.
-version: v1.25.0
-# ignores vulnerabilities until expiry date; change duration by modifying expiry date
+version: v1.25.1
 exclude:
-    global:
-        #Exclude test directory for snyk code scan
-        - Snyk.Code.Library.Tests
-        - Snyk.Common.Tests
-        - Snyk.VisualStudio.Extension.Tests
+  global:
+    - Snyk.Code.Library.Tests
+    - Snyk.Common.Tests
+    - Snyk.VisualStudio.Extension.Tests
+# ignores vulnerabilities until expiry date; change duration by modifying expiry date
 ignore:
   SNYK-DOTNET-NEWTONSOFTJSON-2774678:
     - '*':
@@ -15,32 +14,51 @@ ignore:
         created: 2022-06-02T11:45:31.420Z
   SNYK-DOTNET-SYSTEMNETHTTP-60045:
     - '*':
-        reason: Runtime vulnerability see - https://docs.snyk.io/scan-applications/supported-languages-and-frameworks/.net#tackling-vulnerabilities-from-runtime-dependencies
+        reason: >-
+          Runtime vulnerability see -
+          https://docs.snyk.io/scan-applications/supported-languages-and-frameworks/.net#tackling-vulnerabilities-from-runtime-dependencies
         expires: 2024-09-21T00:00:00.000Z
         created: 2023-09-21T11:45:31.420Z
   SNYK-DOTNET-SYSTEMNETHTTP-60046:
     - '*':
-        reason: Runtime vulnerability see - https://docs.snyk.io/scan-applications/supported-languages-and-frameworks/.net#tackling-vulnerabilities-from-runtime-dependencies
+        reason: >-
+          Runtime vulnerability see -
+          https://docs.snyk.io/scan-applications/supported-languages-and-frameworks/.net#tackling-vulnerabilities-from-runtime-dependencies
         expires: 2024-09-21T00:00:00.000Z
         created: 2023-09-21T11:45:31.420Z
   SNYK-DOTNET-SYSTEMNETHTTP-72439:
     - '*':
-        reason: Runtime vulnerability see - https://docs.snyk.io/scan-applications/supported-languages-and-frameworks/.net#tackling-vulnerabilities-from-runtime-dependencies
+        reason: >-
+          Runtime vulnerability see -
+          https://docs.snyk.io/scan-applications/supported-languages-and-frameworks/.net#tackling-vulnerabilities-from-runtime-dependencies
         expires: 2024-09-21T00:00:00.000Z
         created: 2023-09-21T11:45:31.420Z
   SNYK-DOTNET-SYSTEMTEXTREGULAREXPRESSIONS-174708:
     - '*':
-        reason: Runtime vulnerability see - https://docs.snyk.io/scan-applications/supported-languages-and-frameworks/.net#tackling-vulnerabilities-from-runtime-dependencies
+        reason: >-
+          Runtime vulnerability see -
+          https://docs.snyk.io/scan-applications/supported-languages-and-frameworks/.net#tackling-vulnerabilities-from-runtime-dependencies
         expires: 2024-09-21T00:00:00.000Z
         created: 2023-09-21T11:45:31.420Z
   SNYK-DOTNET-SYSTEMNETHTTP-60047:
     - '*':
-        reason: Runtime vulnerability see - https://docs.snyk.io/scan-applications/supported-languages-and-frameworks/.net#tackling-vulnerabilities-from-runtime-dependencies
+        reason: >-
+          Runtime vulnerability see -
+          https://docs.snyk.io/scan-applications/supported-languages-and-frameworks/.net#tackling-vulnerabilities-from-runtime-dependencies
         expires: 2024-09-21T00:00:00.000Z
         created: 2023-09-21T11:45:31.420Z
   SNYK-DOTNET-SYSTEMNETHTTP-60048:
     - '*':
-        reason: Runtime vulnerability see - https://docs.snyk.io/scan-applications/supported-languages-and-frameworks/.net#tackling-vulnerabilities-from-runtime-dependencies
+        reason: >-
+          Runtime vulnerability see -
+          https://docs.snyk.io/scan-applications/supported-languages-and-frameworks/.net#tackling-vulnerabilities-from-runtime-dependencies
         expires: 2024-09-21T00:00:00.000Z
         created: 2023-09-21T11:45:31.420Z
+  SNYK-DOTNET-SYSTEMTEXTJSON-8168848:
+    - '*':
+        reason: >-
+          Runtime vulnerability see -
+          https://docs.snyk.io/scan-applications/supported-languages-and-frameworks/.net#tackling-vulnerabilities-from-runtime-dependencies
+        expires: 2025-11-22T13:14:00.380Z
+        created: 2024-10-23T13:14:00.384Z
 patch: {}
