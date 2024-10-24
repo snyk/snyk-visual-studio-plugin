@@ -1,7 +1,4 @@
-﻿using Microsoft.VisualStudio.PlatformUI;
-using System;
-
-namespace Snyk.VisualStudio.Extension.UI.Html
+﻿namespace Snyk.VisualStudio.Extension.UI.Html
 {
     public class IacHtmlProvider : BaseHtmlProvider
     {
@@ -17,14 +14,6 @@ namespace Snyk.VisualStudio.Extension.UI.Html
                 }
                 return _instance;
             }
-        }
-
-        public override string ReplaceCssVariables(string html)
-        {
-            html = base.ReplaceCssVariables(html);
-            html = html.Replace("var(--container-background-color)", VSColorTheme.GetThemedColor(EnvironmentColors.BrandedUIBackgroundBrushKey).ToHex());
-
-            return html;
         }
     }
 }

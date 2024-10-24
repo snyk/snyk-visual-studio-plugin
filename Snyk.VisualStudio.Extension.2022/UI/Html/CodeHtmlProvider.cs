@@ -1,5 +1,6 @@
 ﻿using System;
 using Microsoft.VisualStudio.PlatformUI;
+using Snyk.VisualStudio.Extension.Theme;
 
 namespace Snyk.VisualStudio.Extension.UI.Html
 {
@@ -94,6 +95,7 @@ namespace Snyk.VisualStudio.Extension.UI.Html
 
         public override string GetInitScript()
         {
+            var themeScript = GetThemeScript();
             var initScript = base.GetInitScript();
             return initScript + Environment.NewLine + @"
                     function navigateToIssue(e, target) {
@@ -128,14 +130,23 @@ namespace Snyk.VisualStudio.Extension.UI.Html
                     if(document.getElementsByClassName('ignore-action-container') && document.getElementsByClassName('ignore-action-container')[0]){
                         document.getElementsByClassName('ignore-action-container')[0].className = 'hidden';
                      }
-                ";
+                " + themeScript;
+        }
+
+        private string GetThemeScript()
+        {
+            var isDarkTheme = ThemeInfo.IsDarkTheme();
+            var isHighContrast = ThemeInfo.IsHighContrast();
+            var themeScript = $"var isDarkTheme = {isDarkTheme.ToString().ToLowerInvariant()};\n" +
+                              $"var isHighContrast = {isHighContrast.ToString().ToLowerInvariant()};\n" +
+                              "document.body.classList.add(isHighContrast ? 'high-contrast' : (isDarkTheme ? 'dark' : 'light'));";
+            return themeScript;
         }
 
         public override string ReplaceCssVariables(string html)
         {
             html = base.ReplaceCssVariables(html);
 
-            html = html.Replace("var(--code-background-color)", VSColorTheme.GetThemedColor(EnvironmentColors.BrandedUIBackgroundBrushKey).ToHex());
             html = html.Replace("var(--line-removed)", VSColorTheme.GetThemedColor(EnvironmentColors.VizSurfaceRedDarkBrushKey).ToHex());
             html = html.Replace("var(--line-added)", VSColorTheme.GetThemedColor(EnvironmentColors.VizSurfaceGreenDarkBrushKey).ToHex());
 

@@ -88,7 +88,7 @@ namespace Snyk.VisualStudio.Extension.UI.Html
             html = html.Replace("var(--border-color)", VSColorTheme.GetThemedColor(EnvironmentColors.AccessKeyToolTipColorKey).ToHex()); 
             html = html.Replace("var(--link-color)", VSColorTheme.GetThemedColor(EnvironmentColors.PanelHyperlinkBrushKey).ToHex());
             html = html.Replace("var(--horizontal-border-color)", VSColorTheme.GetThemedColor(EnvironmentColors.ClassDesignerDefaultShapeTextBrushKey).ToHex());
-            html = html.Replace("var(--code-background-color)", VSColorTheme.GetThemedColor(EnvironmentColors.ClassDesignerConnectionRouteBorderBrushKey).ToHex());
+            html = html.Replace("var(--code-background-color)", VSColorTheme.GetThemedColor(EnvironmentColors.EditorExpansionFillBrushKey).ToHex());
             
             var ideHeaders = """
                              <head>
