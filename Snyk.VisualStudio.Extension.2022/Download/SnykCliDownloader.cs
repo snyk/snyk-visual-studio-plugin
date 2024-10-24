@@ -9,6 +9,7 @@ using Snyk.Common.Settings;
 using Snyk.VisualStudio.Extension.CLI;
 using Snyk.VisualStudio.Extension.Language;
 using Snyk.VisualStudio.Extension.Service;
+using Snyk.VisualStudio.Extension.UI.Notifications;
 
 namespace Snyk.VisualStudio.Extension.Download
 {
@@ -326,6 +327,7 @@ namespace Snyk.VisualStudio.Extension.Download
                 }
                 catch (Exception e)
                 {
+                    NotificationService.Instance.ShowErrorInfoBar($"CLI could not be updated. Please check if another process is using the CLI binary at {cliFileDestinationPath}");
                     Logger.Error(e, "Error on CLI copy from temp file");
                 }
                 finally

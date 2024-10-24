@@ -126,8 +126,8 @@ namespace Snyk.VisualStudio.Extension.Language
                 return;
             }
 
-            serviceProvider.Options.ApiToken = new AuthenticationToken(serviceProvider.Options.AuthenticationMethod, token);
             serviceProvider.Options.CustomEndpoint = apiUrl;
+            serviceProvider.Options.ApiToken = new AuthenticationToken(serviceProvider.Options.AuthenticationMethod, token);
 
             await serviceProvider.Options.OnAuthenticationSuccessfulAsync(token, apiUrl);
 
