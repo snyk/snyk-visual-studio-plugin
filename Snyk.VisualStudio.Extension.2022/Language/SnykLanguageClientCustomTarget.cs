@@ -120,10 +120,16 @@ namespace Snyk.VisualStudio.Extension.Language
             {
                 return;
             }
+            var apiUrl = arg["apiUrl"].ToString();
+            if (string.IsNullOrEmpty(apiUrl))
+            {
+                return;
+            }
 
             serviceProvider.Options.ApiToken = new AuthenticationToken(serviceProvider.Options.AuthenticationMethod, token);
+            serviceProvider.Options.CustomEndpoint = apiUrl;
 
-            await serviceProvider.Options.OnAuthenticationSuccessfulAsync(token);
+            await serviceProvider.Options.OnAuthenticationSuccessfulAsync(token, apiUrl);
 
             if (serviceProvider.Options.AutoScan)
             {

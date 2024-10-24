@@ -152,9 +152,9 @@ namespace Snyk.VisualStudio.Extension.Settings
             }
         }
 
-        public async Task OnAuthenticationSuccessfulAsync(string token)
+        public async Task OnAuthenticationSuccessfulAsync(string token, string apiUrl)
         {
-            await this.GeneralSettingsUserControl.OnAuthenticationSuccessfulAsync(token);
+            await this.GeneralSettingsUserControl.OnAuthenticationSuccessfulAsync(token, apiUrl);
         }
 
         public async Task OnAuthenticationFailedAsync(string errorMessage)
