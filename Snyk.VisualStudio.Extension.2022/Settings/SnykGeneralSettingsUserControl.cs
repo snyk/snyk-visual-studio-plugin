@@ -149,7 +149,7 @@ namespace Snyk.VisualStudio.Extension.Settings
                 this.UpdateViewFromOptionsDialog();
             }).FireAndForget();
 
-        public async Task OnAuthenticationSuccessfulAsync(string apiToken)
+        public async Task OnAuthenticationSuccessfulAsync(string apiToken, string apiUrl)
         {
             logger.Information("Enter authenticate successCallback");
 
@@ -160,6 +160,14 @@ namespace Snyk.VisualStudio.Extension.Settings
                 this.tokenTextBox.Invoke(new Action(() =>
                 {
                     this.tokenTextBox.Text = apiToken;
+                }));
+            }
+
+            if (this.customEndpointTextBox.IsHandleCreated)
+            {
+                this.tokenTextBox.Invoke(new Action(() =>
+                {
+                    this.customEndpointTextBox.Text = apiUrl;
                 }));
             }
 

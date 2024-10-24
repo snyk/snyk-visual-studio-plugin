@@ -104,7 +104,7 @@ namespace Snyk.Common.Settings
         public string CurrentCliVersion { get; set; }
 
         SastSettings SastSettings { get; set; }
-        Task OnAuthenticationSuccessfulAsync(string token);
+        Task OnAuthenticationSuccessfulAsync(string token, string apiUrl);
         Task OnAuthenticationFailedAsync(string errorMessage);
         void FireSettingsChangedEvent();
     }

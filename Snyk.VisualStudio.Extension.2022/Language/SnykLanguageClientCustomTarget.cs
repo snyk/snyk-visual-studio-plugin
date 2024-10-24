@@ -7,6 +7,7 @@ using Newtonsoft.Json.Linq;
 using Snyk.Common.Authentication;
 using Snyk.VisualStudio.Extension.Extension;
 using Snyk.VisualStudio.Extension.Service;
+using Snyk.VisualStudio.Extension.UI.Notifications;
 using StreamJsonRpc;
 
 namespace Snyk.VisualStudio.Extension.Language
@@ -121,9 +122,20 @@ namespace Snyk.VisualStudio.Extension.Language
                 return;
             }
 
+            var apiUrl = arg["apiUrl"]?.ToString();
+            if (!string.IsNullOrEmpty(apiUrl))
+            {
+                if (apiUrl != serviceProvider.Options.CustomEndpoint)
+                {
+                    NotificationService.Instance.ShowInformationInfoBar(
+                        $"Api Endpoint was updated from the server to: {apiUrl}");
+                }
+                serviceProvider.Options.CustomEndpoint = apiUrl;
+            }
+
             serviceProvider.Options.ApiToken = new AuthenticationToken(serviceProvider.Options.AuthenticationMethod, token);
 
-            await serviceProvider.Options.OnAuthenticationSuccessfulAsync(token);
+            await serviceProvider.Options.OnAuthenticationSuccessfulAsync(token, apiUrl);
 
             if (serviceProvider.Options.AutoScan)
             {
