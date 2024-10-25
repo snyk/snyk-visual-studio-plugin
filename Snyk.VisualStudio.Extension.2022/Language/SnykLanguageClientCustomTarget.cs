@@ -125,11 +125,6 @@ namespace Snyk.VisualStudio.Extension.Language
             var apiUrl = arg["apiUrl"]?.ToString();
             if (!string.IsNullOrEmpty(apiUrl))
             {
-                if (apiUrl != serviceProvider.Options.CustomEndpoint)
-                {
-                    NotificationService.Instance.ShowInformationInfoBar(
-                        $"Api Endpoint was updated from the server to: {apiUrl}");
-                }
                 serviceProvider.Options.CustomEndpoint = apiUrl;
             }
 
