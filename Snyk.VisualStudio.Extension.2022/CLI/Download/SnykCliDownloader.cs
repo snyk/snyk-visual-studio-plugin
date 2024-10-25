@@ -14,7 +14,7 @@
     /// </summary>
     public class SnykCliDownloader
     {
-        private const string BaseUrl = "https://static.snyk.io";
+        private const string BaseUrl = "https://downloads.snyk.io";
         private const string LatestReleaseVersionUrl = BaseUrl + "/cli/latest/version";
         private const string LatestReleaseDownloadUrl = BaseUrl + "/cli/latest/{0}";
         private const string Sha256DownloadUrl = BaseUrl + "/cli/latest/snyk-win.exe.sha256";
