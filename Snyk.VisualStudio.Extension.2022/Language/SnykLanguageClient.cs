@@ -5,7 +5,6 @@ using System.Diagnostics;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
-using Microsoft.NET.StringTools;
 using Microsoft.VisualStudio.LanguageServer.Client;
 using Microsoft.VisualStudio.Shell;
 using Microsoft.VisualStudio.Threading;
@@ -19,7 +18,7 @@ using StreamJsonRpc;
 using Task = System.Threading.Tasks.Task;
 using LSP = Microsoft.VisualStudio.LanguageServer.Protocol;
 using Process = System.Diagnostics.Process;
-using Snyk.VisualStudio.Extension.Download;
+// ReSharper disable UnusedMember.Local
 
 namespace Snyk.VisualStudio.Extension.Language
 {
@@ -29,7 +28,7 @@ namespace Snyk.VisualStudio.Extension.Language
     public partial class SnykLanguageClient : ILanguageClient, ILanguageClientCustomMessage2, ILanguageClientManager
     {
         private static readonly ILogger Logger = LogManager.ForContext<SnykLanguageClient>();
-        private SemaphoreSlim Semaphore = new SemaphoreSlim(1,1);
+        private readonly SemaphoreSlim semaphore = new SemaphoreSlim(1,1);
         private SnykLsInitializationOptions initializationOptions;
 
         [ImportingConstructor]
@@ -121,6 +120,7 @@ namespace Snyk.VisualStudio.Extension.Language
                 return null;
             }
             var options = SnykVSPackage.ServiceProvider.Options;
+            // ReSharper disable once RedundantAssignment
             var lsDebugLevel = await GetLsDebugLevelAsync(options);
 #if DEBUG
             lsDebugLevel = "trace";
@@ -166,7 +166,7 @@ namespace Snyk.VisualStudio.Extension.Language
 
         public async Task StartServerAsync(bool shouldStart = false)
         {
-            await Semaphore.WaitAsync();
+            await semaphore.WaitAsync();
             try
             {
                 if (StartAsync == null && shouldStart)
@@ -195,7 +195,7 @@ namespace Snyk.VisualStudio.Extension.Language
             }
             finally
             {
-                Semaphore.Release();
+                semaphore.Release();
             }
         }
 
@@ -205,14 +205,14 @@ namespace Snyk.VisualStudio.Extension.Language
             if (settings == null) return;
             if (settings.AnalyticsPluginInstalledSent) return;
             
-            if (string.IsNullOrEmpty(settings.DeviceId) )
+            if (string.IsNullOrEmpty(settings.DeviceId))
             {
                 settings.DeviceId = Guid.NewGuid().ToString();
-            };
+            }
             
-            var analyticsSender = AnalyticsSender.Instance(settings);
-            List<string> categories = [ "install" ];
-            IAbstractAnalyticsEvent pluginInstalledEvent = new AnalyticsEvent("plugin installed", categories, settings.DeviceId);
+            var analyticsSender = AnalyticsSender.Instance(settings, LanguageClientHelper.LanguageClientManager());
+            var categories = new List<string> { "install" };
+            var pluginInstalledEvent = new AnalyticsEvent("plugin installed", categories, settings.DeviceId);
 
             analyticsSender.LogEvent(pluginInstalledEvent, Callback);
             return;
@@ -296,6 +296,7 @@ namespace Snyk.VisualStudio.Extension.Language
 
         protected void OnStopping() { }
         protected void OnStopped() { }
+        // ReSharper disable once UnusedAutoPropertyAccessor.Global
         public bool IsReloading { get; set; }
 
         private async Task RestartAsync(bool isReload)
@@ -381,8 +382,8 @@ namespace Snyk.VisualStudio.Extension.Language
             {
                 Command = LsConstants.SnykCopyAuthLink,
             };
-            var authLin = await InvokeWithParametersAsync<string>(LsConstants.WorkspaceExecuteCommand, param, cancellationToken);
-            return authLin;
+            var copyLink = await InvokeWithParametersAsync<string>(LsConstants.WorkspaceExecuteCommand, param, cancellationToken);
+            return copyLink;
         }
 
         public async Task<string> InvokeGenerateIssueDescriptionAsync(string issueId, CancellationToken cancellationToken)
@@ -392,8 +393,8 @@ namespace Snyk.VisualStudio.Extension.Language
                 Command = LsConstants.SnykGenerateIssueDescription,
                 Arguments = new object[] { issueId }
             };
-            var authLin = await InvokeWithParametersAsync<string>(LsConstants.WorkspaceExecuteCommand, param, cancellationToken);
-            return authLin;
+            var result = await InvokeWithParametersAsync<string>(LsConstants.WorkspaceExecuteCommand, param, cancellationToken);
+            return result;
         }
 
         public async Task<object> InvokeGetFeatureFlagStatus(string featureFlag, CancellationToken cancellationToken)
@@ -407,16 +408,15 @@ namespace Snyk.VisualStudio.Extension.Language
             return featureFlagStatus;
         }
         
-        public Task InvokeReportAnalytics(IAbstractAnalyticsEvent analyticsEvent, CancellationToken cancellationToken)
+        public async Task InvokeReportAnalyticsAsync(IAbstractAnalyticsEvent analyticsEvent, CancellationToken cancellationToken)
         {
             var param = new LSP.ExecuteCommandParams
             {
                 Command = LsConstants.SnykReportAnalytics,
-                Arguments = [analyticsEvent]
+                Arguments = new object[] { analyticsEvent }
             };
             // analytics sending does not need to be awaited, as it's fire and forget
-            _ = InvokeWithParametersAsync<string>(LsConstants.WorkspaceExecuteCommand, param, cancellationToken);
-            return Task.CompletedTask;
+            await InvokeWithParametersAsync<object>(LsConstants.WorkspaceExecuteCommand, param, cancellationToken);
         }
 
         public async Task<object> DidChangeConfigurationAsync(CancellationToken cancellationToken)

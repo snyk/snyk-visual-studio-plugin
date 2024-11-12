@@ -25,6 +25,6 @@ namespace Snyk.VisualStudio.Extension.Language
         event AsyncEventHandler<SnykLanguageServerEventArgs> OnLanguageServerReadyAsync;
         event AsyncEventHandler<SnykLanguageServerEventArgs> OnLanguageClientNotInitializedAsync;
         void FireOnLanguageClientNotInitializedAsync();
-        Task InvokeReportAnalytics(IAbstractAnalyticsEvent analyticsEvent, CancellationToken cancellationToken);
+        Task InvokeReportAnalyticsAsync(IAbstractAnalyticsEvent analyticsEvent, CancellationToken cancellationToken);
     }
 }

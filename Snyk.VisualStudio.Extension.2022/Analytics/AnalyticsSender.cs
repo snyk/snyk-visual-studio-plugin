@@ -3,6 +3,7 @@ using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
+using Microsoft.VisualStudio.Shell;
 using Serilog;
 using Snyk.Common;
 using Snyk.Common.Settings;
@@ -12,25 +13,39 @@ namespace Snyk.VisualStudio.Extension.Analytics
 {
     public class AnalyticsSender
     {
+        private class Pair
+        {
+            private Pair()
+            {
+            }
+
+            public Pair(IAbstractAnalyticsEvent analyticsEvent, Action<object> callback)
+            {
+                this.Callback = callback;
+                this.Event = analyticsEvent;
+            }
+
+            public IAbstractAnalyticsEvent Event { get; set; }
+            public Action<object> Callback { get; set; }
+        }
+
         // left = event, right = callback function
-        private readonly ConcurrentQueue<(IAbstractAnalyticsEvent Event, Action<object> Callback)> eventQueue = new();
+        private readonly ConcurrentQueue<Pair> eventQueue = new ConcurrentQueue<Pair>();
         private readonly ISnykOptions settings;
         private readonly ILogger logger = LogManager.ForContext<AnalyticsSender>();
 
         private static AnalyticsSender _instance;
 
-        private AnalyticsSender(ISnykOptions settings)
+        private AnalyticsSender(ISnykOptions settings, ILanguageClientManager languageClientManager)
         {
             this.settings = settings;
-#pragma warning disable VSTHRD110
-            Task.Run(StartAsync);
-#pragma warning restore VSTHRD110
+            ThreadHelper.JoinableTaskFactory.RunAsync(StartAsync).FireAndForget();
         }
 
 
-        public static AnalyticsSender Instance(ISnykOptions settings)
+        public static AnalyticsSender Instance(ISnykOptions settings, ILanguageClientManager languageClientManager)
         {
-            return _instance ??= new AnalyticsSender(settings);
+            return _instance ??= new AnalyticsSender(settings, languageClientManager);
         }
 
         private async Task StartAsync()
@@ -46,15 +61,14 @@ namespace Snyk.VisualStudio.Extension.Analytics
                     continue;
                 }
 
-                var copyForSending = new List<(IAbstractAnalyticsEvent Event, Action<object> Callback)>(eventQueue);
-                foreach (var (analyticsEvent, callback) in copyForSending)
+                var copyForSending = new List<Pair>(eventQueue);
+                foreach (var pair in copyForSending)
                 {
                     try
                     {
-                        var cancellationToken = new CancellationToken();
                         await LanguageClientHelper.LanguageClientManager()
-                            .InvokeReportAnalytics(analyticsEvent, cancellationToken);
-                        callback(null);
+                            .InvokeReportAnalyticsAsync(pair.Event, SnykVSPackage.Instance.DisposalToken);
+                        pair.Callback(null);
                     }
                     catch (Exception e)
                     {
@@ -71,7 +85,7 @@ namespace Snyk.VisualStudio.Extension.Analytics
 
         public void LogEvent(IAbstractAnalyticsEvent analyticsEvent, Action<object> callback)
         {
-            eventQueue.Enqueue((analyticsEvent, callback));
+            eventQueue.Enqueue(new Pair(analyticsEvent, callback));
         }
     }
 }
