@@ -20,6 +20,7 @@
 - Download CLI depending on Language Server Protocol version.
 - Deleted Code Client Library.
 - Improve memory footprint by loading issue desciption on demand.
+- Add plugin installed event
 
 ### Fixed
 - Fixed UI Freeze when changing authentication method.
