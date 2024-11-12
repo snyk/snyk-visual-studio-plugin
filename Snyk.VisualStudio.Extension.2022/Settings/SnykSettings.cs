@@ -68,5 +68,6 @@ namespace Snyk.VisualStudio.Extension.Settings
         public bool IgnoreUnknownCa { get; set; }
         public string Organization { get; set; }
         public string CustomEndpoint { get; set; }
+        public string DeviceId { get; set; }
     }
 }

@@ -12,12 +12,13 @@ using Serilog;
 using Snyk.Common;
 using Snyk.Common.Authentication;
 using Snyk.Common.Settings;
+using Snyk.VisualStudio.Extension.Analytics;
 using Snyk.VisualStudio.Extension.CLI;
 using StreamJsonRpc;
 using Task = System.Threading.Tasks.Task;
 using LSP = Microsoft.VisualStudio.LanguageServer.Protocol;
 using Process = System.Diagnostics.Process;
-using Snyk.VisualStudio.Extension.Download;
+// ReSharper disable UnusedMember.Local
 
 namespace Snyk.VisualStudio.Extension.Language
 {
@@ -27,7 +28,7 @@ namespace Snyk.VisualStudio.Extension.Language
     public partial class SnykLanguageClient : ILanguageClient, ILanguageClientCustomMessage2, ILanguageClientManager
     {
         private static readonly ILogger Logger = LogManager.ForContext<SnykLanguageClient>();
-        private SemaphoreSlim Semaphore = new SemaphoreSlim(1,1);
+        private readonly SemaphoreSlim semaphore = new SemaphoreSlim(1,1);
         private SnykLsInitializationOptions initializationOptions;
 
         [ImportingConstructor]
@@ -89,7 +90,8 @@ namespace Snyk.VisualStudio.Extension.Language
                 IntegrationVersion = options.IntegrationVersion,
                 RequiredProtocolVersion = LsConstants.ProtocolVersion,
                 HoverVerbosity = 1,
-                OutputFormat = "plain"
+                OutputFormat = "plain",
+                DeviceId = GetDeviceId(options)
             };
             return initializationOptions;
         }
@@ -119,6 +121,7 @@ namespace Snyk.VisualStudio.Extension.Language
                 return null;
             }
             var options = SnykVSPackage.ServiceProvider.Options;
+            // ReSharper disable once RedundantAssignment
             var lsDebugLevel = await GetLsDebugLevelAsync(options);
 #if DEBUG
             lsDebugLevel = "trace";
@@ -164,7 +167,7 @@ namespace Snyk.VisualStudio.Extension.Language
 
         public async Task StartServerAsync(bool shouldStart = false)
         {
-            await Semaphore.WaitAsync();
+            await semaphore.WaitAsync();
             try
             {
                 if (StartAsync == null && shouldStart)
@@ -184,6 +187,7 @@ namespace Snyk.VisualStudio.Extension.Language
                     await StartAsync.InvokeAsync(this, EventArgs.Empty);
                     IsReady = true;
                     FireOnLanguageServerReadyAsyncEvent();
+                    SendPluginInstalledEvent();
                 }
                 else
                 {
@@ -192,8 +196,39 @@ namespace Snyk.VisualStudio.Extension.Language
             }
             finally
             {
-                Semaphore.Release();
+                semaphore.Release();
             }
+        }
+
+        private void SendPluginInstalledEvent()
+        {
+            var settings = SnykVSPackage.Instance?.Options;
+            if (settings == null) return;
+            if (settings.AnalyticsPluginInstalledSent) return;
+            
+            var deviceId = GetDeviceId(settings);
+            
+            var analyticsSender = AnalyticsSender.Instance(settings, LanguageClientHelper.LanguageClientManager());
+            var categories = new List<string> { "install" };
+            var pluginInstalledEvent = new AnalyticsEvent("plugin installed", categories, deviceId);
+
+            analyticsSender.LogEvent(pluginInstalledEvent, Callback);
+            return;
+
+            void Callback(object _)
+            {
+                settings.AnalyticsPluginInstalledSent = true;
+            }
+        }
+
+        private string GetDeviceId(ISnykOptions settings)
+        {
+            if (string.IsNullOrEmpty(settings.DeviceId))
+            {
+                settings.DeviceId = Guid.NewGuid().ToString();
+            }
+
+            return settings.DeviceId;
         }
 
         public async Task StopServerAsync()
@@ -269,6 +304,7 @@ namespace Snyk.VisualStudio.Extension.Language
 
         protected void OnStopping() { }
         protected void OnStopped() { }
+        // ReSharper disable once UnusedAutoPropertyAccessor.Global
         public bool IsReloading { get; set; }
 
         private async Task RestartAsync(bool isReload)
@@ -354,8 +390,8 @@ namespace Snyk.VisualStudio.Extension.Language
             {
                 Command = LsConstants.SnykCopyAuthLink,
             };
-            var authLin = await InvokeWithParametersAsync<string>(LsConstants.WorkspaceExecuteCommand, param, cancellationToken);
-            return authLin;
+            var copyLink = await InvokeWithParametersAsync<string>(LsConstants.WorkspaceExecuteCommand, param, cancellationToken);
+            return copyLink;
         }
 
         public async Task<string> InvokeGenerateIssueDescriptionAsync(string issueId, CancellationToken cancellationToken)
@@ -365,8 +401,8 @@ namespace Snyk.VisualStudio.Extension.Language
                 Command = LsConstants.SnykGenerateIssueDescription,
                 Arguments = new object[] { issueId }
             };
-            var authLin = await InvokeWithParametersAsync<string>(LsConstants.WorkspaceExecuteCommand, param, cancellationToken);
-            return authLin;
+            var result = await InvokeWithParametersAsync<string>(LsConstants.WorkspaceExecuteCommand, param, cancellationToken);
+            return result;
         }
 
         public async Task<object> InvokeGetFeatureFlagStatus(string featureFlag, CancellationToken cancellationToken)
@@ -378,6 +414,16 @@ namespace Snyk.VisualStudio.Extension.Language
             };
             var featureFlagStatus = await InvokeWithParametersAsync<object>(LsConstants.WorkspaceExecuteCommand, param, cancellationToken);
             return featureFlagStatus;
+        }
+        
+        public async Task InvokeReportAnalyticsAsync(IAbstractAnalyticsEvent analyticsEvent, CancellationToken cancellationToken)
+        {
+            var param = new LSP.ExecuteCommandParams
+            {
+                Command = LsConstants.SnykReportAnalytics,
+                Arguments = new object[] { Json.Serialize(analyticsEvent) }
+            };
+            await InvokeWithParametersAsync<object>(LsConstants.WorkspaceExecuteCommand, param, cancellationToken);
         }
 
         public async Task<object> DidChangeConfigurationAsync(CancellationToken cancellationToken)

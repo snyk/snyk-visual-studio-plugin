@@ -3,6 +3,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.VisualStudio.Threading;
 using Snyk.Common;
+using Snyk.VisualStudio.Extension.Analytics;
 using StreamJsonRpc;
 
 namespace Snyk.VisualStudio.Extension.Language
@@ -24,5 +25,6 @@ namespace Snyk.VisualStudio.Extension.Language
         event AsyncEventHandler<SnykLanguageServerEventArgs> OnLanguageServerReadyAsync;
         event AsyncEventHandler<SnykLanguageServerEventArgs> OnLanguageClientNotInitializedAsync;
         void FireOnLanguageClientNotInitializedAsync();
+        Task InvokeReportAnalyticsAsync(IAbstractAnalyticsEvent analyticsEvent, CancellationToken cancellationToken);
     }
 }

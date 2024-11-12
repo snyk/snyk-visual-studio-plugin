@@ -126,7 +126,7 @@ namespace Snyk.VisualStudio.Extension.Settings
             get => snykSettings.CustomEndpoint;
             set => snykSettings.CustomEndpoint = value;
         }
-        
+
         public bool SnykCodeSecurityEnabled
         {
             get => snykSettings.SnykCodeSecurityEnabled;
@@ -156,6 +156,15 @@ namespace Snyk.VisualStudio.Extension.Settings
             get => snykSettings.CurrentCliVersion;
             set => snykSettings.CurrentCliVersion = value;
         }
+
+        public string DeviceId
+        {
+            get => snykSettings.DeviceId;
+            set => snykSettings.DeviceId = value;
+        }
+
+        public bool AnalyticsPluginInstalledSent
+        { get; set; }
 
         /// <summary>
         /// Get is all projects enabled.
