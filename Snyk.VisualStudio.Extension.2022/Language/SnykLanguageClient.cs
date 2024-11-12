@@ -423,7 +423,6 @@ namespace Snyk.VisualStudio.Extension.Language
                 Command = LsConstants.SnykReportAnalytics,
                 Arguments = new object[] { Json.Serialize(analyticsEvent) }
             };
-            // analytics sending does not need to be awaited, as it's fire and forget
             await InvokeWithParametersAsync<object>(LsConstants.WorkspaceExecuteCommand, param, cancellationToken);
         }
 
