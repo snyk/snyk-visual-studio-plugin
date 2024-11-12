@@ -16,6 +16,8 @@ namespace Snyk.Common.Settings
         string IntegrationVersion { get; }
         string IntegrationEnvironment { get; set; }
         string IntegrationEnvironmentVersion { get; set; }
+        
+        string DeviceId { get; set; }
         bool AutoScan { get; set; }
 
         /// <summary>
@@ -104,6 +106,7 @@ namespace Snyk.Common.Settings
         public string CurrentCliVersion { get; set; }
 
         SastSettings SastSettings { get; set; }
+        bool AnalyticsPluginInstalledSent { get; set; }
         Task OnAuthenticationSuccessfulAsync(string token, string apiUrl);
         Task OnAuthenticationFailedAsync(string errorMessage);
         void FireSettingsChangedEvent();

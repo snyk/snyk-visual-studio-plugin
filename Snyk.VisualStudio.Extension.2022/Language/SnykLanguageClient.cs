@@ -5,6 +5,7 @@ using System.Diagnostics;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using Microsoft.NET.StringTools;
 using Microsoft.VisualStudio.LanguageServer.Client;
 using Microsoft.VisualStudio.Shell;
 using Microsoft.VisualStudio.Threading;
@@ -12,6 +13,7 @@ using Serilog;
 using Snyk.Common;
 using Snyk.Common.Authentication;
 using Snyk.Common.Settings;
+using Snyk.VisualStudio.Extension.Analytics;
 using Snyk.VisualStudio.Extension.CLI;
 using StreamJsonRpc;
 using Task = System.Threading.Tasks.Task;
@@ -184,6 +186,7 @@ namespace Snyk.VisualStudio.Extension.Language
                     await StartAsync.InvokeAsync(this, EventArgs.Empty);
                     IsReady = true;
                     FireOnLanguageServerReadyAsyncEvent();
+                    SendPluginInstalledEvent();
                 }
                 else
                 {
@@ -193,6 +196,30 @@ namespace Snyk.VisualStudio.Extension.Language
             finally
             {
                 Semaphore.Release();
+            }
+        }
+
+        private void SendPluginInstalledEvent()
+        {
+            var settings = SnykVSPackage.Instance?.Options;
+            if (settings == null) return;
+            if (settings.AnalyticsPluginInstalledSent) return;
+            
+            if (string.IsNullOrEmpty(settings.DeviceId) )
+            {
+                settings.DeviceId = Guid.NewGuid().ToString();
+            };
+            
+            var analyticsSender = AnalyticsSender.Instance(settings);
+            List<string> categories = [ "install" ];
+            IAbstractAnalyticsEvent pluginInstalledEvent = new AnalyticsEvent("plugin installed", categories, settings.DeviceId);
+
+            analyticsSender.LogEvent(pluginInstalledEvent, Callback);
+            return;
+
+            void Callback(object _)
+            {
+                settings.AnalyticsPluginInstalledSent = true;
             }
         }
 
@@ -378,6 +405,18 @@ namespace Snyk.VisualStudio.Extension.Language
             };
             var featureFlagStatus = await InvokeWithParametersAsync<object>(LsConstants.WorkspaceExecuteCommand, param, cancellationToken);
             return featureFlagStatus;
+        }
+        
+        public Task InvokeReportAnalytics(IAbstractAnalyticsEvent analyticsEvent, CancellationToken cancellationToken)
+        {
+            var param = new LSP.ExecuteCommandParams
+            {
+                Command = LsConstants.SnykReportAnalytics,
+                Arguments = [analyticsEvent]
+            };
+            // analytics sending does not need to be awaited, as it's fire and forget
+            _ = InvokeWithParametersAsync<string>(LsConstants.WorkspaceExecuteCommand, param, cancellationToken);
+            return Task.CompletedTask;
         }
 
         public async Task<object> DidChangeConfigurationAsync(CancellationToken cancellationToken)

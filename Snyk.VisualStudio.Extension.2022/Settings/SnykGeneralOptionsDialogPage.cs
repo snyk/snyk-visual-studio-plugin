@@ -29,6 +29,12 @@ namespace Snyk.VisualStudio.Extension.Settings
         public string IntegrationVersion { get; } = SnykExtension.Version;
         public string IntegrationEnvironment { get; set; }
         public string IntegrationEnvironmentVersion { get; set;}
+        
+        public string DeviceId
+        {
+            get => this.userStorageSettingsService.DeviceId;
+            set => this.userStorageSettingsService.DeviceId = value;
+        }
 
         private ISnykServiceProvider serviceProvider;
 
@@ -143,13 +149,14 @@ namespace Snyk.VisualStudio.Extension.Settings
 
             set
             {
-                if (this.sastSettings == value)
-                {
-                    return;
-                }
-
                 this.sastSettings = value;
             }
+        }
+
+        public bool AnalyticsPluginInstalledSent
+        {
+            get => this.userStorageSettingsService.AnalyticsPluginInstalledSent; 
+            set => this.userStorageSettingsService.AnalyticsPluginInstalledSent = value;
         }
 
         public async Task OnAuthenticationSuccessfulAsync(string token, string apiUrl)
