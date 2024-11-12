@@ -90,7 +90,8 @@ namespace Snyk.VisualStudio.Extension.Language
                 IntegrationVersion = options.IntegrationVersion,
                 RequiredProtocolVersion = LsConstants.ProtocolVersion,
                 HoverVerbosity = 1,
-                OutputFormat = "plain"
+                OutputFormat = "plain",
+                DeviceId = GetDeviceId(options)
             };
             return initializationOptions;
         }
@@ -205,14 +206,11 @@ namespace Snyk.VisualStudio.Extension.Language
             if (settings == null) return;
             if (settings.AnalyticsPluginInstalledSent) return;
             
-            if (string.IsNullOrEmpty(settings.DeviceId))
-            {
-                settings.DeviceId = Guid.NewGuid().ToString();
-            }
+            var deviceId = GetDeviceId(settings);
             
             var analyticsSender = AnalyticsSender.Instance(settings, LanguageClientHelper.LanguageClientManager());
             var categories = new List<string> { "install" };
-            var pluginInstalledEvent = new AnalyticsEvent("plugin installed", categories, settings.DeviceId);
+            var pluginInstalledEvent = new AnalyticsEvent("plugin installed", categories, deviceId);
 
             analyticsSender.LogEvent(pluginInstalledEvent, Callback);
             return;
@@ -221,6 +219,16 @@ namespace Snyk.VisualStudio.Extension.Language
             {
                 settings.AnalyticsPluginInstalledSent = true;
             }
+        }
+
+        private string GetDeviceId(ISnykOptions settings)
+        {
+            if (string.IsNullOrEmpty(settings.DeviceId))
+            {
+                settings.DeviceId = Guid.NewGuid().ToString();
+            }
+
+            return settings.DeviceId;
         }
 
         public async Task StopServerAsync()
@@ -413,7 +421,7 @@ namespace Snyk.VisualStudio.Extension.Language
             var param = new LSP.ExecuteCommandParams
             {
                 Command = LsConstants.SnykReportAnalytics,
-                Arguments = new object[] { analyticsEvent }
+                Arguments = new object[] { Json.Serialize(analyticsEvent) }
             };
             // analytics sending does not need to be awaited, as it's fire and forget
             await InvokeWithParametersAsync<object>(LsConstants.WorkspaceExecuteCommand, param, cancellationToken);
