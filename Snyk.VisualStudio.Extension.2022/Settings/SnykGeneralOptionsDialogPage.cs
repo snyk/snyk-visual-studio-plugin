@@ -63,6 +63,12 @@ namespace Snyk.VisualStudio.Extension.Settings
         /// </summary>
         public ISnykServiceProvider ServiceProvider => this.serviceProvider;
 
+        public bool ConsistentIgnoresEnabled
+        {
+            get => this.userStorageSettingsService.ConsistentIgnoresEnabled;
+            set => this.userStorageSettingsService.ConsistentIgnoresEnabled = value;
+        }
+
         /// <summary>
         /// Gets or sets a value indicating whether API token.
         /// </summary>

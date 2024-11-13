@@ -166,6 +166,9 @@ namespace Snyk.VisualStudio.Extension.Settings
         public bool AnalyticsPluginInstalledSent
         { get; set; }
 
+        public bool ConsistentIgnoresEnabled { get => snykSettings.ConsistentIgnoresEnabled; 
+            set => snykSettings.ConsistentIgnoresEnabled = value; }
+
         /// <summary>
         /// Get is all projects enabled.
         /// </summary>

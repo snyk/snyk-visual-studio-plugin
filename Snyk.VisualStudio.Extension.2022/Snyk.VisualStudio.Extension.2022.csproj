@@ -104,6 +104,7 @@
       <IncludeInVSIX>true</IncludeInVSIX>
     </Content>
     <Compile Include="Service\Domain\FeaturesSettings.cs" />
+    <Compile Include="Service\FeatureFlagService.cs" />
     <Compile Include="Service\ISnykProgressWorker.cs" />
     <Compile Include="Service\ISnykService.cs" />
     <Compile Include="Service\ISnykServiceProvider.cs" />

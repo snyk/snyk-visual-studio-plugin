@@ -5,6 +5,7 @@ using System.Diagnostics;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using System.Windows.Controls.Primitives;
 using Microsoft.VisualStudio.LanguageServer.Client;
 using Microsoft.VisualStudio.Shell;
 using Microsoft.VisualStudio.Threading;
@@ -405,15 +406,14 @@ namespace Snyk.VisualStudio.Extension.Language
             return result;
         }
 
-        public async Task<object> InvokeGetFeatureFlagStatus(string featureFlag, CancellationToken cancellationToken)
+        public async Task<string> InvokeGetFeatureFlagStatusAsync(string featureFlag, CancellationToken cancellationToken)
         {
             var param = new LSP.ExecuteCommandParams
             {
                 Command = LsConstants.SnykGetFeatureFlagStatus,
                 Arguments = new object[] { featureFlag }
             };
-            var featureFlagStatus = await InvokeWithParametersAsync<object>(LsConstants.WorkspaceExecuteCommand, param, cancellationToken);
-            return featureFlagStatus;
+            return await InvokeWithParametersAsync<string>(LsConstants.WorkspaceExecuteCommand, param, cancellationToken);
         }
         
         public async Task InvokeReportAnalyticsAsync(IAbstractAnalyticsEvent analyticsEvent, CancellationToken cancellationToken)

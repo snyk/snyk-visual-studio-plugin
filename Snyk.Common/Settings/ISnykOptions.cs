@@ -19,6 +19,8 @@ namespace Snyk.Common.Settings
         
         string DeviceId { get; set; }
         bool AutoScan { get; set; }
+        
+        bool ConsistentIgnoresEnabled { get; set; }
 
         /// <summary>
         /// Gets or sets a value indicating whether Snyk user API token.

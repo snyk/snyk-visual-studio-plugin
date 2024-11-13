@@ -252,6 +252,8 @@ namespace Snyk.VisualStudio.Extension
                 LanguageClientManager = languageServerClientManager;
                 LanguageClientManager.OnLanguageClientNotInitializedAsync += LanguageClientManagerOnOnLanguageClientNotInitializedAsync;
                 LanguageClientManager.OnLanguageServerReadyAsync += LanguageClientManagerOnOnLanguageServerReadyAsync;
+                FeatureFlagService featureFlagService = new FeatureFlagService(LanguageClientManager, Options);
+                LanguageClientManager.OnLanguageServerReadyAsync += featureFlagService.OnLanguageServerReadyAsync;
                 if (languageServerClientManager != null && !languageServerClientManager.IsReady)
                 {
                     // If CLI download is necessary, Skip initializing.
