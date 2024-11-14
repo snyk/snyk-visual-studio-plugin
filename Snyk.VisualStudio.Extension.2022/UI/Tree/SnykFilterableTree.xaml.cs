@@ -143,7 +143,8 @@ namespace Snyk.VisualStudio.Extension.UI.Tree
             var fileTreeNodes = new List<FileTreeNode>();
             foreach (var kv in scanResultDictionary.Where(x => x.Key.Replace("\\", "/").Contains(currentFolder)))
             {
-                var issueList = FilterIssues(options, kv.Value).ToList();
+                var issueList = kv.Value.ToList();
+
                 if (additionalFilter != null)
                     issueList = issueList.Where(additionalFilter).ToList();
 
@@ -159,6 +160,8 @@ namespace Snyk.VisualStudio.Extension.UI.Tree
                 lowSeverityCount += issueList.Count(suggestion => suggestion.Severity == Severity.Low);
                 ignoredIssueCount += issueList.Count(suggestion => suggestion.IsIgnored);
                 fixableIssueCount += issueList.Count(suggestion => suggestion.HasFix());
+
+                issueList = FilterIssues(options, kv.Value).ToList();
 
                 issueList.Sort((issue1, issue2) => Severity.ToInt(issue2.Severity) - Severity.ToInt(issue1.Severity));
 
