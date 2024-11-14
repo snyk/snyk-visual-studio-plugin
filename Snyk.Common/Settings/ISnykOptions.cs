@@ -109,8 +109,8 @@ namespace Snyk.Common.Settings
 
         SastSettings SastSettings { get; set; }
         bool AnalyticsPluginInstalledSent { get; set; }
-        Task OnAuthenticationSuccessfulAsync(string token, string apiUrl);
-        Task OnAuthenticationFailedAsync(string errorMessage);
+        Task HandleAuthenticationSuccess(string token, string apiUrl);
+        Task HandleFailedAuthentication(string errorMessage);
         void FireSettingsChangedEvent();
     }
 }

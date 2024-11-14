@@ -149,7 +149,7 @@ namespace Snyk.VisualStudio.Extension.Settings
                 this.UpdateViewFromOptionsDialog();
             }).FireAndForget();
 
-        public async Task OnAuthenticationSuccessfulAsync(string apiToken, string apiUrl)
+        public async Task HandleAuthenticationSuccess(string apiToken, string apiUrl)
         {
             logger.Information("Enter authenticate successCallback");
 
@@ -192,7 +192,7 @@ namespace Snyk.VisualStudio.Extension.Settings
                 }).FireAndForget();
         }
 
-        public async Task OnAuthenticationFailAsync(string errorMessage)
+        public async Task HandleFailedAuthentication(string errorMessage)
         {
             logger.Information("Enter authenticate errorCallback");
 

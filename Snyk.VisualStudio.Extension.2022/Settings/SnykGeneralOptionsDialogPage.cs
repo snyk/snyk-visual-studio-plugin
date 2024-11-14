@@ -63,11 +63,7 @@ namespace Snyk.VisualStudio.Extension.Settings
         /// </summary>
         public ISnykServiceProvider ServiceProvider => this.serviceProvider;
 
-        public bool ConsistentIgnoresEnabled
-        {
-            get => this.userStorageSettingsService.ConsistentIgnoresEnabled;
-            set => this.userStorageSettingsService.ConsistentIgnoresEnabled = value;
-        }
+        public bool ConsistentIgnoresEnabled { get; set; }
 
         /// <summary>
         /// Gets or sets a value indicating whether API token.
@@ -165,14 +161,14 @@ namespace Snyk.VisualStudio.Extension.Settings
             set => this.userStorageSettingsService.AnalyticsPluginInstalledSent = value;
         }
 
-        public async Task OnAuthenticationSuccessfulAsync(string token, string apiUrl)
+        public async Task HandleAuthenticationSuccess(string token, string apiUrl)
         {
-            await this.GeneralSettingsUserControl.OnAuthenticationSuccessfulAsync(token, apiUrl);
+            await this.GeneralSettingsUserControl.HandleAuthenticationSuccess(token, apiUrl);
         }
 
-        public async Task OnAuthenticationFailedAsync(string errorMessage)
+        public async Task HandleFailedAuthentication(string errorMessage)
         {
-            await this.GeneralSettingsUserControl.OnAuthenticationFailAsync(errorMessage);
+            await this.GeneralSettingsUserControl.HandleFailedAuthentication(errorMessage);
         }
         /// <summary>
         /// Gets or sets a value indicating whether organization.

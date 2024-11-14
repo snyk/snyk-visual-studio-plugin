@@ -3,6 +3,7 @@ using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using Microsoft.VisualStudio.Shell;
 using Newtonsoft.Json.Linq;
 using Snyk.Common.Authentication;
 using Snyk.VisualStudio.Extension.Extension;
@@ -50,25 +51,27 @@ namespace Snyk.VisualStudio.Extension.Language
             }
 
             var source = LspSourceToProduct(diagnosticsArray[0]["source"].ToString());
-            var dataList = diagnosticsArray.Where(x => x["data"] != null)
+            var issueList = diagnosticsArray.Where(x => x["data"] != null)
                 .Select(x =>
                 {
                     var issue = x["data"].TryParse<Issue>();
-                    issue.Product = LspSourceToProduct(source);
+                    if (issue.IsIgnored)
+                    {
+                        serviceProvider.Options.ConsistentIgnoresEnabled = true;
+                    }
                     return issue;
                 });
-
 
             switch (source)
             {
                 case "code":
-                    snykCodeIssueDictionary.TryAdd(parsedUri.UncAwareAbsolutePath(), dataList);
+                    snykCodeIssueDictionary.TryAdd(parsedUri.UncAwareAbsolutePath(), issueList);
                     break;
                 case "oss":
-                     snykOssIssueDictionary.TryAdd(parsedUri.UncAwareAbsolutePath(), dataList);
+                     snykOssIssueDictionary.TryAdd(parsedUri.UncAwareAbsolutePath(), issueList);
                     break;
                 case "iac":
-                    snykIaCIssueDictionary.TryAdd(parsedUri.UncAwareAbsolutePath(), dataList);
+                    snykIaCIssueDictionary.TryAdd(parsedUri.UncAwareAbsolutePath(), issueList);
                     break;
                 default:
                     throw new InvalidProductTypeException();
@@ -112,7 +115,7 @@ namespace Snyk.VisualStudio.Extension.Language
         {
             if (arg?["token"] == null)
             {
-                await serviceProvider.Options.OnAuthenticationFailedAsync("Authentication failed");
+                await serviceProvider.Options.HandleFailedAuthentication("Authentication failed");
                 return;
             }
 
@@ -130,7 +133,9 @@ namespace Snyk.VisualStudio.Extension.Language
 
             serviceProvider.Options.ApiToken = new AuthenticationToken(serviceProvider.Options.AuthenticationMethod, token);
 
-            await serviceProvider.Options.OnAuthenticationSuccessfulAsync(token, apiUrl);
+            await serviceProvider.Options.HandleAuthenticationSuccess(token, apiUrl);
+
+            FeatureFlagService.Instance.RefreshAsync().FireAndForget();
 
             if (serviceProvider.Options.AutoScan)
             {

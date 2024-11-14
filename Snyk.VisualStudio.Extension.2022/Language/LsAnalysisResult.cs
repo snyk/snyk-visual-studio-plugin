@@ -127,7 +127,6 @@ namespace Snyk.VisualStudio.Extension.Language
         public bool IsNew { get; set; }
         public IgnoreDetails IgnoreDetails { get; set; }
         public AdditionalData AdditionalData { get; set; }
-        public string Product { get; set; }
 
         public string GetDisplayTitle() => string.IsNullOrEmpty(this.Title) ? this.AdditionalData?.Message : this.Title;
 

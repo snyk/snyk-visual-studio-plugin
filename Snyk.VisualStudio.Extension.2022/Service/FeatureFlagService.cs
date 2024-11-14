@@ -6,24 +6,50 @@ using Snyk.VisualStudio.Extension.Language;
 
 namespace Snyk.VisualStudio.Extension.Service;
 
-public class FeatureFlagService(ILanguageClientManager languageClient, ISnykOptions settings)
+public class FeatureFlagService
 {
-    private readonly ILogger logger = LogManager.ForContext<FeatureFlagService>();
+    private readonly ILanguageClientManager languageClient;
+    private readonly ISnykOptions settings;
+    private static readonly ILogger Logger = LogManager.ForContext<FeatureFlagService>();
+    private static FeatureFlagService instance;
 
-    public async Task OnLanguageServerReadyAsync(object sender, SnykLanguageServerEventArgs args)
+    public FeatureFlagService(ILanguageClientManager languageClient, ISnykOptions settings)
     {
-        var result = await languageClient.InvokeGetFeatureFlagStatusAsync(LsConstants.SnykGetFeatureFlagStatus, SnykVSPackage.Instance.DisposalToken);
-        var response = Json.Deserialize<FeatureFlagResponse>(result);
-        settings.ConsistentIgnoresEnabled = response.Ok;
-        if (!response.Ok)
-        {
-            if (!response.UserMessage.IsNullOrEmpty()) this.logger.Error("feature flag not enabled: {UserMessage}", response.UserMessage);
-        }
+        this.languageClient = languageClient;
+        this.settings = settings;
     }
-    
-    private class FeatureFlagResponse
+
+    public static FeatureFlagService Instance => instance;
+
+    /// <summary>
+    /// Initialize service.
+    /// </summary>
+    /// <param name="languageClient"></param>
+    /// <param name="settings"></param>
+    /// <returns>Task.</returns>
+    public static FeatureFlagService Initialize(ILanguageClientManager languageClient, ISnykOptions settings)
     {
-        public bool Ok { get; set; }
-        public string UserMessage { get; set; }
+        if (instance != null)
+            return instance;
+
+        instance = new FeatureFlagService(languageClient, settings);
+
+        Logger.Information("FeatureFlagService initialized");
+        return instance;
+    }
+
+    public async Task RefreshAsync()
+    {
+        var result = await languageClient.InvokeGetFeatureFlagStatusAsync(LsConstants.SnykConsistentIgnoresEnabled, SnykVSPackage.Instance.DisposalToken);
+        if (result == null)
+        {
+            settings.ConsistentIgnoresEnabled = false;
+            return;
+        }
+        settings.ConsistentIgnoresEnabled = result.Ok;
+        if (!result.Ok)
+        {
+            if (!result.UserMessage.IsNullOrEmpty()) Logger.Error("feature flag not enabled: {UserMessage}", result.UserMessage);
+        }
     }
 }

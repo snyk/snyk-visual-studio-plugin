@@ -125,7 +125,7 @@ namespace Snyk.VisualStudio.Extension.Language
             // ReSharper disable once RedundantAssignment
             var lsDebugLevel = await GetLsDebugLevelAsync(options);
 #if DEBUG
-            lsDebugLevel = "trace";
+            lsDebugLevel = "debug";
 #endif
             var info = new ProcessStartInfo
             {
@@ -406,14 +406,14 @@ namespace Snyk.VisualStudio.Extension.Language
             return result;
         }
 
-        public async Task<string> InvokeGetFeatureFlagStatusAsync(string featureFlag, CancellationToken cancellationToken)
+        public async Task<FeatureFlagResponse> InvokeGetFeatureFlagStatusAsync(string featureFlag, CancellationToken cancellationToken)
         {
             var param = new LSP.ExecuteCommandParams
             {
                 Command = LsConstants.SnykGetFeatureFlagStatus,
                 Arguments = new object[] { featureFlag }
             };
-            return await InvokeWithParametersAsync<string>(LsConstants.WorkspaceExecuteCommand, param, cancellationToken);
+            return await InvokeWithParametersAsync<FeatureFlagResponse>(LsConstants.WorkspaceExecuteCommand, param, cancellationToken);
         }
         
         public async Task InvokeReportAnalyticsAsync(IAbstractAnalyticsEvent analyticsEvent, CancellationToken cancellationToken)
@@ -461,7 +461,15 @@ namespace Snyk.VisualStudio.Extension.Language
         private async Task<T> InvokeWithParametersAsync<T>(string request, object parameters, CancellationToken t)
         {
             if (!IsReady) return default;
-            return await Rpc.InvokeWithParameterObjectAsync<T>(request, parameters, t).ConfigureAwait(false);
+            try
+            {
+                return await Rpc.InvokeWithParameterObjectAsync<T>(request, parameters, t).ConfigureAwait(false);
+            }
+            catch (Exception ex)
+            {
+                Logger.Error("{Ex}" ,ex);
+                return default;
+            }
         }
 
         private async Task NotifyWithParametersAsync(string request, object parameters)
