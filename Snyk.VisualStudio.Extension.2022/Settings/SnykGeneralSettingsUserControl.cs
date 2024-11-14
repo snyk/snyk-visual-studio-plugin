@@ -98,6 +98,8 @@ namespace Snyk.VisualStudio.Extension.Settings
             this.autoScanCheckBox.Checked = this.OptionsDialogPage.AutoScan;
             this.cliDownloadUrlTextBox.Text = this.OptionsDialogPage.CliDownloadUrl;
             this.tokenTextBox.Text = this.OptionsDialogPage.ApiToken.ToString();
+            this.cbIgnoredIssues.Checked = this.OptionsDialogPage.IgnoredIssuesEnabled;
+            this.cbOpenIssues.Checked = this.OptionsDialogPage.OpenIssuesEnabled;
 
             var cliPath = string.IsNullOrEmpty(this.OptionsDialogPage.CliCustomPath)
                 ? SnykCli.GetSnykCliDefaultPath()
