@@ -252,7 +252,7 @@ namespace Snyk.VisualStudio.Extension
                 LanguageClientManager = languageServerClientManager;
                 LanguageClientManager.OnLanguageClientNotInitializedAsync += LanguageClientManagerOnOnLanguageClientNotInitializedAsync;
                 LanguageClientManager.OnLanguageServerReadyAsync += LanguageClientManagerOnOnLanguageServerReadyAsync;
-                if (languageServerClientManager != null && !languageServerClientManager.IsReady)
+                if (!LanguageClientHelper.IsLanguageServerReady())
                 {
                     // If CLI download is necessary, Skip initializing.
                     if (this.serviceProvider.TasksService.ShouldDownloadCli())
@@ -270,6 +270,7 @@ namespace Snyk.VisualStudio.Extension
 
         private async Task LanguageClientManagerOnOnLanguageServerReadyAsync(object sender, SnykLanguageServerEventArgs args)
         {
+            await FeatureFlagService.Initialize(LanguageClientManager, Options).RefreshAsync();
             // Sleep for three seconds before closing the temp window
             await Task.Delay(3000);
             await JoinableTaskFactory.SwitchToMainThreadAsync();

@@ -261,7 +261,7 @@ namespace Snyk.VisualStudio.Extension.Download
             string cliFileDestinationPath,
             List<CliDownloadFinishedCallback> downloadFinishedCallbacks = null)
         {
-            const int bufferSize = 8192;
+            const int bufferSize = 81920;
 
             using (var client = new HttpClient())
             {
@@ -275,7 +275,7 @@ namespace Snyk.VisualStudio.Extension.Download
 
                 using (var fileStream = new FileStream(tempCliFile, FileMode.Create, FileAccess.Write, FileShare.ReadWrite, bufferSize, true))
                 {
-                    using (Stream contentStream = await response.Content.ReadAsStreamAsync())
+                    using (var contentStream = await response.Content.ReadAsStreamAsync())
                     {
                         var totalBytes = response.Content.Headers.ContentLength ?? long.MaxValue; // Avoid dividing by null when calculating progress
                         var totalRead = 0L;

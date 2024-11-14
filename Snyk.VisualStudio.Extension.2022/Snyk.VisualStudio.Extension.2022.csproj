@@ -68,6 +68,7 @@
     <Compile Include="Extension\JTokenExtension.cs" />
     <Compile Include="Extension\UriExtensions.cs" />
     <Compile Include="Language\CustomInitializationOptions.cs" />
+    <Compile Include="Language\FeatureFlagResponse.cs" />
     <Compile Include="Language\ILanguageClientManager.cs" />
     <Compile Include="Language\InvalidProductTypeException.cs" />
     <Compile Include="Language\LsConstants.cs" />
@@ -104,6 +105,7 @@
       <IncludeInVSIX>true</IncludeInVSIX>
     </Content>
     <Compile Include="Service\Domain\FeaturesSettings.cs" />
+    <Compile Include="Service\FeatureFlagService.cs" />
     <Compile Include="Service\ISnykProgressWorker.cs" />
     <Compile Include="Service\ISnykService.cs" />
     <Compile Include="Service\ISnykServiceProvider.cs" />
@@ -201,21 +203,26 @@
     <Compile Include="UI\Toolwindow\ToolWindowState.cs" />
     <Compile Include="UI\Toolwindow\UpdateDownloadState.cs" />
     <Compile Include="UI\Toolwindow\WebBrowserHostUIHandler.cs" />
+    <Compile Include="UI\Tree\FileTreeNode.cs" />
+    <Compile Include="UI\Tree\InfoTreeNode.cs" />
+    <Compile Include="UI\Tree\IssueTreeNode.cs" />
     <Compile Include="UI\Tree\OssRootTreeNode.cs" />
-    <Compile Include="UI\Tree\OssVulnerabilityTreeNode.cs" />
+    <Compile Include="UI\Tree\OssFileTreeNode.cs" />
+    <Compile Include="UI\Tree\OssTreeNode.cs" />
     <Compile Include="UI\Tree\RootTreeNode.cs" />
     <Compile Include="UI\Tree\RootTreeNodeState.cs" />
-    <Compile Include="UI\Tree\SnykIacFileTreeNode.cs" />
-    <Compile Include="UI\Tree\SnykCodeFileTreeNode.cs" />
-    <Compile Include="UI\Tree\IacVulnerabilityTreeNode.cs" />
+    <Compile Include="UI\Tree\IacFileTreeNode.cs" />
+    <Compile Include="UI\Tree\CodeFileTreeNode.cs" />
+    <Compile Include="UI\Tree\IacTreeNode.cs" />
     <Compile Include="UI\Tree\SnykIacRootTreeNode.cs" />
     <Compile Include="UI\Tree\SnykCodeQualityRootTreeNode.cs" />
     <Compile Include="UI\Tree\SnykCodeSecurityRootTreeNode.cs" />
-    <Compile Include="UI\Tree\SnykCodeVulnerabilityTreeNode.cs" />
+    <Compile Include="UI\Tree\CodeTreeNode.cs" />
     <Compile Include="UI\Tree\SnykFilterableTree.xaml.cs">
       <DependentUpon>SnykFilterableTree.xaml</DependentUpon>
     </Compile>
     <Compile Include="UI\Tree\TreeNode.cs" />
+    <Compile Include="UI\Tree\TreeNodeProductFactory.cs" />
     <Compile Include="VSPackage.Designer.cs">
       <DependentUpon>VSPackage.resx</DependentUpon>
       <DesignTime>True</DesignTime>

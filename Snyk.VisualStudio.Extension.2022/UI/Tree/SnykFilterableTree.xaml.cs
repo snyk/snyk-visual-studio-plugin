@@ -6,8 +6,10 @@ using System.Windows.Data;
 using Microsoft.VisualStudio.Shell;
 using Snyk.VisualStudio.Extension.Model;
 using System.Collections.Generic;
-using System.IO;
+using System.Threading.Tasks;
+using Snyk.Common.Settings;
 using Snyk.VisualStudio.Extension.Language;
+using Snyk.VisualStudio.Extension.Service;
 
 namespace Snyk.VisualStudio.Extension.UI.Tree
 {
@@ -90,64 +92,7 @@ namespace Snyk.VisualStudio.Extension.UI.Tree
         /// </summary>
         public IDictionary<string, IEnumerable<Issue>> OssResult
         {
-            set
-            {
-                if (!this.ossRootNode.Enabled)
-                {
-                    return;
-                }
-
-                this.ossRootNode.Items.Clear();
-
-                var criticalSeverityCount = 0;
-                var highSeverityCount = 0;
-                var mediumSeverityCount = 0;
-                var lowSeverityCount = 0;
-                var currentFolder = ThreadHelper.JoinableTaskFactory.Run(async () =>
-                    await SnykVSPackage.ServiceProvider.SolutionService.GetSolutionFolderAsync()).Replace("\\","/");
-                foreach (var kv in value.Where(x=>x.Key.Replace("\\", "/").Contains(currentFolder)))
-                {
-                    var filePath = kv.Key;
-                    var issueList = kv.Value.ToList();
-
-                    var fileNode = new OssVulnerabilityTreeNode { IssueList = issueList, IsExpanded = false };
-                    if (issueList.Any() && issueList.Any() && issueList.First().AdditionalData != null)
-                    {
-                        var firstIssue = issueList.First();
-                        fileNode.PackageManager = firstIssue.AdditionalData.PackageManager;
-                        fileNode.DisplayTargetFile = Path.GetFileName(firstIssue.AdditionalData.DisplayTargetFile);
-                        fileNode.ProjectName = firstIssue.AdditionalData.ProjectName;
-                    }
-                    criticalSeverityCount += issueList.Count(suggestion => suggestion.Severity == Severity.Critical);
-                    highSeverityCount += issueList.Count(suggestion => suggestion.Severity == Severity.High);
-                    mediumSeverityCount += issueList.Count(suggestion => suggestion.Severity == Severity.Medium);
-                    lowSeverityCount += issueList.Count(suggestion => suggestion.Severity == Severity.Low);
-
-                    issueList.Sort((issue1, issue2) => Severity.ToInt(issue2.Severity) - Severity.ToInt(issue1.Severity));
-
-                    foreach (var issue in issueList)
-                    {
-                        var vulNode = new OssVulnerabilityTreeNode { Issue = issue };
-                        fileNode.Items.Add(vulNode);
-                        if (issue.AdditionalData == null) continue;
-                        vulNode.PackageManager = issue.AdditionalData.PackageManager;
-                        vulNode.DisplayTargetFile = issue.AdditionalData.DisplayTargetFile;
-                        vulNode.ProjectName = issue.AdditionalData.ProjectName;
-                    }
-
-                    if (fileNode.Items.Count > 0)
-                    {
-                        this.ossRootNode.Items.Add(fileNode);
-                    }
-                }
-
-                this.ossRootNode.CriticalSeverityCount = criticalSeverityCount;
-                this.ossRootNode.HighSeverityCount = highSeverityCount;
-                this.ossRootNode.MediumSeverityCount = mediumSeverityCount;
-                this.ossRootNode.LowSeverityCount = lowSeverityCount;
-
-                this.ossRootNode.State = RootTreeNodeState.ResultDetails;
-            }
+            set => FillIssueRootNode(SnykVSPackage.ServiceProvider, value, ossRootNode, Product.Oss);
         }
 
         /// <summary>
@@ -160,66 +105,157 @@ namespace Snyk.VisualStudio.Extension.UI.Tree
             {
                 if (this.codeSecurityRootNode.Enabled)
                 {
-                    this.AppendSnykCodeIssues(this.codeSecurityRootNode, value, issue => issue.AdditionalData.IsSecurityType);
+                    this.FillIssueRootNode(SnykVSPackage.ServiceProvider, value, this.codeSecurityRootNode, Product.Code,
+                        issue => issue.AdditionalData.IsSecurityType);
                 }
 
                 if (this.codeQualityRootNode.Enabled)
                 {
-                    this.AppendSnykCodeIssues(this.codeQualityRootNode, value, issue => !issue.AdditionalData.IsSecurityType);
+                    this.FillIssueRootNode(SnykVSPackage.ServiceProvider, value, this.codeQualityRootNode, Product.Code,
+                        issue => !issue.AdditionalData.IsSecurityType);
                 }
             }
         }
 
-
         public IDictionary<string, IEnumerable<Issue>> IacResults
         {
-            set
+            set => FillIssueRootNode(SnykVSPackage.ServiceProvider, value, iacRootNode, Product.Iac);
+        }
+
+        private void FillIssueRootNode(ISnykServiceProvider serviceProvider, IDictionary<string, IEnumerable<Issue>> scanResultDictionary, RootTreeNode rootNode, string product, Func<Issue, bool> additionalFilter = null)
+        {
+            if (!rootNode.Enabled)
             {
-                if (!this.iacRootNode.Enabled)
-                {
-                    return;
-                }
-
-                this.iacRootNode.Items.Clear();
-
-                var criticalSeverityCount = 0;
-                var highSeverityCount = 0;
-                var mediumSeverityCount = 0;
-                var lowSeverityCount = 0;
-                var currentFolder = ThreadHelper.JoinableTaskFactory.Run(async () =>
-                    await SnykVSPackage.ServiceProvider.SolutionService.GetSolutionFolderAsync()).Replace("\\", "/");
-                foreach (var kv in value.Where(x => x.Key.Replace("\\", "/").Contains(currentFolder)))
-                {
-                    var filePath = kv.Key;
-                    var issues = kv.Value.ToList();
-
-                    var issueNode = new SnykIacFileTreeNode { IssueList = issues, FileName = filePath, FolderName = currentFolder, IsExpanded = false };
-
-                    criticalSeverityCount += issues.Count(suggestion => suggestion.Severity == Severity.Critical);
-                    highSeverityCount += issues.Count(suggestion => suggestion.Severity == Severity.High);
-                    mediumSeverityCount += issues.Count(suggestion => suggestion.Severity == Severity.Medium);
-                    lowSeverityCount += issues.Count(suggestion => suggestion.Severity == Severity.Low);
-
-                    issues.Sort((issue1, issue2) => Severity.ToInt(issue2.Severity) - Severity.ToInt(issue1.Severity));
-
-                    foreach (var suggestion in issues)
-                    {
-                        issueNode.Items.Add(new IacVulnerabilityTreeNode { Issue = suggestion });
-                    }
-
-                    if (issueNode.Items.Count > 0)
-                    {
-                        this.iacRootNode.Items.Add(issueNode);
-                    }
-                }
-
-                this.iacRootNode.CriticalSeverityCount = criticalSeverityCount;
-                this.iacRootNode.HighSeverityCount = highSeverityCount;
-                this.iacRootNode.MediumSeverityCount = mediumSeverityCount;
-                this.iacRootNode.LowSeverityCount = lowSeverityCount;
-
-                this.iacRootNode.State = RootTreeNodeState.ResultDetails;
+                return;
             }
+
+            rootNode.Items.Clear();
+
+            var criticalSeverityCount = 0;
+            var highSeverityCount = 0;
+            var mediumSeverityCount = 0;
+            var lowSeverityCount = 0;
+            var ignoredIssueCount = 0;
+            var fixableIssueCount = 0;
+            var currentFolder = ThreadHelper.JoinableTaskFactory.Run(async () =>
+                await serviceProvider.SolutionService.GetSolutionFolderAsync()).Replace("\\", "/");
+            var options = serviceProvider.Options;
+            var fileTreeNodes = new List<FileTreeNode>();
+            foreach (var kv in scanResultDictionary.Where(x => x.Key.Replace("\\", "/").Contains(currentFolder)))
+            {
+                var issueList = kv.Value.ToList();
+
+                if (additionalFilter != null)
+                    issueList = issueList.Where(additionalFilter).ToList();
+
+                var fileNode = TreeNodeProductFactory.GetFileTreeNode(product);
+                fileNode.IssueList = issueList;
+                fileNode.IsExpanded = false;
+                fileNode.FileName = kv.Key;
+                fileNode.FolderName = currentFolder;
+
+                ignoredIssueCount += issueList.Count(suggestion => suggestion.IsIgnored);
+
+                issueList = FilterIgnoredIssues(options, kv.Value).ToList();
+                
+                criticalSeverityCount += issueList.Count(suggestion => suggestion.Severity == Severity.Critical);
+                highSeverityCount += issueList.Count(suggestion => suggestion.Severity == Severity.High);
+                mediumSeverityCount += issueList.Count(suggestion => suggestion.Severity == Severity.Medium);
+                lowSeverityCount += issueList.Count(suggestion => suggestion.Severity == Severity.Low);
+
+                fixableIssueCount += issueList.Count(suggestion => suggestion.HasFix());
+
+                issueList.Sort((issue1, issue2) => Severity.ToInt(issue2.Severity) - Severity.ToInt(issue1.Severity));
+
+                foreach (var issue in issueList)
+                {
+                    var issueNode = TreeNodeProductFactory.GetIssueTreeNode(product);
+                    issueNode.Issue = issue;
+                    fileNode.Items.Add(issueNode);
+                }
+
+                if (fileNode.Items.Count > 0)
+                {
+                    fileTreeNodes.Add(fileNode);
+                }
+            }
+
+
+            var totalIssueCount = scanResultDictionary.Values.SelectMany(value => value).Count();
+            AddInfoTreeNodes(rootNode, totalIssueCount, ignoredIssueCount, fixableIssueCount, options);
+
+            foreach (var ossFileTreeNode in fileTreeNodes)
+            {
+                rootNode.Items.Add(ossFileTreeNode);
+            }
+
+            rootNode.CriticalSeverityCount = criticalSeverityCount;
+            rootNode.HighSeverityCount = highSeverityCount;
+            rootNode.MediumSeverityCount = mediumSeverityCount;
+            rootNode.LowSeverityCount = lowSeverityCount;
+
+            rootNode.State = RootTreeNodeState.ResultDetails;
+        }
+
+        private void AddInfoTreeNodes(RootTreeNode rootNode, int totalIssueCount, int ignoredIssueCount,
+            int fixableIssueCount, ISnykOptions options)
+        {
+            var plural = GetPlural(totalIssueCount);
+            var text = "✅ Congrats! No issues found!";
+
+            if (totalIssueCount > 0)
+            {
+                text = $"✋ {totalIssueCount} issue{plural} found by Snyk";
+                if (options.ConsistentIgnoresEnabled)
+                {
+                    text += $", {ignoredIssueCount} ignored";
+                }
+            }
+
+            rootNode.Items.Add(new InfoTreeNode { Title = text });
+
+            if (fixableIssueCount > 0)
+            {
+                rootNode.Items.Add(new InfoTreeNode
+                    { Title = $"⚡ {fixableIssueCount} issue{plural} can be fixed automatically" });
+            }
+            else if(totalIssueCount > 0)
+            {
+                rootNode.Items.Add(new InfoTreeNode
+                    { Title = "There are no issues automatically fixable" });
+            }
+
+            if (options.ConsistentIgnoresEnabled)
+            {
+                if (ignoredIssueCount == totalIssueCount && !options.IgnoredIssuesEnabled)
+                {
+                    rootNode.Items.Add(new InfoTreeNode
+                        { Title = "Adjust your Issue View Options to see ignored issues." });
+                }
+                else if (ignoredIssueCount == 0 && !options.OpenIssuesEnabled)
+                {
+                    rootNode.Items.Add(new InfoTreeNode
+                        { Title = "Adjust your Issue View Options to open issues." });
+                }
+            }
+        }
+
+        private string GetPlural(int count)
+        {
+            return count > 1 ? "s" : "";
+        }
+
+        private IEnumerable<Issue> FilterIgnoredIssues(ISnykOptions options, IEnumerable<Issue> issueList)
+        {
+            var includeIgnoredIssues = true;
+            var includeOpenedIssues = true;
+            if (options.ConsistentIgnoresEnabled)
+            {
+                includeOpenedIssues = options.OpenIssuesEnabled;
+                includeIgnoredIssues = options.IgnoredIssuesEnabled;
+            }
+
+            return issueList.Where(x => x.IsVisible(includeIgnoredIssues, includeOpenedIssues));
         }
 
         /// <summary>
@@ -271,14 +307,14 @@ namespace Snyk.VisualStudio.Extension.UI.Tree
 
             var searchString = severityFilter.GetOnlyQueryString();
 
-            this.FilterOssItems(this.ossRootNode, severityFilter, searchString);
+            this.FilterTreeItems(this.ossRootNode, severityFilter, searchString);
 
-            this.FilterSnykCodeItems(this.codeQualityRootNode, severityFilter, searchString);
-            this.FilterSnykCodeItems(this.codeSecurityRootNode, severityFilter, searchString);
-            this.FilterIacItems(this.iacRootNode, severityFilter, searchString);
+            this.FilterTreeItems(this.codeQualityRootNode, severityFilter, searchString);
+            this.FilterTreeItems(this.codeSecurityRootNode, severityFilter, searchString);
+            this.FilterTreeItems(this.iacRootNode, severityFilter, searchString);
         });
 
-        private async System.Threading.Tasks.Task DisplayAllVulnerabilitiesAsync(RootTreeNode rootTreeNode)
+        private async Task DisplayAllVulnerabilitiesAsync(RootTreeNode rootTreeNode)
         {
             await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
 
@@ -290,34 +326,13 @@ namespace Snyk.VisualStudio.Extension.UI.Tree
             }
         }
 
-        private void FilterOssItems(RootTreeNode rootTreeNode, SeverityFilter severityFilter, string searchString)
+        private void FilterTreeItems(RootTreeNode rootTreeNode, SeverityFilter severityFilter, string searchString)
         {
             foreach (var treeNode in rootTreeNode.Items)
             {
                 CollectionViewSource.GetDefaultView(treeNode.Items).Filter = filterObject =>
                 {
-                    var filteredTreeNode = filterObject as OssVulnerabilityTreeNode;
-                    var vulnerability = filteredTreeNode.Issue;
-
-                    var isVulnIncluded = severityFilter.IsVulnerabilityIncluded(vulnerability.Severity);
-
-                    if (!string.IsNullOrEmpty(searchString))
-                    {
-                        isVulnIncluded = isVulnIncluded && vulnerability.GetPackageNameTitle().ToLowerInvariant().Contains(searchString.ToLowerInvariant());
-                    }
-
-                    return isVulnIncluded;
-                };
-            }
-        }
-
-        private void FilterSnykCodeItems(RootTreeNode rootTreeNode, SeverityFilter severityFilter, string searchString)
-        {
-            foreach (var treeNode in rootTreeNode.Items)
-            {
-                CollectionViewSource.GetDefaultView(treeNode.Items).Filter = filterObject =>
-                {
-                    var filteredTreeNode = filterObject as SnykCodeVulnerabilityTreeNode;
+                    var filteredTreeNode = filterObject as IssueTreeNode;
                     if (filteredTreeNode == null) return false;
 
                     var issue = filteredTreeNode.Issue;
@@ -333,80 +348,11 @@ namespace Snyk.VisualStudio.Extension.UI.Tree
                 };
             }
         }
-
-
-        private void FilterIacItems(RootTreeNode rootTreeNode, SeverityFilter severityFilter, string searchString)
-        {
-            foreach (var treeNode in rootTreeNode.Items)
-            {
-                CollectionViewSource.GetDefaultView(treeNode.Items).Filter = filterObject =>
-                {
-                    var filteredTreeNode = filterObject as IacVulnerabilityTreeNode;
-                    if (filteredTreeNode == null) return false;
-                    var issue = filteredTreeNode.Issue;
-
-                    var isVulnIncluded = severityFilter.IsVulnerabilityIncluded(issue.Severity);
-
-                    if (!string.IsNullOrEmpty(searchString))
-                    {
-                        isVulnIncluded = isVulnIncluded && issue.GetDisplayTitleWithLineNumber().ToLowerInvariant().Contains(searchString.ToLowerInvariant());
-                    }
-
-                    return isVulnIncluded;
-                };
-            }
-        }
-        
 
         private void VulnerabilitiesTree_SelectedItemChanged(object sender, RoutedEventArgs eventArgs) =>
             this.SelectedVulnerabilityChanged?.Invoke(this, eventArgs);
 
         private void TreeViewItem_Selected(object sender, RoutedEventArgs eventArgs) => MessageBox.Show(eventArgs.ToString());
-
-        private void AppendSnykCodeIssues(RootTreeNode rootNode, IDictionary<string, IEnumerable<Issue>> analysisResult, Func<Issue, bool> conditionFunction)
-        {
-            var criticalSeverityCount = 0;
-            var highSeverityCount = 0;
-            var mediumSeverityCount = 0;
-            var lowSeverityCount = 0;
-
-            rootNode.Clean();
-            var currentFolder = ThreadHelper.JoinableTaskFactory.Run(async () =>
-                await SnykVSPackage.ServiceProvider.SolutionService.GetSolutionFolderAsync()).Replace("\\", "/");
-            foreach (var kv in analysisResult.Where(x => x.Key.Replace("\\", "/").Contains(currentFolder)))
-            {
-                var filePath = kv.Key;
-                var issueList = kv.Value.ToList();
-
-                var issueNode = new SnykCodeFileTreeNode { IssueList = issueList, FileName = filePath,FolderName = currentFolder, IsExpanded = false };
-
-                var issues = issueList.Where(conditionFunction).ToList();
-
-                criticalSeverityCount += issues.Count(suggestion => suggestion.Severity == Severity.Critical);
-                highSeverityCount += issues.Count(suggestion => suggestion.Severity == Severity.High);
-                mediumSeverityCount += issues.Count(suggestion => suggestion.Severity == Severity.Medium);
-                lowSeverityCount += issues.Count(suggestion => suggestion.Severity == Severity.Low);
-
-                issues.Sort((issue1,issue2)=> Severity.ToInt(issue2.Severity) - Severity.ToInt(issue1.Severity));
-
-                foreach (var suggestion in issues)
-                {
-                    issueNode.Items.Add(new SnykCodeVulnerabilityTreeNode { Issue = suggestion });
-                }
-
-                if (issueNode.Items.Count > 0)
-                {
-                    rootNode.Items.Add(issueNode);
-                }
-            }
-
-            rootNode.CriticalSeverityCount = criticalSeverityCount;
-            rootNode.HighSeverityCount = highSeverityCount;
-            rootNode.MediumSeverityCount = mediumSeverityCount;
-            rootNode.LowSeverityCount = lowSeverityCount;
-
-            rootNode.State = RootTreeNodeState.ResultDetails;
-        }
 
         private void TreeView_RequestBringIntoView(object sender, RequestBringIntoViewEventArgs e)
         {

@@ -1,14 +1,12 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.IO;
-using Snyk.VisualStudio.Extension.Language;
 
 namespace Snyk.VisualStudio.Extension.UI.Tree
 {
     /// <summary>
-    /// SnykCode file tree node.
+    /// SnykIac file tree node.
     /// </summary>
-    public class SnykCodeFileTreeNode : TreeNode
+    public class IacFileTreeNode : FileTreeNode
     {
         /// <summary>
         /// Gets a value indicating whether title.
@@ -24,9 +22,6 @@ namespace Snyk.VisualStudio.Extension.UI.Tree
             }
         }
 
-        public string FolderName { get; set; }
-        public string FileName { get; set; }
-
         /// <summary>
         /// Gets a value indicating whether icon for node.
         /// </summary>
@@ -39,10 +34,5 @@ namespace Snyk.VisualStudio.Extension.UI.Tree
                 return SnykIconProvider.GetFileIconByExtension(fileExtension);
             }
         }
-
-        /// <summary>
-        /// Gets or sets SnykCode <see cref="IssueList"/> object.
-        /// </summary>
-        public IEnumerable<Issue> IssueList { get; set; }
     }
 }

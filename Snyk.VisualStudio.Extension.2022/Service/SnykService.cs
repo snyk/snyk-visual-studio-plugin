@@ -148,7 +148,6 @@ namespace Snyk.VisualStudio.Extension.Service
                 this.dte = await this.serviceProvider.GetServiceAsync(typeof(DTE)) as DTE2;
                 await SnykSolutionService.Instance.InitializeAsync(this);
 
-
                 this.tasksService = SnykTasksService.Instance;
                 this.workspaceTrustService = new WorkspaceTrustService(this.UserStorageSettingsService);
 

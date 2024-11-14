@@ -19,6 +19,10 @@ namespace Snyk.Common.Settings
         
         string DeviceId { get; set; }
         bool AutoScan { get; set; }
+        
+        bool ConsistentIgnoresEnabled { get; set; }
+        public bool OpenIssuesEnabled { get; set; }
+        public bool IgnoredIssuesEnabled { get; set; }
 
         /// <summary>
         /// Gets or sets a value indicating whether Snyk user API token.
@@ -107,8 +111,8 @@ namespace Snyk.Common.Settings
 
         SastSettings SastSettings { get; set; }
         bool AnalyticsPluginInstalledSent { get; set; }
-        Task OnAuthenticationSuccessfulAsync(string token, string apiUrl);
-        Task OnAuthenticationFailedAsync(string errorMessage);
+        Task HandleAuthenticationSuccess(string token, string apiUrl);
+        Task HandleFailedAuthentication(string errorMessage);
         void FireSettingsChangedEvent();
     }
 }

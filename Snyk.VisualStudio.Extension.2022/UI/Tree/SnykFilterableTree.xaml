@@ -26,9 +26,18 @@
             <TreeView.ItemTemplate>
                 <HierarchicalDataTemplate ItemsSource="{Binding Items}" >
                     <StackPanel Orientation="Horizontal">
-                        <Image x:Name="icon" SnapsToDevicePixels="True" Margin="0, 0, 2, 0"  
-                               Width="16" Height="16"
-                               Source="{Binding Icon}"/>
+                        <Image x:Name="icon" SnapsToDevicePixels="True" Margin="0, 0, 2, 0"
+                               Width="16" Height="16" Source="{Binding Icon}">
+                            <Image.Style>
+                                <Style TargetType="Image">
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding Icon}" Value="">
+                                            <Setter Property="Visibility" Value="Collapsed"/>
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </Image.Style>
+                        </Image>
                         <Label Content="{Binding Title}"
                                ToolTipService.ToolTip="{Binding Title}" 
                                IsEnabled="{Binding Enabled}"

@@ -98,6 +98,8 @@ namespace Snyk.VisualStudio.Extension.Settings
             this.autoScanCheckBox.Checked = this.OptionsDialogPage.AutoScan;
             this.cliDownloadUrlTextBox.Text = this.OptionsDialogPage.CliDownloadUrl;
             this.tokenTextBox.Text = this.OptionsDialogPage.ApiToken.ToString();
+            this.cbIgnoredIssues.Checked = this.OptionsDialogPage.IgnoredIssuesEnabled;
+            this.cbOpenIssues.Checked = this.OptionsDialogPage.OpenIssuesEnabled;
 
             var cliPath = string.IsNullOrEmpty(this.OptionsDialogPage.CliCustomPath)
                 ? SnykCli.GetSnykCliDefaultPath()
@@ -149,7 +151,7 @@ namespace Snyk.VisualStudio.Extension.Settings
                 this.UpdateViewFromOptionsDialog();
             }).FireAndForget();
 
-        public async Task OnAuthenticationSuccessfulAsync(string apiToken, string apiUrl)
+        public async Task HandleAuthenticationSuccess(string apiToken, string apiUrl)
         {
             logger.Information("Enter authenticate successCallback");
 
@@ -192,7 +194,7 @@ namespace Snyk.VisualStudio.Extension.Settings
                 }).FireAndForget();
         }
 
-        public async Task OnAuthenticationFailAsync(string errorMessage)
+        public async Task HandleFailedAuthentication(string errorMessage)
         {
             logger.Information("Enter authenticate errorCallback");
 
@@ -305,6 +307,7 @@ namespace Snyk.VisualStudio.Extension.Settings
         private void SnykGeneralSettingsUserControl_Load(object sender, EventArgs e)
         {
             this.StartSastEnablementCheckLoop();
+            this.CheckForIgnores();
         }
 
         private void UpdateSnykCodeEnablementSettings(SastSettings sastSettings)
@@ -323,6 +326,16 @@ namespace Snyk.VisualStudio.Extension.Settings
             this.checkAgainLinkLabel.Visible = !snykCodeEnabled;
         }
 
+        private void CheckForIgnores()
+        {
+            ThreadHelper.JoinableTaskFactory.RunAsync(async () =>
+            {
+                if (!OptionsDialogPage.ConsistentIgnoresEnabled && LanguageClientHelper.IsLanguageServerReady() && FeatureFlagService.Instance != null)
+                    await FeatureFlagService.Instance.RefreshAsync();
+                await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
+                this.ignoreGroupbox.Visible = this.OptionsDialogPage.ConsistentIgnoresEnabled;
+            }).FireAndForget();
+        }
         private void StartSastEnablementCheckLoop()
         {
             try
@@ -475,6 +488,16 @@ namespace Snyk.VisualStudio.Extension.Settings
         {
             this.ReleaseChannelLink.LinkVisited = true;
             Process.Start("https://docs.snyk.io/snyk-cli/releases-and-channels-for-the-snyk-cli");
+        }
+
+        private void cbOpenIssues_CheckedChanged(object sender, EventArgs e)
+        {
+            this.OptionsDialogPage.OpenIssuesEnabled = this.cbOpenIssues.Checked;
+        }
+
+        private void cbIgnoredIssues_CheckedChanged(object sender, EventArgs e)
+        {
+            this.OptionsDialogPage.IgnoredIssuesEnabled = this.cbIgnoredIssues.Checked;
         }
     }
 }

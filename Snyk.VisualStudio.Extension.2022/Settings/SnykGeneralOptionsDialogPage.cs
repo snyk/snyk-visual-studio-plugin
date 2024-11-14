@@ -63,6 +63,30 @@ namespace Snyk.VisualStudio.Extension.Settings
         /// </summary>
         public ISnykServiceProvider ServiceProvider => this.serviceProvider;
 
+        public bool ConsistentIgnoresEnabled { get; set; }
+
+        public bool OpenIssuesEnabled
+        {
+            get => this.userStorageSettingsService.OpenIssuesEnabled;
+            set
+            {
+                if (this.userStorageSettingsService == null || this.userStorageSettingsService.OpenIssuesEnabled == value)
+                    return;
+                this.userStorageSettingsService.OpenIssuesEnabled = value;
+            }
+        }
+
+        public bool IgnoredIssuesEnabled
+        {
+            get => this.userStorageSettingsService.IgnoredIssuesEnabled;
+            set
+            {
+                if (this.userStorageSettingsService == null || this.userStorageSettingsService.IgnoredIssuesEnabled == value)
+                    return;
+                this.userStorageSettingsService.IgnoredIssuesEnabled = value;
+            }
+        }
+
         /// <summary>
         /// Gets or sets a value indicating whether API token.
         /// </summary>
@@ -159,14 +183,14 @@ namespace Snyk.VisualStudio.Extension.Settings
             set => this.userStorageSettingsService.AnalyticsPluginInstalledSent = value;
         }
 
-        public async Task OnAuthenticationSuccessfulAsync(string token, string apiUrl)
+        public async Task HandleAuthenticationSuccess(string token, string apiUrl)
         {
-            await this.GeneralSettingsUserControl.OnAuthenticationSuccessfulAsync(token, apiUrl);
+            await this.GeneralSettingsUserControl.HandleAuthenticationSuccess(token, apiUrl);
         }
 
-        public async Task OnAuthenticationFailedAsync(string errorMessage)
+        public async Task HandleFailedAuthentication(string errorMessage)
         {
-            await this.GeneralSettingsUserControl.OnAuthenticationFailAsync(errorMessage);
+            await this.GeneralSettingsUserControl.HandleFailedAuthentication(errorMessage);
         }
         /// <summary>
         /// Gets or sets a value indicating whether organization.

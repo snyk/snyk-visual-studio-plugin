@@ -2,7 +2,7 @@
 {
     public static class LsConstants
     {
-        public const string ProtocolVersion = "16";
+        public const string ProtocolVersion = "17";
         
         // Notifications
         public const string SnykHasAuthenticated = "$/snyk.hasAuthenticated";
@@ -28,5 +28,8 @@
         public const string SnykGetFeatureFlagStatus = "snyk.getFeatureFlagStatus";
         public const string SnykGenerateIssueDescription = "snyk.generateIssueDescription";
         public const string SnykReportAnalytics = "snyk.reportAnalytics";
+        
+        // Feature flags
+        public const string SnykConsistentIgnoresEnabled = "snykCodeConsistentIgnores";
     }
 }

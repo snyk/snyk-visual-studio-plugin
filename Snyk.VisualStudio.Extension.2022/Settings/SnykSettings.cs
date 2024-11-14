@@ -69,5 +69,7 @@ namespace Snyk.VisualStudio.Extension.Settings
         public string Organization { get; set; }
         public string CustomEndpoint { get; set; }
         public string DeviceId { get; set; }
+        public bool OpenIssuesEnabled { get; set; } = true;
+        public bool IgnoredIssuesEnabled { get; set; } = true;
     }
 }
