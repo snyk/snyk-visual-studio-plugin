@@ -21,6 +21,8 @@ namespace Snyk.Common.Settings
         bool AutoScan { get; set; }
         
         bool ConsistentIgnoresEnabled { get; set; }
+        public bool OpenIssuesEnabled { get; set; }
+        public bool IgnoredIssuesEnabled { get; set; }
 
         /// <summary>
         /// Gets or sets a value indicating whether Snyk user API token.

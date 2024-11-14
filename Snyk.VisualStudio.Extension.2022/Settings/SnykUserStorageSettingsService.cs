@@ -165,6 +165,18 @@ namespace Snyk.VisualStudio.Extension.Settings
 
         public bool AnalyticsPluginInstalledSent { get; set; }
 
+        public bool OpenIssuesEnabled
+        {
+            get => snykSettings.OpenIssuesEnabled;
+            set => snykSettings.OpenIssuesEnabled = value;
+        }
+
+        public bool IgnoredIssuesEnabled
+        {
+            get => snykSettings.IgnoredIssuesEnabled;
+            set => snykSettings.IgnoredIssuesEnabled = value;
+        }
+
         /// <summary>
         /// Get is all projects enabled.
         /// </summary>

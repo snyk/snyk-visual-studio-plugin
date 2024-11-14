@@ -1,11 +1,9 @@
-﻿using Snyk.VisualStudio.Extension.Language;
-
-namespace Snyk.VisualStudio.Extension.UI.Tree
+﻿namespace Snyk.VisualStudio.Extension.UI.Tree
 {
     /// <summary>
     /// SnykCode vulnerability tree node.
     /// </summary>
-    public class SnykCodeVulnerabilityTreeNode : TreeNode
+    public class IacTreeNode : IssueTreeNode
     {
         /// <summary>
         /// Gets a value indicating whether title.
@@ -16,10 +14,5 @@ namespace Snyk.VisualStudio.Extension.UI.Tree
         /// Gets a value indicating whether icon for node.
         /// </summary>
         public override string Icon => SnykIconProvider.GetSeverityIcon(this.Issue.Severity);
-
-        /// <summary>
-        /// Gets or sets SnykCode suggestion.
-        /// </summary>
-        public Issue Issue { get; set; }
     }
 }

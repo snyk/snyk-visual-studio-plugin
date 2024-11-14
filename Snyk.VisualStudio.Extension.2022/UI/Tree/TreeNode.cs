@@ -1,7 +1,7 @@
-﻿namespace Snyk.VisualStudio.Extension.UI.Tree
-{
-    using System.Collections.ObjectModel;
+﻿using System.Collections.ObjectModel;
 
+namespace Snyk.VisualStudio.Extension.UI.Tree
+{
     /// <summary>
     /// Issue tree node.
     /// </summary>

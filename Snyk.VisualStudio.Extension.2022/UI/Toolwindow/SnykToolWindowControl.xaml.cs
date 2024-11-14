@@ -689,21 +689,21 @@ namespace Snyk.VisualStudio.Extension.UI.Toolwindow
 
                 this.messagePanel.Visibility = Visibility.Collapsed;
 
-                if (this.resultsTree.SelectedItem is OssVulnerabilityTreeNode)
+                if (this.resultsTree.SelectedItem is OssTreeNode)
                 {
                     this.HandleOssTreeNodeSelected();
 
                     return;
                 }
 
-                if (this.resultsTree.SelectedItem is SnykCodeVulnerabilityTreeNode)
+                if (this.resultsTree.SelectedItem is CodeTreeNode)
                 {
                     await this.HandleSnykCodeTreeNodeSelectedAsync();
 
                     return;
                 }
 
-                if (this.resultsTree.SelectedItem is IacVulnerabilityTreeNode)
+                if (this.resultsTree.SelectedItem is IacTreeNode)
                 {
                     await this.HandleIacTreeNodeSelectedAsync();
 
@@ -734,7 +734,7 @@ namespace Snyk.VisualStudio.Extension.UI.Toolwindow
 
         private void HandleOssTreeNodeSelected()
         {
-            var ossTreeNode = this.resultsTree.SelectedItem as OssVulnerabilityTreeNode;
+            var ossTreeNode = this.resultsTree.SelectedItem as OssTreeNode;
 
             var issue = ossTreeNode?.Issue;
             this.resultsTree.CurrentTreeNode = ossTreeNode;
@@ -785,7 +785,7 @@ namespace Snyk.VisualStudio.Extension.UI.Toolwindow
         {
             this.DescriptionPanel.Visibility = Visibility.Visible;
 
-            var snykCodeTreeNode = this.resultsTree.SelectedItem as SnykCodeVulnerabilityTreeNode;
+            var snykCodeTreeNode = this.resultsTree.SelectedItem as CodeTreeNode;
             this.resultsTree.CurrentTreeNode = snykCodeTreeNode;
             if (snykCodeTreeNode == null) return;
 
@@ -805,7 +805,7 @@ namespace Snyk.VisualStudio.Extension.UI.Toolwindow
         {
             this.DescriptionPanel.Visibility = Visibility.Visible;
 
-            var iacTreeNode = this.resultsTree.SelectedItem as IacVulnerabilityTreeNode;
+            var iacTreeNode = this.resultsTree.SelectedItem as IacTreeNode;
             this.resultsTree.CurrentTreeNode = iacTreeNode;
             if (iacTreeNode == null) return;
             

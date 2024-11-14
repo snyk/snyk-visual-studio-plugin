@@ -305,6 +305,7 @@ namespace Snyk.VisualStudio.Extension.Settings
         private void SnykGeneralSettingsUserControl_Load(object sender, EventArgs e)
         {
             this.StartSastEnablementCheckLoop();
+            this.CheckForIgnores();
         }
 
         private void UpdateSnykCodeEnablementSettings(SastSettings sastSettings)
@@ -323,6 +324,16 @@ namespace Snyk.VisualStudio.Extension.Settings
             this.checkAgainLinkLabel.Visible = !snykCodeEnabled;
         }
 
+        private void CheckForIgnores()
+        {
+            ThreadHelper.JoinableTaskFactory.RunAsync(async () =>
+            {
+                if (!OptionsDialogPage.ConsistentIgnoresEnabled && LanguageClientHelper.IsLanguageServerReady() && FeatureFlagService.Instance != null)
+                    await FeatureFlagService.Instance.RefreshAsync();
+                await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
+                this.ignoreGroupbox.Visible = this.OptionsDialogPage.ConsistentIgnoresEnabled;
+            }).FireAndForget();
+        }
         private void StartSastEnablementCheckLoop()
         {
             try
@@ -475,6 +486,16 @@ namespace Snyk.VisualStudio.Extension.Settings
         {
             this.ReleaseChannelLink.LinkVisited = true;
             Process.Start("https://docs.snyk.io/snyk-cli/releases-and-channels-for-the-snyk-cli");
+        }
+
+        private void cbOpenIssues_CheckedChanged(object sender, EventArgs e)
+        {
+            this.OptionsDialogPage.OpenIssuesEnabled = this.cbOpenIssues.Checked;
+        }
+
+        private void cbIgnoredIssues_CheckedChanged(object sender, EventArgs e)
+        {
+            this.OptionsDialogPage.IgnoredIssuesEnabled = this.cbIgnoredIssues.Checked;
         }
     }
 }

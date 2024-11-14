@@ -130,18 +130,46 @@ namespace Snyk.VisualStudio.Extension.Language
 
         public string GetDisplayTitle() => string.IsNullOrEmpty(this.Title) ? this.AdditionalData?.Message : this.Title;
 
-        public string GetDisplayTitleWithLineNumber()
+        public bool HasFix()
         {
-            var line = "line " + this.Range?.End?.Line + ": " + this.GetDisplayTitle();
-            if (this.AdditionalData?.HasAIFix ?? false)
-            {
-                line = "⚡" + line;
-            }
-
-            return line;
+            var hasAiFix = this.AdditionalData?.HasAIFix ?? false;
+            var isUpgradable = this.AdditionalData?.IsUpgradable ?? false;
+            return hasAiFix || isUpgradable;
         }
 
-        public string GetPackageNameTitle() => $"{this.AdditionalData?.PackageName}@{this.AdditionalData?.Version}: {this.Title}";
+        public string GetDisplayTitleWithLineNumber()
+        {
+            var fixIcon = HasFix() ? "⚡" : "";
+
+            var ignoredPrefix = this.IsIgnored ? "[ Ignored ] " : "";
+            var line = "line " + this.Range?.End?.Line + ": " + this.GetDisplayTitle();
+
+            return fixIcon + ignoredPrefix + line;
+        }
+
+        public bool IsVisible(bool includeIgnoredIssues, bool includeOpenedIssues)
+        {
+            if (includeIgnoredIssues && includeOpenedIssues)
+            {
+                return true;
+            }
+            if (includeIgnoredIssues)
+            {
+                return this.IsIgnored;
+            }
+            if (includeOpenedIssues)
+            {
+                return this.IsIgnored != true;
+            }
+
+            return false;
+        }
+
+        public string GetPackageNameTitle()
+        {
+            var fixIcon = HasFix() ? "⚡" : "";
+            return $"{fixIcon}{this.AdditionalData?.PackageName}@{this.AdditionalData?.Version}: {this.Title}";
+        }
     }
 
     public class LineData

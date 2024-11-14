@@ -65,6 +65,28 @@ namespace Snyk.VisualStudio.Extension.Settings
 
         public bool ConsistentIgnoresEnabled { get; set; }
 
+        public bool OpenIssuesEnabled
+        {
+            get => this.userStorageSettingsService.OpenIssuesEnabled;
+            set
+            {
+                if (this.userStorageSettingsService == null || this.userStorageSettingsService.OpenIssuesEnabled == value)
+                    return;
+                this.userStorageSettingsService.OpenIssuesEnabled = value;
+            }
+        }
+
+        public bool IgnoredIssuesEnabled
+        {
+            get => this.userStorageSettingsService.IgnoredIssuesEnabled;
+            set
+            {
+                if (this.userStorageSettingsService == null || this.userStorageSettingsService.IgnoredIssuesEnabled == value)
+                    return;
+                this.userStorageSettingsService.IgnoredIssuesEnabled = value;
+            }
+        }
+
         /// <summary>
         /// Gets or sets a value indicating whether API token.
         /// </summary>
