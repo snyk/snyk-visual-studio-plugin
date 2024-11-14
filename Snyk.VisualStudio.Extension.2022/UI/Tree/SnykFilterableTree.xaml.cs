@@ -153,15 +153,17 @@ namespace Snyk.VisualStudio.Extension.UI.Tree
                 fileNode.IsExpanded = false;
                 fileNode.FileName = kv.Key;
                 fileNode.FolderName = currentFolder;
+
+                ignoredIssueCount += issueList.Count(suggestion => suggestion.IsIgnored);
+
+                issueList = FilterIgnoredIssues(options, kv.Value).ToList();
                 
                 criticalSeverityCount += issueList.Count(suggestion => suggestion.Severity == Severity.Critical);
                 highSeverityCount += issueList.Count(suggestion => suggestion.Severity == Severity.High);
                 mediumSeverityCount += issueList.Count(suggestion => suggestion.Severity == Severity.Medium);
                 lowSeverityCount += issueList.Count(suggestion => suggestion.Severity == Severity.Low);
-                ignoredIssueCount += issueList.Count(suggestion => suggestion.IsIgnored);
-                fixableIssueCount += issueList.Count(suggestion => suggestion.HasFix());
 
-                issueList = FilterIssues(options, kv.Value).ToList();
+                fixableIssueCount += issueList.Count(suggestion => suggestion.HasFix());
 
                 issueList.Sort((issue1, issue2) => Severity.ToInt(issue2.Severity) - Severity.ToInt(issue1.Severity));
 
@@ -178,9 +180,9 @@ namespace Snyk.VisualStudio.Extension.UI.Tree
                 }
             }
 
-            var totalCount = criticalSeverityCount + highSeverityCount + mediumSeverityCount + lowSeverityCount;
 
-            AddInfoTreeNodes(rootNode, totalCount, ignoredIssueCount, fixableIssueCount, options);
+            var totalIssueCount = scanResultDictionary.Values.SelectMany(value => value).Count();
+            AddInfoTreeNodes(rootNode, totalIssueCount, ignoredIssueCount, fixableIssueCount, options);
 
             foreach (var ossFileTreeNode in fileTreeNodes)
             {
@@ -243,7 +245,7 @@ namespace Snyk.VisualStudio.Extension.UI.Tree
             return count > 1 ? "s" : "";
         }
 
-        private IEnumerable<Issue> FilterIssues(ISnykOptions options, IEnumerable<Issue> issueList)
+        private IEnumerable<Issue> FilterIgnoredIssues(ISnykOptions options, IEnumerable<Issue> issueList)
         {
             var includeIgnoredIssues = true;
             var includeOpenedIssues = true;
