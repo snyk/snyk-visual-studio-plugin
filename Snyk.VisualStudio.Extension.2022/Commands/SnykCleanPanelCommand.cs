@@ -44,6 +44,11 @@
         public override async Task UpdateStateAsync()
         {
             await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
+            if (this.VsPackage.ToolWindow == null) 
+            {
+                this.MenuCommand.Enabled = false;
+                return;
+            }
             this.MenuCommand.Enabled = SnykVSPackage.ServiceProvider.Options.ApiToken.IsValidAfterRefresh()
                                        && this.VsPackage.ToolWindowControl.IsTreeContentNotEmpty();
         }
@@ -55,6 +60,7 @@
         /// <param name="eventArgs">Event args.</param>
         protected override void Execute(object sender, EventArgs eventArgs)
         {
+            base.Execute(sender, eventArgs);
             this.VsPackage.ToolWindowControl.Clean();
 
             SnykVSPackage.ServiceProvider.SolutionService.Clean();
