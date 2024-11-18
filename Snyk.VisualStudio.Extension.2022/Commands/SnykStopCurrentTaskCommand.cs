@@ -54,7 +54,11 @@
         /// </summary>
         /// <param name="sender">Source object.</param>
         /// <param name="eventArgs">Event args.</param>
-        protected override void Execute(object sender, EventArgs eventArgs) => SnykTasksService.Instance.CancelTasks();
+        protected override void Execute(object sender, EventArgs eventArgs)
+        {
+            base.Execute(sender, eventArgs);
+            SnykTasksService.Instance.CancelTasks();
+        }
 
         /// <summary>
         /// Get command Id.
