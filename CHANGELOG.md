@@ -1,5 +1,10 @@
 # Snyk Security Changelog
 
+## [1.1.65]
+
+### Fixed
+- Support VS > 17.10.
+
 ## [1.1.63]
 
 ### Fixed
