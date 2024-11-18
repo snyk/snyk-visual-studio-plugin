@@ -1,4 +1,6 @@
-﻿namespace Snyk.VisualStudio.Extension.Commands
+﻿using EnvDTE;
+
+namespace Snyk.VisualStudio.Extension.Commands
 {
     using System;
     using System.ComponentModel.Design;
@@ -66,7 +68,14 @@
         /// </summary>
         /// <param name="sender">Source object.</param>
         /// <param name="eventArgs">Event args.</param>
-        protected abstract void Execute(object sender, EventArgs eventArgs);
+        protected virtual void Execute(object sender, EventArgs eventArgs)
+        {
+            ThreadHelper.JoinableTaskFactory.Run(async () =>
+            {
+                await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
+                await VsPackage.EnsureInitializeToolWindowAsync();
+            });
+        }
 
         /// <summary>
         /// Get command Id.

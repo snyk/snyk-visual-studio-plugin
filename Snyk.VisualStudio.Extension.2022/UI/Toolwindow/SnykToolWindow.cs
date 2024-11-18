@@ -8,6 +8,8 @@ using Microsoft.VisualStudio.Shell;
 using Microsoft.VisualStudio.Shell.Interop;
 using Microsoft.Internal.VisualStudio.PlatformUI;
 using Snyk.VisualStudio.Extension.Model;
+using Snyk.VisualStudio.Extension.Service;
+using Snyk.VisualStudio.Extension.UI.Tree;
 
 namespace Snyk.VisualStudio.Extension.UI.Toolwindow
 {
@@ -41,6 +43,26 @@ namespace Snyk.VisualStudio.Extension.UI.Toolwindow
             this.ToolBar = new CommandID(SnykGuids.SnykVSPackageCommandSet, SnykGuids.SnykToolbarId);
 
             this.ToolBarLocation = (int)VSTWT_LOCATION.VSTWT_TOP;
+        }
+
+        public override void OnToolWindowCreated()
+        {
+            base.OnToolWindowCreated();
+            ThreadHelper.JoinableTaskFactory.Run(async () =>
+            {
+                await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
+                var toolWindowControl = Content as SnykToolWindowControl;
+                if (toolWindowControl == null) return;
+                var package = Package as SnykVSPackage;
+                if (package == null) return;
+                package.ToolWindow = this;
+                package.ToolWindowControl = toolWindowControl;
+                var serviceProvider = await package.GetServiceAsync(typeof(SnykService)) as SnykService ??
+                                      throw new InvalidOperationException("Could not find Snyk Service");
+                toolWindowControl.InitializeEventListeners(serviceProvider);
+                toolWindowControl.Initialize(serviceProvider);
+            });
+
         }
 
         /// <summary>

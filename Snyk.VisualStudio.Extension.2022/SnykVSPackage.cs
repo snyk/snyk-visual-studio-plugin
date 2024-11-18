@@ -21,7 +21,6 @@ using Snyk.VisualStudio.Extension.Settings;
 using Snyk.VisualStudio.Extension.UI.Notifications;
 using Snyk.VisualStudio.Extension.UI.Toolwindow;
 using Task = System.Threading.Tasks.Task;
-using Thread = EnvDTE.Thread;
 
 namespace Snyk.VisualStudio.Extension
 {
@@ -92,7 +91,7 @@ namespace Snyk.VisualStudio.Extension
         /// <summary>
         /// Gets a value indicating whether ToolWindow Control.
         /// </summary>
-        public SnykToolWindowControl ToolWindowControl { get; private set; }
+        public SnykToolWindowControl ToolWindowControl { get; set; }
 
         /// <summary>
         /// Gets a value indicating whether general Options dialog.
@@ -107,7 +106,7 @@ namespace Snyk.VisualStudio.Extension
         /// <summary>
         /// Gets <see cref="SnykToolWindow"/> instance.
         /// </summary>
-        public SnykToolWindow ToolWindow { get; private set; }
+        public SnykToolWindow ToolWindow { get; set; }
 
         /// <summary>
         /// True if the package was initialized successfully.
@@ -142,39 +141,24 @@ namespace Snyk.VisualStudio.Extension
         /// Initialize tool window.
         /// </summary>
         /// <returns>Task.</returns>
-        public async Task InitializeToolWindowAsync()
+        public async Task EnsureInitializeToolWindowAsync()
         {
-            if (ToolWindow == null)
+            await JoinableTaskFactory.SwitchToMainThreadAsync();
+            if (ToolWindow != null) return;
+            Logger.Information("Call FindToolWindow().");
+            ToolWindow = FindToolWindow(typeof(SnykToolWindow), 0, true) as SnykToolWindow;
+
+            Logger.Information("Check ToolWindow is not null {ToolWindow}.", ToolWindow);
+
+            if (ToolWindow == null || ToolWindow.Frame == null)
             {
-                Logger.Information(
-                    "ToolWindow is not initialized. Call await JoinableTaskFactory.SwitchToMainThreadAsync().");
+                Logger.Error("Exception: Cannot find Snyk tool window.");
 
-                await JoinableTaskFactory.SwitchToMainThreadAsync();
-
-                Logger.Information("Call FindToolWindow().");
-
-                ToolWindow = FindToolWindow(typeof(SnykToolWindow), 0, true) as SnykToolWindow;
-
-                Logger.Information("Check ToolWindow is not null {ToolWindow}.", ToolWindow);
-
-                if (ToolWindow == null || ToolWindow.Frame == null)
-                {
-                    Logger.Error("Exception: Cannot find Snyk tool window.");
-
-                    throw new NotSupportedException("Cannot find Snyk tool window.");
-                }
-
-                Logger.Information(
-                    "Initialize ToolWindow.Content. Call await JoinableTaskFactory.SwitchToMainThreadAsync().");
-
-                await JoinableTaskFactory.SwitchToMainThreadAsync();
-
-                Logger.Information("Call ToolWindow.Content.");
-
-                ToolWindowControl = (SnykToolWindowControl) ToolWindow.Content;
-
-                Logger.Information("Leave InitializeToolWindowControlAsync() method");
+                throw new NotSupportedException("Cannot find Snyk tool window.");
             }
+
+            Logger.Information("Call ToolWindow.Content.");
+            ToolWindowControl = (SnykToolWindowControl)ToolWindow.Content;
         }
 
         /// <summary>
@@ -207,19 +191,12 @@ namespace Snyk.VisualStudio.Extension
 
                 // Initialize commands
                 Logger.Information("Initialize Commands()");
+
                 await SnykScanCommand.InitializeAsync(this);
                 await SnykStopCurrentTaskCommand.InitializeAsync(this);
                 await SnykCleanPanelCommand.InitializeAsync(this);
                 await SnykOpenSettingsCommand.InitializeAsync(this);
-
-                // Initialize tool-window
-                Logger.Information("Initializing tool window");
-                await InitializeToolWindowAsync();
-                VsStatusBarNotificationService.Instance.InitializeEventListeners(this.serviceProvider);
-                Logger.Information("Before call toolWindowControl.InitializeEventListeners() method.");
-                ToolWindowControl.InitializeEventListeners(this.serviceProvider);
-                ToolWindowControl.Initialize(this.serviceProvider);
-                
+            
                 // Notify package has been initialized
                 IsInitialized = true;
                 initializationTaskCompletionSource.SetResult(true);

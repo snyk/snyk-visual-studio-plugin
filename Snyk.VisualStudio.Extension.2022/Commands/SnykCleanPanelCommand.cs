@@ -43,6 +43,11 @@
 
         public override async Task UpdateStateAsync()
         {
+            if (this.VsPackage.ToolWindow == null)
+            {
+                this.MenuCommand.Enabled = false;
+                return;
+            }
             await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
             this.MenuCommand.Enabled = this.VsPackage.ToolWindowControl.IsTreeContentNotEmpty();
         }
@@ -54,6 +59,7 @@
         /// <param name="eventArgs">Event args.</param>
         protected override void Execute(object sender, EventArgs eventArgs)
         {
+            base.Execute(sender, eventArgs);
             this.VsPackage.ToolWindowControl.Clean();
         }
 

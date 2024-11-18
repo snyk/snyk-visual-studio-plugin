@@ -66,6 +66,14 @@ namespace Snyk.VisualStudio.Extension.UI
         /// </summary>
         /// <param name="sender">The event sender.</param>
         /// <param name="e">The event args.</param>
-        private void ShowToolWindow(object sender, EventArgs e) => this.serviceProvider.ToolWindow.Show();
+        private void ShowToolWindow(object sender, EventArgs e)
+        {
+            ThreadHelper.JoinableTaskFactory.Run(async () =>
+            {
+                await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
+                await this.serviceProvider.Package.EnsureInitializeToolWindowAsync();
+                this.serviceProvider.ToolWindow.Show();
+            });
+        }
     }
 }
