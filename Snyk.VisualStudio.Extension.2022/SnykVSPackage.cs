@@ -91,7 +91,7 @@ namespace Snyk.VisualStudio.Extension
         /// <summary>
         /// Gets a value indicating whether ToolWindow Control.
         /// </summary>
-        public SnykToolWindowControl ToolWindowControl { get; private set; }
+        public SnykToolWindowControl ToolWindowControl { get; set; }
 
         /// <summary>
         /// Gets a value indicating whether general Options dialog.
@@ -106,7 +106,7 @@ namespace Snyk.VisualStudio.Extension
         /// <summary>
         /// Gets <see cref="SnykToolWindow"/> instance.
         /// </summary>
-        public SnykToolWindow ToolWindow { get; private set; }
+        public SnykToolWindow ToolWindow { get; set; }
 
         /// <summary>
         /// True if the package was initialized successfully.
@@ -143,14 +143,9 @@ namespace Snyk.VisualStudio.Extension
         /// <returns>Task.</returns>
         public async Task EnsureInitializeToolWindowAsync()
         {
-            if (ToolWindow != null) return;
-            Logger.Information(
-                "ToolWindow is not initialized. Call await JoinableTaskFactory.SwitchToMainThreadAsync().");
-
             await JoinableTaskFactory.SwitchToMainThreadAsync();
-
+            if (ToolWindow != null) return;
             Logger.Information("Call FindToolWindow().");
-
             ToolWindow = FindToolWindow(typeof(SnykToolWindow), 0, true) as SnykToolWindow;
 
             Logger.Information("Check ToolWindow is not null {ToolWindow}.", ToolWindow);
@@ -162,19 +157,8 @@ namespace Snyk.VisualStudio.Extension
                 throw new NotSupportedException("Cannot find Snyk tool window.");
             }
 
-            Logger.Information(
-                "Initialize ToolWindow.Content. Call await JoinableTaskFactory.SwitchToMainThreadAsync().");
-
-            await JoinableTaskFactory.SwitchToMainThreadAsync();
-
             Logger.Information("Call ToolWindow.Content.");
-
             ToolWindowControl = (SnykToolWindowControl)ToolWindow.Content;
-
-            VsStatusBarNotificationService.Instance.InitializeEventListeners(this.serviceProvider);
-            Logger.Information("Before call toolWindowControl.InitializeEventListeners() method.");
-            ToolWindowControl.InitializeEventListeners(this.serviceProvider);
-            ToolWindowControl.Initialize(this.serviceProvider);
         }
 
         /// <summary>
@@ -213,9 +197,9 @@ namespace Snyk.VisualStudio.Extension
                 await SnykCleanPanelCommand.InitializeAsync(this);
                 await SnykOpenSettingsCommand.InitializeAsync(this);
             
-            // Notify package has been initialized
-            IsInitialized = true;
-            initializationTaskCompletionSource.SetResult(true);
+                // Notify package has been initialized
+                IsInitialized = true;
+                initializationTaskCompletionSource.SetResult(true);
             }
             catch (Exception ex)
             {

@@ -43,7 +43,11 @@
 
         public override async Task UpdateStateAsync()
         {
-            if (this.VsPackage.ToolWindowControl == null) return;
+            if (this.VsPackage.ToolWindow == null)
+            {
+                this.MenuCommand.Enabled = false;
+                return;
+            }
             await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
             this.MenuCommand.Enabled = this.VsPackage.ToolWindowControl.IsTreeContentNotEmpty();
         }
