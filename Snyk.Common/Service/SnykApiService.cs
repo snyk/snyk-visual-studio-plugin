@@ -61,13 +61,11 @@
             {
                 return null;
             }
-
-            var response = await SendSastSettingsRequestAsync();
-            var responseContent = await response.Content.ReadAsStringAsync();
-
             try
             {
-                SastSettings sastSettings = Json.Deserialize<SastSettings>(responseContent);
+                var response = await SendSastSettingsRequestAsync();
+                var responseContent = await response.Content.ReadAsStringAsync();
+                var sastSettings = Json.Deserialize<SastSettings>(responseContent);
                 this.options.SastSettings = sastSettings;
                 return sastSettings;
             }

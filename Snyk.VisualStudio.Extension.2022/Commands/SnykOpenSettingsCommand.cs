@@ -49,7 +49,11 @@
         /// </summary>
         /// <param name="sender">Source object.</param>
         /// <param name="eventArgs">Event args.</param>
-        protected override void Execute(object sender, EventArgs eventArgs) => this.VsPackage.ShowOptionPage();
+        protected override void Execute(object sender, EventArgs eventArgs)
+        {
+            base.Execute(sender, eventArgs);
+            this.VsPackage.ShowOptionPage();
+        }
 
         /// <summary>
         /// Get command Id.

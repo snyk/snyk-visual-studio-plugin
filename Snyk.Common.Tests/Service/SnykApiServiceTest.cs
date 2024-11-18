@@ -23,7 +23,7 @@ namespace Snyk.Common.Tests.Service
 
             optionsMock
                 .Setup(options => options.CustomEndpoint)
-                .Returns("https://snyk.io/api");
+                .Returns("https://api.snyk.io");
             optionsMock
                 .Setup(options => options.ApiToken)
                 .Returns(TestToken);
@@ -44,7 +44,7 @@ namespace Snyk.Common.Tests.Service
 
             optionsMock
                 .Setup(options => options.CustomEndpoint)
-                .Returns("https://snyk.io/api");
+                .Returns("https://api.snyk.io");
 
             optionsMock
                 .Setup(options => options.ApiToken)
@@ -67,7 +67,7 @@ namespace Snyk.Common.Tests.Service
 
             optionsMock
                 .Setup(options => options.CustomEndpoint)
-                .Returns("https://dev.snyk.io/api");
+                .Returns("https://api.dev.snyk.io");
             optionsMock
                 .Setup(options => options.ApiToken)
                 .Returns(TestToken);
@@ -89,7 +89,7 @@ namespace Snyk.Common.Tests.Service
 
             optionsMock
                 .Setup(options => options.CustomEndpoint)
-                .Returns("https://snyk.io/api");
+                .Returns("https://api.snyk.io");
 
             optionsMock
                 .Setup(options => options.ApiToken)
@@ -109,7 +109,7 @@ namespace Snyk.Common.Tests.Service
 
             optionsMock
                 .Setup(options => options.CustomEndpoint)
-                .Returns("https://snyk.io/");
+                .Returns("https://invalidurl.local");
 
             optionsMock
                 .Setup(options => options.ApiToken)
