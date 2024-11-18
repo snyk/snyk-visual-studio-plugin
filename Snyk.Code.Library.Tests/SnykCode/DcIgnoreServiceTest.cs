@@ -83,8 +83,8 @@
         [Fact]
         public void DcIgnoreService_ListOfProjectFilesProvided_CreateDcIgnoreFileAndFilterFiles()
         {
-            string folderPath = Path.GetTempPath();
-
+            string folderPath = Path.Combine(Path.GetTempPath(), "DcIgnoreService_ListOfProjectFilesProvided_CreateDcIgnoreFileAndFilterFiles");
+            Directory.CreateDirectory(folderPath);
             string dcIGnorePath = Path.Combine(folderPath, ".dcignore");
 
             if (File.Exists(dcIGnorePath))
@@ -113,14 +113,14 @@
             Assert.Equal(expectedFiles.OrderBy(x => x), filteredFiles.OrderBy(x => x));
             Assert.True(File.Exists(dcIGnorePath));
 
-            File.Delete(dcIGnorePath);
+            Directory.Delete(folderPath, true);
         }
 
         [Fact]
         public void DcIgnoreService_SolutionWithoutDcIgnoreProvided_CreateDcIgnore()
         {
-            string folderPath = Path.GetTempPath();
-
+            string folderPath = Path.Combine(Path.GetTempPath(), "DcIgnoreService_SolutionWithoutDcIgnoreProvided_CreateDcIgnore");
+            Directory.CreateDirectory(folderPath);
             string dcIGnorePath = Path.Combine(folderPath, ".dcignore");
 
             if (File.Exists(dcIGnorePath))
@@ -135,7 +135,7 @@
 
             Assert.True(File.Exists(dcIGnorePath));
 
-            File.Delete(dcIGnorePath);
+            Directory.Delete(folderPath, true);
         }
 
         [Fact]
@@ -163,8 +163,8 @@
         [Fact]
         public void DcIgnoreService_FilePathWithUnderscoreFolderNameProvided_FilterFilesPass()
         {
-            string folderPath = Path.GetTempPath();
-
+            string folderPath = Path.Combine(Path.GetTempPath(), "DcIgnoreService_FilePathWithUnderscoreFolderNameProvided_FilterFilesPass");
+            Directory.CreateDirectory(folderPath);
             string dcIGnorePath = Path.Combine(folderPath, ".dcignore");
 
             if (File.Exists(dcIGnorePath))
@@ -188,7 +188,7 @@
 
             Assert.True(File.Exists(dcIGnorePath));
 
-            File.Delete(dcIGnorePath);
+            Directory.Delete(folderPath, true);
         }
     }
 }
