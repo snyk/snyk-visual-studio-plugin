@@ -8,43 +8,7 @@ namespace Snyk.VisualStudio.Extension.UI.Html
     {
         public virtual string GetCss()
         {
-            return @"
-                    html, body {
-                       height: 100%;
-                       display: flex;
-                       flex-direction: column;
-                       margin: 0;
-                       padding: 0;
-                     }
-
-                     body {
-                       background-color: var(--background-color);
-                       color: var(--text-color);
-                       font-weight: 400;
-                     }
-
-                     section {
-                       padding: 20px;
-                     }
-                     
-                     .font-light {
-                       font-weight: bold;
-                     }
-
-                     a,
-                     .link {
-                       color: var(--link-color);
-                     }
-
-                    .delimiter-top {
-                           border-top: 1px solid var(--horizontal-border-color);
-                    }
-                    code {
-                        background-color: var(--code-background-color);
-                        padding: 1px 3px;
-                        border-radius: 4px;
-                    }
-                ";
+            return "";
         }
 
         public virtual string GetJs()
