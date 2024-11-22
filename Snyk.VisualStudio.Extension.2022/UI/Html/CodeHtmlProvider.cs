@@ -21,78 +21,6 @@ namespace Snyk.VisualStudio.Extension.UI.Html
             }
         }
 
-        public override string GetCss()
-        {
-            return base.GetCss() + Environment.NewLine + @"
-                     .identifiers {
-                       padding-bottom: 20px;
-                     }
-                     .data-flow-table {
-                       background-color: var(--code-background-color);
-                       border: 1px solid transparent;
-                     }
-                     .tabs-nav {
-                       margin: 21px 0 -21px;
-                     }
-                    .light .dark-only,
-                    .high-contrast.high-contrast-light .dark-only {
-                      display: none;
-                    }
-
-                    .dark .light-only,
-                    .high-contrast:not(.high-contrast-light) .light-only {
-                      display: none;
-                    }
-                     .tab-item {
-                       cursor: pointer;
-                       display: inline-block;
-                       padding: 5px 10px;
-                       border-bottom: 1px solid transparent;
-                       color: var(--text-color);
-                       text-transform: uppercase;
-                     }
-                     
-                     .tab-item:hover {
-                     
-                     }
-                     
-                     .tab-item.is-selected {
-                       border-bottom: 3px solid var(--link-color);
-                     }
-                     
-                     .tab-content {
-                       display: none;
-                     }
-                     
-                     .tab-content.is-selected {
-                       display: block;
-                     }
-                     .removed {
-                      background-color: var(--line-removed);
-                      color: #fff;
-                     }
-                    .lesson-link {
-                     margin-left: 3px;
-                    }
-                    .added {
-                      background-color: var(--line-added);
-                      color: #fff;
-                    }
-                    .arrow {
-                        cursor: pointer;
-                        width: 20px;
-                        height: 20px;
-                        padding: 4px;
-                        border-radius: 4px;
-                        text-align: center;
-                        line-height: 1;
-                    }
-                    .example {
-                        background-color: var(--container-background-color);
-                    }
-                ";
-        }
-
         public override string GetInitScript()
         {
             var themeScript = GetThemeScript();
@@ -147,8 +75,8 @@ namespace Snyk.VisualStudio.Extension.UI.Html
         {
             html = base.ReplaceCssVariables(html);
 
-            html = html.Replace("var(--line-removed)", VSColorTheme.GetThemedColor(EnvironmentColors.VizSurfaceRedDarkBrushKey).ToHex());
-            html = html.Replace("var(--line-added)", VSColorTheme.GetThemedColor(EnvironmentColors.VizSurfaceGreenDarkBrushKey).ToHex());
+            html = html.Replace("var(--example-line-removed-color)", VSColorTheme.GetThemedColor(EnvironmentColors.VizSurfaceRedDarkBrushKey).ToHex());
+            html = html.Replace("var(--example-line-added-color)", VSColorTheme.GetThemedColor(EnvironmentColors.VizSurfaceGreenDarkBrushKey).ToHex());
 
             return html;
         }
