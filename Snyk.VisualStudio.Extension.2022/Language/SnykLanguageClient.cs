@@ -69,7 +69,8 @@ namespace Snyk.VisualStudio.Extension.Language
                 ManageBinariesAutomatically = options.BinariesAutoUpdate.ToString(),
                 EnableTrustedFoldersFeature = "false",
                 TrustedFolders = options.TrustedFolders.ToList(),
-                IntegrationName = options.IntegrationName,
+                IntegrationName = this.GetIntegrationName(options),
+                IntegrationVersion = this.GetIntegrationVersion(options),
                 FilterSeverity = new FilterSeverityOptions
                 {
                     Critical = false,
@@ -88,7 +89,6 @@ namespace Snyk.VisualStudio.Extension.Language
                 AutomaticAuthentication = "false",
                 Endpoint = options.CustomEndpoint,
                 Insecure = options.IgnoreUnknownCA.ToString(),
-                IntegrationVersion = options.IntegrationVersion,
                 RequiredProtocolVersion = LsConstants.ProtocolVersion,
                 HoverVerbosity = 1,
                 OutputFormat = "plain",
@@ -97,6 +97,16 @@ namespace Snyk.VisualStudio.Extension.Language
             return initializationOptions;
         }
 
+        private string GetIntegrationName(ISnykOptions options)
+        {
+            var compositeValue = $"{options.IntegrationEnvironment}@@{options.IntegrationName}";
+            return compositeValue;
+        }
+        private string GetIntegrationVersion(ISnykOptions options)
+        {
+            var compositeValue = $"{options.IntegrationEnvironmentVersion}@@{options.IntegrationVersion}";
+            return compositeValue;
+        }
         public IEnumerable<string> FilesToWatch => null;
 
         public bool ShowNotificationOnInitializeFailed => true;
@@ -186,9 +196,6 @@ namespace Snyk.VisualStudio.Extension.Language
 
                     Logger.Information("Starting Language Server");
                     await StartAsync.InvokeAsync(this, EventArgs.Empty);
-                    IsReady = true;
-                    FireOnLanguageServerReadyAsyncEvent();
-                    SendPluginInstalledEvent();
                 }
                 else
                 {
@@ -291,7 +298,7 @@ namespace Snyk.VisualStudio.Extension.Language
 
         private void Rpc_Disconnected(object sender, JsonRpcDisconnectedEventArgs e)
         {
-
+            IsReady = false;
         }
 
         public async Task AttachForCustomMessageAsync(JsonRpc rpc)
@@ -301,6 +308,9 @@ namespace Snyk.VisualStudio.Extension.Language
             Rpc.AllowModificationWhileListening = true;
             Rpc.ActivityTracingStrategy = null;
             Rpc.AllowModificationWhileListening = false;
+            IsReady = true;
+            FireOnLanguageServerReadyAsyncEvent();
+            SendPluginInstalledEvent();
         }
 
         protected void OnStopping() { }
