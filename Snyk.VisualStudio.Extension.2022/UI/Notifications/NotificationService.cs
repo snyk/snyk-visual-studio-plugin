@@ -1,5 +1,4 @@
-﻿using Snyk.Common;
-using Snyk.VisualStudio.Extension.Extension;
+﻿using Snyk.VisualStudio.Extension.Extension;
 using Snyk.VisualStudio.Extension.Service;
 
 namespace Snyk.VisualStudio.Extension.UI.Notifications

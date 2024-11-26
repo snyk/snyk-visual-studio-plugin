@@ -106,7 +106,9 @@ namespace Snyk.VisualStudio.Extension.Language
         [JsonRpcMethod(LsConstants.SnykFolderConfig)]
         public async Task OnFolderConfig(JToken arg)
         {
-
+            var folderConfigs = arg.TryParse<FolderConfigsParam>();
+            if (folderConfigs == null) return;
+            serviceProvider.Options.FolderConfigs = folderConfigs.FolderConfigs;
         }
 
         [JsonRpcMethod(LsConstants.SnykHasAuthenticated)]
@@ -133,8 +135,8 @@ namespace Snyk.VisualStudio.Extension.Language
             serviceProvider.Options.ApiToken = new AuthenticationToken(serviceProvider.Options.AuthenticationMethod, token);
 
             await serviceProvider.Options.HandleAuthenticationSuccess(token, apiUrl);
-
-            FeatureFlagService.Instance.RefreshAsync().FireAndForget();
+            if(FeatureFlagService.Instance != null)
+                FeatureFlagService.Instance.RefreshAsync(SnykVSPackage.Instance.DisposalToken).FireAndForget();
 
             if (serviceProvider.Options.AutoScan)
             {

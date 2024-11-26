@@ -41,7 +41,7 @@ namespace Snyk.VisualStudio.Extension.UI.Notifications
         /// <param name="serviceProvider">Service provider.</param>
         public void InitializeEventListeners(ISnykServiceProvider serviceProvider)
         {
-            SnykTasksService tasksService = serviceProvider.TasksService;
+            var tasksService = serviceProvider.TasksService;
 
             this.statusBar = VsStatusBar.Instance;
 

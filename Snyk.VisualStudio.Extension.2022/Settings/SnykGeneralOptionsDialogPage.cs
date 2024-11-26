@@ -35,7 +35,7 @@ namespace Snyk.VisualStudio.Extension.Settings
 
         private ISnykServiceProvider serviceProvider;
 
-        private SnykUserStorageSettingsService userStorageSettingsService;
+        private IUserStorageSettingsService userStorageSettingsService;
 
         private SnykGeneralSettingsUserControl generalSettingsUserControl;
 
@@ -52,8 +52,28 @@ namespace Snyk.VisualStudio.Extension.Settings
             }
         }
 
-        public bool EnableDeltaFindings { get; set; }
-        public List<FolderConfig> FolderConfigs { get; set; }
+        public bool EnableDeltaFindings
+        {
+            get => this.userStorageSettingsService.EnableDeltaFindings;
+            set
+            {
+                if (this.userStorageSettingsService == null || this.userStorageSettingsService.EnableDeltaFindings == value)
+                    return;
+                this.userStorageSettingsService.EnableDeltaFindings = value;
+            }
+        }
+
+        public List<FolderConfig> FolderConfigs
+        {
+            get => this.userStorageSettingsService.FolderConfigs;
+            set
+            {
+                if (this.userStorageSettingsService == null || this.userStorageSettingsService.FolderConfigs == value)
+                    return;
+                this.userStorageSettingsService.FolderConfigs = value;
+                userStorageSettingsService.SaveSettings();
+            }
+        }
 
         /// <inheritdoc/>
         public event EventHandler<SnykSettingsChangedEventArgs> SettingsChanged;

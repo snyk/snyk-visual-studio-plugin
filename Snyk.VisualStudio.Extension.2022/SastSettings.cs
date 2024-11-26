@@ -1,7 +1,6 @@
 ﻿using System.Collections.Generic;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Serialization;
-using Snyk.Common;
 
 namespace Snyk.VisualStudio.Extension
 {

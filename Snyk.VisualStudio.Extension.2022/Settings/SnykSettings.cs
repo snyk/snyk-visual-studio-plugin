@@ -1,6 +1,8 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using Snyk.VisualStudio.Extension.Authentication;
 using Snyk.VisualStudio.Extension.Download;
+using Snyk.VisualStudio.Extension.Language;
 
 namespace Snyk.VisualStudio.Extension.Settings
 {
@@ -68,8 +70,10 @@ namespace Snyk.VisualStudio.Extension.Settings
         public bool IgnoreUnknownCa { get; set; }
         public string Organization { get; set; }
         public string CustomEndpoint { get; set; }
-        public string DeviceId { get; set; }
+        public string DeviceId { get; set; } = Guid.NewGuid().ToString();
         public bool OpenIssuesEnabled { get; set; } = true;
         public bool IgnoredIssuesEnabled { get; set; } = true;
+        public List<FolderConfig> FolderConfigs { get; set; }
+        public bool EnableDeltaFindings { get; set; }
     }
 }

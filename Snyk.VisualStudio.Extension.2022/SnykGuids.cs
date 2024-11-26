@@ -1,4 +1,6 @@
-﻿namespace Snyk.VisualStudio.Extension
+﻿using Snyk.VisualStudio.Extension.UI.Toolwindow;
+
+namespace Snyk.VisualStudio.Extension
 {
     using System;
     using Snyk.VisualStudio.Extension.UI;

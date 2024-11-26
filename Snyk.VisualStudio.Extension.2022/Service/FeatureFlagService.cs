@@ -1,4 +1,5 @@
-﻿using System.Threading.Tasks;
+﻿using System.Threading;
+using System.Threading.Tasks;
 using Serilog;
 using Snyk.VisualStudio.Extension.Extension;
 using Snyk.VisualStudio.Extension.Language;
@@ -38,9 +39,9 @@ public class FeatureFlagService
         return instance;
     }
 
-    public async Task RefreshAsync()
+    public async Task RefreshAsync(CancellationToken cancellationToken)
     {
-        var result = await languageClient.InvokeGetFeatureFlagStatusAsync(LsConstants.SnykConsistentIgnoresEnabled, SnykVSPackage.Instance.DisposalToken);
+        var result = await languageClient.InvokeGetFeatureFlagStatusAsync(LsConstants.SnykConsistentIgnoresEnabled, cancellationToken);
         if (result == null)
         {
             settings.ConsistentIgnoresEnabled = false;

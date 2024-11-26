@@ -8,7 +8,6 @@ using Microsoft.VisualStudio;
 using Microsoft.VisualStudio.Shell;
 using Microsoft.VisualStudio.Shell.Interop;
 using Serilog;
-using Snyk.Common;
 using Snyk.VisualStudio.Extension.CLI;
 using Snyk.VisualStudio.Extension.Commands;
 using Snyk.VisualStudio.Extension.Language;
@@ -82,7 +81,7 @@ namespace Snyk.VisualStudio.Extension.UI.Toolwindow
 
             Logger.Information("Initialize CLI Event Listeners");
 
-            SnykTasksService tasksService = serviceProvider.TasksService;
+            var tasksService = serviceProvider.TasksService;
 
             tasksService.SnykCodeScanningStarted += this.OnSnykCodeScanningStarted;
             tasksService.SnykCodeScanError += this.OnSnykCodeDisplayError;
@@ -710,6 +709,12 @@ namespace Snyk.VisualStudio.Extension.UI.Toolwindow
                     return;
                 }
 
+                if (this.resultsTree.SelectedItem is BaseBranchTreeNode)
+                {
+                    // Show Dialog
+
+                    return;
+                }
 
                 this.HandleRootTreeNodeSelected();
             });

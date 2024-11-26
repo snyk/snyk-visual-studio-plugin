@@ -66,7 +66,7 @@ namespace Snyk.VisualStudio.Extension.Service
         /// <summary>
         /// Gets Tasks service.
         /// </summary>
-        public SnykTasksService TasksService => this.tasksService;
+        public ISnykTasksService TasksService => this.tasksService;
 
         /// <summary>
         /// Gets VS Settings manager.
@@ -96,7 +96,7 @@ namespace Snyk.VisualStudio.Extension.Service
         /// <summary>
         /// Gets user storage settings service instance.
         /// </summary>
-        public SnykUserStorageSettingsService UserStorageSettingsService
+        public IUserStorageSettingsService UserStorageSettingsService
         {
             get
             {

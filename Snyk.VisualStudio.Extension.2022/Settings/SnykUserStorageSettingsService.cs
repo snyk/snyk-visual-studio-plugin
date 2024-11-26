@@ -2,6 +2,7 @@
 using System.Threading.Tasks;
 using Serilog;
 using Snyk.VisualStudio.Extension.Authentication;
+using Snyk.VisualStudio.Extension.Language;
 using Snyk.VisualStudio.Extension.Service;
 
 namespace Snyk.VisualStudio.Extension.Settings
@@ -173,6 +174,18 @@ namespace Snyk.VisualStudio.Extension.Settings
         {
             get => snykSettings.IgnoredIssuesEnabled;
             set => snykSettings.IgnoredIssuesEnabled = value;
+        }
+
+        public List<FolderConfig> FolderConfigs
+        {
+            get => snykSettings.FolderConfigs;
+            set => snykSettings.FolderConfigs = value;
+        }
+
+        public bool EnableDeltaFindings
+        {
+            get => snykSettings.EnableDeltaFindings;
+            set => snykSettings.EnableDeltaFindings = value;
         }
 
         /// <summary>

@@ -2,7 +2,6 @@
 using System.Windows.Forms;
 using Microsoft.VisualStudio.Shell;
 using Serilog;
-using Snyk.Common;
 using Snyk.VisualStudio.Extension.Service;
 
 namespace Snyk.VisualStudio.Extension.Settings
@@ -16,7 +15,7 @@ namespace Snyk.VisualStudio.Extension.Settings
 
         private ISnykServiceProvider serviceProvider;
 
-        private SnykUserStorageSettingsService userStorageSettingsService;
+        private IUserStorageSettingsService userStorageSettingsService;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="SnykSolutionOptionsUserControl"/> class.

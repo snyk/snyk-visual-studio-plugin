@@ -48,6 +48,11 @@ namespace Snyk.VisualStudio.Extension.Language
         public List<string> AdditionalParameters { get; set; }
     }
 
+    public class FolderConfigsParam
+    {
+        public List<FolderConfig> FolderConfigs { get; set; }
+    }
+
     public class FilterSeverityOptions
     {
         public bool Critical { get; set; }

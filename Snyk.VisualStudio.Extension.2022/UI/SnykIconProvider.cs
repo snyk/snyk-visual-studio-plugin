@@ -38,7 +38,8 @@ namespace Snyk.VisualStudio.Extension.UI
         /// Snyk Dog Icon.
         /// </summary>
         public static string SnykDogLogoIconPath = ResourceLoader.GetResourcePath("SnykDogLogoFullSize.png");
-
+        public static string DarkThemeBranchIconPath = ResourceLoader.GetResourcePath("branch-light.png");
+        public static string LightThemeBranchIconPath = ResourceLoader.GetResourcePath("branch-dark.png");
         private static string NugetIconPath = ResourceLoader.GetResourcePath("NugetLogo.png");
         private static string NpmIconPath = ResourceLoader.GetResourcePath("NpmLogo.png");
         private static string JsIconPath = ResourceLoader.GetResourcePath("JsLogo.png");

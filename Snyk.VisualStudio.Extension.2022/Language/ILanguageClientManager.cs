@@ -1,8 +1,6 @@
-﻿using System;
-using System.Threading;
+﻿using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.VisualStudio.Threading;
-using Snyk.Common;
 using Snyk.VisualStudio.Extension.Analytics;
 using StreamJsonRpc;
 

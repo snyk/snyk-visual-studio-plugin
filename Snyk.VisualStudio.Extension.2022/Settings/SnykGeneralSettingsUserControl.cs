@@ -251,11 +251,6 @@ namespace Snyk.VisualStudio.Extension.Settings
             }
         }
 
-        private void OrganizationTextBox_TextChanged(object sender, EventArgs e)
-        {
-            this.OptionsDialogPage.Organization = this.organizationTextBox.Text;
-        }
-
         private void IgnoreUnknownCACheckBox_CheckedChanged(object sender, EventArgs e)
         {
             this.OptionsDialogPage.IgnoreUnknownCA = this.ignoreUnknownCACheckBox.Checked;
@@ -327,7 +322,7 @@ namespace Snyk.VisualStudio.Extension.Settings
             ThreadHelper.JoinableTaskFactory.RunAsync(async () =>
             {
                 if (!OptionsDialogPage.ConsistentIgnoresEnabled && LanguageClientHelper.IsLanguageServerReady() && FeatureFlagService.Instance != null)
-                    await FeatureFlagService.Instance.RefreshAsync();
+                    await FeatureFlagService.Instance.RefreshAsync(SnykVSPackage.Instance.DisposalToken);
                 await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
                 this.ignoreGroupbox.Visible = this.OptionsDialogPage.ConsistentIgnoresEnabled;
             }).FireAndForget();

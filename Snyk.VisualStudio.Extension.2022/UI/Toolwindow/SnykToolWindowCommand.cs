@@ -1,12 +1,10 @@
 ﻿using System;
 using System.ComponentModel.Design;
 using Microsoft.VisualStudio.Shell;
-using Serilog;
-using Snyk.Common;
 using Snyk.VisualStudio.Extension.Service;
 using Task = System.Threading.Tasks.Task;
 
-namespace Snyk.VisualStudio.Extension.UI
+namespace Snyk.VisualStudio.Extension.UI.Toolwindow
 {
     /// <summary>
     /// Command handler.

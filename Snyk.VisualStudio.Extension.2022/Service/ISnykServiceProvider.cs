@@ -39,7 +39,7 @@ namespace Snyk.VisualStudio.Extension.Service
         /// <summary>
         /// Gets Tasks service instance.
         /// </summary>
-        SnykTasksService TasksService { get; }
+        ISnykTasksService TasksService { get; }
 
         /// <summary>
         /// Gets <see cref="ISnykOptions"/> (Settings) implementation instance.
@@ -59,7 +59,7 @@ namespace Snyk.VisualStudio.Extension.Service
         /// <summary>
         /// Gets user storage settings service instance.
         /// </summary>
-        SnykUserStorageSettingsService UserStorageSettingsService { get; }
+        IUserStorageSettingsService UserStorageSettingsService { get; }
 
         /// <summary>
         /// Gets <see cref="SnykToolWindowControl"/> instance.

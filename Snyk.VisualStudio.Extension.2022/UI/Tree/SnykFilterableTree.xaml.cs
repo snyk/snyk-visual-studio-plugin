@@ -156,7 +156,7 @@ namespace Snyk.VisualStudio.Extension.UI.Tree
 
                 ignoredIssueCount += issueList.Count(suggestion => suggestion.IsIgnored);
 
-                issueList = FilterIgnoredIssues(options, kv.Value).ToList();
+                issueList = FilterIgnoredIssues(options, issueList).ToList();
                 
                 criticalSeverityCount += issueList.Count(suggestion => suggestion.Severity == Severity.Critical);
                 highSeverityCount += issueList.Count(suggestion => suggestion.Severity == Severity.High);
@@ -182,6 +182,11 @@ namespace Snyk.VisualStudio.Extension.UI.Tree
 
 
             var totalIssueCount = scanResultDictionary.Values.SelectMany(value => value).Count();
+            var folderConfig = options.FolderConfigs.SingleOrDefault(x=> x.FolderPath.Replace("\\", "/") == currentFolder);
+            if (options.EnableDeltaFindings && folderConfig != null)
+            {
+                rootNode.Items.Add(new BaseBranchTreeNode{Title = $"Base branch: {folderConfig.BaseBranch}"});
+            }
             AddInfoTreeNodes(rootNode, totalIssueCount, ignoredIssueCount, fixableIssueCount, options);
 
             foreach (var ossFileTreeNode in fileTreeNodes)
