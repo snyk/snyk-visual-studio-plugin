@@ -781,7 +781,9 @@ namespace Snyk.VisualStudio.Extension.UI.Toolwindow
             });
         }
 
+#pragma warning disable CS1998 // Async method lacks 'await' operators and will run synchronously
         private async Task HandleSnykCodeTreeNodeSelectedAsync()
+#pragma warning restore CS1998 // Async method lacks 'await' operators and will run synchronously
         {
             this.DescriptionPanel.Visibility = Visibility.Visible;
 
@@ -801,7 +803,9 @@ namespace Snyk.VisualStudio.Extension.UI.Toolwindow
                 issue.Range.End.Character);
         }
 
+#pragma warning disable CS1998 // Async method lacks 'await' operators and will run synchronously
         private async Task HandleIacTreeNodeSelectedAsync()
+#pragma warning restore CS1998 // Async method lacks 'await' operators and will run synchronously
         {
             this.DescriptionPanel.Visibility = Visibility.Visible;
 

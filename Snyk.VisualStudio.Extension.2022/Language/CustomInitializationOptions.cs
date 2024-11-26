@@ -36,8 +36,8 @@ namespace Snyk.VisualStudio.Extension.Language
         public string SnykCodeApi { get; set; }
         public int HoverVerbosity { get; set; }
         public string OutputFormat { get; set; }
-
-        public FolderConfig FolderConfigs { get; set; }
+        public bool EnableDeltaFindings { get; set; }
+        public List<FolderConfig> FolderConfigs { get; set; }
     }
 
     public class FolderConfig

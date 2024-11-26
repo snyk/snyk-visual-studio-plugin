@@ -5,7 +5,7 @@ using Serilog.Core;
 using Serilog.Events;
 using Serilog.Exceptions;
 
-namespace Snyk.Common
+namespace Snyk.VisualStudio.Extension
 {
     /// <summary>
     /// Logger manager for create logger per class.

@@ -1,4 +1,4 @@
-﻿namespace Snyk.Common
+﻿namespace Snyk.VisualStudio.Extension
 {
     /// <summary>
     /// Sast local code engine settings.

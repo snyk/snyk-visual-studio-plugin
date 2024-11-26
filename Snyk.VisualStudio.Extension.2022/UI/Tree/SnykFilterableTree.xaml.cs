@@ -10,6 +10,7 @@ using System.Threading.Tasks;
 using Snyk.Common.Settings;
 using Snyk.VisualStudio.Extension.Language;
 using Snyk.VisualStudio.Extension.Service;
+using Snyk.VisualStudio.Extension.Settings;
 
 namespace Snyk.VisualStudio.Extension.UI.Tree
 {

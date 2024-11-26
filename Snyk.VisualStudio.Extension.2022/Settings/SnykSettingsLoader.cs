@@ -3,6 +3,7 @@ using System.IO;
 using System.Text;
 using Serilog;
 using Snyk.Common;
+using Snyk.VisualStudio.Extension.Utils;
 
 namespace Snyk.VisualStudio.Extension.Settings
 {

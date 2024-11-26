@@ -6,10 +6,8 @@ using System.Threading.Tasks;
 using System.Windows.Forms;
 using Microsoft.VisualStudio.Shell;
 using Serilog;
-using Snyk.Common;
-using Snyk.Common.Authentication;
-using Snyk.Common.Service;
 using Snyk.Common.Settings;
+using Snyk.VisualStudio.Extension.Authentication;
 using Snyk.VisualStudio.Extension.CLI;
 using Snyk.VisualStudio.Extension.Language;
 using Snyk.VisualStudio.Extension.Service;
@@ -54,6 +52,9 @@ namespace Snyk.VisualStudio.Extension.Settings
                 this.userStorageSettingsService.TrustedFolders = value;
             }
         }
+
+        public bool EnableDeltaFindings { get; set; }
+        public List<FolderConfig> FolderConfigs { get; set; }
 
         /// <inheritdoc/>
         public event EventHandler<SnykSettingsChangedEventArgs> SettingsChanged;

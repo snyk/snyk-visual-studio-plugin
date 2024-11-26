@@ -2,6 +2,8 @@
 using Serilog;
 using Snyk.Common;
 using Snyk.Common.Settings;
+using Snyk.VisualStudio.Extension.Settings;
+
 namespace Snyk.VisualStudio.Extension.CLI
 {
     /// <summary>

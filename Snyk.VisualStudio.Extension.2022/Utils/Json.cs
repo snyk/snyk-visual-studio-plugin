@@ -1,8 +1,8 @@
-﻿namespace Snyk.Common
-{
-    using Newtonsoft.Json;
-    using Newtonsoft.Json.Serialization;
+﻿using Newtonsoft.Json;
+using Newtonsoft.Json.Serialization;
 
+namespace Snyk.VisualStudio.Extension.Utils
+{
     /// <summary>
     /// Json util for serialize and deserialize objects with Json serialization parameters.
     /// </summary>

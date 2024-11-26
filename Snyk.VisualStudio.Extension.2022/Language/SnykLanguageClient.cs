@@ -5,16 +5,16 @@ using System.Diagnostics;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
-using System.Windows.Controls.Primitives;
 using Microsoft.VisualStudio.LanguageServer.Client;
 using Microsoft.VisualStudio.Shell;
 using Microsoft.VisualStudio.Threading;
 using Serilog;
-using Snyk.Common;
-using Snyk.Common.Authentication;
 using Snyk.Common.Settings;
 using Snyk.VisualStudio.Extension.Analytics;
+using Snyk.VisualStudio.Extension.Authentication;
 using Snyk.VisualStudio.Extension.CLI;
+using Snyk.VisualStudio.Extension.Settings;
+using Snyk.VisualStudio.Extension.Utils;
 using StreamJsonRpc;
 using Task = System.Threading.Tasks.Task;
 using LSP = Microsoft.VisualStudio.LanguageServer.Protocol;
@@ -310,7 +310,7 @@ namespace Snyk.VisualStudio.Extension.Language
             Rpc.AllowModificationWhileListening = false;
             IsReady = true;
             FireOnLanguageServerReadyAsyncEvent();
-            SendPluginInstalledEvent();
+            //SendPluginInstalledEvent();
         }
 
         protected void OnStopping() { }

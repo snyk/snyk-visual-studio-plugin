@@ -1,6 +1,6 @@
 ﻿using System.ComponentModel;
 
-namespace Snyk.Common.Authentication
+namespace Snyk.VisualStudio.Extension.Authentication
 {
     public enum AuthenticationType
     {

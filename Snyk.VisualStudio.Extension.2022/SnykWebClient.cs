@@ -1,7 +1,7 @@
-﻿namespace Snyk.Common
-{
-    using System.Net;
+﻿using System.Net;
 
+namespace Snyk.VisualStudio.Extension
+{
     /// <summary>
     /// Extended WebClient for Snyk extension.
     /// </summary>

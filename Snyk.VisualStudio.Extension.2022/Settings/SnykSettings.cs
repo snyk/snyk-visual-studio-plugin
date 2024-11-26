@@ -1,5 +1,5 @@
 ﻿using System.Collections.Generic;
-using Snyk.Common.Authentication;
+using Snyk.VisualStudio.Extension.Authentication;
 using Snyk.VisualStudio.Extension.Download;
 
 namespace Snyk.VisualStudio.Extension.Settings
