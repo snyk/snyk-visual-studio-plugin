@@ -1,5 +1,4 @@
 ﻿using System;
-using Snyk.Common.Settings;
 using Snyk.VisualStudio.Extension.Service;
 using Snyk.VisualStudio.Extension.Settings;
 

@@ -9,7 +9,6 @@ using System.Windows.Forms;
 using Microsoft.VisualStudio.Shell;
 using Microsoft.VisualStudio.Threading;
 using Serilog;
-using Snyk.Common.Settings;
 using Snyk.VisualStudio.Extension.Authentication;
 using Snyk.VisualStudio.Extension.CLI;
 using Snyk.VisualStudio.Extension.Extension;
