@@ -1,7 +1,5 @@
 ﻿using System.Threading.Tasks;
 using Serilog;
-using Snyk.Common;
-using Snyk.Common.Settings;
 using Snyk.VisualStudio.Extension.Extension;
 using Snyk.VisualStudio.Extension.Language;
 using Snyk.VisualStudio.Extension.Settings;

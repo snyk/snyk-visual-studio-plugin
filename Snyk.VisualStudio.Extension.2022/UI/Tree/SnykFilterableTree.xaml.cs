@@ -7,7 +7,6 @@ using Microsoft.VisualStudio.Shell;
 using Snyk.VisualStudio.Extension.Model;
 using System.Collections.Generic;
 using System.Threading.Tasks;
-using Snyk.Common.Settings;
 using Snyk.VisualStudio.Extension.Language;
 using Snyk.VisualStudio.Extension.Service;
 using Snyk.VisualStudio.Extension.Settings;

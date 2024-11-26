@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Text.RegularExpressions;
-using Snyk.Common.Settings;
 using Snyk.VisualStudio.Extension.Authentication;
 using Snyk.VisualStudio.Extension.Extension;
 using Snyk.VisualStudio.Extension.Settings;

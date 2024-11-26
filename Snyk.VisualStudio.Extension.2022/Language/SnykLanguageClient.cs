@@ -9,7 +9,6 @@ using Microsoft.VisualStudio.LanguageServer.Client;
 using Microsoft.VisualStudio.Shell;
 using Microsoft.VisualStudio.Threading;
 using Serilog;
-using Snyk.Common.Settings;
 using Snyk.VisualStudio.Extension.Analytics;
 using Snyk.VisualStudio.Extension.Authentication;
 using Snyk.VisualStudio.Extension.CLI;

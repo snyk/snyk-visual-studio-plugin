@@ -4,8 +4,6 @@ using System.IO;
 using System.Net.Http;
 using System.Threading.Tasks;
 using Serilog;
-using Snyk.Common;
-using Snyk.Common.Settings;
 using Snyk.VisualStudio.Extension.CLI;
 using Snyk.VisualStudio.Extension.Language;
 using Snyk.VisualStudio.Extension.Service;

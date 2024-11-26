@@ -1,5 +1,4 @@
-﻿using Snyk.Common.Settings;
-using System;
+﻿using System;
 using System.Diagnostics.CodeAnalysis;
 using System.IO;
 using System.Linq;
@@ -13,12 +12,10 @@ using Microsoft.VisualStudio.ComponentModelHost;
 using Microsoft.VisualStudio.Shell;
 using Microsoft.VisualStudio.Shell.Interop;
 using Serilog;
-using Snyk.Common;
 using Snyk.VisualStudio.Extension.Commands;
 using Snyk.VisualStudio.Extension.Language;
 using Snyk.VisualStudio.Extension.Service;
 using Snyk.VisualStudio.Extension.Settings;
-using Snyk.VisualStudio.Extension.UI.Notifications;
 using Snyk.VisualStudio.Extension.UI.Toolwindow;
 using Task = System.Threading.Tasks.Task;
 
