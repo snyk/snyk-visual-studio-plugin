@@ -36,7 +36,7 @@ namespace Snyk.VisualStudio.Extension.Language
         public string SnykCodeApi { get; set; }
         public int HoverVerbosity { get; set; }
         public string OutputFormat { get; set; }
-        public bool EnableDeltaFindings { get; set; }
+        public string EnableDeltaFindings { get; set; }
         public List<FolderConfig> FolderConfigs { get; set; }
     }
 
@@ -44,8 +44,8 @@ namespace Snyk.VisualStudio.Extension.Language
     {
         public string BaseBranch { get; set; }
         public string FolderPath { get; set; }
-        public IList<string> LocalBranches { get; set; }
-        public IList<string> AdditionalParameters { get; set; }
+        public List<string> LocalBranches { get; set; }
+        public List<string> AdditionalParameters { get; set; }
     }
 
     public class FilterSeverityOptions

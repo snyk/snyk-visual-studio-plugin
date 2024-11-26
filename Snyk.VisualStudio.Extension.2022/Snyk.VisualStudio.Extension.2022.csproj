@@ -108,7 +108,6 @@
     <Resource Include="Resources\SnykIac.png">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Resource>
-    <Content Include=".pkgdef" />
     <Content Include="Resources\SnykLsInit.cs">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
       <IncludeInVSIX>true</IncludeInVSIX>
@@ -248,9 +247,6 @@
     </Compile>
   </ItemGroup>
   <ItemGroup>
-    <Content Include="SnykLanguageExtensionSettings.json">
-      <IncludeInVSIX>true</IncludeInVSIX>
-    </Content>
     <None Include="source.extension.vsixmanifest">
       <SubType>Designer</SubType>
     </None>
@@ -293,9 +289,6 @@
     </PackageReference>
     <PackageReference Include="Analytics">
       <Version>3.8.1</Version>
-    </PackageReference>
-    <PackageReference Include="Newtonsoft.Json">
-      <Version>13.0.1</Version>
     </PackageReference>
     <PackageReference Include="Serilog.Enrichers.Process">
       <Version>2.0.2</Version>
