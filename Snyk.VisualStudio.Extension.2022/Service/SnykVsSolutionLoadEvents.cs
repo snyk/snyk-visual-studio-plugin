@@ -109,7 +109,7 @@ namespace Snyk.VisualStudio.Extension.Service
         public int OnAfterOpenProject(IVsHierarchy vsHierarchy, int fAdded)
         {
             var languageClientManager = LanguageClientHelper.LanguageClientManager();
-            if (languageClientManager == null)
+            if (languageClientManager == null || !(SnykVSPackage.Instance?.IsInitialized ?? false))
                 return VSConstants.S_OK;
 
             var isFolderTrusted = false;

@@ -29,13 +29,13 @@ namespace Snyk.VisualStudio.Extension.Language
             var options = this.serviceProvider.Options;
             var initializationOptions = new SnykLsInitializationOptions
             {
-                ActivateSnykCode = options.SnykCodeSecurityEnabled.ToString(),
-                ActivateSnykCodeSecurity = options.SnykCodeSecurityEnabled.ToString(),
-                ActivateSnykCodeQuality = options.SnykCodeQualityEnabled.ToString(),
-                ActivateSnykOpenSource = options.OssEnabled.ToString(),
-                ActivateSnykIac = options.IacEnabled.ToString(),
+                ActivateSnykCode = options.SnykCodeSecurityEnabled.ToString().ToLower(),
+                ActivateSnykCodeSecurity = options.SnykCodeSecurityEnabled.ToString().ToLower(),
+                ActivateSnykCodeQuality = options.SnykCodeQualityEnabled.ToString().ToLower(),
+                ActivateSnykOpenSource = options.OssEnabled.ToString().ToLower(),
+                ActivateSnykIac = options.IacEnabled.ToString().ToLower(),
                 SendErrorReports = "true",
-                ManageBinariesAutomatically = options.BinariesAutoUpdate.ToString(),
+                ManageBinariesAutomatically = options.BinariesAutoUpdate.ToString().ToLower(),
                 EnableTrustedFoldersFeature = "false",
                 TrustedFolders = options.TrustedFolders.ToList(),
                 IntegrationName = this.GetIntegrationName(options),
@@ -57,12 +57,12 @@ namespace Snyk.VisualStudio.Extension.Language
                 Token = options.ApiToken.ToString(),
                 AutomaticAuthentication = "false",
                 Endpoint = options.CustomEndpoint,
-                Insecure = options.IgnoreUnknownCA.ToString(),
+                Insecure = options.IgnoreUnknownCA.ToString().ToLower(),
                 RequiredProtocolVersion = LsConstants.ProtocolVersion,
                 HoverVerbosity = 1,
                 OutputFormat = "plain",
                 DeviceId = options.DeviceId,
-                EnableDeltaFindings = options.EnableDeltaFindings.ToString(),
+                EnableDeltaFindings = options.EnableDeltaFindings.ToString().ToLower(),
                 FolderConfigs = options.FolderConfigs
             };
             return initializationOptions;

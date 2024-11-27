@@ -60,6 +60,12 @@ namespace Snyk.VisualStudio.Extension.Settings
             this.ManageBinariesAutomaticallyCheckbox = new System.Windows.Forms.CheckBox();
             this.label1 = new System.Windows.Forms.Label();
             this.productSelectionGroupBox = new System.Windows.Forms.GroupBox();
+            this.label4 = new System.Windows.Forms.Label();
+            this.label3 = new System.Windows.Forms.Label();
+            this.cbDelta = new System.Windows.Forms.ComboBox();
+            this.ignoreGroupbox = new System.Windows.Forms.GroupBox();
+            this.cbIgnoredIssues = new System.Windows.Forms.CheckBox();
+            this.cbOpenIssues = new System.Windows.Forms.CheckBox();
             this.snykIacInfoLabel = new System.Windows.Forms.Label();
             this.iacEnabledCheckbox = new System.Windows.Forms.CheckBox();
             this.snykCodeQualityInfoLabel = new System.Windows.Forms.Label();
@@ -80,15 +86,12 @@ namespace Snyk.VisualStudio.Extension.Settings
             this.cliReleaseChannelLabel = new System.Windows.Forms.Label();
             this.cliBaseDownloadUrl = new System.Windows.Forms.Label();
             this.cliDownloadUrlTextBox = new System.Windows.Forms.TextBox();
-            this.ignoreGroupbox = new System.Windows.Forms.GroupBox();
-            this.cbIgnoredIssues = new System.Windows.Forms.CheckBox();
-            this.cbOpenIssues = new System.Windows.Forms.CheckBox();
             ((System.ComponentModel.ISupportInitialize)(this.errorProvider)).BeginInit();
             this.generalSettingsGroupBox.SuspendLayout();
             this.productSelectionGroupBox.SuspendLayout();
+            this.ignoreGroupbox.SuspendLayout();
             this.userExperienceGroupBox.SuspendLayout();
             this.ExecutablesGroupBox.SuspendLayout();
-            this.ignoreGroupbox.SuspendLayout();
             this.SuspendLayout();
             // 
             // customEndpointTextBox
@@ -139,7 +142,7 @@ namespace Snyk.VisualStudio.Extension.Settings
             // tokenTextBox
             // 
             this.tokenTextBox.Location = new System.Drawing.Point(172, 158);
-            this.tokenTextBox.Margin = new System.Windows.Forms.Padding(4, 4, 4, 4);
+            this.tokenTextBox.Margin = new System.Windows.Forms.Padding(4);
             this.tokenTextBox.Name = "tokenTextBox";
             this.tokenTextBox.PasswordChar = '*';
             this.tokenTextBox.Size = new System.Drawing.Size(399, 22);
@@ -162,7 +165,7 @@ namespace Snyk.VisualStudio.Extension.Settings
             // authenticateButton
             // 
             this.authenticateButton.Location = new System.Drawing.Point(169, 118);
-            this.authenticateButton.Margin = new System.Windows.Forms.Padding(4, 4, 4, 4);
+            this.authenticateButton.Margin = new System.Windows.Forms.Padding(4);
             this.authenticateButton.Name = "authenticateButton";
             this.authenticateButton.Size = new System.Drawing.Size(257, 32);
             this.authenticateButton.TabIndex = 7;
@@ -245,7 +248,7 @@ namespace Snyk.VisualStudio.Extension.Settings
             this.authMethodDescription.BackColor = System.Drawing.SystemColors.Control;
             this.authMethodDescription.BorderStyle = System.Windows.Forms.BorderStyle.None;
             this.authMethodDescription.Location = new System.Drawing.Point(169, 65);
-            this.authMethodDescription.Margin = new System.Windows.Forms.Padding(4, 4, 4, 4);
+            this.authMethodDescription.Margin = new System.Windows.Forms.Padding(4);
             this.authMethodDescription.Name = "authMethodDescription";
             this.authMethodDescription.ReadOnly = true;
             this.authMethodDescription.Size = new System.Drawing.Size(571, 46);
@@ -261,7 +264,7 @@ namespace Snyk.VisualStudio.Extension.Settings
             "OAuth",
             "Token"});
             this.authType.Location = new System.Drawing.Point(172, 32);
-            this.authType.Margin = new System.Windows.Forms.Padding(4, 4, 4, 4);
+            this.authType.Margin = new System.Windows.Forms.Padding(4);
             this.authType.Name = "authType";
             this.authType.Size = new System.Drawing.Size(256, 24);
             this.authType.TabIndex = 13;
@@ -304,7 +307,7 @@ namespace Snyk.VisualStudio.Extension.Settings
             // 
             this.richTextBox1.BorderStyle = System.Windows.Forms.BorderStyle.None;
             this.richTextBox1.Location = new System.Drawing.Point(9, 155);
-            this.richTextBox1.Margin = new System.Windows.Forms.Padding(4, 4, 4, 4);
+            this.richTextBox1.Margin = new System.Windows.Forms.Padding(4);
             this.richTextBox1.Name = "richTextBox1";
             this.richTextBox1.ReadOnly = true;
             this.richTextBox1.Size = new System.Drawing.Size(684, 39);
@@ -315,7 +318,7 @@ namespace Snyk.VisualStudio.Extension.Settings
             // resetCliPathToDefaultButton
             // 
             this.resetCliPathToDefaultButton.Location = new System.Drawing.Point(347, 65);
-            this.resetCliPathToDefaultButton.Margin = new System.Windows.Forms.Padding(4, 4, 4, 4);
+            this.resetCliPathToDefaultButton.Margin = new System.Windows.Forms.Padding(4);
             this.resetCliPathToDefaultButton.Name = "resetCliPathToDefaultButton";
             this.resetCliPathToDefaultButton.Size = new System.Drawing.Size(129, 28);
             this.resetCliPathToDefaultButton.TabIndex = 17;
@@ -326,7 +329,7 @@ namespace Snyk.VisualStudio.Extension.Settings
             // CliPathBrowseButton
             // 
             this.CliPathBrowseButton.Location = new System.Drawing.Point(239, 65);
-            this.CliPathBrowseButton.Margin = new System.Windows.Forms.Padding(4, 4, 4, 4);
+            this.CliPathBrowseButton.Margin = new System.Windows.Forms.Padding(4);
             this.CliPathBrowseButton.Name = "CliPathBrowseButton";
             this.CliPathBrowseButton.Size = new System.Drawing.Size(100, 28);
             this.CliPathBrowseButton.TabIndex = 16;
@@ -373,6 +376,9 @@ namespace Snyk.VisualStudio.Extension.Settings
             // 
             // productSelectionGroupBox
             // 
+            this.productSelectionGroupBox.Controls.Add(this.label4);
+            this.productSelectionGroupBox.Controls.Add(this.label3);
+            this.productSelectionGroupBox.Controls.Add(this.cbDelta);
             this.productSelectionGroupBox.Controls.Add(this.ignoreGroupbox);
             this.productSelectionGroupBox.Controls.Add(this.snykIacInfoLabel);
             this.productSelectionGroupBox.Controls.Add(this.iacEnabledCheckbox);
@@ -389,10 +395,78 @@ namespace Snyk.VisualStudio.Extension.Settings
             this.productSelectionGroupBox.Margin = new System.Windows.Forms.Padding(3, 2, 3, 2);
             this.productSelectionGroupBox.Name = "productSelectionGroupBox";
             this.productSelectionGroupBox.Padding = new System.Windows.Forms.Padding(11, 10, 11, 10);
-            this.productSelectionGroupBox.Size = new System.Drawing.Size(747, 193);
+            this.productSelectionGroupBox.Size = new System.Drawing.Size(747, 242);
             this.productSelectionGroupBox.TabIndex = 18;
             this.productSelectionGroupBox.TabStop = false;
             this.productSelectionGroupBox.Text = "Issue view options";
+            // 
+            // label4
+            // 
+            this.label4.AutoSize = true;
+            this.label4.Location = new System.Drawing.Point(12, 191);
+            this.label4.Name = "label4";
+            this.label4.Size = new System.Drawing.Size(182, 16);
+            this.label4.TabIndex = 26;
+            this.label4.Text = "All Issues Vs Net New Issues:";
+            // 
+            // label3
+            // 
+            this.label3.AutoSize = true;
+            this.label3.Location = new System.Drawing.Point(12, 216);
+            this.label3.Name = "label3";
+            this.label3.Size = new System.Drawing.Size(347, 16);
+            this.label3.TabIndex = 24;
+            this.label3.Text = "Specifies whether to see only net new issues or all issues.";
+            // 
+            // cbDelta
+            // 
+            this.cbDelta.DropDownStyle = System.Windows.Forms.ComboBoxStyle.DropDownList;
+            this.cbDelta.FormattingEnabled = true;
+            this.cbDelta.Location = new System.Drawing.Point(235, 183);
+            this.cbDelta.Margin = new System.Windows.Forms.Padding(4);
+            this.cbDelta.Name = "cbDelta";
+            this.cbDelta.Size = new System.Drawing.Size(160, 24);
+            this.cbDelta.TabIndex = 25;
+            this.cbDelta.SelectedIndexChanged += new System.EventHandler(this.cbDelta_SelectedIndexChanged);
+            // 
+            // ignoreGroupbox
+            // 
+            this.ignoreGroupbox.Controls.Add(this.cbIgnoredIssues);
+            this.ignoreGroupbox.Controls.Add(this.cbOpenIssues);
+            this.ignoreGroupbox.Location = new System.Drawing.Point(493, 15);
+            this.ignoreGroupbox.Name = "ignoreGroupbox";
+            this.ignoreGroupbox.Size = new System.Drawing.Size(240, 80);
+            this.ignoreGroupbox.TabIndex = 23;
+            this.ignoreGroupbox.TabStop = false;
+            this.ignoreGroupbox.Text = "Show the following issues";
+            // 
+            // cbIgnoredIssues
+            // 
+            this.cbIgnoredIssues.AutoSize = true;
+            this.cbIgnoredIssues.Checked = true;
+            this.cbIgnoredIssues.CheckState = System.Windows.Forms.CheckState.Checked;
+            this.cbIgnoredIssues.Location = new System.Drawing.Point(21, 51);
+            this.cbIgnoredIssues.Margin = new System.Windows.Forms.Padding(3, 2, 3, 2);
+            this.cbIgnoredIssues.Name = "cbIgnoredIssues";
+            this.cbIgnoredIssues.Size = new System.Drawing.Size(117, 20);
+            this.cbIgnoredIssues.TabIndex = 25;
+            this.cbIgnoredIssues.Text = "Ignored issues";
+            this.cbIgnoredIssues.UseVisualStyleBackColor = true;
+            this.cbIgnoredIssues.CheckedChanged += new System.EventHandler(this.cbIgnoredIssues_CheckedChanged);
+            // 
+            // cbOpenIssues
+            // 
+            this.cbOpenIssues.AutoSize = true;
+            this.cbOpenIssues.Checked = true;
+            this.cbOpenIssues.CheckState = System.Windows.Forms.CheckState.Checked;
+            this.cbOpenIssues.Location = new System.Drawing.Point(21, 22);
+            this.cbOpenIssues.Margin = new System.Windows.Forms.Padding(3, 2, 3, 2);
+            this.cbOpenIssues.Name = "cbOpenIssues";
+            this.cbOpenIssues.Size = new System.Drawing.Size(104, 20);
+            this.cbOpenIssues.TabIndex = 24;
+            this.cbOpenIssues.Text = "Open issues";
+            this.cbOpenIssues.UseVisualStyleBackColor = true;
+            this.cbOpenIssues.CheckedChanged += new System.EventHandler(this.cbOpenIssues_CheckedChanged);
             // 
             // snykIacInfoLabel
             // 
@@ -497,7 +571,7 @@ namespace Snyk.VisualStudio.Extension.Settings
             // userExperienceGroupBox
             // 
             this.userExperienceGroupBox.Controls.Add(this.autoScanCheckBox);
-            this.userExperienceGroupBox.Location = new System.Drawing.Point(13, 912);
+            this.userExperienceGroupBox.Location = new System.Drawing.Point(13, 957);
             this.userExperienceGroupBox.Margin = new System.Windows.Forms.Padding(3, 2, 3, 2);
             this.userExperienceGroupBox.Name = "userExperienceGroupBox";
             this.userExperienceGroupBox.Padding = new System.Windows.Forms.Padding(11, 10, 11, 10);
@@ -554,9 +628,9 @@ namespace Snyk.VisualStudio.Extension.Settings
             this.ExecutablesGroupBox.Controls.Add(this.ManageBinariesAutomaticallyCheckbox);
             this.ExecutablesGroupBox.Controls.Add(this.CliPathTextBox);
             this.ExecutablesGroupBox.Location = new System.Drawing.Point(13, 428);
-            this.ExecutablesGroupBox.Margin = new System.Windows.Forms.Padding(4, 4, 4, 4);
+            this.ExecutablesGroupBox.Margin = new System.Windows.Forms.Padding(4);
             this.ExecutablesGroupBox.Name = "ExecutablesGroupBox";
-            this.ExecutablesGroupBox.Padding = new System.Windows.Forms.Padding(4, 4, 4, 4);
+            this.ExecutablesGroupBox.Padding = new System.Windows.Forms.Padding(4);
             this.ExecutablesGroupBox.Size = new System.Drawing.Size(747, 277);
             this.ExecutablesGroupBox.TabIndex = 19;
             this.ExecutablesGroupBox.TabStop = false;
@@ -578,7 +652,7 @@ namespace Snyk.VisualStudio.Extension.Settings
             // 
             this.releaseChannel.FormattingEnabled = true;
             this.releaseChannel.Location = new System.Drawing.Point(239, 208);
-            this.releaseChannel.Margin = new System.Windows.Forms.Padding(4, 4, 4, 4);
+            this.releaseChannel.Margin = new System.Windows.Forms.Padding(4);
             this.releaseChannel.Name = "releaseChannel";
             this.releaseChannel.Size = new System.Drawing.Size(160, 24);
             this.releaseChannel.TabIndex = 23;
@@ -604,49 +678,10 @@ namespace Snyk.VisualStudio.Extension.Settings
             // cliDownloadUrlTextBox
             // 
             this.cliDownloadUrlTextBox.Location = new System.Drawing.Point(241, 23);
-            this.cliDownloadUrlTextBox.Margin = new System.Windows.Forms.Padding(4, 4, 4, 4);
+            this.cliDownloadUrlTextBox.Margin = new System.Windows.Forms.Padding(4);
             this.cliDownloadUrlTextBox.Name = "cliDownloadUrlTextBox";
             this.cliDownloadUrlTextBox.Size = new System.Drawing.Size(399, 22);
             this.cliDownloadUrlTextBox.TabIndex = 21;
-            // 
-            // ignoreGroupbox
-            // 
-            this.ignoreGroupbox.Controls.Add(this.cbIgnoredIssues);
-            this.ignoreGroupbox.Controls.Add(this.cbOpenIssues);
-            this.ignoreGroupbox.Location = new System.Drawing.Point(493, 15);
-            this.ignoreGroupbox.Name = "ignoreGroupbox";
-            this.ignoreGroupbox.Size = new System.Drawing.Size(240, 121);
-            this.ignoreGroupbox.TabIndex = 23;
-            this.ignoreGroupbox.TabStop = false;
-            this.ignoreGroupbox.Text = "Show the following issues";
-            // 
-            // cbIgnoredIssues
-            // 
-            this.cbIgnoredIssues.AutoSize = true;
-            this.cbIgnoredIssues.Checked = true;
-            this.cbIgnoredIssues.CheckState = System.Windows.Forms.CheckState.Checked;
-            this.cbIgnoredIssues.Location = new System.Drawing.Point(21, 51);
-            this.cbIgnoredIssues.Margin = new System.Windows.Forms.Padding(3, 2, 3, 2);
-            this.cbIgnoredIssues.Name = "cbIgnoredIssues";
-            this.cbIgnoredIssues.Size = new System.Drawing.Size(117, 20);
-            this.cbIgnoredIssues.TabIndex = 25;
-            this.cbIgnoredIssues.Text = "Ignored issues";
-            this.cbIgnoredIssues.UseVisualStyleBackColor = true;
-            this.cbIgnoredIssues.CheckedChanged += new System.EventHandler(this.cbIgnoredIssues_CheckedChanged);
-            // 
-            // cbOpenIssues
-            // 
-            this.cbOpenIssues.AutoSize = true;
-            this.cbOpenIssues.Checked = true;
-            this.cbOpenIssues.CheckState = System.Windows.Forms.CheckState.Checked;
-            this.cbOpenIssues.Location = new System.Drawing.Point(21, 22);
-            this.cbOpenIssues.Margin = new System.Windows.Forms.Padding(3, 2, 3, 2);
-            this.cbOpenIssues.Name = "cbOpenIssues";
-            this.cbOpenIssues.Size = new System.Drawing.Size(104, 20);
-            this.cbOpenIssues.TabIndex = 24;
-            this.cbOpenIssues.Text = "Open issues";
-            this.cbOpenIssues.UseVisualStyleBackColor = true;
-            this.cbOpenIssues.CheckedChanged += new System.EventHandler(this.cbOpenIssues_CheckedChanged);
             // 
             // SnykGeneralSettingsUserControl
             // 
@@ -660,18 +695,18 @@ namespace Snyk.VisualStudio.Extension.Settings
             this.Margin = new System.Windows.Forms.Padding(3, 2, 3, 2);
             this.MinimumSize = new System.Drawing.Size(1060, 923);
             this.Name = "SnykGeneralSettingsUserControl";
-            this.Size = new System.Drawing.Size(1060, 1012);
+            this.Size = new System.Drawing.Size(1060, 1041);
             ((System.ComponentModel.ISupportInitialize)(this.errorProvider)).EndInit();
             this.generalSettingsGroupBox.ResumeLayout(false);
             this.generalSettingsGroupBox.PerformLayout();
             this.productSelectionGroupBox.ResumeLayout(false);
             this.productSelectionGroupBox.PerformLayout();
+            this.ignoreGroupbox.ResumeLayout(false);
+            this.ignoreGroupbox.PerformLayout();
             this.userExperienceGroupBox.ResumeLayout(false);
             this.userExperienceGroupBox.PerformLayout();
             this.ExecutablesGroupBox.ResumeLayout(false);
             this.ExecutablesGroupBox.PerformLayout();
-            this.ignoreGroupbox.ResumeLayout(false);
-            this.ignoreGroupbox.PerformLayout();
             this.ResumeLayout(false);
 
         }
@@ -727,5 +762,8 @@ namespace Snyk.VisualStudio.Extension.Settings
         private GroupBox ignoreGroupbox;
         private CheckBox cbIgnoredIssues;
         private CheckBox cbOpenIssues;
+        private Label label3;
+        private ComboBox cbDelta;
+        private Label label4;
     }
 }

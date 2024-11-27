@@ -1,8 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿using System.Collections.Generic;
 using Microsoft.VisualStudio.Sdk.TestFramework;
 using Moq;
 using Snyk.VisualStudio.Extension.Authentication;
@@ -17,14 +13,13 @@ namespace Snyk.VisualStudio.Extension.Tests.Language
     public class LsConfigurationTest
     {
         private LsConfiguration cut;
-        private readonly Mock<ISnykServiceProvider> serviceProviderMock;
         private readonly Mock<ISnykOptions> optionsMock;
 
         public LsConfigurationTest(GlobalServiceProvider sp)
         {
             sp.Reset();
             optionsMock = new Mock<ISnykOptions>();
-            serviceProviderMock = new Mock<ISnykServiceProvider>();
+            var serviceProviderMock = new Mock<ISnykServiceProvider>();
             serviceProviderMock.Setup(x => x.Options).Returns(optionsMock.Object);
             cut = new LsConfiguration(serviceProviderMock.Object);
         }
@@ -60,13 +55,13 @@ namespace Snyk.VisualStudio.Extension.Tests.Language
 
             // Assert
             Assert.NotNull(initOptions);
-            Assert.Equal("True", initOptions.ActivateSnykCode);
-            Assert.Equal("True", initOptions.ActivateSnykCodeSecurity);
-            Assert.Equal("True", initOptions.ActivateSnykCodeQuality);
-            Assert.Equal("True", initOptions.ActivateSnykOpenSource);
-            Assert.Equal("True", initOptions.ActivateSnykIac);
+            Assert.Equal("true", initOptions.ActivateSnykCode);
+            Assert.Equal("true", initOptions.ActivateSnykCodeSecurity);
+            Assert.Equal("true", initOptions.ActivateSnykCodeQuality);
+            Assert.Equal("true", initOptions.ActivateSnykOpenSource);
+            Assert.Equal("true", initOptions.ActivateSnykIac);
             Assert.Equal("true", initOptions.SendErrorReports);
-            Assert.Equal("True", initOptions.ManageBinariesAutomatically);
+            Assert.Equal("true", initOptions.ManageBinariesAutomatically);
             Assert.Equal("false", initOptions.EnableTrustedFoldersFeature);
             Assert.Contains("/path/to/trusted", initOptions.TrustedFolders);
             Assert.Equal("Visual Studio 2022@@VISUAL_STUDIO", initOptions.IntegrationName);
@@ -78,11 +73,11 @@ namespace Snyk.VisualStudio.Extension.Tests.Language
             Assert.Equal("test-token", initOptions.Token);
             Assert.Equal("false", initOptions.AutomaticAuthentication);
             Assert.Equal("https://api.snyk.io", initOptions.Endpoint);
-            Assert.Equal("False", initOptions.Insecure);
+            Assert.Equal("false", initOptions.Insecure);
             Assert.Equal(LsConstants.ProtocolVersion, initOptions.RequiredProtocolVersion);
             Assert.Equal("plain", initOptions.OutputFormat);
             Assert.Equal("device-id-123", initOptions.DeviceId);
-            Assert.Equal("True", initOptions.EnableDeltaFindings);
+            Assert.Equal("true", initOptions.EnableDeltaFindings);
         }
 
     }

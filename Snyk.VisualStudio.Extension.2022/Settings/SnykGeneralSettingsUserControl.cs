@@ -26,7 +26,6 @@ namespace Snyk.VisualStudio.Extension.Settings
     public partial class SnykGeneralSettingsUserControl : UserControl
     {
         private static readonly ILogger logger = LogManager.ForContext<SnykGeneralSettingsUserControl>();
-
         /// <summary>
         /// Instance of SnykGeneralOptionsDialogPage.
         /// </summary>
@@ -107,6 +106,11 @@ namespace Snyk.VisualStudio.Extension.Settings
                 this.releaseChannel.DataSource = ReleaseChannelList();
             }
 
+            if (cbDelta.DataSource == null)
+            {
+                this.cbDelta.DataSource = DeltaOptionList();
+            }
+
             if (authType.SelectedIndex == -1)
             {
                 this.authType.DataSource = AuthenticationMethodList();
@@ -116,6 +120,7 @@ namespace Snyk.VisualStudio.Extension.Settings
             
             this.releaseChannel.SelectedItem = this.OptionsDialogPage.CliReleaseChannel;
             this.authType.SelectedValue = this.OptionsDialogPage.AuthenticationMethod;
+            this.cbDelta.SelectedItem = this.OptionsDialogPage.EnableDeltaFindings ? "Net new issues" : "All issues";
         }
 
         private IEnumerable<object> AuthenticationMethodList()
@@ -129,6 +134,7 @@ namespace Snyk.VisualStudio.Extension.Settings
                 })
                 .ToList();
         }
+
         private IEnumerable<string> ReleaseChannelList()
         {
             var defaultList =  new List<string>() { "stable", "rc", "preview" };
@@ -138,6 +144,13 @@ namespace Snyk.VisualStudio.Extension.Settings
             }
             return defaultList;
         }
+
+        private IEnumerable<string> DeltaOptionList()
+        {
+            var defaultList = new List<string> { "All issues", "Net new issues"};
+            return defaultList;
+        }
+
         private void OptionsDialogPageOnSettingsChanged(object sender, SnykSettingsChangedEventArgs e) =>
             ThreadHelper.JoinableTaskFactory.RunAsync(async () =>
             {
@@ -489,6 +502,14 @@ namespace Snyk.VisualStudio.Extension.Settings
         private void cbIgnoredIssues_CheckedChanged(object sender, EventArgs e)
         {
             this.OptionsDialogPage.IgnoredIssuesEnabled = this.cbIgnoredIssues.Checked;
+        }
+
+        private void cbDelta_SelectedIndexChanged(object sender, EventArgs e)
+        {
+            if (this.cbDelta.SelectedItem == null)
+                return;
+            var enableDelta = this.cbDelta.SelectedItem.ToString() == "Net new issues";
+            this.OptionsDialogPage.EnableDeltaFindings = enableDelta;
         }
     }
 }
