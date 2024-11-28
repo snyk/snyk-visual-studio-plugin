@@ -639,11 +639,6 @@ namespace Snyk.VisualStudio.Extension.UI.Toolwindow
         /// <param name="cliResult">CLI result.</param>
         private void AppendOssResultToTree(IDictionary<string, IEnumerable<Issue>> cliResult)
         {
-            if (!cliResult.Any())
-            {
-                return;
-            }
-
             this.context.TransitionTo(ScanResultsState.Instance);
 
             ThreadHelper.JoinableTaskFactory.Run(async () =>

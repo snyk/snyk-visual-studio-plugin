@@ -24,8 +24,7 @@
             <imaging:CrispImage Moniker="{x:Static catalog:KnownMonikers.Close}" />
         </Button>
         <DockPanel DockPanel.Dock="Bottom">
-            <Button x:Name="OkButton" Margin="5, 5" Content="Ok" Click="OkButton_OnClick" Width="78"  />
-            <Button x:Name="CancelButton" DockPanel.Dock="Right"  HorizontalAlignment="Right" Margin="5, 5" Content="Cancel" Click="CancelButton_OnClick" Width="78" />
+            <Button x:Name="OkButton" Content="Ok" Click="OkButton_OnClick" Width="78" HorizontalAlignment="Left" />
         </DockPanel>
         <Grid>
             <Grid.RowDefinitions>
