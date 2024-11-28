@@ -709,11 +709,17 @@ namespace Snyk.VisualStudio.Extension.UI.Toolwindow
                     return;
                 }
 
-                if (this.resultsTree.SelectedItem is BaseBranchTreeNode)
+                if (this.resultsTree.SelectedItem is BaseBranchTreeNode && !BranchSelectorDialogWindow.IsOpen)
                 {
-                    // Show Dialog
+                    try
+                    {
+                        new BranchSelectorDialogWindow(serviceProvider).ShowDialog();
+                        return;
+                    }
+                    catch (Exception ex)
+                    {
 
-                    return;
+                    }
                 }
 
                 this.HandleRootTreeNodeSelected();

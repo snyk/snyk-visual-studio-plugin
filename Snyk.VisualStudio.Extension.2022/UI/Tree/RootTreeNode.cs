@@ -1,9 +1,9 @@
-﻿namespace Snyk.VisualStudio.Extension.UI.Tree
-{
-    using System.Collections.Generic;
-    using System.Linq;
-    using System.Text;
+﻿using System.Collections.Generic;
+using System.Linq;
+using System.Text;
 
+namespace Snyk.VisualStudio.Extension.UI.Tree
+{
     /// <summary>
     /// Root tree node for different types of issues (Open source, security or quality).
     /// </summary>

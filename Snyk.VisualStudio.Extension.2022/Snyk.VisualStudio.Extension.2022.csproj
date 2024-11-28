@@ -182,6 +182,9 @@
     <Compile Include="AuthDialogWindow.xaml.cs">
       <DependentUpon>AuthDialogWindow.xaml</DependentUpon>
     </Compile>
+    <Compile Include="BranchSelectorDialogWindow.xaml.cs">
+      <DependentUpon>BranchSelectorDialogWindow.xaml</DependentUpon>
+    </Compile>
     <Compile Include="TrustDialogWindow.xaml.cs">
       <DependentUpon>TrustDialogWindow.xaml</DependentUpon>
     </Compile>
@@ -327,6 +330,10 @@
       <SubType>Designer</SubType>
     </Page>
     <Page Include="TrustDialogWindow.xaml">
+      <Generator>MSBuild:Compile</Generator>
+      <SubType>Designer</SubType>
+    </Page>
+    <Page Include="BranchSelectorDialogWindow.xaml">
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
     </Page>

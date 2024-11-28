@@ -60,6 +60,7 @@ namespace Snyk.VisualStudio.Extension.Settings
                 if (this.userStorageSettingsService == null || this.userStorageSettingsService.EnableDeltaFindings == value)
                     return;
                 this.userStorageSettingsService.EnableDeltaFindings = value;
+                userStorageSettingsService.SaveSettings();
             }
         }
 
@@ -72,6 +73,7 @@ namespace Snyk.VisualStudio.Extension.Settings
                     return;
                 this.userStorageSettingsService.FolderConfigs = value;
                 userStorageSettingsService.SaveSettings();
+                FireSettingsChangedEvent();
             }
         }
 
