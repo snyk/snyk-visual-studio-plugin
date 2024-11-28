@@ -21,6 +21,8 @@
 - Deleted Code Client Library.
 - Improve memory footprint by loading issue desciption on demand.
 - Add plugin installed event
+- Remove Common Project
+- Added Delta scan support.
 
 ### Fixed
 - Fixed UI Freeze when changing authentication method.
@@ -33,6 +35,7 @@
 - Fixed CLI downloader always attempting to download after extension starts.
 - Fixed State transition when Automatic download for CLI is selected.
 - Removed TLS enforcement from the extension.
+- OSS TreeNode empty state.
 
 ## [1.1.63]
 
