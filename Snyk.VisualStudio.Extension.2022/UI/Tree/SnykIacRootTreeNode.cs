@@ -11,8 +11,8 @@
         /// </summary>
         public const string SnykIacTitle = "Configuration";
 
-        public SnykIacRootTreeNode(IRefreshable parent)
-            : base(parent)
+        public SnykIacRootTreeNode(IRefreshable tree)
+            : base(tree)
         {
         }
 

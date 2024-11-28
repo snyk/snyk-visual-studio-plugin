@@ -8,6 +8,8 @@ namespace Snyk.VisualStudio.Extension.UI.Tree
     /// </summary>
     public class CodeFileTreeNode : FileTreeNode
     {
+        public CodeFileTreeNode(TreeNode parent) : base(parent) { }
+
         /// <summary>
         /// Gets a value indicating whether title.
         /// </summary>

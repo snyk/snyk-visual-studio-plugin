@@ -10,8 +10,8 @@
         /// </summary>
         public const string OpenSourceSecurityTitle = "Open Source Security";
 
-        public OssRootTreeNode(IRefreshable parent)
-            : base(parent)
+        public OssRootTreeNode(IRefreshable tree)
+            : base(tree)
         {
         }
 

@@ -181,7 +181,7 @@ namespace Snyk.VisualStudio.Extension.UI.Toolwindow
                 this.mainGrid.Visibility = Visibility.Visible;
 
                 this.resultsTree.IacRootNode.State = RootTreeNodeState.Scanning;
-
+                resultsTree.IacRootNode.Clean();
                 await this.UpdateActionsStateAsync();
             });
         }
@@ -262,7 +262,7 @@ namespace Snyk.VisualStudio.Extension.UI.Toolwindow
             this.mainGrid.Visibility = Visibility.Visible;
 
             this.resultsTree.OssRootNode.State = RootTreeNodeState.Scanning;
-
+            resultsTree.OssRootNode.Clean();
             await this.UpdateActionsStateAsync();
         });
 
@@ -279,7 +279,8 @@ namespace Snyk.VisualStudio.Extension.UI.Toolwindow
 
             SetScanNodeState(resultsTree.CodeSecurityRootNode, eventArgs.CodeScanEnabled);
             SetScanNodeState(resultsTree.CodeQualityRootNode, eventArgs.QualityScanEnabled);
-
+            resultsTree.CodeSecurityRootNode.Clean();
+            resultsTree.CodeQualityRootNode.Clean();
             await this.UpdateActionsStateAsync();
         });
 
@@ -290,7 +291,6 @@ namespace Snyk.VisualStudio.Extension.UI.Toolwindow
             if (!isEnabled)
             {
                 node.State = RootTreeNodeState.Disabled;
-                node.Clean();
                 return;
             }
             node.State = RootTreeNodeState.Scanning;
@@ -561,7 +561,10 @@ namespace Snyk.VisualStudio.Extension.UI.Toolwindow
             
             this.resultsTree.OssRootNode.State = options.ApiToken.IsValid() && options.OssEnabled ? RootTreeNodeState.Enabled : RootTreeNodeState.Disabled;
             this.resultsTree.IacRootNode.State = options.ApiToken.IsValid() && options.IacEnabled ? RootTreeNodeState.Enabled : RootTreeNodeState.Disabled;
-
+            HandleBranchSelectorNode(serviceProvider, this.resultsTree.OssRootNode);
+            HandleBranchSelectorNode(serviceProvider, this.resultsTree.CodeSecurityRootNode);
+            HandleBranchSelectorNode(serviceProvider, this.resultsTree.CodeQualityRootNode);
+            HandleBranchSelectorNode(serviceProvider, this.resultsTree.IacRootNode);
             try
             {
                 SastSettings sastSettings = null;
@@ -584,6 +587,36 @@ namespace Snyk.VisualStudio.Extension.UI.Toolwindow
                 NotificationService.Instance.ShowErrorInfoBar(e.Message);
             }
         });
+
+        private void HandleBranchSelectorNode(ISnykServiceProvider serviceProvider, RootTreeNode rootTreeNode)
+        {
+            var currentFolder = ThreadHelper.JoinableTaskFactory.Run(async () =>
+                await serviceProvider.SolutionService.GetSolutionFolderAsync());
+            
+            var folderConfig = serviceProvider.Options?.FolderConfigs?.SingleOrDefault(x => x.FolderPath == currentFolder);
+            if (folderConfig == null)
+                return;
+
+            var isDeltaEnabled = this.serviceProvider.Options?.EnableDeltaFindings ?? false;
+            var baseBranchTreeNode = rootTreeNode.Items.SingleOrDefault(x => x is BaseBranchTreeNode);
+            if (isDeltaEnabled)
+            {
+                if (baseBranchTreeNode == null)
+                {
+                    rootTreeNode.Items.Insert(0, new BaseBranchTreeNode (rootTreeNode) { Title = $"Base branch: {folderConfig.BaseBranch}" });
+                }
+                else
+                {
+                    baseBranchTreeNode.Title = $"Base branch: {folderConfig.BaseBranch}";
+                }
+                    
+            }
+            else
+            {
+                if (baseBranchTreeNode != null)
+                    rootTreeNode.Items.Remove(baseBranchTreeNode);
+            }
+        }
 
         private RootTreeNodeState GetSastRootNodeState(SastSettings sastSettings, bool enabledInOptions)
         {
@@ -709,10 +742,13 @@ namespace Snyk.VisualStudio.Extension.UI.Toolwindow
                     return;
                 }
 
-                if (this.resultsTree.SelectedItem is BaseBranchTreeNode && !BranchSelectorDialogWindow.IsOpen)
+                var baseBranchTreeNode = this.resultsTree.SelectedItem as BaseBranchTreeNode;
+                if (baseBranchTreeNode != null && !BranchSelectorDialogWindow.IsOpen)
                 {
                     try
                     {
+                        baseBranchTreeNode.IsSelected = false;
+                        baseBranchTreeNode.Parent.IsSelected = true;
                         new BranchSelectorDialogWindow(serviceProvider).ShowDialog();
                         return;
                     }

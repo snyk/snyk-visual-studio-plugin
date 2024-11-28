@@ -427,7 +427,7 @@ namespace Snyk.VisualStudio.Extension.Settings
             this.cbDelta.Name = "cbDelta";
             this.cbDelta.Size = new System.Drawing.Size(160, 24);
             this.cbDelta.TabIndex = 25;
-            this.cbDelta.SelectedIndexChanged += new System.EventHandler(this.cbDelta_SelectedIndexChanged);
+            this.cbDelta.SelectionChangeCommitted += new System.EventHandler(this.cbDelta_SelectionChangeCommitted);
             // 
             // ignoreGroupbox
             // 

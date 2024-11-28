@@ -38,6 +38,7 @@
                     Base Branch for:
                 </TextBlock>
                 <TextBlock x:Name="LblFolderPath" TextWrapping="Wrap" />
+                <TextBlock TextWrapping="Wrap" />
                 <ComboBox x:Name="CbBranchList" />
             </StackPanel>
         </Grid>

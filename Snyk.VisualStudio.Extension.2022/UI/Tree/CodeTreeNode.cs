@@ -5,6 +5,8 @@
     /// </summary>
     public class CodeTreeNode : IssueTreeNode
     {
+        public CodeTreeNode(TreeNode parent) : base(parent) { }
+
         /// <summary>
         /// Gets a value indicating whether title.
         /// </summary>

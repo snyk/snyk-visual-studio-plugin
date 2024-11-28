@@ -69,7 +69,7 @@ namespace Snyk.VisualStudio.Extension.Settings
             get => this.userStorageSettingsService.FolderConfigs;
             set
             {
-                if (this.userStorageSettingsService == null || this.userStorageSettingsService.FolderConfigs == value)
+                if (this.userStorageSettingsService == null)
                     return;
                 this.userStorageSettingsService.FolderConfigs = value;
                 userStorageSettingsService.SaveSettings();
@@ -462,8 +462,23 @@ namespace Snyk.VisualStudio.Extension.Settings
         public void Initialize(ISnykServiceProvider provider)
         {
             this.serviceProvider = provider;
-
+            SettingsChanged += SnykGeneralOptionsDialogPage_SettingsChanged;
             this.userStorageSettingsService = this.serviceProvider.UserStorageSettingsService;
+        }
+
+        private void SnykGeneralOptionsDialogPage_SettingsChanged(object sender, SnykSettingsChangedEventArgs e)
+        {
+            ThreadHelper.JoinableTaskFactory.RunAsync(async () =>
+            {
+                if (LanguageClientHelper.IsLanguageServerReady())
+                {
+                    await ServiceProvider.Package.LanguageClientManager.DidChangeConfigurationAsync(SnykVSPackage
+                        .Instance.DisposalToken);
+                    if (AutoScan)
+                        await ServiceProvider.Package.LanguageClientManager.InvokeWorkspaceScanAsync(SnykVSPackage
+                            .Instance.DisposalToken);
+                }
+            }).FireAndForget();
         }
 
         /// <inheritdoc />

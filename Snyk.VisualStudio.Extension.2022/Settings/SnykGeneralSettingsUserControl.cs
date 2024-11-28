@@ -154,8 +154,6 @@ namespace Snyk.VisualStudio.Extension.Settings
         private void OptionsDialogPageOnSettingsChanged(object sender, SnykSettingsChangedEventArgs e) =>
             ThreadHelper.JoinableTaskFactory.RunAsync(async () =>
             {
-                if (LanguageClientHelper.IsLanguageServerReady())
-                    await ServiceProvider.Package.LanguageClientManager.DidChangeConfigurationAsync(SnykVSPackage.Instance.DisposalToken);
                 await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
                 this.UpdateViewFromOptionsDialog();
             }).FireAndForget();
@@ -503,8 +501,7 @@ namespace Snyk.VisualStudio.Extension.Settings
         {
             this.OptionsDialogPage.IgnoredIssuesEnabled = this.cbIgnoredIssues.Checked;
         }
-
-        private void cbDelta_SelectedIndexChanged(object sender, EventArgs e)
+        private void cbDelta_SelectionChangeCommitted(object sender, EventArgs e)
         {
             if (this.cbDelta.SelectedItem == null)
                 return;

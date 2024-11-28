@@ -247,6 +247,7 @@
     <Compile Include="UI\Tree\SnykFilterableTree.xaml.cs">
       <DependentUpon>SnykFilterableTree.xaml</DependentUpon>
     </Compile>
+    <Compile Include="UI\Tree\ThreadSafeObservableCollection.cs" />
     <Compile Include="UI\Tree\TreeNode.cs" />
     <Compile Include="UI\Tree\TreeNodeProductFactory.cs" />
     <Compile Include="Utils\Json.cs" />

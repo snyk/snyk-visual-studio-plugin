@@ -128,9 +128,7 @@ namespace Snyk.VisualStudio.Extension.UI.Tree
             {
                 return;
             }
-
-            rootNode.Items.Clear();
-
+            rootNode.Clean();
             var criticalSeverityCount = 0;
             var highSeverityCount = 0;
             var mediumSeverityCount = 0;
@@ -148,7 +146,7 @@ namespace Snyk.VisualStudio.Extension.UI.Tree
                 if (additionalFilter != null)
                     issueList = issueList.Where(additionalFilter).ToList();
 
-                var fileNode = TreeNodeProductFactory.GetFileTreeNode(product);
+                var fileNode = TreeNodeProductFactory.GetFileTreeNode(product, rootNode);
                 fileNode.IssueList = issueList;
                 fileNode.IsExpanded = false;
                 fileNode.FileName = kv.Key;
@@ -169,7 +167,7 @@ namespace Snyk.VisualStudio.Extension.UI.Tree
 
                 foreach (var issue in issueList)
                 {
-                    var issueNode = TreeNodeProductFactory.GetIssueTreeNode(product);
+                    var issueNode = TreeNodeProductFactory.GetIssueTreeNode(product, fileNode);
                     issueNode.Issue = issue;
                     fileNode.Items.Add(issueNode);
                 }
@@ -182,11 +180,7 @@ namespace Snyk.VisualStudio.Extension.UI.Tree
 
 
             var totalIssueCount = scanResultDictionary.Values.SelectMany(value => value).Count();
-            var folderConfig = options.FolderConfigs.SingleOrDefault(x=> x.FolderPath.Replace("\\", "/") == currentFolder);
-            if (options.EnableDeltaFindings && folderConfig != null)
-            {
-                rootNode.Items.Add(new BaseBranchTreeNode{Title = $"Base branch: {folderConfig.BaseBranch}"});
-            }
+
             AddInfoTreeNodes(rootNode, totalIssueCount, ignoredIssueCount, fixableIssueCount, options);
 
             foreach (var ossFileTreeNode in fileTreeNodes)

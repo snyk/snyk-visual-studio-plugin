@@ -2,6 +2,9 @@
 {
     public class OssTreeNode : IssueTreeNode
     {
+        public OssTreeNode(TreeNode parent) : base(parent)
+        {
+        }
         public override string Title => this.Issue.GetPackageNameTitle();
 
         /// <summary>

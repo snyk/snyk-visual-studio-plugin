@@ -5,6 +5,9 @@
     /// </summary>
     public class IacTreeNode : IssueTreeNode
     {
+        public IacTreeNode(TreeNode parent): base(parent)
+        {
+        }
         /// <summary>
         /// Gets a value indicating whether title.
         /// </summary>

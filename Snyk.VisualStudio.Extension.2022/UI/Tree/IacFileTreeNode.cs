@@ -8,6 +8,7 @@ namespace Snyk.VisualStudio.Extension.UI.Tree
     /// </summary>
     public class IacFileTreeNode : FileTreeNode
     {
+        public IacFileTreeNode(TreeNode parent) : base(parent) { }
         /// <summary>
         /// Gets a value indicating whether title.
         /// </summary>
