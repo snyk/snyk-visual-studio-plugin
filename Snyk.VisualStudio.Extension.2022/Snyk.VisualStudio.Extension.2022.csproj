@@ -61,6 +61,9 @@
     <WarningLevel>4</WarningLevel>
     <LangVersion>latest</LangVersion>
   </PropertyGroup>
+  <PropertyGroup>
+    <RestorePackagesWithLockFile>true</RestorePackagesWithLockFile>
+  </PropertyGroup>  
   <ItemGroup>
     <Compile Include="Analytics\AbstractAnalyticsEvent.cs" />
     <Compile Include="Analytics\AnalyticsEvent.cs" />
