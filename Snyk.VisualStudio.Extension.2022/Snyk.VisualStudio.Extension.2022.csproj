@@ -77,7 +77,7 @@
     <Compile Include="Language\FeatureFlagResponse.cs" />
     <Compile Include="Language\ILanguageClientManager.cs" />
     <Compile Include="Language\InvalidProductTypeException.cs" />
-    <Compile Include="Language\LsConfiguration.cs" />
+    <Compile Include="Language\LsSettings.cs" />
     <Compile Include="Language\LsConstants.cs" />
     <Compile Include="Language\LsAnalysisResult.cs" />
     <Compile Include="Language\SatisfyImportExtension.cs" />

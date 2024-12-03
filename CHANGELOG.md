@@ -2,8 +2,8 @@
 
 ## [2.0.0]
 ### Changed
-- Visual Studio extension is now fully integrated with Snyk Language Server protocol v16.
-- Reported issues now are highlighted in directly in your editor.
+- Visual Studio extension is now fully integrated with Snyk Language Server protocol.
+- Reported issues now are highlighted directly in your editor.
 - Reported issues are now shown in the Visual Studio Error Window.
 - Code Actions in the editor to learn about the reported issue.
 - Apply AI fixes from the text editor.
@@ -22,7 +22,7 @@
 - Improve memory footprint by loading issue desciption on demand.
 - Add plugin installed event
 - Remove Common Project
-- Added Delta scan support.
+- Added Net new issues scan support.
 
 ### Fixed
 - Fixed UI Freeze when changing authentication method.

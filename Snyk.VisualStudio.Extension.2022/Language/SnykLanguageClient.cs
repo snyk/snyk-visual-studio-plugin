@@ -2,7 +2,6 @@
 using System.Collections.Generic;
 using System.ComponentModel.Composition;
 using System.Diagnostics;
-using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.VisualStudio.LanguageServer.Client;
@@ -10,7 +9,6 @@ using Microsoft.VisualStudio.Shell;
 using Microsoft.VisualStudio.Threading;
 using Serilog;
 using Snyk.VisualStudio.Extension.Analytics;
-using Snyk.VisualStudio.Extension.Authentication;
 using Snyk.VisualStudio.Extension.CLI;
 using Snyk.VisualStudio.Extension.Settings;
 using Snyk.VisualStudio.Extension.Utils;
@@ -29,13 +27,12 @@ namespace Snyk.VisualStudio.Extension.Language
     {
         private static readonly ILogger Logger = LogManager.ForContext<SnykLanguageClient>();
         private readonly SemaphoreSlim semaphore = new SemaphoreSlim(1,1);
-        private readonly LsConfiguration configuration;
+        private LsSettings settings;
 
         [ImportingConstructor]
         public SnykLanguageClient()
         {
             middleware = new SnykLanguageClientMiddleware();
-            configuration = new LsConfiguration(SnykVSPackage.ServiceProvider);
         }
 
         public string Name => "Snyk Language Server";
@@ -52,7 +49,9 @@ namespace Snyk.VisualStudio.Extension.Language
 
         public object GetInitializationOptions()
         {
-            return configuration.GetInitializationOptions();
+            if (settings == null)
+                settings = new LsSettings(SnykVSPackage.ServiceProvider);
+            return settings.GetInitializationOptions();
         }
 
         public IEnumerable<string> FilesToWatch => null;

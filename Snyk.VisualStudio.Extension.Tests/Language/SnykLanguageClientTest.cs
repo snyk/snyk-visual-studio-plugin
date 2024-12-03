@@ -47,6 +47,8 @@ namespace Snyk.VisualStudio.Extension.Tests.Language
             serviceProviderMock.Setup(x => x.Options).Returns(optionsMock.Object);
             serviceProviderMock.Setup(x => x.TasksService).Returns(tasksServiceMock.Object);
             sp.AddService(typeof(ISnykService),serviceProviderMock.Object);
+            //SnykVSPackage.Instance = new Mock<SnykVSPackage>().Object;
+
             // Set the static ServiceProvider to our mock
             //var snykVsPackage = new SnykVSPackage();
             //var instanceField = typeof(SnykVSPackage).GetField("_instance", BindingFlags.Static | BindingFlags.NonPublic);

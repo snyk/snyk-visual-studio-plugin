@@ -10,18 +10,18 @@ using Xunit;
 namespace Snyk.VisualStudio.Extension.Tests.Language
 {
     [Collection(MockedVS.Collection)]
-    public class LsConfigurationTest
+    public class LsSettingsTest
     {
-        private LsConfiguration cut;
+        private LsSettings cut;
         private readonly Mock<ISnykOptions> optionsMock;
 
-        public LsConfigurationTest(GlobalServiceProvider sp)
+        public LsSettingsTest(GlobalServiceProvider sp)
         {
             sp.Reset();
             optionsMock = new Mock<ISnykOptions>();
             var serviceProviderMock = new Mock<ISnykServiceProvider>();
             serviceProviderMock.Setup(x => x.Options).Returns(optionsMock.Object);
-            cut = new LsConfiguration(serviceProviderMock.Object);
+            cut = new LsSettings(serviceProviderMock.Object);
         }
 
         [Fact]

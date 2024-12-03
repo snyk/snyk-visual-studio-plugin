@@ -7,11 +7,11 @@ using Snyk.VisualStudio.Extension.Settings;
 
 namespace Snyk.VisualStudio.Extension.Language
 {
-    public class LsConfiguration
+    public class LsSettings
     {
         private readonly ISnykServiceProvider serviceProvider;
 
-        public LsConfiguration(ISnykServiceProvider serviceProvider)
+        public LsSettings(ISnykServiceProvider serviceProvider)
         {
             this.serviceProvider = serviceProvider;
         }
@@ -25,12 +25,10 @@ namespace Snyk.VisualStudio.Extension.Language
             var options = this.serviceProvider.Options;
             var initializationOptions = new SnykLsInitializationOptions
             {
-                ActivateSnykCode = options.SnykCodeSecurityEnabled.ToString().ToLower(),
                 ActivateSnykCodeSecurity = options.SnykCodeSecurityEnabled.ToString().ToLower(),
                 ActivateSnykCodeQuality = options.SnykCodeQualityEnabled.ToString().ToLower(),
                 ActivateSnykOpenSource = options.OssEnabled.ToString().ToLower(),
                 ActivateSnykIac = options.IacEnabled.ToString().ToLower(),
-                SendErrorReports = "true",
                 ManageBinariesAutomatically = options.BinariesAutoUpdate.ToString().ToLower(),
                 EnableTrustedFoldersFeature = "false",
                 TrustedFolders = options.TrustedFolders.ToList(),

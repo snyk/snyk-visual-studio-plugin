@@ -251,7 +251,7 @@ namespace Snyk.VisualStudio.Extension
         {
             await FeatureFlagService.Initialize(LanguageClientManager, Options).RefreshAsync(DisposalToken);
             // Sleep for three seconds before closing the temp window
-            await Task.Delay(3000);
+            await Task.Delay(1000);
             await JoinableTaskFactory.SwitchToMainThreadAsync();
             tempOpenedFileWindow?.Close(vsSaveChanges.vsSaveChangesNo);
         }
