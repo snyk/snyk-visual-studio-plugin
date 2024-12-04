@@ -45,7 +45,7 @@ jobs:
             args:
               --severity-threshold=high
   build-project:
-    uses: snyk/snyk-visual-studio-plugin/.github/workflows/build-project.yml@feat/netnew-ui
+    uses: snyk/snyk-visual-studio-plugin/.github/workflows/build-project.yml@main
     with:
       solution-file-path: .
     secrets: inherit
@@ -74,5 +74,5 @@ jobs:
       run: vstest.console.exe **\*.Tests.dll /TestCaseFilter:"FullyQualifiedName!=Xunit.Instances.VisualStudio&integration!=true" #exclude integration tests and the psuedo-tests that launch a VS instance
   run-integration-tests:
     needs: build-project
-    uses: snyk/snyk-visual-studio-plugin/.github/workflows/integration-tests.yml@feat/netnew-ui
+    uses: snyk/snyk-visual-studio-plugin/.github/workflows/integration-tests.yml@main
     secrets: inherit      
