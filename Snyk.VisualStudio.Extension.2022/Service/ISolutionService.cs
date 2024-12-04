@@ -1,8 +1,8 @@
-﻿namespace Snyk.Common
-{
-    using System.Collections.Generic;
-    using System.Threading.Tasks;
+﻿using System.Collections.Generic;
+using System.Threading.Tasks;
 
+namespace Snyk.VisualStudio.Extension.Service
+{
     /// <summary>
     /// Service for solution related functionality.
     /// </summary>

@@ -2,10 +2,10 @@
 using System.IO;
 using System.Threading.Tasks;
 using Moq;
-using Snyk.Common.Settings;
 using Snyk.VisualStudio.Extension.CLI;
 using Snyk.VisualStudio.Extension.Download;
 using Snyk.VisualStudio.Extension.Service;
+using Snyk.VisualStudio.Extension.Settings;
 using Xunit;
 
 namespace Snyk.VisualStudio.Extension.Tests

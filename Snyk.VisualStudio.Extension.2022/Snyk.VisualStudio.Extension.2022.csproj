@@ -68,12 +68,19 @@
     <Compile Include="Analytics\AbstractAnalyticsEvent.cs" />
     <Compile Include="Analytics\AnalyticsEvent.cs" />
     <Compile Include="Analytics\AnalyticsSender.cs" />
+    <Compile Include="Authentication\AuthenticationToken.cs" />
+    <Compile Include="Authentication\AuthenticationType.cs" />
+    <Compile Include="Authentication\OAuthToken.cs" />
+    <Compile Include="Download\Sha256.cs" />
+    <Compile Include="Extension\CollectionExtensions.cs" />
     <Compile Include="Extension\JTokenExtension.cs" />
+    <Compile Include="Extension\StringExtensions.cs" />
     <Compile Include="Extension\UriExtensions.cs" />
     <Compile Include="Language\CustomInitializationOptions.cs" />
     <Compile Include="Language\FeatureFlagResponse.cs" />
     <Compile Include="Language\ILanguageClientManager.cs" />
     <Compile Include="Language\InvalidProductTypeException.cs" />
+    <Compile Include="Language\LsSettings.cs" />
     <Compile Include="Language\LsConstants.cs" />
     <Compile Include="Language\LsAnalysisResult.cs" />
     <Compile Include="Language\SatisfyImportExtension.cs" />
@@ -96,6 +103,8 @@
     <Compile Include="Commands\SnykScanCommand.cs" />
     <Compile Include="Commands\SnykStopCurrentTaskCommand.cs" />
     <Compile Include="Language\SnykLanguageServerEventArgs.cs" />
+    <Compile Include="LocalCodeEngine.cs" />
+    <Compile Include="LogManager.cs" />
     <Compile Include="ManualAssemblyResolver.cs" />
     <Compile Include="Model\Severity.cs" />
     <Compile Include="Product.cs" />
@@ -103,15 +112,25 @@
     <Resource Include="Resources\SnykIac.png">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Resource>
+    <Resource Include="Resources\branch-light.png">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Resource>
+    <Resource Include="Resources\branch-dark.png">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Resource>
     <Content Include="Resources\SnykLsInit.cs">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
       <IncludeInVSIX>true</IncludeInVSIX>
     </Content>
+    <Compile Include="SastSettings.cs" />
+    <Compile Include="Service\ApiEndpointResolver.cs" />
     <Compile Include="Service\Domain\FeaturesSettings.cs" />
     <Compile Include="Service\FeatureFlagService.cs" />
     <Compile Include="Service\ISnykProgressWorker.cs" />
     <Compile Include="Service\ISnykService.cs" />
     <Compile Include="Service\ISnykServiceProvider.cs" />
+    <Compile Include="Service\ISnykTasksService.cs" />
+    <Compile Include="Service\ISolutionService.cs" />
     <Compile Include="Service\IWorkspaceTrustService.cs" />
     <Compile Include="Service\OssScanException.cs" />
     <Compile Include="Service\SnykCliDownloadEventArgs.cs" />
@@ -126,6 +145,7 @@
     <Compile Include="Service\VsCodeService.cs" />
     <Compile Include="Service\WorkspaceTrustService.cs" />
     <Compile Include="Settings\ErrorProviderExtensions.cs" />
+    <Compile Include="Settings\ISnykOptions.cs" />
     <Compile Include="Settings\IUserStorageSettingsService.cs" />
     <Compile Include="Settings\SnykGeneralOptionsDialogPage.cs">
       <SubType>Component</SubType>
@@ -137,6 +157,7 @@
       <DependentUpon>SnykGeneralSettingsUserControl.cs</DependentUpon>
     </Compile>
     <Compile Include="Settings\SnykSettings.cs" />
+    <Compile Include="Settings\SnykSettingsChangedEventArgs.cs" />
     <Compile Include="Settings\SnykSettingsLoader.cs" />
     <Compile Include="Settings\SnykSolutionOptionsDialogPage.cs">
       <SubType>Component</SubType>
@@ -156,12 +177,16 @@
       <AutoGen>True</AutoGen>
     </Compile>
     <Compile Include="SnykVSPackage.cs" />
+    <Compile Include="SnykWebClient.cs" />
     <Compile Include="Theme\ColorExtension.cs" />
     <Compile Include="Theme\SnykVsThemeService.cs" />
     <Compile Include="Theme\ThemeInfo.cs" />
     <Compile Include="Theme\VsBroadcastMessageEvents.cs" />
     <Compile Include="AuthDialogWindow.xaml.cs">
       <DependentUpon>AuthDialogWindow.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="BranchSelectorDialogWindow.xaml.cs">
+      <DependentUpon>BranchSelectorDialogWindow.xaml</DependentUpon>
     </Compile>
     <Compile Include="TrustDialogWindow.xaml.cs">
       <DependentUpon>TrustDialogWindow.xaml</DependentUpon>
@@ -206,6 +231,7 @@
     <Compile Include="UI\Toolwindow\ToolWindowState.cs" />
     <Compile Include="UI\Toolwindow\UpdateDownloadState.cs" />
     <Compile Include="UI\Toolwindow\WebBrowserHostUIHandler.cs" />
+    <Compile Include="UI\Tree\BaseBranchTreeNode.cs" />
     <Compile Include="UI\Tree\FileTreeNode.cs" />
     <Compile Include="UI\Tree\InfoTreeNode.cs" />
     <Compile Include="UI\Tree\IssueTreeNode.cs" />
@@ -224,8 +250,12 @@
     <Compile Include="UI\Tree\SnykFilterableTree.xaml.cs">
       <DependentUpon>SnykFilterableTree.xaml</DependentUpon>
     </Compile>
+    <Compile Include="UI\Tree\ThreadSafeObservableCollection.cs" />
     <Compile Include="UI\Tree\TreeNode.cs" />
     <Compile Include="UI\Tree\TreeNodeProductFactory.cs" />
+    <Compile Include="Utils\Json.cs" />
+    <Compile Include="Utils\SnykDirectory.cs" />
+    <Compile Include="Utils\SnykExtension.cs" />
     <Compile Include="VSPackage.Designer.cs">
       <DependentUpon>VSPackage.resx</DependentUpon>
       <DesignTime>True</DesignTime>
@@ -276,8 +306,20 @@
     <PackageReference Include="Analytics">
       <Version>3.8.1</Version>
     </PackageReference>
-    <PackageReference Include="Serilog">
-      <Version>3.0.1</Version>
+    <PackageReference Include="Serilog.Enrichers.Process">
+      <Version>2.0.2</Version>
+    </PackageReference>
+    <PackageReference Include="Serilog.Enrichers.Thread">
+      <Version>3.1.0</Version>
+    </PackageReference>
+    <PackageReference Include="Serilog.Exceptions">
+      <Version>8.4.0</Version>
+    </PackageReference>
+    <PackageReference Include="Serilog.Extensions.Logging">
+      <Version>7.0.0</Version>
+    </PackageReference>
+    <PackageReference Include="Serilog.Sinks.File">
+      <Version>5.0.0</Version>
     </PackageReference>
     <PackageReference Include="SerilogAnalyzer">
       <Version>0.15.0</Version>
@@ -287,17 +329,15 @@
     </PackageReference>
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\Snyk.Common\Snyk.Common.csproj">
-      <Project>{7912ad6d-c154-4504-9ab3-8767d3c46e89}</Project>
-      <Name>Snyk.Common</Name>
-    </ProjectReference>
-  </ItemGroup>
-  <ItemGroup>
     <Page Include="AuthDialogWindow.xaml">
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
     </Page>
     <Page Include="TrustDialogWindow.xaml">
+      <Generator>MSBuild:Compile</Generator>
+      <SubType>Designer</SubType>
+    </Page>
+    <Page Include="BranchSelectorDialogWindow.xaml">
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
     </Page>
@@ -553,6 +593,7 @@
       <IncludeInVSIX>true</IncludeInVSIX>
     </Content>
   </ItemGroup>
+  <ItemGroup />
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <Import Project="$(VSToolsPath)\VSSDK\Microsoft.VsSDK.targets" Condition="'$(VSToolsPath)' != ''" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 

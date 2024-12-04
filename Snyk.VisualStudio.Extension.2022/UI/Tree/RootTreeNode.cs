@@ -1,9 +1,9 @@
-﻿namespace Snyk.VisualStudio.Extension.UI.Tree
-{
-    using System.Collections.Generic;
-    using System.Linq;
-    using System.Text;
+﻿using System.Collections.Generic;
+using System.Linq;
+using System.Text;
 
+namespace Snyk.VisualStudio.Extension.UI.Tree
+{
     /// <summary>
     /// Root tree node for different types of issues (Open source, security or quality).
     /// </summary>
@@ -11,15 +11,15 @@
     {
         private RootTreeNodeState state;
 
-        private IRefreshable parent;
+        private IRefreshable tree;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="RootTreeNode"/> class.
         /// </summary>
-        /// <param name="parent">Refreshable reference.</param>
-        public RootTreeNode(IRefreshable parent)
+        /// <param name="tree">Refreshable reference.</param>
+        public RootTreeNode(IRefreshable tree)
         {
-            this.parent = parent;
+            this.tree = tree;
 
             this.State = RootTreeNodeState.Disabled;
         }
@@ -92,7 +92,7 @@
 
                 this.state = value;
 
-                this.parent.Refresh();
+                this.tree.Refresh();
             }
         }
 
@@ -131,11 +131,11 @@
         /// </summary>
         public void Clean()
         {
+            var baseBranchTreeNode = Items.SingleOrDefault(x => x is BaseBranchTreeNode);
             this.Items.Clear();
-
+            if(baseBranchTreeNode != null)
+                this.Items.Add(baseBranchTreeNode);
             this.Title = this.GetTitlePrefix();
-
-            this.State = RootTreeNodeState.Disabled;
         }
 
         /// <summary>

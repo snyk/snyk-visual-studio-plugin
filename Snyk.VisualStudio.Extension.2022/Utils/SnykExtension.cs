@@ -1,11 +1,10 @@
-﻿namespace Snyk.Common
-{
-    using System;
-    using System.IO;
-    using System.Linq;
-    using System.Text;
-    using System.Xml;
+﻿using System;
+using System.IO;
+using System.Linq;
+using System.Xml;
 
+namespace Snyk.VisualStudio.Extension
+{
     /// <summary>
     /// Common Snyk extension message.
     /// </summary>
@@ -15,45 +14,14 @@
         /// Integration name.
         /// </summary>
         public const string IntegrationName = "VISUAL_STUDIO";
-        private const string AppSettingsDevelopmentFileName = "appsettings.development.json";
-        private const string AppSettingsFileName = "appsettings.json";
 
         private static string extensionDirectoryPath;
-        private static SnykAppSettings appSettings;
         private static readonly Lazy<string> versionLazy = new(GetIntegrationVersion);
 
         /// <summary>
         /// Gets extension version.
         /// </summary>
         public static string Version => versionLazy.Value;
-
-        /// <summary>
-        /// Gets <see cref="SnykAppSettings"/> from the appsettings.json file.
-        /// </summary>
-        public static SnykAppSettings AppSettings
-        {
-            get
-            {
-                if (appSettings == null)
-                {
-                    string extensionPath = GetExtensionDirectoryPath();
-                    string appSettingsPath = Path.Combine(extensionPath, AppSettingsFileName);
-
-#if DEBUG
-                    // In Debug mode, attempt to use the appsettings.development.json file if present
-                    var developmentAppSettingsPath = Path.Combine(extensionPath, AppSettingsDevelopmentFileName);
-                    if (File.Exists(developmentAppSettingsPath))
-                    {
-                        appSettingsPath = developmentAppSettingsPath;
-                    }
-#endif
-
-                    appSettings = Json.Deserialize<SnykAppSettings>(File.ReadAllText(appSettingsPath, Encoding.UTF8));
-                }
-
-                return appSettings;
-            }
-        }
 
         /// <summary>
         /// Get extension directory path.

@@ -1,8 +1,8 @@
-﻿namespace Snyk.Common
-{
-    using System;
-    using System.Text.RegularExpressions;
+﻿using System;
+using System.Text.RegularExpressions;
 
+namespace Snyk.VisualStudio.Extension.Extension
+{
     /// <summary>
     /// Extension methods for string class.
     /// </summary>

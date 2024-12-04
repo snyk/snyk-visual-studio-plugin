@@ -2,19 +2,16 @@
 using System.Collections.Generic;
 using System.ComponentModel.Composition;
 using System.Diagnostics;
-using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
-using System.Windows.Controls.Primitives;
 using Microsoft.VisualStudio.LanguageServer.Client;
 using Microsoft.VisualStudio.Shell;
 using Microsoft.VisualStudio.Threading;
 using Serilog;
-using Snyk.Common;
-using Snyk.Common.Authentication;
-using Snyk.Common.Settings;
 using Snyk.VisualStudio.Extension.Analytics;
 using Snyk.VisualStudio.Extension.CLI;
+using Snyk.VisualStudio.Extension.Settings;
+using Snyk.VisualStudio.Extension.Utils;
 using StreamJsonRpc;
 using Task = System.Threading.Tasks.Task;
 using LSP = Microsoft.VisualStudio.LanguageServer.Protocol;
@@ -30,7 +27,7 @@ namespace Snyk.VisualStudio.Extension.Language
     {
         private static readonly ILogger Logger = LogManager.ForContext<SnykLanguageClient>();
         private readonly SemaphoreSlim semaphore = new SemaphoreSlim(1,1);
-        private SnykLsInitializationOptions initializationOptions;
+        private LsSettings settings;
 
         [ImportingConstructor]
         public SnykLanguageClient()
@@ -52,61 +49,11 @@ namespace Snyk.VisualStudio.Extension.Language
 
         public object GetInitializationOptions()
         {
-            if (SnykVSPackage.ServiceProvider == null)
-            {
-                return null;
-            }
-
-            var options = SnykVSPackage.ServiceProvider.Options;
-            initializationOptions = new SnykLsInitializationOptions
-            {
-                ActivateSnykCode = options.SnykCodeSecurityEnabled.ToString(),
-                ActivateSnykCodeSecurity = options.SnykCodeSecurityEnabled.ToString(),
-                ActivateSnykCodeQuality = options.SnykCodeQualityEnabled.ToString(),
-                ActivateSnykOpenSource = options.OssEnabled.ToString(),
-                ActivateSnykIac = options.IacEnabled.ToString(),
-                SendErrorReports = "true",
-                ManageBinariesAutomatically = options.BinariesAutoUpdate.ToString(),
-                EnableTrustedFoldersFeature = "false",
-                TrustedFolders = options.TrustedFolders.ToList(),
-                IntegrationName = this.GetIntegrationName(options),
-                IntegrationVersion = this.GetIntegrationVersion(options),
-                FilterSeverity = new FilterSeverityOptions
-                {
-                    Critical = false,
-                    High = false,
-                    Low = false,
-                    Medium = false,
-                },
-                ScanningMode = options.AutoScan ? "auto" : "manual",
-#pragma warning disable VSTHRD104
-                AdditionalParams = ThreadHelper.JoinableTaskFactory.Run(() => options.GetAdditionalOptionsAsync()),
-#pragma warning restore VSTHRD104
-                AuthenticationMethod = options.AuthenticationMethod == AuthenticationType.OAuth ? "oauth" : "token",
-                CliPath = SnykCli.GetCliFilePath(options.CliCustomPath),
-                Organization = options.Organization,
-                Token = options.ApiToken.ToString(),
-                AutomaticAuthentication = "false",
-                Endpoint = options.CustomEndpoint,
-                Insecure = options.IgnoreUnknownCA.ToString(),
-                RequiredProtocolVersion = LsConstants.ProtocolVersion,
-                HoverVerbosity = 1,
-                OutputFormat = "plain",
-                DeviceId = GetDeviceId(options)
-            };
-            return initializationOptions;
+            if (settings == null)
+                settings = new LsSettings(SnykVSPackage.ServiceProvider);
+            return settings.GetInitializationOptions();
         }
 
-        private string GetIntegrationName(ISnykOptions options)
-        {
-            var compositeValue = $"{options.IntegrationEnvironment}@@{options.IntegrationName}";
-            return compositeValue;
-        }
-        private string GetIntegrationVersion(ISnykOptions options)
-        {
-            var compositeValue = $"{options.IntegrationEnvironmentVersion}@@{options.IntegrationVersion}";
-            return compositeValue;
-        }
         public IEnumerable<string> FilesToWatch => null;
 
         public bool ShowNotificationOnInitializeFailed => true;
@@ -213,8 +160,8 @@ namespace Snyk.VisualStudio.Extension.Language
             var settings = SnykVSPackage.Instance?.Options;
             if (settings == null) return;
             if (settings.AnalyticsPluginInstalledSent) return;
-            
-            var deviceId = GetDeviceId(settings);
+
+            var deviceId = settings.DeviceId;
             
             var analyticsSender = AnalyticsSender.Instance(settings, LanguageClientHelper.LanguageClientManager());
             var categories = new List<string> { "install" };
@@ -227,16 +174,6 @@ namespace Snyk.VisualStudio.Extension.Language
             {
                 settings.AnalyticsPluginInstalledSent = true;
             }
-        }
-
-        private string GetDeviceId(ISnykOptions settings)
-        {
-            if (string.IsNullOrEmpty(settings.DeviceId))
-            {
-                settings.DeviceId = Guid.NewGuid().ToString();
-            }
-
-            return settings.DeviceId;
         }
 
         public async Task StopServerAsync()
@@ -345,7 +282,13 @@ namespace Snyk.VisualStudio.Extension.Language
         }
         
         public async Task<object> InvokeWorkspaceScanAsync(CancellationToken cancellationToken)
-        {
+        { 
+            var isFolderTrusted = await SnykVSPackage.ServiceProvider.TasksService.IsFolderTrustedAsync();
+            if (!isFolderTrusted)
+            {
+                return null;
+            }
+
             var param = new LSP.ExecuteCommandParams {
                 Command = LsConstants.SnykWorkspaceScan
             };

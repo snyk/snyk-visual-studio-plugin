@@ -11,8 +11,8 @@
         /// </summary>
         public const string SnykCodeTitle = "Code Security";
 
-        public SnykCodeSecurityRootTreeNode(IRefreshable parent)
-            : base(parent)
+        public SnykCodeSecurityRootTreeNode(IRefreshable tree)
+            : base(tree)
         {
         }
 

@@ -8,7 +8,7 @@ using Microsoft.VisualStudio;
 using Microsoft.VisualStudio.Shell;
 using Microsoft.VisualStudio.Shell.Interop;
 using Serilog;
-using Snyk.Common;
+using Snyk.VisualStudio.Extension.Extension;
 using Task = System.Threading.Tasks.Task;
 using Toolkit = Community.VisualStudio.Toolkit;
 

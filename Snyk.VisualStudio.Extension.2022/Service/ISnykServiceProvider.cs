@@ -3,9 +3,6 @@ using System.Threading.Tasks;
 using EnvDTE80;
 using Microsoft.VisualStudio.Settings;
 using Microsoft.VisualStudio.Shell;
-using Snyk.Common;
-using Snyk.Common.Settings;
-using Snyk.VisualStudio.Extension.CLI;
 using Snyk.VisualStudio.Extension.Settings;
 using Snyk.VisualStudio.Extension.Theme;
 using Snyk.VisualStudio.Extension.UI.Toolwindow;
@@ -42,7 +39,7 @@ namespace Snyk.VisualStudio.Extension.Service
         /// <summary>
         /// Gets Tasks service instance.
         /// </summary>
-        SnykTasksService TasksService { get; }
+        ISnykTasksService TasksService { get; }
 
         /// <summary>
         /// Gets <see cref="ISnykOptions"/> (Settings) implementation instance.
@@ -62,7 +59,7 @@ namespace Snyk.VisualStudio.Extension.Service
         /// <summary>
         /// Gets user storage settings service instance.
         /// </summary>
-        SnykUserStorageSettingsService UserStorageSettingsService { get; }
+        IUserStorageSettingsService UserStorageSettingsService { get; }
 
         /// <summary>
         /// Gets <see cref="SnykToolWindowControl"/> instance.

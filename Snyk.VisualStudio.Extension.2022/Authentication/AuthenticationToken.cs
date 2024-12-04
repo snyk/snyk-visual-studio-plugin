@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace Snyk.Common.Authentication
+namespace Snyk.VisualStudio.Extension.Authentication
 {
     /// <summary>
     /// Util for AuthenticationToken strings.

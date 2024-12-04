@@ -1,9 +1,11 @@
 ﻿using System;
 using System.Text.RegularExpressions;
-using Snyk.Common.Authentication;
-using Snyk.Common.Settings;
+using Snyk.VisualStudio.Extension.Authentication;
+using Snyk.VisualStudio.Extension.Extension;
+using Snyk.VisualStudio.Extension.Settings;
 
-namespace Snyk.Common.Service
+
+namespace Snyk.VisualStudio.Extension.Service
 {
     /// <summary>
     /// Helper class for resolve API endpoints. It's one place for all endpoint calculations.

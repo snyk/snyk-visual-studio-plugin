@@ -11,8 +11,8 @@
         /// </summary>
         public const string SnykCodeTitle = "Code Quality";
 
-        public SnykCodeQualityRootTreeNode(IRefreshable parent)
-            : base(parent)
+        public SnykCodeQualityRootTreeNode(IRefreshable tree)
+            : base(tree)
         {
         }
 

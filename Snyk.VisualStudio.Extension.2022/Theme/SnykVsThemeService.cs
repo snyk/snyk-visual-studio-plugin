@@ -1,15 +1,14 @@
-﻿namespace Snyk.VisualStudio.Extension.Theme
-{
-    using System;
-    using System.Runtime.InteropServices;
-    using Microsoft.VisualStudio;
-    using Microsoft.VisualStudio.Shell;
-    using Microsoft.VisualStudio.Shell.Interop;
-    using Serilog;
-    using Snyk.Common;
-    using Snyk.VisualStudio.Extension.Service;
-    using Task = System.Threading.Tasks.Task;
+﻿using System;
+using System.Runtime.InteropServices;
+using Microsoft.VisualStudio;
+using Microsoft.VisualStudio.Shell;
+using Microsoft.VisualStudio.Shell.Interop;
+using Serilog;
+using Snyk.VisualStudio.Extension.Service;
+using Task = System.Threading.Tasks.Task;
 
+namespace Snyk.VisualStudio.Extension.Theme
+{
     /// <summary>
     /// Add support for light and dark Visual Studio themes.
     /// </summary>

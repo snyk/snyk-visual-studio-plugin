@@ -1,6 +1,4 @@
-﻿using System.Collections.ObjectModel;
-
-namespace Snyk.VisualStudio.Extension.UI.Tree
+﻿namespace Snyk.VisualStudio.Extension.UI.Tree
 {
     /// <summary>
     /// Issue tree node.
@@ -10,7 +8,7 @@ namespace Snyk.VisualStudio.Extension.UI.Tree
         /// <summary>
         /// Initializes a new instance of the <see cref="TreeNode"/> class.
         /// </summary>
-        public TreeNode() => this.Items = new ObservableCollection<TreeNode>();
+        public TreeNode() => this.Items = new ThreadSafeObservableCollection<TreeNode>();
 
         /// <summary>
         /// Gets or sets a value indicating whether title.
@@ -42,8 +40,10 @@ namespace Snyk.VisualStudio.Extension.UI.Tree
         /// <summary>
         /// Gets or sets a value indicating whether items.
         /// </summary>
-        public ObservableCollection<TreeNode> Items { get; set; }
+        public ThreadSafeObservableCollection<TreeNode> Items { get; set; }
         public bool IsSelected { get; set; }
         public bool IsExpanded { get; set; } = true;
+
+        public TreeNode Parent { get; set; }
     }
 }

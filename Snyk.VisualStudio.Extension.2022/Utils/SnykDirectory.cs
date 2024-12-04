@@ -1,8 +1,8 @@
-﻿namespace Snyk.Common
-{
-    using System;
-    using System.IO;
+﻿using System;
+using System.IO;
 
+namespace Snyk.VisualStudio.Extension
+{
     public class SnykDirectory
     {
         /// <summary>

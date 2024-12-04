@@ -1,5 +1,4 @@
-﻿using Snyk.Common;
-using Snyk.VisualStudio.Extension.Service;
+﻿using Snyk.VisualStudio.Extension.Service;
 using System;
 using System.Diagnostics;
 using System.Runtime.InteropServices;

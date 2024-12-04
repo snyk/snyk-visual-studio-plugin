@@ -5,6 +5,7 @@ namespace Snyk.VisualStudio.Extension.UI.Tree
 {
     public class OssFileTreeNode : FileTreeNode
     {
+        public OssFileTreeNode(TreeNode parent) : base(parent) { }
         public override string Title => this.ProjectName.Replace("/", "\\") + "\\" + this.DisplayTargetFile;
         public override string Icon => SnykIconProvider.GetPackageManagerIcon(this.PackageManager);
         private string ProjectName => this.IssueList.FirstOrDefault()?.AdditionalData?.ProjectName ?? "";

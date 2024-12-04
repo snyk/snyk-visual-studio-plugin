@@ -1,10 +1,10 @@
-﻿namespace Snyk.Common
-{
-    using System;
-    using System.IO;
-    using System.Security.Cryptography;
-    using System.Text;
+﻿using System;
+using System.IO;
+using System.Security.Cryptography;
+using System.Text;
 
+namespace Snyk.VisualStudio.Extension.Download
+{
     /// <summary>
     /// Methods related to Sha256 encoding.
     /// </summary>

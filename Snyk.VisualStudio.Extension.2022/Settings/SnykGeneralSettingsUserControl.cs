@@ -3,19 +3,15 @@ using System.Collections.Generic;
 using System.ComponentModel;
 using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
-using System.IO;
 using System.Linq;
-using System.Threading;
 using System.Threading.Tasks;
 using System.Windows.Forms;
 using Microsoft.VisualStudio.Shell;
 using Microsoft.VisualStudio.Threading;
 using Serilog;
-using Snyk.Common;
-using Snyk.Common.Authentication;
-using Snyk.Common.Settings;
+using Snyk.VisualStudio.Extension.Authentication;
 using Snyk.VisualStudio.Extension.CLI;
-using Snyk.VisualStudio.Extension.Download;
+using Snyk.VisualStudio.Extension.Extension;
 using Snyk.VisualStudio.Extension.Language;
 using Snyk.VisualStudio.Extension.Service;
 using Snyk.VisualStudio.Extension.UI.Notifications;
@@ -30,7 +26,6 @@ namespace Snyk.VisualStudio.Extension.Settings
     public partial class SnykGeneralSettingsUserControl : UserControl
     {
         private static readonly ILogger logger = LogManager.ForContext<SnykGeneralSettingsUserControl>();
-
         /// <summary>
         /// Instance of SnykGeneralOptionsDialogPage.
         /// </summary>
@@ -111,6 +106,11 @@ namespace Snyk.VisualStudio.Extension.Settings
                 this.releaseChannel.DataSource = ReleaseChannelList();
             }
 
+            if (cbDelta.DataSource == null)
+            {
+                this.cbDelta.DataSource = DeltaOptionList();
+            }
+
             if (authType.SelectedIndex == -1)
             {
                 this.authType.DataSource = AuthenticationMethodList();
@@ -120,6 +120,7 @@ namespace Snyk.VisualStudio.Extension.Settings
             
             this.releaseChannel.SelectedItem = this.OptionsDialogPage.CliReleaseChannel;
             this.authType.SelectedValue = this.OptionsDialogPage.AuthenticationMethod;
+            this.cbDelta.SelectedItem = this.OptionsDialogPage.EnableDeltaFindings ? "Net new issues" : "All issues";
         }
 
         private IEnumerable<object> AuthenticationMethodList()
@@ -133,6 +134,7 @@ namespace Snyk.VisualStudio.Extension.Settings
                 })
                 .ToList();
         }
+
         private IEnumerable<string> ReleaseChannelList()
         {
             var defaultList =  new List<string>() { "stable", "rc", "preview" };
@@ -142,11 +144,16 @@ namespace Snyk.VisualStudio.Extension.Settings
             }
             return defaultList;
         }
+
+        private IEnumerable<string> DeltaOptionList()
+        {
+            var defaultList = new List<string> { "All issues", "Net new issues"};
+            return defaultList;
+        }
+
         private void OptionsDialogPageOnSettingsChanged(object sender, SnykSettingsChangedEventArgs e) =>
             ThreadHelper.JoinableTaskFactory.RunAsync(async () =>
             {
-                if (LanguageClientHelper.IsLanguageServerReady())
-                    await ServiceProvider.Package.LanguageClientManager.DidChangeConfigurationAsync(SnykVSPackage.Instance.DisposalToken);
                 await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
                 this.UpdateViewFromOptionsDialog();
             }).FireAndForget();
@@ -255,11 +262,6 @@ namespace Snyk.VisualStudio.Extension.Settings
             }
         }
 
-        private void OrganizationTextBox_TextChanged(object sender, EventArgs e)
-        {
-            this.OptionsDialogPage.Organization = this.organizationTextBox.Text;
-        }
-
         private void IgnoreUnknownCACheckBox_CheckedChanged(object sender, EventArgs e)
         {
             this.OptionsDialogPage.IgnoreUnknownCA = this.ignoreUnknownCACheckBox.Checked;
@@ -331,7 +333,7 @@ namespace Snyk.VisualStudio.Extension.Settings
             ThreadHelper.JoinableTaskFactory.RunAsync(async () =>
             {
                 if (!OptionsDialogPage.ConsistentIgnoresEnabled && LanguageClientHelper.IsLanguageServerReady() && FeatureFlagService.Instance != null)
-                    await FeatureFlagService.Instance.RefreshAsync();
+                    await FeatureFlagService.Instance.RefreshAsync(SnykVSPackage.Instance.DisposalToken);
                 await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
                 this.ignoreGroupbox.Visible = this.OptionsDialogPage.ConsistentIgnoresEnabled;
             }).FireAndForget();
@@ -498,6 +500,13 @@ namespace Snyk.VisualStudio.Extension.Settings
         private void cbIgnoredIssues_CheckedChanged(object sender, EventArgs e)
         {
             this.OptionsDialogPage.IgnoredIssuesEnabled = this.cbIgnoredIssues.Checked;
+        }
+        private void cbDelta_SelectionChangeCommitted(object sender, EventArgs e)
+        {
+            if (this.cbDelta.SelectedItem == null)
+                return;
+            var enableDelta = this.cbDelta.SelectedItem.ToString() == "Net new issues";
+            this.OptionsDialogPage.EnableDeltaFindings = enableDelta;
         }
     }
 }

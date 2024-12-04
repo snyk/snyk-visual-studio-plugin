@@ -4,7 +4,6 @@ using Microsoft.VisualStudio.LanguageServer.Client;
 using LSP = Microsoft.VisualStudio.LanguageServer.Protocol;
 using Newtonsoft.Json.Linq;
 using Serilog;
-using Snyk.Common;
 using Snyk.VisualStudio.Extension.Extension;
 
 namespace Snyk.VisualStudio.Extension.Language

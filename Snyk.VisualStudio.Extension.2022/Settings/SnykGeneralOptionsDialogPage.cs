@@ -6,10 +6,7 @@ using System.Threading.Tasks;
 using System.Windows.Forms;
 using Microsoft.VisualStudio.Shell;
 using Serilog;
-using Snyk.Common;
-using Snyk.Common.Authentication;
-using Snyk.Common.Service;
-using Snyk.Common.Settings;
+using Snyk.VisualStudio.Extension.Authentication;
 using Snyk.VisualStudio.Extension.CLI;
 using Snyk.VisualStudio.Extension.Language;
 using Snyk.VisualStudio.Extension.Service;
@@ -38,7 +35,7 @@ namespace Snyk.VisualStudio.Extension.Settings
 
         private ISnykServiceProvider serviceProvider;
 
-        private SnykUserStorageSettingsService userStorageSettingsService;
+        private IUserStorageSettingsService userStorageSettingsService;
 
         private SnykGeneralSettingsUserControl generalSettingsUserControl;
 
@@ -52,6 +49,31 @@ namespace Snyk.VisualStudio.Extension.Settings
                 if (this.userStorageSettingsService == null || this.userStorageSettingsService.TrustedFolders == value)
                     return;
                 this.userStorageSettingsService.TrustedFolders = value;
+            }
+        }
+
+        public bool EnableDeltaFindings
+        {
+            get => this.userStorageSettingsService.EnableDeltaFindings;
+            set
+            {
+                if (this.userStorageSettingsService == null || this.userStorageSettingsService.EnableDeltaFindings == value)
+                    return;
+                this.userStorageSettingsService.EnableDeltaFindings = value;
+                userStorageSettingsService.SaveSettings();
+            }
+        }
+
+        public List<FolderConfig> FolderConfigs
+        {
+            get => this.userStorageSettingsService.FolderConfigs;
+            set
+            {
+                if (this.userStorageSettingsService == null)
+                    return;
+                this.userStorageSettingsService.FolderConfigs = value;
+                userStorageSettingsService.SaveSettings();
+                FireSettingsChangedEvent();
             }
         }
 
@@ -440,8 +462,23 @@ namespace Snyk.VisualStudio.Extension.Settings
         public void Initialize(ISnykServiceProvider provider)
         {
             this.serviceProvider = provider;
-
+            SettingsChanged += SnykGeneralOptionsDialogPage_SettingsChanged;
             this.userStorageSettingsService = this.serviceProvider.UserStorageSettingsService;
+        }
+
+        private void SnykGeneralOptionsDialogPage_SettingsChanged(object sender, SnykSettingsChangedEventArgs e)
+        {
+            ThreadHelper.JoinableTaskFactory.RunAsync(async () =>
+            {
+                if (LanguageClientHelper.IsLanguageServerReady())
+                {
+                    await ServiceProvider.Package.LanguageClientManager.DidChangeConfigurationAsync(SnykVSPackage
+                        .Instance.DisposalToken);
+                    if (AutoScan)
+                        await ServiceProvider.Package.LanguageClientManager.InvokeWorkspaceScanAsync(SnykVSPackage
+                            .Instance.DisposalToken);
+                }
+            }).FireAndForget();
         }
 
         /// <inheritdoc />

@@ -8,9 +8,6 @@ using Microsoft.VisualStudio.Settings;
 using Microsoft.VisualStudio.Shell;
 using Microsoft.VisualStudio.Shell.Settings;
 using Serilog;
-using Snyk.Common;
-using Snyk.Common.Settings;
-using Snyk.VisualStudio.Extension.CLI;
 using Snyk.VisualStudio.Extension.Settings;
 using Snyk.VisualStudio.Extension.Theme;
 using Snyk.VisualStudio.Extension.UI;
@@ -69,7 +66,7 @@ namespace Snyk.VisualStudio.Extension.Service
         /// <summary>
         /// Gets Tasks service.
         /// </summary>
-        public SnykTasksService TasksService => this.tasksService;
+        public ISnykTasksService TasksService => this.tasksService;
 
         /// <summary>
         /// Gets VS Settings manager.
@@ -99,7 +96,7 @@ namespace Snyk.VisualStudio.Extension.Service
         /// <summary>
         /// Gets user storage settings service instance.
         /// </summary>
-        public SnykUserStorageSettingsService UserStorageSettingsService
+        public IUserStorageSettingsService UserStorageSettingsService
         {
             get
             {

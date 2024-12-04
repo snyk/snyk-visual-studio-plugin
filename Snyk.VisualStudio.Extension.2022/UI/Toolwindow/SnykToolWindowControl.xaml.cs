@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Threading;
 using System.Windows;
@@ -8,12 +9,11 @@ using Microsoft.VisualStudio;
 using Microsoft.VisualStudio.Shell;
 using Microsoft.VisualStudio.Shell.Interop;
 using Serilog;
-using Snyk.Common;
-using Snyk.Common.Settings;
 using Snyk.VisualStudio.Extension.CLI;
 using Snyk.VisualStudio.Extension.Commands;
 using Snyk.VisualStudio.Extension.Language;
 using Snyk.VisualStudio.Extension.Service;
+using Snyk.VisualStudio.Extension.Settings;
 using Snyk.VisualStudio.Extension.UI.Notifications;
 using Snyk.VisualStudio.Extension.UI.Tree;
 using Task = System.Threading.Tasks.Task;
@@ -82,7 +82,7 @@ namespace Snyk.VisualStudio.Extension.UI.Toolwindow
 
             Logger.Information("Initialize CLI Event Listeners");
 
-            SnykTasksService tasksService = serviceProvider.TasksService;
+            var tasksService = serviceProvider.TasksService;
 
             tasksService.SnykCodeScanningStarted += this.OnSnykCodeScanningStarted;
             tasksService.SnykCodeScanError += this.OnSnykCodeDisplayError;
@@ -182,7 +182,7 @@ namespace Snyk.VisualStudio.Extension.UI.Toolwindow
                 this.mainGrid.Visibility = Visibility.Visible;
 
                 this.resultsTree.IacRootNode.State = RootTreeNodeState.Scanning;
-
+                resultsTree.IacRootNode.Clean();
                 await this.UpdateActionsStateAsync();
             });
         }
@@ -263,7 +263,7 @@ namespace Snyk.VisualStudio.Extension.UI.Toolwindow
             this.mainGrid.Visibility = Visibility.Visible;
 
             this.resultsTree.OssRootNode.State = RootTreeNodeState.Scanning;
-
+            resultsTree.OssRootNode.Clean();
             await this.UpdateActionsStateAsync();
         });
 
@@ -280,7 +280,8 @@ namespace Snyk.VisualStudio.Extension.UI.Toolwindow
 
             SetScanNodeState(resultsTree.CodeSecurityRootNode, eventArgs.CodeScanEnabled);
             SetScanNodeState(resultsTree.CodeQualityRootNode, eventArgs.QualityScanEnabled);
-
+            resultsTree.CodeSecurityRootNode.Clean();
+            resultsTree.CodeQualityRootNode.Clean();
             await this.UpdateActionsStateAsync();
         });
 
@@ -291,7 +292,6 @@ namespace Snyk.VisualStudio.Extension.UI.Toolwindow
             if (!isEnabled)
             {
                 node.State = RootTreeNodeState.Disabled;
-                node.Clean();
                 return;
             }
             node.State = RootTreeNodeState.Scanning;
@@ -562,7 +562,10 @@ namespace Snyk.VisualStudio.Extension.UI.Toolwindow
             
             this.resultsTree.OssRootNode.State = options.ApiToken.IsValid() && options.OssEnabled ? RootTreeNodeState.Enabled : RootTreeNodeState.Disabled;
             this.resultsTree.IacRootNode.State = options.ApiToken.IsValid() && options.IacEnabled ? RootTreeNodeState.Enabled : RootTreeNodeState.Disabled;
-
+            HandleBranchSelectorNode(serviceProvider, this.resultsTree.OssRootNode);
+            HandleBranchSelectorNode(serviceProvider, this.resultsTree.CodeSecurityRootNode);
+            HandleBranchSelectorNode(serviceProvider, this.resultsTree.CodeQualityRootNode);
+            HandleBranchSelectorNode(serviceProvider, this.resultsTree.IacRootNode);
             try
             {
                 SastSettings sastSettings = null;
@@ -586,6 +589,36 @@ namespace Snyk.VisualStudio.Extension.UI.Toolwindow
             }
         });
 
+        private void HandleBranchSelectorNode(ISnykServiceProvider serviceProvider, RootTreeNode rootTreeNode)
+        {
+            var currentFolder = ThreadHelper.JoinableTaskFactory.Run(async () =>
+                await serviceProvider.SolutionService.GetSolutionFolderAsync()).TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar);
+            
+            var folderConfig = serviceProvider.Options?.FolderConfigs?.SingleOrDefault(x => x.FolderPath.TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar) == currentFolder);
+            if (folderConfig == null)
+                return;
+
+            var isDeltaEnabled = this.serviceProvider.Options?.EnableDeltaFindings ?? false;
+            var baseBranchTreeNode = rootTreeNode.Items.SingleOrDefault(x => x is BaseBranchTreeNode);
+            if (isDeltaEnabled)
+            {
+                if (baseBranchTreeNode == null)
+                {
+                    rootTreeNode.Items.Insert(0, new BaseBranchTreeNode (rootTreeNode) { Title = $"Base branch: {folderConfig.BaseBranch}" });
+                }
+                else
+                {
+                    baseBranchTreeNode.Title = $"Base branch: {folderConfig.BaseBranch}";
+                }
+                    
+            }
+            else
+            {
+                if (baseBranchTreeNode != null)
+                    rootTreeNode.Items.Remove(baseBranchTreeNode);
+            }
+        }
+
         private RootTreeNodeState GetSastRootNodeState(SastSettings sastSettings, bool enabledInOptions)
         {
             if (sastSettings == null)
@@ -607,11 +640,6 @@ namespace Snyk.VisualStudio.Extension.UI.Toolwindow
         /// <param name="cliResult">CLI result.</param>
         private void AppendOssResultToTree(IDictionary<string, IEnumerable<Issue>> cliResult)
         {
-            if (!cliResult.Any())
-            {
-                return;
-            }
-
             this.context.TransitionTo(ScanResultsState.Instance);
 
             ThreadHelper.JoinableTaskFactory.Run(async () =>
@@ -710,6 +738,21 @@ namespace Snyk.VisualStudio.Extension.UI.Toolwindow
                     return;
                 }
 
+                var baseBranchTreeNode = this.resultsTree.SelectedItem as BaseBranchTreeNode;
+                if (baseBranchTreeNode != null && !BranchSelectorDialogWindow.IsOpen)
+                {
+                    try
+                    {
+                        baseBranchTreeNode.IsSelected = false;
+                        baseBranchTreeNode.Parent.IsSelected = true;
+                        new BranchSelectorDialogWindow(serviceProvider).ShowDialog();
+                        return;
+                    }
+                    catch (Exception ex)
+                    {
+
+                    }
+                }
 
                 this.HandleRootTreeNodeSelected();
             });
@@ -781,7 +824,9 @@ namespace Snyk.VisualStudio.Extension.UI.Toolwindow
             });
         }
 
+#pragma warning disable CS1998 // Async method lacks 'await' operators and will run synchronously
         private async Task HandleSnykCodeTreeNodeSelectedAsync()
+#pragma warning restore CS1998 // Async method lacks 'await' operators and will run synchronously
         {
             this.DescriptionPanel.Visibility = Visibility.Visible;
 
@@ -801,7 +846,9 @@ namespace Snyk.VisualStudio.Extension.UI.Toolwindow
                 issue.Range.End.Character);
         }
 
+#pragma warning disable CS1998 // Async method lacks 'await' operators and will run synchronously
         private async Task HandleIacTreeNodeSelectedAsync()
+#pragma warning restore CS1998 // Async method lacks 'await' operators and will run synchronously
         {
             this.DescriptionPanel.Visibility = Visibility.Visible;
 

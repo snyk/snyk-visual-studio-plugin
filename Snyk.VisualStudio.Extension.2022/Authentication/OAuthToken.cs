@@ -1,7 +1,8 @@
-﻿using Newtonsoft.Json;
+﻿using System;
+using Newtonsoft.Json;
 using Newtonsoft.Json.Serialization;
-using System;
-namespace Snyk.Common.Authentication
+
+namespace Snyk.VisualStudio.Extension.Authentication
 {
     [JsonObject(NamingStrategyType = typeof(SnakeCaseNamingStrategy))]
     public class OAuthToken

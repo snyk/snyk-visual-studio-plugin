@@ -1,7 +1,7 @@
-﻿namespace Snyk.Common.Settings
-{
-    using System;
+﻿using System;
 
+namespace Snyk.VisualStudio.Extension.Settings
+{
     /// <summary>
     /// EventsArgs for settings changed event.
     /// </summary>

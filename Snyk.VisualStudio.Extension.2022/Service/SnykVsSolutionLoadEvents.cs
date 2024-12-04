@@ -2,7 +2,6 @@
 using Microsoft.VisualStudio;
 using Microsoft.VisualStudio.Shell;
 using Microsoft.VisualStudio.Shell.Interop;
-using Snyk.Common;
 using Snyk.VisualStudio.Extension.Language;
 
 namespace Snyk.VisualStudio.Extension.Service
@@ -109,32 +108,6 @@ namespace Snyk.VisualStudio.Extension.Service
         /// <returns>VSConstants.S_OK.</returns>
         public int OnAfterOpenProject(IVsHierarchy vsHierarchy, int fAdded)
         {
-            var languageClientManager = LanguageClientHelper.LanguageClientManager();
-            if (languageClientManager == null)
-                return VSConstants.S_OK;
-
-            var isFolderTrusted = false;
-            ThreadHelper.JoinableTaskFactory.Run(async () =>
-                isFolderTrusted = await SnykVSPackage.ServiceProvider.TasksService.IsFolderTrustedAsync());
-            if (!isFolderTrusted)
-            {
-                // If folder was not trusted. Stop Language Server if running.
-                languageClientManager.StopServerAsync().FireAndForget();
-                return VSConstants.S_OK;
-            }
-
-            var shouldDownloadCli = SnykVSPackage.ServiceProvider.TasksService.ShouldDownloadCli();
-
-            if (shouldDownloadCli)
-                return VSConstants.S_OK;
-
-            if (languageClientManager.IsReady)
-            {
-                languageClientManager.RestartServerAsync().FireAndForget();
-                return VSConstants.S_OK;
-            }
-
-            languageClientManager.StartServerAsync(true).FireAndForget();
             return VSConstants.S_OK;
         }
 

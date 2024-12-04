@@ -2,7 +2,7 @@
 using Newtonsoft.Json;
 using Newtonsoft.Json.Serialization;
 
-namespace Snyk.Common
+namespace Snyk.VisualStudio.Extension
 {
     /// <summary>
     /// Sast settings.

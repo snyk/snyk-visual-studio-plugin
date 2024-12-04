@@ -1,9 +1,10 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
-using Snyk.Common.Authentication;
+using Snyk.VisualStudio.Extension.Authentication;
+using Snyk.VisualStudio.Extension.Language;
 
-namespace Snyk.Common.Settings
+namespace Snyk.VisualStudio.Extension.Settings
 {
     /// <summary>
     /// Interface for Snyk Options/Settings in Visual Studio.
@@ -82,6 +83,10 @@ namespace Snyk.Common.Settings
         string CliReleaseChannel { get; set; }
         string CliDownloadUrl { get; set; }
         ISet<string> TrustedFolders { get; set; }
+
+        public bool EnableDeltaFindings { get; set; }
+        public List<FolderConfig> FolderConfigs { get; set; }
+
         /// <summary>
         /// Settings changed event.
         /// </summary>

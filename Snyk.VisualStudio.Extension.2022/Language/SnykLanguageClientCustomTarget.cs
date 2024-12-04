@@ -5,10 +5,9 @@ using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.VisualStudio.Shell;
 using Newtonsoft.Json.Linq;
-using Snyk.Common.Authentication;
+using Snyk.VisualStudio.Extension.Authentication;
 using Snyk.VisualStudio.Extension.Extension;
 using Snyk.VisualStudio.Extension.Service;
-using Snyk.VisualStudio.Extension.UI.Notifications;
 using StreamJsonRpc;
 
 namespace Snyk.VisualStudio.Extension.Language
@@ -107,7 +106,9 @@ namespace Snyk.VisualStudio.Extension.Language
         [JsonRpcMethod(LsConstants.SnykFolderConfig)]
         public async Task OnFolderConfig(JToken arg)
         {
-
+            var folderConfigs = arg.TryParse<FolderConfigsParam>();
+            if (folderConfigs == null) return;
+            serviceProvider.Options.FolderConfigs = folderConfigs.FolderConfigs;
         }
 
         [JsonRpcMethod(LsConstants.SnykHasAuthenticated)]
@@ -134,8 +135,9 @@ namespace Snyk.VisualStudio.Extension.Language
             serviceProvider.Options.ApiToken = new AuthenticationToken(serviceProvider.Options.AuthenticationMethod, token);
 
             await serviceProvider.Options.HandleAuthenticationSuccess(token, apiUrl);
-
-            FeatureFlagService.Instance.RefreshAsync().FireAndForget();
+            // for testing
+            if(FeatureFlagService.Instance != null && SnykVSPackage.Instance != null)
+                FeatureFlagService.Instance.RefreshAsync(SnykVSPackage.Instance.DisposalToken).FireAndForget();
 
             if (serviceProvider.Options.AutoScan)
             {

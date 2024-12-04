@@ -1,11 +1,11 @@
-﻿namespace Snyk.VisualStudio.Extension
-{
-    using System;
-    using System.Collections.Generic;
-    using System.IO;
-    using System.Linq;
-    using System.Reflection;
+﻿using System;
+using System.Collections.Generic;
+using System.IO;
+using System.Linq;
+using System.Reflection;
 
+namespace Snyk.VisualStudio.Extension
+{
     /// <summary>
     /// AssemblyResolver or Assembly loader for load dll's on VS2015 and VS2022.
     /// </summary>

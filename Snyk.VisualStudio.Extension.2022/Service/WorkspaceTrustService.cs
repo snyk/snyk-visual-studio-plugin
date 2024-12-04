@@ -1,7 +1,6 @@
 ﻿using System;
 using System.IO;
 using Serilog;
-using Snyk.Common;
 using Snyk.VisualStudio.Extension.Settings;
 
 namespace Snyk.VisualStudio.Extension.Service

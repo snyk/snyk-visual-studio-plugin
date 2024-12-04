@@ -7,9 +7,9 @@ using Microsoft.VisualStudio.Shell;
 using Snyk.VisualStudio.Extension.Model;
 using System.Collections.Generic;
 using System.Threading.Tasks;
-using Snyk.Common.Settings;
 using Snyk.VisualStudio.Extension.Language;
 using Snyk.VisualStudio.Extension.Service;
+using Snyk.VisualStudio.Extension.Settings;
 
 namespace Snyk.VisualStudio.Extension.UI.Tree
 {
@@ -128,9 +128,7 @@ namespace Snyk.VisualStudio.Extension.UI.Tree
             {
                 return;
             }
-
-            rootNode.Items.Clear();
-
+            rootNode.Clean();
             var criticalSeverityCount = 0;
             var highSeverityCount = 0;
             var mediumSeverityCount = 0;
@@ -148,7 +146,7 @@ namespace Snyk.VisualStudio.Extension.UI.Tree
                 if (additionalFilter != null)
                     issueList = issueList.Where(additionalFilter).ToList();
 
-                var fileNode = TreeNodeProductFactory.GetFileTreeNode(product);
+                var fileNode = TreeNodeProductFactory.GetFileTreeNode(product, rootNode);
                 fileNode.IssueList = issueList;
                 fileNode.IsExpanded = false;
                 fileNode.FileName = kv.Key;
@@ -156,7 +154,7 @@ namespace Snyk.VisualStudio.Extension.UI.Tree
 
                 ignoredIssueCount += issueList.Count(suggestion => suggestion.IsIgnored);
 
-                issueList = FilterIgnoredIssues(options, kv.Value).ToList();
+                issueList = FilterIgnoredIssues(options, issueList).ToList();
                 
                 criticalSeverityCount += issueList.Count(suggestion => suggestion.Severity == Severity.Critical);
                 highSeverityCount += issueList.Count(suggestion => suggestion.Severity == Severity.High);
@@ -169,7 +167,7 @@ namespace Snyk.VisualStudio.Extension.UI.Tree
 
                 foreach (var issue in issueList)
                 {
-                    var issueNode = TreeNodeProductFactory.GetIssueTreeNode(product);
+                    var issueNode = TreeNodeProductFactory.GetIssueTreeNode(product, fileNode);
                     issueNode.Issue = issue;
                     fileNode.Items.Add(issueNode);
                 }
@@ -182,6 +180,7 @@ namespace Snyk.VisualStudio.Extension.UI.Tree
 
 
             var totalIssueCount = scanResultDictionary.Values.SelectMany(value => value).Count();
+
             AddInfoTreeNodes(rootNode, totalIssueCount, ignoredIssueCount, fixableIssueCount, options);
 
             foreach (var ossFileTreeNode in fileTreeNodes)

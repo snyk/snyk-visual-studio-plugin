@@ -1,7 +1,6 @@
 ﻿using System.IO;
 using Microsoft.VisualStudio.Sdk.TestFramework;
 using Moq;
-using Snyk.Common;
 using Snyk.VisualStudio.Extension.Service;
 using Snyk.VisualStudio.Extension.Settings;
 using Xunit;

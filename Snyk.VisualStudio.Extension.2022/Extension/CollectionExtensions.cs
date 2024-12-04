@@ -1,8 +1,8 @@
-﻿namespace Snyk.Common
-{
-    using System.Collections.Generic;
-    using System.Linq;
+﻿using System.Collections.Generic;
+using System.Linq;
 
+namespace Snyk.VisualStudio.Extension.Extension
+{
     /// <summary>
     /// Common extension methods implementations.
     /// </summary>

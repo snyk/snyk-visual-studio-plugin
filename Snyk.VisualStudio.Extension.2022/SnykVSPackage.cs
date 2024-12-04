@@ -1,5 +1,4 @@
-﻿using Snyk.Common.Settings;
-using System;
+﻿using System;
 using System.Diagnostics.CodeAnalysis;
 using System.IO;
 using System.Linq;
@@ -13,12 +12,10 @@ using Microsoft.VisualStudio.ComponentModelHost;
 using Microsoft.VisualStudio.Shell;
 using Microsoft.VisualStudio.Shell.Interop;
 using Serilog;
-using Snyk.Common;
 using Snyk.VisualStudio.Extension.Commands;
 using Snyk.VisualStudio.Extension.Language;
 using Snyk.VisualStudio.Extension.Service;
 using Snyk.VisualStudio.Extension.Settings;
-using Snyk.VisualStudio.Extension.UI.Notifications;
 using Snyk.VisualStudio.Extension.UI.Toolwindow;
 using Task = System.Threading.Tasks.Task;
 
@@ -83,6 +80,11 @@ namespace Snyk.VisualStudio.Extension
         /// </summary>
         public static ISnykServiceProvider ServiceProvider => Instance.serviceProvider;
 
+        // Used only in tests
+        public static void SetServiceProvider(ISnykServiceProvider serviceProvider)
+        {
+            Instance.serviceProvider = serviceProvider;
+        }
         /// <summary>
         /// Gets a task that completes once the Snyk extension has been initialized.
         /// </summary>
@@ -247,9 +249,9 @@ namespace Snyk.VisualStudio.Extension
 
         private async Task LanguageClientManagerOnOnLanguageServerReadyAsync(object sender, SnykLanguageServerEventArgs args)
         {
-            await FeatureFlagService.Initialize(LanguageClientManager, Options).RefreshAsync();
+            await FeatureFlagService.Initialize(LanguageClientManager, Options).RefreshAsync(DisposalToken);
             // Sleep for three seconds before closing the temp window
-            await Task.Delay(3000);
+            await Task.Delay(1000);
             await JoinableTaskFactory.SwitchToMainThreadAsync();
             tempOpenedFileWindow?.Close(vsSaveChanges.vsSaveChangesNo);
         }
