@@ -1,5 +1,6 @@
 ﻿using System.Collections.Generic;
 using System.Threading.Tasks;
+using Microsoft.VisualStudio.Sdk.TestFramework;
 using Moq;
 using Newtonsoft.Json.Linq;
 using Snyk.VisualStudio.Extension.Authentication;
@@ -10,14 +11,15 @@ using Xunit;
 
 namespace Snyk.VisualStudio.Extension.Tests.Language
 {
-    public class SnykLanguageClientCustomTargetTests
+    [Collection(MockedVS.Collection)]
+    public class SnykLanguageClientCustomTargetTests : PackageBaseTest
     {
         private readonly Mock<ISnykTasksService> tasksServiceMock;
         private readonly Mock<ISnykOptions> optionsMock;
         private readonly Mock<IUserStorageSettingsService> userStorageSettingsServiceMock;
         private readonly SnykLanguageClientCustomTarget cut;
 
-        public SnykLanguageClientCustomTargetTests()
+        public SnykLanguageClientCustomTargetTests(GlobalServiceProvider gsp) : base(gsp)
         {
             var serviceProviderMock = new Mock<ISnykServiceProvider>();
             tasksServiceMock = new Mock<ISnykTasksService>();

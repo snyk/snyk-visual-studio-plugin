@@ -81,9 +81,9 @@ namespace Snyk.VisualStudio.Extension
         public static ISnykServiceProvider ServiceProvider => Instance.serviceProvider;
 
         // Used only in tests
-        public static void SetServiceProvider(ISnykServiceProvider serviceProvider)
+        public void SetServiceProvider(ISnykServiceProvider serviceProvider)
         {
-            Instance.serviceProvider = serviceProvider;
+            this.serviceProvider = serviceProvider;
         }
         /// <summary>
         /// Gets a task that completes once the Snyk extension has been initialized.
@@ -95,15 +95,10 @@ namespace Snyk.VisualStudio.Extension
         /// </summary>
         public SnykToolWindowControl ToolWindowControl { get; set; }
 
-        /// <summary>
-        /// Gets a value indicating whether general Options dialog.
-        /// </summary>
-        public SnykGeneralOptionsDialogPage GeneralOptionsDialogPage { get; private set; }
-        
         // <summary>
         /// Gets the Options
         /// </summary>
-        public ISnykOptions Options => GeneralOptionsDialogPage;
+        public ISnykOptions Options { get; private set; }
 
         /// <summary>
         /// Gets <see cref="SnykToolWindow"/> instance.
@@ -276,7 +271,7 @@ namespace Snyk.VisualStudio.Extension
 
         private async Task InitializeGeneralOptionsAsync()
         {
-            if (GeneralOptionsDialogPage == null)
+            if (Options == null)
             {
                 Logger.Information(
                     "Call GetDialogPage to create. await JoinableTaskFactory.SwitchToMainThreadAsync().");
@@ -285,18 +280,18 @@ namespace Snyk.VisualStudio.Extension
 
                 Logger.Information("GeneralOptionsDialogPage not created yet. Call GetDialogPage to create.");
 
-                GeneralOptionsDialogPage =
+                Options =
                     (SnykGeneralOptionsDialogPage) GetDialogPage(typeof(SnykGeneralOptionsDialogPage));
 
                 Logger.Information("Call generalOptionsDialogPage.Initialize()");
 
-                GeneralOptionsDialogPage.Initialize(this.serviceProvider);
+                Options.Initialize(this.serviceProvider);
                 var readableVsVersion = await this.GetReadableVsVersionAsync();
                 var vsMajorMinorVersion = await this.GetVsMajorMinorVersionAsync();
-                GeneralOptionsDialogPage.Application = readableVsVersion;
-                GeneralOptionsDialogPage.ApplicationVersion = vsMajorMinorVersion;
-                GeneralOptionsDialogPage.IntegrationEnvironment = readableVsVersion;
-                GeneralOptionsDialogPage.IntegrationEnvironmentVersion = vsMajorMinorVersion;
+                Options.Application = readableVsVersion;
+                Options.ApplicationVersion = vsMajorMinorVersion;
+                Options.IntegrationEnvironment = readableVsVersion;
+                Options.IntegrationEnvironmentVersion = vsMajorMinorVersion;
             }
         }
 
