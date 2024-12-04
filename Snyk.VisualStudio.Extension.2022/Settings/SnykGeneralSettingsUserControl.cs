@@ -197,7 +197,7 @@ namespace Snyk.VisualStudio.Extension.Settings
             if(LanguageClientHelper.IsLanguageServerReady())
                 ThreadHelper.JoinableTaskFactory.RunAsync(async () =>
                 {
-                    await ServiceProvider.Package.LanguageClientManager.InvokeLogout(SnykVSPackage.Instance.DisposalToken);
+                    await ServiceProvider.LanguageClientManager.InvokeLogout(SnykVSPackage.Instance.DisposalToken);
                 }).FireAndForget();
         }
 
@@ -332,8 +332,8 @@ namespace Snyk.VisualStudio.Extension.Settings
         {
             ThreadHelper.JoinableTaskFactory.RunAsync(async () =>
             {
-                if (!OptionsDialogPage.ConsistentIgnoresEnabled && LanguageClientHelper.IsLanguageServerReady() && FeatureFlagService.Instance != null)
-                    await FeatureFlagService.Instance.RefreshAsync(SnykVSPackage.Instance.DisposalToken);
+                if (!OptionsDialogPage.ConsistentIgnoresEnabled && LanguageClientHelper.IsLanguageServerReady())
+                    await ServiceProvider.FeatureFlagService.RefreshAsync(SnykVSPackage.Instance.DisposalToken);
                 await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
                 this.ignoreGroupbox.Visible = this.OptionsDialogPage.ConsistentIgnoresEnabled;
             }).FireAndForget();
@@ -356,7 +356,7 @@ namespace Snyk.VisualStudio.Extension.Settings
                     try
                     {
                         if (!LanguageClientHelper.IsLanguageServerReady()) return;
-                        var sastSettings = await this.ServiceProvider.Package.LanguageClientManager.InvokeGetSastEnabled(SnykVSPackage.Instance.DisposalToken);
+                        var sastSettings = await this.ServiceProvider.LanguageClientManager.InvokeGetSastEnabled(SnykVSPackage.Instance.DisposalToken);
 
                         bool snykCodeEnabled = sastSettings != null ? sastSettings.SnykCodeEnabled : false;
 

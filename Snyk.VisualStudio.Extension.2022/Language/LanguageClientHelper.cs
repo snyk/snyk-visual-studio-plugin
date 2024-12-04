@@ -4,7 +4,7 @@
     {
         public static ILanguageClientManager LanguageClientManager()
         {
-            return SnykVSPackage.Instance?.LanguageClientManager;
+            return SnykVSPackage.ServiceProvider.LanguageClientManager;
         }
 
         public static bool IsLanguageServerReady()

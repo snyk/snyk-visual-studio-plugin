@@ -1,6 +1,7 @@
 ﻿using Snyk.VisualStudio.Extension.Service;
 using System;
 using Microsoft.VisualStudio.Shell;
+using Snyk.VisualStudio.Extension.Language;
 
 namespace Snyk.VisualStudio.Extension.Commands
 {
@@ -27,7 +28,7 @@ namespace Snyk.VisualStudio.Extension.Commands
         protected bool IsButtonAvailable()
         {
             ThreadHelper.ThrowIfNotOnUIThread();
-            var isLsReady = SnykVSPackage.Instance?.LanguageClientManager?.IsReady ?? false;
+            var isLsReady = LanguageClientHelper.IsLanguageServerReady();
             return SnykSolutionService.Instance.IsSolutionOpen() && isLsReady;
         }
 

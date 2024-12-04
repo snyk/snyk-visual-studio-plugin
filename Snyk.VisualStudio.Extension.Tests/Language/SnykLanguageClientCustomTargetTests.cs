@@ -1,4 +1,5 @@
 ﻿using System.Collections.Generic;
+using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.VisualStudio.Sdk.TestFramework;
 using Moq;
@@ -25,10 +26,15 @@ namespace Snyk.VisualStudio.Extension.Tests.Language
             tasksServiceMock = new Mock<ISnykTasksService>();
             optionsMock = new Mock<ISnykOptions>();
             userStorageSettingsServiceMock = new Mock<IUserStorageSettingsService>();
+            var featureFlagServiceMock = new Mock<IFeatureFlagService>();
+            
+            featureFlagServiceMock.Setup(x => x.RefreshAsync(It.IsAny<CancellationToken>()))
+                .Returns(Task.CompletedTask);
 
             serviceProviderMock.SetupGet(sp => sp.TasksService).Returns(tasksServiceMock.Object);
             serviceProviderMock.SetupGet(sp => sp.Options).Returns(optionsMock.Object);
             serviceProviderMock.SetupGet(sp => sp.UserStorageSettingsService).Returns(userStorageSettingsServiceMock.Object);
+            serviceProviderMock.SetupGet(sp => sp.FeatureFlagService).Returns(featureFlagServiceMock.Object);
 
             cut = new SnykLanguageClientCustomTarget(serviceProviderMock.Object);
         }

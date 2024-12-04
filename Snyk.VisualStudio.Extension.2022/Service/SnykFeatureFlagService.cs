@@ -7,36 +7,16 @@ using Snyk.VisualStudio.Extension.Settings;
 
 namespace Snyk.VisualStudio.Extension.Service;
 
-public class FeatureFlagService
+public class SnykFeatureFlagService : IFeatureFlagService
 {
     private readonly ILanguageClientManager languageClient;
     private readonly ISnykOptions settings;
-    private static readonly ILogger Logger = LogManager.ForContext<FeatureFlagService>();
-    private static FeatureFlagService instance;
+    private static readonly ILogger Logger = LogManager.ForContext<SnykFeatureFlagService>();
 
-    public FeatureFlagService(ILanguageClientManager languageClient, ISnykOptions settings)
+    public SnykFeatureFlagService(ILanguageClientManager languageClient, ISnykOptions settings)
     {
         this.languageClient = languageClient;
         this.settings = settings;
-    }
-
-    public static FeatureFlagService Instance => instance;
-
-    /// <summary>
-    /// Initialize service.
-    /// </summary>
-    /// <param name="languageClient"></param>
-    /// <param name="settings"></param>
-    /// <returns>Task.</returns>
-    public static FeatureFlagService Initialize(ILanguageClientManager languageClient, ISnykOptions settings)
-    {
-        if (instance != null)
-            return instance;
-
-        instance = new FeatureFlagService(languageClient, settings);
-
-        Logger.Information("FeatureFlagService initialized");
-        return instance;
     }
 
     public async Task RefreshAsync(CancellationToken cancellationToken)

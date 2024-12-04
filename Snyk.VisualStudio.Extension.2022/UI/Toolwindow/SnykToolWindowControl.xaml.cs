@@ -111,12 +111,12 @@ namespace Snyk.VisualStudio.Extension.UI.Toolwindow
             tasksService.DownloadStarted += (sender, args) =>
             {
                 if (LanguageClientHelper.IsLanguageServerReady())
-                    ThreadHelper.JoinableTaskFactory.RunAsync(serviceProvider.Package.LanguageClientManager.StopServerAsync).FireAndForget();
+                    ThreadHelper.JoinableTaskFactory.RunAsync(serviceProvider.LanguageClientManager.StopServerAsync).FireAndForget();
                 this.OnDownloadStarted(sender, args);
             };
             tasksService.DownloadFinished += (sender, args) =>
             {
-                ThreadHelper.JoinableTaskFactory.RunAsync(async ()=> await serviceProvider.Package.LanguageClientManager.StartServerAsync(true)).FireAndForget();
+                ThreadHelper.JoinableTaskFactory.RunAsync(async ()=> await serviceProvider.LanguageClientManager.StartServerAsync(true)).FireAndForget();
                 this.OnDownloadFinished(sender, args);
             };
             tasksService.DownloadUpdate += (sender, args) => ThreadHelper.JoinableTaskFactory.RunAsync(() => this.OnDownloadUpdateAsync(sender, args));
@@ -571,7 +571,7 @@ namespace Snyk.VisualStudio.Extension.UI.Toolwindow
                 SastSettings sastSettings = null;
                 if (LanguageClientHelper.IsLanguageServerReady())
                 {
-                    sastSettings = await this.serviceProvider.Package.LanguageClientManager.InvokeGetSastEnabled(SnykVSPackage.Instance.DisposalToken);
+                    sastSettings = await this.serviceProvider.LanguageClientManager.InvokeGetSastEnabled(SnykVSPackage.Instance.DisposalToken);
                 }
                 this.resultsTree.CodeQualityRootNode.State = this.GetSastRootNodeState(sastSettings, options.SnykCodeQualityEnabled);
                 this.resultsTree.CodeSecurityRootNode.State = this.GetSastRootNodeState(sastSettings, options.SnykCodeSecurityEnabled);

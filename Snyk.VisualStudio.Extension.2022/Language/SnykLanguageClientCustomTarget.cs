@@ -135,7 +135,7 @@ namespace Snyk.VisualStudio.Extension.Language
             serviceProvider.Options.ApiToken = new AuthenticationToken(serviceProvider.Options.AuthenticationMethod, token);
 
             await serviceProvider.Options.HandleAuthenticationSuccess(token, apiUrl);
-            FeatureFlagService.Instance.RefreshAsync(SnykVSPackage.Instance.DisposalToken).FireAndForget();
+            serviceProvider.FeatureFlagService.RefreshAsync(SnykVSPackage.Instance.DisposalToken).FireAndForget();
 
             if (serviceProvider.Options.AutoScan)
             {
