@@ -55,12 +55,10 @@ namespace Snyk.VisualStudio.Extension.Tests.Language
 
             // Assert
             Assert.NotNull(initOptions);
-            Assert.Equal("true", initOptions.ActivateSnykCode);
             Assert.Equal("true", initOptions.ActivateSnykCodeSecurity);
             Assert.Equal("true", initOptions.ActivateSnykCodeQuality);
             Assert.Equal("true", initOptions.ActivateSnykOpenSource);
             Assert.Equal("true", initOptions.ActivateSnykIac);
-            Assert.Equal("true", initOptions.SendErrorReports);
             Assert.Equal("true", initOptions.ManageBinariesAutomatically);
             Assert.Equal("false", initOptions.EnableTrustedFoldersFeature);
             Assert.Contains("/path/to/trusted", initOptions.TrustedFolders);

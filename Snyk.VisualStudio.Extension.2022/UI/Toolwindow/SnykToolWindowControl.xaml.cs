@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Threading;
 using System.Windows;
@@ -591,9 +592,9 @@ namespace Snyk.VisualStudio.Extension.UI.Toolwindow
         private void HandleBranchSelectorNode(ISnykServiceProvider serviceProvider, RootTreeNode rootTreeNode)
         {
             var currentFolder = ThreadHelper.JoinableTaskFactory.Run(async () =>
-                await serviceProvider.SolutionService.GetSolutionFolderAsync());
+                await serviceProvider.SolutionService.GetSolutionFolderAsync()).TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar);
             
-            var folderConfig = serviceProvider.Options?.FolderConfigs?.SingleOrDefault(x => x.FolderPath == currentFolder);
+            var folderConfig = serviceProvider.Options?.FolderConfigs?.SingleOrDefault(x => x.FolderPath.TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar) == currentFolder);
             if (folderConfig == null)
                 return;
 

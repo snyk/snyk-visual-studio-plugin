@@ -1,4 +1,5 @@
-﻿using System.Linq;
+﻿using System.IO;
+using System.Linq;
 using System.Windows;
 using System.Windows.Input;
 using Microsoft.VisualStudio.PlatformUI;
@@ -20,9 +21,9 @@ namespace Snyk.VisualStudio.Extension
             this.InitializeComponent();
 
             var currentFolder = ThreadHelper.JoinableTaskFactory.Run(async () =>
-                await this.serviceProvider.SolutionService.GetSolutionFolderAsync());
+                await this.serviceProvider.SolutionService.GetSolutionFolderAsync()).TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar);
             FolderConfig =
-                this.serviceProvider.Options?.FolderConfigs?.SingleOrDefault(x => x.FolderPath == currentFolder);
+                this.serviceProvider.Options?.FolderConfigs?.SingleOrDefault(x => x.FolderPath.TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar) == currentFolder);
             if (FolderConfig == null)
                 return;
             LblFolderPath.Text = FolderConfig.FolderPath;
