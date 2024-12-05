@@ -18,6 +18,7 @@ namespace Snyk.VisualStudio.Extension.Tests.Language
         private readonly Mock<ISnykTasksService> tasksServiceMock;
         private readonly Mock<ISnykOptions> optionsMock;
         private readonly Mock<IUserStorageSettingsService> userStorageSettingsServiceMock;
+        private readonly Mock<ILanguageClientManager> languageClientManagerMock;
         private readonly SnykLanguageClientCustomTarget cut;
 
         public SnykLanguageClientCustomTargetTests(GlobalServiceProvider gsp) : base(gsp)
@@ -26,6 +27,8 @@ namespace Snyk.VisualStudio.Extension.Tests.Language
             tasksServiceMock = new Mock<ISnykTasksService>();
             optionsMock = new Mock<ISnykOptions>();
             userStorageSettingsServiceMock = new Mock<IUserStorageSettingsService>();
+            languageClientManagerMock = new Mock<ILanguageClientManager>();
+
             var featureFlagServiceMock = new Mock<IFeatureFlagService>();
             
             featureFlagServiceMock.Setup(x => x.RefreshAsync(It.IsAny<CancellationToken>()))
@@ -35,6 +38,7 @@ namespace Snyk.VisualStudio.Extension.Tests.Language
             serviceProviderMock.SetupGet(sp => sp.Options).Returns(optionsMock.Object);
             serviceProviderMock.SetupGet(sp => sp.UserStorageSettingsService).Returns(userStorageSettingsServiceMock.Object);
             serviceProviderMock.SetupGet(sp => sp.FeatureFlagService).Returns(featureFlagServiceMock.Object);
+            serviceProviderMock.SetupGet(sp => sp.LanguageClientManager).Returns(languageClientManagerMock.Object);
 
             cut = new SnykLanguageClientCustomTarget(serviceProviderMock.Object);
         }
@@ -92,7 +96,7 @@ namespace Snyk.VisualStudio.Extension.Tests.Language
         public async Task OnSnykScan_ShouldFireScanningCancelledEvent_WhenCancellationRequested()
         {
             // Arrange
-            var tokenSource = new System.Threading.CancellationTokenSource();
+            var tokenSource = new CancellationTokenSource();
             tokenSource.Cancel();
             tasksServiceMock.SetupGet(t => t.SnykScanTokenSource).Returns(tokenSource);
 
@@ -150,6 +154,7 @@ namespace Snyk.VisualStudio.Extension.Tests.Language
             Assert.Contains("/folder1", optionsMock.Object.TrustedFolders);
             Assert.Contains("/folder2", optionsMock.Object.TrustedFolders);
             userStorageSettingsServiceMock.Verify(s => s.SaveSettings(), Times.Once);
+            languageClientManagerMock.Verify(s => s.DidChangeConfigurationAsync(It.IsAny<CancellationToken>()), Times.Once);
         }
 
         [Fact]

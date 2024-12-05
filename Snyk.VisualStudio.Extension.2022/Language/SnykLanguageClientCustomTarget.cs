@@ -151,6 +151,7 @@ namespace Snyk.VisualStudio.Extension.Language
 
             serviceProvider.Options.TrustedFolders = new HashSet<string>(trustedFolders.TrustedFolders);
             this.serviceProvider.UserStorageSettingsService?.SaveSettings();
+            await serviceProvider.LanguageClientManager.DidChangeConfigurationAsync(SnykVSPackage.Instance.DisposalToken);
         }
 
         private async Task ProcessCodeScanAsync(LsAnalysisResult lsAnalysisResult)
