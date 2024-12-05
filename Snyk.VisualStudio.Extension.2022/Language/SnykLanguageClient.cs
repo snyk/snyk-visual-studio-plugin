@@ -58,7 +58,7 @@ namespace Snyk.VisualStudio.Extension.Language
 
         public bool ShowNotificationOnInitializeFailed => true;
 
-        public JsonRpc Rpc { get; set; }
+        public IJsonRpc Rpc { get; set; }
         private readonly SnykLanguageClientMiddleware middleware;
 
         public object MiddleLayer => middleware;
@@ -241,7 +241,7 @@ namespace Snyk.VisualStudio.Extension.Language
         public async Task AttachForCustomMessageAsync(JsonRpc rpc)
         {
             await Task.Yield();
-            Rpc = rpc;
+            Rpc = new JsonRpcWrapper(rpc);
             Rpc.AllowModificationWhileListening = true;
             Rpc.ActivityTracingStrategy = null;
             Rpc.AllowModificationWhileListening = false;

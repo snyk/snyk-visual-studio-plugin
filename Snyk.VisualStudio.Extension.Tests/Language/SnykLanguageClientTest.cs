@@ -8,6 +8,7 @@ using Moq;
 using Snyk.VisualStudio.Extension.Language;
 using StreamJsonRpc;
 using Xunit;
+using LSP = Microsoft.VisualStudio.LanguageServer.Protocol;
 
 namespace Snyk.VisualStudio.Extension.Tests.Language
 {
@@ -16,16 +17,17 @@ namespace Snyk.VisualStudio.Extension.Tests.Language
     {
         private readonly SnykLanguageClient cut;
         private readonly Mock<ILanguageClientInitializationInfo> initializationInfoMock;
+        private readonly Mock<IJsonRpc> jsonRpcMock;
 
         public SnykLanguageClientTest(GlobalServiceProvider sp) : base(sp)
         {
             sp.Reset();
-            var jsonRpcMock = new JsonRpc(new MemoryStream(), new MemoryStream());
+            jsonRpcMock = new Mock<IJsonRpc>();
             initializationInfoMock = new Mock<ILanguageClientInitializationInfo>();
 
             cut = new SnykLanguageClient
             {
-                Rpc = jsonRpcMock
+                Rpc = jsonRpcMock.Object
             };
         }
 
@@ -54,8 +56,31 @@ namespace Snyk.VisualStudio.Extension.Tests.Language
             var result = await cut.DidChangeConfigurationAsync(CancellationToken.None);
 
             // Assert
+            jsonRpcMock.Verify(x=>x.InvokeWithParameterObjectAsync<object>(LsConstants.WorkspaceChangeConfiguration, 
+                It.IsAny<LSP.DidChangeConfigurationParams>(), 
+                It.IsAny<CancellationToken>()), 
+                Times.Never);
             Assert.Null(result);
         }
+
+        [Fact]
+        public async Task DidChangeConfigurationAsync_ShouldInvoke()
+        {
+            // Arrange
+            cut.IsReady = true;
+            TestUtils.SetupOptionsMock(OptionsMock);
+
+            // Act
+            var result = await cut.DidChangeConfigurationAsync(CancellationToken.None);
+
+            // Assert
+            jsonRpcMock.Verify(x => x.InvokeWithParameterObjectAsync<object>(LsConstants.WorkspaceChangeConfiguration,
+                It.IsAny<LSP.DidChangeConfigurationParams>(), 
+                It.IsAny<CancellationToken>()), 
+                Times.Once);
+            Assert.Null(result);
+        }
+
 
         [Fact]
         public void Rpc_Disconnected_ShouldSetIsReadyToFalse()
@@ -82,8 +107,9 @@ namespace Snyk.VisualStudio.Extension.Tests.Language
             await cut.AttachForCustomMessageAsync(rpc);
 
             // Assert
-            Assert.Equal(rpc, cut.Rpc);
             Assert.True(cut.IsReady);
+            Assert.NotNull(cut.Rpc);
+            Assert.Null(cut.Rpc.ActivityTracingStrategy);
         }
 
         [Fact]
@@ -97,6 +123,46 @@ namespace Snyk.VisualStudio.Extension.Tests.Language
 
             // Assert
             Assert.Null(result);
+            jsonRpcMock.Verify(x => x.InvokeWithParameterObjectAsync<object>(LsConstants.WorkspaceExecuteCommand, 
+                    It.Is<LSP.ExecuteCommandParams>(param => param.Command == LsConstants.SnykWorkspaceScan),
+                It.IsAny<CancellationToken>()), 
+                Times.Never);
+        }
+
+        [Fact]
+        public async Task InvokeWorkspaceScanAsync_ShouldInvoke_IfReady_FolderTrusted()
+        {
+            // Arrange
+            cut.IsReady = true;
+            TasksServiceMock.Setup(x => x.IsFolderTrustedAsync()).Returns(Task.FromResult(true));
+
+            // Act
+            var result = await cut.InvokeWorkspaceScanAsync(CancellationToken.None);
+
+            // Assert
+            Assert.Null(result);
+            jsonRpcMock.Verify(x => x.InvokeWithParameterObjectAsync<object>(LsConstants.WorkspaceExecuteCommand,
+                It.Is<LSP.ExecuteCommandParams>(param=> param.Command == LsConstants.SnykWorkspaceScan), 
+                It.IsAny<CancellationToken>()), 
+                Times.Once);
+        }
+
+        [Fact]
+        public async Task InvokeWorkspaceScanAsync_ShouldNotInvoke_IfReady_FolderNotTrusted()
+        {
+            // Arrange
+            cut.IsReady = true;
+            TasksServiceMock.Setup(x => x.IsFolderTrustedAsync()).Returns(Task.FromResult(false));
+
+            // Act
+            var result = await cut.InvokeWorkspaceScanAsync(CancellationToken.None);
+
+            // Assert
+            Assert.Null(result);
+            jsonRpcMock.Verify(x => x.InvokeWithParameterObjectAsync<object>(LsConstants.WorkspaceExecuteCommand,
+                It.Is<LSP.ExecuteCommandParams>(param => param.Command == LsConstants.SnykWorkspaceScan),
+                It.IsAny<CancellationToken>()), 
+                Times.Never);
         }
 
         [Fact]
@@ -123,7 +189,7 @@ namespace Snyk.VisualStudio.Extension.Tests.Language
         public async Task StartServerAsync_ShouldNotInvokeStartAsync_WhenShouldStartIsFalse()
         {
             // Arrange
-            bool eventInvoked = false;
+            var eventInvoked = false;
             cut.StartAsync += (sender, args) =>
             {
                 eventInvoked = true;
@@ -141,7 +207,7 @@ namespace Snyk.VisualStudio.Extension.Tests.Language
         public async Task StopServerAsync_ShouldInvokeStopAsync()
         {
             // Arrange
-            bool eventInvoked = false;
+            var eventInvoked = false;
             cut.StopAsync += (sender, args) =>
             {
                 eventInvoked = true;
@@ -159,8 +225,8 @@ namespace Snyk.VisualStudio.Extension.Tests.Language
         public async Task RestartAsync_ShouldRestartServer()
         {
             // Arrange
-            bool startInvoked = false;
-            bool stopInvoked = false;
+            var startInvoked = false;
+            var stopInvoked = false;
 
             cut.StartAsync += (sender, args) =>
             {
@@ -185,7 +251,7 @@ namespace Snyk.VisualStudio.Extension.Tests.Language
         public async Task OnLoadedAsync_ShouldStartServer_WhenPackageIsInitialized()
         {
             // Arrange
-            bool startInvoked = false;
+            var startInvoked = false;
             cut.StartAsync += (sender, args) =>
             {
                 startInvoked = true;
@@ -223,7 +289,7 @@ namespace Snyk.VisualStudio.Extension.Tests.Language
         public void FireOnLanguageServerReadyAsyncEvent_ShouldInvokeEvent()
         {
             // Arrange
-            bool eventInvoked = false;
+            var eventInvoked = false;
             cut.OnLanguageServerReadyAsync += (sender, args) =>
             {
                 eventInvoked = true;
@@ -242,7 +308,7 @@ namespace Snyk.VisualStudio.Extension.Tests.Language
         public void FireOnLanguageClientNotInitializedAsync_ShouldInvokeEvent()
         {
             // Arrange
-            bool eventInvoked = false;
+            var eventInvoked = false;
             cut.OnLanguageClientNotInitializedAsync += (sender, args) =>
             {
                 eventInvoked = true;
@@ -263,12 +329,32 @@ namespace Snyk.VisualStudio.Extension.Tests.Language
         {
             // Arrange
             cut.IsReady = false;
+            // Act
+            var result = await cut.InvokeLogin(CancellationToken.None);
+
+            // Assert
+            Assert.Null(result);
+            jsonRpcMock.Verify(x => x.InvokeWithParameterObjectAsync<object>(LsConstants.WorkspaceExecuteCommand, 
+                    It.Is<LSP.ExecuteCommandParams>(param => param.Command == LsConstants.SnykLogin),
+                It.IsAny<CancellationToken>()), 
+                Times.Never);
+        }
+
+        [Fact]
+        public async Task InvokeLogin_ShouldInvokeRpcRequest()
+        {
+            // Arrange
+            cut.IsReady = true;
 
             // Act
             var result = await cut.InvokeLogin(CancellationToken.None);
 
             // Assert
             Assert.Null(result);
+            jsonRpcMock.Verify(x => x.InvokeWithParameterObjectAsync<object>(LsConstants.WorkspaceExecuteCommand, 
+                    It.Is<LSP.ExecuteCommandParams>(param => param.Command == LsConstants.SnykLogin),
+                It.IsAny<CancellationToken>()), 
+                Times.Once);
         }
     }
 }

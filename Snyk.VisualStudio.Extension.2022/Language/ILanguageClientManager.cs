@@ -12,7 +12,7 @@ namespace Snyk.VisualStudio.Extension.Language
         Task RestartServerAsync();
         Task StopServerAsync();
         bool IsReady { get; set; }
-        JsonRpc Rpc { get; set; }
+        IJsonRpc Rpc { get; set; }
         Task<object> InvokeWorkspaceScanAsync(CancellationToken cancellationToken);
         Task<SastSettings> InvokeGetSastEnabled(CancellationToken cancellationToken);
         Task<string> InvokeLogin(CancellationToken cancellationToken);
