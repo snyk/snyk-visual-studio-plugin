@@ -135,9 +135,7 @@ namespace Snyk.VisualStudio.Extension.Language
             serviceProvider.Options.ApiToken = new AuthenticationToken(serviceProvider.Options.AuthenticationMethod, token);
 
             await serviceProvider.Options.HandleAuthenticationSuccess(token, apiUrl);
-            // for testing
-            if(FeatureFlagService.Instance != null && SnykVSPackage.Instance != null)
-                FeatureFlagService.Instance.RefreshAsync(SnykVSPackage.Instance.DisposalToken).FireAndForget();
+            serviceProvider.FeatureFlagService.RefreshAsync(SnykVSPackage.Instance.DisposalToken).FireAndForget();
 
             if (serviceProvider.Options.AutoScan)
             {
@@ -153,6 +151,7 @@ namespace Snyk.VisualStudio.Extension.Language
 
             serviceProvider.Options.TrustedFolders = new HashSet<string>(trustedFolders.TrustedFolders);
             this.serviceProvider.UserStorageSettingsService?.SaveSettings();
+            await serviceProvider.LanguageClientManager.DidChangeConfigurationAsync(SnykVSPackage.Instance.DisposalToken);
         }
 
         private async Task ProcessCodeScanAsync(LsAnalysisResult lsAnalysisResult)

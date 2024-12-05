@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Threading.Tasks;
 using Snyk.VisualStudio.Extension.Authentication;
 using Snyk.VisualStudio.Extension.Language;
+using Snyk.VisualStudio.Extension.Service;
 
 namespace Snyk.VisualStudio.Extension.Settings
 {
@@ -11,6 +12,7 @@ namespace Snyk.VisualStudio.Extension.Settings
     /// </summary>
     public interface ISnykOptions
     {
+        void Initialize(ISnykServiceProvider provider);
         string Application { get; set; }
         string ApplicationVersion { get; set; }
         string IntegrationName { get; }

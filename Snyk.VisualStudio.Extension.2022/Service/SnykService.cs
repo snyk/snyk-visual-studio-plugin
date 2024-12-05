@@ -4,10 +4,13 @@ using System.Threading;
 using System.Threading.Tasks;
 using EnvDTE;
 using EnvDTE80;
+using Microsoft;
+using Microsoft.VisualStudio.ComponentModelHost;
 using Microsoft.VisualStudio.Settings;
 using Microsoft.VisualStudio.Shell;
 using Microsoft.VisualStudio.Shell.Settings;
 using Serilog;
+using Snyk.VisualStudio.Extension.Language;
 using Snyk.VisualStudio.Extension.Settings;
 using Snyk.VisualStudio.Extension.Theme;
 using Snyk.VisualStudio.Extension.UI;
@@ -34,6 +37,7 @@ namespace Snyk.VisualStudio.Extension.Service
         private DTE2 dte;
 
         private SnykUserStorageSettingsService userStorageSettingsService;
+        private SnykFeatureFlagService featureFlagService;
 
         private IWorkspaceTrustService workspaceTrustService;
         
@@ -48,10 +52,12 @@ namespace Snyk.VisualStudio.Extension.Service
             this.vsVersion = vsVersion;
         }
 
+        public ILanguageClientManager LanguageClientManager { get; set; }
+
         /// <summary>
         /// Gets Snyk options implementation.
         /// </summary>
-        public ISnykOptions Options => this.Package.GeneralOptionsDialogPage;
+        public ISnykOptions Options => this.Package.Options;
 
         /// <summary>
         /// Gets solution service.
@@ -121,6 +127,19 @@ namespace Snyk.VisualStudio.Extension.Service
         /// <returns>Result VS service instance</returns>
         public async Task<object> GetServiceAsync(Type serviceType) =>
             await this.serviceProvider.GetServiceAsync(serviceType);
+
+        public IFeatureFlagService FeatureFlagService
+        {
+            get
+            {
+                if (this.featureFlagService == null)
+                {
+                    this.featureFlagService = new SnykFeatureFlagService(LanguageClientManager, Options);
+                }
+
+                return this.featureFlagService;
+            }
+        }
 
         /// <summary>
         /// Initialize service.

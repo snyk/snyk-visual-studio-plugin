@@ -683,7 +683,7 @@ namespace Snyk.VisualStudio.Extension.Service
             SastSettings sastSettings = null;
             if (LanguageClientHelper.IsLanguageServerReady())
             {
-                sastSettings = await this.serviceProvider.Package.LanguageClientManager.InvokeGetSastEnabled(CancellationToken.None);
+                sastSettings = await this.serviceProvider.LanguageClientManager.InvokeGetSastEnabled(CancellationToken.None);
             }
 
             bool snykCodeEnabled = sastSettings?.SnykCodeEnabled ?? false;

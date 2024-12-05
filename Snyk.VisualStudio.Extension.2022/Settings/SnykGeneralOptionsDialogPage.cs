@@ -472,10 +472,10 @@ namespace Snyk.VisualStudio.Extension.Settings
             {
                 if (LanguageClientHelper.IsLanguageServerReady())
                 {
-                    await ServiceProvider.Package.LanguageClientManager.DidChangeConfigurationAsync(SnykVSPackage
+                    await ServiceProvider.LanguageClientManager.DidChangeConfigurationAsync(SnykVSPackage
                         .Instance.DisposalToken);
                     if (AutoScan)
-                        await ServiceProvider.Package.LanguageClientManager.InvokeWorkspaceScanAsync(SnykVSPackage
+                        await ServiceProvider.LanguageClientManager.InvokeWorkspaceScanAsync(SnykVSPackage
                             .Instance.DisposalToken);
                 }
             }).FireAndForget();
@@ -503,9 +503,9 @@ namespace Snyk.VisualStudio.Extension.Settings
 
                 ThreadHelper.JoinableTaskFactory.RunAsync(async () =>
                 {
-                    await ServiceProvider.Package.LanguageClientManager.InvokeLogout(SnykVSPackage.Instance
+                    await ServiceProvider.LanguageClientManager.InvokeLogout(SnykVSPackage.Instance
                         .DisposalToken);
-                    await ServiceProvider.Package.LanguageClientManager.InvokeLogin(SnykVSPackage.Instance
+                    await ServiceProvider.LanguageClientManager.InvokeLogin(SnykVSPackage.Instance
                         .DisposalToken);
                 }).FireAndForget();
 

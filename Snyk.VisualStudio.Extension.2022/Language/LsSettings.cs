@@ -30,7 +30,7 @@ namespace Snyk.VisualStudio.Extension.Language
                 ActivateSnykOpenSource = options.OssEnabled.ToString().ToLower(),
                 ActivateSnykIac = options.IacEnabled.ToString().ToLower(),
                 ManageBinariesAutomatically = options.BinariesAutoUpdate.ToString().ToLower(),
-                EnableTrustedFoldersFeature = "false",
+                EnableTrustedFoldersFeature = "true",
                 TrustedFolders = options.TrustedFolders.ToList(),
                 IntegrationName = this.GetIntegrationName(options),
                 IntegrationVersion = this.GetIntegrationVersion(options),

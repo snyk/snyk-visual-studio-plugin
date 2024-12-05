@@ -8,38 +8,17 @@ using Xunit;
 
 namespace Snyk.VisualStudio.Extension.Tests.Service
 {
-    public class FeatureFlagServiceTests
+    public class SnykFeatureFlagServiceTests
     {
         private readonly Mock<ILanguageClientManager> languageClientManagerMock;
         private readonly Mock<ISnykOptions> settingsMock;
-        private readonly FeatureFlagService cut;
+        private readonly SnykFeatureFlagService cut;
 
-        public FeatureFlagServiceTests()
+        public SnykFeatureFlagServiceTests()
         {
             languageClientManagerMock = new Mock<ILanguageClientManager>();
             settingsMock = new Mock<ISnykOptions>();
-            cut = new FeatureFlagService(languageClientManagerMock.Object, settingsMock.Object);
-        }
-
-        [Fact]
-        public void Initialize_ShouldReturnInstance()
-        {
-            // Act
-            var instance = FeatureFlagService.Initialize(languageClientManagerMock.Object, settingsMock.Object);
-
-            // Assert
-            Assert.NotNull(instance);
-        }
-
-        [Fact]
-        public void Initialize_ShouldReturnSameInstance_WhenCalledMultipleTimes()
-        {
-            // Act
-            var instance1 = FeatureFlagService.Initialize(languageClientManagerMock.Object, settingsMock.Object);
-            var instance2 = FeatureFlagService.Initialize(languageClientManagerMock.Object, settingsMock.Object);
-
-            // Assert
-            Assert.Same(instance1, instance2);
+            cut = new SnykFeatureFlagService(languageClientManagerMock.Object, settingsMock.Object);
         }
 
         [Fact]

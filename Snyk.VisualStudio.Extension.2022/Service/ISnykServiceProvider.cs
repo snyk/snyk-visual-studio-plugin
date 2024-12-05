@@ -3,6 +3,7 @@ using System.Threading.Tasks;
 using EnvDTE80;
 using Microsoft.VisualStudio.Settings;
 using Microsoft.VisualStudio.Shell;
+using Snyk.VisualStudio.Extension.Language;
 using Snyk.VisualStudio.Extension.Settings;
 using Snyk.VisualStudio.Extension.Theme;
 using Snyk.VisualStudio.Extension.UI.Toolwindow;
@@ -72,5 +73,15 @@ namespace Snyk.VisualStudio.Extension.Service
         /// <param name="serviceType">Service type.</param>
         /// <returns>VS service instance.</returns>
         Task<object> GetServiceAsync(Type serviceType);
+        
+        /// <summary>
+        /// Get Feature Flag Service
+        /// </summary>
+        IFeatureFlagService FeatureFlagService { get; }
+        
+        /// <summary>
+        /// Get Language Client Manager
+        /// </summary>
+        ILanguageClientManager LanguageClientManager { get; set; }
     }
 }

@@ -63,7 +63,7 @@
   </PropertyGroup>
   <PropertyGroup>
     <RestorePackagesWithLockFile>true</RestorePackagesWithLockFile>
-  </PropertyGroup>  
+  </PropertyGroup>
   <ItemGroup>
     <Compile Include="Analytics\AbstractAnalyticsEvent.cs" />
     <Compile Include="Analytics\AnalyticsEvent.cs" />
@@ -78,8 +78,10 @@
     <Compile Include="Extension\UriExtensions.cs" />
     <Compile Include="Language\CustomInitializationOptions.cs" />
     <Compile Include="Language\FeatureFlagResponse.cs" />
+    <Compile Include="Language\IJsonRpc.cs" />
     <Compile Include="Language\ILanguageClientManager.cs" />
     <Compile Include="Language\InvalidProductTypeException.cs" />
+    <Compile Include="Language\JsonRpcWrapper.cs" />
     <Compile Include="Language\LsSettings.cs" />
     <Compile Include="Language\LsConstants.cs" />
     <Compile Include="Language\LsAnalysisResult.cs" />
@@ -125,7 +127,8 @@
     <Compile Include="SastSettings.cs" />
     <Compile Include="Service\ApiEndpointResolver.cs" />
     <Compile Include="Service\Domain\FeaturesSettings.cs" />
-    <Compile Include="Service\FeatureFlagService.cs" />
+    <Compile Include="Service\SnykFeatureFlagService.cs" />
+    <Compile Include="Service\IFeatureFlagService.cs" />
     <Compile Include="Service\ISnykProgressWorker.cs" />
     <Compile Include="Service\ISnykService.cs" />
     <Compile Include="Service\ISnykServiceProvider.cs" />

@@ -81,9 +81,9 @@ namespace Snyk.VisualStudio.Extension
         public static ISnykServiceProvider ServiceProvider => Instance.serviceProvider;
 
         // Used only in tests
-        public static void SetServiceProvider(ISnykServiceProvider serviceProvider)
+        public void SetServiceProvider(ISnykServiceProvider serviceProvider)
         {
-            Instance.serviceProvider = serviceProvider;
+            this.serviceProvider = serviceProvider;
         }
         /// <summary>
         /// Gets a task that completes once the Snyk extension has been initialized.
@@ -95,15 +95,10 @@ namespace Snyk.VisualStudio.Extension
         /// </summary>
         public SnykToolWindowControl ToolWindowControl { get; set; }
 
-        /// <summary>
-        /// Gets a value indicating whether general Options dialog.
-        /// </summary>
-        public SnykGeneralOptionsDialogPage GeneralOptionsDialogPage { get; private set; }
-        
         // <summary>
         /// Gets the Options
         /// </summary>
-        public ISnykOptions Options => GeneralOptionsDialogPage;
+        public ISnykOptions Options { get; private set; }
 
         /// <summary>
         /// Gets <see cref="SnykToolWindow"/> instance.
@@ -119,7 +114,6 @@ namespace Snyk.VisualStudio.Extension
         /// Show Options dialog.
         /// </summary>
         public void ShowOptionPage() => ShowOptionPage(typeof(SnykGeneralOptionsDialogPage));
-        public ILanguageClientManager LanguageClientManager { get; private set; }
 
         /// <summary>
         /// Create <see cref="SnykService"/> object.
@@ -180,6 +174,7 @@ namespace Snyk.VisualStudio.Extension
                 
                 this.serviceProvider = await GetServiceAsync(typeof(SnykService)) as SnykService ??
                                        throw new InvalidOperationException("Could not find Snyk Service");
+                await SetLanguageClientManagerAsync();
 
                 Logger.Information("Get SnykService as ServiceProvider.");
                 Logger.Information("Start InitializeGeneralOptionsAsync.");
@@ -218,19 +213,23 @@ namespace Snyk.VisualStudio.Extension
             base.Dispose(disposing);
         }
 
-        private async Task InitializeLanguageClientAsync()
+        private async Task SetLanguageClientManagerAsync()
         {
             await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
-            this.SatisfyImportsOnce();
 
+            this.SatisfyImportsOnce();
+            var componentModel = GetGlobalService(typeof(SComponentModel)) as IComponentModel;
+            Assumes.Present(componentModel);
+            var languageServerClientManager = componentModel.GetService<ILanguageClientManager>();
+            this.serviceProvider.LanguageClientManager = languageServerClientManager;
+        }
+        
+        private async Task InitializeLanguageClientAsync()
+        {
             try
             {
-                var componentModel = GetGlobalService(typeof(SComponentModel)) as IComponentModel;
-                Assumes.Present(componentModel);
-                var languageServerClientManager = componentModel.GetService<ILanguageClientManager>();
-                LanguageClientManager = languageServerClientManager;
-                LanguageClientManager.OnLanguageClientNotInitializedAsync += LanguageClientManagerOnOnLanguageClientNotInitializedAsync;
-                LanguageClientManager.OnLanguageServerReadyAsync += LanguageClientManagerOnOnLanguageServerReadyAsync;
+                this.serviceProvider.LanguageClientManager.OnLanguageClientNotInitializedAsync += LanguageClientManagerOnOnLanguageClientNotInitializedAsync;
+                this.serviceProvider.LanguageClientManager.OnLanguageServerReadyAsync += LanguageClientManagerOnOnLanguageServerReadyAsync;
                 if (!LanguageClientHelper.IsLanguageServerReady())
                 {
                     // If CLI download is necessary, Skip initializing.
@@ -238,7 +237,7 @@ namespace Snyk.VisualStudio.Extension
                     {
                         return;
                     }
-                    await LanguageClientManager.StartServerAsync(true);
+                    await this.serviceProvider.LanguageClientManager.StartServerAsync(true);
                 }
             }
             catch (Exception e)
@@ -249,7 +248,7 @@ namespace Snyk.VisualStudio.Extension
 
         private async Task LanguageClientManagerOnOnLanguageServerReadyAsync(object sender, SnykLanguageServerEventArgs args)
         {
-            await FeatureFlagService.Initialize(LanguageClientManager, Options).RefreshAsync(DisposalToken);
+            this.serviceProvider.FeatureFlagService.RefreshAsync(DisposalToken).FireAndForget();
             // Sleep for three seconds before closing the temp window
             await Task.Delay(1000);
             await JoinableTaskFactory.SwitchToMainThreadAsync();
@@ -276,7 +275,7 @@ namespace Snyk.VisualStudio.Extension
 
         private async Task InitializeGeneralOptionsAsync()
         {
-            if (GeneralOptionsDialogPage == null)
+            if (Options == null)
             {
                 Logger.Information(
                     "Call GetDialogPage to create. await JoinableTaskFactory.SwitchToMainThreadAsync().");
@@ -285,18 +284,18 @@ namespace Snyk.VisualStudio.Extension
 
                 Logger.Information("GeneralOptionsDialogPage not created yet. Call GetDialogPage to create.");
 
-                GeneralOptionsDialogPage =
+                Options =
                     (SnykGeneralOptionsDialogPage) GetDialogPage(typeof(SnykGeneralOptionsDialogPage));
 
                 Logger.Information("Call generalOptionsDialogPage.Initialize()");
 
-                GeneralOptionsDialogPage.Initialize(this.serviceProvider);
+                Options.Initialize(this.serviceProvider);
                 var readableVsVersion = await this.GetReadableVsVersionAsync();
                 var vsMajorMinorVersion = await this.GetVsMajorMinorVersionAsync();
-                GeneralOptionsDialogPage.Application = readableVsVersion;
-                GeneralOptionsDialogPage.ApplicationVersion = vsMajorMinorVersion;
-                GeneralOptionsDialogPage.IntegrationEnvironment = readableVsVersion;
-                GeneralOptionsDialogPage.IntegrationEnvironmentVersion = vsMajorMinorVersion;
+                Options.Application = readableVsVersion;
+                Options.ApplicationVersion = vsMajorMinorVersion;
+                Options.IntegrationEnvironment = readableVsVersion;
+                Options.IntegrationEnvironmentVersion = vsMajorMinorVersion;
             }
         }
 
