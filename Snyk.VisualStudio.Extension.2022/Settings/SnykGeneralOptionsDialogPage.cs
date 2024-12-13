@@ -61,12 +61,12 @@ namespace Snyk.VisualStudio.Extension.Settings
 
         public async Task HandleAuthenticationSuccess(string token, string apiUrl)
         {
-            await this.GeneralSettingsUserControl.HandleAuthenticationSuccess(token, apiUrl);
+            await this.generalSettingsUserControl.HandleAuthenticationSuccess(token, apiUrl);
         }
 
         public async Task HandleFailedAuthentication(string errorMessage)
         {
-            await this.GeneralSettingsUserControl.HandleFailedAuthentication(errorMessage);
+            await this.generalSettingsUserControl.HandleFailedAuthentication(errorMessage);
         }
 
         protected override IWin32Window Window => GeneralSettingsUserControl;
