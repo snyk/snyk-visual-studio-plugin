@@ -8,18 +8,19 @@ using Xunit;
 namespace Snyk.VisualStudio.Extension.Tests
 {
     [Collection(MockedVS.Collection)]
-    public class GeneralOptionsDialogPageTest
+    public class SnykOptionsTest
     {
-        private ISnykServiceProvider serviceProvider;
-        public GeneralOptionsDialogPageTest(GlobalServiceProvider sp)
+        private readonly SnykOptions cut;
+        public SnykOptionsTest(GlobalServiceProvider sp)
         {
             sp.Reset();
             var serviceProviderMock = new Mock<ISnykServiceProvider>();
             var snykSolutionService = new SnykSolutionService();
             serviceProviderMock.Setup(x => x.SolutionService).Returns(snykSolutionService);
-            serviceProvider = serviceProviderMock.Object;
+            var serviceProvider = serviceProviderMock.Object;
             var settingsFilePath = Path.Combine(SnykExtension.GetExtensionDirectoryPath(), "settings.json");
             serviceProviderMock.Setup(x => x.UserStorageSettingsService).Returns(new SnykUserStorageSettingsService(settingsFilePath, serviceProvider));
+            cut = new SnykOptions(serviceProvider);
         }
 
         [Theory]
@@ -38,10 +39,8 @@ namespace Snyk.VisualStudio.Extension.Tests
         [InlineData("https://api.eu.snyk.io", "https://app.eu.snyk.io/manage/snyk-code")]
         public void SnykCodeSettingsUrl(string endpoint, string expected)
         {
-            var optionsDialogPage = new SnykGeneralOptionsDialogPage();
-            optionsDialogPage.Initialize(this.serviceProvider);
-            optionsDialogPage.CustomEndpoint = endpoint;
-            Assert.Equal(expected, optionsDialogPage.SnykCodeSettingsUrl);
+            cut.CustomEndpoint = endpoint;
+            Assert.Equal(expected, cut.SnykCodeSettingsUrl);
         }
 
         [Theory]
@@ -56,10 +55,8 @@ namespace Snyk.VisualStudio.Extension.Tests
         [InlineData("https://api.eu.snyk.io", "https://api.eu.snyk.io")]
         public void TransformApiToNewSchema(string endpoint, string expected)
         {
-            var optionsDialogPage = new SnykGeneralOptionsDialogPage();
-            optionsDialogPage.Initialize(this.serviceProvider);
-            optionsDialogPage.CustomEndpoint = endpoint;
-            Assert.Equal(expected, optionsDialogPage.GetCustomApiEndpoint());
+            cut.CustomEndpoint = endpoint;
+            Assert.Equal(expected, cut.GetCustomApiEndpoint());
         }
 
         [Theory]
@@ -73,10 +70,8 @@ namespace Snyk.VisualStudio.Extension.Tests
         [InlineData("https://api.eu.snyk.io", "https://app.eu.snyk.io")]
         public void GetBaseAppUrl(string endpoint, string expected)
         {
-            var optionsDialogPage = new SnykGeneralOptionsDialogPage();
-            optionsDialogPage.Initialize(this.serviceProvider);
-            optionsDialogPage.CustomEndpoint = endpoint;
-            Assert.Equal(expected, optionsDialogPage.GetBaseAppUrl());
+            cut.CustomEndpoint = endpoint;
+            Assert.Equal(expected, cut.GetBaseAppUrl());
         }
     }
 }
