@@ -1,7 +1,9 @@
 ﻿using System;
+using System.ComponentModel;
 using System.IO;
 using System.Runtime.InteropServices;
 using System.Threading.Tasks;
+using System.Windows.Controls;
 using System.Windows.Forms;
 using Microsoft.VisualStudio.Shell;
 using Serilog;
@@ -22,6 +24,32 @@ namespace Snyk.VisualStudio.Extension.Settings
         private SnykGeneralSettingsUserControl generalSettingsUserControl;
         private static readonly ILogger Logger = LogManager.ForContext<SnykGeneralOptionsDialogPage>();
 
+        protected override void OnActivate(CancelEventArgs e)
+        {
+            base.OnActivate(e);
+
+            ResetScrollbarSettings();
+        }
+
+        protected override void OnClosed(EventArgs e)
+        {
+            ResetScrollbarSettings();
+        }
+
+        private void ResetScrollbarSettings()
+        {
+            if (this.generalSettingsUserControl == null)
+                return;
+
+            // Reset the scroll position
+            this.generalSettingsUserControl.GetPanel().AutoScrollPosition = new System.Drawing.Point(0, 0);
+            this.generalSettingsUserControl.GetPanel().Top = 0;
+            this.generalSettingsUserControl.Top = 0;
+            // Force a refresh if needed
+            this.generalSettingsUserControl.Invalidate(true);
+            this.generalSettingsUserControl.Update();
+        }
+
         public void Initialize(ISnykServiceProvider provider)
         {
             this.serviceProvider = provider;
@@ -33,12 +61,12 @@ namespace Snyk.VisualStudio.Extension.Settings
 
         public async Task HandleAuthenticationSuccess(string token, string apiUrl)
         {
-            await this.generalSettingsUserControl.HandleAuthenticationSuccess(token, apiUrl);
+            await this.GeneralSettingsUserControl.HandleAuthenticationSuccess(token, apiUrl);
         }
 
         public async Task HandleFailedAuthentication(string errorMessage)
         {
-            await this.generalSettingsUserControl.HandleFailedAuthentication(errorMessage);
+            await this.GeneralSettingsUserControl.HandleFailedAuthentication(errorMessage);
         }
 
         protected override IWin32Window Window => GeneralSettingsUserControl;

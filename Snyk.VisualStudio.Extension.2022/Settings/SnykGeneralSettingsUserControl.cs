@@ -2,7 +2,6 @@
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Diagnostics;
-using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using System.Threading.Tasks;
 using System.Windows.Forms;
@@ -49,7 +48,7 @@ namespace Snyk.VisualStudio.Extension.Settings
             this.InitializeComponent();
             this.Initialize();
         }
-
+        
         /// <summary>
         /// Initialize elements and actions.
         /// </summary>
@@ -509,6 +508,11 @@ namespace Snyk.VisualStudio.Extension.Settings
                 return;
             var enableDelta = this.cbDelta.SelectedItem.ToString() == "Net new issues";
             snykOptions.EnableDeltaFindings = enableDelta;
+        }
+
+        public Panel GetPanel()
+        {
+            return this.mainPanel;
         }
     }
 }

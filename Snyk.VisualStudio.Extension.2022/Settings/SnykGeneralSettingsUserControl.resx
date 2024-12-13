@@ -133,19 +133,10 @@
   <metadata name="ossInfoToolTip.TrayLocation" type="System.Drawing.Point, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a">
     <value>140, 17</value>
   </metadata>
-  <data name="snykCodeQualityInfoLabel.Image" type="System.Drawing.Bitmap, System.Drawing" mimetype="application/x-microsoft.net.object.bytearray.base64">
-    <value>
-        iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAABGdBTUEAALGPC/xhBQAAAAlwSFlzAAAO
-        vAAADrwBlbxySQAAALxJREFUOE/dUzEOwjAQyz9Y+FnzAV7Aa/hHpYiFNW+AqYKhYsl6nKu4So5DgNiw
-        5OV8tprUCSLSsZQSlUkphpjFoGj3V6i4VeZ0vsswTrI5XDpiBg072O0CqnneHa9PRsv96YaQmSEMyBDs
-        MmHnNSTTHPFpdgkkPK0eJyIgeWd+R3jgRYC7ABKeBsL7JwEvL5HwtPYSf/uNtQvZayFh512RVEfAUmWv
-        jZZtldeAJuTjx7SYAQYQKn7xnCU8ABJO2R9gGis+AAAAAElFTkSuQmCC
-</value>
-  </data>
   <metadata name="snykCodeQualityInfoToolTip.TrayLocation" type="System.Drawing.Point, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a">
     <value>477, 17</value>
   </metadata>
-  <data name="snykCodeSecurityInfoLabel.Image" type="System.Drawing.Bitmap, System.Drawing" mimetype="application/x-microsoft.net.object.bytearray.base64">
+  <data name="snykCodeQualityInfoLabel.Image" type="System.Drawing.Bitmap, System.Drawing" mimetype="application/x-microsoft.net.object.bytearray.base64">
     <value>
         iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAABGdBTUEAALGPC/xhBQAAAAlwSFlzAAAO
         vAAADrwBlbxySQAAALxJREFUOE/dUzEOwjAQyz9Y+FnzAV7Aa/hHpYiFNW+AqYKhYsl6nKu4So5DgNiw
@@ -157,6 +148,15 @@
   <metadata name="snykCodeSecurityInfoToolTip.TrayLocation" type="System.Drawing.Point, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a">
     <value>270, 17</value>
   </metadata>
+  <data name="snykCodeSecurityInfoLabel.Image" type="System.Drawing.Bitmap, System.Drawing" mimetype="application/x-microsoft.net.object.bytearray.base64">
+    <value>
+        iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAABGdBTUEAALGPC/xhBQAAAAlwSFlzAAAO
+        vAAADrwBlbxySQAAALxJREFUOE/dUzEOwjAQyz9Y+FnzAV7Aa/hHpYiFNW+AqYKhYsl6nKu4So5DgNiw
+        5OV8tprUCSLSsZQSlUkphpjFoGj3V6i4VeZ0vsswTrI5XDpiBg072O0CqnneHa9PRsv96YaQmSEMyBDs
+        MmHnNSTTHPFpdgkkPK0eJyIgeWd+R3jgRYC7ABKeBsL7JwEvL5HwtPYSf/uNtQvZayFh512RVEfAUmWv
+        jZZtldeAJuTjx7SYAQYQKn7xnCU8ABJO2R9gGis+AAAAAElFTkSuQmCC
+</value>
+  </data>
   <data name="ossInfoLabel.Image" type="System.Drawing.Bitmap, System.Drawing" mimetype="application/x-microsoft.net.object.bytearray.base64">
     <value>
         iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAABGdBTUEAALGPC/xhBQAAAAlwSFlzAAAO
@@ -166,6 +166,12 @@
         jZZtldeAJuTjx7SYAQYQKn7xnCU8ABJO2R9gGis+AAAAAElFTkSuQmCC
 </value>
   </data>
+  <metadata name="snykCodeSecurityInfoToolTip.TrayLocation" type="System.Drawing.Point, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a">
+    <value>270, 17</value>
+  </metadata>
+  <metadata name="snykCodeQualityInfoToolTip.TrayLocation" type="System.Drawing.Point, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a">
+    <value>477, 17</value>
+  </metadata>
   <metadata name="customCliPathFileDialog.TrayLocation" type="System.Drawing.Point, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a">
     <value>680, 17</value>
   </metadata>

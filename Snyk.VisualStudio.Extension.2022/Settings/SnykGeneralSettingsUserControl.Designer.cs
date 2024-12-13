@@ -86,12 +86,14 @@ namespace Snyk.VisualStudio.Extension.Settings
             this.cliReleaseChannelLabel = new System.Windows.Forms.Label();
             this.cliBaseDownloadUrl = new System.Windows.Forms.Label();
             this.cliDownloadUrlTextBox = new System.Windows.Forms.TextBox();
+            this.mainPanel = new System.Windows.Forms.Panel();
             ((System.ComponentModel.ISupportInitialize)(this.errorProvider)).BeginInit();
             this.generalSettingsGroupBox.SuspendLayout();
             this.productSelectionGroupBox.SuspendLayout();
             this.ignoreGroupbox.SuspendLayout();
             this.userExperienceGroupBox.SuspendLayout();
             this.ExecutablesGroupBox.SuspendLayout();
+            this.mainPanel.SuspendLayout();
             this.SuspendLayout();
             // 
             // customEndpointTextBox
@@ -234,7 +236,7 @@ namespace Snyk.VisualStudio.Extension.Settings
             this.generalSettingsGroupBox.Controls.Add(this.organizationLabel);
             this.generalSettingsGroupBox.Controls.Add(this.ignoreUnknownCACheckBox);
             this.generalSettingsGroupBox.Controls.Add(this.organizationTextBox);
-            this.generalSettingsGroupBox.Location = new System.Drawing.Point(13, 12);
+            this.generalSettingsGroupBox.Location = new System.Drawing.Point(29, 10);
             this.generalSettingsGroupBox.Margin = new System.Windows.Forms.Padding(11, 10, 11, 10);
             this.generalSettingsGroupBox.Name = "generalSettingsGroupBox";
             this.generalSettingsGroupBox.Padding = new System.Windows.Forms.Padding(3, 2, 3, 2);
@@ -391,7 +393,7 @@ namespace Snyk.VisualStudio.Extension.Settings
             this.productSelectionGroupBox.Controls.Add(this.codeQualityEnabledCheckBox);
             this.productSelectionGroupBox.Controls.Add(this.ossEnabledCheckBox);
             this.productSelectionGroupBox.Controls.Add(this.codeSecurityEnabledCheckBox);
-            this.productSelectionGroupBox.Location = new System.Drawing.Point(13, 711);
+            this.productSelectionGroupBox.Location = new System.Drawing.Point(29, 709);
             this.productSelectionGroupBox.Margin = new System.Windows.Forms.Padding(3, 2, 3, 2);
             this.productSelectionGroupBox.Name = "productSelectionGroupBox";
             this.productSelectionGroupBox.Padding = new System.Windows.Forms.Padding(11, 10, 11, 10);
@@ -571,7 +573,7 @@ namespace Snyk.VisualStudio.Extension.Settings
             // userExperienceGroupBox
             // 
             this.userExperienceGroupBox.Controls.Add(this.autoScanCheckBox);
-            this.userExperienceGroupBox.Location = new System.Drawing.Point(13, 957);
+            this.userExperienceGroupBox.Location = new System.Drawing.Point(29, 955);
             this.userExperienceGroupBox.Margin = new System.Windows.Forms.Padding(3, 2, 3, 2);
             this.userExperienceGroupBox.Name = "userExperienceGroupBox";
             this.userExperienceGroupBox.Padding = new System.Windows.Forms.Padding(11, 10, 11, 10);
@@ -627,7 +629,7 @@ namespace Snyk.VisualStudio.Extension.Settings
             this.ExecutablesGroupBox.Controls.Add(this.CliPathBrowseButton);
             this.ExecutablesGroupBox.Controls.Add(this.ManageBinariesAutomaticallyCheckbox);
             this.ExecutablesGroupBox.Controls.Add(this.CliPathTextBox);
-            this.ExecutablesGroupBox.Location = new System.Drawing.Point(13, 428);
+            this.ExecutablesGroupBox.Location = new System.Drawing.Point(29, 426);
             this.ExecutablesGroupBox.Margin = new System.Windows.Forms.Padding(4);
             this.ExecutablesGroupBox.Name = "ExecutablesGroupBox";
             this.ExecutablesGroupBox.Padding = new System.Windows.Forms.Padding(4);
@@ -683,15 +685,25 @@ namespace Snyk.VisualStudio.Extension.Settings
             this.cliDownloadUrlTextBox.Size = new System.Drawing.Size(399, 22);
             this.cliDownloadUrlTextBox.TabIndex = 21;
             // 
+            // mainPanel
+            // 
+            this.mainPanel.AutoScroll = true;
+            this.mainPanel.BorderStyle = System.Windows.Forms.BorderStyle.FixedSingle;
+            this.mainPanel.Controls.Add(this.generalSettingsGroupBox);
+            this.mainPanel.Controls.Add(this.ExecutablesGroupBox);
+            this.mainPanel.Controls.Add(this.productSelectionGroupBox);
+            this.mainPanel.Controls.Add(this.userExperienceGroupBox);
+            this.mainPanel.Dock = System.Windows.Forms.DockStyle.Fill;
+            this.mainPanel.Location = new System.Drawing.Point(0, 0);
+            this.mainPanel.Name = "mainPanel";
+            this.mainPanel.Size = new System.Drawing.Size(1060, 1041);
+            this.mainPanel.TabIndex = 20;
+            // 
             // SnykGeneralSettingsUserControl
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(8F, 16F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            this.AutoScroll = true;
-            this.Controls.Add(this.ExecutablesGroupBox);
-            this.Controls.Add(this.userExperienceGroupBox);
-            this.Controls.Add(this.productSelectionGroupBox);
-            this.Controls.Add(this.generalSettingsGroupBox);
+            this.Controls.Add(this.mainPanel);
             this.Margin = new System.Windows.Forms.Padding(3, 2, 3, 2);
             this.MinimumSize = new System.Drawing.Size(1060, 923);
             this.Name = "SnykGeneralSettingsUserControl";
@@ -707,6 +719,7 @@ namespace Snyk.VisualStudio.Extension.Settings
             this.userExperienceGroupBox.PerformLayout();
             this.ExecutablesGroupBox.ResumeLayout(false);
             this.ExecutablesGroupBox.PerformLayout();
+            this.mainPanel.ResumeLayout(false);
             this.ResumeLayout(false);
 
         }
@@ -765,5 +778,6 @@ namespace Snyk.VisualStudio.Extension.Settings
         private Label label3;
         private ComboBox cbDelta;
         private Label label4;
+        private Panel mainPanel;
     }
 }
