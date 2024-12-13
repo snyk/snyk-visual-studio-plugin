@@ -748,7 +748,7 @@ namespace Snyk.VisualStudio.Extension.UI.Toolwindow
                         new BranchSelectorDialogWindow(serviceProvider).ShowDialog();
                         return;
                     }
-                    catch (Exception ex)
+                    catch (Exception)
                     {
 
                     }

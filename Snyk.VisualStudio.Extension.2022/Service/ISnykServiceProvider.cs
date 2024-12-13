@@ -46,6 +46,7 @@ namespace Snyk.VisualStudio.Extension.Service
         /// Gets <see cref="ISnykOptions"/> (Settings) implementation instance.
         /// </summary>
         ISnykOptions Options { get; }
+        ISnykGeneralOptionsDialogPage GeneralOptionsDialogPage { get; }
 
         /// <summary>
         /// Gets Visual Studio Settiings Manager instance.

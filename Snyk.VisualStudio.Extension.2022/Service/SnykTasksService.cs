@@ -306,7 +306,7 @@ namespace Snyk.VisualStudio.Extension.Service
             try
             {
                 this.serviceProvider.WorkspaceTrustService.AddFolderToTrusted(solutionFolderPath);
-                this.serviceProvider.Options.FireSettingsChangedEvent();
+                this.serviceProvider.Options.InvokeSettingsChangedEvent();
                 Logger.Information("Workspace folder was trusted: {SolutionFolderPath}", solutionFolderPath);
                 return true;
             }

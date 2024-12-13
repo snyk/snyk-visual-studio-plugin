@@ -138,7 +138,7 @@ namespace Snyk.VisualStudio.Extension.UI.Toolwindow
                 try
                 {
                     this.ServiceProvider.WorkspaceTrustService.AddFolderToTrusted(solutionFolderPath);
-                    this.ServiceProvider.Options.FireSettingsChangedEvent();
+                    this.ServiceProvider.Options.InvokeSettingsChangedEvent();
                     Logger.Information("Workspace folder was trusted: {SolutionFolderPath}", solutionFolderPath);
                 }
                 catch (ArgumentException ex)
@@ -150,7 +150,7 @@ namespace Snyk.VisualStudio.Extension.UI.Toolwindow
 
             try
             {
-                this.ServiceProvider.Options.Authenticate();
+                this.ServiceProvider.GeneralOptionsDialogPage.Authenticate();
             }
             catch (FileNotFoundException)
             {
