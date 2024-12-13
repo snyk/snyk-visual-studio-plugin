@@ -44,16 +44,19 @@ namespace Snyk.VisualStudio.Extension.UI.Html
             css += GetCss();
 
             css += "</style>";
+            var borderColor = VSColorTheme.GetThemedColor(EnvironmentColors.AccessKeyToolTipColorKey).ToHex();
+
             html = html.Replace("${ideStyle}", css);
             html = html.Replace("<style nonce=\"ideNonce\" data-ide-style></style>", css);
             html = html.Replace("var(--default-font)", " ui-sans-serif, \"SF Pro Text\", \"Segoe UI\", \"Ubuntu\", Tahoma, Geneva, Verdana, sans-serif;");
             html = html.Replace("var(--text-color)", VSColorTheme.GetThemedColor(EnvironmentColors.BrandedUITextBrushKey).ToHex());
             html = html.Replace("var(--background-color)", VSColorTheme.GetThemedColor(EnvironmentColors.ComboBoxPopupBackgroundEndBrushKey).ToHex());
-            html = html.Replace("var(--border-color)", VSColorTheme.GetThemedColor(EnvironmentColors.AccessKeyToolTipColorKey).ToHex()); 
+            html = html.Replace("var(--border-color)", borderColor); 
             html = html.Replace("var(--link-color)", VSColorTheme.GetThemedColor(EnvironmentColors.PanelHyperlinkBrushKey).ToHex());
             html = html.Replace("var(--horizontal-border-color)", VSColorTheme.GetThemedColor(EnvironmentColors.ClassDesignerDefaultShapeTextBrushKey).ToHex());
             html = html.Replace("var(--code-background-color)", VSColorTheme.GetThemedColor(EnvironmentColors.EditorExpansionFillBrushKey).ToHex());
-            
+            html = html.Replace("var(--circle-color)", borderColor);
+
             var ideHeaders = """
                              <head>
                              <meta http-equiv='Content-Type' content='text/html; charset=unicode' />
