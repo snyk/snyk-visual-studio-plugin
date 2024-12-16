@@ -22,8 +22,8 @@ namespace Snyk.VisualStudio.Extension.Settings
         bool AutoScan { get; set; }
         
         bool ConsistentIgnoresEnabled { get; set; }
-        public bool OpenIssuesEnabled { get; set; }
-        public bool IgnoredIssuesEnabled { get; set; }
+        bool OpenIssuesEnabled { get; set; }
+        bool IgnoredIssuesEnabled { get; set; }
 
         /// <summary>
         /// Gets or sets a value indicating whether Snyk user API token.
@@ -84,8 +84,8 @@ namespace Snyk.VisualStudio.Extension.Settings
         string CliDownloadUrl { get; set; }
         ISet<string> TrustedFolders { get; set; }
 
-        public bool EnableDeltaFindings { get; set; }
-        public List<FolderConfig> FolderConfigs { get; set; }
+        bool EnableDeltaFindings { get; set; }
+        List<FolderConfig> FolderConfigs { get; set; }
 
         /// <summary>
         /// Settings changed event.
@@ -106,10 +106,10 @@ namespace Snyk.VisualStudio.Extension.Settings
         /// <returns><see cref="Task"/> representing the asynchronous operation.</returns>
         Task<bool> IsScanAllProjectsAsync();
 
-        public string CurrentCliVersion { get; set; }
+        string CurrentCliVersion { get; set; }
         SastSettings SastSettings { get; set; }
         bool AnalyticsPluginInstalledSent { get; set; }
         void InvokeSettingsChangedEvent();
-        public void SaveSettings();
+        void SaveSettings();
     }
 }
