@@ -47,7 +47,7 @@ namespace Snyk.VisualStudio.Extension.Settings
         {
             if (this.serviceProvider.SolutionService.IsSolutionOpen())
             {
-                string additionalOptions = this.additionalOptionsTextBox.Text.ToString();
+                string additionalOptions = this.additionalOptionsTextBox.Text;
 
                 this.userStorageSettingsService.SaveAdditionalOptionsAsync(additionalOptions).FireAndForget();
 
@@ -59,7 +59,7 @@ namespace Snyk.VisualStudio.Extension.Settings
         {
             if (this.serviceProvider.SolutionService.IsSolutionOpen())
             {
-                this.userStorageSettingsService.SaveIsAllProjectsScanEnabledAsync(this.allProjectsCheckBox.Checked).FireAndForget(); ;
+                this.userStorageSettingsService.SaveIsAllProjectsScanEnabledAsync(this.allProjectsCheckBox.Checked).FireAndForget();
 
                 this.CheckOptionConflicts();
             }

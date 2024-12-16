@@ -116,7 +116,7 @@ namespace Snyk.VisualStudio.Extension.Language
         {
             if (arg?["token"] == null)
             {
-                await serviceProvider.Options.HandleFailedAuthentication("Authentication failed");
+                await serviceProvider.GeneralOptionsDialogPage.HandleFailedAuthentication("Authentication failed");
                 return;
             }
 
@@ -134,7 +134,7 @@ namespace Snyk.VisualStudio.Extension.Language
 
             serviceProvider.Options.ApiToken = new AuthenticationToken(serviceProvider.Options.AuthenticationMethod, token);
 
-            await serviceProvider.Options.HandleAuthenticationSuccess(token, apiUrl);
+            await serviceProvider.GeneralOptionsDialogPage.HandleAuthenticationSuccess(token, apiUrl);
             serviceProvider.FeatureFlagService.RefreshAsync(SnykVSPackage.Instance.DisposalToken).FireAndForget();
 
             if (serviceProvider.Options.AutoScan)

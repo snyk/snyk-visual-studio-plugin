@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.Threading.Tasks;
 using Snyk.VisualStudio.Extension.Authentication;
 using Snyk.VisualStudio.Extension.Language;
-using Snyk.VisualStudio.Extension.Service;
 
 namespace Snyk.VisualStudio.Extension.Settings
 {
@@ -12,7 +11,6 @@ namespace Snyk.VisualStudio.Extension.Settings
     /// </summary>
     public interface ISnykOptions
     {
-        void Initialize(ISnykServiceProvider provider);
         string Application { get; set; }
         string ApplicationVersion { get; set; }
         string IntegrationName { get; }
@@ -24,8 +22,8 @@ namespace Snyk.VisualStudio.Extension.Settings
         bool AutoScan { get; set; }
         
         bool ConsistentIgnoresEnabled { get; set; }
-        public bool OpenIssuesEnabled { get; set; }
-        public bool IgnoredIssuesEnabled { get; set; }
+        bool OpenIssuesEnabled { get; set; }
+        bool IgnoredIssuesEnabled { get; set; }
 
         /// <summary>
         /// Gets or sets a value indicating whether Snyk user API token.
@@ -35,7 +33,7 @@ namespace Snyk.VisualStudio.Extension.Settings
         /// <summary>
         /// Gets Value of Authentication Token Type.
         /// </summary>
-        AuthenticationType AuthenticationMethod { get; }
+        AuthenticationType AuthenticationMethod { get; set; }
 
         /// <summary>
         /// Gets or sets a value indicating whether CLI custom endpoint parameter.
@@ -60,18 +58,18 @@ namespace Snyk.VisualStudio.Extension.Settings
         /// <summary>
         /// Gets a value indicating whether is Oss scan enabled.
         /// </summary>
-        bool OssEnabled { get; }
-        bool IacEnabled { get; }
+        bool OssEnabled { get; set; }
+        bool IacEnabled { get; set; }
 
         /// <summary>
         /// Gets a value indicating whether is Oss scan enabled.
         /// </summary>
-        bool SnykCodeSecurityEnabled { get; }
+        bool SnykCodeSecurityEnabled { get; set; }
 
         /// <summary>
         /// Gets a value indicating whether is Oss scan enabled.
         /// </summary>
-        bool SnykCodeQualityEnabled { get; }
+        bool SnykCodeQualityEnabled { get; set; }
 
         /// <summary>
         /// Gets or sets a value indicating whether the CLI should be automatically updated.
@@ -86,8 +84,8 @@ namespace Snyk.VisualStudio.Extension.Settings
         string CliDownloadUrl { get; set; }
         ISet<string> TrustedFolders { get; set; }
 
-        public bool EnableDeltaFindings { get; set; }
-        public List<FolderConfig> FolderConfigs { get; set; }
+        bool EnableDeltaFindings { get; set; }
+        List<FolderConfig> FolderConfigs { get; set; }
 
         /// <summary>
         /// Settings changed event.
@@ -108,18 +106,10 @@ namespace Snyk.VisualStudio.Extension.Settings
         /// <returns><see cref="Task"/> representing the asynchronous operation.</returns>
         Task<bool> IsScanAllProjectsAsync();
 
-        /// <summary>
-        /// Attempts to pull the token from the CLI config storage, and validates the token.
-        /// If the token is invalid, attempts to run the authentication command.
-        /// </summary>
-        /// <returns>Returns true if authenticated successfully, or if a valid token was loaded from storage.</returns>
-        void Authenticate();
-        public string CurrentCliVersion { get; set; }
-
+        string CurrentCliVersion { get; set; }
         SastSettings SastSettings { get; set; }
         bool AnalyticsPluginInstalledSent { get; set; }
-        Task HandleAuthenticationSuccess(string token, string apiUrl);
-        Task HandleFailedAuthentication(string errorMessage);
-        void FireSettingsChangedEvent();
+        void InvokeSettingsChangedEvent();
+        void SaveSettings();
     }
 }

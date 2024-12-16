@@ -1,9 +1,9 @@
-﻿namespace Snyk.VisualStudio.Extension.Settings
-{
-    using System.Runtime.InteropServices;
-    using System.Windows.Forms;
-    using Microsoft.VisualStudio.Shell;
+﻿using System.Runtime.InteropServices;
+using System.Windows.Forms;
+using Microsoft.VisualStudio.Shell;
 
+namespace Snyk.VisualStudio.Extension.Settings
+{
     /// <summary>
     /// Snyk dialog page for project Options.
     /// </summary>

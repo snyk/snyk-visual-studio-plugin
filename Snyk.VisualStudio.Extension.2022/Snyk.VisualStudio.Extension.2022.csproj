@@ -148,6 +148,7 @@
     <Compile Include="Service\VsCodeService.cs" />
     <Compile Include="Service\WorkspaceTrustService.cs" />
     <Compile Include="Settings\ErrorProviderExtensions.cs" />
+    <Compile Include="Settings\ISnykGeneralOptionsDialogPage.cs" />
     <Compile Include="Settings\ISnykOptions.cs" />
     <Compile Include="Settings\IUserStorageSettingsService.cs" />
     <Compile Include="Settings\SnykGeneralOptionsDialogPage.cs">
@@ -159,6 +160,7 @@
     <Compile Include="Settings\SnykGeneralSettingsUserControl.Designer.cs">
       <DependentUpon>SnykGeneralSettingsUserControl.cs</DependentUpon>
     </Compile>
+    <Compile Include="Settings\SnykOptions.cs" />
     <Compile Include="Settings\SnykSettings.cs" />
     <Compile Include="Settings\SnykSettingsChangedEventArgs.cs" />
     <Compile Include="Settings\SnykSettingsLoader.cs" />

@@ -99,6 +99,7 @@ namespace Snyk.VisualStudio.Extension
         /// Gets the Options
         /// </summary>
         public ISnykOptions Options { get; private set; }
+        public ISnykGeneralOptionsDialogPage SnykGeneralOptionsDialogPage { get; private set; }
 
         /// <summary>
         /// Gets <see cref="SnykToolWindow"/> instance.
@@ -279,23 +280,25 @@ namespace Snyk.VisualStudio.Extension
             {
                 Logger.Information(
                     "Call GetDialogPage to create. await JoinableTaskFactory.SwitchToMainThreadAsync().");
-
-                await JoinableTaskFactory.SwitchToMainThreadAsync();
-
-                Logger.Information("GeneralOptionsDialogPage not created yet. Call GetDialogPage to create.");
-
-                Options =
-                    (SnykGeneralOptionsDialogPage) GetDialogPage(typeof(SnykGeneralOptionsDialogPage));
-
-                Logger.Information("Call generalOptionsDialogPage.Initialize()");
-
-                Options.Initialize(this.serviceProvider);
+                Options = new SnykOptions(this.serviceProvider);
                 var readableVsVersion = await this.GetReadableVsVersionAsync();
                 var vsMajorMinorVersion = await this.GetVsMajorMinorVersionAsync();
                 Options.Application = readableVsVersion;
                 Options.ApplicationVersion = vsMajorMinorVersion;
                 Options.IntegrationEnvironment = readableVsVersion;
                 Options.IntegrationEnvironmentVersion = vsMajorMinorVersion;
+            }
+
+            if (SnykGeneralOptionsDialogPage == null)
+            {
+                await JoinableTaskFactory.SwitchToMainThreadAsync();
+
+                Logger.Information("GeneralOptionsDialogPage not created yet. Call GetDialogPage to create.");
+
+                SnykGeneralOptionsDialogPage =
+                    (SnykGeneralOptionsDialogPage)GetDialogPage(typeof(SnykGeneralOptionsDialogPage));
+                Logger.Information("Call generalOptionsDialogPage.Initialize()");
+                SnykGeneralOptionsDialogPage.Initialize(this.serviceProvider);
             }
         }
 

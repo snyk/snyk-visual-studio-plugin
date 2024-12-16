@@ -59,6 +59,8 @@ namespace Snyk.VisualStudio.Extension.Service
         /// </summary>
         public ISnykOptions Options => this.Package.Options;
 
+        public ISnykGeneralOptionsDialogPage GeneralOptionsDialogPage => this.Package.SnykGeneralOptionsDialogPage;
+
         /// <summary>
         /// Gets solution service.
         /// </summary>
