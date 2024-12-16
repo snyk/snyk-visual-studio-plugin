@@ -9,6 +9,7 @@ using System.Threading.Tasks;
 using EnvDTE;
 using Microsoft;
 using Microsoft.VisualStudio.ComponentModelHost;
+using Microsoft.VisualStudio.PlatformUI;
 using Microsoft.VisualStudio.Shell;
 using Microsoft.VisualStudio.Shell.Interop;
 using Serilog;
@@ -259,19 +260,32 @@ namespace Snyk.VisualStudio.Extension
         private Window tempOpenedFileWindow;
         private async Task LanguageClientManagerOnOnLanguageClientNotInitializedAsync(object sender, SnykLanguageServerEventArgs args)
         {
-            await JoinableTaskFactory.SwitchToMainThreadAsync();
+            ThreadHelper.JoinableTaskFactory.RunAsync(async () =>
+            {
+                await JoinableTaskFactory.SwitchToMainThreadAsync();
+                while (!LanguageClientHelper.IsLanguageServerReady())
+                {
+                    var isSolutionOrFolderOpen = SnykSolutionService.Instance.IsSolutionOpen();
+                    if (isSolutionOrFolderOpen)
+                    {
+                        var dte = (DTE)await GetServiceAsync(typeof(DTE));
+                        if (dte == null) return;
 
-            var dte = (DTE)await GetServiceAsync(typeof(DTE));
-            if (dte == null) return;
+                        // Get the path to the file within the installed extension directory
+                        var assemblyLocation = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location);
+                        if (assemblyLocation == null) return;
 
-            // Get the path to the file within the installed extension directory
-            var assemblyLocation = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location);
-            if (assemblyLocation == null) return;
+                        var filePath = Path.Combine(assemblyLocation, "Resources", "SnykLsInit.cs");
 
-            var filePath = Path.Combine(assemblyLocation, "Resources", "SnykLsInit.cs");
-
-            // Open the file
-            tempOpenedFileWindow = dte.ItemOperations.OpenFile(filePath, EnvDTE.Constants.vsViewKindTextView);
+                        // Open the file
+                        tempOpenedFileWindow = dte.ItemOperations.OpenFile(filePath, EnvDTE.Constants.vsViewKindTextView);
+                        await Task.Delay(1000);
+                        return;
+                    }
+                    await Task.Delay(1000);
+                }
+            }).FireAndForget();
+                       
         }
 
         private async Task InitializeGeneralOptionsAsync()
