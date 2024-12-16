@@ -14,7 +14,7 @@ jobs:
       - name: Setup .NET
         uses: actions/setup-dotnet@v4
       - name: Restore dependencies
-        run: dotnet restore /home/runner/work/snyk-visual-studio-plugin/snyk-visual-studio-plugin --locked-mode
+        run: dotnet restore /home/runner/work/snyk-visual-studio-plugin/snyk-visual-studio-plugin
       - name: Run snyk monitor
         uses: snyk/actions/dotnet@master
         continue-on-error: true
