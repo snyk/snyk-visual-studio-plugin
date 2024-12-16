@@ -68,9 +68,12 @@ jobs:
       with:
         vs-version: '[17.0, )'
 
+    - name: Restore NuGet packages
+      run: nuget restore ${{ inputs.solution-file-path }}
+
     - name: Build
       run: |
-        msbuild ${{ inputs.solution-file-path }} /p:configuration=Release /p:DeployExtension=false /p:ZipPackageCompressionLevel=normal /t:restore /p:RestoreLockedMode=true /v:m
+        msbuild ${{ inputs.solution-file-path }} /p:configuration=Release /p:DeployExtension=false /p:ZipPackageCompressionLevel=normal /v:m
       shell: powershell
 
     - name: Upload build artifacts
