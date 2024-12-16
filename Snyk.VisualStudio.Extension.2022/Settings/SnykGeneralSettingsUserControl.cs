@@ -56,7 +56,7 @@ namespace Snyk.VisualStudio.Extension.Settings
         {
             Logger.Information("Enter Initialize method");
             
-            this.UpdateViewFromOptionsDialog();
+            this.UpdateViewFromOptions();
             snykOptions.SettingsChanged += this.OptionsDialogPageOnSettingsChanged;
             this.Load += this.SnykGeneralSettingsUserControl_Load;
 
@@ -81,7 +81,7 @@ namespace Snyk.VisualStudio.Extension.Settings
             authenticateButton.Enabled = false;
         }
 
-        private void UpdateViewFromOptionsDialog()
+        private void UpdateViewFromOptions()
         {
             this.authenticateButton.Enabled = LanguageClientHelper.IsLanguageServerReady();
             this.customEndpointTextBox.Text = snykOptions.CustomEndpoint;
@@ -89,22 +89,10 @@ namespace Snyk.VisualStudio.Extension.Settings
             this.ignoreUnknownCACheckBox.Checked = snykOptions.IgnoreUnknownCA;
             this.ossEnabledCheckBox.Checked = snykOptions.OssEnabled;
             this.iacEnabledCheckbox.Checked = snykOptions.IacEnabled;
-            this.ManageBinariesAutomaticallyCheckbox.Checked = snykOptions.BinariesAutoUpdate;
             this.autoScanCheckBox.Checked = snykOptions.AutoScan;
-            this.cliDownloadUrlTextBox.Text = snykOptions.CliDownloadUrl;
             this.tokenTextBox.Text = snykOptions.ApiToken.ToString();
             this.cbIgnoredIssues.Checked = snykOptions.IgnoredIssuesEnabled;
             this.cbOpenIssues.Checked = snykOptions.OpenIssuesEnabled;
-
-            var cliPath = string.IsNullOrEmpty(snykOptions.CliCustomPath)
-                ? SnykCli.GetSnykCliDefaultPath()
-                : snykOptions.CliCustomPath;
-
-            this.CliPathTextBox.Text = cliPath;
-            if (releaseChannel.DataSource == null)
-            {
-                this.releaseChannel.DataSource = ReleaseChannelList();
-            }
 
             if (cbDelta.DataSource == null)
             {
@@ -117,8 +105,7 @@ namespace Snyk.VisualStudio.Extension.Settings
                 this.authType.DisplayMember = "Description";
                 this.authType.ValueMember = "Value";
             }
-            
-            this.releaseChannel.SelectedItem = snykOptions.CliReleaseChannel;
+
             this.authType.SelectedValue = snykOptions.AuthenticationMethod;
             this.cbDelta.SelectedItem = snykOptions.EnableDeltaFindings ? "Net new issues" : "All issues";
         }
@@ -136,16 +123,6 @@ namespace Snyk.VisualStudio.Extension.Settings
                 .ToList();
         }
 
-        private IEnumerable<string> ReleaseChannelList()
-        {
-            var defaultList =  new List<string>() { "stable", "rc", "preview" };
-            if (!defaultList.Contains(snykOptions.CliReleaseChannel))
-            {
-                defaultList.Add(snykOptions.CliReleaseChannel);
-            }
-            return defaultList;
-        }
-
         private IEnumerable<string> DeltaOptionList()
         {
             var defaultList = new List<string> { "All issues", "Net new issues"};
@@ -156,7 +133,7 @@ namespace Snyk.VisualStudio.Extension.Settings
             ThreadHelper.JoinableTaskFactory.RunAsync(async () =>
             {
                 await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
-                this.UpdateViewFromOptionsDialog();
+                this.UpdateViewFromOptions();
             }).FireAndForget();
 
         public async Task HandleAuthenticationSuccess(string apiToken, string apiUrl)
@@ -434,28 +411,6 @@ namespace Snyk.VisualStudio.Extension.Settings
             Process.Start("https://docs.snyk.io/ide-tools/visual-studio-extension#organization-setting");
         }
 
-        private void CliPathBrowseButton_Click(object sender, EventArgs e)
-        {
-            if (this.customCliPathFileDialog.ShowDialog() == DialogResult.OK)
-            {
-                var selectedCliPath = this.customCliPathFileDialog.FileName;
-                this.SetCliCustomPathValue(selectedCliPath);
-            }
-        }
-
-        private void SetCliCustomPathValue(string selectedCliPath)
-        {
-            snykOptions.CliCustomPath = selectedCliPath;
-            this.CliPathTextBox.Text = string.IsNullOrEmpty(snykOptions.CliCustomPath)
-                ? SnykCli.GetSnykCliDefaultPath()
-                : selectedCliPath;
-        }
-
-        private void ClearCliCustomPathButton_Click(object sender, EventArgs e)
-        {
-            this.SetCliCustomPathValue(string.Empty);
-        }
-
         private void authType_SelectionChangeCommitted(object sender, EventArgs e)
         {
             snykOptions.AuthenticationMethod = (AuthenticationType)authType.SelectedValue;
@@ -472,26 +427,6 @@ namespace Snyk.VisualStudio.Extension.Settings
             snykOptions.IacEnabled = iacEnabledCheckbox.Checked;
         }
 
-        public string GetReleaseChannel()
-        {
-            return releaseChannel.Text;
-        }
-
-        public string GetCliDownloadUrl()
-        {
-            return cliDownloadUrlTextBox.Text;
-        }
-
-        public bool GetManageBinariesAutomatically()
-        {
-            return ManageBinariesAutomaticallyCheckbox.Checked;
-        }
-
-        private void ReleaseChannelLink_LinkClicked(object sender, LinkLabelLinkClickedEventArgs e)
-        {
-            this.ReleaseChannelLink.LinkVisited = true;
-            Process.Start("https://docs.snyk.io/snyk-cli/releases-and-channels-for-the-snyk-cli");
-        }
 
         private void cbOpenIssues_CheckedChanged(object sender, EventArgs e)
         {

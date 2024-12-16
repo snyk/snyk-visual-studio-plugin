@@ -50,8 +50,9 @@ namespace Snyk.VisualStudio.Extension
     [ProvideService(typeof(ISnykService), IsAsyncQueryable = true)]
     [ProvideMenuResource("Menus.ctmenu", 1)]
     [ProvideToolWindow(typeof(SnykToolWindow), Style = VsDockStyle.Tabbed)]
-    [ProvideOptionPage(typeof(SnykGeneralOptionsDialogPage), "Snyk", "General settings", 1000, 1001, true)]
+    [ProvideOptionPage(typeof(SnykGeneralOptionsDialogPage), "Snyk", "General", 1000, 1001, true)]
     [ProvideOptionPage(typeof(SnykSolutionOptionsDialogPage), "Snyk", "Solution settings", 1000, 1002, true)]
+    [ProvideOptionPage(typeof(SnykCliOptionsDialogPage), "Snyk", "CLI settings", 1000, 1003, true)]
     public sealed class SnykVSPackage : AsyncPackage, ISnykOptionsProvider
     {
         /// <summary>
@@ -102,6 +103,7 @@ namespace Snyk.VisualStudio.Extension
         /// </summary>
         public ISnykOptions Options { get; private set; }
         public ISnykGeneralOptionsDialogPage SnykGeneralOptionsDialogPage { get; private set; }
+        public ISnykCliOptionsDialogPage SnykCliOptionsDialogPage { get; private set; }
 
         /// <summary>
         /// Gets <see cref="SnykToolWindow"/> instance.
@@ -327,6 +329,16 @@ namespace Snyk.VisualStudio.Extension
                     (SnykGeneralOptionsDialogPage)GetDialogPage(typeof(SnykGeneralOptionsDialogPage));
                 Logger.Information("Call generalOptionsDialogPage.Initialize()");
                 SnykGeneralOptionsDialogPage.Initialize(this.serviceProvider);
+            }
+
+            if (SnykCliOptionsDialogPage == null)
+            {
+                await JoinableTaskFactory.SwitchToMainThreadAsync();
+
+                SnykCliOptionsDialogPage =
+                    (SnykCliOptionsDialogPage)GetDialogPage(typeof(SnykCliOptionsDialogPage));
+                Logger.Information("Call generalOptionsDialogPage.Initialize()");
+                SnykCliOptionsDialogPage.Initialize(this.serviceProvider);
             }
         }
 

@@ -52,13 +52,6 @@ namespace Snyk.VisualStudio.Extension.Settings
             this.label2 = new System.Windows.Forms.Label();
             this.OrganizationInfoLink = new System.Windows.Forms.LinkLabel();
             this.OrgDescriptionText = new System.Windows.Forms.Label();
-            this.richTextBox1 = new System.Windows.Forms.RichTextBox();
-            this.resetCliPathToDefaultButton = new System.Windows.Forms.Button();
-            this.CliPathBrowseButton = new System.Windows.Forms.Button();
-            this.CliPathTextBox = new System.Windows.Forms.TextBox();
-            this.CliPathLabel = new System.Windows.Forms.Label();
-            this.ManageBinariesAutomaticallyCheckbox = new System.Windows.Forms.CheckBox();
-            this.label1 = new System.Windows.Forms.Label();
             this.productSelectionGroupBox = new System.Windows.Forms.GroupBox();
             this.label4 = new System.Windows.Forms.Label();
             this.label3 = new System.Windows.Forms.Label();
@@ -80,19 +73,12 @@ namespace Snyk.VisualStudio.Extension.Settings
             this.snykCodeSecurityInfoToolTip = new System.Windows.Forms.ToolTip(this.components);
             this.snykCodeQualityInfoToolTip = new System.Windows.Forms.ToolTip(this.components);
             this.customCliPathFileDialog = new System.Windows.Forms.OpenFileDialog();
-            this.ExecutablesGroupBox = new System.Windows.Forms.GroupBox();
-            this.ReleaseChannelLink = new System.Windows.Forms.LinkLabel();
-            this.releaseChannel = new System.Windows.Forms.ComboBox();
-            this.cliReleaseChannelLabel = new System.Windows.Forms.Label();
-            this.cliBaseDownloadUrl = new System.Windows.Forms.Label();
-            this.cliDownloadUrlTextBox = new System.Windows.Forms.TextBox();
             this.mainPanel = new System.Windows.Forms.Panel();
             ((System.ComponentModel.ISupportInitialize)(this.errorProvider)).BeginInit();
             this.generalSettingsGroupBox.SuspendLayout();
             this.productSelectionGroupBox.SuspendLayout();
             this.ignoreGroupbox.SuspendLayout();
             this.userExperienceGroupBox.SuspendLayout();
-            this.ExecutablesGroupBox.SuspendLayout();
             this.mainPanel.SuspendLayout();
             this.SuspendLayout();
             // 
@@ -305,77 +291,6 @@ namespace Snyk.VisualStudio.Extension.Settings
     "tch the URL slug as displayed in the URL of your org in the Snyk UI:\r\nhttps://ap" +
     "p.snyk.io/org/[OrgSlugName]";
             // 
-            // richTextBox1
-            // 
-            this.richTextBox1.BorderStyle = System.Windows.Forms.BorderStyle.None;
-            this.richTextBox1.Location = new System.Drawing.Point(9, 155);
-            this.richTextBox1.Margin = new System.Windows.Forms.Padding(4);
-            this.richTextBox1.Name = "richTextBox1";
-            this.richTextBox1.ReadOnly = true;
-            this.richTextBox1.Size = new System.Drawing.Size(684, 39);
-            this.richTextBox1.TabIndex = 18;
-            this.richTextBox1.Text = "Snyk will download, install and update the dependencies for you. If this option i" +
-    "s disabled, make sure valid paths to the dependencies are provided.";
-            // 
-            // resetCliPathToDefaultButton
-            // 
-            this.resetCliPathToDefaultButton.Location = new System.Drawing.Point(347, 65);
-            this.resetCliPathToDefaultButton.Margin = new System.Windows.Forms.Padding(4);
-            this.resetCliPathToDefaultButton.Name = "resetCliPathToDefaultButton";
-            this.resetCliPathToDefaultButton.Size = new System.Drawing.Size(129, 28);
-            this.resetCliPathToDefaultButton.TabIndex = 17;
-            this.resetCliPathToDefaultButton.Text = "Reset to default";
-            this.resetCliPathToDefaultButton.UseVisualStyleBackColor = true;
-            this.resetCliPathToDefaultButton.Click += new System.EventHandler(this.ClearCliCustomPathButton_Click);
-            // 
-            // CliPathBrowseButton
-            // 
-            this.CliPathBrowseButton.Location = new System.Drawing.Point(239, 65);
-            this.CliPathBrowseButton.Margin = new System.Windows.Forms.Padding(4);
-            this.CliPathBrowseButton.Name = "CliPathBrowseButton";
-            this.CliPathBrowseButton.Size = new System.Drawing.Size(100, 28);
-            this.CliPathBrowseButton.TabIndex = 16;
-            this.CliPathBrowseButton.Text = "Browse";
-            this.CliPathBrowseButton.UseVisualStyleBackColor = true;
-            this.CliPathBrowseButton.Click += new System.EventHandler(this.CliPathBrowseButton_Click);
-            // 
-            // CliPathTextBox
-            // 
-            this.CliPathTextBox.Location = new System.Drawing.Point(241, 96);
-            this.CliPathTextBox.Margin = new System.Windows.Forms.Padding(3, 2, 3, 2);
-            this.CliPathTextBox.Name = "CliPathTextBox";
-            this.CliPathTextBox.ReadOnly = true;
-            this.CliPathTextBox.Size = new System.Drawing.Size(399, 22);
-            this.CliPathTextBox.TabIndex = 15;
-            // 
-            // CliPathLabel
-            // 
-            this.CliPathLabel.AutoSize = true;
-            this.CliPathLabel.Location = new System.Drawing.Point(5, 71);
-            this.CliPathLabel.Name = "CliPathLabel";
-            this.CliPathLabel.Size = new System.Drawing.Size(92, 16);
-            this.CliPathLabel.TabIndex = 14;
-            this.CliPathLabel.Text = "Snyk CLI Path:";
-            // 
-            // ManageBinariesAutomaticallyCheckbox
-            // 
-            this.ManageBinariesAutomaticallyCheckbox.AutoSize = true;
-            this.ManageBinariesAutomaticallyCheckbox.Location = new System.Drawing.Point(16, 132);
-            this.ManageBinariesAutomaticallyCheckbox.Margin = new System.Windows.Forms.Padding(3, 2, 3, 2);
-            this.ManageBinariesAutomaticallyCheckbox.Name = "ManageBinariesAutomaticallyCheckbox";
-            this.ManageBinariesAutomaticallyCheckbox.Size = new System.Drawing.Size(18, 17);
-            this.ManageBinariesAutomaticallyCheckbox.TabIndex = 13;
-            this.ManageBinariesAutomaticallyCheckbox.UseVisualStyleBackColor = true;
-            // 
-            // label1
-            // 
-            this.label1.AutoSize = true;
-            this.label1.Location = new System.Drawing.Point(41, 132);
-            this.label1.Name = "label1";
-            this.label1.Size = new System.Drawing.Size(320, 16);
-            this.label1.TabIndex = 12;
-            this.label1.Text = "Update and install Snyk dependencies automatically";
-            // 
             // productSelectionGroupBox
             // 
             this.productSelectionGroupBox.Controls.Add(this.label4);
@@ -393,7 +308,7 @@ namespace Snyk.VisualStudio.Extension.Settings
             this.productSelectionGroupBox.Controls.Add(this.codeQualityEnabledCheckBox);
             this.productSelectionGroupBox.Controls.Add(this.ossEnabledCheckBox);
             this.productSelectionGroupBox.Controls.Add(this.codeSecurityEnabledCheckBox);
-            this.productSelectionGroupBox.Location = new System.Drawing.Point(29, 709);
+            this.productSelectionGroupBox.Location = new System.Drawing.Point(29, 424);
             this.productSelectionGroupBox.Margin = new System.Windows.Forms.Padding(3, 2, 3, 2);
             this.productSelectionGroupBox.Name = "productSelectionGroupBox";
             this.productSelectionGroupBox.Padding = new System.Windows.Forms.Padding(11, 10, 11, 10);
@@ -573,7 +488,7 @@ namespace Snyk.VisualStudio.Extension.Settings
             // userExperienceGroupBox
             // 
             this.userExperienceGroupBox.Controls.Add(this.autoScanCheckBox);
-            this.userExperienceGroupBox.Location = new System.Drawing.Point(29, 955);
+            this.userExperienceGroupBox.Location = new System.Drawing.Point(29, 670);
             this.userExperienceGroupBox.Margin = new System.Windows.Forms.Padding(3, 2, 3, 2);
             this.userExperienceGroupBox.Name = "userExperienceGroupBox";
             this.userExperienceGroupBox.Padding = new System.Windows.Forms.Padding(11, 10, 11, 10);
@@ -615,88 +530,17 @@ namespace Snyk.VisualStudio.Extension.Settings
             // 
             this.customCliPathFileDialog.SupportMultiDottedExtensions = true;
             // 
-            // ExecutablesGroupBox
-            // 
-            this.ExecutablesGroupBox.Controls.Add(this.ReleaseChannelLink);
-            this.ExecutablesGroupBox.Controls.Add(this.releaseChannel);
-            this.ExecutablesGroupBox.Controls.Add(this.cliReleaseChannelLabel);
-            this.ExecutablesGroupBox.Controls.Add(this.cliBaseDownloadUrl);
-            this.ExecutablesGroupBox.Controls.Add(this.richTextBox1);
-            this.ExecutablesGroupBox.Controls.Add(this.cliDownloadUrlTextBox);
-            this.ExecutablesGroupBox.Controls.Add(this.CliPathLabel);
-            this.ExecutablesGroupBox.Controls.Add(this.resetCliPathToDefaultButton);
-            this.ExecutablesGroupBox.Controls.Add(this.label1);
-            this.ExecutablesGroupBox.Controls.Add(this.CliPathBrowseButton);
-            this.ExecutablesGroupBox.Controls.Add(this.ManageBinariesAutomaticallyCheckbox);
-            this.ExecutablesGroupBox.Controls.Add(this.CliPathTextBox);
-            this.ExecutablesGroupBox.Location = new System.Drawing.Point(29, 426);
-            this.ExecutablesGroupBox.Margin = new System.Windows.Forms.Padding(4);
-            this.ExecutablesGroupBox.Name = "ExecutablesGroupBox";
-            this.ExecutablesGroupBox.Padding = new System.Windows.Forms.Padding(4);
-            this.ExecutablesGroupBox.Size = new System.Drawing.Size(747, 277);
-            this.ExecutablesGroupBox.TabIndex = 19;
-            this.ExecutablesGroupBox.TabStop = false;
-            this.ExecutablesGroupBox.Text = "Executables Settings";
-            // 
-            // ReleaseChannelLink
-            // 
-            this.ReleaseChannelLink.AutoSize = true;
-            this.ReleaseChannelLink.Location = new System.Drawing.Point(8, 241);
-            this.ReleaseChannelLink.Margin = new System.Windows.Forms.Padding(4, 0, 4, 0);
-            this.ReleaseChannelLink.Name = "ReleaseChannelLink";
-            this.ReleaseChannelLink.Size = new System.Drawing.Size(219, 16);
-            this.ReleaseChannelLink.TabIndex = 20;
-            this.ReleaseChannelLink.TabStop = true;
-            this.ReleaseChannelLink.Text = "Find out about our release channels";
-            this.ReleaseChannelLink.LinkClicked += new System.Windows.Forms.LinkLabelLinkClickedEventHandler(this.ReleaseChannelLink_LinkClicked);
-            // 
-            // releaseChannel
-            // 
-            this.releaseChannel.FormattingEnabled = true;
-            this.releaseChannel.Location = new System.Drawing.Point(239, 208);
-            this.releaseChannel.Margin = new System.Windows.Forms.Padding(4);
-            this.releaseChannel.Name = "releaseChannel";
-            this.releaseChannel.Size = new System.Drawing.Size(160, 24);
-            this.releaseChannel.TabIndex = 23;
-            // 
-            // cliReleaseChannelLabel
-            // 
-            this.cliReleaseChannelLabel.AutoSize = true;
-            this.cliReleaseChannelLabel.Location = new System.Drawing.Point(5, 212);
-            this.cliReleaseChannelLabel.Name = "cliReleaseChannelLabel";
-            this.cliReleaseChannelLabel.Size = new System.Drawing.Size(128, 16);
-            this.cliReleaseChannelLabel.TabIndex = 22;
-            this.cliReleaseChannelLabel.Text = "CLI release channel:";
-            // 
-            // cliBaseDownloadUrl
-            // 
-            this.cliBaseDownloadUrl.AutoSize = true;
-            this.cliBaseDownloadUrl.Location = new System.Drawing.Point(5, 27);
-            this.cliBaseDownloadUrl.Name = "cliBaseDownloadUrl";
-            this.cliBaseDownloadUrl.Size = new System.Drawing.Size(194, 16);
-            this.cliBaseDownloadUrl.TabIndex = 20;
-            this.cliBaseDownloadUrl.Text = "Base URL to download the CLI: ";
-            // 
-            // cliDownloadUrlTextBox
-            // 
-            this.cliDownloadUrlTextBox.Location = new System.Drawing.Point(241, 23);
-            this.cliDownloadUrlTextBox.Margin = new System.Windows.Forms.Padding(4);
-            this.cliDownloadUrlTextBox.Name = "cliDownloadUrlTextBox";
-            this.cliDownloadUrlTextBox.Size = new System.Drawing.Size(399, 22);
-            this.cliDownloadUrlTextBox.TabIndex = 21;
-            // 
             // mainPanel
             // 
             this.mainPanel.AutoScroll = true;
             this.mainPanel.BorderStyle = System.Windows.Forms.BorderStyle.FixedSingle;
             this.mainPanel.Controls.Add(this.generalSettingsGroupBox);
-            this.mainPanel.Controls.Add(this.ExecutablesGroupBox);
             this.mainPanel.Controls.Add(this.productSelectionGroupBox);
             this.mainPanel.Controls.Add(this.userExperienceGroupBox);
             this.mainPanel.Dock = System.Windows.Forms.DockStyle.Fill;
             this.mainPanel.Location = new System.Drawing.Point(0, 0);
             this.mainPanel.Name = "mainPanel";
-            this.mainPanel.Size = new System.Drawing.Size(1060, 1041);
+            this.mainPanel.Size = new System.Drawing.Size(1060, 923);
             this.mainPanel.TabIndex = 20;
             // 
             // SnykGeneralSettingsUserControl
@@ -707,7 +551,7 @@ namespace Snyk.VisualStudio.Extension.Settings
             this.Margin = new System.Windows.Forms.Padding(3, 2, 3, 2);
             this.MinimumSize = new System.Drawing.Size(1060, 923);
             this.Name = "SnykGeneralSettingsUserControl";
-            this.Size = new System.Drawing.Size(1060, 1041);
+            this.Size = new System.Drawing.Size(1060, 923);
             ((System.ComponentModel.ISupportInitialize)(this.errorProvider)).EndInit();
             this.generalSettingsGroupBox.ResumeLayout(false);
             this.generalSettingsGroupBox.PerformLayout();
@@ -717,8 +561,6 @@ namespace Snyk.VisualStudio.Extension.Settings
             this.ignoreGroupbox.PerformLayout();
             this.userExperienceGroupBox.ResumeLayout(false);
             this.userExperienceGroupBox.PerformLayout();
-            this.ExecutablesGroupBox.ResumeLayout(false);
-            this.ExecutablesGroupBox.PerformLayout();
             this.mainPanel.ResumeLayout(false);
             this.ResumeLayout(false);
 
@@ -752,26 +594,13 @@ namespace Snyk.VisualStudio.Extension.Settings
         private System.Windows.Forms.ToolTip snykCodeQualityInfoToolTip;
         private LinkLabel OrganizationInfoLink;
         private Label OrgDescriptionText;
-        private Label label1;
-        private CheckBox ManageBinariesAutomaticallyCheckbox;
-        private Label CliPathLabel;
-        private TextBox CliPathTextBox;
-        private Button CliPathBrowseButton;
         private OpenFileDialog customCliPathFileDialog;
-        private Button resetCliPathToDefaultButton;
-        private RichTextBox richTextBox1;
-        private GroupBox ExecutablesGroupBox;
         private Label label2;
         private ComboBox authType;
         private RichTextBox authMethodDescription;
         private CheckBox autoScanCheckBox;
         private Label snykIacInfoLabel;
         private CheckBox iacEnabledCheckbox;
-        private ComboBox releaseChannel;
-        private Label cliReleaseChannelLabel;
-        private Label cliBaseDownloadUrl;
-        private TextBox cliDownloadUrlTextBox;
-        private LinkLabel ReleaseChannelLink;
         private GroupBox ignoreGroupbox;
         private CheckBox cbIgnoredIssues;
         private CheckBox cbOpenIssues;

@@ -145,9 +145,19 @@
     <Compile Include="Service\VsCodeService.cs" />
     <Compile Include="Service\WorkspaceTrustService.cs" />
     <Compile Include="Settings\ErrorProviderExtensions.cs" />
+    <Compile Include="Settings\ISnykCliOptionsDialogPage.cs" />
     <Compile Include="Settings\ISnykGeneralOptionsDialogPage.cs" />
     <Compile Include="Settings\ISnykOptions.cs" />
     <Compile Include="Settings\IUserStorageSettingsService.cs" />
+    <Compile Include="Settings\SnykCliOptionsDialogPage.cs">
+      <SubType>Component</SubType>
+    </Compile>
+    <Compile Include="Settings\SnykCliOptionsUserControl.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="Settings\SnykCliOptionsUserControl.Designer.cs">
+      <DependentUpon>SnykCliOptionsUserControl.cs</DependentUpon>
+    </Compile>
     <Compile Include="Settings\SnykGeneralOptionsDialogPage.cs">
       <SubType>Component</SubType>
     </Compile>
@@ -573,6 +583,9 @@
     </Content>
   </ItemGroup>
   <ItemGroup>
+    <EmbeddedResource Include="Settings\SnykCliOptionsUserControl.resx">
+      <DependentUpon>SnykCliOptionsUserControl.cs</DependentUpon>
+    </EmbeddedResource>
     <EmbeddedResource Include="Settings\SnykGeneralSettingsUserControl.resx">
       <DependentUpon>SnykGeneralSettingsUserControl.cs</DependentUpon>
       <SubType>Designer</SubType>
