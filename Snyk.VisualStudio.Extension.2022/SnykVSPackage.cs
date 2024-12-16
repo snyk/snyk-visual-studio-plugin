@@ -65,6 +65,7 @@ namespace Snyk.VisualStudio.Extension
             new TaskCompletionSource<bool>();
 
         public static SnykVSPackage Instance;
+        private readonly SemaphoreSlim semaphore = new SemaphoreSlim(1, 1);
 
         private ISnykServiceProvider serviceProvider;
 
@@ -230,7 +231,7 @@ namespace Snyk.VisualStudio.Extension
         {
             try
             {
-                this.serviceProvider.LanguageClientManager.OnLanguageClientNotInitializedAsync += LanguageClientManagerOnOnLanguageClientNotInitializedAsync;
+                this.serviceProvider.LanguageClientManager.OnLanguageClientNotInitializedAsync += LanguageClientManagerOnLanguageClientNotInitializedAsync;
                 this.serviceProvider.LanguageClientManager.OnLanguageServerReadyAsync += LanguageClientManagerOnOnLanguageServerReadyAsync;
                 if (!LanguageClientHelper.IsLanguageServerReady())
                 {
@@ -258,34 +259,47 @@ namespace Snyk.VisualStudio.Extension
         }
 
         private Window tempOpenedFileWindow;
-        private async Task LanguageClientManagerOnOnLanguageClientNotInitializedAsync(object sender, SnykLanguageServerEventArgs args)
+        private async Task LanguageClientManagerOnLanguageClientNotInitializedAsync(object sender, SnykLanguageServerEventArgs args)
         {
+            await semaphore.WaitAsync(DisposalToken);
+
             ThreadHelper.JoinableTaskFactory.RunAsync(async () =>
             {
-                await JoinableTaskFactory.SwitchToMainThreadAsync();
-                while (!LanguageClientHelper.IsLanguageServerReady())
+                try
                 {
-                    var isSolutionOrFolderOpen = SnykSolutionService.Instance.IsSolutionOpen();
-                    if (isSolutionOrFolderOpen)
+                    await JoinableTaskFactory.SwitchToMainThreadAsync();
+                    while (!LanguageClientHelper.IsLanguageServerReady())
                     {
-                        var dte = (DTE)await GetServiceAsync(typeof(DTE));
-                        if (dte == null) return;
+                        var isSolutionOrFolderOpen = SnykSolutionService.Instance.IsSolutionOpen();
+                        if (isSolutionOrFolderOpen)
+                        {
+                            var dte = (DTE)await GetServiceAsync(typeof(DTE));
+                            if (dte == null) return;
 
-                        // Get the path to the file within the installed extension directory
-                        var assemblyLocation = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location);
-                        if (assemblyLocation == null) return;
+                            // Get the path to the file within the installed extension directory
+                            var assemblyLocation = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location);
+                            if (assemblyLocation == null) return;
 
-                        var filePath = Path.Combine(assemblyLocation, "Resources", "SnykLsInit.cs");
+                            var filePath = Path.Combine(assemblyLocation, "Resources", "SnykLsInit.cs");
 
-                        // Open the file
-                        tempOpenedFileWindow = dte.ItemOperations.OpenFile(filePath, EnvDTE.Constants.vsViewKindTextView);
-                        await Task.Delay(1000);
-                        return;
+                            // Open the file
+                            tempOpenedFileWindow =
+                                dte.ItemOperations.OpenFile(filePath, EnvDTE.Constants.vsViewKindTextView);
+                            return;
+                        }
+
+                        await Task.Delay(3000, DisposalToken);
                     }
-                    await Task.Delay(1000);
+                }
+                catch (Exception ex)
+                {
+                    Logger.Error("LanguageClientManagerOnLanguageClientNotInitializedAsync Failed with {Ex}", ex);
+                }
+                finally
+                {
+                    semaphore.Release();
                 }
             }).FireAndForget();
-                       
         }
 
         private async Task InitializeGeneralOptionsAsync()
