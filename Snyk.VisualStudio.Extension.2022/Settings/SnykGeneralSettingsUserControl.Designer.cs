@@ -117,6 +117,7 @@ namespace Snyk.VisualStudio.Extension.Settings
             this.organizationTextBox.Name = "organizationTextBox";
             this.organizationTextBox.Size = new System.Drawing.Size(399, 22);
             this.organizationTextBox.TabIndex = 3;
+            this.organizationTextBox.TextChanged += new System.EventHandler(this.organizationTextBox_TextChanged);
             // 
             // tokenLabel
             // 

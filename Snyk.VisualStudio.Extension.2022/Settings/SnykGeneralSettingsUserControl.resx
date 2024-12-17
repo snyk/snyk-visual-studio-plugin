@@ -124,10 +124,10 @@
   <data name="snykIacInfoLabel.Image" type="System.Drawing.Bitmap, System.Drawing" mimetype="application/x-microsoft.net.object.bytearray.base64">
     <value>
         iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAABGdBTUEAALGPC/xhBQAAAAlwSFlzAAAO
-        vAAADrwBlbxySQAAALxJREFUOE/dUzEOwjAQyz9Y+FnzAV7Aa/hHpYiFNW+AqYKhYsl6nKu4So5DgNiw
-        5OV8tprUCSLSsZQSlUkphpjFoGj3V6i4VeZ0vsswTrI5XDpiBg072O0CqnneHa9PRsv96YaQmSEMyBDs
-        MmHnNSTTHPFpdgkkPK0eJyIgeWd+R3jgRYC7ABKeBsL7JwEvL5HwtPYSf/uNtQvZayFh512RVEfAUmWv
-        jZZtldeAJuTjx7SYAQYQKn7xnCU8ABJO2R9gGis+AAAAAElFTkSuQmCC
+        vAAADrwBlbxySQAAALlJREFUOE/dk70NAjEMhb0HDZuRBZiAadgDKaKhzQxQnaA40bzW6EF8Sny5AKLD
+        0mtsv0/5sUVVpRSAACACUCfmgohU/VMAWANI8XzXzWHQ1f5SiTnW2MPeCpDN4/Z4nRm9dqcbIaNBDJBY
+        8M0WPp8hycyBR/NNPQCVrxMIiK07vxM99BIwK5p6J6Do/RPA4iP2AOUj/vaNNkitKVwCVIOUF+g5yq1p
+        9CpHeQIUkI+X6bUEBcDi23V+ABJO2R9zc0PSAAAAAElFTkSuQmCC
 </value>
   </data>
   <metadata name="ossInfoToolTip.TrayLocation" type="System.Drawing.Point, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a">
@@ -136,10 +136,10 @@
   <data name="snykCodeQualityInfoLabel.Image" type="System.Drawing.Bitmap, System.Drawing" mimetype="application/x-microsoft.net.object.bytearray.base64">
     <value>
         iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAABGdBTUEAALGPC/xhBQAAAAlwSFlzAAAO
-        vAAADrwBlbxySQAAALxJREFUOE/dUzEOwjAQyz9Y+FnzAV7Aa/hHpYiFNW+AqYKhYsl6nKu4So5DgNiw
-        5OV8tprUCSLSsZQSlUkphpjFoGj3V6i4VeZ0vsswTrI5XDpiBg072O0CqnneHa9PRsv96YaQmSEMyBDs
-        MmHnNSTTHPFpdgkkPK0eJyIgeWd+R3jgRYC7ABKeBsL7JwEvL5HwtPYSf/uNtQvZayFh512RVEfAUmWv
-        jZZtldeAJuTjx7SYAQYQKn7xnCU8ABJO2R9gGis+AAAAAElFTkSuQmCC
+        vAAADrwBlbxySQAAALlJREFUOE/dk70NAjEMhb0HDZuRBZiAadgDKaKhzQxQnaA40bzW6EF8Sny5AKLD
+        0mtsv0/5sUVVpRSAACACUCfmgohU/VMAWANI8XzXzWHQ1f5SiTnW2MPeCpDN4/Z4nRm9dqcbIaNBDJBY
+        8M0WPp8hycyBR/NNPQCVrxMIiK07vxM99BIwK5p6J6Do/RPA4iP2AOUj/vaNNkitKVwCVIOUF+g5yq1p
+        9CpHeQIUkI+X6bUEBcDi23V+ABJO2R9zc0PSAAAAAElFTkSuQmCC
 </value>
   </data>
   <metadata name="snykCodeQualityInfoToolTip.TrayLocation" type="System.Drawing.Point, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a">
@@ -148,10 +148,10 @@
   <data name="snykCodeSecurityInfoLabel.Image" type="System.Drawing.Bitmap, System.Drawing" mimetype="application/x-microsoft.net.object.bytearray.base64">
     <value>
         iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAABGdBTUEAALGPC/xhBQAAAAlwSFlzAAAO
-        vAAADrwBlbxySQAAALxJREFUOE/dUzEOwjAQyz9Y+FnzAV7Aa/hHpYiFNW+AqYKhYsl6nKu4So5DgNiw
-        5OV8tprUCSLSsZQSlUkphpjFoGj3V6i4VeZ0vsswTrI5XDpiBg072O0CqnneHa9PRsv96YaQmSEMyBDs
-        MmHnNSTTHPFpdgkkPK0eJyIgeWd+R3jgRYC7ABKeBsL7JwEvL5HwtPYSf/uNtQvZayFh512RVEfAUmWv
-        jZZtldeAJuTjx7SYAQYQKn7xnCU8ABJO2R9gGis+AAAAAElFTkSuQmCC
+        vAAADrwBlbxySQAAALlJREFUOE/dk70NAjEMhb0HDZuRBZiAadgDKaKhzQxQnaA40bzW6EF8Sny5AKLD
+        0mtsv0/5sUVVpRSAACACUCfmgohU/VMAWANI8XzXzWHQ1f5SiTnW2MPeCpDN4/Z4nRm9dqcbIaNBDJBY
+        8M0WPp8hycyBR/NNPQCVrxMIiK07vxM99BIwK5p6J6Do/RPA4iP2AOUj/vaNNkitKVwCVIOUF+g5yq1p
+        9CpHeQIUkI+X6bUEBcDi23V+ABJO2R9zc0PSAAAAAElFTkSuQmCC
 </value>
   </data>
   <metadata name="snykCodeSecurityInfoToolTip.TrayLocation" type="System.Drawing.Point, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a">
@@ -160,10 +160,10 @@
   <data name="ossInfoLabel.Image" type="System.Drawing.Bitmap, System.Drawing" mimetype="application/x-microsoft.net.object.bytearray.base64">
     <value>
         iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAABGdBTUEAALGPC/xhBQAAAAlwSFlzAAAO
-        vAAADrwBlbxySQAAALxJREFUOE/dUzEOwjAQyz9Y+FnzAV7Aa/hHpYiFNW+AqYKhYsl6nKu4So5DgNiw
-        5OV8tprUCSLSsZQSlUkphpjFoGj3V6i4VeZ0vsswTrI5XDpiBg072O0CqnneHa9PRsv96YaQmSEMyBDs
-        MmHnNSTTHPFpdgkkPK0eJyIgeWd+R3jgRYC7ABKeBsL7JwEvL5HwtPYSf/uNtQvZayFh512RVEfAUmWv
-        jZZtldeAJuTjx7SYAQYQKn7xnCU8ABJO2R9gGis+AAAAAElFTkSuQmCC
+        vAAADrwBlbxySQAAALlJREFUOE/dk70NAjEMhb0HDZuRBZiAadgDKaKhzQxQnaA40bzW6EF8Sny5AKLD
+        0mtsv0/5sUVVpRSAACACUCfmgohU/VMAWANI8XzXzWHQ1f5SiTnW2MPeCpDN4/Z4nRm9dqcbIaNBDJBY
+        8M0WPp8hycyBR/NNPQCVrxMIiK07vxM99BIwK5p6J6Do/RPA4iP2AOUj/vaNNkitKVwCVIOUF+g5yq1p
+        9CpHeQIUkI+X6bUEBcDi23V+ABJO2R9zc0PSAAAAAElFTkSuQmCC
 </value>
   </data>
   <metadata name="customCliPathFileDialog.TrayLocation" type="System.Drawing.Point, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a">

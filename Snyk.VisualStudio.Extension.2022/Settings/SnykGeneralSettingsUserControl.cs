@@ -457,9 +457,15 @@ namespace Snyk.VisualStudio.Extension.Settings
             snykOptions.EnableDeltaFindings = enableDelta;
         }
 
+        private void organizationTextBox_TextChanged(object sender, EventArgs e)
+        {
+            snykOptions.Organization = organizationTextBox.Text;
+        }
+
         public Panel GetPanel()
         {
             return this.mainPanel;
         }
+
     }
 }
