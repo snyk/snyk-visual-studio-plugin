@@ -65,7 +65,7 @@ namespace Snyk.VisualStudio.Extension
             new TaskCompletionSource<bool>();
 
         public static SnykVSPackage Instance;
-        private readonly SemaphoreSlim semaphore = new SemaphoreSlim(1, 1);
+        private readonly SemaphoreSlim languageClientInitSemaphore = new SemaphoreSlim(1, 1);
 
         private ISnykServiceProvider serviceProvider;
 
@@ -261,7 +261,7 @@ namespace Snyk.VisualStudio.Extension
         private Window tempOpenedFileWindow;
         private async Task LanguageClientManagerOnLanguageClientNotInitializedAsync(object sender, SnykLanguageServerEventArgs args)
         {
-            await semaphore.WaitAsync(DisposalToken);
+            await languageClientInitSemaphore.WaitAsync(DisposalToken);
 
             ThreadHelper.JoinableTaskFactory.RunAsync(async () =>
             {
@@ -297,7 +297,7 @@ namespace Snyk.VisualStudio.Extension
                 }
                 finally
                 {
-                    semaphore.Release();
+                    languageClientInitSemaphore.Release();
                 }
             }).FireAndForget();
         }
