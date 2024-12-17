@@ -11,15 +11,13 @@ namespace Snyk.VisualStudio.Extension.Settings
     public partial class SnykCliOptionsUserControl : UserControl
     {
         private readonly ISnykServiceProvider serviceProvider;
-        private readonly ISnykOptions snykOptions;
-        private readonly ISnykOptions memento;
+        public ISnykOptions OptionsMemento { get; set; }
         private static readonly ILogger Logger = LogManager.ForContext<SnykCliOptionsUserControl>();
         
         public SnykCliOptionsUserControl(ISnykServiceProvider serviceProvider)
         {
             this.serviceProvider = serviceProvider;
-            snykOptions = this.serviceProvider.Options;
-            memento = new SnykOptions();
+            OptionsMemento = (ISnykOptions)serviceProvider.SnykOptionsManager.Load();
             InitializeComponent();
             this.Initialize();
         }
@@ -30,12 +28,12 @@ namespace Snyk.VisualStudio.Extension.Settings
  
         private void UpdateViewFromOptions()
         {
-            this.manageBinariesAutomaticallyCheckbox.Checked = snykOptions.BinariesAutoUpdate;
-            this.cliDownloadUrlTextBox.Text = snykOptions.CliDownloadUrl;
+            this.manageBinariesAutomaticallyCheckbox.Checked = OptionsMemento.BinariesAutoUpdate;
+            this.cliDownloadUrlTextBox.Text = OptionsMemento.CliDownloadUrl;
 
-            var cliPath = string.IsNullOrEmpty(snykOptions.CliCustomPath)
+            var cliPath = string.IsNullOrEmpty(OptionsMemento.CliCustomPath)
                 ? SnykCli.GetSnykCliDefaultPath()
-                : snykOptions.CliCustomPath;
+                : OptionsMemento.CliCustomPath;
 
             this.CliPathTextBox.Text = cliPath;
             if (releaseChannel.DataSource == null)
@@ -43,15 +41,15 @@ namespace Snyk.VisualStudio.Extension.Settings
                 this.releaseChannel.DataSource = ReleaseChannelList();
             }
 
-            this.releaseChannel.SelectedItem = snykOptions.CliReleaseChannel;
+            this.releaseChannel.SelectedItem = OptionsMemento.CliReleaseChannel;
         }
 
         private IEnumerable<string> ReleaseChannelList()
         {
             var defaultList = new List<string>() { "stable", "rc", "preview" };
-            if (!defaultList.Contains(snykOptions.CliReleaseChannel))
+            if (!defaultList.Contains(OptionsMemento.CliReleaseChannel))
             {
-                defaultList.Add(snykOptions.CliReleaseChannel);
+                defaultList.Add(OptionsMemento.CliReleaseChannel);
             }
             return defaultList;
         }
@@ -67,8 +65,8 @@ namespace Snyk.VisualStudio.Extension.Settings
 
         private void SetCliCustomPathValue(string selectedCliPath)
         {
-            snykOptions.CliCustomPath = selectedCliPath;
-            this.CliPathTextBox.Text = string.IsNullOrEmpty(snykOptions.CliCustomPath)
+            OptionsMemento.CliCustomPath = selectedCliPath;
+            this.CliPathTextBox.Text = string.IsNullOrEmpty(OptionsMemento.CliCustomPath)
                 ? SnykCli.GetSnykCliDefaultPath()
                 : selectedCliPath;
         }
@@ -83,25 +81,9 @@ namespace Snyk.VisualStudio.Extension.Settings
             this.ReleaseChannelLink.LinkVisited = true;
             Process.Start("https://docs.snyk.io/snyk-cli/releases-and-channels-for-the-snyk-cli");
         }
-
-        public string GetReleaseChannel()
+        private void manageBinariesAutomaticallyCheckbox_CheckedChanged(object sender, System.EventArgs e)
         {
-            return releaseChannel.Text;
-        }
-
-        public string GetCliDownloadUrl()
-        {
-            return cliDownloadUrlTextBox.Text;
-        }
-
-        public bool GetManageBinariesAutomatically()
-        {
-            return manageBinariesAutomaticallyCheckbox.Checked;
-        }
-
-        public Panel GetPanel()
-        {
-            return this.mainPanel;
+            OptionsMemento.BinariesAutoUpdate = manageBinariesAutomaticallyCheckbox.Checked;
         }
     }
 }

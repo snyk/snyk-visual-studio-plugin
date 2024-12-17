@@ -55,7 +55,7 @@
             this.mainPanel.Dock = System.Windows.Forms.DockStyle.Fill;
             this.mainPanel.Location = new System.Drawing.Point(0, 0);
             this.mainPanel.Name = "mainPanel";
-            this.mainPanel.Size = new System.Drawing.Size(752, 285);
+            this.mainPanel.Size = new System.Drawing.Size(803, 339);
             this.mainPanel.TabIndex = 0;
             // 
             // ExecutablesGroupBox
@@ -72,8 +72,8 @@
             this.ExecutablesGroupBox.Controls.Add(this.CliPathBrowseButton);
             this.ExecutablesGroupBox.Controls.Add(this.manageBinariesAutomaticallyCheckbox);
             this.ExecutablesGroupBox.Controls.Add(this.CliPathTextBox);
-            this.ExecutablesGroupBox.Location = new System.Drawing.Point(4, 4);
-            this.ExecutablesGroupBox.Margin = new System.Windows.Forms.Padding(4);
+            this.ExecutablesGroupBox.Location = new System.Drawing.Point(11, 10);
+            this.ExecutablesGroupBox.Margin = new System.Windows.Forms.Padding(11, 10, 11, 10);
             this.ExecutablesGroupBox.Name = "ExecutablesGroupBox";
             this.ExecutablesGroupBox.Padding = new System.Windows.Forms.Padding(4);
             this.ExecutablesGroupBox.Size = new System.Drawing.Size(729, 261);
@@ -189,6 +189,7 @@
             this.manageBinariesAutomaticallyCheckbox.Size = new System.Drawing.Size(18, 17);
             this.manageBinariesAutomaticallyCheckbox.TabIndex = 13;
             this.manageBinariesAutomaticallyCheckbox.UseVisualStyleBackColor = true;
+            this.manageBinariesAutomaticallyCheckbox.CheckedChanged += new System.EventHandler(this.manageBinariesAutomaticallyCheckbox_CheckedChanged);
             // 
             // CliPathTextBox
             // 
@@ -209,7 +210,7 @@
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.Controls.Add(this.mainPanel);
             this.Name = "SnykCliOptionsUserControl";
-            this.Size = new System.Drawing.Size(752, 285);
+            this.Size = new System.Drawing.Size(803, 339);
             this.mainPanel.ResumeLayout(false);
             this.ExecutablesGroupBox.ResumeLayout(false);
             this.ExecutablesGroupBox.PerformLayout();

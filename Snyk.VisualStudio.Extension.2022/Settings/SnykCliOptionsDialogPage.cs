@@ -1,8 +1,8 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Runtime.InteropServices;
 using System.Windows.Forms;
 using Microsoft.VisualStudio.Shell;
+using Snyk.VisualStudio.Extension.Language;
 using Snyk.VisualStudio.Extension.Service;
 
 namespace Snyk.VisualStudio.Extension.Settings;
@@ -50,24 +50,33 @@ public class SnykCliOptionsDialogPage : DialogPage, ISnykCliOptionsDialogPage
 
     private void HandleCliDownload()
     {
-        var releaseChannel = SnykCliOptionsUserControl.GetReleaseChannel().Trim();
-        var downloadUrl = SnykCliOptionsUserControl.GetCliDownloadUrl().Trim();
-        var manageBinariesAutomatically = SnykCliOptionsUserControl.GetManageBinariesAutomatically();
-        if (!manageBinariesAutomatically)
+        var memento = SnykCliOptionsUserControl.OptionsMemento;
+
+        this.SnykOptions.CliDownloadUrl = memento.CliDownloadUrl;
+        this.SnykOptions.CliCustomPath = memento.CliCustomPath;
+
+        if (!memento.BinariesAutoUpdate)
         {
-            this.SnykOptions.CurrentCliVersion = string.Empty;
-            this.SnykOptions.BinariesAutoUpdate = false;
-            serviceProvider.TasksService.CancelDownloadTask();
-            // Language Server restart will happen on DownloadCancelled Event.
+            HandleManualBinaries(memento);
             return;
         }
-        if (this.SnykOptions.CliReleaseChannel != releaseChannel || this.SnykOptions.CliDownloadUrl != downloadUrl || this.SnykOptions.BinariesAutoUpdate != manageBinariesAutomatically)
+
+        // if auto-update is enabled, check if the release channel changed:
+        if (this.SnykOptions.CliReleaseChannel != memento.CliReleaseChannel)
         {
-            this.SnykOptions.CliDownloadUrl = downloadUrl;
-            this.SnykOptions.CliReleaseChannel = releaseChannel;
-            this.SnykOptions.BinariesAutoUpdate = manageBinariesAutomatically;
-            serviceProvider.TasksService.CancelDownloadTask();
+            this.SnykOptions.CliReleaseChannel = memento.CliReleaseChannel;
+            this.SnykOptions.BinariesAutoUpdate = true;
+            serviceProvider.TasksService.CancelTasks();
             this.serviceProvider.TasksService.Download();
         }
+    }
+
+    private void HandleManualBinaries(ISnykOptions memento)
+    {
+        this.SnykOptions.CurrentCliVersion = string.Empty;
+        this.SnykOptions.BinariesAutoUpdate = false;
+        this.SnykOptions.CliReleaseChannel = memento.CliReleaseChannel;
+        serviceProvider.TasksService.CancelTasks();
+        LanguageClientHelper.LanguageClientManager().RestartServerAsync().FireAndForget();
     }
 }

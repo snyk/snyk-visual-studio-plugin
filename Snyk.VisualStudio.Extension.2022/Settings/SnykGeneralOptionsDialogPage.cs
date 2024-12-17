@@ -98,6 +98,7 @@ namespace Snyk.VisualStudio.Extension.Settings
                 {
                     await serviceProvider.LanguageClientManager.DidChangeConfigurationAsync(SnykVSPackage
                         .Instance.DisposalToken);
+                    // TODO: move this to ScanConfigurationDialog onSave
                     if (this.SnykOptions.AutoScan)
                         await serviceProvider.LanguageClientManager.InvokeWorkspaceScanAsync(SnykVSPackage
                             .Instance.DisposalToken);
