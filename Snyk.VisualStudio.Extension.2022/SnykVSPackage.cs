@@ -9,6 +9,7 @@ using System.Threading.Tasks;
 using EnvDTE;
 using Microsoft;
 using Microsoft.VisualStudio.ComponentModelHost;
+using Microsoft.VisualStudio.PlatformUI;
 using Microsoft.VisualStudio.Shell;
 using Microsoft.VisualStudio.Shell.Interop;
 using Serilog;
@@ -64,6 +65,7 @@ namespace Snyk.VisualStudio.Extension
             new TaskCompletionSource<bool>();
 
         public static SnykVSPackage Instance;
+        private readonly SemaphoreSlim languageClientInitSemaphore = new SemaphoreSlim(1, 1);
 
         private ISnykServiceProvider serviceProvider;
 
@@ -229,7 +231,7 @@ namespace Snyk.VisualStudio.Extension
         {
             try
             {
-                this.serviceProvider.LanguageClientManager.OnLanguageClientNotInitializedAsync += LanguageClientManagerOnOnLanguageClientNotInitializedAsync;
+                this.serviceProvider.LanguageClientManager.OnLanguageClientNotInitializedAsync += LanguageClientManagerOnLanguageClientNotInitializedAsync;
                 this.serviceProvider.LanguageClientManager.OnLanguageServerReadyAsync += LanguageClientManagerOnOnLanguageServerReadyAsync;
                 if (!LanguageClientHelper.IsLanguageServerReady())
                 {
@@ -257,21 +259,47 @@ namespace Snyk.VisualStudio.Extension
         }
 
         private Window tempOpenedFileWindow;
-        private async Task LanguageClientManagerOnOnLanguageClientNotInitializedAsync(object sender, SnykLanguageServerEventArgs args)
+        private async Task LanguageClientManagerOnLanguageClientNotInitializedAsync(object sender, SnykLanguageServerEventArgs args)
         {
-            await JoinableTaskFactory.SwitchToMainThreadAsync();
+            await languageClientInitSemaphore.WaitAsync(DisposalToken);
 
-            var dte = (DTE)await GetServiceAsync(typeof(DTE));
-            if (dte == null) return;
+            ThreadHelper.JoinableTaskFactory.RunAsync(async () =>
+            {
+                try
+                {
+                    await JoinableTaskFactory.SwitchToMainThreadAsync();
+                    while (!LanguageClientHelper.IsLanguageServerReady())
+                    {
+                        var isSolutionOrFolderOpen = SnykSolutionService.Instance.IsSolutionOpen();
+                        if (isSolutionOrFolderOpen)
+                        {
+                            var dte = (DTE)await GetServiceAsync(typeof(DTE));
+                            if (dte == null) return;
 
-            // Get the path to the file within the installed extension directory
-            var assemblyLocation = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location);
-            if (assemblyLocation == null) return;
+                            // Get the path to the file within the installed extension directory
+                            var assemblyLocation = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location);
+                            if (assemblyLocation == null) return;
 
-            var filePath = Path.Combine(assemblyLocation, "Resources", "SnykLsInit.cs");
+                            var filePath = Path.Combine(assemblyLocation, "Resources", "SnykLsInit.cs");
 
-            // Open the file
-            tempOpenedFileWindow = dte.ItemOperations.OpenFile(filePath, EnvDTE.Constants.vsViewKindTextView);
+                            // Open the file
+                            tempOpenedFileWindow =
+                                dte.ItemOperations.OpenFile(filePath, EnvDTE.Constants.vsViewKindTextView);
+                            return;
+                        }
+
+                        await Task.Delay(3000, DisposalToken);
+                    }
+                }
+                catch (Exception ex)
+                {
+                    Logger.Error("LanguageClientManagerOnLanguageClientNotInitializedAsync Failed with {Ex}", ex);
+                }
+                finally
+                {
+                    languageClientInitSemaphore.Release();
+                }
+            }).FireAndForget();
         }
 
         private async Task InitializeGeneralOptionsAsync()
