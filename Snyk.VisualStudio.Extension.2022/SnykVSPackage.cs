@@ -102,6 +102,7 @@ namespace Snyk.VisualStudio.Extension
         /// Gets the Options
         /// </summary>
         public ISnykOptions Options { get; private set; }
+        public ISnykOptionsManager SnykOptionsManager { get; private set; }
         public ISnykGeneralOptionsDialogPage SnykGeneralOptionsDialogPage { get; private set; }
         public ISnykCliOptionsDialogPage SnykCliOptionsDialogPage { get; private set; }
 
@@ -306,11 +307,15 @@ namespace Snyk.VisualStudio.Extension
 
         private async Task InitializeGeneralOptionsAsync()
         {
+            if (SnykOptionsManager == null)
+            {
+                SnykOptionsManager = new SnykOptionsManager(this.serviceProvider);
+            }
             if (Options == null)
             {
                 Logger.Information(
                     "Call GetDialogPage to create. await JoinableTaskFactory.SwitchToMainThreadAsync().");
-                Options = new SnykOptions(this.serviceProvider);
+                Options = (ISnykOptions)SnykOptionsManager.Load();
                 var readableVsVersion = await this.GetReadableVsVersionAsync();
                 var vsMajorMinorVersion = await this.GetVsMajorMinorVersionAsync();
                 Options.Application = readableVsVersion;

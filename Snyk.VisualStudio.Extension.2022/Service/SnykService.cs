@@ -60,6 +60,7 @@ namespace Snyk.VisualStudio.Extension.Service
         public ISnykOptions Options => this.Package.Options;
 
         public ISnykGeneralOptionsDialogPage GeneralOptionsDialogPage => this.Package.SnykGeneralOptionsDialogPage;
+        public ISnykOptionsManager SnykOptionsManager => this.Package.SnykOptionsManager;
 
         /// <summary>
         /// Gets solution service.
@@ -167,7 +168,7 @@ namespace Snyk.VisualStudio.Extension.Service
                 await SnykSolutionService.Instance.InitializeAsync(this);
 
                 this.tasksService = SnykTasksService.Instance;
-                this.workspaceTrustService = new WorkspaceTrustService(this.UserStorageSettingsService);
+                this.workspaceTrustService = new WorkspaceTrustService(this);
 
                 NotificationService.Initialize(this);
                 VsStatusBar.Initialize(this);

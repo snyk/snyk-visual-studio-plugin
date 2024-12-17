@@ -12,12 +12,14 @@ namespace Snyk.VisualStudio.Extension.Settings
     {
         private readonly ISnykServiceProvider serviceProvider;
         private readonly ISnykOptions snykOptions;
+        private readonly ISnykOptions memento;
         private static readonly ILogger Logger = LogManager.ForContext<SnykCliOptionsUserControl>();
-
+        
         public SnykCliOptionsUserControl(ISnykServiceProvider serviceProvider)
         {
             this.serviceProvider = serviceProvider;
             snykOptions = this.serviceProvider.Options;
+            memento = new SnykOptions();
             InitializeComponent();
             this.Initialize();
         }

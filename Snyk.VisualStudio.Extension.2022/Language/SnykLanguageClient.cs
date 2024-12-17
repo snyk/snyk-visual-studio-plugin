@@ -73,14 +73,15 @@ namespace Snyk.VisualStudio.Extension.Language
         public async Task<Connection> ActivateAsync(CancellationToken token)
         {
             await Task.Yield();
-            if (SnykVSPackage.ServiceProvider?.Options == null)
+            var serviceProvider = SnykVSPackage.ServiceProvider;
+            if (serviceProvider?.Options == null)
             {
                 Logger.Error("Could not activate Language Server because ServiceProvider is null. Is the extension initialized?");
                 return null;
             }
-            var options = SnykVSPackage.ServiceProvider.Options;
+            var options = serviceProvider.Options;
             // ReSharper disable once RedundantAssignment
-            var lsDebugLevel = await GetLsDebugLevelAsync(options);
+            var lsDebugLevel = await GetLsDebugLevelAsync(serviceProvider.SnykOptionsManager);
 #if DEBUG
             lsDebugLevel = "debug";
 #endif
@@ -221,10 +222,10 @@ namespace Snyk.VisualStudio.Extension.Language
             return Task.CompletedTask;
         }
 
-        private async Task<string> GetLsDebugLevelAsync(ISnykOptions options)
+        private async Task<string> GetLsDebugLevelAsync(ISnykOptionsManager optionsManger)
         {
             var logLevel = "info";
-            var additionalCliParameters = await options.GetAdditionalOptionsAsync();
+            var additionalCliParameters = await optionsManger.GetAdditionalOptionsAsync();
             if (!string.IsNullOrEmpty(additionalCliParameters) && (additionalCliParameters.Contains("-d") || additionalCliParameters.Contains("--debug")))
             {
                 logLevel = "debug";

@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Runtime.InteropServices;
 using System.Windows.Forms;
 using Microsoft.VisualStudio.Shell;
@@ -38,7 +39,7 @@ public class SnykCliOptionsDialogPage : DialogPage, ISnykCliOptionsDialogPage
     public override void SaveSettingsToStorage()
     {
         HandleCliDownload();
-        this.SnykOptions.SaveSettings();
+        this.serviceProvider.SnykOptionsManager.Save(this.SnykOptions);
         this.SnykOptions.InvokeSettingsChangedEvent();
     }
 

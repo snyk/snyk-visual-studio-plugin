@@ -47,7 +47,7 @@ namespace Snyk.VisualStudio.Extension.Service
         /// </summary>
         ISnykOptions Options { get; }
         ISnykGeneralOptionsDialogPage GeneralOptionsDialogPage { get; }
-
+        ISnykOptionsManager SnykOptionsManager { get; }
         /// <summary>
         /// Gets Visual Studio Settiings Manager instance.
         /// </summary>

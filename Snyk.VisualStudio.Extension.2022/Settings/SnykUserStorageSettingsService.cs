@@ -233,6 +233,7 @@ namespace Snyk.VisualStudio.Extension.Settings
         /// <returns>A <see cref="Task"/> representing the asynchronous operation.</returns>
         public async Task SaveAdditionalOptionsAsync(string additionalOptions)
         {
+            // TODO: Move to SnykOptionsManager
             Logger.Information("Enter SaveAdditionalOptions method");
 
             var solutionPathHash = await this.GetSolutionPathHashAsync();
@@ -264,6 +265,7 @@ namespace Snyk.VisualStudio.Extension.Settings
         /// <returns>A <see cref="Task"/> representing the asynchronous operation.</returns>
         public async Task SaveIsAllProjectsScanEnabledAsync(bool isAllProjectsEnabled)
         {
+            // TODO: Move to SnykOptionsManager
             Logger.Information("Enter SaveIsAllProjectsScan method");
 
             var solutionPathHash = await this.GetSolutionPathHashAsync();

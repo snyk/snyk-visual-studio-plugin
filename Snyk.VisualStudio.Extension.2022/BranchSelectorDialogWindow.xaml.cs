@@ -51,8 +51,10 @@ namespace Snyk.VisualStudio.Extension
             var currentList = folderConfigList.Where(x => x.FolderPath != FolderConfig.FolderPath).ToList();
             currentList.Add(FolderConfig);
 
-            SnykVSPackage.ServiceProvider.Options.FolderConfigs = currentList;
-     
+            var options = SnykVSPackage.ServiceProvider.Options;
+            options.FolderConfigs = currentList;
+            SnykVSPackage.ServiceProvider.SnykOptionsManager.Save(options);
+            options.InvokeSettingsChangedEvent();
            this.CloseDialog();
         }
 

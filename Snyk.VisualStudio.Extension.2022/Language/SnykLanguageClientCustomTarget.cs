@@ -3,6 +3,7 @@ using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.VisualStudio.Shell;
 using Newtonsoft.Json.Linq;
 using Snyk.VisualStudio.Extension.Authentication;
@@ -109,6 +110,8 @@ namespace Snyk.VisualStudio.Extension.Language
             var folderConfigs = arg.TryParse<FolderConfigsParam>();
             if (folderConfigs == null) return;
             serviceProvider.Options.FolderConfigs = folderConfigs.FolderConfigs;
+            serviceProvider.SnykOptionsManager.Save(serviceProvider.Options);
+            serviceProvider.Options.InvokeSettingsChangedEvent();
         }
 
         [JsonRpcMethod(LsConstants.SnykHasAuthenticated)]
@@ -133,6 +136,8 @@ namespace Snyk.VisualStudio.Extension.Language
             }
 
             serviceProvider.Options.ApiToken = new AuthenticationToken(serviceProvider.Options.AuthenticationMethod, token);
+            serviceProvider.SnykOptionsManager.Save(serviceProvider.Options);
+            serviceProvider.Options.InvokeSettingsChangedEvent();
 
             await serviceProvider.GeneralOptionsDialogPage.HandleAuthenticationSuccess(token, apiUrl);
             serviceProvider.FeatureFlagService.RefreshAsync(SnykVSPackage.Instance.DisposalToken).FireAndForget();
@@ -150,7 +155,7 @@ namespace Snyk.VisualStudio.Extension.Language
             if (trustedFolders == null) return;
 
             serviceProvider.Options.TrustedFolders = new HashSet<string>(trustedFolders.TrustedFolders);
-            this.serviceProvider.UserStorageSettingsService?.SaveSettings();
+            this.serviceProvider.SnykOptionsManager.Save(serviceProvider.Options);
             await serviceProvider.LanguageClientManager.DidChangeConfigurationAsync(SnykVSPackage.Instance.DisposalToken);
         }
 

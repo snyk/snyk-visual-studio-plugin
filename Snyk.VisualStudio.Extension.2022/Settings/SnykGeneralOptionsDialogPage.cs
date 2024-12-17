@@ -86,7 +86,7 @@ namespace Snyk.VisualStudio.Extension.Settings
         // This method is used when the user clicks "Ok"
         public override void SaveSettingsToStorage()
         {
-            this.SnykOptions.SaveSettings();
+            this.serviceProvider.SnykOptionsManager.Save(this.SnykOptions);
             this.SnykOptions.InvokeSettingsChangedEvent();
         }
 
