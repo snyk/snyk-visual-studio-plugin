@@ -15,7 +15,6 @@ namespace Snyk.VisualStudio.Extension.Settings
         public string IntegrationEnvironment { get; set; }
         public string IntegrationEnvironmentVersion { get; set; }
         public bool ConsistentIgnoresEnabled { get; set; }
-        public SastSettings SastSettings { get; set; }
         public string DeviceId { get; set; }
         public bool AutoScan { get; set; }
         public bool OpenIssuesEnabled { get; set; }

@@ -13,7 +13,6 @@ namespace Snyk.VisualStudio.Extension.Settings
         string IntegrationVersion { get; }
         string IntegrationEnvironment { get; set; }
         string IntegrationEnvironmentVersion { get; set; }
-        SastSettings SastSettings { get; set; }
         bool ConsistentIgnoresEnabled { get; set; }
 
         /// <summary>

@@ -162,7 +162,11 @@ namespace Snyk.VisualStudio.Extension.Settings
             set => snykSettings.DeviceId = value;
         }
 
-        public bool AnalyticsPluginInstalledSent { get; set; }
+        public bool AnalyticsPluginInstalledSent
+        {
+            get => snykSettings.AnalyticsPluginInstalledSent;
+            set => snykSettings.AnalyticsPluginInstalledSent = value;
+        }
 
         public bool OpenIssuesEnabled
         {

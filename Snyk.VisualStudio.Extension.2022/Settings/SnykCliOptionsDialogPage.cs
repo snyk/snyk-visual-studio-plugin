@@ -13,15 +13,13 @@ public class SnykCliOptionsDialogPage : DialogPage, ISnykCliOptionsDialogPage
 {
     private SnykCliOptionsUserControl snykCliOptionsUserControl;
     private ISnykServiceProvider serviceProvider;
+    private ISnykOptions snykOptions;
 
     public void Initialize(ISnykServiceProvider provider)
     {
         this.serviceProvider = provider;
-        this.SnykOptions = provider.Options;
+        this.snykOptions = provider.Options;
     }
-
-    public ISnykOptions SnykOptions { get; set; }
-
     protected override IWin32Window Window => SnykCliOptionsUserControl;
     public SnykCliOptionsUserControl SnykCliOptionsUserControl
     {
@@ -39,44 +37,45 @@ public class SnykCliOptionsDialogPage : DialogPage, ISnykCliOptionsDialogPage
     public override void SaveSettingsToStorage()
     {
         HandleCliDownload();
-        this.serviceProvider.SnykOptionsManager.Save(this.SnykOptions);
-        this.SnykOptions.InvokeSettingsChangedEvent();
+        this.serviceProvider.SnykOptionsManager.Save(this.snykOptions);
+        this.snykOptions.InvokeSettingsChangedEvent();
     }
 
     protected override void OnClosed(EventArgs e)
     {
-        
+        // do nothing
     }
 
     private void HandleCliDownload()
     {
         var memento = SnykCliOptionsUserControl.OptionsMemento;
 
-        this.SnykOptions.CliDownloadUrl = memento.CliDownloadUrl;
-        this.SnykOptions.CliCustomPath = memento.CliCustomPath;
+        this.snykOptions.CliDownloadUrl = memento.CliDownloadUrl;
 
-        if (!memento.BinariesAutoUpdate)
+        var binariesAutoUpdateChanged = this.snykOptions.BinariesAutoUpdate != memento.BinariesAutoUpdate;
+        var releaseChannelChanged = this.snykOptions.CliReleaseChannel != memento.CliReleaseChannel;
+        var cliCustomPathChanged = this.snykOptions.CliCustomPath != memento.CliCustomPath;
+
+        this.snykOptions.CurrentCliVersion = memento.CurrentCliVersion;
+        this.snykOptions.BinariesAutoUpdate = memento.BinariesAutoUpdate;
+        this.snykOptions.CliReleaseChannel = memento.CliReleaseChannel;
+        this.snykOptions.CliCustomPath = memento.CliCustomPath;
+
+        var hasChanges = binariesAutoUpdateChanged || releaseChannelChanged || cliCustomPathChanged;
+        if (!hasChanges)
         {
-            HandleManualBinaries(memento);
             return;
         }
 
-        // if auto-update is enabled, check if the release channel changed:
-        if (this.SnykOptions.CliReleaseChannel != memento.CliReleaseChannel)
+        serviceProvider.TasksService.CancelTasks();
+
+        if (memento.BinariesAutoUpdate)
         {
-            this.SnykOptions.CliReleaseChannel = memento.CliReleaseChannel;
-            this.SnykOptions.BinariesAutoUpdate = true;
-            serviceProvider.TasksService.CancelTasks();
             this.serviceProvider.TasksService.Download();
         }
-    }
-
-    private void HandleManualBinaries(ISnykOptions memento)
-    {
-        this.SnykOptions.CurrentCliVersion = string.Empty;
-        this.SnykOptions.BinariesAutoUpdate = false;
-        this.SnykOptions.CliReleaseChannel = memento.CliReleaseChannel;
-        serviceProvider.TasksService.CancelTasks();
-        LanguageClientHelper.LanguageClientManager().RestartServerAsync().FireAndForget();
+        else
+        {
+            LanguageClientHelper.LanguageClientManager().RestartServerAsync().FireAndForget();
+        }
     }
 }

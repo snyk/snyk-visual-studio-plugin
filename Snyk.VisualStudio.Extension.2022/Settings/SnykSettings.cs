@@ -75,5 +75,6 @@ namespace Snyk.VisualStudio.Extension.Settings
         public bool IgnoredIssuesEnabled { get; set; } = true;
         public List<FolderConfig> FolderConfigs { get; set; }
         public bool EnableDeltaFindings { get; set; }
+        public bool AnalyticsPluginInstalledSent { get; set; }
     }
 }

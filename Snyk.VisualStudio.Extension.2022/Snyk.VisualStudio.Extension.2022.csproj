@@ -150,6 +150,7 @@
     <Compile Include="Settings\ISnykGeneralOptionsDialogPage.cs" />
     <Compile Include="Settings\ISnykOptions.cs" />
     <Compile Include="Settings\ISnykOptionsManager.cs" />
+    <Compile Include="Settings\ISnykScanOptionsDialogPage.cs" />
     <Compile Include="Settings\IUserStorageSettingsService.cs" />
     <Compile Include="Settings\SnykCliOptionsDialogPage.cs">
       <SubType>Component</SubType>
@@ -171,6 +172,15 @@
     </Compile>
     <Compile Include="Settings\SnykOptions.cs" />
     <Compile Include="Settings\SnykOptionsManager.cs" />
+    <Compile Include="Settings\SnykScanOptionsDialogPage.cs">
+      <SubType>Component</SubType>
+    </Compile>
+    <Compile Include="Settings\SnykScanOptionsUserControl.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="Settings\SnykScanOptionsUserControl.Designer.cs">
+      <DependentUpon>SnykScanOptionsUserControl.cs</DependentUpon>
+    </Compile>
     <Compile Include="Settings\SnykSettings.cs" />
     <Compile Include="Settings\SnykSettingsChangedEventArgs.cs" />
     <Compile Include="Settings\SnykSettingsLoader.cs" />
@@ -592,6 +602,9 @@
     <EmbeddedResource Include="Settings\SnykGeneralSettingsUserControl.resx">
       <DependentUpon>SnykGeneralSettingsUserControl.cs</DependentUpon>
       <SubType>Designer</SubType>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Settings\SnykScanOptionsUserControl.resx">
+      <DependentUpon>SnykScanOptionsUserControl.cs</DependentUpon>
     </EmbeddedResource>
     <EmbeddedResource Include="Settings\SnykSolutionOptionsUserControl.resx">
       <DependentUpon>SnykSolutionOptionsUserControl.cs</DependentUpon>

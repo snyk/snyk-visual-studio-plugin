@@ -53,6 +53,7 @@ namespace Snyk.VisualStudio.Extension
     [ProvideOptionPage(typeof(SnykGeneralOptionsDialogPage), "Snyk", "General", 1000, 1001, true)]
     [ProvideOptionPage(typeof(SnykSolutionOptionsDialogPage), "Snyk", "Solution settings", 1000, 1002, true)]
     [ProvideOptionPage(typeof(SnykCliOptionsDialogPage), "Snyk", "CLI settings", 1000, 1003, true)]
+    [ProvideOptionPage(typeof(SnykScanOptionsDialogPage), "Snyk", "Scan settings", 1000, 1004, true)]
     public sealed class SnykVSPackage : AsyncPackage, ISnykOptionsProvider
     {
         /// <summary>
@@ -105,6 +106,7 @@ namespace Snyk.VisualStudio.Extension
         public ISnykOptionsManager SnykOptionsManager { get; private set; }
         public ISnykGeneralOptionsDialogPage SnykGeneralOptionsDialogPage { get; private set; }
         public ISnykCliOptionsDialogPage SnykCliOptionsDialogPage { get; private set; }
+        public ISnykScanOptionsDialogPage SnykScanOptionsDialogPage { get; private set; }
 
         /// <summary>
         /// Gets <see cref="SnykToolWindow"/> instance.
@@ -185,7 +187,7 @@ namespace Snyk.VisualStudio.Extension
                 Logger.Information("Get SnykService as ServiceProvider.");
                 Logger.Information("Start InitializeGeneralOptionsAsync.");
                 
-                await InitializeGeneralOptionsAsync();
+                await InitializeOptionsAsync();
 
 
                 // Initialize LS
@@ -305,16 +307,17 @@ namespace Snyk.VisualStudio.Extension
             }).FireAndForget();
         }
 
-        private async Task InitializeGeneralOptionsAsync()
+        private async Task InitializeOptionsAsync()
         {
+            await JoinableTaskFactory.SwitchToMainThreadAsync();
+
             if (SnykOptionsManager == null)
             {
                 SnykOptionsManager = new SnykOptionsManager(this.serviceProvider);
             }
+
             if (Options == null)
             {
-                Logger.Information(
-                    "Call GetDialogPage to create. await JoinableTaskFactory.SwitchToMainThreadAsync().");
                 Options = (ISnykOptions)SnykOptionsManager.Load();
                 var readableVsVersion = await this.GetReadableVsVersionAsync();
                 var vsMajorMinorVersion = await this.GetVsMajorMinorVersionAsync();
@@ -326,13 +329,8 @@ namespace Snyk.VisualStudio.Extension
 
             if (SnykGeneralOptionsDialogPage == null)
             {
-                await JoinableTaskFactory.SwitchToMainThreadAsync();
-
-                Logger.Information("GeneralOptionsDialogPage not created yet. Call GetDialogPage to create.");
-
                 SnykGeneralOptionsDialogPage =
                     (SnykGeneralOptionsDialogPage)GetDialogPage(typeof(SnykGeneralOptionsDialogPage));
-                Logger.Information("Call generalOptionsDialogPage.Initialize()");
                 SnykGeneralOptionsDialogPage.Initialize(this.serviceProvider);
             }
 
@@ -342,8 +340,14 @@ namespace Snyk.VisualStudio.Extension
 
                 SnykCliOptionsDialogPage =
                     (SnykCliOptionsDialogPage)GetDialogPage(typeof(SnykCliOptionsDialogPage));
-                Logger.Information("Call generalOptionsDialogPage.Initialize()");
                 SnykCliOptionsDialogPage.Initialize(this.serviceProvider);
+            }
+
+            if (SnykScanOptionsDialogPage == null)
+            {
+                SnykScanOptionsDialogPage =
+                    (SnykScanOptionsDialogPage)GetDialogPage(typeof(SnykScanOptionsDialogPage));
+                SnykScanOptionsDialogPage.Initialize(this.serviceProvider);
             }
         }
 

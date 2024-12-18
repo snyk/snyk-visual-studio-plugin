@@ -7,16 +7,13 @@ using System.Threading.Tasks;
 using System.Windows.Forms;
 using Microsoft.VisualStudio.Shell;
 using Microsoft.VisualStudio.Threading;
-using Newtonsoft.Json.Linq;
 using Serilog;
 using Snyk.VisualStudio.Extension.Authentication;
 using Snyk.VisualStudio.Extension.CLI;
 using Snyk.VisualStudio.Extension.Extension;
 using Snyk.VisualStudio.Extension.Language;
 using Snyk.VisualStudio.Extension.Service;
-using Snyk.VisualStudio.Extension.UI.Notifications;
 using Task = System.Threading.Tasks.Task;
-using Timer = System.Windows.Forms.Timer;
 
 namespace Snyk.VisualStudio.Extension.Settings
 {
@@ -31,12 +28,6 @@ namespace Snyk.VisualStudio.Extension.Settings
         /// Instance of SnykGeneralOptionsDialogPage.
         /// </summary>
         private readonly ISnykOptions snykOptions;
-
-        private static readonly int TwoSecondsDelay = 2000;
-
-        private const int MaxSastRequestAttempts = 20;
-
-        private readonly Timer snykCodeEnableTimer = new Timer();
 
         /// <summary>
         /// Initializes a new instance of the <see cref="SnykGeneralSettingsUserControl"/> class.
@@ -59,7 +50,6 @@ namespace Snyk.VisualStudio.Extension.Settings
             
             this.UpdateViewFromOptions();
             snykOptions.SettingsChanged += this.OptionsDialogPageOnSettingsChanged;
-            this.Load += this.SnykGeneralSettingsUserControl_Load;
 
             if (LanguageClientHelper.LanguageClientManager() != null)
             {
@@ -88,17 +78,7 @@ namespace Snyk.VisualStudio.Extension.Settings
             this.customEndpointTextBox.Text = snykOptions.CustomEndpoint;
             this.organizationTextBox.Text = snykOptions.Organization;
             this.ignoreUnknownCACheckBox.Checked = snykOptions.IgnoreUnknownCA;
-            this.ossEnabledCheckBox.Checked = snykOptions.OssEnabled;
-            this.iacEnabledCheckbox.Checked = snykOptions.IacEnabled;
-            this.autoScanCheckBox.Checked = snykOptions.AutoScan;
             this.tokenTextBox.Text = snykOptions.ApiToken.ToString();
-            this.cbIgnoredIssues.Checked = snykOptions.IgnoredIssuesEnabled;
-            this.cbOpenIssues.Checked = snykOptions.OpenIssuesEnabled;
-
-            if (cbDelta.DataSource == null)
-            {
-                this.cbDelta.DataSource = DeltaOptionList();
-            }
 
             if (authType.SelectedIndex == -1)
             {
@@ -108,7 +88,6 @@ namespace Snyk.VisualStudio.Extension.Settings
             }
 
             this.authType.SelectedValue = snykOptions.AuthenticationMethod;
-            this.cbDelta.SelectedItem = snykOptions.EnableDeltaFindings ? "Net new issues" : "All issues";
         }
 
         
@@ -122,12 +101,6 @@ namespace Snyk.VisualStudio.Extension.Settings
                     Value = value
                 })
                 .ToList();
-        }
-
-        private IEnumerable<string> DeltaOptionList()
-        {
-            var defaultList = new List<string> { "All issues", "Net new issues"};
-            return defaultList;
         }
 
         private void OptionsDialogPageOnSettingsChanged(object sender, SnykSettingsChangedEventArgs e) =>
@@ -293,129 +266,7 @@ namespace Snyk.VisualStudio.Extension.Settings
             cancelEventArgs.Cancel = true;
             this.errorProvider.SetError(this.customEndpointTextBox, "Needs to be a full absolute well-formed URL (including protocol)");
         }
-
-        private void SnykGeneralSettingsUserControl_Load(object sender, EventArgs e)
-        {
-            this.StartSastEnablementCheckLoop();
-            this.CheckForIgnores();
-        }
-
-        private void UpdateSnykCodeEnablementSettings(SastSettings sastSettings)
-        {
-            var snykCodeEnabled = sastSettings?.SnykCodeEnabled ?? false;
-
-            if (!snykCodeEnabled)
-            {
-                this.snykCodeDisabledInfoLabel.Text = "Snyk Code is disabled by your organisation\'s configuration:";
-            }
-
-            this.codeSecurityEnabledCheckBox.Enabled = snykCodeEnabled;
-            this.codeQualityEnabledCheckBox.Enabled = snykCodeEnabled;
-            this.snykCodeDisabledInfoLabel.Visible = !snykCodeEnabled;
-            this.snykCodeSettingsLinkLabel.Visible = !snykCodeEnabled;
-            this.checkAgainLinkLabel.Visible = !snykCodeEnabled;
-        }
-
-        private void CheckForIgnores()
-        {
-            ThreadHelper.JoinableTaskFactory.RunAsync(async () =>
-            {
-                if (!snykOptions.ConsistentIgnoresEnabled && LanguageClientHelper.IsLanguageServerReady())
-                    await serviceProvider.FeatureFlagService.RefreshAsync(SnykVSPackage.Instance.DisposalToken);
-                await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
-                this.ignoreGroupbox.Visible = snykOptions.ConsistentIgnoresEnabled;
-            }).FireAndForget();
-        }
-        private void StartSastEnablementCheckLoop()
-        {
-            try
-            {
-                if (this.snykCodeEnableTimer.Enabled)
-                {
-                    this.snykCodeEnableTimer.Stop();
-                }
-
-                var currentRequestAttempt = 1;
-
-                this.snykCodeEnableTimer.Interval = TwoSecondsDelay;
-
-                this.snykCodeEnableTimer.Tick += (sender, args) => ThreadHelper.JoinableTaskFactory.RunAsync(async () =>
-                {
-                    try
-                    {
-                        if (!LanguageClientHelper.IsLanguageServerReady()) return;
-                        var sastSettings = await this.serviceProvider.LanguageClientManager.InvokeGetSastEnabled(SnykVSPackage.Instance.DisposalToken);
-
-                        bool snykCodeEnabled = sastSettings != null ? sastSettings.SnykCodeEnabled : false;
-
-                        this.UpdateSnykCodeEnablementSettings(sastSettings);
-
-                        if (snykCodeEnabled)
-                        {
-                            this.snykCodeEnableTimer.Stop();
-                        }
-                        else if (currentRequestAttempt < MaxSastRequestAttempts)
-                        {
-                            currentRequestAttempt++;
-
-                            this.snykCodeEnableTimer.Interval = TwoSecondsDelay * currentRequestAttempt;
-                        }
-                        else
-                        {
-                            this.snykCodeEnableTimer.Stop();
-                        }
-                    }
-                    catch (Exception e)
-                    {
-                        this.HandleSastError(e);
-                    }
-                });
-
-                this.snykCodeEnableTimer.Start();
-            }
-            catch (Exception e)
-            {
-                this.HandleSastError(e);
-            }
-        }
-
-        private void HandleSastError(Exception e)
-        {
-            this.snykCodeEnableTimer.Stop();
-
-            NotificationService.Instance.ShowErrorInfoBar(e.Message);
-
-            this.codeSecurityEnabledCheckBox.Enabled = false;
-            this.codeQualityEnabledCheckBox.Enabled = false;
-
-            this.snykCodeDisabledInfoLabel.Visible = false;
-            this.snykCodeSettingsLinkLabel.Visible = false;
-            this.checkAgainLinkLabel.Visible = false;
-        }
-
-        private void OssEnabledCheckBox_CheckedChanged(object sender, EventArgs e)
-        {
-            snykOptions.OssEnabled = this.ossEnabledCheckBox.Checked;
-        }
-
-        private void CodeSecurityEnabledCheckBox_CheckedChanged(object sender, EventArgs e)
-        {
-            snykOptions.SnykCodeSecurityEnabled = this.codeSecurityEnabledCheckBox.Checked;
-        }
-
-        private void CodeQualityEnabledCheckBox_CheckedChanged(object sender, EventArgs e)
-        {
-            snykOptions.SnykCodeQualityEnabled = this.codeQualityEnabledCheckBox.Checked;
-        }
-
-        private void SnykCodeSettingsLinkLabel_LinkClicked(object sender, LinkLabelLinkClickedEventArgs e)
-            => Process.Start(snykOptions.SnykCodeSettingsUrl);
-
-        private void CheckAgainLinkLabel_LinkClicked(object sender, LinkLabelLinkClickedEventArgs e)
-        {
-            this.StartSastEnablementCheckLoop();
-        }
-
+       
         private void OrganizationInfoLink_LinkClicked(object sender, LinkLabelLinkClickedEventArgs e)
         {
             this.OrganizationInfoLink.LinkVisited = true;
@@ -429,43 +280,9 @@ namespace Snyk.VisualStudio.Extension.Settings
             InvalidateApiToken();
         }
 
-        private void autoScanCheckBox_CheckedChanged(object sender, EventArgs e)
-        {
-            snykOptions.AutoScan = autoScanCheckBox.Checked;
-        }
-
-        private void iacEnabledCheckbox_CheckedChanged(object sender, EventArgs e)
-        {
-            snykOptions.IacEnabled = iacEnabledCheckbox.Checked;
-        }
-
-
-        private void cbOpenIssues_CheckedChanged(object sender, EventArgs e)
-        {
-            snykOptions.OpenIssuesEnabled = this.cbOpenIssues.Checked;
-        }
-
-        private void cbIgnoredIssues_CheckedChanged(object sender, EventArgs e)
-        {
-            snykOptions.IgnoredIssuesEnabled = this.cbIgnoredIssues.Checked;
-        }
-        private void cbDelta_SelectionChangeCommitted(object sender, EventArgs e)
-        {
-            if (this.cbDelta.SelectedItem == null)
-                return;
-            var enableDelta = this.cbDelta.SelectedItem.ToString() == "Net new issues";
-            snykOptions.EnableDeltaFindings = enableDelta;
-        }
-
         private void organizationTextBox_TextChanged(object sender, EventArgs e)
         {
             snykOptions.Organization = organizationTextBox.Text;
         }
-
-        public Panel GetPanel()
-        {
-            return this.mainPanel;
-        }
-
     }
 }

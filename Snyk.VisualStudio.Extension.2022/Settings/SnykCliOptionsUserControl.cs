@@ -2,7 +2,6 @@
 using System.Diagnostics;
 using System.Windows.Forms;
 using Microsoft.VisualStudio.Shell;
-using Serilog;
 using Snyk.VisualStudio.Extension.CLI;
 using Snyk.VisualStudio.Extension.Service;
 
@@ -12,8 +11,7 @@ namespace Snyk.VisualStudio.Extension.Settings
     {
         private readonly ISnykServiceProvider serviceProvider;
         public ISnykOptions OptionsMemento { get; set; }
-        private static readonly ILogger Logger = LogManager.ForContext<SnykCliOptionsUserControl>();
-        
+
         public SnykCliOptionsUserControl(ISnykServiceProvider serviceProvider)
         {
             this.serviceProvider = serviceProvider;
