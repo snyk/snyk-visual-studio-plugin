@@ -17,7 +17,7 @@ namespace Snyk.VisualStudio.Extension.Tests.Service
         public WorkspaceTrustServiceTest()
         {
             optionsMock = new Mock<ISnykOptions>();
-
+            optionsMock.Setup(x => x.TrustedFolders).Returns(new HashSet<string>());
             serviceProviderMock = new Mock<ISnykServiceProvider>();
             serviceProviderMock.Setup(x => x.Options).Returns(optionsMock.Object);
 
