@@ -4,8 +4,6 @@ using System.Threading;
 using System.Threading.Tasks;
 using EnvDTE;
 using EnvDTE80;
-using Microsoft;
-using Microsoft.VisualStudio.ComponentModelHost;
 using Microsoft.VisualStudio.Settings;
 using Microsoft.VisualStudio.Shell;
 using Microsoft.VisualStudio.Shell.Settings;
@@ -36,7 +34,7 @@ namespace Snyk.VisualStudio.Extension.Service
 
         private DTE2 dte;
 
-        private SnykUserStorageSettingsService userStorageSettingsService;
+        private SnykOptionsManager snykOptionsManager;
         private SnykFeatureFlagService featureFlagService;
 
         private IWorkspaceTrustService workspaceTrustService;
@@ -60,7 +58,6 @@ namespace Snyk.VisualStudio.Extension.Service
         public ISnykOptions Options => this.Package.Options;
 
         public ISnykGeneralOptionsDialogPage GeneralOptionsDialogPage => this.Package.SnykGeneralOptionsDialogPage;
-        public ISnykOptionsManager SnykOptionsManager => this.Package.SnykOptionsManager;
 
         /// <summary>
         /// Gets solution service.
@@ -102,21 +99,18 @@ namespace Snyk.VisualStudio.Extension.Service
         /// </summary>
         public SnykVsThemeService VsThemeService => this.vsThemeService;
 
-        /// <summary>
-        /// Gets user storage settings service instance.
-        /// </summary>
-        public IUserStorageSettingsService UserStorageSettingsService
+        public ISnykOptionsManager SnykOptionsManager
         {
             get
             {
-                if (this.userStorageSettingsService == null)
+                if (this.snykOptionsManager == null)
                 {
                     string settingsFilePath = Path.Combine(SnykExtension.GetExtensionDirectoryPath(), "settings.json");
 
-                    this.userStorageSettingsService = new SnykUserStorageSettingsService(settingsFilePath, this);
+                    this.snykOptionsManager = new SnykOptionsManager(settingsFilePath, this);
                 }
 
-                return this.userStorageSettingsService;
+                return this.snykOptionsManager;
             }
         }
 

@@ -69,6 +69,7 @@ namespace Snyk.VisualStudio.Extension.Tests.Language
             // Arrange
             cut.IsReady = true;
             TestUtils.SetupOptionsMock(OptionsMock);
+            TestUtils.SetupOptionsManagerMock(OptionsManagerMock);
 
             // Act
             var result = await cut.DidChangeConfigurationAsync(CancellationToken.None);

@@ -727,7 +727,7 @@ namespace Snyk.VisualStudio.Extension.Service
 
         public bool ShouldDownloadCli()
         {
-            if (!this.serviceProvider.UserStorageSettingsService.BinariesAutoUpdate)
+            if (!this.serviceProvider.Options.BinariesAutoUpdate)
             {
                 return false;
             }
@@ -750,8 +750,8 @@ namespace Snyk.VisualStudio.Extension.Service
         private async Task DownloadAsync(CliDownloadFinishedCallback downloadFinishedCallback,
             ISnykProgressWorker progressWorker)
         {
-            var userSettingsStorageService = this.serviceProvider.UserStorageSettingsService;
-            if (!userSettingsStorageService.BinariesAutoUpdate)
+            var options = this.serviceProvider.Options;
+            if (!options.BinariesAutoUpdate)
             {
                 Logger.Information("CLI auto-update is disabled, CLI download is skipped.");
                 this.DownloadCancelled?.Invoke(this, new SnykCliDownloadEventArgs());

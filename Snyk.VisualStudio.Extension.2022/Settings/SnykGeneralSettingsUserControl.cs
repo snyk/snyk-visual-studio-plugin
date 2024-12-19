@@ -284,5 +284,10 @@ namespace Snyk.VisualStudio.Extension.Settings
         {
             snykOptions.Organization = organizationTextBox.Text;
         }
+
+        public System.Windows.Forms.Panel GetPanel()
+        {
+            return this.mainPanel;
+        }
     }
 }

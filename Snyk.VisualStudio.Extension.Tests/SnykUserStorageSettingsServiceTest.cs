@@ -8,12 +8,12 @@ using Xunit;
 namespace Snyk.VisualStudio.Extension.Tests
 {
     /// <summary>
-    /// Test case for <see cref="SnykUserStorageSettingsService"/>.
+    /// Test case for <see cref="SnykOptionsManagerTest"/>.
     /// </summary>
-    public class SnykUserStorageSettingsServiceTest
+    public class SnykOptionsManagerTest
     {
         [Fact]
-        public async Task SnykUserStorageSettingsService_ProjectNameNotExists_SaveAdditionalOptionsSuccessfullAsync()
+        public async Task ProjectNameNotExists_SaveAdditionalOptionsSuccessfullAsync()
         {
             var serviceProviderMock = new Mock<ISnykServiceProvider>();
             var solutionServiceMock = new Mock<ISolutionService>();
@@ -28,7 +28,7 @@ namespace Snyk.VisualStudio.Extension.Tests
 
             string settingsFilePath = Path.GetTempFileName();
 
-            var userStorageSettingsService = new SnykUserStorageSettingsService(settingsFilePath, serviceProviderMock.Object);
+            var userStorageSettingsService = new SnykOptionsManager(settingsFilePath, serviceProviderMock.Object);
 
             await userStorageSettingsService.SaveAdditionalOptionsAsync("--test-command");
 

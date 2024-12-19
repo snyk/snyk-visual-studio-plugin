@@ -17,7 +17,7 @@ namespace Snyk.VisualStudio.Extension.Tests.Language
     {
         private readonly Mock<ISnykTasksService> tasksServiceMock;
         private readonly Mock<ISnykOptions> optionsMock;
-        private readonly Mock<IUserStorageSettingsService> userStorageSettingsServiceMock;
+        private readonly Mock<ISnykOptionsManager> snykOptionsManagerMock;
         private readonly Mock<ILanguageClientManager> languageClientManagerMock;
         private readonly Mock<ISnykGeneralOptionsDialogPage> generalSettingsPageMock;
         private readonly SnykLanguageClientCustomTarget cut;
@@ -28,7 +28,7 @@ namespace Snyk.VisualStudio.Extension.Tests.Language
             tasksServiceMock = new Mock<ISnykTasksService>();
             optionsMock = new Mock<ISnykOptions>();
             generalSettingsPageMock = new Mock<ISnykGeneralOptionsDialogPage>();
-            userStorageSettingsServiceMock = new Mock<IUserStorageSettingsService>();
+            snykOptionsManagerMock = new Mock<ISnykOptionsManager>();
             languageClientManagerMock = new Mock<ILanguageClientManager>();
 
             var featureFlagServiceMock = new Mock<IFeatureFlagService>();
@@ -39,7 +39,7 @@ namespace Snyk.VisualStudio.Extension.Tests.Language
             serviceProviderMock.SetupGet(sp => sp.TasksService).Returns(tasksServiceMock.Object);
             serviceProviderMock.SetupGet(sp => sp.Options).Returns(optionsMock.Object);
             serviceProviderMock.SetupGet(sp => sp.GeneralOptionsDialogPage).Returns(generalSettingsPageMock.Object);
-            serviceProviderMock.SetupGet(sp => sp.UserStorageSettingsService).Returns(userStorageSettingsServiceMock.Object);
+            serviceProviderMock.SetupGet(sp => sp.SnykOptionsManager).Returns(snykOptionsManagerMock.Object);
             serviceProviderMock.SetupGet(sp => sp.FeatureFlagService).Returns(featureFlagServiceMock.Object);
             serviceProviderMock.SetupGet(sp => sp.LanguageClientManager).Returns(languageClientManagerMock.Object);
 
@@ -156,7 +156,7 @@ namespace Snyk.VisualStudio.Extension.Tests.Language
             Assert.Equal(2, optionsMock.Object.TrustedFolders.Count);
             Assert.Contains("/folder1", optionsMock.Object.TrustedFolders);
             Assert.Contains("/folder2", optionsMock.Object.TrustedFolders);
-            userStorageSettingsServiceMock.Verify(s => s.SaveSettings(), Times.Once);
+            snykOptionsManagerMock.Verify(s => s.Save(It.IsAny<IPersistableOptions>()), Times.Once);
             languageClientManagerMock.Verify(s => s.DidChangeConfigurationAsync(It.IsAny<CancellationToken>()), Times.Once);
         }
 

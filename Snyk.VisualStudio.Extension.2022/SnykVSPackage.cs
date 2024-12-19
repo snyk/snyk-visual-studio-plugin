@@ -54,7 +54,7 @@ namespace Snyk.VisualStudio.Extension
     [ProvideOptionPage(typeof(SnykSolutionOptionsDialogPage), "Snyk", "Solution settings", 1000, 1002, true)]
     [ProvideOptionPage(typeof(SnykCliOptionsDialogPage), "Snyk", "CLI settings", 1000, 1003, true)]
     [ProvideOptionPage(typeof(SnykScanOptionsDialogPage), "Snyk", "Scan settings", 1000, 1004, true)]
-    public sealed class SnykVSPackage : AsyncPackage, ISnykOptionsProvider
+    public sealed class SnykVSPackage : AsyncPackage
     {
         /// <summary>
         /// SnykVSPackage GUID string.
@@ -103,7 +103,6 @@ namespace Snyk.VisualStudio.Extension
         /// Gets the Options
         /// </summary>
         public ISnykOptions Options { get; private set; }
-        public ISnykOptionsManager SnykOptionsManager { get; private set; }
         public ISnykGeneralOptionsDialogPage SnykGeneralOptionsDialogPage { get; private set; }
         public ISnykCliOptionsDialogPage SnykCliOptionsDialogPage { get; private set; }
         public ISnykScanOptionsDialogPage SnykScanOptionsDialogPage { get; private set; }
@@ -311,14 +310,9 @@ namespace Snyk.VisualStudio.Extension
         {
             await JoinableTaskFactory.SwitchToMainThreadAsync();
 
-            if (SnykOptionsManager == null)
-            {
-                SnykOptionsManager = new SnykOptionsManager(this.serviceProvider);
-            }
-
             if (Options == null)
             {
-                Options = (ISnykOptions)SnykOptionsManager.Load();
+                Options = (ISnykOptions)serviceProvider.SnykOptionsManager.Load();
                 var readableVsVersion = await this.GetReadableVsVersionAsync();
                 var vsMajorMinorVersion = await this.GetVsMajorMinorVersionAsync();
                 Options.Application = readableVsVersion;
@@ -406,11 +400,5 @@ namespace Snyk.VisualStudio.Extension
                 return "Unknown Visual Studio version";
             }
         }
-    }
-
-    // Interface to enable testing with mocks
-    public interface ISnykOptionsProvider
-    {
-        ISnykOptions Options { get; }
     }
 }

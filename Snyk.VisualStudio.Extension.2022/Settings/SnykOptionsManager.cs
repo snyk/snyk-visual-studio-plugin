@@ -1,100 +1,211 @@
-﻿using Snyk.VisualStudio.Extension.Authentication;
+﻿using System.IO;
+using Snyk.VisualStudio.Extension.Authentication;
 using Snyk.VisualStudio.Extension.Service;
 using System.Threading.Tasks;
+using Serilog;
 
 namespace Snyk.VisualStudio.Extension.Settings
 {
     public class SnykOptionsManager : ISnykOptionsManager
     {
         private readonly ISnykServiceProvider serviceProvider;
-        private readonly IUserStorageSettingsService userSettingsStorage;
+        private readonly SnykSettingsLoader settingsLoader;
+        private SnykSettings snykSettings;
+        private static readonly ILogger Logger = LogManager.ForContext<SnykOptionsManager>();
 
-        public SnykOptionsManager(ISnykServiceProvider serviceProvider)
+        public SnykOptionsManager(string settingsFilePath, ISnykServiceProvider serviceProvider)
         {
             this.serviceProvider = serviceProvider;
-            this.userSettingsStorage = serviceProvider.UserStorageSettingsService;
+            this.settingsLoader = new SnykSettingsLoader(settingsFilePath);
+            LoadSettingsFromFile();
+        }
+
+        public void LoadSettingsFromFile()
+        {
+            this.snykSettings = this.settingsLoader.Load();
+
+            if (this.snykSettings != null) return;
+
+            this.snykSettings = new SnykSettings();
+            SaveSettingsToFile();
+        }
+
+        public void SaveSettingsToFile()
+        {
+            this.settingsLoader.Save(snykSettings);
         }
 
         public IPersistableOptions Load()
         {
             return new SnykOptions
             {
-                DeviceId = userSettingsStorage.DeviceId,
-                TrustedFolders = userSettingsStorage.TrustedFolders,
-                AnalyticsPluginInstalledSent = userSettingsStorage.AnalyticsPluginInstalledSent,
-                AutoScan = userSettingsStorage.AutoScan,
-                IgnoreUnknownCA = userSettingsStorage.IgnoreUnknownCa,
+                DeviceId = snykSettings.DeviceId,
+                TrustedFolders = snykSettings.TrustedFolders,
+                AnalyticsPluginInstalledSent = snykSettings.AnalyticsPluginInstalledSent,
+                AutoScan = snykSettings.AutoScan,
+                IgnoreUnknownCA = snykSettings.IgnoreUnknownCa,
 
-                BinariesAutoUpdate = userSettingsStorage.BinariesAutoUpdate,
-                CliCustomPath = userSettingsStorage.CliCustomPath,
-                CliDownloadUrl = userSettingsStorage.CliDownloadUrl,
-                CliReleaseChannel = userSettingsStorage.CliReleaseChannel,
-                CurrentCliVersion = userSettingsStorage.CurrentCliVersion,
+                BinariesAutoUpdate = snykSettings.BinariesAutoUpdateEnabled,
+                CliCustomPath = snykSettings.CustomCliPath,
+                CliDownloadUrl = snykSettings.CliDownloadUrl,
+                CliReleaseChannel = snykSettings.CliReleaseChannel,
+                CurrentCliVersion = snykSettings.CurrentCliVersion,
 
-                AuthenticationMethod = userSettingsStorage.AuthenticationMethod,
-                ApiToken = new AuthenticationToken(userSettingsStorage.AuthenticationMethod, userSettingsStorage.Token),
-                CustomEndpoint = userSettingsStorage.CustomEndpoint,
-                Organization = userSettingsStorage.Organization,
+                AuthenticationMethod = snykSettings.AuthenticationMethod,
+                ApiToken = new AuthenticationToken(snykSettings.AuthenticationMethod, snykSettings.Token),
+                CustomEndpoint = snykSettings.CustomEndpoint,
+                Organization = snykSettings.Organization,
 
-                FolderConfigs = userSettingsStorage.FolderConfigs,
-                EnableDeltaFindings = userSettingsStorage.EnableDeltaFindings,
+                FolderConfigs = snykSettings.FolderConfigs,
+                EnableDeltaFindings = snykSettings.EnableDeltaFindings,
 
-                OpenIssuesEnabled = userSettingsStorage.OpenIssuesEnabled,
-                IgnoredIssuesEnabled = userSettingsStorage.IgnoredIssuesEnabled,
+                OpenIssuesEnabled = snykSettings.OpenIssuesEnabled,
+                IgnoredIssuesEnabled = snykSettings.IgnoredIssuesEnabled,
 
-                IacEnabled = userSettingsStorage.IacEnabled,
-                SnykCodeQualityEnabled = userSettingsStorage.SnykCodeQualityEnabled,
-                SnykCodeSecurityEnabled = userSettingsStorage.SnykCodeSecurityEnabled,
-                OssEnabled = userSettingsStorage.OssEnabled,
+                IacEnabled = snykSettings.IacEnabled,
+                SnykCodeQualityEnabled = snykSettings.SnykCodeQualityEnabled,
+                SnykCodeSecurityEnabled = snykSettings.SnykCodeSecurityEnabled,
+                OssEnabled = snykSettings.OssEnabled,
             };
         }
 
         public void Save(IPersistableOptions options)
         {
-            userSettingsStorage.DeviceId = options.DeviceId;
-            userSettingsStorage.TrustedFolders = options.TrustedFolders;
-            userSettingsStorage.AnalyticsPluginInstalledSent = options.AnalyticsPluginInstalledSent;
-            userSettingsStorage.AutoScan = options.AutoScan;
-            userSettingsStorage.IgnoreUnknownCa = options.IgnoreUnknownCA;
+            snykSettings.DeviceId = options.DeviceId;
+            snykSettings.TrustedFolders = options.TrustedFolders;
+            snykSettings.AnalyticsPluginInstalledSent = options.AnalyticsPluginInstalledSent;
+            snykSettings.AutoScan = options.AutoScan;
+            snykSettings.IgnoreUnknownCa = options.IgnoreUnknownCA;
 
-            userSettingsStorage.BinariesAutoUpdate = options.BinariesAutoUpdate;
-            userSettingsStorage.CliCustomPath = options.CliCustomPath;
-            userSettingsStorage.CliDownloadUrl = options.CliDownloadUrl;
-            userSettingsStorage.CliReleaseChannel = options.CliReleaseChannel;
-            userSettingsStorage.CurrentCliVersion = options.CurrentCliVersion;
+            snykSettings.BinariesAutoUpdateEnabled = options.BinariesAutoUpdate;
+            snykSettings.CustomCliPath = options.CliCustomPath;
+            snykSettings.CliDownloadUrl = options.CliDownloadUrl;
+            snykSettings.CliReleaseChannel = options.CliReleaseChannel;
+            snykSettings.CurrentCliVersion = options.CurrentCliVersion;
 
-            userSettingsStorage.AuthenticationMethod = options.AuthenticationMethod;
-            userSettingsStorage.Token = options.ApiToken.ToString();
+            snykSettings.AuthenticationMethod = options.AuthenticationMethod;
+            snykSettings.Token = options.ApiToken.ToString();
 
-            userSettingsStorage.CustomEndpoint = options.CustomEndpoint;
-            userSettingsStorage.Organization = options.Organization;
+            snykSettings.CustomEndpoint = options.CustomEndpoint;
+            snykSettings.Organization = options.Organization;
 
-            userSettingsStorage.FolderConfigs = options.FolderConfigs;
-            userSettingsStorage.EnableDeltaFindings = options.EnableDeltaFindings;
+            snykSettings.FolderConfigs = options.FolderConfigs;
+            snykSettings.EnableDeltaFindings = options.EnableDeltaFindings;
 
-            userSettingsStorage.OpenIssuesEnabled = options.OpenIssuesEnabled;
-            userSettingsStorage.IgnoredIssuesEnabled = options.IgnoredIssuesEnabled;
+            snykSettings.OpenIssuesEnabled = options.OpenIssuesEnabled;
+            snykSettings.IgnoredIssuesEnabled = options.IgnoredIssuesEnabled;
 
-            userSettingsStorage.IacEnabled = options.IacEnabled;
-            userSettingsStorage.SnykCodeQualityEnabled = options.SnykCodeQualityEnabled;
-            userSettingsStorage.SnykCodeSecurityEnabled = options.SnykCodeSecurityEnabled;
-            userSettingsStorage.OssEnabled = options.OssEnabled;
+            snykSettings.IacEnabled = options.IacEnabled;
+            snykSettings.SnykCodeQualityEnabled = options.SnykCodeQualityEnabled;
+            snykSettings.SnykCodeSecurityEnabled = options.SnykCodeSecurityEnabled;
+            snykSettings.OssEnabled = options.OssEnabled;
 
-            this.userSettingsStorage.SaveSettings();
+            this.SaveSettingsToFile();
         }
 
         /// <summary>
-        /// Gets a value indicating whether additional options.
-        /// Get this data using <see cref="SnykUserStorageSettingsService"/>.
+        /// Get is all projects enabled.
         /// </summary>
-        /// <returns><see cref="Task"/> representing the asynchronous operation.</returns>
-        public async Task<string> GetAdditionalOptionsAsync() => await this.userSettingsStorage.GetAdditionalOptionsAsync();
+        /// <returns>Bool.</returns>
+        public async Task<bool> GetIsAllProjectsEnabledAsync()
+        {
+            Logger.Information("Enter GetIsAllProjectsEnabled method");
+
+            var solutionPathHash = await this.GetSolutionPathHashAsync();
+
+            if (snykSettings == null || !snykSettings.SolutionSettingsDict.ContainsKey(solutionPathHash))
+            {
+                return true;
+            }
+            else
+            {
+                return snykSettings.SolutionSettingsDict[solutionPathHash].IsAllProjectsScanEnabled;
+            }
+        }
 
         /// <summary>
-        /// Gets a value indicating whether is scan all projects enabled via <see cref="SnykUserStorageSettingsService"/>.
-        /// Get this data using <see cref="SnykUserStorageSettingsService"/>.
+        /// Get CLI additional options string.
         /// </summary>
-        /// <returns><see cref="Task"/> representing the asynchronous operation.</returns>
-        public async Task<bool> IsScanAllProjectsAsync() => await this.userSettingsStorage.GetIsAllProjectsEnabledAsync();
+        /// <returns>string.</returns>
+        public async Task<string> GetAdditionalOptionsAsync()
+        {
+            Logger.Information("Enter GetAdditionalOptions method");
+
+            var solutionPathHash = await this.GetSolutionPathHashAsync();
+
+            if (snykSettings == null || !snykSettings.SolutionSettingsDict.ContainsKey(solutionPathHash))
+            {
+                return string.Empty;
+            }
+
+            return snykSettings.SolutionSettingsDict[solutionPathHash].AdditionalOptions;
+        }
+
+        /// <summary>
+        /// Save additional options string.
+        /// </summary>
+        /// <param name="additionalOptions">CLI options string.</param>
+        /// <returns>A <see cref="Task"/> representing the asynchronous operation.</returns>
+        public async Task SaveAdditionalOptionsAsync(string additionalOptions)
+        {
+            // TODO: Move to SnykOptionsManager
+            Logger.Information("Enter SaveAdditionalOptions method");
+
+            var solutionPathHash = await this.GetSolutionPathHashAsync();
+
+            SnykSolutionSettings projectSettings;
+
+            if (snykSettings.SolutionSettingsDict.ContainsKey(solutionPathHash))
+            {
+                projectSettings = snykSettings.SolutionSettingsDict[solutionPathHash];
+            }
+            else
+            {
+                projectSettings = new SnykSolutionSettings();
+            }
+
+            projectSettings.AdditionalOptions = additionalOptions;
+
+            snykSettings.SolutionSettingsDict[solutionPathHash] = projectSettings;
+
+            this.SaveSettingsToFile();
+
+            Logger.Information("Leave SaveAdditionalOptions method");
+        }
+
+        /// <summary>
+        /// Sace is all projects scan enabled.
+        /// </summary>
+        /// <param name="isAllProjectsEnabled">Bool param.</param>
+        /// <returns>A <see cref="Task"/> representing the asynchronous operation.</returns>
+        public async Task SaveIsAllProjectsScanEnabledAsync(bool isAllProjectsEnabled)
+        {
+            // TODO: Move to SnykOptionsManager
+            Logger.Information("Enter SaveIsAllProjectsScan method");
+
+            var solutionPathHash = await this.GetSolutionPathHashAsync();
+
+            SnykSolutionSettings projectSettings;
+
+            if (snykSettings.SolutionSettingsDict.ContainsKey(solutionPathHash))
+            {
+                projectSettings = snykSettings.SolutionSettingsDict[solutionPathHash];
+            }
+            else
+            {
+                projectSettings = new SnykSolutionSettings();
+            }
+
+            projectSettings.IsAllProjectsScanEnabled = isAllProjectsEnabled;
+
+            snykSettings.SolutionSettingsDict[solutionPathHash] = projectSettings;
+
+            this.SaveSettingsToFile();
+
+            Logger.Information("Leave SaveIsAllProjectsScan method");
+        }
+
+        private async Task<int> GetSolutionPathHashAsync() =>
+            (await this.serviceProvider.SolutionService.GetSolutionFolderAsync()).ToLower().GetHashCode();
     }
 }

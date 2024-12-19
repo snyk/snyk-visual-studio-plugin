@@ -151,7 +151,6 @@
     <Compile Include="Settings\ISnykOptions.cs" />
     <Compile Include="Settings\ISnykOptionsManager.cs" />
     <Compile Include="Settings\ISnykScanOptionsDialogPage.cs" />
-    <Compile Include="Settings\IUserStorageSettingsService.cs" />
     <Compile Include="Settings\SnykCliOptionsDialogPage.cs">
       <SubType>Component</SubType>
     </Compile>
@@ -194,7 +193,6 @@
       <DependentUpon>SnykSolutionOptionsUserControl.cs</DependentUpon>
     </Compile>
     <Compile Include="Settings\SnykSolutionSettings.cs" />
-    <Compile Include="Settings\SnykUserStorageSettingsService.cs" />
     <Compile Include="SnykGuids.cs" />
     <Compile Include="SnykIcons.Designer.cs">
       <DependentUpon>SnykIcons.resx</DependentUpon>

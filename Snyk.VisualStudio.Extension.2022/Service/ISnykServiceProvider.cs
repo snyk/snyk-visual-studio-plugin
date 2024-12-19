@@ -59,11 +59,6 @@ namespace Snyk.VisualStudio.Extension.Service
         SnykVsThemeService VsThemeService { get; }
 
         /// <summary>
-        /// Gets user storage settings service instance.
-        /// </summary>
-        IUserStorageSettingsService UserStorageSettingsService { get; }
-
-        /// <summary>
         /// Gets <see cref="SnykToolWindowControl"/> instance.
         /// </summary>
         SnykToolWindowControl ToolWindow { get; }
