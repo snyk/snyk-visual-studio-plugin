@@ -1,7 +1,6 @@
 ﻿using System.Collections.Generic;
 using System.Diagnostics;
 using System.Windows.Forms;
-using Microsoft.VisualStudio.Shell;
 using Snyk.VisualStudio.Extension.CLI;
 using Snyk.VisualStudio.Extension.Service;
 
@@ -15,7 +14,7 @@ namespace Snyk.VisualStudio.Extension.Settings
         public SnykCliOptionsUserControl(ISnykServiceProvider serviceProvider)
         {
             this.serviceProvider = serviceProvider;
-            OptionsMemento = (ISnykOptions)serviceProvider.SnykOptionsManager.Load();
+            OptionsMemento = serviceProvider.SnykOptionsManager.Load();
             InitializeComponent();
             this.Initialize();
         }

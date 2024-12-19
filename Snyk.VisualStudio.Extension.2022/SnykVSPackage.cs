@@ -312,7 +312,7 @@ namespace Snyk.VisualStudio.Extension
 
             if (Options == null)
             {
-                Options = (ISnykOptions)serviceProvider.SnykOptionsManager.Load();
+                Options = serviceProvider.SnykOptionsManager.Load();
                 var readableVsVersion = await this.GetReadableVsVersionAsync();
                 var vsMajorMinorVersion = await this.GetVsMajorMinorVersionAsync();
                 Options.Application = readableVsVersion;

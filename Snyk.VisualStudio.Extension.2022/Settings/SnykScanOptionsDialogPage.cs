@@ -2,6 +2,7 @@
 using System.Runtime.InteropServices;
 using System.Windows.Forms;
 using Microsoft.VisualStudio.Shell;
+using Snyk.VisualStudio.Extension.Language;
 using Snyk.VisualStudio.Extension.Service;
 
 namespace Snyk.VisualStudio.Extension.Settings;
@@ -44,12 +45,11 @@ public class SnykScanOptionsDialogPage : DialogPage, ISnykScanOptionsDialogPage
         this.snykOptions.SnykCodeSecurityEnabled = SnykCliOptionsUserControl.OptionsMemento.SnykCodeSecurityEnabled;
         this.snykOptions.IacEnabled = SnykCliOptionsUserControl.OptionsMemento.IacEnabled;
         this.snykOptions.OssEnabled = SnykCliOptionsUserControl.OptionsMemento.OssEnabled;
-        if (this.snykOptions.AutoScan)
+        if (LanguageClientHelper.IsLanguageServerReady() && this.snykOptions.AutoScan)
             serviceProvider.LanguageClientManager.InvokeWorkspaceScanAsync(SnykVSPackage
                 .Instance.DisposalToken).FireAndForget();
 
         this.serviceProvider.SnykOptionsManager.Save(this.snykOptions);
-        this.snykOptions.InvokeSettingsChangedEvent();
     }
 
     protected override void OnClosed(EventArgs e)

@@ -6,7 +6,7 @@ public interface ISnykOptionsManager
 {
     void LoadSettingsFromFile();
     void SaveSettingsToFile();
-    IPersistableOptions Load();
+    ISnykOptions Load();
     void Save(IPersistableOptions options);
 
     /// <summary>

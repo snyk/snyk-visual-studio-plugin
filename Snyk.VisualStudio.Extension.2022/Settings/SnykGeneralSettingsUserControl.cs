@@ -143,16 +143,6 @@ namespace Snyk.VisualStudio.Extension.Settings
             await this.serviceProvider.ToolWindow.UpdateScreenStateAsync();
         }
 
-        public void InvalidateApiToken()
-        {
-            this.tokenTextBox.Text = string.Empty;
-            if(LanguageClientHelper.IsLanguageServerReady())
-                ThreadHelper.JoinableTaskFactory.RunAsync(async () =>
-                {
-                    await serviceProvider.LanguageClientManager.InvokeLogout(SnykVSPackage.Instance.DisposalToken);
-                }).FireAndForget();
-        }
-
         public async Task HandleFailedAuthentication(string errorMessage)
         {
             Logger.Information("Enter authenticate errorCallback");
@@ -277,7 +267,6 @@ namespace Snyk.VisualStudio.Extension.Settings
         {
             snykOptions.AuthenticationMethod = (AuthenticationType)authType.SelectedValue;
             serviceProvider.Options.InvokeSettingsChangedEvent();
-            InvalidateApiToken();
         }
 
         private void organizationTextBox_TextChanged(object sender, EventArgs e)

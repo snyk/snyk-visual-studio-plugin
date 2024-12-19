@@ -35,7 +35,7 @@ namespace Snyk.VisualStudio.Extension.Settings
             this.settingsLoader.Save(snykSettings);
         }
 
-        public IPersistableOptions Load()
+        public ISnykOptions Load()
         {
             return new SnykOptions
             {
@@ -101,6 +101,7 @@ namespace Snyk.VisualStudio.Extension.Settings
             snykSettings.OssEnabled = options.OssEnabled;
 
             this.SaveSettingsToFile();
+            serviceProvider.Options.InvokeSettingsChangedEvent();
         }
 
         /// <summary>

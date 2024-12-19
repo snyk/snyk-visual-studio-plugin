@@ -38,7 +38,6 @@ public class SnykCliOptionsDialogPage : DialogPage, ISnykCliOptionsDialogPage
     {
         HandleCliDownload();
         this.serviceProvider.SnykOptionsManager.Save(this.snykOptions);
-        this.snykOptions.InvokeSettingsChangedEvent();
     }
 
     protected override void OnClosed(EventArgs e)

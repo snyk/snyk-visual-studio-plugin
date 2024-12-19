@@ -46,8 +46,7 @@ namespace Snyk.VisualStudio.Extension.Tests
         public void LoadAndSaveGeneralOptions_PersistsChanges()
         {
             // Load default
-            var options = cut.Load() as SnykOptions;
-            Assert.NotNull(options);
+            var options = cut.Load();
             // Set some values
             options.AutoScan = true;
             options.IgnoreUnknownCA = true;
@@ -68,9 +67,8 @@ namespace Snyk.VisualStudio.Extension.Tests
             cut.Save(options);
 
             // Reload to confirm persistence
-            var reloadedOptions = cut.Load() as SnykOptions;
-            Assert.NotNull(reloadedOptions);
-
+            var reloadedOptions = cut.Load();
+            
             Assert.True(reloadedOptions.AutoScan);
             Assert.True(reloadedOptions.IgnoreUnknownCA);
             Assert.Equal("my-org", reloadedOptions.Organization);

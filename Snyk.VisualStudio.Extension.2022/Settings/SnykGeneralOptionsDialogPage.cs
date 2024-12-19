@@ -87,7 +87,6 @@ namespace Snyk.VisualStudio.Extension.Settings
         public override void SaveSettingsToStorage()
         {
             this.serviceProvider.SnykOptionsManager.Save(this.SnykOptions);
-            this.SnykOptions.InvokeSettingsChangedEvent();
         }
 
         private void SnykGeneralOptionsDialogPage_SettingsChanged(object sender, SnykSettingsChangedEventArgs e)
@@ -123,8 +122,6 @@ namespace Snyk.VisualStudio.Extension.Settings
 
                 ThreadHelper.JoinableTaskFactory.RunAsync(async () =>
                 {
-                    await serviceProvider.LanguageClientManager.InvokeLogout(SnykVSPackage.Instance
-                        .DisposalToken);
                     await serviceProvider.LanguageClientManager.InvokeLogin(SnykVSPackage.Instance
                         .DisposalToken);
                 }).FireAndForget();

@@ -25,7 +25,7 @@ namespace Snyk.VisualStudio.Extension.Settings
         public SnykScanOptionsUserControl(ISnykServiceProvider serviceProvider)
         {
             this.serviceProvider = serviceProvider;
-            OptionsMemento = (ISnykOptions)serviceProvider.SnykOptionsManager.Load();
+            OptionsMemento = serviceProvider.SnykOptionsManager.Load();
             serviceProvider.Options.SettingsChanged += OptionsOnSettingsChanged;
             InitializeComponent();
             Initialize();
@@ -81,7 +81,7 @@ namespace Snyk.VisualStudio.Extension.Settings
                 {
                     try
                     {
-                        if (!LanguageClientHelper.IsLanguageServerReady()) return;
+                        if (!LanguageClientHelper.IsLanguageServerReady() || !serviceProvider.Options.ApiToken.IsValid()) return;
                         var sastSettings = await this.serviceProvider.LanguageClientManager.InvokeGetSastEnabled(SnykVSPackage.Instance.DisposalToken);
 
                         bool snykCodeEnabled = sastSettings != null ? sastSettings.SnykCodeEnabled : false;

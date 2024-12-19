@@ -54,7 +54,6 @@ namespace Snyk.VisualStudio.Extension
             var options = SnykVSPackage.ServiceProvider.Options;
             options.FolderConfigs = currentList;
             SnykVSPackage.ServiceProvider.SnykOptionsManager.Save(options);
-            options.InvokeSettingsChangedEvent();
            this.CloseDialog();
         }
 

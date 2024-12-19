@@ -111,7 +111,6 @@ namespace Snyk.VisualStudio.Extension.Language
             if (folderConfigs == null) return;
             serviceProvider.Options.FolderConfigs = folderConfigs.FolderConfigs;
             serviceProvider.SnykOptionsManager.Save(serviceProvider.Options);
-            serviceProvider.Options.InvokeSettingsChangedEvent();
         }
 
         [JsonRpcMethod(LsConstants.SnykHasAuthenticated)]
@@ -124,10 +123,6 @@ namespace Snyk.VisualStudio.Extension.Language
             }
 
             var token = arg["token"].ToString();
-            if (string.IsNullOrEmpty(token))
-            {
-                return;
-            }
 
             var apiUrl = arg["apiUrl"]?.ToString();
             if (!string.IsNullOrEmpty(apiUrl))
@@ -137,11 +132,13 @@ namespace Snyk.VisualStudio.Extension.Language
 
             serviceProvider.Options.ApiToken = new AuthenticationToken(serviceProvider.Options.AuthenticationMethod, token);
             serviceProvider.SnykOptionsManager.Save(serviceProvider.Options);
-            serviceProvider.Options.InvokeSettingsChangedEvent();
+
+            if (!serviceProvider.Options.ApiToken.IsValid())
+                return;
 
             await serviceProvider.GeneralOptionsDialogPage.HandleAuthenticationSuccess(token, apiUrl);
+            
             serviceProvider.FeatureFlagService.RefreshAsync(SnykVSPackage.Instance.DisposalToken).FireAndForget();
-
             if (serviceProvider.Options.AutoScan)
             {
                 await serviceProvider.TasksService.ScanAsync();
