@@ -43,7 +43,7 @@ namespace Snyk.VisualStudio.Extension.Language
                 },
                 ScanningMode = options.AutoScan ? "auto" : "manual",
 #pragma warning disable VSTHRD104
-                AdditionalParams = ThreadHelper.JoinableTaskFactory.Run(() => options.GetAdditionalOptionsAsync()),
+                AdditionalParams = ThreadHelper.JoinableTaskFactory.Run(() => this.serviceProvider.SnykOptionsManager.GetAdditionalOptionsAsync()),
 #pragma warning restore VSTHRD104
                 AuthenticationMethod = options.AuthenticationMethod == AuthenticationType.OAuth ? "oauth" : "token",
                 CliPath = SnykCli.GetCliFilePath(options.CliCustomPath),

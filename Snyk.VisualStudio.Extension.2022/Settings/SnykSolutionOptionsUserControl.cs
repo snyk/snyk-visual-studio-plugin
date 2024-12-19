@@ -15,8 +15,6 @@ namespace Snyk.VisualStudio.Extension.Settings
 
         private ISnykServiceProvider serviceProvider;
 
-        private IUserStorageSettingsService userStorageSettingsService;
-
         /// <summary>
         /// Initializes a new instance of the <see cref="SnykSolutionOptionsUserControl"/> class.
         /// </summary>
@@ -26,7 +24,6 @@ namespace Snyk.VisualStudio.Extension.Settings
             this.InitializeComponent();
 
             this.serviceProvider = serviceProvider;
-            this.userStorageSettingsService = serviceProvider.UserStorageSettingsService;
         }
 
         private void CheckOptionConflicts()
@@ -49,7 +46,7 @@ namespace Snyk.VisualStudio.Extension.Settings
             {
                 string additionalOptions = this.additionalOptionsTextBox.Text;
 
-                this.userStorageSettingsService.SaveAdditionalOptionsAsync(additionalOptions).FireAndForget();
+                this.serviceProvider.SnykOptionsManager.SaveAdditionalOptionsAsync(additionalOptions).FireAndForget();
 
                 this.CheckOptionConflicts();
             }
@@ -59,7 +56,7 @@ namespace Snyk.VisualStudio.Extension.Settings
         {
             if (this.serviceProvider.SolutionService.IsSolutionOpen())
             {
-                this.userStorageSettingsService.SaveIsAllProjectsScanEnabledAsync(this.allProjectsCheckBox.Checked).FireAndForget();
+                this.serviceProvider.SnykOptionsManager.SaveIsAllProjectsScanEnabledAsync(this.allProjectsCheckBox.Checked).FireAndForget();
 
                 this.CheckOptionConflicts();
             }
@@ -81,7 +78,7 @@ namespace Snyk.VisualStudio.Extension.Settings
 
             try
             {
-                string additionalOptions = await this.userStorageSettingsService.GetAdditionalOptionsAsync();
+                string additionalOptions = await this.serviceProvider.SnykOptionsManager.GetAdditionalOptionsAsync();
 
                 if (!string.IsNullOrEmpty(additionalOptions))
                 {
@@ -101,7 +98,7 @@ namespace Snyk.VisualStudio.Extension.Settings
 
             try
             {
-                bool isChecked = await this.userStorageSettingsService.GetIsAllProjectsEnabledAsync();
+                bool isChecked = await this.serviceProvider.SnykOptionsManager.GetIsAllProjectsEnabledAsync();
 
                 this.allProjectsCheckBox.Checked = isChecked;
             }
@@ -111,7 +108,7 @@ namespace Snyk.VisualStudio.Extension.Settings
 
                 this.allProjectsCheckBox.Checked = false;
 
-                await this.userStorageSettingsService.SaveIsAllProjectsScanEnabledAsync(false);
+                await this.serviceProvider.SnykOptionsManager.SaveIsAllProjectsScanEnabledAsync(false);
             }
 
             this.CheckOptionConflicts();

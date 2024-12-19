@@ -10,17 +10,25 @@ namespace Snyk.VisualStudio.Extension.Tests.Service
 {
     public class WorkspaceTrustServiceTest
     {
+        private readonly Mock<ISnykOptions> optionsMock;
+        private readonly Mock<ISnykServiceProvider> serviceProviderMock;
+        private readonly WorkspaceTrustService cut;
+
+        public WorkspaceTrustServiceTest()
+        {
+            optionsMock = new Mock<ISnykOptions>();
+            optionsMock.Setup(x => x.TrustedFolders).Returns(new HashSet<string>());
+            serviceProviderMock = new Mock<ISnykServiceProvider>();
+            serviceProviderMock.Setup(x => x.Options).Returns(optionsMock.Object);
+
+            cut = new WorkspaceTrustService(serviceProviderMock.Object);
+        }
+
         [Fact]
         public void WorkspaceTrustServiceTest_IsFolderTrusted_NotTrusted()
         {
-            var trustedFolders = new HashSet<string>();
-            var settingsServiceMock = new Mock<IUserStorageSettingsService>();
-            settingsServiceMock.Setup(s => s.TrustedFolders).Returns(trustedFolders);
-
-            var service = new WorkspaceTrustService(settingsServiceMock.Object);
             var folderPath = "C:\\Users\\Project";
-
-            Assert.False(service.IsFolderTrusted(folderPath));
+            Assert.False(cut.IsFolderTrusted(folderPath));
         }
 
         [Fact]
@@ -28,28 +36,23 @@ namespace Snyk.VisualStudio.Extension.Tests.Service
         {
             var trustedFolders = new HashSet<string>();
             trustedFolders.Add("C:\\Users\\Project");
-            var settingsServiceMock = new Mock<IUserStorageSettingsService>();
-            settingsServiceMock.Setup(s => s.TrustedFolders).Returns(trustedFolders);
+            optionsMock.Setup(s => s.TrustedFolders).Returns(trustedFolders);
 
-            var service = new WorkspaceTrustService(settingsServiceMock.Object);
             var folderPath = "C:\\Users\\Project";
 
-            Assert.True(service.IsFolderTrusted(folderPath));
+            Assert.True(cut.IsFolderTrusted(folderPath));
         }
 
         [Fact]
         public void WorkspaceTrustServiceTest_IsFolderTrusted_SubfolderTrusted()
         {
-            var trustedFolders = new HashSet<string>();
-            trustedFolders.Add("C:\\Users\\Project");
+            var trustedFolders = new HashSet<string> { "C:\\Users\\Project" };
 
-            var settingsServiceMock = new Mock<IUserStorageSettingsService>();
-            settingsServiceMock.Setup(s => s.TrustedFolders).Returns(trustedFolders);
+            optionsMock.Setup(s => s.TrustedFolders).Returns(trustedFolders);
 
-            var service = new WorkspaceTrustService(settingsServiceMock.Object);
             var folderPath = "C:\\Users\\Project\\subfolder";
 
-            Assert.True(service.IsFolderTrusted(folderPath));
+            Assert.True(cut.IsFolderTrusted(folderPath));
         }
 
         [Fact]
@@ -58,84 +61,70 @@ namespace Snyk.VisualStudio.Extension.Tests.Service
             var trustedFolders = new HashSet<string>();
             trustedFolders.Add("C:\\Users\\Project\\subfolder");
 
-            var settingsServiceMock = new Mock<IUserStorageSettingsService>();
-            settingsServiceMock.Setup(s => s.TrustedFolders).Returns(trustedFolders);
+            optionsMock.Setup(s => s.TrustedFolders).Returns(trustedFolders);
 
-            var service = new WorkspaceTrustService(settingsServiceMock.Object);
             var folderPath = "C:\\Users\\Project";
 
-            Assert.False(service.IsFolderTrusted(folderPath));
+            Assert.False(cut.IsFolderTrusted(folderPath));
         }
 
         [Fact]
         public void WorkspaceTrustServiceTest_AddFolderToTrusted_NonExistingFolder()
         {
-            var settingsServiceMock = new Mock<IUserStorageSettingsService>();
-
-            var service = new WorkspaceTrustService(settingsServiceMock.Object);
             var folderPath = "C:\\Users\\Project";
 
-            Assert.Throws<ArgumentException>(() => service.AddFolderToTrusted(folderPath));
+            Assert.Throws<ArgumentException>(() => cut.AddFolderToTrusted(folderPath));
         }
 
         [Fact]
         public void WorkspaceTrustServiceTest_AddFolderToTrusted_RelativeFolder()
         {
-            var settingsServiceMock = new Mock<IUserStorageSettingsService>();
-
-            var service = new WorkspaceTrustService(settingsServiceMock.Object);
             var folderPath = "\\Users\\Project";
 
-            Assert.Throws<ArgumentException>(() => service.AddFolderToTrusted(folderPath));
+            Assert.Throws<ArgumentException>(() => cut.AddFolderToTrusted(folderPath));
         }
 
         [Fact]
         public void WorkspaceTrustServiceTest_AddFolderToTrusted_ExistingFolder()
         {
-            var settingsServiceMock = new Mock<IUserStorageSettingsService>();
-            settingsServiceMock.Setup(s => s.TrustedFolders).Returns(new HashSet<string>());
+            optionsMock.Setup(s => s.TrustedFolders).Returns(new HashSet<string>());
 
-            var service = new WorkspaceTrustService(settingsServiceMock.Object);
             var folderPath = Path.GetDirectoryName(Path.GetTempFileName());
 
-            service.AddFolderToTrusted(folderPath);
+            cut.AddFolderToTrusted(folderPath);
 
-            settingsServiceMock.VerifySet(s => s.TrustedFolders = new HashSet<string> { folderPath }, Times.Once);
+            optionsMock.VerifySet(s => s.TrustedFolders = new HashSet<string> { folderPath }, Times.Once);
         }
 
         [Fact]
         public void WorkspaceTrustServiceTest_AddFolderToTrusted_MultipleFolders()
         {
-            var settingsServiceMock = new Mock<IUserStorageSettingsService>();
             var presentFolder = "C:\\Users\\Project";
-            settingsServiceMock.Setup(s => s.TrustedFolders).Returns(new HashSet<string> { presentFolder });
+            optionsMock.Setup(s => s.TrustedFolders).Returns(new HashSet<string> { presentFolder });
 
-            var service = new WorkspaceTrustService(settingsServiceMock.Object);
 
             var newFolderPath = this.CreateTempDirectory();
 
-            service.AddFolderToTrusted(newFolderPath);
+            cut.AddFolderToTrusted(newFolderPath);
 
-            settingsServiceMock.VerifySet(s => s.TrustedFolders = new HashSet<string> { presentFolder, newFolderPath });
+            optionsMock.VerifySet(s => s.TrustedFolders = new HashSet<string> { presentFolder, newFolderPath });
         }
 
         [Fact]
         public void WorkspaceTrustServiceTest_AddFolderToTrusted_SameFolderTwice()
         {
-            var settingsServiceMock = new Mock<IUserStorageSettingsService>();
-            settingsServiceMock.Setup(s => s.TrustedFolders).Returns(new HashSet<string>());
-            var service = new WorkspaceTrustService(settingsServiceMock.Object);
+            optionsMock.Setup(s => s.TrustedFolders).Returns(new HashSet<string>());
 
             var folderPath1 = this.CreateTempDirectory();
             var folderPath2 = folderPath1;
 
-            service.AddFolderToTrusted(folderPath1);
-            settingsServiceMock.VerifySet(s => s.TrustedFolders = new HashSet<string> { folderPath1 }, Times.Once);
+            cut.AddFolderToTrusted(folderPath1);
+            optionsMock.VerifySet(s => s.TrustedFolders = new HashSet<string> { folderPath1 }, Times.Once);
 
-            service.AddFolderToTrusted(folderPath2);
+            cut.AddFolderToTrusted(folderPath2);
 
             // Must not append new entry to collection
-            settingsServiceMock.VerifySet(s => s.TrustedFolders = new HashSet<string> { folderPath1 }, Times.Exactly(2));
+            optionsMock.VerifySet(s => s.TrustedFolders = new HashSet<string> { folderPath1 }, Times.Exactly(2));
         }
 
         private string CreateTempDirectory()

@@ -86,32 +86,7 @@ namespace Snyk.VisualStudio.Extension.Settings
         // This method is used when the user clicks "Ok"
         public override void SaveSettingsToStorage()
         {
-            HandleCliDownload();
-            this.SnykOptions.SaveSettings();
-            this.SnykOptions.InvokeSettingsChangedEvent();
-        }
-
-        private void HandleCliDownload()
-        {
-            var releaseChannel = generalSettingsUserControl.GetReleaseChannel().Trim();
-            var downloadUrl = generalSettingsUserControl.GetCliDownloadUrl().Trim();
-            var manageBinariesAutomatically = generalSettingsUserControl.GetManageBinariesAutomatically();
-            if (!manageBinariesAutomatically)
-            {
-                this.SnykOptions.CurrentCliVersion = string.Empty;
-                this.SnykOptions.BinariesAutoUpdate = false;
-                serviceProvider.TasksService.CancelDownloadTask();
-                // Language Server restart will happen on DownloadCancelled Event.
-                return;
-            }
-            if (this.SnykOptions.CliReleaseChannel != releaseChannel || this.SnykOptions.CliDownloadUrl != downloadUrl || this.SnykOptions.BinariesAutoUpdate != manageBinariesAutomatically)
-            {
-                this.SnykOptions.CliDownloadUrl = downloadUrl;
-                this.SnykOptions.CliReleaseChannel = releaseChannel;
-                this.SnykOptions.BinariesAutoUpdate = manageBinariesAutomatically;
-                serviceProvider.TasksService.CancelDownloadTask();
-                this.serviceProvider.TasksService.Download();
-            }
+            this.serviceProvider.SnykOptionsManager.Save(this.SnykOptions);
         }
 
         private void SnykGeneralOptionsDialogPage_SettingsChanged(object sender, SnykSettingsChangedEventArgs e)
@@ -122,9 +97,6 @@ namespace Snyk.VisualStudio.Extension.Settings
                 {
                     await serviceProvider.LanguageClientManager.DidChangeConfigurationAsync(SnykVSPackage
                         .Instance.DisposalToken);
-                    if (this.SnykOptions.AutoScan)
-                        await serviceProvider.LanguageClientManager.InvokeWorkspaceScanAsync(SnykVSPackage
-                            .Instance.DisposalToken);
                 }
             }).FireAndForget();
         }
@@ -150,8 +122,6 @@ namespace Snyk.VisualStudio.Extension.Settings
 
                 ThreadHelper.JoinableTaskFactory.RunAsync(async () =>
                 {
-                    await serviceProvider.LanguageClientManager.InvokeLogout(SnykVSPackage.Instance
-                        .DisposalToken);
                     await serviceProvider.LanguageClientManager.InvokeLogin(SnykVSPackage.Instance
                         .DisposalToken);
                 }).FireAndForget();
