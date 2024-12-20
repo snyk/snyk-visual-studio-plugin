@@ -37,10 +37,26 @@ namespace Snyk.VisualStudio.Extension.Settings
         {
             this.serviceProvider = serviceProvider;
             snykOptions = this.serviceProvider.Options;
+            this.Load += OnLoad;
             this.InitializeComponent();
             this.Initialize();
         }
-        
+
+        private void OnLoad(object sender, EventArgs e)
+        {
+            CheckForIgnores();
+        }
+
+        private void CheckForIgnores()
+        {
+            ThreadHelper.JoinableTaskFactory.RunAsync(async () =>
+            {
+                if (serviceProvider.Options.ApiToken.IsValid() && !serviceProvider.Options.ConsistentIgnoresEnabled && LanguageClientHelper.IsLanguageServerReady())
+                    await serviceProvider.FeatureFlagService.RefreshAsync(SnykVSPackage.Instance.DisposalToken);
+                await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
+            }).FireAndForget();
+        }
+
         /// <summary>
         /// Initialize elements and actions.
         /// </summary>

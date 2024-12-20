@@ -2,7 +2,6 @@
 using System.Runtime.InteropServices;
 using System.Windows.Forms;
 using Microsoft.VisualStudio.Shell;
-using Snyk.VisualStudio.Extension.Language;
 using Snyk.VisualStudio.Extension.Service;
 
 namespace Snyk.VisualStudio.Extension.Settings;
@@ -36,12 +35,7 @@ public class SnykExperimentalDialogPage : DialogPage, ISnykExperimentalDialogPag
     // This method is used when the user clicks "Ok"
     public override void SaveSettingsToStorage()
     {
-        this.snykOptions.IgnoredIssuesEnabled = SnykExperimentalUserControl.OptionsMemento.IgnoredIssuesEnabled;
-        this.snykOptions.OpenIssuesEnabled = SnykExperimentalUserControl.OptionsMemento.OpenIssuesEnabled;
-        this.serviceProvider.SnykOptionsManager.Save(this.snykOptions);
-
-        if (LanguageClientHelper.IsLanguageServerReady() && snykOptions.AutoScan)
-            LanguageClientHelper.LanguageClientManager().InvokeWorkspaceScanAsync(SnykVSPackage.Instance.DisposalToken).FireAndForget();
+        // do nothing
     }
 
     protected override void OnClosed(EventArgs e)

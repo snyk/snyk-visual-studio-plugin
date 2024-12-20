@@ -36,46 +36,11 @@ public class SnykCliOptionsDialogPage : DialogPage, ISnykCliOptionsDialogPage
     // This method is used when the user clicks "Ok"
     public override void SaveSettingsToStorage()
     {
-        HandleCliDownload();
-        this.serviceProvider.SnykOptionsManager.Save(this.snykOptions);
+        // do nothing
     }
 
     protected override void OnClosed(EventArgs e)
     {
         // do nothing
-    }
-
-    private void HandleCliDownload()
-    {
-        var memento = SnykCliOptionsUserControl.OptionsMemento;
-
-        this.snykOptions.CliDownloadUrl = memento.CliDownloadUrl;
-
-        var binariesAutoUpdateChanged = this.snykOptions.BinariesAutoUpdate != memento.BinariesAutoUpdate;
-        var releaseChannelChanged = this.snykOptions.CliReleaseChannel != memento.CliReleaseChannel;
-        var cliCustomPathChanged = this.snykOptions.CliCustomPath != memento.CliCustomPath;
-
-        this.snykOptions.CurrentCliVersion = memento.CurrentCliVersion;
-        this.snykOptions.BinariesAutoUpdate = memento.BinariesAutoUpdate;
-        this.snykOptions.CliReleaseChannel = memento.CliReleaseChannel;
-        this.snykOptions.CliCustomPath = memento.CliCustomPath;
-
-        var hasChanges = binariesAutoUpdateChanged || releaseChannelChanged || cliCustomPathChanged;
-        if (!hasChanges)
-        {
-            return;
-        }
-
-        serviceProvider.TasksService.CancelTasks();
-
-        if (memento.BinariesAutoUpdate)
-        {
-            // DownloadStarted event stops language server and DownloadFinished starts it automatically
-            this.serviceProvider.TasksService.Download();
-        }
-        else
-        {
-            LanguageClientHelper.LanguageClientManager().RestartServerAsync().FireAndForget();
-        }
     }
 }

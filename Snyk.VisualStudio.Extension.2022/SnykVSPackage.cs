@@ -241,7 +241,7 @@ namespace Snyk.VisualStudio.Extension
             try
             {
                 this.serviceProvider.LanguageClientManager.OnLanguageClientNotInitializedAsync += LanguageClientManagerOnLanguageClientNotInitializedAsync;
-                this.serviceProvider.LanguageClientManager.OnLanguageServerReadyAsync += LanguageClientManagerOnOnLanguageServerReadyAsync;
+                this.serviceProvider.LanguageClientManager.OnLanguageServerReadyAsync += LanguageClientManagerOnLanguageServerReadyAsync;
                 if (!LanguageClientHelper.IsLanguageServerReady())
                 {
                     // If CLI download is necessary, Skip initializing.
@@ -258,7 +258,7 @@ namespace Snyk.VisualStudio.Extension
             }
         }
 
-        private async Task LanguageClientManagerOnOnLanguageServerReadyAsync(object sender, SnykLanguageServerEventArgs args)
+        private async Task LanguageClientManagerOnLanguageServerReadyAsync(object sender, SnykLanguageServerEventArgs args)
         {
             this.serviceProvider.FeatureFlagService.RefreshAsync(DisposalToken).FireAndForget();
             // Sleep for three seconds before closing the temp window

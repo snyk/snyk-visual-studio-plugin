@@ -21,8 +21,8 @@ public class SnykScanOptionsDialogPage : DialogPage, ISnykScanOptionsDialogPage
         this.snykOptions = provider.Options;
     }
 
-    protected override IWin32Window Window => SnykCliOptionsUserControl;
-    public SnykScanOptionsUserControl SnykCliOptionsUserControl
+    protected override IWin32Window Window => SnykScanOptionsUserControl;
+    public SnykScanOptionsUserControl SnykScanOptionsUserControl
     {
         get
         {
@@ -37,13 +37,7 @@ public class SnykScanOptionsDialogPage : DialogPage, ISnykScanOptionsDialogPage
     // This method is used when the user clicks "Ok"
     public override void SaveSettingsToStorage()
     {
-        this.snykOptions.EnableDeltaFindings = SnykCliOptionsUserControl.OptionsMemento.EnableDeltaFindings;
-        this.snykOptions.SnykCodeQualityEnabled = SnykCliOptionsUserControl.OptionsMemento.SnykCodeQualityEnabled;
-        this.snykOptions.SnykCodeSecurityEnabled = SnykCliOptionsUserControl.OptionsMemento.SnykCodeSecurityEnabled;
-        this.snykOptions.IacEnabled = SnykCliOptionsUserControl.OptionsMemento.IacEnabled;
-        this.snykOptions.OssEnabled = SnykCliOptionsUserControl.OptionsMemento.OssEnabled;
-
-        this.serviceProvider.SnykOptionsManager.Save(this.snykOptions);
+        // do nothing
     }
 
     protected override void OnClosed(EventArgs e)

@@ -37,12 +37,7 @@ public class SnykUserExperienceDialogPage : DialogPage, ISnykUserExperienceDialo
     // This method is used when the user clicks "Ok"
     public override void SaveSettingsToStorage()
     {
-        this.snykOptions.AutoScan = SnykUserExperienceUserControl.OptionsMemento.AutoScan;
-        this.serviceProvider.SnykOptionsManager.Save(this.snykOptions);
-
-        if (LanguageClientHelper.IsLanguageServerReady() && this.snykOptions.AutoScan)
-            serviceProvider.LanguageClientManager.InvokeWorkspaceScanAsync(SnykVSPackage
-                .Instance.DisposalToken).FireAndForget();
+        // do nothing
     }
 
     protected override void OnClosed(EventArgs e)
