@@ -13,9 +13,7 @@ using Snyk.VisualStudio.Extension.CLI;
 using Snyk.VisualStudio.Extension.Extension;
 using Snyk.VisualStudio.Extension.Language;
 using Snyk.VisualStudio.Extension.Service;
-using Snyk.VisualStudio.Extension.UI.Notifications;
 using Task = System.Threading.Tasks.Task;
-using Timer = System.Windows.Forms.Timer;
 
 namespace Snyk.VisualStudio.Extension.Settings
 {
@@ -31,12 +29,6 @@ namespace Snyk.VisualStudio.Extension.Settings
         /// </summary>
         private readonly ISnykOptions snykOptions;
 
-        private static readonly int TwoSecondsDelay = 2000;
-
-        private const int MaxSastRequestAttempts = 20;
-
-        private readonly Timer snykCodeEnableTimer = new Timer();
-
         /// <summary>
         /// Initializes a new instance of the <see cref="SnykGeneralSettingsUserControl"/> class.
         /// </summary>
@@ -45,10 +37,26 @@ namespace Snyk.VisualStudio.Extension.Settings
         {
             this.serviceProvider = serviceProvider;
             snykOptions = this.serviceProvider.Options;
+            this.Load += OnLoad;
             this.InitializeComponent();
             this.Initialize();
         }
-        
+
+        private void OnLoad(object sender, EventArgs e)
+        {
+            CheckForIgnores();
+        }
+
+        private void CheckForIgnores()
+        {
+            ThreadHelper.JoinableTaskFactory.RunAsync(async () =>
+            {
+                if (serviceProvider.Options.ApiToken.IsValid() && !serviceProvider.Options.ConsistentIgnoresEnabled && LanguageClientHelper.IsLanguageServerReady())
+                    await serviceProvider.FeatureFlagService.RefreshAsync(SnykVSPackage.Instance.DisposalToken);
+                await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
+            }).FireAndForget();
+        }
+
         /// <summary>
         /// Initialize elements and actions.
         /// </summary>
@@ -56,9 +64,8 @@ namespace Snyk.VisualStudio.Extension.Settings
         {
             Logger.Information("Enter Initialize method");
             
-            this.UpdateViewFromOptionsDialog();
+            this.UpdateViewFromOptions();
             snykOptions.SettingsChanged += this.OptionsDialogPageOnSettingsChanged;
-            this.Load += this.SnykGeneralSettingsUserControl_Load;
 
             if (LanguageClientHelper.LanguageClientManager() != null)
             {
@@ -81,35 +88,13 @@ namespace Snyk.VisualStudio.Extension.Settings
             authenticateButton.Enabled = false;
         }
 
-        private void UpdateViewFromOptionsDialog()
+        private void UpdateViewFromOptions()
         {
             this.authenticateButton.Enabled = LanguageClientHelper.IsLanguageServerReady();
             this.customEndpointTextBox.Text = snykOptions.CustomEndpoint;
             this.organizationTextBox.Text = snykOptions.Organization;
             this.ignoreUnknownCACheckBox.Checked = snykOptions.IgnoreUnknownCA;
-            this.ossEnabledCheckBox.Checked = snykOptions.OssEnabled;
-            this.iacEnabledCheckbox.Checked = snykOptions.IacEnabled;
-            this.ManageBinariesAutomaticallyCheckbox.Checked = snykOptions.BinariesAutoUpdate;
-            this.autoScanCheckBox.Checked = snykOptions.AutoScan;
-            this.cliDownloadUrlTextBox.Text = snykOptions.CliDownloadUrl;
             this.tokenTextBox.Text = snykOptions.ApiToken.ToString();
-            this.cbIgnoredIssues.Checked = snykOptions.IgnoredIssuesEnabled;
-            this.cbOpenIssues.Checked = snykOptions.OpenIssuesEnabled;
-
-            var cliPath = string.IsNullOrEmpty(snykOptions.CliCustomPath)
-                ? SnykCli.GetSnykCliDefaultPath()
-                : snykOptions.CliCustomPath;
-
-            this.CliPathTextBox.Text = cliPath;
-            if (releaseChannel.DataSource == null)
-            {
-                this.releaseChannel.DataSource = ReleaseChannelList();
-            }
-
-            if (cbDelta.DataSource == null)
-            {
-                this.cbDelta.DataSource = DeltaOptionList();
-            }
 
             if (authType.SelectedIndex == -1)
             {
@@ -117,10 +102,8 @@ namespace Snyk.VisualStudio.Extension.Settings
                 this.authType.DisplayMember = "Description";
                 this.authType.ValueMember = "Value";
             }
-            
-            this.releaseChannel.SelectedItem = snykOptions.CliReleaseChannel;
+
             this.authType.SelectedValue = snykOptions.AuthenticationMethod;
-            this.cbDelta.SelectedItem = snykOptions.EnableDeltaFindings ? "Net new issues" : "All issues";
         }
 
         
@@ -136,27 +119,11 @@ namespace Snyk.VisualStudio.Extension.Settings
                 .ToList();
         }
 
-        private IEnumerable<string> ReleaseChannelList()
-        {
-            var defaultList =  new List<string>() { "stable", "rc", "preview" };
-            if (!defaultList.Contains(snykOptions.CliReleaseChannel))
-            {
-                defaultList.Add(snykOptions.CliReleaseChannel);
-            }
-            return defaultList;
-        }
-
-        private IEnumerable<string> DeltaOptionList()
-        {
-            var defaultList = new List<string> { "All issues", "Net new issues"};
-            return defaultList;
-        }
-
         private void OptionsDialogPageOnSettingsChanged(object sender, SnykSettingsChangedEventArgs e) =>
             ThreadHelper.JoinableTaskFactory.RunAsync(async () =>
             {
                 await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
-                this.UpdateViewFromOptionsDialog();
+                this.UpdateViewFromOptions();
             }).FireAndForget();
 
         public async Task HandleAuthenticationSuccess(string apiToken, string apiUrl)
@@ -190,16 +157,6 @@ namespace Snyk.VisualStudio.Extension.Settings
             }
 
             await this.serviceProvider.ToolWindow.UpdateScreenStateAsync();
-        }
-
-        public void InvalidateApiToken()
-        {
-            this.tokenTextBox.Text = string.Empty;
-            if(LanguageClientHelper.IsLanguageServerReady())
-                ThreadHelper.JoinableTaskFactory.RunAsync(async () =>
-                {
-                    await serviceProvider.LanguageClientManager.InvokeLogout(SnykVSPackage.Instance.DisposalToken);
-                }).FireAndForget();
         }
 
         public async Task HandleFailedAuthentication(string errorMessage)
@@ -248,18 +205,20 @@ namespace Snyk.VisualStudio.Extension.Settings
 
         private void TokenTextBox_TextChanged(object sender, EventArgs e)
         {
-            if (this.ValidateChildren(ValidationConstraints.Enabled))
-            {
-                snykOptions.ApiToken = new AuthenticationToken(snykOptions.AuthenticationMethod, this.tokenTextBox.Text);
-            }
+            snykOptions.ApiToken = new AuthenticationToken(snykOptions.AuthenticationMethod, this.tokenTextBox.Text); 
         }
 
         private void CustomEndpointTextBox_LostFocus(object sender, EventArgs e)
         {
-            if (this.ValidateChildren(ValidationConstraints.Enabled))
+            if (!Uri.IsWellFormedUriString(this.customEndpointTextBox.Text, UriKind.Absolute))
             {
-                snykOptions.CustomEndpoint = this.customEndpointTextBox.Text;
+                Logger.Warning("Custom endpoint value is not a well-formed URI. Setting custom endpoint to empty string");
+                this.customEndpointTextBox.Text = snykOptions.CustomEndpoint = string.Empty;
+                return;
             }
+
+            snykOptions.CustomEndpoint = ApiEndpointResolver.TranslateOldApiToNewApiEndpoint(this.customEndpointTextBox.Text);
+            serviceProvider.Options.InvokeSettingsChangedEvent();
         }
 
         private void IgnoreUnknownCACheckBox_CheckedChanged(object sender, EventArgs e)
@@ -305,209 +264,23 @@ namespace Snyk.VisualStudio.Extension.Settings
             cancelEventArgs.Cancel = true;
             this.errorProvider.SetError(this.customEndpointTextBox, "Needs to be a full absolute well-formed URL (including protocol)");
         }
-
-        private void SnykGeneralSettingsUserControl_Load(object sender, EventArgs e)
-        {
-            this.StartSastEnablementCheckLoop();
-            this.CheckForIgnores();
-        }
-
-        private void UpdateSnykCodeEnablementSettings(SastSettings sastSettings)
-        {
-            var snykCodeEnabled = sastSettings?.SnykCodeEnabled ?? false;
-
-            if (!snykCodeEnabled)
-            {
-                this.snykCodeDisabledInfoLabel.Text = "Snyk Code is disabled by your organisation\'s configuration:";
-            }
-
-            this.codeSecurityEnabledCheckBox.Enabled = snykCodeEnabled;
-            this.codeQualityEnabledCheckBox.Enabled = snykCodeEnabled;
-            this.snykCodeDisabledInfoLabel.Visible = !snykCodeEnabled;
-            this.snykCodeSettingsLinkLabel.Visible = !snykCodeEnabled;
-            this.checkAgainLinkLabel.Visible = !snykCodeEnabled;
-        }
-
-        private void CheckForIgnores()
-        {
-            ThreadHelper.JoinableTaskFactory.RunAsync(async () =>
-            {
-                if (!snykOptions.ConsistentIgnoresEnabled && LanguageClientHelper.IsLanguageServerReady())
-                    await serviceProvider.FeatureFlagService.RefreshAsync(SnykVSPackage.Instance.DisposalToken);
-                await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
-                this.ignoreGroupbox.Visible = snykOptions.ConsistentIgnoresEnabled;
-            }).FireAndForget();
-        }
-        private void StartSastEnablementCheckLoop()
-        {
-            try
-            {
-                if (this.snykCodeEnableTimer.Enabled)
-                {
-                    this.snykCodeEnableTimer.Stop();
-                }
-
-                var currentRequestAttempt = 1;
-
-                this.snykCodeEnableTimer.Interval = TwoSecondsDelay;
-
-                this.snykCodeEnableTimer.Tick += (sender, args) => ThreadHelper.JoinableTaskFactory.RunAsync(async () =>
-                {
-                    try
-                    {
-                        if (!LanguageClientHelper.IsLanguageServerReady()) return;
-                        var sastSettings = await this.serviceProvider.LanguageClientManager.InvokeGetSastEnabled(SnykVSPackage.Instance.DisposalToken);
-
-                        bool snykCodeEnabled = sastSettings != null ? sastSettings.SnykCodeEnabled : false;
-
-                        this.UpdateSnykCodeEnablementSettings(sastSettings);
-
-                        if (snykCodeEnabled)
-                        {
-                            this.snykCodeEnableTimer.Stop();
-                        }
-                        else if (currentRequestAttempt < MaxSastRequestAttempts)
-                        {
-                            currentRequestAttempt++;
-
-                            this.snykCodeEnableTimer.Interval = TwoSecondsDelay * currentRequestAttempt;
-                        }
-                        else
-                        {
-                            this.snykCodeEnableTimer.Stop();
-                        }
-                    }
-                    catch (Exception e)
-                    {
-                        this.HandleSastError(e);
-                    }
-                });
-
-                this.snykCodeEnableTimer.Start();
-            }
-            catch (Exception e)
-            {
-                this.HandleSastError(e);
-            }
-        }
-
-        private void HandleSastError(Exception e)
-        {
-            this.snykCodeEnableTimer.Stop();
-
-            NotificationService.Instance.ShowErrorInfoBar(e.Message);
-
-            this.codeSecurityEnabledCheckBox.Enabled = false;
-            this.codeQualityEnabledCheckBox.Enabled = false;
-
-            this.snykCodeDisabledInfoLabel.Visible = false;
-            this.snykCodeSettingsLinkLabel.Visible = false;
-            this.checkAgainLinkLabel.Visible = false;
-        }
-
-        private void OssEnabledCheckBox_CheckedChanged(object sender, EventArgs e)
-        {
-            snykOptions.OssEnabled = this.ossEnabledCheckBox.Checked;
-        }
-
-        private void CodeSecurityEnabledCheckBox_CheckedChanged(object sender, EventArgs e)
-        {
-            snykOptions.SnykCodeSecurityEnabled = this.codeSecurityEnabledCheckBox.Checked;
-        }
-
-        private void CodeQualityEnabledCheckBox_CheckedChanged(object sender, EventArgs e)
-        {
-            snykOptions.SnykCodeQualityEnabled = this.codeQualityEnabledCheckBox.Checked;
-        }
-
-        private void SnykCodeSettingsLinkLabel_LinkClicked(object sender, LinkLabelLinkClickedEventArgs e)
-            => Process.Start(snykOptions.SnykCodeSettingsUrl);
-
-        private void CheckAgainLinkLabel_LinkClicked(object sender, LinkLabelLinkClickedEventArgs e)
-        {
-            this.StartSastEnablementCheckLoop();
-        }
-
+       
         private void OrganizationInfoLink_LinkClicked(object sender, LinkLabelLinkClickedEventArgs e)
         {
             this.OrganizationInfoLink.LinkVisited = true;
             Process.Start("https://docs.snyk.io/ide-tools/visual-studio-extension#organization-setting");
         }
 
-        private void CliPathBrowseButton_Click(object sender, EventArgs e)
-        {
-            if (this.customCliPathFileDialog.ShowDialog() == DialogResult.OK)
-            {
-                var selectedCliPath = this.customCliPathFileDialog.FileName;
-                this.SetCliCustomPathValue(selectedCliPath);
-            }
-        }
-
-        private void SetCliCustomPathValue(string selectedCliPath)
-        {
-            snykOptions.CliCustomPath = selectedCliPath;
-            this.CliPathTextBox.Text = string.IsNullOrEmpty(snykOptions.CliCustomPath)
-                ? SnykCli.GetSnykCliDefaultPath()
-                : selectedCliPath;
-        }
-
-        private void ClearCliCustomPathButton_Click(object sender, EventArgs e)
-        {
-            this.SetCliCustomPathValue(string.Empty);
-        }
-
         private void authType_SelectionChangeCommitted(object sender, EventArgs e)
         {
             snykOptions.AuthenticationMethod = (AuthenticationType)authType.SelectedValue;
-            InvalidateApiToken();
+            if(LanguageClientHelper.IsLanguageServerReady())
+                LanguageClientHelper.LanguageClientManager().DidChangeConfigurationAsync(SnykVSPackage.Instance.DisposalToken).FireAndForget();
         }
 
-        private void autoScanCheckBox_CheckedChanged(object sender, EventArgs e)
+        private void organizationTextBox_TextChanged(object sender, EventArgs e)
         {
-            snykOptions.AutoScan = autoScanCheckBox.Checked;
-        }
-
-        private void iacEnabledCheckbox_CheckedChanged(object sender, EventArgs e)
-        {
-            snykOptions.IacEnabled = iacEnabledCheckbox.Checked;
-        }
-
-        public string GetReleaseChannel()
-        {
-            return releaseChannel.Text;
-        }
-
-        public string GetCliDownloadUrl()
-        {
-            return cliDownloadUrlTextBox.Text;
-        }
-
-        public bool GetManageBinariesAutomatically()
-        {
-            return ManageBinariesAutomaticallyCheckbox.Checked;
-        }
-
-        private void ReleaseChannelLink_LinkClicked(object sender, LinkLabelLinkClickedEventArgs e)
-        {
-            this.ReleaseChannelLink.LinkVisited = true;
-            Process.Start("https://docs.snyk.io/snyk-cli/releases-and-channels-for-the-snyk-cli");
-        }
-
-        private void cbOpenIssues_CheckedChanged(object sender, EventArgs e)
-        {
-            snykOptions.OpenIssuesEnabled = this.cbOpenIssues.Checked;
-        }
-
-        private void cbIgnoredIssues_CheckedChanged(object sender, EventArgs e)
-        {
-            snykOptions.IgnoredIssuesEnabled = this.cbIgnoredIssues.Checked;
-        }
-        private void cbDelta_SelectionChangeCommitted(object sender, EventArgs e)
-        {
-            if (this.cbDelta.SelectedItem == null)
-                return;
-            var enableDelta = this.cbDelta.SelectedItem.ToString() == "Net new issues";
-            snykOptions.EnableDeltaFindings = enableDelta;
+            snykOptions.Organization = organizationTextBox.Text;
         }
 
         public Panel GetPanel()

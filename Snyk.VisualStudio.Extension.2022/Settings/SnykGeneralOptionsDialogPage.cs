@@ -86,31 +86,89 @@ namespace Snyk.VisualStudio.Extension.Settings
         // This method is used when the user clicks "Ok"
         public override void SaveSettingsToStorage()
         {
-            HandleCliDownload();
-            this.SnykOptions.SaveSettings();
-            this.SnykOptions.InvokeSettingsChangedEvent();
-        }
+            HandleScanConfiguration();
+            HandleExperimentalConfiguration();
+            HandleUserExperienceConfiguration();
+            HandleSolutionOptionsConfiguration();
 
-        private void HandleCliDownload()
-        {
-            var releaseChannel = generalSettingsUserControl.GetReleaseChannel().Trim();
-            var downloadUrl = generalSettingsUserControl.GetCliDownloadUrl().Trim();
-            var manageBinariesAutomatically = generalSettingsUserControl.GetManageBinariesAutomatically();
-            if (!manageBinariesAutomatically)
+            var hasCliChanges = HandleCliConfiguration();
+
+            this.serviceProvider.SnykOptionsManager.Save(this.SnykOptions);
+
+            if (hasCliChanges)
             {
-                this.SnykOptions.CurrentCliVersion = string.Empty;
-                this.SnykOptions.BinariesAutoUpdate = false;
-                serviceProvider.TasksService.CancelDownloadTask();
-                // Language Server restart will happen on DownloadCancelled Event.
+                HandleCliChange();
                 return;
             }
-            if (this.SnykOptions.CliReleaseChannel != releaseChannel || this.SnykOptions.CliDownloadUrl != downloadUrl || this.SnykOptions.BinariesAutoUpdate != manageBinariesAutomatically)
+
+            if (LanguageClientHelper.IsLanguageServerReady() && this.SnykOptions.AutoScan)
+                LanguageClientHelper.LanguageClientManager().InvokeWorkspaceScanAsync(SnykVSPackage.Instance.DisposalToken).FireAndForget();
+        }
+
+        private void HandleSolutionOptionsConfiguration()
+        {
+            var memento = this.serviceProvider.Package.SnykSolutionOptionsDialogPage.SnykSolutionOptionsUserControl.AdditionalOptions;
+            if(memento != null)
+                this.serviceProvider.SnykOptionsManager.SaveAdditionalOptionsAsync(memento).FireAndForget();
+        }
+
+        private void HandleUserExperienceConfiguration()
+        {
+            var memento = this.serviceProvider.Package.SnykUserExperienceDialogPage.SnykUserExperienceUserControl.OptionsMemento;
+
+            this.SnykOptions.AutoScan = memento.AutoScan;
+        }
+
+        private void HandleExperimentalConfiguration()
+        {
+            var memento = this.serviceProvider.Package.SnykExperimentalDialogPage.SnykExperimentalUserControl.OptionsMemento;
+
+            this.SnykOptions.IgnoredIssuesEnabled = memento.IgnoredIssuesEnabled;
+            this.SnykOptions.OpenIssuesEnabled = memento.OpenIssuesEnabled;
+        }
+
+        private void HandleScanConfiguration()
+        {
+            var memento = this.serviceProvider.Package.SnykScanOptionsDialogPage.SnykScanOptionsUserControl.OptionsMemento;
+
+            this.SnykOptions.EnableDeltaFindings = memento.EnableDeltaFindings;
+            this.SnykOptions.SnykCodeQualityEnabled = memento.SnykCodeQualityEnabled;
+            this.SnykOptions.SnykCodeSecurityEnabled = memento.SnykCodeSecurityEnabled;
+            this.SnykOptions.IacEnabled = memento.IacEnabled;
+            this.SnykOptions.OssEnabled = memento.OssEnabled;
+        }
+
+        private bool HandleCliConfiguration()
+        {
+            var memento = this.serviceProvider.Package.SnykCliOptionsDialogPage.SnykCliOptionsUserControl.OptionsMemento;
+
+            this.SnykOptions.CliDownloadUrl = memento.CliDownloadUrl;
+
+            var binariesAutoUpdateChanged = this.SnykOptions.BinariesAutoUpdate != memento.BinariesAutoUpdate;
+            var releaseChannelChanged = this.SnykOptions.CliReleaseChannel != memento.CliReleaseChannel;
+            var cliCustomPathChanged = this.SnykOptions.CliCustomPath != memento.CliCustomPath;
+
+            this.SnykOptions.CurrentCliVersion = memento.CurrentCliVersion;
+            this.SnykOptions.BinariesAutoUpdate = memento.BinariesAutoUpdate;
+            this.SnykOptions.CliReleaseChannel = memento.CliReleaseChannel;
+            this.SnykOptions.CliCustomPath = memento.CliCustomPath;
+
+            var hasChanges = binariesAutoUpdateChanged || releaseChannelChanged || cliCustomPathChanged;
+            return hasChanges;
+        }
+
+        private void HandleCliChange()
+        {
+            serviceProvider.TasksService.CancelTasks();
+
+            if (this.SnykOptions.BinariesAutoUpdate)
             {
-                this.SnykOptions.CliDownloadUrl = downloadUrl;
-                this.SnykOptions.CliReleaseChannel = releaseChannel;
-                this.SnykOptions.BinariesAutoUpdate = manageBinariesAutomatically;
-                serviceProvider.TasksService.CancelDownloadTask();
+                // DownloadStarted event stops language server and DownloadFinished starts it automatically
                 this.serviceProvider.TasksService.Download();
+            }
+            else
+            {
+                LanguageClientHelper.LanguageClientManager().RestartServerAsync().FireAndForget();
             }
         }
 
@@ -122,9 +180,6 @@ namespace Snyk.VisualStudio.Extension.Settings
                 {
                     await serviceProvider.LanguageClientManager.DidChangeConfigurationAsync(SnykVSPackage
                         .Instance.DisposalToken);
-                    if (this.SnykOptions.AutoScan)
-                        await serviceProvider.LanguageClientManager.InvokeWorkspaceScanAsync(SnykVSPackage
-                            .Instance.DisposalToken);
                 }
             }).FireAndForget();
         }

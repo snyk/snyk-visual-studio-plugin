@@ -9,11 +9,11 @@ namespace Snyk.VisualStudio.Extension.Service
     {
         private static readonly ILogger Logger = LogManager.ForContext<WorkspaceTrustService>();
 
-        private readonly IUserStorageSettingsService settingsService;
+        private readonly ISnykServiceProvider serviceProvider;
 
-        public WorkspaceTrustService(IUserStorageSettingsService settingsService)
+        public WorkspaceTrustService(ISnykServiceProvider serviceProvider)
         {
-            this.settingsService = settingsService;
+            this.serviceProvider = serviceProvider;
         }
 
         public void AddFolderToTrusted(string absoluteFolderPath)
@@ -30,10 +30,10 @@ namespace Snyk.VisualStudio.Extension.Service
 
             try
             {
-                var trustedFolders = this.settingsService.TrustedFolders;
+                var trustedFolders = this.serviceProvider.Options.TrustedFolders;
                 trustedFolders.Add(absoluteFolderPath);
-                this.settingsService.TrustedFolders = trustedFolders;
-                this.settingsService.SaveSettings();
+                this.serviceProvider.Options.TrustedFolders = trustedFolders;
+                this.serviceProvider.SnykOptionsManager.Save(this.serviceProvider.Options);
             }
             catch (Exception e)
             {
@@ -45,7 +45,7 @@ namespace Snyk.VisualStudio.Extension.Service
         {
             if (string.IsNullOrEmpty(absoluteFolderPath))
                 return true;
-            var trustedFolders = this.settingsService.TrustedFolders;
+            var trustedFolders = this.serviceProvider.Options.TrustedFolders;
 
             foreach (var trustedFolder in trustedFolders)
             {

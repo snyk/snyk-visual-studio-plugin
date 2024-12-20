@@ -2,12 +2,18 @@
 using Moq;
 using Snyk.VisualStudio.Extension.Authentication;
 using Snyk.VisualStudio.Extension.Language;
+using Snyk.VisualStudio.Extension.Service;
 using Snyk.VisualStudio.Extension.Settings;
 
 namespace Snyk.VisualStudio.Extension.Tests
 {
     public class TestUtils
     {
+        public static void SetupOptionsManagerMock(Mock<ISnykOptionsManager> snykOptionsManager)
+        {
+            snykOptionsManager.Setup(o => o.GetAdditionalOptionsAsync()).ReturnsAsync("--debug");
+        }
+
         public static void SetupOptionsMock(Mock<ISnykOptions> optionsMock)
         {
             optionsMock.SetupGet(o => o.SnykCodeSecurityEnabled).Returns(true);
@@ -29,7 +35,6 @@ namespace Snyk.VisualStudio.Extension.Tests
             optionsMock.SetupGet(o => o.IgnoreUnknownCA).Returns(false);
             optionsMock.SetupGet(o => o.EnableDeltaFindings).Returns(true);
             optionsMock.SetupGet(o => o.FolderConfigs).Returns(new List<FolderConfig>());
-            optionsMock.Setup(o => o.GetAdditionalOptionsAsync()).ReturnsAsync("--debug");
             optionsMock.SetupProperty(o => o.DeviceId, "device-id-123");
         }
     }

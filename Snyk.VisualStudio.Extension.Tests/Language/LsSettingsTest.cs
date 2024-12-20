@@ -12,13 +12,16 @@ namespace Snyk.VisualStudio.Extension.Tests.Language
     {
         private LsSettings cut;
         private readonly Mock<ISnykOptions> optionsMock;
+        private readonly Mock<ISnykOptionsManager> optionsManagerMock;
 
         public LsSettingsTest(GlobalServiceProvider sp)
         {
             sp.Reset();
             optionsMock = new Mock<ISnykOptions>();
+            optionsManagerMock = new Mock<ISnykOptionsManager>();
             var serviceProviderMock = new Mock<ISnykServiceProvider>();
             serviceProviderMock.Setup(x => x.Options).Returns(optionsMock.Object);
+            serviceProviderMock.Setup(x => x.SnykOptionsManager).Returns(optionsManagerMock.Object);
             cut = new LsSettings(serviceProviderMock.Object);
         }
 
@@ -27,6 +30,7 @@ namespace Snyk.VisualStudio.Extension.Tests.Language
         {
             // Arrange
             TestUtils.SetupOptionsMock(optionsMock);
+            TestUtils.SetupOptionsManagerMock(optionsManagerMock);
 
             // Act
             var initOptions = cut.GetInitializationOptions();

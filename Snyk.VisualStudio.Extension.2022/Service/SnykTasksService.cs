@@ -727,8 +727,7 @@ namespace Snyk.VisualStudio.Extension.Service
 
         public bool ShouldDownloadCli()
         {
-            var userSettingsStorageService = this.serviceProvider.UserStorageSettingsService;
-            if (!userSettingsStorageService.BinariesAutoUpdate)
+            if (!this.serviceProvider.Options.BinariesAutoUpdate)
             {
                 return false;
             }
@@ -751,8 +750,8 @@ namespace Snyk.VisualStudio.Extension.Service
         private async Task DownloadAsync(CliDownloadFinishedCallback downloadFinishedCallback,
             ISnykProgressWorker progressWorker)
         {
-            var userSettingsStorageService = this.serviceProvider.UserStorageSettingsService;
-            if (!userSettingsStorageService.BinariesAutoUpdate)
+            var options = this.serviceProvider.Options;
+            if (!options.BinariesAutoUpdate)
             {
                 Logger.Information("CLI auto-update is disabled, CLI download is skipped.");
                 this.DownloadCancelled?.Invoke(this, new SnykCliDownloadEventArgs());
@@ -762,8 +761,7 @@ namespace Snyk.VisualStudio.Extension.Service
             this.isCliDownloading = true;
             try
             {
-                var serviceProviderOptions = this.serviceProvider.Options;
-                var cliDownloader = new SnykCliDownloader(serviceProviderOptions);
+                var cliDownloader = new SnykCliDownloader(this.serviceProvider.Options);
 
                 var downloadFinishedCallbacks = new List<CliDownloadFinishedCallback>();
 
@@ -774,12 +772,12 @@ namespace Snyk.VisualStudio.Extension.Service
 
                 downloadFinishedCallbacks.Add(() =>
                 {
-                    serviceProviderOptions.CurrentCliVersion = cliDownloader.GetLatestReleaseInfo().Name;
-                    userSettingsStorageService.SaveSettings();
+                    this.serviceProvider.Options.CurrentCliVersion = cliDownloader.GetLatestReleaseInfo().Name;
+                    this.serviceProvider.SnykOptionsManager.Save(this.serviceProvider.Options);
                     DisposeCancellationTokenSource(this.downloadCliTokenSource);
                 });
 
-                var downloadPath = serviceProviderOptions.CliCustomPath;
+                var downloadPath = this.serviceProvider.Options.CliCustomPath;
                 await cliDownloader.AutoUpdateCliAsync(
                     progressWorker,
                     downloadPath,

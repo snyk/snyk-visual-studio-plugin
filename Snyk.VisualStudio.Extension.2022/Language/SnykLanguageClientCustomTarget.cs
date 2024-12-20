@@ -3,6 +3,7 @@ using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.VisualStudio.Shell;
 using Newtonsoft.Json.Linq;
 using Snyk.VisualStudio.Extension.Authentication;
@@ -109,6 +110,7 @@ namespace Snyk.VisualStudio.Extension.Language
             var folderConfigs = arg.TryParse<FolderConfigsParam>();
             if (folderConfigs == null) return;
             serviceProvider.Options.FolderConfigs = folderConfigs.FolderConfigs;
+            serviceProvider.SnykOptionsManager.Save(serviceProvider.Options);
         }
 
         [JsonRpcMethod(LsConstants.SnykHasAuthenticated)]
@@ -121,10 +123,6 @@ namespace Snyk.VisualStudio.Extension.Language
             }
 
             var token = arg["token"].ToString();
-            if (string.IsNullOrEmpty(token))
-            {
-                return;
-            }
 
             var apiUrl = arg["apiUrl"]?.ToString();
             if (!string.IsNullOrEmpty(apiUrl))
@@ -133,10 +131,14 @@ namespace Snyk.VisualStudio.Extension.Language
             }
 
             serviceProvider.Options.ApiToken = new AuthenticationToken(serviceProvider.Options.AuthenticationMethod, token);
+            serviceProvider.SnykOptionsManager.Save(serviceProvider.Options);
 
             await serviceProvider.GeneralOptionsDialogPage.HandleAuthenticationSuccess(token, apiUrl);
-            serviceProvider.FeatureFlagService.RefreshAsync(SnykVSPackage.Instance.DisposalToken).FireAndForget();
 
+            if (!serviceProvider.Options.ApiToken.IsValid())
+                return;
+
+            serviceProvider.FeatureFlagService.RefreshAsync(SnykVSPackage.Instance.DisposalToken).FireAndForget();
             if (serviceProvider.Options.AutoScan)
             {
                 await serviceProvider.TasksService.ScanAsync();
@@ -150,7 +152,7 @@ namespace Snyk.VisualStudio.Extension.Language
             if (trustedFolders == null) return;
 
             serviceProvider.Options.TrustedFolders = new HashSet<string>(trustedFolders.TrustedFolders);
-            this.serviceProvider.UserStorageSettingsService?.SaveSettings();
+            this.serviceProvider.SnykOptionsManager.Save(serviceProvider.Options);
             await serviceProvider.LanguageClientManager.DidChangeConfigurationAsync(SnykVSPackage.Instance.DisposalToken);
         }
 

@@ -19,8 +19,8 @@ namespace Snyk.VisualStudio.Extension.Tests
             serviceProviderMock.Setup(x => x.SolutionService).Returns(snykSolutionService);
             var serviceProvider = serviceProviderMock.Object;
             var settingsFilePath = Path.Combine(SnykExtension.GetExtensionDirectoryPath(), "settings.json");
-            serviceProviderMock.Setup(x => x.UserStorageSettingsService).Returns(new SnykUserStorageSettingsService(settingsFilePath, serviceProvider));
-            cut = new SnykOptions(serviceProvider);
+            serviceProviderMock.Setup(x => x.SnykOptionsManager).Returns(new SnykOptionsManager(settingsFilePath, serviceProvider));
+            cut = new SnykOptions();
         }
 
         [Theory]
