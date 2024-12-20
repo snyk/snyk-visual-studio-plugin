@@ -218,6 +218,9 @@ namespace Snyk.VisualStudio.Extension.Language
 
         public Task OnServerInitializedAsync()
         {
+            IsReady = true;
+            FireOnLanguageServerReadyAsyncEvent();
+            SendPluginInstalledEvent();
             Rpc.Disconnected += Rpc_Disconnected;
             return Task.CompletedTask;
         }
@@ -246,9 +249,6 @@ namespace Snyk.VisualStudio.Extension.Language
             Rpc.AllowModificationWhileListening = true;
             Rpc.ActivityTracingStrategy = null;
             Rpc.AllowModificationWhileListening = false;
-            IsReady = true;
-            FireOnLanguageServerReadyAsyncEvent();
-            SendPluginInstalledEvent();
         }
 
         protected void OnStopping() { }
