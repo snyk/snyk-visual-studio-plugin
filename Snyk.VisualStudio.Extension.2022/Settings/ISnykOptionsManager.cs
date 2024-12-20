@@ -10,12 +10,6 @@ public interface ISnykOptionsManager
     void Save(IPersistableOptions options);
 
     /// <summary>
-    /// Get is all projects enabled.
-    /// </summary>
-    /// <returns>Bool.</returns>
-    Task<bool> GetIsAllProjectsEnabledAsync();
-
-    /// <summary>
     /// Get CLI additional options string.
     /// </summary>
     /// <returns>string.</returns>
@@ -27,4 +21,5 @@ public interface ISnykOptionsManager
     /// <param name="additionalOptions">CLI options string.</param>
     /// <returns>A <see cref="Task"/> representing the asynchronous operation.</returns>
     Task SaveAdditionalOptionsAsync(string additionalOptions);
+
 }

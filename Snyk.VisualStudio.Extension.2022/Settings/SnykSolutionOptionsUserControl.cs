@@ -14,7 +14,7 @@ namespace Snyk.VisualStudio.Extension.Settings
         private static readonly ILogger Logger = LogManager.ForContext<SnykSolutionOptionsUserControl>();
 
         private readonly ISnykServiceProvider serviceProvider;
-
+        public string AdditionalOptions { get; set; }
         /// <summary>
         /// Initializes a new instance of the <see cref="SnykSolutionOptionsUserControl"/> class.
         /// </summary>
@@ -30,9 +30,7 @@ namespace Snyk.VisualStudio.Extension.Settings
         {
             if (this.serviceProvider.SolutionService.IsSolutionOpen())
             {
-                string additionalOptions = this.additionalOptionsTextBox.Text;
-
-                this.serviceProvider.SnykOptionsManager.SaveAdditionalOptionsAsync(additionalOptions).FireAndForget();
+                AdditionalOptions = this.additionalOptionsTextBox.Text;
             }
         }
 

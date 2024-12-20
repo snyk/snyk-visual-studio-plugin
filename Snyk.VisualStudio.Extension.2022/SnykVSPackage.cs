@@ -110,6 +110,7 @@ namespace Snyk.VisualStudio.Extension
         public ISnykScanOptionsDialogPage SnykScanOptionsDialogPage { get; private set; }
         public ISnykExperimentalDialogPage SnykExperimentalDialogPage { get; private set; }
         public ISnykUserExperienceDialogPage SnykUserExperienceDialogPage { get; private set; }
+        public ISnykSolutionOptionsDialogPage SnykSolutionOptionsDialogPage { get; private set; }
 
         /// <summary>
         /// Gets <see cref="SnykToolWindow"/> instance.
@@ -360,6 +361,12 @@ namespace Snyk.VisualStudio.Extension
                 SnykExperimentalDialogPage =
                     (SnykExperimentalDialogPage)GetDialogPage(typeof(SnykExperimentalDialogPage));
                 SnykExperimentalDialogPage.Initialize(this.serviceProvider);
+            }
+            if (SnykSolutionOptionsDialogPage == null)
+            {
+                SnykSolutionOptionsDialogPage =
+                    (SnykSolutionOptionsDialogPage)GetDialogPage(typeof(SnykSolutionOptionsDialogPage));
+                SnykSolutionOptionsDialogPage.Initialize(this.serviceProvider);
             }
         }
 

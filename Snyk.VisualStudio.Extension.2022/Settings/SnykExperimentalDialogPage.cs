@@ -40,7 +40,7 @@ public class SnykExperimentalDialogPage : DialogPage, ISnykExperimentalDialogPag
         this.snykOptions.OpenIssuesEnabled = SnykExperimentalUserControl.OptionsMemento.OpenIssuesEnabled;
         this.serviceProvider.SnykOptionsManager.Save(this.snykOptions);
 
-        if (LanguageClientHelper.IsLanguageServerReady())
+        if (LanguageClientHelper.IsLanguageServerReady() && snykOptions.AutoScan)
             LanguageClientHelper.LanguageClientManager().InvokeWorkspaceScanAsync(SnykVSPackage.Instance.DisposalToken).FireAndForget();
     }
 

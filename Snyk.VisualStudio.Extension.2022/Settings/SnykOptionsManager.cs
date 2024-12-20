@@ -104,26 +104,6 @@ namespace Snyk.VisualStudio.Extension.Settings
         }
 
         /// <summary>
-        /// Get is all projects enabled.
-        /// </summary>
-        /// <returns>Bool.</returns>
-        public async Task<bool> GetIsAllProjectsEnabledAsync()
-        {
-            Logger.Information("Enter GetIsAllProjectsEnabled method");
-
-            var solutionPathHash = await this.GetSolutionPathHashAsync();
-
-            if (snykSettings == null || !snykSettings.SolutionSettingsDict.ContainsKey(solutionPathHash))
-            {
-                return true;
-            }
-            else
-            {
-                return snykSettings.SolutionSettingsDict[solutionPathHash].IsAllProjectsScanEnabled;
-            }
-        }
-
-        /// <summary>
         /// Get CLI additional options string.
         /// </summary>
         /// <returns>string.</returns>
@@ -171,38 +151,6 @@ namespace Snyk.VisualStudio.Extension.Settings
             this.SaveSettingsToFile();
 
             Logger.Information("Leave SaveAdditionalOptions method");
-        }
-
-        /// <summary>
-        /// Sace is all projects scan enabled.
-        /// </summary>
-        /// <param name="isAllProjectsEnabled">Bool param.</param>
-        /// <returns>A <see cref="Task"/> representing the asynchronous operation.</returns>
-        public async Task SaveIsAllProjectsScanEnabledAsync(bool isAllProjectsEnabled)
-        {
-            // TODO: Move to SnykOptionsManager
-            Logger.Information("Enter SaveIsAllProjectsScan method");
-
-            var solutionPathHash = await this.GetSolutionPathHashAsync();
-
-            SnykSolutionSettings projectSettings;
-
-            if (snykSettings.SolutionSettingsDict.ContainsKey(solutionPathHash))
-            {
-                projectSettings = snykSettings.SolutionSettingsDict[solutionPathHash];
-            }
-            else
-            {
-                projectSettings = new SnykSolutionSettings();
-            }
-
-            projectSettings.IsAllProjectsScanEnabled = isAllProjectsEnabled;
-
-            snykSettings.SolutionSettingsDict[solutionPathHash] = projectSettings;
-
-            this.SaveSettingsToFile();
-
-            Logger.Information("Leave SaveIsAllProjectsScan method");
         }
 
         private async Task<int> GetSolutionPathHashAsync() =>

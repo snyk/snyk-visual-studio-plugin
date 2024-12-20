@@ -35,7 +35,7 @@ namespace Snyk.VisualStudio.Extension.Settings
         {
             ThreadHelper.JoinableTaskFactory.RunAsync(async () =>
             {
-                if (!serviceProvider.Options.ConsistentIgnoresEnabled && LanguageClientHelper.IsLanguageServerReady())
+                if (serviceProvider.Options.ApiToken.IsValid() && !serviceProvider.Options.ConsistentIgnoresEnabled && LanguageClientHelper.IsLanguageServerReady())
                     await serviceProvider.FeatureFlagService.RefreshAsync(SnykVSPackage.Instance.DisposalToken);
                 await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
             }).FireAndForget();

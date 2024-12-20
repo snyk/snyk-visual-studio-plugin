@@ -70,6 +70,7 @@ public class SnykCliOptionsDialogPage : DialogPage, ISnykCliOptionsDialogPage
 
         if (memento.BinariesAutoUpdate)
         {
+            // DownloadStarted event stops language server and DownloadFinished starts it automatically
             this.serviceProvider.TasksService.Download();
         }
         else

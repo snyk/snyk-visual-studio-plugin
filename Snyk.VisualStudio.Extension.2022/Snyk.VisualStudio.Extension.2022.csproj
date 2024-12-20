@@ -152,6 +152,7 @@
     <Compile Include="Settings\ISnykOptions.cs" />
     <Compile Include="Settings\ISnykOptionsManager.cs" />
     <Compile Include="Settings\ISnykScanOptionsDialogPage.cs" />
+    <Compile Include="Settings\ISnykSolutionOptionsDialogPage.cs" />
     <Compile Include="Settings\ISnykUserExperienceDialogPage.cs" />
     <Compile Include="Settings\SnykCliOptionsDialogPage.cs">
       <SubType>Component</SubType>

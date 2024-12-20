@@ -114,33 +114,5 @@ namespace Snyk.VisualStudio.Extension.Tests
             await cut.SaveAdditionalOptionsAsync("--second-command");
             Assert.Equal("--second-command", await cut.GetAdditionalOptionsAsync());
         }
-
-        [Fact]
-        public async Task GetIsAllProjectsEnabledAsync_DefaultTrueIfNotSet()
-        {
-            solutionServiceMock
-                .Setup(solutionService => solutionService.GetSolutionFolderAsync())
-                .ReturnsAsync("C:\\Projects\\NonExistentProj");
-            Assert.True(await cut.GetIsAllProjectsEnabledAsync());
-        }
-
-        [Fact]
-        public async Task SaveIsAllProjectsScanEnabledAsync_ChangesValue()
-        {
-            solutionServiceMock
-                .Setup(solutionService => solutionService.GetSolutionFolderAsync())
-                .ReturnsAsync("C:\\Projects\\NonExistentProj");
-            // Default is true
-            Assert.True(await cut.GetIsAllProjectsEnabledAsync());
-
-            await cut.SaveIsAllProjectsScanEnabledAsync(false);
-            Assert.False(await cut.GetIsAllProjectsEnabledAsync());
-
-            // Change back to true
-            await cut.SaveIsAllProjectsScanEnabledAsync(true);
-            Assert.True(await cut.GetIsAllProjectsEnabledAsync());
-        }
-
-
     }
 }
