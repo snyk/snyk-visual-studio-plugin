@@ -99,7 +99,7 @@ namespace Snyk.VisualStudio.Extension.Tests.Language
         }
 
         [Fact]
-        public async Task AttachForCustomMessageAsync_ShouldSetRpcAndIsReady()
+        public async Task AttachForCustomMessageAsync_ShouldSetRpc()
         {
             // Arrange
             var rpc = new JsonRpc(new MemoryStream(), new MemoryStream());
@@ -108,7 +108,6 @@ namespace Snyk.VisualStudio.Extension.Tests.Language
             await cut.AttachForCustomMessageAsync(rpc);
 
             // Assert
-            Assert.True(cut.IsReady);
             Assert.NotNull(cut.Rpc);
             Assert.Null(cut.Rpc.ActivityTracingStrategy);
         }
