@@ -189,33 +189,25 @@ namespace Snyk.VisualStudio.Extension.Settings
 
         private void TokenTextBox_TextChanged(object sender, EventArgs e)
         {
-            if (this.ValidateChildren(ValidationConstraints.Enabled))
-            {
-                snykOptions.ApiToken = new AuthenticationToken(snykOptions.AuthenticationMethod, this.tokenTextBox.Text); 
-                serviceProvider.Options.InvokeSettingsChangedEvent();
-            }
+            snykOptions.ApiToken = new AuthenticationToken(snykOptions.AuthenticationMethod, this.tokenTextBox.Text); 
         }
 
         private void CustomEndpointTextBox_LostFocus(object sender, EventArgs e)
         {
-            if (this.ValidateChildren(ValidationConstraints.Enabled))
+            if (!Uri.IsWellFormedUriString(this.customEndpointTextBox.Text, UriKind.Absolute))
             {
-                if (!Uri.IsWellFormedUriString(this.customEndpointTextBox.Text, UriKind.Absolute))
-                {
-                    Logger.Warning("Custom endpoint value is not a well-formed URI. Setting custom endpoint to empty string");
-                    this.customEndpointTextBox.Text = snykOptions.CustomEndpoint = string.Empty;
-                    return;
-                }
-
-                snykOptions.CustomEndpoint = ApiEndpointResolver.TranslateOldApiToNewApiEndpoint(this.customEndpointTextBox.Text);
-                serviceProvider.Options.InvokeSettingsChangedEvent();
+                Logger.Warning("Custom endpoint value is not a well-formed URI. Setting custom endpoint to empty string");
+                this.customEndpointTextBox.Text = snykOptions.CustomEndpoint = string.Empty;
+                return;
             }
+
+            snykOptions.CustomEndpoint = ApiEndpointResolver.TranslateOldApiToNewApiEndpoint(this.customEndpointTextBox.Text);
+            serviceProvider.Options.InvokeSettingsChangedEvent();
         }
 
         private void IgnoreUnknownCACheckBox_CheckedChanged(object sender, EventArgs e)
         {
             snykOptions.IgnoreUnknownCA = this.ignoreUnknownCACheckBox.Checked;
-            serviceProvider.Options.InvokeSettingsChangedEvent();
         }
 
         private void TokenTextBox_Validating(object sender, CancelEventArgs cancelEventArgs) =>
@@ -266,7 +258,8 @@ namespace Snyk.VisualStudio.Extension.Settings
         private void authType_SelectionChangeCommitted(object sender, EventArgs e)
         {
             snykOptions.AuthenticationMethod = (AuthenticationType)authType.SelectedValue;
-            serviceProvider.Options.InvokeSettingsChangedEvent();
+            if(LanguageClientHelper.IsLanguageServerReady())
+                LanguageClientHelper.LanguageClientManager().DidChangeConfigurationAsync(SnykVSPackage.Instance.DisposalToken).FireAndForget();
         }
 
         private void organizationTextBox_TextChanged(object sender, EventArgs e)
@@ -274,7 +267,7 @@ namespace Snyk.VisualStudio.Extension.Settings
             snykOptions.Organization = organizationTextBox.Text;
         }
 
-        public System.Windows.Forms.Panel GetPanel()
+        public Panel GetPanel()
         {
             return this.mainPanel;
         }

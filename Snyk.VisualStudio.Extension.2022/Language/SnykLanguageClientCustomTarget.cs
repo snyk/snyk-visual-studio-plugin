@@ -133,11 +133,11 @@ namespace Snyk.VisualStudio.Extension.Language
             serviceProvider.Options.ApiToken = new AuthenticationToken(serviceProvider.Options.AuthenticationMethod, token);
             serviceProvider.SnykOptionsManager.Save(serviceProvider.Options);
 
+            await serviceProvider.GeneralOptionsDialogPage.HandleAuthenticationSuccess(token, apiUrl);
+
             if (!serviceProvider.Options.ApiToken.IsValid())
                 return;
 
-            await serviceProvider.GeneralOptionsDialogPage.HandleAuthenticationSuccess(token, apiUrl);
-            
             serviceProvider.FeatureFlagService.RefreshAsync(SnykVSPackage.Instance.DisposalToken).FireAndForget();
             if (serviceProvider.Options.AutoScan)
             {
