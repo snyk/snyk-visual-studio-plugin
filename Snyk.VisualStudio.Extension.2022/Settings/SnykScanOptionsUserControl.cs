@@ -26,14 +26,8 @@ namespace Snyk.VisualStudio.Extension.Settings
         {
             this.serviceProvider = serviceProvider;
             OptionsMemento = serviceProvider.SnykOptionsManager.Load();
-            serviceProvider.Options.SettingsChanged += OptionsOnSettingsChanged;
             InitializeComponent();
             Initialize();
-        }
-
-        private void OptionsOnSettingsChanged(object sender, SnykSettingsChangedEventArgs e)
-        {
-            CheckForIgnores();
         }
 
         private void Initialize()
@@ -50,18 +44,6 @@ namespace Snyk.VisualStudio.Extension.Settings
         private void SnykScanOptionsUserControl_Load(object sender, EventArgs e)
         {
             this.StartSastEnablementCheckLoop();
-            this.CheckForIgnores();
-        }
-        
-        private void CheckForIgnores()
-        {
-            ThreadHelper.JoinableTaskFactory.RunAsync(async () =>
-            {
-                if (!serviceProvider.Options.ConsistentIgnoresEnabled && LanguageClientHelper.IsLanguageServerReady())
-                    await serviceProvider.FeatureFlagService.RefreshAsync(SnykVSPackage.Instance.DisposalToken);
-                await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
-                this.ignoreGroupbox.Visible = serviceProvider.Options.ConsistentIgnoresEnabled;
-            }).FireAndForget();
         }
 
         private void StartSastEnablementCheckLoop()
@@ -151,9 +133,6 @@ namespace Snyk.VisualStudio.Extension.Settings
         {
             this.ossEnabledCheckBox.Checked = OptionsMemento.OssEnabled;
             this.iacEnabledCheckbox.Checked = OptionsMemento.IacEnabled;
-            this.autoScanCheckBox.Checked = OptionsMemento.AutoScan;
-            this.cbIgnoredIssues.Checked = OptionsMemento.IgnoredIssuesEnabled;
-            this.cbOpenIssues.Checked = OptionsMemento.OpenIssuesEnabled;
 
             if (cbDelta.DataSource == null)
             {
@@ -195,27 +174,12 @@ namespace Snyk.VisualStudio.Extension.Settings
             OptionsMemento.SnykCodeQualityEnabled = this.codeQualityEnabledCheckBox.Checked;
         }
 
-        private void cbOpenIssues_CheckedChanged(object sender, EventArgs e)
-        {
-            OptionsMemento.OpenIssuesEnabled = this.cbOpenIssues.Checked;
-        }
-
-        private void cbIgnoredIssues_CheckedChanged(object sender, EventArgs e)
-        {
-            OptionsMemento.IgnoredIssuesEnabled = this.cbIgnoredIssues.Checked;
-        }
-
         private void cbDelta_SelectionChangeCommitted(object sender, EventArgs e)
         {
             if (this.cbDelta.SelectedItem == null)
                 return;
             var enableDelta = this.cbDelta.SelectedItem.ToString() == "Net new issues";
             OptionsMemento.EnableDeltaFindings = enableDelta;
-        }
-
-        private void autoScanCheckBox_CheckedChanged(object sender, EventArgs e)
-        {
-            OptionsMemento.AutoScan = autoScanCheckBox.Checked;
         }
 
         private void SnykCodeSettingsLinkLabel_LinkClicked(object sender, LinkLabelLinkClickedEventArgs e)

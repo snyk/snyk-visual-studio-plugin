@@ -27,6 +27,9 @@ namespace Snyk.VisualStudio.Extension.Tests
             serviceProviderMock
                 .Setup(serviceProvider => serviceProvider.SolutionService)
                 .Returns(solutionServiceMock.Object);
+            var optionsMock = new Mock<ISnykOptions>();
+            optionsMock.Setup(x => x.InvokeSettingsChangedEvent());
+            serviceProviderMock.Setup(x => x.Options).Returns(optionsMock.Object);
         }
 
         [Fact]

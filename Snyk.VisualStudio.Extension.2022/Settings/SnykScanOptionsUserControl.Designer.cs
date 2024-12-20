@@ -34,9 +34,6 @@
             this.label4 = new System.Windows.Forms.Label();
             this.label3 = new System.Windows.Forms.Label();
             this.cbDelta = new System.Windows.Forms.ComboBox();
-            this.ignoreGroupbox = new System.Windows.Forms.GroupBox();
-            this.cbIgnoredIssues = new System.Windows.Forms.CheckBox();
-            this.cbOpenIssues = new System.Windows.Forms.CheckBox();
             this.snykIacInfoLabel = new System.Windows.Forms.Label();
             this.iacEnabledCheckbox = new System.Windows.Forms.CheckBox();
             this.snykCodeQualityInfoLabel = new System.Windows.Forms.Label();
@@ -48,12 +45,8 @@
             this.codeQualityEnabledCheckBox = new System.Windows.Forms.CheckBox();
             this.ossEnabledCheckBox = new System.Windows.Forms.CheckBox();
             this.codeSecurityEnabledCheckBox = new System.Windows.Forms.CheckBox();
-            this.userExperienceGroupBox = new System.Windows.Forms.GroupBox();
-            this.autoScanCheckBox = new System.Windows.Forms.CheckBox();
             this.mainPanel.SuspendLayout();
             this.productSelectionGroupBox.SuspendLayout();
-            this.ignoreGroupbox.SuspendLayout();
-            this.userExperienceGroupBox.SuspendLayout();
             this.SuspendLayout();
             // 
             // mainPanel
@@ -61,7 +54,6 @@
             this.mainPanel.AutoScroll = true;
             this.mainPanel.BorderStyle = System.Windows.Forms.BorderStyle.FixedSingle;
             this.mainPanel.Controls.Add(this.productSelectionGroupBox);
-            this.mainPanel.Controls.Add(this.userExperienceGroupBox);
             this.mainPanel.Dock = System.Windows.Forms.DockStyle.Fill;
             this.mainPanel.Location = new System.Drawing.Point(0, 0);
             this.mainPanel.Name = "mainPanel";
@@ -73,7 +65,6 @@
             this.productSelectionGroupBox.Controls.Add(this.label4);
             this.productSelectionGroupBox.Controls.Add(this.label3);
             this.productSelectionGroupBox.Controls.Add(this.cbDelta);
-            this.productSelectionGroupBox.Controls.Add(this.ignoreGroupbox);
             this.productSelectionGroupBox.Controls.Add(this.snykIacInfoLabel);
             this.productSelectionGroupBox.Controls.Add(this.iacEnabledCheckbox);
             this.productSelectionGroupBox.Controls.Add(this.snykCodeQualityInfoLabel);
@@ -122,45 +113,6 @@
             this.cbDelta.Size = new System.Drawing.Size(160, 24);
             this.cbDelta.TabIndex = 25;
             this.cbDelta.SelectionChangeCommitted += new System.EventHandler(this.cbDelta_SelectionChangeCommitted);
-            // 
-            // ignoreGroupbox
-            // 
-            this.ignoreGroupbox.Controls.Add(this.cbIgnoredIssues);
-            this.ignoreGroupbox.Controls.Add(this.cbOpenIssues);
-            this.ignoreGroupbox.Location = new System.Drawing.Point(493, 15);
-            this.ignoreGroupbox.Name = "ignoreGroupbox";
-            this.ignoreGroupbox.Size = new System.Drawing.Size(240, 80);
-            this.ignoreGroupbox.TabIndex = 23;
-            this.ignoreGroupbox.TabStop = false;
-            this.ignoreGroupbox.Text = "Show the following issues";
-            // 
-            // cbIgnoredIssues
-            // 
-            this.cbIgnoredIssues.AutoSize = true;
-            this.cbIgnoredIssues.Checked = true;
-            this.cbIgnoredIssues.CheckState = System.Windows.Forms.CheckState.Checked;
-            this.cbIgnoredIssues.Location = new System.Drawing.Point(21, 51);
-            this.cbIgnoredIssues.Margin = new System.Windows.Forms.Padding(3, 2, 3, 2);
-            this.cbIgnoredIssues.Name = "cbIgnoredIssues";
-            this.cbIgnoredIssues.Size = new System.Drawing.Size(117, 20);
-            this.cbIgnoredIssues.TabIndex = 25;
-            this.cbIgnoredIssues.Text = "Ignored issues";
-            this.cbIgnoredIssues.UseVisualStyleBackColor = true;
-            this.cbIgnoredIssues.CheckedChanged += new System.EventHandler(this.cbIgnoredIssues_CheckedChanged);
-            // 
-            // cbOpenIssues
-            // 
-            this.cbOpenIssues.AutoSize = true;
-            this.cbOpenIssues.Checked = true;
-            this.cbOpenIssues.CheckState = System.Windows.Forms.CheckState.Checked;
-            this.cbOpenIssues.Location = new System.Drawing.Point(21, 22);
-            this.cbOpenIssues.Margin = new System.Windows.Forms.Padding(3, 2, 3, 2);
-            this.cbOpenIssues.Name = "cbOpenIssues";
-            this.cbOpenIssues.Size = new System.Drawing.Size(104, 20);
-            this.cbOpenIssues.TabIndex = 24;
-            this.cbOpenIssues.Text = "Open issues";
-            this.cbOpenIssues.UseVisualStyleBackColor = true;
-            this.cbOpenIssues.CheckedChanged += new System.EventHandler(this.cbOpenIssues_CheckedChanged);
             // 
             // snykIacInfoLabel
             // 
@@ -300,32 +252,6 @@
             this.codeSecurityEnabledCheckBox.UseVisualStyleBackColor = true;
             this.codeSecurityEnabledCheckBox.CheckedChanged += new System.EventHandler(this.CodeSecurityEnabledCheckBox_CheckedChanged);
             // 
-            // userExperienceGroupBox
-            // 
-            this.userExperienceGroupBox.Controls.Add(this.autoScanCheckBox);
-            this.userExperienceGroupBox.Location = new System.Drawing.Point(17, 259);
-            this.userExperienceGroupBox.Margin = new System.Windows.Forms.Padding(3, 2, 3, 2);
-            this.userExperienceGroupBox.Name = "userExperienceGroupBox";
-            this.userExperienceGroupBox.Padding = new System.Windows.Forms.Padding(11, 10, 11, 10);
-            this.userExperienceGroupBox.Size = new System.Drawing.Size(747, 64);
-            this.userExperienceGroupBox.TabIndex = 21;
-            this.userExperienceGroupBox.TabStop = false;
-            this.userExperienceGroupBox.Text = "User experience";
-            // 
-            // autoScanCheckBox
-            // 
-            this.autoScanCheckBox.AutoSize = true;
-            this.autoScanCheckBox.Checked = true;
-            this.autoScanCheckBox.CheckState = System.Windows.Forms.CheckState.Checked;
-            this.autoScanCheckBox.Location = new System.Drawing.Point(16, 28);
-            this.autoScanCheckBox.Margin = new System.Windows.Forms.Padding(3, 2, 3, 2);
-            this.autoScanCheckBox.Name = "autoScanCheckBox";
-            this.autoScanCheckBox.Size = new System.Drawing.Size(266, 20);
-            this.autoScanCheckBox.TabIndex = 10;
-            this.autoScanCheckBox.Text = "Scan automatically on start-up and save";
-            this.autoScanCheckBox.UseVisualStyleBackColor = true;
-            this.autoScanCheckBox.CheckedChanged += new System.EventHandler(this.autoScanCheckBox_CheckedChanged);
-            // 
             // SnykScanOptionsUserControl
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(8F, 16F);
@@ -336,10 +262,6 @@
             this.mainPanel.ResumeLayout(false);
             this.productSelectionGroupBox.ResumeLayout(false);
             this.productSelectionGroupBox.PerformLayout();
-            this.ignoreGroupbox.ResumeLayout(false);
-            this.ignoreGroupbox.PerformLayout();
-            this.userExperienceGroupBox.ResumeLayout(false);
-            this.userExperienceGroupBox.PerformLayout();
             this.ResumeLayout(false);
 
         }
@@ -351,9 +273,6 @@
         private System.Windows.Forms.Label label4;
         private System.Windows.Forms.Label label3;
         private System.Windows.Forms.ComboBox cbDelta;
-        private System.Windows.Forms.GroupBox ignoreGroupbox;
-        private System.Windows.Forms.CheckBox cbIgnoredIssues;
-        private System.Windows.Forms.CheckBox cbOpenIssues;
         private System.Windows.Forms.Label snykIacInfoLabel;
         private System.Windows.Forms.CheckBox iacEnabledCheckbox;
         private System.Windows.Forms.Label snykCodeQualityInfoLabel;
@@ -365,7 +284,5 @@
         private System.Windows.Forms.CheckBox codeQualityEnabledCheckBox;
         private System.Windows.Forms.CheckBox ossEnabledCheckBox;
         private System.Windows.Forms.CheckBox codeSecurityEnabledCheckBox;
-        private System.Windows.Forms.GroupBox userExperienceGroupBox;
-        private System.Windows.Forms.CheckBox autoScanCheckBox;
     }
 }

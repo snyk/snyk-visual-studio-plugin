@@ -42,7 +42,7 @@ namespace Snyk.VisualStudio.Extension.Tests.Language
             serviceProviderMock.SetupGet(sp => sp.SnykOptionsManager).Returns(snykOptionsManagerMock.Object);
             serviceProviderMock.SetupGet(sp => sp.FeatureFlagService).Returns(featureFlagServiceMock.Object);
             serviceProviderMock.SetupGet(sp => sp.LanguageClientManager).Returns(languageClientManagerMock.Object);
-
+            optionsMock.SetupAllProperties();
             cut = new SnykLanguageClientCustomTarget(serviceProviderMock.Object);
         }
 

@@ -50,10 +50,12 @@ namespace Snyk.VisualStudio.Extension
     [ProvideService(typeof(ISnykService), IsAsyncQueryable = true)]
     [ProvideMenuResource("Menus.ctmenu", 1)]
     [ProvideToolWindow(typeof(SnykToolWindow), Style = VsDockStyle.Tabbed)]
-    [ProvideOptionPage(typeof(SnykGeneralOptionsDialogPage), "Snyk", "General", 1000, 1001, true)]
-    [ProvideOptionPage(typeof(SnykSolutionOptionsDialogPage), "Snyk", "Solution settings", 1000, 1002, true)]
-    [ProvideOptionPage(typeof(SnykCliOptionsDialogPage), "Snyk", "CLI settings", 1000, 1003, true)]
-    [ProvideOptionPage(typeof(SnykScanOptionsDialogPage), "Snyk", "Scan settings", 1000, 1004, true)]
+    [ProvideOptionPage(typeof(SnykGeneralOptionsDialogPage), "Snyk", "Account", 1000, 1001, true)]
+    [ProvideOptionPage(typeof(SnykScanOptionsDialogPage), "Snyk", "Scan Configuration", 1000, 1002, true)]
+    [ProvideOptionPage(typeof(SnykSolutionOptionsDialogPage), "Snyk", "Solution settings", 1000, 1003, true)]
+    [ProvideOptionPage(typeof(SnykCliOptionsDialogPage), "Snyk", "CLI settings", 1000, 1004, true)]
+    [ProvideOptionPage(typeof(SnykExperimentalDialogPage), "Snyk", "Experimental", 1000, 1005, true)]
+    [ProvideOptionPage(typeof(SnykUserExperienceDialogPage), "Snyk", "User Experience", 1000, 1006, true)]
     public sealed class SnykVSPackage : AsyncPackage
     {
         /// <summary>
@@ -106,6 +108,8 @@ namespace Snyk.VisualStudio.Extension
         public ISnykGeneralOptionsDialogPage SnykGeneralOptionsDialogPage { get; private set; }
         public ISnykCliOptionsDialogPage SnykCliOptionsDialogPage { get; private set; }
         public ISnykScanOptionsDialogPage SnykScanOptionsDialogPage { get; private set; }
+        public ISnykExperimentalDialogPage SnykExperimentalDialogPage { get; private set; }
+        public ISnykUserExperienceDialogPage SnykUserExperienceDialogPage { get; private set; }
 
         /// <summary>
         /// Gets <see cref="SnykToolWindow"/> instance.
@@ -342,6 +346,20 @@ namespace Snyk.VisualStudio.Extension
                 SnykScanOptionsDialogPage =
                     (SnykScanOptionsDialogPage)GetDialogPage(typeof(SnykScanOptionsDialogPage));
                 SnykScanOptionsDialogPage.Initialize(this.serviceProvider);
+            }
+
+            if (SnykUserExperienceDialogPage == null)
+            {
+                SnykUserExperienceDialogPage =
+                    (SnykUserExperienceDialogPage)GetDialogPage(typeof(SnykUserExperienceDialogPage));
+                SnykUserExperienceDialogPage.Initialize(this.serviceProvider);
+            }
+
+            if (SnykExperimentalDialogPage == null)
+            {
+                SnykExperimentalDialogPage =
+                    (SnykExperimentalDialogPage)GetDialogPage(typeof(SnykExperimentalDialogPage));
+                SnykExperimentalDialogPage.Initialize(this.serviceProvider);
             }
         }
 

@@ -122,6 +122,8 @@ namespace Snyk.VisualStudio.Extension.Settings
 
                 ThreadHelper.JoinableTaskFactory.RunAsync(async () =>
                 {
+                    await serviceProvider.LanguageClientManager.InvokeLogout(SnykVSPackage.Instance
+                        .DisposalToken);
                     await serviceProvider.LanguageClientManager.InvokeLogin(SnykVSPackage.Instance
                         .DisposalToken);
                 }).FireAndForget();

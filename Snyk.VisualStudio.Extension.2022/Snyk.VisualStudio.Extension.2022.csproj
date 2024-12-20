@@ -147,10 +147,12 @@
     <Compile Include="Settings\ErrorProviderExtensions.cs" />
     <Compile Include="Settings\IPersistableOption.cs" />
     <Compile Include="Settings\ISnykCliOptionsDialogPage.cs" />
+    <Compile Include="Settings\ISnykExperimentalDialogPage.cs" />
     <Compile Include="Settings\ISnykGeneralOptionsDialogPage.cs" />
     <Compile Include="Settings\ISnykOptions.cs" />
     <Compile Include="Settings\ISnykOptionsManager.cs" />
     <Compile Include="Settings\ISnykScanOptionsDialogPage.cs" />
+    <Compile Include="Settings\ISnykUserExperienceDialogPage.cs" />
     <Compile Include="Settings\SnykCliOptionsDialogPage.cs">
       <SubType>Component</SubType>
     </Compile>
@@ -159,6 +161,15 @@
     </Compile>
     <Compile Include="Settings\SnykCliOptionsUserControl.Designer.cs">
       <DependentUpon>SnykCliOptionsUserControl.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Settings\SnykExperimentalDialogPage.cs">
+      <SubType>Component</SubType>
+    </Compile>
+    <Compile Include="Settings\SnykExperimentalUserControl.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="Settings\SnykExperimentalUserControl.Designer.cs">
+      <DependentUpon>SnykExperimentalUserControl.cs</DependentUpon>
     </Compile>
     <Compile Include="Settings\SnykGeneralOptionsDialogPage.cs">
       <SubType>Component</SubType>
@@ -193,6 +204,15 @@
       <DependentUpon>SnykSolutionOptionsUserControl.cs</DependentUpon>
     </Compile>
     <Compile Include="Settings\SnykSolutionSettings.cs" />
+    <Compile Include="Settings\SnykUserExperienceDialogPage.cs">
+      <SubType>Component</SubType>
+    </Compile>
+    <Compile Include="Settings\SnykUserExperienceUserControl.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="Settings\SnykUserExperienceUserControl.Designer.cs">
+      <DependentUpon>SnykUserExperienceUserControl.cs</DependentUpon>
+    </Compile>
     <Compile Include="SnykGuids.cs" />
     <Compile Include="SnykIcons.Designer.cs">
       <DependentUpon>SnykIcons.resx</DependentUpon>
@@ -597,6 +617,9 @@
     <EmbeddedResource Include="Settings\SnykCliOptionsUserControl.resx">
       <DependentUpon>SnykCliOptionsUserControl.cs</DependentUpon>
     </EmbeddedResource>
+    <EmbeddedResource Include="Settings\SnykExperimentalUserControl.resx">
+      <DependentUpon>SnykExperimentalUserControl.cs</DependentUpon>
+    </EmbeddedResource>
     <EmbeddedResource Include="Settings\SnykGeneralSettingsUserControl.resx">
       <DependentUpon>SnykGeneralSettingsUserControl.cs</DependentUpon>
       <SubType>Designer</SubType>
@@ -606,6 +629,9 @@
     </EmbeddedResource>
     <EmbeddedResource Include="Settings\SnykSolutionOptionsUserControl.resx">
       <DependentUpon>SnykSolutionOptionsUserControl.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Settings\SnykUserExperienceUserControl.resx">
+      <DependentUpon>SnykUserExperienceUserControl.cs</DependentUpon>
     </EmbeddedResource>
     <EmbeddedResource Include="SnykIcons.resx">
       <LastGenOutput>SnykIcons.Designer.cs</LastGenOutput>

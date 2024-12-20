@@ -37,17 +37,11 @@ public class SnykScanOptionsDialogPage : DialogPage, ISnykScanOptionsDialogPage
     // This method is used when the user clicks "Ok"
     public override void SaveSettingsToStorage()
     {
-        this.snykOptions.AutoScan = SnykCliOptionsUserControl.OptionsMemento.AutoScan;
         this.snykOptions.EnableDeltaFindings = SnykCliOptionsUserControl.OptionsMemento.EnableDeltaFindings;
-        this.snykOptions.IgnoredIssuesEnabled = SnykCliOptionsUserControl.OptionsMemento.IgnoredIssuesEnabled;
-        this.snykOptions.OpenIssuesEnabled = SnykCliOptionsUserControl.OptionsMemento.OpenIssuesEnabled;
         this.snykOptions.SnykCodeQualityEnabled = SnykCliOptionsUserControl.OptionsMemento.SnykCodeQualityEnabled;
         this.snykOptions.SnykCodeSecurityEnabled = SnykCliOptionsUserControl.OptionsMemento.SnykCodeSecurityEnabled;
         this.snykOptions.IacEnabled = SnykCliOptionsUserControl.OptionsMemento.IacEnabled;
         this.snykOptions.OssEnabled = SnykCliOptionsUserControl.OptionsMemento.OssEnabled;
-        if (LanguageClientHelper.IsLanguageServerReady() && this.snykOptions.AutoScan)
-            serviceProvider.LanguageClientManager.InvokeWorkspaceScanAsync(SnykVSPackage
-                .Instance.DisposalToken).FireAndForget();
 
         this.serviceProvider.SnykOptionsManager.Save(this.snykOptions);
     }
