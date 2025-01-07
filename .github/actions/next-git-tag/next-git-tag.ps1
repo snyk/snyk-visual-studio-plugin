@@ -9,7 +9,11 @@
 Param(
     [Parameter(Mandatory = $true)]
     [ValidateSet("semver", "time")]
-    [string]$VersionType  # Parameter to choose the versioning method: "semver" or "time"
+    [string]$VersionType,  # Parameter to choose the versioning method: "semver" or "time"
+
+    [Parameter(Mandatory = $false)]
+    [ValidateSet("patch", "minor", "major")]
+    [string]$BumpType = "patch" # Parameter to choose the bump type for semver mode
 )
 
 if ($VersionType -eq "semver") {
@@ -36,8 +40,24 @@ if ($VersionType -eq "semver") {
     Write-Verbose "MINOR part: $Minor"
     Write-Verbose "PATCH part: $Patch"
 
-    # Hardcoded increment for patch
-    $Patch += 1
+    switch ($BumpType) {
+        "major" {
+            $Major += 1
+            $Minor = 0
+            $Patch = 0
+        }
+        "minor" {
+            $Minor += 1
+            $Patch = 0
+        }
+        "patch" {
+            $Patch += 1
+        }
+        default {
+            Write-Error "Invalid bump type specified: $BumpType"
+            exit 1
+        }
+    }
 
     $NextSemverTag = "$Major.$Minor.$Patch"
     Write-Host "Next SemVer tag: $NextSemverTag"
