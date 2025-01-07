@@ -12,8 +12,8 @@ Param(
     [string]$VersionType,  # Parameter to choose the versioning method: "semver" or "time"
 
     [Parameter(Mandatory = $false)]
-    [ValidateSet("patch", "minor", "major")]
-    [string]$BumpType = "patch" # Parameter to choose the bump type for semver mode
+    [ValidateSet("incrementPatch", "incrementMinor", "incrementMajor")]
+    [string]$BumpType = "incrementPatch" # Parameter to choose the bump type for semver mode
 )
 
 if ($VersionType -eq "semver") {
@@ -41,16 +41,16 @@ if ($VersionType -eq "semver") {
     Write-Verbose "PATCH part: $Patch"
 
     switch ($BumpType) {
-        "major" {
+        "incrementMajor" {
             $Major += 1
             $Minor = 0
             $Patch = 0
         }
-        "minor" {
+        "incrementMinor" {
             $Minor += 1
             $Patch = 0
         }
-        "patch" {
+        "incrementPatch" {
             $Patch += 1
         }
         default {

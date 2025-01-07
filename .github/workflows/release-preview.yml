@@ -15,7 +15,7 @@ jobs:
     with:
       solution-file-path: .
       channel: preview
-      bump_type: "patch"
+      incrementLevel: incrementPatch
     secrets: inherit
   run-integration-tests:
     needs: build-project

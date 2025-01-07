@@ -9,10 +9,10 @@ on:
       channel:
         type: string
         default: preview
-      bump_type:
-        description: "Type of version bump (patch, minor, major)"
+      incrementLevel:
+        description: 'Version level to increment'
         type: string
-        default: patch
+        default: incrementPatch
     outputs:
       version:
         description: 'next Git tag in semver format'
@@ -36,7 +36,7 @@ jobs:
       id: vsix_version
       run: |
         if ("${{ inputs.channel}}" -eq "stable") {
-          & ".\.github\actions\next-git-tag\next-git-tag.ps1" semver "${{ inputs.bump_type }}"
+          & ".\.github\actions\next-git-tag\next-git-tag.ps1" semver "${{ inputs.incrementLevel }}"
         }
         elseif ("${{ inputs.channel }}" -eq "preview") {
           & ".\.github\actions\next-git-tag\next-git-tag.ps1" time
