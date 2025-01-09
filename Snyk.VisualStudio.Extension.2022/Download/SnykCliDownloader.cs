@@ -18,7 +18,7 @@ namespace Snyk.VisualStudio.Extension.Download
     public class SnykCliDownloader
     {
         public const string DefaultBaseDownloadUrl = "https://downloads.snyk.io";
-        public const string DefaultReleaseChannel = "preview";
+        public const string DefaultReleaseChannel = "stable";
 
         private const string LatestReleaseVersionUrlScheme = "{0}/cli/{1}/ls-protocol-version-" + LsConstants.ProtocolVersion;
         private const string LatestReleaseDownloadUrlScheme = "{0}/cli/{1}/" + SnykCli.CliFileName;

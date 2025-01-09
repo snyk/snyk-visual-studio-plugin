@@ -15,6 +15,7 @@ jobs:
     with:
       solution-file-path: .
       channel: preview
+      incrementLevel: incrementPatch
     secrets: inherit
   run-integration-tests:
     needs: build-project

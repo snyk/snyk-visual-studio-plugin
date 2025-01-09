@@ -2,7 +2,16 @@ name: Release Extension
 
 on:
   workflow_dispatch:
-
+    inputs:
+      incrementLevel:
+        description: 'Version level to increment'
+        required: true
+        type: choice
+        options:
+          - incrementPatch
+          - incrementMinor
+          - incrementMajor
+        default: incrementPatch
 env:
   SOLUTION_FILE_PATH: .
   DEFAULT_BRANCH: main
@@ -13,6 +22,7 @@ jobs:
     with:
       solution-file-path: .
       channel: stable
+      incrementLevel: ${{ inputs.incrementLevel }}
     secrets: inherit
   run-integration-tests:
     needs: build-project
