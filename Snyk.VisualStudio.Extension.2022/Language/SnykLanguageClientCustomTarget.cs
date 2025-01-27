@@ -141,7 +141,7 @@ namespace Snyk.VisualStudio.Extension.Language
             serviceProvider.FeatureFlagService.RefreshAsync(SnykVSPackage.Instance.DisposalToken).FireAndForget();
             if (serviceProvider.Options.AutoScan)
             {
-                await serviceProvider.TasksService.ScanAsync();
+                serviceProvider.TasksService.ScanAsync().FireAndForget();
             }
         }
 
