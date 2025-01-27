@@ -96,6 +96,48 @@ namespace Snyk.VisualStudio.Extension.Tests.Language
         }
 
         [Fact]
+        public async Task OnPublishDiagnostics316_ShouldHandleNonAsciiPath()
+        {
+            // Arrange
+            var arg = JObject.Parse(@"{
+                'uri': 'file:///c:/users/blabla/dir - with - space üaöä中文/file.cs',
+                'diagnostics': [
+                    {
+                        'source': 'Snyk Code',
+                        'data': { 'id': 'issue1', 'isIgnored': false }
+                    }
+                ]
+            }");
+
+            // Act
+            await cut.OnPublishDiagnostics316(arg);
+
+            // Assert
+            Assert.True(cut.GetCodeDictionary().ContainsKey("c:\\users\\user\\dir - with - space üaöä中文\\file.cs"));
+        }
+
+        [Fact]
+        public async Task OnPublishDiagnostics316_ShouldHandlePath()
+        {
+            // Arrange
+            var arg = JObject.Parse(@"{
+                'uri': 'file:///c:/users/user/dir/file.cs',
+                'diagnostics': [
+                    {
+                        'source': 'Snyk Code',
+                        'data': { 'id': 'issue1', 'isIgnored': false }
+                    }
+                ]
+            }");
+
+            // Act
+            await cut.OnPublishDiagnostics316(arg);
+
+            // Assert
+            Assert.True(cut.GetCodeDictionary().ContainsKey("c:\\users\\user\\dir\\file.cs"));
+        }
+
+        [Fact]
         public async Task OnSnykScan_ShouldFireScanningCancelledEvent_WhenCancellationRequested()
         {
             // Arrange
@@ -156,7 +198,7 @@ namespace Snyk.VisualStudio.Extension.Tests.Language
             Assert.Equal(2, optionsMock.Object.TrustedFolders.Count);
             Assert.Contains("/folder1", optionsMock.Object.TrustedFolders);
             Assert.Contains("/folder2", optionsMock.Object.TrustedFolders);
-            snykOptionsManagerMock.Verify(s => s.Save(It.IsAny<IPersistableOptions>()), Times.Once);
+            snykOptionsManagerMock.Verify(s => s.Save(It.IsAny<IPersistableOptions>(), false), Times.Once);
             languageClientManagerMock.Verify(s => s.DidChangeConfigurationAsync(It.IsAny<CancellationToken>()), Times.Once);
         }
 

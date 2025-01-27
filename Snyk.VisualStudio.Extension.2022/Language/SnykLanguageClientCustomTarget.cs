@@ -225,6 +225,12 @@ namespace Snyk.VisualStudio.Extension.Language
                 _ => ""
             };
         }
+
+        // Only used in tests
+        public ConcurrentDictionary<string, IEnumerable<Issue>> GetCodeDictionary()
+        {
+            return snykCodeIssueDictionary;
+        }
 #pragma warning restore CS1998 // Async method lacks 'await' operators and will run synchronously
     }
 }
