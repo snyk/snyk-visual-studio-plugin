@@ -100,7 +100,7 @@ namespace Snyk.VisualStudio.Extension.Tests.Language
         {
             // Arrange
             var arg = JObject.Parse(@"{
-                'uri': 'file:///c:/users/blabla/dir - with - space üaöä中文/file.cs',
+                'uri': 'file:///c:/users/user/dir - with - space üaöä中文/file.cs',
                 'diagnostics': [
                     {
                         'source': 'Snyk Code',
@@ -111,7 +111,7 @@ namespace Snyk.VisualStudio.Extension.Tests.Language
 
             // Act
             await cut.OnPublishDiagnostics316(arg);
-
+            
             // Assert
             Assert.True(cut.GetCodeDictionary().ContainsKey("c:\\users\\user\\dir - with - space üaöä中文\\file.cs"));
         }

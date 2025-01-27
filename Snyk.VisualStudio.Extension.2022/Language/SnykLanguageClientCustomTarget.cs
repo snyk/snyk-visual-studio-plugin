@@ -152,7 +152,7 @@ namespace Snyk.VisualStudio.Extension.Language
             if (trustedFolders == null) return;
 
             serviceProvider.Options.TrustedFolders = new HashSet<string>(trustedFolders.TrustedFolders);
-            this.serviceProvider.SnykOptionsManager.Save(serviceProvider.Options);
+            this.serviceProvider.SnykOptionsManager.Save(serviceProvider.Options, false);
             await serviceProvider.LanguageClientManager.DidChangeConfigurationAsync(SnykVSPackage.Instance.DisposalToken);
         }
 
