@@ -86,23 +86,28 @@ namespace Snyk.VisualStudio.Extension.Settings
         // This method is used when the user clicks "Ok"
         public override void SaveSettingsToStorage()
         {
-            HandleScanConfiguration();
-            HandleExperimentalConfiguration();
-            HandleUserExperienceConfiguration();
-            HandleSolutionOptionsConfiguration();
-
-            var hasCliChanges = HandleCliConfiguration();
-
-            this.serviceProvider.SnykOptionsManager.Save(this.SnykOptions);
-
-            if (hasCliChanges)
+            ThreadHelper.JoinableTaskFactory.RunAsync(() =>
             {
-                HandleCliChange();
-                return;
-            }
+                HandleScanConfiguration();
+                HandleExperimentalConfiguration();
+                HandleUserExperienceConfiguration();
+                HandleSolutionOptionsConfiguration();
 
-            if (LanguageClientHelper.IsLanguageServerReady() && this.SnykOptions.AutoScan)
-                LanguageClientHelper.LanguageClientManager().InvokeWorkspaceScanAsync(SnykVSPackage.Instance.DisposalToken).FireAndForget();
+                var hasCliChanges = HandleCliConfiguration();
+
+                this.serviceProvider.SnykOptionsManager.Save(this.SnykOptions);
+
+                if (hasCliChanges)
+                {
+                    HandleCliChange();
+                    return Task.CompletedTask;
+                }
+
+                if (LanguageClientHelper.IsLanguageServerReady() && this.SnykOptions.AutoScan)
+                    this.serviceProvider.TasksService.ScanAsync().FireAndForget();
+
+                return Task.CompletedTask;
+            }).FireAndForget();
         }
 
         private void HandleSolutionOptionsConfiguration()

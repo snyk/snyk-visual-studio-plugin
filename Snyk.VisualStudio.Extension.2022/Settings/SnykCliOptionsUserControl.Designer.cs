@@ -101,6 +101,7 @@
             this.releaseChannel.Name = "releaseChannel";
             this.releaseChannel.Size = new System.Drawing.Size(160, 24);
             this.releaseChannel.TabIndex = 23;
+            this.releaseChannel.SelectionChangeCommitted += new System.EventHandler(this.releaseChannel_SelectionChangeCommitted);
             // 
             // cliReleaseChannelLabel
             // 
