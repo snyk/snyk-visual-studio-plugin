@@ -901,7 +901,14 @@ namespace Snyk.VisualStudio.Extension.UI.Toolwindow
                 return;
             }
 
-            if (options.ApiToken.IsValid())
+            var isFolderTrusted = ThreadHelper.JoinableTaskFactory.Run(async () =>
+            {
+                var solutionFolderPath = await this.serviceProvider.SolutionService.GetSolutionFolderAsync();
+                var isFolderTrusted = this.serviceProvider.WorkspaceTrustService.IsFolderTrusted(solutionFolderPath);
+                return isFolderTrusted;
+            });
+
+            if (options.ApiToken.IsValid() && isFolderTrusted)
             {
                 this.context.TransitionTo(RunScanState.Instance);
                 return;

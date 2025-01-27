@@ -7,7 +7,7 @@ public interface ISnykOptionsManager
     void LoadSettingsFromFile();
     void SaveSettingsToFile();
     ISnykOptions Load();
-    void Save(IPersistableOptions options);
+    void Save(IPersistableOptions options, bool triggerSettingsChangedEvent = true);
 
     /// <summary>
     /// Get CLI additional options string.
