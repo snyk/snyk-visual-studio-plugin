@@ -78,6 +78,8 @@ namespace Snyk.VisualStudio.Extension.Commands
         protected override void Execute(object sender, EventArgs eventArgs)
         {
             base.Execute(sender, eventArgs);
+
+            SnykVSPackage.ServiceProvider.ToolWindow.Show();
             ThreadHelper.JoinableTaskFactory.RunAsync(SnykTasksService.Instance.ScanAsync).FireAndForget();
         }
 
