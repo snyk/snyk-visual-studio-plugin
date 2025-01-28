@@ -79,7 +79,6 @@ namespace Snyk.VisualStudio.Extension.Commands
         {
             base.Execute(sender, eventArgs);
 
-            SnykVSPackage.ServiceProvider.ToolWindow.Show();
             ThreadHelper.JoinableTaskFactory.RunAsync(SnykTasksService.Instance.ScanAsync).FireAndForget();
         }
 

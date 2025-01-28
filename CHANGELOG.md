@@ -1,5 +1,11 @@
 # Snyk Security Changelog
 
+## [2.0.1]
+### Changed
+- Fix UI freezes when ignoring trust, downloading or triggering scans.
+- Fix CLI release channel not being persisted.
+- Fix showing scan results when path contains non-ascii characters.
+
 ## [2.0.0]
 ### Changed
 - Visual Studio extension is now fully integrated with Snyk Language Server protocol.
