@@ -76,8 +76,8 @@ jobs:
     - name: Create and push Git tag release
       run: |
         git tag ${{ needs.build-project.outputs.version }}
-        git push origin main
-        git push origin main --tags
+        git push origin ${{ github.ref_name }}
+        git push origin ${{ github.ref_name }} --tags
 
     - name: Create GitHub Release
       id: create_release

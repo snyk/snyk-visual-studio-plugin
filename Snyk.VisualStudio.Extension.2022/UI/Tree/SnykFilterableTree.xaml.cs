@@ -136,10 +136,11 @@ namespace Snyk.VisualStudio.Extension.UI.Tree
             var ignoredIssueCount = 0;
             var fixableIssueCount = 0;
             var currentFolder = ThreadHelper.JoinableTaskFactory.Run(async () =>
-                await serviceProvider.SolutionService.GetSolutionFolderAsync()).Replace("\\", "/");
+                await serviceProvider.SolutionService.GetSolutionFolderAsync()).Replace("\\", "/").TrimEnd('/');
+            
             var options = serviceProvider.Options;
             var fileTreeNodes = new List<FileTreeNode>();
-            foreach (var kv in scanResultDictionary.Where(x => x.Key.Replace("\\", "/").Contains(currentFolder)))
+            foreach (var kv in scanResultDictionary.Where(x => x.Key.Replace("\\", "/").TrimEnd('/').Contains(currentFolder)))
             {
                 var issueList = kv.Value.ToList();
 
@@ -178,8 +179,9 @@ namespace Snyk.VisualStudio.Extension.UI.Tree
                 }
             }
 
-
-            var totalIssueCount = scanResultDictionary.Values.SelectMany(value => value).Count();
+            var totalIssueCount = scanResultDictionary
+                .Where(x => x.Key.Replace("\\", "/").TrimEnd('/').Contains(currentFolder))
+                .SelectMany(x => x.Value).Count();
 
             AddInfoTreeNodes(rootNode, totalIssueCount, ignoredIssueCount, fixableIssueCount, options);
 

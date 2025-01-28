@@ -86,23 +86,28 @@ namespace Snyk.VisualStudio.Extension.Settings
         // This method is used when the user clicks "Ok"
         public override void SaveSettingsToStorage()
         {
-            HandleScanConfiguration();
-            HandleExperimentalConfiguration();
-            HandleUserExperienceConfiguration();
-            HandleSolutionOptionsConfiguration();
-
-            var hasCliChanges = HandleCliConfiguration();
-
-            this.serviceProvider.SnykOptionsManager.Save(this.SnykOptions);
-
-            if (hasCliChanges)
+            ThreadHelper.JoinableTaskFactory.RunAsync(() =>
             {
-                HandleCliChange();
-                return;
-            }
+                HandleScanConfiguration();
+                HandleExperimentalConfiguration();
+                HandleUserExperienceConfiguration();
+                HandleSolutionOptionsConfiguration();
 
-            if (LanguageClientHelper.IsLanguageServerReady() && this.SnykOptions.AutoScan)
-                LanguageClientHelper.LanguageClientManager().InvokeWorkspaceScanAsync(SnykVSPackage.Instance.DisposalToken).FireAndForget();
+                var hasCliChanges = HandleCliConfiguration();
+
+                this.serviceProvider.SnykOptionsManager.Save(this.SnykOptions);
+
+                if (hasCliChanges)
+                {
+                    HandleCliChange();
+                    return Task.CompletedTask;
+                }
+
+                if (LanguageClientHelper.IsLanguageServerReady() && this.SnykOptions.AutoScan)
+                    this.serviceProvider.TasksService.ScanAsync().FireAndForget();
+
+                return Task.CompletedTask;
+            }).FireAndForget();
         }
 
         private void HandleSolutionOptionsConfiguration()
@@ -198,8 +203,15 @@ namespace Snyk.VisualStudio.Extension.Settings
                     Logger.Error("Language Server is not initialized yet.");
                     return;
                 }
+
                 if (this.SnykOptions.ApiToken.IsValid())
+                {
+                    if (SnykOptions.AutoScan)
+                    {
+                        ThreadHelper.JoinableTaskFactory.RunAsync(serviceProvider.TasksService.ScanAsync).FireAndForget();
+                    }
                     return;
+                }
 
                 Logger.Information("Api token is invalid. Attempting to authenticate via snyk auth");
 
@@ -207,6 +219,7 @@ namespace Snyk.VisualStudio.Extension.Settings
                 {
                     await serviceProvider.LanguageClientManager.InvokeLogout(SnykVSPackage.Instance
                         .DisposalToken);
+                    Logger.Information("Invoking InvokeLogin for auth");
                     await serviceProvider.LanguageClientManager.InvokeLogin(SnykVSPackage.Instance
                         .DisposalToken);
                 }).FireAndForget();
@@ -214,6 +227,7 @@ namespace Snyk.VisualStudio.Extension.Settings
                 ThreadHelper.JoinableTaskFactory.Run(async () =>
                 {
                     await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
+                    Logger.Information("Attempting to call AuthDialogWindow.Instance.ShowDialog()");
                     AuthDialogWindow.Instance.ShowDialog();
                 });
             }

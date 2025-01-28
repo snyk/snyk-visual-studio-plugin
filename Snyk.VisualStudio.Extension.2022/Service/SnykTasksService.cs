@@ -228,16 +228,6 @@ namespace Snyk.VisualStudio.Extension.Service
             try
             {
                 var selectedFeatures = await this.GetFeaturesSettingsAsync();
-                await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
-
-                if (!this.serviceProvider.SolutionService.IsSolutionOpen())
-                {
-                    this.FireOssError("No open solution", selectedFeatures);
-
-                    Logger.Information("Solution not opened");
-
-                    return;
-                }
 
                 var isFolderTrusted = await this.IsFolderTrustedAsync();
                 if (!isFolderTrusted)
@@ -261,10 +251,11 @@ namespace Snyk.VisualStudio.Extension.Service
                     FireSnykIacDisabledError(selectedFeatures.IacEnabled);
                 }
 
-                var componentModel = Package.GetGlobalService(typeof(SComponentModel)) as IComponentModel;
-
-                Assumes.Present(componentModel);
-                var languageServerClientManager = componentModel.GetService<ILanguageClientManager>();
+                if (!LanguageClientHelper.IsLanguageServerReady())
+                {
+                    Logger.Error("Attempting to scan and language server is not ready yet");
+                    return;
+                }
                 this.SnykScanTokenSource = new CancellationTokenSource();
 
                 var progressWorker = new SnykProgressWorker
@@ -273,7 +264,7 @@ namespace Snyk.VisualStudio.Extension.Service
                     TokenSource = this.SnykScanTokenSource,
                 };
 
-                await languageServerClientManager.InvokeWorkspaceScanAsync(progressWorker.TokenSource.Token);
+                await LanguageClientHelper.LanguageClientManager().InvokeWorkspaceScanAsync(progressWorker.TokenSource.Token);
             }
             catch (Exception ex)
             {
@@ -294,7 +285,7 @@ namespace Snyk.VisualStudio.Extension.Service
             {
                 return true;
             }
-
+            await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
             var trustDialog = new TrustDialogWindow(solutionFolderPath);
             var trusted = trustDialog.ShowModal();
 
@@ -305,9 +296,13 @@ namespace Snyk.VisualStudio.Extension.Service
 
             try
             {
-                this.serviceProvider.WorkspaceTrustService.AddFolderToTrusted(solutionFolderPath);
-                this.serviceProvider.Options.InvokeSettingsChangedEvent();
-                Logger.Information("Workspace folder was trusted: {SolutionFolderPath}", solutionFolderPath);
+                ThreadHelper.JoinableTaskFactory.RunAsync(async () =>
+                {
+                    this.serviceProvider.WorkspaceTrustService.AddFolderToTrusted(solutionFolderPath);
+                    Logger.Information("Workspace folder was trusted: {SolutionFolderPath}", solutionFolderPath);
+                    await this.serviceProvider.LanguageClientManager.DidChangeConfigurationAsync(SnykVSPackage
+                        .Instance.DisposalToken);
+                }).FireAndForget();
                 return true;
             }
             catch (ArgumentException e)

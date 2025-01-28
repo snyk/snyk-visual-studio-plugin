@@ -68,7 +68,7 @@ namespace Snyk.VisualStudio.Extension.Settings
             };
         }
 
-        public void Save(IPersistableOptions options)
+        public void Save(IPersistableOptions options, bool triggerSettingsChangedEvent = true)
         {
             snykSettings.DeviceId = options.DeviceId;
             snykSettings.TrustedFolders = options.TrustedFolders;
@@ -100,7 +100,8 @@ namespace Snyk.VisualStudio.Extension.Settings
             snykSettings.OssEnabled = options.OssEnabled;
 
             this.SaveSettingsToFile();
-            serviceProvider.Options.InvokeSettingsChangedEvent();
+            if(triggerSettingsChangedEvent)
+                serviceProvider.Options.InvokeSettingsChangedEvent();
         }
 
         /// <summary>

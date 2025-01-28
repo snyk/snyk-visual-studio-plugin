@@ -82,5 +82,13 @@ namespace Snyk.VisualStudio.Extension.Settings
         {
             OptionsMemento.BinariesAutoUpdate = manageBinariesAutomaticallyCheckbox.Checked;
         }
+
+        private void releaseChannel_SelectionChangeCommitted(object sender, System.EventArgs e)
+        {
+            var selectedItem = this.releaseChannel.SelectedItem?.ToString() ?? "";
+            if (string.IsNullOrEmpty(selectedItem))
+                return;
+            OptionsMemento.CliReleaseChannel = selectedItem;
+        }
     }
 }
