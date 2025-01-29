@@ -1,6 +1,7 @@
 ﻿using System.Linq;
 using System;
 using Microsoft.VisualStudio.PlatformUI;
+using Snyk.VisualStudio.Extension.Theme;
 
 namespace Snyk.VisualStudio.Extension.UI.Html
 {
@@ -40,6 +41,7 @@ namespace Snyk.VisualStudio.Extension.UI.Html
 
         public virtual string ReplaceCssVariables(string html)
         {
+            var isDarkTheme = ThemeInfo.IsDarkTheme();
             var css = "<style nonce=\"${nonce}\">";
             css += GetCss();
 
@@ -56,7 +58,9 @@ namespace Snyk.VisualStudio.Extension.UI.Html
             html = html.Replace("var(--horizontal-border-color)", VSColorTheme.GetThemedColor(EnvironmentColors.ClassDesignerDefaultShapeTextBrushKey).ToHex());
             html = html.Replace("var(--code-background-color)", VSColorTheme.GetThemedColor(EnvironmentColors.EditorExpansionFillBrushKey).ToHex());
             html = html.Replace("var(--circle-color)", borderColor);
-
+            html = html.Replace("var(--input-border)", borderColor);
+            
+            html = html.Replace("var(--ide-background-color)", isDarkTheme ? "#242424" : "#fbfbfb");
             var ideHeaders = """
                              <head>
                              <meta http-equiv='Content-Type' content='text/html; charset=unicode' />

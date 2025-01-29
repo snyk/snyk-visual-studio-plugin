@@ -5,22 +5,22 @@ using UserControl = System.Windows.Controls.UserControl;
 
 namespace Snyk.VisualStudio.Extension.UI.Toolwindow
 {
-    public partial class HtmlDescriptionPanel : UserControl
+    public partial class SummaryHtmlPanel : UserControl
     {
         private IHtmlProvider htmlProvider;
         private WebBrowserHostUIHandler _wbHandler;
 
-        public HtmlDescriptionPanel()
+        public SummaryHtmlPanel()
         {
             this.InitializeComponent();
 
-            _wbHandler = new WebBrowserHostUIHandler(HtmlViewer)
+            _wbHandler = new WebBrowserHostUIHandler(SummaryHtmlViewer)
             {
                 IsWebBrowserContextMenuEnabled = false,
                 ScriptErrorsSuppressed = true,
             };
 
-            HtmlViewer.ObjectForScripting = new SnykScriptManager(SnykVSPackage.ServiceProvider);
+            SummaryHtmlViewer.ObjectForScripting = new SnykScriptManager(SnykVSPackage.ServiceProvider);
             _wbHandler.LoadCompleted += HtmlViewerOnLoadCompleted;
         }
 
@@ -30,36 +30,37 @@ namespace Snyk.VisualStudio.Extension.UI.Toolwindow
             {
                 if (htmlProvider == null)
                     return;
-                HtmlViewer.InvokeScript("eval", new string[] { htmlProvider.GetInitScript() });
+                SummaryHtmlViewer.InvokeScript("eval", new string[] { htmlProvider.GetInitScript() });
             }
             catch
             {
 
             }
         }
-
         public void SetContent(string html, string product)
         {
             if (string.IsNullOrEmpty(html))
                 return;
-            HtmlViewer.Visibility = Visibility.Visible;
 
-            this.htmlProvider = HtmlProviderFactory.GetHtmlProvider(product);
+            this.htmlProvider = HtmlProviderFactory.GetHtmlProvider("summary");
             if (this.htmlProvider == null)
                 return;
-            HtmlViewer.InvalidateVisual();
-            HtmlViewer.UpdateLayout();
             html = htmlProvider.ReplaceCssVariables(html);
-            HtmlViewer.NavigateToString(html);
+            SummaryHtmlViewer.NavigateToString(html);
+            SummaryHtmlViewer.InvalidateVisual();
+            SummaryHtmlViewer.UpdateLayout();
         }
 
         public void Init()
         {
-            HtmlViewer.Visibility = Visibility.Collapsed;
-            HtmlViewer.NavigateToString("<html><body style='margin:0;padding:0;'>Loading...</body></html>");
-            HtmlViewer.InvalidateVisual();
-            HtmlViewer.UpdateLayout();
+            var provider = (StaticHtmlProvider) HtmlProviderFactory.GetHtmlProvider("static");
+            SummaryHtmlViewer.NavigateToString(provider.ReplaceCssVariables(provider.GetInitHtml()));
+            
+            SummaryHtmlViewer.InvalidateVisual();
+            SummaryHtmlViewer.UpdateLayout();
         }
+
+        
     }
 }
 
