@@ -18,15 +18,6 @@ namespace Snyk.VisualStudio.Extension.UI.Html
                 return _instance;
             }
         }
-        public override string GetInitScript()
-        {
-            var initScript = base.GetInitScript();
-            return initScript + @"
-             // Hide scrollbar
-             document.body.style.overflow = 'hidden';
-            ";
-        }
-      
         public override string ReplaceCssVariables(string html)
         {
             html = html.Replace("${ideFunc}", "window.external.EnableDelta(isEnabled);");
