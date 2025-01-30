@@ -5,6 +5,7 @@ using System.Runtime.InteropServices;
 using System.Threading.Tasks;
 using Microsoft.VisualStudio.Shell;
 using Serilog;
+using Snyk.VisualStudio.Extension.Language;
 
 namespace Snyk.VisualStudio.Extension.UI.Toolwindow
 {
@@ -12,12 +13,17 @@ namespace Snyk.VisualStudio.Extension.UI.Toolwindow
     public class SnykScriptManager
     {
         private static readonly ILogger Logger = LogManager.ForContext<SnykScriptManager>();
+        private readonly ISnykServiceProvider serviceProvider;
 
+        public SnykScriptManager(ISnykServiceProvider serviceProvider)
+        {
+            this.serviceProvider = serviceProvider;
+        }
         public void OpenFileInEditor(string filePath, string startLine, string endLine, string startCharacter, string endCharacter)
         {
             try
             {
-                Task.Run(async () =>
+                ThreadHelper.JoinableTaskFactory.RunAsync(async () =>
                 {
                     await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
                     VsCodeService.Instance.OpenAndNavigate(
@@ -39,6 +45,17 @@ namespace Snyk.VisualStudio.Extension.UI.Toolwindow
             if (string.IsNullOrEmpty(link) || !link.StartsWith("http"))
                 return;
             Process.Start(link);
+        }
+
+        public void EnableDelta(bool isEnabled)
+        {
+            ThreadHelper.JoinableTaskFactory.RunAsync(async () =>
+            {
+                this.serviceProvider.Options.EnableDeltaFindings = isEnabled;
+                this.serviceProvider.SnykOptionsManager.Save(this.serviceProvider.Options, false);
+                await LanguageClientHelper.LanguageClientManager().DidChangeConfigurationAsync(SnykVSPackage.Instance.DisposalToken);
+
+            }).FireAndForget();
         }
     }
 }

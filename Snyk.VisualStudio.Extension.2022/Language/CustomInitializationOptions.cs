@@ -52,6 +52,10 @@ namespace Snyk.VisualStudio.Extension.Language
     {
         public List<FolderConfig> FolderConfigs { get; set; }
     }
+    public class ScanSummaryParam
+    {
+        public string ScanSummary { get; set; }
+    }
 
     public class FilterSeverityOptions
     {

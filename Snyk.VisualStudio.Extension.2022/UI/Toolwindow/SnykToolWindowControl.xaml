@@ -20,13 +20,19 @@
         <Grid.ColumnDefinitions>
             <ColumnDefinition></ColumnDefinition>
         </Grid.ColumnDefinitions>
-        <Grid Grid.Row="3" Grid.Column="0" Name="mainGrid">
+        <Grid Grid.Row="1" Grid.Column="0" Name="mainGrid">
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="3*"/>
                 <ColumnDefinition Width="5"/>
                 <ColumnDefinition Width="6*"/>
             </Grid.ColumnDefinitions>
-            <tree:SnykFilterableTree x:Name="resultsTree" SelectedVulnerabilityChanged="VulnerabilitiesTree_SelectetVulnerabilityChanged"/>
+            <window:SummaryHtmlPanel  
+ x:Name="SummaryPanel" 
+Height="115"
+                            VerticalAlignment="Top"
+                            
+                            />
+            <tree:SnykFilterableTree x:Name="resultsTree" SelectedVulnerabilityChanged="VulnerabilitiesTree_SelectetVulnerabilityChanged" Margin="0, 115, 0, 0"/>
 
             <GridSplitter Grid.Column="1" Width="5" HorizontalAlignment="Stretch" Background="{DynamicResource VsBrush.Window}" Foreground="{DynamicResource VsBrush.WindowText}"/>
 

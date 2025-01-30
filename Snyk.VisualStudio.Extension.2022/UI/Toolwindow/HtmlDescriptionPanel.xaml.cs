@@ -20,7 +20,7 @@ namespace Snyk.VisualStudio.Extension.UI.Toolwindow
                 ScriptErrorsSuppressed = true,
             };
 
-            HtmlViewer.ObjectForScripting = new SnykScriptManager();
+            HtmlViewer.ObjectForScripting = new SnykScriptManager(SnykVSPackage.ServiceProvider);
             _wbHandler.LoadCompleted += HtmlViewerOnLoadCompleted;
         }
 

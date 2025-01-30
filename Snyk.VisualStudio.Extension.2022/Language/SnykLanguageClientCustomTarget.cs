@@ -113,6 +113,19 @@ namespace Snyk.VisualStudio.Extension.Language
             serviceProvider.SnykOptionsManager.Save(serviceProvider.Options);
         }
 
+        [JsonRpcMethod(LsConstants.SnykScanSummary)]
+        public async Task OnScanSummary(JToken arg)
+        {
+            var html = arg;
+            var scanSummaryParam = arg.TryParse<ScanSummaryParam>();
+            if (scanSummaryParam?.ScanSummary == null || serviceProvider?.ToolWindow?.SummaryPanel == null) return;
+            ThreadHelper.JoinableTaskFactory.RunAsync(async () =>
+            {
+                await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
+                serviceProvider.ToolWindow.SummaryPanel.SetContent(scanSummaryParam.ScanSummary, "summary");
+            }).FireAndForget();
+        }
+
         [JsonRpcMethod(LsConstants.SnykHasAuthenticated)]
         public async Task OnHasAuthenticated(JToken arg)
         {

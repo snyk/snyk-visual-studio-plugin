@@ -2,9 +2,9 @@
 {
     public static class HtmlProviderFactory
     {
-        public static IHtmlProvider GetHtmlProvider(string product)
+        public static IHtmlProvider GetHtmlProvider(string provider)
         {
-            switch (product)
+            switch (provider)
             {
                 case Product.Code:
                     return CodeHtmlProvider.Instance;
@@ -12,9 +12,13 @@
                     return OssHtmlProvider.Instance;
                 case Product.Iac:
                     return IacHtmlProvider.Instance;
+                case "summary":
+                    return SummaryHtmlProvider.Instance;
+                case "static":
+                    return StaticHtmlProvider.Instance;
+                default:
+                    return null;
             }
-
-            return null;
         }
     }
 }

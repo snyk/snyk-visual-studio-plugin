@@ -1,10 +1,12 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Drawing;
 using System.IO;
 using System.Linq;
 using System.Threading;
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Media;
 using Microsoft.VisualStudio;
 using Microsoft.VisualStudio.Shell;
 using Microsoft.VisualStudio.Shell.Interop;
@@ -14,6 +16,7 @@ using Snyk.VisualStudio.Extension.Commands;
 using Snyk.VisualStudio.Extension.Language;
 using Snyk.VisualStudio.Extension.Service;
 using Snyk.VisualStudio.Extension.Settings;
+using Snyk.VisualStudio.Extension.Theme;
 using Snyk.VisualStudio.Extension.UI.Notifications;
 using Snyk.VisualStudio.Extension.UI.Tree;
 using Task = System.Threading.Tasks.Task;
@@ -47,6 +50,7 @@ namespace Snyk.VisualStudio.Extension.UI.Toolwindow
 
             this.DescriptionPanel.Init();
 
+            this.SummaryPanel.Init();
             this.messagePanel.Context = this.context;
         }
 

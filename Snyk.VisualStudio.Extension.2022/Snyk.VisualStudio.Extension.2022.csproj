@@ -117,6 +117,10 @@
     <Resource Include="Resources\branch-dark.png">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Resource>
+    <Content Include="Resources\LoadingSummary.html">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <IncludeInVSIX>true</IncludeInVSIX>
+    </Content>
     <Content Include="Resources\SnykLsInit.cs">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
       <IncludeInVSIX>true</IncludeInVSIX>
@@ -242,6 +246,8 @@
     <Compile Include="UI\Html\ColorExtension.cs" />
     <Compile Include="UI\Html\IacHtmlProvider.cs" />
     <Compile Include="UI\Html\IHtmlProvider.cs" />
+    <Compile Include="UI\Html\StaticHtmlProvider.cs" />
+    <Compile Include="UI\Html\SummaryHtmlProvider.cs" />
     <Compile Include="UI\Html\OssHtmlProvider.cs" />
     <Compile Include="UI\Html\CodeHtmlProvider.cs" />
     <Compile Include="UI\Html\HtmlProviderFactory.cs" />
@@ -253,6 +259,9 @@
     <Compile Include="UI\ResourceLoader.cs" />
     <Compile Include="UI\SeverityFilter.cs" />
     <Compile Include="UI\SnykIconProvider.cs" />
+    <Compile Include="UI\Toolwindow\SummaryHtmlPanel.xaml.cs">
+      <DependentUpon>SummaryHtmlPanel.xaml</DependentUpon>
+    </Compile>
     <Compile Include="UI\Toolwindow\HtmlDescriptionPanel.xaml.cs">
       <DependentUpon>HtmlDescriptionPanel.xaml</DependentUpon>
     </Compile>
@@ -386,6 +395,10 @@
       <SubType>Designer</SubType>
     </Page>
     <Page Include="UI\Controls\TextField.xaml">
+      <Generator>MSBuild:Compile</Generator>
+      <SubType>Designer</SubType>
+    </Page>
+    <Page Include="UI\Toolwindow\SummaryHtmlPanel.xaml">
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
     </Page>
