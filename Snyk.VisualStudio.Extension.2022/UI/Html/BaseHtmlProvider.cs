@@ -60,7 +60,7 @@ namespace Snyk.VisualStudio.Extension.UI.Html
             html = html.Replace("var(--circle-color)", borderColor);
             html = html.Replace("var(--input-border)", borderColor);
             
-            html = html.Replace("var(--ide-background-color)", isDarkTheme ? "#242424" : "#fbfbfb");
+            html = html.Replace("var(--ide-background-color)", isDarkTheme ? "#242424" : "#FBFBFB");
             var ideHeaders = """
                              <head>
                              <meta http-equiv='Content-Type' content='text/html; charset=unicode' />

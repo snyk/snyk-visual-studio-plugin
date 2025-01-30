@@ -17,7 +17,7 @@
         }
         public override string GetInitScript()
         {
-            return string.Empty;
+          return @"";
         }
 
         public string GetInitHtml()
@@ -39,7 +39,7 @@
                   font-size:15px;
                 }
                 p { font-size:1.3rem; margin: .8rem 0;  }
-                body { background-color: var(--ide-background-color); color: var(--text-color); font-family: sans-serif; padding: 12px; opacity: 0.4;}
+                body { background-color: var(--ide-background-color); color: var(--text-color); font-family: sans-serif; padding: 12px; }
                 .snx-loader { display:inline-block; width: 12px; height: 12px; border: 2px solid rgba(125,125,125,.65); border-bottom-color: transparent; border-radius: 50%; margin-right:.8rem; animation: spin 1s linear infinite;
                 }
                 .size-s { width: 12px; height: 12px; border-width:2px }

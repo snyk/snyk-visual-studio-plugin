@@ -47,12 +47,12 @@ namespace Snyk.VisualStudio.Extension.UI.Toolwindow
             Process.Start(link);
         }
 
-        public void ToggleDelta(bool isEnabled)
+        public void EnableDelta(bool isEnabled)
         {
             ThreadHelper.JoinableTaskFactory.RunAsync(async () =>
             {
                 this.serviceProvider.Options.EnableDeltaFindings = isEnabled;
-                this.serviceProvider.SnykOptionsManager.Save(this.serviceProvider.Options);
+                this.serviceProvider.SnykOptionsManager.Save(this.serviceProvider.Options, false);
                 await LanguageClientHelper.LanguageClientManager().DidChangeConfigurationAsync(SnykVSPackage.Instance.DisposalToken);
 
             }).FireAndForget();

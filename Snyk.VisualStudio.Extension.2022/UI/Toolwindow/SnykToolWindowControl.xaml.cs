@@ -54,10 +54,6 @@ namespace Snyk.VisualStudio.Extension.UI.Toolwindow
             this.messagePanel.Context = this.context;
         }
 
-        public System.Windows.Media.Color GetBackgroundColor()
-        {
-            return this.Background.ToColor();         
-        }
         /// <summary>
         /// Gets a value indicating whether VulnerabilitiesTree.
         /// </summary>

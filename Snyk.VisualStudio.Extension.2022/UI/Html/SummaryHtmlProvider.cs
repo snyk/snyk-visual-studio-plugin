@@ -22,25 +22,24 @@ namespace Snyk.VisualStudio.Extension.UI.Html
         {
             var initScript = base.GetInitScript();
             return initScript + @"
-             if(document.getElementById('totalIssues')){
-                document.getElementById('totalIssues').onclick = function(e) {
-                    window.external.ToggleDelta(false);
-                    };
-                }
-            if(document.getElementById('newIssues')){
-                document.getElementById('newIssues').onclick = function(e) {
-                    window.external.ToggleDelta(true);
-                    };
-            }
+             // Hide scrollbar
+             document.body.style.overflow = 'hidden';
             ";
         }
-
+      
         public override string ReplaceCssVariables(string html)
         {
+            html = html.Replace("${ideFunc}", "window.external.EnableDelta(isEnabled);");
             html = base.ReplaceCssVariables(html);
 
             return html;
         }
-
+        public override string GetCss()
+        {
+            return @"
+            body { overflow: hidden; }
+            .body-padding { padding: 0px 4px 8px 4px; }
+";
+        }
     }
 }

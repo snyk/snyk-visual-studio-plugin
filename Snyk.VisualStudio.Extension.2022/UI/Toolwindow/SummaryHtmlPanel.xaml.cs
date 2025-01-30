@@ -59,8 +59,6 @@ namespace Snyk.VisualStudio.Extension.UI.Toolwindow
             SummaryHtmlViewer.InvalidateVisual();
             SummaryHtmlViewer.UpdateLayout();
         }
-
-        
     }
 }
 
