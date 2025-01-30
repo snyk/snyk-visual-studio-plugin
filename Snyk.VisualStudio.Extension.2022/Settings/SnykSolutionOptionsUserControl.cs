@@ -28,28 +28,14 @@ namespace Snyk.VisualStudio.Extension.Settings
 
         private void AdditionalOptionsTextBox_TextChanged(object sender, EventArgs e)
         {
-            if (this.serviceProvider.SolutionService.IsSolutionOpen())
-            {
-                AdditionalOptions = this.additionalOptionsTextBox.Text;
-            }
+            AdditionalOptions = this.additionalOptionsTextBox.Text;
         }
 
         private void SnykProjectOptionsUserControl_Load(object sender, EventArgs eventArgs) => ThreadHelper.JoinableTaskFactory.RunAsync(async () =>
         {
-            this.OnVisibleChanged(eventArgs);
-
-            bool isProjectOpened = this.serviceProvider.SolutionService.IsSolutionOpen();
-
-            this.additionalOptionsTextBox.Enabled = isProjectOpened;
-
-            if (!isProjectOpened)
-            {
-                return;
-            }
-
             try
             {
-                string additionalOptions = await this.serviceProvider.SnykOptionsManager.GetAdditionalOptionsAsync();
+                var additionalOptions = await this.serviceProvider.SnykOptionsManager.GetAdditionalOptionsAsync();
 
                 if (!string.IsNullOrEmpty(additionalOptions))
                 {

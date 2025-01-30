@@ -108,6 +108,13 @@ namespace Snyk.VisualStudio.Extension.Service
         /// <returns>VSConstants.S_OK.</returns>
         public int OnAfterOpenProject(IVsHierarchy vsHierarchy, int fAdded)
         {
+            if (SnykVSPackage.Instance == null || SnykVSPackage.ServiceProvider?.SolutionService == null)
+            {
+                return VSConstants.S_OK;
+            }
+            // Reset solution folder cache to force loading Solution Folder from VS API
+            SnykVSPackage.ServiceProvider.SolutionService.SolutionFolderCache = "";
+
             return VSConstants.S_OK;
         }
 

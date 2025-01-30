@@ -154,7 +154,7 @@ namespace Snyk.VisualStudio.Extension.Language
             serviceProvider.FeatureFlagService.RefreshAsync(SnykVSPackage.Instance.DisposalToken).FireAndForget();
             if (serviceProvider.Options.AutoScan)
             {
-                await serviceProvider.TasksService.ScanAsync();
+                serviceProvider.TasksService.ScanAsync().FireAndForget();
             }
         }
 
@@ -165,7 +165,7 @@ namespace Snyk.VisualStudio.Extension.Language
             if (trustedFolders == null) return;
 
             serviceProvider.Options.TrustedFolders = new HashSet<string>(trustedFolders.TrustedFolders);
-            this.serviceProvider.SnykOptionsManager.Save(serviceProvider.Options);
+            this.serviceProvider.SnykOptionsManager.Save(serviceProvider.Options, false);
             await serviceProvider.LanguageClientManager.DidChangeConfigurationAsync(SnykVSPackage.Instance.DisposalToken);
         }
 
@@ -237,6 +237,12 @@ namespace Snyk.VisualStudio.Extension.Language
                 "Snyk IaC" => "iac",
                 _ => ""
             };
+        }
+
+        // Only used in tests
+        public ConcurrentDictionary<string, IEnumerable<Issue>> GetCodeDictionary()
+        {
+            return snykCodeIssueDictionary;
         }
 #pragma warning restore CS1998 // Async method lacks 'await' operators and will run synchronously
     }

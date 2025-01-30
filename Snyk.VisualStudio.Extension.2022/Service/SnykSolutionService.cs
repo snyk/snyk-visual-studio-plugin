@@ -118,7 +118,7 @@ namespace Snyk.VisualStudio.Extension.Service
         /// </summary>
         /// <returns>Return Ok constant.</returns>
         public int OnDisconnect() => VSConstants.S_OK;
-
+        public string SolutionFolderCache { get; set; }
         /// <summary>
         /// Get solution path. First try to get path by VS solution (solution with projects or folder).
         /// If no success, try to get path for flat project (without solution) or web site (in case VS2015).
@@ -126,7 +126,12 @@ namespace Snyk.VisualStudio.Extension.Service
         /// <returns>Solution path string.</returns>
         public async System.Threading.Tasks.Task<string> GetSolutionFolderAsync()
         {
-            string solutionFolder = await this.FindRootDirectoryForSolutionAsync();
+            if (!string.IsNullOrEmpty(SolutionFolderCache))
+            {
+                Logger.Information("Using cached solution folder {SolutionFolder}", SolutionFolderCache);
+                return SolutionFolderCache;
+            }
+            var solutionFolder = await this.FindRootDirectoryForSolutionAsync();
 
             Logger.Information("Solution folder from is {SolutionFolder}", solutionFolder);
 
@@ -136,7 +141,7 @@ namespace Snyk.VisualStudio.Extension.Service
             }
 
             Logger.Information("Result solution folder from is {SolutionFolder}", solutionFolder);
-
+            SolutionFolderCache = solutionFolder;
             return solutionFolder;
         }
 

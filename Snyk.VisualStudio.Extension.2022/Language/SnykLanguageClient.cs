@@ -82,9 +82,6 @@ namespace Snyk.VisualStudio.Extension.Language
             var options = serviceProvider.Options;
             // ReSharper disable once RedundantAssignment
             var lsDebugLevel = await GetLsDebugLevelAsync(serviceProvider.SnykOptionsManager);
-#if DEBUG
-            lsDebugLevel = "debug";
-#endif
             var info = new ProcessStartInfo
             {
                 FileName = SnykCli.GetCliFilePath(options.CliCustomPath),
@@ -94,9 +91,6 @@ namespace Snyk.VisualStudio.Extension.Language
                 UseShellExecute = false,
                 CreateNoWindow = true
             };
-#if DEBUG
-            info.CreateNoWindow = false;
-#endif
             var process = new Process
             {
                 StartInfo = info
@@ -119,7 +113,7 @@ namespace Snyk.VisualStudio.Extension.Language
             //}
             var isPackageInitialized = SnykVSPackage.Instance?.IsInitialized ?? false;
             var shouldStart =  isPackageInitialized && !SnykVSPackage.ServiceProvider.TasksService.ShouldDownloadCli();
-            Logger.Debug("OnLoadedAsync Called and shouldStart is: {ShouldStart}", shouldStart);
+            Logger.Information("OnLoadedAsync Called and shouldStart is: {ShouldStart}", shouldStart);
 
             await StartServerAsync(shouldStart);
         }
@@ -147,7 +141,7 @@ namespace Snyk.VisualStudio.Extension.Language
                 }
                 else
                 {
-                    Logger.Debug("Couldn't Start Language Server");
+                    Logger.Information("Couldn't Start Language Server");
                 }
             }
             finally
@@ -196,7 +190,7 @@ namespace Snyk.VisualStudio.Extension.Language
             }
             else
             {
-                Logger.Debug("Could not stop Language Server because StopAsync is null");
+                Logger.Information("Could not stop Language Server because StopAsync is null");
             }
         }
 

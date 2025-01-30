@@ -20,7 +20,7 @@ namespace Snyk.VisualStudio.Extension.Tests
             this.progressWorkerMock = new Mock<ISnykProgressWorker>();
             this.optionsMock = new Mock<ISnykOptions>();
             this.optionsMock.Setup(x => x.CliDownloadUrl).Returns(SnykCliDownloader.DefaultBaseDownloadUrl);
-            this.optionsMock.Setup(x => x.CliReleaseChannel).Returns(SnykCliDownloader.DefaultReleaseChannel);
+            this.optionsMock.Setup(x => x.CliReleaseChannel).Returns("preview");
         }
 
         [Fact]

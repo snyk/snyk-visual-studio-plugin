@@ -51,7 +51,7 @@ namespace Snyk.VisualStudio.Extension.Language
                     Logger.Information(msgTemplate, logMsg.Message);
                     break;
                 case LSP.MessageType.Log:
-                    Logger.Debug(msgTemplate, logMsg.Message);
+                    Logger.Information(msgTemplate, logMsg.Message);
                     break;
             }
         }

@@ -196,7 +196,7 @@ namespace Snyk.VisualStudio.Extension
 
                 // Initialize LS
                 Logger.Information("Initializing Language Server");
-                InitializeLanguageClientAsync().FireAndForget();
+                InitializeLanguageClient();
 
                 // Initialize commands
                 Logger.Information("Initialize Commands()");
@@ -236,26 +236,29 @@ namespace Snyk.VisualStudio.Extension
             this.serviceProvider.LanguageClientManager = languageServerClientManager;
         }
         
-        private async Task InitializeLanguageClientAsync()
+        private void InitializeLanguageClient()
         {
-            try
+            ThreadHelper.JoinableTaskFactory.RunAsync(async () =>
             {
-                this.serviceProvider.LanguageClientManager.OnLanguageClientNotInitializedAsync += LanguageClientManagerOnLanguageClientNotInitializedAsync;
-                this.serviceProvider.LanguageClientManager.OnLanguageServerReadyAsync += LanguageClientManagerOnLanguageServerReadyAsync;
-                if (!LanguageClientHelper.IsLanguageServerReady())
+                try
                 {
-                    // If CLI download is necessary, Skip initializing.
-                    if (this.serviceProvider.TasksService.ShouldDownloadCli())
+                    this.serviceProvider.LanguageClientManager.OnLanguageClientNotInitializedAsync += LanguageClientManagerOnLanguageClientNotInitializedAsync;
+                    this.serviceProvider.LanguageClientManager.OnLanguageServerReadyAsync += LanguageClientManagerOnLanguageServerReadyAsync;
+                    if (!LanguageClientHelper.IsLanguageServerReady())
                     {
-                        return;
+                        // If CLI download is necessary, Skip initializing.
+                        if (this.serviceProvider.TasksService.ShouldDownloadCli())
+                        {
+                            return;
+                        }
+                        await this.serviceProvider.LanguageClientManager.StartServerAsync(true);
                     }
-                    await this.serviceProvider.LanguageClientManager.StartServerAsync(true);
                 }
-            }
-            catch (Exception e)
-            {
-                Logger.Error(e, string.Empty);
-            }
+                catch (Exception e)
+                {
+                    Logger.Error(e, string.Empty);
+                }
+            }).FireAndForget();
         }
 
         private async Task LanguageClientManagerOnLanguageServerReadyAsync(object sender, SnykLanguageServerEventArgs args)

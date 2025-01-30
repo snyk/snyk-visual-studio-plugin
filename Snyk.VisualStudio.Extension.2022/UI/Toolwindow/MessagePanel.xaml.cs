@@ -108,7 +108,7 @@ namespace Snyk.VisualStudio.Extension.UI.Toolwindow
             this.ShowPanel(this.snykInitializing);
         }
 
-        private void RunButton_Click(object sender, RoutedEventArgs e) => ThreadHelper.JoinableTaskFactory.RunAsync(SnykTasksService.Instance.ScanAsync);
+        private void RunButton_Click(object sender, RoutedEventArgs e) => ThreadHelper.JoinableTaskFactory.RunAsync(SnykTasksService.Instance.ScanAsync).FireAndForget();
 
         private void ShowPanel(StackPanel panel)
         {
@@ -122,24 +122,30 @@ namespace Snyk.VisualStudio.Extension.UI.Toolwindow
 
         private void TestCodeNow_Click(object sender, RoutedEventArgs e)
         {
-            ThreadHelper.JoinableTaskFactory.Run(RunTestCodeNowAsync);
+            this.testCodeNowButton.IsEnabled = false;
+            ThreadHelper.JoinableTaskFactory.RunAsync(RunTestCodeNowAsync).FireAndForget();
         }
-        
         private async Task RunTestCodeNowAsync()
         {
-            await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
-            this.testCodeNowButton.IsEnabled = false;
-
-            await TaskScheduler.Default;
             // Add folder to trusted
+            Logger.Information("Enter RunTestCodeNowAsync");
             var solutionFolderPath = await this.ServiceProvider.SolutionService.GetSolutionFolderAsync();
             if (!string.IsNullOrEmpty(solutionFolderPath))
             {
+                Logger.Information("Solution Folder Is {SolutionFolder}", solutionFolderPath);
+
                 try
                 {
-                    this.ServiceProvider.WorkspaceTrustService.AddFolderToTrusted(solutionFolderPath);
-                    this.ServiceProvider.Options.InvokeSettingsChangedEvent();
-                    Logger.Information("Workspace folder was trusted: {SolutionFolderPath}", solutionFolderPath);
+                    ThreadHelper.JoinableTaskFactory.RunAsync(async () =>
+                    {
+                        Logger.Information("Adding Folder {SolutionFolder} to trusted folders", solutionFolderPath);
+
+                        this.ServiceProvider.WorkspaceTrustService.AddFolderToTrusted(solutionFolderPath);
+                        Logger.Information("Workspace folder was trusted: {SolutionFolderPath}", solutionFolderPath);
+                        await this.ServiceProvider.LanguageClientManager.DidChangeConfigurationAsync(SnykVSPackage
+                            .Instance.DisposalToken);
+                    }).FireAndForget();
+                    
                 }
                 catch (ArgumentException ex)
                 {
@@ -150,6 +156,7 @@ namespace Snyk.VisualStudio.Extension.UI.Toolwindow
 
             try
             {
+                Logger.Information("Attempting to Auth");
                 this.ServiceProvider.GeneralOptionsDialogPage.Authenticate();
             }
             catch (FileNotFoundException)

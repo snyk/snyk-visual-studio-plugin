@@ -46,5 +46,6 @@ namespace Snyk.VisualStudio.Extension.Service
         /// <param name="paths">All paths.</param>
         /// <returns>Root directory for all paths.</returns>
         string FindRootDirectoryForSolutionProjects(string rootDir, IList<string> paths);
+        string SolutionFolderCache { get; set; }
     }
 }
