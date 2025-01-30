@@ -34,12 +34,13 @@ namespace Snyk.VisualStudio.Extension.UI.Html
 
             return html;
         }
+
         public override string GetCss()
         {
             return @"
             body { overflow: hidden; }
             .body-padding { padding: 0px 4px 8px 4px; }
-";
+            ";
         }
     }
 }

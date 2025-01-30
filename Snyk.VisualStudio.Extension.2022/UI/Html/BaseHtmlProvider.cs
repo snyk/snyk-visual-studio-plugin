@@ -59,14 +59,8 @@ namespace Snyk.VisualStudio.Extension.UI.Html
             html = html.Replace("var(--code-background-color)", VSColorTheme.GetThemedColor(EnvironmentColors.EditorExpansionFillBrushKey).ToHex());
             html = html.Replace("var(--circle-color)", borderColor);
             html = html.Replace("var(--input-border)", borderColor);
-            
+            html = html.Replace("var(--main-font-size)", "15px");
             html = html.Replace("var(--ide-background-color)", isDarkTheme ? "#242424" : "#FBFBFB");
-            var ideHeaders = """
-                             <head>
-                             <meta http-equiv='Content-Type' content='text/html; charset=unicode' />
-                             <meta http-equiv='X-UA-Compatible' content='IE=edge' /> 
-                             """;
-            html = html.Replace("<head>", ideHeaders);
             html = html.Replace("${headerEnd}", "");
             var nonce = GetNonce();
             html = html.Replace("${nonce}", nonce);

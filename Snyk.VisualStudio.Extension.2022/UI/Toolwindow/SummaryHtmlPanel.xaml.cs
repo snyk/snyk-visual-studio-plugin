@@ -1,5 +1,6 @@
 ﻿using System.Windows;
 using System.Windows.Navigation;
+using Microsoft.VisualStudio.Shell;
 using Snyk.VisualStudio.Extension.UI.Html;
 using UserControl = System.Windows.Controls.UserControl;
 
@@ -53,11 +54,18 @@ namespace Snyk.VisualStudio.Extension.UI.Toolwindow
 
         public void Init()
         {
-            var provider = (StaticHtmlProvider) HtmlProviderFactory.GetHtmlProvider("static");
-            SummaryHtmlViewer.NavigateToString(provider.ReplaceCssVariables(provider.GetInitHtml()));
+            ThreadHelper.JoinableTaskFactory.Run(async () =>
+            {
+                var provider = (StaticHtmlProvider)HtmlProviderFactory.GetHtmlProvider("static");
+                var html = provider.ReplaceCssVariables(await provider.GetInitHtmlAsync());
+                
+                await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
+                SummaryHtmlViewer.NavigateToString(html);
+
+                SummaryHtmlViewer.InvalidateVisual();
+                SummaryHtmlViewer.UpdateLayout();
+            });
             
-            SummaryHtmlViewer.InvalidateVisual();
-            SummaryHtmlViewer.UpdateLayout();
         }
     }
 }
