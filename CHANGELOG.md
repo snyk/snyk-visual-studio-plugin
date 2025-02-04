@@ -1,4 +1,7 @@
 # Snyk Security Changelog
+## [2.1.0]
+### Changed
+- New Summary Panel for scan information and Net New Issues filtering.
 
 ## [2.0.1]
 ### Changed

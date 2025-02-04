@@ -13,6 +13,7 @@
         // This notification is needed because we are sending Issue data in the Diagnostic.Data field and Visual Studio filters it out.
         // We had to send the same notification but with a different to avoid Visual Studio's filtering behavior.
         public const string OnPublishDiagnostics316 = "$/snyk.publishDiagnostics316";
+        public const string SnykScanSummary = "$/snyk.scanSummary";
         
         // Requests
         public const string WorkspaceChangeConfiguration = "workspace/didChangeConfiguration";
