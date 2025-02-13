@@ -213,4 +213,13 @@ namespace Snyk.VisualStudio.Extension.Language
     {
         public IList<string> TrustedFolders { get; set; }
     }
+
+    [JsonObject(NamingStrategyType = typeof(CamelCaseNamingStrategy))]
+    public class ShowDocumentParams
+    {
+        public string Uri { get; set; }
+        public bool External { get; set; }
+        public bool TakeFocus{ get; set; }
+        public Range Selection { get; set; }
+    }
 }

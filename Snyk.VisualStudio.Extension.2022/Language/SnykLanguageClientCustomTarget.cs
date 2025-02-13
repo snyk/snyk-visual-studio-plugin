@@ -104,6 +104,45 @@ namespace Snyk.VisualStudio.Extension.Language
             }
         }
 
+        [JsonRpcMethod(LsConstants.ShowDocument)]
+        public async Task OnShowDocument(JToken arg)
+        {
+            var lspAnalysisResult = arg.TryParse<ShowDocumentParams>();
+            if (lspAnalysisResult == null) return;
+            var uri = new Uri(Uri.UnescapeDataString(lspAnalysisResult.Uri));
+
+            // Manually parse query parameters
+            var queryParams = ParseQueryString(uri.Query);
+            var issueId = queryParams["issueId"];
+            var product = LspSourceToProduct(queryParams["product"].Replace("+", " "));
+            var action= queryParams["action"];
+            if (action != "showInDetailPanel")
+            {
+                return;
+            }
+            serviceProvider.ToolWindow.SelectedItemInTree(issueId, product);
+        }
+
+        static Dictionary<string, string> ParseQueryString(string query)
+        {
+            var result = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+
+            if (query.StartsWith("?"))
+                query = query.Substring(1);
+
+            foreach (var pair in query.Split('&'))
+            {
+                var parts = pair.Split('=');
+                if (parts.Length == 2)
+                {
+                    var key = Uri.UnescapeDataString(parts[0]);
+                    var value = Uri.UnescapeDataString(parts[1]);
+                    result[key] = value;
+                }
+            }
+            return result;
+        }
+
         [JsonRpcMethod(LsConstants.SnykFolderConfig)]
         public async Task OnFolderConfig(JToken arg)
         {

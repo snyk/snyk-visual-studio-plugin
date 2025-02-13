@@ -149,7 +149,7 @@ namespace Snyk.VisualStudio.Extension.UI.Tree
 
                 var fileNode = TreeNodeProductFactory.GetFileTreeNode(product, rootNode);
                 fileNode.IssueList = issueList;
-                fileNode.IsExpanded = false;
+                fileNode.IsExpanded = true;
                 fileNode.FileName = kv.Key;
                 fileNode.FolderName = currentFolder;
 
