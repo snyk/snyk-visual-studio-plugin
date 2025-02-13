@@ -43,6 +43,7 @@ namespace Snyk.VisualStudio.Extension.Language
     public class FolderConfig
     {
         public string BaseBranch { get; set; }
+        public string ReferenceFolderPath { get; set; }
         public string FolderPath { get; set; }
         public List<string> LocalBranches { get; set; }
         public List<string> AdditionalParameters { get; set; }

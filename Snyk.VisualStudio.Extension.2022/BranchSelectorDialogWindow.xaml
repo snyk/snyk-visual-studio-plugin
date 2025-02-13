@@ -5,40 +5,74 @@
                  xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
                  xmlns:toolkit="clr-namespace:Community.VisualStudio.Toolkit;assembly=Community.VisualStudio.Toolkit"
                  xmlns:ui="clr-namespace:Microsoft.VisualStudio.PlatformUI;assembly=Microsoft.VisualStudio.Shell.15.0"
+                 xmlns:catalog="clr-namespace:Microsoft.VisualStudio.Imaging;assembly=Microsoft.VisualStudio.ImageCatalog"
+                 xmlns:imaging="clr-namespace:Microsoft.VisualStudio.Imaging;assembly=Microsoft.VisualStudio.Imaging"
                  mc:Ignorable="d"
                  WindowStartupLocation="CenterScreen"
                  IsCloseButtonEnabled="True"
                  HasHelpButton="False"
-                 MinHeight="150" Height="150"
+                 MinHeight="250" Height="250"
                  MinWidth="400" Width="400"
                  BorderBrush="{x:Static SystemColors.WindowFrameBrush}" BorderThickness="1"
                  WindowStyle="None" ResizeMode="NoResize" AllowsTransparency="True"
-                 xmlns:catalog="clr-namespace:Microsoft.VisualStudio.Imaging;assembly=Microsoft.VisualStudio.ImageCatalog"
-                 xmlns:imaging="clr-namespace:Microsoft.VisualStudio.Imaging;assembly=Microsoft.VisualStudio.Imaging"
                  toolkit:Themes.UseVsTheme="True"
                  Title="Choose base branch for net-new issue scanning"
                  MouseDown="BranchSelectorDialogWindow_OnMouseDown">
+
     <DockPanel Margin="10">
-        <Button DockPanel.Dock="Top" HorizontalAlignment="Right" Click="CancelButton_OnClick" MinWidth="1"
-                MinHeight="1" Width="35" Margin="0" Padding="0">
+        <!-- Top: Close Button -->
+        <Button DockPanel.Dock="Top"
+                HorizontalAlignment="Right"
+                Click="CancelButton_OnClick"
+                MinWidth="1"
+                MinHeight="1"
+                Width="35"
+                Margin="0"
+                Padding="0">
             <imaging:CrispImage Moniker="{x:Static catalog:KnownMonikers.Close}" />
         </Button>
+
+        <!-- Bottom: OK Button -->
         <DockPanel DockPanel.Dock="Bottom">
-            <Button x:Name="OkButton" Content="Ok" Click="OkButton_OnClick" Width="78" HorizontalAlignment="Left" />
+            <Button x:Name="OkButton"
+                    Content="Ok"
+                    Click="OkButton_OnClick"
+                    Width="78"
+                    HorizontalAlignment="Left" />
         </DockPanel>
+
         <Grid>
             <Grid.RowDefinitions>
-                <RowDefinition Height="auto" />
-                <RowDefinition Height="auto" />
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="Auto" />
             </Grid.RowDefinitions>
 
             <StackPanel Grid.Row="1" HorizontalAlignment="Left">
-                <TextBlock x:Name="ProjectNameLabel" TextWrapping="Wrap">
-                    Base Branch for:
-                </TextBlock>
-                <TextBlock x:Name="LblFolderPath" TextWrapping="Wrap" />
-                <TextBlock TextWrapping="Wrap" />
+                <StackPanel Orientation="Horizontal">
+                    <TextBlock x:Name="ProjectNameLabel" TextWrapping="Wrap" Text="Base Branch for: " />
+                    <TextBlock x:Name="LblFolderPathForBranch" TextWrapping="Wrap" />
+                </StackPanel>
                 <ComboBox x:Name="CbBranchList" />
+            </StackPanel>
+
+            <StackPanel Grid.Row="2" Margin="0,10,0,0" ToolTip="Optional. Here you can specify a reference directory to be used for scanning.">
+                <TextBlock>
+                    <LineBreak />
+                </TextBlock>
+                <StackPanel Orientation="Horizontal">
+                    <TextBlock TextWrapping="Wrap" Text="Reference folder for: " />
+                    <TextBlock x:Name="LblFolderPathForReferenceFolder" TextWrapping="Wrap" />
+                </StackPanel>
+                <StackPanel Orientation="Horizontal">
+                    <TextBox x:Name="SelectedFolderPath"
+                             Width="250"
+                             Margin="0,0,5,0" HorizontalAlignment="Left" />
+                    <Button Content="Browse..."
+                            Click="BrowseButton_Click"
+                            Width="80" HorizontalAlignment="Left"/>
+                </StackPanel>
+                
             </StackPanel>
         </Grid>
     </DockPanel>
