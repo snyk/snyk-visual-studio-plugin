@@ -1,6 +1,7 @@
 ﻿using System.IO;
 using System.Linq;
 using System.Windows;
+using System.Windows.Forms;
 using System.Windows.Input;
 using Microsoft.VisualStudio.PlatformUI;
 using Microsoft.VisualStudio.Shell;
@@ -26,9 +27,11 @@ namespace Snyk.VisualStudio.Extension
                 this.serviceProvider.Options?.FolderConfigs?.SingleOrDefault(x => x.FolderPath.TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar) == currentFolder);
             if (FolderConfig == null)
                 return;
-            LblFolderPath.Text = FolderConfig.FolderPath;
+            LblFolderPathForBranch.Text = FolderConfig.FolderPath;
+            LblFolderPathForReferenceFolder.Text = FolderConfig.FolderPath;
             CbBranchList.ItemsSource = FolderConfig.LocalBranches;
             CbBranchList.SelectedItem = FolderConfig.BaseBranch;
+            SelectedFolderPath.Text = FolderConfig.ReferenceFolderPath;
             IsOpen = true;
         }
 
@@ -47,6 +50,8 @@ namespace Snyk.VisualStudio.Extension
                 return;
             }
             FolderConfig.BaseBranch = CbBranchList.SelectedItem.ToString();
+            FolderConfig.ReferenceFolderPath = SelectedFolderPath.Text;
+
             var folderConfigList = this.serviceProvider.Options.FolderConfigs;
             var currentList = folderConfigList.Where(x => x.FolderPath != FolderConfig.FolderPath).ToList();
             currentList.Add(FolderConfig);
@@ -66,6 +71,20 @@ namespace Snyk.VisualStudio.Extension
         {
             IsOpen = false;
             this.Close();
+        }
+
+        private void BrowseButton_Click(object sender, RoutedEventArgs e)
+        {
+            using (var dialog = new FolderBrowserDialog())
+            {
+                dialog.ShowNewFolderButton = false;
+
+                var result = dialog.ShowDialog();
+                if (result == System.Windows.Forms.DialogResult.OK)
+                {
+                    SelectedFolderPath.Text = dialog.SelectedPath;
+                }
+            }
         }
     }
 }
