@@ -59,7 +59,11 @@ namespace Snyk.VisualStudio.Extension
             var options = SnykVSPackage.ServiceProvider.Options;
             options.FolderConfigs = currentList;
             SnykVSPackage.ServiceProvider.SnykOptionsManager.Save(options);
-           this.CloseDialog();
+            if (SnykVSPackage.Instance.Options.AutoScan)
+            {
+                ThreadHelper.JoinableTaskFactory.RunAsync(serviceProvider.TasksService.ScanAsync).FireAndForget();
+            }
+            this.CloseDialog();
         }
 
         private void CancelButton_OnClick(object sender, RoutedEventArgs e)
