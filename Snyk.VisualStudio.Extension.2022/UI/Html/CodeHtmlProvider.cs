@@ -50,14 +50,6 @@ namespace Snyk.VisualStudio.Extension.UI.Html
                             }
                         }
                     }
-                    // disable Autofix and ignores
-                    if(document.getElementById('ai-fix-wrapper') && document.getElementById('no-ai-fix-wrapper')){
-                        document.getElementById('ai-fix-wrapper').className = 'hidden';
-                        document.getElementById('no-ai-fix-wrapper').className = '';
-                     }
-                    if(document.getElementsByClassName('ignore-action-container') && document.getElementsByClassName('ignore-action-container')[0]){
-                        document.getElementsByClassName('ignore-action-container')[0].className = 'hidden';
-                     }
                 " + themeScript;
         }
 
@@ -77,7 +69,8 @@ namespace Snyk.VisualStudio.Extension.UI.Html
 
             html = html.Replace("var(--example-line-removed-color)", VSColorTheme.GetThemedColor(EnvironmentColors.VizSurfaceRedDarkBrushKey).ToHex());
             html = html.Replace("var(--example-line-added-color)", VSColorTheme.GetThemedColor(EnvironmentColors.VizSurfaceGreenDarkBrushKey).ToHex());
-
+            html = html.Replace("${ideGenerateAIFix}", "window.external.GenerateFixes(generateFixQueryString)");
+            html = html.Replace("${ideApplyAIFix}", "window.external.ApplyFixDiff(fixId)");
             return html;
         }
     }
