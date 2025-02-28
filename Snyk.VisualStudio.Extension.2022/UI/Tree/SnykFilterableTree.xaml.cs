@@ -129,6 +129,7 @@ namespace Snyk.VisualStudio.Extension.UI.Tree
                 return;
             }
             rootNode.Clean();
+            var totalIssueCount = 0;
             var criticalSeverityCount = 0;
             var highSeverityCount = 0;
             var mediumSeverityCount = 0;
@@ -155,14 +156,16 @@ namespace Snyk.VisualStudio.Extension.UI.Tree
 
                 ignoredIssueCount += issueList.Count(suggestion => suggestion.IsIgnored);
 
-                issueList = FilterIgnoredIssues(options, issueList).ToList();
-                
+                totalIssueCount += issueList.Count;
+
                 criticalSeverityCount += issueList.Count(suggestion => suggestion.Severity == Severity.Critical);
                 highSeverityCount += issueList.Count(suggestion => suggestion.Severity == Severity.High);
                 mediumSeverityCount += issueList.Count(suggestion => suggestion.Severity == Severity.Medium);
                 lowSeverityCount += issueList.Count(suggestion => suggestion.Severity == Severity.Low);
 
                 fixableIssueCount += issueList.Count(suggestion => suggestion.HasFix());
+
+                issueList = FilterIgnoredIssues(options, issueList).ToList();
 
                 issueList.Sort((issue1, issue2) => Severity.ToInt(issue2.Severity) - Severity.ToInt(issue1.Severity));
 
@@ -178,10 +181,6 @@ namespace Snyk.VisualStudio.Extension.UI.Tree
                     fileTreeNodes.Add(fileNode);
                 }
             }
-
-            var totalIssueCount = scanResultDictionary
-                .Where(x => x.Key.Replace("\\", "/").TrimEnd('/').Contains(currentFolder))
-                .SelectMany(x => x.Value).Count();
 
             AddInfoTreeNodes(rootNode, totalIssueCount, ignoredIssueCount, fixableIssueCount, options);
 

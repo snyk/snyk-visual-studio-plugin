@@ -1,4 +1,8 @@
 # Snyk Security Changelog
+## [2.1.1]
+### Fixed
+- Fixed total issue counts for code scans being wrong.
+
 ## [2.1.0]
 ### Changed
 - New Summary Panel for scan information and Net New Issues filtering.
