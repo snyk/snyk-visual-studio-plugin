@@ -69,6 +69,8 @@ namespace Snyk.VisualStudio.Extension.UI.Html
 
             html = html.Replace("var(--example-line-removed-color)", VSColorTheme.GetThemedColor(EnvironmentColors.VizSurfaceRedDarkBrushKey).ToHex());
             html = html.Replace("var(--example-line-added-color)", VSColorTheme.GetThemedColor(EnvironmentColors.VizSurfaceGreenDarkBrushKey).ToHex());
+            html = html.Replace("var(--generated-ai-fix-button-background-color)", VSColorTheme.GetThemedColor(EnvironmentColors.StartPageButtonPinHoverColorKey).ToHex());
+            html = html.Replace("var(--circle-color)", VSColorTheme.GetThemedColor(EnvironmentColors.StartPageButtonPinHoverColorKey).ToHex());
             html = html.Replace("${ideGenerateAIFix}", "window.external.GenerateFixes(generateFixQueryString)");
             html = html.Replace("${ideApplyAIFix}", "window.external.ApplyFixDiff(fixId)");
             return html;
