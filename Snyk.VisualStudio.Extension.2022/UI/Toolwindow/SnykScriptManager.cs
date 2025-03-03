@@ -68,10 +68,7 @@ namespace Snyk.VisualStudio.Extension.UI.Toolwindow
                     var folderURI = args[0];
                     var fileURI = args[1];
                     var issueID = args[2];
-                    var res = await LanguageClientHelper.LanguageClientManager().SendCodeFixDiffsAsync(folderURI, fileURI, issueID, SnykVSPackage.Instance.DisposalToken);
-                    if (res != null)
-                    {
-                    }
+                    await LanguageClientHelper.LanguageClientManager().SendCodeFixDiffsAsync(folderURI, fileURI, issueID, SnykVSPackage.Instance.DisposalToken);
                 }
             }).FireAndForget();
         }
