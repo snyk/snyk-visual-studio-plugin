@@ -247,7 +247,7 @@ namespace Snyk.VisualStudio.Extension.UI.Toolwindow
                             {
                                 continue;
                             }
-
+                            tvItem.BringIntoView();
                             if (tvItem.IsSelected && resultsTree.vulnerabilitiesTree.SelectedItem == issueTreeNode)
                             {
                                 RaiseSelectedItemChanged(resultsTree.vulnerabilitiesTree, resultsTree.vulnerabilitiesTree.SelectedItem, issueTreeNode);
@@ -837,11 +837,6 @@ namespace Snyk.VisualStudio.Extension.UI.Toolwindow
                 await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
 
                 this.messagePanel.Visibility = Visibility.Collapsed;
-
-                if (sender is TreeViewItem item)
-                {
-                    item.BringIntoView();
-                }
 
                 if (this.resultsTree.SelectedItem is OssTreeNode)
                 {
