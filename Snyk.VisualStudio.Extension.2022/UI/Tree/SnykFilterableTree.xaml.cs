@@ -150,7 +150,7 @@ namespace Snyk.VisualStudio.Extension.UI.Tree
 
                 var fileNode = TreeNodeProductFactory.GetFileTreeNode(product, rootNode);
                 fileNode.IssueList = issueList;
-                fileNode.IsExpanded = false;
+                fileNode.IsExpanded = true;
                 fileNode.FileName = kv.Key;
                 fileNode.FolderName = currentFolder;
 
@@ -351,12 +351,5 @@ namespace Snyk.VisualStudio.Extension.UI.Tree
 
         private void VulnerabilitiesTree_SelectedItemChanged(object sender, RoutedEventArgs eventArgs) =>
             this.SelectedVulnerabilityChanged?.Invoke(this, eventArgs);
-
-        private void TreeViewItem_Selected(object sender, RoutedEventArgs eventArgs) => MessageBox.Show(eventArgs.ToString());
-
-        private void TreeView_RequestBringIntoView(object sender, RequestBringIntoViewEventArgs e)
-        {
-            e.Handled = true;
-        }
     }
 }

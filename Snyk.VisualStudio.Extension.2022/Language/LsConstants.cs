@@ -29,7 +29,11 @@
         public const string SnykGetFeatureFlagStatus = "snyk.getFeatureFlagStatus";
         public const string SnykGenerateIssueDescription = "snyk.generateIssueDescription";
         public const string SnykReportAnalytics = "snyk.reportAnalytics";
-        
+        public const string SnykCodeFixDiffs = "snyk.code.fixDiffs";
+        public const string SnykCodeFixApplyEdit = "snyk.code.fixApplyEdit";
+
+
+        public const string ShowDocument = "window/showDocument";
         // Feature flags
         public const string SnykConsistentIgnoresEnabled = "snykCodeConsistentIgnores";
     }

@@ -57,7 +57,6 @@ namespace Snyk.VisualStudio.Extension.UI.Html
             html = html.Replace("var(--link-color)", VSColorTheme.GetThemedColor(EnvironmentColors.PanelHyperlinkBrushKey).ToHex());
             html = html.Replace("var(--horizontal-border-color)", VSColorTheme.GetThemedColor(EnvironmentColors.ClassDesignerDefaultShapeTextBrushKey).ToHex());
             html = html.Replace("var(--code-background-color)", VSColorTheme.GetThemedColor(EnvironmentColors.EditorExpansionFillBrushKey).ToHex());
-            html = html.Replace("var(--circle-color)", borderColor);
             html = html.Replace("var(--input-border)", borderColor);
             html = html.Replace("var(--main-font-size)", "15px");
             html = html.Replace("var(--ide-background-color)", isDarkTheme ? "#242424" : "#FBFBFB");
