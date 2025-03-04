@@ -243,14 +243,18 @@ namespace Snyk.VisualStudio.Extension.UI.Toolwindow
                             this.resultsTree.CurrentTreeNode = issueTreeNode;
 
                             var tvItem = FindContainerForItem(resultsTree.vulnerabilitiesTree, issueTreeNode);
-                            if (tvItem != null)
+                            if (tvItem == null)
                             {
-                                tvItem.IsSelected = true;
+                                continue;
                             }
-                            if (resultsTree.vulnerabilitiesTree.SelectedItem == issueTreeNode)
+
+                            if (tvItem.IsSelected && resultsTree.vulnerabilitiesTree.SelectedItem == issueTreeNode)
                             {
                                 RaiseSelectedItemChanged(resultsTree.vulnerabilitiesTree, resultsTree.vulnerabilitiesTree.SelectedItem, issueTreeNode);
+                                return true;
                             }
+
+                            tvItem.IsSelected = true;
                             return true;
                         }
                     }
