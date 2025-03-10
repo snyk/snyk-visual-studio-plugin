@@ -15,5 +15,14 @@
                 return _instance;
             }
         }
+
+        public override string ReplaceCssVariables(string html)
+        {
+            var css = "<style nonce=\"${nonce}\">";
+            css += GetCss();
+            css += "</style>";
+            html = html.Replace("${ideStyle}", css);
+            return base.ReplaceCssVariables(html);
+        }
     }
 }

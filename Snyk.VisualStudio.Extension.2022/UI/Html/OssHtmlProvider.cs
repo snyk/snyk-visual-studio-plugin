@@ -21,6 +21,10 @@ namespace Snyk.VisualStudio.Extension.UI.Html
 
         public override string ReplaceCssVariables(string html)
         {
+            var css = "<style nonce=\"${nonce}\">";
+            css += GetCss();
+            css += "</style>"; 
+            html = html.Replace("${ideStyle}", css);
             html =  base.ReplaceCssVariables(html);
             html = html.Replace("var(--container-background-color)", VSColorTheme.GetThemedColor(EnvironmentColors.EditorExpansionFillBrushKey).ToHex());
 
