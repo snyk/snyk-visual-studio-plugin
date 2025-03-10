@@ -50,10 +50,6 @@ namespace Snyk.VisualStudio.Extension.UI
         private static string SeverityHighIconPath = ResourceLoader.GetResourcePath("SeverityHigh.png");
         private static string SeverityMediumIconPath = ResourceLoader.GetResourcePath("SeverityMedium.png");
         private static string SeverityLowIconPath = ResourceLoader.GetResourcePath("SeverityLow.png");
-        private static string SeverityCritical24IconName = ResourceLoader.GetResourcePath("SeverityCritical24.png");
-        private static string SeverityHigh24IconName = ResourceLoader.GetResourcePath("SeverityHigh24.png");
-        private static string SeverityMedium24IconName = ResourceLoader.GetResourcePath("SeverityMedium24.png");
-        private static string SeverityLow24IconName = ResourceLoader.GetResourcePath("SeverityLow24.png");
         private static string JsFileIconPath = ResourceLoader.GetResourcePath("JSScript.png");
         private static string CsFileIconPath = ResourceLoader.GetResourcePath("CSFileNode.png");
         private static string TsFileIconPath = ResourceLoader.GetResourcePath("TSFileNode.png");
@@ -213,42 +209,6 @@ namespace Snyk.VisualStudio.Extension.UI
             }
 
             return icon;
-        }
-
-        /// <summary>
-        /// Get icon path for severity.
-        /// </summary>
-        /// <param name="severity">Severity name.</param>
-        /// <returns>Icon path.</returns>
-        public static ImageSource GetSeverityIconSource(string severity)
-        {
-            string iconPath;
-
-            switch (severity)
-            {
-                case Severity.Critical:
-                    iconPath = SeverityCritical24IconName;
-
-                    break;
-                case Severity.High:
-                    iconPath = SeverityHigh24IconName;
-
-                    break;
-                case Severity.Medium:
-                    iconPath = SeverityMedium24IconName;
-
-                    break;
-                case Severity.Low:
-                    iconPath = SeverityLow24IconName;
-
-                    break;
-                default:
-                    iconPath = DefaultIconPath;
-
-                    break;
-            }
-
-            return ConvertPathToBitmap(iconPath);
         }
 
         public static ImageSource GetImageSourceFromPath(string imagePath)

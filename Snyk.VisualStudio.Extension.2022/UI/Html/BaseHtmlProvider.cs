@@ -9,7 +9,9 @@ namespace Snyk.VisualStudio.Extension.UI.Html
     {
         public virtual string GetCss()
         {
-            return "";
+            return @"
+            .sn-issue-title { margin-left: 10px; }
+            ";
         }
 
         public virtual string GetJs()
@@ -42,14 +44,8 @@ namespace Snyk.VisualStudio.Extension.UI.Html
         public virtual string ReplaceCssVariables(string html)
         {
             var isDarkTheme = ThemeInfo.IsDarkTheme();
-            var css = "<style nonce=\"${nonce}\">";
-            css += GetCss();
-
-            css += "</style>";
             var borderColor = VSColorTheme.GetThemedColor(EnvironmentColors.AccessKeyToolTipColorKey).ToHex();
 
-            html = html.Replace("${ideStyle}", css);
-            html = html.Replace("<style nonce=\"ideNonce\" data-ide-style></style>", css);
             html = html.Replace("var(--default-font)", " ui-sans-serif, \"SF Pro Text\", \"Segoe UI\", \"Ubuntu\", Tahoma, Geneva, Verdana, sans-serif;");
             html = html.Replace("var(--text-color)", VSColorTheme.GetThemedColor(EnvironmentColors.BrandedUITextBrushKey).ToHex());
             html = html.Replace("var(--background-color)", VSColorTheme.GetThemedColor(EnvironmentColors.ComboBoxPopupBackgroundEndBrushKey).ToHex());
@@ -60,6 +56,8 @@ namespace Snyk.VisualStudio.Extension.UI.Html
             html = html.Replace("var(--input-border)", borderColor);
             html = html.Replace("var(--main-font-size)", "15px");
             html = html.Replace("var(--ide-background-color)", isDarkTheme ? "#242424" : "#FBFBFB");
+            html = html.Replace("var(--dimmed-text-color)", VSColorTheme.GetThemedColor(EnvironmentColors.ScrollBarThumbPressedBackgroundBrushKey).ToHex());
+
             html = html.Replace("${headerEnd}", "");
             var nonce = GetNonce();
             html = html.Replace("${nonce}", nonce);
