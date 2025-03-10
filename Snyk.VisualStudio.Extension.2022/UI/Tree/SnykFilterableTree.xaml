@@ -56,7 +56,6 @@
                                          Opacity="0.4"/>
                     </Style.Resources>
 
-                    <EventSetter Event="RequestBringIntoView" Handler="TreeView_RequestBringIntoView" />
                     <Setter Property="IsExpanded" Value="{Binding IsExpanded, Mode=TwoWay}"/>
                     <Setter Property="IsSelected" Value="{Binding IsSelected, Mode=TwoWay}"/>
                 </Style>

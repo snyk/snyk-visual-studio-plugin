@@ -52,10 +52,32 @@ namespace Snyk.VisualStudio.Extension.UI.Toolwindow
             ThreadHelper.JoinableTaskFactory.RunAsync(async () =>
             {
                 this.serviceProvider.Options.EnableDeltaFindings = isEnabled;
-                this.serviceProvider.SnykOptionsManager.Save(this.serviceProvider.Options, false);
+                this.serviceProvider.SnykOptionsManager.Save(this.serviceProvider.Options);
                 await LanguageClientHelper.LanguageClientManager().DidChangeConfigurationAsync(SnykVSPackage.Instance.DisposalToken);
 
             }).FireAndForget();
         }
+        public void GenerateFixes(string value)
+        {
+            ThreadHelper.JoinableTaskFactory.RunAsync(async () => {
+
+            string[] separator = { "@|@" };
+            var args = value.Split(separator, StringSplitOptions.None);
+                if (args.Length > 1)
+                {
+                    var folderURI = args[0];
+                    var fileURI = args[1];
+                    var issueID = args[2];
+                    await LanguageClientHelper.LanguageClientManager().SendCodeFixDiffsAsync(folderURI, fileURI, issueID, SnykVSPackage.Instance.DisposalToken);
+                }
+            }).FireAndForget();
+        }
+        public void ApplyFixDiff(string fixID)
+        {
+            ThreadHelper.JoinableTaskFactory.RunAsync(async () => {
+                await LanguageClientHelper.LanguageClientManager().SendApplyFixDiffsAsync(fixID, SnykVSPackage.Instance.DisposalToken);
+            }).FireAndForget();
+        }
+
     }
 }

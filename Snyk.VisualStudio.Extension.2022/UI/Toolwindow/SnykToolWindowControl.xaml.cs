@@ -191,6 +191,123 @@ namespace Snyk.VisualStudio.Extension.UI.Toolwindow
             });
         }
 
+        public void SelectedItemInTree(string issueId, string product)
+        {
+            ThreadHelper.JoinableTaskFactory.Run(async () =>
+            {
+                await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
+
+                var rootNodes = new List<TreeNode>();
+
+                switch (product)
+                {
+                    case Product.Code:
+                        rootNodes.Add(this.resultsTree.CodeSecurityRootNode);
+                        rootNodes.Add(this.resultsTree.CodeQualityRootNode);
+                        break;
+                    case Product.Oss:
+                        rootNodes.Add(this.resultsTree.OssRootNode);
+                        break;
+                    case Product.Iac:
+                        rootNodes.Add(this.resultsTree.IacRootNode);
+                        break;
+                }
+
+                foreach (var rootNode in rootNodes)
+                {
+                    var foundAndSelected = TrySelectIssueInRootNode(rootNode, issueId);
+                    if (foundAndSelected)
+                    {
+                        break;
+                    }
+                }
+            });
+        }
+
+        /// <summary>
+        /// Searches the given root node (e.g. CodeSecurityRootNode) for a child CodeTreeNode
+        /// whose Issue.Id matches <paramref name="issueId"/>. If found, selects it.
+        /// </summary>
+        private bool TrySelectIssueInRootNode(TreeNode rootNode, string issueId)
+        {
+            foreach (var treeItem in rootNode.Items)
+            {
+                if (treeItem is FileTreeNode fileTreeNode)
+                {
+                    foreach (var childNode in fileTreeNode.Items)
+                    {
+                        if (childNode is IssueTreeNode issueTreeNode && issueTreeNode.Issue.Id == issueId)
+                        {
+                            issueTreeNode.IsSelected = true;
+
+                            this.resultsTree.CurrentTreeNode = issueTreeNode;
+
+                            var tvItem = FindContainerForItem(resultsTree.vulnerabilitiesTree, issueTreeNode);
+                            if (tvItem == null)
+                            {
+                                continue;
+                            }
+                            tvItem.BringIntoView();
+                            if (tvItem.IsSelected && resultsTree.vulnerabilitiesTree.SelectedItem == issueTreeNode)
+                            {
+                                RaiseSelectedItemChanged(resultsTree.vulnerabilitiesTree, resultsTree.vulnerabilitiesTree.SelectedItem, issueTreeNode);
+                                return true;
+                            }
+
+                            tvItem.IsSelected = true;
+                            return true;
+                        }
+                    }
+                }
+            }
+
+            return false;
+        }
+
+        public static TreeViewItem FindContainerForItem(
+            ItemsControl parent,
+            object targetItem,
+            bool autoExpandParents = false)
+        {
+            if (parent.ItemContainerGenerator.ContainerFromItem(targetItem) is TreeViewItem container) return container;
+
+            foreach (var childItem in parent.Items)
+            {
+                if (parent.ItemContainerGenerator.ContainerFromItem(childItem) is not TreeViewItem parentContainer)
+                    continue;
+                if (autoExpandParents)
+                {
+                    // Expand to force generation of deeper levels
+                    parentContainer.IsExpanded = true;
+                    parent.UpdateLayout();
+                }
+
+                // Recurse
+                var descendantContainer = FindContainerForItem(
+                    parentContainer,
+                    targetItem,
+                    autoExpandParents);
+
+                if (descendantContainer != null)
+                    return descendantContainer;
+            }
+            return null;
+        }
+        private void RaiseSelectedItemChanged(TreeView tree, object oldItem, object newItem)
+        {
+            // Build the args needed for the SelectedItemChanged event
+            var args = new RoutedPropertyChangedEventArgs<object>(
+                oldItem,
+                newItem
+            )
+            {
+                RoutedEvent = TreeView.SelectedItemChangedEvent,
+                Source = tree
+            };
+
+            // Manually raise the event on the TreeView
+            tree.RaiseEvent(args);
+        }
         private void OnIacScanningDisabled(object sender, SnykCodeScanEventArgs e)
         {
             ThreadHelper.JoinableTaskFactory.Run(async () =>

@@ -129,6 +129,7 @@ namespace Snyk.VisualStudio.Extension.UI.Tree
                 return;
             }
             rootNode.Clean();
+            var totalIssueCount = 0;
             var criticalSeverityCount = 0;
             var highSeverityCount = 0;
             var mediumSeverityCount = 0;
@@ -149,20 +150,22 @@ namespace Snyk.VisualStudio.Extension.UI.Tree
 
                 var fileNode = TreeNodeProductFactory.GetFileTreeNode(product, rootNode);
                 fileNode.IssueList = issueList;
-                fileNode.IsExpanded = false;
+                fileNode.IsExpanded = true;
                 fileNode.FileName = kv.Key;
                 fileNode.FolderName = currentFolder;
 
                 ignoredIssueCount += issueList.Count(suggestion => suggestion.IsIgnored);
 
-                issueList = FilterIgnoredIssues(options, issueList).ToList();
-                
+                totalIssueCount += issueList.Count;
+
                 criticalSeverityCount += issueList.Count(suggestion => suggestion.Severity == Severity.Critical);
                 highSeverityCount += issueList.Count(suggestion => suggestion.Severity == Severity.High);
                 mediumSeverityCount += issueList.Count(suggestion => suggestion.Severity == Severity.Medium);
                 lowSeverityCount += issueList.Count(suggestion => suggestion.Severity == Severity.Low);
 
                 fixableIssueCount += issueList.Count(suggestion => suggestion.HasFix());
+
+                issueList = FilterIgnoredIssues(options, issueList).ToList();
 
                 issueList.Sort((issue1, issue2) => Severity.ToInt(issue2.Severity) - Severity.ToInt(issue1.Severity));
 
@@ -178,10 +181,6 @@ namespace Snyk.VisualStudio.Extension.UI.Tree
                     fileTreeNodes.Add(fileNode);
                 }
             }
-
-            var totalIssueCount = scanResultDictionary
-                .Where(x => x.Key.Replace("\\", "/").TrimEnd('/').Contains(currentFolder))
-                .SelectMany(x => x.Value).Count();
 
             AddInfoTreeNodes(rootNode, totalIssueCount, ignoredIssueCount, fixableIssueCount, options);
 
@@ -352,12 +351,5 @@ namespace Snyk.VisualStudio.Extension.UI.Tree
 
         private void VulnerabilitiesTree_SelectedItemChanged(object sender, RoutedEventArgs eventArgs) =>
             this.SelectedVulnerabilityChanged?.Invoke(this, eventArgs);
-
-        private void TreeViewItem_Selected(object sender, RoutedEventArgs eventArgs) => MessageBox.Show(eventArgs.ToString());
-
-        private void TreeView_RequestBringIntoView(object sender, RequestBringIntoViewEventArgs e)
-        {
-            e.Handled = true;
-        }
     }
 }
