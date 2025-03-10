@@ -165,8 +165,6 @@ namespace Snyk.VisualStudio.Extension.UI.Tree
 
                 fixableIssueCount += issueList.Count(suggestion => suggestion.HasFix());
 
-                issueList = FilterIgnoredIssues(options, issueList).ToList();
-
                 issueList.Sort((issue1, issue2) => Severity.ToInt(issue2.Severity) - Severity.ToInt(issue1.Severity));
 
                 foreach (var issue in issueList)
@@ -243,19 +241,6 @@ namespace Snyk.VisualStudio.Extension.UI.Tree
         private string GetPlural(int count)
         {
             return count > 1 ? "s" : "";
-        }
-
-        private IEnumerable<Issue> FilterIgnoredIssues(ISnykOptions options, IEnumerable<Issue> issueList)
-        {
-            var includeIgnoredIssues = true;
-            var includeOpenedIssues = true;
-            if (options.ConsistentIgnoresEnabled)
-            {
-                includeOpenedIssues = options.OpenIssuesEnabled;
-                includeIgnoredIssues = options.IgnoredIssuesEnabled;
-            }
-
-            return issueList.Where(x => x.IsVisible(includeIgnoredIssues, includeOpenedIssues));
         }
 
         /// <summary>
