@@ -198,49 +198,140 @@ namespace Snyk.VisualStudio.Extension.UI.Tree
         private void AddInfoTreeNodes(RootTreeNode rootNode, int totalIssueCount, int ignoredIssueCount,
             int fixableIssueCount, ISnykOptions options)
         {
-            var plural = GetPlural(totalIssueCount);
-            var text = "✅ Congrats! No issues found!";
-
-            if (totalIssueCount > 0)
-            {
-                text = $"✋ {totalIssueCount} issue{plural} found by Snyk";
-                if (options.ConsistentIgnoresEnabled)
-                {
-                    text += $", {ignoredIssueCount} ignored";
-                }
-            }
+            var openIssueCount = totalIssueCount - ignoredIssueCount;
+            var text = rootNode is SnykCodeSecurityRootTreeNode ? GetIssueFoundTextForCodeSecurity(options, totalIssueCount, openIssueCount, ignoredIssueCount) : GetIssueFoundText(options, totalIssueCount);
 
             rootNode.Items.Add(new InfoTreeNode { Title = text });
 
-            if (fixableIssueCount > 0)
+            if (totalIssueCount == 0)
             {
-                rootNode.Items.Add(new InfoTreeNode
-                    { Title = $"⚡ {fixableIssueCount} issue{plural} can be fixed automatically" });
-            }
-            else if(totalIssueCount > 0)
-            {
-                rootNode.Items.Add(new InfoTreeNode
-                    { Title = "There are no issues automatically fixable" });
-            }
-
-            if (options.ConsistentIgnoresEnabled)
-            {
-                if (ignoredIssueCount == totalIssueCount && !options.IgnoredIssuesEnabled)
+                var ivoNode = rootNode is SnykCodeSecurityRootTreeNode ? GetNoIssueViewOptionsSelectedTreeNodeForCodeSecurity(options) : GetNoIssueViewOptionsSelectedTreeNode(options);
+                if (ivoNode != null)
                 {
-                    rootNode.Items.Add(new InfoTreeNode
-                        { Title = "Adjust your Issue View Options to see ignored issues." });
+                    rootNode.Items.Add(ivoNode);
                 }
-                else if (ignoredIssueCount == 0 && !options.OpenIssuesEnabled)
+            }
+            else
+            {
+                var fixableNode = rootNode is SnykCodeSecurityRootTreeNode ? GetFixableIssuesNodeForCodeSecurity(options, fixableIssueCount) : GetFixableIssuesNode(options, fixableIssueCount);
+                if (fixableNode != null)
                 {
-                    rootNode.Items.Add(new InfoTreeNode
-                        { Title = "Adjust your Issue View Options to open issues." });
+                    rootNode.Items.Add(fixableNode);
                 }
             }
         }
 
-        private string GetPlural(int count)
+        private string GetIssueFoundText(ISnykOptions options, int issueCount) {
+            if (!options.OpenIssuesEnabled) {
+                return "Open issues are disabled!";
+            }
+
+            if (issueCount == 0) {
+                return "✅ Congrats! No issues found!";
+            } else {
+                return $"✋ {issueCount} issue{(issueCount == 1 ? "" : "s" )}";
+            }
+        }
+
+        private string GetIssueFoundTextForCodeSecurity(ISnykOptions options, int totalIssueCount, int openIssueCount, int ignoredIssueCount)
         {
-            return count > 1 ? "s" : "";
+            if (!options.ConsistentIgnoresEnabled)
+            {
+                return GetIssueFoundText(options, totalIssueCount);
+            }
+
+            var openIssuesText = $"{openIssueCount} open issue{(openIssueCount == 1 ? "" : "s")}";
+            var ignoredIssuesText = $"{ignoredIssueCount} ignored issue{(ignoredIssueCount == 1 ? "" : "s")}";
+
+            if (options.OpenIssuesEnabled)
+            {
+                if (options.IgnoredIssuesEnabled)
+                {
+                    if (totalIssueCount == 0)
+                    {
+                        return "✅ Congrats! No issues found!";
+                    }
+                    else
+                    {
+                        return $"✋ {openIssuesText}, {ignoredIssuesText}";
+                    }
+                }
+                else
+                {
+                    if (openIssueCount == 0)
+                    {
+                        return "✅ Congrats! No open issues found!";
+                    }
+                    else
+                    {
+                        return $"✋ {openIssuesText}";
+                    }
+                }
+            }
+            else if (options.IgnoredIssuesEnabled)
+            {
+                if (ignoredIssueCount == 0)
+                {
+                    return "✋ No ignored issues, open issues are disabled";
+                }
+                else
+                {
+                    return $"✋ {ignoredIssuesText}, open issues are disabled";
+                }
+            }
+            else
+            {
+                return "Open and Ignored issues are disabled!";
+            }
+        }
+
+        private TreeNode GetNoIssueViewOptionsSelectedTreeNode(ISnykOptions options)
+        {
+            if (!options.OpenIssuesEnabled)
+            {
+                return new InfoTreeNode { Title = "Adjust your settings to view Open issues." };
+            }
+
+            return null;
+        }
+
+        private TreeNode GetNoIssueViewOptionsSelectedTreeNodeForCodeSecurity(ISnykOptions options)
+        {
+            if (!options.ConsistentIgnoresEnabled)
+            {
+                return GetNoIssueViewOptionsSelectedTreeNode(options);
+            }
+
+            if (!options.OpenIssuesEnabled && !options.IgnoredIssuesEnabled)
+            {
+                return new InfoTreeNode { Title = "Adjust your settings to view Open and Ignored issues." };
+            }
+
+            if (!options.OpenIssuesEnabled)
+            {
+                return new InfoTreeNode { Title = "Adjust your settings to view Open issues." };
+            }
+
+            if (!options.IgnoredIssuesEnabled)
+            {
+                return new InfoTreeNode { Title = "Adjust your settings to view Ignored issues." };
+            }
+
+            return null;
+        }
+
+        private TreeNode GetFixableIssuesNode(ISnykOptions options, int fixableIssueCount)
+        {
+            return new InfoTreeNode { Title = fixableIssueCount > 0 ? $"⚡ {fixableIssueCount} issue{(fixableIssueCount == 1 ? "" : "s")} can be fixed automatically" : "There are no issues automatically fixable" };
+        }
+
+        private TreeNode GetFixableIssuesNodeForCodeSecurity(ISnykOptions options, int fixableIssueCount)
+        {
+            if (!options.OpenIssuesEnabled)
+            {
+                return null;
+            }
+            return GetFixableIssuesNode(options, fixableIssueCount);
         }
 
         /// <summary>
