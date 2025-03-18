@@ -1,4 +1,5 @@
-﻿using System.IO;
+﻿using System;
+using System.IO;
 using System.Linq;
 
 namespace Snyk.VisualStudio.Extension.UI.Tree
@@ -6,10 +7,19 @@ namespace Snyk.VisualStudio.Extension.UI.Tree
     public class OssFileTreeNode : FileTreeNode
     {
         public OssFileTreeNode(TreeNode parent) : base(parent) { }
-        public override string Title => this.ProjectName.Replace("/", "\\") + "\\" + this.DisplayTargetFile;
+
+        public override string Title
+        {
+            get
+            {
+                var mainDirUri = new Uri(FolderName);
+                var fileUri = new Uri(FileName);
+                var relativeUri = mainDirUri.MakeRelativeUri(fileUri);
+                return Uri.UnescapeDataString(relativeUri.ToString()).Replace("/", "\\");
+            }
+        }
+
         public override string Icon => SnykIconProvider.GetPackageManagerIcon(this.PackageManager);
-        private string ProjectName => this.IssueList.FirstOrDefault()?.AdditionalData?.ProjectName ?? "";
         private string PackageManager => this.IssueList.FirstOrDefault()?.AdditionalData?.PackageManager ?? "";
-        private string DisplayTargetFile => Path.GetFileName(this.IssueList.FirstOrDefault()?.AdditionalData?.DisplayTargetFile ?? "");
     }
 }
