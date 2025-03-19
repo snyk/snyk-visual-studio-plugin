@@ -33,6 +33,7 @@ namespace Snyk.VisualStudio.Extension.Settings
         private void InitializeComponent()
         {
             this.components = new System.ComponentModel.Container();
+            System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(SnykGeneralSettingsUserControl));
             this.customEndpointTextBox = new System.Windows.Forms.TextBox();
             this.customEndpointLabel = new System.Windows.Forms.Label();
             this.organizationLabel = new System.Windows.Forms.Label();
@@ -62,7 +63,7 @@ namespace Snyk.VisualStudio.Extension.Settings
             // 
             // customEndpointTextBox
             // 
-            this.customEndpointTextBox.Location = new System.Drawing.Point(169, 260);
+            this.customEndpointTextBox.Location = new System.Drawing.Point(169, 274);
             this.customEndpointTextBox.Margin = new System.Windows.Forms.Padding(3, 2, 3, 2);
             this.customEndpointTextBox.Name = "customEndpointTextBox";
             this.customEndpointTextBox.Size = new System.Drawing.Size(399, 20);
@@ -73,7 +74,7 @@ namespace Snyk.VisualStudio.Extension.Settings
             // customEndpointLabel
             // 
             this.customEndpointLabel.AutoSize = true;
-            this.customEndpointLabel.Location = new System.Drawing.Point(5, 262);
+            this.customEndpointLabel.Location = new System.Drawing.Point(5, 276);
             this.customEndpointLabel.Name = "customEndpointLabel";
             this.customEndpointLabel.Size = new System.Drawing.Size(89, 13);
             this.customEndpointLabel.TabIndex = 1;
@@ -82,7 +83,7 @@ namespace Snyk.VisualStudio.Extension.Settings
             // organizationLabel
             // 
             this.organizationLabel.AutoSize = true;
-            this.organizationLabel.Location = new System.Drawing.Point(5, 317);
+            this.organizationLabel.Location = new System.Drawing.Point(5, 331);
             this.organizationLabel.Name = "organizationLabel";
             this.organizationLabel.Size = new System.Drawing.Size(69, 13);
             this.organizationLabel.TabIndex = 2;
@@ -90,7 +91,7 @@ namespace Snyk.VisualStudio.Extension.Settings
             // 
             // organizationTextBox
             // 
-            this.organizationTextBox.Location = new System.Drawing.Point(169, 317);
+            this.organizationTextBox.Location = new System.Drawing.Point(169, 331);
             this.organizationTextBox.Margin = new System.Windows.Forms.Padding(3, 2, 3, 2);
             this.organizationTextBox.Name = "organizationTextBox";
             this.organizationTextBox.Size = new System.Drawing.Size(399, 20);
@@ -120,7 +121,7 @@ namespace Snyk.VisualStudio.Extension.Settings
             // ignoreUnknownCACheckBox
             // 
             this.ignoreUnknownCACheckBox.AutoSize = true;
-            this.ignoreUnknownCACheckBox.Location = new System.Drawing.Point(172, 284);
+            this.ignoreUnknownCACheckBox.Location = new System.Drawing.Point(172, 298);
             this.ignoreUnknownCACheckBox.Margin = new System.Windows.Forms.Padding(3, 2, 3, 2);
             this.ignoreUnknownCACheckBox.Name = "ignoreUnknownCACheckBox";
             this.ignoreUnknownCACheckBox.Size = new System.Drawing.Size(120, 17);
@@ -174,7 +175,7 @@ namespace Snyk.VisualStudio.Extension.Settings
             // 
             this.SnykRegionsLink.AutoSize = true;
             this.SnykRegionsLink.ImageAlign = System.Drawing.ContentAlignment.MiddleRight;
-            this.SnykRegionsLink.Location = new System.Drawing.Point(175, 238);
+            this.SnykRegionsLink.Location = new System.Drawing.Point(175, 256);
             this.SnykRegionsLink.Margin = new System.Windows.Forms.Padding(4, 0, 4, 0);
             this.SnykRegionsLink.Name = "SnykRegionsLink";
             this.SnykRegionsLink.Size = new System.Drawing.Size(114, 13);
@@ -191,11 +192,9 @@ namespace Snyk.VisualStudio.Extension.Settings
             this.endpointDescriptionText.Margin = new System.Windows.Forms.Padding(4);
             this.endpointDescriptionText.Name = "endpointDescriptionText";
             this.endpointDescriptionText.ReadOnly = true;
-            this.endpointDescriptionText.Size = new System.Drawing.Size(571, 46);
+            this.endpointDescriptionText.Size = new System.Drawing.Size(571, 68);
             this.endpointDescriptionText.TabIndex = 20;
-            this.endpointDescriptionText.Text = "If you\'re using OAuth2, API endpoint configuration is automatic. \nFor private ins" +
-    "tances, contact your team or account manager.\nOtherwise, for public regional ins" +
-    "tances, see the docs:\n";
+            this.endpointDescriptionText.Text = resources.GetString("endpointDescriptionText.Text");
             // 
             // authMethodDescription
             // 
@@ -236,7 +235,7 @@ namespace Snyk.VisualStudio.Extension.Settings
             // OrganizationInfoLink
             // 
             this.OrganizationInfoLink.AutoSize = true;
-            this.OrganizationInfoLink.Location = new System.Drawing.Point(175, 393);
+            this.OrganizationInfoLink.Location = new System.Drawing.Point(175, 403);
             this.OrganizationInfoLink.Margin = new System.Windows.Forms.Padding(4, 0, 4, 0);
             this.OrganizationInfoLink.Name = "OrganizationInfoLink";
             this.OrganizationInfoLink.Size = new System.Drawing.Size(150, 13);
@@ -248,7 +247,7 @@ namespace Snyk.VisualStudio.Extension.Settings
             // OrgDescriptionText
             // 
             this.OrgDescriptionText.AutoSize = true;
-            this.OrgDescriptionText.Location = new System.Drawing.Point(166, 339);
+            this.OrgDescriptionText.Location = new System.Drawing.Point(166, 353);
             this.OrgDescriptionText.Margin = new System.Windows.Forms.Padding(4, 0, 4, 0);
             this.OrgDescriptionText.Name = "OrgDescriptionText";
             this.OrgDescriptionText.Size = new System.Drawing.Size(376, 39);
