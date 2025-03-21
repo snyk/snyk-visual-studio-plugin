@@ -124,7 +124,7 @@
     <value>156</value>
   </metadata>
   <data name="endpointDescriptionText.Text" xml:space="preserve">
-    <value>If you're using SSO with Snyk and OAuth2 the custom endpoint configuration is 
+    <value>If you're using SSO with Snyk and OAuth2, the custom endpoint configuration is 
 automatically populated. 
 For private instances, contact your team or account manager.
 Otherwise, for public regional instances, see the docs:</value>
