@@ -60,18 +60,18 @@ namespace Snyk.VisualStudio.Extension.Language
                         serviceProvider.Options.ConsistentIgnoresEnabled = true;
                     }
                     return issue;
-                });
+                }).ToList();
 
             switch (source)
             {
                 case "code":
-                    snykCodeIssueDictionary.TryAdd(parsedUri.UncAwareAbsolutePath(), issueList);
+                    snykCodeIssueDictionary.AddOrUpdate(parsedUri.UncAwareAbsolutePath(), issueList, (_, _) => issueList);
                     break;
                 case "oss":
-                     snykOssIssueDictionary.TryAdd(parsedUri.UncAwareAbsolutePath(), issueList);
+                     snykOssIssueDictionary.AddOrUpdate(parsedUri.UncAwareAbsolutePath(), issueList, (_, _) => issueList);
                     break;
                 case "iac":
-                    snykIaCIssueDictionary.TryAdd(parsedUri.UncAwareAbsolutePath(), issueList);
+                    snykIaCIssueDictionary.AddOrUpdate(parsedUri.UncAwareAbsolutePath(), issueList, (_, _) => issueList);
                     break;
                 default:
                     throw new InvalidProductTypeException();

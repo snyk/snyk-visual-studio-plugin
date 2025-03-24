@@ -20,6 +20,11 @@ namespace Snyk.VisualStudio.Extension.UI.Html
         }
         public override string ReplaceCssVariables(string html)
         {
+            var css = "<style nonce=\"${nonce}\">";
+            css += GetCss();
+            css += "</style>";
+            html = html.Replace("${ideStyle}", css);
+
             html = html.Replace("${ideFunc}", "window.external.EnableDelta(isEnabled);");
             html = base.ReplaceCssVariables(html);
 

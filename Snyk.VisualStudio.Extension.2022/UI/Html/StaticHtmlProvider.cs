@@ -1,8 +1,6 @@
 ﻿using Microsoft.VisualStudio.Shell;
 using System.IO;
-using System.Reflection;
 using System.Threading.Tasks;
-using System.Windows;
 
 namespace Snyk.VisualStudio.Extension.UI.Html
 {
@@ -24,6 +22,12 @@ namespace Snyk.VisualStudio.Extension.UI.Html
         public override string GetInitScript()
         {
           return @"";
+        }
+
+        public override string ReplaceCssVariables(string html)
+        {
+            html = html.Replace("${ideStyle}", "");
+            return base.ReplaceCssVariables(html);
         }
 
         public async Task<string> GetInitHtmlAsync()
