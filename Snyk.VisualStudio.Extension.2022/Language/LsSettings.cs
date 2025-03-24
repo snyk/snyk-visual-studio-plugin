@@ -41,6 +41,11 @@ namespace Snyk.VisualStudio.Extension.Language
                     Low = false,
                     Medium = false,
                 },
+                IssueViewOptions = new IssueViewOptions
+                {
+                    OpenIssues = options.OpenIssuesEnabled,
+                    IgnoredIssues = options.IgnoredIssuesEnabled,
+                },
                 ScanningMode = options.AutoScan ? "auto" : "manual",
 #pragma warning disable VSTHRD104
                 AdditionalParams = ThreadHelper.JoinableTaskFactory.Run(() => this.serviceProvider.SnykOptionsManager.GetAdditionalOptionsAsync()),
