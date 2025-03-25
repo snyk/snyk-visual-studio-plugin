@@ -287,5 +287,11 @@ namespace Snyk.VisualStudio.Extension.Settings
         {
             return this.mainPanel;
         }
+
+        private void SnykRegionsLink_LinkClicked(object sender, LinkLabelLinkClickedEventArgs e)
+        {
+            this.SnykRegionsLink.LinkVisited = true;
+            Process.Start("https://docs.snyk.io/working-with-snyk/regional-hosting-and-data-residency#available-snyk-regions");
+        }
     }
 }
