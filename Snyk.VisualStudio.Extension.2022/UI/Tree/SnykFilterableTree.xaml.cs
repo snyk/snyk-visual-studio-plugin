@@ -205,7 +205,7 @@ namespace Snyk.VisualStudio.Extension.UI.Tree
 
             if (totalIssueCount > 0)
             {
-                text = $"✋ {totalIssueCount} issue{plural} found by Snyk";
+                text = $"✋ {totalIssueCount} issue{plural} found";
                 if (options.ConsistentIgnoresEnabled)
                 {
                     text += $", {ignoredIssueCount} ignored";
