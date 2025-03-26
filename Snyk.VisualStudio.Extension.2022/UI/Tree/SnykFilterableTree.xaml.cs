@@ -222,7 +222,7 @@ namespace Snyk.VisualStudio.Extension.UI.Tree
         }
 
         private string GetIssueFoundText(ISnykOptions options, int issueCount) {
-            if (!options.OpenIssuesEnabled) {
+            if (options.ConsistentIgnoresEnabled && !options.OpenIssuesEnabled) {
                 return "Open issues are disabled!";
             }
 
@@ -287,6 +287,11 @@ namespace Snyk.VisualStudio.Extension.UI.Tree
 
         private TreeNode GetNoIssueViewOptionsSelectedTreeNode(ISnykOptions options)
         {
+            if (!options.ConsistentIgnoresEnabled)
+            {
+                return null;
+            }
+
             if (!options.OpenIssuesEnabled)
             {
                 return new InfoTreeNode { Title = "Adjust your settings to view Open issues." };
@@ -299,7 +304,7 @@ namespace Snyk.VisualStudio.Extension.UI.Tree
         {
             if (!options.ConsistentIgnoresEnabled)
             {
-                return GetNoIssueViewOptionsSelectedTreeNode(options);
+                return null;
             }
 
             if (!options.OpenIssuesEnabled && !options.IgnoredIssuesEnabled)
@@ -327,7 +332,7 @@ namespace Snyk.VisualStudio.Extension.UI.Tree
 
         private TreeNode GetFixableIssuesNodeForCodeSecurity(ISnykOptions options, int fixableIssueCount)
         {
-            if (!options.OpenIssuesEnabled)
+            if (options.ConsistentIgnoresEnabled && !options.OpenIssuesEnabled)
             {
                 return null;
             }
