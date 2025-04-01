@@ -36,7 +36,7 @@ namespace Snyk.VisualStudio.Extension.UI.Html
             {
                 var assemblyLocation = Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location);
                 if (assemblyLocation == null) return string.Empty;
-                var path = Path.Combine(assemblyLocation, "Resources", "LoadingSummary.html");
+                var path = Path.Combine(assemblyLocation, "Resources", "ScanSummaryInit.html");
                 using (var stream = new StreamReader(path))
                 {
                     var html = await stream.ReadToEndAsync();

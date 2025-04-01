@@ -117,7 +117,7 @@
     <Resource Include="Resources\branch-dark.png">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Resource>
-    <Content Include="Resources\LoadingSummary.html">
+    <Content Include="Resources\ScanSummaryInit.html">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
       <IncludeInVSIX>true</IncludeInVSIX>
     </Content>
