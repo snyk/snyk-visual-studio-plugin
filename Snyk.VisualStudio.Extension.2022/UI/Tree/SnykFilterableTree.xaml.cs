@@ -18,6 +18,16 @@ namespace Snyk.VisualStudio.Extension.UI.Tree
     /// </summary>
     public partial class SnykFilterableTree : UserControl, IRefreshable
     {
+        private const string CongratsNoIssuesFound = "✅ Congrats! No issues found!";
+        private const string CongratsNoOpenIssuesFound = "✅ Congrats! No open issues found!";
+        private const string OpenIssuesAreDisabled = "Open issues are disabled!";
+        private const string NoIgnoredIssues = "✋ No ignored issues, open issues are disabled";
+        private const string OpenAndIgnoredIssuesAreDisabled = "Open and Ignored issues are disabled!";
+        private const string NoFixableIssues = "There are no issues automatically fixable.";
+        private const string AllIssueViewOptionsDisabled = "Adjust your settings to view Open or Ignored issues.";
+        private const string OpenIssueViewOptionDisabled = "Adjust your settings to view Open issues.";
+        private const string IgnoredIssueViewOptionDisabled = "Adjust your settings to view Ignored issues.";
+
         private static SnykFilterableTree instance;
 
         private readonly RootTreeNode ossRootNode;
@@ -199,13 +209,13 @@ namespace Snyk.VisualStudio.Extension.UI.Tree
             int fixableIssueCount, ISnykOptions options)
         {
             var openIssueCount = totalIssueCount - ignoredIssueCount;
-            var text = rootNode is SnykCodeSecurityRootTreeNode ? GetIssueFoundTextForCodeSecurity(options, totalIssueCount, openIssueCount, ignoredIssueCount) : GetIssueFoundText(options, totalIssueCount);
+            bool isCodeSecurity = rootNode is SnykCodeSecurityRootTreeNode;
 
+            var text = !isCodeSecurity ? GetIssueFoundText(options, totalIssueCount) : GetIssueFoundTextForCodeSecurity(options, totalIssueCount, openIssueCount, ignoredIssueCount);
             rootNode.Items.Add(new InfoTreeNode { Title = text });
-
             if (totalIssueCount == 0)
             {
-                var ivoNode = rootNode is SnykCodeSecurityRootTreeNode ? GetNoIssueViewOptionsSelectedTreeNodeForCodeSecurity(options) : GetNoIssueViewOptionsSelectedTreeNode(options);
+                var ivoNode = !isCodeSecurity ? GetNoIssueViewOptionsSelectedTreeNode(options) : GetNoIssueViewOptionsSelectedTreeNodeForCodeSecurity(options);
                 if (ivoNode != null)
                 {
                     rootNode.Items.Add(ivoNode);
@@ -213,21 +223,21 @@ namespace Snyk.VisualStudio.Extension.UI.Tree
             }
             else
             {
-                var fixableNode = rootNode is SnykCodeSecurityRootTreeNode ? GetFixableIssuesNodeForCodeSecurity(options, fixableIssueCount) : GetFixableIssuesNode(options, fixableIssueCount);
-                if (fixableNode != null)
+                var fixableText = !isCodeSecurity ? GetFixableIssuesText(options, fixableIssueCount) : GetFixableIssuesTextForCodeSecurity(options, fixableIssueCount);
+                if (fixableText != null)
                 {
-                    rootNode.Items.Add(fixableNode);
+                    rootNode.Items.Add(new InfoTreeNode { Title = fixableText });
                 }
             }
         }
 
         private string GetIssueFoundText(ISnykOptions options, int issueCount) {
             if (options.ConsistentIgnoresEnabled && !options.OpenIssuesEnabled) {
-                return "Open issues are disabled!";
+                return OpenIssuesAreDisabled;
             }
 
             if (issueCount == 0) {
-                return "✅ Congrats! No issues found!";
+                return CongratsNoIssuesFound;
             } else {
                 return $"✋ {issueCount} issue{(issueCount == 1 ? "" : "s" )}";
             }
@@ -243,46 +253,40 @@ namespace Snyk.VisualStudio.Extension.UI.Tree
             var openIssuesText = $"{openIssueCount} open issue{(openIssueCount == 1 ? "" : "s")}";
             var ignoredIssuesText = $"{ignoredIssueCount} ignored issue{(ignoredIssueCount == 1 ? "" : "s")}";
 
-            if (options.OpenIssuesEnabled)
+            if (options.OpenIssuesEnabled && options.IgnoredIssuesEnabled)
             {
-                if (options.IgnoredIssuesEnabled)
+                if (totalIssueCount == 0)
                 {
-                    if (totalIssueCount == 0)
-                    {
-                        return "✅ Congrats! No issues found!";
-                    }
-                    else
-                    {
-                        return $"✋ {openIssuesText}, {ignoredIssuesText}";
-                    }
+                    return CongratsNoIssuesFound;
                 }
                 else
                 {
-                    if (openIssueCount == 0)
-                    {
-                        return "✅ Congrats! No open issues found!";
-                    }
-                    else
-                    {
-                        return $"✋ {openIssuesText}";
-                    }
+                    return $"✋ {openIssuesText}, {ignoredIssuesText}";
                 }
             }
-            else if (options.IgnoredIssuesEnabled)
+            if (options.OpenIssuesEnabled)
+            {
+                if (openIssueCount == 0)
+                {
+                    return CongratsNoOpenIssuesFound;
+                }
+                else
+                {
+                    return $"✋ {openIssuesText}";
+                }
+            }
+            if (options.IgnoredIssuesEnabled)
             {
                 if (ignoredIssueCount == 0)
                 {
-                    return "✋ No ignored issues, open issues are disabled";
+                    return NoIgnoredIssues;
                 }
                 else
                 {
                     return $"✋ {ignoredIssuesText}, open issues are disabled";
                 }
             }
-            else
-            {
-                return "Open and Ignored issues are disabled!";
-            }
+            return OpenAndIgnoredIssuesAreDisabled;
         }
 
         private TreeNode GetNoIssueViewOptionsSelectedTreeNode(ISnykOptions options)
@@ -294,7 +298,7 @@ namespace Snyk.VisualStudio.Extension.UI.Tree
 
             if (!options.OpenIssuesEnabled)
             {
-                return new InfoTreeNode { Title = "Adjust your settings to view Open issues." };
+                return new InfoTreeNode { Title = OpenIssueViewOptionDisabled };
             }
 
             return null;
@@ -309,34 +313,34 @@ namespace Snyk.VisualStudio.Extension.UI.Tree
 
             if (!options.OpenIssuesEnabled && !options.IgnoredIssuesEnabled)
             {
-                return new InfoTreeNode { Title = "Adjust your settings to view Open and Ignored issues." };
+                return new InfoTreeNode { Title = AllIssueViewOptionsDisabled };
             }
 
             if (!options.OpenIssuesEnabled)
             {
-                return new InfoTreeNode { Title = "Adjust your settings to view Open issues." };
+                return new InfoTreeNode { Title = OpenIssueViewOptionDisabled };
             }
 
             if (!options.IgnoredIssuesEnabled)
             {
-                return new InfoTreeNode { Title = "Adjust your settings to view Ignored issues." };
+                return new InfoTreeNode { Title = IgnoredIssueViewOptionDisabled };
             }
 
             return null;
         }
 
-        private TreeNode GetFixableIssuesNode(ISnykOptions options, int fixableIssueCount)
+        private string GetFixableIssuesText(ISnykOptions options, int fixableIssueCount)
         {
-            return new InfoTreeNode { Title = fixableIssueCount > 0 ? $"⚡ {fixableIssueCount} issue{(fixableIssueCount == 1 ? "" : "s")} can be fixed automatically" : "There are no issues automatically fixable" };
+            return fixableIssueCount > 0 ? $"⚡ {fixableIssueCount} issue{(fixableIssueCount == 1 ? "" : "s")} can be fixed automatically." : NoFixableIssues;
         }
 
-        private TreeNode GetFixableIssuesNodeForCodeSecurity(ISnykOptions options, int fixableIssueCount)
+        private string GetFixableIssuesTextForCodeSecurity(ISnykOptions options, int fixableIssueCount)
         {
             if (options.ConsistentIgnoresEnabled && !options.OpenIssuesEnabled)
             {
                 return null;
             }
-            return GetFixableIssuesNode(options, fixableIssueCount);
+            return GetFixableIssuesText(options, fixableIssueCount);
         }
 
         /// <summary>
