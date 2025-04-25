@@ -34,13 +34,6 @@ namespace Snyk.VisualStudio.Extension.Language
                 TrustedFolders = options.TrustedFolders.ToList(),
                 IntegrationName = this.GetIntegrationName(options),
                 IntegrationVersion = this.GetIntegrationVersion(options),
-                FilterSeverity = new FilterSeverityOptions
-                {
-                    Critical = false,
-                    High = false,
-                    Low = false,
-                    Medium = false,
-                },
                 IssueViewOptions = new IssueViewOptions
                 {
                     OpenIssues = options.OpenIssuesEnabled,
