@@ -16,6 +16,7 @@ namespace Snyk.VisualStudio.Extension.Language
         Task<object> InvokeWorkspaceScanAsync(CancellationToken cancellationToken);
         Task<object> SendCodeFixDiffsAsync(string FolderURI, string FileURI, string IssueID, CancellationToken cancellationToken);
         Task<object> SendApplyFixDiffsAsync(string fixID, CancellationToken cancellationToken);
+        Task<object> SubmitIgnoreRequestAsync(string workflow, string issueId, string ignoreType, string ignoreReason, string ignoreExpirationDate, CancellationToken cancellationToken);
 
         Task<SastSettings> InvokeGetSastEnabled(CancellationToken cancellationToken);
         Task<string> InvokeLogin(CancellationToken cancellationToken);
