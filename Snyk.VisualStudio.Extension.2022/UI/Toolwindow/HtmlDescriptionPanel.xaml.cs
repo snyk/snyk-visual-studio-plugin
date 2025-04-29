@@ -1,7 +1,7 @@
 ﻿using System.Windows;
 using System.Windows.Navigation;
 using Snyk.VisualStudio.Extension.UI.Html;
-using UserControl = System.Windows.Controls.UserControl;
+using System.Windows.Controls;
 
 namespace Snyk.VisualStudio.Extension.UI.Toolwindow
 {

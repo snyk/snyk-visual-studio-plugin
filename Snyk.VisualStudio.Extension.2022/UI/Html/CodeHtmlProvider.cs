@@ -50,6 +50,12 @@ namespace Snyk.VisualStudio.Extension.UI.Html
                             }
                         }
                     }
+
+                    // Below fixes a VS bug where when clicking a web view, the focus will not switch to the web view.
+                    // Which, among other things, caused issues where pressing backspace would delete code in the editor and not the focused HTML form.
+                    document.addEventListener('mousedown', function (e) {
+                        window.external.FocusToolWindow();
+                    });
                 " + themeScript;
         }
 
