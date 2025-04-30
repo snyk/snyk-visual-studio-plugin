@@ -209,13 +209,13 @@ namespace Snyk.VisualStudio.Extension.UI.Tree
             int fixableIssueCount, ISnykOptions options)
         {
             var openIssueCount = totalIssueCount - ignoredIssueCount;
-            bool isCodeSecurity = rootNode is SnykCodeSecurityRootTreeNode;
+            bool isCodeNode = rootNode is SnykCodeSecurityRootTreeNode || rootNode is SnykCodeQualityRootTreeNode;
 
-            var text = !isCodeSecurity ? GetIssueFoundText(options, totalIssueCount) : GetIssueFoundTextForCodeSecurity(options, totalIssueCount, openIssueCount, ignoredIssueCount);
+            var text = !isCodeNode ? GetIssueFoundText(options, totalIssueCount) : GetIssueFoundTextForCode(options, totalIssueCount, openIssueCount, ignoredIssueCount);
             rootNode.Items.Add(new InfoTreeNode { Title = text });
             if (totalIssueCount == 0)
             {
-                var ivoNode = !isCodeSecurity ? GetNoIssueViewOptionsSelectedTreeNode(options) : GetNoIssueViewOptionsSelectedTreeNodeForCodeSecurity(options);
+                var ivoNode = !isCodeNode ? GetNoIssueViewOptionsSelectedTreeNode(options) : GetNoIssueViewOptionsSelectedTreeNodeForCode(options);
                 if (ivoNode != null)
                 {
                     rootNode.Items.Add(ivoNode);
@@ -223,7 +223,7 @@ namespace Snyk.VisualStudio.Extension.UI.Tree
             }
             else
             {
-                var fixableText = !isCodeSecurity ? GetFixableIssuesText(options, fixableIssueCount) : GetFixableIssuesTextForCodeSecurity(options, fixableIssueCount);
+                var fixableText = !isCodeNode ? GetFixableIssuesText(options, fixableIssueCount) : GetFixableIssuesTextForCode(options, fixableIssueCount);
                 if (fixableText != null)
                 {
                     rootNode.Items.Add(new InfoTreeNode { Title = fixableText });
@@ -243,7 +243,7 @@ namespace Snyk.VisualStudio.Extension.UI.Tree
             }
         }
 
-        private string GetIssueFoundTextForCodeSecurity(ISnykOptions options, int totalIssueCount, int openIssueCount, int ignoredIssueCount)
+        private string GetIssueFoundTextForCode(ISnykOptions options, int totalIssueCount, int openIssueCount, int ignoredIssueCount)
         {
             if (!options.ConsistentIgnoresEnabled)
             {
@@ -304,7 +304,7 @@ namespace Snyk.VisualStudio.Extension.UI.Tree
             return null;
         }
 
-        private TreeNode GetNoIssueViewOptionsSelectedTreeNodeForCodeSecurity(ISnykOptions options)
+        private TreeNode GetNoIssueViewOptionsSelectedTreeNodeForCode(ISnykOptions options)
         {
             if (!options.ConsistentIgnoresEnabled)
             {
@@ -334,7 +334,7 @@ namespace Snyk.VisualStudio.Extension.UI.Tree
             return fixableIssueCount > 0 ? $"⚡ {fixableIssueCount} issue{(fixableIssueCount == 1 ? "" : "s")} can be fixed automatically." : NoFixableIssues;
         }
 
-        private string GetFixableIssuesTextForCodeSecurity(ISnykOptions options, int fixableIssueCount)
+        private string GetFixableIssuesTextForCode(ISnykOptions options, int fixableIssueCount)
         {
             if (options.ConsistentIgnoresEnabled && !options.OpenIssuesEnabled)
             {
