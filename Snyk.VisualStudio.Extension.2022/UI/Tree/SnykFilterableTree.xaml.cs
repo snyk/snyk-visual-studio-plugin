@@ -139,6 +139,7 @@ namespace Snyk.VisualStudio.Extension.UI.Tree
                 return;
             }
             rootNode.Clean();
+            // totalIssueCount is the number of issues returned by LS, which pre-filters on Issue View Options and Severity Filters (to be implemented at time of this comment - 6th May 2025).
             var totalIssueCount = 0;
             var criticalSeverityCount = 0;
             var highSeverityCount = 0;
@@ -208,6 +209,8 @@ namespace Snyk.VisualStudio.Extension.UI.Tree
         private void AddInfoTreeNodes(RootTreeNode rootNode, int totalIssueCount, int ignoredIssueCount,
             int fixableIssueCount, ISnykOptions options)
         {
+            // Depending on Issue View Options, ignored issues might be pre-filtered by the LS and so ignoredIssueCount may be 0.
+            // In this case, openIssueCount is the total issue count returned by the LS.
             var openIssueCount = totalIssueCount - ignoredIssueCount;
             bool isCodeNode = rootNode is SnykCodeSecurityRootTreeNode || rootNode is SnykCodeQualityRootTreeNode;
 
@@ -224,7 +227,7 @@ namespace Snyk.VisualStudio.Extension.UI.Tree
             else
             {
                 var fixableText = !isCodeNode ? GetFixableIssuesText(options, fixableIssueCount) : GetFixableIssuesTextForCode(options, fixableIssueCount);
-                if (fixableText != null)
+                if (!string.IsNullOrEmpty(fixableText))
                 {
                     rootNode.Items.Add(new InfoTreeNode { Title = fixableText });
                 }
@@ -338,7 +341,7 @@ namespace Snyk.VisualStudio.Extension.UI.Tree
         {
             if (options.ConsistentIgnoresEnabled && !options.OpenIssuesEnabled)
             {
-                return null;
+                return "";
             }
             return GetFixableIssuesText(options, fixableIssueCount);
         }
