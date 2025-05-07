@@ -226,7 +226,7 @@ namespace Snyk.VisualStudio.Extension.UI.Tree
             }
             else
             {
-                var fixableText = !isCodeNode ? GetFixableIssuesText(options, fixableIssueCount) : GetFixableIssuesTextForCode(options, fixableIssueCount);
+                var fixableText = !isCodeNode ? GetFixableIssuesText(options, fixableIssueCount, false) : GetFixableIssuesTextForCode(options, fixableIssueCount);
                 if (!string.IsNullOrEmpty(fixableText))
                 {
                     rootNode.Items.Add(new InfoTreeNode { Title = fixableText });
@@ -264,7 +264,7 @@ namespace Snyk.VisualStudio.Extension.UI.Tree
                 }
                 else
                 {
-                    return $"✋ {openIssuesText}, {ignoredIssuesText}";
+                    return $"✋ {openIssuesText} & {ignoredIssuesText}";
                 }
             }
             if (options.OpenIssuesEnabled)
@@ -332,9 +332,11 @@ namespace Snyk.VisualStudio.Extension.UI.Tree
             return null;
         }
 
-        private string GetFixableIssuesText(ISnykOptions options, int fixableIssueCount)
+        private string GetFixableIssuesText(ISnykOptions options, int fixableIssueCount, bool sayOpenIssues)
         {
-            return fixableIssueCount > 0 ? $"⚡ {fixableIssueCount} issue{(fixableIssueCount == 1 ? "" : "s")} can be fixed automatically." : NoFixableIssues;
+            return fixableIssueCount > 0
+                ? $"⚡ {fixableIssueCount}{(sayOpenIssues ? " open" : "")} issue{(fixableIssueCount == 1 ? " is" : "s are")} fixable automatically."
+                : NoFixableIssues;
         }
 
         private string GetFixableIssuesTextForCode(ISnykOptions options, int fixableIssueCount)
@@ -343,7 +345,7 @@ namespace Snyk.VisualStudio.Extension.UI.Tree
             {
                 return "";
             }
-            return GetFixableIssuesText(options, fixableIssueCount);
+            return GetFixableIssuesText(options, fixableIssueCount, options.ConsistentIgnoresEnabled);
         }
 
         /// <summary>
