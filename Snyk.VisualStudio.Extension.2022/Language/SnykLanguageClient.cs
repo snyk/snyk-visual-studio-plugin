@@ -309,6 +309,17 @@ namespace Snyk.VisualStudio.Extension.Language
             var res = await InvokeWithParametersAsync<object>(LsConstants.WorkspaceExecuteCommand, param, cancellationToken);
             return res;
         }
+        public async Task<object> SubmitIgnoreRequestAsync(string workflow, string issueId, string ignoreType, string ignoreReason, string ignoreExpirationDate, CancellationToken cancellationToken)
+        {
+            var param = new LSP.ExecuteCommandParams
+            {
+                Command = LsConstants.SnykSubmitIgnoreRequest,
+                Arguments = new object[] { workflow, issueId, ignoreType, ignoreReason, ignoreExpirationDate }
+            };
+            var res = await InvokeWithParametersAsync<object>(LsConstants.WorkspaceExecuteCommand, param, cancellationToken);
+            return res;
+        }
+
         public async Task<object> InvokeFolderScanAsync(string folderPath, CancellationToken cancellationToken)
         {
             var param = new LSP.ExecuteCommandParams

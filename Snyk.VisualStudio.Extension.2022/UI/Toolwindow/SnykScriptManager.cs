@@ -78,6 +78,20 @@ namespace Snyk.VisualStudio.Extension.UI.Toolwindow
                 await LanguageClientHelper.LanguageClientManager().SendApplyFixDiffsAsync(fixID, SnykVSPackage.Instance.DisposalToken);
             }).FireAndForget();
         }
-
+        public void SubmitIgnoreRequest(string issueId, string ignoreType, string ignoreReason, string ignoreExpirationDate)
+        {
+            ThreadHelper.JoinableTaskFactory.RunAsync(async () => {
+                await LanguageClientHelper.LanguageClientManager().SubmitIgnoreRequestAsync("create", issueId, ignoreType, ignoreReason, ignoreExpirationDate, SnykVSPackage.Instance.DisposalToken);
+            }).FireAndForget();
+        }
+        public void FocusToolWindow()
+        {
+            ThreadHelper.JoinableTaskFactory.RunAsync(async () =>
+            {
+                await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
+                // Using .Show() as .Focus() didn't work on anything we tried.
+                this.serviceProvider.ToolWindow.Show();
+            }).FireAndForget();
+        }
     }
 }

@@ -15,7 +15,7 @@
         public const string OnPublishDiagnostics316 = "$/snyk.publishDiagnostics316";
         public const string SnykScanSummary = "$/snyk.scanSummary";
         
-        // Requests
+        // Commands
         public const string WorkspaceChangeConfiguration = "workspace/didChangeConfiguration";
         public const string WorkspaceExecuteCommand = "workspace/executeCommand";
 
@@ -31,6 +31,7 @@
         public const string SnykReportAnalytics = "snyk.reportAnalytics";
         public const string SnykCodeFixDiffs = "snyk.code.fixDiffs";
         public const string SnykCodeFixApplyEdit = "snyk.code.fixApplyEdit";
+        public const string SnykSubmitIgnoreRequest = "snyk.submitIgnoreRequest";
 
 
         public const string ShowDocument = "window/showDocument";

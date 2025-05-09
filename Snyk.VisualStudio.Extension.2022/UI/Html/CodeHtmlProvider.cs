@@ -50,6 +50,12 @@ namespace Snyk.VisualStudio.Extension.UI.Html
                             }
                         }
                     }
+
+                    // Below fixes a VS bug where when clicking a web view, the focus will not switch to the web view.
+                    // Which, among other things, caused issues where pressing backspace would delete code in the editor and not the focused HTML form.
+                    document.addEventListener('mousedown', function (e) {
+                        window.external.FocusToolWindow();
+                    });
                 " + themeScript;
         }
 
@@ -72,13 +78,15 @@ namespace Snyk.VisualStudio.Extension.UI.Html
 
             html = html.Replace("var(--example-line-removed-color)", VSColorTheme.GetThemedColor(EnvironmentColors.VizSurfaceRedDarkBrushKey).ToHex());
             html = html.Replace("var(--example-line-added-color)", VSColorTheme.GetThemedColor(EnvironmentColors.VizSurfaceGreenDarkBrushKey).ToHex());
-            html = html.Replace("var(--generated-ai-fix-button-background-color)", VSColorTheme.GetThemedColor(EnvironmentColors.StartPageButtonPinHoverColorKey).ToHex());
+            html = html.Replace("var(--button-background-color)", VSColorTheme.GetThemedColor(EnvironmentColors.StartPageButtonPinHoverColorKey).ToHex());
+            html = html.Replace("var(--button-text-color)", VSColorTheme.GetThemedColor(EnvironmentColors.BrandedUITextBrushKey).ToHex());
             html = html.Replace("var(--circle-color)", VSColorTheme.GetThemedColor(EnvironmentColors.StartPageButtonPinHoverColorKey).ToHex());
             html = html.Replace("var(--warning-background)", VSColorTheme.GetThemedColor(EnvironmentColors.SmartTagHoverFillBrushKey).ToHex());
             html = html.Replace("var(--warning-text)", VSColorTheme.GetThemedColor(EnvironmentColors.SmartTagHoverTextBrushKey).ToHex());
 
             html = html.Replace("${ideGenerateAIFix}", "window.external.GenerateFixes(generateFixQueryString)");
             html = html.Replace("${ideApplyAIFix}", "window.external.ApplyFixDiff(fixId)");
+            html = html.Replace("${ideSubmitIgnoreRequest}", "window.external.SubmitIgnoreRequest(issueId, ignoreType, ignoreReason, ignoreExpirationDate)");
             return html;
         }
     }
