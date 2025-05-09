@@ -147,24 +147,6 @@ namespace Snyk.VisualStudio.Extension.Language
             return fixIcon + ignoredPrefix + line;
         }
 
-        public bool IsVisible(bool includeIgnoredIssues, bool includeOpenedIssues)
-        {
-            if (includeIgnoredIssues && includeOpenedIssues)
-            {
-                return true;
-            }
-            if (includeIgnoredIssues)
-            {
-                return this.IsIgnored;
-            }
-            if (includeOpenedIssues)
-            {
-                return this.IsIgnored != true;
-            }
-
-            return false;
-        }
-
         public string GetPackageNameTitle()
         {
             var fixIcon = HasFix() ? "⚡" : "";

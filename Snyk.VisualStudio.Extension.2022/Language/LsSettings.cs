@@ -34,12 +34,10 @@ namespace Snyk.VisualStudio.Extension.Language
                 TrustedFolders = options.TrustedFolders.ToList(),
                 IntegrationName = this.GetIntegrationName(options),
                 IntegrationVersion = this.GetIntegrationVersion(options),
-                FilterSeverity = new FilterSeverityOptions
+                IssueViewOptions = new IssueViewOptions
                 {
-                    Critical = false,
-                    High = false,
-                    Low = false,
-                    Medium = false,
+                    OpenIssues = options.OpenIssuesEnabled,
+                    IgnoredIssues = options.IgnoredIssuesEnabled,
                 },
                 ScanningMode = options.AutoScan ? "auto" : "manual",
 #pragma warning disable VSTHRD104

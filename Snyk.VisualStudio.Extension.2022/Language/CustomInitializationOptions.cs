@@ -31,6 +31,7 @@ namespace Snyk.VisualStudio.Extension.Language
         public string IntegrationName { get; set; }
         public string IntegrationVersion { get; set; }
         public FilterSeverityOptions FilterSeverity { get; set; }
+        public IssueViewOptions IssueViewOptions { get; set; }
         public string ScanningMode { get; set; }
         public string AuthenticationMethod { get; set; }
         public string SnykCodeApi { get; set; }
@@ -64,5 +65,11 @@ namespace Snyk.VisualStudio.Extension.Language
         public bool High { get; set; }
         public bool Medium { get; set; }
         public bool Low { get; set; }
+    }
+
+    public class IssueViewOptions
+    {
+        public bool OpenIssues { get; set; }
+        public bool IgnoredIssues { get; set; }
     }
 }
