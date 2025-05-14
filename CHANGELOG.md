@@ -1,5 +1,11 @@
 # Snyk Security Changelog
 
+## [2.2.0]
+### Changed
+- Support early access of Ignores Approval Workflow
+### Fixed
+- Fix early access Issue View Options not hiding issues in editor
+
 ## [2.1.1]
 ### Changed
 ### Fixed
