@@ -2,7 +2,7 @@
 {
     public static class LsConstants
     {
-        public const string ProtocolVersion = "18";
+        public const string ProtocolVersion = "19";
         
         // Notifications
         public const string SnykHasAuthenticated = "$/snyk.hasAuthenticated";
