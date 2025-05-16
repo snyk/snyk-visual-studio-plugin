@@ -1,5 +1,9 @@
 # Snyk Security Changelog
 
+## [2.2.1]
+### Fixed
+- bump LS protocol version to 19.
+
 ## [2.2.0]
 ### Changed
 - Support early access of Ignores Approval Workflow
