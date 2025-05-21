@@ -290,11 +290,11 @@ namespace Snyk.VisualStudio.Extension.Language
             var res = await InvokeWithParametersAsync<object>(LsConstants.WorkspaceExecuteCommand, param, cancellationToken);
             return res;
         }
-        public async Task<object> SendCodeFixDiffsAsync(string FolderURI, string FileURI, string IssueID, CancellationToken cancellationToken)
+        public async Task<object> SendCodeFixDiffsAsync(string issueID, CancellationToken cancellationToken)
         {
             var param = new LSP.ExecuteCommandParams {
                 Command = LsConstants.SnykCodeFixDiffs,
-                Arguments = new object[] {FolderURI, FileURI, IssueID}
+                Arguments = new object[] { issueID }
             };
             var res = await InvokeWithParametersAsync<object>(LsConstants.WorkspaceExecuteCommand,param, cancellationToken);
             return res;

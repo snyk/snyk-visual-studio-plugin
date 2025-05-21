@@ -60,16 +60,7 @@ namespace Snyk.VisualStudio.Extension.UI.Toolwindow
         public void GenerateFixes(string value)
         {
             ThreadHelper.JoinableTaskFactory.RunAsync(async () => {
-
-            string[] separator = { "@|@" };
-            var args = value.Split(separator, StringSplitOptions.None);
-                if (args.Length > 1)
-                {
-                    var folderURI = args[0];
-                    var fileURI = args[1];
-                    var issueID = args[2];
-                    await LanguageClientHelper.LanguageClientManager().SendCodeFixDiffsAsync(folderURI, fileURI, issueID, SnykVSPackage.Instance.DisposalToken);
-                }
+            await LanguageClientHelper.LanguageClientManager().SendCodeFixDiffsAsync(value, SnykVSPackage.Instance.DisposalToken);
             }).FireAndForget();
         }
         public void ApplyFixDiff(string fixID)

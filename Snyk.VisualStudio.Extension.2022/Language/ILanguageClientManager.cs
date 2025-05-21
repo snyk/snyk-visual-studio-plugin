@@ -14,7 +14,7 @@ namespace Snyk.VisualStudio.Extension.Language
         bool IsReady { get; set; }
         IJsonRpc Rpc { get; set; }
         Task<object> InvokeWorkspaceScanAsync(CancellationToken cancellationToken);
-        Task<object> SendCodeFixDiffsAsync(string FolderURI, string FileURI, string IssueID, CancellationToken cancellationToken);
+        Task<object> SendCodeFixDiffsAsync(string IssueID, CancellationToken cancellationToken);
         Task<object> SendApplyFixDiffsAsync(string fixID, CancellationToken cancellationToken);
         Task<object> SubmitIgnoreRequestAsync(string workflow, string issueId, string ignoreType, string ignoreReason, string ignoreExpirationDate, CancellationToken cancellationToken);
 
