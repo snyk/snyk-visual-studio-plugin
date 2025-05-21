@@ -84,7 +84,7 @@ namespace Snyk.VisualStudio.Extension.UI.Html
             html = html.Replace("var(--warning-background)", VSColorTheme.GetThemedColor(EnvironmentColors.SmartTagHoverFillBrushKey).ToHex());
             html = html.Replace("var(--warning-text)", VSColorTheme.GetThemedColor(EnvironmentColors.SmartTagHoverTextBrushKey).ToHex());
 
-            html = html.Replace("${ideGenerateAIFix}", "window.external.GenerateFixes(generateFixQueryString)");
+            html = html.Replace("${ideGenerateAIFix}", "window.external.GenerateFixes(issueId)");
             html = html.Replace("${ideApplyAIFix}", "window.external.ApplyFixDiff(fixId)");
             html = html.Replace("${ideSubmitIgnoreRequest}", "window.external.SubmitIgnoreRequest(issueId, ignoreType, ignoreReason, ignoreExpirationDate)");
             return html;
