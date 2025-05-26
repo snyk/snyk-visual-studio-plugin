@@ -9,7 +9,7 @@
         /// <summary>
         /// Title text for open source root node.
         /// </summary>
-        public const string SnykIacTitle = "Configuration";
+        public const string SnykIacTitle = "Infrastructure As Code";
 
         public SnykIacRootTreeNode(IRefreshable tree)
             : base(tree)
