@@ -43,7 +43,7 @@ namespace Snyk.VisualStudio.Extension.Language
 #pragma warning disable VSTHRD104
                 AdditionalParams = ThreadHelper.JoinableTaskFactory.Run(() => this.serviceProvider.SnykOptionsManager.GetAdditionalOptionsAsync()),
 #pragma warning restore VSTHRD104
-                AuthenticationMethod = options.AuthenticationMethod == AuthenticationType.OAuth ? "oauth" : "token",
+                AuthenticationMethod = options.AuthenticationMethod.ToString().ToLowerInvariant(),
                 CliPath = SnykCli.GetCliFilePath(options.CliCustomPath),
                 Organization = options.Organization,
                 Token = options.ApiToken.ToString(),

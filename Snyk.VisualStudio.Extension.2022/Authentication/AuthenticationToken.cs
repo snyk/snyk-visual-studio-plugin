@@ -35,6 +35,9 @@ namespace Snyk.VisualStudio.Extension.Authentication
             {
                 case AuthenticationType.Token:
                     return Guid.TryParse(this.value, out _);
+                case AuthenticationType.Pat:
+                    // PAT tokens can be validated by a backend call, which is not necessary in this context.
+                    return true;
                 case AuthenticationType.OAuth:
                     {
                         var tokenState = GetTokenState(this.value);

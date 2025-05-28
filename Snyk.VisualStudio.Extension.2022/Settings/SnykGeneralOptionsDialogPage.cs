@@ -3,10 +3,10 @@ using System.ComponentModel;
 using System.IO;
 using System.Runtime.InteropServices;
 using System.Threading.Tasks;
-using System.Windows.Controls;
 using System.Windows.Forms;
 using Microsoft.VisualStudio.Shell;
 using Serilog;
+using Snyk.VisualStudio.Extension.Authentication;
 using Snyk.VisualStudio.Extension.CLI;
 using Snyk.VisualStudio.Extension.Language;
 using Snyk.VisualStudio.Extension.Service;
@@ -226,6 +226,9 @@ namespace Snyk.VisualStudio.Extension.Settings
 
                 ThreadHelper.JoinableTaskFactory.Run(async () =>
                 {
+                    // don't show auth dialog for PAT since we won't wait for response.
+                    if (this.SnykOptions.AuthenticationMethod == AuthenticationType.Pat)
+                        return;
                     await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
                     Logger.Information("Attempting to call AuthDialogWindow.Instance.ShowDialog()");
                     AuthDialogWindow.Instance.ShowDialog();
