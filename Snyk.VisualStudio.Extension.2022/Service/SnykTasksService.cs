@@ -597,7 +597,6 @@ namespace Snyk.VisualStudio.Extension.Service
             this.SnykCodeScanningStarted?.Invoke(this,
                 new SnykCodeScanEventArgs
                 {
-                    QualityScanEnabled = featuresSettings.CodeQualityEnabled,
                     CodeScanEnabled = featuresSettings.CodeSecurityEnabled
                 });
         }
@@ -688,7 +687,6 @@ namespace Snyk.VisualStudio.Extension.Service
                 OssEnabled = options.OssEnabled,
                 SastOnServerEnabled = snykCodeEnabled,
                 CodeSecurityEnabled = snykCodeEnabled && options.SnykCodeSecurityEnabled,
-                CodeQualityEnabled = snykCodeEnabled && options.SnykCodeQualityEnabled,
                 LocalCodeEngineEnabled = sastSettings?.LocalCodeEngineEnabled ?? false,
                 IacEnabled = options.IacEnabled
             };

@@ -17,7 +17,6 @@ namespace Snyk.VisualStudio.Extension.Tests
         public static void SetupOptionsMock(Mock<ISnykOptions> optionsMock)
         {
             optionsMock.SetupGet(o => o.SnykCodeSecurityEnabled).Returns(true);
-            optionsMock.SetupGet(o => o.SnykCodeQualityEnabled).Returns(true);
             optionsMock.SetupGet(o => o.OssEnabled).Returns(true);
             optionsMock.SetupGet(o => o.IacEnabled).Returns(true);
             optionsMock.SetupGet(o => o.BinariesAutoUpdate).Returns(true);

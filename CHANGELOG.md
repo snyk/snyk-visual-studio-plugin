@@ -1,5 +1,8 @@
 # Snyk Security Changelog
 
+## [2.3.0]
+- remove Snyk Code Quality
+
 ## [2.2.1]
 ### Fixed
 - bump LS protocol version to 19.

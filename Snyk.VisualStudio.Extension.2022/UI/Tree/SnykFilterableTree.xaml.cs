@@ -34,7 +34,6 @@ namespace Snyk.VisualStudio.Extension.UI.Tree
 
         private readonly SnykCodeSecurityRootTreeNode codeSecurityRootNode;
 
-        private readonly SnykCodeQualityRootTreeNode codeQualityRootNode;
         private readonly SnykIacRootTreeNode iacRootNode;
 
         public TreeNode CurrentTreeNode;
@@ -50,12 +49,10 @@ namespace Snyk.VisualStudio.Extension.UI.Tree
 
             this.ossRootNode = new OssRootTreeNode(this);
             this.codeSecurityRootNode = new SnykCodeSecurityRootTreeNode(this);
-            this.codeQualityRootNode = new SnykCodeQualityRootTreeNode(this);
             this.iacRootNode = new SnykIacRootTreeNode(this);
 
             this.vulnerabilitiesTree.Items.Add(this.ossRootNode);
             this.vulnerabilitiesTree.Items.Add(this.codeSecurityRootNode);
-            this.vulnerabilitiesTree.Items.Add(this.codeQualityRootNode);
             this.vulnerabilitiesTree.Items.Add(this.iacRootNode);
         }
 
@@ -74,10 +71,6 @@ namespace Snyk.VisualStudio.Extension.UI.Tree
         /// </summary>
         public SnykCodeSecurityRootTreeNode CodeSecurityRootNode => this.codeSecurityRootNode;
 
-        /// <summary>
-        /// Gets code quality root node.
-        /// </summary>
-        public SnykCodeQualityRootTreeNode CodeQualityRootNode => this.codeQualityRootNode;
         public SnykIacRootTreeNode IacRootNode => this.iacRootNode;
 
         /// <summary>
@@ -117,12 +110,6 @@ namespace Snyk.VisualStudio.Extension.UI.Tree
                 {
                     this.FillIssueRootNode(SnykVSPackage.ServiceProvider, value, this.codeSecurityRootNode, Product.Code,
                         issue => issue.AdditionalData.IsSecurityType);
-                }
-
-                if (this.codeQualityRootNode.Enabled)
-                {
-                    this.FillIssueRootNode(SnykVSPackage.ServiceProvider, value, this.codeQualityRootNode, Product.Code,
-                        issue => !issue.AdditionalData.IsSecurityType);
                 }
             }
         }
@@ -212,7 +199,7 @@ namespace Snyk.VisualStudio.Extension.UI.Tree
             // Depending on Issue View Options, ignored issues might be pre-filtered by the LS and so ignoredIssueCount may be 0.
             // In this case, openIssueCount is the total issue count returned by the LS.
             var openIssueCount = totalIssueCount - ignoredIssueCount;
-            bool isCodeNode = rootNode is SnykCodeSecurityRootTreeNode || rootNode is SnykCodeQualityRootTreeNode;
+            bool isCodeNode = rootNode is SnykCodeSecurityRootTreeNode;
 
             var text = !isCodeNode ? GetIssueFoundText(options, totalIssueCount) : GetIssueFoundTextForCode(options, totalIssueCount, openIssueCount, ignoredIssueCount);
             rootNode.Items.Add(new InfoTreeNode { Title = text });
@@ -365,7 +352,6 @@ namespace Snyk.VisualStudio.Extension.UI.Tree
         {
             this.ossRootNode.Clean();
             this.codeSecurityRootNode.Clean();
-            this.codeQualityRootNode.Clean();
             this.iacRootNode.Clean();
         }
 
@@ -378,11 +364,10 @@ namespace Snyk.VisualStudio.Extension.UI.Tree
 
             var restoreOssItemsTask = this.DisplayAllVulnerabilitiesAsync(this.ossRootNode);
             var restoreCodeSecurityItemsTask = this.DisplayAllVulnerabilitiesAsync(this.codeSecurityRootNode);
-            var restoreCodeQualityItemsTask = this.DisplayAllVulnerabilitiesAsync(this.codeQualityRootNode);
             var restoreIacItemsTask = this.DisplayAllVulnerabilitiesAsync(this.iacRootNode);
 
             await System.Threading.Tasks.Task
-                .WhenAll(restoreOssItemsTask, restoreCodeSecurityItemsTask, restoreCodeQualityItemsTask, restoreIacItemsTask);
+                .WhenAll(restoreOssItemsTask, restoreCodeSecurityItemsTask, restoreIacItemsTask);
         });
 
         /// <summary>
@@ -399,7 +384,6 @@ namespace Snyk.VisualStudio.Extension.UI.Tree
 
             this.FilterTreeItems(this.ossRootNode, severityFilter, searchString);
 
-            this.FilterTreeItems(this.codeQualityRootNode, severityFilter, searchString);
             this.FilterTreeItems(this.codeSecurityRootNode, severityFilter, searchString);
             this.FilterTreeItems(this.iacRootNode, severityFilter, searchString);
         });

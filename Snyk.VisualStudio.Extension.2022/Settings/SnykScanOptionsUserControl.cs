@@ -106,7 +106,6 @@ namespace Snyk.VisualStudio.Extension.Settings
             NotificationService.Instance.ShowErrorInfoBar(e.Message);
 
             this.codeSecurityEnabledCheckBox.Enabled = false;
-            this.codeQualityEnabledCheckBox.Enabled = false;
 
             this.snykCodeDisabledInfoLabel.Visible = false;
             this.snykCodeSettingsLinkLabel.Visible = false;
@@ -123,7 +122,6 @@ namespace Snyk.VisualStudio.Extension.Settings
             }
 
             this.codeSecurityEnabledCheckBox.Enabled = snykCodeEnabled;
-            this.codeQualityEnabledCheckBox.Enabled = snykCodeEnabled;
             this.snykCodeDisabledInfoLabel.Visible = !snykCodeEnabled;
             this.snykCodeSettingsLinkLabel.Visible = !snykCodeEnabled;
             this.checkAgainLinkLabel.Visible = !snykCodeEnabled;
@@ -168,12 +166,7 @@ namespace Snyk.VisualStudio.Extension.Settings
         {
             OptionsMemento.SnykCodeSecurityEnabled = this.codeSecurityEnabledCheckBox.Checked;
         }
-
-        private void CodeQualityEnabledCheckBox_CheckedChanged(object sender, EventArgs e)
-        {
-            OptionsMemento.SnykCodeQualityEnabled = this.codeQualityEnabledCheckBox.Checked;
-        }
-
+        
         private void cbDelta_SelectionChangeCommitted(object sender, EventArgs e)
         {
             if (this.cbDelta.SelectedItem == null)
