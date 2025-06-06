@@ -64,7 +64,6 @@ namespace Snyk.VisualStudio.Extension.Tests
             options.CurrentCliVersion = "1.2.3";
             options.IacEnabled = true;
             options.SnykCodeSecurityEnabled = true;
-            options.SnykCodeQualityEnabled = true;
             options.OssEnabled = true;
 
             cut.Save(options);
@@ -85,7 +84,6 @@ namespace Snyk.VisualStudio.Extension.Tests
             Assert.Equal("1.2.3", reloadedOptions.CurrentCliVersion);
             Assert.True(reloadedOptions.IacEnabled);
             Assert.True(reloadedOptions.SnykCodeSecurityEnabled);
-            Assert.True(reloadedOptions.SnykCodeQualityEnabled);
             Assert.True(reloadedOptions.OssEnabled);
         }
 

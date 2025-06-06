@@ -297,7 +297,6 @@
     <Compile Include="UI\Tree\CodeFileTreeNode.cs" />
     <Compile Include="UI\Tree\IacTreeNode.cs" />
     <Compile Include="UI\Tree\SnykIacRootTreeNode.cs" />
-    <Compile Include="UI\Tree\SnykCodeQualityRootTreeNode.cs" />
     <Compile Include="UI\Tree\SnykCodeSecurityRootTreeNode.cs" />
     <Compile Include="UI\Tree\CodeTreeNode.cs" />
     <Compile Include="UI\Tree\SnykFilterableTree.xaml.cs">

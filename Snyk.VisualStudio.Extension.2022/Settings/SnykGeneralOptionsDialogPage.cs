@@ -137,7 +137,6 @@ namespace Snyk.VisualStudio.Extension.Settings
             var memento = this.serviceProvider.Package.SnykScanOptionsDialogPage.SnykScanOptionsUserControl.OptionsMemento;
 
             this.SnykOptions.EnableDeltaFindings = memento.EnableDeltaFindings;
-            this.SnykOptions.SnykCodeQualityEnabled = memento.SnykCodeQualityEnabled;
             this.SnykOptions.SnykCodeSecurityEnabled = memento.SnykCodeSecurityEnabled;
             this.SnykOptions.IacEnabled = memento.IacEnabled;
             this.SnykOptions.OssEnabled = memento.OssEnabled;

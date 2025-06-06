@@ -64,8 +64,7 @@ namespace Snyk.VisualStudio.Extension.UI.Toolwindow
         /// </summary>
         /// <returns>True if result tree not empty.</returns>
         public bool IsTreeContentNotEmpty() => this.resultsTree.OssRootNode.HasContent
-            || this.resultsTree.CodeSecurityRootNode.HasContent
-            || this.resultsTree.CodeQualityRootNode.HasContent;
+            || this.resultsTree.CodeSecurityRootNode.HasContent;
 
         /// <summary>
         /// Initialize event listeners for UI.
@@ -203,7 +202,6 @@ namespace Snyk.VisualStudio.Extension.UI.Toolwindow
                 {
                     case Product.Code:
                         rootNodes.Add(this.resultsTree.CodeSecurityRootNode);
-                        rootNodes.Add(this.resultsTree.CodeQualityRootNode);
                         break;
                     case Product.Oss:
                         rootNodes.Add(this.resultsTree.OssRootNode);
@@ -400,9 +398,7 @@ namespace Snyk.VisualStudio.Extension.UI.Toolwindow
             this.messagePanel.ShowScanningMessage();
 
             SetScanNodeState(resultsTree.CodeSecurityRootNode, eventArgs.CodeScanEnabled);
-            SetScanNodeState(resultsTree.CodeQualityRootNode, eventArgs.QualityScanEnabled);
             resultsTree.CodeSecurityRootNode.Clean();
-            resultsTree.CodeQualityRootNode.Clean();
             await this.UpdateActionsStateAsync();
         });
 
@@ -439,7 +435,7 @@ namespace Snyk.VisualStudio.Extension.UI.Toolwindow
 
             NotificationService.Instance.ShowErrorInfoBar(eventArgs.Error.Message);
 
-            if (eventArgs.FeaturesSettings != null && !eventArgs.FeaturesSettings.CodeSecurityEnabled && !eventArgs.FeaturesSettings.CodeQualityEnabled)
+            if (eventArgs.FeaturesSettings != null && !eventArgs.FeaturesSettings.CodeSecurityEnabled)
             {
                 this.context.TransitionTo(RunScanState.Instance);
             }
@@ -462,9 +458,7 @@ namespace Snyk.VisualStudio.Extension.UI.Toolwindow
         {
             await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
 
-            this.resultsTree.CodeQualityRootNode.State = RootTreeNodeState.Error;
             this.resultsTree.CodeSecurityRootNode.State = RootTreeNodeState.Error;
-            this.resultsTree.CodeQualityRootNode.Clean();
             this.resultsTree.CodeSecurityRootNode.Clean();
             NotificationService.Instance.ShowErrorInfoBar(eventArgs.Error);
 
@@ -487,10 +481,8 @@ namespace Snyk.VisualStudio.Extension.UI.Toolwindow
 
             var disabledNodeState = RootTreeNodeState.DisabledForOrganization;
 
-            this.resultsTree.CodeQualityRootNode.State = disabledNodeState;
             this.resultsTree.CodeSecurityRootNode.State = disabledNodeState;
 
-            this.resultsTree.CodeQualityRootNode.Clean();
             this.resultsTree.CodeSecurityRootNode.Clean();
         });
 
@@ -685,7 +677,6 @@ namespace Snyk.VisualStudio.Extension.UI.Toolwindow
             this.resultsTree.IacRootNode.State = options.ApiToken.IsValid() && options.IacEnabled ? RootTreeNodeState.Enabled : RootTreeNodeState.Disabled;
             HandleBranchSelectorNode(serviceProvider, this.resultsTree.OssRootNode);
             HandleBranchSelectorNode(serviceProvider, this.resultsTree.CodeSecurityRootNode);
-            HandleBranchSelectorNode(serviceProvider, this.resultsTree.CodeQualityRootNode);
             HandleBranchSelectorNode(serviceProvider, this.resultsTree.IacRootNode);
             try
             {
@@ -694,14 +685,12 @@ namespace Snyk.VisualStudio.Extension.UI.Toolwindow
                 {
                     sastSettings = await this.serviceProvider.LanguageClientManager.InvokeGetSastEnabled(SnykVSPackage.Instance.DisposalToken);
                 }
-                this.resultsTree.CodeQualityRootNode.State = this.GetSastRootNodeState(sastSettings, options.SnykCodeQualityEnabled);
                 this.resultsTree.CodeSecurityRootNode.State = this.GetSastRootNodeState(sastSettings, options.SnykCodeSecurityEnabled);
             }
             catch (Exception e)
             {
                 Logger.Error(e, "Error on get sast settings and display tree node state");
 
-                this.resultsTree.CodeQualityRootNode.State = RootTreeNodeState.Error;
                 this.resultsTree.CodeSecurityRootNode.State = RootTreeNodeState.Error;
                 this.resultsTree.OssRootNode.State = RootTreeNodeState.Error;
                 this.resultsTree.IacRootNode.State = RootTreeNodeState.Error;
@@ -787,7 +776,6 @@ namespace Snyk.VisualStudio.Extension.UI.Toolwindow
                 }
                 else
                 {
-                    this.resultsTree.CodeQualityRootNode.State = RootTreeNodeState.NoFilesForSnykCodeScan;
                     this.resultsTree.CodeSecurityRootNode.State = RootTreeNodeState.NoFilesForSnykCodeScan;
                 }
             });
@@ -888,7 +876,7 @@ namespace Snyk.VisualStudio.Extension.UI.Toolwindow
 
             // Check if selected tree node is related to Snyk Code and if state is LocalCodeEngineIsEnabled.
             // In this case display additional informaiton in toolwindow panel.
-            if (selectedItem is SnykCodeQualityRootTreeNode || selectedItem is SnykCodeSecurityRootTreeNode)
+            if (selectedItem is SnykCodeSecurityRootTreeNode)
             {
                 var rootTreeNode = selectedItem as RootTreeNode;
             }

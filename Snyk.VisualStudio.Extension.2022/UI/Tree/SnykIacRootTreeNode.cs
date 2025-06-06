@@ -2,7 +2,7 @@
 {
 
     /// <summary>
-    /// SnykCode Quality root tree node.
+    /// IaC root tree node.
     /// </summary>
     public class SnykIacRootTreeNode : RootTreeNode
     {

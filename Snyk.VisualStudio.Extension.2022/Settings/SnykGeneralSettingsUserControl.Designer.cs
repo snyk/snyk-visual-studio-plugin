@@ -53,7 +53,6 @@ namespace Snyk.VisualStudio.Extension.Settings
             this.OrgDescriptionText = new System.Windows.Forms.Label();
             this.ossInfoToolTip = new System.Windows.Forms.ToolTip(this.components);
             this.snykCodeSecurityInfoToolTip = new System.Windows.Forms.ToolTip(this.components);
-            this.snykCodeQualityInfoToolTip = new System.Windows.Forms.ToolTip(this.components);
             this.customCliPathFileDialog = new System.Windows.Forms.OpenFileDialog();
             this.mainPanel = new System.Windows.Forms.Panel();
             ((System.ComponentModel.ISupportInitialize)(this.errorProvider)).BeginInit();
@@ -266,11 +265,6 @@ namespace Snyk.VisualStudio.Extension.Settings
             this.snykCodeSecurityInfoToolTip.IsBalloon = true;
             this.snykCodeSecurityInfoToolTip.ShowAlways = true;
             // 
-            // snykCodeQualityInfoToolTip
-            // 
-            this.snykCodeQualityInfoToolTip.IsBalloon = true;
-            this.snykCodeQualityInfoToolTip.ShowAlways = true;
-            // 
             // customCliPathFileDialog
             // 
             this.customCliPathFileDialog.SupportMultiDottedExtensions = true;
@@ -316,7 +310,6 @@ namespace Snyk.VisualStudio.Extension.Settings
         private System.Windows.Forms.GroupBox generalSettingsGroupBox;
         private System.Windows.Forms.ToolTip ossInfoToolTip;
         private System.Windows.Forms.ToolTip snykCodeSecurityInfoToolTip;
-        private System.Windows.Forms.ToolTip snykCodeQualityInfoToolTip;
         private LinkLabel OrganizationInfoLink;
         private Label OrgDescriptionText;
         private OpenFileDialog customCliPathFileDialog;

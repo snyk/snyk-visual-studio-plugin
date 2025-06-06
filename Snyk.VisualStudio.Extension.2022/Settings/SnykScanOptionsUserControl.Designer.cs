@@ -36,13 +36,11 @@
             this.cbDelta = new System.Windows.Forms.ComboBox();
             this.snykIacInfoLabel = new System.Windows.Forms.Label();
             this.iacEnabledCheckbox = new System.Windows.Forms.CheckBox();
-            this.snykCodeQualityInfoLabel = new System.Windows.Forms.Label();
             this.snykCodeSecurityInfoLabel = new System.Windows.Forms.Label();
             this.ossInfoLabel = new System.Windows.Forms.Label();
             this.checkAgainLinkLabel = new System.Windows.Forms.LinkLabel();
             this.snykCodeSettingsLinkLabel = new System.Windows.Forms.LinkLabel();
             this.snykCodeDisabledInfoLabel = new System.Windows.Forms.Label();
-            this.codeQualityEnabledCheckBox = new System.Windows.Forms.CheckBox();
             this.ossEnabledCheckBox = new System.Windows.Forms.CheckBox();
             this.codeSecurityEnabledCheckBox = new System.Windows.Forms.CheckBox();
             this.mainPanel.SuspendLayout();
@@ -67,13 +65,11 @@
             this.productSelectionGroupBox.Controls.Add(this.cbDelta);
             this.productSelectionGroupBox.Controls.Add(this.snykIacInfoLabel);
             this.productSelectionGroupBox.Controls.Add(this.iacEnabledCheckbox);
-            this.productSelectionGroupBox.Controls.Add(this.snykCodeQualityInfoLabel);
             this.productSelectionGroupBox.Controls.Add(this.snykCodeSecurityInfoLabel);
             this.productSelectionGroupBox.Controls.Add(this.ossInfoLabel);
             this.productSelectionGroupBox.Controls.Add(this.checkAgainLinkLabel);
             this.productSelectionGroupBox.Controls.Add(this.snykCodeSettingsLinkLabel);
             this.productSelectionGroupBox.Controls.Add(this.snykCodeDisabledInfoLabel);
-            this.productSelectionGroupBox.Controls.Add(this.codeQualityEnabledCheckBox);
             this.productSelectionGroupBox.Controls.Add(this.ossEnabledCheckBox);
             this.productSelectionGroupBox.Controls.Add(this.codeSecurityEnabledCheckBox);
             this.productSelectionGroupBox.Location = new System.Drawing.Point(17, 13);
@@ -142,17 +138,6 @@
             this.iacEnabledCheckbox.UseVisualStyleBackColor = true;
             this.iacEnabledCheckbox.CheckedChanged += new System.EventHandler(this.iacEnabledCheckbox_CheckedChanged);
             // 
-            // snykCodeQualityInfoLabel
-            // 
-            this.snykCodeQualityInfoLabel.BackColor = System.Drawing.Color.Transparent;
-            this.snykCodeQualityInfoLabel.Font = new System.Drawing.Font("Microsoft Sans Serif", 12F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(204)));
-            this.snykCodeQualityInfoLabel.Image = ((System.Drawing.Image)(resources.GetObject("snykCodeQualityInfoLabel.Image")));
-            this.snykCodeQualityInfoLabel.Location = new System.Drawing.Point(400, 92);
-            this.snykCodeQualityInfoLabel.Name = "snykCodeQualityInfoLabel";
-            this.snykCodeQualityInfoLabel.Size = new System.Drawing.Size(27, 25);
-            this.snykCodeQualityInfoLabel.TabIndex = 20;
-            this.snykCodeQualityInfoLabel.Text = "   ";
-            // 
             // snykCodeSecurityInfoLabel
             // 
             this.snykCodeSecurityInfoLabel.BackColor = System.Drawing.Color.Transparent;
@@ -210,20 +195,6 @@
             this.snykCodeDisabledInfoLabel.TabIndex = 14;
             this.snykCodeDisabledInfoLabel.Text = "Snyk Code is disabled by your organisation\'s configuration:";
             // 
-            // codeQualityEnabledCheckBox
-            // 
-            this.codeQualityEnabledCheckBox.AutoSize = true;
-            this.codeQualityEnabledCheckBox.Checked = true;
-            this.codeQualityEnabledCheckBox.CheckState = System.Windows.Forms.CheckState.Checked;
-            this.codeQualityEnabledCheckBox.Location = new System.Drawing.Point(256, 96);
-            this.codeQualityEnabledCheckBox.Margin = new System.Windows.Forms.Padding(3, 2, 3, 2);
-            this.codeQualityEnabledCheckBox.Name = "codeQualityEnabledCheckBox";
-            this.codeQualityEnabledCheckBox.Size = new System.Drawing.Size(139, 20);
-            this.codeQualityEnabledCheckBox.TabIndex = 13;
-            this.codeQualityEnabledCheckBox.Text = "Snyk Code Quality";
-            this.codeQualityEnabledCheckBox.UseVisualStyleBackColor = true;
-            this.codeQualityEnabledCheckBox.CheckedChanged += new System.EventHandler(this.CodeQualityEnabledCheckBox_CheckedChanged);
-            // 
             // ossEnabledCheckBox
             // 
             this.ossEnabledCheckBox.AutoSize = true;
@@ -275,13 +246,11 @@
         private System.Windows.Forms.ComboBox cbDelta;
         private System.Windows.Forms.Label snykIacInfoLabel;
         private System.Windows.Forms.CheckBox iacEnabledCheckbox;
-        private System.Windows.Forms.Label snykCodeQualityInfoLabel;
         private System.Windows.Forms.Label snykCodeSecurityInfoLabel;
         private System.Windows.Forms.Label ossInfoLabel;
         private System.Windows.Forms.LinkLabel checkAgainLinkLabel;
         private System.Windows.Forms.LinkLabel snykCodeSettingsLinkLabel;
         private System.Windows.Forms.Label snykCodeDisabledInfoLabel;
-        private System.Windows.Forms.CheckBox codeQualityEnabledCheckBox;
         private System.Windows.Forms.CheckBox ossEnabledCheckBox;
         private System.Windows.Forms.CheckBox codeSecurityEnabledCheckBox;
     }

@@ -76,7 +76,7 @@ namespace Snyk.VisualStudio.Extension.UI.Notifications
                 return;
             }
 
-            if (!this.options.SnykCodeSecurityEnabled && !this.options.SnykCodeQualityEnabled)
+            if (!this.options.SnykCodeSecurityEnabled)
             {
                 this.statusBar.ShowSnykCodeUpdateMessage("Snyk Open Source scan error");
             }

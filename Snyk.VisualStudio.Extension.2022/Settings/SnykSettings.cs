@@ -31,12 +31,7 @@ namespace Snyk.VisualStudio.Extension.Settings
         /// Gets or sets a value indicating whether snyk code security enabled.
         /// </summary>
         public bool SnykCodeSecurityEnabled { get; set; } = true;
-
-        /// <summary>
-        /// Gets or sets a value indicating whether snyk code quality enabled.
-        /// </summary>
-        public bool SnykCodeQualityEnabled { get; set; } = true;
-
+        
         /// <summary>
         /// Gets or sets a value indicating whether oss enabled.
         /// </summary>

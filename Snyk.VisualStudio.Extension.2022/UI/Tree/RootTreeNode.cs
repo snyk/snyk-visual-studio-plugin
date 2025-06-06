@@ -5,7 +5,7 @@ using System.Text;
 namespace Snyk.VisualStudio.Extension.UI.Tree
 {
     /// <summary>
-    /// Root tree node for different types of issues (Open source, security or quality).
+    /// Root tree node for different types of issues (Open source, Code or IaC).
     /// </summary>
     public abstract class RootTreeNode : TreeNode
     {

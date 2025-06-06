@@ -62,7 +62,6 @@ namespace Snyk.VisualStudio.Extension.Settings
                 IgnoredIssuesEnabled = snykSettings.IgnoredIssuesEnabled,
 
                 IacEnabled = snykSettings.IacEnabled,
-                SnykCodeQualityEnabled = snykSettings.SnykCodeQualityEnabled,
                 SnykCodeSecurityEnabled = snykSettings.SnykCodeSecurityEnabled,
                 OssEnabled = snykSettings.OssEnabled,
             };
@@ -95,7 +94,6 @@ namespace Snyk.VisualStudio.Extension.Settings
             snykSettings.IgnoredIssuesEnabled = options.IgnoredIssuesEnabled;
 
             snykSettings.IacEnabled = options.IacEnabled;
-            snykSettings.SnykCodeQualityEnabled = options.SnykCodeQualityEnabled;
             snykSettings.SnykCodeSecurityEnabled = options.SnykCodeSecurityEnabled;
             snykSettings.OssEnabled = options.OssEnabled;
 
