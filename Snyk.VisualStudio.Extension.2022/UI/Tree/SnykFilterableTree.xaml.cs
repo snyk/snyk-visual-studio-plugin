@@ -199,7 +199,7 @@ namespace Snyk.VisualStudio.Extension.UI.Tree
             // Depending on Issue View Options, ignored issues might be pre-filtered by the LS and so ignoredIssueCount may be 0.
             // In this case, openIssueCount is the total issue count returned by the LS.
             var openIssueCount = totalIssueCount - ignoredIssueCount;
-            bool isCodeNode = rootNode is SnykCodeSecurityRootTreeNode
+            bool isCodeNode = rootNode is SnykCodeSecurityRootTreeNode;
 
             var text = !isCodeNode ? GetIssueFoundText(options, totalIssueCount) : GetIssueFoundTextForCode(options, totalIssueCount, openIssueCount, ignoredIssueCount);
             rootNode.Items.Add(new InfoTreeNode { Title = text });
