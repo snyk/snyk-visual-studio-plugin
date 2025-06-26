@@ -1,7 +1,7 @@
 ﻿namespace Snyk.VisualStudio.Extension.Service.Domain
 {
     /// <summary>
-    /// Settings for enabled/disabled features (OSS, SAST, Code quality and security).
+    /// Settings for enabled/disabled features (OSS, Code, IaC).
     /// </summary>
     public class FeaturesSettings
     {
@@ -20,11 +20,6 @@
         /// Gets or sets a value indicating whether Sast on server enabled.
         /// </summary>
         public bool SastOnServerEnabled { get; set; }
-
-        /// <summary>
-        /// Gets or sets a value indicating whether Code quality enabled.
-        /// </summary>
-        public bool CodeQualityEnabled { get; set; }
 
         /// <summary>
         /// Gets or sets a value indicating whether Code security enabled.

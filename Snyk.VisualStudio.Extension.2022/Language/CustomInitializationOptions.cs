@@ -26,7 +26,6 @@ namespace Snyk.VisualStudio.Extension.Language
         public string EnableTrustedFoldersFeature { get; set; }
         public List<string> TrustedFolders { get; set; }
         public string ActivateSnykCodeSecurity { get; set; }
-        public string ActivateSnykCodeQuality { get; set; }
         public string DeviceId { get; set; }
         public string IntegrationName { get; set; }
         public string IntegrationVersion { get; set; }

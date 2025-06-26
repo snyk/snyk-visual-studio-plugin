@@ -26,7 +26,6 @@ namespace Snyk.VisualStudio.Extension.Language
             var initializationOptions = new SnykLsInitializationOptions
             {
                 ActivateSnykCodeSecurity = options.SnykCodeSecurityEnabled.ToString().ToLower(),
-                ActivateSnykCodeQuality = options.SnykCodeQualityEnabled.ToString().ToLower(),
                 ActivateSnykOpenSource = options.OssEnabled.ToString().ToLower(),
                 ActivateSnykIac = options.IacEnabled.ToString().ToLower(),
                 ManageBinariesAutomatically = options.BinariesAutoUpdate.ToString().ToLower(),

@@ -38,7 +38,6 @@ namespace Snyk.VisualStudio.Extension.Tests.Language
             // Assert
             Assert.NotNull(initOptions);
             Assert.Equal("true", initOptions.ActivateSnykCodeSecurity);
-            Assert.Equal("true", initOptions.ActivateSnykCodeQuality);
             Assert.Equal("true", initOptions.ActivateSnykOpenSource);
             Assert.Equal("true", initOptions.ActivateSnykIac);
             Assert.Equal("true", initOptions.ManageBinariesAutomatically);
