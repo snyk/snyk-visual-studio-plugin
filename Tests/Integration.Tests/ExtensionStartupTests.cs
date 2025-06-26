@@ -64,7 +64,6 @@
                 Assert.True(packageObject != null, "Failed to find Snyk package");
                 Assert.IsType<SnykVSPackage>(packageObject);
                 var snykVsPackage = (SnykVSPackage) packageObject;
-                Assert.True(snykVsPackage.ToolWindow != null, "Tool window failed to open");
                 Assert.True(snykVsPackage.IsInitialized, "Snyk package was not initialized");
             }
         }

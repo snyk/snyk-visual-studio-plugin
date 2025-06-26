@@ -1,6 +1,8 @@
 # Snyk Security Changelog
 
 ## [2.3.0]
+### Changed
+- PAT support.
 - remove Snyk Code Quality
 
 ## [2.2.1]
