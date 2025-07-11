@@ -48,37 +48,21 @@ namespace Snyk.VisualStudio.Extension.Download
         {
             Logger.Information("Enter GetLatestReleaseInfo method");
 
-            var cliReleaseChannel = this.SnykOptions.CliReleaseChannel ?? DefaultReleaseChannel;
-            var cliDownloadUrl = this.SnykOptions.CliDownloadUrl ?? DefaultBaseDownloadUrl;
-
-            var latestReleaseVersionUrl = string.Format(LatestReleaseVersionUrlScheme, cliDownloadUrl, cliReleaseChannel);
-
-            Logger.Information("Get latest release information from {Url}", latestReleaseVersionUrl);
-
             using (var webClient = new SnykWebClient(this.SnykOptions))
             {
-                var latestReleaseInfo = new LatestReleaseInfo();
+                Logger.Information("Get latest CLI release info");
 
-                try
+                var latestReleaseVersionUrl = string.Format(LatestReleaseVersionUrlScheme, SnykOptions.CliDownloadUrl, SnykOptions.CliReleaseChannel);
+                var latestVersion = webClient.DownloadString(latestReleaseVersionUrl).Replace("\n", string.Empty);
+
+                var latestReleaseDownloadUrl = string.Format(LatestReleaseDownloadUrlScheme, SnykOptions.CliDownloadUrl, "v"+latestVersion);
+
+                return new LatestReleaseInfo
                 {
-                    var latestReleaseInfoJson = webClient.DownloadString(latestReleaseVersionUrl);
-
-                    Logger.Information("Latest release information: {LatestReleaseInfoJson}", latestReleaseInfoJson);
-
-                    latestReleaseInfo = Json.Deserialize<LatestReleaseInfo>(latestReleaseInfoJson);
-                }
-                catch (System.Exception exception)
-                {
-                    Logger.Error(exception, "Error on get latest release information");
-
-                    throw;
-                }
-
-                var latestReleaseDownloadUrl = string.Format(LatestReleaseDownloadUrlScheme, cliDownloadUrl, cliReleaseChannel);
-
-                latestReleaseInfo.Url = latestReleaseDownloadUrl;
-
-                return latestReleaseInfo;
+                    Version = "v" + latestVersion,
+                    Url = latestReleaseDownloadUrl,
+                    Name = "v" + latestVersion,
+                };
             }
         }
 
