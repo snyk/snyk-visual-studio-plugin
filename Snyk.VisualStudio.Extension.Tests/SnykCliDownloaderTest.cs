@@ -1,6 +1,9 @@
 ﻿using System;
 using System.IO;
+using System.Net;
+using System.Net.Http;
 using System.Threading.Tasks;
+using Microsoft.VisualStudio.Sdk.TestFramework;
 using Moq;
 using Snyk.VisualStudio.Extension.CLI;
 using Snyk.VisualStudio.Extension.Download;
@@ -10,17 +13,23 @@ using Xunit;
 
 namespace Snyk.VisualStudio.Extension.Tests
 {
+    [Collection(MockedVS.Collection)]
     public class SnykCliDownloaderTest
     {
         private Mock<ISnykProgressWorker> progressWorkerMock;
         private Mock<ISnykOptions> optionsMock;
+        private readonly Mock<ISnykOptions> mockOptions;
+        private readonly SnykCliDownloader downloader;
 
-        public SnykCliDownloaderTest()
+        public SnykCliDownloaderTest(GlobalServiceProvider sp)
         {
+            sp.Reset();
             this.progressWorkerMock = new Mock<ISnykProgressWorker>();
             this.optionsMock = new Mock<ISnykOptions>();
             this.optionsMock.Setup(x => x.CliDownloadUrl).Returns(SnykCliDownloader.DefaultBaseDownloadUrl);
             this.optionsMock.Setup(x => x.CliReleaseChannel).Returns("preview");
+            mockOptions = new Mock<ISnykOptions>();
+            downloader = new SnykCliDownloader(mockOptions.Object);
         }
 
         [Fact]
@@ -190,6 +199,107 @@ namespace Snyk.VisualStudio.Extension.Tests
 
             File.Delete(tempCliPath);
             Assert.True(cliDownloader.IsCliDownloadNeeded(tempCliPath));
+        }
+
+        [Fact]
+        public void SnykWebClient_Should_Respect_IgnoreUnknownCA_Setting()
+        {
+            // Arrange
+            mockOptions.Setup(o => o.IgnoreUnknownCA).Returns(true);
+
+            // Act
+            using (var webClient = new SnykWebClient(mockOptions.Object))
+            {
+                // Assert
+                Assert.NotNull(webClient);
+                // The ServerCertificateValidationCallback should be set when IgnoreUnknownCA is true
+                Assert.NotNull(ServicePointManager.ServerCertificateValidationCallback);
+            }
+        }
+
+        [Fact]
+        public void SnykWebClient_Should_Use_System_Proxy()
+        {
+            // Arrange
+            mockOptions.Setup(o => o.IgnoreUnknownCA).Returns(false);
+
+            // Act
+            using (var webClient = new SnykWebClient(mockOptions.Object))
+            {
+                // Assert
+                Assert.NotNull(webClient);
+                // Proxy should be configured
+                Assert.NotNull(webClient.Proxy);
+            }
+        }
+
+        [Fact]
+        public void SnykWebClient_Should_Handle_Null_Options()
+        {
+            // Act & Assert - should not throw
+            using (var webClient = new SnykWebClient(null))
+            {
+                Assert.NotNull(webClient);
+            }
+        }
+
+        [Fact]
+        public void CreateHttpClientHandler_Should_Respect_IgnoreUnknownCA_Setting()
+        {
+            // Arrange
+            mockOptions.Setup(o => o.IgnoreUnknownCA).Returns(true);
+            var downloader = new SnykCliDownloader(mockOptions.Object);
+
+            // Act
+            var handler = GetHttpClientHandler(downloader);
+
+            // Assert
+            Assert.NotNull(handler);
+            Assert.NotNull(handler.ServerCertificateCustomValidationCallback);
+            
+            // Test that the callback returns true (accepts all certificates)
+            var result = handler.ServerCertificateCustomValidationCallback(
+                null, null, null, System.Net.Security.SslPolicyErrors.None);
+            Assert.True(result);
+        }
+
+        [Fact]
+        public void CreateHttpClientHandler_Should_Configure_Proxy()
+        {
+            // Arrange
+            mockOptions.Setup(o => o.IgnoreUnknownCA).Returns(false);
+            var downloader = new SnykCliDownloader(mockOptions.Object);
+
+            // Act
+            var handler = GetHttpClientHandler(downloader);
+
+            // Assert
+            Assert.NotNull(handler);
+            Assert.True(handler.UseProxy);
+            Assert.NotNull(handler.Proxy);
+        }
+
+        [Fact]
+        public void CreateHttpClientHandler_Should_Handle_Secure_Connection()
+        {
+            // Arrange
+            mockOptions.Setup(o => o.IgnoreUnknownCA).Returns(false);
+            var downloader = new SnykCliDownloader(mockOptions.Object);
+
+            // Act
+            var handler = GetHttpClientHandler(downloader);
+
+            // Assert
+            Assert.NotNull(handler);
+            Assert.Null(handler.ServerCertificateCustomValidationCallback);
+        }
+
+        // Helper method to access the private CreateHttpClientHandler method
+        private HttpClientHandler GetHttpClientHandler(SnykCliDownloader downloader)
+        {
+            var method = typeof(SnykCliDownloader).GetMethod("CreateHttpClientHandler", 
+                System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+            return (HttpClientHandler)method.Invoke(downloader, null);
         }
     }
 }

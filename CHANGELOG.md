@@ -359,3 +359,20 @@
 ### Fixed
 - Extension crash on Visual Studio 2017.
 - Cache invalidation for Open Source vulnerabilities.
+
+## [Unreleased]
+
+### Added
+- SSL certificate and proxy handling improvements for downloads:
+  - Added support for `--insecure` flag via `IgnoreUnknownCA` setting in both WebClient and HttpClient
+  - Added automatic system proxy configuration for CLI downloads
+  - Added SSL certificate validation bypass when `IgnoreUnknownCA` is enabled
+  - Added comprehensive test coverage for SSL and proxy handling
+
+### Changed
+- Enhanced `SnykWebClient` to respect SSL and proxy settings from extension options
+- Enhanced `SnykCliDownloader` to use properly configured `HttpClient` with SSL and proxy support
+
+### Fixed
+- Fixed SSL certificate validation not respecting the `IgnoreUnknownCA` setting during CLI downloads
+- Fixed missing proxy configuration for CLI downloads

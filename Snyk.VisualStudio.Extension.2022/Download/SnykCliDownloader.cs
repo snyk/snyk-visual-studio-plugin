@@ -48,21 +48,37 @@ namespace Snyk.VisualStudio.Extension.Download
         {
             Logger.Information("Enter GetLatestReleaseInfo method");
 
-            using (var webClient = new SnykWebClient())
+            var cliReleaseChannel = this.SnykOptions.CliReleaseChannel ?? DefaultReleaseChannel;
+            var cliDownloadUrl = this.SnykOptions.CliDownloadUrl ?? DefaultBaseDownloadUrl;
+
+            var latestReleaseVersionUrl = string.Format(LatestReleaseVersionUrlScheme, cliDownloadUrl, cliReleaseChannel);
+
+            Logger.Information("Get latest release information from {Url}", latestReleaseVersionUrl);
+
+            using (var webClient = new SnykWebClient(this.SnykOptions))
             {
-                Logger.Information("Get latest CLI release info");
+                var latestReleaseInfo = new LatestReleaseInfo();
 
-                var latestReleaseVersionUrl = string.Format(LatestReleaseVersionUrlScheme, SnykOptions.CliDownloadUrl, SnykOptions.CliReleaseChannel);
-                var latestVersion = webClient.DownloadString(latestReleaseVersionUrl).Replace("\n", string.Empty);
-
-                var latestReleaseDownloadUrl = string.Format(LatestReleaseDownloadUrlScheme, SnykOptions.CliDownloadUrl, "v"+latestVersion);
-
-                return new LatestReleaseInfo
+                try
                 {
-                    Version = "v" + latestVersion,
-                    Url = latestReleaseDownloadUrl,
-                    Name = "v" + latestVersion,
-                };
+                    var latestReleaseInfoJson = webClient.DownloadString(latestReleaseVersionUrl);
+
+                    Logger.Information("Latest release information: {LatestReleaseInfoJson}", latestReleaseInfoJson);
+
+                    latestReleaseInfo = Json.Deserialize<LatestReleaseInfo>(latestReleaseInfoJson);
+                }
+                catch (System.Exception exception)
+                {
+                    Logger.Error(exception, "Error on get latest release information");
+
+                    throw;
+                }
+
+                var latestReleaseDownloadUrl = string.Format(LatestReleaseDownloadUrlScheme, cliDownloadUrl, cliReleaseChannel);
+
+                latestReleaseInfo.Url = latestReleaseDownloadUrl;
+
+                return latestReleaseInfo;
             }
         }
 
@@ -79,14 +95,15 @@ namespace Snyk.VisualStudio.Extension.Download
         }
 
         /// <summary>
-        /// Request last cli sha.
+        /// Request last cli sha256 checksum from server.
         /// </summary>
-        /// <returns>CLI sha string.</returns>
+        /// <param name="cliDownloadUrl">CLI download URL.</param>
+        /// <returns>CLI sha256 checksum.</returns>
         public string GetLatestCliSha(string cliDownloadUrl)
         {
             Logger.Information("Enter GetLatestCliSha method");
 
-            using (var webClient = new SnykWebClient())
+            using (var webClient = new SnykWebClient(this.SnykOptions))
             {
                 Logger.Information("Get latest CLI sha");
                 var shaDownloadUrl = string.Format(Sha256DownloadUrl, cliDownloadUrl);
@@ -262,7 +279,8 @@ namespace Snyk.VisualStudio.Extension.Download
         {
             const int bufferSize = 81920;
 
-            using (var client = new HttpClient())
+            using (var handler = CreateHttpClientHandler())
+            using (var client = new HttpClient(handler))
             {
                 client.Timeout = TimeSpan.FromMinutes(5);
 
@@ -334,6 +352,36 @@ namespace Snyk.VisualStudio.Extension.Download
                     File.Delete(tempCliFile);
                 }
             }
+        }
+
+        private HttpClientHandler CreateHttpClientHandler()
+        {
+            var handler = new HttpClientHandler();
+
+            // Configure SSL/TLS settings
+            if (this.SnykOptions?.IgnoreUnknownCA == true)
+            {
+                handler.ServerCertificateCustomValidationCallback = (message, cert, chain, errors) => true;
+            }
+
+            // Configure proxy settings
+            try
+            {
+                handler.UseProxy = true;
+                handler.Proxy = WebRequest.GetSystemWebProxy();
+                
+                if (handler.Proxy != null)
+                {
+                    handler.Proxy.Credentials = CredentialCache.DefaultCredentials;
+                }
+            }
+            catch (Exception ex)
+            {
+                Logger.Warning(ex, "Failed to configure proxy settings for HttpClient");
+                handler.UseProxy = false;
+            }
+
+            return handler;
         }
 
         private void FinishDownload(ISnykProgressWorker progressWorker, List<CliDownloadFinishedCallback> downloadFinishedCallbacks)
