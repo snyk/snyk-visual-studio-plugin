@@ -218,22 +218,6 @@ namespace Snyk.VisualStudio.Extension.Tests
         }
 
         [Fact]
-        public void SnykWebClient_Should_Use_System_Proxy()
-        {
-            // Arrange
-            mockOptions.Setup(o => o.IgnoreUnknownCA).Returns(false);
-
-            // Act
-            using (var webClient = new SnykWebClient(mockOptions.Object))
-            {
-                // Assert
-                Assert.NotNull(webClient);
-                // Proxy should be configured
-                Assert.NotNull(webClient.Proxy);
-            }
-        }
-
-        [Fact]
         public void SnykWebClient_Should_Handle_Null_Options()
         {
             // Act & Assert - should not throw
@@ -264,22 +248,6 @@ namespace Snyk.VisualStudio.Extension.Tests
         }
 
         [Fact]
-        public void CreateHttpClientHandler_Should_Configure_Proxy()
-        {
-            // Arrange
-            mockOptions.Setup(o => o.IgnoreUnknownCA).Returns(false);
-            var downloader = new SnykCliDownloader(mockOptions.Object);
-
-            // Act
-            var handler = GetHttpClientHandler(downloader);
-
-            // Assert
-            Assert.NotNull(handler);
-            Assert.True(handler.UseProxy);
-            Assert.NotNull(handler.Proxy);
-        }
-
-        [Fact]
         public void CreateHttpClientHandler_Should_Handle_Secure_Connection()
         {
             // Arrange
@@ -292,6 +260,19 @@ namespace Snyk.VisualStudio.Extension.Tests
             // Assert
             Assert.NotNull(handler);
             Assert.Null(handler.ServerCertificateCustomValidationCallback);
+            // UseProxy should be true by default (system proxy)
+            Assert.True(handler.UseProxy);
+        }
+
+        [Fact]
+        public void HttpClient_Should_Use_System_Proxy_By_Default()
+        {
+            // Test to verify HttpClient uses system proxy by default
+            using (var defaultHandler = new HttpClientHandler())
+            {
+                // Assert default behavior - HttpClient should use system proxy by default
+                Assert.True(defaultHandler.UseProxy);
+            }
         }
 
         // Helper method to access the private CreateHttpClientHandler method

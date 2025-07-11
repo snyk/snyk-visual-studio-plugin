@@ -358,28 +358,14 @@ namespace Snyk.VisualStudio.Extension.Download
         {
             var handler = new HttpClientHandler();
 
-            // Configure SSL/TLS settings
+            // Configure SSL/TLS settings - bypass certificate validation when IgnoreUnknownCA is enabled
             if (this.SnykOptions?.IgnoreUnknownCA == true)
             {
                 handler.ServerCertificateCustomValidationCallback = (message, cert, chain, errors) => true;
             }
 
-            // Configure proxy settings
-            try
-            {
-                handler.UseProxy = true;
-                handler.Proxy = WebRequest.GetSystemWebProxy();
-                
-                if (handler.Proxy != null)
-                {
-                    handler.Proxy.Credentials = CredentialCache.DefaultCredentials;
-                }
-            }
-            catch (Exception ex)
-            {
-                Logger.Warning(ex, "Failed to configure proxy settings for HttpClient");
-                handler.UseProxy = false;
-            }
+            // Note: Proxy configuration is not needed - HttpClient uses system proxy by default
+            // (HttpClientHandler.UseProxy = true by default, which means it will use system proxy)
 
             return handler;
         }

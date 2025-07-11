@@ -23,35 +23,14 @@ namespace Snyk.VisualStudio.Extension
 
             ServicePointManager.Expect100Continue = true;
             
-            // Configure SSL/TLS settings
+            // Configure SSL/TLS settings - bypass certificate validation when IgnoreUnknownCA is enabled
             if (options?.IgnoreUnknownCA == true)
             {
                 ServicePointManager.ServerCertificateValidationCallback = 
                     (sender, certificate, chain, sslPolicyErrors) => true;
             }
             
-            // Configure proxy settings if available
-            ConfigureProxy();
-        }
-
-        private void ConfigureProxy()
-        {
-            try
-            {
-                // Use system proxy by default
-                this.Proxy = WebRequest.GetSystemWebProxy();
-                
-                // If proxy is configured, use credentials
-                if (this.Proxy != null)
-                {
-                    this.Proxy.Credentials = CredentialCache.DefaultCredentials;
-                }
-            }
-            catch (System.Exception)
-            {
-                // If proxy configuration fails, continue without proxy
-                this.Proxy = null;
-            }
+            // Note: Proxy configuration is not needed - WebClient uses system proxy by default
         }
 
         protected override void Dispose(bool disposing)

@@ -2,21 +2,19 @@
 
 ## [2.3.0]
 ### Added
-- SSL certificate and proxy handling improvements for downloads:
+- SSL certificate validation bypass for downloads:
   - Added support for `--insecure` flag via `IgnoreUnknownCA` setting in both WebClient and HttpClient
-  - Added automatic system proxy configuration for CLI downloads
   - Added SSL certificate validation bypass when `IgnoreUnknownCA` is enabled
-  - Added comprehensive test coverage for SSL and proxy handling
+  - Added comprehensive test coverage for SSL certificate handling
 
 ### Changed
 - PAT support.
 - remove Snyk Code Quality
-- Enhanced `SnykWebClient` to respect SSL and proxy settings from extension options
-- Enhanced `SnykCliDownloader` to use properly configured `HttpClient` with SSL and proxy support
+- Enhanced `SnykWebClient` to respect SSL settings from extension options
+- Enhanced `SnykCliDownloader` to use properly configured `HttpClient` with SSL support
 
 ### Fixed
 - Fixed SSL certificate validation not respecting the `IgnoreUnknownCA` setting during CLI downloads
-- Fixed missing proxy configuration for CLI downloads
 
 ## [2.2.1]
 ### Fixed
