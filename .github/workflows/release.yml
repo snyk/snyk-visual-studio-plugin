@@ -86,16 +86,6 @@ jobs:
         GH_TOKEN: ${{ github.token }}
       run: gh release create ${{ needs.build-project.outputs.version }} --generate-notes $(find . -name '*.vsix')
 
-    - name: Upload GitHub Release 2022 Asset
-      uses: actions/upload-release-asset@v1
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      with:
-        upload_url: ${{ steps.create_release.outputs.upload_url }}
-        asset_path: .\Snyk.VisualStudio.Extension.2022\bin\Release\Snyk.VisualStudio.Extension.vsix
-        asset_name: Snyk_Vulnerability_Scanner-${{ needs.build-project.outputs.version }}-2022.vsix
-        asset_content_type: application/zip
-
     - name: Publish 2022 extension to Marketplace
       uses: cezarypiatek/VsixPublisherAction@0.2
       with:
