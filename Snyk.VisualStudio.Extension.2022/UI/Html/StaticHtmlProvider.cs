@@ -26,7 +26,9 @@ namespace Snyk.VisualStudio.Extension.UI.Html
 
         public override string ReplaceCssVariables(string html)
         {
-            html = html.Replace("${ideStyle}", "");
+            // Must not have blank template replacements, as they could be used to skip the "${nonce}" injection check
+            // and still end up with the nonce injected, e.g. "${nonce${resolvesToEmpty}}" becomes "${nonce}" - See IDE-1050.
+            html = html.Replace("${ideStyle}", " ");
             return base.ReplaceCssVariables(html);
         }
 
