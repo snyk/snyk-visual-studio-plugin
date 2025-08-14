@@ -1,6 +1,5 @@
 ﻿using System.Linq;
 using Microsoft.VisualStudio.Shell;
-using Snyk.VisualStudio.Extension.Authentication;
 using Snyk.VisualStudio.Extension.CLI;
 using Snyk.VisualStudio.Extension.Service;
 using Snyk.VisualStudio.Extension.Settings;
@@ -38,7 +37,7 @@ namespace Snyk.VisualStudio.Extension.Language
                     OpenIssues = options.OpenIssuesEnabled,
                     IgnoredIssues = options.IgnoredIssuesEnabled,
                 },
-                ScanningMode = options.AutoScan ? "auto" : "manual",
+                ScanningMode = options.InternalAutoScan ? "auto" : "manual",
 #pragma warning disable VSTHRD104
                 AdditionalParams = ThreadHelper.JoinableTaskFactory.Run(() => this.serviceProvider.SnykOptionsManager.GetAdditionalOptionsAsync()),
 #pragma warning restore VSTHRD104

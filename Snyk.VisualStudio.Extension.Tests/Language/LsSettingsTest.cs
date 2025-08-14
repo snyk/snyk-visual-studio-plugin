@@ -45,7 +45,7 @@ namespace Snyk.VisualStudio.Extension.Tests.Language
             Assert.Contains("/path/to/trusted", initOptions.TrustedFolders);
             Assert.Equal("Visual Studio 2022@@VISUAL_STUDIO", initOptions.IntegrationName);
             Assert.Equal("2022@@1.0.0", initOptions.IntegrationVersion);
-            Assert.Equal("auto", initOptions.ScanningMode);
+            Assert.Equal("manual", initOptions.ScanningMode);
             Assert.Equal("oauth", initOptions.AuthenticationMethod);
             Assert.Equal("/path/to/cli", initOptions.CliPath);
             Assert.Equal("test-org", initOptions.Organization);
