@@ -1,5 +1,10 @@
 # Snyk Security Changelog
 
+## [2.4.0]
+### Changed
+### FIxed
+- Trust pop-up when auto scan option is enabled.
+
 ## [2.3.0]
 ### Changed
 - PAT support.

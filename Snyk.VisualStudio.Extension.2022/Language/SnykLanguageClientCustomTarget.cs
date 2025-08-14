@@ -1,15 +1,15 @@
-﻿using System;
-using System.Collections.Concurrent;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
-using Microsoft.Extensions.DependencyInjection;
-using Microsoft.VisualStudio.Shell;
+﻿using Microsoft.VisualStudio.Shell;
+using Microsoft.VisualStudio.Threading;
 using Newtonsoft.Json.Linq;
 using Snyk.VisualStudio.Extension.Authentication;
 using Snyk.VisualStudio.Extension.Extension;
 using Snyk.VisualStudio.Extension.Service;
 using StreamJsonRpc;
+using System;
+using System.Collections.Concurrent;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
 
 namespace Snyk.VisualStudio.Extension.Language
 {
@@ -19,7 +19,6 @@ namespace Snyk.VisualStudio.Extension.Language
         private readonly ConcurrentDictionary<string, IEnumerable<Issue>> snykCodeIssueDictionary = new();
         private readonly ConcurrentDictionary<string, IEnumerable<Issue>> snykOssIssueDictionary = new();
         private readonly ConcurrentDictionary<string, IEnumerable<Issue>> snykIaCIssueDictionary = new();
-
         public SnykLanguageClientCustomTarget(ISnykServiceProvider serviceProvider)
         {
             this.serviceProvider = serviceProvider;
@@ -148,8 +147,24 @@ namespace Snyk.VisualStudio.Extension.Language
         {
             var folderConfigs = arg.TryParse<FolderConfigsParam>();
             if (folderConfigs == null) return;
+
             serviceProvider.Options.FolderConfigs = folderConfigs.FolderConfigs;
             serviceProvider.SnykOptionsManager.Save(serviceProvider.Options);
+
+            var shouldEnableAutoScan = serviceProvider.Options.AutoScan && !serviceProvider.Options.InternalAutoScan;
+
+            if (shouldEnableAutoScan)
+            {
+                var isFolderTrusted = await this.serviceProvider.TasksService.IsFolderTrustedAsync();
+                await TaskScheduler.Default;
+                if (!isFolderTrusted)
+                    return;
+                var currentInternalAutoScanEnabled = serviceProvider.Options.InternalAutoScan;
+                serviceProvider.Options.InternalAutoScan = true;
+                await serviceProvider.LanguageClientManager.DidChangeConfigurationAsync(SnykVSPackage.Instance.DisposalToken);
+                if (!currentInternalAutoScanEnabled)
+                    serviceProvider.TasksService.ScanAsync().FireAndForget();
+            }
         }
 
         [JsonRpcMethod(LsConstants.SnykScanSummary)]

@@ -14,6 +14,7 @@ namespace Snyk.VisualStudio.Extension.Settings
         string IntegrationEnvironment { get; set; }
         string IntegrationEnvironmentVersion { get; set; }
         bool ConsistentIgnoresEnabled { get; set; }
+        public bool InternalAutoScan { get; set; }
 
         /// <summary>
         /// Settings changed event.
