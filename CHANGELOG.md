@@ -2,7 +2,7 @@
 
 ## [2.4.0]
 ### Changed
-### FIxed
+### Fixed
 - Trust pop-up when auto scan option is enabled.
 
 ## [2.3.0]
