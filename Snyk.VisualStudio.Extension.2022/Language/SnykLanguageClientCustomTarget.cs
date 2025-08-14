@@ -151,19 +151,19 @@ namespace Snyk.VisualStudio.Extension.Language
             serviceProvider.Options.FolderConfigs = folderConfigs.FolderConfigs;
             serviceProvider.SnykOptionsManager.Save(serviceProvider.Options);
 
-            var shouldEnableAutoScan = serviceProvider.Options.AutoScan && !serviceProvider.Options.InternalAutoScan;
-
-            if (shouldEnableAutoScan)
+            if (serviceProvider.Options.AutoScan)
             {
                 var isFolderTrusted = await this.serviceProvider.TasksService.IsFolderTrustedAsync();
                 await TaskScheduler.Default;
                 if (!isFolderTrusted)
                     return;
-                var currentInternalAutoScanEnabled = serviceProvider.Options.InternalAutoScan;
-                serviceProvider.Options.InternalAutoScan = true;
-                await serviceProvider.LanguageClientManager.DidChangeConfigurationAsync(SnykVSPackage.Instance.DisposalToken);
-                if (!currentInternalAutoScanEnabled)
+                
+                if (!serviceProvider.Options.InternalAutoScan)
+                {
+                    serviceProvider.Options.InternalAutoScan = true;
+                    await serviceProvider.LanguageClientManager.DidChangeConfigurationAsync(SnykVSPackage.Instance.DisposalToken);
                     serviceProvider.TasksService.ScanAsync().FireAndForget();
+                }
             }
         }
 
