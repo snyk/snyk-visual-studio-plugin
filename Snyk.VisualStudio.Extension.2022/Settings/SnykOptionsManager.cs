@@ -152,6 +152,49 @@ namespace Snyk.VisualStudio.Extension.Settings
             Logger.Information("Leave SaveAdditionalOptions method");
         }
 
+        /// <summary>
+        /// Get organization string.
+        /// </summary>
+        /// <returns>string.</returns>
+        public async Task<string> GetOrganizationAsync()
+        {
+            var solutionPathHash = await this.GetSolutionPathHashAsync();
+
+            if (snykSettings == null || !snykSettings.SolutionSettingsDict.ContainsKey(solutionPathHash))
+            {
+                return string.Empty;
+            }
+
+            return snykSettings.SolutionSettingsDict[solutionPathHash].Organization;
+        }
+
+        /// <summary>
+        /// Save organization string.
+        /// </summary>
+        /// <param name="organization">Organization string.</param>
+        /// <returns>A <see cref="Task"/> representing the asynchronous operation.</returns>
+        public async Task SaveOrganizationAsync(string organization)
+        {
+            var solutionPathHash = await this.GetSolutionPathHashAsync();
+
+            SnykSolutionSettings projectSettings;
+
+            if (snykSettings.SolutionSettingsDict.ContainsKey(solutionPathHash))
+            {
+                projectSettings = snykSettings.SolutionSettingsDict[solutionPathHash];
+            }
+            else
+            {
+                projectSettings = new SnykSolutionSettings();
+            }
+
+            projectSettings.Organization = organization;
+
+            snykSettings.SolutionSettingsDict[solutionPathHash] = projectSettings;
+
+            this.SaveSettingsToFile();
+        }
+
         private async Task<int> GetSolutionPathHashAsync() =>
             (await this.serviceProvider.SolutionService.GetSolutionFolderAsync()).ToLower().GetHashCode();
     }

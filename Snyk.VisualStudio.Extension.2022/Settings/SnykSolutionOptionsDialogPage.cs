@@ -40,7 +40,11 @@ namespace Snyk.VisualStudio.Extension.Settings
 
         public override void SaveSettingsToStorage()
         {
-            // do nothing
+            ThreadHelper.JoinableTaskFactory.RunAsync(async () =>
+            {
+                await this.serviceProvider.SnykOptionsManager.SaveOrganizationAsync(SnykSolutionOptionsUserControl.Organization);
+                await this.serviceProvider.SnykOptionsManager.SaveAdditionalOptionsAsync(SnykSolutionOptionsUserControl.AdditionalOptions);
+            }).FireAndForget();
         }
 
         protected override void OnClosed(EventArgs e)

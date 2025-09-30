@@ -47,6 +47,21 @@ namespace Snyk.VisualStudio.Extension.Language
         public string FolderPath { get; set; }
         public List<string> LocalBranches { get; set; }
         public List<string> AdditionalParameters { get; set; }
+        public string PreferredOrg { get; set; }
+        public ScanCommandConfig ScanCommandConfig { get; set; }
+
+        public void SetScanCommandConfig(ScanCommandConfig scanCommandConfig)
+        {
+            this.ScanCommandConfig = scanCommandConfig;
+        }
+    }
+
+
+    [JsonObject(NamingStrategyType = typeof(CamelCaseNamingStrategy))]
+    public class ScanCommandConfig
+    {
+        // Add properties as needed based on the Java ScanCommandConfig class
+        // This is a placeholder for now - can be extended with specific properties
     }
 
     public class FolderConfigsParam

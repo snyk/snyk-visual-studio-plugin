@@ -67,7 +67,7 @@ namespace Snyk.VisualStudio.Extension.Language
                     snykCodeIssueDictionary.AddOrUpdate(parsedUri.UncAwareAbsolutePath(), issueList, (_, _) => issueList);
                     break;
                 case "oss":
-                     snykOssIssueDictionary.AddOrUpdate(parsedUri.UncAwareAbsolutePath(), issueList, (_, _) => issueList);
+                    snykOssIssueDictionary.AddOrUpdate(parsedUri.UncAwareAbsolutePath(), issueList, (_, _) => issueList);
                     break;
                 case "iac":
                     snykIaCIssueDictionary.AddOrUpdate(parsedUri.UncAwareAbsolutePath(), issueList, (_, _) => issueList);
@@ -114,7 +114,7 @@ namespace Snyk.VisualStudio.Extension.Language
             var queryParams = ParseQueryString(uri.Query);
             var issueId = queryParams["issueId"];
             var product = LspSourceToProduct(queryParams["product"].Replace("+", " "));
-            var action= queryParams["action"];
+            var action = queryParams["action"];
             if (action != "showInDetailPanel")
             {
                 return;
@@ -149,6 +149,29 @@ namespace Snyk.VisualStudio.Extension.Language
             if (folderConfigs == null) return;
 
             serviceProvider.Options.FolderConfigs = folderConfigs.FolderConfigs;
+
+            // Get current solution folder path
+            var currentSolutionPath = await serviceProvider.SolutionService.GetSolutionFolderAsync();
+            var matchingFolderConfig = FindMatchingFolderConfig(folderConfigs.FolderConfigs, currentSolutionPath);
+
+            if (matchingFolderConfig != null)
+            {
+                // Extract preferred organization ID from matching folder config
+                // Language Server is authoritative - always use its data
+                if (!string.IsNullOrEmpty(matchingFolderConfig.PreferredOrg))
+                {
+                    await serviceProvider.SnykOptionsManager.SaveOrganizationAsync(matchingFolderConfig.PreferredOrg);
+                }
+
+                // Extract additional parameters from matching folder config
+                // Language Server is authoritative - always use its data
+                if (matchingFolderConfig.AdditionalParameters != null && matchingFolderConfig.AdditionalParameters.Count > 0)
+                {
+                    var additionalParams = string.Join(" ", matchingFolderConfig.AdditionalParameters);
+                    await serviceProvider.SnykOptionsManager.SaveAdditionalOptionsAsync(additionalParams);
+                }
+            }
+
             serviceProvider.SnykOptionsManager.Save(serviceProvider.Options);
 
             if (serviceProvider.Options.AutoScan)
@@ -157,7 +180,7 @@ namespace Snyk.VisualStudio.Extension.Language
                 await TaskScheduler.Default;
                 if (!isFolderTrusted)
                     return;
-                
+
                 if (!serviceProvider.Options.InternalAutoScan)
                 {
                     serviceProvider.Options.InternalAutoScan = true;
@@ -165,6 +188,35 @@ namespace Snyk.VisualStudio.Extension.Language
                     serviceProvider.TasksService.ScanAsync().FireAndForget();
                 }
             }
+        }
+
+        private FolderConfig FindMatchingFolderConfig(List<FolderConfig> folderConfigs, string currentSolutionPath)
+        {
+            if (folderConfigs == null || string.IsNullOrEmpty(currentSolutionPath)) return null;
+
+            // Normalize paths for comparison
+            var normalizedCurrentPath = currentSolutionPath.Replace("\\", "/").TrimEnd('/').ToLowerInvariant();
+
+            foreach (var folderConfig in folderConfigs)
+            {
+                if (string.IsNullOrEmpty(folderConfig.FolderPath)) continue;
+
+                var normalizedConfigPath = folderConfig.FolderPath.Replace("\\", "/").TrimEnd('/').ToLowerInvariant();
+
+                // Check for exact match
+                if (normalizedConfigPath.Equals(normalizedCurrentPath, StringComparison.OrdinalIgnoreCase))
+                {
+                    return folderConfig;
+                }
+
+                // Check if current path is within the config path (subfolder)
+                if (normalizedCurrentPath.StartsWith(normalizedConfigPath + "/", StringComparison.OrdinalIgnoreCase))
+                {
+                    return folderConfig;
+                }
+            }
+
+            return null;
         }
 
         [JsonRpcMethod(LsConstants.SnykScanSummary)]

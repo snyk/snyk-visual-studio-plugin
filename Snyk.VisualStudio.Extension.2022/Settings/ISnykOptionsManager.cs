@@ -22,4 +22,17 @@ public interface ISnykOptionsManager
     /// <returns>A <see cref="Task"/> representing the asynchronous operation.</returns>
     Task SaveAdditionalOptionsAsync(string additionalOptions);
 
+    /// <summary>
+    /// Get organization string.
+    /// </summary>
+    /// <returns>string.</returns>
+    Task<string> GetOrganizationAsync();
+
+    /// <summary>
+    /// Save organization string.
+    /// </summary>
+    /// <param name="organization">Organization string.</param>
+    /// <returns>A <see cref="Task"/> representing the asynchronous operation.</returns>
+    Task SaveOrganizationAsync(string organization);
+
 }

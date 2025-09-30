@@ -49,8 +49,6 @@ namespace Snyk.VisualStudio.Extension.Settings
             this.authMethodDescription = new System.Windows.Forms.RichTextBox();
             this.authType = new System.Windows.Forms.ComboBox();
             this.label2 = new System.Windows.Forms.Label();
-            this.OrganizationInfoLink = new System.Windows.Forms.LinkLabel();
-            this.OrgDescriptionText = new System.Windows.Forms.Label();
             this.ossInfoToolTip = new System.Windows.Forms.ToolTip(this.components);
             this.snykCodeSecurityInfoToolTip = new System.Windows.Forms.ToolTip(this.components);
             this.customCliPathFileDialog = new System.Windows.Forms.OpenFileDialog();
@@ -90,12 +88,13 @@ namespace Snyk.VisualStudio.Extension.Settings
             // 
             // organizationTextBox
             // 
+            this.organizationTextBox.Enabled = false;
             this.organizationTextBox.Location = new System.Drawing.Point(169, 331);
             this.organizationTextBox.Margin = new System.Windows.Forms.Padding(3, 2, 3, 2);
             this.organizationTextBox.Name = "organizationTextBox";
             this.organizationTextBox.Size = new System.Drawing.Size(399, 20);
             this.organizationTextBox.TabIndex = 3;
-            this.organizationTextBox.TextChanged += new System.EventHandler(this.organizationTextBox_TextChanged);
+            this.organizationTextBox.Text = "Configure in Solution Settings";
             // 
             // tokenLabel
             // 
@@ -151,16 +150,14 @@ namespace Snyk.VisualStudio.Extension.Settings
             this.generalSettingsGroupBox.Controls.Add(this.authMethodDescription);
             this.generalSettingsGroupBox.Controls.Add(this.authType);
             this.generalSettingsGroupBox.Controls.Add(this.label2);
-            this.generalSettingsGroupBox.Controls.Add(this.OrganizationInfoLink);
-            this.generalSettingsGroupBox.Controls.Add(this.OrgDescriptionText);
             this.generalSettingsGroupBox.Controls.Add(this.tokenLabel);
             this.generalSettingsGroupBox.Controls.Add(this.tokenTextBox);
             this.generalSettingsGroupBox.Controls.Add(this.authenticateButton);
             this.generalSettingsGroupBox.Controls.Add(this.customEndpointLabel);
             this.generalSettingsGroupBox.Controls.Add(this.customEndpointTextBox);
             this.generalSettingsGroupBox.Controls.Add(this.organizationLabel);
-            this.generalSettingsGroupBox.Controls.Add(this.ignoreUnknownCACheckBox);
             this.generalSettingsGroupBox.Controls.Add(this.organizationTextBox);
+            this.generalSettingsGroupBox.Controls.Add(this.ignoreUnknownCACheckBox);
             this.generalSettingsGroupBox.Location = new System.Drawing.Point(10, 10);
             this.generalSettingsGroupBox.Margin = new System.Windows.Forms.Padding(11, 10, 11, 10);
             this.generalSettingsGroupBox.Name = "generalSettingsGroupBox";
@@ -231,30 +228,6 @@ namespace Snyk.VisualStudio.Extension.Settings
             this.label2.TabIndex = 12;
             this.label2.Text = " Authentication Method:";
             // 
-            // OrganizationInfoLink
-            // 
-            this.OrganizationInfoLink.AutoSize = true;
-            this.OrganizationInfoLink.Location = new System.Drawing.Point(175, 403);
-            this.OrganizationInfoLink.Margin = new System.Windows.Forms.Padding(4, 0, 4, 0);
-            this.OrganizationInfoLink.Name = "OrganizationInfoLink";
-            this.OrganizationInfoLink.Size = new System.Drawing.Size(150, 13);
-            this.OrganizationInfoLink.TabIndex = 11;
-            this.OrganizationInfoLink.TabStop = true;
-            this.OrganizationInfoLink.Text = "Learn more about organization";
-            this.OrganizationInfoLink.LinkClicked += new System.Windows.Forms.LinkLabelLinkClickedEventHandler(this.OrganizationInfoLink_LinkClicked);
-            // 
-            // OrgDescriptionText
-            // 
-            this.OrgDescriptionText.AutoSize = true;
-            this.OrgDescriptionText.Location = new System.Drawing.Point(166, 353);
-            this.OrgDescriptionText.Margin = new System.Windows.Forms.Padding(4, 0, 4, 0);
-            this.OrgDescriptionText.Name = "OrgDescriptionText";
-            this.OrgDescriptionText.Size = new System.Drawing.Size(376, 39);
-            this.OrgDescriptionText.TabIndex = 10;
-            this.OrgDescriptionText.Text = "Specify an organization slug name to run tests for that organization.\r\nIt must ma" +
-    "tch the URL slug as displayed in the URL of your org in the Snyk UI:\r\nhttps://ap" +
-    "p.snyk.io/org/[OrgSlugName]";
-            // 
             // ossInfoToolTip
             // 
             this.ossInfoToolTip.IsBalloon = true;
@@ -310,8 +283,6 @@ namespace Snyk.VisualStudio.Extension.Settings
         private System.Windows.Forms.GroupBox generalSettingsGroupBox;
         private System.Windows.Forms.ToolTip ossInfoToolTip;
         private System.Windows.Forms.ToolTip snykCodeSecurityInfoToolTip;
-        private LinkLabel OrganizationInfoLink;
-        private Label OrgDescriptionText;
         private OpenFileDialog customCliPathFileDialog;
         private Label label2;
         private ComboBox authType;

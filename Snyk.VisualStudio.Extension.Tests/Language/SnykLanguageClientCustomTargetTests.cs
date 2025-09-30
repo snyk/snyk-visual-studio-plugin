@@ -246,5 +246,109 @@ namespace Snyk.VisualStudio.Extension.Tests.Language
             // Assert
             Assert.Null(optionsMock.Object.FolderConfigs);
         }
+
+        [Fact]
+        public async Task OnFolderConfig_ShouldUpdateOrganization_WhenPreferredOrganizationExists()
+        {
+            // Arrange
+            var arg = JObject.Parse(@"{
+                'folderConfigs': [
+                    {
+                        'folderPath': '/path/to/folder1',
+                        'baseBranch': 'main',
+                        'preferredOrg': 'preferredOrg'
+                    }
+                ]
+            }");
+            optionsMock.SetupProperty(o => o.FolderConfigs);
+            optionsMock.SetupProperty(o => o.Organization);
+
+            // Act
+            await cut.OnFolderConfig(arg);
+
+            // Assert
+            Assert.Equal("preferredOrg", optionsMock.Object.Organization);
+            snykOptionsManagerMock.Verify(s => s.Save(It.IsAny<IPersistableOptions>(), It.IsAny<bool>()), Times.Once);
+        }
+
+        [Fact]
+        public async Task OnFolderConfig_ShouldNotUpdateOrganization_WhenNoPreferredOrganization()
+        {
+            // Arrange
+            var arg = JObject.Parse(@"{
+                'folderConfigs': [
+                    {
+                        'folderPath': '/path/to/folder1',
+                        'baseBranch': 'main'
+                    }
+                ]
+            }");
+            optionsMock.SetupProperty(o => o.FolderConfigs);
+            optionsMock.SetupProperty(o => o.Organization);
+            var originalOrg = "original-org";
+            optionsMock.Object.Organization = originalOrg;
+
+            // Act
+            await cut.OnFolderConfig(arg);
+
+            // Assert
+            Assert.Equal(originalOrg, optionsMock.Object.Organization);
+            snykOptionsManagerMock.Verify(s => s.Save(It.IsAny<IPersistableOptions>(), It.IsAny<bool>()), Times.Once);
+        }
+
+        [Fact]
+        public async Task OnFolderConfig_ShouldNotUpdateOrganization_WhenPreferredOrgIsNull()
+        {
+            // Arrange
+            var arg = JObject.Parse(@"{
+                'folderConfigs': [
+                    {
+                        'folderPath': '/path/to/folder1',
+                        'baseBranch': 'main',
+                        'preferredOrg': null
+                    }
+                ]
+            }");
+            optionsMock.SetupProperty(o => o.FolderConfigs);
+            optionsMock.SetupProperty(o => o.Organization);
+            var originalOrg = "original-org";
+            optionsMock.Object.Organization = originalOrg;
+
+            // Act
+            await cut.OnFolderConfig(arg);
+
+            // Assert
+            Assert.Equal(originalOrg, optionsMock.Object.Organization);
+            snykOptionsManagerMock.Verify(s => s.Save(It.IsAny<IPersistableOptions>(), It.IsAny<bool>()), Times.Once);
+        }
+
+        [Fact]
+        public async Task OnFolderConfig_ShouldUpdateOrganization_WithFirstPreferredOrganization()
+        {
+            // Arrange
+            var arg = JObject.Parse(@"{
+                'folderConfigs': [
+                    {
+                        'folderPath': '/path/to/folder1',
+                        'baseBranch': 'main',
+                        'preferredOrg': 'preferredOrg1'
+                    },
+                    {
+                        'folderPath': '/path/to/folder2',
+                        'baseBranch': 'master',
+                        'preferredOrg': 'preferredOrg2'
+                    }
+                ]
+            }");
+            optionsMock.SetupProperty(o => o.FolderConfigs);
+            optionsMock.SetupProperty(o => o.Organization);
+
+            // Act
+            await cut.OnFolderConfig(arg);
+
+            // Assert
+            Assert.Equal("preferredOrg1", optionsMock.Object.Organization);
+            snykOptionsManagerMock.Verify(s => s.Save(It.IsAny<IPersistableOptions>(), It.IsAny<bool>()), Times.Once);
+        }
     }
 }
