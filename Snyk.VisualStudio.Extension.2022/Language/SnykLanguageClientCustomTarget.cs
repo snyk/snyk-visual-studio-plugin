@@ -160,6 +160,8 @@ namespace Snyk.VisualStudio.Extension.Language
                 // Language Server is authoritative - always use its data
                 if (!string.IsNullOrEmpty(matchingFolderConfig.PreferredOrg))
                 {
+                    // Update both global and solution-specific organization for migration
+                    serviceProvider.Options.Organization = matchingFolderConfig.PreferredOrg;
                     await serviceProvider.SnykOptionsManager.SaveOrganizationAsync(matchingFolderConfig.PreferredOrg);
                 }
 
