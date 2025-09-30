@@ -40,11 +40,9 @@ namespace Snyk.VisualStudio.Extension.Settings
 
         public override void SaveSettingsToStorage()
         {
-            ThreadHelper.JoinableTaskFactory.RunAsync(async () =>
-            {
-                await this.serviceProvider.SnykOptionsManager.SaveOrganizationAsync(SnykSolutionOptionsUserControl.Organization);
-                await this.serviceProvider.SnykOptionsManager.SaveAdditionalOptionsAsync(SnykSolutionOptionsUserControl.AdditionalOptions);
-            }).FireAndForget();
+            // Note: Organization and AdditionalOptions are now saved immediately on text change
+            // This method is kept for compatibility but the actual persistence happens in the text change handlers
+            // to match the trusted folder pattern of immediate persistence
         }
 
         protected override void OnClosed(EventArgs e)

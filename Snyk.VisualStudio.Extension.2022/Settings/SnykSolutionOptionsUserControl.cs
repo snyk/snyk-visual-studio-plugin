@@ -31,21 +31,45 @@ namespace Snyk.VisualStudio.Extension.Settings
         private void AdditionalOptionsTextBox_TextChanged(object sender, EventArgs e)
         {
             AdditionalOptions = this.additionalOptionsTextBox.Text;
-            // Notify Language Server of configuration change
-            ThreadHelper.JoinableTaskFactory.RunAsync(async () =>
+            // Persist and notify Language Server of configuration change
+            try
             {
-                await this.serviceProvider.LanguageClientManager.DidChangeConfigurationAsync(SnykVSPackage.Instance.DisposalToken);
-            }).FireAndForget();
+                ThreadHelper.JoinableTaskFactory.RunAsync(async () =>
+                {
+                    // Persist the change first (like trusted folder pattern)
+                    await this.serviceProvider.SnykOptionsManager.SaveAdditionalOptionsAsync(AdditionalOptions);
+                    Logger.Information("Additional options saved: {AdditionalOptions}", AdditionalOptions);
+
+                    // Then notify Language Server
+                    await this.serviceProvider.LanguageClientManager.DidChangeConfigurationAsync(SnykVSPackage.Instance.DisposalToken);
+                }).FireAndForget();
+            }
+            catch (Exception ex)
+            {
+                Logger.Error(ex, "Failed to save additional options or notify Language Server of configuration change");
+            }
         }
 
         private void OrganizationTextBox_TextChanged(object sender, EventArgs e)
         {
             Organization = this.organizationTextBox.Text;
-            // Notify Language Server of configuration change
-            ThreadHelper.JoinableTaskFactory.RunAsync(async () =>
+            // Persist and notify Language Server of configuration change
+            try
             {
-                await this.serviceProvider.LanguageClientManager.DidChangeConfigurationAsync(SnykVSPackage.Instance.DisposalToken);
-            }).FireAndForget();
+                ThreadHelper.JoinableTaskFactory.RunAsync(async () =>
+                {
+                    // Persist the change first (like trusted folder pattern)
+                    await this.serviceProvider.SnykOptionsManager.SaveOrganizationAsync(Organization);
+                    Logger.Information("Organization saved: {Organization}", Organization);
+
+                    // Then notify Language Server
+                    await this.serviceProvider.LanguageClientManager.DidChangeConfigurationAsync(SnykVSPackage.Instance.DisposalToken);
+                }).FireAndForget();
+            }
+            catch (Exception ex)
+            {
+                Logger.Error(ex, "Failed to save organization or notify Language Server of configuration change");
+            }
         }
 
         private void OrganizationInfoLink_LinkClicked(object sender, LinkLabelLinkClickedEventArgs e)

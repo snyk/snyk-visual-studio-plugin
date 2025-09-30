@@ -8,6 +8,7 @@
 ### Changed
 - Organization setting is now solution-scoped instead of global
 - Language Server folder configurations now automatically update organization and additional parameters
+- bump LS protocol version to 21.
 
 
 ## [2.4.0]

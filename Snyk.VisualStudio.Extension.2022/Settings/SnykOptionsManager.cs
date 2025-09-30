@@ -158,14 +158,19 @@ namespace Snyk.VisualStudio.Extension.Settings
         /// <returns>string.</returns>
         public async Task<string> GetOrganizationAsync()
         {
+            Logger.Information("Enter GetOrganization method");
+
             var solutionPathHash = await this.GetSolutionPathHashAsync();
 
             if (snykSettings == null || !snykSettings.SolutionSettingsDict.ContainsKey(solutionPathHash))
             {
+                Logger.Information("Leave GetOrganization method");
                 return string.Empty;
             }
 
-            return snykSettings.SolutionSettingsDict[solutionPathHash].Organization;
+            var organization = snykSettings.SolutionSettingsDict[solutionPathHash].Organization;
+            Logger.Information("Leave GetOrganization method");
+            return organization;
         }
 
         /// <summary>
@@ -175,6 +180,8 @@ namespace Snyk.VisualStudio.Extension.Settings
         /// <returns>A <see cref="Task"/> representing the asynchronous operation.</returns>
         public async Task SaveOrganizationAsync(string organization)
         {
+            Logger.Information("Enter SaveOrganization method");
+
             var solutionPathHash = await this.GetSolutionPathHashAsync();
 
             SnykSolutionSettings projectSettings;
@@ -193,6 +200,8 @@ namespace Snyk.VisualStudio.Extension.Settings
             snykSettings.SolutionSettingsDict[solutionPathHash] = projectSettings;
 
             this.SaveSettingsToFile();
+
+            Logger.Information("Leave SaveOrganization method");
         }
 
         private async Task<int> GetSolutionPathHashAsync() =>

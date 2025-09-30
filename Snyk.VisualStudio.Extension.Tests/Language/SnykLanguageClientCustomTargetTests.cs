@@ -20,6 +20,7 @@ namespace Snyk.VisualStudio.Extension.Tests.Language
         private readonly Mock<ISnykOptionsManager> snykOptionsManagerMock;
         private readonly Mock<ILanguageClientManager> languageClientManagerMock;
         private readonly Mock<ISnykGeneralOptionsDialogPage> generalSettingsPageMock;
+        private readonly Mock<ISolutionService> solutionServiceMock;
         private readonly SnykLanguageClientCustomTarget cut;
 
         public SnykLanguageClientCustomTargetTests(GlobalServiceProvider gsp) : base(gsp)
@@ -30,11 +31,15 @@ namespace Snyk.VisualStudio.Extension.Tests.Language
             generalSettingsPageMock = new Mock<ISnykGeneralOptionsDialogPage>();
             snykOptionsManagerMock = new Mock<ISnykOptionsManager>();
             languageClientManagerMock = new Mock<ILanguageClientManager>();
+            solutionServiceMock = new Mock<ISolutionService>();
 
             var featureFlagServiceMock = new Mock<IFeatureFlagService>();
             
             featureFlagServiceMock.Setup(x => x.RefreshAsync(It.IsAny<CancellationToken>()))
                 .Returns(Task.CompletedTask);
+
+            solutionServiceMock.Setup(s => s.GetSolutionFolderAsync())
+                .ReturnsAsync("/path/to/folder1");
 
             serviceProviderMock.SetupGet(sp => sp.TasksService).Returns(tasksServiceMock.Object);
             serviceProviderMock.SetupGet(sp => sp.Options).Returns(optionsMock.Object);
@@ -42,6 +47,7 @@ namespace Snyk.VisualStudio.Extension.Tests.Language
             serviceProviderMock.SetupGet(sp => sp.SnykOptionsManager).Returns(snykOptionsManagerMock.Object);
             serviceProviderMock.SetupGet(sp => sp.FeatureFlagService).Returns(featureFlagServiceMock.Object);
             serviceProviderMock.SetupGet(sp => sp.LanguageClientManager).Returns(languageClientManagerMock.Object);
+            serviceProviderMock.SetupGet(sp => sp.SolutionService).Returns(solutionServiceMock.Object);
             optionsMock.SetupAllProperties();
             cut = new SnykLanguageClientCustomTarget(serviceProviderMock.Object);
         }
@@ -269,6 +275,7 @@ namespace Snyk.VisualStudio.Extension.Tests.Language
             // Assert
             Assert.Equal("preferredOrg", optionsMock.Object.Organization);
             snykOptionsManagerMock.Verify(s => s.Save(It.IsAny<IPersistableOptions>(), It.IsAny<bool>()), Times.Once);
+            snykOptionsManagerMock.Verify(s => s.SaveOrganizationAsync("preferredOrg"), Times.Once);
         }
 
         [Fact]
@@ -294,6 +301,7 @@ namespace Snyk.VisualStudio.Extension.Tests.Language
             // Assert
             Assert.Equal(originalOrg, optionsMock.Object.Organization);
             snykOptionsManagerMock.Verify(s => s.Save(It.IsAny<IPersistableOptions>(), It.IsAny<bool>()), Times.Once);
+            snykOptionsManagerMock.Verify(s => s.SaveOrganizationAsync(It.IsAny<string>()), Times.Never);
         }
 
         [Fact]
@@ -320,6 +328,7 @@ namespace Snyk.VisualStudio.Extension.Tests.Language
             // Assert
             Assert.Equal(originalOrg, optionsMock.Object.Organization);
             snykOptionsManagerMock.Verify(s => s.Save(It.IsAny<IPersistableOptions>(), It.IsAny<bool>()), Times.Once);
+            snykOptionsManagerMock.Verify(s => s.SaveOrganizationAsync(It.IsAny<string>()), Times.Never);
         }
 
         [Fact]
@@ -349,6 +358,7 @@ namespace Snyk.VisualStudio.Extension.Tests.Language
             // Assert
             Assert.Equal("preferredOrg1", optionsMock.Object.Organization);
             snykOptionsManagerMock.Verify(s => s.Save(It.IsAny<IPersistableOptions>(), It.IsAny<bool>()), Times.Once);
+            snykOptionsManagerMock.Verify(s => s.SaveOrganizationAsync("preferredOrg1"), Times.Once);
         }
     }
 }
