@@ -80,10 +80,10 @@ namespace Snyk.VisualStudio.Extension.Settings
 
         private void SnykProjectOptionsUserControl_Load(object sender, EventArgs eventArgs) => ThreadHelper.JoinableTaskFactory.RunAsync(async () =>
         {
+            // Load additional options
             try
             {
                 var additionalOptions = await this.serviceProvider.SnykOptionsManager.GetAdditionalOptionsAsync();
-                var organization = await this.serviceProvider.SnykOptionsManager.GetOrganizationAsync();
 
                 if (!string.IsNullOrEmpty(additionalOptions))
                 {
@@ -93,6 +93,17 @@ namespace Snyk.VisualStudio.Extension.Settings
                 {
                     this.additionalOptionsTextBox.Text = string.Empty;
                 }
+            }
+            catch (Exception e)
+            {
+                Logger.Error(e, "Error on load additional options");
+                this.additionalOptionsTextBox.Text = string.Empty;
+            }
+
+            // Load organization
+            try
+            {
+                var organization = await this.serviceProvider.SnykOptionsManager.GetOrganizationAsync();
 
                 if (!string.IsNullOrEmpty(organization))
                 {
@@ -105,9 +116,7 @@ namespace Snyk.VisualStudio.Extension.Settings
             }
             catch (Exception e)
             {
-                Logger.Error(e, "Error on load additional options and organization");
-
-                this.additionalOptionsTextBox.Text = string.Empty;
+                Logger.Error(e, "Error on load organization");
                 this.organizationTextBox.Text = string.Empty;
             }
         });
