@@ -29,6 +29,7 @@ namespace Snyk.VisualStudio.Extension.Settings
         /// Instance of SnykGeneralOptionsDialogPage.
         /// </summary>
         private readonly ISnykOptions snykOptions;
+        private readonly System.ComponentModel.ComponentResourceManager resources;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="SnykGeneralSettingsUserControl"/> class.
@@ -38,6 +39,7 @@ namespace Snyk.VisualStudio.Extension.Settings
         {
             this.serviceProvider = serviceProvider;
             snykOptions = this.serviceProvider.Options;
+            this.resources = new System.ComponentModel.ComponentResourceManager(typeof(SnykGeneralSettingsUserControl));
             this.Load += OnLoad;
             this.InitializeComponent();
             this.Initialize();
@@ -93,7 +95,7 @@ namespace Snyk.VisualStudio.Extension.Settings
         {
             this.authenticateButton.Enabled = LanguageClientHelper.IsLanguageServerReady();
             this.customEndpointTextBox.Text = snykOptions.CustomEndpoint;
-            this.organizationTextBox.Text = string.IsNullOrEmpty(snykOptions.Organization) ? "Configure in Solution Settings" : snykOptions.Organization;
+            this.organizationTextBox.Text = string.IsNullOrEmpty(snykOptions.Organization) ? resources.GetString("organizationTextBox.Text") : snykOptions.Organization;
             this.ignoreUnknownCACheckBox.Checked = snykOptions.IgnoreUnknownCA;
             this.tokenTextBox.Text = snykOptions.ApiToken.ToString();
 
