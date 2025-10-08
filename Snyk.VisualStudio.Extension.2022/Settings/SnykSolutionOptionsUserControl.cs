@@ -95,12 +95,6 @@ namespace Snyk.VisualStudio.Extension.Settings
             }
         }
 
-        private void OrganizationInfoLink_LinkClicked(object sender, LinkLabelLinkClickedEventArgs e)
-        {
-            this.OrganizationInfoLink.LinkVisited = true;
-            System.Diagnostics.Process.Start("https://docs.snyk.io/ide-tools/visual-studio-extension#organization-setting");
-        }
-
         private void WebAccountSettingsLink_LinkClicked(object sender, LinkLabelLinkClickedEventArgs e)
         {
             this.WebAccountSettingsLabel.LinkVisited = true;
