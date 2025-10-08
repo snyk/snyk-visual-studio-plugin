@@ -24,6 +24,11 @@
         public string Organization { get; set; }
 
         /// <summary>
+        /// Gets or sets a value indicating whether organization should be automatically selected.
+        /// </summary>
+        public bool AutoOrganization { get; set; } = true;
+
+        /// <summary>
         /// Gets or sets a value indicating whether Is all projects scan enabled.
         /// </summary>
         public bool IsAllProjectsScanEnabled { get; set; }

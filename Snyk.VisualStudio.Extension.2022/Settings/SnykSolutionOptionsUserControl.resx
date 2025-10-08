@@ -120,4 +120,23 @@
   <metadata name="errorProvider.TrayLocation" type="System.Drawing.Point, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a">
     <value>17, 17</value>
   </metadata>
+  <metadata name="$this.TrayHeight" type="System.Int32, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089">
+    <value>25</value>
+  </metadata>
+  <data name="OrgDescriptionText.Text" xml:space="preserve">
+    <value>Specify the organization (ID or name) for Snyk to run scans against. 
+Retrieve the organization ID from the organization settings in the 
+Snyk UI: `https://app.snyk.io/org/[ORG_NAME]/manage/settings` 
+and copy the ID from the Organization ID section. If the organization 
+is provided in your web account settings will be used.
+</value>
+  </data>
+  <data name="autoOrganizationDescriptionLabel.Text" xml:space="preserve">
+    <value>Use automatic organization selection. When enabled, Snyk will automatically 
+select the most appropriate organization for your project using context found 
+in your repository and your authentication. If an organization is configured 
+manually, this feature will be overridden. If an appropriate organization 
+cannot be identified automatically, the preferred organization defined in 
+your web account settings will be used as a fallback.</value>
+  </data>
 </root>

@@ -54,6 +54,7 @@ namespace Snyk.VisualStudio.Extension.Settings
                 ApiToken = new AuthenticationToken(snykSettings.AuthenticationMethod, snykSettings.Token),
                 CustomEndpoint = snykSettings.CustomEndpoint,
                 Organization = snykSettings.Organization,
+                AutoOrganization = snykSettings.AutoOrganization,
 
                 FolderConfigs = snykSettings.FolderConfigs,
                 EnableDeltaFindings = snykSettings.EnableDeltaFindings,
@@ -86,6 +87,7 @@ namespace Snyk.VisualStudio.Extension.Settings
 
             snykSettings.CustomEndpoint = options.CustomEndpoint;
             snykSettings.Organization = options.Organization;
+            snykSettings.AutoOrganization = options.AutoOrganization;
 
             snykSettings.FolderConfigs = options.FolderConfigs;
             snykSettings.EnableDeltaFindings = options.EnableDeltaFindings;
@@ -202,6 +204,58 @@ namespace Snyk.VisualStudio.Extension.Settings
             this.SaveSettingsToFile();
 
             Logger.Information("Leave SaveOrganization method");
+        }
+
+        /// <summary>
+        /// Get auto organization setting.
+        /// </summary>
+        /// <returns>Auto organization setting.</returns>
+        public async Task<bool> GetAutoOrganizationAsync()
+        {
+            Logger.Information("Enter GetAutoOrganization method");
+
+            var solutionPathHash = await this.GetSolutionPathHashAsync();
+
+            if (snykSettings == null || !snykSettings.SolutionSettingsDict.ContainsKey(solutionPathHash))
+            {
+                Logger.Information("Leave GetAutoOrganization method - using default");
+                return true; // Default to true
+            }
+
+            var autoOrganization = snykSettings.SolutionSettingsDict[solutionPathHash].AutoOrganization;
+            Logger.Information("Leave GetAutoOrganization method");
+            return autoOrganization;
+        }
+
+        /// <summary>
+        /// Save auto organization setting.
+        /// </summary>
+        /// <param name="autoOrganization">Auto organization setting.</param>
+        /// <returns>A <see cref="Task"/> representing the asynchronous operation.</returns>
+        public async Task SaveAutoOrganizationAsync(bool autoOrganization)
+        {
+            Logger.Information("Enter SaveAutoOrganization method");
+
+            var solutionPathHash = await this.GetSolutionPathHashAsync();
+
+            SnykSolutionSettings projectSettings;
+
+            if (snykSettings.SolutionSettingsDict.ContainsKey(solutionPathHash))
+            {
+                projectSettings = snykSettings.SolutionSettingsDict[solutionPathHash];
+            }
+            else
+            {
+                projectSettings = new SnykSolutionSettings();
+            }
+
+            projectSettings.AutoOrganization = autoOrganization;
+
+            snykSettings.SolutionSettingsDict[solutionPathHash] = projectSettings;
+
+            this.SaveSettingsToFile();
+
+            Logger.Information("Leave SaveAutoOrganization method");
         }
 
         private async Task<int> GetSolutionPathHashAsync() =>

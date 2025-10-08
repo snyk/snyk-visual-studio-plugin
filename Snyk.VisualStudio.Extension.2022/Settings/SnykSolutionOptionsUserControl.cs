@@ -17,6 +17,7 @@ namespace Snyk.VisualStudio.Extension.Settings
         private readonly ISnykServiceProvider serviceProvider;
         public string AdditionalOptions { get; set; }
         public string Organization { get; set; }
+        public bool AutoOrganization { get; set; }
         /// <summary>
         /// Initializes a new instance of the <see cref="SnykSolutionOptionsUserControl"/> class.
         /// </summary>
@@ -72,10 +73,38 @@ namespace Snyk.VisualStudio.Extension.Settings
             }
         }
 
+        private void AutoOrganizationCheckBox_CheckedChanged(object sender, EventArgs e)
+        {
+            AutoOrganization = this.autoOrganizationCheckBox.Checked;
+            // Persist and notify Language Server of configuration change
+            try
+            {
+                ThreadHelper.JoinableTaskFactory.RunAsync(async () =>
+                {
+                    // Persist the change first
+                    await this.serviceProvider.SnykOptionsManager.SaveAutoOrganizationAsync(AutoOrganization);
+                    Logger.Information("Auto organization saved: {AutoOrganization}", AutoOrganization);
+
+                    // Then notify Language Server
+                    await this.serviceProvider.LanguageClientManager.DidChangeConfigurationAsync(SnykVSPackage.Instance.DisposalToken);
+                }).FireAndForget();
+            }
+            catch (Exception ex)
+            {
+                Logger.Error(ex, "Failed to save auto organization or notify Language Server of configuration change");
+            }
+        }
+
         private void OrganizationInfoLink_LinkClicked(object sender, LinkLabelLinkClickedEventArgs e)
         {
             this.OrganizationInfoLink.LinkVisited = true;
             System.Diagnostics.Process.Start("https://docs.snyk.io/ide-tools/visual-studio-extension#organization-setting");
+        }
+
+        private void WebAccountSettingsLink_LinkClicked(object sender, LinkLabelLinkClickedEventArgs e)
+        {
+            this.WebAccountSettingsLabel.LinkVisited = true;
+            System.Diagnostics.Process.Start("https://app.snyk.io/account");
         }
 
         private void SnykProjectOptionsUserControl_Load(object sender, EventArgs eventArgs) => ThreadHelper.JoinableTaskFactory.RunAsync(async () =>
@@ -118,6 +147,18 @@ namespace Snyk.VisualStudio.Extension.Settings
             {
                 Logger.Error(e, "Error on load organization");
                 this.organizationTextBox.Text = string.Empty;
+            }
+
+            // Load auto organization
+            try
+            {
+                var autoOrganization = await this.serviceProvider.SnykOptionsManager.GetAutoOrganizationAsync();
+                this.autoOrganizationCheckBox.Checked = autoOrganization;
+            }
+            catch (Exception e)
+            {
+                Logger.Error(e, "Error on load auto organization");
+                this.autoOrganizationCheckBox.Checked = true; // Default to true
             }
         });
     }

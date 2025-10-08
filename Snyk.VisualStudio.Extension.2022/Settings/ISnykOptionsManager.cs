@@ -35,4 +35,17 @@ public interface ISnykOptionsManager
     /// <returns>A <see cref="Task"/> representing the asynchronous operation.</returns>
     Task SaveOrganizationAsync(string organization);
 
+    /// <summary>
+    /// Get auto organization setting.
+    /// </summary>
+    /// <returns>Auto organization setting.</returns>
+    Task<bool> GetAutoOrganizationAsync();
+
+    /// <summary>
+    /// Save auto organization setting.
+    /// </summary>
+    /// <param name="autoOrganization">Auto organization setting.</param>
+    /// <returns>A <see cref="Task"/> representing the asynchronous operation.</returns>
+    Task SaveAutoOrganizationAsync(bool autoOrganization);
+
 }
