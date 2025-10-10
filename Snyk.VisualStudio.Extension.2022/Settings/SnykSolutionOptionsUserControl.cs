@@ -32,66 +32,54 @@ namespace Snyk.VisualStudio.Extension.Settings
         private void AdditionalOptionsTextBox_TextChanged(object sender, EventArgs e)
         {
             AdditionalOptions = this.additionalOptionsTextBox.Text;
-            // Persist and notify Language Server of configuration change
+            // Only save to storage, Language Server notification will happen on dialog save
             try
             {
                 ThreadHelper.JoinableTaskFactory.RunAsync(async () =>
                 {
-                    // Persist the change first (like trusted folder pattern)
                     await this.serviceProvider.SnykOptionsManager.SaveAdditionalOptionsAsync(AdditionalOptions);
                     Logger.Information("Additional options saved: {AdditionalOptions}", AdditionalOptions);
-
-                    // Then notify Language Server
-                    await this.serviceProvider.LanguageClientManager.DidChangeConfigurationAsync(SnykVSPackage.Instance.DisposalToken);
                 }).FireAndForget();
             }
             catch (Exception ex)
             {
-                Logger.Error(ex, "Failed to save additional options or notify Language Server of configuration change");
+                Logger.Error(ex, "Failed to save additional options");
             }
         }
 
         private void OrganizationTextBox_TextChanged(object sender, EventArgs e)
         {
             Organization = this.organizationTextBox.Text;
-            // Persist and notify Language Server of configuration change
+            // Only save to storage, Language Server notification will happen on dialog save
             try
             {
                 ThreadHelper.JoinableTaskFactory.RunAsync(async () =>
                 {
-                    // Persist the change first (like trusted folder pattern)
                     await this.serviceProvider.SnykOptionsManager.SaveOrganizationAsync(Organization);
                     Logger.Information("Organization saved: {Organization}", Organization);
-
-                    // Then notify Language Server
-                    await this.serviceProvider.LanguageClientManager.DidChangeConfigurationAsync(SnykVSPackage.Instance.DisposalToken);
                 }).FireAndForget();
             }
             catch (Exception ex)
             {
-                Logger.Error(ex, "Failed to save organization or notify Language Server of configuration change");
+                Logger.Error(ex, "Failed to save organization");
             }
         }
 
         private void AutoOrganizationCheckBox_CheckedChanged(object sender, EventArgs e)
         {
             AutoOrganization = this.autoOrganizationCheckBox.Checked;
-            // Persist and notify Language Server of configuration change
+            // Only save to storage, Language Server notification will happen on dialog save
             try
             {
                 ThreadHelper.JoinableTaskFactory.RunAsync(async () =>
                 {
-                    // Persist the change first
                     await this.serviceProvider.SnykOptionsManager.SaveAutoOrganizationAsync(AutoOrganization);
                     Logger.Information("Auto organization saved: {AutoOrganization}", AutoOrganization);
-
-                    // Then notify Language Server
-                    await this.serviceProvider.LanguageClientManager.DidChangeConfigurationAsync(SnykVSPackage.Instance.DisposalToken);
                 }).FireAndForget();
             }
             catch (Exception ex)
             {
-                Logger.Error(ex, "Failed to save auto organization or notify Language Server of configuration change");
+                Logger.Error(ex, "Failed to save auto organization");
             }
         }
 

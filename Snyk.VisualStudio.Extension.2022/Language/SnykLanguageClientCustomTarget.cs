@@ -174,7 +174,7 @@ namespace Snyk.VisualStudio.Extension.Language
                 }
             }
 
-            serviceProvider.SnykOptionsManager.Save(serviceProvider.Options);
+            serviceProvider.SnykOptionsManager.Save(serviceProvider.Options, false);
 
             if (serviceProvider.Options.AutoScan)
             {
@@ -274,7 +274,8 @@ namespace Snyk.VisualStudio.Extension.Language
 
             serviceProvider.Options.TrustedFolders = new HashSet<string>(trustedFolders.TrustedFolders);
             this.serviceProvider.SnykOptionsManager.Save(serviceProvider.Options, false);
-            await serviceProvider.LanguageClientManager.DidChangeConfigurationAsync(SnykVSPackage.Instance.DisposalToken);
+            // Don't call DidChangeConfigurationAsync here as it creates an infinite loop
+            // The Language Server already knows about the trusted folders changes
         }
 
         private async Task ProcessCodeScanAsync(LsAnalysisResult lsAnalysisResult)
