@@ -64,7 +64,6 @@ namespace Snyk.VisualStudio.Extension.Settings
         public string CliDownloadUrl { get; set; } = SnykCliDownloader.DefaultBaseDownloadUrl;
         public bool IgnoreUnknownCa { get; set; }
         public string Organization { get; set; }
-        public bool AutoOrganization { get; set; } = true;
         public string CustomEndpoint { get; set; }
         public string DeviceId { get; set; } = Guid.NewGuid().ToString();
         public bool OpenIssuesEnabled { get; set; } = true;

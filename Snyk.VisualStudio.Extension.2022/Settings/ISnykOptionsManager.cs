@@ -1,8 +1,8 @@
 ﻿using System.Threading.Tasks;
 
-namespace Snyk.VisualStudio.Extension.Settings;
-
-public interface ISnykOptionsManager
+namespace Snyk.VisualStudio.Extension.Settings
+{
+    public interface ISnykOptionsManager
 {
     void LoadSettingsFromFile();
     void SaveSettingsToFile();
@@ -35,17 +35,50 @@ public interface ISnykOptionsManager
     /// <returns>A <see cref="Task"/> representing the asynchronous operation.</returns>
     Task SaveOrganizationAsync(string organization);
 
-    /// <summary>
-    /// Get auto organization setting.
-    /// </summary>
-    /// <returns>Auto organization setting.</returns>
-    Task<bool> GetAutoOrganizationAsync();
 
     /// <summary>
-    /// Save auto organization setting.
+    /// Get auto-determined organization.
     /// </summary>
-    /// <param name="autoOrganization">Auto organization setting.</param>
+    /// <returns>Auto-determined organization string.</returns>
+    Task<string> GetAutoDeterminedOrgAsync();
+
+    /// <summary>
+    /// Save auto-determined organization.
+    /// </summary>
+    /// <param name="autoDeterminedOrg">Auto-determined organization string.</param>
     /// <returns>A <see cref="Task"/> representing the asynchronous operation.</returns>
-    Task SaveAutoOrganizationAsync(bool autoOrganization);
+    Task SaveAutoDeterminedOrgAsync(string autoDeterminedOrg);
 
+    /// <summary>
+    /// Get preferred organization.
+    /// </summary>
+    /// <returns>Preferred organization string.</returns>
+    Task<string> GetPreferredOrgAsync();
+
+    /// <summary>
+    /// Save preferred organization.
+    /// </summary>
+    /// <param name="preferredOrg">Preferred organization string.</param>
+    /// <returns>A <see cref="Task"/> representing the asynchronous operation.</returns>
+    Task SavePreferredOrgAsync(string preferredOrg);
+
+    /// <summary>
+    /// Get organization set by user flag.
+    /// </summary>
+    /// <returns>Organization set by user flag.</returns>
+    Task<bool> GetOrgSetByUserAsync();
+
+    /// <summary>
+    /// Save organization set by user flag.
+    /// </summary>
+    /// <param name="orgSetByUser">Organization set by user flag.</param>
+    /// <returns>A <see cref="Task"/> representing the asynchronous operation.</returns>
+    Task SaveOrgSetByUserAsync(bool orgSetByUser);
+
+    /// <summary>
+    /// Get effective organization based on IntelliJ logic.
+    /// </summary>
+    /// <returns>Effective organization string.</returns>
+    Task<string> GetEffectiveOrganizationAsync();
+    }
 }

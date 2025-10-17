@@ -17,7 +17,6 @@ namespace Snyk.VisualStudio.Extension.Settings
         private readonly ISnykServiceProvider serviceProvider;
         public string AdditionalOptions { get; set; }
         public string Organization { get; set; }
-        public bool AutoOrganization { get; set; }
         /// <summary>
         /// Initializes a new instance of the <see cref="SnykSolutionOptionsUserControl"/> class.
         /// </summary>
@@ -67,14 +66,37 @@ namespace Snyk.VisualStudio.Extension.Settings
 
         private void AutoOrganizationCheckBox_CheckedChanged(object sender, EventArgs e)
         {
-            AutoOrganization = this.autoOrganizationCheckBox.Checked;
-            // Only save to storage, Language Server notification will happen on dialog save
+            var isAutoMode = this.autoOrganizationCheckBox.Checked;
+            
+            // Implement IntelliJ logic for checkbox behavior
             try
             {
                 ThreadHelper.JoinableTaskFactory.RunAsync(async () =>
                 {
-                    await this.serviceProvider.SnykOptionsManager.SaveAutoOrganizationAsync(AutoOrganization);
-                    Logger.Information("Auto organization saved: {AutoOrganization}", AutoOrganization);
+                    // When checkbox is ticked (auto mode):
+                    // - orgSetByUser is set to false
+                    // - preferredOrg is set to ""
+                    // - preferredOrgTextField is set to the value of autoDeterminedOrg
+                    if (isAutoMode)
+                    {
+                        await this.serviceProvider.SnykOptionsManager.SaveOrgSetByUserAsync(false);
+                        await this.serviceProvider.SnykOptionsManager.SavePreferredOrgAsync("");
+                        
+                        // Update text field to show auto-determined org
+                        var autoDeterminedOrg = await this.serviceProvider.SnykOptionsManager.GetAutoDeterminedOrgAsync();
+                        this.organizationTextBox.Text = autoDeterminedOrg;
+                        this.Organization = autoDeterminedOrg;
+                    }
+                    else
+                    {
+                        // When checkbox is unticked (manual mode):
+                        // - preferredOrgTextField is set to ""
+                        // - orgSetByUser will be set to true when apply is clicked
+                        this.organizationTextBox.Text = "";
+                        this.Organization = "";
+                    }
+                    
+                    Logger.Information("Auto organization state updated: {IsAutoMode}", isAutoMode);
                 }).FireAndForget();
             }
             catch (Exception ex)
@@ -111,36 +133,47 @@ namespace Snyk.VisualStudio.Extension.Settings
                 this.additionalOptionsTextBox.Text = string.Empty;
             }
 
-            // Load organization
+            // Load organization settings with IntelliJ logic
             try
             {
-                var organization = await this.serviceProvider.SnykOptionsManager.GetOrganizationAsync();
+                var orgSetByUser = await this.serviceProvider.SnykOptionsManager.GetOrgSetByUserAsync();
+                
+                // Set checkbox state based on IntelliJ logic
+                // Checkbox should be ticked if orgSetByUser is false (auto mode)
+                this.autoOrganizationCheckBox.Checked = !orgSetByUser;
 
-                if (!string.IsNullOrEmpty(organization))
+                // Populate text field based on IntelliJ logic
+                if (!orgSetByUser)
                 {
-                    this.organizationTextBox.Text = organization;
+                    // Show autoDeterminedOrg if orgSetByUser is false
+                    var autoDeterminedOrg = await this.serviceProvider.SnykOptionsManager.GetAutoDeterminedOrgAsync();
+                    
+                    // If autoDeterminedOrg is empty, fallback to global organization
+                    if (string.IsNullOrEmpty(autoDeterminedOrg))
+                    {
+                        var globalOrg = this.serviceProvider.Options.Organization;
+                        this.organizationTextBox.Text = globalOrg ?? string.Empty;
+                        this.Organization = globalOrg ?? string.Empty;
+                    }
+                    else
+                    {
+                        this.organizationTextBox.Text = autoDeterminedOrg;
+                        this.Organization = autoDeterminedOrg;
+                    }
                 }
                 else
                 {
-                    this.organizationTextBox.Text = string.Empty;
+                    // Show preferredOrg if orgSetByUser is true
+                    var preferredOrg = await this.serviceProvider.SnykOptionsManager.GetPreferredOrgAsync();
+                    this.organizationTextBox.Text = preferredOrg ?? string.Empty;
+                    this.Organization = preferredOrg ?? string.Empty;
                 }
             }
             catch (Exception e)
             {
-                Logger.Error(e, "Error on load organization");
+                Logger.Error(e, "Error on load organization settings");
+                this.autoOrganizationCheckBox.Checked = true; // Default to auto mode
                 this.organizationTextBox.Text = string.Empty;
-            }
-
-            // Load auto organization
-            try
-            {
-                var autoOrganization = await this.serviceProvider.SnykOptionsManager.GetAutoOrganizationAsync();
-                this.autoOrganizationCheckBox.Checked = autoOrganization;
-            }
-            catch (Exception e)
-            {
-                Logger.Error(e, "Error on load auto organization");
-                this.autoOrganizationCheckBox.Checked = true; // Default to true
             }
         });
     }

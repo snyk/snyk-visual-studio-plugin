@@ -40,7 +40,6 @@ public interface IPersistableOptions
     /// <summary>
     /// Gets or sets a value indicating whether organization should be automatically selected.
     /// </summary>
-    bool AutoOrganization { get; set; }
 
     /// <summary>
     /// Gets or sets a value indicating whether CLI ignore unknown CA parameter.

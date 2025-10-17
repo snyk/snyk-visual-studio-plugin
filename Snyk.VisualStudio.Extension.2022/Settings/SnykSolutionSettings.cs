@@ -23,10 +23,21 @@
         /// </summary>
         public string Organization { get; set; }
 
+
         /// <summary>
-        /// Gets or sets a value indicating whether organization should be automatically selected.
+        /// Gets or sets the auto-determined organization from folder config.
         /// </summary>
-        public bool AutoOrganization { get; set; } = true;
+        public string AutoDeterminedOrg { get; set; }
+
+        /// <summary>
+        /// Gets or sets the preferred organization set by user.
+        /// </summary>
+        public string PreferredOrg { get; set; }
+
+        /// <summary>
+        /// Gets or sets a value indicating whether organization was set by user (manual mode).
+        /// </summary>
+        public bool OrgSetByUser { get; set; } = false;
 
         /// <summary>
         /// Gets or sets a value indicating whether Is all projects scan enabled.

@@ -54,7 +54,6 @@ namespace Snyk.VisualStudio.Extension.Settings
                 ApiToken = new AuthenticationToken(snykSettings.AuthenticationMethod, snykSettings.Token),
                 CustomEndpoint = snykSettings.CustomEndpoint,
                 Organization = snykSettings.Organization,
-                AutoOrganization = snykSettings.AutoOrganization,
 
                 FolderConfigs = snykSettings.FolderConfigs,
                 EnableDeltaFindings = snykSettings.EnableDeltaFindings,
@@ -87,7 +86,6 @@ namespace Snyk.VisualStudio.Extension.Settings
 
             snykSettings.CustomEndpoint = options.CustomEndpoint;
             snykSettings.Organization = options.Organization;
-            snykSettings.AutoOrganization = options.AutoOrganization;
 
             snykSettings.FolderConfigs = options.FolderConfigs;
             snykSettings.EnableDeltaFindings = options.EnableDeltaFindings;
@@ -206,35 +204,36 @@ namespace Snyk.VisualStudio.Extension.Settings
             Logger.Information("Leave SaveOrganization method");
         }
 
+
         /// <summary>
-        /// Get auto organization setting.
+        /// Get auto-determined organization.
         /// </summary>
-        /// <returns>Auto organization setting.</returns>
-        public async Task<bool> GetAutoOrganizationAsync()
+        /// <returns>Auto-determined organization string.</returns>
+        public async Task<string> GetAutoDeterminedOrgAsync()
         {
-            Logger.Information("Enter GetAutoOrganization method");
+            Logger.Information("Enter GetAutoDeterminedOrg method");
 
             var solutionPathHash = await this.GetSolutionPathHashAsync();
 
             if (snykSettings == null || !snykSettings.SolutionSettingsDict.ContainsKey(solutionPathHash))
             {
-                Logger.Information("Leave GetAutoOrganization method - using default");
-                return true; // Default to true
+                Logger.Information("Leave GetAutoDeterminedOrg method - no settings");
+                return string.Empty;
             }
 
-            var autoOrganization = snykSettings.SolutionSettingsDict[solutionPathHash].AutoOrganization;
-            Logger.Information("Leave GetAutoOrganization method");
-            return autoOrganization;
+            var autoDeterminedOrg = snykSettings.SolutionSettingsDict[solutionPathHash].AutoDeterminedOrg;
+            Logger.Information("Leave GetAutoDeterminedOrg method");
+            return autoDeterminedOrg ?? string.Empty;
         }
 
         /// <summary>
-        /// Save auto organization setting.
+        /// Save auto-determined organization.
         /// </summary>
-        /// <param name="autoOrganization">Auto organization setting.</param>
+        /// <param name="autoDeterminedOrg">Auto-determined organization string.</param>
         /// <returns>A <see cref="Task"/> representing the asynchronous operation.</returns>
-        public async Task SaveAutoOrganizationAsync(bool autoOrganization)
+        public async Task SaveAutoDeterminedOrgAsync(string autoDeterminedOrg)
         {
-            Logger.Information("Enter SaveAutoOrganization method");
+            Logger.Information("Enter SaveAutoDeterminedOrg method");
 
             var solutionPathHash = await this.GetSolutionPathHashAsync();
 
@@ -249,13 +248,171 @@ namespace Snyk.VisualStudio.Extension.Settings
                 projectSettings = new SnykSolutionSettings();
             }
 
-            projectSettings.AutoOrganization = autoOrganization;
+            projectSettings.AutoDeterminedOrg = autoDeterminedOrg;
 
             snykSettings.SolutionSettingsDict[solutionPathHash] = projectSettings;
 
             this.SaveSettingsToFile();
 
-            Logger.Information("Leave SaveAutoOrganization method");
+            Logger.Information("Leave SaveAutoDeterminedOrg method");
+        }
+
+        /// <summary>
+        /// Get preferred organization.
+        /// </summary>
+        /// <returns>Preferred organization string.</returns>
+        public async Task<string> GetPreferredOrgAsync()
+        {
+            Logger.Information("Enter GetPreferredOrg method");
+
+            var solutionPathHash = await this.GetSolutionPathHashAsync();
+
+            if (snykSettings == null || !snykSettings.SolutionSettingsDict.ContainsKey(solutionPathHash))
+            {
+                Logger.Information("Leave GetPreferredOrg method - no settings");
+                return string.Empty;
+            }
+
+            var preferredOrg = snykSettings.SolutionSettingsDict[solutionPathHash].PreferredOrg;
+            Logger.Information("Leave GetPreferredOrg method");
+            return preferredOrg ?? string.Empty;
+        }
+
+        /// <summary>
+        /// Save preferred organization.
+        /// </summary>
+        /// <param name="preferredOrg">Preferred organization string.</param>
+        /// <returns>A <see cref="Task"/> representing the asynchronous operation.</returns>
+        public async Task SavePreferredOrgAsync(string preferredOrg)
+        {
+            Logger.Information("Enter SavePreferredOrg method");
+
+            var solutionPathHash = await this.GetSolutionPathHashAsync();
+
+            SnykSolutionSettings projectSettings;
+
+            if (snykSettings.SolutionSettingsDict.ContainsKey(solutionPathHash))
+            {
+                projectSettings = snykSettings.SolutionSettingsDict[solutionPathHash];
+            }
+            else
+            {
+                projectSettings = new SnykSolutionSettings();
+            }
+
+            projectSettings.PreferredOrg = preferredOrg;
+
+            snykSettings.SolutionSettingsDict[solutionPathHash] = projectSettings;
+
+            this.SaveSettingsToFile();
+
+            Logger.Information("Leave SavePreferredOrg method");
+        }
+
+        /// <summary>
+        /// Get organization set by user flag.
+        /// </summary>
+        /// <returns>Organization set by user flag.</returns>
+        public async Task<bool> GetOrgSetByUserAsync()
+        {
+            Logger.Information("Enter GetOrgSetByUser method");
+
+            var solutionPathHash = await this.GetSolutionPathHashAsync();
+
+            if (snykSettings == null || !snykSettings.SolutionSettingsDict.ContainsKey(solutionPathHash))
+            {
+                Logger.Information("Leave GetOrgSetByUser method - using default");
+                return false; // Default to false (auto mode)
+            }
+
+            var orgSetByUser = snykSettings.SolutionSettingsDict[solutionPathHash].OrgSetByUser;
+            Logger.Information("Leave GetOrgSetByUser method");
+            return orgSetByUser;
+        }
+
+        /// <summary>
+        /// Save organization set by user flag.
+        /// </summary>
+        /// <param name="orgSetByUser">Organization set by user flag.</param>
+        /// <returns>A <see cref="Task"/> representing the asynchronous operation.</returns>
+        public async Task SaveOrgSetByUserAsync(bool orgSetByUser)
+        {
+            Logger.Information("Enter SaveOrgSetByUser method");
+
+            var solutionPathHash = await this.GetSolutionPathHashAsync();
+
+            SnykSolutionSettings projectSettings;
+
+            if (snykSettings.SolutionSettingsDict.ContainsKey(solutionPathHash))
+            {
+                projectSettings = snykSettings.SolutionSettingsDict[solutionPathHash];
+            }
+            else
+            {
+                projectSettings = new SnykSolutionSettings();
+            }
+
+            projectSettings.OrgSetByUser = orgSetByUser;
+
+            snykSettings.SolutionSettingsDict[solutionPathHash] = projectSettings;
+
+            this.SaveSettingsToFile();
+
+            Logger.Information("Leave SaveOrgSetByUser method");
+        }
+
+        /// <summary>
+        /// Get effective organization based on IntelliJ logic.
+        /// </summary>
+        /// <returns>Effective organization string.</returns>
+        public async Task<string> GetEffectiveOrganizationAsync()
+        {
+            Logger.Information("Enter GetEffectiveOrganization method");
+
+            var solutionPathHash = await this.GetSolutionPathHashAsync();
+
+            // Fallback hierarchy:
+            // 1. Folder-specific values (highest priority)
+            //    - autoDeterminedOrg when auto-detect is enabled
+            //    - preferredOrg when manual mode is enabled
+            // 2. Global organization setting (fallback)
+            // 3. Empty string (final fallback)
+
+            if (snykSettings != null && snykSettings.SolutionSettingsDict.ContainsKey(solutionPathHash))
+            {
+                var projectSettings = snykSettings.SolutionSettingsDict[solutionPathHash];
+                
+                // Check if organization was set by user (manual mode)
+                if (projectSettings.OrgSetByUser)
+                {
+                    // Use preferredOrg when manual mode is enabled
+                    if (!string.IsNullOrEmpty(projectSettings.PreferredOrg))
+                    {
+                        Logger.Information("Using preferredOrg: {PreferredOrg}", projectSettings.PreferredOrg);
+                        return projectSettings.PreferredOrg;
+                    }
+                }
+                else
+                {
+                    // Use autoDeterminedOrg when auto-detect is enabled
+                    if (!string.IsNullOrEmpty(projectSettings.AutoDeterminedOrg))
+                    {
+                        Logger.Information("Using autoDeterminedOrg: {AutoDeterminedOrg}", projectSettings.AutoDeterminedOrg);
+                        return projectSettings.AutoDeterminedOrg;
+                    }
+                }
+            }
+
+            // Fallback to global organization setting
+            if (!string.IsNullOrEmpty(snykSettings?.Organization))
+            {
+                Logger.Information("Using global organization: {GlobalOrg}", snykSettings.Organization);
+                return snykSettings.Organization;
+            }
+
+            // Final fallback to empty string
+            Logger.Information("Using empty string as final fallback");
+            return string.Empty;
         }
 
         private async Task<int> GetSolutionPathHashAsync() =>

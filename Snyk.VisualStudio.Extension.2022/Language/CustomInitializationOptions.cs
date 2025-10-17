@@ -42,15 +42,18 @@ namespace Snyk.VisualStudio.Extension.Language
 
     public class FolderConfig
     {
-        public string BaseBranch { get; set; }
-        public string ReferenceFolderPath { get; set; }
         public string FolderPath { get; set; }
+        public string BaseBranch { get; set; }
         public List<string> LocalBranches { get; set; }
         public List<string> AdditionalParameters { get; set; }
+        public string ReferenceFolderPath { get; set; }
+        public Dictionary<string, ScanCommandConfig> ScanCommandConfig { get; set; }
         public string PreferredOrg { get; set; }
-        public ScanCommandConfig ScanCommandConfig { get; set; }
+        public string AutoDeterminedOrg { get; set; }
+        public bool OrgMigratedFromGlobalConfig { get; set; }
+        public bool OrgSetByUser { get; set; }
 
-        public void SetScanCommandConfig(ScanCommandConfig scanCommandConfig)
+        public void SetScanCommandConfig(Dictionary<string, ScanCommandConfig> scanCommandConfig)
         {
             this.ScanCommandConfig = scanCommandConfig;
         }

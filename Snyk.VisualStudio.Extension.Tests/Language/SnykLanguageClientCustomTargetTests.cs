@@ -254,7 +254,7 @@ namespace Snyk.VisualStudio.Extension.Tests.Language
         }
 
         [Fact]
-        public async Task OnFolderConfig_ShouldUpdateOrganization_WhenPreferredOrganizationExists()
+        public async Task OnFolderConfig_ShouldUpdateOrganization_WhenAutoDeterminedOrgExists()
         {
             // Arrange
             var arg = JObject.Parse(@"{
@@ -262,7 +262,7 @@ namespace Snyk.VisualStudio.Extension.Tests.Language
                     {
                         'folderPath': '/path/to/folder1',
                         'baseBranch': 'main',
-                        'preferredOrg': 'preferredOrg'
+                        'autoDeterminedOrg': 'auto-determined-org'
                     }
                 ]
             }");
@@ -273,13 +273,14 @@ namespace Snyk.VisualStudio.Extension.Tests.Language
             await cut.OnFolderConfig(arg);
 
             // Assert
-            Assert.Equal("preferredOrg", optionsMock.Object.Organization);
+            Assert.Equal("auto-determined-org", optionsMock.Object.Organization);
             snykOptionsManagerMock.Verify(s => s.Save(It.IsAny<IPersistableOptions>(), It.IsAny<bool>()), Times.Once);
-            snykOptionsManagerMock.Verify(s => s.SaveOrganizationAsync("preferredOrg"), Times.Once);
+            snykOptionsManagerMock.Verify(s => s.SaveOrganizationAsync("auto-determined-org"), Times.Once);
+            snykOptionsManagerMock.Verify(s => s.SaveAutoDeterminedOrgAsync("auto-determined-org"), Times.Once);
         }
 
         [Fact]
-        public async Task OnFolderConfig_ShouldNotUpdateOrganization_WhenNoPreferredOrganization()
+        public async Task OnFolderConfig_ShouldNotUpdateOrganization_WhenNoAutoDeterminedOrg()
         {
             // Arrange
             var arg = JObject.Parse(@"{
@@ -305,7 +306,7 @@ namespace Snyk.VisualStudio.Extension.Tests.Language
         }
 
         [Fact]
-        public async Task OnFolderConfig_ShouldNotUpdateOrganization_WhenPreferredOrgIsNull()
+        public async Task OnFolderConfig_ShouldNotUpdateOrganization_WhenAutoDeterminedOrgIsNull()
         {
             // Arrange
             var arg = JObject.Parse(@"{
@@ -313,7 +314,7 @@ namespace Snyk.VisualStudio.Extension.Tests.Language
                     {
                         'folderPath': '/path/to/folder1',
                         'baseBranch': 'main',
-                        'preferredOrg': null
+                        'autoDeterminedOrg': null
                     }
                 ]
             }");
@@ -332,7 +333,7 @@ namespace Snyk.VisualStudio.Extension.Tests.Language
         }
 
         [Fact]
-        public async Task OnFolderConfig_ShouldUpdateOrganization_WithFirstPreferredOrganization()
+        public async Task OnFolderConfig_ShouldUpdateOrganization_WithBothOrgFields()
         {
             // Arrange
             var arg = JObject.Parse(@"{
@@ -340,12 +341,18 @@ namespace Snyk.VisualStudio.Extension.Tests.Language
                     {
                         'folderPath': '/path/to/folder1',
                         'baseBranch': 'main',
-                        'preferredOrg': 'preferredOrg1'
+                        'preferredOrg': 'user-specified-org',
+                        'autoDeterminedOrg': 'auto-determined-org',
+                        'orgSetByUser': true,
+                        'orgMigratedFromGlobalConfig': false
                     },
                     {
                         'folderPath': '/path/to/folder2',
                         'baseBranch': 'master',
-                        'preferredOrg': 'preferredOrg2'
+                        'preferredOrg': '',
+                        'autoDeterminedOrg': 'auto-determined-org-2',
+                        'orgSetByUser': false,
+                        'orgMigratedFromGlobalConfig': true
                     }
                 ]
             }");
@@ -356,9 +363,40 @@ namespace Snyk.VisualStudio.Extension.Tests.Language
             await cut.OnFolderConfig(arg);
 
             // Assert
-            Assert.Equal("preferredOrg1", optionsMock.Object.Organization);
             snykOptionsManagerMock.Verify(s => s.Save(It.IsAny<IPersistableOptions>(), It.IsAny<bool>()), Times.Once);
-            snykOptionsManagerMock.Verify(s => s.SaveOrganizationAsync("preferredOrg1"), Times.Once);
+            snykOptionsManagerMock.Verify(s => s.SaveAutoDeterminedOrgAsync("auto-determined-org"), Times.Once);
+            snykOptionsManagerMock.Verify(s => s.SavePreferredOrgAsync("user-specified-org"), Times.Once);
+            snykOptionsManagerMock.Verify(s => s.SaveOrgSetByUserAsync(true), Times.Once);
+            snykOptionsManagerMock.Verify(s => s.GetEffectiveOrganizationAsync(), Times.Once);
+        }
+
+        [Fact]
+        public async Task OnFolderConfig_ShouldSaveBothOrgFields_WhenBothExist()
+        {
+            // Arrange
+            var arg = JObject.Parse(@"{
+                'folderConfigs': [
+                    {
+                        'folderPath': '/path/to/folder1',
+                        'preferredOrg': 'user-preferred-org',
+                        'autoDeterminedOrg': 'auto-detected-org',
+                        'orgSetByUser': true,
+                        'orgMigratedFromGlobalConfig': false
+                    }
+                ]
+            }");
+
+            optionsMock.SetupProperty(o => o.FolderConfigs);
+            optionsMock.SetupProperty(o => o.Organization);
+
+            // Act
+            await cut.OnFolderConfig(arg);
+
+            // Assert
+            snykOptionsManagerMock.Verify(s => s.SaveAutoDeterminedOrgAsync("auto-detected-org"), Times.Once);
+            snykOptionsManagerMock.Verify(s => s.SavePreferredOrgAsync("user-preferred-org"), Times.Once);
+            snykOptionsManagerMock.Verify(s => s.SaveOrgSetByUserAsync(true), Times.Once);
+            snykOptionsManagerMock.Verify(s => s.GetEffectiveOrganizationAsync(), Times.Once);
         }
     }
 }

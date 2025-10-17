@@ -24,7 +24,6 @@ namespace Snyk.VisualStudio.Extension.Settings
         public AuthenticationType AuthenticationMethod { get; set; }
         public string CustomEndpoint { get; set; }
         public string Organization { get; set; }
-        public bool AutoOrganization { get; set; }
         public bool IgnoreUnknownCA { get; set; }
         public bool OssEnabled { get; set; }
         public bool IacEnabled { get; set; }

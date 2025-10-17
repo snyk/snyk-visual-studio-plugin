@@ -156,13 +156,30 @@ namespace Snyk.VisualStudio.Extension.Language
 
             if (matchingFolderConfig != null)
             {
-                // Extract preferred organization ID from matching folder config
+                // Extract auto-determined organization from matching folder config
                 // Language Server is authoritative - always use its data
+                if (!string.IsNullOrEmpty(matchingFolderConfig.AutoDeterminedOrg))
+                {
+                    // Save as auto-determined organization (from Language Server)
+                    await serviceProvider.SnykOptionsManager.SaveAutoDeterminedOrgAsync(matchingFolderConfig.AutoDeterminedOrg);
+                }
+
+                // Extract preferred organization from matching folder config
                 if (!string.IsNullOrEmpty(matchingFolderConfig.PreferredOrg))
                 {
-                    // Update both global and solution-specific organization for migration
-                    serviceProvider.Options.Organization = matchingFolderConfig.PreferredOrg;
-                    await serviceProvider.SnykOptionsManager.SaveOrganizationAsync(matchingFolderConfig.PreferredOrg);
+                    // Save as preferred organization (from Language Server)
+                    await serviceProvider.SnykOptionsManager.SavePreferredOrgAsync(matchingFolderConfig.PreferredOrg);
+                }
+
+                // Extract orgSetByUser flag from Language Server
+                await serviceProvider.SnykOptionsManager.SaveOrgSetByUserAsync(matchingFolderConfig.OrgSetByUser);
+
+                // Update global organization based on the effective organization logic
+                var effectiveOrg = await serviceProvider.SnykOptionsManager.GetEffectiveOrganizationAsync();
+                if (!string.IsNullOrEmpty(effectiveOrg))
+                {
+                    serviceProvider.Options.Organization = effectiveOrg;
+                    await serviceProvider.SnykOptionsManager.SaveOrganizationAsync(effectiveOrg);
                 }
 
                 // Extract additional parameters from matching folder config
