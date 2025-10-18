@@ -59,8 +59,6 @@ namespace Snyk.VisualStudio.Extension.Language
         }
     }
 
-
-    [JsonObject(NamingStrategyType = typeof(CamelCaseNamingStrategy))]
     public class ScanCommandConfig
     {
         // Add properties as needed based on the Java ScanCommandConfig class

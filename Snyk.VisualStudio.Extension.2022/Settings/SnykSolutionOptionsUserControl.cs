@@ -17,6 +17,11 @@ namespace Snyk.VisualStudio.Extension.Settings
         private readonly ISnykServiceProvider serviceProvider;
         public string AdditionalOptions { get; set; }
         public string Organization { get; set; }
+
+        /// <summary>
+        /// Gets the current state of the auto organization checkbox.
+        /// </summary>
+        public bool IsAutoOrganizationChecked => this.autoOrganizationCheckBox.Checked;
         /// <summary>
         /// Initializes a new instance of the <see cref="SnykSolutionOptionsUserControl"/> class.
         /// </summary>

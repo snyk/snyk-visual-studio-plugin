@@ -123,16 +123,18 @@ namespace Snyk.VisualStudio.Extension.Settings
             // Implement IntelliJ apply logic for organization
             ThreadHelper.JoinableTaskFactory.RunAsync(async () =>
             {
-                var orgSetByUser = await this.serviceProvider.SnykOptionsManager.GetOrgSetByUserAsync();
+                // Use UI state instead of reading from database to get current user intent
+                var isAutoMode = control.IsAutoOrganizationChecked;
                 var organizationText = control.Organization;
-                var isAutoMode = !orgSetByUser;
                 
                 if (isAutoMode)
                 {
                     // When apply is clicked and checkbox is ticked (auto mode):
                     // - orgSetByUser is set to false
+                    // - preferredOrg is cleared
                     // - Update folderconfig and send to Language Server
                     await this.serviceProvider.SnykOptionsManager.SaveOrgSetByUserAsync(false);
+                    await this.serviceProvider.SnykOptionsManager.SavePreferredOrgAsync("");
                     await this.UpdateFolderConfigAndNotifyLanguageServerAsync();
                 }
                 else
@@ -170,7 +172,7 @@ namespace Snyk.VisualStudio.Extension.Settings
             }
         }
 
-        private async Task UpdateFolderConfigForCurrentSolutionAsync(string solutionPath)
+        private Task UpdateFolderConfigForCurrentSolutionAsync(string solutionPath)
         {
             try
             {
@@ -196,15 +198,19 @@ namespace Snyk.VisualStudio.Extension.Settings
                     folderConfigs.Add(existingConfig);
                 }
                 
-                // Update organization settings
-                var orgSetByUser = await this.serviceProvider.SnykOptionsManager.GetOrgSetByUserAsync();
-                existingConfig.OrgSetByUser = orgSetByUser;
+                // Get the control to access current UI state
+                var control = this.serviceProvider.Package.SnykSolutionOptionsDialogPage.SnykSolutionOptionsUserControl;
                 
-                if (orgSetByUser)
+                // Use UI state instead of reading from database
+                var isAutoMode = control.IsAutoOrganizationChecked;
+                var organizationText = control.Organization;
+
+                existingConfig.OrgSetByUser = !isAutoMode;
+
+                if (!isAutoMode)
                 {
-                    // Manual mode - use preferredOrg
-                    var preferredOrg = await this.serviceProvider.SnykOptionsManager.GetPreferredOrgAsync();
-                    existingConfig.PreferredOrg = preferredOrg ?? string.Empty;
+                    // Manual mode - use organization text from UI
+                    existingConfig.PreferredOrg = organizationText ?? string.Empty;
                 }
                 else
                 {
@@ -215,13 +221,15 @@ namespace Snyk.VisualStudio.Extension.Settings
                 // Update global folder configs
                 this.serviceProvider.Options.FolderConfigs = folderConfigs;
                 
-                Logger.Information("Updated folder config for solution: {SolutionPath}, OrgSetByUser: {OrgSetByUser}", 
-                    solutionPath, orgSetByUser);
+                Logger.Information("Updated folder config for solution: {SolutionPath}, OrgSetByUser: {OrgSetByUser}, PreferredOrg: {PreferredOrg}", 
+                    solutionPath, !isAutoMode, existingConfig.PreferredOrg);
             }
             catch (Exception ex)
             {
                 Logger.Error(ex, "Failed to update folder config for solution: {SolutionPath}", solutionPath);
             }
+
+            return Task.CompletedTask;
         }
 
         private void HandleUserExperienceConfiguration()
