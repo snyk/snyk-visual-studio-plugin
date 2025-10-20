@@ -120,7 +120,7 @@ namespace Snyk.VisualStudio.Extension.Settings
             if(control.AdditionalOptions != null)
                 this.serviceProvider.SnykOptionsManager.SaveAdditionalOptionsAsync(control.AdditionalOptions).FireAndForget();
             
-            // Implement IntelliJ apply logic for organization
+            // Implement logic for organization
             ThreadHelper.JoinableTaskFactory.RunAsync(async () =>
             {
                 // Use UI state instead of reading from database to get current user intent

@@ -362,7 +362,7 @@ namespace Snyk.VisualStudio.Extension.Settings
         }
 
         /// <summary>
-        /// Get effective organization based on IntelliJ logic.
+        /// Get effective organization.
         /// </summary>
         /// <returns>Effective organization string.</returns>
         public async Task<string> GetEffectiveOrganizationAsync()

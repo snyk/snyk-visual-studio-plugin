@@ -53,7 +53,7 @@
     <!-- Add missing dependencies from main project -->
     <PackageReference Include="Microsoft.VisualStudio.LanguageServer.Client" Version="17.4.1068" />
     <PackageReference Include="Microsoft.VisualStudio.LanguageServer.Protocol" Version="17.2.8" />
-    <PackageReference Include="Microsoft.VisualStudio.Threading" Version="17.4.1068" />
+    <PackageReference Include="Microsoft.VisualStudio.Threading" Version="17.6.40" />
     <PackageReference Include="Community.VisualStudio.Toolkit.17" Version="17.0.394" />
   </ItemGroup>
 

@@ -73,7 +73,6 @@ namespace Snyk.VisualStudio.Extension.Settings
         {
             var isAutoMode = this.autoOrganizationCheckBox.Checked;
             
-            // Implement IntelliJ logic for checkbox behavior
             try
             {
                 ThreadHelper.JoinableTaskFactory.RunAsync(async () =>
@@ -138,16 +137,13 @@ namespace Snyk.VisualStudio.Extension.Settings
                 this.additionalOptionsTextBox.Text = string.Empty;
             }
 
-            // Load organization settings with IntelliJ logic
             try
             {
                 var orgSetByUser = await this.serviceProvider.SnykOptionsManager.GetOrgSetByUserAsync();
                 
-                // Set checkbox state based on IntelliJ logic
                 // Checkbox should be ticked if orgSetByUser is false (auto mode)
                 this.autoOrganizationCheckBox.Checked = !orgSetByUser;
 
-                // Populate text field based on IntelliJ logic
                 if (!orgSetByUser)
                 {
                     // Show autoDeterminedOrg if orgSetByUser is false
