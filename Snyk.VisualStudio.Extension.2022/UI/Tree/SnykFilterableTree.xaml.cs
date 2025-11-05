@@ -251,7 +251,10 @@ namespace Snyk.VisualStudio.Extension.UI.Tree
                 }
                 else
                 {
-                    return $"✋ {openIssuesText} & {ignoredIssuesText}";
+                  if (ignoredIssueCount == 0) {
+                    return $"✋ {openIssuesText}";
+                  }
+                  return $"✋ {openIssuesText} & {ignoredIssuesText}";
                 }
             }
             if (options.OpenIssuesEnabled)
