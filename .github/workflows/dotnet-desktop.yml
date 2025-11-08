@@ -1,0 +1,182 @@
+# This workflow uses actions that are not certified by GitHub.
+# They are provided by a third-party and are governed by
+# separate terms of service, privacy policy, and support
+# documentation.
+
+# This workflow will build, test, sign and package a WPF or Windows Forms desktop application
+# built on .NET Core.
+# To learn how to migrate your existing application to .NET Core,
+# refer to https://docs.microsoft.com/en-us/dotnet/desktop-wpf/migration/convert-project-from-net-framework
+#
+# To configure this workflow:
+#
+# 1. Configure environment variables
+# GitHub sets default environment variables for every workflow run.
+# Replace the variables relative to your project in the "env" section below.
+#
+# 2. Signing
+# Generate a signing certificate in the Windows Application
+# Packaging Project or add an existing signing certificate to the project.
+# Next, use PowerShell to encode the .pfx file using Base64 encoding
+# by running the following Powershell script to generate the output string:
+#
+# $pfx_cert = Get-Content '.\SigningCertificate.pfx' -Encoding Byte
+# [System.Convert]::ToBase64String($pfx_cert) | Out-File 'SigningCertificate_Encoded.txt'
+#
+# Open the output file, SigningCertificate_Encoded.txt, and copy the
+# string inside. Then, add the string to the repo as a GitHub secret
+# and name it "Base64_Encoded_Pfx."
+# For more information on how to configure your signing certificate for
+# this workflow, refer to https://github.com/microsoft/github-actions-for-desktop-apps#signing
+#
+# Finally, add the signing certificate password to the repo as a secret and name it "Pfx_Key".
+# See "Build the Windows Application Packaging project" below to see how the secret is used.
+#
+# For more information on GitHub Actions, refer to https://github.com/features/actions
+# For a complete CI/CD sample to get started with GitHub Action workflows for Desktop Applications,
+# refer to https://github.com/microsoft/github-actions-for-desktop-apps
+German: directors
+DENIC-Registrierungsbedingungen: http://www.denic.de/de/bedingungen.html
+DENIC-Registrierungsrichtlinien: http://www.denic.de/de/richtlinien.html
+.eu Domains: In the case of a ".eu" registration, the following terms and conditions will apply:
+Eligibility Criteria. .eu domain names are available for registration to companies and persons who fulfill the following criteria. As a condition of registration, you accordingly represent that you are:
+an undertaking having its registered office, central administration or principal place of business within the European Community;
+an organization established within the European Community without prejudice to the application of national law, or
+a natural person resident within the European Community.
+Registry Policy. You acknowledge and understand that by accepting the terms and conditions of this agreement you shall be bound by Registry policies and any pertinent rules or policies that exist now or in the future and which are posted on the Registry website. Registration policies of the Registry and the terms and conditions applicable to your .eu registration may be found at: http://www.eurid.eu/files/docs/trm_con_EN.pdf. You are responsible for monitoring the Registry's site on a regular basis. In the event that you do not wish to be bound by a revision or modification to any Registry policy, your sole remedy is to cancel your domain name registration by following the appropriate Registry policy regarding such cancellation.
+Domain Name Disputes. You agree that, if the registration or reservation of your domain name is challenged by a third party, you will be subject to the provisions specified by the Registry or any court of law.
+.fr, .acquitane, .alsace Domains: In the case of ".fr", ".acquitane", ".alsace" registrations, the following terms and conditions will apply:
+Representation of Registrant. .fr, .acquitane, .alsace domain names are available for registration to companies and persons who fulfill the following criteria. As a condition of registration, you accordingly represent that you are: (A) A legal entity:
+whose head office is in France; (or),
+which possess an address in France which is expressly listed in the public electronic databases of the registrars of the commercial courts or the National Statistical and Economic Studies Institute (INSEE), (or),
+State institutions or departments, local authorities or associated establishments, (or),
+which own a trademark registered with the National Intellectual Property Institute or own a registered EU or international trademark which expressly includes French territory.
+Administrative Contact. Each registrant must designate an administrative contact to act as a coordinator between the registrant and the Registry. In the case of .fr registrations, the administrative contact must be based in France where it can receive legal and other documents.
+Registry Policies. You agree to be bound by the Registry's Naming Charter, its registration rules for .fr. English language translations of the Registry's documents are provided for convenience. The Registry documents may be found at: http://www.afnic.fr/en/resources/reference/registry-policies/.
+Domain Name Disputes. You agree that, if the registration or reservation of your domain name is challenged by a third party, you will be subject to the provisions specified by the Registry or any court of law. The current .fr dispute resolution policy and procedures can be found at http://www.afnic.fr/doc/ref/juridique/parl. You agree that in the event a domain name dispute arises with any third party, you will indemnify and hold us harmless pursuant to the terms and conditions specified by the Registry or any court of law.
+.CORSICA : In the case of ".CORSICA" registrations, the following terms and conditions will apply:
+.CORSICA domain names are available for registration to companies and persons who fulfill the following criteria. As a condition of registration, you accordingly meet at least one of the requirements:
+Legal entity in Corsica - A company headquartered in Corsica or company having its head office outside Corsica but a secondary establishment registered in Corsica.
+Individuals living in Corsica - The applicant may be a French or foreign citizen with a physical address valid on the territory of Corsica.
+Nexus to the .corsican community Diaspora and link to the Corsican community - Any individual who has and will prove a direct or indirect link attachment (economic, social, cultural,familial, historical or otherwise) with Corsica.
+In addition to the criteria stated above, the Registrant of a domain name in .corsica is obliged, if he creates a website, to create and maintain in Corsican language at least one page of its website in.corsica. This Corsican language page will be registered on its home page and be published at the latest, three months after the publication of the website.
+.it Domains: In the case of a ".it" registration, the following terms and conditions shall apply:
+Registration Criteria. Registration of an .it name is restricted to subjects belonging to a member state of the European Union. Individuals and associations operating without a VAT number or a fiscal code are limited to a single domain name registration.
+Registry Policy. You acknowledge and understand that by accepting the terms and conditions of this agreement you shall be bound by Registry policies and any pertinent rules or policies that exist now or in the future and which are posted on the Registry website at http://www.nic.it/create-and-change.it/regulations-and-guidelines. You are responsible for monitoring the Registry's site on a regular basis. In the event that you do not wish to be bound by a revision or modification to any Registry policy, your sole remedy is to cancel your domain name registration by following the appropriate Registry policy regarding such cancellation. Additional policies, including transfer procedures and "netiquette" rules may be found at http://www.nic.it/everything-on.it/naming-authority/?searchterm=naming%20authority.
+.RIO : In the case of ".RIO" registrations, the following terms and conditions will apply:
+A domain owner that loses eligibility to a .RIO domain is subject to termination of DNS publication for the domain, and to domain removal, no matter domain expiration date.
+Two pre-configured nameservers are required
+No trustee service allowed; abuse can lead to the deletion of the domain name by the registry
+Additional policies may be found at http://http://nic.rio/.
+Names under this TLD are only for usage by the city council of Rio. The .rio domain owner needs to be either:
+Legal entity incorporated in Brazil, with headquarters, branch, franchisee or licensee located in the city of Rio de Janeiro, with active record in "Cadastro Nacional das Pessoas JurÃƒÂ­dicas - CNPJ/MF" of the FinanceMinistry.
+Individual with fixed address in the city of Rio de Janeiro, with active record in "Cadastro das Pessoas FÃƒÂ­sicas- CPF/MF" of the Finance Ministry.
+.nl Domains: In the case of a ".nl" registration, the following terms and conditions shall apply:
+Registration Criteria. Registration of a .nl domain name is unrestricted save and except that applicants who are not based in the Netherlands or who do not have a registered address in the Netherlands must provide an address in the Netherlands where written documents can be sent to the applicant and where legal summonses can be served.
+Registry Policies. You agree to be bound by the policies of the Registry including but not limited to the Registry's Registration Regulations. English language translations of the Registry's documents are provided for convenience and may be found at: https://www.sidn.nl/fileadmin/downloads_en/Terms_and_Conditions/General_Terms_and_Conditions_for_.nl_Registrants.pdf.
+You agree that, if the registration or reservation of your domain name is challenged by a third party, you will be subject to the provisions specified by the Registry or any court of law. The current .nl dispute resolution policy and procedures can be found at https://www.sidn.nl/t/nl-domain-name.
+You agree that in the event a domain name dispute arises with any third party, you will indemnify and hold us harmless pursuant to the terms and conditions specified by the Registry or any court of law.
+.tv Domains: In the case of a ".tv" registration, the following terms and conditions will apply:
+Domain Name Dispute Policy. If you reserved or registered a domain name through us, or transferred a domain name to us from another Registrar, you agree to be bound by the Dispute Policy that is incorporated herein and made a part of this Agreement by reference. The current version of the Dispute Policy may be found at http://www.icann.org/dndr/udrp/policy.htm. Please take the time to familiarize yourself with this policy.
+Policy. You agree that your registration of the .tv domain name shall be subject to suspension, cancellation, or transfer pursuant to any ICANN or government adopted policy, or pursuant to any Registrar or registry procedure not inconsistent with an ICANN or government-adopted policy,
+to correct mistakes by us or the applicable Registry in registering the name or
+for the resolution of disputes concerning the domain name. You acknowledge that you have reviewed the .tv General Terms of Service which may be found at http://www.verisign.com/information-services/naming-services/cctlds/index.html" and expressly agree to the terms outlined therein.
+.uk Domains: In the case of a .uk registration, the following terms and conditions will apply:
+"Nominet UK" means the entity granted the exclusive right to administer the registry for .uk domain name registrations.
+Domain Name Dispute Policy. If you reserved or registered a domain name through us, or transferred a domain name to us from another registrar, you agree to be bound by the Dispute Policy which is incorporated herein and made a part of this Agreement by reference. The current version of the Dispute Policy may be found at: http://www.nominet.org.uk/disputes/. Please take the time to familiarize yourself with this policy.
+Nominet UK Policy. You agree that your registration of the domain name shall be subject to suspension, cancellation, or transfer pursuant to any Nominet UK-adopted policy, term or condition, or pursuant to any registrar or registry procedure not inconsistent with an Nominet UK-adopted policy,
+to correct mistakes by a registrar or the registry in registering the name, or
+for the resolution of disputes concerning the domain name. The current Nominet UK terms and conditions can be found at: http://www.nominet.org.uk/disputes/terms/
+When you submit a request for a domain name registration with In2net and/or Reseller, you will be entering into two contracts - one contract with In2net and/or Reseller and one contract with Nominet UK.
+In2net and your Reseller will act as agents on your behalf by submitting your application to Nominet for you, however, you will still be entering into a direct contract between you and Nominet UK. This is a separate contract from this agreement; may be found at http://www.nominet.org.uk/nominet-terms. In2net and Reseller must also make you aware that by accepting Nominet's terms and conditions you are consenting to Nominet using your personal data for a variety of reasons. In particular, your name and address may be published as part of Nominet's Whois look-up service.
+Transfer of Ownership. Any transfer of ownership in and to a domain name registration shall be affected in accordance with Nominet UK policies and procedures.
+.us Domains: In the case of a ".us" registration, the following terms and conditions will apply:
+"DOC" means the United States of America Department of Commerce.
+".us Nexus Requirement". Only those individuals or organizations that have a substantive lawful connection in the United States are permitted to register for .usTLD domain names. Registrants in the .usTLD must satisfy the nexus requirement ("Nexus" or "Nexus Requirements") set out at: http://www.neustar.us/the-ustld-nexus-requirements/.
+Selection of a Domain Name. You certify and represent that:
+You have and shall continue to have, a bona fide presence in the United States on the basis of real and substantial lawful contacts with, or lawful activities in, the United States as defined in Section (ii) hereinabove;
+The listed name servers are located within the United States;
+The data provided in the domain name registration application is true, correct, up to date and complete, and that you will continue to keep all of the information provided correct, up-to-date and complete;
+To the best of the your knowledge and belief, neither this registration of a domain name nor the manner in which it is directly or indirectly to be used infringes upon the legal rights of a third party;
+That the domain name is not being registered for nor shall it at any time whatsoever be used for any unlawful purpose whatsoever;
+You have the authority to enter into this Registration Agreement.
+Domain Name Dispute Policy. If you reserved or registered a domain name through us, or transferred a domain name to us from another registrar, you agree to be bound by the Dispute Policy and the usDRP, as defined below, that is incorporated herein and made a part of this Agreement by reference. Please take the time to familiarize yourself with these policies.
+Domain Name Disputes. You acknowledge having read and understood and agree to be bound by the terms and conditions of the following documents, as they may be amended from time to time, which are hereby incorporated and made an integral part of this Agreement:
+
+name: .NET Core Desktop
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+
+jobs:
+
+  build:
+
+    strategy:
+      matrix:
+        configuration: [Debug, Release]
+
+    runs-on: windows-latest  # For a list of available runner types, refer to
+                             # https://help.github.com/en/actions/reference/workflow-syntax-for-github-actions#jobsjob_idruns-on
+
+    env:
+      Solution_Name: your-solution-name                         # Replace with your solution name, i.e. MyWpfApp.sln.
+      Test_Project_Path: your-test-project-path                 # Replace with the path to your test project, i.e. MyWpfApp.Tests\MyWpfApp.Tests.csproj.
+      Wap_Project_Directory: your-wap-project-directory-name    # Replace with the Wap project directory relative to the solution, i.e. MyWpfApp.Package.
+      Wap_Project_Path: your-wap-project-path                   # Replace with the path to your Wap project, i.e. MyWpf.App.Package\MyWpfApp.Package.wapproj.
+
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+
+    # Install the .NET Core workload
+    - name: Install .NET Core
+      uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: 8.0.x
+
+    # Add  MSBuild to the PATH: https://github.com/microsoft/setup-msbuild
+    - name: Setup MSBuild.exe
+      uses: microsoft/setup-msbuild@v2
+
+    # Execute all unit tests in the solution
+    - name: Execute unit tests
+      run: dotnet test
+
+    # Restore the application to populate the obj folder with RuntimeIdentifiers
+    - name: Restore the application
+      run: msbuild $env:Solution_Name /t:Restore /p:Configuration=$env:Configuration
+      env:
+        Configuration: ${{ matrix.configuration }}
+
+    # Decode the base 64 encoded pfx and save the Signing_Certificate
+    - name: Decode the pfx
+      run: |
+        $pfx_cert_byte = [System.Convert]::FromBase64String("${{ secrets.Base64_Encoded_Pfx }}")
+        $certificatePath = Join-Path -Path $env:Wap_Project_Directory -ChildPath GitHubActionsWorkflow.pfx
+        [IO.File]::WriteAllBytes("$certificatePath", $pfx_cert_byte)
+
+    # Create the app package by building and packaging the Windows Application Packaging project
+    - name: Create the app package
+      run: msbuild $env:Wap_Project_Path /p:Configuration=$env:Configuration /p:UapAppxPackageBuildMode=$env:Appx_Package_Build_Mode /p:AppxBundle=$env:Appx_Bundle /p:PackageCertificateKeyFile=GitHubActionsWorkflow.pfx /p:PackageCertificatePassword=${{ secrets.Pfx_Key }}
+      env:
+        Appx_Bundle: Always
+        Appx_Bundle_Platforms: x86|x64
+        Appx_Package_Build_Mode: StoreUpload
+        Configuration: ${{ matrix.configuration }}
+
+    # Remove the pfx
+    - name: Remove the pfx
+      run: Remove-Item -path $env:Wap_Project_Directory\GitHubActionsWorkflow.pfx
+
+    # Upload the MSIX package: https://github.com/marketplace/actions/upload-a-build-artifact
+    - name: Upload build artifacts
+      uses: actions/upload-artifact@v4
+      with:
+        name: MSIX Package
+        path: ${{ env.Wap_Project_Directory }}\AppPackages
