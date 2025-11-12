@@ -97,7 +97,7 @@
             this.autoOrganizationCheckBox.Name = "autoOrganizationCheckBox";
             this.autoOrganizationCheckBox.Size = new System.Drawing.Size(124, 19);
             this.autoOrganizationCheckBox.TabIndex = 8;
-            this.autoOrganizationCheckBox.Text = "Auto organization";
+            this.autoOrganizationCheckBox.Text = "Auto-select organization";
             this.autoOrganizationCheckBox.UseVisualStyleBackColor = true;
             this.autoOrganizationCheckBox.CheckedChanged += new System.EventHandler(this.AutoOrganizationCheckBox_CheckedChanged);
             // 

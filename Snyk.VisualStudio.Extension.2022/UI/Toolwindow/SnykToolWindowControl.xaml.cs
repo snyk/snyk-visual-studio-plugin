@@ -89,7 +89,7 @@ namespace Snyk.VisualStudio.Extension.UI.Toolwindow
 
             tasksService.SnykCodeScanningStarted += this.OnSnykCodeScanningStarted;
             tasksService.SnykCodeScanError += this.OnSnykCodeDisplayError;
-            tasksService.SnykCodeDisabled += this.OnSnykCodeDisabledHandler;
+            // SnykCodeDisabled event handler removed - SAST checks are no longer performed
             tasksService.SnykCodeScanningUpdate += this.OnSnykCodeScanningUpdate;
             tasksService.SnykCodeScanningFinished += (sender, args) => ThreadHelper.JoinableTaskFactory.RunAsync(this.OnSnykCodeScanningFinishedAsync);
             
@@ -470,21 +470,7 @@ namespace Snyk.VisualStudio.Extension.UI.Toolwindow
             await this.UpdateActionsStateAsync();
         });
 
-        /// <summary>
-        /// Handle SnykCode disabled.
-        /// </summary>
-        /// <param name="sender">Source object.</param>
-        /// <param name="eventArgs">Event args.</param>
-        public void OnSnykCodeDisabledHandler(object sender, SnykCodeScanEventArgs eventArgs) => ThreadHelper.JoinableTaskFactory.Run(async () =>
-        {
-            await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
-
-            var disabledNodeState = RootTreeNodeState.DisabledForOrganization;
-
-            this.resultsTree.CodeSecurityRootNode.State = disabledNodeState;
-
-            this.resultsTree.CodeSecurityRootNode.Clean();
-        });
+        // OnSnykCodeDisabledHandler removed - SAST checks are no longer performed
 
         /// <summary>
         /// ScanningCancelled event handler. Switch context to ScanResultsState.
@@ -678,25 +664,8 @@ namespace Snyk.VisualStudio.Extension.UI.Toolwindow
             HandleBranchSelectorNode(serviceProvider, this.resultsTree.OssRootNode);
             HandleBranchSelectorNode(serviceProvider, this.resultsTree.CodeSecurityRootNode);
             HandleBranchSelectorNode(serviceProvider, this.resultsTree.IacRootNode);
-            try
-            {
-                SastSettings sastSettings = null;
-                if (LanguageClientHelper.IsLanguageServerReady())
-                {
-                    sastSettings = await this.serviceProvider.LanguageClientManager.InvokeGetSastEnabled(SnykVSPackage.Instance.DisposalToken);
-                }
-                this.resultsTree.CodeSecurityRootNode.State = this.GetSastRootNodeState(sastSettings, options.SnykCodeSecurityEnabled);
-            }
-            catch (Exception e)
-            {
-                Logger.Error(e, "Error on get sast settings and display tree node state");
-
-                this.resultsTree.CodeSecurityRootNode.State = RootTreeNodeState.Error;
-                this.resultsTree.OssRootNode.State = RootTreeNodeState.Error;
-                this.resultsTree.IacRootNode.State = RootTreeNodeState.Error;
-
-                NotificationService.Instance.ShowErrorInfoBar(e.Message);
-            }
+            // SAST enablement check removed - state is based only on user's checkbox setting
+            this.resultsTree.CodeSecurityRootNode.State = options.SnykCodeSecurityEnabled ? RootTreeNodeState.Enabled : RootTreeNodeState.Disabled;
         });
 
         private void HandleBranchSelectorNode(ISnykServiceProvider serviceProvider, RootTreeNode rootTreeNode)
@@ -729,20 +698,7 @@ namespace Snyk.VisualStudio.Extension.UI.Toolwindow
             }
         }
 
-        private RootTreeNodeState GetSastRootNodeState(SastSettings sastSettings, bool enabledInOptions)
-        {
-            if (sastSettings == null)
-            {
-                return RootTreeNodeState.Disabled;
-            }
-
-            if (!sastSettings.SastEnabled)
-            {
-                return RootTreeNodeState.DisabledForOrganization;
-            }
-
-            return enabledInOptions ? RootTreeNodeState.Enabled : RootTreeNodeState.Disabled;
-        }
+        // GetSastRootNodeState removed - SAST checks are no longer performed
 
         /// <summary>
         /// Append CLI results to tree.

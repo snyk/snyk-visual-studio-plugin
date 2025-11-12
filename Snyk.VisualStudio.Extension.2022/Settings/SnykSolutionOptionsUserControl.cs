@@ -54,19 +54,8 @@ namespace Snyk.VisualStudio.Extension.Settings
         private void OrganizationTextBox_TextChanged(object sender, EventArgs e)
         {
             Organization = this.organizationTextBox.Text;
-            // Only save to storage, Language Server notification will happen on dialog save
-            try
-            {
-                ThreadHelper.JoinableTaskFactory.RunAsync(async () =>
-                {
-                    await this.serviceProvider.SnykOptionsManager.SaveOrganizationAsync(Organization);
-                    Logger.Information("Organization saved: {Organization}", Organization);
-                }).FireAndForget();
-            }
-            catch (Exception ex)
-            {
-                Logger.Error(ex, "Failed to save organization");
-            }
+            // Do NOT save to global organization here - this is solution-specific.
+            // The organization will be saved to preferredOrg when the user clicks Apply/OK.
         }
 
         private void AutoOrganizationCheckBox_CheckedChanged(object sender, EventArgs e)

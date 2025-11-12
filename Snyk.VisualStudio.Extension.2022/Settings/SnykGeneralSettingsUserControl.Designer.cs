@@ -47,8 +47,10 @@ namespace Snyk.VisualStudio.Extension.Settings
             this.SnykRegionsLink = new System.Windows.Forms.LinkLabel();
             this.endpointDescriptionText = new System.Windows.Forms.RichTextBox();
             this.authMethodDescription = new System.Windows.Forms.RichTextBox();
+            this.organizationDescriptionText = new System.Windows.Forms.RichTextBox();
             this.authType = new System.Windows.Forms.ComboBox();
             this.label2 = new System.Windows.Forms.Label();
+            this.organizationToolTip = new System.Windows.Forms.ToolTip(this.components);
             this.ossInfoToolTip = new System.Windows.Forms.ToolTip(this.components);
             this.snykCodeSecurityInfoToolTip = new System.Windows.Forms.ToolTip(this.components);
             this.customCliPathFileDialog = new System.Windows.Forms.OpenFileDialog();
@@ -60,10 +62,10 @@ namespace Snyk.VisualStudio.Extension.Settings
             // 
             // customEndpointTextBox
             // 
-            this.customEndpointTextBox.Location = new System.Drawing.Point(169, 274);
-            this.customEndpointTextBox.Margin = new System.Windows.Forms.Padding(3, 2, 3, 2);
+            this.customEndpointTextBox.Location = new System.Drawing.Point(338, 531);
+            this.customEndpointTextBox.Margin = new System.Windows.Forms.Padding(6, 4, 6, 4);
             this.customEndpointTextBox.Name = "customEndpointTextBox";
-            this.customEndpointTextBox.Size = new System.Drawing.Size(399, 20);
+            this.customEndpointTextBox.Size = new System.Drawing.Size(794, 38);
             this.customEndpointTextBox.TabIndex = 0;
             this.customEndpointTextBox.LostFocus += new System.EventHandler(this.CustomEndpointTextBox_LostFocus);
             this.customEndpointTextBox.Validating += new System.ComponentModel.CancelEventHandler(this.CustomEndpointTextBox_Validating);
@@ -71,47 +73,50 @@ namespace Snyk.VisualStudio.Extension.Settings
             // customEndpointLabel
             // 
             this.customEndpointLabel.AutoSize = true;
-            this.customEndpointLabel.Location = new System.Drawing.Point(5, 276);
+            this.customEndpointLabel.Location = new System.Drawing.Point(10, 535);
+            this.customEndpointLabel.Margin = new System.Windows.Forms.Padding(6, 0, 6, 0);
             this.customEndpointLabel.Name = "customEndpointLabel";
-            this.customEndpointLabel.Size = new System.Drawing.Size(89, 13);
+            this.customEndpointLabel.Size = new System.Drawing.Size(227, 31);
             this.customEndpointLabel.TabIndex = 1;
             this.customEndpointLabel.Text = "Custom endpoint:";
             // 
             // organizationLabel
             // 
             this.organizationLabel.AutoSize = true;
-            this.organizationLabel.Location = new System.Drawing.Point(5, 331);
+            this.organizationLabel.Location = new System.Drawing.Point(10, 775);
+            this.organizationLabel.Margin = new System.Windows.Forms.Padding(6, 0, 6, 0);
             this.organizationLabel.Name = "organizationLabel";
-            this.organizationLabel.Size = new System.Drawing.Size(69, 13);
+            this.organizationLabel.Size = new System.Drawing.Size(176, 31);
             this.organizationLabel.TabIndex = 2;
             this.organizationLabel.Text = "Organization:";
             // 
             // organizationTextBox
             // 
-            this.organizationTextBox.Enabled = false;
-            this.organizationTextBox.Location = new System.Drawing.Point(169, 331);
-            this.organizationTextBox.Margin = new System.Windows.Forms.Padding(3, 2, 3, 2);
+            this.organizationTextBox.Location = new System.Drawing.Point(338, 775);
+            this.organizationTextBox.Margin = new System.Windows.Forms.Padding(6, 4, 6, 4);
             this.organizationTextBox.Name = "organizationTextBox";
-            this.organizationTextBox.Size = new System.Drawing.Size(399, 20);
+            this.organizationTextBox.Size = new System.Drawing.Size(794, 38);
             this.organizationTextBox.TabIndex = 3;
-            this.organizationTextBox.Text = resources.GetString("organizationTextBox.Text");
+            this.organizationToolTip.SetToolTip(this.organizationTextBox, resources.GetString("organizationTextBox.ToolTip"));
+            this.organizationTextBox.TextChanged += new System.EventHandler(this.OrganizationTextBox_TextChanged);
             // 
             // tokenLabel
             // 
             this.tokenLabel.AutoSize = true;
-            this.tokenLabel.Location = new System.Drawing.Point(5, 161);
+            this.tokenLabel.Location = new System.Drawing.Point(10, 312);
+            this.tokenLabel.Margin = new System.Windows.Forms.Padding(6, 0, 6, 0);
             this.tokenLabel.Name = "tokenLabel";
-            this.tokenLabel.Size = new System.Drawing.Size(41, 13);
+            this.tokenLabel.Size = new System.Drawing.Size(98, 31);
             this.tokenLabel.TabIndex = 4;
             this.tokenLabel.Text = "Token:";
             // 
             // tokenTextBox
             // 
-            this.tokenTextBox.Location = new System.Drawing.Point(169, 158);
-            this.tokenTextBox.Margin = new System.Windows.Forms.Padding(4);
+            this.tokenTextBox.Location = new System.Drawing.Point(338, 306);
+            this.tokenTextBox.Margin = new System.Windows.Forms.Padding(8, 8, 8, 8);
             this.tokenTextBox.Name = "tokenTextBox";
             this.tokenTextBox.PasswordChar = '*';
-            this.tokenTextBox.Size = new System.Drawing.Size(399, 20);
+            this.tokenTextBox.Size = new System.Drawing.Size(794, 38);
             this.tokenTextBox.TabIndex = 5;
             this.tokenTextBox.TextChanged += new System.EventHandler(this.TokenTextBox_TextChanged);
             this.tokenTextBox.Validating += new System.ComponentModel.CancelEventHandler(this.TokenTextBox_Validating);
@@ -119,10 +124,10 @@ namespace Snyk.VisualStudio.Extension.Settings
             // ignoreUnknownCACheckBox
             // 
             this.ignoreUnknownCACheckBox.AutoSize = true;
-            this.ignoreUnknownCACheckBox.Location = new System.Drawing.Point(172, 298);
-            this.ignoreUnknownCACheckBox.Margin = new System.Windows.Forms.Padding(3, 2, 3, 2);
+            this.ignoreUnknownCACheckBox.Location = new System.Drawing.Point(344, 577);
+            this.ignoreUnknownCACheckBox.Margin = new System.Windows.Forms.Padding(6, 4, 6, 4);
             this.ignoreUnknownCACheckBox.Name = "ignoreUnknownCACheckBox";
-            this.ignoreUnknownCACheckBox.Size = new System.Drawing.Size(120, 17);
+            this.ignoreUnknownCACheckBox.Size = new System.Drawing.Size(284, 35);
             this.ignoreUnknownCACheckBox.TabIndex = 6;
             this.ignoreUnknownCACheckBox.Text = "Ignore unknown CA";
             this.ignoreUnknownCACheckBox.UseVisualStyleBackColor = true;
@@ -130,10 +135,10 @@ namespace Snyk.VisualStudio.Extension.Settings
             // 
             // authenticateButton
             // 
-            this.authenticateButton.Location = new System.Drawing.Point(169, 118);
-            this.authenticateButton.Margin = new System.Windows.Forms.Padding(4);
+            this.authenticateButton.Location = new System.Drawing.Point(338, 229);
+            this.authenticateButton.Margin = new System.Windows.Forms.Padding(8, 8, 8, 8);
             this.authenticateButton.Name = "authenticateButton";
-            this.authenticateButton.Size = new System.Drawing.Size(257, 32);
+            this.authenticateButton.Size = new System.Drawing.Size(514, 62);
             this.authenticateButton.TabIndex = 7;
             this.authenticateButton.Text = "Connect IDE to Snyk";
             this.authenticateButton.UseVisualStyleBackColor = true;
@@ -148,6 +153,7 @@ namespace Snyk.VisualStudio.Extension.Settings
             this.generalSettingsGroupBox.Controls.Add(this.SnykRegionsLink);
             this.generalSettingsGroupBox.Controls.Add(this.endpointDescriptionText);
             this.generalSettingsGroupBox.Controls.Add(this.authMethodDescription);
+            this.generalSettingsGroupBox.Controls.Add(this.organizationDescriptionText);
             this.generalSettingsGroupBox.Controls.Add(this.authType);
             this.generalSettingsGroupBox.Controls.Add(this.label2);
             this.generalSettingsGroupBox.Controls.Add(this.tokenLabel);
@@ -158,11 +164,11 @@ namespace Snyk.VisualStudio.Extension.Settings
             this.generalSettingsGroupBox.Controls.Add(this.organizationLabel);
             this.generalSettingsGroupBox.Controls.Add(this.organizationTextBox);
             this.generalSettingsGroupBox.Controls.Add(this.ignoreUnknownCACheckBox);
-            this.generalSettingsGroupBox.Location = new System.Drawing.Point(10, 10);
-            this.generalSettingsGroupBox.Margin = new System.Windows.Forms.Padding(11, 10, 11, 10);
+            this.generalSettingsGroupBox.Location = new System.Drawing.Point(20, 19);
+            this.generalSettingsGroupBox.Margin = new System.Windows.Forms.Padding(22, 19, 22, 19);
             this.generalSettingsGroupBox.Name = "generalSettingsGroupBox";
-            this.generalSettingsGroupBox.Padding = new System.Windows.Forms.Padding(3, 2, 3, 2);
-            this.generalSettingsGroupBox.Size = new System.Drawing.Size(747, 427);
+            this.generalSettingsGroupBox.Padding = new System.Windows.Forms.Padding(6, 4, 6, 4);
+            this.generalSettingsGroupBox.Size = new System.Drawing.Size(1494, 914);
             this.generalSettingsGroupBox.TabIndex = 17;
             this.generalSettingsGroupBox.TabStop = false;
             this.generalSettingsGroupBox.Text = "General Settings";
@@ -171,10 +177,10 @@ namespace Snyk.VisualStudio.Extension.Settings
             // 
             this.SnykRegionsLink.AutoSize = true;
             this.SnykRegionsLink.ImageAlign = System.Drawing.ContentAlignment.MiddleRight;
-            this.SnykRegionsLink.Location = new System.Drawing.Point(175, 256);
-            this.SnykRegionsLink.Margin = new System.Windows.Forms.Padding(4, 0, 4, 0);
+            this.SnykRegionsLink.Location = new System.Drawing.Point(350, 496);
+            this.SnykRegionsLink.Margin = new System.Windows.Forms.Padding(8, 0, 8, 0);
             this.SnykRegionsLink.Name = "SnykRegionsLink";
-            this.SnykRegionsLink.Size = new System.Drawing.Size(114, 13);
+            this.SnykRegionsLink.Size = new System.Drawing.Size(288, 31);
             this.SnykRegionsLink.TabIndex = 21;
             this.SnykRegionsLink.TabStop = true;
             this.SnykRegionsLink.Text = "Available Snyk regions";
@@ -184,11 +190,11 @@ namespace Snyk.VisualStudio.Extension.Settings
             // 
             this.endpointDescriptionText.BackColor = System.Drawing.SystemColors.Control;
             this.endpointDescriptionText.BorderStyle = System.Windows.Forms.BorderStyle.None;
-            this.endpointDescriptionText.Location = new System.Drawing.Point(169, 186);
-            this.endpointDescriptionText.Margin = new System.Windows.Forms.Padding(4);
+            this.endpointDescriptionText.Location = new System.Drawing.Point(338, 360);
+            this.endpointDescriptionText.Margin = new System.Windows.Forms.Padding(8, 8, 8, 8);
             this.endpointDescriptionText.Name = "endpointDescriptionText";
             this.endpointDescriptionText.ReadOnly = true;
-            this.endpointDescriptionText.Size = new System.Drawing.Size(571, 68);
+            this.endpointDescriptionText.Size = new System.Drawing.Size(1142, 132);
             this.endpointDescriptionText.TabIndex = 20;
             this.endpointDescriptionText.Text = resources.GetString("endpointDescriptionText.Text");
             // 
@@ -196,14 +202,26 @@ namespace Snyk.VisualStudio.Extension.Settings
             // 
             this.authMethodDescription.BackColor = System.Drawing.SystemColors.Control;
             this.authMethodDescription.BorderStyle = System.Windows.Forms.BorderStyle.None;
-            this.authMethodDescription.Location = new System.Drawing.Point(169, 64);
-            this.authMethodDescription.Margin = new System.Windows.Forms.Padding(4);
+            this.authMethodDescription.Location = new System.Drawing.Point(338, 124);
+            this.authMethodDescription.Margin = new System.Windows.Forms.Padding(8, 8, 8, 8);
             this.authMethodDescription.Name = "authMethodDescription";
             this.authMethodDescription.ReadOnly = true;
-            this.authMethodDescription.Size = new System.Drawing.Size(571, 46);
+            this.authMethodDescription.Size = new System.Drawing.Size(1142, 89);
             this.authMethodDescription.TabIndex = 19;
             this.authMethodDescription.Text = "Specifies whether to authenticate with OAuth2 or with an API token.\nNote: OAuth2 " +
     "authentication is recommended as it provides enhanced security.";
+            // 
+            // organizationDescriptionText
+            // 
+            this.organizationDescriptionText.BackColor = System.Drawing.SystemColors.Control;
+            this.organizationDescriptionText.BorderStyle = System.Windows.Forms.BorderStyle.None;
+            this.organizationDescriptionText.Location = new System.Drawing.Point(338, 577);
+            this.organizationDescriptionText.Margin = new System.Windows.Forms.Padding(8, 8, 8, 8);
+            this.organizationDescriptionText.Name = "organizationDescriptionText";
+            this.organizationDescriptionText.ReadOnly = true;
+            this.organizationDescriptionText.Size = new System.Drawing.Size(1142, 196);
+            this.organizationDescriptionText.TabIndex = 22;
+            this.organizationDescriptionText.Text = resources.GetString("organizationDescriptionText.Text");
             // 
             // authType
             // 
@@ -212,19 +230,20 @@ namespace Snyk.VisualStudio.Extension.Settings
             this.authType.Items.AddRange(new object[] {
             "OAuth",
             "Token"});
-            this.authType.Location = new System.Drawing.Point(169, 33);
-            this.authType.Margin = new System.Windows.Forms.Padding(4);
+            this.authType.Location = new System.Drawing.Point(338, 64);
+            this.authType.Margin = new System.Windows.Forms.Padding(8, 8, 8, 8);
             this.authType.Name = "authType";
-            this.authType.Size = new System.Drawing.Size(256, 24);
+            this.authType.Size = new System.Drawing.Size(508, 39);
             this.authType.TabIndex = 13;
             this.authType.SelectionChangeCommitted += new System.EventHandler(this.authType_SelectionChangeCommitted);
             // 
             // label2
             // 
             this.label2.AutoSize = true;
-            this.label2.Location = new System.Drawing.Point(5, 36);
+            this.label2.Location = new System.Drawing.Point(10, 70);
+            this.label2.Margin = new System.Windows.Forms.Padding(6, 0, 6, 0);
             this.label2.Name = "label2";
-            this.label2.Size = new System.Drawing.Size(120, 13);
+            this.label2.Size = new System.Drawing.Size(299, 31);
             this.label2.TabIndex = 12;
             this.label2.Text = " Authentication Method:";
             // 
@@ -249,18 +268,19 @@ namespace Snyk.VisualStudio.Extension.Settings
             this.mainPanel.Controls.Add(this.generalSettingsGroupBox);
             this.mainPanel.Dock = System.Windows.Forms.DockStyle.Fill;
             this.mainPanel.Location = new System.Drawing.Point(0, 0);
+            this.mainPanel.Margin = new System.Windows.Forms.Padding(6, 6, 6, 6);
             this.mainPanel.Name = "mainPanel";
-            this.mainPanel.Size = new System.Drawing.Size(789, 449);
+            this.mainPanel.Size = new System.Drawing.Size(1578, 870);
             this.mainPanel.TabIndex = 20;
             // 
             // SnykGeneralSettingsUserControl
             // 
-            this.AutoScaleDimensions = new System.Drawing.SizeF(8F, 16F);
+            this.AutoScaleDimensions = new System.Drawing.SizeF(16F, 31F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.Controls.Add(this.mainPanel);
-            this.Margin = new System.Windows.Forms.Padding(3, 2, 3, 2);
+            this.Margin = new System.Windows.Forms.Padding(6, 4, 6, 4);
             this.Name = "SnykGeneralSettingsUserControl";
-            this.Size = new System.Drawing.Size(789, 449);
+            this.Size = new System.Drawing.Size(1578, 870);
             ((System.ComponentModel.ISupportInitialize)(this.errorProvider)).EndInit();
             this.generalSettingsGroupBox.ResumeLayout(false);
             this.generalSettingsGroupBox.PerformLayout();
@@ -283,12 +303,14 @@ namespace Snyk.VisualStudio.Extension.Settings
         private System.Windows.Forms.GroupBox generalSettingsGroupBox;
         private System.Windows.Forms.ToolTip ossInfoToolTip;
         private System.Windows.Forms.ToolTip snykCodeSecurityInfoToolTip;
+        private System.Windows.Forms.ToolTip organizationToolTip;
         private OpenFileDialog customCliPathFileDialog;
         private Label label2;
         private ComboBox authType;
         private RichTextBox authMethodDescription;
         private Panel mainPanel;
         private RichTextBox endpointDescriptionText;
+        private RichTextBox organizationDescriptionText;
         private LinkLabel SnykRegionsLink;
     }
 }

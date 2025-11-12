@@ -174,13 +174,9 @@ namespace Snyk.VisualStudio.Extension.Language
                 // Extract orgSetByUser flag from Language Server
                 await serviceProvider.SnykOptionsManager.SaveOrgSetByUserAsync(matchingFolderConfig.OrgSetByUser);
 
-                // Update global organization based on the effective organization logic
-                var effectiveOrg = await serviceProvider.SnykOptionsManager.GetEffectiveOrganizationAsync();
-                if (!string.IsNullOrEmpty(effectiveOrg))
-                {
-                    serviceProvider.Options.Organization = effectiveOrg;
-                    await serviceProvider.SnykOptionsManager.SaveOrganizationAsync(effectiveOrg);
-                }
+                // Do NOT update global organization when receiving folder configs from Language Server.
+                // The global organization should remain as the user set it and be used as a fallback.
+                // The Language Server handles the fallback logic: project-specific → global → web account preferred.
 
                 // Extract additional parameters from matching folder config
                 // Language Server is authoritative - always use its data

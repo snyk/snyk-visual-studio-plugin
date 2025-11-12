@@ -76,7 +76,7 @@ namespace Snyk.VisualStudio.Extension.Settings
     Task SaveOrgSetByUserAsync(bool orgSetByUser);
 
     /// <summary>
-    /// Get effective organization based on IntelliJ logic.
+    /// Get effective organization.
     /// </summary>
     /// <returns>Effective organization string.</returns>
     Task<string> GetEffectiveOrganizationAsync();

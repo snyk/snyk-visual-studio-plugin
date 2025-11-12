@@ -158,8 +158,6 @@ namespace Snyk.VisualStudio.Extension.Settings
         /// <returns>string.</returns>
         public async Task<string> GetOrganizationAsync()
         {
-            Logger.Information("Enter GetOrganization method");
-
             var solutionPathHash = await this.GetSolutionPathHashAsync();
 
             if (snykSettings == null || !snykSettings.SolutionSettingsDict.ContainsKey(solutionPathHash))
@@ -169,60 +167,40 @@ namespace Snyk.VisualStudio.Extension.Settings
             }
 
             var organization = snykSettings.SolutionSettingsDict[solutionPathHash].Organization;
-            Logger.Information("Leave GetOrganization method");
             return organization;
         }
 
         /// <summary>
-        /// Save organization string.
+        /// Save global organization string.
         /// </summary>
         /// <param name="organization">Organization string.</param>
         /// <returns>A <see cref="Task"/> representing the asynchronous operation.</returns>
         public async Task SaveOrganizationAsync(string organization)
         {
-            Logger.Information("Enter SaveOrganization method");
-
-            var solutionPathHash = await this.GetSolutionPathHashAsync();
-
-            SnykSolutionSettings projectSettings;
-
-            if (snykSettings.SolutionSettingsDict.ContainsKey(solutionPathHash))
-            {
-                projectSettings = snykSettings.SolutionSettingsDict[solutionPathHash];
-            }
-            else
-            {
-                projectSettings = new SnykSolutionSettings();
-            }
-
-            projectSettings.Organization = organization;
-
-            snykSettings.SolutionSettingsDict[solutionPathHash] = projectSettings;
-
+            // Save to global organization setting (not solution-specific)
+            // This matches Eclipse behavior where global org is always editable and used as fallback
+            snykSettings.Organization = organization;
             this.SaveSettingsToFile();
-
-            Logger.Information("Leave SaveOrganization method");
+            
+            // Update the options object to reflect the change
+            serviceProvider.Options.Organization = organization;
         }
 
 
-        /// <summary>
+        /// <summary>           
         /// Get auto-determined organization.
         /// </summary>
         /// <returns>Auto-determined organization string.</returns>
         public async Task<string> GetAutoDeterminedOrgAsync()
         {
-            Logger.Information("Enter GetAutoDeterminedOrg method");
-
             var solutionPathHash = await this.GetSolutionPathHashAsync();
 
             if (snykSettings == null || !snykSettings.SolutionSettingsDict.ContainsKey(solutionPathHash))
             {
-                Logger.Information("Leave GetAutoDeterminedOrg method - no settings");
                 return string.Empty;
             }
 
             var autoDeterminedOrg = snykSettings.SolutionSettingsDict[solutionPathHash].AutoDeterminedOrg;
-            Logger.Information("Leave GetAutoDeterminedOrg method");
             return autoDeterminedOrg ?? string.Empty;
         }
 
@@ -233,8 +211,6 @@ namespace Snyk.VisualStudio.Extension.Settings
         /// <returns>A <see cref="Task"/> representing the asynchronous operation.</returns>
         public async Task SaveAutoDeterminedOrgAsync(string autoDeterminedOrg)
         {
-            Logger.Information("Enter SaveAutoDeterminedOrg method");
-
             var solutionPathHash = await this.GetSolutionPathHashAsync();
 
             SnykSolutionSettings projectSettings;
@@ -253,8 +229,6 @@ namespace Snyk.VisualStudio.Extension.Settings
             snykSettings.SolutionSettingsDict[solutionPathHash] = projectSettings;
 
             this.SaveSettingsToFile();
-
-            Logger.Information("Leave SaveAutoDeterminedOrg method");
         }
 
         /// <summary>
@@ -263,18 +237,14 @@ namespace Snyk.VisualStudio.Extension.Settings
         /// <returns>Preferred organization string.</returns>
         public async Task<string> GetPreferredOrgAsync()
         {
-            Logger.Information("Enter GetPreferredOrg method");
-
             var solutionPathHash = await this.GetSolutionPathHashAsync();
 
             if (snykSettings == null || !snykSettings.SolutionSettingsDict.ContainsKey(solutionPathHash))
             {
-                Logger.Information("Leave GetPreferredOrg method - no settings");
                 return string.Empty;
             }
 
             var preferredOrg = snykSettings.SolutionSettingsDict[solutionPathHash].PreferredOrg;
-            Logger.Information("Leave GetPreferredOrg method");
             return preferredOrg ?? string.Empty;
         }
 
@@ -285,8 +255,6 @@ namespace Snyk.VisualStudio.Extension.Settings
         /// <returns>A <see cref="Task"/> representing the asynchronous operation.</returns>
         public async Task SavePreferredOrgAsync(string preferredOrg)
         {
-            Logger.Information("Enter SavePreferredOrg method");
-
             var solutionPathHash = await this.GetSolutionPathHashAsync();
 
             SnykSolutionSettings projectSettings;
@@ -305,8 +273,6 @@ namespace Snyk.VisualStudio.Extension.Settings
             snykSettings.SolutionSettingsDict[solutionPathHash] = projectSettings;
 
             this.SaveSettingsToFile();
-
-            Logger.Information("Leave SavePreferredOrg method");
         }
 
         /// <summary>
@@ -315,18 +281,14 @@ namespace Snyk.VisualStudio.Extension.Settings
         /// <returns>Organization set by user flag.</returns>
         public async Task<bool> GetOrgSetByUserAsync()
         {
-            Logger.Information("Enter GetOrgSetByUser method");
-
             var solutionPathHash = await this.GetSolutionPathHashAsync();
 
             if (snykSettings == null || !snykSettings.SolutionSettingsDict.ContainsKey(solutionPathHash))
             {
-                Logger.Information("Leave GetOrgSetByUser method - using default");
                 return false; // Default to false (auto mode)
             }
 
             var orgSetByUser = snykSettings.SolutionSettingsDict[solutionPathHash].OrgSetByUser;
-            Logger.Information("Leave GetOrgSetByUser method");
             return orgSetByUser;
         }
 
@@ -337,8 +299,6 @@ namespace Snyk.VisualStudio.Extension.Settings
         /// <returns>A <see cref="Task"/> representing the asynchronous operation.</returns>
         public async Task SaveOrgSetByUserAsync(bool orgSetByUser)
         {
-            Logger.Information("Enter SaveOrgSetByUser method");
-
             var solutionPathHash = await this.GetSolutionPathHashAsync();
 
             SnykSolutionSettings projectSettings;
@@ -357,8 +317,6 @@ namespace Snyk.VisualStudio.Extension.Settings
             snykSettings.SolutionSettingsDict[solutionPathHash] = projectSettings;
 
             this.SaveSettingsToFile();
-
-            Logger.Information("Leave SaveOrgSetByUser method");
         }
 
         /// <summary>
@@ -367,8 +325,6 @@ namespace Snyk.VisualStudio.Extension.Settings
         /// <returns>Effective organization string.</returns>
         public async Task<string> GetEffectiveOrganizationAsync()
         {
-            Logger.Information("Enter GetEffectiveOrganization method");
-
             var solutionPathHash = await this.GetSolutionPathHashAsync();
 
             // Fallback hierarchy:
@@ -388,7 +344,6 @@ namespace Snyk.VisualStudio.Extension.Settings
                     // Use preferredOrg when manual mode is enabled
                     if (!string.IsNullOrEmpty(projectSettings.PreferredOrg))
                     {
-                        Logger.Information("Using preferredOrg: {PreferredOrg}", projectSettings.PreferredOrg);
                         return projectSettings.PreferredOrg;
                     }
                 }
@@ -397,7 +352,6 @@ namespace Snyk.VisualStudio.Extension.Settings
                     // Use autoDeterminedOrg when auto-detect is enabled
                     if (!string.IsNullOrEmpty(projectSettings.AutoDeterminedOrg))
                     {
-                        Logger.Information("Using autoDeterminedOrg: {AutoDeterminedOrg}", projectSettings.AutoDeterminedOrg);
                         return projectSettings.AutoDeterminedOrg;
                     }
                 }
@@ -406,12 +360,10 @@ namespace Snyk.VisualStudio.Extension.Settings
             // Fallback to global organization setting
             if (!string.IsNullOrEmpty(snykSettings?.Organization))
             {
-                Logger.Information("Using global organization: {GlobalOrg}", snykSettings.Organization);
                 return snykSettings.Organization;
             }
 
             // Final fallback to empty string
-            Logger.Information("Using empty string as final fallback");
             return string.Empty;
         }
 
