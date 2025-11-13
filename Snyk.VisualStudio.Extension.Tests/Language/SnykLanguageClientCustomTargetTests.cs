@@ -277,10 +277,12 @@ namespace Snyk.VisualStudio.Extension.Tests.Language
             await cut.OnFolderConfig(arg);
 
             // Assert
-            Assert.Equal("auto-determined-org", optionsMock.Object.Organization);
+            // Global organization is NOT updated when receiving folder configs - Language Server handles fallback
+            // Only the auto-determined org is saved for solution-specific settings
             snykOptionsManagerMock.Verify(s => s.Save(It.IsAny<IPersistableOptions>(), It.IsAny<bool>()), Times.Once);
-            snykOptionsManagerMock.Verify(s => s.SaveOrganizationAsync("auto-determined-org"), Times.Once);
             snykOptionsManagerMock.Verify(s => s.SaveAutoDeterminedOrgAsync("auto-determined-org"), Times.Once);
+            // SaveOrganizationAsync should NOT be called - global org is not updated from folder configs
+            snykOptionsManagerMock.Verify(s => s.SaveOrganizationAsync(It.IsAny<string>()), Times.Never);
         }
 
         [Fact]
@@ -299,18 +301,16 @@ namespace Snyk.VisualStudio.Extension.Tests.Language
             optionsMock.SetupProperty(o => o.Organization);
             var originalOrg = "original-org";
             optionsMock.Object.Organization = originalOrg;
-            
-            // Override the global mock to return the original org when no auto-determined org exists
-            snykOptionsManagerMock.Setup(s => s.GetEffectiveOrganizationAsync()).ReturnsAsync(originalOrg);
 
             // Act
             await cut.OnFolderConfig(arg);
 
             // Assert
+            // Global organization should remain unchanged when no auto-determined org exists
             Assert.Equal(originalOrg, optionsMock.Object.Organization);
             snykOptionsManagerMock.Verify(s => s.Save(It.IsAny<IPersistableOptions>(), It.IsAny<bool>()), Times.Once);
-            // When there's no auto-determined org, the effective org is still the original org, so SaveOrganizationAsync is called
-            snykOptionsManagerMock.Verify(s => s.SaveOrganizationAsync(originalOrg), Times.Once);
+            // SaveOrganizationAsync should NOT be called - global org is not updated from folder configs
+            snykOptionsManagerMock.Verify(s => s.SaveOrganizationAsync(It.IsAny<string>()), Times.Never);
         }
 
         [Fact]
@@ -330,18 +330,16 @@ namespace Snyk.VisualStudio.Extension.Tests.Language
             optionsMock.SetupProperty(o => o.Organization);
             var originalOrg = "original-org";
             optionsMock.Object.Organization = originalOrg;
-            
-            // Override the global mock to return the original org when auto-determined org is null
-            snykOptionsManagerMock.Setup(s => s.GetEffectiveOrganizationAsync()).ReturnsAsync(originalOrg);
 
             // Act
             await cut.OnFolderConfig(arg);
 
             // Assert
+            // Global organization should remain unchanged when auto-determined org is null
             Assert.Equal(originalOrg, optionsMock.Object.Organization);
             snykOptionsManagerMock.Verify(s => s.Save(It.IsAny<IPersistableOptions>(), It.IsAny<bool>()), Times.Once);
-            // When auto-determined org is null, the effective org is still the original org, so SaveOrganizationAsync is called
-            snykOptionsManagerMock.Verify(s => s.SaveOrganizationAsync(originalOrg), Times.Once);
+            // SaveOrganizationAsync should NOT be called - global org is not updated from folder configs
+            snykOptionsManagerMock.Verify(s => s.SaveOrganizationAsync(It.IsAny<string>()), Times.Never);
         }
 
         [Fact]
@@ -379,7 +377,8 @@ namespace Snyk.VisualStudio.Extension.Tests.Language
             snykOptionsManagerMock.Verify(s => s.SaveAutoDeterminedOrgAsync("auto-determined-org"), Times.Once);
             snykOptionsManagerMock.Verify(s => s.SavePreferredOrgAsync("user-specified-org"), Times.Once);
             snykOptionsManagerMock.Verify(s => s.SaveOrgSetByUserAsync(true), Times.Once);
-            snykOptionsManagerMock.Verify(s => s.GetEffectiveOrganizationAsync(), Times.Once);
+            // GetEffectiveOrganizationAsync is not called - Language Server handles fallback logic
+            snykOptionsManagerMock.Verify(s => s.GetEffectiveOrganizationAsync(), Times.Never);
         }
 
         [Fact]
@@ -408,7 +407,8 @@ namespace Snyk.VisualStudio.Extension.Tests.Language
             snykOptionsManagerMock.Verify(s => s.SaveAutoDeterminedOrgAsync("auto-detected-org"), Times.Once);
             snykOptionsManagerMock.Verify(s => s.SavePreferredOrgAsync("user-preferred-org"), Times.Once);
             snykOptionsManagerMock.Verify(s => s.SaveOrgSetByUserAsync(true), Times.Once);
-            snykOptionsManagerMock.Verify(s => s.GetEffectiveOrganizationAsync(), Times.Once);
+            // GetEffectiveOrganizationAsync is not called - Language Server handles fallback logic
+            snykOptionsManagerMock.Verify(s => s.GetEffectiveOrganizationAsync(), Times.Never);
         }
     }
 }
