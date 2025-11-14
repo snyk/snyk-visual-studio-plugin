@@ -241,10 +241,7 @@ namespace Snyk.VisualStudio.Extension.Service
                     FireOssScanningDisabledEvent();
                 }
 
-                if (!selectedFeatures.SastOnServerEnabled)
-                {
-                    FireSnykCodeDisabledError(selectedFeatures.LocalCodeEngineEnabled);
-                }
+                // SAST enablement check removed - scans are always allowed
 
                 if (!selectedFeatures.IacEnabled)
                 {
@@ -674,20 +671,14 @@ namespace Snyk.VisualStudio.Extension.Service
         {
             var options = this.serviceProvider.Options;
 
-            SastSettings sastSettings = null;
-            if (LanguageClientHelper.IsLanguageServerReady())
-            {
-                sastSettings = await this.serviceProvider.LanguageClientManager.InvokeGetSastEnabled(CancellationToken.None);
-            }
-
-            bool snykCodeEnabled = sastSettings?.SnykCodeEnabled ?? false;
-
+            // SAST is always considered enabled - Language Server will handle the actual enablement
+            // This allows the checkbox to always be toggleable
             return new FeaturesSettings
             {
                 OssEnabled = options.OssEnabled,
-                SastOnServerEnabled = snykCodeEnabled,
-                CodeSecurityEnabled = snykCodeEnabled && options.SnykCodeSecurityEnabled,
-                LocalCodeEngineEnabled = sastSettings?.LocalCodeEngineEnabled ?? false,
+                SastOnServerEnabled = true,
+                CodeSecurityEnabled = options.SnykCodeSecurityEnabled,
+                LocalCodeEngineEnabled = false,
                 IacEnabled = options.IacEnabled
             };
         }
