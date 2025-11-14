@@ -45,6 +45,7 @@ namespace Snyk.VisualStudio.Extension.Settings
         {
             this.ossEnabledCheckBox.Checked = OptionsMemento.OssEnabled;
             this.iacEnabledCheckbox.Checked = OptionsMemento.IacEnabled;
+            this.codeSecurityEnabledCheckBox.Checked = OptionsMemento.SnykCodeSecurityEnabled;
 
             if (cbDelta.DataSource == null)
             {
