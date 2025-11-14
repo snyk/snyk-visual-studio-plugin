@@ -27,7 +27,7 @@ Install the plugin at any time free of charge from the [Visual Studio marketplac
 
 After the extension is installed, use Snyk through the **Extensions > Snyk** menu.
 
-<figure><img src="https://github.com/snyk/user-docs/raw/HEAD/docs/.gitbook/assets/image (351) (1) (1) (1) (1) (1) (1) (1) (1) (1).png" alt=""><figcaption><p>Snyk extensions menu</p></figcaption></figure>
+<figure><img src="https://github.com/snyk/user-docs/raw/HEAD/docs/.gitbook/assets/image (24).png" alt=""><figcaption><p>Snyk extensions menu</p></figcaption></figure>
 
 You can also open the Snyk tool window using **View > Other Windows > Snyk**_._
 
