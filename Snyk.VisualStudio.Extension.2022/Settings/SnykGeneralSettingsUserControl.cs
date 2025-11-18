@@ -169,14 +169,14 @@ namespace Snyk.VisualStudio.Extension.Settings
             await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
             AuthDialogWindow.Instance.Hide();
 
-            var ossError = new OssError
+            var presentableError = new Language.PresentableError
             {
-                IsSuccess = false,
-                Message = errorMessage,
+                ErrorMessage = errorMessage,
                 Path = string.Empty,
+                ShowNotification = true
             };
 
-            this.serviceProvider.TasksService.FireOssError(ossError);
+            this.serviceProvider.TasksService.FireOssError(presentableError);
 
             this.serviceProvider.ToolWindow.Show();
 
