@@ -19,8 +19,11 @@ namespace Snyk.VisualStudio.Extension.Service
         /// <summary>
         /// Initializes a new instance of the <see cref="SnykCodeScanEventArgs"/> class.
         /// </summary>
-        /// <param name="error">Error message.</param>
-        public SnykCodeScanEventArgs(string error) => this.Error = error;
+        /// <param name="presentableError">Presentable error from Language Server.</param>
+        public SnykCodeScanEventArgs(PresentableError presentableError)
+        {
+            this.PresentableError = presentableError;
+        }
 
         /// <summary>
         /// Initializes a new instance of the <see cref="SnykCodeScanEventArgs"/> class.
@@ -45,9 +48,9 @@ namespace Snyk.VisualStudio.Extension.Service
         public bool IacEnabled { get; set; }
 
         /// <summary>
-        /// Gets or sets a value indicating error message.
+        /// Gets or sets presentable error from Language Server.
         /// </summary>
-        public string Error { get; set; }
+        public PresentableError PresentableError { get; set; }
 
         /// <summary>
         /// Gets or sets a value indicating whether <see cref="AnalysisResult"/> object.

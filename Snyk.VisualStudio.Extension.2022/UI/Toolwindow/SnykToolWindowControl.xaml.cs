@@ -163,8 +163,14 @@ namespace Snyk.VisualStudio.Extension.UI.Toolwindow
                 await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
 
                 this.resultsTree.IacRootNode.State = RootTreeNodeState.Error;
+                this.resultsTree.IacRootNode.ErrorSuffix = e.PresentableError?.TreeNodeSuffix;
+                this.resultsTree.IacRootNode.PresentableError = e.PresentableError;
                 this.resultsTree.IacRootNode.Clean();
-                NotificationService.Instance.ShowErrorInfoBar(e.Error);
+
+                if (e.PresentableError?.ShowNotification ?? true)
+                {
+                    NotificationService.Instance.ShowErrorInfoBar(e.PresentableError?.ErrorMessage);
+                }
 
                 if (!this.serviceProvider.Options.OssEnabled)
                 {
@@ -432,8 +438,13 @@ namespace Snyk.VisualStudio.Extension.UI.Toolwindow
             await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
 
             this.resultsTree.OssRootNode.State = RootTreeNodeState.Error;
+            this.resultsTree.OssRootNode.ErrorSuffix = eventArgs.PresentableError?.TreeNodeSuffix;
+            this.resultsTree.OssRootNode.PresentableError = eventArgs.PresentableError;
 
-            NotificationService.Instance.ShowErrorInfoBar(eventArgs.Error.Message);
+            if (eventArgs.PresentableError?.ShowNotification ?? true)
+            {
+                NotificationService.Instance.ShowErrorInfoBar(eventArgs.PresentableError?.ErrorMessage);
+            }
 
             if (eventArgs.FeaturesSettings != null && !eventArgs.FeaturesSettings.CodeSecurityEnabled)
             {
@@ -459,8 +470,14 @@ namespace Snyk.VisualStudio.Extension.UI.Toolwindow
             await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
 
             this.resultsTree.CodeSecurityRootNode.State = RootTreeNodeState.Error;
+            this.resultsTree.CodeSecurityRootNode.ErrorSuffix = eventArgs.PresentableError?.TreeNodeSuffix;
+            this.resultsTree.CodeSecurityRootNode.PresentableError = eventArgs.PresentableError;
             this.resultsTree.CodeSecurityRootNode.Clean();
-            NotificationService.Instance.ShowErrorInfoBar(eventArgs.Error);
+
+            if (eventArgs.PresentableError?.ShowNotification ?? true)
+            {
+                NotificationService.Instance.ShowErrorInfoBar(eventArgs.PresentableError?.ErrorMessage);
+            }
 
             if (!this.serviceProvider.Options.OssEnabled)
             {
@@ -825,17 +842,138 @@ namespace Snyk.VisualStudio.Extension.UI.Toolwindow
 
         private void HandleRootTreeNodeSelected()
         {
-            this.DescriptionPanel.Visibility = Visibility.Collapsed;
-            this.messagePanel.Visibility = Visibility.Visible;
-
             var selectedItem = this.resultsTree.SelectedItem;
 
-            // Check if selected tree node is related to Snyk Code and if state is LocalCodeEngineIsEnabled.
-            // In this case display additional informaiton in toolwindow panel.
-            if (selectedItem is SnykCodeSecurityRootTreeNode)
+            // Check if root node has an error and display error HTML
+            if (selectedItem is RootTreeNode rootTreeNode &&
+                rootTreeNode.State == RootTreeNodeState.Error &&
+                rootTreeNode.PresentableError != null &&
+                !string.IsNullOrEmpty(rootTreeNode.PresentableError.ErrorMessage))
             {
-                var rootTreeNode = selectedItem as RootTreeNode;
+                this.DescriptionPanel.Visibility = Visibility.Visible;
+                this.messagePanel.Visibility = Visibility.Collapsed;
+
+                // Generate error HTML content
+                var errorHtml = $@"
+<!DOCTYPE html>
+<html>
+<head>
+  <meta http-equiv='Content-Type' content='text/html; charset=unicode' />
+  <meta http-equiv='X-UA-Compatible' content='IE=edge' />
+  <meta charset=""utf-8"" />
+  <meta name=""viewport"" content=""width=device-width, initial-scale=1.0"" />
+  <meta http-equiv=""Content-Security-Policy""
+        content=""style-src 'self' 'nonce-${{nonce}}' 'nonce-ideNonce' https://fonts.googleapis.com;
+        script-src 'nonce-${{nonce}}' https://fonts.googleapis.com;
+        font-src 'self' https://fonts.gstatic.com;"" />
+  <style nonce=${{nonce}}>
+    @import url('https://fonts.googleapis.com/css2?family=Inter&display=swap');
+
+    :root {{
+      font-size: var(--main-font-size);
+      --default-font: ""SF Pro Text"", ""Segoe UI"", ""Ubuntu"", Geneva, Verdana, Tahoma, sans-serif;
+      --ide-background-color: var(--vscode-sideBar-background);
+      --text-color: var(--vscode-foreground);
+      --input-border: var(--vscode-input-border);
+    }}
+
+    body {{
+      background-color: var(--ide-background-color);
+      color: var(--text-color);
+      font-family: var(--default-font);
+      padding: 1.2rem;
+      margin: 0;
+    }}
+
+    .snx-h1 {{
+      font-size: 1.6rem;
+      font-weight: 400;
+      margin: .4rem 0 1.2rem 0;
+      color: #d32f2f;
+    }}
+
+    .error-details {{
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
+    }}
+
+    .error-field {{
+      display: flex;
+      flex-direction: column;
+      gap: 0.4rem;
+    }}
+
+    .error-label {{
+      font-weight: 600;
+      font-size: 0.9rem;
+      opacity: 0.7;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }}
+
+    .error-value {{
+      font-size: 1rem;
+      line-height: 1.5;
+      word-wrap: break-word;
+    }}
+
+    code {{
+      background-color: var(--code-background-color);
+      padding: 0.2rem 0.4rem;
+      border-radius: 3px;
+      font-family: 'Courier New', monospace;
+      font-size: 0.9rem;
+    }}
+  </style>
+  ${{ideStyle}}
+</head>
+<body>
+  <h1 class=""snx-h1"">⚠️ Scan Error</h1>
+  <div class=""error-details"">
+    <div class=""error-field"">
+      <div class=""error-label"">Message</div>
+      <div class=""error-value"">{rootTreeNode.PresentableError.ErrorMessage}</div>
+    </div>";
+
+                if (!string.IsNullOrEmpty(rootTreeNode.PresentableError.Path))
+                {
+                    errorHtml += $@"
+    <div class=""error-field"">
+      <div class=""error-label"">Path</div>
+      <div class=""error-value"">{rootTreeNode.PresentableError.Path}</div>
+    </div>";
+                }
+
+                if (!string.IsNullOrEmpty(rootTreeNode.PresentableError.Command))
+                {
+                    errorHtml += $@"
+    <div class=""error-field"">
+      <div class=""error-label"">Command</div>
+      <div class=""error-value""><code>{rootTreeNode.PresentableError.Command}</code></div>
+    </div>";
+                }
+
+                if (rootTreeNode.PresentableError.Code > 0)
+                {
+                    errorHtml += $@"
+    <div class=""error-field"">
+      <div class=""error-label"">Error Code</div>
+      <div class=""error-value"">{rootTreeNode.PresentableError.Code}</div>
+    </div>";
+                }
+
+                errorHtml += @"
+  </div>
+</body>
+</html>";
+
+                this.DescriptionPanel.SetContent(errorHtml, "static");
+                return;
             }
+
+            this.DescriptionPanel.Visibility = Visibility.Collapsed;
+            this.messagePanel.Visibility = Visibility.Visible;
 
             this.messagePanel.ShowSelectIssueMessage();
         }

@@ -301,7 +301,7 @@ namespace Snyk.VisualStudio.Extension.Language
             }
             if (lsAnalysisResult.Status == "error")
             {
-                serviceProvider.TasksService.OnSnykCodeError(lsAnalysisResult.ErrorMessage);
+                serviceProvider.TasksService.OnSnykCodeError(lsAnalysisResult.PresentableError);
                 serviceProvider.TasksService.FireTaskFinished();
                 return;
             }
@@ -320,7 +320,7 @@ namespace Snyk.VisualStudio.Extension.Language
             }
             if (lsAnalysisResult.Status == "error")
             {
-                serviceProvider.TasksService.FireOssError(lsAnalysisResult.ErrorMessage);
+                serviceProvider.TasksService.FireOssError(lsAnalysisResult.PresentableError);
                 serviceProvider.TasksService.FireTaskFinished();
                 return;
             }
@@ -340,7 +340,7 @@ namespace Snyk.VisualStudio.Extension.Language
             }
             if (lsAnalysisResult.Status == "error")
             {
-                serviceProvider.TasksService.OnIacError(lsAnalysisResult.ErrorMessage);
+                serviceProvider.TasksService.OnIacError(lsAnalysisResult.PresentableError);
                 serviceProvider.TasksService.FireTaskFinished();
                 return;
             }

@@ -24,6 +24,16 @@ namespace Snyk.VisualStudio.Extension.UI.Tree
             this.State = RootTreeNodeState.Disabled;
         }
 
+        /// <summary>
+        /// Gets or sets custom error suffix from Language Server.
+        /// </summary>
+        public string ErrorSuffix { get; set; }
+
+        /// <summary>
+        /// Gets or sets presentable error from Language Server.
+        /// </summary>
+        public Language.PresentableError PresentableError { get; set; }
+
         /// <inheritdoc/>
         public override string Title
         {
@@ -46,7 +56,8 @@ namespace Snyk.VisualStudio.Extension.UI.Tree
                         title = this.GetResultDetailsTitle();
                         break;
                     case RootTreeNodeState.Error:
-                        title = this.GetTitlePrefix() + " (error)";
+                        var errorSuffix = string.IsNullOrEmpty(this.ErrorSuffix) ? "(error)" : this.ErrorSuffix;
+                        title = this.GetTitlePrefix() + " " + errorSuffix;
                         break;
                     case RootTreeNodeState.NoFilesForSnykCodeScan:
                         title = this.GetTitlePrefix() + " (no supported code available)";
