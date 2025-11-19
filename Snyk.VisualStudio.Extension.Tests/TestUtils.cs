@@ -12,6 +12,7 @@ namespace Snyk.VisualStudio.Extension.Tests
         public static void SetupOptionsManagerMock(Mock<ISnykOptionsManager> snykOptionsManager)
         {
             snykOptionsManager.Setup(o => o.GetAdditionalOptionsAsync()).ReturnsAsync("--debug");
+            snykOptionsManager.Setup(o => o.GetEffectiveOrganizationAsync()).ReturnsAsync("test-org");
         }
 
         public static void SetupOptionsMock(Mock<ISnykOptions> optionsMock)

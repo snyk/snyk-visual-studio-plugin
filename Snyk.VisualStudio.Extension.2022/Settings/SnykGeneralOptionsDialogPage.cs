@@ -1,6 +1,8 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.ComponentModel;
 using System.IO;
+using System.Linq;
 using System.Runtime.InteropServices;
 using System.Threading.Tasks;
 using System.Windows.Forms;
@@ -112,9 +114,122 @@ namespace Snyk.VisualStudio.Extension.Settings
 
         private void HandleSolutionOptionsConfiguration()
         {
-            var memento = this.serviceProvider.Package.SnykSolutionOptionsDialogPage.SnykSolutionOptionsUserControl.AdditionalOptions;
-            if(memento != null)
-                this.serviceProvider.SnykOptionsManager.SaveAdditionalOptionsAsync(memento).FireAndForget();
+            var control = this.serviceProvider.Package.SnykSolutionOptionsDialogPage.SnykSolutionOptionsUserControl;
+            
+            // Save additional options
+            if(control.AdditionalOptions != null)
+                this.serviceProvider.SnykOptionsManager.SaveAdditionalOptionsAsync(control.AdditionalOptions).FireAndForget();
+            
+            // Implement logic for organization
+            ThreadHelper.JoinableTaskFactory.RunAsync(async () =>
+            {
+                // Use UI state instead of reading from database to get current user intent
+                var isAutoMode = control.IsAutoOrganizationChecked;
+                var organizationText = control.Organization;
+                
+                if (isAutoMode)
+                {
+                    // When apply is clicked and checkbox is ticked (auto mode):
+                    // - orgSetByUser is set to false
+                    // - preferredOrg is cleared
+                    // - Update folderconfig and send to Language Server
+                    await this.serviceProvider.SnykOptionsManager.SaveOrgSetByUserAsync(false);
+                    await this.serviceProvider.SnykOptionsManager.SavePreferredOrgAsync("");
+                    await this.UpdateFolderConfigAndNotifyLanguageServerAsync();
+                }
+                else
+                {
+                    // When apply is clicked and checkbox is unticked (manual mode):
+                    // - preferredOrg gets value from preferredOrgTextField
+                    // - orgSetByUser is set to true
+                    // - Update folderconfig and send to Language Server
+                    await this.serviceProvider.SnykOptionsManager.SavePreferredOrgAsync(organizationText);
+                    await this.serviceProvider.SnykOptionsManager.SaveOrgSetByUserAsync(true);
+                    await this.UpdateFolderConfigAndNotifyLanguageServerAsync();
+                }
+            }).FireAndForget();
+        }
+
+        private async Task UpdateFolderConfigAndNotifyLanguageServerAsync()
+        {
+            try
+            {
+                // Get current solution folder path
+                var currentSolutionPath = await this.serviceProvider.SolutionService.GetSolutionFolderAsync();
+                
+                // Update folder config with current settings
+                await this.UpdateFolderConfigForCurrentSolutionAsync(currentSolutionPath);
+                
+                // Send updated configuration to Language Server
+                if (LanguageClientHelper.IsLanguageServerReady())
+                {
+                    await this.serviceProvider.LanguageClientManager.DidChangeConfigurationAsync(SnykVSPackage.Instance.DisposalToken);
+                }
+            }
+            catch (Exception ex)
+            {
+                Logger.Error(ex, "Failed to update folder config and notify Language Server");
+            }
+        }
+
+        private Task UpdateFolderConfigForCurrentSolutionAsync(string solutionPath)
+        {
+            try
+            {
+                // Get current folder configs
+                var folderConfigs = this.serviceProvider.Options.FolderConfigs ?? new List<FolderConfig>();
+                
+                // Find or create folder config for current solution
+                var existingConfig = folderConfigs.FirstOrDefault(fc => 
+                    string.Equals(fc.FolderPath, solutionPath, StringComparison.OrdinalIgnoreCase));
+                
+                if (existingConfig == null)
+                {
+                    // Create new folder config
+                    existingConfig = new FolderConfig
+                    {
+                        FolderPath = solutionPath,
+                        BaseBranch = "main", // Default branch
+                        LocalBranches = new List<string> { "main" },
+                        AdditionalParameters = new List<string>(),
+                        OrgSetByUser = false,
+                        OrgMigratedFromGlobalConfig = false
+                    };
+                    folderConfigs.Add(existingConfig);
+                }
+                
+                // Get the control to access current UI state
+                var control = this.serviceProvider.Package.SnykSolutionOptionsDialogPage.SnykSolutionOptionsUserControl;
+                
+                // Use UI state instead of reading from database
+                var isAutoMode = control.IsAutoOrganizationChecked;
+                var organizationText = control.Organization;
+
+                existingConfig.OrgSetByUser = !isAutoMode;
+
+                if (!isAutoMode)
+                {
+                    // Manual mode - use organization text from UI
+                    existingConfig.PreferredOrg = organizationText ?? string.Empty;
+                }
+                else
+                {
+                    // Auto mode - clear preferredOrg
+                    existingConfig.PreferredOrg = string.Empty;
+                }
+                
+                // Update global folder configs
+                this.serviceProvider.Options.FolderConfigs = folderConfigs;
+                
+                Logger.Information("Updated folder config for solution: {SolutionPath}, OrgSetByUser: {OrgSetByUser}, PreferredOrg: {PreferredOrg}", 
+                    solutionPath, !isAutoMode, existingConfig.PreferredOrg);
+            }
+            catch (Exception ex)
+            {
+                Logger.Error(ex, "Failed to update folder config for solution: {SolutionPath}", solutionPath);
+            }
+
+            return Task.CompletedTask;
         }
 
         private void HandleUserExperienceConfiguration()

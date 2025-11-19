@@ -6,13 +6,24 @@ using Newtonsoft.Json.Serialization;
 namespace Snyk.VisualStudio.Extension.Language
 {
     [JsonObject(NamingStrategyType = typeof(CamelCaseNamingStrategy))]
+    public class PresentableError
+    {
+        public int Code { get; set; }
+        [JsonProperty("error")]
+        public string ErrorMessage { get; set; }
+        public string Path { get; set; }
+        public string Command { get; set; }
+        public bool ShowNotification { get; set; }
+        public string TreeNodeSuffix { get; set; }
+    }
+
+    [JsonObject(NamingStrategyType = typeof(CamelCaseNamingStrategy))]
     public class LsAnalysisResult
     {
         public string Status { get; set; }
         public string Product { get; set; }
         public string FolderPath { get; set; }
-        public string ErrorMessage { get; set; }
-        public IEnumerable<Issue> Issues { get; set; }
+        public PresentableError PresentableError { get; set; }
     }
 
     public class AdditionalData
