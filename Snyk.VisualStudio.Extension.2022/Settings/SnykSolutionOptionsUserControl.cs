@@ -54,8 +54,23 @@ namespace Snyk.VisualStudio.Extension.Settings
         private void OrganizationTextBox_TextChanged(object sender, EventArgs e)
         {
             Organization = this.organizationTextBox.Text;
-            // Do NOT save to global organization here - this is solution-specific.
-            // The organization will be saved to preferredOrg when the user clicks Apply/OK.
+            // Save to preferredOrg immediately if in manual mode (consistent with AdditionalOptions behavior)
+            // Only save if checkbox is unchecked (manual mode), otherwise wait for Apply/OK
+            if (!this.autoOrganizationCheckBox.Checked)
+            {
+                try
+                {
+                    ThreadHelper.JoinableTaskFactory.RunAsync(async () =>
+                    {
+                        await this.serviceProvider.SnykOptionsManager.SavePreferredOrgAsync(Organization);
+                        Logger.Information("Preferred organization saved: {Organization}", Organization);
+                    }).FireAndForget();
+                }
+                catch (Exception ex)
+                {
+                    Logger.Error(ex, "Failed to save preferred organization");
+                }
+            }
         }
 
         private void AutoOrganizationCheckBox_CheckedChanged(object sender, EventArgs e)
@@ -83,8 +98,10 @@ namespace Snyk.VisualStudio.Extension.Settings
                     else
                     {
                         // When checkbox is unticked (manual mode):
+                        // - orgSetByUser is set to true
                         // - preferredOrgTextField is set to ""
-                        // - orgSetByUser will be set to true when apply is clicked
+                        await this.serviceProvider.SnykOptionsManager.SaveOrgSetByUserAsync(true);
+                        await this.serviceProvider.SnykOptionsManager.SavePreferredOrgAsync("");
                         this.organizationTextBox.Text = "";
                         this.Organization = "";
                     }
@@ -137,19 +154,9 @@ namespace Snyk.VisualStudio.Extension.Settings
                 {
                     // Show autoDeterminedOrg if orgSetByUser is false
                     var autoDeterminedOrg = await this.serviceProvider.SnykOptionsManager.GetAutoDeterminedOrgAsync();
-                    
-                    // If autoDeterminedOrg is empty, fallback to global organization
-                    if (string.IsNullOrEmpty(autoDeterminedOrg))
-                    {
-                        var globalOrg = this.serviceProvider.Options.Organization;
-                        this.organizationTextBox.Text = globalOrg ?? string.Empty;
-                        this.Organization = globalOrg ?? string.Empty;
-                    }
-                    else
-                    {
-                        this.organizationTextBox.Text = autoDeterminedOrg;
-                        this.Organization = autoDeterminedOrg;
-                    }
+                    // If autoDeterminedOrg is empty, display empty string (user likely not logged in or error state)
+                    this.organizationTextBox.Text = autoDeterminedOrg ?? string.Empty;
+                    this.Organization = autoDeterminedOrg ?? string.Empty;
                 }
                 else
                 {

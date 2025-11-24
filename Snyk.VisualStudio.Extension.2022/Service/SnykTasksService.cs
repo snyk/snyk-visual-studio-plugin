@@ -659,20 +659,20 @@ namespace Snyk.VisualStudio.Extension.Service
         /// </summary>
         public void FireScanningCancelledEvent() => this.ScanningCancelled?.Invoke(this, new SnykOssScanEventArgs());
 
-        public async Task<FeaturesSettings> GetFeaturesSettingsAsync()
+        public Task<FeaturesSettings> GetFeaturesSettingsAsync()
         {
             var options = this.serviceProvider.Options;
 
             // SAST is always considered enabled - Language Server will handle the actual enablement
             // This allows the checkbox to always be toggleable
-            return new FeaturesSettings
+            return Task.FromResult(new FeaturesSettings
             {
                 OssEnabled = options.OssEnabled,
                 SastOnServerEnabled = true,
                 CodeSecurityEnabled = options.SnykCodeSecurityEnabled,
                 LocalCodeEngineEnabled = false,
                 IacEnabled = options.IacEnabled
-            };
+            });
         }
 
         public void CancelDownloadTask()

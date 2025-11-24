@@ -175,7 +175,7 @@ namespace Snyk.VisualStudio.Extension.Settings
         /// </summary>
         /// <param name="organization">Organization string.</param>
         /// <returns>A <see cref="Task"/> representing the asynchronous operation.</returns>
-        public async Task SaveOrganizationAsync(string organization)
+        public Task SaveOrganizationAsync(string organization)
         {
             // Save to global organization setting (not solution-specific)
             // This matches Eclipse behavior where global org is always editable and used as fallback
@@ -184,6 +184,7 @@ namespace Snyk.VisualStudio.Extension.Settings
             
             // Update the options object to reflect the change
             serviceProvider.Options.Organization = organization;
+            return Task.CompletedTask;
         }
 
 
