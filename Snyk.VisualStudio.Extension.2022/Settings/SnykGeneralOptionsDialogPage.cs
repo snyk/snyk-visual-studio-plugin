@@ -1,6 +1,8 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.ComponentModel;
 using System.IO;
+using System.Linq;
 using System.Runtime.InteropServices;
 using System.Threading.Tasks;
 using System.Windows.Forms;
@@ -86,13 +88,13 @@ namespace Snyk.VisualStudio.Extension.Settings
         // This method is used when the user clicks "Ok"
         public override void SaveSettingsToStorage()
         {
-            ThreadHelper.JoinableTaskFactory.RunAsync(() =>
+            ThreadHelper.JoinableTaskFactory.RunAsync(async () =>
             {
                 HandleScanConfiguration();
                 HandleExperimentalConfiguration();
                 HandleUserExperienceConfiguration();
-                HandleSolutionOptionsConfiguration();
-
+                HandleGeneralConfiguration();
+                await HandleSolutionOptionsConfigurationAsync();
                 var hasCliChanges = HandleCliConfiguration();
 
                 this.serviceProvider.SnykOptionsManager.Save(this.SnykOptions);
@@ -100,21 +102,76 @@ namespace Snyk.VisualStudio.Extension.Settings
                 if (hasCliChanges)
                 {
                     HandleCliChange();
-                    return Task.CompletedTask;
+                    return;
                 }
-
-                if (LanguageClientHelper.IsLanguageServerReady() && this.SnykOptions.AutoScan)
-                    this.serviceProvider.TasksService.ScanAsync().FireAndForget();
-
-                return Task.CompletedTask;
             }).FireAndForget();
         }
 
-        private void HandleSolutionOptionsConfiguration()
+        private async Task HandleSolutionOptionsConfigurationAsync()
         {
-            var memento = this.serviceProvider.Package.SnykSolutionOptionsDialogPage.SnykSolutionOptionsUserControl.AdditionalOptions;
-            if(memento != null)
-                this.serviceProvider.SnykOptionsManager.SaveAdditionalOptionsAsync(memento).FireAndForget();
+            var control = this.serviceProvider.Package.SnykSolutionOptionsDialogPage.SnykSolutionOptionsUserControl;
+
+            // Save additional options
+            if(control.AdditionalOptions != null)
+                await this.serviceProvider.SnykOptionsManager.SaveAdditionalOptionsAsync(control.AdditionalOptions);
+
+            // Implement logic for organization
+            // Use UI state instead of reading from database to get current user intent
+            var isAutoMode = control.IsAutoOrganizationChecked;
+            var preferredOrganizationText = control.Organization;
+
+            await this.serviceProvider.SnykOptionsManager.SaveOrgSetByUserAsync(!isAutoMode);
+            await this.serviceProvider.SnykOptionsManager.SavePreferredOrgAsync(preferredOrganizationText);
+            await this.UpdateFolderConfigForCurrentSolutionAsync();
+        }
+
+        private async Task UpdateFolderConfigForCurrentSolutionAsync()
+        {
+            string solutionPath = null;
+            try
+            {
+                // Get current solution folder path
+                solutionPath = await this.serviceProvider.SolutionService.GetSolutionFolderAsync();
+
+                // Get current folder configs
+                var folderConfigs = this.serviceProvider.Options.FolderConfigs ?? new List<FolderConfig>();
+
+                // Find or create folder config for current solution
+                var existingConfig = folderConfigs.FirstOrDefault(fc =>
+                    string.Equals(fc.FolderPath, solutionPath, StringComparison.OrdinalIgnoreCase));
+
+                if (existingConfig == null)
+                {
+                    // Create new folder config
+                    existingConfig = new FolderConfig
+                    {
+                        FolderPath = solutionPath,
+                        BaseBranch = "main", // Default branch
+                        LocalBranches = new List<string> { "main" },
+                        AdditionalParameters = new List<string>(),
+                        OrgSetByUser = true,
+                        OrgMigratedFromGlobalConfig = false
+                    };
+                    folderConfigs.Add(existingConfig);
+                }
+
+                // Read values from SnykOptionsManager (already saved by HandleSolutionOptionsConfigurationAsync)
+                var orgSetByUser = await this.serviceProvider.SnykOptionsManager.GetOrgSetByUserAsync();
+                var preferredOrg = await this.serviceProvider.SnykOptionsManager.GetPreferredOrgAsync();
+
+                existingConfig.OrgSetByUser = orgSetByUser;
+                existingConfig.PreferredOrg = preferredOrg ?? string.Empty;
+
+                // Update global folder configs
+                this.serviceProvider.Options.FolderConfigs = folderConfigs;
+
+                Logger.Information("Updated folder config for solution: {SolutionPath}, OrgSetByUser: {OrgSetByUser}, PreferredOrg: {PreferredOrg}",
+                    solutionPath, orgSetByUser, existingConfig.PreferredOrg);
+            }
+            catch (Exception ex)
+            {
+                Logger.Error(ex, "Failed to update folder config for solution: {SolutionPath}", solutionPath);
+            }
         }
 
         private void HandleUserExperienceConfiguration()
@@ -130,6 +187,14 @@ namespace Snyk.VisualStudio.Extension.Settings
 
             this.SnykOptions.IgnoredIssuesEnabled = memento.IgnoredIssuesEnabled;
             this.SnykOptions.OpenIssuesEnabled = memento.OpenIssuesEnabled;
+        }
+
+        private void HandleGeneralConfiguration()
+        {
+            // Read organization from the general settings control
+            // This is consistent with how other settings are handled - read on OK/Apply, not on every keystroke
+            var control = this.GeneralSettingsUserControl;
+            this.SnykOptions.Organization = control.Organization;
         }
 
         private void HandleScanConfiguration()

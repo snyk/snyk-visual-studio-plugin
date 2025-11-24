@@ -241,10 +241,7 @@ namespace Snyk.VisualStudio.Extension.Service
                     FireOssScanningDisabledEvent();
                 }
 
-                if (!selectedFeatures.SastOnServerEnabled)
-                {
-                    FireSnykCodeDisabledError(selectedFeatures.LocalCodeEngineEnabled);
-                }
+                // SAST enablement check removed - scans are always allowed
 
                 if (!selectedFeatures.IacEnabled)
                 {
@@ -447,38 +444,30 @@ namespace Snyk.VisualStudio.Extension.Service
         public void FireTaskFinished() => this.TaskFinished?.Invoke(this, new EventArgs());
 
         /// <summary>
-        /// Fire error event. Create <see cref="OssError"/> instance.
+        /// Fire error event with PresentableError from Language Server.
         /// </summary>
-        /// <param name="message">Error message.</param>
+        /// <param name="presentableError">Presentable error from Language Server.</param>
         /// <param name="featuresSettings">Features settings.</param>
-        public void FireOssError(string message, FeaturesSettings featuresSettings = null)
+        public void FireOssError(Language.PresentableError presentableError, FeaturesSettings featuresSettings = null)
         {
             this.IsOssScanning = false;
-            this.FireOssError(new OssError(message), featuresSettings);
+            this.OssScanError?.Invoke(this, new SnykOssScanEventArgs(featuresSettings, presentableError));
         }
-
-        /// <summary>
-        /// Fire error event with <see cref="SnykOssScanEventArgs"/>.
-        /// </summary>
-        /// <param name="error"><see cref="OssError"/> object.</param>
-        /// <param name="featuresSettings">Features settings.</param>
-        public void FireOssError(OssError error, FeaturesSettings featuresSettings = null)
-            => this.OssScanError?.Invoke(this, new SnykOssScanEventArgs(error, featuresSettings));
 
         /// <summary>
         /// Fire error event with <see cref="SnykCodeScanEventArgs"/>.
         /// </summary>
-        /// <param name="message">Error message</param>
-        public void OnSnykCodeError(string message)
+        /// <param name="presentableError">Presentable error from Language Server</param>
+        public void OnSnykCodeError(Language.PresentableError presentableError)
         {
             this.IsSnykCodeScanning = false;
-            this.SnykCodeScanError?.Invoke(this, new SnykCodeScanEventArgs(message));
+            this.SnykCodeScanError?.Invoke(this, new SnykCodeScanEventArgs(presentableError));
         }
 
-        public void OnIacError(string message)
+        public void OnIacError(Language.PresentableError presentableError)
         {
             this.IsIacScanning = false;
-            this.IacScanError?.Invoke(this, new SnykCodeScanEventArgs(message));
+            this.IacScanError?.Invoke(this, new SnykCodeScanEventArgs(presentableError));
         }
 
         /// <summary>
@@ -670,26 +659,20 @@ namespace Snyk.VisualStudio.Extension.Service
         /// </summary>
         public void FireScanningCancelledEvent() => this.ScanningCancelled?.Invoke(this, new SnykOssScanEventArgs());
 
-        public async Task<FeaturesSettings> GetFeaturesSettingsAsync()
+        public Task<FeaturesSettings> GetFeaturesSettingsAsync()
         {
             var options = this.serviceProvider.Options;
 
-            SastSettings sastSettings = null;
-            if (LanguageClientHelper.IsLanguageServerReady())
-            {
-                sastSettings = await this.serviceProvider.LanguageClientManager.InvokeGetSastEnabled(CancellationToken.None);
-            }
-
-            bool snykCodeEnabled = sastSettings?.SnykCodeEnabled ?? false;
-
-            return new FeaturesSettings
+            // SAST is always considered enabled - Language Server will handle the actual enablement
+            // This allows the checkbox to always be toggleable
+            return Task.FromResult(new FeaturesSettings
             {
                 OssEnabled = options.OssEnabled,
-                SastOnServerEnabled = snykCodeEnabled,
-                CodeSecurityEnabled = snykCodeEnabled && options.SnykCodeSecurityEnabled,
-                LocalCodeEngineEnabled = sastSettings?.LocalCodeEngineEnabled ?? false,
+                SastOnServerEnabled = true,
+                CodeSecurityEnabled = options.SnykCodeSecurityEnabled,
+                LocalCodeEngineEnabled = false,
                 IacEnabled = options.IacEnabled
-            };
+            });
         }
 
         public void CancelDownloadTask()

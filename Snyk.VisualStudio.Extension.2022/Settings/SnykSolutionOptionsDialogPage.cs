@@ -40,7 +40,9 @@ namespace Snyk.VisualStudio.Extension.Settings
 
         public override void SaveSettingsToStorage()
         {
-            // do nothing
+            // Note: Organization and AdditionalOptions are now saved immediately on text change
+            // This method is kept for compatibility but the actual persistence happens in the text change handlers
+            // to match the trusted folder pattern of immediate persistence
         }
 
         protected override void OnClosed(EventArgs e)

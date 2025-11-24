@@ -8,6 +8,7 @@ using System.Windows.Forms;
 using Microsoft.VisualStudio.Shell;
 using Microsoft.VisualStudio.Threading;
 using Serilog;
+using Snyk.VisualStudio.Extension;
 using Snyk.VisualStudio.Extension.Authentication;
 using Snyk.VisualStudio.Extension.CLI;
 using Snyk.VisualStudio.Extension.Extension;
@@ -28,6 +29,7 @@ namespace Snyk.VisualStudio.Extension.Settings
         /// Instance of SnykGeneralOptionsDialogPage.
         /// </summary>
         private readonly ISnykOptions snykOptions;
+        private readonly System.ComponentModel.ComponentResourceManager resources;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="SnykGeneralSettingsUserControl"/> class.
@@ -37,10 +39,16 @@ namespace Snyk.VisualStudio.Extension.Settings
         {
             this.serviceProvider = serviceProvider;
             snykOptions = this.serviceProvider.Options;
+            this.resources = new System.ComponentModel.ComponentResourceManager(typeof(SnykGeneralSettingsUserControl));
             this.Load += OnLoad;
             this.InitializeComponent();
             this.Initialize();
         }
+
+        /// <summary>
+        /// Gets the organization value from the organization text box.
+        /// </summary>
+        public string Organization => this.organizationTextBox.Text;
 
         private void OnLoad(object sender, EventArgs e)
         {
@@ -92,7 +100,7 @@ namespace Snyk.VisualStudio.Extension.Settings
         {
             this.authenticateButton.Enabled = LanguageClientHelper.IsLanguageServerReady();
             this.customEndpointTextBox.Text = snykOptions.CustomEndpoint;
-            this.organizationTextBox.Text = snykOptions.Organization;
+            this.organizationTextBox.Text = snykOptions.Organization ?? string.Empty;
             this.ignoreUnknownCACheckBox.Checked = snykOptions.IgnoreUnknownCA;
             this.tokenTextBox.Text = snykOptions.ApiToken.ToString();
 
@@ -166,14 +174,14 @@ namespace Snyk.VisualStudio.Extension.Settings
             await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
             AuthDialogWindow.Instance.Hide();
 
-            var ossError = new OssError
+            var presentableError = new Language.PresentableError
             {
-                IsSuccess = false,
-                Message = errorMessage,
+                ErrorMessage = errorMessage,
                 Path = string.Empty,
+                ShowNotification = true
             };
 
-            this.serviceProvider.TasksService.FireOssError(ossError);
+            this.serviceProvider.TasksService.FireOssError(presentableError);
 
             this.serviceProvider.ToolWindow.Show();
 
@@ -226,6 +234,7 @@ namespace Snyk.VisualStudio.Extension.Settings
             snykOptions.IgnoreUnknownCA = this.ignoreUnknownCACheckBox.Checked;
         }
 
+
         private void TokenTextBox_Validating(object sender, CancelEventArgs cancelEventArgs) =>
             ThreadHelper.JoinableTaskFactory.RunAsync(async () =>
             {
@@ -265,11 +274,6 @@ namespace Snyk.VisualStudio.Extension.Settings
             this.errorProvider.SetError(this.customEndpointTextBox, "Needs to be a full absolute well-formed URL (including protocol)");
         }
        
-        private void OrganizationInfoLink_LinkClicked(object sender, LinkLabelLinkClickedEventArgs e)
-        {
-            this.OrganizationInfoLink.LinkVisited = true;
-            Process.Start("https://docs.snyk.io/ide-tools/visual-studio-extension#organization-setting");
-        }
 
         private void authType_SelectionChangeCommitted(object sender, EventArgs e)
         {
@@ -278,10 +282,6 @@ namespace Snyk.VisualStudio.Extension.Settings
                 LanguageClientHelper.LanguageClientManager().DidChangeConfigurationAsync(SnykVSPackage.Instance.DisposalToken).FireAndForget();
         }
 
-        private void organizationTextBox_TextChanged(object sender, EventArgs e)
-        {
-            snykOptions.Organization = organizationTextBox.Text;
-        }
 
         public Panel GetPanel()
         {
@@ -292,6 +292,11 @@ namespace Snyk.VisualStudio.Extension.Settings
         {
             this.SnykRegionsLink.LinkVisited = true;
             Process.Start("https://docs.snyk.io/working-with-snyk/regional-hosting-and-data-residency#available-snyk-regions");
+        }
+
+        private void organizationDescriptionText_TextChanged(object sender, EventArgs e)
+        {
+
         }
     }
 }

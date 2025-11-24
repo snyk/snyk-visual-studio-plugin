@@ -1,5 +1,11 @@
 # Snyk Security Changelog
 
+## [2.5.0]
+### Changed
+- Organization setting can now also be set in solution-specific settings, allowing different organizations per solution/project
+- bump LS protocol version to 21.
+
+
 ## [2.4.0]
 ### Changed
 ### Fixed

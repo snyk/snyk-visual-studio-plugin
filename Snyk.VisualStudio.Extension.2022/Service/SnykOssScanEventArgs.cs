@@ -21,12 +21,12 @@ namespace Snyk.VisualStudio.Extension.Service
         /// <summary>
         /// Initializes a new instance of the <see cref="SnykOssScanEventArgs"/> class.
         /// </summary>
-        /// <param name="ossError"><see cref="OssError"/> object.</param>
         /// <param name="featuresSettings">Features settings.</param>
-        public SnykOssScanEventArgs(OssError ossError, FeaturesSettings featuresSettings)
+        /// <param name="presentableError">Presentable error from Language Server.</param>
+        public SnykOssScanEventArgs(FeaturesSettings featuresSettings, PresentableError presentableError)
         {
-            this.Error = ossError;
             this.FeaturesSettings = featuresSettings;
+            this.PresentableError = presentableError;
         }
 
         /// <summary>
@@ -49,9 +49,9 @@ namespace Snyk.VisualStudio.Extension.Service
         public bool SnykCodeScanRunning { get; set; }
 
         /// <summary>
-        /// Gets or sets a value indicating whether <see cref="OssError"/> object.
+        /// Gets or sets presentable error from Language Server.
         /// </summary>
-        public OssError Error { get; set; }
+        public PresentableError PresentableError { get; set; }
 
         /// <summary>
         /// Gets or sets a value indicating whether <see cref="CliResult"/> object.

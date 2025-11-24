@@ -164,26 +164,19 @@ public interface ISnykTasksService
     void FireTaskFinished();
 
     /// <summary>
-    /// Fire error event. Create <see cref="OssError"/> instance.
+    /// Fire error event with PresentableError from Language Server.
     /// </summary>
-    /// <param name="message">Error message.</param>
+    /// <param name="presentableError">Presentable error from Language Server.</param>
     /// <param name="featuresSettings">Features settings.</param>
-    void FireOssError(string message, FeaturesSettings featuresSettings = null);
-
-    /// <summary>
-    /// Fire error event with <see cref="SnykOssScanEventArgs"/>.
-    /// </summary>
-    /// <param name="error"><see cref="OssError"/> object.</param>
-    /// <param name="featuresSettings">Features settings.</param>
-    void FireOssError(OssError error, FeaturesSettings featuresSettings = null);
+    void FireOssError(PresentableError presentableError, FeaturesSettings featuresSettings = null);
 
     /// <summary>
     /// Fire error event with <see cref="SnykCodeScanEventArgs"/>.
     /// </summary>
-    /// <param name="message">Error message</param>
-    void OnSnykCodeError(string message);
+    /// <param name="presentableError">Presentable error from Language Server</param>
+    void OnSnykCodeError(PresentableError presentableError);
 
-    void OnIacError(string message);
+    void OnIacError(PresentableError presentableError);
 
     /// <summary>
     /// Fire SnykCode disabled event with <see cref="SnykCodeScanEventArgs"/>.

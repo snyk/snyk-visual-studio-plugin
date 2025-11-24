@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Drawing;
 using System.IO;
 using System.Linq;
+using System.Net;
 using System.Threading;
 using System.Windows;
 using System.Windows.Controls;
@@ -89,7 +90,7 @@ namespace Snyk.VisualStudio.Extension.UI.Toolwindow
 
             tasksService.SnykCodeScanningStarted += this.OnSnykCodeScanningStarted;
             tasksService.SnykCodeScanError += this.OnSnykCodeDisplayError;
-            tasksService.SnykCodeDisabled += this.OnSnykCodeDisabledHandler;
+            // SnykCodeDisabled event handler removed - SAST checks are no longer performed
             tasksService.SnykCodeScanningUpdate += this.OnSnykCodeScanningUpdate;
             tasksService.SnykCodeScanningFinished += (sender, args) => ThreadHelper.JoinableTaskFactory.RunAsync(this.OnSnykCodeScanningFinishedAsync);
             
@@ -163,8 +164,13 @@ namespace Snyk.VisualStudio.Extension.UI.Toolwindow
                 await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
 
                 this.resultsTree.IacRootNode.State = RootTreeNodeState.Error;
+                this.resultsTree.IacRootNode.PresentableError = e.PresentableError;
                 this.resultsTree.IacRootNode.Clean();
-                NotificationService.Instance.ShowErrorInfoBar(e.Error);
+
+                if (e.PresentableError?.ShowNotification ?? true)
+                {
+                    NotificationService.Instance.ShowErrorInfoBar(e.PresentableError?.ErrorMessage);
+                }
 
                 if (!this.serviceProvider.Options.OssEnabled)
                 {
@@ -432,8 +438,12 @@ namespace Snyk.VisualStudio.Extension.UI.Toolwindow
             await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
 
             this.resultsTree.OssRootNode.State = RootTreeNodeState.Error;
+            this.resultsTree.OssRootNode.PresentableError = eventArgs.PresentableError;
 
-            NotificationService.Instance.ShowErrorInfoBar(eventArgs.Error.Message);
+            if (eventArgs.PresentableError?.ShowNotification ?? true)
+            {
+                NotificationService.Instance.ShowErrorInfoBar(eventArgs.PresentableError?.ErrorMessage);
+            }
 
             if (eventArgs.FeaturesSettings != null && !eventArgs.FeaturesSettings.CodeSecurityEnabled)
             {
@@ -459,8 +469,13 @@ namespace Snyk.VisualStudio.Extension.UI.Toolwindow
             await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
 
             this.resultsTree.CodeSecurityRootNode.State = RootTreeNodeState.Error;
+            this.resultsTree.CodeSecurityRootNode.PresentableError = eventArgs.PresentableError;
             this.resultsTree.CodeSecurityRootNode.Clean();
-            NotificationService.Instance.ShowErrorInfoBar(eventArgs.Error);
+
+            if (eventArgs.PresentableError?.ShowNotification ?? true)
+            {
+                NotificationService.Instance.ShowErrorInfoBar(eventArgs.PresentableError?.ErrorMessage);
+            }
 
             if (!this.serviceProvider.Options.OssEnabled)
             {
@@ -470,21 +485,7 @@ namespace Snyk.VisualStudio.Extension.UI.Toolwindow
             await this.UpdateActionsStateAsync();
         });
 
-        /// <summary>
-        /// Handle SnykCode disabled.
-        /// </summary>
-        /// <param name="sender">Source object.</param>
-        /// <param name="eventArgs">Event args.</param>
-        public void OnSnykCodeDisabledHandler(object sender, SnykCodeScanEventArgs eventArgs) => ThreadHelper.JoinableTaskFactory.Run(async () =>
-        {
-            await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
-
-            var disabledNodeState = RootTreeNodeState.DisabledForOrganization;
-
-            this.resultsTree.CodeSecurityRootNode.State = disabledNodeState;
-
-            this.resultsTree.CodeSecurityRootNode.Clean();
-        });
+        // OnSnykCodeDisabledHandler removed - SAST checks are no longer performed
 
         /// <summary>
         /// ScanningCancelled event handler. Switch context to ScanResultsState.
@@ -678,25 +679,8 @@ namespace Snyk.VisualStudio.Extension.UI.Toolwindow
             HandleBranchSelectorNode(serviceProvider, this.resultsTree.OssRootNode);
             HandleBranchSelectorNode(serviceProvider, this.resultsTree.CodeSecurityRootNode);
             HandleBranchSelectorNode(serviceProvider, this.resultsTree.IacRootNode);
-            try
-            {
-                SastSettings sastSettings = null;
-                if (LanguageClientHelper.IsLanguageServerReady())
-                {
-                    sastSettings = await this.serviceProvider.LanguageClientManager.InvokeGetSastEnabled(SnykVSPackage.Instance.DisposalToken);
-                }
-                this.resultsTree.CodeSecurityRootNode.State = this.GetSastRootNodeState(sastSettings, options.SnykCodeSecurityEnabled);
-            }
-            catch (Exception e)
-            {
-                Logger.Error(e, "Error on get sast settings and display tree node state");
-
-                this.resultsTree.CodeSecurityRootNode.State = RootTreeNodeState.Error;
-                this.resultsTree.OssRootNode.State = RootTreeNodeState.Error;
-                this.resultsTree.IacRootNode.State = RootTreeNodeState.Error;
-
-                NotificationService.Instance.ShowErrorInfoBar(e.Message);
-            }
+            // SAST enablement check removed - state is based only on user's checkbox setting
+            this.resultsTree.CodeSecurityRootNode.State = options.SnykCodeSecurityEnabled ? RootTreeNodeState.Enabled : RootTreeNodeState.Disabled;
         });
 
         private void HandleBranchSelectorNode(ISnykServiceProvider serviceProvider, RootTreeNode rootTreeNode)
@@ -729,20 +713,7 @@ namespace Snyk.VisualStudio.Extension.UI.Toolwindow
             }
         }
 
-        private RootTreeNodeState GetSastRootNodeState(SastSettings sastSettings, bool enabledInOptions)
-        {
-            if (sastSettings == null)
-            {
-                return RootTreeNodeState.Disabled;
-            }
-
-            if (!sastSettings.SastEnabled)
-            {
-                return RootTreeNodeState.DisabledForOrganization;
-            }
-
-            return enabledInOptions ? RootTreeNodeState.Enabled : RootTreeNodeState.Disabled;
-        }
+        // GetSastRootNodeState removed - SAST checks are no longer performed
 
         /// <summary>
         /// Append CLI results to tree.
@@ -869,17 +840,138 @@ namespace Snyk.VisualStudio.Extension.UI.Toolwindow
 
         private void HandleRootTreeNodeSelected()
         {
-            this.DescriptionPanel.Visibility = Visibility.Collapsed;
-            this.messagePanel.Visibility = Visibility.Visible;
-
             var selectedItem = this.resultsTree.SelectedItem;
 
-            // Check if selected tree node is related to Snyk Code and if state is LocalCodeEngineIsEnabled.
-            // In this case display additional informaiton in toolwindow panel.
-            if (selectedItem is SnykCodeSecurityRootTreeNode)
+            // Check if root node has an error and display error HTML
+            if (selectedItem is RootTreeNode rootTreeNode &&
+                rootTreeNode.State == RootTreeNodeState.Error &&
+                rootTreeNode.PresentableError != null &&
+                !string.IsNullOrEmpty(rootTreeNode.PresentableError.ErrorMessage))
             {
-                var rootTreeNode = selectedItem as RootTreeNode;
+                this.DescriptionPanel.Visibility = Visibility.Visible;
+                this.messagePanel.Visibility = Visibility.Collapsed;
+
+                // Generate error HTML content
+                var errorHtml = $@"
+<!DOCTYPE html>
+<html>
+<head>
+  <meta http-equiv='Content-Type' content='text/html; charset=unicode' />
+  <meta http-equiv='X-UA-Compatible' content='IE=edge' />
+  <meta charset=""utf-8"" />
+  <meta name=""viewport"" content=""width=device-width, initial-scale=1.0"" />
+  <meta http-equiv=""Content-Security-Policy""
+        content=""style-src 'self' 'nonce-${{nonce}}' 'nonce-ideNonce' https://fonts.googleapis.com;
+        script-src 'nonce-${{nonce}}' https://fonts.googleapis.com;
+        font-src 'self' https://fonts.gstatic.com;"" />
+  <style nonce=${{nonce}}>
+    @import url('https://fonts.googleapis.com/css2?family=Inter&display=swap');
+
+    :root {{
+      font-size: var(--main-font-size);
+      --default-font: ""SF Pro Text"", ""Segoe UI"", ""Ubuntu"", Geneva, Verdana, Tahoma, sans-serif;
+      --ide-background-color: var(--vscode-sideBar-background);
+      --text-color: var(--vscode-foreground);
+      --input-border: var(--vscode-input-border);
+    }}
+
+    body {{
+      background-color: var(--ide-background-color);
+      color: var(--text-color);
+      font-family: var(--default-font);
+      padding: 1.2rem;
+      margin: 0;
+    }}
+
+    .snx-h1 {{
+      font-size: 1.6rem;
+      font-weight: 400;
+      margin: .4rem 0 1.2rem 0;
+      color: #d32f2f;
+    }}
+
+    .error-details {{
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
+    }}
+
+    .error-field {{
+      display: flex;
+      flex-direction: column;
+      gap: 0.4rem;
+    }}
+
+    .error-label {{
+      font-weight: 600;
+      font-size: 0.9rem;
+      opacity: 0.7;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }}
+
+    .error-value {{
+      font-size: 1rem;
+      line-height: 1.5;
+      word-wrap: break-word;
+    }}
+
+    code {{
+      background-color: var(--code-background-color);
+      padding: 0.2rem 0.4rem;
+      border-radius: 3px;
+      font-family: 'Courier New', monospace;
+      font-size: 0.9rem;
+    }}
+  </style>
+  ${{ideStyle}}
+</head>
+<body>
+  <h1 class=""snx-h1"">⚠️ Scan Error</h1>
+  <div class=""error-details"">
+    <div class=""error-field"">
+      <div class=""error-label"">Message</div>
+      <div class=""error-value"">{WebUtility.HtmlEncode(rootTreeNode.PresentableError.ErrorMessage)}</div>
+    </div>";
+
+                if (!string.IsNullOrEmpty(rootTreeNode.PresentableError.Path))
+                {
+                    errorHtml += $@"
+    <div class=""error-field"">
+      <div class=""error-label"">Path</div>
+      <div class=""error-value"">{WebUtility.HtmlEncode(rootTreeNode.PresentableError.Path)}</div>
+    </div>";
+                }
+
+                if (!string.IsNullOrEmpty(rootTreeNode.PresentableError.Command))
+                {
+                    errorHtml += $@"
+    <div class=""error-field"">
+      <div class=""error-label"">Command</div>
+      <div class=""error-value""><code>{WebUtility.HtmlEncode(rootTreeNode.PresentableError.Command)}</code></div>
+    </div>";
+                }
+
+                if (rootTreeNode.PresentableError.Code > 0)
+                {
+                    errorHtml += $@"
+    <div class=""error-field"">
+      <div class=""error-label"">Error Code</div>
+      <div class=""error-value"">{rootTreeNode.PresentableError.Code}</div>
+    </div>";
+                }
+
+                errorHtml += @"
+  </div>
+</body>
+</html>";
+
+                this.DescriptionPanel.SetContent(errorHtml, "static");
+                return;
             }
+
+            this.DescriptionPanel.Visibility = Visibility.Collapsed;
+            this.messagePanel.Visibility = Visibility.Visible;
 
             this.messagePanel.ShowSelectIssueMessage();
         }
