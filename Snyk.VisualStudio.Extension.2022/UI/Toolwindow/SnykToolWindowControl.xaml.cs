@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Drawing;
 using System.IO;
 using System.Linq;
+using System.Net;
 using System.Threading;
 using System.Windows;
 using System.Windows.Controls;
@@ -933,7 +934,7 @@ namespace Snyk.VisualStudio.Extension.UI.Toolwindow
   <div class=""error-details"">
     <div class=""error-field"">
       <div class=""error-label"">Message</div>
-      <div class=""error-value"">{rootTreeNode.PresentableError.ErrorMessage}</div>
+      <div class=""error-value"">{WebUtility.HtmlEncode(rootTreeNode.PresentableError.ErrorMessage)}</div>
     </div>";
 
                 if (!string.IsNullOrEmpty(rootTreeNode.PresentableError.Path))
@@ -941,7 +942,7 @@ namespace Snyk.VisualStudio.Extension.UI.Toolwindow
                     errorHtml += $@"
     <div class=""error-field"">
       <div class=""error-label"">Path</div>
-      <div class=""error-value"">{rootTreeNode.PresentableError.Path}</div>
+      <div class=""error-value"">{WebUtility.HtmlEncode(rootTreeNode.PresentableError.Path)}</div>
     </div>";
                 }
 
@@ -950,7 +951,7 @@ namespace Snyk.VisualStudio.Extension.UI.Toolwindow
                     errorHtml += $@"
     <div class=""error-field"">
       <div class=""error-label"">Command</div>
-      <div class=""error-value""><code>{rootTreeNode.PresentableError.Command}</code></div>
+      <div class=""error-value""><code>{WebUtility.HtmlEncode(rootTreeNode.PresentableError.Command)}</code></div>
     </div>";
                 }
 
