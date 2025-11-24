@@ -47,12 +47,12 @@
             // 
             // additionalOptionsTextBox
             // 
-            this.additionalOptionsTextBox.Location = new System.Drawing.Point(127, 44);
-            this.additionalOptionsTextBox.Margin = new System.Windows.Forms.Padding(2);
+            this.additionalOptionsTextBox.Location = new System.Drawing.Point(339, 105);
+            this.additionalOptionsTextBox.Margin = new System.Windows.Forms.Padding(5, 5, 5, 5);
             this.additionalOptionsTextBox.Multiline = true;
             this.additionalOptionsTextBox.Name = "additionalOptionsTextBox";
             this.additionalOptionsTextBox.ScrollBars = System.Windows.Forms.ScrollBars.Both;
-            this.additionalOptionsTextBox.Size = new System.Drawing.Size(423, 118);
+            this.additionalOptionsTextBox.Size = new System.Drawing.Size(1121, 276);
             this.additionalOptionsTextBox.TabIndex = 0;
             this.additionalOptionsTextBox.TextChanged += new System.EventHandler(this.AdditionalOptionsTextBox_TextChanged);
             // 
@@ -63,39 +63,39 @@
             // label1
             // 
             this.label1.AutoSize = true;
-            this.label1.Location = new System.Drawing.Point(12, 27);
-            this.label1.Margin = new System.Windows.Forms.Padding(2, 0, 2, 0);
+            this.label1.Location = new System.Drawing.Point(32, 64);
+            this.label1.Margin = new System.Windows.Forms.Padding(5, 0, 5, 0);
             this.label1.Name = "label1";
-            this.label1.Size = new System.Drawing.Size(131, 15);
+            this.label1.Size = new System.Drawing.Size(303, 32);
             this.label1.TabIndex = 2;
             this.label1.Text = "Additional Parameters:";
             // 
             // organizationLabel
             // 
             this.organizationLabel.AutoSize = true;
-            this.organizationLabel.Location = new System.Drawing.Point(9, 329);
-            this.organizationLabel.Margin = new System.Windows.Forms.Padding(2, 0, 2, 0);
+            this.organizationLabel.Location = new System.Drawing.Point(24, 809);
+            this.organizationLabel.Margin = new System.Windows.Forms.Padding(5, 0, 5, 0);
             this.organizationLabel.Name = "organizationLabel";
-            this.organizationLabel.Size = new System.Drawing.Size(80, 15);
+            this.organizationLabel.Size = new System.Drawing.Size(185, 32);
             this.organizationLabel.TabIndex = 3;
             this.organizationLabel.Text = "Organization:";
             // 
             // organizationTextBox
             // 
-            this.organizationTextBox.Location = new System.Drawing.Point(127, 329);
-            this.organizationTextBox.Margin = new System.Windows.Forms.Padding(2);
+            this.organizationTextBox.Location = new System.Drawing.Point(339, 809);
+            this.organizationTextBox.Margin = new System.Windows.Forms.Padding(5, 5, 5, 5);
             this.organizationTextBox.Name = "organizationTextBox";
-            this.organizationTextBox.Size = new System.Drawing.Size(418, 20);
+            this.organizationTextBox.Size = new System.Drawing.Size(1108, 38);
             this.organizationTextBox.TabIndex = 4;
             this.organizationTextBox.TextChanged += new System.EventHandler(this.OrganizationTextBox_TextChanged);
             // 
             // autoOrganizationCheckBox
             // 
             this.autoOrganizationCheckBox.AutoSize = true;
-            this.autoOrganizationCheckBox.Location = new System.Drawing.Point(12, 185);
-            this.autoOrganizationCheckBox.Margin = new System.Windows.Forms.Padding(2);
+            this.autoOrganizationCheckBox.Location = new System.Drawing.Point(32, 441);
+            this.autoOrganizationCheckBox.Margin = new System.Windows.Forms.Padding(5, 5, 5, 5);
             this.autoOrganizationCheckBox.Name = "autoOrganizationCheckBox";
-            this.autoOrganizationCheckBox.Size = new System.Drawing.Size(124, 19);
+            this.autoOrganizationCheckBox.Size = new System.Drawing.Size(359, 36);
             this.autoOrganizationCheckBox.TabIndex = 8;
             this.autoOrganizationCheckBox.Text = "Auto-select organization";
             this.autoOrganizationCheckBox.UseVisualStyleBackColor = true;
@@ -104,20 +104,20 @@
             // autoOrganizationDescriptionLabel
             // 
             this.autoOrganizationDescriptionLabel.AutoSize = true;
-            this.autoOrganizationDescriptionLabel.Location = new System.Drawing.Point(127, 206);
-            this.autoOrganizationDescriptionLabel.Margin = new System.Windows.Forms.Padding(2, 0, 2, 0);
+            this.autoOrganizationDescriptionLabel.Location = new System.Drawing.Point(339, 491);
+            this.autoOrganizationDescriptionLabel.Margin = new System.Windows.Forms.Padding(5, 0, 5, 0);
             this.autoOrganizationDescriptionLabel.Name = "autoOrganizationDescriptionLabel";
-            this.autoOrganizationDescriptionLabel.Size = new System.Drawing.Size(426, 90);
+            this.autoOrganizationDescriptionLabel.Size = new System.Drawing.Size(1295, 256);
             this.autoOrganizationDescriptionLabel.TabIndex = 9;
             this.autoOrganizationDescriptionLabel.Text = resources.GetString("autoOrganizationDescriptionLabel.Text");
             // 
             // OrgDescriptionText
             // 
             this.OrgDescriptionText.AutoSize = true;
-            this.OrgDescriptionText.Location = new System.Drawing.Point(127, 350);
-            this.OrgDescriptionText.Margin = new System.Windows.Forms.Padding(2, 0, 2, 0);
+            this.OrgDescriptionText.Location = new System.Drawing.Point(339, 859);
+            this.OrgDescriptionText.Margin = new System.Windows.Forms.Padding(5, 0, 5, 0);
             this.OrgDescriptionText.Name = "OrgDescriptionText";
-            this.OrgDescriptionText.Size = new System.Drawing.Size(375, 75);
+            this.OrgDescriptionText.Size = new System.Drawing.Size(1390, 96);
             this.OrgDescriptionText.TabIndex = 6;
             this.OrgDescriptionText.Text = resources.GetString("OrgDescriptionText.Text");
             // 
@@ -125,20 +125,20 @@
             // 
             this.additionalParamsInfoLabel.AutoSize = true;
             this.additionalParamsInfoLabel.ForeColor = System.Drawing.SystemColors.ControlText;
-            this.additionalParamsInfoLabel.Location = new System.Drawing.Point(127, 164);
-            this.additionalParamsInfoLabel.Margin = new System.Windows.Forms.Padding(2, 0, 2, 0);
+            this.additionalParamsInfoLabel.Location = new System.Drawing.Point(339, 391);
+            this.additionalParamsInfoLabel.Margin = new System.Windows.Forms.Padding(5, 0, 5, 0);
             this.additionalParamsInfoLabel.Name = "additionalParamsInfoLabel";
-            this.additionalParamsInfoLabel.Size = new System.Drawing.Size(418, 15);
+            this.additionalParamsInfoLabel.Size = new System.Drawing.Size(965, 32);
             this.additionalParamsInfoLabel.TabIndex = 7;
             this.additionalParamsInfoLabel.Text = "Additional parameters used when calling the CLI, e.g. `-d` or `--exclude=bin`";
             // 
             // WebAccountSettingsLabel
             // 
             this.WebAccountSettingsLabel.AutoSize = true;
-            this.WebAccountSettingsLabel.Location = new System.Drawing.Point(127, 296);
-            this.WebAccountSettingsLabel.Margin = new System.Windows.Forms.Padding(2, 0, 2, 0);
+            this.WebAccountSettingsLabel.Location = new System.Drawing.Point(339, 753);
+            this.WebAccountSettingsLabel.Margin = new System.Windows.Forms.Padding(5, 0, 5, 0);
             this.WebAccountSettingsLabel.Name = "WebAccountSettingsLabel";
-            this.WebAccountSettingsLabel.Size = new System.Drawing.Size(123, 15);
+            this.WebAccountSettingsLabel.Size = new System.Drawing.Size(285, 32);
             this.WebAccountSettingsLabel.TabIndex = 10;
             this.WebAccountSettingsLabel.TabStop = true;
             this.WebAccountSettingsLabel.Text = "Web account settings";
@@ -155,25 +155,25 @@
             this.folderConfigurationGroupBox.Controls.Add(this.organizationLabel);
             this.folderConfigurationGroupBox.Controls.Add(this.label1);
             this.folderConfigurationGroupBox.Controls.Add(this.additionalOptionsTextBox);
-            this.folderConfigurationGroupBox.Location = new System.Drawing.Point(10, 10);
-            this.folderConfigurationGroupBox.Margin = new System.Windows.Forms.Padding(11, 10, 11, 10);
+            this.folderConfigurationGroupBox.Location = new System.Drawing.Point(27, 24);
+            this.folderConfigurationGroupBox.Margin = new System.Windows.Forms.Padding(29, 24, 29, 24);
             this.folderConfigurationGroupBox.Name = "folderConfigurationGroupBox";
-            this.folderConfigurationGroupBox.Padding = new System.Windows.Forms.Padding(3, 2, 3, 2);
-            this.folderConfigurationGroupBox.Size = new System.Drawing.Size(747, 427);
+            this.folderConfigurationGroupBox.Padding = new System.Windows.Forms.Padding(8, 5, 8, 5);
+            this.folderConfigurationGroupBox.Size = new System.Drawing.Size(1992, 1018);
             this.folderConfigurationGroupBox.TabIndex = 0;
             this.folderConfigurationGroupBox.TabStop = false;
             this.folderConfigurationGroupBox.Text = "Folder Configuration";
             // 
             // SnykSolutionOptionsUserControl
             // 
-            this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
+            this.AutoScaleDimensions = new System.Drawing.SizeF(16F, 31F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.AutoSize = true;
             this.Controls.Add(this.folderConfigurationGroupBox);
-            this.Margin = new System.Windows.Forms.Padding(2);
+            this.Margin = new System.Windows.Forms.Padding(5, 5, 5, 5);
             this.Name = "SnykSolutionOptionsUserControl";
-            this.Padding = new System.Windows.Forms.Padding(4, 3, 4, 3);
-            this.Size = new System.Drawing.Size(4501, 1014);
+            this.Padding = new System.Windows.Forms.Padding(11, 7, 11, 7);
+            this.Size = new System.Drawing.Size(12003, 2418);
             this.Load += new System.EventHandler(this.SnykProjectOptionsUserControl_Load);
             ((System.ComponentModel.ISupportInitialize)(this.errorProvider)).EndInit();
             this.folderConfigurationGroupBox.ResumeLayout(false);
