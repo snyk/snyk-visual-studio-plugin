@@ -124,19 +124,18 @@
     <value>25</value>
   </metadata>
   <data name="OrgDescriptionText.Text" xml:space="preserve">
-    <value>Specify the organization (ID or name) for Snyk to run scans against. 
-Retrieve the organization ID from the organization settings in the 
-Snyk UI: `https://app.snyk.io/org/[ORG_NAME]/manage/settings` 
-and copy the ID from the Organization ID section. If the organization 
-is provided in your web account settings will be used.
-</value>
+    <value>[Experimental] Specify the organization (ID or name) for Snyk to run scans against for this specific IDE project.
+
+If the organization value is blank or invalid, the value from the global Organization field will be used.</value>
   </data>
   <data name="autoOrganizationDescriptionLabel.Text" xml:space="preserve">
-    <value>Use automatic organization selection. When enabled, Snyk will automatically 
+    <value>[Experimental] Use automatic organization selection. When enabled, Snyk will automatically 
 select the most appropriate organization for your project using context found 
-in your repository and your authentication. If an organization is configured 
-manually, this feature will be overridden. If an appropriate organization 
-cannot be identified automatically, the preferred organization defined in 
+in your repository and your authentication.
+
+If an organization is configured manually, this feature will be overridden.
+
+If an appropriate organization cannot be identified automatically, the preferred organization defined in 
 your web account settings will be used as a fallback.</value>
   </data>
 </root>

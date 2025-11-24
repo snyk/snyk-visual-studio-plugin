@@ -293,5 +293,10 @@ namespace Snyk.VisualStudio.Extension.Settings
             this.SnykRegionsLink.LinkVisited = true;
             Process.Start("https://docs.snyk.io/working-with-snyk/regional-hosting-and-data-residency#available-snyk-regions");
         }
+
+        private void organizationDescriptionText_TextChanged(object sender, EventArgs e)
+        {
+
+        }
     }
 }

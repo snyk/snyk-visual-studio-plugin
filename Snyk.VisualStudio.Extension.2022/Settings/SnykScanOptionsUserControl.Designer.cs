@@ -56,9 +56,8 @@
             this.codeSecurityEnabledCheckBox.Name = "codeSecurityEnabledCheckBox";
             this.codeSecurityEnabledCheckBox.Size = new System.Drawing.Size(860, 66);
             this.codeSecurityEnabledCheckBox.TabIndex = 12;
-            this.codeSecurityEnabledCheckBox.Text = "Snyk Code Security. \r\nNote: Snyk Code scans must be enabled for the organization " +
-    "to run.";
-            this.codeSecurityToolTip.SetToolTip(this.codeSecurityEnabledCheckBox, "Snyk Code scans must be enabled for the organization to run.");
+            this.codeSecurityEnabledCheckBox.Text = "Snyk Code Security. \r\nFor these scans to run, Snyk Code must be enabled for your organization in Snyk settings.";
+            this.codeSecurityToolTip.SetToolTip(this.codeSecurityEnabledCheckBox, "For these scans to run, Snyk Code must be enabled for your organization in Snyk settings.");
             this.codeSecurityEnabledCheckBox.UseVisualStyleBackColor = true;
             this.codeSecurityEnabledCheckBox.CheckedChanged += new System.EventHandler(this.CodeSecurityEnabledCheckBox_CheckedChanged);
             // 
