@@ -94,6 +94,7 @@ namespace Snyk.VisualStudio.Extension.Settings
                 HandleExperimentalConfiguration();
                 HandleUserExperienceConfiguration();
                 HandleSolutionOptionsConfiguration();
+                HandleGeneralConfiguration();
 
                 var hasCliChanges = HandleCliConfiguration();
 
@@ -125,7 +126,7 @@ namespace Snyk.VisualStudio.Extension.Settings
             {
                 // Use UI state instead of reading from database to get current user intent
                 var isAutoMode = control.IsAutoOrganizationChecked;
-                var organizationText = control.Organization;
+                var preferredOrganizationText = control.Organization;
                 
                 if (isAutoMode)
                 {
@@ -143,7 +144,7 @@ namespace Snyk.VisualStudio.Extension.Settings
                     // - preferredOrg gets value from preferredOrgTextField
                     // - orgSetByUser is set to true
                     // - Update folderconfig and send to Language Server
-                    await this.serviceProvider.SnykOptionsManager.SavePreferredOrgAsync(organizationText);
+                    await this.serviceProvider.SnykOptionsManager.SavePreferredOrgAsync(preferredOrganizationText);
                     await this.serviceProvider.SnykOptionsManager.SaveOrgSetByUserAsync(true);
                     await this.UpdateFolderConfigAndNotifyLanguageServerAsync();
                 }
@@ -192,7 +193,7 @@ namespace Snyk.VisualStudio.Extension.Settings
                         BaseBranch = "main", // Default branch
                         LocalBranches = new List<string> { "main" },
                         AdditionalParameters = new List<string>(),
-                        OrgSetByUser = false,
+                        OrgSetByUser = true,
                         OrgMigratedFromGlobalConfig = false
                     };
                     folderConfigs.Add(existingConfig);
@@ -245,6 +246,14 @@ namespace Snyk.VisualStudio.Extension.Settings
 
             this.SnykOptions.IgnoredIssuesEnabled = memento.IgnoredIssuesEnabled;
             this.SnykOptions.OpenIssuesEnabled = memento.OpenIssuesEnabled;
+        }
+
+        private void HandleGeneralConfiguration()
+        {
+            // Read organization from the general settings control
+            // This is consistent with how other settings are handled - read on OK/Apply, not on every keystroke
+            var control = this.GeneralSettingsUserControl;
+            this.SnykOptions.Organization = control.Organization;
         }
 
         private void HandleScanConfiguration()

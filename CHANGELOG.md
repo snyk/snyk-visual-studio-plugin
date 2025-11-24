@@ -1,13 +1,8 @@
 # Snyk Security Changelog
 
 ## [2.5.0]
-### Added
-- Organization setting moved to solution-specific settings, allowing different organizations per solution/project
-- Language Server integration to automatically sync organization preferences from folder configurations
-- Organization input field in solution options with validation and help documentation
 ### Changed
-- Organization setting is now solution-scoped instead of global
-- Language Server folder configurations now automatically update organization and additional parameters
+- Organization setting can now also be set in solution-specific settings, allowing different organizations per solution/project
 - bump LS protocol version to 21.
 
 

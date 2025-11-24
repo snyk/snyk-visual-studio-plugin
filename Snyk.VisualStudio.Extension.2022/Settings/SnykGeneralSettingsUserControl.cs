@@ -45,6 +45,11 @@ namespace Snyk.VisualStudio.Extension.Settings
             this.Initialize();
         }
 
+        /// <summary>
+        /// Gets the organization value from the organization text box.
+        /// </summary>
+        public string Organization => this.organizationTextBox.Text;
+
         private void OnLoad(object sender, EventArgs e)
         {
             CheckForIgnores();
@@ -229,17 +234,6 @@ namespace Snyk.VisualStudio.Extension.Settings
             snykOptions.IgnoreUnknownCA = this.ignoreUnknownCACheckBox.Checked;
         }
 
-        private void OrganizationTextBox_TextChanged(object sender, EventArgs e)
-        {
-            // Save global organization setting when user changes it
-            var organization = this.organizationTextBox.Text;
-            snykOptions.Organization = organization;
-            ThreadHelper.JoinableTaskFactory.RunAsync(async () =>
-            {
-                await this.serviceProvider.SnykOptionsManager.SaveOrganizationAsync(organization);
-                Logger.Information("Global organization saved: {Organization}", organization);
-            }).FireAndForget();
-        }
 
         private void TokenTextBox_Validating(object sender, CancelEventArgs cancelEventArgs) =>
             ThreadHelper.JoinableTaskFactory.RunAsync(async () =>

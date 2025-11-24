@@ -164,7 +164,6 @@ namespace Snyk.VisualStudio.Extension.UI.Toolwindow
                 await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
 
                 this.resultsTree.IacRootNode.State = RootTreeNodeState.Error;
-                this.resultsTree.IacRootNode.ErrorSuffix = e.PresentableError?.TreeNodeSuffix;
                 this.resultsTree.IacRootNode.PresentableError = e.PresentableError;
                 this.resultsTree.IacRootNode.Clean();
 
@@ -439,7 +438,6 @@ namespace Snyk.VisualStudio.Extension.UI.Toolwindow
             await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
 
             this.resultsTree.OssRootNode.State = RootTreeNodeState.Error;
-            this.resultsTree.OssRootNode.ErrorSuffix = eventArgs.PresentableError?.TreeNodeSuffix;
             this.resultsTree.OssRootNode.PresentableError = eventArgs.PresentableError;
 
             if (eventArgs.PresentableError?.ShowNotification ?? true)
@@ -471,7 +469,6 @@ namespace Snyk.VisualStudio.Extension.UI.Toolwindow
             await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
 
             this.resultsTree.CodeSecurityRootNode.State = RootTreeNodeState.Error;
-            this.resultsTree.CodeSecurityRootNode.ErrorSuffix = eventArgs.PresentableError?.TreeNodeSuffix;
             this.resultsTree.CodeSecurityRootNode.PresentableError = eventArgs.PresentableError;
             this.resultsTree.CodeSecurityRootNode.Clean();
 

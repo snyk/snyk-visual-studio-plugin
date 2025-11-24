@@ -37,9 +37,6 @@ public interface IPersistableOptions
     /// </summary>
     string Organization { get; set; }
 
-    /// <summary>
-    /// Gets or sets a value indicating whether organization should be automatically selected.
-    /// </summary>
 
     /// <summary>
     /// Gets or sets a value indicating whether CLI ignore unknown CA parameter.

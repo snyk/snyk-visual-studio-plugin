@@ -23,7 +23,7 @@ namespace Snyk.VisualStudio.Extension.Settings
     Task SaveAdditionalOptionsAsync(string additionalOptions);
 
     /// <summary>
-    /// Get organization string.
+    /// Get global organization string.
     /// </summary>
     /// <returns>string.</returns>
     Task<string> GetOrganizationAsync();

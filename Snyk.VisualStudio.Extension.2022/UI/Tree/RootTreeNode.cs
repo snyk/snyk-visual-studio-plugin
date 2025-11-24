@@ -25,11 +25,6 @@ namespace Snyk.VisualStudio.Extension.UI.Tree
         }
 
         /// <summary>
-        /// Gets or sets custom error suffix from Language Server.
-        /// </summary>
-        public string ErrorSuffix { get; set; }
-
-        /// <summary>
         /// Gets or sets presentable error from Language Server.
         /// </summary>
         public Language.PresentableError PresentableError { get; set; }
@@ -56,7 +51,7 @@ namespace Snyk.VisualStudio.Extension.UI.Tree
                         title = this.GetResultDetailsTitle();
                         break;
                     case RootTreeNodeState.Error:
-                        var errorSuffix = string.IsNullOrEmpty(this.ErrorSuffix) ? "(error)" : this.ErrorSuffix;
+                        var errorSuffix = string.IsNullOrEmpty(this.PresentableError?.TreeNodeSuffix) ? "(error)" : this.PresentableError.TreeNodeSuffix;
                         title = this.GetTitlePrefix() + " " + errorSuffix;
                         break;
                     case RootTreeNodeState.NoFilesForSnykCodeScan:

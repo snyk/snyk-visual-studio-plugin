@@ -266,7 +266,10 @@ namespace Snyk.VisualStudio.Extension.Tests.Language
                     {
                         'folderPath': '/path/to/folder1',
                         'baseBranch': 'main',
-                        'autoDeterminedOrg': 'auto-determined-org'
+                        'autoDeterminedOrg': 'auto-determined-org',
+                        'preferredOrg': '',
+                        'orgSetByUser': false,
+                        'orgMigratedFromGlobalConfig': false
                     }
                 ]
             }");
@@ -281,6 +284,8 @@ namespace Snyk.VisualStudio.Extension.Tests.Language
             // Only the auto-determined org is saved for solution-specific settings
             snykOptionsManagerMock.Verify(s => s.Save(It.IsAny<IPersistableOptions>(), It.IsAny<bool>()), Times.Once);
             snykOptionsManagerMock.Verify(s => s.SaveAutoDeterminedOrgAsync("auto-determined-org"), Times.Once);
+            snykOptionsManagerMock.Verify(s => s.SavePreferredOrgAsync(""), Times.Once);
+            snykOptionsManagerMock.Verify(s => s.SaveOrgSetByUserAsync(false), Times.Once);
             // SaveOrganizationAsync should NOT be called - global org is not updated from folder configs
             snykOptionsManagerMock.Verify(s => s.SaveOrganizationAsync(It.IsAny<string>()), Times.Never);
         }
@@ -346,6 +351,9 @@ namespace Snyk.VisualStudio.Extension.Tests.Language
         public async Task OnFolderConfig_ShouldUpdateOrganization_WithBothOrgFields()
         {
             // Arrange
+            // Note: Visual Studio processes only ONE folder config - the one matching the current solution path.
+            // The second folder config (/path/to/folder2) is included to verify that non-matching configs are ignored.
+            // Solution path is set to '/path/to/folder1' in test setup, so only the first config will be processed.
             var arg = JObject.Parse(@"{
                 'folderConfigs': [
                     {
@@ -373,6 +381,7 @@ namespace Snyk.VisualStudio.Extension.Tests.Language
             await cut.OnFolderConfig(arg);
 
             // Assert
+            // Only the matching folder config (/path/to/folder1) is processed, so save methods are called once
             snykOptionsManagerMock.Verify(s => s.Save(It.IsAny<IPersistableOptions>(), It.IsAny<bool>()), Times.Once);
             snykOptionsManagerMock.Verify(s => s.SaveAutoDeterminedOrgAsync("auto-determined-org"), Times.Once);
             snykOptionsManagerMock.Verify(s => s.SavePreferredOrgAsync("user-specified-org"), Times.Once);
@@ -409,6 +418,34 @@ namespace Snyk.VisualStudio.Extension.Tests.Language
             snykOptionsManagerMock.Verify(s => s.SaveOrgSetByUserAsync(true), Times.Once);
             // GetEffectiveOrganizationAsync is not called - Language Server handles fallback logic
             snykOptionsManagerMock.Verify(s => s.GetEffectiveOrganizationAsync(), Times.Never);
+        }
+
+        [Fact]
+        public async Task OnFolderConfig_ShouldSaveEmptyPreferredOrg_WhenPreferredOrgIsEmpty()
+        {
+            // Arrange
+            var arg = JObject.Parse(@"{
+                'folderConfigs': [
+                    {
+                        'folderPath': '/path/to/folder1',
+                        'preferredOrg': '',
+                        'autoDeterminedOrg': 'auto-detected-org',
+                        'orgSetByUser': false,
+                        'orgMigratedFromGlobalConfig': false
+                    }
+                ]
+            }");
+
+            optionsMock.SetupProperty(o => o.FolderConfigs);
+            optionsMock.SetupProperty(o => o.Organization);
+
+            // Act
+            await cut.OnFolderConfig(arg);
+
+            // Assert
+            snykOptionsManagerMock.Verify(s => s.SaveAutoDeterminedOrgAsync("auto-detected-org"), Times.Once);
+            snykOptionsManagerMock.Verify(s => s.SavePreferredOrgAsync(""), Times.Once);
+            snykOptionsManagerMock.Verify(s => s.SaveOrgSetByUserAsync(false), Times.Once);
         }
     }
 }

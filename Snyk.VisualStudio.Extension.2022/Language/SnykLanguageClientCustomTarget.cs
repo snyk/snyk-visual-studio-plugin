@@ -165,11 +165,8 @@ namespace Snyk.VisualStudio.Extension.Language
                 }
 
                 // Extract preferred organization from matching folder config
-                if (!string.IsNullOrEmpty(matchingFolderConfig.PreferredOrg))
-                {
-                    // Save as preferred organization (from Language Server)
-                    await serviceProvider.SnykOptionsManager.SavePreferredOrgAsync(matchingFolderConfig.PreferredOrg);
-                }
+                // Language Server is authoritative - always use its data, even if empty
+                await serviceProvider.SnykOptionsManager.SavePreferredOrgAsync(matchingFolderConfig.PreferredOrg);
 
                 // Extract orgSetByUser flag from Language Server
                 await serviceProvider.SnykOptionsManager.SaveOrgSetByUserAsync(matchingFolderConfig.OrgSetByUser);
@@ -199,7 +196,6 @@ namespace Snyk.VisualStudio.Extension.Language
                 if (!serviceProvider.Options.InternalAutoScan)
                 {
                     serviceProvider.Options.InternalAutoScan = true;
-                    await serviceProvider.LanguageClientManager.DidChangeConfigurationAsync(SnykVSPackage.Instance.DisposalToken);
                     serviceProvider.TasksService.ScanAsync().FireAndForget();
                 }
             }
@@ -209,23 +205,23 @@ namespace Snyk.VisualStudio.Extension.Language
         {
             if (folderConfigs == null || string.IsNullOrEmpty(currentSolutionPath)) return null;
 
-            // Normalize paths for comparison
-            var normalizedCurrentPath = currentSolutionPath.Replace("\\", "/").TrimEnd('/').ToLowerInvariant();
-
             foreach (var folderConfig in folderConfigs)
             {
                 if (string.IsNullOrEmpty(folderConfig.FolderPath)) continue;
 
-                var normalizedConfigPath = folderConfig.FolderPath.Replace("\\", "/").TrimEnd('/').ToLowerInvariant();
-
                 // Check for exact match
-                if (normalizedConfigPath.Equals(normalizedCurrentPath, StringComparison.OrdinalIgnoreCase))
+                if (folderConfig.FolderPath.Equals(currentSolutionPath, StringComparison.OrdinalIgnoreCase))
                 {
                     return folderConfig;
                 }
 
                 // Check if current path is within the config path (subfolder)
-                if (normalizedCurrentPath.StartsWith(normalizedConfigPath + "/", StringComparison.OrdinalIgnoreCase))
+                // Note: This is a defensive check. In normal operation, the Language Server sends folder configs
+                // that match workspace folders exactly, so exact matches should be sufficient. This subfolder
+                // check handles edge cases where paths might not align perfectly (e.g., path normalization differences).
+                var trimmedConfigPath = folderConfig.FolderPath.TrimEnd('\\', '/');
+                if (currentSolutionPath.StartsWith(trimmedConfigPath + "\\", StringComparison.OrdinalIgnoreCase) ||
+                    currentSolutionPath.StartsWith(trimmedConfigPath + "/", StringComparison.OrdinalIgnoreCase))
                 {
                     return folderConfig;
                 }
