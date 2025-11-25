@@ -2,9 +2,9 @@
 
 ## [2.5.0]
 ### Changed
-- Organization setting can now also be set in solution-specific settings, allowing different organizations per solution/project
-- Add support for automatic organization configuration.
-- bump LS protocol version to 21.
+- Organization setting can now also be set in solution-specific settings (experimental), allowing different organizations per solution/project.
+- Add support for automatic organization configuration (experimental).
+- Bump LS protocol version to 21.
 
 
 ## [2.4.0]
