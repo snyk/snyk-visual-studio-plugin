@@ -83,13 +83,10 @@ namespace Snyk.VisualStudio.Extension.Settings
                 {
                     // When checkbox is ticked (auto mode):
                     // - orgSetByUser is set to false
-                    // - preferredOrg is set to ""
                     // - preferredOrgTextField is set to the value of autoDeterminedOrg
                     if (isAutoMode)
                     {
                         await this.serviceProvider.SnykOptionsManager.SaveOrgSetByUserAsync(false);
-                        await this.serviceProvider.SnykOptionsManager.SavePreferredOrgAsync("");
-                        
                         // Update text field to show auto-determined org
                         var autoDeterminedOrg = await this.serviceProvider.SnykOptionsManager.GetAutoDeterminedOrgAsync();
                         this.organizationTextBox.Text = autoDeterminedOrg;
@@ -99,12 +96,15 @@ namespace Snyk.VisualStudio.Extension.Settings
                     {
                         // When checkbox is unticked (manual mode):
                         // - orgSetByUser is set to true
-                        // - preferredOrgTextField is set to ""
+                        // - preferredOrgTextField is set to the previously saved value.
                         await this.serviceProvider.SnykOptionsManager.SaveOrgSetByUserAsync(true);
-                        await this.serviceProvider.SnykOptionsManager.SavePreferredOrgAsync("");
-                        this.organizationTextBox.Text = "";
-                        this.Organization = "";
+                        var preferredOrg = await this.serviceProvider.SnykOptionsManager.GetPreferredOrgAsync();
+                        this.organizationTextBox.Text = preferredOrg;
+                        this.Organization = preferredOrg;
                     }
+
+                    // Disable the Preferred Organization field if Auto-select Organization is enabled.
+                    this.organizationTextBox.Enabled = !isAutoMode;
                     
                     Logger.Information("Auto organization state updated: {IsAutoMode}", isAutoMode);
                 }).FireAndForget();
