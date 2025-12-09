@@ -13,6 +13,13 @@
   - Make sure Early Access are specified correctly for new feature.
 
 
+**Preview Version Verification**
+
+- Trigger or wait for the preview release workflow to build a preview version on the commit that will be used for the release.
+  - The preview release workflow runs automatically on pushes to main.
+- Install the preview version from the marketplace and verify that the changes listed in the changelog are present and working correctly.
+
+
 **Initiate Release**
 
 - If you want to do a hotfix with a subset of commits from main, create a hotfix branch off the previous release tag.
@@ -21,12 +28,6 @@
 - Trigger the release workflow in GitHub Actions.
   - Select the appropriate version type (major, minor, patch).
   - If this is a hotfix not off main, select the hotfix branch.
-
-
-**Release Notes**
-
-- Edit or generate release notes on GitHub.
-  - Its okay to include all items from any intermediate hotfix releases in the release notes.
 
 
 **Marketplace Availability**
