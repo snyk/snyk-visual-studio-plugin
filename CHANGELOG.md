@@ -1,11 +1,14 @@
 # Snyk Security Changelog
 
-## [2.5.0]
+## [2.6.0]
 ### Changed
 - Organization setting can now also be set in solution-specific settings (experimental), allowing different organizations per solution/project.
 - Add support for automatic organization configuration (experimental).
 - Bump LS protocol version to 21.
 
+## [2.5.0]
+### Changed
+- No changes
 
 ## [2.4.0]
 ### Changed
