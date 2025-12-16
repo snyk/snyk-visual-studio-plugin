@@ -24,8 +24,6 @@ namespace Snyk.VisualStudio.Extension.Settings
     {
         private ISnykServiceProvider serviceProvider;
         private SnykGeneralSettingsUserControl generalSettingsUserControl;
-        private HtmlSettingsPanel htmlSettingsPanel;
-        private bool useHtmlPanel;
         private static readonly ILogger Logger = LogManager.ForContext<SnykGeneralOptionsDialogPage>();
 
         protected override void OnActivate(CancelEventArgs e)
@@ -42,8 +40,7 @@ namespace Snyk.VisualStudio.Extension.Settings
 
         private void ResetScrollbarSettings()
         {
-            // Only reset scrollbar for legacy control
-            if (useHtmlPanel || this.generalSettingsUserControl == null)
+            if (this.generalSettingsUserControl == null)
                 return;
 
             // Reset the scroll position
@@ -66,54 +63,15 @@ namespace Snyk.VisualStudio.Extension.Settings
 
         public async Task HandleAuthenticationSuccess(string token, string apiUrl)
         {
-            // Only handle authentication UI updates for legacy panel
-            // HTML panel gets auth updates via Language Server
-            if (!useHtmlPanel)
-            {
-                await this.GeneralSettingsUserControl.HandleAuthenticationSuccess(token, apiUrl);
-            }
+            await this.GeneralSettingsUserControl.HandleAuthenticationSuccess(token, apiUrl);
         }
 
         public async Task HandleFailedAuthentication(string errorMessage)
         {
-            // Only handle authentication UI updates for legacy panel
-            // HTML panel gets auth updates via Language Server
-            if (!useHtmlPanel)
-            {
-                await this.GeneralSettingsUserControl.HandleFailedAuthentication(errorMessage);
-            }
+            await this.GeneralSettingsUserControl.HandleFailedAuthentication(errorMessage);
         }
 
-        protected override IWin32Window Window
-        {
-            get
-            {
-                // Check feature flag to determine which panel to use
-                useHtmlPanel = FeatureFlags.UseHtmlConfigDialog;
-
-                if (useHtmlPanel)
-                {
-                    return HtmlPanel;
-                }
-                else
-                {
-                    return GeneralSettingsUserControl;
-                }
-            }
-        }
-
-        private HtmlSettingsPanel HtmlPanel
-        {
-            get
-            {
-                if (htmlSettingsPanel == null)
-                {
-                    var rpc = GetLanguageServerRpc();
-                    htmlSettingsPanel = new HtmlSettingsPanel(SnykOptions, rpc);
-                }
-                return htmlSettingsPanel;
-            }
-        }
+        protected override IWin32Window Window => GeneralSettingsUserControl;
 
         public SnykGeneralSettingsUserControl GeneralSettingsUserControl
         {
@@ -127,70 +85,24 @@ namespace Snyk.VisualStudio.Extension.Settings
             }
         }
 
-        private IJsonRpc GetLanguageServerRpc()
-        {
-            try
-            {
-                // Get RPC from Language Client Manager
-                if (serviceProvider?.LanguageClientManager != null)
-                {
-                    return serviceProvider.LanguageClientManager.Rpc;
-                }
-            }
-            catch (Exception ex)
-            {
-                Logger.Warning(ex, "Failed to get Language Server RPC, HTML panel will use fallback");
-            }
-            return null; // Fallback HTML will be used
-        }
-
         // This method is used when the user clicks "Ok"
         public override void SaveSettingsToStorage()
         {
             ThreadHelper.JoinableTaskFactory.RunAsync(async () =>
             {
-                if (useHtmlPanel && htmlSettingsPanel != null)
+                HandleScanConfiguration();
+                HandleExperimentalConfiguration();
+                HandleUserExperienceConfiguration();
+                HandleGeneralConfiguration();
+                await HandleSolutionOptionsConfigurationAsync();
+                var hasCliChanges = HandleCliConfiguration();
+
+                this.serviceProvider.SnykOptionsManager.Save(this.SnykOptions);
+
+                if (hasCliChanges)
                 {
-                    // HTML panel handles its own saving via JavaScript bridge
-                    try
-                    {
-                        await htmlSettingsPanel.ApplyAsync();
-                        Logger.Information("HTML settings panel saved successfully");
-
-                        // Still need to save to storage and handle CLI changes
-                        this.serviceProvider.SnykOptionsManager.Save(this.SnykOptions);
-
-                        // Check for CLI changes (options may have been updated by HTML panel)
-                        // Note: HTML panel updates ISnykOptions directly, so we can check for changes
-                        // For now, restart LS to pick up any HTML-provided changes
-                        if (LanguageClientHelper.IsLanguageServerReady())
-                        {
-                            await serviceProvider.LanguageClientManager.DidChangeConfigurationAsync(
-                                SnykVSPackage.Instance.DisposalToken);
-                        }
-                    }
-                    catch (Exception ex)
-                    {
-                        Logger.Error(ex, "Failed to save HTML settings panel");
-                    }
-                }
-                else
-                {
-                    // Legacy panel - use existing save logic
-                    HandleScanConfiguration();
-                    HandleExperimentalConfiguration();
-                    HandleUserExperienceConfiguration();
-                    HandleGeneralConfiguration();
-                    await HandleSolutionOptionsConfigurationAsync();
-                    var hasCliChanges = HandleCliConfiguration();
-
-                    this.serviceProvider.SnykOptionsManager.Save(this.SnykOptions);
-
-                    if (hasCliChanges)
-                    {
-                        HandleCliChange();
-                        return;
-                    }
+                    HandleCliChange();
+                    return;
                 }
             }).FireAndForget();
         }

@@ -50,5 +50,33 @@ namespace Snyk.VisualStudio.Extension.Settings
         {
             OptionsMemento.IgnoredIssuesEnabled = cbIgnoredIssues.Checked;
         }
+
+        private void btnOpenSettingsV2_Click(object sender, EventArgs e)
+        {
+            try
+            {
+                // Get required dependencies
+                var options = serviceProvider.Options;
+                var languageServerRpc = serviceProvider.LanguageClientManager?.Rpc;
+                var optionsManager = serviceProvider.SnykOptionsManager;
+
+                // Create and show modal window
+                var settingsWindow = new HtmlSettingsWindow(
+                    options,
+                    languageServerRpc,
+                    optionsManager,
+                    serviceProvider);
+
+                settingsWindow.ShowDialog();
+            }
+            catch (Exception ex)
+            {
+                System.Windows.MessageBox.Show(
+                    $"Failed to open settings window: {ex.Message}",
+                    "Error",
+                    System.Windows.MessageBoxButton.OK,
+                    System.Windows.MessageBoxImage.Error);
+            }
+        }
     }
 }

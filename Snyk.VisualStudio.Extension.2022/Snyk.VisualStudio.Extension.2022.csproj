@@ -151,8 +151,8 @@
     <Compile Include="Service\WorkspaceTrustService.cs" />
     <Compile Include="Settings\ErrorProviderExtensions.cs" />
     <Compile Include="Settings\FeatureFlags.cs" />
-    <Compile Include="Settings\HtmlSettingsPanel.cs">
-      <SubType>UserControl</SubType>
+    <Compile Include="Settings\HtmlSettingsWindow.xaml.cs">
+      <DependentUpon>HtmlSettingsWindow.xaml</DependentUpon>
     </Compile>
     <Compile Include="Settings\IPersistableOption.cs" />
     <Compile Include="Settings\ISnykCliOptionsDialogPage.cs" />
@@ -397,6 +397,10 @@
       <SubType>Designer</SubType>
     </Page>
     <Page Include="BranchSelectorDialogWindow.xaml">
+      <Generator>MSBuild:Compile</Generator>
+      <SubType>Designer</SubType>
+    </Page>
+    <Page Include="Settings\HtmlSettingsWindow.xaml">
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
     </Page>
