@@ -117,4 +117,22 @@
   <resheader name="writer">
     <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </resheader>
+  <data name="filterNoteLabel.Text" xml:space="preserve">
+    <value>Code Consistent Ignores helps your teams focus on important tasks by filtering out distractions. It 
+ensures that once an ignore is created, it is consistently respected regardless of how and where 
+the test is run and what branch is being tested. Note: These filters will have no effect if 
+Code Consistent Ignores is disabled for the organization.</value>
+  </data>
+  <metadata name="ignoredIssuesToolTip.TrayLocation" type="System.Drawing.Point, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a">
+    <value>169, 17</value>
+  </metadata>
+  <data name="cbIgnoredIssues.ToolTip" xml:space="preserve">
+    <value>Show Ignored Issues. Code Consistent Ignores helps your teams focus on important tasks by filtering out distractions. It ensures that once an ignore is created, it is consistently respected regardless of how and where the test is run and what branch is being tested. Note: These filters will have no effect if Code Consistent Ignores is disabled for the organization.</value>
+  </data>
+  <metadata name="openIssuesToolTip.TrayLocation" type="System.Drawing.Point, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a">
+    <value>17, 17</value>
+  </metadata>
+  <data name="cbOpenIssues.ToolTip" xml:space="preserve">
+    <value>Show Open Issues. Code Consistent Ignores helps your teams focus on important tasks by filtering out distractions. It ensures that once an ignore is created, it is consistently respected regardless of how and where the test is run and what branch is being tested. Note: These filters will have no effect if Code Consistent Ignores is disabled for the organization.</value>
+  </data>
 </root>

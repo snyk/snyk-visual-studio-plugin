@@ -117,11 +117,17 @@
   <resheader name="writer">
     <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </resheader>
-  <metadata name="errorProvider.TrayLocation" type="System.Drawing.Point, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a">
+  <metadata name="organizationToolTip.TrayLocation" type="System.Drawing.Point, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a">
     <value>17, 17</value>
   </metadata>
+  <data name="organizationTextBox.ToolTip" xml:space="preserve">
+    <value>Specify the organization (ID or name) for Snyk to run scans against. If the organization is provided manually, automatic organization selection is overridden. If the organization value is blank or invalid, the preferred organization defined in your web account settings will be used.</value>
+  </data>
+  <metadata name="errorProvider.TrayLocation" type="System.Drawing.Point, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a">
+    <value>305, 17</value>
+  </metadata>
   <metadata name="$this.TrayHeight" type="System.Int32, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089">
-    <value>156</value>
+    <value>25</value>
   </metadata>
   <data name="endpointDescriptionText.Text" xml:space="preserve">
     <value>If you're using SSO with Snyk and OAuth2, the custom endpoint configuration is 
@@ -129,13 +135,23 @@ automatically populated.
 For private instances, contact your team or account manager.
 Otherwise, for public regional instances, see the docs:</value>
   </data>
+  <data name="organizationDescriptionText.Text" xml:space="preserve">
+    <value>Specify the organization (ID or name) for Snyk to run scans against.
+
+Organization selection follows this order:
+1. Solution-specific settings (if configured)
+2. This global setting (if the solution-specific setting is empty)
+3. Your web account's preferred organization (if both above are empty)
+
+Manual organization settings override automatic organization selection.</value>
+  </data>
   <metadata name="ossInfoToolTip.TrayLocation" type="System.Drawing.Point, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a">
-    <value>140, 17</value>
+    <value>521, 17</value>
   </metadata>
   <metadata name="snykCodeSecurityInfoToolTip.TrayLocation" type="System.Drawing.Point, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a">
-    <value>270, 17</value>
+    <value>752, 17</value>
   </metadata>
   <metadata name="customCliPathFileDialog.TrayLocation" type="System.Drawing.Point, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a">
-    <value>680, 17</value>
+    <value>1138, 17</value>
   </metadata>
 </root>

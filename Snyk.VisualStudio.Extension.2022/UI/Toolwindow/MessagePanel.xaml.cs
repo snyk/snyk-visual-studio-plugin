@@ -170,7 +170,7 @@ namespace Snyk.VisualStudio.Extension.UI.Toolwindow
             this.testCodeNowButton.IsEnabled = true;
 
 
-            this.Context.TransitionTo(OverviewState.Instance);
+            this.Context.TransitionTo(RunScanState.Instance);
         }
 
 

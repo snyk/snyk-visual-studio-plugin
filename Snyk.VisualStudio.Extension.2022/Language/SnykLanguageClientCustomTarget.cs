@@ -3,13 +3,13 @@ using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
-using Microsoft.Extensions.DependencyInjection;
 using Microsoft.VisualStudio.Shell;
+using Microsoft.VisualStudio.Threading;
 using Newtonsoft.Json.Linq;
+using StreamJsonRpc;
 using Snyk.VisualStudio.Extension.Authentication;
 using Snyk.VisualStudio.Extension.Extension;
 using Snyk.VisualStudio.Extension.Service;
-using StreamJsonRpc;
 
 namespace Snyk.VisualStudio.Extension.Language
 {
@@ -19,7 +19,6 @@ namespace Snyk.VisualStudio.Extension.Language
         private readonly ConcurrentDictionary<string, IEnumerable<Issue>> snykCodeIssueDictionary = new();
         private readonly ConcurrentDictionary<string, IEnumerable<Issue>> snykOssIssueDictionary = new();
         private readonly ConcurrentDictionary<string, IEnumerable<Issue>> snykIaCIssueDictionary = new();
-
         public SnykLanguageClientCustomTarget(ISnykServiceProvider serviceProvider)
         {
             this.serviceProvider = serviceProvider;
@@ -68,7 +67,7 @@ namespace Snyk.VisualStudio.Extension.Language
                     snykCodeIssueDictionary.AddOrUpdate(parsedUri.UncAwareAbsolutePath(), issueList, (_, _) => issueList);
                     break;
                 case "oss":
-                     snykOssIssueDictionary.AddOrUpdate(parsedUri.UncAwareAbsolutePath(), issueList, (_, _) => issueList);
+                    snykOssIssueDictionary.AddOrUpdate(parsedUri.UncAwareAbsolutePath(), issueList, (_, _) => issueList);
                     break;
                 case "iac":
                     snykIaCIssueDictionary.AddOrUpdate(parsedUri.UncAwareAbsolutePath(), issueList, (_, _) => issueList);
@@ -115,7 +114,7 @@ namespace Snyk.VisualStudio.Extension.Language
             var queryParams = ParseQueryString(uri.Query);
             var issueId = queryParams["issueId"];
             var product = LspSourceToProduct(queryParams["product"].Replace("+", " "));
-            var action= queryParams["action"];
+            var action = queryParams["action"];
             if (action != "showInDetailPanel")
             {
                 return;
@@ -148,8 +147,87 @@ namespace Snyk.VisualStudio.Extension.Language
         {
             var folderConfigs = arg.TryParse<FolderConfigsParam>();
             if (folderConfigs == null) return;
+
             serviceProvider.Options.FolderConfigs = folderConfigs.FolderConfigs;
-            serviceProvider.SnykOptionsManager.Save(serviceProvider.Options);
+
+            // Get current solution folder path
+            var currentSolutionPath = await serviceProvider.SolutionService.GetSolutionFolderAsync();
+            var matchingFolderConfig = FindMatchingFolderConfig(folderConfigs.FolderConfigs, currentSolutionPath);
+
+            if (matchingFolderConfig != null)
+            {
+                // Extract auto-determined organization from matching folder config
+                // Language Server is authoritative - always use its data
+                if (!string.IsNullOrEmpty(matchingFolderConfig.AutoDeterminedOrg))
+                {
+                    // Save as auto-determined organization (from Language Server)
+                    await serviceProvider.SnykOptionsManager.SaveAutoDeterminedOrgAsync(matchingFolderConfig.AutoDeterminedOrg);
+                }
+
+                // Extract preferred organization from matching folder config
+                // Language Server is authoritative - always use its data, even if empty
+                await serviceProvider.SnykOptionsManager.SavePreferredOrgAsync(matchingFolderConfig.PreferredOrg);
+
+                // Extract orgSetByUser flag from Language Server
+                await serviceProvider.SnykOptionsManager.SaveOrgSetByUserAsync(matchingFolderConfig.OrgSetByUser);
+
+                // Do NOT update global organization when receiving folder configs from Language Server.
+                // The global organization should remain as the user set it and be used as a fallback.
+                // The Language Server handles the fallback logic: project-specific → global → web account preferred.
+
+                // Extract additional parameters from matching folder config
+                // Language Server is authoritative - always use its data
+                if (matchingFolderConfig.AdditionalParameters != null && matchingFolderConfig.AdditionalParameters.Count > 0)
+                {
+                    var additionalParams = string.Join(" ", matchingFolderConfig.AdditionalParameters);
+                    await serviceProvider.SnykOptionsManager.SaveAdditionalOptionsAsync(additionalParams);
+                }
+            }
+
+            serviceProvider.SnykOptionsManager.Save(serviceProvider.Options, false);
+
+            if (serviceProvider.Options.AutoScan)
+            {
+                var isFolderTrusted = await this.serviceProvider.TasksService.IsFolderTrustedAsync();
+                await TaskScheduler.Default;
+                if (!isFolderTrusted)
+                    return;
+
+                if (!serviceProvider.Options.InternalAutoScan)
+                {
+                    serviceProvider.Options.InternalAutoScan = true;
+                    serviceProvider.TasksService.ScanAsync().FireAndForget();
+                }
+            }
+        }
+
+        private FolderConfig FindMatchingFolderConfig(List<FolderConfig> folderConfigs, string currentSolutionPath)
+        {
+            if (folderConfigs == null || string.IsNullOrEmpty(currentSolutionPath)) return null;
+
+            foreach (var folderConfig in folderConfigs)
+            {
+                if (string.IsNullOrEmpty(folderConfig.FolderPath)) continue;
+
+                // Check for exact match
+                if (folderConfig.FolderPath.Equals(currentSolutionPath, StringComparison.OrdinalIgnoreCase))
+                {
+                    return folderConfig;
+                }
+
+                // Check if current path is within the config path (subfolder)
+                // Note: This is a defensive check. In normal operation, the Language Server sends folder configs
+                // that match workspace folders exactly, so exact matches should be sufficient. This subfolder
+                // check handles edge cases where paths might not align perfectly (e.g., path normalization differences).
+                var trimmedConfigPath = folderConfig.FolderPath.TrimEnd('\\', '/');
+                if (currentSolutionPath.StartsWith(trimmedConfigPath + "\\", StringComparison.OrdinalIgnoreCase) ||
+                    currentSolutionPath.StartsWith(trimmedConfigPath + "/", StringComparison.OrdinalIgnoreCase))
+                {
+                    return folderConfig;
+                }
+            }
+
+            return null;
         }
 
         [JsonRpcMethod(LsConstants.SnykScanSummary)]
@@ -205,7 +283,8 @@ namespace Snyk.VisualStudio.Extension.Language
 
             serviceProvider.Options.TrustedFolders = new HashSet<string>(trustedFolders.TrustedFolders);
             this.serviceProvider.SnykOptionsManager.Save(serviceProvider.Options, false);
-            await serviceProvider.LanguageClientManager.DidChangeConfigurationAsync(SnykVSPackage.Instance.DisposalToken);
+            // Don't call DidChangeConfigurationAsync here as it creates an infinite loop
+            // The Language Server already knows about the trusted folders changes
         }
 
         private async Task ProcessCodeScanAsync(LsAnalysisResult lsAnalysisResult)
@@ -218,7 +297,7 @@ namespace Snyk.VisualStudio.Extension.Language
             }
             if (lsAnalysisResult.Status == "error")
             {
-                serviceProvider.TasksService.OnSnykCodeError(lsAnalysisResult.ErrorMessage);
+                serviceProvider.TasksService.OnSnykCodeError(lsAnalysisResult.PresentableError);
                 serviceProvider.TasksService.FireTaskFinished();
                 return;
             }
@@ -237,7 +316,7 @@ namespace Snyk.VisualStudio.Extension.Language
             }
             if (lsAnalysisResult.Status == "error")
             {
-                serviceProvider.TasksService.FireOssError(lsAnalysisResult.ErrorMessage);
+                serviceProvider.TasksService.FireOssError(lsAnalysisResult.PresentableError);
                 serviceProvider.TasksService.FireTaskFinished();
                 return;
             }
@@ -257,7 +336,7 @@ namespace Snyk.VisualStudio.Extension.Language
             }
             if (lsAnalysisResult.Status == "error")
             {
-                serviceProvider.TasksService.OnIacError(lsAnalysisResult.ErrorMessage);
+                serviceProvider.TasksService.OnIacError(lsAnalysisResult.PresentableError);
                 serviceProvider.TasksService.FireTaskFinished();
                 return;
             }

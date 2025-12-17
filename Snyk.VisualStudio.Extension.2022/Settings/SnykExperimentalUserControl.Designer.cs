@@ -28,61 +28,69 @@
         /// </summary>
         private void InitializeComponent()
         {
+            this.components = new System.ComponentModel.Container();
+            System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(SnykExperimentalUserControl));
             this.experimentalGroupBox = new System.Windows.Forms.GroupBox();
-            this.mainPanel = new System.Windows.Forms.Panel();
             this.ignoreGroupbox = new System.Windows.Forms.GroupBox();
+            this.filterNoteLabel = new System.Windows.Forms.Label();
             this.cbIgnoredIssues = new System.Windows.Forms.CheckBox();
             this.cbOpenIssues = new System.Windows.Forms.CheckBox();
+            this.mainPanel = new System.Windows.Forms.Panel();
+            this.openIssuesToolTip = new System.Windows.Forms.ToolTip(this.components);
+            this.ignoredIssuesToolTip = new System.Windows.Forms.ToolTip(this.components);
             this.experimentalGroupBox.SuspendLayout();
-            this.mainPanel.SuspendLayout();
             this.ignoreGroupbox.SuspendLayout();
+            this.mainPanel.SuspendLayout();
             this.SuspendLayout();
             // 
             // experimentalGroupBox
             // 
             this.experimentalGroupBox.Controls.Add(this.ignoreGroupbox);
-            this.experimentalGroupBox.Location = new System.Drawing.Point(3, 14);
-            this.experimentalGroupBox.Margin = new System.Windows.Forms.Padding(3, 2, 3, 2);
+            this.experimentalGroupBox.Location = new System.Drawing.Point(2, 11);
+            this.experimentalGroupBox.Margin = new System.Windows.Forms.Padding(2);
             this.experimentalGroupBox.Name = "experimentalGroupBox";
-            this.experimentalGroupBox.Padding = new System.Windows.Forms.Padding(11, 10, 11, 10);
-            this.experimentalGroupBox.Size = new System.Drawing.Size(747, 180);
+            this.experimentalGroupBox.Padding = new System.Windows.Forms.Padding(8);
+            this.experimentalGroupBox.Size = new System.Drawing.Size(590, 195);
             this.experimentalGroupBox.TabIndex = 21;
             this.experimentalGroupBox.TabStop = false;
             this.experimentalGroupBox.Text = "Experimental";
             // 
-            // mainPanel
-            // 
-            this.mainPanel.AutoScroll = true;
-            this.mainPanel.BorderStyle = System.Windows.Forms.BorderStyle.FixedSingle;
-            this.mainPanel.Controls.Add(this.experimentalGroupBox);
-            this.mainPanel.Dock = System.Windows.Forms.DockStyle.Fill;
-            this.mainPanel.Location = new System.Drawing.Point(0, 0);
-            this.mainPanel.Name = "mainPanel";
-            this.mainPanel.Size = new System.Drawing.Size(832, 527);
-            this.mainPanel.TabIndex = 2;
-            // 
             // ignoreGroupbox
             // 
+            this.ignoreGroupbox.Controls.Add(this.filterNoteLabel);
             this.ignoreGroupbox.Controls.Add(this.cbIgnoredIssues);
             this.ignoreGroupbox.Controls.Add(this.cbOpenIssues);
-            this.ignoreGroupbox.Location = new System.Drawing.Point(14, 28);
+            this.ignoreGroupbox.Location = new System.Drawing.Point(10, 23);
+            this.ignoreGroupbox.Margin = new System.Windows.Forms.Padding(2, 3, 2, 3);
             this.ignoreGroupbox.Name = "ignoreGroupbox";
-            this.ignoreGroupbox.Size = new System.Drawing.Size(240, 80);
+            this.ignoreGroupbox.Padding = new System.Windows.Forms.Padding(2, 3, 2, 3);
+            this.ignoreGroupbox.Size = new System.Drawing.Size(562, 150);
             this.ignoreGroupbox.TabIndex = 24;
             this.ignoreGroupbox.TabStop = false;
             this.ignoreGroupbox.Text = "Show the following issues";
+            // 
+            // filterNoteLabel
+            // 
+            this.filterNoteLabel.AutoSize = true;
+            this.filterNoteLabel.Location = new System.Drawing.Point(14, 79);
+            this.filterNoteLabel.Margin = new System.Windows.Forms.Padding(2, 0, 2, 0);
+            this.filterNoteLabel.Name = "filterNoteLabel";
+            this.filterNoteLabel.Size = new System.Drawing.Size(461, 52);
+            this.filterNoteLabel.TabIndex = 26;
+            this.filterNoteLabel.Text = resources.GetString("filterNoteLabel.Text");
             // 
             // cbIgnoredIssues
             // 
             this.cbIgnoredIssues.AutoSize = true;
             this.cbIgnoredIssues.Checked = true;
             this.cbIgnoredIssues.CheckState = System.Windows.Forms.CheckState.Checked;
-            this.cbIgnoredIssues.Location = new System.Drawing.Point(21, 51);
-            this.cbIgnoredIssues.Margin = new System.Windows.Forms.Padding(3, 2, 3, 2);
+            this.cbIgnoredIssues.Location = new System.Drawing.Point(16, 54);
+            this.cbIgnoredIssues.Margin = new System.Windows.Forms.Padding(2);
             this.cbIgnoredIssues.Name = "cbIgnoredIssues";
-            this.cbIgnoredIssues.Size = new System.Drawing.Size(117, 20);
+            this.cbIgnoredIssues.Size = new System.Drawing.Size(125, 17);
             this.cbIgnoredIssues.TabIndex = 25;
-            this.cbIgnoredIssues.Text = "Ignored issues";
+            this.cbIgnoredIssues.Text = "Show Ignored Issues";
+            this.ignoredIssuesToolTip.SetToolTip(this.cbIgnoredIssues, resources.GetString("cbIgnoredIssues.ToolTip"));
             this.cbIgnoredIssues.UseVisualStyleBackColor = true;
             this.cbIgnoredIssues.CheckedChanged += new System.EventHandler(this.cbIgnoredIssues_CheckedChanged);
             // 
@@ -91,26 +99,40 @@
             this.cbOpenIssues.AutoSize = true;
             this.cbOpenIssues.Checked = true;
             this.cbOpenIssues.CheckState = System.Windows.Forms.CheckState.Checked;
-            this.cbOpenIssues.Location = new System.Drawing.Point(21, 22);
-            this.cbOpenIssues.Margin = new System.Windows.Forms.Padding(3, 2, 3, 2);
+            this.cbOpenIssues.Location = new System.Drawing.Point(16, 29);
+            this.cbOpenIssues.Margin = new System.Windows.Forms.Padding(2);
             this.cbOpenIssues.Name = "cbOpenIssues";
-            this.cbOpenIssues.Size = new System.Drawing.Size(104, 20);
+            this.cbOpenIssues.Size = new System.Drawing.Size(115, 17);
             this.cbOpenIssues.TabIndex = 24;
-            this.cbOpenIssues.Text = "Open issues";
+            this.cbOpenIssues.Text = "Show Open Issues";
+            this.openIssuesToolTip.SetToolTip(this.cbOpenIssues, resources.GetString("cbOpenIssues.ToolTip"));
             this.cbOpenIssues.UseVisualStyleBackColor = true;
             this.cbOpenIssues.CheckedChanged += new System.EventHandler(this.cbOpenIssues_CheckedChanged);
             // 
+            // mainPanel
+            // 
+            this.mainPanel.AutoScroll = true;
+            this.mainPanel.BorderStyle = System.Windows.Forms.BorderStyle.FixedSingle;
+            this.mainPanel.Controls.Add(this.experimentalGroupBox);
+            this.mainPanel.Dock = System.Windows.Forms.DockStyle.Fill;
+            this.mainPanel.Location = new System.Drawing.Point(0, 0);
+            this.mainPanel.Margin = new System.Windows.Forms.Padding(2, 3, 2, 3);
+            this.mainPanel.Name = "mainPanel";
+            this.mainPanel.Size = new System.Drawing.Size(624, 428);
+            this.mainPanel.TabIndex = 2;
+            // 
             // SnykExperimentalUserControl
             // 
-            this.AutoScaleDimensions = new System.Drawing.SizeF(8F, 16F);
+            this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.Controls.Add(this.mainPanel);
+            this.Margin = new System.Windows.Forms.Padding(2, 3, 2, 3);
             this.Name = "SnykExperimentalUserControl";
-            this.Size = new System.Drawing.Size(832, 527);
+            this.Size = new System.Drawing.Size(624, 428);
             this.experimentalGroupBox.ResumeLayout(false);
-            this.mainPanel.ResumeLayout(false);
             this.ignoreGroupbox.ResumeLayout(false);
             this.ignoreGroupbox.PerformLayout();
+            this.mainPanel.ResumeLayout(false);
             this.ResumeLayout(false);
 
         }
@@ -120,7 +142,10 @@
         private System.Windows.Forms.GroupBox experimentalGroupBox;
         private System.Windows.Forms.Panel mainPanel;
         private System.Windows.Forms.GroupBox ignoreGroupbox;
+        private System.Windows.Forms.Label filterNoteLabel;
         private System.Windows.Forms.CheckBox cbIgnoredIssues;
         private System.Windows.Forms.CheckBox cbOpenIssues;
+        private System.Windows.Forms.ToolTip openIssuesToolTip;
+        private System.Windows.Forms.ToolTip ignoredIssuesToolTip;
     }
 }
