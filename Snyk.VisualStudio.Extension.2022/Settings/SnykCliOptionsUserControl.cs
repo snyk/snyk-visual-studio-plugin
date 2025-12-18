@@ -1,29 +1,24 @@
-﻿using System.Collections.Generic;
+﻿// ABOUTME: This file implements the WinForms user control for Snyk CLI-related settings
+// ABOUTME: It provides UI for configuring CLI path, release channel, download URL, and automatic updates
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.Windows.Forms;
+using Microsoft.VisualStudio.Shell;
+using Snyk.VisualStudio.Extension;
 using Snyk.VisualStudio.Extension.CLI;
 using Snyk.VisualStudio.Extension.Service;
 
 namespace Snyk.VisualStudio.Extension.Settings
 {
-    public partial class SnykCliOptionsUserControl : UserControl
+    public partial class SnykCliOptionsUserControl : BaseSnykUserControl
     {
-        private readonly ISnykServiceProvider serviceProvider;
-        public ISnykOptions OptionsMemento { get; set; }
-
-        public SnykCliOptionsUserControl(ISnykServiceProvider serviceProvider)
+        public SnykCliOptionsUserControl(ISnykServiceProvider serviceProvider) : base(serviceProvider)
         {
-            this.serviceProvider = serviceProvider;
-            OptionsMemento = serviceProvider.SnykOptionsManager.Load();
             InitializeComponent();
-            this.Initialize();
+            UpdateViewFromOptions();
         }
-        private void Initialize()
-        {
-            this.UpdateViewFromOptions();
-        }
- 
-        private void UpdateViewFromOptions()
+
+        protected override void UpdateViewFromOptions()
         {
             this.manageBinariesAutomaticallyCheckbox.Checked = OptionsMemento.BinariesAutoUpdate;
             this.cliDownloadUrlTextBox.Text = OptionsMemento.CliDownloadUrl;

@@ -1,4 +1,6 @@
-﻿using System.Collections.Generic;
+﻿// ABOUTME: This file defines the interface for Snyk options that can be persisted to disk storage
+// ABOUTME: It contains all configuration properties that need to be saved and restored across VS sessions
+using System.Collections.Generic;
 using Snyk.VisualStudio.Extension.Authentication;
 using Snyk.VisualStudio.Extension.Language;
 
@@ -71,4 +73,13 @@ public interface IPersistableOptions
     List<FolderConfig> FolderConfigs { get; set; }
     string CurrentCliVersion { get; set; }
     bool AnalyticsPluginInstalledSent { get; set; }
+
+    // Severity filters
+    bool FilterCritical { get; set; }
+    bool FilterHigh { get; set; }
+    bool FilterMedium { get; set; }
+    bool FilterLow { get; set; }
+
+    string AdditionalEnv { get; set; }
+    int? RiskScoreThreshold { get; set; }
 }

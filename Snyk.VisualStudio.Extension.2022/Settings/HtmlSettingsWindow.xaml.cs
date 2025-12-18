@@ -25,7 +25,6 @@ namespace Snyk.VisualStudio.Extension.Settings
         private readonly ISnykOptionsManager optionsManager;
         private readonly ISnykServiceProvider serviceProvider;
         private ConfigScriptingBridge scriptingBridge;
-        private bool saveCompleted = false;
 
         public static readonly DependencyProperty IsDirtyProperty =
             DependencyProperty.Register(
@@ -87,23 +86,6 @@ namespace Snyk.VisualStudio.Extension.Settings
                             IsDirty = false;
                         });
                     },
-                    onSaveComplete: () =>
-                    {
-                        // Persist settings to storage
-                        optionsManager.Save(options);
-
-                        // Notify Language Server of configuration changes
-                        ThreadHelper.JoinableTaskFactory.RunAsync(async () =>
-                        {
-                            if (LanguageClientHelper.IsLanguageServerReady())
-                            {
-                                await serviceProvider.LanguageClientManager.DidChangeConfigurationAsync(
-                                    SnykVSPackage.Instance.DisposalToken);
-                            }
-                        }).FireAndForget();
-
-                        saveCompleted = true;
-                    },
                     optionsManager: optionsManager,
                     serviceProvider: serviceProvider);
 
@@ -164,11 +146,15 @@ namespace Snyk.VisualStudio.Extension.Settings
                         languageServerRpc,
                         System.Threading.CancellationToken.None);
                     if (!string.IsNullOrEmpty(lsHtml))
+                    {
+                        Logger.Information("Successfully loaded settings HTML from Language Server");
                         return lsHtml;
+                    }
+                    Logger.Warning("Language Server returned empty HTML on attempt {Attempt}", i + 1);
                 }
-                catch
+                catch (Exception ex)
                 {
-                    // Ignore and retry
+                    Logger.Warning(ex, "Failed to get HTML from Language Server on attempt {Attempt} of 3", i + 1);
                 }
 
                 if (i < 2)
@@ -176,6 +162,7 @@ namespace Snyk.VisualStudio.Extension.Settings
             }
 
             // Fall back to embedded HTML
+            Logger.Warning("Falling back to embedded HTML after 3 failed Language Server attempts");
             return HtmlResourceLoader.LoadFallbackHtml(options);
         }
 
@@ -203,7 +190,6 @@ namespace Snyk.VisualStudio.Extension.Settings
                     window.__ideSaveAttemptFinished__ = function(status) {
                         window.external.__ideSaveAttemptFinished__(status);
                     };
-                    window.__IS_IDE_AUTOSAVE_ENABLED__ = false;
                 ";
 
                 var scriptElement = doc.CreateElement("script");
@@ -225,9 +211,6 @@ namespace Snyk.VisualStudio.Extension.Settings
                 OkButton.IsEnabled = false;
                 CancelButton.IsEnabled = false;
 
-                // Reset save completion flag
-                saveCompleted = false;
-
                 // Call the LS HTML's exposed function to collect and save config
                 try
                 {
@@ -235,7 +218,7 @@ namespace Snyk.VisualStudio.Extension.Settings
 
                     // Wait for save to complete (with timeout)
                     var startTime = DateTime.Now;
-                    while (!saveCompleted && (DateTime.Now - startTime).TotalSeconds < 5)
+                    while (!scriptingBridge.IsSaveComplete && (DateTime.Now - startTime).TotalSeconds < 5)
                     {
                         await Task.Delay(100);
                     }

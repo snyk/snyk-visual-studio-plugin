@@ -1,4 +1,6 @@
-﻿using System;
+﻿// ABOUTME: This file implements custom JSON-RPC message handlers for the Snyk Language Client
+// ABOUTME: It processes diagnostics, authentication, and scan results from the Language Server
+using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
@@ -185,20 +187,6 @@ namespace Snyk.VisualStudio.Extension.Language
             }
 
             serviceProvider.SnykOptionsManager.Save(serviceProvider.Options, false);
-
-            if (serviceProvider.Options.AutoScan)
-            {
-                var isFolderTrusted = await this.serviceProvider.TasksService.IsFolderTrustedAsync();
-                await TaskScheduler.Default;
-                if (!isFolderTrusted)
-                    return;
-
-                if (!serviceProvider.Options.InternalAutoScan)
-                {
-                    serviceProvider.Options.InternalAutoScan = true;
-                    serviceProvider.TasksService.ScanAsync().FireAndForget();
-                }
-            }
         }
 
         private FolderConfig FindMatchingFolderConfig(List<FolderConfig> folderConfigs, string currentSolutionPath)

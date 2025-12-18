@@ -1,26 +1,24 @@
-﻿using System;
+﻿// ABOUTME: This file implements the WinForms user control for experimental feature settings
+// ABOUTME: It provides UI for configuring preview features like delta findings and consistent ignores
+using System;
 using System.Windows.Forms;
 using Microsoft.VisualStudio.Shell;
+using Snyk.VisualStudio.Extension;
 using Snyk.VisualStudio.Extension.Language;
 using Snyk.VisualStudio.Extension.Service;
 
 namespace Snyk.VisualStudio.Extension.Settings
 {
-    public partial class SnykExperimentalUserControl : UserControl
+    public partial class SnykExperimentalUserControl : BaseSnykUserControl
     {
-        private readonly ISnykServiceProvider serviceProvider;
-        public ISnykOptions OptionsMemento { get; set; }
-
-        public SnykExperimentalUserControl(ISnykServiceProvider serviceProvider)
+        public SnykExperimentalUserControl(ISnykServiceProvider serviceProvider) : base(serviceProvider)
         {
-            this.serviceProvider = serviceProvider;
-            OptionsMemento = serviceProvider.SnykOptionsManager.Load();
             this.Load += OnLoad;
             InitializeComponent();
-            this.UpdateViewFromOptions();
+            UpdateViewFromOptions();
         }
 
-        private void UpdateViewFromOptions()
+        protected override void UpdateViewFromOptions()
         {
             this.cbIgnoredIssues.Checked = OptionsMemento.IgnoredIssuesEnabled;
             this.cbOpenIssues.Checked = OptionsMemento.OpenIssuesEnabled;
@@ -78,5 +76,6 @@ namespace Snyk.VisualStudio.Extension.Settings
                     System.Windows.MessageBoxImage.Error);
             }
         }
+
     }
 }

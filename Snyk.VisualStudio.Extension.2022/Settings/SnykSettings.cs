@@ -1,4 +1,6 @@
-﻿using System;
+﻿// ABOUTME: This file defines the data structure for persisted Snyk settings stored on disk
+// ABOUTME: It contains global and solution-specific configuration including authentication tokens, scan preferences, and folder configs
+using System;
 using System.Collections.Generic;
 using Snyk.VisualStudio.Extension.Authentication;
 using Snyk.VisualStudio.Extension.Download;
@@ -71,5 +73,11 @@ namespace Snyk.VisualStudio.Extension.Settings
         public List<FolderConfig> FolderConfigs { get; set; }
         public bool EnableDeltaFindings { get; set; }
         public bool AnalyticsPluginInstalledSent { get; set; }
+        public bool FilterCritical { get; set; } = true;
+        public bool FilterHigh { get; set; } = true;
+        public bool FilterMedium { get; set; } = true;
+        public bool FilterLow { get; set; } = true;
+        public string AdditionalEnv { get; set; } = string.Empty;
+        public int? RiskScoreThreshold { get; set; } = null;
     }
 }

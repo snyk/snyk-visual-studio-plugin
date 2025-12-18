@@ -1,4 +1,6 @@
-﻿using System.Linq;
+﻿// ABOUTME: This file converts Visual Studio IDE settings into Language Server initialization options
+// ABOUTME: It bridges the gap between IDE configuration and the Snyk Language Server protocol format
+using System.Linq;
 using Microsoft.VisualStudio.Shell;
 using Snyk.VisualStudio.Extension.CLI;
 using Snyk.VisualStudio.Extension.Service;
@@ -37,7 +39,14 @@ namespace Snyk.VisualStudio.Extension.Language
                     OpenIssues = options.OpenIssuesEnabled,
                     IgnoredIssues = options.IgnoredIssuesEnabled,
                 },
-                ScanningMode = options.InternalAutoScan ? "auto" : "manual",
+                FilterSeverity = new FilterSeverityOptions
+                {
+                    Critical = options.FilterCritical,
+                    High = options.FilterHigh,
+                    Medium = options.FilterMedium,
+                    Low = options.FilterLow,
+                },
+                ScanningMode = options.AutoScan ? "auto" : "manual",
 #pragma warning disable VSTHRD104
                 AdditionalParams = ThreadHelper.JoinableTaskFactory.Run(() => this.serviceProvider.SnykOptionsManager.GetAdditionalOptionsAsync()),
 #pragma warning restore VSTHRD104
@@ -53,7 +62,10 @@ namespace Snyk.VisualStudio.Extension.Language
                 OutputFormat = "plain",
                 DeviceId = options.DeviceId,
                 EnableDeltaFindings = options.EnableDeltaFindings.ToString().ToLower(),
-                FolderConfigs = options.FolderConfigs
+                FolderConfigs = options.FolderConfigs,
+                BaseUrl = options.CliDownloadUrl,
+                AdditionalEnv = options.AdditionalEnv,
+                RiskScoreThreshold = options.RiskScoreThreshold
             };
             return initializationOptions;
         }
