@@ -263,6 +263,8 @@ namespace Snyk.VisualStudio.Extension.Settings
                 SetBrowserFeatureControlKey("FEATURE_BROWSER_EMULATION", appName, 11001); // IE11 mode
                 SetBrowserFeatureControlKey("FEATURE_DISABLE_NAVIGATION_SOUNDS", appName, 1);
                 SetBrowserFeatureControlKey("FEATURE_SCRIPTURL_MITIGATION", appName, 1);
+                SetBrowserFeatureControlKey("FEATURE_96DPI_PIXEL", appName, 1); // Force 96 DPI pixel scaling
+                SetBrowserFeatureControlKey("FEATURE_NINPUT_LEGACYMODE", appName, 0); // Disable legacy input mode
             }
             catch (Exception ex)
             {

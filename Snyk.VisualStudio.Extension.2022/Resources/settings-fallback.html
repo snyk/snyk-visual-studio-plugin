@@ -1,291 +1,331 @@
+<!--
+  Fallback settings page shown when the Language Server is not yet available.
+  Once the CLI is downloaded and the LS is running, the full settings
+  panel will be served by the LS and this fallback will be replaced automatically.
+
+  Template placeholders:
+    {{MANAGE_BINARIES_CHECKED}} - "checked" or ""
+    {{CLI_BASE_DOWNLOAD_URL}} - download URL string
+    {{CLI_PATH}} - CLI path string
+    {{CHANNEL_STABLE_SELECTED}} - "selected" or ""
+    {{CHANNEL_RC_SELECTED}} - "selected" or ""
+    {{CHANNEL_PREVIEW_SELECTED}} - "selected" or ""
+    {{INSECURE_CHECKED}} - "checked" or ""
+-->
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta http-equiv="X-UA-Compatible" content="IE=edge">
-    <title>Snyk Settings</title>
-    <style>
-        * {
-            box-sizing: border-box;
-            margin: 0;
-            padding: 0;
-        }
+  <meta charset="UTF-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Snyk Settings</title>
+  <style nonce="ideNonce">
+    :root {
+      /* Spacing - fixed values that don't need theme adaptation */
+      --container-padding: 20px;
+      --section-padding: 15px;
+      --input-padding: 8px;
+      --form-group-margin: 15px;
+      --section-margin: 30px;
+      --checkbox-gap: 8px;
+      --label-margin-bottom: 5px;
 
-        body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            font-size: 13px;
-            color: {{TEXT_COLOR}};
-            background-color: {{BACKGROUND_COLOR}};
-            padding: 20px;
-            line-height: 1.6;
-        }
+      /* Border radius - fixed values */
+      --border-radius: 4px;
+      --border-radius-small: 2px;
 
-        .container {
-            max-width: 800px;
-            margin: 0 auto;
-        }
+      /* Layout - fixed values */
+      --max-form-width: 1400px;
 
-        h1 {
-            font-size: 24px;
-            margin-bottom: 10px;
-            font-weight: 600;
-        }
+      /* Typography - fixed values */
+      --h1-font-size: 24px;
+      --h2-font-size: 18px;
+      --base-font-size: 13px;
+      --small-font-size: 12px;
+      --tiny-font-size: 11px;
 
-        h2 {
-            font-size: 18px;
-            margin: 30px 0 15px 0;
-            font-weight: 600;
-            border-bottom: 1px solid {{BORDER_COLOR}};
-            padding-bottom: 8px;
-        }
+      /* Badge styling - fixed values matching Bootstrap */
+      --badge-background-color: #6c757d;
+      --badge-color: #fff;
+      --badge-padding: 2px 6px;
 
-        .info-banner {
-            background-color: {{INFO_BG_COLOR}};
-            border-left: 4px solid {{INFO_BORDER_COLOR}};
-            padding: 12px 16px;
-            margin: 20px 0;
-        }
+      /* Tooltip styling - fixed values */
+      --tooltip-background-color: #000;
+      --tooltip-color: #fff;
+    }
 
-        .info-banner p {
-            margin: 8px 0;
-        }
+    body {
+      font-family: var(--default-font);
+      font-size: var(--base-font-size);
+      color: var(--text-color);
+      background-color: var(--background-color);
+      padding: var(--container-padding);
+      margin: 0;
+    }
 
-        .form-group {
-            margin-bottom: 20px;
-        }
+    form {
+      max-width: var(--max-form-width);
+      margin: 0 auto;
+    }
 
-        label {
-            display: block;
-            margin-bottom: 6px;
-            font-weight: 500;
-        }
+    h1 {
+      font-size: var(--h1-font-size);
+      margin-bottom: var(--container-padding);
+      color: var(--text-color);
+      max-width: var(--max-form-width);
+      margin-left: auto;
+      margin-right: auto;
+    }
 
-        input[type="text"],
-        select {
-            width: 100%;
-            padding: 8px 12px;
-            background-color: {{INPUT_BACKGROUND}};
-            color: {{INPUT_FOREGROUND}};
-            border: 1px solid {{INPUT_BORDER}};
-            font-family: inherit;
-            font-size: inherit;
-        }
+    h2 {
+      font-size: var(--h2-font-size);
+      margin-top: 0;
+      margin-bottom: var(--section-padding);
+      color: var(--text-color);
+      border-bottom: 1px solid var(--border-color);
+      padding-bottom: var(--checkbox-gap);
+      flex-shrink: 0;
+    }
 
-        input[type="text"]:focus,
-        select:focus {
-            outline: none;
-            border-color: {{FOCUS_BORDER}};
-        }
+    .section {
+      margin-bottom: var(--section-margin);
+      padding: var(--section-padding);
+      background-color: var(--section-background-color);
+      border-radius: var(--border-radius);
+      display: flex;
+      flex-direction: column;
+    }
 
-        input[type="checkbox"] {
-            margin-right: 8px;
-            cursor: pointer;
-        }
+    .form-group {
+      margin-bottom: var(--form-group-margin);
+      flex-grow: 1;
+      display: flex;
+      flex-direction: column;
+    }
 
-        .checkbox-group {
-            margin-bottom: 12px;
-        }
+    label {
+      display: block;
+      margin-bottom: var(--label-margin-bottom);
+      font-weight: 600;
+      color: var(--text-color);
+    }
 
-        .checkbox-group label {
-            margin: 0;
-            font-weight: 400;
-            cursor: pointer;
-            display: inline;
-        }
+    .checkbox-label {
+      display: flex;
+      align-items: center;
+      font-weight: normal;
+      cursor: pointer;
+    }
 
-        .help-text {
-            font-size: 12px;
-            color: {{TEXT_COLOR}};
-            opacity: 0.7;
-            margin-top: 4px;
-        }
+    .checkbox-label input[type="checkbox"] {
+      margin-right: var(--checkbox-gap);
+    }
 
-        .error-message {
-            background-color: {{ERROR_BG_COLOR}};
-            border-left: 4px solid {{ERROR_BORDER_COLOR}};
-            padding: 12px 16px;
-            margin: 20px 0;
-            display: none;
-        }
+    input[type="text"],
+    select {
+      width: 100%;
+      padding: var(--input-padding);
+      background-color: var(--input-background-color);
+      color: var(--text-color);
+      border: 1px solid var(--border-color);
+      border-radius: var(--border-radius-small);
+      box-sizing: border-box;
+      font-family: inherit;
+      font-size: inherit;
+    }
 
-        .error-message.visible {
-            display: block;
-        }
+    input:focus,
+    select:focus {
+      outline: 1px solid var(--focus-color);
+      outline-offset: -1px;
+    }
 
-        .error-message p {
-            color: {{ERROR_TEXT_COLOR}};
-            font-weight: 500;
-        }
+    .info-message {
+      padding: var(--section-padding);
+      background-color: var(--section-background-color);
+      border: 1px solid var(--focus-color);
+      border-radius: var(--border-radius);
+      margin-bottom: var(--container-padding);
+      max-width: var(--max-form-width);
+      margin-left: auto;
+      margin-right: auto;
+    }
 
-        .divider {
-            height: 1px;
-            background-color: {{BORDER_COLOR}};
-            margin: 30px 0;
-        }
+    a {
+      color: var(--link-color);
+    }
 
-        .section-description {
-            margin-bottom: 20px;
-            opacity: 0.8;
-        }
-    </style>
+    /* Bootstrap badge base styles */
+    .badge {
+      --bs-badge-padding-x: 0.65em;
+      --bs-badge-padding-y: 0.35em;
+      --bs-badge-font-size: 0.75em;
+      --bs-badge-font-weight: 700;
+      --bs-badge-border-radius: 0.375rem;
+      display: inline-block;
+      padding: var(--bs-badge-padding-y) var(--bs-badge-padding-x);
+      font-size: var(--bs-badge-font-size);
+      font-weight: var(--bs-badge-font-weight);
+      line-height: 1;
+      color: var(--badge-color);
+      text-align: center;
+      white-space: nowrap;
+      vertical-align: baseline;
+      border-radius: var(--bs-badge-border-radius);
+    }
+
+    .bg-secondary {
+      background-color: var(--badge-background-color) !important;
+    }
+
+    /* Tooltip overrides to match LS HTML */
+    .badge.bg-secondary[data-bs-toggle="tooltip"] {
+      margin-left: var(--checkbox-gap);
+      vertical-align: middle;
+      cursor: help;
+      font-size: var(--tiny-font-size);
+      padding: var(--badge-padding);
+      position: relative;
+    }
+
+    .badge.bg-secondary[data-bs-toggle="tooltip"]:hover::after {
+      content: attr(title);
+      position: absolute;
+      left: 50%;
+      transform: translateX(-50%);
+      bottom: 100%;
+      margin-bottom: var(--checkbox-gap);
+      padding: var(--checkbox-gap) var(--small-font-size);
+      background-color: var(--tooltip-background-color);
+      color: var(--tooltip-color);
+      border-radius: var(--border-radius);
+      font-size: var(--small-font-size);
+      font-weight: normal;
+      white-space: normal;
+      width: 250px;
+      max-width: 300px;
+      z-index: 1000;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+    }
+
+    .badge.bg-secondary[data-bs-toggle="tooltip"]:hover::before {
+      content: '';
+      position: absolute;
+      left: 50%;
+      transform: translateX(-50%);
+      bottom: 100%;
+      margin-bottom: var(--border-radius-small);
+      border: 6px solid transparent;
+      border-top-color: var(--tooltip-background-color);
+    }
+  </style>
 </head>
 <body>
-    <div class="container">
-        <h1>Snyk Settings</h1>
+<h1>Snyk Settings</h1>
 
-        <div class="info-banner">
-            <p><strong>Download Snyk CLI to unlock full settings</strong></p>
-            <p>The full configuration interface is only available when the Snyk Language Server is running.
-               Download the Snyk CLI below to enable all settings.</p>
-        </div>
+<div class="info-message">
+  <strong>Note:</strong> The Snyk CLI is not yet available. Configure the executable settings below to download and set up the CLI.
+  <br><br>
+  <strong>Limited settings mode:</strong> Only CLI download settings are currently available. Once the CLI is downloaded,
+  additional options will appear including authentication, scan types, severity filters, and organization settings.
+</div>
 
-        <div class="error-message" id="errorMessage">
-            <p id="errorText"></p>
-        </div>
+<form id="configForm">
+  <div class="section">
+    <h2>CLI Configuration</h2>
 
-        <form id="settingsForm">
-            <h2>Snyk CLI</h2>
-            <p class="section-description">Configure how Snyk CLI binaries are managed and downloaded.</p>
-
-            <div class="form-group">
-                <div class="checkbox-group">
-                    <input type="checkbox" id="manageBinaries" name="manageBinaries" {{MANAGE_BINARIES_CHECKED}}>
-                    <label for="manageBinaries">Manage binaries automatically</label>
-                </div>
-                <p class="help-text">Let Snyk automatically download and update the CLI binary</p>
-            </div>
-
-            <div class="form-group">
-                <label for="cliPath">CLI Path</label>
-                <input type="text" id="cliPath" name="cliPath" value="{{CLI_PATH}}" placeholder="Path to Snyk CLI executable">
-                <p class="help-text">Specify a custom path to the Snyk CLI executable (leave empty for automatic management)</p>
-            </div>
-
-            <div class="form-group">
-                <label for="baseDownloadUrl">Base Download URL</label>
-                <input type="text" id="baseDownloadUrl" name="baseDownloadUrl" value="{{CLI_BASE_DOWNLOAD_URL}}" placeholder="https://downloads.snyk.io">
-                <p class="help-text">Custom base URL for downloading Snyk CLI (for enterprise proxy setups)</p>
-            </div>
-
-            <div class="form-group">
-                <label for="releaseChannel">Release Channel</label>
-                <select id="releaseChannel" name="releaseChannel">
-                    <option value="stable" {{CHANNEL_STABLE_SELECTED}}>Stable</option>
-                    <option value="rc" {{CHANNEL_RC_SELECTED}}>Release Candidate</option>
-                    <option value="preview" {{CHANNEL_PREVIEW_SELECTED}}>Preview</option>
-                </select>
-                <p class="help-text">Choose which release channel to use for CLI updates</p>
-            </div>
-
-            <div class="divider"></div>
-
-            <h2>About</h2>
-            <p class="section-description">
-                This is a minimal configuration interface. To access all Snyk settings including scan types,
-                severity filters, and authentication options, please ensure the Snyk Language Server is running
-                by downloading the CLI above.
-            </p>
-        </form>
+    <div class="form-group">
+      <label class="checkbox-label">
+        <input type="checkbox" name="manageBinariesAutomatically" id="manageBinariesAutomatically" {{MANAGE_BINARIES_CHECKED}}>
+        Manage Binaries Automatically
+        <span class="badge bg-secondary" data-bs-toggle="tooltip" title="Automatically download and manage Snyk CLI binaries">?</span>
+      </label>
     </div>
 
-    <script type="text/javascript">
-        // IE11-compatible JavaScript (ES5 only)
-        (function() {
-            'use strict';
+    <div class="form-group">
+      <label for="cliBaseDownloadURL">Base URL <span class="badge bg-secondary" data-bs-toggle="tooltip" title="Base URL for downloading Snyk CLI binaries. The default is https://downloads.snyk.io. For FIPS-enabled CLIs (Windows/Linux only), use https://downloads.snyk.io/fips">?</span></label>
+      <input type="text" id="cliBaseDownloadURL" name="cliBaseDownloadURL" value="{{CLI_BASE_DOWNLOAD_URL}}" placeholder="https://downloads.snyk.io">
+    </div>
 
-            // Track form changes
-            var isFormDirty = false;
-            var form = document.getElementById('settingsForm');
+    <div class="form-group">
+      <label class="checkbox-label">
+        <input type="checkbox" name="insecure" id="insecure" {{INSECURE_CHECKED}}>
+        Insecure (Skip SSL Verification)
+        <span class="badge bg-secondary" data-bs-toggle="tooltip" title="If enabled, the plugin will ignore SSL certificate errors. Use this when connecting to self-signed or internal CA servers.">?</span>
+      </label>
+    </div>
 
-            // Use traditional event handling for IE11
-            if (form.addEventListener) {
-                form.addEventListener('change', onFormChange, false);
-            } else {
-                form.attachEvent('onchange', onFormChange);
-            }
+    <div class="form-group">
+      <label for="cliPath">CLI Path <span class="badge bg-secondary" data-bs-toggle="tooltip" title="Path to Snyk CLI executable">?</span></label>
+      <input type="text" id="cliPath" name="cliPath" value="{{CLI_PATH}}" placeholder="/path/to/snyk-cli">
+    </div>
 
-            function onFormChange() {
-                isFormDirty = true;
-                if (typeof window.__onFormDirtyChange__ === 'function') {
-                    window.__onFormDirtyChange__(true);
-                }
-            }
+    <div class="form-group">
+      <label for="cliReleaseChannel">CLI Release Channel <span class="badge bg-secondary" data-bs-toggle="tooltip" title="Release channel for Snyk CLI downloads (stable, preview, or rc)">?</span></label>
+      <select id="cliReleaseChannel" name="cliReleaseChannel">
+        <option value="stable" {{CHANNEL_STABLE_SELECTED}}>Stable</option>
+        <option value="rc" {{CHANNEL_RC_SELECTED}}>Release Candidate</option>
+        <option value="preview" {{CHANNEL_PREVIEW_SELECTED}}>Preview</option>
+      </select>
+    </div>
+  </div>
+</form>
 
-            // Collect and save configuration
-            // Uses same function name as LS HTML for consistency
-            window.getAndSaveIdeConfig = function() {
-                if (!isFormDirty) {
-                    return;
-                }
+<script>
+  (function() {
+    window.__modified__ = false;
 
-                try {
-                    var config = {
-                        manageBinariesAutomatically: document.getElementById('manageBinaries').checked,
-                        cliPath: document.getElementById('cliPath').value.replace(/^\s+|\s+$/g, ''), // trim
-                        cliBaseDownloadURL: document.getElementById('baseDownloadUrl').value.replace(/^\s+|\s+$/g, ''),
-                        cliReleaseChannel: document.getElementById('releaseChannel').value
-                    };
+    function get(id) {
+      return document.getElementById(id);
+    }
 
-                    // Call IDE bridge function (matches LS HTML pattern)
-                    if (typeof window.__saveIdeConfig__ !== 'function') {
-                        showError('Unable to save settings: IDE bridge not available');
-                        return;
-                    }
+    function collectData() {
+      return {
+        cliPath: get('cliPath').value,
+        manageBinariesAutomatically: get('manageBinariesAutomatically').checked,
+        cliBaseDownloadURL: get('cliBaseDownloadURL').value,
+        cliReleaseChannel: get('cliReleaseChannel').value,
+        insecure: get('insecure').checked
+      };
+    }
 
-                    window.__saveIdeConfig__(JSON.stringify(config));
-                    isFormDirty = false;
-                    if (typeof window.__onFormDirtyChange__ === 'function') {
-                        window.__onFormDirtyChange__(false);
-                    }
-                    hideError();
-                } catch (error) {
-                    showError('Error saving settings: ' + error.message);
-                }
-            };
+    function markModified() {
+      window.__modified__ = true;
+      if (typeof window.__onFormDirtyChange__ === 'function') {
+        window.__onFormDirtyChange__(true);
+      }
+    }
 
-            // Error handling helpers
-            function showError(message) {
-                var errorDiv = document.getElementById('errorMessage');
-                var errorText = document.getElementById('errorText');
-                if (errorDiv && errorText) {
-                    errorText.innerText = message; // Use innerText for IE11
-                    errorDiv.className = errorDiv.className + ' visible';
-                }
-            }
+    window.getAndSaveIdeConfig = function() {
+      var data = collectData();
+      var jsonString = JSON.stringify(data);
+      try {
+        if (typeof window.__saveIdeConfig__ === 'function') {
+          window.__saveIdeConfig__(jsonString);
+          window.__modified__ = false;
+        }
+      } catch (e) {
+        console.error('Error saving configuration:', e);
+      }
+    };
 
-            function hideError() {
-                var errorDiv = document.getElementById('errorMessage');
-                if (errorDiv) {
-                    errorDiv.className = errorDiv.className.replace(' visible', '');
-                }
-            }
+    window.addEventListener('load', function() {
+      var form = get('configForm');
+      if (!form) return;
 
-            // Make error functions globally available
-            window.showError = showError;
-            window.hideError = hideError;
+      var inputs = form.getElementsByTagName('input');
+      var selects = form.getElementsByTagName('select');
 
-            // Auto-enable CLI path input when manage binaries is unchecked
-            var manageBinariesCheckbox = document.getElementById('manageBinaries');
-            var cliPathInput = document.getElementById('cliPath');
+      for (var i = 0; i < inputs.length; i++) {
+        inputs[i].addEventListener('input', markModified);
+        inputs[i].addEventListener('change', markModified);
+      }
 
-            function updateCliPathState() {
-                if (manageBinariesCheckbox.checked) {
-                    cliPathInput.disabled = true;
-                    cliPathInput.style.opacity = '0.5';
-                } else {
-                    cliPathInput.disabled = false;
-                    cliPathInput.style.opacity = '1';
-                }
-            }
-
-            if (manageBinariesCheckbox.addEventListener) {
-                manageBinariesCheckbox.addEventListener('change', updateCliPathState, false);
-            } else {
-                manageBinariesCheckbox.attachEvent('onchange', updateCliPathState);
-            }
-            updateCliPathState(); // Initialize state
-
-        })();
-    </script>
+      for (var j = 0; j < selects.length; j++) {
+        selects[j].addEventListener('change', markModified);
+      }
+    });
+  })();
+</script>
 </body>
 </html>

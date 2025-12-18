@@ -150,7 +150,6 @@
     <Compile Include="Service\VsCodeService.cs" />
     <Compile Include="Service\WorkspaceTrustService.cs" />
     <Compile Include="Settings\ErrorProviderExtensions.cs" />
-    <Compile Include="Settings\FeatureFlags.cs" />
     <Compile Include="Settings\HtmlSettingsWindow.xaml.cs">
       <DependentUpon>HtmlSettingsWindow.xaml</DependentUpon>
     </Compile>

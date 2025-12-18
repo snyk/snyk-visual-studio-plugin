@@ -68,7 +68,7 @@ namespace Snyk.VisualStudio.Extension.Language
     [JsonObject(NamingStrategyType = typeof(CamelCaseNamingStrategy))]
     public class ScanCommandConfig
     {
-        public string Command { get; set; }
+        public string PreScanCommand { get; set; }
         public bool PreScanOnlyReferenceFolder { get; set; }
         public string PostScanCommand { get; set; }
         public bool PostScanOnlyReferenceFolder { get; set; }
