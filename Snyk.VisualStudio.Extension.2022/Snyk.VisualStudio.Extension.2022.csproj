@@ -252,6 +252,7 @@
     <Compile Include="UI\Html\BaseHtmlProvider.cs" />
     <Compile Include="UI\Html\ColorExtension.cs" />
     <Compile Include="UI\Html\ConfigScriptingBridge.cs" />
+    <Compile Include="UI\Html\IdeConfigData.cs" />
     <Compile Include="UI\Html\HtmlResourceLoader.cs" />
     <Compile Include="UI\Html\IacHtmlProvider.cs" />
     <Compile Include="UI\Html\IHtmlProvider.cs" />

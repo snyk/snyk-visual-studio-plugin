@@ -8,7 +8,6 @@ using System.Runtime.InteropServices;
 using System.Threading.Tasks;
 using Microsoft.VisualStudio.Shell;
 using Newtonsoft.Json;
-using Newtonsoft.Json.Linq;
 using Serilog;
 using Snyk.VisualStudio.Extension;
 using Snyk.VisualStudio.Extension.Authentication;
@@ -170,7 +169,7 @@ namespace Snyk.VisualStudio.Extension.UI.Html
         private async Task ParseAndSaveConfigAsync(string jsonString)
         {
             // LS HTML JavaScript handles all validation - we just parse and save
-            var config = JsonConvert.DeserializeObject<Dictionary<string, object>>(jsonString);
+            var config = JsonConvert.DeserializeObject<IdeConfigData>(jsonString);
             if (config == null) return;
 
             ApplyScanSettings(config);
@@ -187,51 +186,45 @@ namespace Snyk.VisualStudio.Extension.UI.Html
             // - enableTrustedFoldersFeature: "false"
         }
 
-        private void ApplyScanSettings(Dictionary<string, object> config)
+        private void ApplyScanSettings(IdeConfigData config)
         {
             // Apply scan settings (activateSnykOpenSource, activateSnykCode, activateSnykIac)
-            if (HasScanTypeKeys(config))
+            if (config.ActivateSnykOpenSource.HasValue || config.ActivateSnykCode.HasValue || config.ActivateSnykIac.HasValue)
             {
-                options.OssEnabled = GetBoolean(config, "activateSnykOpenSource", false);
-                options.SnykCodeSecurityEnabled = GetBoolean(config, "activateSnykCode", false);
-                options.IacEnabled = GetBoolean(config, "activateSnykIac", false);
+                options.OssEnabled = config.ActivateSnykOpenSource ?? false;
+                options.SnykCodeSecurityEnabled = config.ActivateSnykCode ?? false;
+                options.IacEnabled = config.ActivateSnykIac ?? false;
             }
 
             // Apply scanning mode (auto/manual)
-            if (config.TryGetValue("scanningMode", out var mode))
+            if (!string.IsNullOrEmpty(config.ScanningMode))
             {
-                options.AutoScan = mode?.ToString() == "auto";
+                options.AutoScan = config.ScanningMode == "auto";
             }
         }
 
-        private void ApplyIssueViewSettings(Dictionary<string, object> config)
+        private void ApplyIssueViewSettings(IdeConfigData config)
         {
             // Apply issue view options (issueViewOptions: {openIssues, ignoredIssues})
-            if (config.TryGetValue("issueViewOptions", out var issueViewOptionsObj) && issueViewOptionsObj is JObject issueViewOptions)
+            if (config.IssueViewOptions != null)
             {
-                if (issueViewOptions.TryGetValue("openIssues", out var openIssuesToken))
-                {
-                    options.OpenIssuesEnabled = openIssuesToken.Value<bool>();
-                }
-                if (issueViewOptions.TryGetValue("ignoredIssues", out var ignoredIssuesToken))
-                {
-                    options.IgnoredIssuesEnabled = ignoredIssuesToken.Value<bool>();
-                }
+                options.OpenIssuesEnabled = config.IssueViewOptions.OpenIssues;
+                options.IgnoredIssuesEnabled = config.IssueViewOptions.IgnoredIssues;
             }
 
             // Apply delta findings (enableDeltaFindings: "true"/"false" or boolean)
-            if (config.ContainsKey("enableDeltaFindings"))
+            if (config.EnableDeltaFindings.HasValue)
             {
-                options.EnableDeltaFindings = GetBoolean(config, "enableDeltaFindings", false);
+                options.EnableDeltaFindings = config.EnableDeltaFindings.Value;
             }
         }
 
-        private void ApplyAuthenticationSettings(Dictionary<string, object> config)
+        private void ApplyAuthenticationSettings(IdeConfigData config)
         {
             // Apply authentication method (authenticationMethod: "oauth"/"token"/"pat")
-            if (config.TryGetValue("authenticationMethod", out var authMethod))
+            if (!string.IsNullOrEmpty(config.AuthenticationMethod))
             {
-                var authMethodStr = authMethod?.ToString()?.ToLowerInvariant();
+                var authMethodStr = config.AuthenticationMethod.ToLowerInvariant();
                 switch (authMethodStr)
                 {
                     case "oauth":
@@ -247,44 +240,39 @@ namespace Snyk.VisualStudio.Extension.UI.Html
             }
         }
 
-        private void ApplyConnectionSettings(Dictionary<string, object> config)
+        private void ApplyConnectionSettings(IdeConfigData config)
         {
-            if (config.TryGetValue("endpoint", out var endpoint))
+            if (!string.IsNullOrEmpty(config.Endpoint))
             {
-                options.CustomEndpoint = endpoint?.ToString() ?? string.Empty;
+                options.CustomEndpoint = config.Endpoint;
             }
 
-            if (config.TryGetValue("token", out var token))
+            if (!string.IsNullOrEmpty(config.Token))
             {
-                var tokenString = token?.ToString();
-                if (!string.IsNullOrEmpty(tokenString))
-                {
-                    // Use the authenticationMethod from this request if provided, otherwise uses existing value
-                    // Note: Requires caller to send authenticationMethod when updating token to ensure correct pairing
-                    options.ApiToken = new AuthenticationToken(options.AuthenticationMethod, tokenString);
-                }
+                // Use the authenticationMethod from this request if provided, otherwise uses existing value
+                // Note: Requires caller to send authenticationMethod when updating token to ensure correct pairing
+                options.ApiToken = new AuthenticationToken(options.AuthenticationMethod, config.Token);
             }
 
-            if (config.TryGetValue("organization", out var org))
+            if (!string.IsNullOrEmpty(config.Organization))
             {
-                options.Organization = org?.ToString() ?? string.Empty;
+                options.Organization = config.Organization;
             }
 
-            if (config.ContainsKey("insecure"))
+            if (config.Insecure.HasValue)
             {
-                options.IgnoreUnknownCA = GetBoolean(config, "insecure", false);
+                options.IgnoreUnknownCA = config.Insecure.Value;
             }
         }
 
-        private void ApplyTrustedFolders(Dictionary<string, object> config)
+        private void ApplyTrustedFolders(IdeConfigData config)
         {
-            if (!config.TryGetValue("trustedFolders", out var trustedFoldersObj) || !(trustedFoldersObj is JArray trustedFoldersArray))
+            if (config.TrustedFolders == null || config.TrustedFolders.Count == 0)
                 return;
 
             var trustedFolders = new HashSet<string>();
-            foreach (var folderToken in trustedFoldersArray)
+            foreach (var folderPath in config.TrustedFolders)
             {
-                var folderPath = folderToken?.ToString();
                 if (!string.IsNullOrEmpty(folderPath))
                 {
                     trustedFolders.Add(folderPath);
@@ -297,85 +285,63 @@ namespace Snyk.VisualStudio.Extension.UI.Html
             }
         }
 
-        private void ApplyCliSettings(Dictionary<string, object> config)
+        private void ApplyCliSettings(IdeConfigData config)
         {
-            if (config.TryGetValue("cliPath", out var cliPath))
+            if (!string.IsNullOrEmpty(config.CliPath))
             {
-                options.CliCustomPath = cliPath?.ToString() ?? string.Empty;
+                options.CliCustomPath = config.CliPath;
             }
 
-            if (config.ContainsKey("manageBinariesAutomatically"))
+            if (config.ManageBinariesAutomatically.HasValue)
             {
-                options.BinariesAutoUpdate = GetBoolean(config, "manageBinariesAutomatically", true);
+                options.BinariesAutoUpdate = config.ManageBinariesAutomatically.Value;
             }
 
-            if (config.TryGetValue("baseUrl", out var baseUrl) && !string.IsNullOrEmpty(baseUrl?.ToString()))
+            if (!string.IsNullOrEmpty(config.BaseUrl))
             {
-                options.CliDownloadUrl = baseUrl.ToString();
+                options.CliDownloadUrl = config.BaseUrl;
             }
 
-            if (config.TryGetValue("cliReleaseChannel", out var channel) && !string.IsNullOrEmpty(channel?.ToString()))
+            if (!string.IsNullOrEmpty(config.CliReleaseChannel))
             {
-                options.CliReleaseChannel = channel.ToString();
+                options.CliReleaseChannel = config.CliReleaseChannel;
             }
         }
 
-        private void ApplyFilterSettings(Dictionary<string, object> config)
+        private void ApplyFilterSettings(IdeConfigData config)
         {
-            if (!config.TryGetValue("filterSeverity", out var filterSeverityObj) || !(filterSeverityObj is JObject filterSeverity))
+            if (config.FilterSeverity == null)
                 return;
 
-            if (filterSeverity.TryGetValue("critical", out var criticalToken))
-            {
-                options.FilterCritical = criticalToken.Value<bool>();
-            }
-            if (filterSeverity.TryGetValue("high", out var highToken))
-            {
-                options.FilterHigh = highToken.Value<bool>();
-            }
-            if (filterSeverity.TryGetValue("medium", out var mediumToken))
-            {
-                options.FilterMedium = mediumToken.Value<bool>();
-            }
-            if (filterSeverity.TryGetValue("low", out var lowToken))
-            {
-                options.FilterLow = lowToken.Value<bool>();
-            }
+            options.FilterCritical = config.FilterSeverity.Critical;
+            options.FilterHigh = config.FilterSeverity.High;
+            options.FilterMedium = config.FilterSeverity.Medium;
+            options.FilterLow = config.FilterSeverity.Low;
         }
 
-        private void ApplyMiscellaneousSettings(Dictionary<string, object> config)
+        private void ApplyMiscellaneousSettings(IdeConfigData config)
         {
             // Apply additional environment variables
-            if (config.TryGetValue("additionalEnv", out var additionalEnv))
+            if (!string.IsNullOrEmpty(config.AdditionalEnv))
             {
-                options.AdditionalEnv = additionalEnv?.ToString() ?? string.Empty;
+                options.AdditionalEnv = config.AdditionalEnv;
             }
 
             // Apply risk score threshold
-            if (config.TryGetValue("riskScoreThreshold", out var riskScoreThreshold))
-            {
-                if (riskScoreThreshold != null && int.TryParse(riskScoreThreshold.ToString(), out var threshold))
-                {
-                    options.RiskScoreThreshold = threshold;
-                }
-                else
-                {
-                    options.RiskScoreThreshold = null;
-                }
-            }
+            options.RiskScoreThreshold = config.RiskScoreThreshold;
         }
 
-        private async Task ApplyFolderConfigsAsync(Dictionary<string, object> config)
+        private async Task ApplyFolderConfigsAsync(IdeConfigData config)
         {
             // Apply per-solution/folder settings (folderConfigs: [...])
             // Save to solution-specific storage AND update in-memory global FolderConfigs
-            if (config.TryGetValue("folderConfigs", out var folderConfigsObj) && folderConfigsObj is JArray folderConfigs)
+            if (config.FolderConfigs != null && config.FolderConfigs.Count > 0)
             {
-                await SaveFolderConfigsAsync(folderConfigs);
+                await SaveFolderConfigsAsync(config.FolderConfigs);
             }
         }
 
-        private async Task SaveFolderConfigsAsync(JArray folderConfigs)
+        private async Task SaveFolderConfigsAsync(List<FolderConfigData> folderConfigs)
         {
             // LS HTML sends folder configs for the current solution
             // Pattern: Save to solution-specific storage AND update in-memory global FolderConfigs
@@ -393,31 +359,16 @@ namespace Snyk.VisualStudio.Extension.UI.Html
                     return;
                 }
 
-                foreach (var folderConfigToken in folderConfigs)
+                foreach (var folderConfig in folderConfigs)
                 {
-                    var folderConfig = folderConfigToken.ToObject<Dictionary<string, object>>();
                     if (folderConfig == null) continue;
 
                     // Extract folder settings (matching LS HTML JSON keys)
-                    var additionalOptions = folderConfig.TryGetValue("additionalParameters", out var addOpts)
-                        ? addOpts?.ToString() ?? string.Empty
-                        : string.Empty;
-
-                    var additionalEnv = folderConfig.TryGetValue("additionalEnv", out var addEnv)
-                        ? addEnv?.ToString() ?? string.Empty
-                        : string.Empty;
-
-                    var preferredOrg = folderConfig.TryGetValue("preferredOrg", out var prefOrg)
-                        ? prefOrg?.ToString() ?? string.Empty
-                        : string.Empty;
-
-                    var autoOrg = folderConfig.TryGetValue("autoDeterminedOrg", out var autOrg)
-                        ? autOrg?.ToString() ?? string.Empty
-                        : string.Empty;
-
-                    var orgSetByUser = folderConfig.TryGetValue("orgSetByUser", out var orgSetByUserObj)
-                        ? GetBooleanFromObject(orgSetByUserObj)
-                        : false;
+                    var additionalOptions = folderConfig.AdditionalParameters ?? string.Empty;
+                    var additionalEnv = folderConfig.AdditionalEnv ?? string.Empty;
+                    var preferredOrg = folderConfig.PreferredOrg ?? string.Empty;
+                    var autoOrg = folderConfig.AutoDeterminedOrg ?? string.Empty;
+                    var orgSetByUser = folderConfig.OrgSetByUser;
 
                     // 1. Save to solution-specific storage
                     await optionsManager.SaveAdditionalOptionsAsync(additionalOptions);
@@ -455,13 +406,9 @@ namespace Snyk.VisualStudio.Extension.UI.Html
                             existingConfig.AdditionalEnv = additionalEnv;
 
                             // Mirror ScanCommandConfig if present in JSON
-                            if (folderConfig.TryGetValue("scanCommandConfig", out var scanCommandConfigObj) && scanCommandConfigObj is JObject scanCommandConfig)
+                            if (folderConfig.ScanCommandConfig != null)
                             {
-                                var scanCommandDict = scanCommandConfig.ToObject<Dictionary<string, ScanCommandConfig>>();
-                                if (scanCommandDict != null)
-                                {
-                                    existingConfig.ScanCommandConfig = scanCommandDict;
-                                }
+                                existingConfig.ScanCommandConfig = folderConfig.ScanCommandConfig;
                             }
 
                             Logger.Information("Mirrored folder config for solution: {SolutionPath}", solutionPath);
@@ -474,34 +421,6 @@ namespace Snyk.VisualStudio.Extension.UI.Html
                 Logger.Error(ex, "Error saving folder configs");
                 throw;
             }
-        }
-
-        private bool GetBooleanFromObject(object value)
-        {
-            if (value is bool b) return b;
-            if (value is string s) return s.Equals("true", StringComparison.OrdinalIgnoreCase);
-            if (value is int i) return i != 0;
-            if (value is JValue jv) return jv.Value<bool>();
-            return false;
-        }
-
-        private bool HasScanTypeKeys(Dictionary<string, object> config)
-        {
-            return config.ContainsKey("activateSnykOpenSource") ||
-                   config.ContainsKey("activateSnykCode") ||
-                   config.ContainsKey("activateSnykIac");
-        }
-
-        private bool GetBoolean(Dictionary<string, object> dict, string key, bool defaultValue)
-        {
-            if (dict.TryGetValue(key, out var value))
-            {
-                if (value is bool b) return b;
-                if (value is string s) return s.Equals("true", StringComparison.OrdinalIgnoreCase);
-                if (value is int i) return i != 0;
-                if (value is JValue jv) return jv.Value<bool>();
-            }
-            return defaultValue;
         }
 
     }

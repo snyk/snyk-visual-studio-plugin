@@ -6,6 +6,16 @@ using Newtonsoft.Json.Serialization;
 
 namespace Snyk.VisualStudio.Extension.Language
 {
+    /// <summary>
+    /// CamelCase naming strategy that preserves dictionary keys as-is.
+    /// </summary>
+    public class CamelCasePreserveDictionaryKeysNamingStrategy : CamelCaseNamingStrategy
+    {
+        public CamelCasePreserveDictionaryKeysNamingStrategy() : base(processDictionaryKeys: false, overrideSpecifiedNames: false)
+        {
+        }
+    }
+
     [JsonObject(NamingStrategyType = typeof(CamelCaseNamingStrategy))]
     public class SnykLsInitializationOptions
     {
@@ -44,7 +54,7 @@ namespace Snyk.VisualStudio.Extension.Language
         public int? RiskScoreThreshold { get; set; }
     }
 
-    [JsonObject(NamingStrategyType = typeof(CamelCaseNamingStrategy))]
+    [JsonObject(NamingStrategyType = typeof(CamelCasePreserveDictionaryKeysNamingStrategy))]
     public class FolderConfig
     {
         public string FolderPath { get; set; }
