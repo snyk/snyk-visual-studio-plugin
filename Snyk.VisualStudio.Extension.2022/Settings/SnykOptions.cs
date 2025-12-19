@@ -19,6 +19,7 @@ namespace Snyk.VisualStudio.Extension.Settings
         public bool ConsistentIgnoresEnabled { get; set; }
         public string DeviceId { get; set; }
         public bool AutoScan { get; set; }
+        public bool InternalAutoScan { get; set; }
         public bool OpenIssuesEnabled { get; set; }
         public bool IgnoredIssuesEnabled { get; set; }
         public AuthenticationToken ApiToken { get; set; }

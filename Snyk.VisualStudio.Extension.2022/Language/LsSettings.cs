@@ -46,7 +46,7 @@ namespace Snyk.VisualStudio.Extension.Language
                     Medium = options.FilterMedium,
                     Low = options.FilterLow,
                 },
-                ScanningMode = options.AutoScan ? "auto" : "manual",
+                ScanningMode = options.InternalAutoScan ? "auto" : "manual",
 #pragma warning disable VSTHRD104
                 AdditionalParams = ThreadHelper.JoinableTaskFactory.Run(() => this.serviceProvider.SnykOptionsManager.GetAdditionalOptionsAsync()),
 #pragma warning restore VSTHRD104

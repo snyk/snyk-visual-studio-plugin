@@ -187,6 +187,21 @@ namespace Snyk.VisualStudio.Extension.Language
             }
 
             serviceProvider.SnykOptionsManager.Save(serviceProvider.Options, false);
+
+            if (serviceProvider.Options.AutoScan)
+            {
+                var isFolderTrusted = await this.serviceProvider.TasksService.IsFolderTrustedAsync();
+                await TaskScheduler.Default;
+                if (!isFolderTrusted)
+                    return;
+
+                if (!serviceProvider.Options.InternalAutoScan)
+                {
+                    serviceProvider.Options.InternalAutoScan = true;
+                    await serviceProvider.LanguageClientManager.DidChangeConfigurationAsync(SnykVSPackage.Instance.DisposalToken);
+                    serviceProvider.TasksService.ScanAsync().FireAndForget();
+                }
+            }
         }
 
         private FolderConfig FindMatchingFolderConfig(List<FolderConfig> folderConfigs, string currentSolutionPath)
