@@ -283,7 +283,7 @@ namespace Snyk.VisualStudio.Extension.UI.Html
             {
                 // Normalize empty/null/undefined to empty string for comparison
                 var normalizedNewToken = config.Token?.Trim() ?? string.Empty;
-                var normalizedExistingToken = options.ApiToken?.AuthToken?.Trim() ?? string.Empty;
+                var normalizedExistingToken = options.ApiToken?.ToString()?.Trim() ?? string.Empty;
 
                 // Persist token only if it has changed
                 if (normalizedNewToken != normalizedExistingToken)
