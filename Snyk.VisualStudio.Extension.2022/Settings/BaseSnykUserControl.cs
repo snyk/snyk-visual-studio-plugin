@@ -14,14 +14,28 @@ namespace Snyk.VisualStudio.Extension.Settings
     /// Handles common functionality like settings synchronization with the HTML settings window.
     /// Supports both synchronous and asynchronous loading patterns.
     /// </summary>
-    public abstract class BaseSnykUserControl : UserControl
+    public class BaseSnykUserControl : UserControl
     {
         protected readonly ISnykServiceProvider serviceProvider;
         internal IPersistableOptions OptionsMemento { get; set; }
 
-        protected BaseSnykUserControl(ISnykServiceProvider serviceProvider)
+        /// <summary>
+        /// Parameterless constructor for Visual Studio Designer support.
+        /// Do not use this constructor in production code.
+        /// </summary>
+        public BaseSnykUserControl() : this(null)
         {
-            this.serviceProvider = serviceProvider ?? throw new ArgumentNullException(nameof(serviceProvider));
+        }
+
+        public BaseSnykUserControl(ISnykServiceProvider serviceProvider)
+        {
+            this.serviceProvider = serviceProvider;
+
+            // Skip initialization if in design mode (serviceProvider will be null)
+            if (serviceProvider == null || DesignMode)
+            {
+                return;
+            }
 
             // Load initial settings
             OptionsMemento = serviceProvider.SnykOptionsManager.Load();
@@ -37,6 +51,11 @@ namespace Snyk.VisualStudio.Extension.Settings
         /// </summary>
         private void OnSettingsChanged(object sender, SnykSettingsChangedEventArgs e)
         {
+            if (serviceProvider == null || DesignMode)
+            {
+                return;
+            }
+
             ThreadHelper.JoinableTaskFactory.RunAsync(async () =>
             {
                 await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
@@ -76,7 +95,7 @@ namespace Snyk.VisualStudio.Extension.Settings
         /// </summary>
         protected override void Dispose(bool disposing)
         {
-            if (disposing && serviceProvider?.Options != null)
+            if (disposing && !DesignMode && serviceProvider?.Options != null)
             {
                 serviceProvider.Options.SettingsChanged -= OnSettingsChanged;
             }
