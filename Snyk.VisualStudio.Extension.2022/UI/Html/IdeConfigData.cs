@@ -39,7 +39,7 @@ namespace Snyk.VisualStudio.Extension.UI.Html
         // CLI Settings
         public string CliPath { get; set; }
         public bool? ManageBinariesAutomatically { get; set; }
-        public string BaseUrl { get; set; }
+        public string CliBaseDownloadURL { get; set; }
         public string CliReleaseChannel { get; set; }
 
         // Filter Settings

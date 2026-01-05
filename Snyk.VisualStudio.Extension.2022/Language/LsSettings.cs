@@ -63,7 +63,7 @@ namespace Snyk.VisualStudio.Extension.Language
                 DeviceId = options.DeviceId,
                 EnableDeltaFindings = options.EnableDeltaFindings.ToString().ToLower(),
                 FolderConfigs = options.FolderConfigs,
-                BaseUrl = options.CliDownloadUrl,
+                CliBaseDownloadUrl = options.CliBaseDownloadURL,
                 AdditionalEnv = options.AdditionalEnv,
                 RiskScoreThreshold = options.RiskScoreThreshold
             };

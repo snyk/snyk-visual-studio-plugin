@@ -50,7 +50,7 @@ namespace Snyk.VisualStudio.Extension.Language
         public string OutputFormat { get; set; }
         public string EnableDeltaFindings { get; set; }
         public List<FolderConfig> FolderConfigs { get; set; }
-        public string BaseUrl { get; set; }
+        public string CliBaseDownloadUrl { get; set; }
         public int? RiskScoreThreshold { get; set; }
     }
 

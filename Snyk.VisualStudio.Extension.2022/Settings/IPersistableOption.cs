@@ -66,7 +66,7 @@ public interface IPersistableOptions
     /// </summary>
     string CliCustomPath { get; set; }
     string CliReleaseChannel { get; set; }
-    string CliDownloadUrl { get; set; }
+    string CliBaseDownloadURL { get; set; }
     ISet<string> TrustedFolders { get; set; }
 
     bool EnableDeltaFindings { get; set; }

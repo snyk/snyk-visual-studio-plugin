@@ -33,7 +33,7 @@ namespace Snyk.VisualStudio.Extension.UI.Html
                         template = template
                             .Replace("{{MANAGE_BINARIES_CHECKED}}", options.BinariesAutoUpdate ? "checked" : "")
                             .Replace("{{CLI_PATH}}", options.CliCustomPath ?? "")
-                            .Replace("{{CLI_BASE_DOWNLOAD_URL}}", options.CliDownloadUrl ?? "")
+                            .Replace("{{CLI_BASE_DOWNLOAD_URL}}", options.CliBaseDownloadURL ?? "")
                             .Replace("{{CHANNEL_STABLE_SELECTED}}", options.CliReleaseChannel == "stable" ? "selected" : "")
                             .Replace("{{CHANNEL_RC_SELECTED}}", options.CliReleaseChannel == "rc" ? "selected" : "")
                             .Replace("{{CHANNEL_PREVIEW_SELECTED}}", options.CliReleaseChannel == "preview" ? "selected" : "");

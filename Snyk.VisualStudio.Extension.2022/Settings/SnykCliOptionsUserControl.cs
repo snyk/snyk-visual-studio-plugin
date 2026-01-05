@@ -21,7 +21,7 @@ namespace Snyk.VisualStudio.Extension.Settings
         protected override void UpdateViewFromOptions()
         {
             this.manageBinariesAutomaticallyCheckbox.Checked = OptionsMemento.BinariesAutoUpdate;
-            this.cliDownloadUrlTextBox.Text = OptionsMemento.CliDownloadUrl;
+            this.cliDownloadUrlTextBox.Text = OptionsMemento.CliBaseDownloadURL;
 
             var cliPath = string.IsNullOrEmpty(OptionsMemento.CliCustomPath)
                 ? SnykCli.GetSnykCliDefaultPath()

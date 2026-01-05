@@ -48,7 +48,7 @@ namespace Snyk.VisualStudio.Extension.Settings
 
                 BinariesAutoUpdate = snykSettings.BinariesAutoUpdateEnabled,
                 CliCustomPath = snykSettings.CustomCliPath,
-                CliDownloadUrl = snykSettings.CliDownloadUrl,
+                CliBaseDownloadURL = snykSettings.CliBaseDownloadURL,
                 CliReleaseChannel = snykSettings.CliReleaseChannel,
                 CurrentCliVersion = snykSettings.CurrentCliVersion,
 
@@ -87,7 +87,7 @@ namespace Snyk.VisualStudio.Extension.Settings
 
             snykSettings.BinariesAutoUpdateEnabled = options.BinariesAutoUpdate;
             snykSettings.CustomCliPath = options.CliCustomPath;
-            snykSettings.CliDownloadUrl = options.CliDownloadUrl;
+            snykSettings.CliBaseDownloadURL = options.CliBaseDownloadURL;
             snykSettings.CliReleaseChannel = options.CliReleaseChannel;
             snykSettings.CurrentCliVersion = options.CurrentCliVersion;
 

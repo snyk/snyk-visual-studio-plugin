@@ -63,7 +63,7 @@ namespace Snyk.VisualStudio.Extension.Settings
         public string Token { get; set; } = string.Empty;
         public bool IacEnabled { get; set; } = true;
         public string CliReleaseChannel { get; set; } = SnykCliDownloader.DefaultReleaseChannel;
-        public string CliDownloadUrl { get; set; } = SnykCliDownloader.DefaultBaseDownloadUrl;
+        public string CliBaseDownloadURL { get; set; } = SnykCliDownloader.DefaultBaseDownloadUrl;
         public bool IgnoreUnknownCa { get; set; }
         public string Organization { get; set; }
         public string CustomEndpoint { get; set; }

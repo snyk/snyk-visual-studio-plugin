@@ -33,7 +33,7 @@ namespace Snyk.VisualStudio.Extension.Settings
         public bool BinariesAutoUpdate { get; set; }
         public string CliCustomPath { get; set; }
         public string CliReleaseChannel { get; set; }
-        public string CliDownloadUrl { get; set; }
+        public string CliBaseDownloadURL { get; set; }
         public ISet<string> TrustedFolders { get; set; }
         public bool EnableDeltaFindings { get; set; }
         public List<FolderConfig> FolderConfigs { get; set; }

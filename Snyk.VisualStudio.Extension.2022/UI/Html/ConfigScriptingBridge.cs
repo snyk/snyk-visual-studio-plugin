@@ -332,9 +332,9 @@ namespace Snyk.VisualStudio.Extension.UI.Html
                 options.BinariesAutoUpdate = config.ManageBinariesAutomatically.Value;
             }
 
-            if (config.BaseUrl != null)
+            if (config.CliBaseDownloadURL != null)
             {
-                options.CliDownloadUrl = config.BaseUrl;
+                options.CliBaseDownloadURL = config.CliBaseDownloadURL;
             }
 
             if (config.CliReleaseChannel != null)
