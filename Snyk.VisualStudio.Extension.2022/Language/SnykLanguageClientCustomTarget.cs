@@ -12,6 +12,7 @@ using StreamJsonRpc;
 using Snyk.VisualStudio.Extension.Authentication;
 using Snyk.VisualStudio.Extension.Extension;
 using Snyk.VisualStudio.Extension.Service;
+using Snyk.VisualStudio.Extension.Settings;
 
 namespace Snyk.VisualStudio.Extension.Language
 {
@@ -267,6 +268,9 @@ namespace Snyk.VisualStudio.Extension.Language
             serviceProvider.SnykOptionsManager.Save(serviceProvider.Options);
 
             await serviceProvider.GeneralOptionsDialogPage.HandleAuthenticationSuccess(token, apiUrl);
+
+            // Notify HTML settings window of auth token change
+            HtmlSettingsWindow.Instance?.UpdateAuthToken(token);
 
             if (!serviceProvider.Options.ApiToken.IsValid())
                 return;

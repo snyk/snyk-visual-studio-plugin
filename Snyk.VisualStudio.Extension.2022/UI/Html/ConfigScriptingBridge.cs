@@ -30,6 +30,7 @@ namespace Snyk.VisualStudio.Extension.UI.Html
         private readonly ISnykServiceProvider serviceProvider;
         private readonly Action onModified;
         private readonly Action onReset;
+        private readonly Action<string> onAuthTokenChanged;
         private volatile bool isSaveComplete;
 
         /// <summary>
@@ -48,13 +49,15 @@ namespace Snyk.VisualStudio.Extension.UI.Html
             Action onModified,
             Action onReset = null,
             ISnykOptionsManager optionsManager = null,
-            ISnykServiceProvider serviceProvider = null)
+            ISnykServiceProvider serviceProvider = null,
+            Action<string> onAuthTokenChanged = null)
         {
             this.options = options ?? throw new ArgumentNullException(nameof(options));
             this.onModified = onModified ?? throw new ArgumentNullException(nameof(onModified));
             this.onReset = onReset;
             this.optionsManager = optionsManager ?? throw new ArgumentNullException(nameof(optionsManager));
             this.serviceProvider = serviceProvider ?? throw new ArgumentNullException(nameof(serviceProvider));
+            this.onAuthTokenChanged = onAuthTokenChanged;
         }
 
         /// <summary>
@@ -321,12 +324,6 @@ namespace Snyk.VisualStudio.Extension.UI.Html
 
         private void ApplyMiscellaneousSettings(IdeConfigData config)
         {
-            // Apply additional environment variables
-            if (!string.IsNullOrEmpty(config.AdditionalEnv))
-            {
-                options.AdditionalEnv = config.AdditionalEnv;
-            }
-
             // Apply risk score threshold
             options.RiskScoreThreshold = config.RiskScoreThreshold;
         }

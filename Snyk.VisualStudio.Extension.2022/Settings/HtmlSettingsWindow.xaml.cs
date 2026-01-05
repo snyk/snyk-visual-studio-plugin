@@ -20,6 +20,10 @@ namespace Snyk.VisualStudio.Extension.Settings
     public partial class HtmlSettingsWindow : DialogWindow
     {
         private static readonly ILogger Logger = LogManager.ForContext<HtmlSettingsWindow>();
+        private static HtmlSettingsWindow instance;
+
+        public static HtmlSettingsWindow Instance => instance;
+
         private readonly ISnykOptions options;
         private readonly IJsonRpc languageServerRpc;
         private readonly ISnykOptionsManager optionsManager;
@@ -49,6 +53,9 @@ namespace Snyk.VisualStudio.Extension.Settings
             this.languageServerRpc = languageServerRpc;
             this.optionsManager = optionsManager ?? throw new ArgumentNullException(nameof(optionsManager));
             this.serviceProvider = serviceProvider ?? throw new ArgumentNullException(nameof(serviceProvider));
+
+            // Set as singleton instance
+            instance = this;
 
             // Set IE11 feature control for modern rendering
             SetBrowserFeatureControl();
@@ -249,6 +256,73 @@ namespace Snyk.VisualStudio.Extension.Settings
         {
             DialogResult = false;
             Close();
+        }
+
+        public void UpdateAuthToken(string token)
+        {
+            try
+            {
+                ThreadHelper.JoinableTaskFactory.Run(async () =>
+                {
+                    await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
+
+                    if (SettingsBrowser?.Document != null)
+                    {
+                        InvokeSetAuthToken(token);
+                    }
+                });
+            }
+            catch (Exception ex)
+            {
+                Logger.Error(ex, "Error updating auth token in HTML settings");
+            }
+        }
+
+        private void InvokeSetAuthToken(string token)
+        {
+            try
+            {
+                // Inject script element to call setAuthToken function
+                dynamic doc = SettingsBrowser.Document;
+                if (doc == null)
+                {
+                    Logger.Warning("Document is null, cannot set auth token");
+                    return;
+                }
+
+                var escapedToken = token.Replace("'", "\\'").Replace("\"", "\\\"");
+                var script = $@"
+                    (function() {{
+                        if (typeof window.setAuthToken === 'function') {{
+                            window.setAuthToken('{escapedToken}');
+                        }} else {{
+                            console.warn('window.setAuthToken is not available');
+                        }}
+                    }})();
+                ";
+
+                var scriptElement = doc.CreateElement("script");
+                scriptElement.SetAttribute("type", "text/javascript");
+                scriptElement.InnerText = script;
+                doc.GetElementsByTagName("head")[0].AppendChild(scriptElement);
+
+                Logger.Information("Invoked window.setAuthToken with token");
+            }
+            catch (Exception ex)
+            {
+                Logger.Error(ex, "Error invoking window.setAuthToken");
+            }
+        }
+
+        protected override void OnClosed(EventArgs e)
+        {
+            // Clear singleton instance
+            if (instance == this)
+            {
+                instance = null;
+            }
+
+            base.OnClosed(e);
         }
 
         /// <summary>

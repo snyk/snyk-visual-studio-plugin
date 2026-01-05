@@ -43,7 +43,6 @@ namespace Snyk.VisualStudio.Extension.UI.Html
         public FilterSeverity FilterSeverity { get; set; }
 
         // Miscellaneous Settings
-        public string AdditionalEnv { get; set; }
         public int? RiskScoreThreshold { get; set; }
 
         // Folder Configs
