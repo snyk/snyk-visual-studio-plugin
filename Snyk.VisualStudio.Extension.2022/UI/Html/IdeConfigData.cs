@@ -11,6 +11,9 @@ namespace Snyk.VisualStudio.Extension.UI.Html
     /// </summary>
     public class IdeConfigData
     {
+        // Form Type
+        public bool? IsFallbackForm { get; set; }
+
         // Scan Settings
         public bool? ActivateSnykOpenSource { get; set; }
         public bool? ActivateSnykCode { get; set; }

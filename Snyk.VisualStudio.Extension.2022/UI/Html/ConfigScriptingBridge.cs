@@ -175,32 +175,47 @@ namespace Snyk.VisualStudio.Extension.UI.Html
             var config = JsonConvert.DeserializeObject<IdeConfigData>(jsonString);
             if (config == null) return;
 
-            ApplyScanSettings(config);
-            ApplyIssueViewSettings(config);
-            ApplyAuthenticationSettings(config);
-            ApplyConnectionSettings(config);
-            ApplyTrustedFolders(config);
-            ApplyCliSettings(config);
-            ApplyFilterSettings(config);
-            ApplyMiscellaneousSettings(config);
-            await ApplyFolderConfigsAsync(config);
+            var isCliOnly = config.IsFallbackForm ?? false;
+            Logger.Information("Saving workspace configuration (CLI only: {IsCliOnly})", isCliOnly);
 
-            // Note: The following settings are LS-only and not persisted in IDE options:
-            // - enableTrustedFoldersFeature: "false"
+            // Always apply CLI settings and Insecure setting
+            ApplyCliSettings(config);
+            ApplyInsecureSetting(config);
+
+            // Only apply full settings when not in CLI-only mode
+            if (!isCliOnly)
+            {
+                ApplyScanSettings(config);
+                ApplyIssueViewSettings(config);
+                ApplyAuthenticationSettings(config);
+                ApplyConnectionSettings(config);
+                ApplyTrustedFolders(config);
+                ApplyFilterSettings(config);
+                ApplyMiscellaneousSettings(config);
+                await ApplyFolderConfigsAsync(config);
+            }
         }
 
         private void ApplyScanSettings(IdeConfigData config)
         {
             // Apply scan settings (activateSnykOpenSource, activateSnykCode, activateSnykIac)
-            if (config.ActivateSnykOpenSource.HasValue || config.ActivateSnykCode.HasValue || config.ActivateSnykIac.HasValue)
+            if (config.ActivateSnykOpenSource.HasValue)
             {
-                options.OssEnabled = config.ActivateSnykOpenSource ?? false;
-                options.SnykCodeSecurityEnabled = config.ActivateSnykCode ?? false;
-                options.IacEnabled = config.ActivateSnykIac ?? false;
+                options.OssEnabled = config.ActivateSnykOpenSource.Value;
+            }
+
+            if (config.ActivateSnykCode.HasValue)
+            {
+                options.SnykCodeSecurityEnabled = config.ActivateSnykCode.Value;
+            }
+
+            if (config.ActivateSnykIac.HasValue)
+            {
+                options.IacEnabled = config.ActivateSnykIac.Value;
             }
 
             // Apply scanning mode (auto/manual)
-            if (!string.IsNullOrEmpty(config.ScanningMode))
+            if (config.ScanningMode != null)
             {
                 options.AutoScan = config.ScanningMode == "auto";
             }
@@ -225,9 +240,9 @@ namespace Snyk.VisualStudio.Extension.UI.Html
         private void ApplyAuthenticationSettings(IdeConfigData config)
         {
             // Apply authentication method (authenticationMethod: "oauth"/"token"/"pat")
-            if (!string.IsNullOrEmpty(config.AuthenticationMethod))
+            if (config.AuthenticationMethod != null)
             {
-                var authMethodStr = config.AuthenticationMethod.ToLowerInvariant();
+                var authMethodStr = config.AuthenticationMethod.ToLowerInvariant().Trim();
                 switch (authMethodStr)
                 {
                     case "oauth":
@@ -239,38 +254,56 @@ namespace Snyk.VisualStudio.Extension.UI.Html
                     case "pat":
                         options.AuthenticationMethod = AuthenticationType.Pat;
                         break;
+                    default:
+                        // Default to OAuth if empty or unknown value
+                        options.AuthenticationMethod = AuthenticationType.OAuth;
+                        break;
                 }
             }
         }
 
-        private void ApplyConnectionSettings(IdeConfigData config)
+        private void ApplyInsecureSetting(IdeConfigData config)
         {
-            if (!string.IsNullOrEmpty(config.Endpoint))
-            {
-                options.CustomEndpoint = config.Endpoint;
-            }
-
-            if (!string.IsNullOrEmpty(config.Token))
-            {
-                // Use the authenticationMethod from this request if provided, otherwise uses existing value
-                // Note: Requires caller to send authenticationMethod when updating token to ensure correct pairing
-                options.ApiToken = new AuthenticationToken(options.AuthenticationMethod, config.Token);
-            }
-
-            if (!string.IsNullOrEmpty(config.Organization))
-            {
-                options.Organization = config.Organization;
-            }
-
+            // Apply Insecure (SSL) setting - available in both CLI-only and full mode
             if (config.Insecure.HasValue)
             {
                 options.IgnoreUnknownCA = config.Insecure.Value;
             }
         }
 
+        private void ApplyConnectionSettings(IdeConfigData config)
+        {
+            // Allow empty values to reset settings
+            if (config.Endpoint != null)
+            {
+                options.CustomEndpoint = config.Endpoint;
+            }
+
+            if (config.Token != null)
+            {
+                // Normalize empty/null/undefined to empty string for comparison
+                var normalizedNewToken = config.Token?.Trim() ?? string.Empty;
+                var normalizedExistingToken = options.ApiToken?.AuthToken?.Trim() ?? string.Empty;
+
+                // Persist token only if it has changed
+                if (normalizedNewToken != normalizedExistingToken)
+                {
+                    // Use the authenticationMethod from this request if provided, otherwise uses existing value
+                    // Note: Requires caller to send authenticationMethod when updating token to ensure correct pairing
+                    options.ApiToken = new AuthenticationToken(options.AuthenticationMethod, config.Token);
+                }
+            }
+
+            if (config.Organization != null)
+            {
+                options.Organization = config.Organization;
+            }
+        }
+
         private void ApplyTrustedFolders(IdeConfigData config)
         {
-            if (config.TrustedFolders == null || config.TrustedFolders.Count == 0)
+            // Allow empty list to clear trusted folders
+            if (config.TrustedFolders == null)
                 return;
 
             var trustedFolders = new HashSet<string>();
@@ -282,15 +315,14 @@ namespace Snyk.VisualStudio.Extension.UI.Html
                 }
             }
 
-            if (trustedFolders.Count > 0)
-            {
-                options.TrustedFolders = trustedFolders;
-            }
+            // Set even if empty to allow clearing
+            options.TrustedFolders = trustedFolders;
         }
 
         private void ApplyCliSettings(IdeConfigData config)
         {
-            if (!string.IsNullOrEmpty(config.CliPath))
+            // Allow empty values to reset settings
+            if (config.CliPath != null)
             {
                 options.CliCustomPath = config.CliPath;
             }
@@ -300,12 +332,12 @@ namespace Snyk.VisualStudio.Extension.UI.Html
                 options.BinariesAutoUpdate = config.ManageBinariesAutomatically.Value;
             }
 
-            if (!string.IsNullOrEmpty(config.BaseUrl))
+            if (config.BaseUrl != null)
             {
                 options.CliDownloadUrl = config.BaseUrl;
             }
 
-            if (!string.IsNullOrEmpty(config.CliReleaseChannel))
+            if (config.CliReleaseChannel != null)
             {
                 options.CliReleaseChannel = config.CliReleaseChannel;
             }
