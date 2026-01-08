@@ -29,6 +29,7 @@ namespace Snyk.VisualStudio.Extension.Settings
         private readonly ISnykOptionsManager optionsManager;
         private readonly ISnykServiceProvider serviceProvider;
         private ConfigScriptingBridge scriptingBridge;
+        private UI.Toolwindow.WebBrowserHostUIHandler wbHandler;
 
         public static readonly DependencyProperty IsDirtyProperty =
             DependencyProperty.Register(
@@ -57,10 +58,19 @@ namespace Snyk.VisualStudio.Extension.Settings
             // Set as singleton instance
             instance = this;
 
-            // Set IE11 feature control for modern rendering
-            SetBrowserFeatureControl();
+            // Clean up any previous registry modifications
+            // CleanupBrowserFeatureControl();
 
             InitializeComponent();
+
+            // Initialize WebBrowser handler exactly like HtmlDescriptionPanel
+            wbHandler = new UI.Toolwindow.WebBrowserHostUIHandler(SettingsBrowser)
+            {
+                IsWebBrowserContextMenuEnabled = false,
+                ScriptErrorsSuppressed = true,
+            };
+
+            wbHandler.LoadCompleted += SettingsBrowser_OnLoadCompleted;
         }
 
         private async void Window_Loaded(object sender, RoutedEventArgs e)
@@ -105,14 +115,61 @@ namespace Snyk.VisualStudio.Extension.Settings
                     return;
                 }
 
-                // Apply theme
-                html = HtmlResourceLoader.ApplyTheme(html);
-
                 // Set the scripting bridge as the ObjectForScripting
                 SettingsBrowser.ObjectForScripting = scriptingBridge;
 
-                // Navigate to the HTML
-                SettingsBrowser.NavigateToString(html);
+                // Force visual refresh before navigation (required for DPI handling)
+                SettingsBrowser.InvalidateVisual();
+                SettingsBrowser.UpdateLayout();
+
+                // TEMPORARY TEST: Use simple HTML to verify DPI handling
+                var testHtml = @"
+                    <!DOCTYPE html>
+                    <html>
+                    <head>
+                        <meta http-equiv='X-UA-Compatible' content='IE=edge' />
+                        <meta name='viewport' content='width=device-width, initial-scale=1.0' />
+                        <style>
+                            body {
+                                font-family: 'Segoe UI', Arial, sans-serif;
+                                margin: 20px;
+                                padding: 0;
+                            }
+                            h1 { font-size: 48px; }
+                            p { font-size: 28px; line-height: 1.5; }
+                            .test-box {
+                                border: 2px solid #0078d4;
+                                padding: 15px;
+                                margin: 10px 0;
+                                background: #f3f3f3;
+                            }
+                            input, select, button {
+                                font-size: 14px;
+                                padding: 8px;
+                                margin: 5px;
+                            }
+                        </style>
+                    </head>
+                    <body>
+                        <h1>DPI Test - Settings Window</h1>
+                        <div class='test-box'>
+                            <p>This is 14px text. If font sizes look correct, DPI handling is working.</p>
+                            <p>Testing various elements:</p>
+                            <input type='text' value='Text input' />
+                            <select><option>Dropdown</option></select>
+                            <button>Button</button>
+                        </div>
+                        <p>Actual content HTML length: " + html.Length + @" characters</p>
+                    </body>
+                    </html>
+                ";
+
+                // Navigate to test HTML instead of actual content
+                SettingsBrowser.NavigateToString(testHtml);
+
+                // TODO: Remove test HTML and uncomment these lines once DPI is verified:
+                // html = HtmlResourceLoader.ApplyTheme(html);
+                // SettingsBrowser.NavigateToString(html);
             }
             catch (Exception ex)
             {
@@ -125,9 +182,6 @@ namespace Snyk.VisualStudio.Extension.Settings
         {
             try
             {
-                // Ensure scripting bridge is set
-                SettingsBrowser.ObjectForScripting = scriptingBridge;
-
                 // Inject IDE bridge functions into window object
                 InjectIdeBridgeFunctions();
 
@@ -258,6 +312,14 @@ namespace Snyk.VisualStudio.Extension.Settings
             Close();
         }
 
+        private void TitleBar_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)
+        {
+            if (e.ClickCount == 1)
+            {
+                DragMove();
+            }
+        }
+
         public void UpdateAuthToken(string token)
         {
             try
@@ -326,41 +388,63 @@ namespace Snyk.VisualStudio.Extension.Settings
         }
 
         /// <summary>
-        /// Set IE11 feature control for modern rendering mode.
-        /// This ensures the WebBrowser control uses IE11 mode instead of IE7 compatibility mode.
+        /// Clean up any previous IE11 feature control registry modifications.
+        /// Removes registry entries that were previously set by SetBrowserFeatureControl.
         /// </summary>
-        private void SetBrowserFeatureControl()
+        private void CleanupBrowserFeatureControl()
         {
             try
             {
                 var appName = System.IO.Path.GetFileName(System.Diagnostics.Process.GetCurrentProcess().MainModule.FileName);
-                SetBrowserFeatureControlKey("FEATURE_BROWSER_EMULATION", appName, 11001); // IE11 mode
-                SetBrowserFeatureControlKey("FEATURE_DISABLE_NAVIGATION_SOUNDS", appName, 1);
-                SetBrowserFeatureControlKey("FEATURE_SCRIPTURL_MITIGATION", appName, 1);
-                SetBrowserFeatureControlKey("FEATURE_96DPI_PIXEL", appName, 1); // Force 96 DPI pixel scaling
-                SetBrowserFeatureControlKey("FEATURE_NINPUT_LEGACYMODE", appName, 0); // Disable legacy input mode
+
+                // List of features that were previously set
+                var features = new[]
+                {
+                    "FEATURE_BROWSER_EMULATION",
+                    "FEATURE_DISABLE_NAVIGATION_SOUNDS",
+                    "FEATURE_SCRIPTURL_MITIGATION",
+                    "FEATURE_96DPI_PIXEL",
+                    "FEATURE_NINPUT_LEGACYMODE"
+                };
+
+                foreach (var feature in features)
+                {
+                    CleanupBrowserFeatureControlKey(feature, appName);
+                }
+
+                Logger.Information("Successfully cleaned up browser feature control registry entries");
             }
             catch (Exception ex)
             {
-                Logger.Error(ex, "Error setting browser feature control");
+                Logger.Warning(ex, "Error cleaning up browser feature control");
             }
         }
 
-        private void SetBrowserFeatureControlKey(string feature, string appName, int value)
+        private void CleanupBrowserFeatureControlKey(string feature, string appName)
         {
             try
             {
-                using (var key = Microsoft.Win32.Registry.CurrentUser.CreateSubKey(
+                using (var key = Microsoft.Win32.Registry.CurrentUser.OpenSubKey(
                     $@"Software\Microsoft\Internet Explorer\Main\FeatureControl\{feature}",
-                    Microsoft.Win32.RegistryKeyPermissionCheck.ReadWriteSubTree))
+                    writable: true))
                 {
-                    key?.SetValue(appName, value, Microsoft.Win32.RegistryValueKind.DWord);
+                    if (key != null)
+                    {
+                        // Delete the value if it exists
+                        var value = key.GetValue(appName);
+                        if (value != null)
+                        {
+                            key.DeleteValue(appName, throwOnMissingValue: false);
+                            Logger.Information("Removed registry value for {Feature}: {AppName}", feature, appName);
+                        }
+                    }
                 }
             }
             catch (Exception ex)
             {
-                Logger.Error(ex, $"Error setting browser feature control key: {feature}");
+                Logger.Warning(ex, "Error cleaning up browser feature control key: {Feature}", feature);
             }
         }
+
     }
 }

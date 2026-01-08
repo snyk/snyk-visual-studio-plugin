@@ -18,24 +18,37 @@
                  toolkit:Themes.UseVsTheme="True"
                  Title="Snyk Settings"
                  Loaded="Window_Loaded">
-    <WindowChrome.WindowChrome>
+    <!-- TEMP: WindowChrome removed to test DPI handling -->
+    <!-- <WindowChrome.WindowChrome>
         <WindowChrome CaptionHeight="0"
                       ResizeBorderThickness="5"
                       GlassFrameThickness="0"
                       CornerRadius="0" />
-    </WindowChrome.WindowChrome>
+    </WindowChrome.WindowChrome> -->
     <DockPanel Margin="10">
-        <!-- Top: Close Button -->
-        <Button DockPanel.Dock="Top"
-                HorizontalAlignment="Right"
-                Click="CloseButton_OnClick"
-                MinWidth="1"
-                MinHeight="1"
-                Width="35"
-                Margin="0,0,0,10"
-                Padding="0">
-            <imaging:CrispImage Moniker="{x:Static catalog:KnownMonikers.Close}" />
-        </Button>
+        <!-- Top: Draggable Bar with Close Button -->
+        <Grid DockPanel.Dock="Top" Margin="0,0,0,10">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*" />
+                <ColumnDefinition Width="Auto" />
+            </Grid.ColumnDefinitions>
+
+            <!-- Draggable area (empty, just for dragging) -->
+            <Border Grid.Column="0"
+                    Background="Transparent"
+                    MouseLeftButtonDown="TitleBar_MouseLeftButtonDown"
+                    Height="35" />
+
+            <!-- Close button -->
+            <Button Grid.Column="1"
+                    Click="CloseButton_OnClick"
+                    MinWidth="35"
+                    Width="35"
+                    Height="35"
+                    Padding="0">
+                <imaging:CrispImage Moniker="{x:Static catalog:KnownMonikers.Close}" />
+            </Button>
+        </Grid>
 
         <!-- Bottom: OK and Cancel Buttons -->
         <StackPanel HorizontalAlignment="Right" DockPanel.Dock="Bottom" Orientation="Horizontal" Margin="0,10,0,0">
@@ -47,7 +60,9 @@
         <!-- Center: WebBrowser -->
         <Grid>
             <WebBrowser x:Name="SettingsBrowser"
-                        LoadCompleted="SettingsBrowser_OnLoadCompleted" />
+                        VerticalAlignment="Stretch"
+                        HorizontalAlignment="Stretch"
+                        UseLayoutRounding="True" />
             <TextBlock x:Name="DebugLabel"
                        Text="Loading settings..."
                        FontSize="16"

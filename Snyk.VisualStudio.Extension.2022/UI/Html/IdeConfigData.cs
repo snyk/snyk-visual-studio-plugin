@@ -77,7 +77,7 @@ namespace Snyk.VisualStudio.Extension.UI.Html
     /// </summary>
     public class FolderConfigData
     {
-        public string AdditionalParameters { get; set; }
+        public List<string> AdditionalParameters { get; set; }
         public string AdditionalEnv { get; set; }
         public string PreferredOrg { get; set; }
         public string AutoDeterminedOrg { get; set; }

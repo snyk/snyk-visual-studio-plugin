@@ -393,7 +393,7 @@ namespace Snyk.VisualStudio.Extension.UI.Html
                     if (folderConfig == null) continue;
 
                     // Extract folder settings (matching LS HTML JSON keys)
-                    var additionalOptions = folderConfig.AdditionalParameters ?? string.Empty;
+                    var additionalOptions = string.Join(" ", folderConfig.AdditionalParameters);
                     var additionalEnv = folderConfig.AdditionalEnv ?? string.Empty;
                     var preferredOrg = folderConfig.PreferredOrg ?? string.Empty;
                     var autoOrg = folderConfig.AutoDeterminedOrg ?? string.Empty;
@@ -418,23 +418,8 @@ namespace Snyk.VisualStudio.Extension.UI.Html
                             existingConfig.PreferredOrg = preferredOrg;
                             existingConfig.AutoDeterminedOrg = autoOrg;
                             existingConfig.OrgSetByUser = orgSetByUser;
-
-                            // Mirror AdditionalParameters (convert from string to List<string>)
-                            if (!string.IsNullOrEmpty(additionalOptions))
-                            {
-                                // Split by space, but this is a simplified approach
-                                // The LS HTML sends it as a string, we store it as List<string>
-                                existingConfig.AdditionalParameters = additionalOptions.Split(new[] { ' ' }, StringSplitOptions.RemoveEmptyEntries).ToList();
-                            }
-                            else
-                            {
-                                existingConfig.AdditionalParameters = new List<string>();
-                            }
-
-                            // Mirror AdditionalEnv
+                            existingConfig.AdditionalParameters = folderConfig.AdditionalParameters ?? new List<string>();
                             existingConfig.AdditionalEnv = additionalEnv;
-
-                            // Mirror ScanCommandConfig if present in JSON
                             if (folderConfig.ScanCommandConfig != null)
                             {
                                 existingConfig.ScanCommandConfig = folderConfig.ScanCommandConfig;
