@@ -59,7 +59,7 @@ namespace Snyk.VisualStudio.Extension.Settings
             instance = this;
 
             // Clean up any previous registry modifications
-            // CleanupBrowserFeatureControl();
+            CleanupBrowserFeatureControl();
 
             InitializeComponent();
 
@@ -165,11 +165,11 @@ namespace Snyk.VisualStudio.Extension.Settings
                 ";
 
                 // Navigate to test HTML instead of actual content
-                SettingsBrowser.NavigateToString(testHtml);
+                //SettingsBrowser.NavigateToString(testHtml);
 
                 // TODO: Remove test HTML and uncomment these lines once DPI is verified:
-                // html = HtmlResourceLoader.ApplyTheme(html);
-                // SettingsBrowser.NavigateToString(html);
+                html = HtmlResourceLoader.ApplyTheme(html);
+                SettingsBrowser.NavigateToString(html);
             }
             catch (Exception ex)
             {
