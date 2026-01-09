@@ -31,7 +31,7 @@ namespace Snyk.VisualStudio.Extension.Settings
         private readonly ISnykOptionsManager optionsManager;
         private readonly ISnykServiceProvider serviceProvider;
         private ConfigScriptingBridge scriptingBridge;
-        private WebBrowserHostUIHandler wbHandler;
+        protected WebBrowserHostUIHandler wbHandler;
 
         public static readonly DependencyProperty IsDirtyProperty =
             DependencyProperty.Register(
@@ -62,12 +62,15 @@ namespace Snyk.VisualStudio.Extension.Settings
 
             InitializeComponent();
 
-            // Initialize WebBrowser handler exactly like HtmlDescriptionPanel
+            // Initialize WebBrowser handler
             wbHandler = new WebBrowserHostUIHandler(SettingsBrowser)
             {
                 IsWebBrowserContextMenuEnabled = false,
                 ScriptErrorsSuppressed = true,
             };
+            // Disable DPI awareness for this window, since we haven't been able to find a way to support it properly and we are not scaling.
+            // If we do not disable DPI awareness (without fixing the DPI scaling issue), then dropdown menus will be rendered incorrectly.
+            wbHandler.SetDpiAwareFlag(false);
 
             wbHandler.LoadCompleted += SettingsBrowser_OnLoadCompleted;
         }

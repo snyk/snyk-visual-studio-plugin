@@ -79,6 +79,9 @@ namespace Snyk.VisualStudio.Extension.Settings
             ISnykServiceProvider serviceProvider)
             : base(options, languageServerRpc, optionsManager, serviceProvider)
         {
+            // Enable script error visibility for debugging
+            wbHandler.ScriptErrorsSuppressed = false;
+
             // Add debug indicator to title after base initialization
             this.Loaded += (sender, args) =>
             {
