@@ -45,14 +45,36 @@
         public override Task UpdateStateAsync() => Task.CompletedTask;
 
         /// <summary>
-        /// Open Snyk Options (Settings) page.
+        /// Open Snyk HTML Settings window.
         /// </summary>
         /// <param name="sender">Source object.</param>
         /// <param name="eventArgs">Event args.</param>
         protected override void Execute(object sender, EventArgs eventArgs)
         {
             base.Execute(sender, eventArgs);
-            this.VsPackage.ShowOptionPage();
+
+            ThreadHelper.JoinableTaskFactory.Run(async () =>
+            {
+                await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
+
+                var serviceProvider = SnykVSPackage.ServiceProvider;
+                var options = serviceProvider.Options;
+                var languageServerRpc = serviceProvider.LanguageClientManager?.Rpc;
+                var optionsManager = serviceProvider.SnykOptionsManager;
+
+                using (Settings.DpiContextScope.EnterUnawareGdiScaled())
+                {
+                    var settingsWindow = new Settings.HtmlSettingsWindow(
+                        options,
+                        languageServerRpc,
+                        optionsManager,
+                        serviceProvider);
+
+                    var hlp = new System.Windows.Interop.WindowInteropHelper(settingsWindow);
+                    hlp.Owner = System.Diagnostics.Process.GetCurrentProcess().MainWindowHandle;
+                    settingsWindow.Show();
+                }
+            });
         }
 
         /// <summary>
