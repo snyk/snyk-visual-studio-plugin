@@ -1,9 +1,21 @@
-﻿using System.Collections.Generic;
+﻿// ABOUTME: This file defines initialization options and configuration structures for the Snyk Language Server protocol
+// ABOUTME: It contains data models for folder configs, scan commands, and initialization parameters sent to the Language Server
+using System.Collections.Generic;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Serialization;
 
 namespace Snyk.VisualStudio.Extension.Language
 {
+    /// <summary>
+    /// CamelCase naming strategy that preserves dictionary keys as-is.
+    /// </summary>
+    public class CamelCasePreserveDictionaryKeysNamingStrategy : CamelCaseNamingStrategy
+    {
+        public CamelCasePreserveDictionaryKeysNamingStrategy() : base(processDictionaryKeys: false, overrideSpecifiedNames: false)
+        {
+        }
+    }
+
     [JsonObject(NamingStrategyType = typeof(CamelCaseNamingStrategy))]
     public class SnykLsInitializationOptions
     {
@@ -38,14 +50,18 @@ namespace Snyk.VisualStudio.Extension.Language
         public string OutputFormat { get; set; }
         public string EnableDeltaFindings { get; set; }
         public List<FolderConfig> FolderConfigs { get; set; }
+        public string CliBaseDownloadUrl { get; set; }
+        public int? RiskScoreThreshold { get; set; }
     }
 
+    [JsonObject(NamingStrategyType = typeof(CamelCasePreserveDictionaryKeysNamingStrategy))]
     public class FolderConfig
     {
         public string FolderPath { get; set; }
         public string BaseBranch { get; set; }
         public List<string> LocalBranches { get; set; }
         public List<string> AdditionalParameters { get; set; }
+        public string AdditionalEnv { get; set; }
         public string ReferenceFolderPath { get; set; }
         public Dictionary<string, ScanCommandConfig> ScanCommandConfig { get; set; }
         public string PreferredOrg { get; set; }
@@ -59,10 +75,13 @@ namespace Snyk.VisualStudio.Extension.Language
         }
     }
 
+    [JsonObject(NamingStrategyType = typeof(CamelCaseNamingStrategy))]
     public class ScanCommandConfig
     {
-        // Add properties as needed based on the Java ScanCommandConfig class
-        // This is a placeholder for now - can be extended with specific properties
+        public string PreScanCommand { get; set; }
+        public bool PreScanOnlyReferenceFolder { get; set; }
+        public string PostScanCommand { get; set; }
+        public bool PostScanOnlyReferenceFolder { get; set; }
     }
 
     public class FolderConfigsParam

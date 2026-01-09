@@ -1,4 +1,6 @@
-﻿using System;
+﻿// ABOUTME: This file implements the ISnykOptions interface providing the concrete settings object
+// ABOUTME: It holds all Snyk configuration values and triggers SettingsChanged events when options are modified
+using System;
 using System.Collections.Generic;
 using Snyk.VisualStudio.Extension.Authentication;
 using Snyk.VisualStudio.Extension.Language;
@@ -31,12 +33,18 @@ namespace Snyk.VisualStudio.Extension.Settings
         public bool BinariesAutoUpdate { get; set; }
         public string CliCustomPath { get; set; }
         public string CliReleaseChannel { get; set; }
-        public string CliDownloadUrl { get; set; }
+        public string CliBaseDownloadURL { get; set; }
         public ISet<string> TrustedFolders { get; set; }
         public bool EnableDeltaFindings { get; set; }
         public List<FolderConfig> FolderConfigs { get; set; }
         public string CurrentCliVersion { get; set; }
         public bool AnalyticsPluginInstalledSent { get; set; }
+        public bool FilterCritical { get; set; }
+        public bool FilterHigh { get; set; }
+        public bool FilterMedium { get; set; }
+        public bool FilterLow { get; set; }
+        public string AdditionalEnv { get; set; }
+        public int? RiskScoreThreshold { get; set; }
         public string SnykCodeSettingsUrl => $"{this.GetBaseAppUrl()}/manage/snyk-code";
         public event EventHandler<SnykSettingsChangedEventArgs> SettingsChanged;
 

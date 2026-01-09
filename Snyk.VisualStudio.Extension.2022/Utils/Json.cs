@@ -4,17 +4,30 @@ using Newtonsoft.Json.Serialization;
 namespace Snyk.VisualStudio.Extension.Utils
 {
     /// <summary>
+    /// Custom contract resolver that camelCases property names but preserves dictionary keys.
+    /// </summary>
+    public class CamelCaseExceptDictionaryKeysResolver : CamelCasePropertyNamesContractResolver
+    {
+        protected override JsonDictionaryContract CreateDictionaryContract(System.Type objectType)
+        {
+            var contract = base.CreateDictionaryContract(objectType);
+            contract.DictionaryKeyResolver = propertyName => propertyName; // Don't transform dictionary keys
+            return contract;
+        }
+    }
+
+    /// <summary>
     /// Json util for serialize and deserialize objects with Json serialization parameters.
     /// </summary>
     public static class Json
     {
         /// <summary>
         /// Gets a value indicating whether with serialization options.
-        /// For example it enable Camel case by default.
+        /// For example it enable Camel case by default but preserves dictionary keys.
         /// </summary>
         private static JsonSerializerSettings SerializerOptions => new JsonSerializerSettings
         {
-            ContractResolver = new CamelCasePropertyNamesContractResolver(),
+            ContractResolver = new CamelCaseExceptDictionaryKeysResolver(),
         };
 
         /// <summary>

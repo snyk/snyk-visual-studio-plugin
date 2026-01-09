@@ -1,4 +1,6 @@
-﻿using Snyk.VisualStudio.Extension.Authentication;
+﻿// ABOUTME: This file manages loading and saving Snyk settings from persistent storage
+// ABOUTME: It handles serialization/deserialization of settings to file and provides solution-specific configuration management
+using Snyk.VisualStudio.Extension.Authentication;
 using Snyk.VisualStudio.Extension.Service;
 using System.Threading.Tasks;
 using Serilog;
@@ -46,7 +48,7 @@ namespace Snyk.VisualStudio.Extension.Settings
 
                 BinariesAutoUpdate = snykSettings.BinariesAutoUpdateEnabled,
                 CliCustomPath = snykSettings.CustomCliPath,
-                CliDownloadUrl = snykSettings.CliDownloadUrl,
+                CliBaseDownloadURL = snykSettings.CliBaseDownloadURL,
                 CliReleaseChannel = snykSettings.CliReleaseChannel,
                 CurrentCliVersion = snykSettings.CurrentCliVersion,
 
@@ -64,6 +66,14 @@ namespace Snyk.VisualStudio.Extension.Settings
                 IacEnabled = snykSettings.IacEnabled,
                 SnykCodeSecurityEnabled = snykSettings.SnykCodeSecurityEnabled,
                 OssEnabled = snykSettings.OssEnabled,
+
+                FilterCritical = snykSettings.FilterCritical,
+                FilterHigh = snykSettings.FilterHigh,
+                FilterMedium = snykSettings.FilterMedium,
+                FilterLow = snykSettings.FilterLow,
+
+                AdditionalEnv = snykSettings.AdditionalEnv,
+                RiskScoreThreshold = snykSettings.RiskScoreThreshold,
             };
         }
 
@@ -77,7 +87,7 @@ namespace Snyk.VisualStudio.Extension.Settings
 
             snykSettings.BinariesAutoUpdateEnabled = options.BinariesAutoUpdate;
             snykSettings.CustomCliPath = options.CliCustomPath;
-            snykSettings.CliDownloadUrl = options.CliDownloadUrl;
+            snykSettings.CliBaseDownloadURL = options.CliBaseDownloadURL;
             snykSettings.CliReleaseChannel = options.CliReleaseChannel;
             snykSettings.CurrentCliVersion = options.CurrentCliVersion;
 
@@ -96,6 +106,14 @@ namespace Snyk.VisualStudio.Extension.Settings
             snykSettings.IacEnabled = options.IacEnabled;
             snykSettings.SnykCodeSecurityEnabled = options.SnykCodeSecurityEnabled;
             snykSettings.OssEnabled = options.OssEnabled;
+
+            snykSettings.FilterCritical = options.FilterCritical;
+            snykSettings.FilterHigh = options.FilterHigh;
+            snykSettings.FilterMedium = options.FilterMedium;
+            snykSettings.FilterLow = options.FilterLow;
+
+            snykSettings.AdditionalEnv = options.AdditionalEnv;
+            snykSettings.RiskScoreThreshold = options.RiskScoreThreshold;
 
             this.SaveSettingsToFile();
             if(triggerSettingsChangedEvent)
@@ -150,6 +168,55 @@ namespace Snyk.VisualStudio.Extension.Settings
             this.SaveSettingsToFile();
 
             Logger.Information("Leave SaveAdditionalOptions method");
+        }
+
+        /// <summary>
+        /// Get additional environment variables string.
+        /// </summary>
+        /// <returns>string.</returns>
+        public async Task<string> GetAdditionalEnvAsync()
+        {
+            Logger.Information("Enter GetAdditionalEnv method");
+
+            var solutionPathHash = await this.GetSolutionPathHashAsync();
+
+            if (snykSettings == null || !snykSettings.SolutionSettingsDict.ContainsKey(solutionPathHash))
+            {
+                return string.Empty;
+            }
+
+            return snykSettings.SolutionSettingsDict[solutionPathHash].AdditionalEnv;
+        }
+
+        /// <summary>
+        /// Save additional environment variables string.
+        /// </summary>
+        /// <param name="additionalEnv">Environment variables string.</param>
+        /// <returns>A <see cref="Task"/> representing the asynchronous operation.</returns>
+        public async Task SaveAdditionalEnvAsync(string additionalEnv)
+        {
+            Logger.Information("Enter SaveAdditionalEnv method");
+
+            var solutionPathHash = await this.GetSolutionPathHashAsync();
+
+            SnykSolutionSettings projectSettings;
+
+            if (snykSettings.SolutionSettingsDict.ContainsKey(solutionPathHash))
+            {
+                projectSettings = snykSettings.SolutionSettingsDict[solutionPathHash];
+            }
+            else
+            {
+                projectSettings = new SnykSolutionSettings();
+            }
+
+            projectSettings.AdditionalEnv = additionalEnv;
+
+            snykSettings.SolutionSettingsDict[solutionPathHash] = projectSettings;
+
+            this.SaveSettingsToFile();
+
+            Logger.Information("Leave SaveAdditionalEnv method");
         }
 
         /// <summary>

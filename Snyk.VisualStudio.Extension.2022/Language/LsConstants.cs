@@ -2,7 +2,7 @@
 {
     public static class LsConstants
     {
-        public const string ProtocolVersion = "21";
+        public const string ProtocolVersion = "22";
         
         // Notifications
         public const string SnykHasAuthenticated = "$/snyk.hasAuthenticated";
@@ -21,6 +21,7 @@
 
         public const string SnykWorkspaceScan = "snyk.workspace.scan";
         public const string SnykWorkspaceFolderScan = "snyk.workspaceFolder.scan";
+        public const string SnykWorkspaceConfiguration = "snyk.workspace.configuration";
         public const string SnykSastEnabled = "snyk.getSettingsSastEnabled";
         public const string SnykLogin = "snyk.login";
         public const string SnykLogout = "snyk.logout";

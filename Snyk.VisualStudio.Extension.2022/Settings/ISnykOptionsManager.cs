@@ -23,6 +23,19 @@ namespace Snyk.VisualStudio.Extension.Settings
     Task SaveAdditionalOptionsAsync(string additionalOptions);
 
     /// <summary>
+    /// Get additional environment variables string.
+    /// </summary>
+    /// <returns>string.</returns>
+    Task<string> GetAdditionalEnvAsync();
+
+    /// <summary>
+    /// Save additional environment variables string.
+    /// </summary>
+    /// <param name="additionalEnv">Environment variables string.</param>
+    /// <returns>A <see cref="Task"/> representing the asynchronous operation.</returns>
+    Task SaveAdditionalEnvAsync(string additionalEnv);
+
+    /// <summary>
     /// Get global organization string.
     /// </summary>
     /// <returns>string.</returns>

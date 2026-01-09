@@ -211,7 +211,7 @@ namespace Snyk.VisualStudio.Extension.Settings
         {
             var memento = this.serviceProvider.Package.SnykCliOptionsDialogPage.SnykCliOptionsUserControl.OptionsMemento;
 
-            this.SnykOptions.CliDownloadUrl = memento.CliDownloadUrl;
+            this.SnykOptions.CliBaseDownloadURL = memento.CliBaseDownloadURL;
 
             var binariesAutoUpdateChanged = this.SnykOptions.BinariesAutoUpdate != memento.BinariesAutoUpdate;
             var releaseChannelChanged = this.SnykOptions.CliReleaseChannel != memento.CliReleaseChannel;

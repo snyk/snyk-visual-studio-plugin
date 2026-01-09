@@ -1,22 +1,21 @@
-﻿using System.Windows.Forms;
+﻿// ABOUTME: This file implements the WinForms user control for user experience settings
+// ABOUTME: It provides UI for configuring telemetry, auto-scan, error reporting, and issue visibility preferences
+using System.Windows.Forms;
+using Microsoft.VisualStudio.Shell;
+using Snyk.VisualStudio.Extension;
 using Snyk.VisualStudio.Extension.Service;
 
 namespace Snyk.VisualStudio.Extension.Settings
 {
-    public partial class SnykUserExperienceUserControl : UserControl
+    public partial class SnykUserExperienceUserControl : BaseSnykUserControl
     {
-        private readonly ISnykServiceProvider serviceProvider;
-        public ISnykOptions OptionsMemento { get; set; }
-
-        public SnykUserExperienceUserControl(ISnykServiceProvider serviceProvider)
+        public SnykUserExperienceUserControl(ISnykServiceProvider serviceProvider) : base(serviceProvider)
         {
-            this.serviceProvider = serviceProvider;
-            OptionsMemento = serviceProvider.SnykOptionsManager.Load();
             InitializeComponent();
-            this.UpdateViewFromOptions();
+            UpdateViewFromOptions();
         }
 
-        private void UpdateViewFromOptions()
+        protected override void UpdateViewFromOptions()
         {
             this.autoScanCheckBox.Checked = OptionsMemento.AutoScan;
         }

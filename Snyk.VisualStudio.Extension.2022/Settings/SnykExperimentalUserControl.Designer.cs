@@ -31,6 +31,7 @@
             this.components = new System.ComponentModel.Container();
             System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(SnykExperimentalUserControl));
             this.experimentalGroupBox = new System.Windows.Forms.GroupBox();
+            this.btnOpenSettingsV2 = new System.Windows.Forms.Button();
             this.ignoreGroupbox = new System.Windows.Forms.GroupBox();
             this.filterNoteLabel = new System.Windows.Forms.Label();
             this.cbIgnoredIssues = new System.Windows.Forms.CheckBox();
@@ -42,18 +43,30 @@
             this.ignoreGroupbox.SuspendLayout();
             this.mainPanel.SuspendLayout();
             this.SuspendLayout();
-            // 
+            //
             // experimentalGroupBox
-            // 
+            //
+            this.experimentalGroupBox.Controls.Add(this.btnOpenSettingsV2);
             this.experimentalGroupBox.Controls.Add(this.ignoreGroupbox);
             this.experimentalGroupBox.Location = new System.Drawing.Point(2, 11);
             this.experimentalGroupBox.Margin = new System.Windows.Forms.Padding(2);
             this.experimentalGroupBox.Name = "experimentalGroupBox";
             this.experimentalGroupBox.Padding = new System.Windows.Forms.Padding(8);
-            this.experimentalGroupBox.Size = new System.Drawing.Size(590, 195);
+            this.experimentalGroupBox.Size = new System.Drawing.Size(590, 225);
             this.experimentalGroupBox.TabIndex = 21;
             this.experimentalGroupBox.TabStop = false;
             this.experimentalGroupBox.Text = "Experimental";
+            //
+            // btnOpenSettingsV2
+            //
+            this.btnOpenSettingsV2.Location = new System.Drawing.Point(10, 180);
+            this.btnOpenSettingsV2.Margin = new System.Windows.Forms.Padding(2);
+            this.btnOpenSettingsV2.Name = "btnOpenSettingsV2";
+            this.btnOpenSettingsV2.Size = new System.Drawing.Size(150, 25);
+            this.btnOpenSettingsV2.TabIndex = 25;
+            this.btnOpenSettingsV2.Text = "Open settings v2 page";
+            this.btnOpenSettingsV2.UseVisualStyleBackColor = true;
+            this.btnOpenSettingsV2.Click += new System.EventHandler(this.btnOpenSettingsV2_Click);
             // 
             // ignoreGroupbox
             // 
@@ -147,5 +160,6 @@
         private System.Windows.Forms.CheckBox cbOpenIssues;
         private System.Windows.Forms.ToolTip openIssuesToolTip;
         private System.Windows.Forms.ToolTip ignoredIssuesToolTip;
+        private System.Windows.Forms.Button btnOpenSettingsV2;
     }
 }

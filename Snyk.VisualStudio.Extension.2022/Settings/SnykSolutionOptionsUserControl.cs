@@ -1,4 +1,6 @@
-﻿using System;
+﻿// ABOUTME: This file implements the WinForms user control for solution-specific settings
+// ABOUTME: It provides UI for configuring per-solution additional parameters and organization settings
+using System;
 using System.Windows.Forms;
 using Microsoft.VisualStudio.Shell;
 using Serilog;
@@ -10,11 +12,10 @@ namespace Snyk.VisualStudio.Extension.Settings
     /// <summary>
     /// Solution settings control.
     /// </summary>
-    public partial class SnykSolutionOptionsUserControl : UserControl
+    public partial class SnykSolutionOptionsUserControl : BaseSnykUserControl
     {
         private static readonly ILogger Logger = LogManager.ForContext<SnykSolutionOptionsUserControl>();
 
-        private readonly ISnykServiceProvider serviceProvider;
         public string AdditionalOptions { get; set; }
         public string Organization { get; set; }
 
@@ -22,15 +23,64 @@ namespace Snyk.VisualStudio.Extension.Settings
         /// Gets the current state of the auto organization checkbox.
         /// </summary>
         public bool IsAutoOrganizationChecked => this.autoOrganizationCheckBox.Checked;
+
         /// <summary>
         /// Initializes a new instance of the <see cref="SnykSolutionOptionsUserControl"/> class.
         /// </summary>
         /// <param name="serviceProvider">Snyk service provider.</param>
-        public SnykSolutionOptionsUserControl(ISnykServiceProvider serviceProvider)
+        public SnykSolutionOptionsUserControl(ISnykServiceProvider serviceProvider) : base(serviceProvider)
         {
             this.InitializeComponent();
+        }
 
-            this.serviceProvider = serviceProvider;
+        /// <summary>
+        /// Loads solution-specific settings asynchronously.
+        /// Overrides base class to provide async loading for solution-specific storage.
+        /// </summary>
+        protected override async System.Threading.Tasks.Task UpdateViewFromOptionsAsync()
+        {
+            // Load additional options
+            try
+            {
+                var additionalOptions = await this.serviceProvider.SnykOptionsManager.GetAdditionalOptionsAsync();
+                this.additionalOptionsTextBox.Text = additionalOptions ?? string.Empty;
+                this.AdditionalOptions = additionalOptions ?? string.Empty;
+            }
+            catch (Exception e)
+            {
+                Logger.Error(e, "Error on load additional options");
+                this.additionalOptionsTextBox.Text = string.Empty;
+            }
+
+            // Load organization settings
+            try
+            {
+                var orgSetByUser = await this.serviceProvider.SnykOptionsManager.GetOrgSetByUserAsync();
+
+                // Checkbox should be ticked if orgSetByUser is false (auto mode)
+                this.autoOrganizationCheckBox.Checked = !orgSetByUser;
+
+                if (!orgSetByUser)
+                {
+                    // Show autoDeterminedOrg if orgSetByUser is false
+                    var autoDeterminedOrg = await this.serviceProvider.SnykOptionsManager.GetAutoDeterminedOrgAsync();
+                    this.organizationTextBox.Text = autoDeterminedOrg ?? string.Empty;
+                    this.Organization = autoDeterminedOrg ?? string.Empty;
+                }
+                else
+                {
+                    // Show preferredOrg if orgSetByUser is true
+                    var preferredOrg = await this.serviceProvider.SnykOptionsManager.GetPreferredOrgAsync();
+                    this.organizationTextBox.Text = preferredOrg ?? string.Empty;
+                    this.Organization = preferredOrg ?? string.Empty;
+                }
+            }
+            catch (Exception e)
+            {
+                Logger.Error(e, "Error on load organization settings");
+                this.autoOrganizationCheckBox.Checked = true; // Default to auto mode
+                this.organizationTextBox.Text = string.Empty;
+            }
         }
 
         private void AdditionalOptionsTextBox_TextChanged(object sender, EventArgs e)
@@ -121,57 +171,10 @@ namespace Snyk.VisualStudio.Extension.Settings
             System.Diagnostics.Process.Start("https://app.snyk.io/account");
         }
 
-        private void SnykProjectOptionsUserControl_Load(object sender, EventArgs eventArgs) => ThreadHelper.JoinableTaskFactory.RunAsync(async () =>
-        {
-            // Load additional options
-            try
+        private void SnykProjectOptionsUserControl_Load(object sender, EventArgs eventArgs) =>
+            ThreadHelper.JoinableTaskFactory.RunAsync(async () =>
             {
-                var additionalOptions = await this.serviceProvider.SnykOptionsManager.GetAdditionalOptionsAsync();
-
-                if (!string.IsNullOrEmpty(additionalOptions))
-                {
-                    this.additionalOptionsTextBox.Text = additionalOptions;
-                }
-                else
-                {
-                    this.additionalOptionsTextBox.Text = string.Empty;
-                }
-            }
-            catch (Exception e)
-            {
-                Logger.Error(e, "Error on load additional options");
-                this.additionalOptionsTextBox.Text = string.Empty;
-            }
-
-            try
-            {
-                var orgSetByUser = await this.serviceProvider.SnykOptionsManager.GetOrgSetByUserAsync();
-                
-                // Checkbox should be ticked if orgSetByUser is false (auto mode)
-                this.autoOrganizationCheckBox.Checked = !orgSetByUser;
-
-                if (!orgSetByUser)
-                {
-                    // Show autoDeterminedOrg if orgSetByUser is false
-                    var autoDeterminedOrg = await this.serviceProvider.SnykOptionsManager.GetAutoDeterminedOrgAsync();
-                    // If autoDeterminedOrg is empty, display empty string (user likely not logged in or error state)
-                    this.organizationTextBox.Text = autoDeterminedOrg ?? string.Empty;
-                    this.Organization = autoDeterminedOrg ?? string.Empty;
-                }
-                else
-                {
-                    // Show preferredOrg if orgSetByUser is true
-                    var preferredOrg = await this.serviceProvider.SnykOptionsManager.GetPreferredOrgAsync();
-                    this.organizationTextBox.Text = preferredOrg ?? string.Empty;
-                    this.Organization = preferredOrg ?? string.Empty;
-                }
-            }
-            catch (Exception e)
-            {
-                Logger.Error(e, "Error on load organization settings");
-                this.autoOrganizationCheckBox.Checked = true; // Default to auto mode
-                this.organizationTextBox.Text = string.Empty;
-            }
-        });
+                await UpdateViewFromOptionsAsync();
+            }).FireAndForget();
     }
 }

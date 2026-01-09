@@ -1,4 +1,6 @@
-﻿using System;
+﻿// ABOUTME: This file implements the WinForms user control for scan-related settings
+// ABOUTME: It provides UI for enabling/disabling security products (Code, OSS, IaC) and configuring severity filters
+using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Windows.Forms;
@@ -10,30 +12,20 @@ using Snyk.VisualStudio.Extension.UI.Notifications;
 
 namespace Snyk.VisualStudio.Extension.Settings
 {
-    public partial class SnykScanOptionsUserControl : UserControl
+    public partial class SnykScanOptionsUserControl : BaseSnykUserControl
     {
-        private readonly ISnykServiceProvider serviceProvider;
         private static readonly ILogger Logger = LogManager.ForContext<SnykScanOptionsUserControl>();
-        public ISnykOptions OptionsMemento { get; set; }
 
-
-        public SnykScanOptionsUserControl(ISnykServiceProvider serviceProvider)
+        public SnykScanOptionsUserControl(ISnykServiceProvider serviceProvider) : base(serviceProvider)
         {
-            this.serviceProvider = serviceProvider;
-            OptionsMemento = serviceProvider.SnykOptionsManager.Load();
             InitializeComponent();
-            Initialize();
-        }
+            Logger.Information("Initializing SnykScanOptionsUserControl");
 
-        private void Initialize()
-        {
-            Logger.Information("Enter Initialize method");
-
-            this.UpdateViewFromOptions();
-            OptionsMemento.SettingsChanged += this.OptionsDialogPageOnSettingsChanged;
+            UpdateViewFromOptions();
             this.Load += this.SnykScanOptionsUserControl_Load;
             this.serviceProvider.ToolWindow.Show();
-            Logger.Information("Leave Initialize method");
+
+            Logger.Information("SnykScanOptionsUserControl initialized");
         }
 
         private void SnykScanOptionsUserControl_Load(object sender, EventArgs e)
@@ -41,7 +33,7 @@ namespace Snyk.VisualStudio.Extension.Settings
             // SAST enablement check removed - checkbox is always toggleable
         }
 
-        private void UpdateViewFromOptions()
+        protected override void UpdateViewFromOptions()
         {
             this.ossEnabledCheckBox.Checked = OptionsMemento.OssEnabled;
             this.iacEnabledCheckbox.Checked = OptionsMemento.IacEnabled;
@@ -59,13 +51,6 @@ namespace Snyk.VisualStudio.Extension.Settings
             var defaultList = new List<string> { "All issues", "Net new issues" };
             return defaultList;
         }
-
-        private void OptionsDialogPageOnSettingsChanged(object sender, SnykSettingsChangedEventArgs e) =>
-            ThreadHelper.JoinableTaskFactory.RunAsync(async () =>
-            {
-                await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
-                this.UpdateViewFromOptions();
-            }).FireAndForget();
 
         private void OssEnabledCheckBox_CheckedChanged(object sender, EventArgs e)
         {

@@ -1,4 +1,6 @@
-﻿using System;
+﻿// ABOUTME: This file implements custom JSON-RPC message handlers for the Snyk Language Client
+// ABOUTME: It processes diagnostics, authentication, and scan results from the Language Server
+using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
@@ -10,6 +12,7 @@ using StreamJsonRpc;
 using Snyk.VisualStudio.Extension.Authentication;
 using Snyk.VisualStudio.Extension.Extension;
 using Snyk.VisualStudio.Extension.Service;
+using Snyk.VisualStudio.Extension.Settings;
 
 namespace Snyk.VisualStudio.Extension.Language
 {
@@ -196,6 +199,7 @@ namespace Snyk.VisualStudio.Extension.Language
                 if (!serviceProvider.Options.InternalAutoScan)
                 {
                     serviceProvider.Options.InternalAutoScan = true;
+                    await serviceProvider.LanguageClientManager.DidChangeConfigurationAsync(SnykVSPackage.Instance.DisposalToken);
                     serviceProvider.TasksService.ScanAsync().FireAndForget();
                 }
             }
@@ -264,6 +268,9 @@ namespace Snyk.VisualStudio.Extension.Language
             serviceProvider.SnykOptionsManager.Save(serviceProvider.Options);
 
             await serviceProvider.GeneralOptionsDialogPage.HandleAuthenticationSuccess(token, apiUrl);
+
+            // Notify HTML settings window of auth token change
+            HtmlSettingsWindow.Instance?.UpdateAuthToken(token);
 
             if (!serviceProvider.Options.ApiToken.IsValid())
                 return;
