@@ -5,7 +5,6 @@ using System;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Input;
-using Microsoft.VisualStudio.PlatformUI;
 using Microsoft.VisualStudio.Shell;
 using Serilog;
 using Snyk.VisualStudio.Extension.Language;
@@ -19,7 +18,7 @@ namespace Snyk.VisualStudio.Extension.Settings
     /// WPF modal window for HTML-based settings configuration.
     /// Loads settings HTML from Language Server and provides IDE bridge functions for save/login/logout.
     /// </summary>
-    public partial class HtmlSettingsWindow : DialogWindow
+    public partial class HtmlSettingsWindow : Window
     {
         protected static readonly ILogger Logger = LogManager.ForContext<HtmlSettingsWindow>();
         private static HtmlSettingsWindow instance;
@@ -29,6 +28,7 @@ namespace Snyk.VisualStudio.Extension.Settings
         private readonly ISnykServiceProvider serviceProvider;
         private HtmlSettingsScriptingBridge scriptingBridge;
         protected WebBrowserHostUIHandler wbHandler;
+        //private System.Windows.Controls.WebBrowser SettingsBrowser;
 
         public static readonly DependencyProperty IsDirtyProperty =
             DependencyProperty.Register(
@@ -52,11 +52,21 @@ namespace Snyk.VisualStudio.Extension.Settings
 
             InitializeComponent();
 
+            //using (DpiContextScope.EnterUnawareGdiScaled())
+            //{
+                //SettingsBrowser = new System.Windows.Controls.WebBrowser();
+                //SettingsBrowser.VerticalAlignment = VerticalAlignment.Stretch;
+                //SettingsBrowser.HorizontalAlignment = HorizontalAlignment.Stretch;
+            //}
+            //this.Content = SettingsBrowser;
+            //mygrid.Children.Add(SettingsBrowser);
+
             // Initialize WebBrowser handler
             wbHandler = new WebBrowserHostUIHandler(SettingsBrowser)
             {
                 IsWebBrowserContextMenuEnabled = false,
                 ScriptErrorsSuppressed = true,
+                IgnoreDpiAware = false
             };
             // Disable DPI awareness for this window, since we haven't been able to find a way to support it properly and we are not scaling.
             // If we do not disable DPI awareness (without fixing the DPI scaling issue), then dropdown menus will be rendered incorrectly.
@@ -79,7 +89,6 @@ namespace Snyk.VisualStudio.Extension.Settings
                 // Set up scripting bridge for IDE integration (before loading HTML)
                 SetupScriptingBridge();
 
-                // Load HTML from Language Server or fallback
                 var html = await GetHtmlContentAsync();
 
                 if (string.IsNullOrEmpty(html))

@@ -49,8 +49,11 @@ namespace Snyk.VisualStudio.Extension.Settings
                 
                 Logger.Information("DEBUG MODE: Opening DebugHtmlSettingsWindow for local file testing");
                 
-                var debugWindow = new DebugHtmlSettingsWindow(serviceProvider);
-                debugWindow.Show();
+                using (DpiContextScope.EnterUnawareGdiScaled())
+                {
+                    var debugWindow = new DebugHtmlSettingsWindow(serviceProvider);
+                    debugWindow.Show();
+                }
             }
             catch (Exception ex)
             {

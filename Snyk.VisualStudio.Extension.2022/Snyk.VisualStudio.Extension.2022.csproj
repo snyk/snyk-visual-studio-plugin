@@ -69,6 +69,7 @@
     <Compile Include="Authentication\AuthenticationType.cs" />
     <Compile Include="Authentication\OAuthToken.cs" />
     <Compile Include="Download\Sha256.cs" />
+    <Compile Include="DpiHelper.cs" />
     <Compile Include="Extension\CollectionExtensions.cs" />
     <Compile Include="Extension\JTokenExtension.cs" />
     <Compile Include="Extension\StringExtensions.cs" />
@@ -102,6 +103,9 @@
     <Compile Include="Commands\SnykScanCommand.cs" />
     <Compile Include="Commands\SnykStopCurrentTaskCommand.cs" />
     <Compile Include="Language\SnykLanguageServerEventArgs.cs" />
+    <Compile Include="LegacyBrowserDpi.cs">
+      <SubType>Component</SubType>
+    </Compile>
     <Compile Include="LocalCodeEngine.cs" />
     <Compile Include="LogManager.cs" />
     <Compile Include="ManualAssemblyResolver.cs" />
@@ -148,6 +152,8 @@
     <Compile Include="Service\SolutionType.cs" />
     <Compile Include="Service\VsCodeService.cs" />
     <Compile Include="Service\WorkspaceTrustService.cs" />
+    <Compile Include="Settings\DpiContextScope.cs" />
+    <Compile Include="Settings\DpiUtil.cs" />
     <Compile Include="Settings\ErrorProviderExtensions.cs" />
     <Compile Include="Settings\DebugHtmlSettingsWindow.xaml.cs" />
     <Compile Include="Settings\HtmlSettingsWindow.xaml.cs">

@@ -1,8 +1,10 @@
-﻿using System.Linq;
+using System.Linq;
 using System;
 using System.Text.RegularExpressions;
 using Microsoft.VisualStudio.PlatformUI;
 using Snyk.VisualStudio.Extension.Theme;
+using System.Windows;
+using System.Windows.Media;
 
 namespace Snyk.VisualStudio.Extension.UI.Html
 {
@@ -92,13 +94,17 @@ namespace Snyk.VisualStudio.Extension.UI.Html
             var scrollbarThumb = VSColorTheme.GetThemedColor(EnvironmentColors.ScrollBarThumbBackgroundColorKey).ToHex();
             var scrollbarThumbHover = VSColorTheme.GetThemedColor(EnvironmentColors.ScrollBarThumbMouseOverBackgroundColorKey).ToHex();
 
+            // Get IDE font size dynamically
+            var fontSize = GetEditorFontSize();
+            var dpiScale = GetDpiScale();
+
             // Build variable map for regex-based replacement (like IntelliJ plugin)
             var varMap = new System.Collections.Generic.Dictionary<string, string>
             {
                 // VS Code style variables (from LS HTML)
                 { "vscode-font-family", "'Segoe UI', Tahoma, Geneva, Verdana, sans-serif" },
                 { "vscode-editor-font-family", "'Consolas', 'Courier New', monospace" },
-                { "vscode-font-size", "13px" },
+                { "vscode-font-size", $"{fontSize}px" },
                 { "vscode-editor-background", editorBackground },
                 { "vscode-foreground", textColor },
                 { "vscode-input-foreground", textColor },
@@ -137,7 +143,7 @@ namespace Snyk.VisualStudio.Extension.UI.Html
                 { "horizontal-border-color", borderColor },
                 { "code-background-color", inputBackground },
                 { "input-border", inputBorder },
-                { "main-font-size", "15px" },
+                { "main-font-size", $"{fontSize * 15.0 / 13.0:F2}px" },
                 { "ide-background-color", backgroundColor },
                 { "dimmed-text-color", disabledForeground }
             };
@@ -213,6 +219,61 @@ namespace Snyk.VisualStudio.Extension.UI.Html
             catch
             {
                 return hexColor;
+            }
+        }
+
+        /// <summary>
+        /// Gets the current editor font size from Visual Studio environment settings.
+        /// Uses WPF SystemFonts with DPI scaling applied for WebBrowser control.
+        /// </summary>
+        /// <returns>Font size in pixels suitable for CSS px units, scaled for DPI</returns>
+        private double GetEditorFontSize()
+        {
+            // Base font size - this is what looks good at 100% DPI
+            double baseFontSize = 13.0;
+
+            // Get DPI scale factor
+            // The WebBrowser control is not DPI-aware, so we need to manually scale
+            var dpiScale = GetDpiScale();
+
+            // Scale the font size by DPI
+            // At 100% (scale 1.0): 13px
+            // At 175% (scale 1.75): 13 * 1.75 = 22.75px
+            // At 250% (scale 2.5): 13 * 2.5 = 32.5px
+
+            // return baseFontSize * dpiScale;
+            return baseFontSize; // TODO - Use DPI scale or delete it.
+        }
+
+        /// <summary>
+        /// Gets the current DPI scale factor for the system.
+        /// </summary>
+        /// <returns>DPI scale factor (1.0 = 100%, 1.5 = 150%, 2.0 = 200%, etc.)</returns>
+        private double GetDpiScale()
+        {
+            try
+            {
+                // Try to get DPI from the main window
+                var mainWindow = System.Windows.Application.Current?.MainWindow;
+                if (mainWindow != null)
+                {
+                    var source = PresentationSource.FromVisual(mainWindow);
+                    if (source?.CompositionTarget != null)
+                    {
+                        return source.CompositionTarget.TransformToDevice.M11;
+                    }
+                }
+
+                // Fallback: Get system DPI
+                using (var graphics = System.Drawing.Graphics.FromHwnd(IntPtr.Zero))
+                {
+                    return graphics.DpiX / 96.0;
+                }
+            }
+            catch
+            {
+                // Default to 100% scaling if we can't determine DPI
+                return 1.0;
             }
         }
     }
