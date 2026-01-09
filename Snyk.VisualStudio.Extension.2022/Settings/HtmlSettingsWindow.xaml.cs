@@ -11,15 +11,17 @@ using Serilog;
 using Snyk.VisualStudio.Extension.Language;
 using Snyk.VisualStudio.Extension.Service;
 using Snyk.VisualStudio.Extension.UI.Html;
+using Snyk.VisualStudio.Extension.UI.Toolwindow;
 
 namespace Snyk.VisualStudio.Extension.Settings
 {
     /// <summary>
     /// WPF modal window for HTML-based settings configuration.
+    /// Loads settings HTML from Language Server and provides IDE bridge functions for save/login/logout.
     /// </summary>
     public partial class HtmlSettingsWindow : DialogWindow
     {
-        private static readonly ILogger Logger = LogManager.ForContext<HtmlSettingsWindow>();
+        protected static readonly ILogger Logger = LogManager.ForContext<HtmlSettingsWindow>();
         private static HtmlSettingsWindow instance;
 
         public static HtmlSettingsWindow Instance => instance;
@@ -29,7 +31,7 @@ namespace Snyk.VisualStudio.Extension.Settings
         private readonly ISnykOptionsManager optionsManager;
         private readonly ISnykServiceProvider serviceProvider;
         private ConfigScriptingBridge scriptingBridge;
-        private UI.Toolwindow.WebBrowserHostUIHandler wbHandler;
+        private WebBrowserHostUIHandler wbHandler;
 
         public static readonly DependencyProperty IsDirtyProperty =
             DependencyProperty.Register(
@@ -58,13 +60,10 @@ namespace Snyk.VisualStudio.Extension.Settings
             // Set as singleton instance
             instance = this;
 
-            // Clean up any previous registry modifications
-            CleanupBrowserFeatureControl();
-
             InitializeComponent();
 
             // Initialize WebBrowser handler exactly like HtmlDescriptionPanel
-            wbHandler = new UI.Toolwindow.WebBrowserHostUIHandler(SettingsBrowser)
+            wbHandler = new WebBrowserHostUIHandler(SettingsBrowser)
             {
                 IsWebBrowserContextMenuEnabled = false,
                 ScriptErrorsSuppressed = true,
@@ -84,27 +83,8 @@ namespace Snyk.VisualStudio.Extension.Settings
             {
                 DebugLabel.Text = "Loading settings...";
 
-                // Create scripting bridge with callbacks
-                scriptingBridge = new ConfigScriptingBridge(
-                    options,
-                    onModified: () =>
-                    {
-                        ThreadHelper.JoinableTaskFactory.Run(async () =>
-                        {
-                            await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
-                            IsDirty = true;
-                        });
-                    },
-                    onReset: () =>
-                    {
-                        ThreadHelper.JoinableTaskFactory.Run(async () =>
-                        {
-                            await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
-                            IsDirty = false;
-                        });
-                    },
-                    optionsManager: optionsManager,
-                    serviceProvider: serviceProvider);
+                // Set up scripting bridge for IDE integration (before loading HTML)
+                SetupScriptingBridge();
 
                 // Load HTML from Language Server or fallback
                 var html = await GetHtmlContentAsync();
@@ -115,59 +95,10 @@ namespace Snyk.VisualStudio.Extension.Settings
                     return;
                 }
 
-                // Set the scripting bridge as the ObjectForScripting
-                SettingsBrowser.ObjectForScripting = scriptingBridge;
-
                 // Force visual refresh before navigation (required for DPI handling)
                 SettingsBrowser.InvalidateVisual();
                 SettingsBrowser.UpdateLayout();
 
-                // TEMPORARY TEST: Use simple HTML to verify DPI handling
-                var testHtml = @"
-                    <!DOCTYPE html>
-                    <html>
-                    <head>
-                        <meta http-equiv='X-UA-Compatible' content='IE=edge' />
-                        <meta name='viewport' content='width=device-width, initial-scale=1.0' />
-                        <style>
-                            body {
-                                font-family: 'Segoe UI', Arial, sans-serif;
-                                margin: 20px;
-                                padding: 0;
-                            }
-                            h1 { font-size: 48px; }
-                            p { font-size: 28px; line-height: 1.5; }
-                            .test-box {
-                                border: 2px solid #0078d4;
-                                padding: 15px;
-                                margin: 10px 0;
-                                background: #f3f3f3;
-                            }
-                            input, select, button {
-                                font-size: 14px;
-                                padding: 8px;
-                                margin: 5px;
-                            }
-                        </style>
-                    </head>
-                    <body>
-                        <h1>DPI Test - Settings Window</h1>
-                        <div class='test-box'>
-                            <p>This is 14px text. If font sizes look correct, DPI handling is working.</p>
-                            <p>Testing various elements:</p>
-                            <input type='text' value='Text input' />
-                            <select><option>Dropdown</option></select>
-                            <button>Button</button>
-                        </div>
-                        <p>Actual content HTML length: " + html.Length + @" characters</p>
-                    </body>
-                    </html>
-                ";
-
-                // Navigate to test HTML instead of actual content
-                //SettingsBrowser.NavigateToString(testHtml);
-
-                // TODO: Remove test HTML and uncomment these lines once DPI is verified:
                 html = HtmlResourceLoader.ApplyTheme(html);
                 SettingsBrowser.NavigateToString(html);
             }
@@ -176,6 +107,38 @@ namespace Snyk.VisualStudio.Extension.Settings
                 Logger.Error(ex, "Failed to load HTML settings");
                 DebugLabel.Text = $"Error loading settings: {ex.Message}";
             }
+        }
+
+        /// <summary>
+        /// Sets up the scripting bridge for IDE integration.
+        /// Called before loading HTML to ensure window.external is available.
+        /// </summary>
+        protected virtual void SetupScriptingBridge()
+        {
+            // Create scripting bridge with callbacks
+            scriptingBridge = new ConfigScriptingBridge(
+                options,
+                onModified: () =>
+                {
+                    ThreadHelper.JoinableTaskFactory.Run(async () =>
+                    {
+                        await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
+                        IsDirty = true;
+                    });
+                },
+                onReset: () =>
+                {
+                    ThreadHelper.JoinableTaskFactory.Run(async () =>
+                    {
+                        await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
+                        IsDirty = false;
+                    });
+                },
+                optionsManager: optionsManager,
+                serviceProvider: serviceProvider);
+
+            // Set the scripting bridge as the ObjectForScripting
+            SettingsBrowser.ObjectForScripting = scriptingBridge;
         }
 
         private void SettingsBrowser_OnLoadCompleted(object sender, System.Windows.Navigation.NavigationEventArgs e)
@@ -195,8 +158,10 @@ namespace Snyk.VisualStudio.Extension.Settings
             }
         }
 
-
-        private async Task<string> GetHtmlContentAsync()
+        /// <summary>
+        /// Loads HTML from Language Server with retries, falls back to embedded HTML if unavailable.
+        /// </summary>
+        protected virtual async Task<string> GetHtmlContentAsync()
         {
             // Try to get HTML from Language Server (with retries)
             for (int i = 0; i < 3; i++)
@@ -227,7 +192,10 @@ namespace Snyk.VisualStudio.Extension.Settings
             return HtmlResourceLoader.LoadFallbackHtml(options);
         }
 
-        private void InjectIdeBridgeFunctions()
+        /// <summary>
+        /// Injects IDE bridge functions into the HTML window object for save/login/logout operations.
+        /// </summary>
+        protected virtual void InjectIdeBridgeFunctions()
         {
             try
             {
@@ -385,65 +353,6 @@ namespace Snyk.VisualStudio.Extension.Settings
             }
 
             base.OnClosed(e);
-        }
-
-        /// <summary>
-        /// Clean up any previous IE11 feature control registry modifications.
-        /// Removes registry entries that were previously set by SetBrowserFeatureControl.
-        /// </summary>
-        private void CleanupBrowserFeatureControl()
-        {
-            try
-            {
-                var appName = System.IO.Path.GetFileName(System.Diagnostics.Process.GetCurrentProcess().MainModule.FileName);
-
-                // List of features that were previously set
-                var features = new[]
-                {
-                    "FEATURE_BROWSER_EMULATION",
-                    "FEATURE_DISABLE_NAVIGATION_SOUNDS",
-                    "FEATURE_SCRIPTURL_MITIGATION",
-                    "FEATURE_96DPI_PIXEL",
-                    "FEATURE_NINPUT_LEGACYMODE"
-                };
-
-                foreach (var feature in features)
-                {
-                    CleanupBrowserFeatureControlKey(feature, appName);
-                }
-
-                Logger.Information("Successfully cleaned up browser feature control registry entries");
-            }
-            catch (Exception ex)
-            {
-                Logger.Warning(ex, "Error cleaning up browser feature control");
-            }
-        }
-
-        private void CleanupBrowserFeatureControlKey(string feature, string appName)
-        {
-            try
-            {
-                using (var key = Microsoft.Win32.Registry.CurrentUser.OpenSubKey(
-                    $@"Software\Microsoft\Internet Explorer\Main\FeatureControl\{feature}",
-                    writable: true))
-                {
-                    if (key != null)
-                    {
-                        // Delete the value if it exists
-                        var value = key.GetValue(appName);
-                        if (value != null)
-                        {
-                            key.DeleteValue(appName, throwOnMissingValue: false);
-                            Logger.Information("Removed registry value for {Feature}: {AppName}", feature, appName);
-                        }
-                    }
-                }
-            }
-            catch (Exception ex)
-            {
-                Logger.Warning(ex, "Error cleaning up browser feature control key: {Feature}", feature);
-            }
         }
 
     }

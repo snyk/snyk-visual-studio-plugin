@@ -205,6 +205,9 @@ namespace Snyk.VisualStudio.Extension
                 await SnykStopCurrentTaskCommand.InitializeAsync(this);
                 await SnykCleanPanelCommand.InitializeAsync(this);
                 await SnykOpenSettingsCommand.InitializeAsync(this);
+
+                // Can be enabled if you want to do rapid CSS/layout testing
+                await Settings.DebugHtmlSettingsWindow.OpenDebugWindowIfEnabledAsync(serviceProvider);
             
                 // Notify package has been initialized
                 IsInitialized = true;
