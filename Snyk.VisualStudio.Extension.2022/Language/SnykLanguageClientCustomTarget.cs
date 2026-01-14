@@ -189,6 +189,15 @@ namespace Snyk.VisualStudio.Extension.Language
 
             serviceProvider.SnykOptionsManager.Save(serviceProvider.Options, false);
 
+            // Trigger first scan after folder config is received.
+            //
+            // AutoScan vs InternalAutoScan vs ScanningMode:
+            // - AutoScan: Persisted user preference ("I want auto-scanning")
+            // - InternalAutoScan: Runtime flag, starts false each session to prevent scanning until we are actually ready.
+            //     This controls ScanningMode, the string sent to LS ("auto"/"manual").
+            //
+            // We always start with InternalAutoScan=false and therefore ScanningMode="manual" during LS initialization to prevent the LS from auto-scanning before we are fully ready.
+            // Now folder configs have arrived, we can set InternalAutoScan=AutoScan and trigger the first scan if necessary.
             if (serviceProvider.Options.AutoScan)
             {
                 var isFolderTrusted = await this.serviceProvider.TasksService.IsFolderTrustedAsync();
@@ -198,6 +207,8 @@ namespace Snyk.VisualStudio.Extension.Language
 
                 if (!serviceProvider.Options.InternalAutoScan)
                 {
+                    // AutoScan is enabled but we haven't triggered the first scan yet (InternalAutoScan is still false).
+                    // So set InternalAutoScan=true, update LS with the true ScanningMode ("auto") and trigger the first scan.
                     serviceProvider.Options.InternalAutoScan = true;
                     await serviceProvider.LanguageClientManager.DidChangeConfigurationAsync(SnykVSPackage.Instance.DisposalToken);
                     serviceProvider.TasksService.ScanAsync().FireAndForget();

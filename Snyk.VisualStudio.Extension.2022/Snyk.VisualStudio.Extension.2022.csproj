@@ -81,7 +81,6 @@
     <Compile Include="Language\JsonRpcWrapper.cs" />
     <Compile Include="Language\LsSettings.cs" />
     <Compile Include="Language\LsConstants.cs" />
-    <Compile Include="Language\LanguageServerCommands.cs" />
     <Compile Include="Language\LsAnalysisResult.cs" />
     <Compile Include="Language\SatisfyImportExtension.cs" />
     <Compile Include="Language\SnykContentDefinition.cs" />
@@ -252,7 +251,7 @@
     </Compile>
     <Compile Include="UI\Html\BaseHtmlProvider.cs" />
     <Compile Include="UI\Html\ColorExtension.cs" />
-    <Compile Include="UI\Html\ConfigScriptingBridge.cs" />
+    <Compile Include="UI\Html\HtmlSettingsScriptingBridge.cs" />
     <Compile Include="UI\Html\IdeConfigData.cs" />
     <Compile Include="UI\Html\HtmlResourceLoader.cs" />
     <Compile Include="UI\Html\IacHtmlProvider.cs" />

@@ -22,16 +22,17 @@ namespace Snyk.VisualStudio.Extension.UI.Html
     /// Must be ComVisible for IE11 WebBrowser control's ObjectForScripting.
     /// </summary>
     [ComVisible(true)]
-    public class ConfigScriptingBridge
+    public class HtmlSettingsScriptingBridge
     {
-        private static readonly ILogger Logger = LogManager.ForContext<ConfigScriptingBridge>();
-        private readonly ISnykOptions options;
-        private readonly ISnykOptionsManager optionsManager;
+        private static readonly ILogger Logger = LogManager.ForContext<HtmlSettingsScriptingBridge>();
         private readonly ISnykServiceProvider serviceProvider;
         private readonly Action onModified;
         private readonly Action onReset;
         private readonly Action<string> onAuthTokenChanged;
         private volatile bool isSaveComplete;
+
+        private ISnykOptions Options => serviceProvider.Options;
+        private ISnykOptionsManager OptionsManager => serviceProvider.SnykOptionsManager;
 
         /// <summary>
         /// Indicates whether the most recent save operation has completed.
@@ -44,19 +45,15 @@ namespace Snyk.VisualStudio.Extension.UI.Html
             private set => isSaveComplete = value;
         }
 
-        public ConfigScriptingBridge(
-            ISnykOptions options,
+        public HtmlSettingsScriptingBridge(
+            ISnykServiceProvider serviceProvider,
             Action onModified,
             Action onReset = null,
-            ISnykOptionsManager optionsManager = null,
-            ISnykServiceProvider serviceProvider = null,
             Action<string> onAuthTokenChanged = null)
         {
-            this.options = options ?? throw new ArgumentNullException(nameof(options));
+            this.serviceProvider = serviceProvider ?? throw new ArgumentNullException(nameof(serviceProvider));
             this.onModified = onModified ?? throw new ArgumentNullException(nameof(onModified));
             this.onReset = onReset;
-            this.optionsManager = optionsManager ?? throw new ArgumentNullException(nameof(optionsManager));
-            this.serviceProvider = serviceProvider ?? throw new ArgumentNullException(nameof(serviceProvider));
             this.onAuthTokenChanged = onAuthTokenChanged;
         }
 
@@ -77,7 +74,7 @@ namespace Snyk.VisualStudio.Extension.UI.Html
 
                     // Persist all settings to storage at the end
                     // This triggers SettingsChanged event which notifies Language Server
-                    optionsManager.Save(options, triggerSettingsChangedEvent: true);
+                    OptionsManager.Save(Options, triggerSettingsChangedEvent: true);
 
                     IsSaveComplete = true;
                 });
@@ -137,7 +134,7 @@ namespace Snyk.VisualStudio.Extension.UI.Html
             try
             {
                 // Clear the API token
-                options.ApiToken = AuthenticationToken.EmptyToken;
+                Options.ApiToken = AuthenticationToken.EmptyToken;
 
                 // Notify Language Server of logout
                 if (serviceProvider?.LanguageClientManager != null)
@@ -201,23 +198,23 @@ namespace Snyk.VisualStudio.Extension.UI.Html
             // Apply scan settings (activateSnykOpenSource, activateSnykCode, activateSnykIac)
             if (config.ActivateSnykOpenSource.HasValue)
             {
-                options.OssEnabled = config.ActivateSnykOpenSource.Value;
+                Options.OssEnabled = config.ActivateSnykOpenSource.Value;
             }
 
             if (config.ActivateSnykCode.HasValue)
             {
-                options.SnykCodeSecurityEnabled = config.ActivateSnykCode.Value;
+                Options.SnykCodeSecurityEnabled = config.ActivateSnykCode.Value;
             }
 
             if (config.ActivateSnykIac.HasValue)
             {
-                options.IacEnabled = config.ActivateSnykIac.Value;
+                Options.IacEnabled = config.ActivateSnykIac.Value;
             }
 
             // Apply scanning mode (auto/manual)
             if (config.ScanningMode != null)
             {
-                options.AutoScan = config.ScanningMode == "auto";
+                Options.AutoScan = config.ScanningMode == "auto";
             }
         }
 
@@ -226,14 +223,14 @@ namespace Snyk.VisualStudio.Extension.UI.Html
             // Apply issue view options (issueViewOptions: {openIssues, ignoredIssues})
             if (config.IssueViewOptions != null)
             {
-                options.OpenIssuesEnabled = config.IssueViewOptions.OpenIssues;
-                options.IgnoredIssuesEnabled = config.IssueViewOptions.IgnoredIssues;
+                Options.OpenIssuesEnabled = config.IssueViewOptions.OpenIssues;
+                Options.IgnoredIssuesEnabled = config.IssueViewOptions.IgnoredIssues;
             }
 
             // Apply delta findings (enableDeltaFindings: "true"/"false" or boolean)
             if (config.EnableDeltaFindings.HasValue)
             {
-                options.EnableDeltaFindings = config.EnableDeltaFindings.Value;
+                Options.EnableDeltaFindings = config.EnableDeltaFindings.Value;
             }
         }
 
@@ -246,17 +243,17 @@ namespace Snyk.VisualStudio.Extension.UI.Html
                 switch (authMethodStr)
                 {
                     case "oauth":
-                        options.AuthenticationMethod = AuthenticationType.OAuth;
+                        Options.AuthenticationMethod = AuthenticationType.OAuth;
                         break;
                     case "token":
-                        options.AuthenticationMethod = AuthenticationType.Token;
+                        Options.AuthenticationMethod = AuthenticationType.Token;
                         break;
                     case "pat":
-                        options.AuthenticationMethod = AuthenticationType.Pat;
+                        Options.AuthenticationMethod = AuthenticationType.Pat;
                         break;
                     default:
                         // Default to OAuth if empty or unknown value
-                        options.AuthenticationMethod = AuthenticationType.OAuth;
+                        Options.AuthenticationMethod = AuthenticationType.OAuth;
                         break;
                 }
             }
@@ -267,7 +264,7 @@ namespace Snyk.VisualStudio.Extension.UI.Html
             // Apply Insecure (SSL) setting - available in both CLI-only and full mode
             if (config.Insecure.HasValue)
             {
-                options.IgnoreUnknownCA = config.Insecure.Value;
+                Options.IgnoreUnknownCA = config.Insecure.Value;
             }
         }
 
@@ -276,27 +273,27 @@ namespace Snyk.VisualStudio.Extension.UI.Html
             // Allow empty values to reset settings
             if (config.Endpoint != null)
             {
-                options.CustomEndpoint = config.Endpoint;
+                Options.CustomEndpoint = config.Endpoint;
             }
 
             if (config.Token != null)
             {
                 // Normalize empty/null/undefined to empty string for comparison
                 var normalizedNewToken = config.Token?.Trim() ?? string.Empty;
-                var normalizedExistingToken = options.ApiToken?.ToString()?.Trim() ?? string.Empty;
+                var normalizedExistingToken = Options.ApiToken?.ToString()?.Trim() ?? string.Empty;
 
                 // Persist token only if it has changed
                 if (normalizedNewToken != normalizedExistingToken)
                 {
                     // Use the authenticationMethod from this request if provided, otherwise uses existing value
                     // Note: Requires caller to send authenticationMethod when updating token to ensure correct pairing
-                    options.ApiToken = new AuthenticationToken(options.AuthenticationMethod, config.Token);
+                    Options.ApiToken = new AuthenticationToken(Options.AuthenticationMethod, config.Token);
                 }
             }
 
             if (config.Organization != null)
             {
-                options.Organization = config.Organization;
+                Options.Organization = config.Organization;
             }
         }
 
@@ -316,7 +313,7 @@ namespace Snyk.VisualStudio.Extension.UI.Html
             }
 
             // Set even if empty to allow clearing
-            options.TrustedFolders = trustedFolders;
+            Options.TrustedFolders = trustedFolders;
         }
 
         private void ApplyCliSettings(IdeConfigData config)
@@ -324,22 +321,22 @@ namespace Snyk.VisualStudio.Extension.UI.Html
             // Allow empty values to reset settings
             if (config.CliPath != null)
             {
-                options.CliCustomPath = config.CliPath;
+                Options.CliCustomPath = config.CliPath;
             }
 
             if (config.ManageBinariesAutomatically.HasValue)
             {
-                options.BinariesAutoUpdate = config.ManageBinariesAutomatically.Value;
+                Options.BinariesAutoUpdate = config.ManageBinariesAutomatically.Value;
             }
 
             if (config.CliBaseDownloadURL != null)
             {
-                options.CliBaseDownloadURL = config.CliBaseDownloadURL;
+                Options.CliBaseDownloadURL = config.CliBaseDownloadURL;
             }
 
             if (config.CliReleaseChannel != null)
             {
-                options.CliReleaseChannel = config.CliReleaseChannel;
+                Options.CliReleaseChannel = config.CliReleaseChannel;
             }
         }
 
@@ -348,16 +345,16 @@ namespace Snyk.VisualStudio.Extension.UI.Html
             if (config.FilterSeverity == null)
                 return;
 
-            options.FilterCritical = config.FilterSeverity.Critical;
-            options.FilterHigh = config.FilterSeverity.High;
-            options.FilterMedium = config.FilterSeverity.Medium;
-            options.FilterLow = config.FilterSeverity.Low;
+            Options.FilterCritical = config.FilterSeverity.Critical;
+            Options.FilterHigh = config.FilterSeverity.High;
+            Options.FilterMedium = config.FilterSeverity.Medium;
+            Options.FilterLow = config.FilterSeverity.Low;
         }
 
         private void ApplyMiscellaneousSettings(IdeConfigData config)
         {
             // Apply risk score threshold
-            options.RiskScoreThreshold = config.RiskScoreThreshold;
+            Options.RiskScoreThreshold = config.RiskScoreThreshold;
         }
 
         private async Task ApplyFolderConfigsAsync(IdeConfigData config)
@@ -400,16 +397,16 @@ namespace Snyk.VisualStudio.Extension.UI.Html
                     var orgSetByUser = folderConfig.OrgSetByUser;
 
                     // 1. Save to solution-specific storage
-                    await optionsManager.SaveAdditionalOptionsAsync(additionalOptions);
-                    await optionsManager.SaveAdditionalEnvAsync(additionalEnv);
-                    await optionsManager.SavePreferredOrgAsync(preferredOrg);
-                    await optionsManager.SaveAutoDeterminedOrgAsync(autoOrg);
-                    await optionsManager.SaveOrgSetByUserAsync(orgSetByUser);
+                    await OptionsManager.SaveAdditionalOptionsAsync(additionalOptions);
+                    await OptionsManager.SaveAdditionalEnvAsync(additionalEnv);
+                    await OptionsManager.SavePreferredOrgAsync(preferredOrg);
+                    await OptionsManager.SaveAutoDeterminedOrgAsync(autoOrg);
+                    await OptionsManager.SaveOrgSetByUserAsync(orgSetByUser);
 
                     // 2. Update in-memory global FolderConfigs to mirror solution settings (only if already exists)
-                    if (options.FolderConfigs != null)
+                    if (Options.FolderConfigs != null)
                     {
-                        var existingConfig = options.FolderConfigs.FirstOrDefault(fc =>
+                        var existingConfig = Options.FolderConfigs.FirstOrDefault(fc =>
                             string.Equals(fc.FolderPath, solutionPath, StringComparison.OrdinalIgnoreCase));
 
                         if (existingConfig != null)

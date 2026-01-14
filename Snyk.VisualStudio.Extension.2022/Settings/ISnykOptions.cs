@@ -16,6 +16,10 @@ namespace Snyk.VisualStudio.Extension.Settings
         string IntegrationEnvironment { get; set; }
         string IntegrationEnvironmentVersion { get; set; }
         bool ConsistentIgnoresEnabled { get; set; }
+
+        /// <summary>
+        /// Runtime flag (not persisted) that delays telling LS about auto mode until we are actually ready to scan.
+        /// </summary>
         bool InternalAutoScan { get; set; }
 
         /// <summary>

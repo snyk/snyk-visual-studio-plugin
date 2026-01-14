@@ -63,7 +63,7 @@
                         VerticalAlignment="Stretch"
                         HorizontalAlignment="Stretch"
                         UseLayoutRounding="True" />
-            <TextBlock x:Name="DebugLabel"
+            <TextBlock x:Name="LoadingStatusLabel"
                        Text="Loading settings..."
                        FontSize="16"
                        HorizontalAlignment="Center"

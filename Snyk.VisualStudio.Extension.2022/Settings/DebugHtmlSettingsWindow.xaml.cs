@@ -49,17 +49,7 @@ namespace Snyk.VisualStudio.Extension.Settings
                 
                 Logger.Information("DEBUG MODE: Opening DebugHtmlSettingsWindow for local file testing");
                 
-                // Get required dependencies
-                var options = serviceProvider.Options;
-                var languageServerRpc = serviceProvider.LanguageClientManager?.Rpc;
-                var optionsManager = serviceProvider.SnykOptionsManager;
-
-                var debugWindow = new DebugHtmlSettingsWindow(
-                    options,
-                    languageServerRpc,
-                    optionsManager,
-                    serviceProvider
-                );
+                var debugWindow = new DebugHtmlSettingsWindow(serviceProvider);
                 debugWindow.Show();
             }
             catch (Exception ex)
@@ -70,14 +60,10 @@ namespace Snyk.VisualStudio.Extension.Settings
         
         /// <summary>
         /// Initializes a new debug HTML settings window.
-        /// Passes all parameters to base HtmlSettingsWindow constructor.
+        /// Passes serviceProvider to base HtmlSettingsWindow constructor.
         /// </summary>
-        public DebugHtmlSettingsWindow(
-            ISnykOptions options,
-            IJsonRpc languageServerRpc,
-            ISnykOptionsManager optionsManager,
-            ISnykServiceProvider serviceProvider)
-            : base(options, languageServerRpc, optionsManager, serviceProvider)
+        public DebugHtmlSettingsWindow(ISnykServiceProvider serviceProvider)
+            : base(serviceProvider)
         {
             // Enable script error visibility for debugging
             wbHandler.ScriptErrorsSuppressed = false;

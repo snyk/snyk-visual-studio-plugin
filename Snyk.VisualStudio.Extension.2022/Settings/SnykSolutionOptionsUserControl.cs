@@ -42,9 +42,9 @@ namespace Snyk.VisualStudio.Extension.Settings
             // Load additional options
             try
             {
-                var additionalOptions = await this.serviceProvider.SnykOptionsManager.GetAdditionalOptionsAsync();
-                this.additionalOptionsTextBox.Text = additionalOptions ?? string.Empty;
-                this.AdditionalOptions = additionalOptions ?? string.Empty;
+                var additionalOptions = await this.serviceProvider.SnykOptionsManager.GetAdditionalOptionsAsync() ?? string.Empty;
+                this.additionalOptionsTextBox.Text = additionalOptions;
+                this.AdditionalOptions = additionalOptions;
             }
             catch (Exception e)
             {
@@ -63,16 +63,16 @@ namespace Snyk.VisualStudio.Extension.Settings
                 if (!orgSetByUser)
                 {
                     // Show autoDeterminedOrg if orgSetByUser is false
-                    var autoDeterminedOrg = await this.serviceProvider.SnykOptionsManager.GetAutoDeterminedOrgAsync();
-                    this.organizationTextBox.Text = autoDeterminedOrg ?? string.Empty;
-                    this.Organization = autoDeterminedOrg ?? string.Empty;
+                    var autoDeterminedOrg = await this.serviceProvider.SnykOptionsManager.GetAutoDeterminedOrgAsync() ?? string.Empty;
+                    this.organizationTextBox.Text = autoDeterminedOrg;
+                    this.Organization = autoDeterminedOrg;
                 }
                 else
                 {
                     // Show preferredOrg if orgSetByUser is true
-                    var preferredOrg = await this.serviceProvider.SnykOptionsManager.GetPreferredOrgAsync();
-                    this.organizationTextBox.Text = preferredOrg ?? string.Empty;
-                    this.Organization = preferredOrg ?? string.Empty;
+                    var preferredOrg = await this.serviceProvider.SnykOptionsManager.GetPreferredOrgAsync() ?? string.Empty;
+                    this.organizationTextBox.Text = preferredOrg;
+                    this.Organization = preferredOrg;
                 }
             }
             catch (Exception e)

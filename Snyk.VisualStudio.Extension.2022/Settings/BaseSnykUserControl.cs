@@ -23,19 +23,13 @@ namespace Snyk.VisualStudio.Extension.Settings
         /// Parameterless constructor for Visual Studio Designer support.
         /// Do not use this constructor in production code.
         /// </summary>
-        public BaseSnykUserControl() : this(null)
+        public BaseSnykUserControl()
         {
         }
 
         public BaseSnykUserControl(ISnykServiceProvider serviceProvider)
         {
             this.serviceProvider = serviceProvider;
-
-            // Skip initialization if in design mode (serviceProvider will be null)
-            if (serviceProvider == null || DesignMode)
-            {
-                return;
-            }
 
             // Load initial settings
             OptionsMemento = serviceProvider.SnykOptionsManager.Load();
@@ -51,11 +45,6 @@ namespace Snyk.VisualStudio.Extension.Settings
         /// </summary>
         private void OnSettingsChanged(object sender, SnykSettingsChangedEventArgs e)
         {
-            if (serviceProvider == null || DesignMode)
-            {
-                return;
-            }
-
             ThreadHelper.JoinableTaskFactory.RunAsync(async () =>
             {
                 await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();

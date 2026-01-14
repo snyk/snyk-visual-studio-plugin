@@ -26,11 +26,8 @@ namespace Snyk.VisualStudio.Extension.Settings
 
         public static HtmlSettingsWindow Instance => instance;
 
-        private readonly ISnykOptions options;
-        private readonly IJsonRpc languageServerRpc;
-        private readonly ISnykOptionsManager optionsManager;
         private readonly ISnykServiceProvider serviceProvider;
-        private ConfigScriptingBridge scriptingBridge;
+        private HtmlSettingsScriptingBridge scriptingBridge;
         protected WebBrowserHostUIHandler wbHandler;
 
         public static readonly DependencyProperty IsDirtyProperty =
@@ -46,15 +43,8 @@ namespace Snyk.VisualStudio.Extension.Settings
             set => SetValue(IsDirtyProperty, value);
         }
 
-        public HtmlSettingsWindow(
-            ISnykOptions options,
-            IJsonRpc languageServerRpc,
-            ISnykOptionsManager optionsManager,
-            ISnykServiceProvider serviceProvider)
+        public HtmlSettingsWindow(ISnykServiceProvider serviceProvider)
         {
-            this.options = options ?? throw new ArgumentNullException(nameof(options));
-            this.languageServerRpc = languageServerRpc;
-            this.optionsManager = optionsManager ?? throw new ArgumentNullException(nameof(optionsManager));
             this.serviceProvider = serviceProvider ?? throw new ArgumentNullException(nameof(serviceProvider));
 
             // Set as singleton instance
@@ -84,7 +74,7 @@ namespace Snyk.VisualStudio.Extension.Settings
         {
             try
             {
-                DebugLabel.Text = "Loading settings...";
+                LoadingStatusLabel.Text = "Loading settings...";
 
                 // Set up scripting bridge for IDE integration (before loading HTML)
                 SetupScriptingBridge();
@@ -94,7 +84,7 @@ namespace Snyk.VisualStudio.Extension.Settings
 
                 if (string.IsNullOrEmpty(html))
                 {
-                    DebugLabel.Text = "Failed to load settings HTML";
+                    LoadingStatusLabel.Text = "Failed to load settings HTML";
                     return;
                 }
 
@@ -108,7 +98,7 @@ namespace Snyk.VisualStudio.Extension.Settings
             catch (Exception ex)
             {
                 Logger.Error(ex, "Failed to load HTML settings");
-                DebugLabel.Text = $"Error loading settings: {ex.Message}";
+                LoadingStatusLabel.Text = $"Error loading settings: {ex.Message}";
             }
         }
 
@@ -119,26 +109,11 @@ namespace Snyk.VisualStudio.Extension.Settings
         protected virtual void SetupScriptingBridge()
         {
             // Create scripting bridge with callbacks
-            scriptingBridge = new ConfigScriptingBridge(
-                options,
-                onModified: () =>
-                {
-                    ThreadHelper.JoinableTaskFactory.Run(async () =>
-                    {
-                        await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
-                        IsDirty = true;
-                    });
-                },
-                onReset: () =>
-                {
-                    ThreadHelper.JoinableTaskFactory.Run(async () =>
-                    {
-                        await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
-                        IsDirty = false;
-                    });
-                },
-                optionsManager: optionsManager,
-                serviceProvider: serviceProvider);
+            // Note: JavaScript -> ObjectForScripting calls are COM-marshaled to UI thread (STA)
+            scriptingBridge = new HtmlSettingsScriptingBridge(
+                serviceProvider,
+                onModified: () => IsDirty = true,
+                onReset: () => IsDirty = false);
 
             // Set the scripting bridge as the ObjectForScripting
             SettingsBrowser.ObjectForScripting = scriptingBridge;
@@ -152,12 +127,12 @@ namespace Snyk.VisualStudio.Extension.Settings
                 InjectIdeBridgeFunctions();
 
                 // Hide loading label
-                DebugLabel.Visibility = Visibility.Collapsed;
+                LoadingStatusLabel.Visibility = Visibility.Collapsed;
             }
             catch (Exception ex)
             {
                 Logger.Error(ex, "Error loading settings content");
-                DebugLabel.Text = $"Error: {ex.Message}";
+                LoadingStatusLabel.Text = $"Error: {ex.Message}";
             }
         }
 
@@ -166,33 +141,32 @@ namespace Snyk.VisualStudio.Extension.Settings
         /// </summary>
         protected virtual async Task<string> GetHtmlContentAsync()
         {
-            // Try to get HTML from Language Server (with retries)
-            for (int i = 0; i < 3; i++)
+            // Check if Language Server is ready before attempting to get HTML
+            if (!LanguageClientHelper.IsLanguageServerReady())
             {
-                try
-                {
-                    var lsHtml = await LanguageServerCommands.GetConfigHtmlAsync(
-                        languageServerRpc,
-                        System.Threading.CancellationToken.None);
-                    if (!string.IsNullOrEmpty(lsHtml))
-                    {
-                        Logger.Information("Successfully loaded settings HTML from Language Server");
-                        return lsHtml;
-                    }
-                    Logger.Warning("Language Server returned empty HTML on attempt {Attempt}", i + 1);
-                }
-                catch (Exception ex)
-                {
-                    Logger.Warning(ex, "Failed to get HTML from Language Server on attempt {Attempt} of 3", i + 1);
-                }
+                Logger.Warning("Language Server not ready, using fallback HTML");
+                return HtmlResourceLoader.LoadFallbackHtml(serviceProvider.Options);
+            }
 
-                if (i < 2)
-                    await Task.Delay(1000);
+            try
+            {
+                var lsHtml = await serviceProvider.LanguageClientManager.GetConfigHtmlAsync(
+                    System.Threading.CancellationToken.None);
+                if (!string.IsNullOrEmpty(lsHtml))
+                {
+                    Logger.Information("Successfully loaded settings HTML from Language Server");
+                    return lsHtml;
+                }
+                Logger.Warning("Language Server returned empty HTML");
+            }
+            catch (Exception ex)
+            {
+                Logger.Warning(ex, "Failed to get HTML from Language Server");
             }
 
             // Fall back to embedded HTML
-            Logger.Warning("Falling back to embedded HTML after 3 failed Language Server attempts");
-            return HtmlResourceLoader.LoadFallbackHtml(options);
+            Logger.Warning("Falling back to embedded HTML");
+            return HtmlResourceLoader.LoadFallbackHtml(serviceProvider.Options);
         }
 
         /// <summary>

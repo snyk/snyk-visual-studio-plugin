@@ -403,6 +403,19 @@ namespace Snyk.VisualStudio.Extension.Language
             await InvokeWithParametersAsync<object>(LsConstants.WorkspaceExecuteCommand, param, cancellationToken);
         }
 
+        /// <summary>
+        /// Retrieves HTML configuration UI from the Language Server.
+        /// Returns null if LS is not available or command fails.
+        /// </summary>
+        public async Task<string> GetConfigHtmlAsync(CancellationToken cancellationToken)
+        {
+            var param = new LSP.ExecuteCommandParams
+            {
+                Command = LsConstants.SnykWorkspaceConfiguration
+            };
+            return await InvokeWithParametersAsync<string>(LsConstants.WorkspaceExecuteCommand, param, cancellationToken);
+        }
+
         public async Task<object> DidChangeConfigurationAsync(CancellationToken cancellationToken)
         {
             if (!IsReady) return default;

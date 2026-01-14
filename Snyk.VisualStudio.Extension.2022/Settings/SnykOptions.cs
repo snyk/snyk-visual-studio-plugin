@@ -19,6 +19,10 @@ namespace Snyk.VisualStudio.Extension.Settings
         public bool ConsistentIgnoresEnabled { get; set; }
         public string DeviceId { get; set; }
         public bool AutoScan { get; set; }
+
+        /// <summary>
+        /// Runtime flag (not persisted) that delays telling LS about auto mode until we are actually ready to scan.
+        /// </summary>
         public bool InternalAutoScan { get; set; }
         public bool OpenIssuesEnabled { get; set; }
         public bool IgnoredIssuesEnabled { get; set; }

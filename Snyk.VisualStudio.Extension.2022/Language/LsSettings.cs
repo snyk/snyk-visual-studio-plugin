@@ -46,6 +46,7 @@ namespace Snyk.VisualStudio.Extension.Language
                     Medium = options.FilterMedium,
                     Low = options.FilterLow,
                 },
+                // Use InternalAutoScan, as it starts off as false and will delay us telling LS about our actual AutoMode until we are actually ready to scan.
                 ScanningMode = options.InternalAutoScan ? "auto" : "manual",
 #pragma warning disable VSTHRD104
                 AdditionalParams = ThreadHelper.JoinableTaskFactory.Run(() => this.serviceProvider.SnykOptionsManager.GetAdditionalOptionsAsync()),

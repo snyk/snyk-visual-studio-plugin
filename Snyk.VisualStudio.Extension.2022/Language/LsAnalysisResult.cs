@@ -157,10 +157,12 @@ namespace Snyk.VisualStudio.Extension.Language
         {
             get
             {
-                // Map severity to millions range (primary sort key)
+                // Map severity to millions (4M for critical, 3M for high, 2M for medium, 1M for low).
+                // Using millions ensures severity always takes precedence over score-based tiebreakers,
+                // since scores are typically in the hundreds/thousands range.
                 int severityPriority = GetSeverityPriority(Severity);
 
-                // Get appropriate score based on product type (tiebreaker)
+                // Get appropriate score based on product type (tiebreaker within same severity)
                 int scoreComponent = GetScoreComponent();
 
                 return severityPriority + scoreComponent;
@@ -204,10 +206,7 @@ namespace Snyk.VisualStudio.Extension.Language
                 return AdditionalData.PriorityScore;
             }
 
-            // Fallback: try priorityScore first, then riskScore
-            return AdditionalData.PriorityScore > 0
-                ? AdditionalData.PriorityScore
-                : AdditionalData.RiskScore;
+            throw new InvalidOperationException($"Unknown product type: {Product}");
         }
 
         public string GetDisplayTitle() => string.IsNullOrEmpty(this.Title) ? this.AdditionalData?.Message : this.Title;

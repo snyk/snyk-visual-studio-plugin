@@ -53,18 +53,8 @@ namespace Snyk.VisualStudio.Extension.Settings
         {
             try
             {
-                // Get required dependencies
-                var options = serviceProvider.Options;
-                var languageServerRpc = serviceProvider.LanguageClientManager?.Rpc;
-                var optionsManager = serviceProvider.SnykOptionsManager;
-
                 // Create and show modal window
-                var settingsWindow = new HtmlSettingsWindow(
-                    options,
-                    languageServerRpc,
-                    optionsManager,
-                    serviceProvider);
-
+                var settingsWindow = new HtmlSettingsWindow(serviceProvider);
                 settingsWindow.ShowDialog();
             }
             catch (Exception ex)
