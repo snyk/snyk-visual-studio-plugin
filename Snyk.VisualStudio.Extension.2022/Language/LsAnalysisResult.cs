@@ -157,18 +157,17 @@ namespace Snyk.VisualStudio.Extension.Language
         {
             get
             {
-                // Map severity to millions (4M for critical, 3M for high, 2M for medium, 1M for low).
-                // Using millions ensures severity always takes precedence over score-based tiebreakers,
-                // since scores are typically in the hundreds/thousands range.
                 int severityPriority = GetSeverityPriority(Severity);
-
-                // Get appropriate score based on product type (tiebreaker within same severity)
                 int scoreComponent = GetScoreComponent();
-
                 return severityPriority + scoreComponent;
             }
         }
 
+        /// <summary>
+        /// Maps severity to millions (4M for critical, 3M for high, 2M for medium, 1M for low).
+        /// Using millions ensures severity always takes precedence over score-based tiebreakers,
+        /// since scores are typically in the hundreds/thousands range.
+        /// </summary>
         private int GetSeverityPriority(string severity)
         {
             if (string.IsNullOrEmpty(severity))

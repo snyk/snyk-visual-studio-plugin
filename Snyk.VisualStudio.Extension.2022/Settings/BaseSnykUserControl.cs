@@ -84,7 +84,7 @@ namespace Snyk.VisualStudio.Extension.Settings
         /// </summary>
         protected override void Dispose(bool disposing)
         {
-            if (disposing && !DesignMode && serviceProvider?.Options != null)
+            if (disposing && serviceProvider?.Options != null)
             {
                 serviceProvider.Options.SettingsChanged -= OnSettingsChanged;
             }
