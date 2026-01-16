@@ -3,18 +3,20 @@ version: 2.1
 orbs:
   prodsec: snyk/prodsec-orb@1
 
-
 jobs:
-  # Security scans have been implemented fully as GitHub actions in .github/workflows
   security-scans:
-    resource_class: small
+    resource_class: medium
     docker:
-      - image: cimg/go:1.21
+      - image: mcr.microsoft.com/dotnet/sdk:8.0
     steps:
+      - checkout
+      - run:
+          name: Restore dependencies
+          command: dotnet restore
       - prodsec/security_scans:
           mode: auto
-          code-scan: disabled
-          open-source-scan: disabled
+          sudo-install: false
+          open-source-additional-arguments: --exclude=Snyk.VisualStudio.Extension.Tests,Snyk.Common.Tests,Snyk.Code.Library.Tests,Tests
           iac-scan: disabled
 
 workflows:
@@ -29,6 +31,7 @@ workflows:
           filters:
             branches:
               ignore: main
+
       - security-scans:
           context: devex_ide
 
