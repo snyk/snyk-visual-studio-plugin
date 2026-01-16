@@ -151,7 +151,7 @@ namespace Snyk.VisualStudio.Extension.Settings
             try
             {
                 var lsHtml = await serviceProvider.LanguageClientManager.GetConfigHtmlAsync(
-                    System.Threading.CancellationToken.None);
+                    SnykVSPackage.Instance.DisposalToken);
                 if (!string.IsNullOrEmpty(lsHtml))
                 {
                     Logger.Information("Successfully loaded settings HTML from Language Server");
