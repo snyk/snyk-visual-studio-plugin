@@ -1,4 +1,6 @@
-﻿using System;
+﻿// ABOUTME: This file defines the main interface for all Snyk settings and configuration options
+// ABOUTME: It extends IPersistableOptions with runtime properties and the SettingsChanged event mechanism
+using System;
 
 namespace Snyk.VisualStudio.Extension.Settings
 {
@@ -14,7 +16,11 @@ namespace Snyk.VisualStudio.Extension.Settings
         string IntegrationEnvironment { get; set; }
         string IntegrationEnvironmentVersion { get; set; }
         bool ConsistentIgnoresEnabled { get; set; }
-        public bool InternalAutoScan { get; set; }
+
+        /// <summary>
+        /// Runtime flag (not persisted) that delays telling LS about auto mode until we are actually ready to scan.
+        /// </summary>
+        bool InternalAutoScan { get; set; }
 
         /// <summary>
         /// Settings changed event.

@@ -22,7 +22,9 @@ namespace Snyk.VisualStudio.Extension.UI.Toolwindow
 
             Browser = browser;
             
-            Flags |= HostUIFlags.DPI_AWARE;
+            // Enable DPI awareness by default
+            SetDpiAwareFlag(true);
+
             browser.LoadCompleted += OnLoadCompleted;
             browser.Navigated += OnNavigated;
         }
@@ -32,6 +34,18 @@ namespace Snyk.VisualStudio.Extension.UI.Toolwindow
         public HostUIFlags Flags { get; set; }
         public bool IsWebBrowserContextMenuEnabled { get; set; }
         public bool ScriptErrorsSuppressed { get; set; }
+
+        /// <summary>
+        /// Sets the DPI awareness flag.
+        /// </summary>
+        /// <param name="dpiAware">If true, enables DPI awareness; if false, disables DPI awareness</param>
+        public void SetDpiAwareFlag(bool dpiAware)
+        {
+            if (dpiAware)
+                Flags |= HostUIFlags.DPI_AWARE;
+            else
+                Flags &= ~HostUIFlags.DPI_AWARE;
+        }
 
         public void OnNavigated(object sender, NavigationEventArgs e)
         {

@@ -40,6 +40,7 @@ namespace Snyk.VisualStudio.Extension.Language
         public IList<int> Rows { get; set; }
         public bool IsSecurityType { get; set; }
         public int PriorityScore { get; set; }
+        public int RiskScore { get; set; }
         public bool HasAIFix { get; set; }
         public IList<DataFlow> DataFlow { get; set; }
 
@@ -138,6 +139,74 @@ namespace Snyk.VisualStudio.Extension.Language
         public bool IsNew { get; set; }
         public IgnoreDetails IgnoreDetails { get; set; }
         public AdditionalData AdditionalData { get; set; }
+
+        /// <summary>
+        /// Product type for this issue (code, oss, iac).
+        /// Used to determine which score field to use for priority calculation.
+        /// </summary>
+        [JsonIgnore]
+        public string Product { get; set; }
+
+        /// <summary>
+        /// Gets the priority for sorting issues.
+        /// Uses severity as primary key (Critical > High > Medium > Low),
+        /// with score as tiebreaker within same severity level.
+        /// </summary>
+        [JsonIgnore]
+        public int Priority
+        {
+            get
+            {
+                int severityPriority = GetSeverityPriority(Severity);
+                int scoreComponent = GetScoreComponent();
+                return severityPriority + scoreComponent;
+            }
+        }
+
+        /// <summary>
+        /// Maps severity to millions (4M for critical, 3M for high, 2M for medium, 1M for low).
+        /// Using millions ensures severity always takes precedence over score-based tiebreakers,
+        /// since scores are typically in the hundreds/thousands range.
+        /// </summary>
+        private int GetSeverityPriority(string severity)
+        {
+            if (string.IsNullOrEmpty(severity))
+                return 0;
+
+            // Case-insensitive comparison
+            switch (severity.ToLowerInvariant())
+            {
+                case "critical":
+                    return 4_000_000;
+                case "high":
+                    return 3_000_000;
+                case "medium":
+                    return 2_000_000;
+                case "low":
+                    return 1_000_000;
+                default:
+                    return 0;
+            }
+        }
+
+        private int GetScoreComponent()
+        {
+            if (AdditionalData == null)
+                return 0;
+
+            // OSS and IaC use riskScore, Code uses priorityScore
+            if (Product == Snyk.VisualStudio.Extension.Product.Oss ||
+                Product == Snyk.VisualStudio.Extension.Product.Iac)
+            {
+                return AdditionalData.RiskScore;
+            }
+            else if (Product == Snyk.VisualStudio.Extension.Product.Code)
+            {
+                return AdditionalData.PriorityScore;
+            }
+
+            throw new InvalidOperationException($"Unknown product type: {Product}");
+        }
 
         public string GetDisplayTitle() => string.IsNullOrEmpty(this.Title) ? this.AdditionalData?.Message : this.Title;
 

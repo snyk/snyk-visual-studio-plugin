@@ -1,4 +1,6 @@
-﻿using System;
+﻿// ABOUTME: This file implements custom JSON-RPC message handlers for the Snyk Language Client
+// ABOUTME: It processes diagnostics, authentication, and scan results from the Language Server
+using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
@@ -10,6 +12,7 @@ using StreamJsonRpc;
 using Snyk.VisualStudio.Extension.Authentication;
 using Snyk.VisualStudio.Extension.Extension;
 using Snyk.VisualStudio.Extension.Service;
+using Snyk.VisualStudio.Extension.Settings;
 
 namespace Snyk.VisualStudio.Extension.Language
 {
@@ -186,6 +189,15 @@ namespace Snyk.VisualStudio.Extension.Language
 
             serviceProvider.SnykOptionsManager.Save(serviceProvider.Options, false);
 
+            // Trigger first scan after folder config is received.
+            //
+            // AutoScan vs InternalAutoScan vs ScanningMode:
+            // - AutoScan: Persisted user preference ("I want auto-scanning")
+            // - InternalAutoScan: Runtime flag, starts false each session to prevent scanning until we are actually ready.
+            //     This controls ScanningMode, the string sent to LS ("auto"/"manual").
+            //
+            // We always start with InternalAutoScan=false and therefore ScanningMode="manual" during LS initialization to prevent the LS from auto-scanning before we are fully ready.
+            // Now folder configs have arrived, we can set InternalAutoScan=AutoScan and trigger the first scan if necessary.
             if (serviceProvider.Options.AutoScan)
             {
                 var isFolderTrusted = await this.serviceProvider.TasksService.IsFolderTrustedAsync();
@@ -195,7 +207,10 @@ namespace Snyk.VisualStudio.Extension.Language
 
                 if (!serviceProvider.Options.InternalAutoScan)
                 {
+                    // AutoScan is enabled but we haven't triggered the first scan yet (InternalAutoScan is still false).
+                    // So set InternalAutoScan=true, update LS with the true ScanningMode ("auto") and trigger the first scan.
                     serviceProvider.Options.InternalAutoScan = true;
+                    await serviceProvider.LanguageClientManager.DidChangeConfigurationAsync(SnykVSPackage.Instance.DisposalToken);
                     serviceProvider.TasksService.ScanAsync().FireAndForget();
                 }
             }
@@ -264,6 +279,9 @@ namespace Snyk.VisualStudio.Extension.Language
             serviceProvider.SnykOptionsManager.Save(serviceProvider.Options);
 
             await serviceProvider.GeneralOptionsDialogPage.HandleAuthenticationSuccess(token, apiUrl);
+
+            // Notify HTML settings window of auth token change
+            HtmlSettingsWindow.Instance?.UpdateAuthToken(token);
 
             if (!serviceProvider.Options.ApiToken.IsValid())
                 return;

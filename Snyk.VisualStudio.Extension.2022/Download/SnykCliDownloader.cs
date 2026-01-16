@@ -52,10 +52,10 @@ namespace Snyk.VisualStudio.Extension.Download
             {
                 Logger.Information("Get latest CLI release info");
 
-                var latestReleaseVersionUrl = string.Format(LatestReleaseVersionUrlScheme, SnykOptions.CliDownloadUrl, SnykOptions.CliReleaseChannel);
+                var latestReleaseVersionUrl = string.Format(LatestReleaseVersionUrlScheme, SnykOptions.CliBaseDownloadURL, SnykOptions.CliReleaseChannel);
                 var latestVersion = webClient.DownloadString(latestReleaseVersionUrl).Replace("\n", string.Empty);
 
-                var latestReleaseDownloadUrl = string.Format(LatestReleaseDownloadUrlScheme, SnykOptions.CliDownloadUrl, "v"+latestVersion);
+                var latestReleaseDownloadUrl = string.Format(LatestReleaseDownloadUrlScheme, SnykOptions.CliBaseDownloadURL, "v"+latestVersion);
 
                 return new LatestReleaseInfo
                 {

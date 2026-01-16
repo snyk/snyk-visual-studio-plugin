@@ -59,7 +59,7 @@ namespace Snyk.VisualStudio.Extension.Tests
             options.ApiToken = new AuthenticationToken(AuthenticationType.OAuth, "dummy-token");
             options.BinariesAutoUpdate = true;
             options.CliCustomPath = "C:\\cli\\snyk.exe";
-            options.CliDownloadUrl = "https://cli.download.url";
+            options.CliBaseDownloadURL = "https://cli.download.url";
             options.CliReleaseChannel = "stable";
             options.CurrentCliVersion = "1.2.3";
             options.IacEnabled = true;
@@ -79,7 +79,7 @@ namespace Snyk.VisualStudio.Extension.Tests
             Assert.Equal("dummy-token", reloadedOptions.ApiToken.ToString());
             Assert.True(reloadedOptions.BinariesAutoUpdate);
             Assert.Equal("C:\\cli\\snyk.exe", reloadedOptions.CliCustomPath);
-            Assert.Equal("https://cli.download.url", reloadedOptions.CliDownloadUrl);
+            Assert.Equal("https://cli.download.url", reloadedOptions.CliBaseDownloadURL);
             Assert.Equal("stable", reloadedOptions.CliReleaseChannel);
             Assert.Equal("1.2.3", reloadedOptions.CurrentCliVersion);
             Assert.True(reloadedOptions.IacEnabled);

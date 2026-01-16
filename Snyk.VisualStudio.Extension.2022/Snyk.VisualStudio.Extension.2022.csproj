@@ -149,6 +149,13 @@
     <Compile Include="Service\VsCodeService.cs" />
     <Compile Include="Service\WorkspaceTrustService.cs" />
     <Compile Include="Settings\ErrorProviderExtensions.cs" />
+    <Compile Include="Settings\DebugHtmlSettingsWindow.xaml.cs" />
+    <Compile Include="Settings\HtmlSettingsWindow.xaml.cs">
+      <DependentUpon>HtmlSettingsWindow.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="Settings\BaseSnykUserControl.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
     <Compile Include="Settings\IPersistableOption.cs" />
     <Compile Include="Settings\ISnykCliOptionsDialogPage.cs" />
     <Compile Include="Settings\ISnykExperimentalDialogPage.cs" />
@@ -244,6 +251,9 @@
     </Compile>
     <Compile Include="UI\Html\BaseHtmlProvider.cs" />
     <Compile Include="UI\Html\ColorExtension.cs" />
+    <Compile Include="UI\Html\HtmlSettingsScriptingBridge.cs" />
+    <Compile Include="UI\Html\IdeConfigData.cs" />
+    <Compile Include="UI\Html\HtmlResourceLoader.cs" />
     <Compile Include="UI\Html\IacHtmlProvider.cs" />
     <Compile Include="UI\Html\IHtmlProvider.cs" />
     <Compile Include="UI\Html\StaticHtmlProvider.cs" />
@@ -390,6 +400,10 @@
       <SubType>Designer</SubType>
     </Page>
     <Page Include="BranchSelectorDialogWindow.xaml">
+      <Generator>MSBuild:Compile</Generator>
+      <SubType>Designer</SubType>
+    </Page>
+    <Page Include="Settings\HtmlSettingsWindow.xaml">
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
     </Page>
@@ -613,6 +627,9 @@
     <Content Include="stylesheet.css">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>
+  </ItemGroup>
+  <ItemGroup>
+    <EmbeddedResource Include="Resources\settings-fallback.html" />
   </ItemGroup>
   <ItemGroup>
     <EmbeddedResource Include="Settings\SnykCliOptionsUserControl.resx">

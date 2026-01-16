@@ -19,6 +19,11 @@
         public string AdditionalOptions { get; set; }
 
         /// <summary>
+        /// Gets or sets additional environment variables for project.
+        /// </summary>
+        public string AdditionalEnv { get; set; }
+
+        /// <summary>
         /// Gets or sets organization for project.
         /// </summary>
         public string Organization { get; set; }
