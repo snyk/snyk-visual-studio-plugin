@@ -62,7 +62,17 @@ namespace Snyk.VisualStudio.Extension.UI.Html
             var editorBackground = backgroundColor;
             var editorForeground = textColor;
 
-            // Buttons - use command bar colors which are designed for interactive elements
+            // Primary buttons - use hyperlink color for a prominent blue appearance
+            var primaryButtonBackground = linkColor;
+            var primaryButtonForeground = "#FFFFFF";
+            var primaryButtonHoverBackground = AdjustBrightness(primaryButtonBackground, 1.15f);
+
+            // Secondary buttons - use input background for visible contrast with main background
+            var secondaryButtonBackground = inputBackground;
+            var secondaryButtonForeground = textColor;
+            var secondaryButtonHoverBackground = AdjustBrightness(secondaryButtonBackground, 1.15f);
+
+            // Legacy vscode- prefixed button variables (kept for compatibility)
             var buttonBackground = VSColorTheme.GetThemedColor(EnvironmentColors.CommandBarMenuBackgroundGradientBeginColorKey).ToHex();
             var buttonText = textColor;
             var buttonHoverBackground = VSColorTheme.GetThemedColor(EnvironmentColors.CommandBarMouseOverBackgroundBeginColorKey).ToHex();
@@ -97,12 +107,6 @@ namespace Snyk.VisualStudio.Extension.UI.Html
                 { "vscode-errorForeground", errorForeground },
                 { "vscode-input-background", inputBackground },
                 { "vscode-editor-inactiveSelectionBackground", inactiveSelectionBackground },
-                { "vscode-button-background", buttonBackground },
-                { "vscode-button-foreground", buttonText },
-                { "vscode-button-hoverBackground", buttonHoverBackground },
-                { "vscode-button-secondaryBackground", ColorToRgba(buttonBackground, 0.6) },
-                { "vscode-button-secondaryForeground", buttonText },
-                { "vscode-button-secondaryHoverBackground", ColorToRgba(buttonHoverBackground, 0.7) },
                 { "vscode-list-hoverBackground", listHoverBackground },
                 { "vscode-input-border", inputBorder },
                 { "vscode-panel-border", borderColor },
@@ -110,6 +114,20 @@ namespace Snyk.VisualStudio.Extension.UI.Html
                 { "vscode-scrollbarSlider-background", scrollbarThumb },
                 { "vscode-scrollbarSlider-hoverBackground", scrollbarThumbHover },
                 { "vscode-scrollbarSlider-activeBackground", scrollbarThumbHover },
+                // Button variables (vscode- prefix for legacy compatibility)
+                { "vscode-button-background", buttonBackground },
+                { "vscode-button-foreground", buttonText },
+                { "vscode-button-hoverBackground", buttonHoverBackground },
+                { "vscode-button-secondaryBackground", ColorToRgba(buttonBackground, 0.6) },
+                { "vscode-button-secondaryForeground", buttonText },
+                { "vscode-button-secondaryHoverBackground", ColorToRgba(buttonHoverBackground, 0.7) },
+                // Button variables (LS HTML uses these without vscode- prefix)
+                { "button-background-color", primaryButtonBackground },
+                { "button-foreground", primaryButtonForeground },
+                { "button-hover-background", primaryButtonHoverBackground },
+                { "button-secondary-background", secondaryButtonBackground },
+                { "button-secondary-foreground", secondaryButtonForeground },
+                { "button-secondary-hover-background", secondaryButtonHoverBackground },
                 // Legacy variables (for fallback HTML)
                 { "default-font", "'Segoe UI', Tahoma, Geneva, Verdana, sans-serif" },
                 { "text-color", textColor },
@@ -164,6 +182,38 @@ namespace Snyk.VisualStudio.Extension.UI.Html
             int g = Convert.ToInt32(hexColor.Substring(2, 2), 16);
             int b = Convert.ToInt32(hexColor.Substring(4, 2), 16);
             return $"rgba({r}, {g}, {b}, {alpha:F2})";
+        }
+
+        /// <summary>
+        /// Adjusts the brightness of a hex color by a given factor.
+        /// </summary>
+        /// <param name="hexColor">The hex color string (e.g., "#0e639c")</param>
+        /// <param name="factor">Brightness multiplier (> 1.0 for lighter, < 1.0 for darker)</param>
+        /// <returns>Adjusted hex color string</returns>
+        private string AdjustBrightness(string hexColor, float factor)
+        {
+            if (string.IsNullOrEmpty(hexColor) || !hexColor.StartsWith("#"))
+            {
+                return hexColor;
+            }
+
+            try
+            {
+                var hex = hexColor.Substring(1);
+                int r = Convert.ToInt32(hex.Substring(0, 2), 16);
+                int g = Convert.ToInt32(hex.Substring(2, 2), 16);
+                int b = Convert.ToInt32(hex.Substring(4, 2), 16);
+
+                r = Math.Min(255, Math.Max(0, (int)(r * factor)));
+                g = Math.Min(255, Math.Max(0, (int)(g * factor)));
+                b = Math.Min(255, Math.Max(0, (int)(b * factor)));
+
+                return $"#{r:X2}{g:X2}{b:X2}";
+            }
+            catch
+            {
+                return hexColor;
+            }
         }
     }
 }
