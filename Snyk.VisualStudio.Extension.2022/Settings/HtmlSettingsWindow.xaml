@@ -10,7 +10,7 @@
                  xmlns:imaging="clr-namespace:Microsoft.VisualStudio.Imaging;assembly=Microsoft.VisualStudio.Imaging"
                  mc:Ignorable="d"
                  WindowStartupLocation="CenterScreen"
-                 IsCloseButtonEnabled="False"
+                 IsCloseButtonEnabled="True"
                  HasHelpButton="False"
                  MinHeight="750" Height="850"
                  MinWidth="600" Width="950"
@@ -26,30 +26,6 @@
                       CornerRadius="0" />
     </WindowChrome.WindowChrome> -->
     <DockPanel Margin="10">
-        <!-- Top: Draggable Bar with Close Button -->
-        <Grid DockPanel.Dock="Top" Margin="0,0,0,10">
-            <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="*" />
-                <ColumnDefinition Width="Auto" />
-            </Grid.ColumnDefinitions>
-
-            <!-- Draggable area (empty, just for dragging) -->
-            <Border Grid.Column="0"
-                    Background="Transparent"
-                    MouseLeftButtonDown="TitleBar_MouseLeftButtonDown"
-                    Height="35" />
-
-            <!-- Close button -->
-            <Button Grid.Column="1"
-                    Click="CloseButton_OnClick"
-                    MinWidth="35"
-                    Width="35"
-                    Height="35"
-                    Padding="0">
-                <imaging:CrispImage Moniker="{x:Static catalog:KnownMonikers.Close}" />
-            </Button>
-        </Grid>
-
         <!-- Bottom: OK and Cancel Buttons -->
         <StackPanel HorizontalAlignment="Right" DockPanel.Dock="Bottom" Orientation="Horizontal" Margin="0,10,0,0">
             <Button x:Name="OkButton" Margin="5, 5" Content="OK" Click="OkButton_OnClick"

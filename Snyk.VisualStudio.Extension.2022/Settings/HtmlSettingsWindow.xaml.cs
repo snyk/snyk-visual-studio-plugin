@@ -251,12 +251,6 @@ namespace Snyk.VisualStudio.Extension.Settings
             Close();
         }
 
-        private void CloseButton_OnClick(object sender, RoutedEventArgs e)
-        {
-            DialogResult = false;
-            Close();
-        }
-
         private void TitleBar_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)
         {
             if (e.ClickCount == 1)
