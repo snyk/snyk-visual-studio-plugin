@@ -1,4 +1,4 @@
-﻿using System.Linq;
+using System.Linq;
 using System;
 using System.Text.RegularExpressions;
 using Microsoft.VisualStudio.PlatformUI;
@@ -92,8 +92,10 @@ namespace Snyk.VisualStudio.Extension.UI.Html
             var scrollbarThumb = VSColorTheme.GetThemedColor(EnvironmentColors.ScrollBarThumbBackgroundColorKey).ToHex();
             var scrollbarThumbHover = VSColorTheme.GetThemedColor(EnvironmentColors.ScrollBarThumbMouseOverBackgroundColorKey).ToHex();
 
-            // Build variable map for regex-based replacement (like IntelliJ plugin)
-            var varMap = new System.Collections.Generic.Dictionary<string, string>
+            var varMap = ExtractRootCssVariables(html);
+
+            // IDE custom theme variables. These take priority over the extracted variables.
+            var ideVarOverridesMap = new System.Collections.Generic.Dictionary<string, string>
             {
                 // VS Code style variables (from LS HTML)
                 { "vscode-font-family", "'Segoe UI', Tahoma, Geneva, Verdana, sans-serif" },
@@ -128,7 +130,7 @@ namespace Snyk.VisualStudio.Extension.UI.Html
                 { "button-secondary-background", secondaryButtonBackground },
                 { "button-secondary-foreground", secondaryButtonForeground },
                 { "button-secondary-hover-background", secondaryButtonHoverBackground },
-                // Legacy variables (for fallback HTML)
+                // Legacy variables (for fallback HTML theme colors)
                 { "default-font", "'Segoe UI', Tahoma, Geneva, Verdana, sans-serif" },
                 { "text-color", textColor },
                 { "background-color", backgroundColor },
@@ -137,20 +139,21 @@ namespace Snyk.VisualStudio.Extension.UI.Html
                 { "horizontal-border-color", borderColor },
                 { "code-background-color", inputBackground },
                 { "input-border", inputBorder },
+                { "input-background-color", inputBackground },
+                { "section-background-color", inactiveSelectionBackground },
+                { "focus-color", linkColor },
                 { "main-font-size", "15px" },
                 { "ide-background-color", backgroundColor },
                 { "dimmed-text-color", disabledForeground }
             };
 
-            // Regex pattern to match var(--varName) or var(--varName, fallback)
-            // Matches var() usage in CSS
-            var cssVarPattern = new Regex(@"var\(--([a-zA-Z0-9_-]+)(?:,\s*[^)]+)?\)");
-
-            html = cssVarPattern.Replace(html, match =>
+            // Merge IDE variables into varMap (IDE values override :root values)
+            foreach (var ideVarOverride in ideVarOverridesMap)
             {
-                var varName = match.Groups[1].Value;
-                return varMap.ContainsKey(varName) ? varMap[varName] : match.Value;
-            });
+                varMap[ideVarOverride.Key] = ideVarOverride.Value;
+            }
+
+            html = ReplaceCssVarUsages(html, varMap, maxIterations: 10);
 
             // Template placeholder replacements (for embedded/fallback HTML)
             html = html.Replace("{{TEXT_COLOR}}", textColor);
@@ -171,6 +174,81 @@ namespace Snyk.VisualStudio.Extension.UI.Html
             html = html.Replace("${nonce}", nonce);
             html = html.Replace("ideNonce", nonce);
             html = html.Replace("${ideScript}", "");
+
+            return html;
+        }
+
+        /// <summary>
+        /// Extracts CSS variable definitions from :root blocks in HTML.
+        /// This is needed because IE11 doesn't support CSS custom properties natively.
+        /// </summary>
+        internal System.Collections.Generic.Dictionary<string, string> ExtractRootCssVariables(string html)
+        {
+            var variables = new System.Collections.Generic.Dictionary<string, string>();
+
+            // Match :root { ... } blocks (handles multi-line)
+            var rootPattern = new Regex(@"^\s*:root\s*\{(?<content>[^}]+)\}\s*$", RegexOptions.Multiline);
+            // Strip block comments /* ... */ (Singleline makes . match newlines)
+            var blockCommentPattern = new Regex(@"/\*.*?\*/", RegexOptions.Singleline);
+            // Match variable definitions: --name: value;
+            var varDefPattern = new Regex(@"^\s*--(?<name>[a-zA-Z0-9_-]+)\s*:\s*(?<value>[^;]+);", RegexOptions.Multiline);
+
+            foreach (Match rootMatch in rootPattern.Matches(html))
+            {
+                var rootBlock = rootMatch.Groups["content"].Value;
+                // Remove block comments before extracting variables
+                rootBlock = blockCommentPattern.Replace(rootBlock, "");
+
+                foreach (Match varMatch in varDefPattern.Matches(rootBlock))
+                {
+                    var name = varMatch.Groups["name"].Value;
+                    var value = varMatch.Groups["value"].Value.Trim();
+                    // Last definition wins (CSS cascade behavior)
+                    variables[name] = value;
+                }
+            }
+
+            return variables;
+        }
+
+        /// <summary>
+        /// Replaces var(--name) and var(--name, fallback) usages with actual values.
+        /// Loops until content stabilizes or max iterations reached (handles nested variables).
+        /// </summary>
+        internal string ReplaceCssVarUsages(string html, System.Collections.Generic.Dictionary<string, string> varMap, int maxIterations)
+        {
+            var cssVarPattern = new Regex(@"var\(--(?<name>[a-zA-Z0-9_-]+)(?:,\s*(?<fallback>[^)]+))?\)");
+
+            for (int i = 0; i < maxIterations; i++)
+            {
+                var previousHtml = html;
+
+                html = cssVarPattern.Replace(html, match =>
+                {
+                    var varName = match.Groups["name"].Value;
+                    var fallbackGroup = match.Groups["fallback"];
+
+                    // Priority: varMap value > CSS fallback > leave unchanged
+                    if (varMap.ContainsKey(varName))
+                    {
+                        return varMap[varName];
+                    }
+                    else if (fallbackGroup.Success)
+                    {
+                        return fallbackGroup.Value.Trim();
+                    }
+                    else
+                    {
+                        return match.Value;
+                    }
+                });
+
+                // Stop if content hasn't changed (no more replacements possible)
+                if (html == previousHtml)
+                {
+                    break;
+                }
+            }
 
             return html;
         }
