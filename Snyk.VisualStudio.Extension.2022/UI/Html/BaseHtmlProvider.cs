@@ -169,11 +169,13 @@ namespace Snyk.VisualStudio.Extension.UI.Html
             html = html.Replace("{{ERROR_BORDER_COLOR}}", "#f44336");
             html = html.Replace("{{ERROR_TEXT_COLOR}}", "#f44336");
 
-            html = html.Replace("${headerEnd}", "");
+            // Must not have blank template replacements, as they could be used to skip the "${nonce}" injection check
+            // and still end up with the nonce injected, e.g. "${nonce${resolvesToEmpty}}" becomes "${nonce}" - See IDE-1050.
+            html = html.Replace("${headerEnd}", " ");
             var nonce = GetNonce();
             html = html.Replace("${nonce}", nonce);
             html = html.Replace("ideNonce", nonce);
-            html = html.Replace("${ideScript}", "");
+            html = html.Replace("${ideScript}", " ");
 
             return html;
         }
