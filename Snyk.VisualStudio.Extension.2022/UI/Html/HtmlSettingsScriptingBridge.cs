@@ -104,33 +104,21 @@ namespace Snyk.VisualStudio.Extension.UI.Html
 
         /// <summary>
         /// Called from LS HTML JavaScript: window.__ideExecuteCommand__(command, argsJson, callbackId)
-        /// Routes commands (login, logout, etc.) to the Language Server via workspace/executeCommand.
+        /// Routes commands to the Language Server via workspace/executeCommand.
         /// If callbackId is non-empty, the command result is passed back to the JS callback.
         /// </summary>
         public void __ideExecuteCommand__(string command, string argsJson, string callbackId)
         {
-            try
+            ThreadHelper.JoinableTaskFactory.RunAsync(async () =>
             {
-                var args = string.IsNullOrEmpty(argsJson)
-                    ? Array.Empty<object>()
-                    : JsonConvert.DeserializeObject<object[]>(argsJson);
-
-                ThreadHelper.JoinableTaskFactory.RunAsync(async () =>
-                {
-                    var result = await serviceProvider.LanguageClientManager.InvokeExecuteCommandAsync(
-                        command, args, SnykVSPackage.Instance.DisposalToken);
-
-                    if (!string.IsNullOrEmpty(callbackId))
-                    {
-                        var resultJson = result != null ? JsonConvert.SerializeObject(result) : "null";
-                        onCommandResult?.Invoke(callbackId, resultJson);
-                    }
-                }).FireAndForget();
-            }
-            catch (Exception ex)
-            {
-                Logger.Error(ex, "Error executing command {Command} from HTML settings", command);
-            }
+                await ExecuteCommandBridge.DispatchAsync(
+                    serviceProvider.LanguageClientManager,
+                    command,
+                    argsJson,
+                    callbackId,
+                    onCommandResult,
+                    SnykVSPackage.Instance.DisposalToken);
+            }).FireAndForget();
         }
 
         /// <summary>

@@ -171,7 +171,7 @@ namespace Snyk.VisualStudio.Extension.Settings
         }
 
         /// <summary>
-        /// Injects IDE bridge functions into the HTML window object for save/login/logout operations.
+        /// Injects IDE bridge functions into the HTML window object for save and command operations.
         /// </summary>
         protected virtual void InjectIdeBridgeFunctions()
         {
@@ -182,19 +182,8 @@ namespace Snyk.VisualStudio.Extension.Settings
 
                 // Inject bridge functions that LS HTML expects
                 var script = @"
-                    window.__ideCallbacks__ = {};
-                    var __cbCounter_ide = 0;
                     window.__saveIdeConfig__ = function(jsonString) {
                         window.external.__saveIdeConfig__(jsonString);
-                    };
-                    window.__ideExecuteCommand__ = function(command, args, callback) {
-                        var callbackId = '';
-                        if (typeof callback === 'function') {
-                            callbackId = '__cb_' + (++__cbCounter_ide);
-                            window.__ideCallbacks__[callbackId] = callback;
-                        }
-                        var argsJson = JSON.stringify(args || []);
-                        window.external.__ideExecuteCommand__(command, argsJson, callbackId);
                     };
                     window.__onFormDirtyChange__ = function(isDirty) {
                         window.external.__onFormDirtyChange__(isDirty);
@@ -202,7 +191,7 @@ namespace Snyk.VisualStudio.Extension.Settings
                     window.__ideSaveAttemptFinished__ = function(status) {
                         window.external.__ideSaveAttemptFinished__(status);
                     };
-                ";
+                " + ExecuteCommandBridge.BuildClientScript();
 
                 var scriptElement = doc.CreateElement("script");
                 scriptElement.SetAttribute("type", "text/javascript");
