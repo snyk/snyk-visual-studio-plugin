@@ -29,6 +29,7 @@ namespace Snyk.VisualStudio.Extension.UI.Html
         private readonly Action onModified;
         private readonly Action onReset;
         private readonly Action<string> onAuthTokenChanged;
+        private readonly Action<string, string> onCommandResult;
         private volatile bool isSaveComplete;
 
         private ISnykOptions Options => serviceProvider.Options;
@@ -49,12 +50,14 @@ namespace Snyk.VisualStudio.Extension.UI.Html
             ISnykServiceProvider serviceProvider,
             Action onModified,
             Action onReset = null,
-            Action<string> onAuthTokenChanged = null)
+            Action<string> onAuthTokenChanged = null,
+            Action<string, string> onCommandResult = null)
         {
             this.serviceProvider = serviceProvider ?? throw new ArgumentNullException(nameof(serviceProvider));
             this.onModified = onModified ?? throw new ArgumentNullException(nameof(onModified));
             this.onReset = onReset;
             this.onAuthTokenChanged = onAuthTokenChanged;
+            this.onCommandResult = onCommandResult;
         }
 
         /// <summary>
@@ -100,60 +103,33 @@ namespace Snyk.VisualStudio.Extension.UI.Html
         }
 
         /// <summary>
-        /// Called from LS HTML JavaScript: window.__ideLogin__()
-        /// Triggers the IDE's authentication flow via Language Server.
+        /// Called from LS HTML JavaScript: window.__ideExecuteCommand__(command, argsJson, callbackId)
+        /// Routes commands (login, logout, etc.) to the Language Server via workspace/executeCommand.
+        /// If callbackId is non-empty, the command result is passed back to the JS callback.
         /// </summary>
-        public void __ideLogin__()
+        public void __ideExecuteCommand__(string command, string argsJson, string callbackId)
         {
             try
             {
-                // Trigger authentication through the GeneralOptionsDialogPage
-                // This matches the pattern from SnykGeneralSettingsUserControl
-                if (serviceProvider?.GeneralOptionsDialogPage != null)
-                {
-                    serviceProvider.GeneralOptionsDialogPage.Authenticate();
-                    Logger.Information("Authentication initiated from HTML settings");
-                }
-                else
-                {
-                    Logger.Warning("Cannot authenticate: GeneralOptionsDialogPage not available");
-                }
-            }
-            catch (Exception ex)
-            {
-                Logger.Error(ex, "Error during authentication from HTML settings");
-            }
-        }
+                var args = string.IsNullOrEmpty(argsJson)
+                    ? Array.Empty<object>()
+                    : JsonConvert.DeserializeObject<object[]>(argsJson);
 
-        /// <summary>
-        /// Called from LS HTML JavaScript: window.__ideLogout__()
-        /// Clears authentication token and notifies Language Server.
-        /// </summary>
-        public void __ideLogout__()
-        {
-            try
-            {
-                // Clear the API token
-                Options.ApiToken = AuthenticationToken.EmptyToken;
-
-                // Notify Language Server of logout
-                if (serviceProvider?.LanguageClientManager != null)
+                ThreadHelper.JoinableTaskFactory.RunAsync(async () =>
                 {
-                    ThreadHelper.JoinableTaskFactory.RunAsync(async () =>
+                    var result = await serviceProvider.LanguageClientManager.InvokeExecuteCommandAsync(
+                        command, args, SnykVSPackage.Instance.DisposalToken);
+
+                    if (!string.IsNullOrEmpty(callbackId))
                     {
-                        await serviceProvider.LanguageClientManager.InvokeLogout(
-                            SnykVSPackage.Instance.DisposalToken);
-                        Logger.Information("Logout completed - Language Server notified");
-                    }).FireAndForget();
-                }
-                else
-                {
-                    Logger.Information("Logout completed - Language Server not available");
-                }
+                        var resultJson = result != null ? JsonConvert.SerializeObject(result) : "null";
+                        onCommandResult?.Invoke(callbackId, resultJson);
+                    }
+                }).FireAndForget();
             }
             catch (Exception ex)
             {
-                Logger.Error(ex, "Error during logout from HTML settings");
+                Logger.Error(ex, "Error executing command {Command} from HTML settings", command);
             }
         }
 

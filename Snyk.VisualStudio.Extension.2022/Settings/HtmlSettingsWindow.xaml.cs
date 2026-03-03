@@ -113,7 +113,8 @@ namespace Snyk.VisualStudio.Extension.Settings
             scriptingBridge = new HtmlSettingsScriptingBridge(
                 serviceProvider,
                 onModified: () => IsDirty = true,
-                onReset: () => IsDirty = false);
+                onReset: () => IsDirty = false,
+                onCommandResult: (callbackId, resultJson) => InvokeCommandCallback(callbackId, resultJson));
 
             // Set the scripting bridge as the ObjectForScripting
             SettingsBrowser.ObjectForScripting = scriptingBridge;
@@ -181,14 +182,19 @@ namespace Snyk.VisualStudio.Extension.Settings
 
                 // Inject bridge functions that LS HTML expects
                 var script = @"
+                    window.__ideCallbacks__ = {};
+                    var __cbCounter_ide = 0;
                     window.__saveIdeConfig__ = function(jsonString) {
                         window.external.__saveIdeConfig__(jsonString);
                     };
-                    window.__ideLogin__ = function() {
-                        window.external.__ideLogin__();
-                    };
-                    window.__ideLogout__ = function() {
-                        window.external.__ideLogout__();
+                    window.__ideExecuteCommand__ = function(command, args, callback) {
+                        var callbackId = '';
+                        if (typeof callback === 'function') {
+                            callbackId = '__cb_' + (++__cbCounter_ide);
+                            window.__ideCallbacks__[callbackId] = callback;
+                        }
+                        var argsJson = JSON.stringify(args || []);
+                        window.external.__ideExecuteCommand__(command, argsJson, callbackId);
                     };
                     window.__onFormDirtyChange__ = function(isDirty) {
                         window.external.__onFormDirtyChange__(isDirty);
@@ -276,6 +282,35 @@ namespace Snyk.VisualStudio.Extension.Settings
             catch (Exception ex)
             {
                 Logger.Error(ex, "Error updating auth token in HTML settings");
+            }
+        }
+
+        private void InvokeCommandCallback(string callbackId, string resultJson)
+        {
+            try
+            {
+                ThreadHelper.JoinableTaskFactory.Run(async () =>
+                {
+                    await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
+
+                    dynamic doc = SettingsBrowser.Document;
+                    if (doc == null) return;
+
+                    var escapedCallbackId = callbackId.Replace("\\", "\\\\").Replace("'", "\\'");
+                    var script = $"if(window.__ideCallbacks__&&window.__ideCallbacks__['{escapedCallbackId}']){{" +
+                                 $"var cb=window.__ideCallbacks__['{escapedCallbackId}'];" +
+                                 $"delete window.__ideCallbacks__['{escapedCallbackId}'];" +
+                                 $"cb({resultJson});}}";
+
+                    var scriptElement = doc.CreateElement("script");
+                    scriptElement.SetAttribute("type", "text/javascript");
+                    scriptElement.InnerText = script;
+                    doc.GetElementsByTagName("head")[0].AppendChild(scriptElement);
+                });
+            }
+            catch (Exception ex)
+            {
+                Logger.Error(ex, "Error invoking command callback {CallbackId}", callbackId);
             }
         }
 
