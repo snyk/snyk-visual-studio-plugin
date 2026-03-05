@@ -268,20 +268,30 @@ namespace Snyk.VisualStudio.Extension.Language
             }
 
             var token = arg["token"].ToString();
-
             var apiUrl = arg["apiUrl"]?.ToString();
+
+            var oldToken = serviceProvider.Options.ApiToken?.ToString() ?? string.Empty;
+
+            // Always notify the HTML settings window so the token field updates immediately.
+            HtmlSettingsWindow.Instance?.UpdateAuthToken(token, apiUrl);
+
             if (!string.IsNullOrEmpty(apiUrl))
             {
                 serviceProvider.Options.CustomEndpoint = apiUrl;
             }
 
             serviceProvider.Options.ApiToken = new AuthenticationToken(serviceProvider.Options.AuthenticationMethod, token);
-            serviceProvider.SnykOptionsManager.Save(serviceProvider.Options);
+
+            // Persist without triggering SettingsChanged → DidChangeConfigurationAsync back to the LS.
+            serviceProvider.SnykOptionsManager.Save(serviceProvider.Options, false);
+
+            // Scan only when this is a new login (old token was blank).
+            // Token refresh also has old token non-blank, so no scan.
+            var isNewLogin = string.IsNullOrEmpty(oldToken) && !string.IsNullOrEmpty(token);
+            if (!isNewLogin)
+                return;
 
             await serviceProvider.GeneralOptionsDialogPage.HandleAuthenticationSuccess(token, apiUrl);
-
-            // Notify HTML settings window of auth token change
-            HtmlSettingsWindow.Instance?.UpdateAuthToken(token);
 
             if (!serviceProvider.Options.ApiToken.IsValid())
                 return;
