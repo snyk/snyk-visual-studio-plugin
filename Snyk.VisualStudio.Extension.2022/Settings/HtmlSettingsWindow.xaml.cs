@@ -254,7 +254,7 @@ namespace Snyk.VisualStudio.Extension.Settings
             }
         }
 
-        public void UpdateAuthToken(string token)
+        public void UpdateAuthToken(string token, string apiUrl = null)
         {
             try
             {
@@ -264,7 +264,7 @@ namespace Snyk.VisualStudio.Extension.Settings
 
                     if (SettingsBrowser?.Document != null)
                     {
-                        InvokeSetAuthToken(token);
+                        InvokeSetAuthToken(token, apiUrl);
                     }
                 });
             }
@@ -303,7 +303,7 @@ namespace Snyk.VisualStudio.Extension.Settings
             }
         }
 
-        private void InvokeSetAuthToken(string token)
+        private void InvokeSetAuthToken(string token, string apiUrl)
         {
             try
             {
@@ -316,10 +316,11 @@ namespace Snyk.VisualStudio.Extension.Settings
                 }
 
                 var escapedToken = token.Replace("'", "\\'").Replace("\"", "\\\"");
+                var escapedApiUrl = (apiUrl ?? string.Empty).Replace("'", "\\'").Replace("\"", "\\\"");
                 var script = $@"
                     (function() {{
                         if (typeof window.setAuthToken === 'function') {{
-                            window.setAuthToken('{escapedToken}');
+                            window.setAuthToken('{escapedToken}', '{escapedApiUrl}');
                         }} else {{
                             console.warn('window.setAuthToken is not available');
                         }}
@@ -331,7 +332,7 @@ namespace Snyk.VisualStudio.Extension.Settings
                 scriptElement.InnerText = script;
                 doc.GetElementsByTagName("head")[0].AppendChild(scriptElement);
 
-                Logger.Information("Invoked window.setAuthToken with token");
+                Logger.Information("Invoked window.setAuthToken with token and apiUrl");
             }
             catch (Exception ex)
             {
