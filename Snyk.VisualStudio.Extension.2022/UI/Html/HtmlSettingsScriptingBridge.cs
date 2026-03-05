@@ -106,9 +106,36 @@ namespace Snyk.VisualStudio.Extension.UI.Html
         /// Called from LS HTML JavaScript: window.__ideExecuteCommand__(command, argsJson, callbackId)
         /// Routes commands to the Language Server via workspace/executeCommand.
         /// If callbackId is non-empty, the command result is passed back to the JS callback.
+        /// When command is "snyk.login" and args has 3+ elements, saves auth params to IDE storage
+        /// immediately without triggering DidChangeConfigurationAsync.
         /// </summary>
         public void __ideExecuteCommand__(string command, string argsJson, string callbackId)
         {
+            if (command == "snyk.login")
+            {
+                try
+                {
+                    var args = JsonConvert.DeserializeObject<object[]>(argsJson ?? "[]");
+                    if (args != null && args.Length >= 3)
+                    {
+                        var authMethodStr = args[0]?.ToString() ?? string.Empty;
+                        serviceProvider.Options.AuthenticationMethod = authMethodStr switch
+                        {
+                            "oauth" => AuthenticationType.OAuth,
+                            "pat" => AuthenticationType.Pat,
+                            "token" => AuthenticationType.Token,
+                            _ => AuthenticationType.OAuth,
+                        };
+                        serviceProvider.Options.CustomEndpoint = args[1]?.ToString() ?? string.Empty;
+                        serviceProvider.Options.IgnoreUnknownCA = args[2] is bool b ? b : Convert.ToBoolean(args[2]);
+                    }
+                }
+                catch (Exception ex)
+                {
+                    Logger.Warning(ex, "Failed to save login args from __ideExecuteCommand__");
+                }
+            }
+
             ThreadHelper.JoinableTaskFactory.RunAsync(async () =>
             {
                 await ExecuteCommandBridge.DispatchAsync(
