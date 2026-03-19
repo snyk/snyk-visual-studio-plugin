@@ -25,7 +25,7 @@ namespace Snyk.VisualStudio.Extension.UI.Html
     /// </summary>
     public static class ExecuteCommandBridge
     {
-        private static readonly ILogger Logger = LogManager.ForContext<ExecuteCommandBridge>();
+        private static readonly ILogger Logger = LogManager.ForContext(typeof(ExecuteCommandBridge));
 
         // Allowlist regex for callbackIds produced by BuildClientScript: "" or "__cb_<digits>"
         private static readonly Regex CallbackIdPattern = new Regex(@"^(__cb_\d+)?$", RegexOptions.Compiled);
