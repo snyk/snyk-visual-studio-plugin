@@ -93,6 +93,7 @@ namespace Snyk.VisualStudio.Extension.Settings
                 SettingsBrowser.UpdateLayout();
 
                 html = HtmlResourceLoader.ApplyTheme(html);
+                html = InjectBridgeScriptIntoHtml(html);
                 SettingsBrowser.NavigateToString(html);
             }
             catch (Exception ex)
@@ -170,8 +171,35 @@ namespace Snyk.VisualStudio.Extension.Settings
             return HtmlResourceLoader.LoadFallbackHtml(serviceProvider.Options);
         }
 
+        private static string BuildIdeBridgeScript() =>
+            @"window.__saveIdeConfig__ = function(jsonString) { window.external.__saveIdeConfig__(jsonString); };
+            window.__onFormDirtyChange__ = function(isDirty) { window.external.__onFormDirtyChange__(isDirty); };
+            window.__ideSaveAttemptFinished__ = function(status) { window.external.__ideSaveAttemptFinished__(status); };"
+            + ExecuteCommandBridge.BuildClientScript();
+
+        /// <summary>
+        /// Injects IDE bridge functions into the HTML string before it is loaded by the browser.
+        /// This ensures the functions are defined before the page's own scripts run, which is
+        /// required for the LS HTML page to wire up its auth and command buttons correctly.
+        /// </summary>
+        protected virtual string InjectBridgeScriptIntoHtml(string html)
+        {
+            var script = BuildIdeBridgeScript();
+            var scriptTag = $"<script type=\"text/javascript\">{script}</script>";
+
+            var headIndex = html.IndexOf("<head>", StringComparison.OrdinalIgnoreCase);
+            if (headIndex >= 0)
+            {
+                return html.Insert(headIndex + "<head>".Length, scriptTag);
+            }
+
+            // Fallback: prepend if no <head> found
+            return scriptTag + html;
+        }
+
         /// <summary>
         /// Injects IDE bridge functions into the HTML window object for save and command operations.
+        /// Called after LoadCompleted as a secondary injection to ensure functions are (re-)applied.
         /// </summary>
         protected virtual void InjectIdeBridgeFunctions()
         {
@@ -180,22 +208,9 @@ namespace Snyk.VisualStudio.Extension.Settings
                 dynamic doc = SettingsBrowser.Document;
                 if (doc == null) return;
 
-                // Inject bridge functions that LS HTML expects
-                var script = @"
-                    window.__saveIdeConfig__ = function(jsonString) {
-                        window.external.__saveIdeConfig__(jsonString);
-                    };
-                    window.__onFormDirtyChange__ = function(isDirty) {
-                        window.external.__onFormDirtyChange__(isDirty);
-                    };
-                    window.__ideSaveAttemptFinished__ = function(status) {
-                        window.external.__ideSaveAttemptFinished__(status);
-                    };
-                " + ExecuteCommandBridge.BuildClientScript();
-
                 var scriptElement = doc.CreateElement("script");
                 scriptElement.SetAttribute("type", "text/javascript");
-                scriptElement.InnerText = script;
+                scriptElement.InnerText = BuildIdeBridgeScript();
                 doc.GetElementsByTagName("head")[0].AppendChild(scriptElement);
             }
             catch (Exception ex)
