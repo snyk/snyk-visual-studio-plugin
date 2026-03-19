@@ -46,7 +46,7 @@ namespace Snyk.VisualStudio.Extension
                     shared: true)
                 .CreateLogger();
 
-        private static ILogger ForContext(Type type) => Logger.Value.ForContext(type)
+        public static ILogger ForContext(Type type) => Logger.Value.ForContext(type)
             .ForContext("ShortSourceContext", type.Name);
     }
 
