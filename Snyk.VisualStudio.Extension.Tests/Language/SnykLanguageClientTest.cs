@@ -56,9 +56,9 @@ namespace Snyk.VisualStudio.Extension.Tests.Language
             var result = await cut.DidChangeConfigurationAsync(CancellationToken.None);
 
             // Assert
-            jsonRpcMock.Verify(x=>x.InvokeWithParameterObjectAsync<object>(LsConstants.WorkspaceChangeConfiguration, 
-                It.IsAny<LSP.DidChangeConfigurationParams>(), 
-                It.IsAny<CancellationToken>()), 
+            jsonRpcMock.Verify(x => x.InvokeWithParameterObjectAsync<object>(LsConstants.WorkspaceChangeConfiguration,
+                It.IsAny<LSP.DidChangeConfigurationParams>(),
+                It.IsAny<CancellationToken>()),
                 Times.Never);
             Assert.Null(result);
         }
@@ -76,8 +76,8 @@ namespace Snyk.VisualStudio.Extension.Tests.Language
 
             // Assert
             jsonRpcMock.Verify(x => x.InvokeWithParameterObjectAsync<object>(LsConstants.WorkspaceChangeConfiguration,
-                It.IsAny<LSP.DidChangeConfigurationParams>(), 
-                It.IsAny<CancellationToken>()), 
+                It.IsAny<LSP.DidChangeConfigurationParams>(),
+                It.IsAny<CancellationToken>()),
                 Times.Once);
             Assert.Null(result);
         }
@@ -123,9 +123,9 @@ namespace Snyk.VisualStudio.Extension.Tests.Language
 
             // Assert
             Assert.Null(result);
-            jsonRpcMock.Verify(x => x.InvokeWithParameterObjectAsync<object>(LsConstants.WorkspaceExecuteCommand, 
+            jsonRpcMock.Verify(x => x.InvokeWithParameterObjectAsync<object>(LsConstants.WorkspaceExecuteCommand,
                     It.Is<LSP.ExecuteCommandParams>(param => param.Command == LsConstants.SnykWorkspaceScan),
-                It.IsAny<CancellationToken>()), 
+                It.IsAny<CancellationToken>()),
                 Times.Never);
         }
 
@@ -142,8 +142,8 @@ namespace Snyk.VisualStudio.Extension.Tests.Language
             // Assert
             Assert.Null(result);
             jsonRpcMock.Verify(x => x.InvokeWithParameterObjectAsync<object>(LsConstants.WorkspaceExecuteCommand,
-                It.Is<LSP.ExecuteCommandParams>(param=> param.Command == LsConstants.SnykWorkspaceScan), 
-                It.IsAny<CancellationToken>()), 
+                It.Is<LSP.ExecuteCommandParams>(param => param.Command == LsConstants.SnykWorkspaceScan),
+                It.IsAny<CancellationToken>()),
                 Times.Once);
         }
 
@@ -161,7 +161,7 @@ namespace Snyk.VisualStudio.Extension.Tests.Language
             Assert.Null(result);
             jsonRpcMock.Verify(x => x.InvokeWithParameterObjectAsync<object>(LsConstants.WorkspaceExecuteCommand,
                 It.Is<LSP.ExecuteCommandParams>(param => param.Command == LsConstants.SnykWorkspaceScan),
-                It.IsAny<CancellationToken>()), 
+                It.IsAny<CancellationToken>()),
                 Times.Never);
         }
 
@@ -334,9 +334,9 @@ namespace Snyk.VisualStudio.Extension.Tests.Language
 
             // Assert
             Assert.Null(result);
-            jsonRpcMock.Verify(x => x.InvokeWithParameterObjectAsync<object>(LsConstants.WorkspaceExecuteCommand, 
+            jsonRpcMock.Verify(x => x.InvokeWithParameterObjectAsync<object>(LsConstants.WorkspaceExecuteCommand,
                     It.Is<LSP.ExecuteCommandParams>(param => param.Command == LsConstants.SnykLogin),
-                It.IsAny<CancellationToken>()), 
+                It.IsAny<CancellationToken>()),
                 Times.Never);
         }
 
@@ -351,9 +351,9 @@ namespace Snyk.VisualStudio.Extension.Tests.Language
 
             // Assert
             Assert.Null(result);
-            jsonRpcMock.Verify(x => x.InvokeWithParameterObjectAsync<object>(LsConstants.WorkspaceExecuteCommand, 
+            jsonRpcMock.Verify(x => x.InvokeWithParameterObjectAsync<object>(LsConstants.WorkspaceExecuteCommand,
                     It.Is<LSP.ExecuteCommandParams>(param => param.Command == LsConstants.SnykLogin),
-                It.IsAny<CancellationToken>()), 
+                It.IsAny<CancellationToken>()),
                 Times.Once);
         }
     }

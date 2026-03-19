@@ -22,7 +22,7 @@ namespace Snyk.VisualStudio.Extension.Settings
     public partial class HtmlSettingsWindow : DialogWindow
     {
         protected static readonly ILogger Logger = LogManager.ForContext<HtmlSettingsWindow>();
-        private static HtmlSettingsWindow instance;
+        private static volatile HtmlSettingsWindow instance;
 
         public static HtmlSettingsWindow Instance => instance;
 
@@ -93,6 +93,7 @@ namespace Snyk.VisualStudio.Extension.Settings
                 SettingsBrowser.UpdateLayout();
 
                 html = HtmlResourceLoader.ApplyTheme(html);
+                html = InjectBridgeScriptIntoHtml(html);
                 SettingsBrowser.NavigateToString(html);
             }
             catch (Exception ex)
@@ -113,7 +114,8 @@ namespace Snyk.VisualStudio.Extension.Settings
             scriptingBridge = new HtmlSettingsScriptingBridge(
                 serviceProvider,
                 onModified: () => IsDirty = true,
-                onReset: () => IsDirty = false);
+                onReset: () => IsDirty = false,
+                onCommandResult: (callbackId, resultJson) => InvokeCommandCallback(callbackId, resultJson));
 
             // Set the scripting bridge as the ObjectForScripting
             SettingsBrowser.ObjectForScripting = scriptingBridge;
@@ -169,8 +171,35 @@ namespace Snyk.VisualStudio.Extension.Settings
             return HtmlResourceLoader.LoadFallbackHtml(serviceProvider.Options);
         }
 
+        private static string BuildIdeBridgeScript() =>
+            @"window.__saveIdeConfig__ = function(jsonString) { window.external.__saveIdeConfig__(jsonString); };
+            window.__onFormDirtyChange__ = function(isDirty) { window.external.__onFormDirtyChange__(isDirty); };
+            window.__ideSaveAttemptFinished__ = function(status) { window.external.__ideSaveAttemptFinished__(status); };"
+            + ExecuteCommandBridge.BuildClientScript();
+
         /// <summary>
-        /// Injects IDE bridge functions into the HTML window object for save/login/logout operations.
+        /// Injects IDE bridge functions into the HTML string before it is loaded by the browser.
+        /// This ensures the functions are defined before the page's own scripts run, which is
+        /// required for the LS HTML page to wire up its auth and command buttons correctly.
+        /// </summary>
+        protected virtual string InjectBridgeScriptIntoHtml(string html)
+        {
+            var script = BuildIdeBridgeScript();
+            var scriptTag = $"<script type=\"text/javascript\">{script}</script>";
+
+            var headIndex = html.IndexOf("<head>", StringComparison.OrdinalIgnoreCase);
+            if (headIndex >= 0)
+            {
+                return html.Insert(headIndex + "<head>".Length, scriptTag);
+            }
+
+            // Fallback: prepend if no <head> found
+            return scriptTag + html;
+        }
+
+        /// <summary>
+        /// Injects IDE bridge functions into the HTML window object for save and command operations.
+        /// Called after LoadCompleted as a secondary injection to ensure functions are (re-)applied.
         /// </summary>
         protected virtual void InjectIdeBridgeFunctions()
         {
@@ -179,28 +208,9 @@ namespace Snyk.VisualStudio.Extension.Settings
                 dynamic doc = SettingsBrowser.Document;
                 if (doc == null) return;
 
-                // Inject bridge functions that LS HTML expects
-                var script = @"
-                    window.__saveIdeConfig__ = function(jsonString) {
-                        window.external.__saveIdeConfig__(jsonString);
-                    };
-                    window.__ideLogin__ = function() {
-                        window.external.__ideLogin__();
-                    };
-                    window.__ideLogout__ = function() {
-                        window.external.__ideLogout__();
-                    };
-                    window.__onFormDirtyChange__ = function(isDirty) {
-                        window.external.__onFormDirtyChange__(isDirty);
-                    };
-                    window.__ideSaveAttemptFinished__ = function(status) {
-                        window.external.__ideSaveAttemptFinished__(status);
-                    };
-                ";
-
                 var scriptElement = doc.CreateElement("script");
                 scriptElement.SetAttribute("type", "text/javascript");
-                scriptElement.InnerText = script;
+                scriptElement.InnerText = BuildIdeBridgeScript();
                 doc.GetElementsByTagName("head")[0].AppendChild(scriptElement);
             }
             catch (Exception ex)
@@ -259,7 +269,7 @@ namespace Snyk.VisualStudio.Extension.Settings
             }
         }
 
-        public void UpdateAuthToken(string token)
+        public void UpdateAuthToken(string token, string apiUrl = null)
         {
             try
             {
@@ -269,7 +279,7 @@ namespace Snyk.VisualStudio.Extension.Settings
 
                     if (SettingsBrowser?.Document != null)
                     {
-                        InvokeSetAuthToken(token);
+                        InvokeSetAuthToken(token, apiUrl);
                     }
                 });
             }
@@ -279,7 +289,42 @@ namespace Snyk.VisualStudio.Extension.Settings
             }
         }
 
-        private void InvokeSetAuthToken(string token)
+        private void InvokeCommandCallback(string callbackId, string resultJson)
+        {
+            try
+            {
+                ThreadHelper.JoinableTaskFactory.Run(async () =>
+                {
+                    await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
+
+                    dynamic doc = SettingsBrowser.Document;
+                    if (doc == null) return;
+
+                    if (!ExecuteCommandBridge.IsValidCallbackId(callbackId))
+                    {
+                        Logger.Warning("Rejected callbackId with unexpected format: {CallbackId}", callbackId);
+                        return;
+                    }
+
+                    var escapedCallbackId = callbackId.Replace("\\", "\\\\").Replace("'", "\\'");
+                    var script = $"if(window.__ideCallbacks__&&window.__ideCallbacks__['{escapedCallbackId}']){{" +
+                                 $"var cb=window.__ideCallbacks__['{escapedCallbackId}'];" +
+                                 $"delete window.__ideCallbacks__['{escapedCallbackId}'];" +
+                                 $"cb({resultJson});}}";
+
+                    var scriptElement = doc.CreateElement("script");
+                    scriptElement.SetAttribute("type", "text/javascript");
+                    scriptElement.InnerText = script;
+                    doc.GetElementsByTagName("head")[0].AppendChild(scriptElement);
+                });
+            }
+            catch (Exception ex)
+            {
+                Logger.Error(ex, "Error invoking command callback {CallbackId}", callbackId);
+            }
+        }
+
+        private void InvokeSetAuthToken(string token, string apiUrl)
         {
             try
             {
@@ -291,11 +336,12 @@ namespace Snyk.VisualStudio.Extension.Settings
                     return;
                 }
 
-                var escapedToken = token.Replace("'", "\\'").Replace("\"", "\\\"");
+                var escapedToken = token.Replace("\\", "\\\\").Replace("'", "\\'");
+                var escapedApiUrl = (apiUrl ?? string.Empty).Replace("\\", "\\\\").Replace("'", "\\'");
                 var script = $@"
                     (function() {{
                         if (typeof window.setAuthToken === 'function') {{
-                            window.setAuthToken('{escapedToken}');
+                            window.setAuthToken('{escapedToken}', '{escapedApiUrl}');
                         }} else {{
                             console.warn('window.setAuthToken is not available');
                         }}
@@ -307,7 +353,7 @@ namespace Snyk.VisualStudio.Extension.Settings
                 scriptElement.InnerText = script;
                 doc.GetElementsByTagName("head")[0].AppendChild(scriptElement);
 
-                Logger.Information("Invoked window.setAuthToken with token");
+                Logger.Information("Invoked window.setAuthToken with token and apiUrl");
             }
             catch (Exception ex)
             {
