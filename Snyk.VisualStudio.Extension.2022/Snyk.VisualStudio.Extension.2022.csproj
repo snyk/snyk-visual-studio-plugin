@@ -251,6 +251,7 @@
     </Compile>
     <Compile Include="UI\Html\BaseHtmlProvider.cs" />
     <Compile Include="UI\Html\ColorExtension.cs" />
+    <Compile Include="UI\Html\ExecuteCommandBridge.cs" />
     <Compile Include="UI\Html\HtmlSettingsScriptingBridge.cs" />
     <Compile Include="UI\Html\IdeConfigData.cs" />
     <Compile Include="UI\Html\HtmlResourceLoader.cs" />
