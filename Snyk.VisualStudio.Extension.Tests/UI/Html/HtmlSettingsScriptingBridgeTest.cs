@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using Microsoft.VisualStudio.Sdk.TestFramework;
 using Moq;
 using Newtonsoft.Json;
@@ -103,6 +104,54 @@ namespace Snyk.VisualStudio.Extension.Tests.UI.Html
             optionsMock.VerifySet(o => o.AuthenticationMethod = It.IsAny<AuthenticationType>(), Times.Never);
             optionsMock.VerifySet(o => o.CustomEndpoint = It.IsAny<string>(), Times.Never);
             optionsMock.VerifySet(o => o.IgnoreUnknownCA = It.IsAny<bool>(), Times.Never);
+        }
+
+        [Fact]
+        public void SaveIdeConfig_ClearsToken_WhenAuthMethodChanges()
+        {
+            var setApiTokenCalls = new List<AuthenticationToken>();
+
+            optionsMock.SetupGet(o => o.AuthenticationMethod).Returns(AuthenticationType.OAuth);
+            optionsMock.SetupSet(o => o.AuthenticationMethod = It.IsAny<AuthenticationType>())
+                .Callback<AuthenticationType>(v => optionsMock.SetupGet(o => o.AuthenticationMethod).Returns(v));
+            optionsMock.SetupGet(o => o.ApiToken)
+                .Returns(new AuthenticationToken(AuthenticationType.OAuth, "existing-oauth-token"));
+            optionsMock.SetupSet(o => o.ApiToken = It.IsAny<AuthenticationToken>())
+                .Callback<AuthenticationToken>(t => setApiTokenCalls.Add(t));
+
+            var config = JsonConvert.SerializeObject(new IdeConfigData
+            {
+                AuthenticationMethod = "token",
+                Token = "new-pat-token",
+            });
+
+            bridge.__saveIdeConfig__(config);
+
+            Assert.True(setApiTokenCalls.Count >= 1, "ApiToken setter should have been called");
+            Assert.Equal(string.Empty, setApiTokenCalls[0].ToString());
+        }
+
+        [Fact]
+        public void SaveIdeConfig_DoesNotClearToken_WhenAuthMethodUnchanged()
+        {
+            var setApiTokenCalls = new List<AuthenticationToken>();
+
+            optionsMock.SetupGet(o => o.AuthenticationMethod).Returns(AuthenticationType.OAuth);
+            optionsMock.SetupGet(o => o.ApiToken)
+                .Returns(new AuthenticationToken(AuthenticationType.OAuth, "existing-token"));
+            optionsMock.SetupSet(o => o.ApiToken = It.IsAny<AuthenticationToken>())
+                .Callback<AuthenticationToken>(t => setApiTokenCalls.Add(t));
+
+            var config = JsonConvert.SerializeObject(new IdeConfigData
+            {
+                AuthenticationMethod = "oauth",
+                Token = "new-oauth-token",
+            });
+
+            bridge.__saveIdeConfig__(config);
+
+            // No clear-token call; any ApiToken set should be the new value, not empty
+            Assert.DoesNotContain(setApiTokenCalls, t => t.ToString() == string.Empty);
         }
     }
 }

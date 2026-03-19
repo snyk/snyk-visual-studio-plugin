@@ -2,6 +2,7 @@
 // ABOUTME: Reusable by any WebBrowser panel (settings, tree view, etc.).
 
 using System;
+using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
 using Newtonsoft.Json;
@@ -25,6 +26,16 @@ namespace Snyk.VisualStudio.Extension.UI.Html
     public static class ExecuteCommandBridge
     {
         private static readonly ILogger Logger = LogManager.ForContext<ExecuteCommandBridge>();
+
+        // Allowlist regex for callbackIds produced by BuildClientScript: "" or "__cb_<digits>"
+        private static readonly Regex CallbackIdPattern = new Regex(@"^(__cb_\d+)?$", RegexOptions.Compiled);
+
+        /// <summary>
+        /// Returns true if <paramref name="callbackId"/> matches the expected format produced by
+        /// <see cref="BuildClientScript"/>. Used as an XSS guard before injecting the id back into JS.
+        /// </summary>
+        public static bool IsValidCallbackId(string callbackId) =>
+            CallbackIdPattern.IsMatch(callbackId ?? string.Empty);
 
         /// <summary>
         /// Returns the ES5-compatible JavaScript that defines <c>window.__ideExecuteCommand__</c>.
@@ -71,6 +82,12 @@ namespace Snyk.VisualStudio.Extension.UI.Html
 
                 if (!string.IsNullOrEmpty(callbackId))
                 {
+                    if (!IsValidCallbackId(callbackId))
+                    {
+                        Logger.Warning("Rejected callbackId with unexpected format: {CallbackId}", callbackId);
+                        return;
+                    }
+
                     var resultJson = result != null ? JsonConvert.SerializeObject(result) : "null";
                     onCommandResult?.Invoke(callbackId, resultJson);
                 }

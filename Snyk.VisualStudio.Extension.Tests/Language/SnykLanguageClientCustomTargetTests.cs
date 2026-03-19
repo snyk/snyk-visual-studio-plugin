@@ -34,7 +34,7 @@ namespace Snyk.VisualStudio.Extension.Tests.Language
             solutionServiceMock = new Mock<ISolutionService>();
 
             var featureFlagServiceMock = new Mock<IFeatureFlagService>();
-            
+
             featureFlagServiceMock.Setup(x => x.RefreshAsync(It.IsAny<CancellationToken>()))
                 .Returns(Task.CompletedTask);
 
@@ -48,7 +48,7 @@ namespace Snyk.VisualStudio.Extension.Tests.Language
             serviceProviderMock.SetupGet(sp => sp.FeatureFlagService).Returns(featureFlagServiceMock.Object);
             serviceProviderMock.SetupGet(sp => sp.LanguageClientManager).Returns(languageClientManagerMock.Object);
             serviceProviderMock.SetupGet(sp => sp.SolutionService).Returns(solutionServiceMock.Object);
-            
+
             // Setup GetEffectiveOrganizationAsync mock
             snykOptionsManagerMock.Setup(s => s.GetEffectiveOrganizationAsync()).ReturnsAsync("auto-determined-org");
             optionsMock.SetupAllProperties();
@@ -120,7 +120,7 @@ namespace Snyk.VisualStudio.Extension.Tests.Language
 
             // Act
             await cut.OnPublishDiagnostics316(arg);
-            
+
             // Assert
             Assert.True(cut.GetCodeDictionary().ContainsKey("c:\\users\\user\\dir - with - space üaöä中文\\file.cs"));
         }

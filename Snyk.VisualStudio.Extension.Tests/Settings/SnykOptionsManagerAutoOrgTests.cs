@@ -18,14 +18,14 @@ namespace Snyk.VisualStudio.Extension.Tests.Settings
             this.testSettingsPath = System.IO.Path.GetTempFileName();
             this.serviceProviderMock = new Mock<ISnykServiceProvider>();
             this.solutionServiceMock = new Mock<ISolutionService>();
-            
+
             this.serviceProviderMock.Setup(x => x.SolutionService).Returns(this.solutionServiceMock.Object);
             this.solutionServiceMock.Setup(x => x.GetSolutionFolderAsync()).ReturnsAsync("/test/solution");
-            
+
             // Setup Options mock to prevent null reference exception
             var optionsMock = new Mock<ISnykOptions>();
             this.serviceProviderMock.Setup(x => x.Options).Returns(optionsMock.Object);
-            
+
             this.cut = new SnykOptionsManager(this.testSettingsPath, this.serviceProviderMock.Object);
         }
 

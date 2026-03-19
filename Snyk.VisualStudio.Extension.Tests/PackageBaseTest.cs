@@ -26,21 +26,21 @@ namespace Snyk.VisualStudio.Extension.Tests
             TasksServiceMock = new Mock<ISnykTasksService>();
             var loggerMock = new Mock<ILogger>();
             Log.Logger = loggerMock.Object;
-            
+
             ServiceProviderMock.Setup(x => x.SnykOptionsManager).Returns(OptionsManagerMock.Object);
             ServiceProviderMock.Setup(x => x.Options).Returns(OptionsMock.Object);
             ServiceProviderMock.Setup(x => x.TasksService).Returns(TasksServiceMock.Object);
-            
+
             sp.AddService(typeof(ISnykService), ServiceProviderMock.Object);
 
             VsPackage = new SnykVSPackage();
 
             var instanceField = typeof(SnykVSPackage).GetField(nameof(SnykVSPackage.Instance), BindingFlags.Static | BindingFlags.Public);
             instanceField.SetValue(null, VsPackage);
-            
+
             typeof(SnykVSPackage).GetProperty(nameof(SnykVSPackage.Options)).SetValue(VsPackage, OptionsMock.Object);
             typeof(SnykVSPackage).GetProperty(nameof(SnykVSPackage.IsInitialized)).SetValue(VsPackage, true, null);
-         
+
             VsPackage.SetServiceProvider(ServiceProviderMock.Object);
         }
     }

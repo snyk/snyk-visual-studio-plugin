@@ -22,7 +22,7 @@ namespace Snyk.VisualStudio.Extension.Settings
     public partial class HtmlSettingsWindow : DialogWindow
     {
         protected static readonly ILogger Logger = LogManager.ForContext<HtmlSettingsWindow>();
-        private static HtmlSettingsWindow instance;
+        private static volatile HtmlSettingsWindow instance;
 
         public static HtmlSettingsWindow Instance => instance;
 
@@ -285,6 +285,12 @@ namespace Snyk.VisualStudio.Extension.Settings
                     dynamic doc = SettingsBrowser.Document;
                     if (doc == null) return;
 
+                    if (!ExecuteCommandBridge.IsValidCallbackId(callbackId))
+                    {
+                        Logger.Warning("Rejected callbackId with unexpected format: {CallbackId}", callbackId);
+                        return;
+                    }
+
                     var escapedCallbackId = callbackId.Replace("\\", "\\\\").Replace("'", "\\'");
                     var script = $"if(window.__ideCallbacks__&&window.__ideCallbacks__['{escapedCallbackId}']){{" +
                                  $"var cb=window.__ideCallbacks__['{escapedCallbackId}'];" +
@@ -315,8 +321,8 @@ namespace Snyk.VisualStudio.Extension.Settings
                     return;
                 }
 
-                var escapedToken = token.Replace("'", "\\'").Replace("\"", "\\\"");
-                var escapedApiUrl = (apiUrl ?? string.Empty).Replace("'", "\\'").Replace("\"", "\\\"");
+                var escapedToken = token.Replace("\\", "\\\\").Replace("'", "\\'");
+                var escapedApiUrl = (apiUrl ?? string.Empty).Replace("\\", "\\\\").Replace("'", "\\'");
                 var script = $@"
                     (function() {{
                         if (typeof window.setAuthToken === 'function') {{

@@ -44,5 +44,27 @@ namespace Snyk.VisualStudio.Extension.Tests.UI.Html
             Assert.DoesNotContain("let ", script);
             Assert.DoesNotContain("=>", script);
         }
+
+        [Theory]
+        [InlineData("", true)]
+        [InlineData("__cb_1", true)]
+        [InlineData("__cb_123", true)]
+        [InlineData("__cb_9999999", true)]
+        [InlineData(null, true)]
+        public void IsValidCallbackId_AcceptsValidFormats(string callbackId, bool expected)
+        {
+            Assert.Equal(expected, ExecuteCommandBridge.IsValidCallbackId(callbackId));
+        }
+
+        [Theory]
+        [InlineData("<script>alert(1)</script>")]
+        [InlineData("__cb_abc")]
+        [InlineData(";drop table--")]
+        [InlineData("__cb_1; alert(1)")]
+        [InlineData("__cb_")]
+        public void IsValidCallbackId_RejectsInvalidFormats(string callbackId)
+        {
+            Assert.False(ExecuteCommandBridge.IsValidCallbackId(callbackId));
+        }
     }
 }

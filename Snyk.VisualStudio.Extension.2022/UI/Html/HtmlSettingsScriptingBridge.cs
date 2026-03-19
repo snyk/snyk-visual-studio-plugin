@@ -175,7 +175,14 @@ namespace Snyk.VisualStudio.Extension.UI.Html
             {
                 ApplyScanSettings(config);
                 ApplyIssueViewSettings(config);
+                var previousAuthMethod = Options.AuthenticationMethod;
                 ApplyAuthenticationSettings(config);
+                // Clear stored token when auth method changes: a token from one method is not valid for another.
+                if (config.AuthenticationMethod != null && Options.AuthenticationMethod != previousAuthMethod)
+                {
+                    Options.ApiToken = new AuthenticationToken(Options.AuthenticationMethod, string.Empty);
+                }
+
                 ApplyConnectionSettings(config);
                 ApplyTrustedFolders(config);
                 ApplyFilterSettings(config);
