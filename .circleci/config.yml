@@ -11,6 +11,7 @@ jobs:
     docker:
       - image: cimg/go:1.21
     steps:
+      - checkout
       - prodsec/security_scans:
           mode: auto
           code-scan: disabled

@@ -118,10 +118,13 @@ namespace Snyk.VisualStudio.Extension.Settings
             // Implement logic for organization
             // Use UI state instead of reading from database to get current user intent
             var isAutoMode = control.IsAutoOrganizationChecked;
-            var preferredOrganizationText = control.Organization;
+            var organizationText = control.Organization;
 
             await this.serviceProvider.SnykOptionsManager.SaveOrgSetByUserAsync(!isAutoMode);
-            await this.serviceProvider.SnykOptionsManager.SavePreferredOrgAsync(preferredOrganizationText);
+            if (!isAutoMode)
+                await this.serviceProvider.SnykOptionsManager.SavePreferredOrgAsync(organizationText);
+            else
+                await this.serviceProvider.SnykOptionsManager.SaveAutoDeterminedOrgAsync(organizationText);
             await this.UpdateFolderConfigForCurrentSolutionAsync();
         }
 

@@ -4,6 +4,7 @@
 ### Changed
 - Added support for improved Settings UI for simpler configuration of Snyk settings (experimental).
 - Automatic organization configuration is now enabled by default.
+- Added support for risk score filtering (closed beta).
 - Bump LS protocol version to 22.
 
 ## [2.6.0]

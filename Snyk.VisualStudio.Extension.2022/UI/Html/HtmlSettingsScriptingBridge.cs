@@ -397,7 +397,7 @@ namespace Snyk.VisualStudio.Extension.UI.Html
                     var orgSetByUser = folderConfig.OrgSetByUser;
 
                     // 1. Save to solution-specific storage
-                    await OptionsManager.SaveAdditionalOptionsAsync(additionalOptions);
+                    // Note: AdditionalOptions not saved here - flows through FolderConfig.AdditionalParameters only (IDE-1714)
                     await OptionsManager.SaveAdditionalEnvAsync(additionalEnv);
                     await OptionsManager.SavePreferredOrgAsync(preferredOrg);
                     await OptionsManager.SaveAutoDeterminedOrgAsync(autoOrg);
