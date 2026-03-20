@@ -416,6 +416,16 @@ namespace Snyk.VisualStudio.Extension.Language
             return await InvokeWithParametersAsync<string>(LsConstants.WorkspaceExecuteCommand, param, cancellationToken);
         }
 
+        public async Task<object> InvokeExecuteCommandAsync(string command, object[] args, CancellationToken cancellationToken)
+        {
+            var param = new LSP.ExecuteCommandParams
+            {
+                Command = command,
+                Arguments = args
+            };
+            return await InvokeWithParametersAsync<object>(LsConstants.WorkspaceExecuteCommand, param, cancellationToken);
+        }
+
         public async Task<object> DidChangeConfigurationAsync(CancellationToken cancellationToken)
         {
             if (!IsReady) return default;
