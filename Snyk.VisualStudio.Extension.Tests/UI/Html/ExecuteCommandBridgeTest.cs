@@ -66,5 +66,25 @@ namespace Snyk.VisualStudio.Extension.Tests.UI.Html
         {
             Assert.False(ExecuteCommandBridge.IsValidCallbackId(callbackId));
         }
+
+        [Theory]
+        [InlineData("snyk.login", true)]
+        [InlineData("snyk.logout", true)]
+        [InlineData("snyk.navigateToRange", true)]
+        [InlineData("snyk.anyCommand", true)]
+        public void IsAllowedCommand_AllowsSnykPrefixedCommands(string command, bool expected)
+        {
+            Assert.Equal(expected, ExecuteCommandBridge.IsAllowedCommand(command));
+        }
+
+        [Theory]
+        [InlineData("workbench.action.terminal.new")]
+        [InlineData("vscode.open")]
+        [InlineData("")]
+        [InlineData(null)]
+        public void IsAllowedCommand_RejectsNonSnykCommands(string command)
+        {
+            Assert.False(ExecuteCommandBridge.IsAllowedCommand(command));
+        }
     }
 }

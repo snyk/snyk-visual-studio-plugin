@@ -38,6 +38,13 @@ namespace Snyk.VisualStudio.Extension.UI.Html
             CallbackIdPattern.IsMatch(callbackId ?? string.Empty);
 
         /// <summary>
+        /// Returns true if <paramref name="command"/> is in the <c>snyk.*</c> namespace and may be
+        /// dispatched from a webview.
+        /// </summary>
+        public static bool IsAllowedCommand(string command) =>
+            !string.IsNullOrEmpty(command) && command.StartsWith("snyk.");
+
+        /// <summary>
         /// Returns the ES5-compatible JavaScript that defines <c>window.__ideExecuteCommand__</c>.
         /// Assumes <c>window.external.__ideExecuteCommand__(command, argsJson, callbackId)</c>
         /// is provided by the COM bridge (<see cref="HtmlSettingsScriptingBridge"/>).
@@ -73,6 +80,12 @@ namespace Snyk.VisualStudio.Extension.UI.Html
         {
             try
             {
+                if (!IsAllowedCommand(command))
+                {
+                    Logger.Warning("Webview attempted to execute disallowed command: {Command}", command);
+                    return;
+                }
+
                 var args = string.IsNullOrEmpty(argsJson)
                     ? Array.Empty<object>()
                     : JsonConvert.DeserializeObject<object[]>(argsJson);
