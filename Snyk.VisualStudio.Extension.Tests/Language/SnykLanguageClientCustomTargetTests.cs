@@ -34,7 +34,7 @@ namespace Snyk.VisualStudio.Extension.Tests.Language
             solutionServiceMock = new Mock<ISolutionService>();
 
             var featureFlagServiceMock = new Mock<IFeatureFlagService>();
-            
+
             featureFlagServiceMock.Setup(x => x.RefreshAsync(It.IsAny<CancellationToken>()))
                 .Returns(Task.CompletedTask);
 
@@ -48,7 +48,7 @@ namespace Snyk.VisualStudio.Extension.Tests.Language
             serviceProviderMock.SetupGet(sp => sp.FeatureFlagService).Returns(featureFlagServiceMock.Object);
             serviceProviderMock.SetupGet(sp => sp.LanguageClientManager).Returns(languageClientManagerMock.Object);
             serviceProviderMock.SetupGet(sp => sp.SolutionService).Returns(solutionServiceMock.Object);
-            
+
             // Setup GetEffectiveOrganizationAsync mock
             snykOptionsManagerMock.Setup(s => s.GetEffectiveOrganizationAsync()).ReturnsAsync("auto-determined-org");
             optionsMock.SetupAllProperties();
@@ -120,7 +120,7 @@ namespace Snyk.VisualStudio.Extension.Tests.Language
 
             // Act
             await cut.OnPublishDiagnostics316(arg);
-            
+
             // Assert
             Assert.True(cut.GetCodeDictionary().ContainsKey("c:\\users\\user\\dir - with - space üaöä中文\\file.cs"));
         }
@@ -178,7 +178,7 @@ namespace Snyk.VisualStudio.Extension.Tests.Language
         [Fact]
         public async Task OnHasAuthenticated_ShouldHandleAuthenticationSuccess_WhenTokenIsProvided()
         {
-            // Arrange
+            // Arrange — new login (no previous token).
             var arg = JObject.Parse("{'token':'test-token','apiUrl':'https://api.snyk.io'}");
             generalSettingsPageMock.Setup(o => o.HandleAuthenticationSuccess("test-token", "https://api.snyk.io")).Returns(Task.CompletedTask);
             optionsMock.SetupGet(o => o.AuthenticationMethod).Returns(AuthenticationType.OAuth);
@@ -186,10 +186,47 @@ namespace Snyk.VisualStudio.Extension.Tests.Language
             // Act
             await cut.OnHasAuthenticated(arg);
 
-            // Assert
+            // Assert — token and endpoint stored, saved without triggering didChangeConfiguration loop
             optionsMock.VerifySet(o => o.CustomEndpoint = "https://api.snyk.io");
             optionsMock.VerifySet(o => o.ApiToken = It.Is<AuthenticationToken>(t => t.Type == AuthenticationType.OAuth && t.ToString() == "test-token"));
+            snykOptionsManagerMock.Verify(s => s.Save(It.IsAny<IPersistableOptions>(), false), Times.Once);
             generalSettingsPageMock.Verify(o => o.HandleAuthenticationSuccess("test-token", "https://api.snyk.io"), Times.Once);
+        }
+
+        [Fact]
+        public async Task OnHasAuthenticated_WithExistingToken_OnlySavesQuietly()
+        {
+            // Arrange — token refresh (existing token non-blank).
+            var arg = JObject.Parse("{'token':'refreshed-token','apiUrl':'https://api.snyk.io'}");
+            optionsMock.SetupGet(o => o.AuthenticationMethod).Returns(AuthenticationType.OAuth);
+            // Simulate existing token so isNewLogin=false
+            optionsMock.SetupGet(o => o.ApiToken).Returns(new AuthenticationToken(AuthenticationType.OAuth, "existing-token"));
+
+            // Act
+            await cut.OnHasAuthenticated(arg);
+
+            // Assert — Save must be called with triggerSettingsChangedEvent=false to avoid the loop
+            snykOptionsManagerMock.Verify(s => s.Save(It.IsAny<IPersistableOptions>(), false), Times.Once);
+            // HandleAuthenticationSuccess must NOT be called — not a new login
+            generalSettingsPageMock.Verify(o => o.HandleAuthenticationSuccess(It.IsAny<string>(), It.IsAny<string>()), Times.Never);
+            // No scan on refresh — old token was non-blank
+            tasksServiceMock.Verify(t => t.ScanAsync(), Times.Never);
+        }
+
+        [Fact]
+        public async Task OnHasAuthenticated_AlwaysUpdatesTokenAndEndpoint()
+        {
+            // Arrange — always stores token and endpoint regardless of whether it is a new login or refresh.
+            var arg = JObject.Parse("{'token':'refreshed-token','apiUrl':'https://api.eu.snyk.io'}");
+            optionsMock.SetupGet(o => o.AuthenticationMethod).Returns(AuthenticationType.OAuth);
+            optionsMock.SetupGet(o => o.ApiToken).Returns(new AuthenticationToken(AuthenticationType.OAuth, "existing-token"));
+
+            // Act
+            await cut.OnHasAuthenticated(arg);
+
+            // Assert — token and endpoint must be stored
+            optionsMock.VerifySet(o => o.CustomEndpoint = "https://api.eu.snyk.io");
+            optionsMock.VerifySet(o => o.ApiToken = It.Is<AuthenticationToken>(t => t.ToString() == "refreshed-token"));
         }
 
         [Fact]

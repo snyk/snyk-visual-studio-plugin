@@ -6,7 +6,7 @@
 using System.Diagnostics.CodeAnalysis;
 
 [assembly: SuppressMessage("Style",
-	"VSTHRD200:Use \"Async\" suffix for async methods",
-	Justification = "Unnecessary for tests",
-	Scope = "namespaceanddescendants",
-	Target = "Integration.Tests.Shared")]
+    "VSTHRD200:Use \"Async\" suffix for async methods",
+    Justification = "Unnecessary for tests",
+    Scope = "namespaceanddescendants",
+    Target = "Integration.Tests.Shared")]

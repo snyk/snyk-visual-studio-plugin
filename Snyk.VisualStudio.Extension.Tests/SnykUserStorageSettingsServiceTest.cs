@@ -70,7 +70,7 @@ namespace Snyk.VisualStudio.Extension.Tests
 
             // Reload to confirm persistence
             var reloadedOptions = cut.Load();
-            
+
             Assert.True(reloadedOptions.AutoScan);
             Assert.True(reloadedOptions.IgnoreUnknownCA);
             Assert.Equal("my-org", reloadedOptions.Organization);

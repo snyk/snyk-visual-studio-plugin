@@ -1,14 +1,14 @@
 ﻿namespace Integration.Tests
 {
-	using System;
-	using System.Threading.Tasks;
-	using Microsoft.VisualStudio.Shell;
-	using Microsoft.VisualStudio.Shell.Interop;
-	using Microsoft.VisualStudio.Threading;
-	using Snyk.VisualStudio.Extension;
-	using Xunit;
-	using Xunit.Abstractions;
-	using Task = System.Threading.Tasks.Task;
+    using System;
+    using System.Threading.Tasks;
+    using Microsoft.VisualStudio.Shell;
+    using Microsoft.VisualStudio.Shell.Interop;
+    using Microsoft.VisualStudio.Threading;
+    using Snyk.VisualStudio.Extension;
+    using Xunit;
+    using Xunit.Abstractions;
+    using Task = System.Threading.Tasks.Task;
 
 #if VS_VERSION_PRE22
 	[IdeSettings(MinVersion = VisualStudioVersion.VS2019, MaxVersion = VisualStudioVersion.VS2019)]
@@ -63,7 +63,7 @@
                 // Assert
                 Assert.True(packageObject != null, "Failed to find Snyk package");
                 Assert.IsType<SnykVSPackage>(packageObject);
-                var snykVsPackage = (SnykVSPackage) packageObject;
+                var snykVsPackage = (SnykVSPackage)packageObject;
                 Assert.True(snykVsPackage.IsInitialized, "Snyk package was not initialized");
             }
         }
