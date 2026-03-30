@@ -31,6 +31,13 @@ namespace Snyk.VisualStudio.Extension.UI.Html
         private static readonly Regex CallbackIdPattern = new Regex(@"^(__cb_\d+)?$", RegexOptions.Compiled);
 
         /// <summary>
+        /// Escapes a string for safe embedding inside a single-quoted JavaScript string literal.
+        /// Handles backslashes first, then single quotes, to avoid double-escaping.
+        /// </summary>
+        public static string EscapeForJsString(string value) =>
+            (value ?? string.Empty).Replace("\\", "\\\\").Replace("'", "\\'");
+
+        /// <summary>
         /// Returns true if <paramref name="callbackId"/> matches the expected format produced by
         /// <see cref="BuildClientScript"/>. Used as an XSS guard before injecting the id back into JS.
         /// </summary>

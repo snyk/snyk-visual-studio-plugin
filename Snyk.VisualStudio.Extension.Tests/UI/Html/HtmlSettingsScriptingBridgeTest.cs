@@ -64,6 +64,19 @@ namespace Snyk.VisualStudio.Extension.Tests.UI.Html
             optionsMock.VerifySet(o => o.AuthenticationMethod = AuthenticationType.Token);
         }
 
+        [Theory]
+        [InlineData("unknown")]
+        [InlineData("")]
+        [InlineData(" ")]
+        public void IdeExecuteCommand_SnykLogin_DefaultsToOAuthForInvalidMethod(string authMethod)
+        {
+            var args = JsonConvert.SerializeObject(new object[] { authMethod, "https://api.snyk.io", false });
+
+            bridge.__ideExecuteCommand__("snyk.login", args, "");
+
+            optionsMock.VerifySet(o => o.AuthenticationMethod = AuthenticationType.OAuth);
+        }
+
         [Fact]
         public void IdeExecuteCommand_SnykLogin_SavesEndpoint()
         {

@@ -62,6 +62,8 @@ namespace Snyk.VisualStudio.Extension.Tests.UI.Html
         [InlineData(";drop table--")]
         [InlineData("__cb_1; alert(1)")]
         [InlineData("__cb_")]
+        [InlineData("_cb_8")]
+        [InlineData(" ")]
         public void IsValidCallbackId_RejectsInvalidFormats(string callbackId)
         {
             Assert.False(ExecuteCommandBridge.IsValidCallbackId(callbackId));

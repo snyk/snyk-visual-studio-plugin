@@ -187,10 +187,11 @@ namespace Snyk.VisualStudio.Extension.Settings
             var script = BuildIdeBridgeScript();
             var scriptTag = $"<script type=\"text/javascript\">{script}</script>";
 
-            var headIndex = html.IndexOf("<head>", StringComparison.OrdinalIgnoreCase);
+            const string headTag = "<head>";
+            var headIndex = html.IndexOf(headTag, StringComparison.OrdinalIgnoreCase);
             if (headIndex >= 0)
             {
-                return html.Insert(headIndex + "<head>".Length, scriptTag);
+                return html.Insert(headIndex + headTag.Length, scriptTag);
             }
 
             // Fallback: prepend if no <head> found
@@ -291,6 +292,12 @@ namespace Snyk.VisualStudio.Extension.Settings
 
         private void InvokeCommandCallback(string callbackId, string resultJson)
         {
+            if (!ExecuteCommandBridge.IsValidCallbackId(callbackId))
+            {
+                Logger.Warning("Rejected callbackId with unexpected format: {CallbackId}", callbackId);
+                return;
+            }
+
             try
             {
                 ThreadHelper.JoinableTaskFactory.Run(async () =>
@@ -300,13 +307,7 @@ namespace Snyk.VisualStudio.Extension.Settings
                     dynamic doc = SettingsBrowser.Document;
                     if (doc == null) return;
 
-                    if (!ExecuteCommandBridge.IsValidCallbackId(callbackId))
-                    {
-                        Logger.Warning("Rejected callbackId with unexpected format: {CallbackId}", callbackId);
-                        return;
-                    }
-
-                    var escapedCallbackId = callbackId.Replace("\\", "\\\\").Replace("'", "\\'");
+                    var escapedCallbackId = ExecuteCommandBridge.EscapeForJsString(callbackId);
                     var script = $"if(window.__ideCallbacks__&&window.__ideCallbacks__['{escapedCallbackId}']){{" +
                                  $"var cb=window.__ideCallbacks__['{escapedCallbackId}'];" +
                                  $"delete window.__ideCallbacks__['{escapedCallbackId}'];" +
@@ -336,8 +337,8 @@ namespace Snyk.VisualStudio.Extension.Settings
                     return;
                 }
 
-                var escapedToken = token.Replace("\\", "\\\\").Replace("'", "\\'");
-                var escapedApiUrl = (apiUrl ?? string.Empty).Replace("\\", "\\\\").Replace("'", "\\'");
+                var escapedToken = ExecuteCommandBridge.EscapeForJsString(token);
+                var escapedApiUrl = ExecuteCommandBridge.EscapeForJsString(apiUrl ?? string.Empty);
                 var script = $@"
                     (function() {{
                         if (typeof window.setAuthToken === 'function') {{
