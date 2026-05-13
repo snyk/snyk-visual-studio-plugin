@@ -1,10 +1,9 @@
-// ABOUTME: JavaScript-to-C# bridge for WebBrowser control using ObjectForScripting
-// ABOUTME: Handles configuration saves and state changes from HTML form
+// ABOUTME: JS-to-C# bridge for the settings panel's HTML page.
+// ABOUTME: Invoked by WebView2MessageDispatcher after chrome.webview.postMessage routing.
 
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Runtime.InteropServices;
 using System.Threading.Tasks;
 using Microsoft.VisualStudio.Shell;
 using Newtonsoft.Json;
@@ -18,10 +17,10 @@ using Snyk.VisualStudio.Extension.Settings;
 namespace Snyk.VisualStudio.Extension.UI.Html
 {
     /// <summary>
-    /// COM-visible bridge object for JavaScript interaction.
-    /// Must be ComVisible for IE11 WebBrowser control's ObjectForScripting.
+    /// Handles configuration save / dirty-state / command messages posted from the
+    /// LS-authored settings HTML. Method names retain their underscore-prefixed JS
+    /// names because the dispatcher routes by exact string match.
     /// </summary>
-    [ComVisible(true)]
     public class HtmlSettingsScriptingBridge
     {
         private static readonly ILogger Logger = LogManager.ForContext<HtmlSettingsScriptingBridge>();
@@ -30,20 +29,26 @@ namespace Snyk.VisualStudio.Extension.UI.Html
         private readonly Action onReset;
         private readonly Action<string> onAuthTokenChanged;
         private readonly Action<string, string> onCommandResult;
-        private volatile bool isSaveComplete;
+        private TaskCompletionSource<bool> saveCompletionTcs =
+            new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
 
         private ISnykOptions Options => serviceProvider.Options;
         private ISnykOptionsManager OptionsManager => serviceProvider.SnykOptionsManager;
 
         /// <summary>
-        /// Indicates whether the most recent save operation has completed.
-        /// Used by HtmlSettingsWindow to wait for save completion.
-        /// Volatile to ensure thread-safe reads from UI thread while writes happen on background threads.
+        /// Completes when the most recent save attempt has finished (success or error).
+        /// Caller must invoke <see cref="BeginSave"/> before triggering a new save so a
+        /// fresh task is available to await.
         /// </summary>
-        public bool IsSaveComplete
+        public Task SaveCompletion => saveCompletionTcs.Task;
+
+        /// <summary>
+        /// Resets <see cref="SaveCompletion"/> to a fresh incomplete task. Called by the
+        /// settings window just before invoking the page's <c>getAndSaveIdeConfig()</c>.
+        /// </summary>
+        public void BeginSave()
         {
-            get => isSaveComplete;
-            private set => isSaveComplete = value;
+            saveCompletionTcs = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
         }
 
         public HtmlSettingsScriptingBridge(
@@ -61,32 +66,28 @@ namespace Snyk.VisualStudio.Extension.UI.Html
         }
 
         /// <summary>
-        /// Called from LS HTML JavaScript: window.__saveIdeConfig__(jsonString)
-        /// The LS HTML handles all validation and data collection - we just save the config.
+        /// Routed from <c>window.external.__saveIdeConfig__(jsonString)</c>. The LS HTML
+        /// handles all validation and data collection — we just persist the config. Always
+        /// completes <see cref="SaveCompletion"/> (true on success, false on failure) so the
+        /// caller can stop waiting.
         /// </summary>
         public void __saveIdeConfig__(string jsonString)
         {
             try
             {
-                IsSaveComplete = false;
-
-                // Parse and apply all configuration changes
                 ThreadHelper.JoinableTaskFactory.Run(async () =>
                 {
                     await ParseAndSaveConfigAsync(jsonString);
-
-                    // Persist all settings to storage at the end
-                    // This triggers SettingsChanged event which notifies Language Server
+                    // Persist all settings to storage at the end — triggers SettingsChanged,
+                    // which notifies the Language Server.
                     OptionsManager.Save(Options, triggerSettingsChangedEvent: true);
-
-                    IsSaveComplete = true;
                 });
+                saveCompletionTcs.TrySetResult(true);
             }
             catch (Exception ex)
             {
                 Logger.Error(ex, "Error saving configuration");
-                IsSaveComplete = true; // Unblock even on error
-                throw; // Re-throw so JavaScript can handle
+                saveCompletionTcs.TrySetResult(false);
             }
         }
 

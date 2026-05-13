@@ -54,7 +54,9 @@ namespace Snyk.VisualStudio.Extension.UI.Html
         /// <summary>
         /// Returns the ES5-compatible JavaScript that defines <c>window.__ideExecuteCommand__</c>.
         /// Assumes <c>window.external.__ideExecuteCommand__(command, argsJson, callbackId)</c>
-        /// is provided by the COM bridge (<see cref="HtmlSettingsScriptingBridge"/>).
+        /// is provided by the bridge (originally <see cref="HtmlSettingsScriptingBridge"/> via
+        /// <c>ObjectForScripting</c>; post-WebView2 migration via the polyfill in
+        /// <see cref="WebView2ExternalPolyfill"/>).
         /// </summary>
         public static string BuildClientScript()
         {
@@ -71,6 +73,42 @@ namespace Snyk.VisualStudio.Extension.UI.Html
                     window.external.__ideExecuteCommand__(command, argsJson, callbackId);
                 };
             ";
+        }
+
+        /// <summary>
+        /// Builds the JS that invokes <c>window.setAuthToken(token, apiUrl)</c> on the page,
+        /// guarded by a <c>typeof</c> check so a missing function logs rather than throws.
+        /// Used by the settings panel when the Language Server pushes an updated auth token
+        /// (e.g. after an OAuth round-trip).
+        /// </summary>
+        public static string BuildSetAuthTokenScript(string token, string apiUrl)
+        {
+            var escapedToken = EscapeForJsString(token);
+            var escapedApiUrl = EscapeForJsString(apiUrl);
+            return $@"
+                (function() {{
+                    if (typeof window.setAuthToken === 'function') {{
+                        window.setAuthToken('{escapedToken}', '{escapedApiUrl}');
+                    }} else {{
+                        console.warn('window.setAuthToken is not available');
+                    }}
+                }})();
+            ";
+        }
+
+        /// <summary>
+        /// Builds the JS that pops a pending callback from <c>window.__ideCallbacks__</c> and
+        /// invokes it with the LS command's result. The <paramref name="callbackId"/> must have
+        /// already been validated with <see cref="IsValidCallbackId"/>; we still escape it as a
+        /// belt-and-braces guard against accidental injection.
+        /// </summary>
+        public static string BuildCommandCallbackScript(string callbackId, string resultJson)
+        {
+            var escapedCallbackId = EscapeForJsString(callbackId);
+            return $"if(window.__ideCallbacks__&&window.__ideCallbacks__['{escapedCallbackId}']){{" +
+                   $"var cb=window.__ideCallbacks__['{escapedCallbackId}'];" +
+                   $"delete window.__ideCallbacks__['{escapedCallbackId}'];" +
+                   $"cb({resultJson});}}";
         }
 
         /// <summary>

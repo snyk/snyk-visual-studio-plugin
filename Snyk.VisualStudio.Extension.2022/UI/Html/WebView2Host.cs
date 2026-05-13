@@ -1,5 +1,7 @@
 using System;
+using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.Web.WebView2.Core;
 using Microsoft.Web.WebView2.Wpf;
@@ -28,18 +30,31 @@ namespace Snyk.VisualStudio.Extension.UI.Html
         private readonly WebView2MessageDispatcher _dispatcher;
         private readonly WebView2NavigationPreparer _preparer;
         private readonly string _userDataFolder;
+        private readonly IReadOnlyList<string> _additionalInitScripts;
         private readonly TaskCompletionSource<bool> _readyTcs =
             new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
 
         private bool _initialized;
 
-        public WebView2Host(WebView2 webView, WebView2MessageDispatcher dispatcher, string userDataFolder)
+        /// <summary>
+        /// Constructs the host. <paramref name="additionalInitScripts"/> are registered via
+        /// <c>AddScriptToExecuteOnDocumentCreatedAsync</c> after the <c>window.external</c>
+        /// polyfill, before the first navigation — for example,
+        /// <see cref="ExecuteCommandBridge.BuildClientScript"/> which defines
+        /// <c>window.__ideExecuteCommand__</c> with its callback-id roundtrip.
+        /// </summary>
+        public WebView2Host(
+            WebView2 webView,
+            WebView2MessageDispatcher dispatcher,
+            string userDataFolder,
+            IEnumerable<string> additionalInitScripts = null)
         {
             _webView = webView ?? throw new ArgumentNullException(nameof(webView));
             _dispatcher = dispatcher ?? throw new ArgumentNullException(nameof(dispatcher));
             if (string.IsNullOrEmpty(userDataFolder)) throw new ArgumentException("User data folder is required", nameof(userDataFolder));
 
             _userDataFolder = userDataFolder;
+            _additionalInitScripts = (additionalInitScripts ?? Enumerable.Empty<string>()).ToArray();
             _preparer = new WebView2NavigationPreparer(Path.Combine(_userDataFolder, "scratch"));
         }
 
@@ -66,6 +81,11 @@ namespace Snyk.VisualStudio.Extension.UI.Html
 
                 await _webView.CoreWebView2.AddScriptToExecuteOnDocumentCreatedAsync(
                     WebView2ExternalPolyfill.BuildScript());
+
+                foreach (var script in _additionalInitScripts)
+                {
+                    await _webView.CoreWebView2.AddScriptToExecuteOnDocumentCreatedAsync(script);
+                }
 
                 _webView.CoreWebView2.WebMessageReceived += OnWebMessageReceived;
 

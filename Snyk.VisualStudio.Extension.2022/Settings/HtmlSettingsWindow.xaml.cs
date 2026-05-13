@@ -1,23 +1,26 @@
 // ABOUTME: WPF modal window for HTML-based settings interface
-// ABOUTME: Uses WPF WebBrowser to display Language Server settings HTML
+// ABOUTME: Hosts the Language Server settings HTML in a WebView2 control
 
 using System;
+using System.IO;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Input;
 using Microsoft.VisualStudio.PlatformUI;
 using Microsoft.VisualStudio.Shell;
+using Microsoft.Web.WebView2.Core;
+using Newtonsoft.Json.Linq;
 using Serilog;
 using Snyk.VisualStudio.Extension.Language;
 using Snyk.VisualStudio.Extension.Service;
 using Snyk.VisualStudio.Extension.UI.Html;
-using Snyk.VisualStudio.Extension.UI.Toolwindow;
 
 namespace Snyk.VisualStudio.Extension.Settings
 {
     /// <summary>
     /// WPF modal window for HTML-based settings configuration.
-    /// Loads settings HTML from Language Server and provides IDE bridge functions for save/login/logout.
+    /// Loads settings HTML from the Language Server and routes the
+    /// <c>window.external.*</c> bridge surface through <see cref="WebView2Host"/>.
     /// </summary>
     public partial class HtmlSettingsWindow : DialogWindow
     {
@@ -26,9 +29,20 @@ namespace Snyk.VisualStudio.Extension.Settings
 
         public static HtmlSettingsWindow Instance => instance;
 
+        /// <summary>
+        /// Aliases <c>window.__saveIdeConfig__</c>, <c>window.__onFormDirtyChange__</c>, and
+        /// <c>window.__ideSaveAttemptFinished__</c> to their <c>window.external.*</c> equivalents
+        /// (which the WebView2 polyfill in turn routes via <c>chrome.webview.postMessage</c>).
+        /// The LS-authored settings page calls the <c>window.X</c> form directly.
+        /// </summary>
+        private const string SettingsBridgeAliasesScript =
+            @"window.__saveIdeConfig__ = function(jsonString) { window.external.__saveIdeConfig__(jsonString); };
+              window.__onFormDirtyChange__ = function(isDirty) { window.external.__onFormDirtyChange__(isDirty); };
+              window.__ideSaveAttemptFinished__ = function(status) { window.external.__ideSaveAttemptFinished__(status); };";
+
         private readonly ISnykServiceProvider serviceProvider;
-        private HtmlSettingsScriptingBridge scriptingBridge;
-        protected WebBrowserHostUIHandler wbHandler;
+        protected HtmlSettingsScriptingBridge scriptingBridge;
+        protected WebView2Host host;
 
         public static readonly DependencyProperty IsDirtyProperty =
             DependencyProperty.Register(
@@ -46,27 +60,59 @@ namespace Snyk.VisualStudio.Extension.Settings
         public HtmlSettingsWindow(ISnykServiceProvider serviceProvider)
         {
             this.serviceProvider = serviceProvider ?? throw new ArgumentNullException(nameof(serviceProvider));
-
-            // Set as singleton instance
             instance = this;
 
             InitializeComponent();
 
-            // Initialize WebBrowser handler
-            wbHandler = new WebBrowserHostUIHandler(SettingsBrowser)
-            {
-                IsWebBrowserContextMenuEnabled = false,
-                ScriptErrorsSuppressed = true,
-            };
-            // Disable DPI awareness for this window, since we haven't been able to find a way to support it properly and we are not scaling.
-            // If we do not disable DPI awareness (without fixing the DPI scaling issue), then dropdown menus will be rendered incorrectly.
-            wbHandler.SetDpiAwareFlag(false);
+            scriptingBridge = new HtmlSettingsScriptingBridge(
+                serviceProvider,
+                onModified: () => IsDirty = true,
+                onReset: () => IsDirty = false,
+                onCommandResult: InvokeCommandCallback);
 
-            wbHandler.LoadCompleted += SettingsBrowser_OnLoadCompleted;
+            var dispatcher = new WebView2MessageDispatcher()
+                .Register("__saveIdeConfig__", args =>
+                    scriptingBridge.__saveIdeConfig__(args[0].Value<string>()))
+                .Register("__onFormDirtyChange__", args =>
+                    scriptingBridge.__onFormDirtyChange__(args[0].Value<bool>()))
+                .Register("__ideSaveAttemptFinished__", args =>
+                    scriptingBridge.__ideSaveAttemptFinished__(args[0].Value<string>()))
+                .Register("__ideExecuteCommand__", args =>
+                    scriptingBridge.__ideExecuteCommand__(
+                        args[0].Value<string>(),
+                        args[1].Value<string>(),
+                        args[2].Value<string>()));
+
+            var userDataFolder = Path.Combine(
+                Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
+                "Snyk", "WebView2", "settings");
+
+            host = new WebView2Host(
+                SettingsBrowser,
+                dispatcher,
+                userDataFolder,
+                additionalInitScripts: new[]
+                {
+                    ExecuteCommandBridge.BuildClientScript(),
+                    SettingsBridgeAliasesScript,
+                });
+
+            SettingsBrowser.NavigationCompleted += SettingsBrowser_OnNavigationCompleted;
         }
 
         private async void Window_Loaded(object sender, RoutedEventArgs e)
         {
+            try
+            {
+                await host.InitializeAsync();
+            }
+            catch (Exception ex)
+            {
+                Logger.Error(ex, "WebView2 initialization failed");
+                LoadingStatusLabel.Text = $"Failed to initialize browser: {ex.Message}";
+                return;
+            }
+
             await LoadHtmlSettingsAsync();
         }
 
@@ -76,25 +122,15 @@ namespace Snyk.VisualStudio.Extension.Settings
             {
                 LoadingStatusLabel.Text = "Loading settings...";
 
-                // Set up scripting bridge for IDE integration (before loading HTML)
-                SetupScriptingBridge();
-
-                // Load HTML from Language Server or fallback
                 var html = await GetHtmlContentAsync();
-
                 if (string.IsNullOrEmpty(html))
                 {
                     LoadingStatusLabel.Text = "Failed to load settings HTML";
                     return;
                 }
 
-                // Force visual refresh before navigation (required for DPI handling)
-                SettingsBrowser.InvalidateVisual();
-                SettingsBrowser.UpdateLayout();
-
                 html = HtmlResourceLoader.ApplyTheme(html);
-                html = InjectBridgeScriptIntoHtml(html);
-                SettingsBrowser.NavigateToString(html);
+                await host.NavigateAsync(html);
             }
             catch (Exception ex)
             {
@@ -104,46 +140,10 @@ namespace Snyk.VisualStudio.Extension.Settings
         }
 
         /// <summary>
-        /// Sets up the scripting bridge for IDE integration.
-        /// Called before loading HTML to ensure window.external is available.
-        /// </summary>
-        protected virtual void SetupScriptingBridge()
-        {
-            // Create scripting bridge with callbacks
-            // Note: JavaScript -> ObjectForScripting calls are COM-marshaled to UI thread (STA)
-            scriptingBridge = new HtmlSettingsScriptingBridge(
-                serviceProvider,
-                onModified: () => IsDirty = true,
-                onReset: () => IsDirty = false,
-                onCommandResult: (callbackId, resultJson) => InvokeCommandCallback(callbackId, resultJson));
-
-            // Set the scripting bridge as the ObjectForScripting
-            SettingsBrowser.ObjectForScripting = scriptingBridge;
-        }
-
-        private void SettingsBrowser_OnLoadCompleted(object sender, System.Windows.Navigation.NavigationEventArgs e)
-        {
-            try
-            {
-                // Inject IDE bridge functions into window object
-                InjectIdeBridgeFunctions();
-
-                // Hide loading label
-                LoadingStatusLabel.Visibility = Visibility.Collapsed;
-            }
-            catch (Exception ex)
-            {
-                Logger.Error(ex, "Error loading settings content");
-                LoadingStatusLabel.Text = $"Error: {ex.Message}";
-            }
-        }
-
-        /// <summary>
         /// Loads HTML from Language Server with retries, falls back to embedded HTML if unavailable.
         /// </summary>
         protected virtual async Task<string> GetHtmlContentAsync()
         {
-            // Check if Language Server is ready before attempting to get HTML
             if (!LanguageClientHelper.IsLanguageServerReady())
             {
                 Logger.Warning("Language Server not ready, using fallback HTML");
@@ -166,78 +166,32 @@ namespace Snyk.VisualStudio.Extension.Settings
                 Logger.Warning(ex, "Failed to get HTML from Language Server");
             }
 
-            // Fall back to embedded HTML
             Logger.Warning("Falling back to embedded HTML");
             return HtmlResourceLoader.LoadFallbackHtml(serviceProvider.Options);
         }
 
-        private static string BuildIdeBridgeScript() =>
-            @"window.__saveIdeConfig__ = function(jsonString) { window.external.__saveIdeConfig__(jsonString); };
-            window.__onFormDirtyChange__ = function(isDirty) { window.external.__onFormDirtyChange__(isDirty); };
-            window.__ideSaveAttemptFinished__ = function(status) { window.external.__ideSaveAttemptFinished__(status); };"
-            + ExecuteCommandBridge.BuildClientScript();
-
-        /// <summary>
-        /// Injects IDE bridge functions into the HTML string before it is loaded by the browser.
-        /// This ensures the functions are defined before the page's own scripts run, which is
-        /// required for the LS HTML page to wire up its auth and command buttons correctly.
-        /// </summary>
-        protected virtual string InjectBridgeScriptIntoHtml(string html)
+        private void SettingsBrowser_OnNavigationCompleted(object sender, CoreWebView2NavigationCompletedEventArgs e)
         {
-            var script = BuildIdeBridgeScript();
-            var scriptTag = $"<script type=\"text/javascript\">{script}</script>";
-
-            const string headTag = "<head>";
-            var headIndex = html.IndexOf(headTag, StringComparison.OrdinalIgnoreCase);
-            if (headIndex >= 0)
-            {
-                return html.Insert(headIndex + headTag.Length, scriptTag);
-            }
-
-            // Fallback: prepend if no <head> found
-            return scriptTag + html;
-        }
-
-        /// <summary>
-        /// Injects IDE bridge functions into the HTML window object for save and command operations.
-        /// Called after LoadCompleted as a secondary injection to ensure functions are (re-)applied.
-        /// </summary>
-        protected virtual void InjectIdeBridgeFunctions()
-        {
-            try
-            {
-                dynamic doc = SettingsBrowser.Document;
-                if (doc == null) return;
-
-                var scriptElement = doc.CreateElement("script");
-                scriptElement.SetAttribute("type", "text/javascript");
-                scriptElement.InnerText = BuildIdeBridgeScript();
-                doc.GetElementsByTagName("head")[0].AppendChild(scriptElement);
-            }
-            catch (Exception ex)
-            {
-                Logger.Error(ex, "Error injecting IDE bridge functions");
-            }
+            LoadingStatusLabel.Visibility = Visibility.Collapsed;
         }
 
         private async void OkButton_OnClick(object sender, RoutedEventArgs e)
         {
             try
             {
-                // Disable buttons while saving
                 OkButton.IsEnabled = false;
                 CancelButton.IsEnabled = false;
 
-                // Call the LS HTML's exposed function to collect and save config
                 try
                 {
-                    SettingsBrowser.InvokeScript("getAndSaveIdeConfig");
+                    scriptingBridge.BeginSave();
+                    await host.ExecuteScriptAsync("getAndSaveIdeConfig()");
 
-                    // Wait for save to complete (with timeout)
-                    var startTime = DateTime.Now;
-                    while (!scriptingBridge.IsSaveComplete && (DateTime.Now - startTime).TotalSeconds < 5)
+                    var saveTask = scriptingBridge.SaveCompletion;
+                    var winner = await Task.WhenAny(saveTask, Task.Delay(TimeSpan.FromSeconds(5)));
+                    if (winner != saveTask)
                     {
-                        await Task.Delay(100);
+                        Logger.Warning("Save did not complete within timeout; closing anyway");
                     }
                 }
                 catch (Exception ex)
@@ -272,22 +226,19 @@ namespace Snyk.VisualStudio.Extension.Settings
 
         public void UpdateAuthToken(string token, string apiUrl = null)
         {
-            try
+            ThreadHelper.JoinableTaskFactory.RunAsync(async () =>
             {
-                ThreadHelper.JoinableTaskFactory.Run(async () =>
+                await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
+                try
                 {
-                    await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
-
-                    if (SettingsBrowser?.Document != null)
-                    {
-                        InvokeSetAuthToken(token, apiUrl);
-                    }
-                });
-            }
-            catch (Exception ex)
-            {
-                Logger.Error(ex, "Error updating auth token in HTML settings");
-            }
+                    await host.ExecuteScriptAsync(
+                        ExecuteCommandBridge.BuildSetAuthTokenScript(token, apiUrl));
+                }
+                catch (Exception ex)
+                {
+                    Logger.Error(ex, "Error invoking window.setAuthToken");
+                }
+            }).FireAndForget();
         }
 
         private void InvokeCommandCallback(string callbackId, string resultJson)
@@ -298,80 +249,31 @@ namespace Snyk.VisualStudio.Extension.Settings
                 return;
             }
 
-            try
+            ThreadHelper.JoinableTaskFactory.RunAsync(async () =>
             {
-                ThreadHelper.JoinableTaskFactory.Run(async () =>
+                await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
+                try
                 {
-                    await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
-
-                    dynamic doc = SettingsBrowser.Document;
-                    if (doc == null) return;
-
-                    var escapedCallbackId = ExecuteCommandBridge.EscapeForJsString(callbackId);
-                    var script = $"if(window.__ideCallbacks__&&window.__ideCallbacks__['{escapedCallbackId}']){{" +
-                                 $"var cb=window.__ideCallbacks__['{escapedCallbackId}'];" +
-                                 $"delete window.__ideCallbacks__['{escapedCallbackId}'];" +
-                                 $"cb({resultJson});}}";
-
-                    var scriptElement = doc.CreateElement("script");
-                    scriptElement.SetAttribute("type", "text/javascript");
-                    scriptElement.InnerText = script;
-                    doc.GetElementsByTagName("head")[0].AppendChild(scriptElement);
-                });
-            }
-            catch (Exception ex)
-            {
-                Logger.Error(ex, "Error invoking command callback {CallbackId}", callbackId);
-            }
-        }
-
-        private void InvokeSetAuthToken(string token, string apiUrl)
-        {
-            try
-            {
-                // Inject script element to call setAuthToken function
-                dynamic doc = SettingsBrowser.Document;
-                if (doc == null)
-                {
-                    Logger.Warning("Document is null, cannot set auth token");
-                    return;
+                    await host.ExecuteScriptAsync(
+                        ExecuteCommandBridge.BuildCommandCallbackScript(callbackId, resultJson));
                 }
-
-                var escapedToken = ExecuteCommandBridge.EscapeForJsString(token);
-                var escapedApiUrl = ExecuteCommandBridge.EscapeForJsString(apiUrl ?? string.Empty);
-                var script = $@"
-                    (function() {{
-                        if (typeof window.setAuthToken === 'function') {{
-                            window.setAuthToken('{escapedToken}', '{escapedApiUrl}');
-                        }} else {{
-                            console.warn('window.setAuthToken is not available');
-                        }}
-                    }})();
-                ";
-
-                var scriptElement = doc.CreateElement("script");
-                scriptElement.SetAttribute("type", "text/javascript");
-                scriptElement.InnerText = script;
-                doc.GetElementsByTagName("head")[0].AppendChild(scriptElement);
-
-                Logger.Information("Invoked window.setAuthToken with token and apiUrl");
-            }
-            catch (Exception ex)
-            {
-                Logger.Error(ex, "Error invoking window.setAuthToken");
-            }
+                catch (Exception ex)
+                {
+                    Logger.Error(ex, "Error invoking command callback {CallbackId}", callbackId);
+                }
+            }).FireAndForget();
         }
 
         protected override void OnClosed(EventArgs e)
         {
-            // Clear singleton instance
             if (instance == this)
             {
                 instance = null;
             }
 
+            host?.Dispose();
+
             base.OnClosed(e);
         }
-
     }
 }
