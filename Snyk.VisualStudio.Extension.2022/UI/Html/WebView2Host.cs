@@ -14,22 +14,28 @@ namespace Snyk.VisualStudio.Extension.UI.Html
     /// Wires a WPF <see cref="WebView2"/> control to the JS↔C# bridge used by the LS-authored
     /// HTML pages: registers the <see cref="WebView2BridgeBindings"/> shim, routes
     /// <c>WebMessageReceived</c> through the supplied <see cref="WebView2MessageDispatcher"/>,
-    /// and handles the &gt;2&nbsp;MB <c>NavigateToString</c> spill-to-disk fallback. Each host
-    /// owns its own <see cref="CoreWebView2Environment"/> bound to a per-panel user-data folder.
+    /// and handles the &gt;2&nbsp;MB <c>NavigateToString</c> spill-to-disk fallback. Hosts
+    /// pointing at the same user-data folder share a single <see cref="CoreWebView2Environment"/>
+    /// instance (and therefore a single Edge browser process); see remarks for the folder
+    /// layout.
     /// </summary>
     /// <remarks>
-    /// We tried sharing a single <see cref="CoreWebView2Environment"/> across all panels in
-    /// the process (Microsoft's recommended pattern). Sharing the env between two
-    /// <c>WebView2</c> controls hosted in the tool window (the description and summary
-    /// panels) worked fine — both controls could be opened simultaneously. But binding the
-    /// settings dialog's <c>WebView2</c> to that same env via <c>EnsureCoreWebView2Async</c>
-    /// consistently failed with HRESULT 0x8007139F (ERROR_INVALID_STATE). The failure
-    /// reproduced regardless of whether settings was opened before or after the tool window.
-    /// The asymmetry points at something about Visual Studio's <c>DialogWindow</c> (its
-    /// nested message pump, or how it parents the WebView2 HwndHost) interacting badly with
-    /// WebView2's env-binding state machine; we never pinned down the precise cause.
-    /// Per-panel envs work reliably across all opening orders. Revisit shared envs if the
-    /// memory cost becomes a concern.
+    /// <para>
+    /// Folder layout — two contexts per VS process:
+    /// <c>%LOCALAPPDATA%\Snyk\WebView2\&lt;pid&gt;\toolwindow\</c> hosts the description
+    /// and summary panels (they live in the same tool window and share an env);
+    /// <c>%LOCALAPPDATA%\Snyk\WebView2\&lt;pid&gt;\settings\</c> is dedicated to the modal
+    /// settings dialog.
+    /// </para>
+    /// <para>
+    /// The settings dialog uses its own folder to avoid state sharing issues (manifested as
+    /// HRESULT 0x8007139F (ERROR_INVALID_STATE)). The description + summary panels can share fine,
+    /// so the most likely root cause is a DPI-awareness mismatch between VS's
+    /// modal <c>DialogWindow</c> and its tool windows — WebView2 requires every controller
+    /// attached to a shared environment to be created in a consistent DPI-awareness
+    /// context. See <a href="https://github.com/MicrosoftEdge/WebView2Feedback/issues/2323">
+    /// WebView2Feedback#2323</a>.
+    /// </para>
     /// </remarks>
     public sealed class WebView2Host : IDisposable
     {
@@ -81,23 +87,26 @@ namespace Snyk.VisualStudio.Extension.UI.Html
         public Task Ready => _readyTcs.Task;
 
         /// <summary>
-        /// Builds a per-panel + per-VS-process user-data folder path under
-        /// <c>%LOCALAPPDATA%\Snyk\WebView2\&lt;pid&gt;\&lt;panelKey&gt;</c>. WebView2 takes
-        /// an exclusive lock on the user-data folder, so the per-process root is essential
-        /// — two VS instances running concurrently would otherwise contend for the same
-        /// folder. Sibling <c>&lt;pid&gt;</c> folders whose process has exited are swept on
-        /// first call so they don't accumulate across crashed sessions.
+        /// Builds a per-context + per-VS-process user-data folder path under
+        /// <c>%LOCALAPPDATA%\Snyk\WebView2\&lt;pid&gt;\&lt;contextKey&gt;</c>. Production
+        /// uses two keys: <c>"toolwindow"</c> (shared by the description and summary
+        /// panels) and <c>"settings"</c> (the modal dialog, see class-level remarks for
+        /// why it's isolated). The per-process root is essential because WebView2 takes
+        /// an exclusive lock on the user-data folder — two VS instances running
+        /// concurrently would otherwise contend. Sibling <c>&lt;pid&gt;</c> folders whose
+        /// process has exited are swept on first call so they don't accumulate across
+        /// crashed sessions.
         /// </summary>
-        public static string BuildUserDataFolder(string panelKey)
+        public static string BuildUserDataFolder(string contextKey)
         {
-            if (string.IsNullOrEmpty(panelKey)) throw new ArgumentException("Panel key is required", nameof(panelKey));
+            if (string.IsNullOrEmpty(contextKey)) throw new ArgumentException("Context key is required", nameof(contextKey));
 
             _ = OrphanCleanupOnce.Value;
 
             var pid = Process.GetCurrentProcess().Id;
             return Path.Combine(
                 Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
-                "Snyk", "WebView2", pid.ToString(), panelKey);
+                "Snyk", "WebView2", pid.ToString(), contextKey);
         }
 
         private static readonly Lazy<bool> OrphanCleanupOnce = new Lazy<bool>(() =>
@@ -105,6 +114,29 @@ namespace Snyk.VisualStudio.Extension.UI.Html
             TryCleanupOrphanFolders();
             return true;
         });
+
+        // Per-folder environment cache so multiple WebView2 controls sharing the same
+        // user-data folder share the same env instance — which is what WebView2 requires
+        // for safe shared-folder operation (see WebView2Feedback#2323 + class-level remarks).
+        private static readonly object EnvironmentGate = new object();
+        private static readonly Dictionary<string, Task<CoreWebView2Environment>> Environments =
+            new Dictionary<string, Task<CoreWebView2Environment>>(StringComparer.OrdinalIgnoreCase);
+
+        private static Task<CoreWebView2Environment> GetOrCreateEnvironmentAsync(string userDataFolder)
+        {
+            lock (EnvironmentGate)
+            {
+                if (!Environments.TryGetValue(userDataFolder, out var task))
+                {
+                    task = CoreWebView2Environment.CreateAsync(
+                        browserExecutableFolder: null,
+                        userDataFolder: userDataFolder,
+                        options: null);
+                    Environments[userDataFolder] = task;
+                }
+                return task;
+            }
+        }
 
         private static void TryCleanupOrphanFolders()
         {
@@ -161,10 +193,7 @@ namespace Snyk.VisualStudio.Extension.UI.Html
 
             try
             {
-                var environment = await CoreWebView2Environment.CreateAsync(
-                    browserExecutableFolder: null,
-                    userDataFolder: _userDataFolder,
-                    options: null);
+                var environment = await GetOrCreateEnvironmentAsync(_userDataFolder);
                 await _webView.EnsureCoreWebView2Async(environment);
 
                 ConfigureSettings(_webView.CoreWebView2.Settings, _enableDeveloperTools);

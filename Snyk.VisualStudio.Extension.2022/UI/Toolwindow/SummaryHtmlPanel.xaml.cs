@@ -39,7 +39,8 @@ namespace Snyk.VisualStudio.Extension.UI.Toolwindow
                     args[3].Value<string>()))
                 .Register("FocusToolWindow", _ => bridge.FocusToolWindow());
 
-            var userDataFolder = WebView2Host.BuildUserDataFolder("summary");
+            // Shared with HtmlDescriptionPanel — see comment there.
+            var userDataFolder = WebView2Host.BuildUserDataFolder("toolwindow");
 
             host = new WebView2Host(SummaryHtmlViewer, dispatcher, userDataFolder);
 

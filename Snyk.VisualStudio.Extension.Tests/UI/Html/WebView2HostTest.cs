@@ -14,14 +14,26 @@ namespace Snyk.VisualStudio.Extension.Tests.UI.Html
     public class WebView2HostTest
     {
         [Fact]
-        public void BuildUserDataFolder_ReturnsPidNestedPathPerPanel()
+        public void BuildUserDataFolder_ReturnsDistinctPathsPerContextKey()
         {
+            // Production keys: "toolwindow" (shared by description + summary panels) and
+            // "settings" (the modal dialog, isolated because of DPI-awareness mismatch).
+            var toolwindow = WebView2Host.BuildUserDataFolder("toolwindow");
             var settings = WebView2Host.BuildUserDataFolder("settings");
-            var description = WebView2Host.BuildUserDataFolder("description");
 
-            Assert.NotEqual(settings, description);
+            Assert.NotEqual(toolwindow, settings);
+            Assert.EndsWith(Path.DirectorySeparatorChar + "toolwindow", toolwindow);
             Assert.EndsWith(Path.DirectorySeparatorChar + "settings", settings);
-            Assert.EndsWith(Path.DirectorySeparatorChar + "description", description);
+        }
+
+        [Fact]
+        public void BuildUserDataFolder_SameKeyReturnsSamePath()
+        {
+            // Two panels using the same key (e.g. description and summary both passing
+            // "toolwindow") must land on the exact same path so they share a CoreWebView2Environment.
+            Assert.Equal(
+                WebView2Host.BuildUserDataFolder("toolwindow"),
+                WebView2Host.BuildUserDataFolder("toolwindow"));
         }
 
         [Fact]
