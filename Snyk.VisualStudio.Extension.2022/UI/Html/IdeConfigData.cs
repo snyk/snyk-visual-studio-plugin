@@ -2,6 +2,7 @@
 // ABOUTME: Used by ConfigScriptingBridge to parse configuration with strong typing
 
 using System.Collections.Generic;
+using Newtonsoft.Json;
 using Snyk.VisualStudio.Extension.Language;
 
 namespace Snyk.VisualStudio.Extension.UI.Html
@@ -31,15 +32,29 @@ namespace Snyk.VisualStudio.Extension.UI.Html
         public string Endpoint { get; set; }
         public string Token { get; set; }
         public string Organization { get; set; }
+
+        // The fallback HTML form posts this field as "proxy_insecure" (snake_case); the
+        // full LS-served form's contract on the same flag also lands here. Explicit
+        // JsonProperty so the property does not silently miss the JSON key.
+        [JsonProperty("proxy_insecure")]
         public bool? Insecure { get; set; }
 
         // Trusted Folders
         public List<string> TrustedFolders { get; set; }
 
-        // CLI Settings
+        // CLI Settings — the fallback HTML form uses snake_case JSON keys that do not match
+        // these PascalCase C# property names by default. Explicit JsonProperty bindings keep
+        // the form's saves landing on the right fields.
+        [JsonProperty("cli_path")]
         public string CliPath { get; set; }
+
+        [JsonProperty("automatic_download")]
         public bool? ManageBinariesAutomatically { get; set; }
+
+        [JsonProperty("binary_base_url")]
         public string CliBaseDownloadURL { get; set; }
+
+        [JsonProperty("cli_release_channel")]
         public string CliReleaseChannel { get; set; }
 
         // Filter Settings
