@@ -81,12 +81,12 @@ namespace Snyk.VisualStudio.Extension.Settings
                         args[1].Value<string>(),
                         args[2].Value<string>()));
 
-            var scratchDirectory = WebView2EnvironmentProvider.GetScratchDirectory("settings");
+            var userDataFolder = WebView2Host.BuildUserDataFolder("settings");
 
             host = new WebView2Host(
                 SettingsBrowser,
                 dispatcher,
-                scratchDirectory,
+                userDataFolder,
                 additionalInitScripts: new[]
                 {
                     ExecuteCommandBridge.BuildClientScript(),
