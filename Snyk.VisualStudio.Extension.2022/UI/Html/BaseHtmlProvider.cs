@@ -142,7 +142,6 @@ namespace Snyk.VisualStudio.Extension.UI.Html
                 { "input-background-color", inputBackground },
                 { "section-background-color", inactiveSelectionBackground },
                 { "focus-color", linkColor },
-                { "main-font-size", "15px" },
                 { "ide-background-color", backgroundColor },
                 { "dimmed-text-color", disabledForeground }
             };

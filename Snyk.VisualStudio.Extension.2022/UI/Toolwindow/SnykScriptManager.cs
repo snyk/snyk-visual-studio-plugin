@@ -1,7 +1,6 @@
 ﻿using Snyk.VisualStudio.Extension.Service;
 using System;
 using System.Diagnostics;
-using System.Runtime.InteropServices;
 using System.Threading.Tasks;
 using Microsoft.VisualStudio.Shell;
 using Serilog;
@@ -9,7 +8,6 @@ using Snyk.VisualStudio.Extension.Language;
 
 namespace Snyk.VisualStudio.Extension.UI.Toolwindow
 {
-    [ComVisible(true)]
     public class SnykScriptManager
     {
         private static readonly ILogger Logger = LogManager.ForContext<SnykScriptManager>();
