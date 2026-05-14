@@ -33,6 +33,13 @@ namespace Snyk.VisualStudio.Extension.Settings
         protected HtmlSettingsScriptingBridge scriptingBridge;
         protected WebView2Host host;
 
+        /// <summary>
+        /// Whether to expose Chromium DevTools (F12) on the hosted WebView2. Production stays
+        /// <c>false</c>; <see cref="DebugHtmlSettingsWindow"/> overrides to <c>true</c> so
+        /// developers can inspect JS errors and the DOM while iterating on the LS HTML.
+        /// </summary>
+        protected virtual bool DeveloperToolsEnabled => false;
+
         public static readonly DependencyProperty IsDirtyProperty =
             DependencyProperty.Register(
                 "IsDirty",
@@ -86,7 +93,8 @@ namespace Snyk.VisualStudio.Extension.Settings
                 additionalInitScripts: new[]
                 {
                     ExecuteCommandBridge.BuildClientScript(),
-                });
+                },
+                enableDeveloperTools: DeveloperToolsEnabled);
 
             SettingsBrowser.NavigationCompleted += SettingsBrowser_OnNavigationCompleted;
         }

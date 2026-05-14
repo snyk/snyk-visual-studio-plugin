@@ -20,6 +20,12 @@ namespace Snyk.VisualStudio.Extension.Settings
     public class DebugHtmlSettingsWindow : HtmlSettingsWindow
     {
         /// <summary>
+        /// Expose Chromium DevTools (F12) and the default right-click context menu so
+        /// developers can inspect JS errors and the DOM while iterating on the LS HTML.
+        /// </summary>
+        protected override bool DeveloperToolsEnabled => true;
+
+        /// <summary>
         /// Path to the local HTML file to load for testing.
         /// Generate this file by running in snyk-ls: go run scripts/config-dialog/main.go > config_output.html
         /// </summary>

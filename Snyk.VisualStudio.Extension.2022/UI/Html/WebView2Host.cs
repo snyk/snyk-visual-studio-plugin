@@ -31,6 +31,7 @@ namespace Snyk.VisualStudio.Extension.UI.Html
         private readonly WebView2NavigationPreparer _preparer;
         private readonly string _userDataFolder;
         private readonly IReadOnlyList<string> _additionalInitScripts;
+        private readonly bool _enableDeveloperTools;
         private readonly TaskCompletionSource<bool> _readyTcs =
             new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
 
@@ -41,12 +42,15 @@ namespace Snyk.VisualStudio.Extension.UI.Html
         /// <c>AddScriptToExecuteOnDocumentCreatedAsync</c> after the bridge bindings, before
         /// the first navigation — for example, <see cref="ExecuteCommandBridge.BuildClientScript"/>
         /// which redefines <c>window.__ideExecuteCommand__</c> with its callback-id roundtrip.
+        /// <paramref name="enableDeveloperTools"/> turns on the Chromium DevTools (F12) for the
+        /// hosted control — useful for the debug subclasses, off in production.
         /// </summary>
         public WebView2Host(
             WebView2 webView,
             WebView2MessageDispatcher dispatcher,
             string userDataFolder,
-            IEnumerable<string> additionalInitScripts = null)
+            IEnumerable<string> additionalInitScripts = null,
+            bool enableDeveloperTools = false)
         {
             _webView = webView ?? throw new ArgumentNullException(nameof(webView));
             _dispatcher = dispatcher ?? throw new ArgumentNullException(nameof(dispatcher));
@@ -54,6 +58,7 @@ namespace Snyk.VisualStudio.Extension.UI.Html
 
             _userDataFolder = userDataFolder;
             _additionalInitScripts = (additionalInitScripts ?? Enumerable.Empty<string>()).ToArray();
+            _enableDeveloperTools = enableDeveloperTools;
             _preparer = new WebView2NavigationPreparer(Path.Combine(_userDataFolder, "scratch"));
         }
 
@@ -76,7 +81,7 @@ namespace Snyk.VisualStudio.Extension.UI.Html
                     options: null);
                 await _webView.EnsureCoreWebView2Async(environment);
 
-                ConfigureSettings(_webView.CoreWebView2.Settings);
+                ConfigureSettings(_webView.CoreWebView2.Settings, _enableDeveloperTools);
 
                 await _webView.CoreWebView2.AddScriptToExecuteOnDocumentCreatedAsync(
                     WebView2BridgeBindings.BuildScript());
@@ -133,11 +138,11 @@ namespace Snyk.VisualStudio.Extension.UI.Html
             _dispatcher.Dispatch(e.WebMessageAsJson);
         }
 
-        private static void ConfigureSettings(CoreWebView2Settings settings)
+        private static void ConfigureSettings(CoreWebView2Settings settings, bool enableDeveloperTools)
         {
-            settings.AreDefaultContextMenusEnabled = false;
+            settings.AreDefaultContextMenusEnabled = enableDeveloperTools;
             settings.IsStatusBarEnabled = false;
-            settings.AreDevToolsEnabled = false;
+            settings.AreDevToolsEnabled = enableDeveloperTools;
             settings.IsZoomControlEnabled = false;
             settings.AreBrowserAcceleratorKeysEnabled = false;
         }
