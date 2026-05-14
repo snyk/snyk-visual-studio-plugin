@@ -19,8 +19,9 @@ namespace Snyk.VisualStudio.Extension.Settings
 {
     /// <summary>
     /// WPF modal window for HTML-based settings configuration.
-    /// Loads settings HTML from the Language Server and routes the
-    /// <c>window.external.*</c> bridge surface through <see cref="WebView2Host"/>.
+    /// Loads settings HTML from the Language Server and provides IDE bridge functions
+    /// for save/login/logout, routed through <see cref="WebView2Host"/>'s
+    /// <c>window.external.*</c> surface.
     /// </summary>
     public partial class HtmlSettingsWindow : DialogWindow
     {
@@ -60,10 +61,13 @@ namespace Snyk.VisualStudio.Extension.Settings
         public HtmlSettingsWindow(ISnykServiceProvider serviceProvider)
         {
             this.serviceProvider = serviceProvider ?? throw new ArgumentNullException(nameof(serviceProvider));
+
+            // Set as singleton instance
             instance = this;
 
             InitializeComponent();
 
+            // Create scripting bridge with callbacks
             scriptingBridge = new HtmlSettingsScriptingBridge(
                 serviceProvider,
                 onModified: () => IsDirty = true,
@@ -122,6 +126,7 @@ namespace Snyk.VisualStudio.Extension.Settings
             {
                 LoadingStatusLabel.Text = "Loading settings...";
 
+                // Load HTML from Language Server or fallback
                 var html = await GetHtmlContentAsync();
                 if (string.IsNullOrEmpty(html))
                 {
@@ -144,6 +149,7 @@ namespace Snyk.VisualStudio.Extension.Settings
         /// </summary>
         protected virtual async Task<string> GetHtmlContentAsync()
         {
+            // Check if Language Server is ready before attempting to get HTML
             if (!LanguageClientHelper.IsLanguageServerReady())
             {
                 Logger.Warning("Language Server not ready, using fallback HTML");
@@ -166,12 +172,14 @@ namespace Snyk.VisualStudio.Extension.Settings
                 Logger.Warning(ex, "Failed to get HTML from Language Server");
             }
 
+            // Fall back to embedded HTML
             Logger.Warning("Falling back to embedded HTML");
             return HtmlResourceLoader.LoadFallbackHtml(serviceProvider.Options);
         }
 
         private void SettingsBrowser_OnNavigationCompleted(object sender, CoreWebView2NavigationCompletedEventArgs e)
         {
+            // Hide loading label
             LoadingStatusLabel.Visibility = Visibility.Collapsed;
         }
 

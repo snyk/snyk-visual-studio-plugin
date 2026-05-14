@@ -10,9 +10,11 @@ namespace Snyk.VisualStudio.Extension.Settings
 {
     /// <summary>
     /// Debug version of HtmlSettingsWindow that loads HTML from a local file instead of
-    /// the Language Server, for rapid CSS/layout iteration. The debug HTML supplies its
-    /// own mock <c>window.external</c>, which overrides the WebView2 polyfill at page-load
-    /// time, so the real scripting bridge — though wired — never receives messages.
+    /// the Language Server. Inherits all UI/XAML from HtmlSettingsWindow, only overrides
+    /// data loading behaviour. Use this for rapid iteration on CSS and layout changes
+    /// without waiting for LS initialization. The debug HTML supplies its own mock
+    /// <c>window.external</c>, which overrides the WebView2 polyfill at page-load time,
+    /// so the real scripting bridge — though wired — never receives messages.
     /// </summary>
     public class DebugHtmlSettingsWindow : HtmlSettingsWindow
     {
@@ -24,6 +26,7 @@ namespace Snyk.VisualStudio.Extension.Settings
 
         /// <summary>
         /// Set to true to automatically open this debug window when the Visual Studio extension loads.
+        /// This allows rapid testing of CSS/HTML changes without manually opening settings.
         /// </summary>
         public static bool AutoOpenOnStartup = false;
 
@@ -41,6 +44,7 @@ namespace Snyk.VisualStudio.Extension.Settings
 
             try
             {
+                // Ensure we're on the UI thread since we're creating a WPF window
                 await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
 
                 Logger.Information("DEBUG MODE: Opening DebugHtmlSettingsWindow for local file testing");
@@ -54,9 +58,14 @@ namespace Snyk.VisualStudio.Extension.Settings
             }
         }
 
+        /// <summary>
+        /// Initializes a new debug HTML settings window.
+        /// Passes serviceProvider to base HtmlSettingsWindow constructor.
+        /// </summary>
         public DebugHtmlSettingsWindow(ISnykServiceProvider serviceProvider)
             : base(serviceProvider)
         {
+            // Add debug indicator to title after base initialization
             this.Loaded += (sender, args) =>
             {
                 this.Title += " [DEBUG MODE - Local HTML]";

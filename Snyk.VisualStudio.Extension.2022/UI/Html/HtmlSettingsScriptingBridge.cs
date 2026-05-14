@@ -75,11 +75,13 @@ namespace Snyk.VisualStudio.Extension.UI.Html
         {
             try
             {
+                // Parse and apply all configuration changes
                 ThreadHelper.JoinableTaskFactory.Run(async () =>
                 {
                     await ParseAndSaveConfigAsync(jsonString);
-                    // Persist all settings to storage at the end — triggers SettingsChanged,
-                    // which notifies the Language Server.
+
+                    // Persist all settings to storage at the end
+                    // This triggers SettingsChanged event which notifies Language Server
                     OptionsManager.Save(Options, triggerSettingsChangedEvent: true);
                 });
                 saveCompletionTcs.TrySetResult(true);
