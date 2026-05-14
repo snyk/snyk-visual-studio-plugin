@@ -18,7 +18,7 @@ namespace Snyk.VisualStudio.Extension.Settings
     {
         /// <summary>
         /// Path to the local HTML file to load for testing.
-        /// Generate this file by running in snyk-ls: go run scripts/config-dialog/main.go &gt; config_output.html
+        /// Generate this file by running in snyk-ls: go run scripts/config-dialog/main.go > config_output.html
         /// </summary>
         private const string DEBUG_HTML_FILE_PATH = @"C:\Mac\Home\Documents\Snyk\snyk-ls\config_output.html";
 
@@ -31,6 +31,7 @@ namespace Snyk.VisualStudio.Extension.Settings
         /// Opens the debug window on extension startup if AutoOpenOnStartup is enabled.
         /// Called from SnykVSPackage.InitializeAsync().
         /// </summary>
+        /// <param name="serviceProvider">The Snyk service provider for accessing dependencies</param>
         public static async Task OpenDebugWindowIfEnabledAsync(ISnykServiceProvider serviceProvider)
         {
             if (!AutoOpenOnStartup)

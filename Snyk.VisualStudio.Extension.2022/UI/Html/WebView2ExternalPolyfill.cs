@@ -6,9 +6,8 @@ using System.Text;
 namespace Snyk.VisualStudio.Extension.UI.Html
 {
     /// <summary>
-    /// Builds the JS shim that preserves the legacy <c>window.external.X(...)</c> contract
-    /// from the IE WebBrowser host. Each call is forwarded to C# via
-    /// <c>chrome.webview.postMessage({ method, args })</c>, where
+    /// Builds the JS shim that defines <c>window.external.X(...)</c>. Each call is
+    /// forwarded to C# via <c>chrome.webview.postMessage({ method, args })</c>, where
     /// <see cref="WebView2MessageDispatcher"/> routes by <c>method</c>.
     /// Registered via <c>CoreWebView2.AddScriptToExecuteOnDocumentCreatedAsync</c> so it
     /// runs before any LS-authored page script.

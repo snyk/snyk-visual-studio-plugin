@@ -1,5 +1,5 @@
 // ABOUTME: Shared bridge for the window.__ideExecuteCommand__ JS<->IDE contract.
-// ABOUTME: Reusable by any WebBrowser panel (settings, tree view, etc.).
+// ABOUTME: Reusable by any WebView2-hosted LS HTML page (settings, tree view, etc.).
 
 using System;
 using System.Text.RegularExpressions;
@@ -14,7 +14,7 @@ namespace Snyk.VisualStudio.Extension.UI.Html
 {
     /// <summary>
     /// Shared bridge for the <c>window.__ideExecuteCommand__</c> JS↔IDE contract.
-    /// Reusable by any WebBrowser panel (settings window, tree view, etc.).
+    /// Reusable by any WebView2-hosted LS HTML page (settings window, tree view, etc.).
     ///
     /// Responsibilities:
     /// <list type="bullet">
@@ -54,9 +54,7 @@ namespace Snyk.VisualStudio.Extension.UI.Html
         /// <summary>
         /// Returns the ES5-compatible JavaScript that defines <c>window.__ideExecuteCommand__</c>.
         /// Assumes <c>window.external.__ideExecuteCommand__(command, argsJson, callbackId)</c>
-        /// is provided by the bridge (originally <see cref="HtmlSettingsScriptingBridge"/> via
-        /// <c>ObjectForScripting</c>; post-WebView2 migration via the polyfill in
-        /// <see cref="WebView2ExternalPolyfill"/>).
+        /// is provided by the polyfill in <see cref="WebView2ExternalPolyfill"/>.
         /// </summary>
         public static string BuildClientScript()
         {

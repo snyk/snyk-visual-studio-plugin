@@ -857,16 +857,13 @@ namespace Snyk.VisualStudio.Extension.UI.Toolwindow
 <html>
 <head>
   <meta http-equiv='Content-Type' content='text/html; charset=unicode' />
-  <meta http-equiv='X-UA-Compatible' content='IE=edge' />
   <meta charset=""utf-8"" />
   <meta name=""viewport"" content=""width=device-width, initial-scale=1.0"" />
   <meta http-equiv=""Content-Security-Policy""
-        content=""style-src 'self' 'nonce-${{nonce}}' 'nonce-ideNonce' https://fonts.googleapis.com;
-        script-src 'nonce-${{nonce}}' https://fonts.googleapis.com;
-        font-src 'self' https://fonts.gstatic.com;"" />
+        content=""style-src 'self' 'nonce-${{nonce}}' 'nonce-ideNonce';
+        script-src 'nonce-${{nonce}}';
+        font-src 'self';"" />
   <style nonce=${{nonce}}>
-    @import url('https://fonts.googleapis.com/css2?family=Inter&display=swap');
-
     :root {{
       --default-font: var(--vscode-font-family, ""SF Pro Text"", ""Segoe UI"", ""Ubuntu"", Geneva, Verdana, Tahoma, sans-serif);
       --ide-background-color: var(--vscode-sideBar-background);
