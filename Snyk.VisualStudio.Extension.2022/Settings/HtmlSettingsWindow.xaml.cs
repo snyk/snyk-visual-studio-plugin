@@ -5,7 +5,6 @@ using System;
 using System.IO;
 using System.Threading.Tasks;
 using System.Windows;
-using System.Windows.Input;
 using Microsoft.VisualStudio.PlatformUI;
 using Microsoft.VisualStudio.Shell;
 using Microsoft.Web.WebView2.Core;
@@ -222,14 +221,6 @@ namespace Snyk.VisualStudio.Extension.Settings
         {
             DialogResult = false;
             Close();
-        }
-
-        private void TitleBar_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)
-        {
-            if (e.ClickCount == 1)
-            {
-                DragMove();
-            }
         }
 
         public void UpdateAuthToken(string token, string apiUrl = null)
