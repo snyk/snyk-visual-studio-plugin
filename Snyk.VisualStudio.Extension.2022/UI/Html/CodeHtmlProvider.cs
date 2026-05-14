@@ -33,7 +33,7 @@ namespace Snyk.VisualStudio.Extension.UI.Html
                         var endLine = target.getAttribute('end-line');
                         var startCharacter = target.getAttribute('start-character');
                         var endCharacter = target.getAttribute('end-character');
-                        window.external.OpenFileInEditor(filePath, startLine, endLine, startCharacter, endCharacter);
+                        window.OpenFileInEditor(filePath, startLine, endLine, startCharacter, endCharacter);
                     }
                     var navigatableLines = document.getElementsByClassName('data-flow-clickable-row');
                     for(var i = 0; i < navigatableLines.length; i++) {
@@ -54,7 +54,7 @@ namespace Snyk.VisualStudio.Extension.UI.Html
                     // Below fixes a VS bug where when clicking a web view, the focus will not switch to the web view.
                     // Which, among other things, caused issues where pressing backspace would delete code in the editor and not the focused HTML form.
                     document.addEventListener('mousedown', function (e) {
-                        window.external.FocusToolWindow();
+                        window.FocusToolWindow();
                     });
                 " + themeScript;
         }
@@ -84,9 +84,9 @@ namespace Snyk.VisualStudio.Extension.UI.Html
             html = html.Replace("var(--warning-background)", VSColorTheme.GetThemedColor(EnvironmentColors.SmartTagHoverFillBrushKey).ToHex());
             html = html.Replace("var(--warning-text)", VSColorTheme.GetThemedColor(EnvironmentColors.SmartTagHoverTextBrushKey).ToHex());
 
-            html = html.Replace("${ideGenerateAIFix}", "window.external.GenerateFixes(issueId)");
-            html = html.Replace("${ideApplyAIFix}", "window.external.ApplyFixDiff(fixId)");
-            html = html.Replace("${ideSubmitIgnoreRequest}", "window.external.SubmitIgnoreRequest(issueId, ignoreType, ignoreReason, ignoreExpirationDate)");
+            html = html.Replace("${ideGenerateAIFix}", "window.GenerateFixes(issueId)");
+            html = html.Replace("${ideApplyAIFix}", "window.ApplyFixDiff(fixId)");
+            html = html.Replace("${ideSubmitIgnoreRequest}", "window.SubmitIgnoreRequest(issueId, ignoreType, ignoreReason, ignoreExpirationDate)");
             return html;
         }
     }

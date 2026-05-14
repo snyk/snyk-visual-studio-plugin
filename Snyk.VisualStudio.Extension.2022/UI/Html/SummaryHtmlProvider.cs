@@ -25,7 +25,7 @@ namespace Snyk.VisualStudio.Extension.UI.Html
             css += "</style>";
             html = html.Replace("${ideStyle}", css);
 
-            html = html.Replace("${ideFunc}", "window.external.EnableDelta(isEnabled);");
+            html = html.Replace("${ideFunc}", "window.EnableDelta(isEnabled);");
             html = base.ReplaceCssVariables(html);
 
             return html;

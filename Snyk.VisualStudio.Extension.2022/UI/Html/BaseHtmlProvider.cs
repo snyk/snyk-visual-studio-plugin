@@ -27,7 +27,7 @@ namespace Snyk.VisualStudio.Extension.UI.Html
                     var links = document.querySelectorAll('a');
                     for(var i = 0; i < links.length; i++) {
                         links[i].onclick = function() {
-                            window.external.OpenLink(this.href);
+                            window.OpenLink(this.href);
                             return false;
                         };
                     }

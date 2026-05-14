@@ -52,9 +52,11 @@ namespace Snyk.VisualStudio.Extension.UI.Html
             !string.IsNullOrEmpty(command) && command.StartsWith("snyk.");
 
         /// <summary>
-        /// Returns the ES5-compatible JavaScript that defines <c>window.__ideExecuteCommand__</c>.
-        /// Assumes <c>window.external.__ideExecuteCommand__(command, argsJson, callbackId)</c>
-        /// is provided by the polyfill in <see cref="WebView2ExternalPolyfill"/>.
+        /// Returns the ES5-compatible JavaScript that redefines <c>window.__ideExecuteCommand__</c>
+        /// to add callback-id roundtrip support on top of the raw bridge binding established
+        /// by <see cref="WebView2BridgeBindings"/>. The wrapper posts directly via
+        /// <c>chrome.webview.postMessage</c>, bypassing the raw binding so the bound callback
+        /// metadata travels with the call.
         /// </summary>
         public static string BuildClientScript()
         {
@@ -68,7 +70,7 @@ namespace Snyk.VisualStudio.Extension.UI.Html
                         window.__ideCallbacks__[callbackId] = callback;
                     }
                     var argsJson = JSON.stringify(args || []);
-                    window.external.__ideExecuteCommand__(command, argsJson, callbackId);
+                    chrome.webview.postMessage({ method: '__ideExecuteCommand__', args: [command, argsJson, callbackId] });
                 };
             ";
         }

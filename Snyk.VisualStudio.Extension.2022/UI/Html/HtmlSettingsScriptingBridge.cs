@@ -66,7 +66,7 @@ namespace Snyk.VisualStudio.Extension.UI.Html
         }
 
         /// <summary>
-        /// Routed from <c>window.external.__saveIdeConfig__(jsonString)</c>. The LS HTML
+        /// Routed from <c>window.__saveIdeConfig__(jsonString)</c>. The LS HTML
         /// handles all validation and data collection — we just persist the config. Always
         /// completes <see cref="SaveCompletion"/> (true on success, false on failure) so the
         /// caller can stop waiting.

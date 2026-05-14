@@ -3,20 +3,23 @@ using Xunit;
 
 namespace Snyk.VisualStudio.Extension.Tests.UI.Html
 {
-    public class WebView2ExternalPolyfillTest
+    public class WebView2BridgeBindingsTest
     {
         [Fact]
-        public void BuildScript_DefinesWindowExternal()
+        public void BuildScript_AssignsEachKnownMethodToWindow()
         {
-            var script = WebView2ExternalPolyfill.BuildScript();
+            var script = WebView2BridgeBindings.BuildScript();
 
-            Assert.Contains("window.external", script);
+            foreach (var method in WebView2BridgeBindings.KnownMethods)
+            {
+                Assert.Contains($"window.{method} = function", script);
+            }
         }
 
         [Fact]
         public void BuildScript_DispatchesViaPostMessage()
         {
-            var script = WebView2ExternalPolyfill.BuildScript();
+            var script = WebView2BridgeBindings.BuildScript();
 
             Assert.Contains("chrome.webview.postMessage", script);
         }
@@ -24,14 +27,14 @@ namespace Snyk.VisualStudio.Extension.Tests.UI.Html
         [Fact]
         public void BuildScript_IsWrappedInImmediatelyInvokedFunction()
         {
-            var script = WebView2ExternalPolyfill.BuildScript().Trim();
+            var script = WebView2BridgeBindings.BuildScript().Trim();
 
             Assert.StartsWith("(function", script);
             Assert.EndsWith("})();", script);
         }
 
         [Fact]
-        public void KnownMethods_CoversEveryWindowExternalCallSite()
+        public void KnownMethods_CoversEveryBridgeCallSite()
         {
             var expected = new[]
             {
@@ -48,26 +51,15 @@ namespace Snyk.VisualStudio.Extension.Tests.UI.Html
                 "FocusToolWindow",
             };
 
-            Assert.Equal(expected, WebView2ExternalPolyfill.KnownMethods);
-        }
-
-        [Fact]
-        public void BuildScript_DefinesEveryKnownMethod()
-        {
-            var script = WebView2ExternalPolyfill.BuildScript();
-
-            foreach (var method in WebView2ExternalPolyfill.KnownMethods)
-            {
-                Assert.Contains(method, script);
-            }
+            Assert.Equal(expected, WebView2BridgeBindings.KnownMethods);
         }
 
         [Fact]
         public void BuildScript_PassesMethodNameAsFirstPostArgument()
         {
-            var script = WebView2ExternalPolyfill.BuildScript();
+            var script = WebView2BridgeBindings.BuildScript();
 
-            foreach (var method in WebView2ExternalPolyfill.KnownMethods)
+            foreach (var method in WebView2BridgeBindings.KnownMethods)
             {
                 Assert.Contains($"'{method}'", script);
             }

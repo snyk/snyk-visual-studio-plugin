@@ -270,7 +270,7 @@
     <Compile Include="UI\Html\OssHtmlProvider.cs" />
     <Compile Include="UI\Html\CodeHtmlProvider.cs" />
     <Compile Include="UI\Html\HtmlProviderFactory.cs" />
-    <Compile Include="UI\Html\WebView2ExternalPolyfill.cs" />
+    <Compile Include="UI\Html\WebView2BridgeBindings.cs" />
     <Compile Include="UI\Html\WebView2Host.cs" />
     <Compile Include="UI\Html\WebView2MessageDispatcher.cs" />
     <Compile Include="UI\Html\WebView2NavigationPreparer.cs" />

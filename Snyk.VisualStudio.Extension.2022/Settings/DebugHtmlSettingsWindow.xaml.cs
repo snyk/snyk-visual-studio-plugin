@@ -13,8 +13,9 @@ namespace Snyk.VisualStudio.Extension.Settings
     /// the Language Server. Inherits all UI/XAML from HtmlSettingsWindow, only overrides
     /// data loading behaviour. Use this for rapid iteration on CSS and layout changes
     /// without waiting for LS initialization. The debug HTML supplies its own mock
-    /// <c>window.external</c>, which overrides the WebView2 polyfill at page-load time,
-    /// so the real scripting bridge — though wired — never receives messages.
+    /// <c>window.__saveIdeConfig__</c>/etc. implementations, which override our bridge
+    /// bindings at page-load time, so the real scripting bridge — though wired — never
+    /// receives messages.
     /// </summary>
     public class DebugHtmlSettingsWindow : HtmlSettingsWindow
     {

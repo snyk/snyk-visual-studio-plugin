@@ -19,8 +19,8 @@ namespace Snyk.VisualStudio.Extension.Settings
     /// <summary>
     /// WPF modal window for HTML-based settings configuration.
     /// Loads settings HTML from the Language Server and provides IDE bridge functions
-    /// for save/login/logout, routed through <see cref="WebView2Host"/>'s
-    /// <c>window.external.*</c> surface.
+    /// for save/login/logout, routed through <see cref="WebView2Host"/>'s window-level
+    /// bridge surface (defined by <see cref="WebView2BridgeBindings"/>).
     /// </summary>
     public partial class HtmlSettingsWindow : DialogWindow
     {
@@ -28,17 +28,6 @@ namespace Snyk.VisualStudio.Extension.Settings
         private static volatile HtmlSettingsWindow instance;
 
         public static HtmlSettingsWindow Instance => instance;
-
-        /// <summary>
-        /// Aliases <c>window.__saveIdeConfig__</c>, <c>window.__onFormDirtyChange__</c>, and
-        /// <c>window.__ideSaveAttemptFinished__</c> to their <c>window.external.*</c> equivalents
-        /// (which the WebView2 polyfill in turn routes via <c>chrome.webview.postMessage</c>).
-        /// The LS-authored settings page calls the <c>window.X</c> form directly.
-        /// </summary>
-        private const string SettingsBridgeAliasesScript =
-            @"window.__saveIdeConfig__ = function(jsonString) { window.external.__saveIdeConfig__(jsonString); };
-              window.__onFormDirtyChange__ = function(isDirty) { window.external.__onFormDirtyChange__(isDirty); };
-              window.__ideSaveAttemptFinished__ = function(status) { window.external.__ideSaveAttemptFinished__(status); };";
 
         private readonly ISnykServiceProvider serviceProvider;
         protected HtmlSettingsScriptingBridge scriptingBridge;
@@ -97,7 +86,6 @@ namespace Snyk.VisualStudio.Extension.Settings
                 additionalInitScripts: new[]
                 {
                     ExecuteCommandBridge.BuildClientScript(),
-                    SettingsBridgeAliasesScript,
                 });
 
             SettingsBrowser.NavigationCompleted += SettingsBrowser_OnNavigationCompleted;

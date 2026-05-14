@@ -11,14 +11,14 @@ namespace Snyk.VisualStudio.Extension.UI.Html
 {
     /// <summary>
     /// Wires a WPF <see cref="WebView2"/> control to the JS↔C# bridge used by the LS-authored
-    /// HTML pages: registers the <c>window.external</c> polyfill, routes
+    /// HTML pages: registers the <see cref="WebView2BridgeBindings"/> shim, routes
     /// <c>WebMessageReceived</c> through the supplied <see cref="WebView2MessageDispatcher"/>,
     /// and handles the &gt;2&nbsp;MB <c>NavigateToString</c> spill-to-disk fallback.
     /// </summary>
     /// <remarks>
     /// This class is mostly orchestration over the WebView2 SDK and isn't directly unit-tested;
     /// the testable pieces (<see cref="WebView2MessageDispatcher"/>,
-    /// <see cref="WebView2ExternalPolyfill"/>, <see cref="WebView2NavigationPreparer"/>)
+    /// <see cref="WebView2BridgeBindings"/>, <see cref="WebView2NavigationPreparer"/>)
     /// have their own test suites. End-to-end behaviour is covered by the panel migrations
     /// (Phase 3-5 of IDE-1707).
     /// </remarks>
@@ -38,10 +38,9 @@ namespace Snyk.VisualStudio.Extension.UI.Html
 
         /// <summary>
         /// Constructs the host. <paramref name="additionalInitScripts"/> are registered via
-        /// <c>AddScriptToExecuteOnDocumentCreatedAsync</c> after the <c>window.external</c>
-        /// polyfill, before the first navigation — for example,
-        /// <see cref="ExecuteCommandBridge.BuildClientScript"/> which defines
-        /// <c>window.__ideExecuteCommand__</c> with its callback-id roundtrip.
+        /// <c>AddScriptToExecuteOnDocumentCreatedAsync</c> after the bridge bindings, before
+        /// the first navigation — for example, <see cref="ExecuteCommandBridge.BuildClientScript"/>
+        /// which redefines <c>window.__ideExecuteCommand__</c> with its callback-id roundtrip.
         /// </summary>
         public WebView2Host(
             WebView2 webView,
@@ -80,7 +79,7 @@ namespace Snyk.VisualStudio.Extension.UI.Html
                 ConfigureSettings(_webView.CoreWebView2.Settings);
 
                 await _webView.CoreWebView2.AddScriptToExecuteOnDocumentCreatedAsync(
-                    WebView2ExternalPolyfill.BuildScript());
+                    WebView2BridgeBindings.BuildScript());
 
                 foreach (var script in _additionalInitScripts)
                 {

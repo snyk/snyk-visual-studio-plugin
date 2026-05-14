@@ -20,10 +20,11 @@ namespace Snyk.VisualStudio.Extension.Tests.UI.Html
         }
 
         [Fact]
-        public void BuildClientScript_CallsWindowExternalIdeExecuteCommand()
+        public void BuildClientScript_PostsIdeExecuteCommandToHost()
         {
             var script = ExecuteCommandBridge.BuildClientScript();
-            Assert.Contains("window.external.__ideExecuteCommand__", script);
+            Assert.Contains("chrome.webview.postMessage", script);
+            Assert.Contains("method: '__ideExecuteCommand__'", script);
         }
 
         [Fact]

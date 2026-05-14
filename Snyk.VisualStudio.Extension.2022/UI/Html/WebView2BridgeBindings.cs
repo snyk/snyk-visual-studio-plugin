@@ -6,13 +6,14 @@ using System.Text;
 namespace Snyk.VisualStudio.Extension.UI.Html
 {
     /// <summary>
-    /// Builds the JS shim that defines <c>window.external.X(...)</c>. Each call is
+    /// Builds the JS shim that publishes the bridge surface directly on <c>window</c>
+    /// (matching the convention the Language Server's HTML expects). Each call is
     /// forwarded to C# via <c>chrome.webview.postMessage({ method, args })</c>, where
-    /// <see cref="WebView2MessageDispatcher"/> routes by <c>method</c>.
-    /// Registered via <c>CoreWebView2.AddScriptToExecuteOnDocumentCreatedAsync</c> so it
-    /// runs before any LS-authored page script.
+    /// <see cref="WebView2MessageDispatcher"/> routes by <c>method</c>. Registered via
+    /// <c>CoreWebView2.AddScriptToExecuteOnDocumentCreatedAsync</c> so it runs before
+    /// any LS-authored page script.
     /// </summary>
-    public static class WebView2ExternalPolyfill
+    public static class WebView2BridgeBindings
     {
         private sealed class Method
         {
@@ -51,23 +52,17 @@ namespace Snyk.VisualStudio.Extension.UI.Html
             sb.Append(Environment.NewLine);
             sb.Append("  var post = function (method, args) { chrome.webview.postMessage({ method: method, args: args || [] }); };");
             sb.Append(Environment.NewLine);
-            sb.Append("  window.external = {");
-            sb.Append(Environment.NewLine);
 
-            for (var i = 0; i < Definitions.Count; i++)
+            foreach (var m in Definitions)
             {
-                var m = Definitions[i];
                 var paramList = string.Join(", ", m.Parameters);
                 var argList = m.Parameters.Count == 0
                     ? "[]"
                     : "[" + string.Join(", ", m.Parameters) + "]";
-                var trailing = i == Definitions.Count - 1 ? string.Empty : ",";
-                sb.Append($"    {m.Name}: function ({paramList}) {{ post('{m.Name}', {argList}); }}{trailing}");
+                sb.Append($"  window.{m.Name} = function ({paramList}) {{ post('{m.Name}', {argList}); }};");
                 sb.Append(Environment.NewLine);
             }
 
-            sb.Append("  };");
-            sb.Append(Environment.NewLine);
             sb.Append("})();");
             return sb.ToString();
         }
