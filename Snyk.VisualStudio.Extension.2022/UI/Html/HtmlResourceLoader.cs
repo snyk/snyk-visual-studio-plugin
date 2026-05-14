@@ -30,13 +30,24 @@ namespace Snyk.VisualStudio.Extension.UI.Html
                     // Apply settings values
                     if (options != null)
                     {
+                        // The CLI release channel can be one of the well-known values
+                        // (stable / rc / preview) or any other string, in which case the
+                        // form treats it as a "custom version" (e.g. "v1.1292.0").
+                        var channel = options.CliReleaseChannel ?? string.Empty;
+                        var isCustomChannel = channel.Length > 0
+                            && channel != "stable" && channel != "rc" && channel != "preview";
+
                         template = template
                             .Replace("{{MANAGE_BINARIES_CHECKED}}", options.BinariesAutoUpdate ? "checked" : "")
+                            .Replace("{{INSECURE_CHECKED}}", options.IgnoreUnknownCA ? "checked" : "")
                             .Replace("{{CLI_PATH}}", options.CliCustomPath ?? "")
                             .Replace("{{CLI_BASE_DOWNLOAD_URL}}", options.CliBaseDownloadURL ?? "")
-                            .Replace("{{CHANNEL_STABLE_SELECTED}}", options.CliReleaseChannel == "stable" ? "selected" : "")
-                            .Replace("{{CHANNEL_RC_SELECTED}}", options.CliReleaseChannel == "rc" ? "selected" : "")
-                            .Replace("{{CHANNEL_PREVIEW_SELECTED}}", options.CliReleaseChannel == "preview" ? "selected" : "");
+                            .Replace("{{CHANNEL_STABLE_SELECTED}}", channel == "stable" ? "selected" : "")
+                            .Replace("{{CHANNEL_RC_SELECTED}}", channel == "rc" ? "selected" : "")
+                            .Replace("{{CHANNEL_PREVIEW_SELECTED}}", channel == "preview" ? "selected" : "")
+                            .Replace("{{CHANNEL_CUSTOM_SELECTED}}", isCustomChannel ? "selected" : "")
+                            .Replace("{{CLI_RELEASE_CHANNEL_CUSTOM_VALUE}}", isCustomChannel ? channel : "")
+                            .Replace("{{CLI_RELEASE_CHANNEL_CUSTOM_HIDDEN}}", isCustomChannel ? "" : "hidden");
                     }
 
                     // Use BaseHtmlProvider for theme replacement
