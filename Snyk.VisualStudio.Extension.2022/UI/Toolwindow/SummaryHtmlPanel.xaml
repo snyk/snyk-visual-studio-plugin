@@ -7,6 +7,7 @@
              xmlns:wv2="clr-namespace:Microsoft.Web.WebView2.Wpf;assembly=Microsoft.Web.WebView2.Wpf"
              x:Class="Snyk.VisualStudio.Extension.UI.Toolwindow.SummaryHtmlPanel"
              toolkit:Themes.UseVsTheme="True"
+             UseLayoutRounding="True"
              mc:Ignorable="d"
              d:DesignHeight="450" d:DesignWidth="800">
     <Border BorderBrush="{x:Static SystemColors.WindowFrameBrush}" BorderThickness="1">

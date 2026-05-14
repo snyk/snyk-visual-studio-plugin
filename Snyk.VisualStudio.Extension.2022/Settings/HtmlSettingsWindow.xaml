@@ -18,6 +18,7 @@
                  ResizeMode="CanResize"
                  toolkit:Themes.UseVsTheme="True"
                  Title="Snyk Settings"
+                 UseLayoutRounding="True"
                  Loaded="Window_Loaded">
     <DockPanel Margin="10">
         <!-- Bottom: OK and Cancel Buttons -->
