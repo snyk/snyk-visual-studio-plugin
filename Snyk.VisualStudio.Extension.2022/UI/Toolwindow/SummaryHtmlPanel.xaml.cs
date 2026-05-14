@@ -1,5 +1,4 @@
 using System;
-using System.IO;
 using System.Windows.Controls;
 using Microsoft.VisualStudio.Shell;
 using Microsoft.Web.WebView2.Core;
@@ -40,11 +39,9 @@ namespace Snyk.VisualStudio.Extension.UI.Toolwindow
                     args[3].Value<string>()))
                 .Register("FocusToolWindow", _ => bridge.FocusToolWindow());
 
-            var userDataFolder = Path.Combine(
-                Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
-                "Snyk", "WebView2", "summary");
+            var scratchDirectory = WebView2EnvironmentProvider.GetScratchDirectory("summary");
 
-            host = new WebView2Host(SummaryHtmlViewer, dispatcher, userDataFolder);
+            host = new WebView2Host(SummaryHtmlViewer, dispatcher, scratchDirectory);
 
             SummaryHtmlViewer.NavigationCompleted += OnNavigationCompleted;
 

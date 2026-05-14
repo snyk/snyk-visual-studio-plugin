@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Generic;
-using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.Web.WebView2.Core;
@@ -13,7 +12,9 @@ namespace Snyk.VisualStudio.Extension.UI.Html
     /// Wires a WPF <see cref="WebView2"/> control to the JS↔C# bridge used by the LS-authored
     /// HTML pages: registers the <see cref="WebView2BridgeBindings"/> shim, routes
     /// <c>WebMessageReceived</c> through the supplied <see cref="WebView2MessageDispatcher"/>,
-    /// and handles the &gt;2&nbsp;MB <c>NavigateToString</c> spill-to-disk fallback.
+    /// and handles the &gt;2&nbsp;MB <c>NavigateToString</c> spill-to-disk fallback. The underlying
+    /// <see cref="CoreWebView2Environment"/> is shared across every host in the process via
+    /// <see cref="WebView2EnvironmentProvider"/>.
     /// </summary>
     /// <remarks>
     /// This class is mostly orchestration over the WebView2 SDK and isn't directly unit-tested;
@@ -29,7 +30,6 @@ namespace Snyk.VisualStudio.Extension.UI.Html
         private readonly WebView2 _webView;
         private readonly WebView2MessageDispatcher _dispatcher;
         private readonly WebView2NavigationPreparer _preparer;
-        private readonly string _userDataFolder;
         private readonly IReadOnlyList<string> _additionalInitScripts;
         private readonly bool _enableDeveloperTools;
         private readonly TaskCompletionSource<bool> _readyTcs =
@@ -38,7 +38,10 @@ namespace Snyk.VisualStudio.Extension.UI.Html
         private bool _initialized;
 
         /// <summary>
-        /// Constructs the host. <paramref name="additionalInitScripts"/> are registered via
+        /// Constructs the host. <paramref name="scratchDirectory"/> is the panel-specific folder
+        /// for oversized-HTML spill files (see <see cref="WebView2NavigationPreparer"/>);
+        /// use <see cref="WebView2EnvironmentProvider.GetScratchDirectory"/> to obtain one.
+        /// <paramref name="additionalInitScripts"/> are registered via
         /// <c>AddScriptToExecuteOnDocumentCreatedAsync</c> after the bridge bindings, before
         /// the first navigation — for example, <see cref="ExecuteCommandBridge.BuildClientScript"/>
         /// which redefines <c>window.__ideExecuteCommand__</c> with its callback-id roundtrip.
@@ -48,18 +51,17 @@ namespace Snyk.VisualStudio.Extension.UI.Html
         public WebView2Host(
             WebView2 webView,
             WebView2MessageDispatcher dispatcher,
-            string userDataFolder,
+            string scratchDirectory,
             IEnumerable<string> additionalInitScripts = null,
             bool enableDeveloperTools = false)
         {
             _webView = webView ?? throw new ArgumentNullException(nameof(webView));
             _dispatcher = dispatcher ?? throw new ArgumentNullException(nameof(dispatcher));
-            if (string.IsNullOrEmpty(userDataFolder)) throw new ArgumentException("User data folder is required", nameof(userDataFolder));
+            if (string.IsNullOrEmpty(scratchDirectory)) throw new ArgumentException("Scratch directory is required", nameof(scratchDirectory));
 
-            _userDataFolder = userDataFolder;
             _additionalInitScripts = (additionalInitScripts ?? Enumerable.Empty<string>()).ToArray();
             _enableDeveloperTools = enableDeveloperTools;
-            _preparer = new WebView2NavigationPreparer(Path.Combine(_userDataFolder, "scratch"));
+            _preparer = new WebView2NavigationPreparer(scratchDirectory);
         }
 
         /// <summary>
@@ -75,10 +77,7 @@ namespace Snyk.VisualStudio.Extension.UI.Html
 
             try
             {
-                var environment = await CoreWebView2Environment.CreateAsync(
-                    browserExecutableFolder: null,
-                    userDataFolder: _userDataFolder,
-                    options: null);
+                var environment = await WebView2EnvironmentProvider.GetAsync();
                 await _webView.EnsureCoreWebView2Async(environment);
 
                 ConfigureSettings(_webView.CoreWebView2.Settings, _enableDeveloperTools);

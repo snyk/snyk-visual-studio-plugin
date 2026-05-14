@@ -2,7 +2,6 @@
 // ABOUTME: Hosts the Language Server settings HTML in a WebView2 control
 
 using System;
-using System.IO;
 using System.Threading.Tasks;
 using System.Windows;
 using Microsoft.VisualStudio.PlatformUI;
@@ -82,14 +81,12 @@ namespace Snyk.VisualStudio.Extension.Settings
                         args[1].Value<string>(),
                         args[2].Value<string>()));
 
-            var userDataFolder = Path.Combine(
-                Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
-                "Snyk", "WebView2", "settings");
+            var scratchDirectory = WebView2EnvironmentProvider.GetScratchDirectory("settings");
 
             host = new WebView2Host(
                 SettingsBrowser,
                 dispatcher,
-                userDataFolder,
+                scratchDirectory,
                 additionalInitScripts: new[]
                 {
                     ExecuteCommandBridge.BuildClientScript(),

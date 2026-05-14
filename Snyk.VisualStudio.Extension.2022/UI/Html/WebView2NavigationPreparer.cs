@@ -24,9 +24,16 @@ namespace Snyk.VisualStudio.Extension.UI.Html
     /// <summary>
     /// Picks between <c>CoreWebView2.NavigateToString</c> and writing HTML to a temp file and
     /// navigating via <c>Source = new Uri(...)</c>. <c>NavigateToString</c> is documented to
-    /// accept up to ~2 MB of HTML; oversized content gets spilled to a temp file under a
-    /// caller-supplied scratch directory. Each call cleans up the previous temp file.
+    /// accept up to ~2&nbsp;MB of HTML; oversized content gets spilled to a temp file under a
+    /// caller-supplied scratch directory.
     /// </summary>
+    /// <remarks>
+    /// Temp-file deletion is deferred by one navigation cycle: the file from the previous Prepare
+    /// call only becomes eligible for deletion when the call AFTER that one runs. By then,
+    /// WebView2 has navigated away from the first file and any in-flight file handles are
+    /// released, so deletion is race-free. The remaining files are swept at construction (clearing
+    /// leftovers from a crashed session) and at <see cref="Dispose"/>.
+    /// </remarks>
     public sealed class WebView2NavigationPreparer : IDisposable
     {
         public const int DefaultInlineSizeLimitBytes = 2_000_000;
@@ -35,7 +42,12 @@ namespace Snyk.VisualStudio.Extension.UI.Html
 
         private readonly string _scratchDirectory;
         private readonly int _inlineSizeLimitBytes;
+
+        // Two-deep retirement queue: the "current" temp file is the one WebView2 is currently
+        // navigating to (may still have an open file handle on it). The "previous" file is the
+        // one WebView2 has moved off — safe to delete on the next Prepare.
         private string _previousTempFile;
+        private string _currentTempFile;
 
         public WebView2NavigationPreparer(string scratchDirectory, int inlineSizeLimitBytes = DefaultInlineSizeLimitBytes)
         {
@@ -44,6 +56,9 @@ namespace Snyk.VisualStudio.Extension.UI.Html
 
             _scratchDirectory = scratchDirectory;
             _inlineSizeLimitBytes = inlineSizeLimitBytes;
+
+            // Clean up files left behind by a previous (possibly crashed) session.
+            SweepScratchDirectory();
         }
 
         public NavigationPayload Prepare(string html)
@@ -53,43 +68,66 @@ namespace Snyk.VisualStudio.Extension.UI.Html
             var byteCount = Encoding.UTF8.GetByteCount(html);
             if (byteCount <= _inlineSizeLimitBytes)
             {
-                CleanupPreviousTempFile();
                 return NavigationPayload.Inline(html);
             }
 
             Directory.CreateDirectory(_scratchDirectory);
-            CleanupPreviousTempFile();
+
+            // _previousTempFile has survived a full navigation cycle: WebView2 navigated to
+            // _currentTempFile after _previousTempFile was set, so any handle on _previousTempFile
+            // has been released. Safe to delete.
+            TryDeleteFile(_previousTempFile);
+            _previousTempFile = _currentTempFile;
 
             var path = Path.Combine(_scratchDirectory, "navigate-" + Guid.NewGuid().ToString("N") + ".html");
             System.IO.File.WriteAllText(path, html, new UTF8Encoding(encoderShouldEmitUTF8Identifier: false));
-            _previousTempFile = path;
+            _currentTempFile = path;
 
             return NavigationPayload.File(new Uri(path));
         }
 
         public void Dispose()
         {
-            CleanupPreviousTempFile();
+            SweepScratchDirectory();
         }
 
-        private void CleanupPreviousTempFile()
+        private void SweepScratchDirectory()
         {
-            if (string.IsNullOrEmpty(_previousTempFile)) return;
-
             try
             {
-                if (System.IO.File.Exists(_previousTempFile))
+                if (Directory.Exists(_scratchDirectory))
                 {
-                    System.IO.File.Delete(_previousTempFile);
+                    foreach (var file in Directory.EnumerateFiles(_scratchDirectory))
+                    {
+                        TryDeleteFile(file);
+                    }
                 }
             }
             catch (Exception ex)
             {
-                Logger.Warning(ex, "Failed to delete previous WebView2 navigation temp file {Path}", _previousTempFile);
+                Logger.Warning(ex, "Failed to enumerate scratch directory {Path}", _scratchDirectory);
             }
             finally
             {
                 _previousTempFile = null;
+                _currentTempFile = null;
+            }
+        }
+
+        private static void TryDeleteFile(string path)
+        {
+            if (string.IsNullOrEmpty(path)) return;
+
+            try
+            {
+                if (System.IO.File.Exists(path))
+                {
+                    System.IO.File.Delete(path);
+                }
+            }
+            catch (Exception ex)
+            {
+                Logger.Warning(ex, "Failed to delete WebView2 navigation temp file {Path}", path);
             }
         }
     }

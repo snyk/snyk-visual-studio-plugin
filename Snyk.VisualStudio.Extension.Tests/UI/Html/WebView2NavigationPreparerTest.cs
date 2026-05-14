@@ -63,17 +63,24 @@ namespace Snyk.VisualStudio.Extension.Tests.UI.Html
         }
 
         [Fact]
-        public void Prepare_SequentialLargeCalls_PreviousTempFileIsDeleted()
+        public void Prepare_DefersDeletionByOneNavigationCycle()
         {
+            // Files survive the immediate next Prepare so WebView2 can finish loading them.
+            // Only the call after THAT one is allowed to delete an old file.
             var preparer = new WebView2NavigationPreparer(_scratchDir, inlineSizeLimitBytes: 16);
             var first = preparer.Prepare("<html>" + new string('a', 100) + "</html>");
-            Assert.True(File.Exists(first.FileUri.LocalPath));
-
             var second = preparer.Prepare("<html>" + new string('b', 100) + "</html>");
 
+            // After two calls, both files still exist — `first` is queued for deletion next time.
+            Assert.True(File.Exists(first.FileUri.LocalPath));
+            Assert.True(File.Exists(second.FileUri.LocalPath));
+
+            var third = preparer.Prepare("<html>" + new string('c', 100) + "</html>");
+
+            // Third call retires `first`; `second` and `third` are still live.
             Assert.False(File.Exists(first.FileUri.LocalPath));
             Assert.True(File.Exists(second.FileUri.LocalPath));
-            Assert.NotEqual(first.FileUri.LocalPath, second.FileUri.LocalPath);
+            Assert.True(File.Exists(third.FileUri.LocalPath));
         }
 
         [Fact]
@@ -90,27 +97,32 @@ namespace Snyk.VisualStudio.Extension.Tests.UI.Html
         }
 
         [Fact]
-        public void Prepare_FollowedByInlineCall_StillCleansUpPreviousTempFile()
+        public void Dispose_SweepsAllRemainingTempFiles()
         {
             var preparer = new WebView2NavigationPreparer(_scratchDir, inlineSizeLimitBytes: 16);
             var first = preparer.Prepare("<html>" + new string('a', 100) + "</html>");
+            var second = preparer.Prepare("<html>" + new string('b', 100) + "</html>");
             Assert.True(File.Exists(first.FileUri.LocalPath));
-
-            preparer.Prepare("<html>small</html>");
-
-            Assert.False(File.Exists(first.FileUri.LocalPath));
-        }
-
-        [Fact]
-        public void Dispose_DeletesPendingTempFile()
-        {
-            var preparer = new WebView2NavigationPreparer(_scratchDir, inlineSizeLimitBytes: 16);
-            var payload = preparer.Prepare("<html>" + new string('a', 100) + "</html>");
-            Assert.True(File.Exists(payload.FileUri.LocalPath));
+            Assert.True(File.Exists(second.FileUri.LocalPath));
 
             preparer.Dispose();
 
-            Assert.False(File.Exists(payload.FileUri.LocalPath));
+            Assert.False(File.Exists(first.FileUri.LocalPath));
+            Assert.False(File.Exists(second.FileUri.LocalPath));
+            Assert.Empty(Directory.GetFiles(_scratchDir));
+        }
+
+        [Fact]
+        public void Constructor_SweepsLeftoverFilesFromPreviousSession()
+        {
+            Directory.CreateDirectory(_scratchDir);
+            var stalePath = Path.Combine(_scratchDir, "navigate-stale.html");
+            File.WriteAllText(stalePath, "stale content");
+
+            // Discard the result; the constructor side-effect is what we're testing.
+            new WebView2NavigationPreparer(_scratchDir);
+
+            Assert.False(File.Exists(stalePath));
         }
 
         [Fact]
