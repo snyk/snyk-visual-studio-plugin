@@ -27,12 +27,16 @@ namespace Snyk.VisualStudio.Extension.UI.Html
             public IReadOnlyList<string> Parameters { get; }
         }
 
+        // window.__ideExecuteCommand__ is intentionally NOT defined here. The LS HTML
+        // calls it with a JS callback function as the third argument, which cannot survive
+        // a raw postMessage round-trip. The settings panel registers
+        // ExecuteCommandBridge.BuildClientScript() as an additional init script, which
+        // defines a proper wrapper that owns a client-side callback-id map.
         private static readonly IReadOnlyList<Method> Definitions = new[]
         {
             new Method("__saveIdeConfig__", "json"),
             new Method("__onFormDirtyChange__", "isDirty"),
             new Method("__ideSaveAttemptFinished__", "status"),
-            new Method("__ideExecuteCommand__", "command", "argsJson", "callbackId"),
             new Method("OpenLink", "href"),
             new Method("OpenFileInEditor", "filePath", "startLine", "endLine", "startCharacter", "endCharacter"),
             new Method("EnableDelta", "isEnabled"),

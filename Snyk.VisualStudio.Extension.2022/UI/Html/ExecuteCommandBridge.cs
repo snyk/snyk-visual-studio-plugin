@@ -52,11 +52,11 @@ namespace Snyk.VisualStudio.Extension.UI.Html
             !string.IsNullOrEmpty(command) && command.StartsWith("snyk.");
 
         /// <summary>
-        /// Returns the ES5-compatible JavaScript that redefines <c>window.__ideExecuteCommand__</c>
-        /// to add callback-id roundtrip support on top of the raw bridge binding established
-        /// by <see cref="WebView2BridgeBindings"/>. The wrapper posts directly via
-        /// <c>chrome.webview.postMessage</c>, bypassing the raw binding so the bound callback
-        /// metadata travels with the call.
+        /// Returns the ES5-compatible JavaScript that defines <c>window.__ideExecuteCommand__</c>
+        /// with callback-id roundtrip support. <see cref="WebView2BridgeBindings"/> deliberately
+        /// omits this method because a raw postMessage forwarder can't carry the JS callback
+        /// the LS HTML passes as the third argument — this wrapper stashes the callback in a
+        /// client-side id map and posts only the id to the host.
         /// </summary>
         public static string BuildClientScript()
         {

@@ -59,7 +59,7 @@ namespace Snyk.VisualStudio.Extension.UI.Html
         /// <paramref name="additionalInitScripts"/> are registered via
         /// <c>AddScriptToExecuteOnDocumentCreatedAsync</c> after the bridge bindings, before
         /// the first navigation — for example, <see cref="ExecuteCommandBridge.BuildClientScript"/>
-        /// which redefines <c>window.__ideExecuteCommand__</c> with its callback-id roundtrip.
+        /// which defines <c>window.__ideExecuteCommand__</c> with its callback-id roundtrip.
         /// <paramref name="enableDeveloperTools"/> turns on the Chromium DevTools (F12) for the
         /// hosted control — useful for the debug subclasses, off in production.
         /// </summary>
