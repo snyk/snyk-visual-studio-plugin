@@ -248,3 +248,5 @@ ModelManifest.xml
 Thumbs.db
 .directory
 .DS_Store
+.claude
+CLAUDE.md
