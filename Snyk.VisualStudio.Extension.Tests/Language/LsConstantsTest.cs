@@ -6,9 +6,9 @@ namespace Snyk.VisualStudio.Extension.Tests.Language
     public class LsConstantsTest
     {
         [Fact]
-        public void ProtocolVersion_ShouldBe25()
+        public void ProtocolVersion_ShouldBe24()
         {
-            Assert.Equal("25", LsConstants.ProtocolVersion);
+            Assert.Equal("24", LsConstants.ProtocolVersion);
         }
 
         [Fact]
