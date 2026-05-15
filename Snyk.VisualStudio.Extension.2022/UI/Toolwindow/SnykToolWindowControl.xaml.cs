@@ -25,9 +25,11 @@ using Task = System.Threading.Tasks.Task;
 namespace Snyk.VisualStudio.Extension.UI.Toolwindow
 {
     /// <summary>
-    /// Interaction logic for SnykToolWindowControl.
+    /// Interaction logic for SnykToolWindowControl. Implements <see cref="IDisposable"/> so
+    /// <see cref="SnykToolWindow"/>'s base <c>ToolWindowPane.Dispose</c> chains cleanup into
+    /// the WebView2-hosting child panels when the tool window is destroyed.
     /// </summary>
-    public partial class SnykToolWindowControl : UserControl
+    public partial class SnykToolWindowControl : UserControl, IDisposable
     {
         private static readonly ILogger Logger = LogManager.ForContext<SnykToolWindowControl>();
 
@@ -1112,6 +1114,16 @@ namespace Snyk.VisualStudio.Extension.UI.Toolwindow
             }
 
             this.context.TransitionTo(OverviewState.Instance);
+        }
+
+        // Disposes the child WebView2-hosting panels. ToolWindowPane (the base of
+        // SnykToolWindow) automatically calls Dispose on its Content property when the
+        // tool window is destroyed, so this runs at real teardown — not on transient
+        // WPF Unloaded events that can fire during docking or theme changes.
+        public void Dispose()
+        {
+            this.DescriptionPanel?.Dispose();
+            this.SummaryPanel?.Dispose();
         }
     }
 }

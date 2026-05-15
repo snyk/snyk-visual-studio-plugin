@@ -9,12 +9,13 @@ using Snyk.VisualStudio.Extension.UI.Html;
 
 namespace Snyk.VisualStudio.Extension.UI.Toolwindow
 {
-    public partial class HtmlDescriptionPanel : UserControl
+    public partial class HtmlDescriptionPanel : UserControl, IDisposable
     {
         private static readonly ILogger Logger = LogManager.ForContext<HtmlDescriptionPanel>();
 
         private readonly WebView2Host host;
         private IHtmlProvider htmlProvider;
+        private bool _disposed;
 
         public HtmlDescriptionPanel()
         {
@@ -120,6 +121,16 @@ namespace Snyk.VisualStudio.Extension.UI.Toolwindow
                     Logger.Error(ex, "Failed to initialize description panel content");
                 }
             }).FireAndForget();
+        }
+
+        // Disposes the underlying WebView2Host, which unsubscribes from WebMessageReceived
+        // and sweeps any oversized-HTML temp files left in the scratch directory. Called
+        // by SnykToolWindowControl.Dispose when ToolWindowPane tears down the tool window.
+        public void Dispose()
+        {
+            if (_disposed) return;
+            _disposed = true;
+            host?.Dispose();
         }
     }
 }
