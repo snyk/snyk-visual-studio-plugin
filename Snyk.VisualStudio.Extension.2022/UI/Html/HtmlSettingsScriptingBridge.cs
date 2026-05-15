@@ -209,8 +209,8 @@ namespace Snyk.VisualStudio.Extension.UI.Html
                 Options.IacEnabled = config.ActivateSnykIac.Value;
             }
 
-            // Accept secrets flag from both the LS HTML form (activateSnykSecrets) and
-            // the fallback form (snyk_secrets_enabled); LS HTML key takes precedence.
+            // Accept secrets flag as camelCase (activateSnykSecrets) or snake_case (snyk_secrets_enabled);
+            // camelCase takes precedence.
             var secretsValue = config.ActivateSnykSecrets ?? config.SnykSecretsEnabledFallback;
             if (secretsValue.HasValue)
             {
