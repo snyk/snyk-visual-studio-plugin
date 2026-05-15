@@ -311,9 +311,12 @@ namespace Snyk.VisualStudio.Extension.Language
             var param = arg.TryParse<LspConfigurationParam>();
             if (param == null) return;
 
-            // TODO (IDE-1653 flip): apply param.Settings and param.FolderConfigs to serviceProvider.Options
-            // Full inbound settings application is implemented in phase 4 (PR-4).
-            Logger.Debug("$/snyk.configuration received: {FolderConfigCount} folder config(s)", param.FolderConfigs?.Count ?? 0);
+            var options = serviceProvider.Options;
+            GlobalSettingsApplier.Apply(param.Settings, options);
+            // Persist without re-triggering DidChangeConfigurationAsync (avoids feedback loop).
+            this.serviceProvider.SnykOptionsManager.Save(options, false);
+            Logger.Debug("$/snyk.configuration applied: {KeyCount} global setting(s), {FolderCount} folder config(s)",
+                param.Settings?.Count ?? 0, param.FolderConfigs?.Count ?? 0);
         }
 
         [JsonRpcMethod(LsConstants.SnykAddTrustedFolders)]

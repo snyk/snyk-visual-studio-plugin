@@ -529,5 +529,23 @@ namespace Snyk.VisualStudio.Extension.Tests.Language
             // Act — must not throw
             await cut.OnSnykConfiguration(arg);
         }
+
+        [Fact]
+        public async Task OnSnykConfiguration_ShouldSaveOptions_WhenValidSettingsReceived()
+        {
+            // Arrange
+            var arg = JObject.Parse(@"{
+                ""settings"": {
+                    ""snyk_oss_enabled"": { ""value"": true, ""changed"": true }
+                },
+                ""folderConfigs"": []
+            }");
+
+            // Act
+            await cut.OnSnykConfiguration(arg);
+
+            // Assert — options are persisted without re-triggering DidChangeConfigurationAsync (triggerSettingsChangedEvent=false)
+            snykOptionsManagerMock.Verify(m => m.Save(It.IsAny<IPersistableOptions>(), false), Times.Once());
+        }
     }
 }
