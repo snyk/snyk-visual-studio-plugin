@@ -9,7 +9,6 @@ using Snyk.VisualStudio.Extension.Settings;
 namespace Snyk.VisualStudio.Extension.Language
 {
     // Converts ISnykOptions to the v25 pflag-keyed wire shape.
-    // Not wired into SnykLanguageClient yet — that happens behind V25Feature.Enabled in PR-3.
     public class LsSettingsV25
     {
         private readonly ISnykServiceProvider serviceProvider;
@@ -129,8 +128,6 @@ namespace Snyk.VisualStudio.Extension.Language
                 return null;
 
             var options = serviceProvider.Options;
-            // TODO (IDE-1653 flip): options.FolderConfigs is populated by OnSnykConfiguration in v25 mode
-            // (phase 4). Until then, FolderConfigs is sent from the last $/snyk.folderConfigs push.
             return new LspConfigurationParam
             {
                 Settings = BuildSettingsMap(options),
