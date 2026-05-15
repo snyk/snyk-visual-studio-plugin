@@ -182,6 +182,13 @@ namespace Snyk.VisualStudio.Extension.Settings
                 OkButton.IsEnabled = false;
                 CancelButton.IsEnabled = false;
 
+                // Under WebView2, the JS call to window.__saveIdeConfig__ is fire-and-forget via
+                // postMessage — JS can't observe C# exceptions the way it could over the old IE
+                // COM bridge. The bridge instead reports save success/failure through
+                // SaveCompletion (a TaskCompletionSource<bool> reset by BeginSave). We honour
+                // that signal here so the dialog doesn't close on a silent save failure.
+                var saveSucceeded = false;
+                var saveAttempted = true;
                 try
                 {
                     scriptingBridge.BeginSave();
@@ -191,12 +198,31 @@ namespace Snyk.VisualStudio.Extension.Settings
                     var winner = await Task.WhenAny(saveTask, Task.Delay(TimeSpan.FromSeconds(5)));
                     if (winner != saveTask)
                     {
-                        Logger.Warning("Save did not complete within timeout; closing anyway");
+                        Logger.Warning("Save did not complete within 5s; treating as failure");
+                    }
+                    else
+                    {
+                        saveSucceeded = await saveTask;
                     }
                 }
                 catch (Exception ex)
                 {
                     Logger.Error(ex, "Failed to invoke getAndSaveIdeConfig");
+                    saveAttempted = false;
+                }
+
+                if (!saveSucceeded && saveAttempted)
+                {
+                    // Keep the dialog open so the user can correct the input and retry.
+                    OkButton.IsEnabled = true;
+                    CancelButton.IsEnabled = true;
+                    MessageBox.Show(
+                        this,
+                        "Failed to save Snyk settings. Check the Snyk log for details.",
+                        "Snyk Settings",
+                        MessageBoxButton.OK,
+                        MessageBoxImage.Warning);
+                    return;
                 }
 
                 DialogResult = true;

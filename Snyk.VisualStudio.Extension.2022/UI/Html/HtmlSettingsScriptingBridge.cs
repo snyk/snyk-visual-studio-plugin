@@ -69,7 +69,14 @@ namespace Snyk.VisualStudio.Extension.UI.Html
         /// Routed from <c>window.__saveIdeConfig__(jsonString)</c>. The LS HTML
         /// handles all validation and data collection — we just persist the config. Always
         /// completes <see cref="SaveCompletion"/> (true on success, false on failure) so the
-        /// caller can stop waiting.
+        /// caller can stop waiting and react to failure.
+        /// <para>
+        /// Failures are logged and signalled via <see cref="SaveCompletion"/> rather than
+        /// re-thrown — the JS caller invoked us via <c>chrome.webview.postMessage</c>
+        /// (fire-and-forget under WebView2) and can't observe an exception the way it could
+        /// over the old IE COM bridge. <c>HtmlSettingsWindow.OkButton_OnClick</c> awaits
+        /// <see cref="SaveCompletion"/> and surfaces failure to the user from there.
+        /// </para>
         /// </summary>
         public void __saveIdeConfig__(string jsonString)
         {
