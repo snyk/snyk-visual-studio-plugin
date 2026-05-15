@@ -67,11 +67,20 @@ namespace Snyk.VisualStudio.Extension.UI.Toolwindow
         }
 
         // The provider's init script (link-click interceptors, etc.) has to run after each
-        // navigation completes, since NavigateAsync replaces the document.
+        // navigation completes, since NavigateAsync replaces the document. Skip when the
+        // navigation itself failed — running the script against an error page would wire
+        // the interceptors to the wrong document.
         private async void OnNavigationCompleted(object sender, CoreWebView2NavigationCompletedEventArgs e)
         {
             try
             {
+                if (!e.IsSuccess)
+                {
+                    Logger.Warning(
+                        "Description panel navigation failed (status {Status}); skipping init script",
+                        e.WebErrorStatus);
+                    return;
+                }
                 if (htmlProvider == null) return;
                 await host.ExecuteScriptAsync(htmlProvider.GetInitScript());
             }
