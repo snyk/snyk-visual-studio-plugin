@@ -164,5 +164,20 @@ namespace Snyk.VisualStudio.Extension.Tests.Language
             GlobalSettingsApplier.Apply(settings, options);
             Assert.True(options.OssEnabled);
         }
+
+        [Fact]
+        public void Apply_ShouldSkipKey_WhenValueHasWrongType()
+        {
+            var options = MakeOptions();
+            options.OssEnabled = true;
+            // Send a string where a bool is expected
+            var settings = new Dictionary<string, ConfigSetting>
+            {
+                [PflagKeys.SnykOssEnabled] = new ConfigSetting { Value = JToken.FromObject("not-a-bool"), Changed = true }
+            };
+            // Must not throw; OssEnabled must remain unchanged
+            GlobalSettingsApplier.Apply(settings, options);
+            Assert.True(options.OssEnabled);
+        }
     }
 }
