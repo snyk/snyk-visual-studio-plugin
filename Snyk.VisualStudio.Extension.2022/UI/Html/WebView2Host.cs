@@ -259,6 +259,9 @@ namespace Snyk.VisualStudio.Extension.UI.Html
             {
                 _webView.CoreWebView2.WebMessageReceived -= OnWebMessageReceived;
             }
+            // WebView2.Dispose tears down the underlying msedgewebview2.exe renderer process —
+            // without this, every settings-dialog close or tool-window refresh would leak one.
+            _webView?.Dispose();
             _preparer.Dispose();
         }
 
