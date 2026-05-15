@@ -66,7 +66,7 @@ namespace Snyk.VisualStudio.Extension.Language
                 [PflagKeys.IssueViewIgnoredIssues] = ConfigSetting.Of(options.IgnoredIssuesEnabled),
 
                 [PflagKeys.ApiEndpoint] = ConfigSetting.Of(options.CustomEndpoint ?? string.Empty),
-                [PflagKeys.Token] = ConfigSetting.Of(options.ApiToken.ToString()),
+                [PflagKeys.Token] = ConfigSetting.Of(options.ApiToken?.ToString() ?? string.Empty),
                 [PflagKeys.Organization] = ConfigSetting.Of(options.Organization ?? string.Empty),
                 [PflagKeys.AuthenticationMethod] = ConfigSetting.Of(options.AuthenticationMethod.ToString().ToLowerInvariant()),
                 [PflagKeys.ProxyInsecure] = ConfigSetting.Of(options.IgnoreUnknownCA),
@@ -97,6 +97,7 @@ namespace Snyk.VisualStudio.Extension.Language
             var result = new List<LspFolderConfig>();
             foreach (var fc in folderConfigs)
             {
+                if (fc == null) continue;
                 var settings = new Dictionary<string, ConfigSetting>();
 
                 if (fc.AdditionalParameters != null)

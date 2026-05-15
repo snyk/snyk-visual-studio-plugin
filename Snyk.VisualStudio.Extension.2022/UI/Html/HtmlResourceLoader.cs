@@ -40,7 +40,6 @@ namespace Snyk.VisualStudio.Extension.UI.Html
                         template = template
                             .Replace("{{MANAGE_BINARIES_CHECKED}}", options.BinariesAutoUpdate ? "checked" : "")
                             .Replace("{{INSECURE_CHECKED}}", options.IgnoreUnknownCA ? "checked" : "")
-                            .Replace("{{SECRETS_ENABLED_CHECKED}}", options.SecretsEnabled ? "checked" : "")
                             .Replace("{{CLI_PATH}}", options.CliCustomPath ?? "")
                             .Replace("{{CLI_BASE_DOWNLOAD_URL}}", options.CliBaseDownloadURL ?? "")
                             .Replace("{{CHANNEL_STABLE_SELECTED}}", channel == "stable" ? "selected" : "")
