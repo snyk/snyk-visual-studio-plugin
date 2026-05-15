@@ -29,12 +29,12 @@ namespace Snyk.VisualStudio.Extension.Language
             {
                 Settings = BuildSettingsMap(options),
                 FolderConfigs = BuildFolderConfigs(options.FolderConfigs),
-                RequiredProtocolVersion = LsConstants.ProtocolVersion,
+                RequiredProtocolVersion = "25",
                 DeviceId = options.DeviceId,
                 IntegrationName = GetIntegrationName(options),
                 IntegrationVersion = GetIntegrationVersion(options),
-                OsPlatform = Environment.OSVersion.Platform.ToString(),
-                OsArch = RuntimeInformation.OSArchitecture.ToString().ToLowerInvariant(),
+                OsPlatform = GetOsPlatform(),
+                OsArch = GetOsArch(),
                 RuntimeName = ".NET Framework",
                 RuntimeVersion = Environment.Version.ToString(),
                 HoverVerbosity = 1,
@@ -80,7 +80,7 @@ namespace Snyk.VisualStudio.Extension.Language
                 [PflagKeys.AdditionalEnvironment] = ConfigSetting.Of(options.AdditionalEnv ?? string.Empty),
 
                 [PflagKeys.DeviceId] = ConfigSetting.Of(options.DeviceId ?? string.Empty),
-                [PflagKeys.ClientProtocolVersion] = ConfigSetting.Of(LsConstants.ProtocolVersion),
+                [PflagKeys.ClientProtocolVersion] = ConfigSetting.Of("25"),
             };
 
             if (options.RiskScoreThreshold.HasValue)
@@ -128,5 +128,24 @@ namespace Snyk.VisualStudio.Extension.Language
 
         private string GetIntegrationVersion(ISnykOptions options) =>
             $"{options.IntegrationEnvironmentVersion}@@{options.IntegrationVersion}";
+
+        private static string GetOsPlatform()
+        {
+            if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows)) return "windows";
+            if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX)) return "darwin";
+            if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux)) return "linux";
+            return "unknown";
+        }
+
+        private static string GetOsArch()
+        {
+            switch (RuntimeInformation.OSArchitecture)
+            {
+                case Architecture.X64: return "amd64";
+                case Architecture.Arm64: return "arm64";
+                case Architecture.X86: return "386";
+                default: return RuntimeInformation.OSArchitecture.ToString().ToLowerInvariant();
+            }
+        }
     }
 }

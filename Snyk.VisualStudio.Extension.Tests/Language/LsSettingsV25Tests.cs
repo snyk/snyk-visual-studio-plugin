@@ -60,7 +60,26 @@ namespace Snyk.VisualStudio.Extension.Tests.Language
         {
             SetupDefaults();
             var result = cut.GetInitializationOptions();
-            Assert.Equal(LsConstants.ProtocolVersion, result.RequiredProtocolVersion);
+            Assert.Equal("25", result.RequiredProtocolVersion);
+        }
+
+        [Fact]
+        public void GetInitializationOptions_OsPlatformIsGoosStyle()
+        {
+            SetupDefaults();
+            var result = cut.GetInitializationOptions();
+            var valid = new[] { "windows", "linux", "darwin", "unknown" };
+            Assert.Contains(result.OsPlatform, valid);
+        }
+
+        [Fact]
+        public void GetInitializationOptions_OsArchIsGoarchStyle()
+        {
+            SetupDefaults();
+            var result = cut.GetInitializationOptions();
+            var valid = new[] { "amd64", "arm64", "386" };
+            // default fallback is allowed too, just must not be "x64" or "X64"
+            Assert.DoesNotMatch("^[Xx]64$", result.OsArch);
         }
 
         [Fact]
@@ -108,7 +127,7 @@ namespace Snyk.VisualStudio.Extension.Tests.Language
             var map = cut.BuildSettingsMap(optionsMock.Object);
 
             Assert.True(map.ContainsKey(PflagKeys.ClientProtocolVersion));
-            Assert.Equal(LsConstants.ProtocolVersion, map[PflagKeys.ClientProtocolVersion].Value);
+            Assert.Equal("25", map[PflagKeys.ClientProtocolVersion].Value);
         }
 
         [Fact]
