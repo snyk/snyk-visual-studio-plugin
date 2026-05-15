@@ -484,5 +484,50 @@ namespace Snyk.VisualStudio.Extension.Tests.Language
             snykOptionsManagerMock.Verify(s => s.SavePreferredOrgAsync(""), Times.Once);
             snykOptionsManagerMock.Verify(s => s.SaveOrgSetByUserAsync(false), Times.Once);
         }
+
+        [Fact]
+        public async Task OnSnykConfiguration_ShouldNotThrow_WhenPayloadIsEmpty()
+        {
+            // Arrange
+            var arg = JObject.Parse(@"{ ""settings"": {}, ""folderConfigs"": [] }");
+
+            // Act — must not throw
+            await cut.OnSnykConfiguration(arg);
+        }
+
+        [Fact]
+        public async Task OnSnykConfiguration_ShouldNotThrow_WhenPayloadIsJsonNull()
+        {
+            // Arrange — JValue.CreateNull() is a non-null JToken of type JTokenType.Null
+            var arg = JValue.CreateNull();
+
+            // Act — must not throw
+            await cut.OnSnykConfiguration(arg);
+        }
+
+        [Fact]
+        public async Task OnSnykConfiguration_ShouldNotThrow_WhenArgIsNull()
+        {
+            // Act — bare C# null (e.g. StreamJsonRpc sends null for a no-params notification)
+            await cut.OnSnykConfiguration(null);
+        }
+
+        [Fact]
+        public async Task OnSnykConfiguration_ShouldNotThrow_WithValidLspConfigurationParam()
+        {
+            // Arrange
+            var arg = JObject.Parse(@"{
+                ""settings"": {
+                    ""snyk_oss_enabled"": { ""value"": true, ""changed"": true },
+                    ""snyk_code_enabled"": { ""value"": false, ""changed"": true }
+                },
+                ""folderConfigs"": [
+                    { ""folderPath"": ""/repo"", ""settings"": {} }
+                ]
+            }");
+
+            // Act — must not throw
+            await cut.OnSnykConfiguration(arg);
+        }
     }
 }

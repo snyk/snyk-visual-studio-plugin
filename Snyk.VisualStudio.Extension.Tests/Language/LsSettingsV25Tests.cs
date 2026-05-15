@@ -300,5 +300,41 @@ namespace Snyk.VisualStudio.Extension.Tests.Language
             var apValue = settings[PflagKeys.AdditionalParameters]?["value"];
             Assert.Equal(JTokenType.Array, apValue?.Type);
         }
+
+        [Fact]
+        public void GetLspConfigurationParam_ReturnsNonNull()
+        {
+            SetupDefaults();
+            optionsMock.SetupGet(o => o.FolderConfigs).Returns(new List<FolderConfig>());
+
+            var result = cut.GetLspConfigurationParam();
+
+            Assert.NotNull(result);
+            Assert.NotNull(result.Settings);
+        }
+
+        [Fact]
+        public void GetLspConfigurationParam_ContainsSameKeysAsInitSettings()
+        {
+            SetupDefaults();
+            optionsMock.SetupGet(o => o.FolderConfigs).Returns(new List<FolderConfig>());
+
+            var configParam = cut.GetLspConfigurationParam();
+            var initOptions = cut.GetInitializationOptions();
+
+            Assert.Equal(initOptions.Settings.Keys, configParam.Settings.Keys);
+        }
+
+        [Fact]
+        public void GetLspConfigurationParam_EmptyFolderConfigs_WhenNullInput()
+        {
+            SetupDefaults();
+            optionsMock.SetupGet(o => o.FolderConfigs).Returns((List<FolderConfig>)null);
+
+            var result = cut.GetLspConfigurationParam();
+
+            Assert.NotNull(result.FolderConfigs);
+            Assert.Empty(result.FolderConfigs);
+        }
     }
 }
