@@ -19,6 +19,8 @@ namespace Snyk.VisualStudio.Extension.Language
         [JsonProperty(NullValueHandling = NullValueHandling.Ignore)]
         public string OriginScope { get; set; }
 
+        // Omit when false (IDE→LS messages never lock; only LS→IDE populates this).
+        [JsonProperty(DefaultValueHandling = DefaultValueHandling.Ignore)]
         public bool IsLocked { get; set; }
 
         public static ConfigSetting Of(object value) => new ConfigSetting { Value = value, Changed = true };

@@ -53,9 +53,9 @@ namespace Snyk.VisualStudio.Extension.Language
         public const string ScanCommandConfig = "scan_command_config";
         public const string BaseBranch = "base_branch";
 
-        // Init-only metadata
+        // Also sent as top-level fields in InitializationOptionsV25; snyk-ls reads them from
+        // there, not from the Settings map — the Settings-map copies are harmless redundancy.
         public const string ClientProtocolVersion = "client_protocol_version";
         public const string DeviceId = "device_id";
-        public const string HoverVerbosity = "hover_verbosity";
     }
 }

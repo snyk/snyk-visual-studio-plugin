@@ -44,7 +44,6 @@ namespace Snyk.VisualStudio.Extension.Tests.Language
             optionsMock.SetupGet(o => o.AdditionalEnv).Returns(string.Empty);
             optionsMock.SetupGet(o => o.RiskScoreThreshold).Returns((int?)null);
             optionsMock.SetupGet(o => o.InternalAutoScan).Returns(false);
-            TestUtils.SetupOptionsManagerMock(optionsManagerMock);
         }
 
         [Fact]
@@ -145,6 +144,7 @@ namespace Snyk.VisualStudio.Extension.Tests.Language
             Assert.True(obj.ContainsKey("value"), "value should be camelCase");
             Assert.True(obj.ContainsKey("changed"), "changed should be camelCase");
             Assert.False(obj.ContainsKey("Value"), "PascalCase must not appear");
+            Assert.False(obj.ContainsKey("isLocked"), "isLocked must be omitted when false (matches snyk-ls omitempty)");
         }
 
         [Fact]
@@ -179,6 +179,107 @@ namespace Snyk.VisualStudio.Extension.Tests.Language
 
             Assert.True(map.ContainsKey(PflagKeys.RiskScoreThreshold));
             Assert.Equal(500, map[PflagKeys.RiskScoreThreshold].Value);
+        }
+
+        [Fact]
+        public void BuildSettingsMap_AdditionalParameters_NotInGlobalMap()
+        {
+            // additional_parameters is folder-scoped in v25; must not appear in global settings
+            SetupDefaults();
+            var map = cut.BuildSettingsMap(optionsMock.Object);
+            Assert.False(map.ContainsKey(PflagKeys.AdditionalParameters));
+        }
+
+        [Fact]
+        public void BuildFolderConfigs_EmptyList_ReturnsEmptyList()
+        {
+            SetupDefaults();
+            var result = cut.GetInitializationOptions();
+            // FolderConfigs is empty list from SetupOptionsMock
+            Assert.NotNull(result.FolderConfigs);
+            Assert.Empty(result.FolderConfigs);
+        }
+
+        [Fact]
+        public void BuildFolderConfigs_FolderWithAllFields_MapsToSettings()
+        {
+            SetupDefaults();
+            var folder = new FolderConfig
+            {
+                FolderPath = "/repo/myproject",
+                BaseBranch = "main",
+                PreferredOrg = "my-org",
+                OrgSetByUser = true,
+                AutoDeterminedOrg = "auto-org",
+                AdditionalParameters = new List<string> { "--debug", "--verbose" },
+                AdditionalEnv = "FOO=bar",
+            };
+            optionsMock.SetupGet(o => o.FolderConfigs).Returns(new List<FolderConfig> { folder });
+
+            var result = cut.GetInitializationOptions();
+
+            Assert.Single(result.FolderConfigs);
+            var fc = result.FolderConfigs[0];
+            Assert.Equal("/repo/myproject", fc.FolderPath);
+            Assert.True(fc.Settings.ContainsKey(PflagKeys.BaseBranch));
+            Assert.Equal("main", fc.Settings[PflagKeys.BaseBranch].Value);
+            Assert.True(fc.Settings.ContainsKey(PflagKeys.PreferredOrg));
+            Assert.True(fc.Settings.ContainsKey(PflagKeys.OrgSetByUser));
+            Assert.Equal(true, fc.Settings[PflagKeys.OrgSetByUser].Value);
+            Assert.True(fc.Settings.ContainsKey(PflagKeys.AdditionalParameters));
+            var apValue = Assert.IsType<List<string>>(fc.Settings[PflagKeys.AdditionalParameters].Value);
+            Assert.Equal(new List<string> { "--debug", "--verbose" }, apValue);
+        }
+
+        [Fact]
+        public void BuildFolderConfigs_NullOptionalFields_OmitsThoseKeys()
+        {
+            SetupDefaults();
+            var folder = new FolderConfig
+            {
+                FolderPath = "/repo/myproject",
+                AdditionalParameters = null,
+                AdditionalEnv = null,
+                PreferredOrg = null,
+                BaseBranch = null,
+                ScanCommandConfig = null,
+                AutoDeterminedOrg = null,
+                OrgSetByUser = false,
+            };
+            optionsMock.SetupGet(o => o.FolderConfigs).Returns(new List<FolderConfig> { folder });
+
+            var result = cut.GetInitializationOptions();
+            var fc = result.FolderConfigs[0];
+
+            Assert.False(fc.Settings.ContainsKey(PflagKeys.AdditionalParameters));
+            Assert.False(fc.Settings.ContainsKey(PflagKeys.AdditionalEnvironment));
+            Assert.False(fc.Settings.ContainsKey(PflagKeys.PreferredOrg));
+            Assert.False(fc.Settings.ContainsKey(PflagKeys.BaseBranch));
+            Assert.False(fc.Settings.ContainsKey(PflagKeys.ScanCommandConfig));
+            // OrgSetByUser is always included (bool, not nullable)
+            Assert.True(fc.Settings.ContainsKey(PflagKeys.OrgSetByUser));
+        }
+
+        [Fact]
+        public void BuildFolderConfigs_AdditionalParameters_SerializesAsArray()
+        {
+            SetupDefaults();
+            var folder = new FolderConfig
+            {
+                FolderPath = "/repo",
+                AdditionalParameters = new List<string> { "--debug" },
+                OrgSetByUser = false,
+            };
+            optionsMock.SetupGet(o => o.FolderConfigs).Returns(new List<FolderConfig> { folder });
+
+            var result = cut.GetInitializationOptions();
+            var json = JsonConvert.SerializeObject(result.FolderConfigs);
+            var arr = JArray.Parse(json);
+            var settings = arr[0]["settings"] as JObject;
+
+            Assert.NotNull(settings);
+            var apValue = settings[PflagKeys.AdditionalParameters]?["value"];
+            Assert.Equal(JTokenType.Array, apValue?.Type);
         }
     }
 }

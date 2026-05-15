@@ -2,7 +2,6 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Runtime.InteropServices;
-using Microsoft.VisualStudio.Shell;
 using Snyk.VisualStudio.Extension.CLI;
 using Snyk.VisualStudio.Extension.Service;
 using Snyk.VisualStudio.Extension.Settings;
@@ -43,13 +42,11 @@ namespace Snyk.VisualStudio.Extension.Language
             };
         }
 
-        public Dictionary<string, ConfigSetting> BuildSettingsMap(ISnykOptions options)
+        // internal for testability (InternalsVisibleTo test project).
+        // Note: additional_parameters is folder-scoped in v25 (see snyk-ls ldx_sync_config.go)
+        // and is not included in the global settings map.
+        internal Dictionary<string, ConfigSetting> BuildSettingsMap(ISnykOptions options)
         {
-#pragma warning disable VSTHRD104
-            var additionalParams = ThreadHelper.JoinableTaskFactory.Run(
-                () => serviceProvider.SnykOptionsManager.GetAdditionalOptionsAsync());
-#pragma warning restore VSTHRD104
-
             var map = new Dictionary<string, ConfigSetting>
             {
                 [PflagKeys.SnykOssEnabled] = ConfigSetting.Of(options.OssEnabled),
@@ -80,7 +77,6 @@ namespace Snyk.VisualStudio.Extension.Language
                 [PflagKeys.CliReleaseChannel] = ConfigSetting.Of(options.CliReleaseChannel ?? string.Empty),
 
                 [PflagKeys.TrustedFolders] = ConfigSetting.Of(options.TrustedFolders?.ToList() ?? new List<string>()),
-                [PflagKeys.AdditionalParameters] = ConfigSetting.Of(additionalParams ?? string.Empty),
                 [PflagKeys.AdditionalEnvironment] = ConfigSetting.Of(options.AdditionalEnv ?? string.Empty),
 
                 [PflagKeys.DeviceId] = ConfigSetting.Of(options.DeviceId ?? string.Empty),
@@ -120,7 +116,7 @@ namespace Snyk.VisualStudio.Extension.Language
                 result.Add(new LspFolderConfig
                 {
                     FolderPath = fc.FolderPath,
-                    Settings = settings.Count > 0 ? settings : null,
+                    Settings = settings,
                 });
             }
             return result;
