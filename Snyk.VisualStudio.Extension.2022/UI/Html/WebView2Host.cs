@@ -47,7 +47,10 @@ namespace Snyk.VisualStudio.Extension.UI.Html
         private readonly string _userDataFolder;
         private readonly IReadOnlyList<string> _additionalInitScripts;
         private readonly bool _enableDeveloperTools;
-        private readonly AsyncInitGuard _initGuard = new AsyncInitGuard();
+
+        private bool _initialized;
+        private TaskCompletionSource<bool> _readyTcs =
+            new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
 
         /// <summary>
         /// Constructs the host. <paramref name="userDataFolder"/> is the Chromium user-data
@@ -82,7 +85,7 @@ namespace Snyk.VisualStudio.Extension.UI.Html
         /// ready for navigation / script execution. Faults with the init exception on failure;
         /// a subsequent <see cref="InitializeAsync"/> call resets <see cref="Ready"/> for retry.
         /// </summary>
-        public Task Ready => _initGuard.Ready;
+        public Task Ready => _readyTcs.Task;
 
         /// <summary>
         /// Builds a per-context + per-VS-process user-data folder path under
@@ -116,6 +119,9 @@ namespace Snyk.VisualStudio.Extension.UI.Html
         // Per-folder environment cache so multiple WebView2 controls sharing the same
         // user-data folder share the same env instance — which is what WebView2 requires
         // for safe shared-folder operation (see WebView2Feedback#2323 + class-level remarks).
+        // The in-flight task is cached so concurrent callers join the same CreateAsync rather
+        // than racing on the exclusive folder lock; faulted/canceled entries are evicted on
+        // next access so a transient init failure doesn't permanently poison the slot.
         private static readonly object EnvironmentGate = new object();
         private static readonly Dictionary<string, Task<CoreWebView2Environment>> Environments =
             new Dictionary<string, Task<CoreWebView2Environment>>(StringComparer.OrdinalIgnoreCase);
@@ -124,14 +130,17 @@ namespace Snyk.VisualStudio.Extension.UI.Html
         {
             lock (EnvironmentGate)
             {
-                if (!Environments.TryGetValue(userDataFolder, out var task))
+                if (Environments.TryGetValue(userDataFolder, out var existing))
                 {
-                    task = CoreWebView2Environment.CreateAsync(
-                        browserExecutableFolder: null,
-                        userDataFolder: userDataFolder,
-                        options: null);
-                    Environments[userDataFolder] = task;
+                    if (!existing.IsFaulted && !existing.IsCanceled) return existing;
+                    Environments.Remove(userDataFolder);
                 }
+
+                var task = CoreWebView2Environment.CreateAsync(
+                    browserExecutableFolder: null,
+                    userDataFolder: userDataFolder,
+                    options: null);
+                Environments[userDataFolder] = task;
                 return task;
             }
         }
@@ -184,10 +193,16 @@ namespace Snyk.VisualStudio.Extension.UI.Html
             }
         }
 
-        public Task InitializeAsync() => _initGuard.RunOnceAsync(InitializeCoreAsync);
-
-        private async Task InitializeCoreAsync()
+        public async Task InitializeAsync()
         {
+            // _initialized gates concurrent calls so the script-registration step doesn't run
+            // twice (which would double-fire the bridge bindings on every page load). On failure
+            // we roll back the gate and swap in a fresh _readyTcs so a follow-up call can retry
+            // rather than awaiting a permanently-faulted Ready task.
+            if (_initialized) return;
+            _initialized = true;
+
+            var currentTcs = _readyTcs;
             try
             {
                 var environment = await GetOrCreateEnvironmentAsync(_userDataFolder);
@@ -204,10 +219,15 @@ namespace Snyk.VisualStudio.Extension.UI.Html
                 }
 
                 _webView.CoreWebView2.WebMessageReceived += OnWebMessageReceived;
+
+                currentTcs.TrySetResult(true);
             }
             catch (Exception ex)
             {
                 Logger.Error(ex, "WebView2 initialization failed");
+                currentTcs.TrySetException(ex);
+                _readyTcs = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
+                _initialized = false;
                 throw;
             }
         }
