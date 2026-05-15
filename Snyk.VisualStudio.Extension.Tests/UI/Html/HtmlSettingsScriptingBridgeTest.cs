@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Threading.Tasks;
 using Microsoft.VisualStudio.Sdk.TestFramework;
 using Moq;
 using Newtonsoft.Json;
@@ -195,6 +196,144 @@ namespace Snyk.VisualStudio.Extension.Tests.UI.Html
 
             // No clear-token call; any ApiToken set should be the new value, not empty
             Assert.DoesNotContain(setApiTokenCalls, t => t.ToString() == string.Empty);
+        }
+
+        [Fact]
+        public void SaveIdeConfig_SetsOssEnabled_FromActivateSnykOpenSource()
+        {
+            var config = JsonConvert.SerializeObject(new IdeConfigData
+            {
+                ActivateSnykOpenSource = true,
+            });
+
+            bridge.__saveIdeConfig__(config);
+
+            optionsMock.VerifySet(o => o.OssEnabled = true);
+        }
+
+        [Fact]
+        public void SaveIdeConfig_SetsSecretsEnabled_FromSnakeCaseKey()
+        {
+            var config = JsonConvert.SerializeObject(new { snyk_secrets_enabled = true });
+
+            bridge.__saveIdeConfig__(config);
+
+            optionsMock.VerifySet(o => o.SecretsEnabled = true);
+        }
+
+        [Fact]
+        public void SaveIdeConfig_SetsSecretsEnabled_FromCamelCaseKey()
+        {
+            var config = JsonConvert.SerializeObject(new { activateSnykSecrets = false });
+
+            bridge.__saveIdeConfig__(config);
+
+            optionsMock.VerifySet(o => o.SecretsEnabled = false);
+        }
+
+        [Fact]
+        public void SaveIdeConfig_SetsFilterSeverity()
+        {
+            var config = JsonConvert.SerializeObject(new IdeConfigData
+            {
+                FilterSeverity = new FilterSeverity
+                {
+                    Critical = true,
+                    High = false,
+                    Medium = true,
+                    Low = false,
+                },
+            });
+
+            bridge.__saveIdeConfig__(config);
+
+            optionsMock.VerifySet(o => o.FilterCritical = true);
+            optionsMock.VerifySet(o => o.FilterHigh = false);
+            optionsMock.VerifySet(o => o.FilterMedium = true);
+            optionsMock.VerifySet(o => o.FilterLow = false);
+        }
+
+        [Fact]
+        public void SaveIdeConfig_PartialPayload_DoesNotTouchUnprovidedSettings()
+        {
+            var config = JsonConvert.SerializeObject(new IdeConfigData
+            {
+                ActivateSnykOpenSource = true,
+                // SecretsEnabled and SnykCodeSecurityEnabled are NOT provided
+            });
+
+            bridge.__saveIdeConfig__(config);
+
+            optionsMock.VerifySet(o => o.OssEnabled = true);
+            optionsMock.VerifySet(o => o.SecretsEnabled = It.IsAny<bool>(), Times.Never);
+            optionsMock.VerifySet(o => o.SnykCodeSecurityEnabled = It.IsAny<bool>(), Times.Never);
+        }
+    }
+
+    [Collection(MockedVS.Collection)]
+    public class HtmlSettingsScriptingBridgeFolderConfigTest : PackageBaseTest
+    {
+        private readonly Mock<ISnykOptions> optionsMock;
+        private readonly Mock<ISnykOptionsManager> snykOptionsManagerMock;
+        private readonly Mock<ISolutionService> solutionServiceMock;
+        private readonly HtmlSettingsScriptingBridge bridge;
+
+        public HtmlSettingsScriptingBridgeFolderConfigTest(GlobalServiceProvider gsp) : base(gsp)
+        {
+            var serviceProviderMock = new Mock<ISnykServiceProvider>();
+            optionsMock = new Mock<ISnykOptions>();
+            snykOptionsManagerMock = new Mock<ISnykOptionsManager>();
+            solutionServiceMock = new Mock<ISolutionService>();
+
+            optionsMock.SetupAllProperties();
+            optionsMock.SetupGet(o => o.FolderConfigs).Returns((List<FolderConfig>)null);
+
+            serviceProviderMock.SetupGet(sp => sp.Options).Returns(optionsMock.Object);
+            serviceProviderMock.SetupGet(sp => sp.SnykOptionsManager).Returns(snykOptionsManagerMock.Object);
+            serviceProviderMock.SetupGet(sp => sp.LanguageClientManager).Returns((ILanguageClientManager)null);
+            serviceProviderMock.SetupGet(sp => sp.SolutionService).Returns(solutionServiceMock.Object);
+
+            solutionServiceMock.Setup(s => s.GetSolutionFolderAsync())
+                .ReturnsAsync("/path/to/solution");
+
+            snykOptionsManagerMock.Setup(m => m.SavePreferredOrgAsync(It.IsAny<string>()))
+                .Returns(Task.CompletedTask);
+            snykOptionsManagerMock.Setup(m => m.SaveAutoDeterminedOrgAsync(It.IsAny<string>()))
+                .Returns(Task.CompletedTask);
+            snykOptionsManagerMock.Setup(m => m.SaveAdditionalEnvAsync(It.IsAny<string>()))
+                .Returns(Task.CompletedTask);
+            snykOptionsManagerMock.Setup(m => m.SaveOrgSetByUserAsync(It.IsAny<bool>()))
+                .Returns(Task.CompletedTask);
+
+            bridge = new HtmlSettingsScriptingBridge(
+                serviceProviderMock.Object,
+                onModified: () => { });
+        }
+
+        [Fact]
+        public void SaveIdeConfig_FolderConfigs_SavesAllFolderProperties()
+        {
+            var config = JsonConvert.SerializeObject(new IdeConfigData
+            {
+                FolderConfigs = new List<FolderConfigData>
+                {
+                    new FolderConfigData
+                    {
+                        PreferredOrg = "my-org",
+                        OrgSetByUser = true,
+                        AdditionalParameters = new List<string>(),
+                        AdditionalEnv = "ENV_VAR=1",
+                        AutoDeterminedOrg = "auto-org",
+                    },
+                },
+            });
+
+            bridge.__saveIdeConfig__(config);
+
+            snykOptionsManagerMock.Verify(m => m.SavePreferredOrgAsync("my-org"), Times.Once);
+            snykOptionsManagerMock.Verify(m => m.SaveOrgSetByUserAsync(true), Times.Once);
+            snykOptionsManagerMock.Verify(m => m.SaveAdditionalEnvAsync("ENV_VAR=1"), Times.Once);
+            snykOptionsManagerMock.Verify(m => m.SaveAutoDeterminedOrgAsync("auto-org"), Times.Once);
         }
     }
 }
