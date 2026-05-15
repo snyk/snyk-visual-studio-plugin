@@ -12,6 +12,7 @@ using Serilog;
 using Snyk.VisualStudio.Extension.Language;
 using Snyk.VisualStudio.Extension.Service;
 using Snyk.VisualStudio.Extension.UI.Html;
+using Snyk.VisualStudio.Extension.UI.Toolwindow;
 
 namespace Snyk.VisualStudio.Extension.Settings
 {
@@ -68,6 +69,11 @@ namespace Snyk.VisualStudio.Extension.Settings
                 onReset: () => IsDirty = false,
                 onCommandResult: InvokeCommandCallback);
 
+            // BaseHtmlProvider's injected link-click interceptor calls window.OpenLink for every
+            // anchor (Privacy Policy, Documentation, etc.) — must be wired through the dispatcher
+            // or the clicks silently no-op.
+            var linkOpener = new SnykScriptManager(serviceProvider);
+
             var dispatcher = new WebView2MessageDispatcher()
                 .Register("__saveIdeConfig__", 1, args =>
                     scriptingBridge.__saveIdeConfig__(args[0].Value<string>()))
@@ -79,7 +85,8 @@ namespace Snyk.VisualStudio.Extension.Settings
                     scriptingBridge.__ideExecuteCommand__(
                         args[0].Value<string>(),
                         args[1].Value<string>(),
-                        args[2].Value<string>()));
+                        args[2].Value<string>()))
+                .Register("OpenLink", 1, args => linkOpener.OpenLink(args[0].Value<string>()));
 
             var userDataFolder = WebView2Host.BuildUserDataFolder("settings");
 
