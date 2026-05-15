@@ -77,7 +77,13 @@ namespace Snyk.VisualStudio.Extension.UI.Html
             _userDataFolder = userDataFolder;
             _additionalInitScripts = (additionalInitScripts ?? Enumerable.Empty<string>()).ToArray();
             _enableDeveloperTools = enableDeveloperTools;
-            _preparer = new WebView2NavigationPreparer(Path.Combine(_userDataFolder, "scratch"));
+
+            // Per-host scratch subfolder so two hosts sharing the same user-data folder (e.g. the
+            // description + summary panels under "toolwindow") don't sweep each other's oversized-HTML
+            // temp files. Orphan subfolders left by a non-disposed host get cleaned up by the per-pid
+            // root sweep on the next VS launch.
+            var scratchDir = Path.Combine(_userDataFolder, "scratch", Guid.NewGuid().ToString("N"));
+            _preparer = new WebView2NavigationPreparer(scratchDir);
         }
 
         /// <summary>
