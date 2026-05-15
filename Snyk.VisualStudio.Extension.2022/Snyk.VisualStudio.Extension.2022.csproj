@@ -81,6 +81,7 @@
     <Compile Include="Language\JsonRpcWrapper.cs" />
     <Compile Include="Language\LsSettings.cs" />
     <Compile Include="Language\LsConstants.cs" />
+    <Compile Include="Language\V25Feature.cs" />
     <Compile Include="Language\LsAnalysisResult.cs" />
     <Compile Include="Language\SatisfyImportExtension.cs" />
     <Compile Include="Language\SnykContentDefinition.cs" />
