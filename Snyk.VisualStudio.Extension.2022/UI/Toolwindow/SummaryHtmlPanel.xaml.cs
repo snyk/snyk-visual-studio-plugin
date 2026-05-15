@@ -21,6 +21,8 @@ namespace Snyk.VisualStudio.Extension.UI.Toolwindow
 
             var bridge = new SnykScriptManager(SnykVSPackage.ServiceProvider);
 
+            // Wire each window.X(...) call the LS HTML can make to the corresponding bridge method.
+            // Messages arrive via chrome.webview.postMessage → WebMessageReceived → this dispatcher.
             var dispatcher = new WebView2MessageDispatcher()
                 .Register("OpenFileInEditor", args => bridge.OpenFileInEditor(
                     args[0].Value<string>(),
@@ -46,6 +48,8 @@ namespace Snyk.VisualStudio.Extension.UI.Toolwindow
 
             SummaryHtmlViewer.NavigationCompleted += OnNavigationCompleted;
 
+            // Kick off WebView2 init now, but don't block the constructor — SetContent/Init below
+            // await host.Ready internally, so queued navigations resolve once init completes.
             ThreadHelper.JoinableTaskFactory.RunAsync(async () =>
             {
                 try
@@ -59,6 +63,8 @@ namespace Snyk.VisualStudio.Extension.UI.Toolwindow
             }).FireAndForget();
         }
 
+        // The provider's init script (link-click interceptors, etc.) has to run after each
+        // navigation completes, since NavigateAsync replaces the document.
         private async void OnNavigationCompleted(object sender, CoreWebView2NavigationCompletedEventArgs e)
         {
             try
@@ -81,6 +87,8 @@ namespace Snyk.VisualStudio.Extension.UI.Toolwindow
 
             var themedHtml = htmlProvider.ReplaceCssVariables(html);
 
+            // Sync public API, async navigation — matches the pre-migration WebBrowser behaviour
+            // so existing callers (scan-finished notification, error paths) don't need to be async.
             ThreadHelper.JoinableTaskFactory.RunAsync(async () =>
             {
                 try
@@ -94,6 +102,8 @@ namespace Snyk.VisualStudio.Extension.UI.Toolwindow
             }).FireAndForget();
         }
 
+        // Loads the embedded "Snyk Security is loading…" placeholder before the first scan
+        // completes. Provider is loaded lazily because StaticHtmlProvider reads from disk.
         public void Init()
         {
             ThreadHelper.JoinableTaskFactory.RunAsync(async () =>
