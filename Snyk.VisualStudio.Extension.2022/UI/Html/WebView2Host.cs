@@ -47,10 +47,7 @@ namespace Snyk.VisualStudio.Extension.UI.Html
         private readonly string _userDataFolder;
         private readonly IReadOnlyList<string> _additionalInitScripts;
         private readonly bool _enableDeveloperTools;
-        private readonly TaskCompletionSource<bool> _readyTcs =
-            new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
-
-        private bool _initialized;
+        private readonly AsyncInitGuard _initGuard = new AsyncInitGuard();
 
         /// <summary>
         /// Constructs the host. <paramref name="userDataFolder"/> is the Chromium user-data
@@ -82,9 +79,10 @@ namespace Snyk.VisualStudio.Extension.UI.Html
 
         /// <summary>
         /// Completes once <see cref="InitializeAsync"/> has finished and the control is
-        /// ready for navigation / script execution. Faults with the init exception on failure.
+        /// ready for navigation / script execution. Faults with the init exception on failure;
+        /// a subsequent <see cref="InitializeAsync"/> call resets <see cref="Ready"/> for retry.
         /// </summary>
-        public Task Ready => _readyTcs.Task;
+        public Task Ready => _initGuard.Ready;
 
         /// <summary>
         /// Builds a per-context + per-VS-process user-data folder path under
@@ -186,11 +184,10 @@ namespace Snyk.VisualStudio.Extension.UI.Html
             }
         }
 
-        public async Task InitializeAsync()
-        {
-            if (_initialized) return;
-            _initialized = true;
+        public Task InitializeAsync() => _initGuard.RunOnceAsync(InitializeCoreAsync);
 
+        private async Task InitializeCoreAsync()
+        {
             try
             {
                 var environment = await GetOrCreateEnvironmentAsync(_userDataFolder);
@@ -207,13 +204,10 @@ namespace Snyk.VisualStudio.Extension.UI.Html
                 }
 
                 _webView.CoreWebView2.WebMessageReceived += OnWebMessageReceived;
-
-                _readyTcs.TrySetResult(true);
             }
             catch (Exception ex)
             {
                 Logger.Error(ex, "WebView2 initialization failed");
-                _readyTcs.TrySetException(ex);
                 throw;
             }
         }
