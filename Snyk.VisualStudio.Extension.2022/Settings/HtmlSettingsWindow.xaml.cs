@@ -69,13 +69,13 @@ namespace Snyk.VisualStudio.Extension.Settings
                 onCommandResult: InvokeCommandCallback);
 
             var dispatcher = new WebView2MessageDispatcher()
-                .Register("__saveIdeConfig__", args =>
+                .Register("__saveIdeConfig__", 1, args =>
                     scriptingBridge.__saveIdeConfig__(args[0].Value<string>()))
-                .Register("__onFormDirtyChange__", args =>
+                .Register("__onFormDirtyChange__", 1, args =>
                     scriptingBridge.__onFormDirtyChange__(args[0].Value<bool>()))
-                .Register("__ideSaveAttemptFinished__", args =>
+                .Register("__ideSaveAttemptFinished__", 1, args =>
                     scriptingBridge.__ideSaveAttemptFinished__(args[0].Value<string>()))
-                .Register("__ideExecuteCommand__", args =>
+                .Register("__ideExecuteCommand__", 3, args =>
                     scriptingBridge.__ideExecuteCommand__(
                         args[0].Value<string>(),
                         args[1].Value<string>(),

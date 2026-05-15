@@ -9,22 +9,35 @@ namespace Snyk.VisualStudio.Extension.UI.Html
     /// <summary>
     /// Parses JSON payloads from WebView2's <c>WebMessageReceived</c> event in the shape
     /// <c>{ "method": "...", "args": [...] }</c> and routes them to a registered handler.
-    /// Errors (malformed payload, unknown method, handler exception) are logged and swallowed
-    /// so that a bad JS message cannot crash the host process.
+    /// Each registration declares the minimum expected argument count.
+    /// Errors (malformed payload, unknown method, argument mismatch, handler exception)
+    /// are logged and swallowed so that a bad JS message cannot crash the host process.
     /// </summary>
     public class WebView2MessageDispatcher
     {
         private static readonly ILogger Logger = LogManager.ForContext<WebView2MessageDispatcher>();
 
-        private readonly Dictionary<string, Action<JArray>> _handlers =
-            new Dictionary<string, Action<JArray>>(StringComparer.Ordinal);
+        private readonly Dictionary<string, Registration> _handlers =
+            new Dictionary<string, Registration>(StringComparer.Ordinal);
 
-        public WebView2MessageDispatcher Register(string method, Action<JArray> handler)
+        private struct Registration
+        {
+            public int ExpectedArgCount;
+            public Action<JArray> Handler;
+        }
+
+        /// <summary>
+        /// Registers a handler. <paramref name="expectedArgCount"/> is the minimum number of
+        /// elements the <c>args</c> array must contain — extra elements are passed through to
+        /// the handler unchanged. A payload with fewer args is logged and dropped.
+        /// </summary>
+        public WebView2MessageDispatcher Register(string method, int expectedArgCount, Action<JArray> handler)
         {
             if (string.IsNullOrEmpty(method)) throw new ArgumentException("Method name is required", nameof(method));
+            if (expectedArgCount < 0) throw new ArgumentOutOfRangeException(nameof(expectedArgCount));
             if (handler == null) throw new ArgumentNullException(nameof(handler));
 
-            _handlers[method] = handler;
+            _handlers[method] = new Registration { ExpectedArgCount = expectedArgCount, Handler = handler };
             return this;
         }
 
@@ -54,16 +67,30 @@ namespace Snyk.VisualStudio.Extension.UI.Html
                 return;
             }
 
-            if (!_handlers.TryGetValue(method, out var handler))
+            if (!_handlers.TryGetValue(method, out var registration))
             {
                 Logger.Warning("No bridge handler registered for method '{Method}'", method);
                 return;
             }
 
             var args = parsed["args"] as JArray ?? new JArray();
+            if (args.Count < registration.ExpectedArgCount)
+            {
+                Logger.Warning(
+                    "Bridge method '{Method}' expected at least {Expected} arg(s) but received {Actual}; dropping message",
+                    method, registration.ExpectedArgCount, args.Count);
+                return;
+            }
+
+            if (args.Count > registration.ExpectedArgCount)
+            {
+                Logger.Information("Bridge method '{Method}' received {Actual} args, but expected only {Expected}; extras ignored",
+                    method, args.Count, registration.ExpectedArgCount);
+            }
+
             try
             {
-                handler(args);
+                registration.Handler(args);
             }
             catch (Exception ex)
             {

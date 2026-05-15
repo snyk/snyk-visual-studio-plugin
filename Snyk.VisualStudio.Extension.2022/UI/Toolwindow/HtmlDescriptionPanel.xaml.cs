@@ -25,22 +25,22 @@ namespace Snyk.VisualStudio.Extension.UI.Toolwindow
             // Wire each window.X(...) call the LS HTML can make to the corresponding bridge method.
             // Messages arrive via chrome.webview.postMessage → WebMessageReceived → this dispatcher.
             var dispatcher = new WebView2MessageDispatcher()
-                .Register("OpenFileInEditor", args => bridge.OpenFileInEditor(
+                .Register("OpenFileInEditor", 5, args => bridge.OpenFileInEditor(
                     args[0].Value<string>(),
                     args[1].Value<string>(),
                     args[2].Value<string>(),
                     args[3].Value<string>(),
                     args[4].Value<string>()))
-                .Register("OpenLink", args => bridge.OpenLink(args[0].Value<string>()))
-                .Register("EnableDelta", args => bridge.EnableDelta(args[0].Value<bool>()))
-                .Register("GenerateFixes", args => bridge.GenerateFixes(args[0].Value<string>()))
-                .Register("ApplyFixDiff", args => bridge.ApplyFixDiff(args[0].Value<string>()))
-                .Register("SubmitIgnoreRequest", args => bridge.SubmitIgnoreRequest(
+                .Register("OpenLink", 1, args => bridge.OpenLink(args[0].Value<string>()))
+                .Register("EnableDelta", 1, args => bridge.EnableDelta(args[0].Value<bool>()))
+                .Register("GenerateFixes", 1, args => bridge.GenerateFixes(args[0].Value<string>()))
+                .Register("ApplyFixDiff", 1, args => bridge.ApplyFixDiff(args[0].Value<string>()))
+                .Register("SubmitIgnoreRequest", 4, args => bridge.SubmitIgnoreRequest(
                     args[0].Value<string>(),
                     args[1].Value<string>(),
                     args[2].Value<string>(),
                     args[3].Value<string>()))
-                .Register("FocusToolWindow", _ => bridge.FocusToolWindow());
+                .Register("FocusToolWindow", 0, _ => bridge.FocusToolWindow());
 
             // Shared with SummaryHtmlPanel — both controls live in the same tool window,
             // so they can safely share one browser process via a common user-data folder.
