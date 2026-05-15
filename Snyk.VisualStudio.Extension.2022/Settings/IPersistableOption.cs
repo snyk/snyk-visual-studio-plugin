@@ -55,6 +55,11 @@ public interface IPersistableOptions
     /// Gets a value indicating whether is Oss scan enabled.
     /// </summary>
     bool SnykCodeSecurityEnabled { get; set; }
+
+    /// <summary>
+    /// Gets or sets a value indicating whether Secrets scanning is enabled.
+    /// </summary>
+    bool SecretsEnabled { get; set; }
     
     /// <summary>
     /// Gets or sets a value indicating whether the CLI should be automatically updated.

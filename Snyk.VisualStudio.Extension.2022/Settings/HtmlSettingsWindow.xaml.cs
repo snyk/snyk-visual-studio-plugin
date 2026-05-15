@@ -171,6 +171,9 @@ namespace Snyk.VisualStudio.Extension.Settings
             return HtmlResourceLoader.LoadFallbackHtml(serviceProvider.Options);
         }
 
+        // Keep false: VS and IntelliJ use OK-button apply; only VS Code autosaves.
+        // __IS_IDE_AUTOSAVE_ENABLED__ is injected by the fallback HTML and LS HTML; this bridge
+        // does not override it so that the VS dialog-commit model (OK button) is preserved.
         private static string BuildIdeBridgeScript() =>
             @"window.__saveIdeConfig__ = function(jsonString) { window.external.__saveIdeConfig__(jsonString); };
             window.__onFormDirtyChange__ = function(isDirty) { window.external.__onFormDirtyChange__(isDirty); };

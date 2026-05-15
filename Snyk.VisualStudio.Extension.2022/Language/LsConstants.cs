@@ -2,8 +2,10 @@
 {
     public static class LsConstants
     {
-        public const string ProtocolVersion = "24";
+        public const string ProtocolVersion = "25";
         
+        public const string SnykConfiguration = "$/snyk.configuration";
+
         // Notifications
         public const string SnykHasAuthenticated = "$/snyk.hasAuthenticated";
         public const string SnykCliPath = "$/snyk.isAvailableCli";

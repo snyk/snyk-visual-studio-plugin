@@ -19,6 +19,20 @@ namespace Snyk.VisualStudio.Extension.UI.Html
         public bool? ActivateSnykOpenSource { get; set; }
         public bool? ActivateSnykCode { get; set; }
         public bool? ActivateSnykIac { get; set; }
+
+        /// <summary>
+        /// Secrets scanning enable flag. Used by the LS HTML form (camelCase key).
+        /// </summary>
+        [JsonProperty("activateSnykSecrets")]
+        public bool? ActivateSnykSecrets { get; set; }
+
+        /// <summary>
+        /// Secrets scanning enable flag. Used by the fallback HTML form (snake_case key).
+        /// Mirrors <see cref="ActivateSnykSecrets"/> so both form variants land on the same setting.
+        /// </summary>
+        [JsonProperty("snyk_secrets_enabled")]
+        public bool? SnykSecretsEnabledFallback { get; set; }
+
         public string ScanningMode { get; set; }
 
         // Issue View Settings
