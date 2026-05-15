@@ -26,7 +26,16 @@ namespace Snyk.VisualStudio.Extension.UI.Html
 
         public override string ReplaceCssVariables(string html)
         {
-            html = html.Replace("${ideStyle}", "");
+            // The shared LS HTML uses --main-font-size as the root font-size hook, deliberately
+            // leaving it undefined so each IDE supplies a value through ${ideStyle}. JCEF/CEF-based
+            // IDEs scale CSS values internally, so an unset variable falls back to a renderer
+            // default that looks right after their scaling. WebView2 renders at face value with no
+            // IDE-applied scale factor, so we have to anchor the root size explicitly.
+            // The page applies `font-size: 1.3rem` to <p>, so root at 10px renders the loader
+            // text at ~13px — matching the body font-size we used to hard-code in this file.
+            const string ideStyleOverride =
+                "<style nonce=\"ideNonce\">:root { --main-font-size: 10px; }</style>";
+            html = html.Replace("${ideStyle}", ideStyleOverride);
             return base.ReplaceCssVariables(html);
         }
 

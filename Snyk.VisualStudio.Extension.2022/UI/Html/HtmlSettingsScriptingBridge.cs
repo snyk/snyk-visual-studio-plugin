@@ -40,7 +40,7 @@ namespace Snyk.VisualStudio.Extension.UI.Html
         /// Caller must invoke <see cref="BeginSave"/> before triggering a new save so a
         /// fresh task is available to await.
         /// </summary>
-        public Task SaveCompletion => saveCompletionTcs.Task;
+        public Task<bool> SaveCompletion => saveCompletionTcs.Task;
 
         /// <summary>
         /// Resets <see cref="SaveCompletion"/> to a fresh incomplete task. Called by the
