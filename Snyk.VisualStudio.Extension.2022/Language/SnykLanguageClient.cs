@@ -431,7 +431,11 @@ namespace Snyk.VisualStudio.Extension.Language
 
             settingsV25 ??= new LsSettingsV25(SnykVSPackage.ServiceProvider);
             var config = settingsV25.GetLspConfigurationParam();
-            if (config == null) return default;
+            if (config == null)
+            {
+                Logger.Warning("DidChangeConfigurationAsync: GetLspConfigurationParam returned null; skipping workspace/didChangeConfiguration notification.");
+                return default;
+            }
             var param = new LSP.DidChangeConfigurationParams { Settings = config };
             return await InvokeWithParametersAsync<object>(LsConstants.WorkspaceChangeConfiguration, param, cancellationToken).ConfigureAwait(false);
         }
