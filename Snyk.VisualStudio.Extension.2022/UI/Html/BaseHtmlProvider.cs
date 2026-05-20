@@ -22,6 +22,9 @@ namespace Snyk.VisualStudio.Extension.UI.Html
 
         public virtual string GetInitScript()
         {
+            // Note that WebView2 publishes each bridge method directly on `window` (in
+            // WebView2BridgeBindings.BuildScript). The old IE WebBrowser, by comparison, exposed the
+            // host bridge as `window.external`.)
             return @"
                     window.onerror = function(msg,url,line){return true;}
                     var links = document.querySelectorAll('a');
