@@ -34,11 +34,16 @@ namespace Snyk.VisualStudio.Extension.Settings
         protected WebView2Host host;
 
         /// <summary>
-        /// Whether to expose Chromium DevTools (F12) on the hosted WebView2. Production stays
-        /// <c>false</c>; <see cref="DebugHtmlSettingsWindow"/> overrides to <c>true</c> so
-        /// developers can inspect JS errors and the DOM while iterating on the LS HTML.
+        /// Whether to expose Chromium DevTools (F12) on the hosted WebView2. Gated on the
+        /// DEBUG compile constant so Release builds never ship DevTools, while local
+        /// developer builds get inspect-element and the JS console for free.
         /// </summary>
-        protected virtual bool DeveloperToolsEnabled => false;
+        protected virtual bool DeveloperToolsEnabled =>
+#if DEBUG
+            true;
+#else
+            false;
+#endif
 
         public static readonly DependencyProperty IsDirtyProperty =
             DependencyProperty.Register(
