@@ -146,6 +146,35 @@ namespace Snyk.VisualStudio.Extension.Tests.UI.Html
         }
 
         [Fact]
+        public void SaveCompletion_IsInitiallyIncomplete()
+        {
+            Assert.False(bridge.SaveCompletion.IsCompleted);
+        }
+
+        [Fact]
+        public void SaveCompletion_CompletesAfterSaveIdeConfig()
+        {
+            Assert.False(bridge.SaveCompletion.IsCompleted);
+
+            bridge.__saveIdeConfig__("{}");
+
+            Assert.True(bridge.SaveCompletion.IsCompleted);
+        }
+
+        [Fact]
+        public void BeginSave_ResetsToNewIncompleteTask()
+        {
+            bridge.__saveIdeConfig__("{}");
+            var firstCompletion = bridge.SaveCompletion;
+            Assert.True(firstCompletion.IsCompleted);
+
+            bridge.BeginSave();
+
+            Assert.NotSame(firstCompletion, bridge.SaveCompletion);
+            Assert.False(bridge.SaveCompletion.IsCompleted);
+        }
+
+        [Fact]
         public void SaveIdeConfig_DoesNotClearToken_WhenAuthMethodUnchanged()
         {
             var setApiTokenCalls = new List<AuthenticationToken>();

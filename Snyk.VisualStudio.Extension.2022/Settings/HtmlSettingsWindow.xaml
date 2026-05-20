@@ -8,6 +8,7 @@
                  xmlns:ui="clr-namespace:Microsoft.VisualStudio.PlatformUI;assembly=Microsoft.VisualStudio.Shell.15.0"
                  xmlns:catalog="clr-namespace:Microsoft.VisualStudio.Imaging;assembly=Microsoft.VisualStudio.ImageCatalog"
                  xmlns:imaging="clr-namespace:Microsoft.VisualStudio.Imaging;assembly=Microsoft.VisualStudio.Imaging"
+                 xmlns:wv2="clr-namespace:Microsoft.Web.WebView2.Wpf;assembly=Microsoft.Web.WebView2.Wpf"
                  mc:Ignorable="d"
                  WindowStartupLocation="CenterScreen"
                  IsCloseButtonEnabled="True"
@@ -17,14 +18,8 @@
                  ResizeMode="CanResize"
                  toolkit:Themes.UseVsTheme="True"
                  Title="Snyk Settings"
+                 UseLayoutRounding="True"
                  Loaded="Window_Loaded">
-    <!-- TEMP: WindowChrome removed to test DPI handling -->
-    <!-- <WindowChrome.WindowChrome>
-        <WindowChrome CaptionHeight="0"
-                      ResizeBorderThickness="5"
-                      GlassFrameThickness="0"
-                      CornerRadius="0" />
-    </WindowChrome.WindowChrome> -->
     <DockPanel Margin="10">
         <!-- Bottom: OK and Cancel Buttons -->
         <StackPanel HorizontalAlignment="Right" DockPanel.Dock="Bottom" Orientation="Horizontal" Margin="0,10,0,0">
@@ -33,12 +28,10 @@
             <Button x:Name="CancelButton" Margin="5, 5" Content="Cancel" Click="CancelButton_OnClick" MinWidth="75" />
         </StackPanel>
 
-        <!-- Center: WebBrowser -->
         <Grid>
-            <WebBrowser x:Name="SettingsBrowser"
-                        VerticalAlignment="Stretch"
-                        HorizontalAlignment="Stretch"
-                        UseLayoutRounding="True" />
+            <wv2:WebView2 x:Name="SettingsBrowser"
+                          VerticalAlignment="Stretch"
+                          HorizontalAlignment="Stretch" />
             <TextBlock x:Name="LoadingStatusLabel"
                        Text="Loading settings..."
                        FontSize="16"

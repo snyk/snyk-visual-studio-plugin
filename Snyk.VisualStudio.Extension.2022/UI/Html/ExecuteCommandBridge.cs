@@ -1,5 +1,5 @@
 // ABOUTME: Shared bridge for the window.__ideExecuteCommand__ JS<->IDE contract.
-// ABOUTME: Reusable by any WebBrowser panel (settings, tree view, etc.).
+// ABOUTME: Reusable by any WebView2-hosted LS HTML page (settings, tree view, etc.).
 
 using System;
 using System.Text.RegularExpressions;
@@ -14,7 +14,7 @@ namespace Snyk.VisualStudio.Extension.UI.Html
 {
     /// <summary>
     /// Shared bridge for the <c>window.__ideExecuteCommand__</c> JS↔IDE contract.
-    /// Reusable by any WebBrowser panel (settings window, tree view, etc.).
+    /// Reusable by any WebView2-hosted LS HTML page (settings window, tree view, etc.).
     ///
     /// Responsibilities:
     /// <list type="bullet">
@@ -52,9 +52,11 @@ namespace Snyk.VisualStudio.Extension.UI.Html
             !string.IsNullOrEmpty(command) && command.StartsWith("snyk.");
 
         /// <summary>
-        /// Returns the ES5-compatible JavaScript that defines <c>window.__ideExecuteCommand__</c>.
-        /// Assumes <c>window.external.__ideExecuteCommand__(command, argsJson, callbackId)</c>
-        /// is provided by the COM bridge (<see cref="HtmlSettingsScriptingBridge"/>).
+        /// Returns the ES5-compatible JavaScript that defines <c>window.__ideExecuteCommand__</c>
+        /// with callback-id roundtrip support. <see cref="WebView2BridgeBindings"/> deliberately
+        /// omits this method because a raw postMessage forwarder can't carry the JS callback
+        /// the LS HTML passes as the third argument — this wrapper stashes the callback in a
+        /// client-side id map and posts only the id to the host.
         /// </summary>
         public static string BuildClientScript()
         {
@@ -68,9 +70,45 @@ namespace Snyk.VisualStudio.Extension.UI.Html
                         window.__ideCallbacks__[callbackId] = callback;
                     }
                     var argsJson = JSON.stringify(args || []);
-                    window.external.__ideExecuteCommand__(command, argsJson, callbackId);
+                    chrome.webview.postMessage({ method: '__ideExecuteCommand__', args: [command, argsJson, callbackId] });
                 };
             ";
+        }
+
+        /// <summary>
+        /// Builds the JS that invokes <c>window.setAuthToken(token, apiUrl)</c> on the page,
+        /// guarded by a <c>typeof</c> check so a missing function logs rather than throws.
+        /// Used by the settings panel when the Language Server pushes an updated auth token
+        /// (e.g. after an OAuth round-trip).
+        /// </summary>
+        public static string BuildSetAuthTokenScript(string token, string apiUrl)
+        {
+            var escapedToken = EscapeForJsString(token);
+            var escapedApiUrl = EscapeForJsString(apiUrl);
+            return $@"
+                (function() {{
+                    if (typeof window.setAuthToken === 'function') {{
+                        window.setAuthToken('{escapedToken}', '{escapedApiUrl}');
+                    }} else {{
+                        console.warn('window.setAuthToken is not available');
+                    }}
+                }})();
+            ";
+        }
+
+        /// <summary>
+        /// Builds the JS that pops a pending callback from <c>window.__ideCallbacks__</c> and
+        /// invokes it with the LS command's result. The <paramref name="callbackId"/> must have
+        /// already been validated with <see cref="IsValidCallbackId"/>; we still escape it as a
+        /// belt-and-braces guard against accidental injection.
+        /// </summary>
+        public static string BuildCommandCallbackScript(string callbackId, string resultJson)
+        {
+            var escapedCallbackId = EscapeForJsString(callbackId);
+            return $"if(window.__ideCallbacks__&&window.__ideCallbacks__['{escapedCallbackId}']){{" +
+                   $"var cb=window.__ideCallbacks__['{escapedCallbackId}'];" +
+                   $"delete window.__ideCallbacks__['{escapedCallbackId}'];" +
+                   $"cb({resultJson});}}";
         }
 
         /// <summary>
