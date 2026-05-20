@@ -22,12 +22,15 @@ namespace Snyk.VisualStudio.Extension.UI.Html
 
         public virtual string GetInitScript()
         {
+            // Note that WebView2 publishes each bridge method directly on `window` (in
+            // WebView2BridgeBindings.BuildScript). The old IE WebBrowser, by comparison, exposed the
+            // host bridge as `window.external`.)
             return @"
                     window.onerror = function(msg,url,line){return true;}
                     var links = document.querySelectorAll('a');
                     for(var i = 0; i < links.length; i++) {
                         links[i].onclick = function() {
-                            window.external.OpenLink(this.href);
+                            window.OpenLink(this.href);
                             return false;
                         };
                     }
@@ -142,7 +145,6 @@ namespace Snyk.VisualStudio.Extension.UI.Html
                 { "input-background-color", inputBackground },
                 { "section-background-color", inactiveSelectionBackground },
                 { "focus-color", linkColor },
-                { "main-font-size", "15px" },
                 { "ide-background-color", backgroundColor },
                 { "dimmed-text-color", disabledForeground }
             };

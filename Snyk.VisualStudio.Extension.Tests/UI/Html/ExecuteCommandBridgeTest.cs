@@ -20,10 +20,11 @@ namespace Snyk.VisualStudio.Extension.Tests.UI.Html
         }
 
         [Fact]
-        public void BuildClientScript_CallsWindowExternalIdeExecuteCommand()
+        public void BuildClientScript_PostsIdeExecuteCommandToHost()
         {
             var script = ExecuteCommandBridge.BuildClientScript();
-            Assert.Contains("window.external.__ideExecuteCommand__", script);
+            Assert.Contains("chrome.webview.postMessage", script);
+            Assert.Contains("method: '__ideExecuteCommand__'", script);
         }
 
         [Fact]
@@ -87,6 +88,65 @@ namespace Snyk.VisualStudio.Extension.Tests.UI.Html
         public void IsAllowedCommand_RejectsNonSnykCommands(string command)
         {
             Assert.False(ExecuteCommandBridge.IsAllowedCommand(command));
+        }
+
+        [Fact]
+        public void BuildSetAuthTokenScript_GuardsOnFunctionExisting()
+        {
+            var script = ExecuteCommandBridge.BuildSetAuthTokenScript("tok", "https://snyk.io");
+
+            Assert.Contains("typeof window.setAuthToken === 'function'", script);
+        }
+
+        [Fact]
+        public void BuildSetAuthTokenScript_InvokesSetAuthTokenWithEscapedArgs()
+        {
+            var script = ExecuteCommandBridge.BuildSetAuthTokenScript("t'ok", @"https://snyk.io/\path");
+
+            Assert.Contains(@"window.setAuthToken('t\'ok', 'https://snyk.io/\\path')", script);
+        }
+
+        [Fact]
+        public void BuildSetAuthTokenScript_TreatsNullApiUrlAsEmptyString()
+        {
+            var script = ExecuteCommandBridge.BuildSetAuthTokenScript("tok", null);
+
+            Assert.Contains("window.setAuthToken('tok', '')", script);
+        }
+
+        [Fact]
+        public void BuildSetAuthTokenScript_IsImmediatelyInvoked()
+        {
+            var script = ExecuteCommandBridge.BuildSetAuthTokenScript("tok", "url").Trim();
+
+            Assert.StartsWith("(function", script);
+            Assert.EndsWith("})();", script);
+        }
+
+        [Fact]
+        public void BuildCommandCallbackScript_PopsCallbackAndInvokesItWithResult()
+        {
+            var script = ExecuteCommandBridge.BuildCommandCallbackScript("__cb_42", "{\"ok\":true}");
+
+            Assert.Contains("window.__ideCallbacks__['__cb_42']", script);
+            Assert.Contains("delete window.__ideCallbacks__['__cb_42']", script);
+            Assert.Contains("({\"ok\":true})", script);
+        }
+
+        [Fact]
+        public void BuildCommandCallbackScript_GuardsOnCallbacksObjectExisting()
+        {
+            var script = ExecuteCommandBridge.BuildCommandCallbackScript("__cb_1", "null");
+
+            Assert.Contains("if(window.__ideCallbacks__", script);
+        }
+
+        [Fact]
+        public void BuildCommandCallbackScript_EscapesSingleQuotesInCallbackId()
+        {
+            var script = ExecuteCommandBridge.BuildCommandCallbackScript("__cb_1'evil", "null");
+
+            Assert.Contains(@"'__cb_1\'evil'", script);
         }
     }
 }

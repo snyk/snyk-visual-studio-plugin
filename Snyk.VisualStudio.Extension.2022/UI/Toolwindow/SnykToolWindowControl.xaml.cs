@@ -25,9 +25,11 @@ using Task = System.Threading.Tasks.Task;
 namespace Snyk.VisualStudio.Extension.UI.Toolwindow
 {
     /// <summary>
-    /// Interaction logic for SnykToolWindowControl.
+    /// Interaction logic for SnykToolWindowControl. Implements <see cref="IDisposable"/> so
+    /// <see cref="SnykToolWindow"/>'s base <c>ToolWindowPane.Dispose</c> chains cleanup into
+    /// the WebView2-hosting child panels when the tool window is destroyed.
     /// </summary>
-    public partial class SnykToolWindowControl : UserControl
+    public partial class SnykToolWindowControl : UserControl, IDisposable
     {
         private static readonly ILogger Logger = LogManager.ForContext<SnykToolWindowControl>();
 
@@ -857,19 +859,15 @@ namespace Snyk.VisualStudio.Extension.UI.Toolwindow
 <html>
 <head>
   <meta http-equiv='Content-Type' content='text/html; charset=unicode' />
-  <meta http-equiv='X-UA-Compatible' content='IE=edge' />
   <meta charset=""utf-8"" />
   <meta name=""viewport"" content=""width=device-width, initial-scale=1.0"" />
   <meta http-equiv=""Content-Security-Policy""
-        content=""style-src 'self' 'nonce-${{nonce}}' 'nonce-ideNonce' https://fonts.googleapis.com;
-        script-src 'nonce-${{nonce}}' https://fonts.googleapis.com;
-        font-src 'self' https://fonts.gstatic.com;"" />
+        content=""style-src 'self' 'nonce-${{nonce}}' 'nonce-ideNonce';
+        script-src 'nonce-${{nonce}}';
+        font-src 'self';"" />
   <style nonce=${{nonce}}>
-    @import url('https://fonts.googleapis.com/css2?family=Inter&display=swap');
-
     :root {{
-      font-size: var(--main-font-size);
-      --default-font: ""SF Pro Text"", ""Segoe UI"", ""Ubuntu"", Geneva, Verdana, Tahoma, sans-serif;
+      --default-font: var(--vscode-font-family, ""SF Pro Text"", ""Segoe UI"", ""Ubuntu"", Geneva, Verdana, Tahoma, sans-serif);
       --ide-background-color: var(--vscode-sideBar-background);
       --text-color: var(--vscode-foreground);
       --input-border: var(--vscode-input-border);
@@ -879,49 +877,49 @@ namespace Snyk.VisualStudio.Extension.UI.Toolwindow
       background-color: var(--ide-background-color);
       color: var(--text-color);
       font-family: var(--default-font);
-      padding: 1.2rem;
+      font-size: var(--vscode-font-size, 13px);
+      padding: 1rem;
       margin: 0;
     }}
 
     .snx-h1 {{
-      font-size: 1.6rem;
-      font-weight: 400;
-      margin: .4rem 0 1.2rem 0;
+      font-size: 1.2em;
+      font-weight: 600;
+      margin: 0 0 0.8rem 0;
       color: #d32f2f;
     }}
 
     .error-details {{
       display: flex;
       flex-direction: column;
-      gap: 1rem;
+      gap: 0.8rem;
     }}
 
     .error-field {{
       display: flex;
       flex-direction: column;
-      gap: 0.4rem;
+      gap: 0.2rem;
     }}
 
     .error-label {{
       font-weight: 600;
-      font-size: 0.9rem;
+      font-size: 0.85em;
       opacity: 0.7;
       text-transform: uppercase;
       letter-spacing: 0.5px;
     }}
 
     .error-value {{
-      font-size: 1rem;
       line-height: 1.5;
       word-wrap: break-word;
     }}
 
     code {{
       background-color: var(--code-background-color);
-      padding: 0.2rem 0.4rem;
+      padding: 0.1rem 0.3rem;
       border-radius: 3px;
       font-family: 'Courier New', monospace;
-      font-size: 0.9rem;
+      font-size: 0.95em;
     }}
   </style>
   ${{ideStyle}}
@@ -1116,6 +1114,16 @@ namespace Snyk.VisualStudio.Extension.UI.Toolwindow
             }
 
             this.context.TransitionTo(OverviewState.Instance);
+        }
+
+        // Disposes the child WebView2-hosting panels. ToolWindowPane (the base of
+        // SnykToolWindow) automatically calls Dispose on its Content property when the
+        // tool window is destroyed, so this runs at real teardown — not on transient
+        // WPF Unloaded events that can fire during docking or theme changes.
+        public void Dispose()
+        {
+            this.DescriptionPanel?.Dispose();
+            this.SummaryPanel?.Dispose();
         }
     }
 }
