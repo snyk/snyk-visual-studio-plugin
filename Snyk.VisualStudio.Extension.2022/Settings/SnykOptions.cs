@@ -34,6 +34,7 @@ namespace Snyk.VisualStudio.Extension.Settings
         public bool OssEnabled { get; set; }
         public bool IacEnabled { get; set; }
         public bool SnykCodeSecurityEnabled { get; set; }
+        public bool SecretsEnabled { get; set; }
         public bool BinariesAutoUpdate { get; set; }
         public string CliCustomPath { get; set; }
         public string CliReleaseChannel { get; set; }

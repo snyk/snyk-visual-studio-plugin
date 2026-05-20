@@ -33,6 +33,11 @@ namespace Snyk.VisualStudio.Extension.Settings
         /// Gets or sets a value indicating whether snyk code security enabled.
         /// </summary>
         public bool SnykCodeSecurityEnabled { get; set; } = true;
+
+        /// <summary>
+        /// Gets or sets a value indicating whether Secrets scanning is enabled.
+        /// </summary>
+        public bool SecretsEnabled { get; set; } = false;
         
         /// <summary>
         /// Gets or sets a value indicating whether oss enabled.

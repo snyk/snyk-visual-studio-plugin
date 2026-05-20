@@ -219,6 +219,14 @@ namespace Snyk.VisualStudio.Extension.UI.Html
                 Options.IacEnabled = config.ActivateSnykIac.Value;
             }
 
+            // Accept secrets flag as camelCase (activateSnykSecrets) or snake_case (snyk_secrets_enabled);
+            // camelCase takes precedence.
+            var secretsValue = config.ActivateSnykSecrets ?? config.SnykSecretsEnabledFallback;
+            if (secretsValue.HasValue)
+            {
+                Options.SecretsEnabled = secretsValue.Value;
+            }
+
             // Apply scanning mode (auto/manual)
             if (config.ScanningMode != null)
             {

@@ -66,6 +66,7 @@ namespace Snyk.VisualStudio.Extension.Settings
                 IacEnabled = snykSettings.IacEnabled,
                 SnykCodeSecurityEnabled = snykSettings.SnykCodeSecurityEnabled,
                 OssEnabled = snykSettings.OssEnabled,
+                SecretsEnabled = snykSettings.SecretsEnabled,
 
                 FilterCritical = snykSettings.FilterCritical,
                 FilterHigh = snykSettings.FilterHigh,
@@ -106,6 +107,7 @@ namespace Snyk.VisualStudio.Extension.Settings
             snykSettings.IacEnabled = options.IacEnabled;
             snykSettings.SnykCodeSecurityEnabled = options.SnykCodeSecurityEnabled;
             snykSettings.OssEnabled = options.OssEnabled;
+            snykSettings.SecretsEnabled = options.SecretsEnabled;
 
             snykSettings.FilterCritical = options.FilterCritical;
             snykSettings.FilterHigh = options.FilterHigh;

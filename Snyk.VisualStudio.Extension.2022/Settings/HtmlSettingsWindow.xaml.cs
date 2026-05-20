@@ -74,6 +74,10 @@ namespace Snyk.VisualStudio.Extension.Settings
             // or the clicks silently no-op.
             var linkOpener = new SnykScriptManager(serviceProvider);
 
+            // Intentionally not wiring __IS_IDE_AUTOSAVE_ENABLED__: VS and IntelliJ use OK-button
+            // apply, only VS Code autosaves. The LS HTML / fallback HTML default of "absent flag
+            // → don't autosave" gives us the right VS dialog-commit behaviour.
+
             var dispatcher = new WebView2MessageDispatcher()
                 .Register("__saveIdeConfig__", 1, args =>
                     scriptingBridge.__saveIdeConfig__(args[0].Value<string>()))
