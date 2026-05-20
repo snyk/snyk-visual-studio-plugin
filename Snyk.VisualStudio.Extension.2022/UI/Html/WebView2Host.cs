@@ -7,6 +7,9 @@ using System.Threading.Tasks;
 using Microsoft.Web.WebView2.Core;
 using Microsoft.Web.WebView2.Wpf;
 using Serilog;
+#if DEBUG
+using Newtonsoft.Json.Linq;
+#endif
 
 namespace Snyk.VisualStudio.Extension.UI.Html
 {
@@ -226,6 +229,10 @@ namespace Snyk.VisualStudio.Extension.UI.Html
 
                 _webView.CoreWebView2.WebMessageReceived += OnWebMessageReceived;
 
+#if DEBUG
+                await EnableJsDiagnosticsAsync();
+#endif
+
                 currentTcs.TrySetResult(true);
             }
             catch (Exception ex)
@@ -284,5 +291,92 @@ namespace Snyk.VisualStudio.Extension.UI.Html
             settings.IsZoomControlEnabled = false;
             settings.AreBrowserAcceleratorKeysEnabled = false;
         }
+
+#if DEBUG
+        // DEBUG-only: route uncaught JS exceptions and console.* calls into Serilog via the
+        // Chrome DevTools Protocol. Replaces the IE `wbHandler.ScriptErrorsSuppressed = false`
+        // behaviour from the pre-WebView2 debug window — but now visible across every panel
+        // and persisted to the Snyk log file rather than a transient popup. Release builds
+        // strip this out entirely.
+        private async Task EnableJsDiagnosticsAsync()
+        {
+            try
+            {
+                await _webView.CoreWebView2.CallDevToolsProtocolMethodAsync("Runtime.enable", "{}");
+
+                var exceptionReceiver = _webView.CoreWebView2
+                    .GetDevToolsProtocolEventReceiver("Runtime.exceptionThrown");
+                exceptionReceiver.DevToolsProtocolEventReceived += OnJsExceptionThrown;
+
+                var consoleReceiver = _webView.CoreWebView2
+                    .GetDevToolsProtocolEventReceiver("Runtime.consoleAPICalled");
+                consoleReceiver.DevToolsProtocolEventReceived += OnJsConsoleApiCalled;
+            }
+            catch (Exception ex)
+            {
+                Logger.Warning(ex, "Failed to enable WebView2 JS diagnostics");
+            }
+        }
+
+        private static void OnJsExceptionThrown(object sender, CoreWebView2DevToolsProtocolEventReceivedEventArgs e)
+        {
+            try
+            {
+                var parsed = JObject.Parse(e.ParameterObjectAsJson);
+                var details = parsed["exceptionDetails"];
+                var text = details?["text"]?.Value<string>() ?? "(no text)";
+                var url = details?["url"]?.Value<string>() ?? "(no url)";
+                var line = details?["lineNumber"]?.Value<int?>();
+                var description = details?["exception"]?["description"]?.Value<string>();
+                Logger.Error("WebView2 JS exception: {Text} at {Url}:{Line} | {Description}",
+                    text, url, line, description ?? "(no detail)");
+            }
+            catch (Exception ex)
+            {
+                Logger.Warning(ex, "Failed to parse WebView2 JS exception payload");
+            }
+        }
+
+        private static void OnJsConsoleApiCalled(object sender, CoreWebView2DevToolsProtocolEventReceivedEventArgs e)
+        {
+            try
+            {
+                var parsed = JObject.Parse(e.ParameterObjectAsJson);
+                var type = parsed["type"]?.Value<string>() ?? "log";
+                var args = parsed["args"] as JArray;
+                var message = args == null
+                    ? string.Empty
+                    : string.Join(" ", args.Select(FormatConsoleArg));
+
+                switch (type)
+                {
+                    case "error":
+                    case "assert":
+                        Logger.Error("WebView2 console.{Type}: {Message}", type, message);
+                        break;
+                    case "warning":
+                        Logger.Warning("WebView2 console.{Type}: {Message}", type, message);
+                        break;
+                    default:
+                        Logger.Information("WebView2 console.{Type}: {Message}", type, message);
+                        break;
+                }
+            }
+            catch (Exception ex)
+            {
+                Logger.Warning(ex, "Failed to parse WebView2 console event payload");
+            }
+        }
+
+        private static string FormatConsoleArg(JToken arg)
+        {
+            // Runtime.RemoteObject: prefer `description` (covers Errors, functions, etc.),
+            // fall back to the primitive `value`.
+            var description = arg?["description"]?.Value<string>();
+            if (!string.IsNullOrEmpty(description)) return description;
+            var value = arg?["value"];
+            return value?.ToString() ?? "(undefined)";
+        }
+#endif
     }
 }
