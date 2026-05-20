@@ -2,6 +2,7 @@
 {
     public static class LsConstants
     {
+        // TODO (IDE-1653 flip): change to "25" in the flag-flip cleanup PR
         public const string ProtocolVersion = "24";
         
         public const string SnykConfiguration = "$/snyk.configuration";

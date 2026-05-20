@@ -28,6 +28,7 @@ namespace Snyk.VisualStudio.Extension.Language
         private static readonly ILogger Logger = LogManager.ForContext<SnykLanguageClient>();
         private readonly SemaphoreSlim semaphore = new SemaphoreSlim(1,1);
         private LsSettings settings;
+        private LsSettingsV25 settingsV25;
 
         [ImportingConstructor]
         public SnykLanguageClient()
@@ -49,6 +50,13 @@ namespace Snyk.VisualStudio.Extension.Language
 
         public object GetInitializationOptions()
         {
+            if (V25Feature.Enabled)
+            {
+                if (settingsV25 == null)
+                    settingsV25 = new LsSettingsV25(SnykVSPackage.ServiceProvider);
+                return settingsV25.GetInitializationOptions();
+            }
+
             if (settings == null)
                 settings = new LsSettings(SnykVSPackage.ServiceProvider);
             return settings.GetInitializationOptions();
@@ -430,11 +438,21 @@ namespace Snyk.VisualStudio.Extension.Language
         {
             if (!IsReady) return default;
 
-            var param = new LSP.DidChangeConfigurationParams
+            LSP.DidChangeConfigurationParams param;
+            if (V25Feature.Enabled)
             {
-                Settings = GetInitializationOptions()
-            };
-            
+                if (settingsV25 == null)
+                    settingsV25 = new LsSettingsV25(SnykVSPackage.ServiceProvider);
+                var config = settingsV25.GetLspConfigurationParam();
+                if (config == null) return default;
+                param = new LSP.DidChangeConfigurationParams { Settings = config };
+            }
+            else
+            {
+                // v24 deviation: sends full InitializationOptions; snyk-ls tolerates extra fields
+                param = new LSP.DidChangeConfigurationParams { Settings = GetInitializationOptions() };
+            }
+
             return await InvokeWithParametersAsync<object>(LsConstants.WorkspaceChangeConfiguration, param, cancellationToken).ConfigureAwait(false);
         }
 

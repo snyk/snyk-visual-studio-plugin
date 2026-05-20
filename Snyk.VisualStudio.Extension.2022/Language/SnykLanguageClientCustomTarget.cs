@@ -8,6 +8,7 @@ using System.Threading.Tasks;
 using Microsoft.VisualStudio.Shell;
 using Microsoft.VisualStudio.Threading;
 using Newtonsoft.Json.Linq;
+using Serilog;
 using StreamJsonRpc;
 using Snyk.VisualStudio.Extension.Authentication;
 using Snyk.VisualStudio.Extension.Extension;
@@ -18,6 +19,7 @@ namespace Snyk.VisualStudio.Extension.Language
 {
     public class SnykLanguageClientCustomTarget
     {
+        private static readonly ILogger Logger = LogManager.ForContext<SnykLanguageClientCustomTarget>();
         private readonly ISnykServiceProvider serviceProvider;
         private readonly ConcurrentDictionary<string, IEnumerable<Issue>> snykCodeIssueDictionary = new();
         private readonly ConcurrentDictionary<string, IEnumerable<Issue>> snykOssIssueDictionary = new();
@@ -301,6 +303,17 @@ namespace Snyk.VisualStudio.Extension.Language
             {
                 serviceProvider.TasksService.ScanAsync().FireAndForget();
             }
+        }
+
+        [JsonRpcMethod(LsConstants.SnykConfiguration)]
+        public async Task OnSnykConfiguration(JToken arg)
+        {
+            var param = arg.TryParse<LspConfigurationParam>();
+            if (param == null) return;
+
+            // TODO (IDE-1653 flip): apply param.Settings and param.FolderConfigs to serviceProvider.Options
+            // Full inbound settings application is implemented in phase 4 (PR-4).
+            Logger.Debug("$/snyk.configuration received: {FolderConfigCount} folder config(s)", param.FolderConfigs?.Count ?? 0);
         }
 
         [JsonRpcMethod(LsConstants.SnykAddTrustedFolders)]

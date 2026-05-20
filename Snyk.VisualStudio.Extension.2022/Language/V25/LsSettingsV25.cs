@@ -123,6 +123,21 @@ namespace Snyk.VisualStudio.Extension.Language
             return result;
         }
 
+        public LspConfigurationParam GetLspConfigurationParam()
+        {
+            if (serviceProvider == null)
+                return null;
+
+            var options = serviceProvider.Options;
+            // TODO (IDE-1653 flip): options.FolderConfigs is populated by OnSnykConfiguration in v25 mode
+            // (phase 4). Until then, FolderConfigs is sent from the last $/snyk.folderConfigs push.
+            return new LspConfigurationParam
+            {
+                Settings = BuildSettingsMap(options),
+                FolderConfigs = BuildFolderConfigs(options.FolderConfigs),
+            };
+        }
+
         private string GetIntegrationName(ISnykOptions options) =>
             $"{options.IntegrationEnvironment}@@{options.IntegrationName}";
 
