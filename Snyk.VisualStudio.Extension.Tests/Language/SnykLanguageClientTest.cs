@@ -64,6 +64,28 @@ namespace Snyk.VisualStudio.Extension.Tests.Language
         }
 
         [Fact]
+        public async Task DidChangeConfigurationAsync_ShouldReturnDefault_WhenConfigIsNull()
+        {
+            // Arrange – make ServiceProvider null so LsSettingsV25.GetLspConfigurationParam returns null
+            cut.IsReady = true;
+            VsPackage.SetServiceProvider(null);
+
+            // Act – must not throw even when the config param cannot be built
+            var result = await cut.DidChangeConfigurationAsync(CancellationToken.None);
+
+            // Assert – nothing sent to the language server.
+            // Note: Logger.Warning is intentionally not asserted here. SnykLanguageClient uses
+            // LogManager.ForContext<T>() which writes to a Lazy<Logger> backed by a file sink,
+            // not to Serilog.Log.Logger (the mock set in PackageBaseTest). The warning cannot
+            // be intercepted without injecting the logger — a larger refactor outside this scope.
+            jsonRpcMock.Verify(x => x.InvokeWithParameterObjectAsync<object>(LsConstants.WorkspaceChangeConfiguration,
+                It.IsAny<LSP.DidChangeConfigurationParams>(),
+                It.IsAny<CancellationToken>()),
+                Times.Never);
+            Assert.Null(result);
+        }
+
+        [Fact]
         public async Task DidChangeConfigurationAsync_ShouldInvoke()
         {
             // Arrange

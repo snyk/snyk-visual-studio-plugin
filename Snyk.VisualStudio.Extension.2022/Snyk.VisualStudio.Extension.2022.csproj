@@ -87,9 +87,7 @@
     <Compile Include="Language\ILanguageClientManager.cs" />
     <Compile Include="Language\InvalidProductTypeException.cs" />
     <Compile Include="Language\JsonRpcWrapper.cs" />
-    <Compile Include="Language\LsSettings.cs" />
     <Compile Include="Language\LsConstants.cs" />
-    <Compile Include="Language\V25Feature.cs" />
     <Compile Include="Language\V25\PflagKeys.cs" />
     <Compile Include="Language\V25\ConfigSetting.cs" />
     <Compile Include="Language\V25\LspFolderConfig.cs" />
