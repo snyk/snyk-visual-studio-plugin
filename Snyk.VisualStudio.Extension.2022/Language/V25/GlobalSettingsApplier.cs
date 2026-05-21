@@ -86,6 +86,10 @@ namespace Snyk.VisualStudio.Extension.Language
                     case PflagKeys.OrgSetByUser:
                     case PflagKeys.BaseBranch:
                         break;
+
+                    // TODO [IDE-1653]: The following pflag keys are not propagated at the global level.
+                    // Evaluate whether any need to be restored to avoid breaking changes:
+                    // SendErrorReports, EnableTelemetry, SnykCodeApi, Path, ActivateSnykCode, AutomaticAuthentication.
                 }
             }
             catch (Exception ex)
