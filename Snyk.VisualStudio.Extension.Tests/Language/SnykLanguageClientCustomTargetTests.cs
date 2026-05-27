@@ -19,7 +19,7 @@ namespace Snyk.VisualStudio.Extension.Tests.Language
         private readonly Mock<ISnykOptions> optionsMock;
         private readonly Mock<ISnykOptionsManager> snykOptionsManagerMock;
         private readonly Mock<ILanguageClientManager> languageClientManagerMock;
-        private readonly Mock<ISnykGeneralOptionsDialogPage> generalSettingsPageMock;
+        private readonly Mock<IAuthenticationFlowService> authenticationFlowServiceMock;
         private readonly Mock<ISolutionService> solutionServiceMock;
         private readonly SnykLanguageClientCustomTarget cut;
 
@@ -28,7 +28,7 @@ namespace Snyk.VisualStudio.Extension.Tests.Language
             var serviceProviderMock = new Mock<ISnykServiceProvider>();
             tasksServiceMock = new Mock<ISnykTasksService>();
             optionsMock = new Mock<ISnykOptions>();
-            generalSettingsPageMock = new Mock<ISnykGeneralOptionsDialogPage>();
+            authenticationFlowServiceMock = new Mock<IAuthenticationFlowService>();
             snykOptionsManagerMock = new Mock<ISnykOptionsManager>();
             languageClientManagerMock = new Mock<ILanguageClientManager>();
             solutionServiceMock = new Mock<ISolutionService>();
@@ -43,7 +43,7 @@ namespace Snyk.VisualStudio.Extension.Tests.Language
 
             serviceProviderMock.SetupGet(sp => sp.TasksService).Returns(tasksServiceMock.Object);
             serviceProviderMock.SetupGet(sp => sp.Options).Returns(optionsMock.Object);
-            serviceProviderMock.SetupGet(sp => sp.GeneralOptionsDialogPage).Returns(generalSettingsPageMock.Object);
+            serviceProviderMock.SetupGet(sp => sp.AuthenticationFlowService).Returns(authenticationFlowServiceMock.Object);
             serviceProviderMock.SetupGet(sp => sp.SnykOptionsManager).Returns(snykOptionsManagerMock.Object);
             serviceProviderMock.SetupGet(sp => sp.FeatureFlagService).Returns(featureFlagServiceMock.Object);
             serviceProviderMock.SetupGet(sp => sp.LanguageClientManager).Returns(languageClientManagerMock.Object);
@@ -166,13 +166,13 @@ namespace Snyk.VisualStudio.Extension.Tests.Language
         {
             // Arrange
             var arg = JObject.Parse("{}");
-            generalSettingsPageMock.Setup(o => o.HandleFailedAuthentication(It.IsAny<string>())).Returns(Task.CompletedTask);
+            authenticationFlowServiceMock.Setup(o => o.HandleFailedAuthenticationAsync(It.IsAny<string>())).Returns(Task.CompletedTask);
 
             // Act
             await cut.OnHasAuthenticated(arg);
 
             // Assert
-            generalSettingsPageMock.Verify(o => o.HandleFailedAuthentication("Authentication failed"), Times.Once);
+            authenticationFlowServiceMock.Verify(o => o.HandleFailedAuthenticationAsync("Authentication failed"), Times.Once);
         }
 
         [Fact]
@@ -180,7 +180,7 @@ namespace Snyk.VisualStudio.Extension.Tests.Language
         {
             // Arrange — new login (no previous token).
             var arg = JObject.Parse("{'token':'test-token','apiUrl':'https://api.snyk.io'}");
-            generalSettingsPageMock.Setup(o => o.HandleAuthenticationSuccess("test-token", "https://api.snyk.io")).Returns(Task.CompletedTask);
+            authenticationFlowServiceMock.Setup(o => o.HandleAuthenticationSuccessAsync("test-token", "https://api.snyk.io")).Returns(Task.CompletedTask);
             optionsMock.SetupGet(o => o.AuthenticationMethod).Returns(AuthenticationType.OAuth);
 
             // Act
@@ -190,7 +190,7 @@ namespace Snyk.VisualStudio.Extension.Tests.Language
             optionsMock.VerifySet(o => o.CustomEndpoint = "https://api.snyk.io");
             optionsMock.VerifySet(o => o.ApiToken = It.Is<AuthenticationToken>(t => t.Type == AuthenticationType.OAuth && t.ToString() == "test-token"));
             snykOptionsManagerMock.Verify(s => s.Save(It.IsAny<IPersistableOptions>(), false), Times.Once);
-            generalSettingsPageMock.Verify(o => o.HandleAuthenticationSuccess("test-token", "https://api.snyk.io"), Times.Once);
+            authenticationFlowServiceMock.Verify(o => o.HandleAuthenticationSuccessAsync("test-token", "https://api.snyk.io"), Times.Once);
         }
 
         [Fact]
@@ -207,8 +207,8 @@ namespace Snyk.VisualStudio.Extension.Tests.Language
 
             // Assert — Save must be called with triggerSettingsChangedEvent=false to avoid the loop
             snykOptionsManagerMock.Verify(s => s.Save(It.IsAny<IPersistableOptions>(), false), Times.Once);
-            // HandleAuthenticationSuccess must NOT be called — not a new login
-            generalSettingsPageMock.Verify(o => o.HandleAuthenticationSuccess(It.IsAny<string>(), It.IsAny<string>()), Times.Never);
+            // HandleAuthenticationSuccessAsync must NOT be called — not a new login
+            authenticationFlowServiceMock.Verify(o => o.HandleAuthenticationSuccessAsync(It.IsAny<string>(), It.IsAny<string>()), Times.Never);
             // No scan on refresh — old token was non-blank
             tasksServiceMock.Verify(t => t.ScanAsync(), Times.Never);
         }

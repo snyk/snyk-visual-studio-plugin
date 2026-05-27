@@ -3,6 +3,7 @@ using System.Threading.Tasks;
 using EnvDTE80;
 using Microsoft.VisualStudio.Settings;
 using Microsoft.VisualStudio.Shell;
+using Snyk.VisualStudio.Extension.Authentication;
 using Snyk.VisualStudio.Extension.Language;
 using Snyk.VisualStudio.Extension.Settings;
 using Snyk.VisualStudio.Extension.Theme;
@@ -46,8 +47,12 @@ namespace Snyk.VisualStudio.Extension.Service
         /// Gets <see cref="ISnykOptions"/> (Settings) implementation instance.
         /// </summary>
         ISnykOptions Options { get; }
-        ISnykGeneralOptionsDialogPage GeneralOptionsDialogPage { get; }
         ISnykOptionsManager SnykOptionsManager { get; }
+
+        /// <summary>
+        /// Orchestrates IDE-side auth flow (login/logout, modal auth dialog).
+        /// </summary>
+        IAuthenticationFlowService AuthenticationFlowService { get; }
         /// <summary>
         /// Gets Visual Studio Settiings Manager instance.
         /// </summary>

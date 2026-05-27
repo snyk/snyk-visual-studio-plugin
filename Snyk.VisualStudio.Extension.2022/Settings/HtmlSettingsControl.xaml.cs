@@ -1,13 +1,12 @@
-// ABOUTME: WPF modal window for HTML-based settings interface
-// ABOUTME: Hosts the Language Server settings HTML in a WebView2 control
+// ABOUTME: WebView2-backed settings UserControl. Hosts the LS-rendered HTML config form.
+// ABOUTME: Hosted by HtmlSettingsDialogPage as the Tools->Options "Snyk" page.
 
 using System;
 using System.Threading.Tasks;
 using System.Windows;
-using Microsoft.VisualStudio.PlatformUI;
+using System.Windows.Controls;
 using Microsoft.VisualStudio.Shell;
 using Microsoft.Web.WebView2.Core;
-using Newtonsoft.Json.Linq;
 using Serilog;
 using Snyk.VisualStudio.Extension.Language;
 using Snyk.VisualStudio.Extension.Service;
@@ -17,21 +16,44 @@ using Snyk.VisualStudio.Extension.UI.Toolwindow;
 namespace Snyk.VisualStudio.Extension.Settings
 {
     /// <summary>
-    /// WPF modal window for HTML-based settings configuration.
-    /// Loads settings HTML from the Language Server and provides IDE bridge functions
-    /// for save/login/logout, routed through <see cref="WebView2Host"/>'s window-level
-    /// bridge surface (defined by <see cref="WebView2BridgeBindings"/>).
+    /// Hosts the Language Server settings HTML in a WebView2 control, wires the JS↔C# bridge,
+    /// and exposes the save / auth-push / dirty-state hooks the embedding Tools→Options
+    /// <see cref="HtmlSettingsDialogPage"/> needs.
     /// </summary>
-    public partial class HtmlSettingsWindow : DialogWindow
+    public partial class HtmlSettingsControl : UserControl, IDisposable
     {
-        protected static readonly ILogger Logger = LogManager.ForContext<HtmlSettingsWindow>();
-        private static volatile HtmlSettingsWindow instance;
+        protected static readonly ILogger Logger = LogManager.ForContext<HtmlSettingsControl>();
 
-        public static HtmlSettingsWindow Instance => instance;
+        // Live control instance, updated on Loaded/Unloaded. Used by SnykLanguageClientCustomTarget
+        // to push LS-driven auth tokens into the currently-visible settings page after an OAuth
+        // round-trip. Volatile because writers (WPF Loaded/Unloaded on UI thread) and readers
+        // (LS callback on a background thread) cross threads.
+        private static volatile HtmlSettingsControl instance;
+
+        /// <summary>
+        /// The currently-loaded settings control, or null if no settings UI is visible.
+        /// Tracks the Tools→Options <see cref="HtmlSettingsDialogPage"/>'s control while
+        /// the page is in the visual tree.
+        /// </summary>
+        public static HtmlSettingsControl Instance => instance;
 
         private readonly ISnykServiceProvider serviceProvider;
-        protected HtmlSettingsScriptingBridge scriptingBridge;
-        protected WebView2Host host;
+        protected readonly HtmlSettingsScriptingBridge scriptingBridge;
+        protected readonly WebView2Host host;
+        private bool _disposed;
+
+        public static readonly DependencyProperty IsDirtyProperty =
+            DependencyProperty.Register(
+                nameof(IsDirty),
+                typeof(bool),
+                typeof(HtmlSettingsControl),
+                new PropertyMetadata(false));
+
+        public bool IsDirty
+        {
+            get => (bool)GetValue(IsDirtyProperty);
+            set => SetValue(IsDirtyProperty, value);
+        }
 
         /// <summary>
         /// Whether to expose Chromium DevTools (F12) on the hosted WebView2. Gated on the
@@ -45,29 +67,12 @@ namespace Snyk.VisualStudio.Extension.Settings
             false;
 #endif
 
-        public static readonly DependencyProperty IsDirtyProperty =
-            DependencyProperty.Register(
-                "IsDirty",
-                typeof(bool),
-                typeof(HtmlSettingsWindow),
-                new PropertyMetadata(false));
-
-        public bool IsDirty
-        {
-            get => (bool)GetValue(IsDirtyProperty);
-            set => SetValue(IsDirtyProperty, value);
-        }
-
-        public HtmlSettingsWindow(ISnykServiceProvider serviceProvider)
+        public HtmlSettingsControl(ISnykServiceProvider serviceProvider)
         {
             this.serviceProvider = serviceProvider ?? throw new ArgumentNullException(nameof(serviceProvider));
 
-            // Set as singleton instance
-            instance = this;
-
             InitializeComponent();
 
-            // Create scripting bridge with callbacks
             scriptingBridge = new HtmlSettingsScriptingBridge(
                 serviceProvider,
                 onModified: () => IsDirty = true,
@@ -82,7 +87,6 @@ namespace Snyk.VisualStudio.Extension.Settings
             // Intentionally not wiring __IS_IDE_AUTOSAVE_ENABLED__: VS and IntelliJ use OK-button
             // apply, only VS Code autosaves. The LS HTML / fallback HTML default of "absent flag
             // → don't autosave" gives us the right VS dialog-commit behaviour.
-
             var dispatcher = new WebView2MessageDispatcher()
                 .Register("__saveIdeConfig__", 1, args =>
                     scriptingBridge.__saveIdeConfig__(args[0].Value<string>()))
@@ -110,10 +114,13 @@ namespace Snyk.VisualStudio.Extension.Settings
                 enableDeveloperTools: DeveloperToolsEnabled);
 
             SettingsBrowser.NavigationCompleted += SettingsBrowser_OnNavigationCompleted;
+            Unloaded += Control_Unloaded;
         }
 
-        private async void Window_Loaded(object sender, RoutedEventArgs e)
+        private async void Control_Loaded(object sender, RoutedEventArgs e)
         {
+            instance = this;
+
             try
             {
                 await host.InitializeAsync();
@@ -128,13 +135,22 @@ namespace Snyk.VisualStudio.Extension.Settings
             await LoadHtmlSettingsAsync();
         }
 
+        private void Control_Unloaded(object sender, RoutedEventArgs e)
+        {
+            // Clear the singleton if we're the currently-tracked control — guards against
+            // older instances racing the latest Loaded write.
+            if (instance == this)
+            {
+                instance = null;
+            }
+        }
+
         private async Task LoadHtmlSettingsAsync()
         {
             try
             {
                 LoadingStatusLabel.Text = "Loading settings...";
 
-                // Load HTML from Language Server or fallback
                 var html = await GetHtmlContentAsync();
                 if (string.IsNullOrEmpty(html))
                 {
@@ -153,11 +169,10 @@ namespace Snyk.VisualStudio.Extension.Settings
         }
 
         /// <summary>
-        /// Loads HTML from Language Server with retries, falls back to embedded HTML if unavailable.
+        /// Loads HTML from Language Server, falls back to embedded HTML if unavailable.
         /// </summary>
         protected virtual async Task<string> GetHtmlContentAsync()
         {
-            // Check if Language Server is ready before attempting to get HTML
             if (!LanguageClientHelper.IsLanguageServerReady())
             {
                 Logger.Warning("Language Server not ready, using fallback HTML");
@@ -180,84 +195,50 @@ namespace Snyk.VisualStudio.Extension.Settings
                 Logger.Warning(ex, "Failed to get HTML from Language Server");
             }
 
-            // Fall back to embedded HTML
             Logger.Warning("Falling back to embedded HTML");
             return HtmlResourceLoader.LoadFallbackHtml(serviceProvider.Options);
         }
 
         private void SettingsBrowser_OnNavigationCompleted(object sender, CoreWebView2NavigationCompletedEventArgs e)
         {
-            // Hide loading label
             LoadingStatusLabel.Visibility = Visibility.Collapsed;
         }
 
-        private async void OkButton_OnClick(object sender, RoutedEventArgs e)
+        /// <summary>
+        /// Triggers the page-side <c>getAndSaveIdeConfig()</c> and awaits the bridge's
+        /// save-completion signal (5-second timeout treated as failure). Returns true on
+        /// success, false on failure or timeout. The save itself is fire-and-forget from JS
+        /// under WebView2, so we rely on <see cref="HtmlSettingsScriptingBridge.SaveCompletion"/>
+        /// to surface success / failure.
+        /// </summary>
+        public async Task<bool> SaveAsync()
         {
             try
             {
-                OkButton.IsEnabled = false;
-                CancelButton.IsEnabled = false;
+                scriptingBridge.BeginSave();
+                await host.ExecuteScriptAsync("getAndSaveIdeConfig()");
 
-                // Under WebView2, the JS call to window.__saveIdeConfig__ is fire-and-forget via
-                // postMessage — JS can't observe C# exceptions the way it could over the old IE
-                // COM bridge. The bridge instead reports save success/failure through
-                // SaveCompletion (a TaskCompletionSource<bool> reset by BeginSave). We honour
-                // that signal here so the dialog doesn't close on a silent save failure.
-                var saveSucceeded = false;
-                var saveAttempted = true;
-                try
+                var saveTask = scriptingBridge.SaveCompletion;
+                var winner = await Task.WhenAny(saveTask, Task.Delay(TimeSpan.FromSeconds(5)));
+                if (winner != saveTask)
                 {
-                    scriptingBridge.BeginSave();
-                    await host.ExecuteScriptAsync("getAndSaveIdeConfig()");
-
-                    var saveTask = scriptingBridge.SaveCompletion;
-                    var winner = await Task.WhenAny(saveTask, Task.Delay(TimeSpan.FromSeconds(5)));
-                    if (winner != saveTask)
-                    {
-                        Logger.Warning("Save did not complete within 5s; treating as failure");
-                    }
-                    else
-                    {
-                        saveSucceeded = await saveTask;
-                    }
+                    Logger.Warning("Save did not complete within 5s; treating as failure");
+                    return false;
                 }
-                catch (Exception ex)
-                {
-                    Logger.Error(ex, "Failed to invoke getAndSaveIdeConfig");
-                    saveAttempted = false;
-                }
-
-                if (!saveSucceeded && saveAttempted)
-                {
-                    // Keep the dialog open so the user can correct the input and retry.
-                    OkButton.IsEnabled = true;
-                    CancelButton.IsEnabled = true;
-                    MessageBox.Show(
-                        this,
-                        "Failed to save Snyk settings. Check the Snyk log for details.",
-                        "Snyk Settings",
-                        MessageBoxButton.OK,
-                        MessageBoxImage.Warning);
-                    return;
-                }
-
-                DialogResult = true;
-                Close();
+                return await saveTask;
             }
             catch (Exception ex)
             {
-                Logger.Error(ex, "Failed to save settings");
-                OkButton.IsEnabled = true;
-                CancelButton.IsEnabled = true;
+                Logger.Error(ex, "Failed to invoke getAndSaveIdeConfig");
+                return false;
             }
         }
 
-        private void CancelButton_OnClick(object sender, RoutedEventArgs e)
-        {
-            DialogResult = false;
-            Close();
-        }
-
+        /// <summary>
+        /// Pushes a freshly-issued token / apiUrl into the still-open settings page so the
+        /// visible token field updates after an LS-driven OAuth flow. Called from
+        /// <see cref="SnykLanguageClientCustomTarget.OnHasAuthenticated"/>.
+        /// </summary>
         public void UpdateAuthToken(string token, string apiUrl = null)
         {
             ThreadHelper.JoinableTaskFactory.RunAsync(async () =>
@@ -298,16 +279,11 @@ namespace Snyk.VisualStudio.Extension.Settings
             }).FireAndForget();
         }
 
-        protected override void OnClosed(EventArgs e)
+        public void Dispose()
         {
-            if (instance == this)
-            {
-                instance = null;
-            }
-
+            if (_disposed) return;
+            _disposed = true;
             host?.Dispose();
-
-            base.OnClosed(e);
         }
     }
 }

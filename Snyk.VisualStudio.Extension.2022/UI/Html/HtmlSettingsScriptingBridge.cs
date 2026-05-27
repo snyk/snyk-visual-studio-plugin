@@ -74,7 +74,7 @@ namespace Snyk.VisualStudio.Extension.UI.Html
         /// Failures are logged and signalled via <see cref="SaveCompletion"/> rather than
         /// re-thrown — the JS caller invoked us via <c>chrome.webview.postMessage</c>
         /// (fire-and-forget under WebView2) and can't observe an exception the way it could
-        /// over the old IE COM bridge. <c>HtmlSettingsWindow.OkButton_OnClick</c> awaits
+        /// over the old IE COM bridge. <c>HtmlSettingsControl.SaveAsync</c> awaits
         /// <see cref="SaveCompletion"/> and surfaces failure to the user from there.
         /// </para>
         /// </summary>
@@ -385,9 +385,9 @@ namespace Snyk.VisualStudio.Extension.UI.Html
 
         private async Task SaveFolderConfigsAsync(List<FolderConfigData> folderConfigs)
         {
-            // LS HTML sends folder configs for the current solution
-            // Pattern: Save to solution-specific storage AND update in-memory global FolderConfigs
-            // (matches SnykGeneralOptionsDialogPage.UpdateFolderConfigForCurrentSolutionAsync)
+            // LS HTML sends folder configs for the current solution.
+            // Pattern: save to solution-specific storage AND mirror the per-folder values into
+            // the global Options.FolderConfigs slot.
             if (folderConfigs == null || folderConfigs.Count == 0)
                 return;
 

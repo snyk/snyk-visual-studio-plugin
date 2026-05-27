@@ -8,6 +8,7 @@ using Microsoft.VisualStudio.Settings;
 using Microsoft.VisualStudio.Shell;
 using Microsoft.VisualStudio.Shell.Settings;
 using Serilog;
+using Snyk.VisualStudio.Extension.Authentication;
 using Snyk.VisualStudio.Extension.Language;
 using Snyk.VisualStudio.Extension.Settings;
 using Snyk.VisualStudio.Extension.Theme;
@@ -36,6 +37,7 @@ namespace Snyk.VisualStudio.Extension.Service
 
         private SnykOptionsManager snykOptionsManager;
         private SnykFeatureFlagService featureFlagService;
+        private IAuthenticationFlowService authenticationFlowService;
 
         private IWorkspaceTrustService workspaceTrustService;
         
@@ -57,7 +59,8 @@ namespace Snyk.VisualStudio.Extension.Service
         /// </summary>
         public ISnykOptions Options => this.Package.Options;
 
-        public ISnykGeneralOptionsDialogPage GeneralOptionsDialogPage => this.Package.SnykGeneralOptionsDialogPage;
+        public IAuthenticationFlowService AuthenticationFlowService =>
+            this.authenticationFlowService ?? (this.authenticationFlowService = new AuthenticationFlowService(this));
 
         /// <summary>
         /// Gets solution service.

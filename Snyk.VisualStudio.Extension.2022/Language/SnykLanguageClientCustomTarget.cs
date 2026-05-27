@@ -265,7 +265,7 @@ namespace Snyk.VisualStudio.Extension.Language
         {
             if (arg?["token"] == null)
             {
-                await serviceProvider.GeneralOptionsDialogPage.HandleFailedAuthentication("Authentication failed");
+                await serviceProvider.AuthenticationFlowService.HandleFailedAuthenticationAsync("Authentication failed");
                 return;
             }
 
@@ -274,8 +274,9 @@ namespace Snyk.VisualStudio.Extension.Language
 
             var oldToken = serviceProvider.Options.ApiToken?.ToString() ?? string.Empty;
 
-            // Always notify the HTML settings window so the token field updates immediately.
-            HtmlSettingsWindow.Instance?.UpdateAuthToken(token, apiUrl);
+            // Always notify the live HTML settings control (modal or Tools→Options page) so
+            // the token field updates immediately after an OAuth round-trip.
+            HtmlSettingsControl.Instance?.UpdateAuthToken(token, apiUrl);
 
             if (!string.IsNullOrEmpty(apiUrl))
             {
@@ -293,7 +294,7 @@ namespace Snyk.VisualStudio.Extension.Language
             if (!isNewLogin)
                 return;
 
-            await serviceProvider.GeneralOptionsDialogPage.HandleAuthenticationSuccess(token, apiUrl);
+            await serviceProvider.AuthenticationFlowService.HandleAuthenticationSuccessAsync(token, apiUrl);
 
             if (!serviceProvider.Options.ApiToken.IsValid())
                 return;

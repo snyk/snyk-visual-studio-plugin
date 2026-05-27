@@ -50,12 +50,7 @@ namespace Snyk.VisualStudio.Extension
     [ProvideService(typeof(ISnykService), IsAsyncQueryable = true)]
     [ProvideMenuResource("Menus.ctmenu", 1)]
     [ProvideToolWindow(typeof(SnykToolWindow), Style = VsDockStyle.Tabbed)]
-    [ProvideOptionPage(typeof(SnykGeneralOptionsDialogPage), "Snyk", "Account", 1000, 1001, true)]
-    [ProvideOptionPage(typeof(SnykScanOptionsDialogPage), "Snyk", "Scan Configuration", 1000, 1002, true)]
-    [ProvideOptionPage(typeof(SnykSolutionOptionsDialogPage), "Snyk", "Solution settings", 1000, 1003, true)]
-    [ProvideOptionPage(typeof(SnykCliOptionsDialogPage), "Snyk", "CLI settings", 1000, 1004, true)]
-    [ProvideOptionPage(typeof(SnykExperimentalDialogPage), "Snyk", "Experimental", 1000, 1005, true)]
-    [ProvideOptionPage(typeof(SnykUserExperienceDialogPage), "Snyk", "User Experience", 1000, 1006, true)]
+    [ProvideOptionPage(typeof(HtmlSettingsDialogPage), "Snyk", "General", 1000, 1001, true)]
     public sealed class SnykVSPackage : AsyncPackage
     {
         /// <summary>
@@ -105,12 +100,8 @@ namespace Snyk.VisualStudio.Extension
         /// Gets the Options
         /// </summary>
         public ISnykOptions Options { get; private set; }
-        public ISnykGeneralOptionsDialogPage SnykGeneralOptionsDialogPage { get; private set; }
-        public ISnykCliOptionsDialogPage SnykCliOptionsDialogPage { get; private set; }
-        public ISnykScanOptionsDialogPage SnykScanOptionsDialogPage { get; private set; }
-        public ISnykExperimentalDialogPage SnykExperimentalDialogPage { get; private set; }
-        public ISnykUserExperienceDialogPage SnykUserExperienceDialogPage { get; private set; }
-        public ISnykSolutionOptionsDialogPage SnykSolutionOptionsDialogPage { get; private set; }
+
+        public HtmlSettingsDialogPage HtmlSettingsDialogPage { get; private set; }
 
         /// <summary>
         /// Gets <see cref="SnykToolWindow"/> instance.
@@ -125,7 +116,7 @@ namespace Snyk.VisualStudio.Extension
         /// <summary>
         /// Show Options dialog.
         /// </summary>
-        public void ShowOptionPage() => ShowOptionPage(typeof(SnykGeneralOptionsDialogPage));
+        public void ShowOptionPage() => ShowOptionPage(typeof(HtmlSettingsDialogPage));
 
         /// <summary>
         /// Create <see cref="SnykService"/> object.
@@ -206,9 +197,6 @@ namespace Snyk.VisualStudio.Extension
                 await SnykCleanPanelCommand.InitializeAsync(this);
                 await SnykOpenSettingsCommand.InitializeAsync(this);
 
-                // Can be enabled if you want to do rapid CSS/layout testing
-                await Settings.DebugHtmlSettingsWindow.OpenDebugWindowIfEnabledAsync(serviceProvider);
-            
                 // Notify package has been initialized
                 IsInitialized = true;
                 initializationTaskCompletionSource.SetResult(true);
@@ -330,50 +318,32 @@ namespace Snyk.VisualStudio.Extension
                 Options.ApplicationVersion = vsMajorMinorVersion;
                 Options.IntegrationEnvironment = readableVsVersion;
                 Options.IntegrationEnvironmentVersion = vsMajorMinorVersion;
+
+                // Push IDE-side settings to the LS whenever they change. Previously wired in
+                // SnykGeneralOptionsDialogPage.Initialize; relocated here when that DialogPage
+                // was retired in favour of HtmlSettingsDialogPage.
+                Options.SettingsChanged += OnOptionsSettingsChanged;
             }
 
-            if (SnykGeneralOptionsDialogPage == null)
-            {
-                SnykGeneralOptionsDialogPage =
-                    (SnykGeneralOptionsDialogPage)GetDialogPage(typeof(SnykGeneralOptionsDialogPage));
-                SnykGeneralOptionsDialogPage.Initialize(this.serviceProvider);
-            }
-
-            if (SnykCliOptionsDialogPage == null)
+            if (HtmlSettingsDialogPage == null)
             {
                 await JoinableTaskFactory.SwitchToMainThreadAsync();
 
-                SnykCliOptionsDialogPage =
-                    (SnykCliOptionsDialogPage)GetDialogPage(typeof(SnykCliOptionsDialogPage));
-                SnykCliOptionsDialogPage.Initialize(this.serviceProvider);
+                HtmlSettingsDialogPage =
+                    (HtmlSettingsDialogPage)GetDialogPage(typeof(HtmlSettingsDialogPage));
+                HtmlSettingsDialogPage.Initialize(this.serviceProvider);
             }
+        }
 
-            if (SnykScanOptionsDialogPage == null)
+        private void OnOptionsSettingsChanged(object sender, SnykSettingsChangedEventArgs e)
+        {
+            JoinableTaskFactory.RunAsync(async () =>
             {
-                SnykScanOptionsDialogPage =
-                    (SnykScanOptionsDialogPage)GetDialogPage(typeof(SnykScanOptionsDialogPage));
-                SnykScanOptionsDialogPage.Initialize(this.serviceProvider);
-            }
-
-            if (SnykUserExperienceDialogPage == null)
-            {
-                SnykUserExperienceDialogPage =
-                    (SnykUserExperienceDialogPage)GetDialogPage(typeof(SnykUserExperienceDialogPage));
-                SnykUserExperienceDialogPage.Initialize(this.serviceProvider);
-            }
-
-            if (SnykExperimentalDialogPage == null)
-            {
-                SnykExperimentalDialogPage =
-                    (SnykExperimentalDialogPage)GetDialogPage(typeof(SnykExperimentalDialogPage));
-                SnykExperimentalDialogPage.Initialize(this.serviceProvider);
-            }
-            if (SnykSolutionOptionsDialogPage == null)
-            {
-                SnykSolutionOptionsDialogPage =
-                    (SnykSolutionOptionsDialogPage)GetDialogPage(typeof(SnykSolutionOptionsDialogPage));
-                SnykSolutionOptionsDialogPage.Initialize(this.serviceProvider);
-            }
+                if (LanguageClientHelper.IsLanguageServerReady())
+                {
+                    await this.serviceProvider.LanguageClientManager.DidChangeConfigurationAsync(DisposalToken);
+                }
+            }).FireAndForget();
         }
 
         private async Task<string> GetVsVersionAsync()
