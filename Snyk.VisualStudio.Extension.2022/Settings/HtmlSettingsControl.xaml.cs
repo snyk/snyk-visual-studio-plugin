@@ -7,6 +7,7 @@ using System.Windows;
 using System.Windows.Controls;
 using Microsoft.VisualStudio.Shell;
 using Microsoft.Web.WebView2.Core;
+using Newtonsoft.Json.Linq;
 using Serilog;
 using Snyk.VisualStudio.Extension.Language;
 using Snyk.VisualStudio.Extension.Service;
