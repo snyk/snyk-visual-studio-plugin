@@ -74,6 +74,8 @@ namespace Snyk.VisualStudio.Extension.Settings
 
             InitializeComponent();
 
+            Logger.Information("[lifecycle] HtmlSettingsControl ctor; instance={Hash}", GetHashCode());
+
             scriptingBridge = new HtmlSettingsScriptingBridge(
                 serviceProvider,
                 onModified: () => IsDirty = true,
@@ -116,10 +118,37 @@ namespace Snyk.VisualStudio.Extension.Settings
 
             SettingsBrowser.NavigationCompleted += SettingsBrowser_OnNavigationCompleted;
             Unloaded += Control_Unloaded;
+
+            // Trigger the heavy WebView2 init + LS fetch from IsVisibleChanged rather than
+            // Loaded. When Tools→Options opens the Snyk page for the second time, VS's
+            // hosting layer briefly cycles the control through Loaded → Unloaded → Loaded
+            // as it re-arranges its WPF tree under a fresh ElementHost. The intermediate
+            // unparent destroys the WebView2's underlying HWND, disposing the wrapper —
+            // and any in-flight NavigateAsync started from the first Loaded then throws
+            // ObjectDisposedException. IsVisibleChanged only fires once the tree is
+            // stable and the control is actually visible, so the init runs after the
+            // re-arrangement settles.
+            IsVisibleChanged += Control_IsVisibleChanged;
         }
 
-        private async void Control_Loaded(object sender, RoutedEventArgs e)
+        private bool _initStarted;
+
+        /// <summary>
+        /// Set to true after this control has been Unloaded. The host's WebView2 may already
+        /// have been disposed by WPF's HwndHost cleanup at that point, so the parent
+        /// <see cref="HtmlSettingsDialogPage"/> uses this to know when to swap in a fresh
+        /// control instance.
+        /// </summary>
+        public bool IsStale { get; private set; }
+
+        private async void Control_IsVisibleChanged(object sender, DependencyPropertyChangedEventArgs e)
         {
+            Logger.Information("[lifecycle] HtmlSettingsControl IsVisibleChanged; instance={Hash}, IsVisible={Visible}, initStarted={Started}",
+                GetHashCode(), IsVisible, _initStarted);
+            if (!IsVisible) return;
+            if (_initStarted) return;
+            _initStarted = true;
+
             instance = this;
 
             try
@@ -138,8 +167,14 @@ namespace Snyk.VisualStudio.Extension.Settings
 
         private void Control_Unloaded(object sender, RoutedEventArgs e)
         {
+            Logger.Information("[lifecycle] HtmlSettingsControl Unloaded; instance={Hash}", GetHashCode());
+            // After Unloaded the WebView2's underlying CoreWebView2Controller is destroyed by
+            // WPF's HwndHost cleanup, leaving the C# wrapper marked disposed. Signal stale so
+            // the DialogPage swaps in a fresh instance on the next show.
+            IsStale = true;
+
             // Clear the singleton if we're the currently-tracked control — guards against
-            // older instances racing the latest Loaded write.
+            // older instances racing the latest IsVisibleChanged write.
             if (instance == this)
             {
                 instance = null;

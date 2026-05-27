@@ -135,6 +135,23 @@ namespace Snyk.VisualStudio.Extension.UI.Html
         private static readonly Dictionary<string, Task<CoreWebView2Environment>> Environments =
             new Dictionary<string, Task<CoreWebView2Environment>>(StringComparer.OrdinalIgnoreCase);
 
+        /// <summary>
+        /// Drops the cached <see cref="CoreWebView2Environment"/> entry for the given user-data
+        /// folder so the next <see cref="InitializeAsync"/> call creates a fresh env (and a
+        /// fresh <c>msedgewebview2.exe</c> subprocess). Use after the only host using a folder
+        /// has been disposed — keeps the env alive when multiple hosts share a folder (e.g. the
+        /// description + summary panels under <c>"toolwindow"</c>) but lets single-user
+        /// surfaces (e.g. the settings DialogPage) start clean each time.
+        /// </summary>
+        public static void EvictEnvironmentCache(string userDataFolder)
+        {
+            if (string.IsNullOrEmpty(userDataFolder)) return;
+            lock (EnvironmentGate)
+            {
+                Environments.Remove(userDataFolder);
+            }
+        }
+
         private static Task<CoreWebView2Environment> GetOrCreateEnvironmentAsync(string userDataFolder)
         {
             lock (EnvironmentGate)
