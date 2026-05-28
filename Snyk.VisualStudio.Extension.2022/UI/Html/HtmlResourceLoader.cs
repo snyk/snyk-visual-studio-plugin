@@ -12,8 +12,10 @@ namespace Snyk.VisualStudio.Extension.UI.Html
     {
         /// <summary>
         /// Loads fallback HTML with theme colors and settings values applied.
+        /// Pass <paramref name="forceLight"/> to render in light mode regardless of the
+        /// active VS theme — used by the settings dialog.
         /// </summary>
-        public static string LoadFallbackHtml(ISnykOptions options)
+        public static string LoadFallbackHtml(ISnykOptions options, bool forceLight = false)
         {
             var assembly = Assembly.GetExecutingAssembly();
             var resourceName = "Snyk.VisualStudio.Extension.Resources.settings-fallback.html";
@@ -51,22 +53,23 @@ namespace Snyk.VisualStudio.Extension.UI.Html
                     }
 
                     // Use BaseHtmlProvider for theme replacement
-                    var provider = new BaseHtmlProvider();
+                    var provider = new BaseHtmlProvider(forceLight);
                     return provider.ReplaceCssVariables(template);
                 }
             }
         }
 
         /// <summary>
-        /// Applies theme colors to HTML from Language Server.
+        /// Applies theme colors to HTML from Language Server. Pass <paramref name="forceLight"/>
+        /// to render in light mode regardless of the active VS theme — used by the settings dialog.
         /// </summary>
-        public static string ApplyTheme(string html)
+        public static string ApplyTheme(string html, bool forceLight = false)
         {
             if (string.IsNullOrEmpty(html))
                 return html;
 
             // Use BaseHtmlProvider for theme replacement
-            var provider = new BaseHtmlProvider();
+            var provider = new BaseHtmlProvider(forceLight);
             return provider.ReplaceCssVariables(html);
         }
     }

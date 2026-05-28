@@ -194,7 +194,9 @@ namespace Snyk.VisualStudio.Extension.Settings
                     return;
                 }
 
-                html = HtmlResourceLoader.ApplyTheme(html);
+                // Settings dialog is always rendered in light mode regardless of VS theme;
+                // the tool-window panels (description, summary) keep theme-following.
+                html = HtmlResourceLoader.ApplyTheme(html, forceLight: true);
                 await host.NavigateAsync(html);
             }
             catch (Exception ex)
@@ -212,7 +214,7 @@ namespace Snyk.VisualStudio.Extension.Settings
             if (!LanguageClientHelper.IsLanguageServerReady())
             {
                 Logger.Warning("Language Server not ready, using fallback HTML");
-                return HtmlResourceLoader.LoadFallbackHtml(serviceProvider.Options);
+                return HtmlResourceLoader.LoadFallbackHtml(serviceProvider.Options, forceLight: true);
             }
 
             try
@@ -232,7 +234,7 @@ namespace Snyk.VisualStudio.Extension.Settings
             }
 
             Logger.Warning("Falling back to embedded HTML");
-            return HtmlResourceLoader.LoadFallbackHtml(serviceProvider.Options);
+            return HtmlResourceLoader.LoadFallbackHtml(serviceProvider.Options, forceLight: true);
         }
 
         private void SettingsBrowser_OnNavigationCompleted(object sender, CoreWebView2NavigationCompletedEventArgs e)
