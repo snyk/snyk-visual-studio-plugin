@@ -80,9 +80,17 @@ namespace Snyk.VisualStudio.Extension.UI.Html
         /// </summary>
         public void __saveIdeConfig__(string jsonString)
         {
-            try
+            // Important: must NOT use a blocking JoinableTaskFactory.Run here. This bridge is
+            // invoked from the WebView2 message dispatcher on the UI thread while OnApply's
+            // own JoinableTaskFactory.Run is already blocking the UI thread waiting on
+            // SaveCompletion. Nesting a second blocking Run on the same UI thread for work
+            // that itself schedules UI-thread continuations (SettingsChanged → DidChangeConfigurationAsync,
+            // LS round-trip via $/snyk.configuration in v25) freezes the dispatcher.
+            // RunAsync + FireAndForget lets the bridge handler return immediately; the
+            // outer OnApply unblocks when saveCompletionTcs is signalled below.
+            ThreadHelper.JoinableTaskFactory.RunAsync(async () =>
             {
-                ThreadHelper.JoinableTaskFactory.Run(async () =>
+                try
                 {
                     await ParseAndSaveConfigAsync(jsonString);
 
@@ -91,13 +99,13 @@ namespace Snyk.VisualStudio.Extension.UI.Html
                     OptionsManager.Save(Options, triggerSettingsChangedEvent: true);
 
                     saveCompletionTcs.TrySetResult(true);
-                });
-            }
-            catch (Exception ex)
-            {
-                Logger.Error(ex, "Error saving configuration");
-                saveCompletionTcs.TrySetResult(false);
-            }
+                }
+                catch (Exception ex)
+                {
+                    Logger.Error(ex, "Error saving configuration");
+                    saveCompletionTcs.TrySetResult(false);
+                }
+            }).FireAndForget();
         }
 
         /// <summary>

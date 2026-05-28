@@ -5,6 +5,7 @@ using System;
 using System.Runtime.InteropServices;
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Threading;
 using Microsoft.VisualStudio.Shell;
 using Serilog;
 using Snyk.VisualStudio.Extension.Service;
@@ -122,10 +123,38 @@ namespace Snyk.VisualStudio.Extension.Settings
         {
             try
             {
-                var saveSucceeded = ThreadHelper.JoinableTaskFactory.Run(async () =>
-                    await Control.SaveAsync());
+                // We have to block OnApply until SaveAsync completes (sync VS contract),
+                // but the save depends on round-tripping through WebView2's WebMessageReceived
+                // event (JS posts via chrome.webview.postMessage, which lands as a dispatcher
+                // message). JoinableTaskFactory.Run blocks the UI thread with a *restricted*
+                // pump that only allows joinable-task continuations through — it won't
+                // dispatch the WebView2 message, so the bridge never fires and the save
+                // never completes. DispatcherFrame.PushFrame pumps the full dispatcher
+                // including WebView2 events, which is exactly what we need here.
+                var saveSucceeded = false;
+                var saveFailedWithException = false;
+                var frame = new DispatcherFrame();
 
-                if (!saveSucceeded)
+                ThreadHelper.JoinableTaskFactory.RunAsync(async () =>
+                {
+                    try
+                    {
+                        saveSucceeded = await Control.SaveAsync();
+                    }
+                    catch (Exception ex)
+                    {
+                        Logger.Error(ex, "SaveAsync threw inside OnApply pump");
+                        saveFailedWithException = true;
+                    }
+                    finally
+                    {
+                        frame.Continue = false;
+                    }
+                }).FireAndForget();
+
+                Dispatcher.PushFrame(frame);
+
+                if (saveFailedWithException || !saveSucceeded)
                 {
                     e.ApplyBehavior = ApplyKind.CancelNoNavigate;
                     MessageBox.Show(
