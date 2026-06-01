@@ -38,6 +38,7 @@ namespace Snyk.VisualStudio.Extension.Service
         private SnykOptionsManager snykOptionsManager;
         private SnykFeatureFlagService featureFlagService;
         private IAuthenticationFlowService authenticationFlowService;
+        private readonly object authenticationFlowServiceGate = new object();
 
         private IWorkspaceTrustService workspaceTrustService;
         
@@ -59,8 +60,23 @@ namespace Snyk.VisualStudio.Extension.Service
         /// </summary>
         public ISnykOptions Options => this.Package.Options;
 
-        public IAuthenticationFlowService AuthenticationFlowService =>
-            this.authenticationFlowService ?? (this.authenticationFlowService = new AuthenticationFlowService(this));
+        public IAuthenticationFlowService AuthenticationFlowService
+        {
+            get
+            {
+                // Double-checked locking: the LS auth callbacks (OnHasAuthenticated) can run on a
+                // background thread while a UI-thread caller is also resolving this, so guard the
+                // lazy init to avoid constructing two instances.
+                if (this.authenticationFlowService != null)
+                    return this.authenticationFlowService;
+
+                lock (this.authenticationFlowServiceGate)
+                {
+                    return this.authenticationFlowService ??
+                           (this.authenticationFlowService = new AuthenticationFlowService(this));
+                }
+            }
+        }
 
         /// <summary>
         /// Gets solution service.

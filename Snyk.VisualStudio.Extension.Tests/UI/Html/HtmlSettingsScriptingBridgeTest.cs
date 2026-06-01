@@ -339,5 +339,105 @@ namespace Snyk.VisualStudio.Extension.Tests.UI.Html
             snykOptionsManagerMock.Verify(m => m.SaveAdditionalEnvAsync("ENV_VAR=1"), Times.Once);
             snykOptionsManagerMock.Verify(m => m.SaveAutoDeterminedOrgAsync("auto-org"), Times.Once);
         }
+
+        [Fact]
+        public void SaveIdeConfig_FolderConfigs_MirrorsChangedOverridesToExistingConfig()
+        {
+            // Existing in-memory global config for the current solution folder.
+            var existing = new FolderConfig { FolderPath = "/path/to/solution" };
+            optionsMock.SetupGet(o => o.FolderConfigs).Returns(new List<FolderConfig> { existing });
+
+            var config = JsonConvert.SerializeObject(new IdeConfigData
+            {
+                FolderConfigs = new List<FolderConfigData>
+                {
+                    new FolderConfigData
+                    {
+                        FolderPath = "/path/to/solution",
+                        PreferredOrg = "my-org",
+                        BaseBranch = "develop",
+                        SnykOssEnabled = true,
+                        SnykCodeEnabled = false,
+                        SeverityFilterHigh = false,
+                        ScanAutomatic = true,
+                        IssueViewIgnoredIssues = false,
+                        RiskScoreThreshold = 500,
+                    },
+                },
+            });
+
+            bridge.__saveIdeConfig__(config);
+
+            Assert.Equal("my-org", existing.PreferredOrg);
+            // BaseBranch has no solution-storage slot — only the mirror persists it.
+            Assert.Equal("develop", existing.BaseBranch);
+            Assert.Equal(true, existing.SnykOssEnabled);
+            Assert.Equal(false, existing.SnykCodeEnabled);
+            Assert.Equal(false, existing.SeverityFilterHigh);
+            Assert.Equal(true, existing.ScanAutomatic);
+            Assert.Equal(false, existing.IssueViewIgnoredIssues);
+            Assert.Equal(500, existing.RiskScoreThreshold);
+        }
+
+        [Fact]
+        public void SaveIdeConfig_FolderConfigs_AbsentFieldsDoNotClobberExistingOverrides()
+        {
+            // Existing config already carries several per-folder overrides.
+            var existing = new FolderConfig
+            {
+                FolderPath = "/path/to/solution",
+                PreferredOrg = "original-org",
+                SnykOssEnabled = true,
+                SeverityFilterHigh = true,
+                RiskScoreThreshold = 700,
+            };
+            optionsMock.SetupGet(o => o.FolderConfigs).Returns(new List<FolderConfig> { existing });
+
+            // Changed-only payload touching a single override.
+            var config = JsonConvert.SerializeObject(new IdeConfigData
+            {
+                FolderConfigs = new List<FolderConfigData>
+                {
+                    new FolderConfigData
+                    {
+                        FolderPath = "/path/to/solution",
+                        SnykCodeEnabled = false,
+                    },
+                },
+            });
+
+            bridge.__saveIdeConfig__(config);
+
+            // The one changed field is applied...
+            Assert.Equal(false, existing.SnykCodeEnabled);
+            // ...and every untouched field survives.
+            Assert.Equal("original-org", existing.PreferredOrg);
+            Assert.Equal(true, existing.SnykOssEnabled);
+            Assert.Equal(true, existing.SeverityFilterHigh);
+            Assert.Equal(700, existing.RiskScoreThreshold);
+        }
+
+        [Fact]
+        public void SaveIdeConfig_FolderConfigs_NoExistingConfig_DoesNotThrowAndStillPersistsScopedValues()
+        {
+            // No matching global config entry (FolderConfigs stays null) — the mirror block is
+            // skipped, but the solution-scoped saves must still run.
+            var config = JsonConvert.SerializeObject(new IdeConfigData
+            {
+                FolderConfigs = new List<FolderConfigData>
+                {
+                    new FolderConfigData
+                    {
+                        FolderPath = "/path/to/solution",
+                        PreferredOrg = "my-org",
+                        SnykOssEnabled = true,
+                    },
+                },
+            });
+
+            bridge.__saveIdeConfig__(config);
+
+            snykOptionsManagerMock.Verify(m => m.SavePreferredOrgAsync("my-org"), Times.Once);
+        }
     }
 }

@@ -213,6 +213,13 @@ namespace Snyk.VisualStudio.Extension
         /// <param name="disposing">Bool.</param>
         protected override void Dispose(bool disposing)
         {
+            if (disposing && Options != null)
+            {
+                // Detach the LS-push handler so it can't fire (and touch the LanguageClientManager)
+                // during or after package teardown.
+                Options.SettingsChanged -= OnOptionsSettingsChanged;
+            }
+
             base.Dispose(disposing);
         }
 
@@ -321,7 +328,9 @@ namespace Snyk.VisualStudio.Extension
 
                 // Push IDE-side settings to the LS whenever they change. Previously wired in
                 // SnykGeneralOptionsDialogPage.Initialize; relocated here when that DialogPage
-                // was retired in favour of HtmlSettingsDialogPage.
+                // was retired in favour of HtmlSettingsDialogPage. Unsubscribe-then-subscribe so
+                // the handler is never wired twice if Options is ever reloaded/reassigned.
+                Options.SettingsChanged -= OnOptionsSettingsChanged;
                 Options.SettingsChanged += OnOptionsSettingsChanged;
             }
 
