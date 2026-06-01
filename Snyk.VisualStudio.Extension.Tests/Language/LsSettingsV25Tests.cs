@@ -251,6 +251,60 @@ namespace Snyk.VisualStudio.Extension.Tests.Language
         }
 
         [Fact]
+        public void BuildFolderConfigs_PerFolderOverrides_MappedWhenSet()
+        {
+            SetupDefaults();
+            var folder = new FolderConfig
+            {
+                FolderPath = "/repo/myproject",
+                OrgSetByUser = false,
+                SnykCodeEnabled = false,
+                SnykOssEnabled = true,
+                SeverityFilterHigh = false,
+                ScanAutomatic = true,
+                IssueViewIgnoredIssues = false,
+                RiskScoreThreshold = 500,
+            };
+            optionsMock.SetupGet(o => o.FolderConfigs).Returns(new List<FolderConfig> { folder });
+
+            var result = cut.GetInitializationOptions();
+            var fc = result.FolderConfigs[0];
+
+            Assert.Equal(false, fc.Settings[PflagKeys.SnykCodeEnabled].Value);
+            Assert.Equal(true, fc.Settings[PflagKeys.SnykOssEnabled].Value);
+            Assert.Equal(false, fc.Settings[PflagKeys.SeverityFilterHigh].Value);
+            Assert.Equal(true, fc.Settings[PflagKeys.ScanAutomatic].Value);
+            Assert.Equal(false, fc.Settings[PflagKeys.IssueViewIgnoredIssues].Value);
+            Assert.Equal(500, fc.Settings[PflagKeys.RiskScoreThreshold].Value);
+            // Overrides not set on this folder must be omitted (PATCH semantics)
+            Assert.False(fc.Settings.ContainsKey(PflagKeys.SnykIacEnabled));
+            Assert.False(fc.Settings.ContainsKey(PflagKeys.SeverityFilterLow));
+        }
+
+        [Fact]
+        public void BuildFolderConfigs_PerFolderOverrides_OmittedWhenNull()
+        {
+            SetupDefaults();
+            var folder = new FolderConfig
+            {
+                FolderPath = "/repo/myproject",
+                OrgSetByUser = false,
+                // all org-scope override fields left null
+            };
+            optionsMock.SetupGet(o => o.FolderConfigs).Returns(new List<FolderConfig> { folder });
+
+            var result = cut.GetInitializationOptions();
+            var fc = result.FolderConfigs[0];
+
+            Assert.False(fc.Settings.ContainsKey(PflagKeys.SnykOssEnabled));
+            Assert.False(fc.Settings.ContainsKey(PflagKeys.SnykCodeEnabled));
+            Assert.False(fc.Settings.ContainsKey(PflagKeys.SeverityFilterCritical));
+            Assert.False(fc.Settings.ContainsKey(PflagKeys.ScanAutomatic));
+            Assert.False(fc.Settings.ContainsKey(PflagKeys.IssueViewOpenIssues));
+            Assert.False(fc.Settings.ContainsKey(PflagKeys.RiskScoreThreshold));
+        }
+
+        [Fact]
         public void BuildFolderConfigs_NullOptionalFields_OmitsThoseKeys()
         {
             SetupDefaults();

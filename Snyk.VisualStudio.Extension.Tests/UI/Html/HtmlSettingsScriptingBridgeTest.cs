@@ -199,11 +199,11 @@ namespace Snyk.VisualStudio.Extension.Tests.UI.Html
         }
 
         [Fact]
-        public void SaveIdeConfig_SetsOssEnabled_FromActivateSnykOpenSource()
+        public void SaveIdeConfig_SetsOssEnabled_FromSnakeCaseKey()
         {
             var config = JsonConvert.SerializeObject(new IdeConfigData
             {
-                ActivateSnykOpenSource = true,
+                SnykOssEnabled = true,
             });
 
             bridge.__saveIdeConfig__(config);
@@ -222,27 +222,14 @@ namespace Snyk.VisualStudio.Extension.Tests.UI.Html
         }
 
         [Fact]
-        public void SaveIdeConfig_SetsSecretsEnabled_FromCamelCaseKey()
+        public void SaveIdeConfig_SetsFilterSeverity_FromFlatSnakeCaseKeys()
         {
-            var config = JsonConvert.SerializeObject(new { activateSnykSecrets = false });
-
-            bridge.__saveIdeConfig__(config);
-
-            optionsMock.VerifySet(o => o.SecretsEnabled = false);
-        }
-
-        [Fact]
-        public void SaveIdeConfig_SetsFilterSeverity()
-        {
-            var config = JsonConvert.SerializeObject(new IdeConfigData
+            var config = JsonConvert.SerializeObject(new
             {
-                FilterSeverity = new FilterSeverity
-                {
-                    Critical = true,
-                    High = false,
-                    Medium = true,
-                    Low = false,
-                },
+                severity_filter_critical = true,
+                severity_filter_high = false,
+                severity_filter_medium = true,
+                severity_filter_low = false,
             });
 
             bridge.__saveIdeConfig__(config);
@@ -254,11 +241,28 @@ namespace Snyk.VisualStudio.Extension.Tests.UI.Html
         }
 
         [Fact]
+        public void SaveIdeConfig_SetsProductEnablement_FromSnakeCaseKeys()
+        {
+            var config = JsonConvert.SerializeObject(new
+            {
+                snyk_oss_enabled = true,
+                snyk_code_enabled = false,
+                snyk_iac_enabled = true,
+            });
+
+            bridge.__saveIdeConfig__(config);
+
+            optionsMock.VerifySet(o => o.OssEnabled = true);
+            optionsMock.VerifySet(o => o.SnykCodeSecurityEnabled = false);
+            optionsMock.VerifySet(o => o.IacEnabled = true);
+        }
+
+        [Fact]
         public void SaveIdeConfig_PartialPayload_DoesNotTouchUnprovidedSettings()
         {
             var config = JsonConvert.SerializeObject(new IdeConfigData
             {
-                ActivateSnykOpenSource = true,
+                SnykOssEnabled = true,
                 // SecretsEnabled and SnykCodeSecurityEnabled are NOT provided
             });
 

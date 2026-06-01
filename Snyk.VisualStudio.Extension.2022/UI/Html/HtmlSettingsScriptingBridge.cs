@@ -211,50 +211,51 @@ namespace Snyk.VisualStudio.Extension.UI.Html
 
         private void ApplyScanSettings(IdeConfigData config)
         {
-            // Apply scan settings (activateSnykOpenSource, activateSnykCode, activateSnykIac)
-            if (config.ActivateSnykOpenSource.HasValue)
+            // Product enablement (snyk_oss_enabled, snyk_code_enabled, snyk_iac_enabled, snyk_secrets_enabled)
+            if (config.SnykOssEnabled.HasValue)
             {
-                Options.OssEnabled = config.ActivateSnykOpenSource.Value;
+                Options.OssEnabled = config.SnykOssEnabled.Value;
             }
 
-            if (config.ActivateSnykCode.HasValue)
+            if (config.SnykCodeEnabled.HasValue)
             {
-                Options.SnykCodeSecurityEnabled = config.ActivateSnykCode.Value;
+                Options.SnykCodeSecurityEnabled = config.SnykCodeEnabled.Value;
             }
 
-            if (config.ActivateSnykIac.HasValue)
+            if (config.SnykIacEnabled.HasValue)
             {
-                Options.IacEnabled = config.ActivateSnykIac.Value;
+                Options.IacEnabled = config.SnykIacEnabled.Value;
             }
 
-            // Accept secrets flag as camelCase (activateSnykSecrets) or snake_case (snyk_secrets_enabled);
-            // camelCase takes precedence.
-            var secretsValue = config.ActivateSnykSecrets ?? config.SnykSecretsEnabledFallback;
-            if (secretsValue.HasValue)
+            if (config.SnykSecretsEnabled.HasValue)
             {
-                Options.SecretsEnabled = secretsValue.Value;
+                Options.SecretsEnabled = config.SnykSecretsEnabled.Value;
             }
 
-            // Apply scanning mode (auto/manual)
-            if (config.ScanningMode != null)
+            // Apply automatic-scan toggle (scan_automatic)
+            if (config.ScanAutomatic.HasValue)
             {
-                Options.AutoScan = config.ScanningMode == "auto";
+                Options.AutoScan = config.ScanAutomatic.Value;
             }
         }
 
         private void ApplyIssueViewSettings(IdeConfigData config)
         {
-            // Apply issue view options (issueViewOptions: {openIssues, ignoredIssues})
-            if (config.IssueViewOptions != null)
+            // Apply issue view options (issue_view_open_issues, issue_view_ignored_issues)
+            if (config.IssueViewOpenIssues.HasValue)
             {
-                Options.OpenIssuesEnabled = config.IssueViewOptions.OpenIssues;
-                Options.IgnoredIssuesEnabled = config.IssueViewOptions.IgnoredIssues;
+                Options.OpenIssuesEnabled = config.IssueViewOpenIssues.Value;
             }
 
-            // Apply delta findings (enableDeltaFindings: "true"/"false" or boolean)
-            if (config.EnableDeltaFindings.HasValue)
+            if (config.IssueViewIgnoredIssues.HasValue)
             {
-                Options.EnableDeltaFindings = config.EnableDeltaFindings.Value;
+                Options.IgnoredIssuesEnabled = config.IssueViewIgnoredIssues.Value;
+            }
+
+            // Apply net-new / delta findings (scan_net_new)
+            if (config.ScanNetNew.HasValue)
+            {
+                Options.EnableDeltaFindings = config.ScanNetNew.Value;
             }
         }
 
@@ -295,9 +296,9 @@ namespace Snyk.VisualStudio.Extension.UI.Html
         private void ApplyConnectionSettings(IdeConfigData config)
         {
             // Allow empty values to reset settings
-            if (config.Endpoint != null)
+            if (config.ApiEndpoint != null)
             {
-                Options.CustomEndpoint = config.Endpoint;
+                Options.CustomEndpoint = config.ApiEndpoint;
             }
 
             if (config.Token != null)
@@ -366,19 +367,37 @@ namespace Snyk.VisualStudio.Extension.UI.Html
 
         private void ApplyFilterSettings(IdeConfigData config)
         {
-            if (config.FilterSeverity == null)
-                return;
+            // Severity filters arrive as individual flat keys (severity_filter_*). The form
+            // only sends the ones that changed, so each is applied independently.
+            if (config.SeverityFilterCritical.HasValue)
+            {
+                Options.FilterCritical = config.SeverityFilterCritical.Value;
+            }
 
-            Options.FilterCritical = config.FilterSeverity.Critical;
-            Options.FilterHigh = config.FilterSeverity.High;
-            Options.FilterMedium = config.FilterSeverity.Medium;
-            Options.FilterLow = config.FilterSeverity.Low;
+            if (config.SeverityFilterHigh.HasValue)
+            {
+                Options.FilterHigh = config.SeverityFilterHigh.Value;
+            }
+
+            if (config.SeverityFilterMedium.HasValue)
+            {
+                Options.FilterMedium = config.SeverityFilterMedium.Value;
+            }
+
+            if (config.SeverityFilterLow.HasValue)
+            {
+                Options.FilterLow = config.SeverityFilterLow.Value;
+            }
         }
 
         private void ApplyMiscellaneousSettings(IdeConfigData config)
         {
-            // Apply risk score threshold
-            Options.RiskScoreThreshold = config.RiskScoreThreshold;
+            // Apply risk score threshold only when present — the form sends a changed-only
+            // payload, so an absent value must not clobber the stored threshold with null.
+            if (config.RiskScoreThreshold.HasValue)
+            {
+                Options.RiskScoreThreshold = config.RiskScoreThreshold;
+            }
         }
 
         private async Task ApplyFolderConfigsAsync(IdeConfigData config)
@@ -409,45 +428,91 @@ namespace Snyk.VisualStudio.Extension.UI.Html
                     return;
                 }
 
+                // The form posts a changed-only folder object (only the fields the user
+                // actually touched, plus folderPath). Apply each field only when it is present
+                // so a single-field edit doesn't blank out the sibling folder settings.
+                var existingConfig = Options.FolderConfigs?.FirstOrDefault(fc =>
+                    string.Equals(fc.FolderPath, solutionPath, StringComparison.OrdinalIgnoreCase));
+
                 foreach (var folderConfig in folderConfigs)
                 {
                     if (folderConfig == null) continue;
 
-                    // Extract folder settings (matching LS HTML JSON keys)
-                    var additionalOptions = string.Join(" ", folderConfig.AdditionalParameters);
-                    var additionalEnv = folderConfig.AdditionalEnv ?? string.Empty;
-                    var preferredOrg = folderConfig.PreferredOrg ?? string.Empty;
-                    var autoOrg = folderConfig.AutoDeterminedOrg ?? string.Empty;
-                    var orgSetByUser = folderConfig.OrgSetByUser;
-
-                    // 1. Save to solution-specific storage
-                    // Note: AdditionalOptions not saved here - flows through FolderConfig.AdditionalParameters only (IDE-1714)
-                    await OptionsManager.SaveAdditionalEnvAsync(additionalEnv);
-                    await OptionsManager.SavePreferredOrgAsync(preferredOrg);
-                    await OptionsManager.SaveAutoDeterminedOrgAsync(autoOrg);
-                    await OptionsManager.SaveOrgSetByUserAsync(orgSetByUser);
-
-                    // 2. Update in-memory global FolderConfigs to mirror solution settings (only if already exists)
-                    if (Options.FolderConfigs != null)
+                    // 1. Persist the folder-scoped values that have solution-specific storage.
+                    //    AdditionalParameters intentionally has no solution-storage slot — it flows
+                    //    through FolderConfig.AdditionalParameters only (IDE-1714).
+                    if (folderConfig.AdditionalEnv != null)
                     {
-                        var existingConfig = Options.FolderConfigs.FirstOrDefault(fc =>
-                            string.Equals(fc.FolderPath, solutionPath, StringComparison.OrdinalIgnoreCase));
+                        await OptionsManager.SaveAdditionalEnvAsync(folderConfig.AdditionalEnv);
+                    }
 
-                        if (existingConfig != null)
-                        {
-                            // Mirror all properties from JSON to existing config
-                            existingConfig.PreferredOrg = preferredOrg;
-                            existingConfig.AutoDeterminedOrg = autoOrg;
-                            existingConfig.OrgSetByUser = orgSetByUser;
-                            existingConfig.AdditionalParameters = folderConfig.AdditionalParameters ?? new List<string>();
-                            existingConfig.AdditionalEnv = additionalEnv;
-                            if (folderConfig.ScanCommandConfig != null)
-                            {
-                                existingConfig.ScanCommandConfig = folderConfig.ScanCommandConfig;
-                            }
+                    if (folderConfig.PreferredOrg != null)
+                    {
+                        await OptionsManager.SavePreferredOrgAsync(folderConfig.PreferredOrg);
+                    }
 
-                            Logger.Information("Mirrored folder config for solution: {SolutionPath}", solutionPath);
-                        }
+                    if (folderConfig.AutoDeterminedOrg != null)
+                    {
+                        await OptionsManager.SaveAutoDeterminedOrgAsync(folderConfig.AutoDeterminedOrg);
+                    }
+
+                    if (folderConfig.OrgSetByUser.HasValue)
+                    {
+                        await OptionsManager.SaveOrgSetByUserAsync(folderConfig.OrgSetByUser.Value);
+                    }
+
+                    // 2. Mirror the same changed fields into the in-memory global FolderConfigs
+                    //    entry so DidChangeConfiguration sends the updated values to the LS (the LS
+                    //    is master for folder-config storage, incl. base branch which has no
+                    //    solution-storage slot of its own).
+                    if (existingConfig != null)
+                    {
+                        if (folderConfig.PreferredOrg != null)
+                            existingConfig.PreferredOrg = folderConfig.PreferredOrg;
+                        if (folderConfig.AutoDeterminedOrg != null)
+                            existingConfig.AutoDeterminedOrg = folderConfig.AutoDeterminedOrg;
+                        if (folderConfig.OrgSetByUser.HasValue)
+                            existingConfig.OrgSetByUser = folderConfig.OrgSetByUser.Value;
+                        if (folderConfig.AdditionalParameters != null)
+                            existingConfig.AdditionalParameters = folderConfig.AdditionalParameters;
+                        if (folderConfig.AdditionalEnv != null)
+                            existingConfig.AdditionalEnv = folderConfig.AdditionalEnv;
+                        if (folderConfig.BaseBranch != null)
+                            existingConfig.BaseBranch = folderConfig.BaseBranch;
+                        if (folderConfig.ScanCommandConfig != null)
+                            existingConfig.ScanCommandConfig = folderConfig.ScanCommandConfig;
+
+                        // Per-folder org-scope overrides (product enablement, severity, scan,
+                        // issue view, risk score). Mirrored so BuildFolderConfigs emits them in
+                        // the folder's settings map and the LS resolves folder-over-global.
+                        if (folderConfig.SnykOssEnabled.HasValue)
+                            existingConfig.SnykOssEnabled = folderConfig.SnykOssEnabled;
+                        if (folderConfig.SnykCodeEnabled.HasValue)
+                            existingConfig.SnykCodeEnabled = folderConfig.SnykCodeEnabled;
+                        if (folderConfig.SnykIacEnabled.HasValue)
+                            existingConfig.SnykIacEnabled = folderConfig.SnykIacEnabled;
+                        if (folderConfig.SnykSecretsEnabled.HasValue)
+                            existingConfig.SnykSecretsEnabled = folderConfig.SnykSecretsEnabled;
+                        if (folderConfig.ScanAutomatic.HasValue)
+                            existingConfig.ScanAutomatic = folderConfig.ScanAutomatic;
+                        if (folderConfig.ScanNetNew.HasValue)
+                            existingConfig.ScanNetNew = folderConfig.ScanNetNew;
+                        if (folderConfig.SeverityFilterCritical.HasValue)
+                            existingConfig.SeverityFilterCritical = folderConfig.SeverityFilterCritical;
+                        if (folderConfig.SeverityFilterHigh.HasValue)
+                            existingConfig.SeverityFilterHigh = folderConfig.SeverityFilterHigh;
+                        if (folderConfig.SeverityFilterMedium.HasValue)
+                            existingConfig.SeverityFilterMedium = folderConfig.SeverityFilterMedium;
+                        if (folderConfig.SeverityFilterLow.HasValue)
+                            existingConfig.SeverityFilterLow = folderConfig.SeverityFilterLow;
+                        if (folderConfig.IssueViewOpenIssues.HasValue)
+                            existingConfig.IssueViewOpenIssues = folderConfig.IssueViewOpenIssues;
+                        if (folderConfig.IssueViewIgnoredIssues.HasValue)
+                            existingConfig.IssueViewIgnoredIssues = folderConfig.IssueViewIgnoredIssues;
+                        if (folderConfig.RiskScoreThreshold.HasValue)
+                            existingConfig.RiskScoreThreshold = folderConfig.RiskScoreThreshold;
+
+                        Logger.Information("Mirrored folder config for solution: {SolutionPath}", solutionPath);
                     }
                 }
             }

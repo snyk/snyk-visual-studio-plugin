@@ -74,6 +74,12 @@ namespace Snyk.VisualStudio.Extension.Settings
 
             InitializeComponent();
 
+            // Paint the WebView2 surface white before its first render so the dialog doesn't
+            // flash black while the Edge process spins up. The settings page is always rendered
+            // in light mode, so white matches the loaded content. Must be set before CoreWebView2
+            // initialization to take effect on first show.
+            SettingsBrowser.DefaultBackgroundColor = System.Drawing.Color.White;
+
             Logger.Information("[lifecycle] HtmlSettingsControl ctor; instance={Hash}", GetHashCode());
 
             scriptingBridge = new HtmlSettingsScriptingBridge(
@@ -239,7 +245,11 @@ namespace Snyk.VisualStudio.Extension.Settings
 
         private void SettingsBrowser_OnNavigationCompleted(object sender, CoreWebView2NavigationCompletedEventArgs e)
         {
+            // Reveal the browser only now that the document has loaded, so the user never sees the
+            // dark WebView2 surface before the (light-mode) HTML has painted. The white host Grid
+            // and loading label covered the area until this point.
             LoadingStatusLabel.Visibility = Visibility.Collapsed;
+            SettingsBrowser.Visibility = Visibility.Visible;
         }
 
         /// <summary>

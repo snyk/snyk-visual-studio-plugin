@@ -7,8 +7,14 @@
              mc:Ignorable="d"
              d:DesignHeight="600" d:DesignWidth="800"
              UseLayoutRounding="True">
-    <Grid>
+    <!-- White host background so nothing dark shows behind the WebView2 before its first
+         paint; the settings page itself is always rendered in light mode. -->
+    <Grid Background="White">
+        <!-- Hidden (not Collapsed, so it keeps its size and renders offscreen) until the first
+             navigation completes. The white Grid + loading label show meanwhile, so the dark
+             WebView2 surface never flashes on screen before the HTML paints. -->
         <wv2:WebView2 x:Name="SettingsBrowser"
+                      Visibility="Hidden"
                       VerticalAlignment="Stretch"
                       HorizontalAlignment="Stretch" />
         <TextBlock x:Name="LoadingStatusLabel"
