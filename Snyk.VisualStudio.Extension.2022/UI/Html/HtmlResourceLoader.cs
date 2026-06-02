@@ -4,6 +4,7 @@
 using System;
 using System.IO;
 using System.Reflection;
+using System.Text.RegularExpressions;
 using Snyk.VisualStudio.Extension.Settings;
 
 namespace Snyk.VisualStudio.Extension.UI.Html
@@ -70,7 +71,53 @@ namespace Snyk.VisualStudio.Extension.UI.Html
 
             // Use BaseHtmlProvider for theme replacement
             var provider = new BaseHtmlProvider(forceLight);
-            return provider.ReplaceCssVariables(html);
+            html = provider.ReplaceCssVariables(html);
+
+            if (forceLight)
+            {
+                html = InjectDisabledButtonOverride(html);
+            }
+
+            return html;
+        }
+
+        // The LS settings stylesheet's disabled-button rule only swaps the background
+        // (to --button-secondary-background) and leaves the text at --button-foreground.
+        // In the forced-light settings dialog that resolves to white text on a near-white
+        // background, so a disabled primary button (e.g. "Authenticate" once signed in) is
+        // unreadable. Inject a settings-only override giving disabled buttons a conventional
+        // muted-grey appearance. Reuses the document's existing CSP nonce because the page's
+        // style-src policy only allows nonce'd inline styles.
+        private static string InjectDisabledButtonOverride(string html)
+        {
+            var nonceMatch = Regex.Match(html, "nonce=\"(?<nonce>[^\"]+)\"");
+            var nonceAttr = nonceMatch.Success ? $" nonce=\"{nonceMatch.Groups["nonce"].Value}\"" : string.Empty;
+
+            var styleBlock =
+                $"<style{nonceAttr}>" +
+                "button:disabled,button[disabled]," +
+                "button.secondary:disabled,button.secondary[disabled]{" +
+                "background-color:#E1E1E1 !important;" +
+                "color:#6E6E6E !important;" +
+                "opacity:1 !important;}" +
+                "</style>";
+
+            // Insert at the very end of the body so the override comes after every other
+            // stylesheet in the document and wins the cascade (equal specificity + !important).
+            var bodyCloseIndex = html.LastIndexOf("</body>", StringComparison.OrdinalIgnoreCase);
+            if (bodyCloseIndex >= 0)
+            {
+                return html.Insert(bodyCloseIndex, styleBlock);
+            }
+
+            var headCloseIndex = html.IndexOf("</head>", StringComparison.OrdinalIgnoreCase);
+            if (headCloseIndex >= 0)
+            {
+                return html.Insert(headCloseIndex, styleBlock);
+            }
+
+            // No <head>/<body> (e.g. a fragment) — append so the override still loads last.
+            return html + styleBlock;
         }
     }
 }
