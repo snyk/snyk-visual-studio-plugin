@@ -252,10 +252,18 @@ namespace Snyk.VisualStudio.Extension.Settings
             SettingsBrowser.Visibility = Visibility.Visible;
         }
 
+        // Backstop for a *lost* WebView2 round-trip, NOT a Language Server timeout. SaveCompletion
+        // is signalled once the bridge has applied the settings to Options and written solution
+        // storage — all local/synchronous work. The LS push (DidChangeConfiguration) happens after,
+        // fire-and-forget via the SettingsChanged event, and is never awaited here, so a slow LS
+        // can't trip this. 5s is generous relative to the JS-injection + message-dispatch + local
+        // save it actually covers; it only fires if getAndSaveIdeConfig()/the bridge never reply.
+        private static readonly TimeSpan SaveCompletionTimeout = TimeSpan.FromSeconds(5);
+
         /// <summary>
         /// Triggers the page-side <c>getAndSaveIdeConfig()</c> and awaits the bridge's
-        /// save-completion signal (5-second timeout treated as failure). Returns true on
-        /// success, false on failure or timeout. The save itself is fire-and-forget from JS
+        /// save-completion signal (<see cref="SaveCompletionTimeout"/> treated as failure). Returns
+        /// true on success, false on failure or timeout. The save itself is fire-and-forget from JS
         /// under WebView2, so we rely on <see cref="HtmlSettingsScriptingBridge.SaveCompletion"/>
         /// to surface success / failure.
         /// </summary>
@@ -267,10 +275,10 @@ namespace Snyk.VisualStudio.Extension.Settings
                 await host.ExecuteScriptAsync("getAndSaveIdeConfig()");
 
                 var saveTask = scriptingBridge.SaveCompletion;
-                var winner = await Task.WhenAny(saveTask, Task.Delay(TimeSpan.FromSeconds(5)));
+                var winner = await Task.WhenAny(saveTask, Task.Delay(SaveCompletionTimeout));
                 if (winner != saveTask)
                 {
-                    Logger.Warning("Save did not complete within 5s; treating as failure");
+                    Logger.Warning("Save did not complete within {Timeout}; treating as failure", SaveCompletionTimeout);
                     return false;
                 }
                 return await saveTask;

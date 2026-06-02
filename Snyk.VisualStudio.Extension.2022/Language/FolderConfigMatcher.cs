@@ -31,20 +31,26 @@ namespace Snyk.VisualStudio.Extension.Language
             if (string.IsNullOrEmpty(folderPath) || string.IsNullOrEmpty(currentSolutionPath))
                 return false;
 
-            // Trim trailing separators on both sides so a config path that differs only by a
-            // trailing slash still counts as the same folder.
-            var config = folderPath.TrimEnd('\\', '/');
-            var solution = currentSolutionPath.TrimEnd('\\', '/');
+            // Unify separator style ('/' vs '\' — the LS may emit forward slashes while the IDE
+            // uses backslashes) and trailing slashes on both sides. Comparison stays
+            // case-insensitive, which already absorbs the casing differences common on Windows
+            // (drive letter, UNC server name). We deliberately avoid Path.GetFullPath here: it can
+            // throw on malformed input, resolves against the process working directory, and still
+            // wouldn't reconcile 8.3/symlink forms — and these are already-absolute folder paths
+            // from the IDE / Language Server, not relative user input.
+            var config = Normalize(folderPath);
+            var solution = Normalize(currentSolutionPath);
 
             if (config.Equals(solution, StringComparison.OrdinalIgnoreCase))
                 return true;
 
             // In normal operation paths match exactly; this fallback handles the edge case the
             // LS->IDE path has long guarded against — the solution living in a subfolder of the
-            // configured path (LS vs IDE path-normalisation differences).
-            return solution.StartsWith(config + "\\", StringComparison.OrdinalIgnoreCase)
-                || solution.StartsWith(config + "/", StringComparison.OrdinalIgnoreCase);
+            // configured path.
+            return solution.StartsWith(config + "\\", StringComparison.OrdinalIgnoreCase);
         }
+
+        private static string Normalize(string path) => path.Replace('/', '\\').TrimEnd('\\');
 
         /// <summary>
         /// Returns the first folder config whose <see cref="FolderConfig.FolderPath"/>

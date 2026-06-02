@@ -12,6 +12,8 @@ namespace Snyk.VisualStudio.Extension.Tests.Language
         [InlineData(@"C:\repo\project\", @"C:\repo\project", true)]  // trailing separator on config path
         [InlineData(@"C:\repo", @"C:\repo\project", true)]           // solution sits inside config path (subfolder)
         [InlineData(@"C:\repo/", @"C:\repo/project", true)]          // forward-slash separator
+        [InlineData(@"C:/repo/project", @"C:\repo\project", true)]   // mixed separators, same folder
+        [InlineData(@"C:/repo", @"C:\repo\project", true)]           // mixed separators, subfolder
         [InlineData(@"C:\repo\other", @"C:\repo\project", false)]    // sibling folder
         [InlineData(@"C:\repo\projectX", @"C:\repo\project", false)] // prefix but not a path boundary
         [InlineData("", @"C:\repo\project", false)]                  // empty config path
