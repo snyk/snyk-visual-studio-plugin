@@ -218,34 +218,11 @@ namespace Snyk.VisualStudio.Extension.Language
             }
         }
 
-        private FolderConfig FindMatchingFolderConfig(List<FolderConfig> folderConfigs, string currentSolutionPath)
-        {
-            if (folderConfigs == null || string.IsNullOrEmpty(currentSolutionPath)) return null;
-
-            foreach (var folderConfig in folderConfigs)
-            {
-                if (string.IsNullOrEmpty(folderConfig.FolderPath)) continue;
-
-                // Check for exact match
-                if (folderConfig.FolderPath.Equals(currentSolutionPath, StringComparison.OrdinalIgnoreCase))
-                {
-                    return folderConfig;
-                }
-
-                // Check if current path is within the config path (subfolder)
-                // Note: This is a defensive check. In normal operation, the Language Server sends folder configs
-                // that match workspace folders exactly, so exact matches should be sufficient. This subfolder
-                // check handles edge cases where paths might not align perfectly (e.g., path normalization differences).
-                var trimmedConfigPath = folderConfig.FolderPath.TrimEnd('\\', '/');
-                if (currentSolutionPath.StartsWith(trimmedConfigPath + "\\", StringComparison.OrdinalIgnoreCase) ||
-                    currentSolutionPath.StartsWith(trimmedConfigPath + "/", StringComparison.OrdinalIgnoreCase))
-                {
-                    return folderConfig;
-                }
-            }
-
-            return null;
-        }
+        // Single source of truth for "which folder config is the current solution" lives in
+        // FolderConfigMatcher, so this path and the settings save path (HtmlSettingsScriptingBridge)
+        // match folders identically.
+        private FolderConfig FindMatchingFolderConfig(List<FolderConfig> folderConfigs, string currentSolutionPath) =>
+            FolderConfigMatcher.FindMatching(folderConfigs, currentSolutionPath);
 
         [JsonRpcMethod(LsConstants.SnykScanSummary)]
         public async Task OnScanSummary(JToken arg)

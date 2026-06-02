@@ -445,12 +445,26 @@ namespace Snyk.VisualStudio.Extension.UI.Html
                 // The form posts a changed-only folder object (only the fields the user
                 // actually touched, plus folderPath). Apply each field only when it is present
                 // so a single-field edit doesn't blank out the sibling folder settings.
-                var existingConfig = Options.FolderConfigs?.FirstOrDefault(fc =>
-                    string.Equals(fc.FolderPath, solutionPath, StringComparison.OrdinalIgnoreCase));
+                // Match via FolderConfigMatcher so this stays consistent with the LS->IDE path.
+                var existingConfig = FolderConfigMatcher.FindMatching(Options.FolderConfigs, solutionPath);
 
                 foreach (var folderConfig in folderConfigs)
                 {
                     if (folderConfig == null) continue;
+
+                    // The VS integration is single-solution: our solution-scoped storage
+                    // (SaveAdditionalEnvAsync etc.) and the mirror target below are both keyed to
+                    // the current solution path. If the form ever posts entries for other folders,
+                    // applying them here would clobber the current solution's settings with
+                    // unrelated data, so skip any entry that doesn't match the current solution.
+                    // Use the shared matcher (exact + normalisation-tolerant) so this agrees with
+                    // the LS->IDE path. An absent folderPath keeps the legacy behaviour (the form
+                    // omitted it; VS only has one folder anyway).
+                    if (!string.IsNullOrEmpty(folderConfig.FolderPath) &&
+                        !FolderConfigMatcher.Matches(folderConfig.FolderPath, solutionPath))
+                    {
+                        continue;
+                    }
 
                     // 1. Persist the folder-scoped values that have solution-specific storage.
                     //    AdditionalParameters intentionally has no solution-storage slot — it flows
