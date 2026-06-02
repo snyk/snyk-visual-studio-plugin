@@ -153,11 +153,17 @@ namespace Snyk.VisualStudio.Extension.Settings
                 var saveFailedWithException = false;
                 var frame = new DispatcherFrame();
 
+                // Resolve the control once, up front. The pump below can run other dispatcher
+                // work (incl. a visibility-driven control swap via EnsureFreshControl), so we must
+                // drive the whole save against the single instance we started with rather than
+                // re-reading Control mid-flight.
+                var activeControl = Control;
+
                 ThreadHelper.JoinableTaskFactory.RunAsync(async () =>
                 {
                     try
                     {
-                        saveSucceeded = await Control.SaveAsync();
+                        saveSucceeded = await activeControl.SaveAsync();
                     }
                     catch (Exception ex)
                     {

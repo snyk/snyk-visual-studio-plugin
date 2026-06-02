@@ -173,6 +173,20 @@ namespace Snyk.VisualStudio.Extension.UI.Html
         public void __ideSaveAttemptFinished__(string status)
         {
             Logger.Information("Save attempt finished with status: {Status}", status);
+
+            // Fast-fail the save when the page reports it did NOT persist (e.g. client-side
+            // validation rejected the CLI version). In that case getAndSaveIdeConfig() returns
+            // without calling __saveIdeConfig__, so SaveCompletion would otherwise sit unsignalled
+            // until HtmlSettingsControl.SaveAsync's 5s timeout — leaving the Apply button hung and
+            // then surfacing a misleading "check the log" error. A non-"success" status lets
+            // OnApply report the failure immediately and keep the user on the page to fix it.
+            // The success path is still driven by __saveIdeConfig__ → TrySetResult(true);
+            // TrySetResult is first-wins, so a later "success" signal here is a harmless no-op.
+            if (!string.IsNullOrEmpty(status) &&
+                !string.Equals(status, "success", StringComparison.OrdinalIgnoreCase))
+            {
+                saveCompletionTcs.TrySetResult(false);
+            }
         }
 
         private async Task ParseAndSaveConfigAsync(string jsonString)

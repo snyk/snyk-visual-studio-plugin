@@ -199,6 +199,42 @@ namespace Snyk.VisualStudio.Extension.Tests.UI.Html
         }
 
         [Fact]
+        public void IdeSaveAttemptFinished_ValidationError_FailsSaveCompletionImmediately()
+        {
+            // No __saveIdeConfig__ is sent on a validation error; the status callback must be
+            // what fails the save so SaveAsync doesn't hang until its 5s timeout.
+            Assert.False(bridge.SaveCompletion.IsCompleted);
+
+            bridge.__ideSaveAttemptFinished__("validation_error");
+
+            Assert.True(bridge.SaveCompletion.IsCompleted);
+            Assert.False(bridge.SaveCompletion.Result);
+        }
+
+        [Fact]
+        public void IdeSaveAttemptFinished_Success_DoesNotSignalCompletion()
+        {
+            // Success is signalled by __saveIdeConfig__; a "success" status here must be a no-op
+            // so it can't race / pre-empt the real save result.
+            bridge.__ideSaveAttemptFinished__("success");
+
+            Assert.False(bridge.SaveCompletion.IsCompleted);
+        }
+
+        [Fact]
+        public void IdeSaveAttemptFinished_DoesNotOverrideSuccessfulSave()
+        {
+            // __saveIdeConfig__ wins first (TrySetResult); a later failure status is ignored.
+            bridge.__saveIdeConfig__("{}");
+            Assert.True(bridge.SaveCompletion.IsCompleted);
+            Assert.True(bridge.SaveCompletion.Result);
+
+            bridge.__ideSaveAttemptFinished__("validation_error");
+
+            Assert.True(bridge.SaveCompletion.Result);
+        }
+
+        [Fact]
         public void SaveIdeConfig_SetsOssEnabled_FromSnakeCaseKey()
         {
             var config = JsonConvert.SerializeObject(new IdeConfigData
