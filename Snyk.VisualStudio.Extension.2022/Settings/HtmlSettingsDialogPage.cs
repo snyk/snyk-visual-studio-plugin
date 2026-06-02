@@ -119,8 +119,26 @@ namespace Snyk.VisualStudio.Extension.Settings
         /// and can retry. <see cref="ThreadHelper.JoinableTaskFactory.Run"/> bridges the sync
         /// callback to the async save without deadlocking the UI thread.
         /// </summary>
+        private bool saveInProgress;
+
         protected override void OnApply(PageApplyEventArgs e)
         {
+            // Re-entrancy guard. Dispatcher.PushFrame below pumps the *full* dispatcher, so the
+            // modal Options dialog can deliver a second Apply/OK click while the first save is
+            // still in flight. Letting that through would re-enter SaveAsync → BeginSave and reset
+            // the bridge's save-completion source mid-flight, stranding the first save (it awaits
+            // the now-orphaned TCS until its 5s timeout) and racing OptionsManager.Save writes.
+            // OnApply only runs on the UI thread, and the pump is the only re-entry path, so a
+            // plain bool is sufficient — no locking needed. Drop the duplicate and keep the page
+            // open so the in-flight save finishes undisturbed.
+            if (saveInProgress)
+            {
+                Logger.Information("Ignoring re-entrant OnApply while a save is already in progress");
+                e.ApplyBehavior = ApplyKind.CancelNoNavigate;
+                return;
+            }
+
+            saveInProgress = true;
             try
             {
                 // We have to block OnApply until SaveAsync completes (sync VS contract),
@@ -171,6 +189,10 @@ namespace Snyk.VisualStudio.Extension.Settings
             {
                 Logger.Error(ex, "OnApply failed for HtmlSettingsDialogPage");
                 e.ApplyBehavior = ApplyKind.CancelNoNavigate;
+            }
+            finally
+            {
+                saveInProgress = false;
             }
         }
 
