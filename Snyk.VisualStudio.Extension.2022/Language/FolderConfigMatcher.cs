@@ -44,9 +44,8 @@ namespace Snyk.VisualStudio.Extension.Language
             if (config.Equals(solution, StringComparison.OrdinalIgnoreCase))
                 return true;
 
-            // In normal operation paths match exactly; this fallback handles the edge case the
-            // LS->IDE path has long guarded against — the solution living in a subfolder of the
-            // configured path.
+            // In normal operation paths match exactly; this fallback handles the edge of the
+            // solution living in a subfolder of the configured path.
             return solution.StartsWith(config + "\\", StringComparison.OrdinalIgnoreCase);
         }
 
@@ -56,7 +55,7 @@ namespace Snyk.VisualStudio.Extension.Language
         /// Returns the first folder config whose <see cref="FolderConfig.FolderPath"/>
         /// <see cref="Matches"/> the current solution path, or null if none do.
         /// </summary>
-        public static FolderConfig FindMatching(IEnumerable<FolderConfig> folderConfigs, string currentSolutionPath)
+        public static FolderConfig FindFirstMatching(IEnumerable<FolderConfig> folderConfigs, string currentSolutionPath)
         {
             if (folderConfigs == null || string.IsNullOrEmpty(currentSolutionPath))
                 return null;

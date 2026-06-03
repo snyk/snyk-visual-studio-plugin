@@ -140,8 +140,8 @@ namespace Snyk.VisualStudio.Extension.UI.Html
         /// folder so the next <see cref="InitializeAsync"/> call creates a fresh env (and a
         /// fresh <c>msedgewebview2.exe</c> subprocess). Use after the only host using a folder
         /// has been disposed — keeps the env alive when multiple hosts share a folder (e.g. the
-        /// description + summary panels under <c>"toolwindow"</c>) but lets single-user
-        /// surfaces (e.g. the settings DialogPage) start clean each time.
+        /// description + summary panels under <c>"toolwindow"</c>) but lets the settings Dialog
+        /// start clean each time (as there is no state to preserve).
         /// </summary>
         public static void EvictEnvironmentCache(string userDataFolder)
         {

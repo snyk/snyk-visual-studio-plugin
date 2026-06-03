@@ -1,5 +1,5 @@
-// ABOUTME: Orchestrates IDE-side auth flow (login/logout, modal auth dialog).
-// ABOUTME: Extracted from SnykGeneralOptionsDialogPage when that DialogPage was retired.
+// ABOUTME: Orchestrates IDE-side auth flow (LS readiness check, login/logout, modal auth dialog).
+// ABOUTME: Only used by the Tool Window Message Panel. HTML settings page calls the LS Auth method directly.
 
 using System;
 using System.IO;

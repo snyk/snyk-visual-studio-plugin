@@ -12,8 +12,7 @@ namespace Snyk.VisualStudio.Extension.UI.Html
     /// CLI-only fallback HTML). Both forms emit a flat, snake_case pflag-keyed payload — the
     /// same key scheme the IDE uses when it sends settings to the Language Server (see
     /// <see cref="LsSettingsV25"/> / PflagKeys). Every field therefore binds explicitly to its
-    /// snake_case JSON key; relying on Newtonsoft's default camelCase matching silently drops
-    /// snake_case keys, which is what previously caused saved settings to revert on reopen.
+    /// snake_case JSON key; relying on default camelCase matching silently drops snake_case keys,
     /// <para>
     /// The form sends only the fields that changed, so every property is nullable / reference
     /// type and the bridge applies it only when present.

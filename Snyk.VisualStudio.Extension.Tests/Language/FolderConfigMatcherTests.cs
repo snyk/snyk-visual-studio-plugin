@@ -32,7 +32,7 @@ namespace Snyk.VisualStudio.Extension.Tests.Language
                 new FolderConfig { FolderPath = @"C:\repo\project" },
             };
 
-            var match = FolderConfigMatcher.FindMatching(configs, @"C:\repo\project");
+            var match = FolderConfigMatcher.FindFirstMatching(configs, @"C:\repo\project");
 
             Assert.NotNull(match);
             Assert.Equal(@"C:\repo\project", match.FolderPath);
@@ -46,16 +46,16 @@ namespace Snyk.VisualStudio.Extension.Tests.Language
                 new FolderConfig { FolderPath = @"C:\repo\other" },
             };
 
-            Assert.Null(FolderConfigMatcher.FindMatching(configs, @"C:\repo\project"));
+            Assert.Null(FolderConfigMatcher.FindFirstMatching(configs, @"C:\repo\project"));
         }
 
         [Fact]
         public void FindMatching_HandlesNullListAndNullEntries()
         {
-            Assert.Null(FolderConfigMatcher.FindMatching(null, @"C:\repo\project"));
+            Assert.Null(FolderConfigMatcher.FindFirstMatching(null, @"C:\repo\project"));
 
             var configs = new List<FolderConfig> { null, new FolderConfig { FolderPath = @"C:\repo\project" } };
-            Assert.NotNull(FolderConfigMatcher.FindMatching(configs, @"C:\repo\project"));
+            Assert.NotNull(FolderConfigMatcher.FindFirstMatching(configs, @"C:\repo\project"));
         }
     }
 }

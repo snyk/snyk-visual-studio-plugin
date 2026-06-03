@@ -446,7 +446,7 @@ namespace Snyk.VisualStudio.Extension.UI.Html
                 // actually touched, plus folderPath). Apply each field only when it is present
                 // so a single-field edit doesn't blank out the sibling folder settings.
                 // Match via FolderConfigMatcher so this stays consistent with the LS->IDE path.
-                var existingConfig = FolderConfigMatcher.FindMatching(Options.FolderConfigs, solutionPath);
+                var existingConfig = FolderConfigMatcher.FindFirstMatching(Options.FolderConfigs, solutionPath);
 
                 foreach (var folderConfig in folderConfigs)
                 {

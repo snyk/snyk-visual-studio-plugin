@@ -218,11 +218,9 @@ namespace Snyk.VisualStudio.Extension.Language
             }
         }
 
-        // Single source of truth for "which folder config is the current solution" lives in
-        // FolderConfigMatcher, so this path and the settings save path (HtmlSettingsScriptingBridge)
-        // match folders identically.
+        // Use FolderConfigMatcher to find the first matching folder config for the current solution path.
         private FolderConfig FindMatchingFolderConfig(List<FolderConfig> folderConfigs, string currentSolutionPath) =>
-            FolderConfigMatcher.FindMatching(folderConfigs, currentSolutionPath);
+            FolderConfigMatcher.FindFirstMatching(folderConfigs, currentSolutionPath);
 
         [JsonRpcMethod(LsConstants.SnykScanSummary)]
         public async Task OnScanSummary(JToken arg)
