@@ -367,13 +367,7 @@ namespace Snyk.VisualStudio.Extension.Tests.UI.Html
 
             bridge.__saveIdeConfig__(config);
 
-            // No disk Save*Async calls — LS is the real persistence
-            snykOptionsManagerMock.Verify(m => m.SavePreferredOrgAsync(It.IsAny<string>()), Times.Never);
-            snykOptionsManagerMock.Verify(m => m.SaveOrgSetByUserAsync(It.IsAny<bool>()), Times.Never);
-            snykOptionsManagerMock.Verify(m => m.SaveAdditionalEnvAsync(It.IsAny<string>()), Times.Never);
-            snykOptionsManagerMock.Verify(m => m.SaveAutoDeterminedOrgAsync(It.IsAny<string>()), Times.Never);
-
-            // In-memory state updated
+            // In-memory state updated — LS is the real persistence (no disk Save*Async calls)
             var fc = optionsMock.Object.FolderConfigs[0];
             Assert.Equal("my-org", fc.PreferredOrg);
             Assert.True(fc.OrgSetByUser);
@@ -491,19 +485,17 @@ namespace Snyk.VisualStudio.Extension.Tests.UI.Html
 
             bridge.__saveIdeConfig__(config);
 
-            // Only the current-solution entry is applied.
-            snykOptionsManagerMock.Verify(m => m.SavePreferredOrgAsync("updated-org"), Times.Once);
-            snykOptionsManagerMock.Verify(m => m.SavePreferredOrgAsync("ghost-org"), Times.Never);
+            // Only the current-solution entry is applied — no disk saves, only in-memory mirror.
             Assert.Equal("updated-org", existing.PreferredOrg);
             // The other folder's SnykOssEnabled=false must not have leaked onto the solution config.
             Assert.Equal(true, existing.SnykOssEnabled);
         }
 
         [Fact]
-        public void SaveIdeConfig_FolderConfigs_NoExistingConfig_DoesNotThrowAndStillPersistsScopedValues()
+        public void SaveIdeConfig_FolderConfigs_NoExistingConfig_DoesNotThrow()
         {
             // No matching global config entry (FolderConfigs stays null) — the mirror block is
-            // skipped, but the solution-scoped saves must still run.
+            // skipped; no exception is thrown; no in-memory update since no matching FolderConfig exists.
             var config = JsonConvert.SerializeObject(new IdeConfigData
             {
                 FolderConfigs = new List<FolderConfigData>
@@ -518,8 +510,6 @@ namespace Snyk.VisualStudio.Extension.Tests.UI.Html
             });
 
             bridge.__saveIdeConfig__(config);
-
-            snykOptionsManagerMock.Verify(m => m.SavePreferredOrgAsync("my-org"), Times.Once);
         }
     }
 }

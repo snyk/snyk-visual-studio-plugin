@@ -314,9 +314,6 @@ namespace Snyk.VisualStudio.Extension.Tests.Language
             Assert.Equal("auto-determined-org", fc.AutoDeterminedOrg);
             Assert.Equal("", fc.PreferredOrg);
             Assert.False(fc.OrgSetByUser);
-            snykOptionsManagerMock.Verify(s => s.SaveAutoDeterminedOrgAsync(It.IsAny<string>()), Times.Never);
-            snykOptionsManagerMock.Verify(s => s.SavePreferredOrgAsync(It.IsAny<string>()), Times.Never);
-            snykOptionsManagerMock.Verify(s => s.SaveOrgSetByUserAsync(It.IsAny<bool>()), Times.Never);
         }
 
         [Fact]
@@ -382,7 +379,6 @@ namespace Snyk.VisualStudio.Extension.Tests.Language
             Assert.Equal("auto-determined-org", fc1.AutoDeterminedOrg);
             Assert.Equal("user-specified-org", fc1.PreferredOrg);
             Assert.True(fc1.OrgSetByUser);
-            snykOptionsManagerMock.Verify(s => s.SaveAutoDeterminedOrgAsync(It.IsAny<string>()), Times.Never);
         }
 
         [Fact]
@@ -412,8 +408,6 @@ namespace Snyk.VisualStudio.Extension.Tests.Language
             Assert.Equal("auto-detected-org", fc.AutoDeterminedOrg);
             Assert.Equal("user-preferred-org", fc.PreferredOrg);
             Assert.True(fc.OrgSetByUser);
-            snykOptionsManagerMock.Verify(s => s.SaveAutoDeterminedOrgAsync(It.IsAny<string>()), Times.Never);
-            snykOptionsManagerMock.Verify(s => s.SavePreferredOrgAsync(It.IsAny<string>()), Times.Never);
         }
 
         [Fact]

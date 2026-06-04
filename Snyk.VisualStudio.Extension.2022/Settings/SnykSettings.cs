@@ -25,11 +25,6 @@ namespace Snyk.VisualStudio.Extension.Settings
         public string CurrentCliVersion { get; set; }
 
         /// <summary>
-        /// Gets or sets solution settings dictionary.
-        /// </summary>
-        public IDictionary<int, SnykSolutionSettings> SolutionSettingsDict { get; set; } = new Dictionary<int, SnykSolutionSettings>();
-
-        /// <summary>
         /// Gets or sets a value indicating whether snyk code security enabled.
         /// </summary>
         public bool SnykCodeSecurityEnabled { get; set; } = true;
