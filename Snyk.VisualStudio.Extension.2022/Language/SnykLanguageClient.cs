@@ -80,7 +80,7 @@ namespace Snyk.VisualStudio.Extension.Language
             }
             var options = serviceProvider.Options;
             // ReSharper disable once RedundantAssignment
-            var lsDebugLevel = await GetLsDebugLevelAsync(serviceProvider.SnykOptionsManager);
+            var lsDebugLevel = await GetLsDebugLevelAsync();
             var info = new ProcessStartInfo
             {
                 FileName = SnykCli.GetCliFilePath(options.CliCustomPath),
@@ -218,10 +218,14 @@ namespace Snyk.VisualStudio.Extension.Language
             return Task.CompletedTask;
         }
 
-        private async Task<string> GetLsDebugLevelAsync(ISnykOptionsManager optionsManger)
+        private async Task<string> GetLsDebugLevelAsync()
         {
             var logLevel = "info";
-            var additionalCliParameters = await optionsManger.GetAdditionalOptionsAsync();
+            var serviceProvider = SnykVSPackage.ServiceProvider;
+            var firstFolder = serviceProvider?.Options?.FolderConfigs?.FirstOrDefault();
+            var additionalCliParameters = firstFolder?.AdditionalParameters != null
+                ? string.Join(" ", firstFolder.AdditionalParameters)
+                : string.Empty;
             if (!string.IsNullOrEmpty(additionalCliParameters) && (additionalCliParameters.Contains("-d") || additionalCliParameters.Contains("--debug")))
             {
                 logLevel = "debug";

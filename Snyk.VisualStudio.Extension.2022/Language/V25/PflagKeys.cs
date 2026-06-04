@@ -52,6 +52,7 @@ namespace Snyk.VisualStudio.Extension.Language
         public const string AutoDeterminedOrg = "auto_determined_org";
         public const string ScanCommandConfig = "scan_command_config";
         public const string BaseBranch = "base_branch";
+        public const string LocalBranches = "local_branches";
 
         // Also sent as top-level fields in InitializationOptionsV25; snyk-ls reads them from
         // there, not from the Settings map — the Settings-map copies are harmless redundancy.

@@ -466,28 +466,7 @@ namespace Snyk.VisualStudio.Extension.UI.Html
                         continue;
                     }
 
-                    // 1. Persist the folder-scoped values that have solution-specific storage.
-                    //    AdditionalParameters intentionally has no solution-storage slot — it flows
-                    //    through FolderConfig.AdditionalParameters only (IDE-1714).
-                    if (folderConfig.AdditionalEnv != null)
-                    {
-                        await OptionsManager.SaveAdditionalEnvAsync(folderConfig.AdditionalEnv);
-                    }
 
-                    if (folderConfig.PreferredOrg != null)
-                    {
-                        await OptionsManager.SavePreferredOrgAsync(folderConfig.PreferredOrg);
-                    }
-
-                    if (folderConfig.AutoDeterminedOrg != null)
-                    {
-                        await OptionsManager.SaveAutoDeterminedOrgAsync(folderConfig.AutoDeterminedOrg);
-                    }
-
-                    if (folderConfig.OrgSetByUser.HasValue)
-                    {
-                        await OptionsManager.SaveOrgSetByUserAsync(folderConfig.OrgSetByUser.Value);
-                    }
 
                     // 2. Mirror the same changed fields into the in-memory global FolderConfigs
                     //    entry so DidChangeConfiguration sends the updated values to the LS (the LS

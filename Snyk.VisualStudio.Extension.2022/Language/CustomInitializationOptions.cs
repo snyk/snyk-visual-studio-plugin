@@ -64,10 +64,6 @@ namespace Snyk.VisualStudio.Extension.Language
         public bool PostScanOnlyReferenceFolder { get; set; }
     }
 
-    public class FolderConfigsParam
-    {
-        public List<FolderConfig> FolderConfigs { get; set; }
-    }
     public class ScanSummaryParam
     {
         public string ScanSummary { get; set; }

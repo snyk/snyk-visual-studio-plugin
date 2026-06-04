@@ -38,9 +38,6 @@ namespace Snyk.VisualStudio.Extension.Tests.Language
             featureFlagServiceMock.Setup(x => x.RefreshAsync(It.IsAny<CancellationToken>()))
                 .Returns(Task.CompletedTask);
 
-            solutionServiceMock.Setup(s => s.GetSolutionFolderAsync())
-                .ReturnsAsync("/path/to/folder1");
-
             serviceProviderMock.SetupGet(sp => sp.TasksService).Returns(tasksServiceMock.Object);
             serviceProviderMock.SetupGet(sp => sp.Options).Returns(optionsMock.Object);
             serviceProviderMock.SetupGet(sp => sp.AuthenticationFlowService).Returns(authenticationFlowServiceMock.Object);
@@ -49,8 +46,6 @@ namespace Snyk.VisualStudio.Extension.Tests.Language
             serviceProviderMock.SetupGet(sp => sp.LanguageClientManager).Returns(languageClientManagerMock.Object);
             serviceProviderMock.SetupGet(sp => sp.SolutionService).Returns(solutionServiceMock.Object);
 
-            // Setup GetEffectiveOrganizationAsync mock
-            snykOptionsManagerMock.Setup(s => s.GetEffectiveOrganizationAsync()).ReturnsAsync("auto-determined-org");
             optionsMock.SetupAllProperties();
             cut = new SnykLanguageClientCustomTarget(serviceProviderMock.Object);
         }
@@ -250,239 +245,234 @@ namespace Snyk.VisualStudio.Extension.Tests.Language
         }
 
         [Fact]
-        public async Task OnFolderConfig_ShouldUpdateFolderConfigs_WhenValidArgProvided()
+        public async Task OnSnykConfiguration_ShouldUpdateFolderConfigs_WhenValidFolderConfigsProvided()
         {
             // Arrange
             var arg = JObject.Parse(@"{
-                'folderConfigs': [
-                        { 'folderPath': '/path/to/folder1', 'baseBranch': 'main' },
-                        { 'folderPath': '/path/to/folder2', 'baseBranch': 'master' }
-                        ]
-                }");
-            var expectedFolderConfigs = new List<FolderConfig>
-            {
-                new FolderConfig { FolderPath = "/path/to/folder1", BaseBranch = "main" },
-                new FolderConfig { FolderPath = "/path/to/folder2", BaseBranch = "master" }
-            };
-
+                ""settings"": {},
+                ""folderConfigs"": [
+                    { ""folderPath"": ""/path/to/folder1"", ""settings"": { ""base_branch"": { ""value"": ""main"", ""changed"": true } } },
+                    { ""folderPath"": ""/path/to/folder2"", ""settings"": { ""base_branch"": { ""value"": ""master"", ""changed"": true } } }
+                ]
+            }");
             optionsMock.SetupProperty(o => o.FolderConfigs);
 
             // Act
-            await cut.OnFolderConfig(arg);
+            await cut.OnSnykConfiguration(arg);
 
             // Assert
             Assert.NotNull(optionsMock.Object.FolderConfigs);
-            Assert.Equal(expectedFolderConfigs.Count, optionsMock.Object.FolderConfigs.Count);
-            for (var i = 0; i < expectedFolderConfigs.Count; i++)
+            Assert.Equal(2, optionsMock.Object.FolderConfigs.Count);
+            Assert.Equal("/path/to/folder1", optionsMock.Object.FolderConfigs[0].FolderPath);
+            Assert.Equal("main", optionsMock.Object.FolderConfigs[0].BaseBranch);
+            Assert.Equal("/path/to/folder2", optionsMock.Object.FolderConfigs[1].FolderPath);
+            Assert.Equal("master", optionsMock.Object.FolderConfigs[1].BaseBranch);
+        }
+
+        [Fact]
+        public async Task OnSnykConfiguration_ShouldPreserveFolderConfigs_WhenFolderConfigsIsEmpty()
+        {
+            // Arrange
+            var arg = JObject.Parse(@"{ ""settings"": {}, ""folderConfigs"": [] }");
+            optionsMock.SetupProperty(o => o.FolderConfigs);
+            optionsMock.Object.FolderConfigs = new List<FolderConfig>
             {
-                Assert.Equal(expectedFolderConfigs[i].FolderPath, optionsMock.Object.FolderConfigs[i].FolderPath);
-                Assert.Equal(expectedFolderConfigs[i].BaseBranch, optionsMock.Object.FolderConfigs[i].BaseBranch);
-            }
-        }
-
-        [Fact]
-        public async Task OnFolderConfig_ShouldDoNothing_WhenFolderConfigsIsNull()
-        {
-            // Arrange
-            var arg = JObject.Parse("{}");
-            optionsMock.SetupProperty(o => o.FolderConfigs);
+                new FolderConfig { FolderPath = "/existing/path" }
+            };
 
             // Act
-            await cut.OnFolderConfig(arg);
+            await cut.OnSnykConfiguration(arg);
 
-            // Assert
-            Assert.Null(optionsMock.Object.FolderConfigs);
+            // Assert — existing list preserved when incoming is empty
+            Assert.Single(optionsMock.Object.FolderConfigs);
         }
 
         [Fact]
-        public async Task OnFolderConfig_ShouldUpdateOrganization_WhenAutoDeterminedOrgExists()
+        public async Task OnSnykConfiguration_ShouldStoreFolderConfigOrgs_WhenSettingsHaveOrgFields()
         {
             // Arrange
             var arg = JObject.Parse(@"{
-                'folderConfigs': [
+                ""settings"": {},
+                ""folderConfigs"": [
                     {
-                        'folderPath': '/path/to/folder1',
-                        'baseBranch': 'main',
-                        'autoDeterminedOrg': 'auto-determined-org',
-                        'preferredOrg': '',
-                        'orgSetByUser': false,
-                        'orgMigratedFromGlobalConfig': false
+                        ""folderPath"": ""/path/to/folder1"",
+                        ""settings"": {
+                            ""auto_determined_org"": { ""value"": ""auto-determined-org"", ""changed"": true },
+                            ""preferred_org"": { ""value"": """", ""changed"": true },
+                            ""org_set_by_user"": { ""value"": false, ""changed"": true }
+                        }
+                    }
+                ]
+            }");
+            optionsMock.SetupProperty(o => o.FolderConfigs);
+
+            // Act
+            await cut.OnSnykConfiguration(arg);
+
+            // Assert — org fields stored in-memory; no disk Save*Async calls
+            var fc = optionsMock.Object.FolderConfigs[0];
+            Assert.Equal("auto-determined-org", fc.AutoDeterminedOrg);
+            Assert.Equal("", fc.PreferredOrg);
+            Assert.False(fc.OrgSetByUser);
+            snykOptionsManagerMock.Verify(s => s.SaveAutoDeterminedOrgAsync(It.IsAny<string>()), Times.Never);
+            snykOptionsManagerMock.Verify(s => s.SavePreferredOrgAsync(It.IsAny<string>()), Times.Never);
+            snykOptionsManagerMock.Verify(s => s.SaveOrgSetByUserAsync(It.IsAny<bool>()), Times.Never);
+        }
+
+        [Fact]
+        public async Task OnSnykConfiguration_GlobalOrgNotChanged_WhenFolderConfigArrives()
+        {
+            // Arrange
+            var arg = JObject.Parse(@"{
+                ""settings"": {},
+                ""folderConfigs"": [
+                    {
+                        ""folderPath"": ""/path/to/folder1"",
+                        ""settings"": {
+                            ""auto_determined_org"": { ""value"": ""auto-org"", ""changed"": true }
+                        }
                     }
                 ]
             }");
             optionsMock.SetupProperty(o => o.FolderConfigs);
             optionsMock.SetupProperty(o => o.Organization);
+            optionsMock.Object.Organization = "original-org";
 
             // Act
-            await cut.OnFolderConfig(arg);
+            await cut.OnSnykConfiguration(arg);
 
-            // Assert
-            // Global organization is NOT updated when receiving folder configs - Language Server handles fallback
-            // Only the auto-determined org is saved for solution-specific settings
-            snykOptionsManagerMock.Verify(s => s.Save(It.IsAny<IPersistableOptions>(), It.IsAny<bool>()), Times.Once);
-            snykOptionsManagerMock.Verify(s => s.SaveAutoDeterminedOrgAsync("auto-determined-org"), Times.Once);
-            snykOptionsManagerMock.Verify(s => s.SavePreferredOrgAsync(""), Times.Once);
-            snykOptionsManagerMock.Verify(s => s.SaveOrgSetByUserAsync(false), Times.Once);
-            // SaveOrganizationAsync should NOT be called - global org is not updated from folder configs
+            // Assert — global org untouched
+            Assert.Equal("original-org", optionsMock.Object.Organization);
             snykOptionsManagerMock.Verify(s => s.SaveOrganizationAsync(It.IsAny<string>()), Times.Never);
         }
 
         [Fact]
-        public async Task OnFolderConfig_ShouldNotUpdateOrganization_WhenNoAutoDeterminedOrg()
+        public async Task OnSnykConfiguration_ShouldStoreAllOrgFields_WhenBothOrgsPresent()
         {
-            // Arrange
+            // Arrange — two folder configs; both stored
             var arg = JObject.Parse(@"{
-                'folderConfigs': [
+                ""settings"": {},
+                ""folderConfigs"": [
                     {
-                        'folderPath': '/path/to/folder1',
-                        'baseBranch': 'main'
-                    }
-                ]
-            }");
-            optionsMock.SetupProperty(o => o.FolderConfigs);
-            optionsMock.SetupProperty(o => o.Organization);
-            var originalOrg = "original-org";
-            optionsMock.Object.Organization = originalOrg;
-
-            // Act
-            await cut.OnFolderConfig(arg);
-
-            // Assert
-            // Global organization should remain unchanged when no auto-determined org exists
-            Assert.Equal(originalOrg, optionsMock.Object.Organization);
-            snykOptionsManagerMock.Verify(s => s.Save(It.IsAny<IPersistableOptions>(), It.IsAny<bool>()), Times.Once);
-            // SaveOrganizationAsync should NOT be called - global org is not updated from folder configs
-            snykOptionsManagerMock.Verify(s => s.SaveOrganizationAsync(It.IsAny<string>()), Times.Never);
-        }
-
-        [Fact]
-        public async Task OnFolderConfig_ShouldNotUpdateOrganization_WhenAutoDeterminedOrgIsNull()
-        {
-            // Arrange
-            var arg = JObject.Parse(@"{
-                'folderConfigs': [
-                    {
-                        'folderPath': '/path/to/folder1',
-                        'baseBranch': 'main',
-                        'autoDeterminedOrg': null
-                    }
-                ]
-            }");
-            optionsMock.SetupProperty(o => o.FolderConfigs);
-            optionsMock.SetupProperty(o => o.Organization);
-            var originalOrg = "original-org";
-            optionsMock.Object.Organization = originalOrg;
-
-            // Act
-            await cut.OnFolderConfig(arg);
-
-            // Assert
-            // Global organization should remain unchanged when auto-determined org is null
-            Assert.Equal(originalOrg, optionsMock.Object.Organization);
-            snykOptionsManagerMock.Verify(s => s.Save(It.IsAny<IPersistableOptions>(), It.IsAny<bool>()), Times.Once);
-            // SaveOrganizationAsync should NOT be called - global org is not updated from folder configs
-            snykOptionsManagerMock.Verify(s => s.SaveOrganizationAsync(It.IsAny<string>()), Times.Never);
-        }
-
-        [Fact]
-        public async Task OnFolderConfig_ShouldUpdateOrganization_WithBothOrgFields()
-        {
-            // Arrange
-            // Note: Visual Studio processes only ONE folder config - the one matching the current solution path.
-            // The second folder config (/path/to/folder2) is included to verify that non-matching configs are ignored.
-            // Solution path is set to '/path/to/folder1' in test setup, so only the first config will be processed.
-            var arg = JObject.Parse(@"{
-                'folderConfigs': [
-                    {
-                        'folderPath': '/path/to/folder1',
-                        'baseBranch': 'main',
-                        'preferredOrg': 'user-specified-org',
-                        'autoDeterminedOrg': 'auto-determined-org',
-                        'orgSetByUser': true,
-                        'orgMigratedFromGlobalConfig': false
+                        ""folderPath"": ""/path/to/folder1"",
+                        ""settings"": {
+                            ""preferred_org"": { ""value"": ""user-specified-org"", ""changed"": true },
+                            ""auto_determined_org"": { ""value"": ""auto-determined-org"", ""changed"": true },
+                            ""org_set_by_user"": { ""value"": true, ""changed"": true }
+                        }
                     },
                     {
-                        'folderPath': '/path/to/folder2',
-                        'baseBranch': 'master',
-                        'preferredOrg': '',
-                        'autoDeterminedOrg': 'auto-determined-org-2',
-                        'orgSetByUser': false,
-                        'orgMigratedFromGlobalConfig': true
+                        ""folderPath"": ""/path/to/folder2"",
+                        ""settings"": {
+                            ""preferred_org"": { ""value"": """", ""changed"": true },
+                            ""auto_determined_org"": { ""value"": ""auto-determined-org-2"", ""changed"": true },
+                            ""org_set_by_user"": { ""value"": false, ""changed"": true }
+                        }
                     }
                 ]
             }");
             optionsMock.SetupProperty(o => o.FolderConfigs);
-            optionsMock.SetupProperty(o => o.Organization);
 
             // Act
-            await cut.OnFolderConfig(arg);
+            await cut.OnSnykConfiguration(arg);
 
-            // Assert
-            // Only the matching folder config (/path/to/folder1) is processed, so save methods are called once
-            snykOptionsManagerMock.Verify(s => s.Save(It.IsAny<IPersistableOptions>(), It.IsAny<bool>()), Times.Once);
-            snykOptionsManagerMock.Verify(s => s.SaveAutoDeterminedOrgAsync("auto-determined-org"), Times.Once);
-            snykOptionsManagerMock.Verify(s => s.SavePreferredOrgAsync("user-specified-org"), Times.Once);
-            snykOptionsManagerMock.Verify(s => s.SaveOrgSetByUserAsync(true), Times.Once);
-            // GetEffectiveOrganizationAsync is not called - Language Server handles fallback logic
-            snykOptionsManagerMock.Verify(s => s.GetEffectiveOrganizationAsync(), Times.Never);
+            // Assert — both configs stored; no disk calls
+            Assert.Equal(2, optionsMock.Object.FolderConfigs.Count);
+            var fc1 = optionsMock.Object.FolderConfigs[0];
+            Assert.Equal("auto-determined-org", fc1.AutoDeterminedOrg);
+            Assert.Equal("user-specified-org", fc1.PreferredOrg);
+            Assert.True(fc1.OrgSetByUser);
+            snykOptionsManagerMock.Verify(s => s.SaveAutoDeterminedOrgAsync(It.IsAny<string>()), Times.Never);
         }
 
         [Fact]
-        public async Task OnFolderConfig_ShouldSaveBothOrgFields_WhenBothExist()
+        public async Task OnSnykConfiguration_ShouldStoreBothOrgFields_WhenBothExist()
         {
             // Arrange
             var arg = JObject.Parse(@"{
-                'folderConfigs': [
+                ""settings"": {},
+                ""folderConfigs"": [
                     {
-                        'folderPath': '/path/to/folder1',
-                        'preferredOrg': 'user-preferred-org',
-                        'autoDeterminedOrg': 'auto-detected-org',
-                        'orgSetByUser': true,
-                        'orgMigratedFromGlobalConfig': false
+                        ""folderPath"": ""/path/to/folder1"",
+                        ""settings"": {
+                            ""preferred_org"": { ""value"": ""user-preferred-org"", ""changed"": true },
+                            ""auto_determined_org"": { ""value"": ""auto-detected-org"", ""changed"": true },
+                            ""org_set_by_user"": { ""value"": true, ""changed"": true }
+                        }
                     }
                 ]
             }");
-
             optionsMock.SetupProperty(o => o.FolderConfigs);
-            optionsMock.SetupProperty(o => o.Organization);
 
             // Act
-            await cut.OnFolderConfig(arg);
+            await cut.OnSnykConfiguration(arg);
 
             // Assert
-            snykOptionsManagerMock.Verify(s => s.SaveAutoDeterminedOrgAsync("auto-detected-org"), Times.Once);
-            snykOptionsManagerMock.Verify(s => s.SavePreferredOrgAsync("user-preferred-org"), Times.Once);
-            snykOptionsManagerMock.Verify(s => s.SaveOrgSetByUserAsync(true), Times.Once);
-            // GetEffectiveOrganizationAsync is not called - Language Server handles fallback logic
-            snykOptionsManagerMock.Verify(s => s.GetEffectiveOrganizationAsync(), Times.Never);
+            var fc = optionsMock.Object.FolderConfigs[0];
+            Assert.Equal("auto-detected-org", fc.AutoDeterminedOrg);
+            Assert.Equal("user-preferred-org", fc.PreferredOrg);
+            Assert.True(fc.OrgSetByUser);
+            snykOptionsManagerMock.Verify(s => s.SaveAutoDeterminedOrgAsync(It.IsAny<string>()), Times.Never);
+            snykOptionsManagerMock.Verify(s => s.SavePreferredOrgAsync(It.IsAny<string>()), Times.Never);
         }
 
         [Fact]
-        public async Task OnFolderConfig_ShouldSaveEmptyPreferredOrg_WhenPreferredOrgIsEmpty()
+        public async Task OnSnykConfiguration_ShouldStoreEmptyPreferredOrg_WhenPreferredOrgIsEmpty()
         {
             // Arrange
             var arg = JObject.Parse(@"{
-                'folderConfigs': [
+                ""settings"": {},
+                ""folderConfigs"": [
                     {
-                        'folderPath': '/path/to/folder1',
-                        'preferredOrg': '',
-                        'autoDeterminedOrg': 'auto-detected-org',
-                        'orgSetByUser': false,
-                        'orgMigratedFromGlobalConfig': false
+                        ""folderPath"": ""/path/to/folder1"",
+                        ""settings"": {
+                            ""preferred_org"": { ""value"": """", ""changed"": true },
+                            ""auto_determined_org"": { ""value"": ""auto-detected-org"", ""changed"": true },
+                            ""org_set_by_user"": { ""value"": false, ""changed"": true }
+                        }
+                    }
+                ]
+            }");
+            optionsMock.SetupProperty(o => o.FolderConfigs);
+
+            // Act
+            await cut.OnSnykConfiguration(arg);
+
+            // Assert
+            var fc = optionsMock.Object.FolderConfigs[0];
+            Assert.Equal("auto-detected-org", fc.AutoDeterminedOrg);
+            Assert.Equal("", fc.PreferredOrg);
+            Assert.False(fc.OrgSetByUser);
+        }
+
+        [Fact]
+        public async Task OnSnykConfiguration_ShouldOverwriteByPath_WhenSamePathArrivesTwice()
+        {
+            // Arrange — pre-seed Options.FolderConfigs with one entry, then send same path with different org
+            optionsMock.SetupProperty(o => o.FolderConfigs);
+            optionsMock.Object.FolderConfigs = new List<FolderConfig>
+            {
+                new FolderConfig { FolderPath = "/path/to/folder1", PreferredOrg = "old-org" }
+            };
+
+            var arg = JObject.Parse(@"{
+                ""settings"": {},
+                ""folderConfigs"": [
+                    {
+                        ""folderPath"": ""/path/to/folder1"",
+                        ""settings"": {
+                            ""preferred_org"": { ""value"": ""new-org"", ""changed"": true }
+                        }
                     }
                 ]
             }");
 
-            optionsMock.SetupProperty(o => o.FolderConfigs);
-            optionsMock.SetupProperty(o => o.Organization);
-
             // Act
-            await cut.OnFolderConfig(arg);
+            await cut.OnSnykConfiguration(arg);
 
-            // Assert
-            snykOptionsManagerMock.Verify(s => s.SaveAutoDeterminedOrgAsync("auto-detected-org"), Times.Once);
-            snykOptionsManagerMock.Verify(s => s.SavePreferredOrgAsync(""), Times.Once);
-            snykOptionsManagerMock.Verify(s => s.SaveOrgSetByUserAsync(false), Times.Once);
+            // Assert — replaced, not appended
+            Assert.Single(optionsMock.Object.FolderConfigs);
+            Assert.Equal("new-org", optionsMock.Object.FolderConfigs[0].PreferredOrg);
         }
 
         [Fact]
@@ -513,7 +503,7 @@ namespace Snyk.VisualStudio.Extension.Tests.Language
         }
 
         [Fact]
-        public async Task OnSnykConfiguration_ShouldNotThrow_WithValidLspConfigurationParam()
+        public async Task OnSnykConfiguration_ShouldPopulateFolderConfigs_WithValidLspConfigurationParam()
         {
             // Arrange
             var arg = JObject.Parse(@"{
@@ -525,9 +515,15 @@ namespace Snyk.VisualStudio.Extension.Tests.Language
                     { ""folderPath"": ""/repo"", ""settings"": {} }
                 ]
             }");
+            optionsMock.SetupProperty(o => o.FolderConfigs);
 
-            // Act — must not throw
+            // Act — must not throw and must populate folder configs
             await cut.OnSnykConfiguration(arg);
+
+            // Assert — folder configs populated (not ignored)
+            Assert.NotNull(optionsMock.Object.FolderConfigs);
+            Assert.Single(optionsMock.Object.FolderConfigs);
+            Assert.Equal("/repo", optionsMock.Object.FolderConfigs[0].FolderPath);
         }
 
         [Fact]
@@ -540,11 +536,12 @@ namespace Snyk.VisualStudio.Extension.Tests.Language
                 },
                 ""folderConfigs"": []
             }");
+            optionsMock.SetupProperty(o => o.FolderConfigs);
 
             // Act
             await cut.OnSnykConfiguration(arg);
 
-            // Assert — options are persisted without re-triggering DidChangeConfigurationAsync (triggerSettingsChangedEvent=false)
+            // Assert — options persisted without re-triggering DidChangeConfigurationAsync (triggerSettingsChangedEvent=false)
             snykOptionsManagerMock.Verify(m => m.Save(It.IsAny<IPersistableOptions>(), false), Times.Once());
         }
     }

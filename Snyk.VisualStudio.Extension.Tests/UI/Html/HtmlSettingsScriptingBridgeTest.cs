@@ -336,23 +336,20 @@ namespace Snyk.VisualStudio.Extension.Tests.UI.Html
             solutionServiceMock.Setup(s => s.GetSolutionFolderAsync())
                 .ReturnsAsync("/path/to/solution");
 
-            snykOptionsManagerMock.Setup(m => m.SavePreferredOrgAsync(It.IsAny<string>()))
-                .Returns(Task.CompletedTask);
-            snykOptionsManagerMock.Setup(m => m.SaveAutoDeterminedOrgAsync(It.IsAny<string>()))
-                .Returns(Task.CompletedTask);
-            snykOptionsManagerMock.Setup(m => m.SaveAdditionalEnvAsync(It.IsAny<string>()))
-                .Returns(Task.CompletedTask);
-            snykOptionsManagerMock.Setup(m => m.SaveOrgSetByUserAsync(It.IsAny<bool>()))
-                .Returns(Task.CompletedTask);
-
             bridge = new HtmlSettingsScriptingBridge(
                 serviceProviderMock.Object,
                 onModified: () => { });
         }
 
         [Fact]
-        public void SaveIdeConfig_FolderConfigs_SavesAllFolderProperties()
+        public void SaveIdeConfig_FolderConfigs_UpdatesInMemoryFolderConfig()
         {
+            // Pre-seed Options.FolderConfigs so the in-memory mirror path triggers
+            optionsMock.SetupGet(o => o.FolderConfigs).Returns(new List<FolderConfig>
+            {
+                new FolderConfig { FolderPath = "/path/to/solution" }
+            });
+
             var config = JsonConvert.SerializeObject(new IdeConfigData
             {
                 FolderConfigs = new List<FolderConfigData>
@@ -370,10 +367,18 @@ namespace Snyk.VisualStudio.Extension.Tests.UI.Html
 
             bridge.__saveIdeConfig__(config);
 
-            snykOptionsManagerMock.Verify(m => m.SavePreferredOrgAsync("my-org"), Times.Once);
-            snykOptionsManagerMock.Verify(m => m.SaveOrgSetByUserAsync(true), Times.Once);
-            snykOptionsManagerMock.Verify(m => m.SaveAdditionalEnvAsync("ENV_VAR=1"), Times.Once);
-            snykOptionsManagerMock.Verify(m => m.SaveAutoDeterminedOrgAsync("auto-org"), Times.Once);
+            // No disk Save*Async calls — LS is the real persistence
+            snykOptionsManagerMock.Verify(m => m.SavePreferredOrgAsync(It.IsAny<string>()), Times.Never);
+            snykOptionsManagerMock.Verify(m => m.SaveOrgSetByUserAsync(It.IsAny<bool>()), Times.Never);
+            snykOptionsManagerMock.Verify(m => m.SaveAdditionalEnvAsync(It.IsAny<string>()), Times.Never);
+            snykOptionsManagerMock.Verify(m => m.SaveAutoDeterminedOrgAsync(It.IsAny<string>()), Times.Never);
+
+            // In-memory state updated
+            var fc = optionsMock.Object.FolderConfigs[0];
+            Assert.Equal("my-org", fc.PreferredOrg);
+            Assert.True(fc.OrgSetByUser);
+            Assert.Equal("ENV_VAR=1", fc.AdditionalEnv);
+            Assert.Equal("auto-org", fc.AutoDeterminedOrg);
         }
 
         [Fact]
