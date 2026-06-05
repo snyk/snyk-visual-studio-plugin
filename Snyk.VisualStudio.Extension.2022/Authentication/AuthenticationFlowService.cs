@@ -54,11 +54,26 @@ namespace Snyk.VisualStudio.Extension.Authentication
 
                 Logger.Information("Api token is invalid. Attempting to authenticate via snyk auth");
 
+                // FireAndForget returns immediately, so the outer catch can't observe failures
+                // from these awaited LS calls — handle them here or any JSON-RPC error,
+                // ObjectDisposedException (client torn down) or cancellation goes unlogged.
                 ThreadHelper.JoinableTaskFactory.RunAsync(async () =>
                 {
-                    await serviceProvider.LanguageClientManager.InvokeLogout(SnykVSPackage.Instance.DisposalToken);
-                    Logger.Information("Invoking InvokeLogin for auth");
-                    await serviceProvider.LanguageClientManager.InvokeLogin(SnykVSPackage.Instance.DisposalToken);
+                    try
+                    {
+                        await serviceProvider.LanguageClientManager.InvokeLogout(SnykVSPackage.Instance.DisposalToken);
+                        Logger.Information("Invoking InvokeLogin for auth");
+                        await serviceProvider.LanguageClientManager.InvokeLogin(SnykVSPackage.Instance.DisposalToken);
+                    }
+                    catch (OperationCanceledException)
+                    {
+                        // Expected when the LS client / VS host is torn down mid-flight; not an error.
+                        Logger.Debug("Login/logout invocation through the Language Server was canceled.");
+                    }
+                    catch (Exception ex)
+                    {
+                        Logger.Error(ex, "Login/logout invocation through the Language Server failed.");
+                    }
                 }).FireAndForget();
 
                 ThreadHelper.JoinableTaskFactory.Run(async () =>
@@ -73,7 +88,10 @@ namespace Snyk.VisualStudio.Extension.Authentication
             }
             catch (Exception e)
             {
-                Logger.Error(e, "Couldn't execute Invoke Login through LS.");
+                // Covers the synchronous setup above (readiness check, scan dispatch, modal auth
+                // dialog). The actual LS login/logout calls are awaited inside the FireAndForget
+                // lambda and log their own failures there.
+                Logger.Error(e, "Couldn't start the authentication flow.");
             }
         }
 

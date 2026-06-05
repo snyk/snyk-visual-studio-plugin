@@ -191,9 +191,28 @@ namespace Snyk.VisualStudio.Extension.UI.Html
 
         private async Task ParseAndSaveConfigAsync(string jsonString)
         {
-            // LS HTML JavaScript handles all validation - we just parse and save
+            // LS HTML JavaScript handles all validation - we just parse and save.
+            // Throw on a null result (malformed/empty JSON that maps to nothing) rather than
+            // returning early: the caller would otherwise still run OptionsManager.Save and
+            // signal success, so the user would see no error while every change is discarded.
             var config = JsonConvert.DeserializeObject<IdeConfigData>(jsonString);
-            if (config == null) return;
+            if (config == null)
+            {
+                // A null result means the JSON was empty/whitespace/"null" or otherwise mapped to
+                // nothing, so it shouldn't carry a real token — but truncate defensively to keep the
+                // log bounded and avoid dumping anything large/sensitive in full.
+                var loggedPayload = jsonString ?? "(null)";
+                if (loggedPayload.Length > 200)
+                {
+                    loggedPayload = loggedPayload.Substring(0, 200) + "…(truncated)";
+                }
+
+                Logger.Error(
+                    "Settings payload from the settings page deserialized to null; no settings were saved. Payload: {Payload}",
+                    loggedPayload);
+                throw new InvalidOperationException(
+                    "Could not parse settings payload from the settings page; no settings were saved.");
+            }
 
             var isCliOnly = config.IsFallbackForm ?? false;
             Logger.Information("Saving workspace configuration (CLI only: {IsCliOnly})", isCliOnly);
