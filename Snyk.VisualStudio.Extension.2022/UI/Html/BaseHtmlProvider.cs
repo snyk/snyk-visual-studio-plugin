@@ -157,7 +157,12 @@ namespace Snyk.VisualStudio.Extension.UI.Html
                 // VS Code style variables (from LS HTML)
                 { "vscode-font-family", "'Segoe UI', Tahoma, Geneva, Verdana, sans-serif" },
                 { "vscode-editor-font-family", "'Consolas', 'Courier New', monospace" },
-                { "vscode-font-size", "13px" },
+                // Drives --base-font-size in the LS CSS. 12px matches Visual Studio's default 9pt
+                // environment font (9pt × 96/72 = 12px); the previous 13px rendered noticeably
+                // larger than native VS dialogs. Applies to every HTML surface (settings dialog +
+                // tool-window panels) since this map is shared by all providers. CSS px are
+                // device-independent in WebView2, so this scales correctly with display DPI.
+                { "vscode-font-size", "12px" },
                 { "vscode-editor-background", editorBackground },
                 { "vscode-foreground", textColor },
                 { "vscode-input-foreground", textColor },

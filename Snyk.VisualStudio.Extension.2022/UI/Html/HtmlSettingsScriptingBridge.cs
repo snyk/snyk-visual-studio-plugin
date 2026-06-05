@@ -443,55 +443,35 @@ namespace Snyk.VisualStudio.Extension.UI.Html
             }
         }
 
-        private async Task SaveFolderConfigsAsync(List<FolderConfigData> folderConfigs)
+        private Task SaveFolderConfigsAsync(List<FolderConfigData> folderConfigs)
         {
-            // LS HTML sends folder configs for the current solution.
-            // Pattern: save to solution-specific storage AND mirror the per-folder values into
-            // the global Options.FolderConfigs slot.
+            // The form posts a changed-only folder object (only the fields the user actually
+            // touched). VS is single-solution and the LS is the source of truth for folder
+            // configs — it sends the current workspace's config keyed by the path it registered,
+            // which FolderConfigApplier stores as the sole entry in Options.FolderConfigs. So we
+            // mirror the form's changes into that single entry directly; no solution-path
+            // re-derivation or matching needed.
             if (folderConfigs == null || folderConfigs.Count == 0)
-                return;
+                return Task.CompletedTask;
 
             try
             {
-                // Get current solution folder path
-                var solutionPath = await serviceProvider.SolutionService.GetSolutionFolderAsync();
-                if (string.IsNullOrEmpty(solutionPath))
+                var existingConfig = Options.FolderConfigs?.FirstOrDefault();
+                if (existingConfig == null)
                 {
-                    Logger.Warning("Cannot save folder configs - no solution loaded");
-                    return;
+                    Logger.Warning("Cannot save folder configs - no folder config available for the current workspace");
+                    return Task.CompletedTask;
                 }
-
-                // The form posts a changed-only folder object (only the fields the user
-                // actually touched, plus folderPath). Apply each field only when it is present
-                // so a single-field edit doesn't blank out the sibling folder settings.
-                // Match via FolderConfigMatcher so this stays consistent with the LS->IDE path.
-                var existingConfig = FolderConfigMatcher.FindFirstMatching(Options.FolderConfigs, solutionPath);
 
                 foreach (var folderConfig in folderConfigs)
                 {
                     if (folderConfig == null) continue;
 
-                    // The VS integration is single-solution: our solution-scoped storage
-                    // (SaveAdditionalEnvAsync etc.) and the mirror target below are both keyed to
-                    // the current solution path. If the form ever posts entries for other folders,
-                    // applying them here would clobber the current solution's settings with
-                    // unrelated data, so skip any entry that doesn't match the current solution.
-                    // Use the shared matcher (exact + normalisation-tolerant) so this agrees with
-                    // the LS->IDE path. An absent folderPath keeps the legacy behaviour (the form
-                    // omitted it; VS only has one folder anyway).
-                    if (!string.IsNullOrEmpty(folderConfig.FolderPath) &&
-                        !FolderConfigMatcher.Matches(folderConfig.FolderPath, solutionPath))
-                    {
-                        continue;
-                    }
-
-
-
-                    // 2. Mirror the same changed fields into the in-memory global FolderConfigs
-                    //    entry so DidChangeConfiguration sends the updated values to the LS (the LS
-                    //    is master for folder-config storage, incl. base branch which has no
-                    //    solution-storage slot of its own).
-                    if (existingConfig != null)
+                    // Mirror the changed fields into the in-memory FolderConfig so
+                    // DidChangeConfiguration sends the updated values to the LS (the LS is master
+                    // for folder-config storage, incl. base branch which has no solution-storage
+                    // slot of its own). Apply each field only when present so a single-field edit
+                    // doesn't blank out the siblings.
                     {
                         if (folderConfig.PreferredOrg != null)
                             existingConfig.PreferredOrg = folderConfig.PreferredOrg;
@@ -538,7 +518,7 @@ namespace Snyk.VisualStudio.Extension.UI.Html
                         if (folderConfig.RiskScoreThreshold.HasValue)
                             existingConfig.RiskScoreThreshold = folderConfig.RiskScoreThreshold;
 
-                        Logger.Information("Mirrored folder config for solution: {SolutionPath}", solutionPath);
+                        Logger.Information("Mirrored folder config: {FolderPath}", existingConfig.FolderPath);
                     }
                 }
             }
@@ -547,6 +527,8 @@ namespace Snyk.VisualStudio.Extension.UI.Html
                 Logger.Error(ex, "Error saving folder configs");
                 throw;
             }
+
+            return Task.CompletedTask;
         }
 
     }

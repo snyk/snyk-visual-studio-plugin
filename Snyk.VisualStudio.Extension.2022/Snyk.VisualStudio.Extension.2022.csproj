@@ -84,7 +84,6 @@
     <Compile Include="Extension\StringExtensions.cs" />
     <Compile Include="Extension\UriExtensions.cs" />
     <Compile Include="Language\CustomInitializationOptions.cs" />
-    <Compile Include="Language\FolderConfigMatcher.cs" />
     <Compile Include="Language\FeatureFlagResponse.cs" />
     <Compile Include="Language\IJsonRpc.cs" />
     <Compile Include="Language\ILanguageClientManager.cs" />

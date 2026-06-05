@@ -453,45 +453,6 @@ namespace Snyk.VisualStudio.Extension.Tests.UI.Html
         }
 
         [Fact]
-        public void SaveIdeConfig_FolderConfigs_IgnoresEntriesForOtherFolders()
-        {
-            // existingConfig is keyed to the current solution ("/path/to/solution"). A payload
-            // entry for a different folder must not clobber it or write to solution-scoped storage.
-            var existing = new FolderConfig
-            {
-                FolderPath = "/path/to/solution",
-                PreferredOrg = "solution-org",
-                SnykOssEnabled = true,
-            };
-            optionsMock.SetupGet(o => o.FolderConfigs).Returns(new List<FolderConfig> { existing });
-
-            var config = JsonConvert.SerializeObject(new IdeConfigData
-            {
-                FolderConfigs = new List<FolderConfigData>
-                {
-                    new FolderConfigData
-                    {
-                        FolderPath = "/some/other/folder",
-                        PreferredOrg = "ghost-org",
-                        SnykOssEnabled = false,
-                    },
-                    new FolderConfigData
-                    {
-                        FolderPath = "/path/to/solution",
-                        PreferredOrg = "updated-org",
-                    },
-                },
-            });
-
-            bridge.__saveIdeConfig__(config);
-
-            // Only the current-solution entry is applied — no disk saves, only in-memory mirror.
-            Assert.Equal("updated-org", existing.PreferredOrg);
-            // The other folder's SnykOssEnabled=false must not have leaked onto the solution config.
-            Assert.Equal(true, existing.SnykOssEnabled);
-        }
-
-        [Fact]
         public void SaveIdeConfig_FolderConfigs_NoExistingConfig_DoesNotThrow()
         {
             // No matching global config entry (FolderConfigs stays null) — the mirror block is

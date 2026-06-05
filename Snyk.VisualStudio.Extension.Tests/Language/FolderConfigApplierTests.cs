@@ -73,6 +73,28 @@ namespace Snyk.VisualStudio.Extension.Tests.Language
         }
 
         [Fact]
+        public void Apply_PrunesStaleEntries_NotInIncoming()
+        {
+            // LS is source of truth: an existing entry for a path the LS no longer sends
+            // (e.g. a previously-opened solution in the same VS session) must be dropped, so a
+            // later FirstOrDefault can't pick it up by mistake.
+            var existing = new List<FolderConfig>
+            {
+                new FolderConfig { FolderPath = "/old-solution", PreferredOrg = "stale-org" }
+            };
+            var incoming = new List<LspFolderConfig>
+            {
+                new LspFolderConfig { FolderPath = "/current-solution", Settings = new Dictionary<string, ConfigSetting>() }
+            };
+
+            var result = FolderConfigApplier.Apply(existing, incoming);
+
+            Assert.Single(result);
+            Assert.Equal("/current-solution", result[0].FolderPath);
+            Assert.DoesNotContain(result, fc => fc.FolderPath == "/old-solution");
+        }
+
+        [Fact]
         public void Apply_ReturnsExisting_WhenIncomingIsEmpty()
         {
             var existing = new List<FolderConfig>
