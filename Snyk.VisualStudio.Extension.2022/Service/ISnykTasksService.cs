@@ -15,6 +15,7 @@ public interface ISnykTasksService
     bool IsOssScanning { get; set; }
     bool IsSnykCodeScanning { get; set; }
     bool IsIacScanning { get; set; }
+    bool IsSecretsScanning { get; set; }
 
     /// <summary>
     /// Cli scanning started event handler.
@@ -90,6 +91,31 @@ public interface ISnykTasksService
     /// SnykCode disabled event handler.
     /// </summary>
     event EventHandler<SnykCodeScanEventArgs> SnykCodeDisabled;
+
+    /// <summary>
+    /// Secrets scanning started event handler.
+    /// </summary>
+    event EventHandler<SnykOssScanEventArgs> SecretsScanningStarted;
+
+    /// <summary>
+    /// Secrets scanning update event handler.
+    /// </summary>
+    event EventHandler<SnykOssScanEventArgs> SecretsScanningUpdate;
+
+    /// <summary>
+    /// Secrets scanning finished event handler.
+    /// </summary>
+    event EventHandler<SnykOssScanEventArgs> SecretsScanningFinished;
+
+    /// <summary>
+    /// Secrets scan error event handler.
+    /// </summary>
+    event EventHandler<SnykOssScanEventArgs> SecretsScanError;
+
+    /// <summary>
+    /// Secrets scanning disabled event handler.
+    /// </summary>
+    event EventHandler<SnykOssScanEventArgs> SecretsScanningDisabled;
 
     /// <summary>
     /// Scanning cancelled event handler.
@@ -210,6 +236,14 @@ public interface ISnykTasksService
     void FireCodeScanningUpdateEvent(IDictionary<string, IEnumerable<Issue>> analysisResult);
 
     void FireIacScanningUpdateEvent(IDictionary<string, IEnumerable<Issue>> analysisResult);
+
+    void FireSecretsScanningStartedEvent();
+
+    void FireSecretsScanningUpdateEvent(IDictionary<string, IEnumerable<Issue>> scanResult);
+
+    void FireSecretsScanningFinishedEvent();
+
+    void OnSecretsError(PresentableError presentableError);
 
     /// <summary>
     /// Fire OSS scanning finished event.

@@ -25,9 +25,10 @@ namespace Snyk.VisualStudio.Extension.Tests.Language
         }
 
         [Theory]
-        [InlineData(Product.Oss, 500, 999, 3_000_500)]   // OSS uses RiskScore
-        [InlineData(Product.Iac, 300, 999, 3_000_300)]   // IaC uses RiskScore
-        [InlineData(Product.Code, 999, 750, 3_000_750)]  // Code uses PriorityScore
+        [InlineData(Product.Oss, 500, 999, 3_000_500)]     // OSS uses RiskScore
+        [InlineData(Product.Iac, 300, 999, 3_000_300)]     // IaC uses RiskScore
+        [InlineData(Product.Code, 999, 750, 3_000_750)]    // Code uses PriorityScore
+        [InlineData(Product.Secrets, 400, 999, 3_000_400)] // Secrets uses RiskScore
         public void Priority_ShouldUseCorrectScoreForProduct(string product, int riskScore, int priorityScore, int expected)
         {
             var issue = new Issue
