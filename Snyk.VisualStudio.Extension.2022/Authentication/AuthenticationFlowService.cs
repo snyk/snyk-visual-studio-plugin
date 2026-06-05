@@ -73,6 +73,11 @@ namespace Snyk.VisualStudio.Extension.Authentication
                     catch (Exception ex)
                     {
                         Logger.Error(ex, "Login/logout invocation through the Language Server failed.");
+                        // The modal AuthDialogWindow is shown below and is normally dismissed by the
+                        // OnHasAuthenticated callback. That callback never arrives when the LS call
+                        // fails, so dismiss the dialog and surface the failure here — otherwise the
+                        // user is left staring at a dialog that can never complete.
+                        await HandleFailedAuthenticationAsync("Authentication failed. Check the Snyk logs for details.");
                     }
                 }).FireAndForget();
 

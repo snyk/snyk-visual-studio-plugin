@@ -86,6 +86,13 @@ namespace Snyk.VisualStudio.Extension.Settings
 
         private void EnsureFreshControl()
         {
+            // Never dispose/swap the control while a save is pumping the dispatcher (see OnApply).
+            // Dispatcher.PushFrame lets visibility events through, and HostBorder_IsVisibleChanged
+            // routes here — disposing the control SaveAsync is still awaiting would throw
+            // ObjectDisposedException (or hang the pump). OnApply resolves the control before
+            // arming this guard, so the in-flight save always has a live instance.
+            if (saveInProgress) return;
+
             if (control != null && !control.IsStale) return;
             if (serviceProvider == null) return;
 
@@ -138,6 +145,12 @@ namespace Snyk.VisualStudio.Extension.Settings
                 return;
             }
 
+            // Resolve (and if needed create/refresh) the control BEFORE arming saveInProgress.
+            // EnsureFreshControl no-ops while saveInProgress is set, so doing this first guarantees
+            // a live instance for the save; once armed, the dispatcher pump below can't dispose or
+            // swap it out from under SaveAsync.
+            var activeControl = Control;
+
             saveInProgress = true;
             try
             {
@@ -152,12 +165,6 @@ namespace Snyk.VisualStudio.Extension.Settings
                 var saveSucceeded = false;
                 var saveFailedWithException = false;
                 var frame = new DispatcherFrame();
-
-                // Resolve the control once, up front. The pump below can run other dispatcher
-                // work (incl. a visibility-driven control swap via EnsureFreshControl), so we must
-                // drive the whole save against the single instance we started with rather than
-                // re-reading Control mid-flight.
-                var activeControl = Control;
 
                 ThreadHelper.JoinableTaskFactory.RunAsync(async () =>
                 {
