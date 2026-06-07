@@ -261,6 +261,18 @@ namespace Snyk.VisualStudio.Extension.Language
                 await StopServerAsync();
                 OnStopped();
                 await StartServerAsync(true);
+
+                // The VS LSP framework only invokes OnServerInitializedAsync once
+                // per ILanguageClient instance, so re-firing StartAsync from a
+                // restart does NOT bring IsReady back to true or notify
+                // OnLanguageServerReadyAsync subscribers. Mark the client ready
+                // ourselves so downstream features (scan triggers, settings
+                // sync, etc.) wake up after a restart.
+                if (Rpc != null)
+                {
+                    IsReady = true;
+                    FireOnLanguageServerReadyAsyncEvent();
+                }
             }
             catch (Exception ex)
             {
