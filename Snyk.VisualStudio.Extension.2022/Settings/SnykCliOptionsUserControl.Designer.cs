@@ -207,8 +207,8 @@
             // 
             // SnykCliOptionsUserControl
             // 
-            this.AutoScaleDimensions = new System.Drawing.SizeF(8F, 16F);
-            this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
+            this.AutoScaleDimensions = new System.Drawing.SizeF(96F, 96F);
+            this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Dpi;
             this.Controls.Add(this.mainPanel);
             this.Name = "SnykCliOptionsUserControl";
             this.Size = new System.Drawing.Size(803, 339);

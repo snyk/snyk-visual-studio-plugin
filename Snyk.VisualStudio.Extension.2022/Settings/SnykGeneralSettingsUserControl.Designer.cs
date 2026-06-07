@@ -268,8 +268,8 @@ namespace Snyk.VisualStudio.Extension.Settings
             // 
             // SnykGeneralSettingsUserControl
             // 
-            this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
-            this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
+            this.AutoScaleDimensions = new System.Drawing.SizeF(96F, 96F);
+            this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Dpi;
             this.Controls.Add(this.mainPanel);
             this.Margin = new System.Windows.Forms.Padding(2, 2, 2, 2);
             this.Name = "SnykGeneralSettingsUserControl";

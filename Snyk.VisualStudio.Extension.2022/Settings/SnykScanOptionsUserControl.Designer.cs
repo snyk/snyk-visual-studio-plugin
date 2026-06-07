@@ -145,8 +145,8 @@
             // 
             // SnykScanOptionsUserControl
             // 
-            this.AutoScaleDimensions = new System.Drawing.SizeF(14F, 29F);
-            this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
+            this.AutoScaleDimensions = new System.Drawing.SizeF(96F, 96F);
+            this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Dpi;
             this.Controls.Add(this.mainPanel);
             this.Margin = new System.Windows.Forms.Padding(5, 6, 5, 6);
             this.Name = "SnykScanOptionsUserControl";
