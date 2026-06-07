@@ -2,6 +2,7 @@
 using Microsoft.VisualStudio;
 using Microsoft.VisualStudio.Shell;
 using Microsoft.VisualStudio.Shell.Interop;
+using Microsoft.VisualStudio.Threading;
 using Snyk.VisualStudio.Extension.Language;
 
 namespace Snyk.VisualStudio.Extension.Service
@@ -21,6 +22,35 @@ namespace Snyk.VisualStudio.Extension.Service
         public SnykVsSolutionLoadEvents(ISolutionService solutionService)
         {
             this.solutionService = solutionService;
+        }
+
+        /// <summary>
+        /// Pushes a workspace/didChangeWorkspaceFolders notification when the solution-root
+        /// folder differs from what the language server was last told about. Returning the
+        /// recomputed folder lets the caller keep its own snapshot in sync.
+        /// </summary>
+        private static string NotifyLsIfSolutionFolderChanged(string previousFolder, string newFolder)
+        {
+            if (string.Equals(previousFolder, newFolder, StringComparison.OrdinalIgnoreCase))
+            {
+                return newFolder;
+            }
+
+            var lsClient = LanguageClientHelper.LanguageClientManager();
+            if (lsClient == null || !lsClient.IsReady)
+            {
+                return newFolder;
+            }
+
+            var added = string.IsNullOrEmpty(newFolder) ? Array.Empty<string>() : new[] { newFolder };
+            var removed = string.IsNullOrEmpty(previousFolder) ? Array.Empty<string>() : new[] { previousFolder };
+
+            ThreadHelper.JoinableTaskFactory.RunAsync(async () =>
+            {
+                await lsClient.DidChangeWorkspaceFoldersAsync(added, removed, SnykVSPackage.Instance.DisposalToken);
+            }).FireAndForget();
+
+            return newFolder;
         }
 
         /// <summary>
@@ -112,8 +142,19 @@ namespace Snyk.VisualStudio.Extension.Service
             {
                 return VSConstants.S_OK;
             }
+
+            var previousFolder = SnykVSPackage.ServiceProvider.SolutionService.SolutionFolderCache;
+
             // Reset solution folder cache to force loading Solution Folder from VS API
             SnykVSPackage.ServiceProvider.SolutionService.SolutionFolderCache = "";
+
+            // Recompute the solution folder and tell the language server about the change
+            // so newly-added projects are scanned without an IDE restart.
+            ThreadHelper.JoinableTaskFactory.RunAsync(async () =>
+            {
+                var newFolder = await SnykVSPackage.ServiceProvider.SolutionService.GetSolutionFolderAsync();
+                NotifyLsIfSolutionFolderChanged(previousFolder, newFolder);
+            }).FireAndForget();
 
             return VSConstants.S_OK;
         }

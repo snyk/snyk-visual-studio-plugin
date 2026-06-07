@@ -440,6 +440,41 @@ namespace Snyk.VisualStudio.Extension.Language
             return await InvokeWithParametersAsync<object>(LsConstants.WorkspaceChangeConfiguration, param, cancellationToken).ConfigureAwait(false);
         }
 
+        public async Task DidChangeWorkspaceFoldersAsync(string[] addedFolderPaths, string[] removedFolderPaths, CancellationToken cancellationToken)
+        {
+            if (!IsReady) return;
+
+            var added = ToWorkspaceFolders(addedFolderPaths);
+            var removed = ToWorkspaceFolders(removedFolderPaths);
+            if (added.Length == 0 && removed.Length == 0) return;
+
+            var param = new LSP.DidChangeWorkspaceFoldersParams
+            {
+                Event = new LSP.WorkspaceFoldersChangeEvent
+                {
+                    Added = added,
+                    Removed = removed,
+                }
+            };
+            await NotifyWithParametersAsync(LsConstants.WorkspaceDidChangeWorkspaceFolders, param).ConfigureAwait(false);
+        }
+
+        private static LSP.WorkspaceFolder[] ToWorkspaceFolders(string[] folderPaths)
+        {
+            if (folderPaths == null) return Array.Empty<LSP.WorkspaceFolder>();
+            var folders = new List<LSP.WorkspaceFolder>(folderPaths.Length);
+            foreach (var path in folderPaths)
+            {
+                if (string.IsNullOrWhiteSpace(path)) continue;
+                folders.Add(new LSP.WorkspaceFolder
+                {
+                    Uri = new Uri(path),
+                    Name = System.IO.Path.GetFileName(path.TrimEnd(System.IO.Path.DirectorySeparatorChar, System.IO.Path.AltDirectorySeparatorChar)),
+                });
+            }
+            return folders.ToArray();
+        }
+
         public async Task RestartServerAsync()
         {
             await RestartAsync(true);

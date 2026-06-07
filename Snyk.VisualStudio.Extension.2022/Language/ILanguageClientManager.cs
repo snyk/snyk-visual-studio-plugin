@@ -23,6 +23,7 @@ namespace Snyk.VisualStudio.Extension.Language
         Task<object> InvokeLogout(CancellationToken cancellationToken);
         Task<object> InvokeExecuteCommandAsync(string command, object[] args, CancellationToken cancellationToken);
         Task<object> DidChangeConfigurationAsync(CancellationToken cancellationToken);
+        Task DidChangeWorkspaceFoldersAsync(string[] addedFolderPaths, string[] removedFolderPaths, CancellationToken cancellationToken);
         Task<string> InvokeCopyLinkAsync(CancellationToken cancellationToken);
         Task<string> InvokeGenerateIssueDescriptionAsync(string issueId, CancellationToken cancellationToken);
         event AsyncEventHandler<SnykLanguageServerEventArgs> OnLanguageServerReadyAsync;
