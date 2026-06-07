@@ -84,11 +84,16 @@ namespace Snyk.VisualStudio.Extension.UI.Html
             {
                 ThreadHelper.JoinableTaskFactory.Run(async () =>
                 {
-                    await ParseAndSaveConfigAsync(jsonString);
+                    var cliChanged = await ParseAndSaveConfigAsync(jsonString);
 
                     // Persist all settings to storage at the end.
                     // This triggers SettingsChanged event which notifies Language Server.
                     OptionsManager.Save(Options, triggerSettingsChangedEvent: true);
+
+                    if (cliChanged)
+                    {
+                        HandleCliChange();
+                    }
 
                     saveCompletionTcs.TrySetResult(true);
                 });
@@ -167,17 +172,17 @@ namespace Snyk.VisualStudio.Extension.UI.Html
             Logger.Information("Save attempt finished with status: {Status}", status);
         }
 
-        private async Task ParseAndSaveConfigAsync(string jsonString)
+        private async Task<bool> ParseAndSaveConfigAsync(string jsonString)
         {
             // LS HTML JavaScript handles all validation - we just parse and save
             var config = JsonConvert.DeserializeObject<IdeConfigData>(jsonString);
-            if (config == null) return;
+            if (config == null) return false;
 
             var isCliOnly = config.IsFallbackForm ?? false;
             Logger.Information("Saving workspace configuration (CLI only: {IsCliOnly})", isCliOnly);
 
             // Always apply CLI settings and Insecure setting
-            ApplyCliSettings(config);
+            var cliChanged = ApplyCliSettings(config);
             ApplyInsecureSetting(config);
 
             // Only apply full settings when not in CLI-only mode
@@ -199,6 +204,8 @@ namespace Snyk.VisualStudio.Extension.UI.Html
                 ApplyMiscellaneousSettings(config);
                 await ApplyFolderConfigsAsync(config);
             }
+
+            return cliChanged;
         }
 
         private void ApplyScanSettings(IdeConfigData config)
@@ -332,27 +339,54 @@ namespace Snyk.VisualStudio.Extension.UI.Html
             Options.TrustedFolders = trustedFolders;
         }
 
-        private void ApplyCliSettings(IdeConfigData config)
+        private bool ApplyCliSettings(IdeConfigData config)
         {
+            var changed = false;
+
             // Allow empty values to reset settings
-            if (config.CliPath != null)
+            if (config.CliPath != null && Options.CliCustomPath != config.CliPath)
             {
                 Options.CliCustomPath = config.CliPath;
+                changed = true;
             }
 
-            if (config.ManageBinariesAutomatically.HasValue)
+            if (config.ManageBinariesAutomatically.HasValue
+                && Options.BinariesAutoUpdate != config.ManageBinariesAutomatically.Value)
             {
                 Options.BinariesAutoUpdate = config.ManageBinariesAutomatically.Value;
+                changed = true;
             }
 
-            if (config.CliBaseDownloadURL != null)
+            if (config.CliBaseDownloadURL != null && Options.CliBaseDownloadURL != config.CliBaseDownloadURL)
             {
                 Options.CliBaseDownloadURL = config.CliBaseDownloadURL;
+                changed = true;
             }
 
-            if (config.CliReleaseChannel != null)
+            if (config.CliReleaseChannel != null && Options.CliReleaseChannel != config.CliReleaseChannel)
             {
                 Options.CliReleaseChannel = config.CliReleaseChannel;
+                changed = true;
+            }
+
+            return changed;
+        }
+
+        // Mirrors SnykGeneralOptionsDialogPage.HandleCliChange so HTML-driven CLI
+        // changes restart (or re-download) the language server like the legacy
+        // WinForms settings dialog already did.
+        private void HandleCliChange()
+        {
+            serviceProvider.TasksService.CancelTasks();
+
+            if (Options.BinariesAutoUpdate)
+            {
+                // DownloadStarted stops the LS and DownloadFinished starts it again.
+                serviceProvider.TasksService.Download();
+            }
+            else
+            {
+                LanguageClientHelper.LanguageClientManager().RestartServerAsync().FireAndForget();
             }
         }
 

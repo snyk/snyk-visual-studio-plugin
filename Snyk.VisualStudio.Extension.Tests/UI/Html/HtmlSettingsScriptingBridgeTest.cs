@@ -271,6 +271,81 @@ namespace Snyk.VisualStudio.Extension.Tests.UI.Html
     }
 
     [Collection(MockedVS.Collection)]
+    public class HtmlSettingsScriptingBridgeCliRestartTest : PackageBaseTest
+    {
+        private readonly Mock<ISnykOptions> optionsMock;
+        private readonly Mock<ISnykOptionsManager> snykOptionsManagerMock;
+        private readonly Mock<ISnykTasksService> tasksServiceMock;
+        private readonly HtmlSettingsScriptingBridge bridge;
+
+        public HtmlSettingsScriptingBridgeCliRestartTest(GlobalServiceProvider gsp) : base(gsp)
+        {
+            var serviceProviderMock = new Mock<ISnykServiceProvider>();
+            optionsMock = new Mock<ISnykOptions>();
+            snykOptionsManagerMock = new Mock<ISnykOptionsManager>();
+            tasksServiceMock = new Mock<ISnykTasksService>();
+
+            // BinariesAutoUpdate=true so HandleCliChange goes through TasksService.Download
+            // and does not touch the static LanguageClientHelper (which has no LS in unit tests).
+            optionsMock.SetupGet(o => o.BinariesAutoUpdate).Returns(true);
+            optionsMock.SetupGet(o => o.CliCustomPath).Returns(string.Empty);
+
+            serviceProviderMock.SetupGet(sp => sp.Options).Returns(optionsMock.Object);
+            serviceProviderMock.SetupGet(sp => sp.SnykOptionsManager).Returns(snykOptionsManagerMock.Object);
+            serviceProviderMock.SetupGet(sp => sp.TasksService).Returns(tasksServiceMock.Object);
+            serviceProviderMock.SetupGet(sp => sp.LanguageClientManager).Returns((ILanguageClientManager)null);
+
+            bridge = new HtmlSettingsScriptingBridge(
+                serviceProviderMock.Object,
+                onModified: () => { });
+        }
+
+        [Fact]
+        public void SaveIdeConfig_CliPathChanged_TriggersCliChangeHandling()
+        {
+            var config = JsonConvert.SerializeObject(new IdeConfigData
+            {
+                CliPath = "/new/cli/path/snyk",
+            });
+
+            bridge.__saveIdeConfig__(config);
+
+            tasksServiceMock.Verify(t => t.CancelTasks(), Times.Once);
+            tasksServiceMock.Verify(t => t.Download(null), Times.Once);
+        }
+
+        [Fact]
+        public void SaveIdeConfig_CliPathUnchanged_DoesNotTriggerCliChangeHandling()
+        {
+            optionsMock.SetupGet(o => o.CliCustomPath).Returns("/existing/path/snyk");
+
+            var config = JsonConvert.SerializeObject(new IdeConfigData
+            {
+                CliPath = "/existing/path/snyk",
+            });
+
+            bridge.__saveIdeConfig__(config);
+
+            tasksServiceMock.Verify(t => t.CancelTasks(), Times.Never);
+            tasksServiceMock.Verify(t => t.Download(null), Times.Never);
+        }
+
+        [Fact]
+        public void SaveIdeConfig_NoCliFieldsInPayload_DoesNotTriggerCliChangeHandling()
+        {
+            var config = JsonConvert.SerializeObject(new IdeConfigData
+            {
+                ActivateSnykOpenSource = true,
+            });
+
+            bridge.__saveIdeConfig__(config);
+
+            tasksServiceMock.Verify(t => t.CancelTasks(), Times.Never);
+            tasksServiceMock.Verify(t => t.Download(null), Times.Never);
+        }
+    }
+
+    [Collection(MockedVS.Collection)]
     public class HtmlSettingsScriptingBridgeFolderConfigTest : PackageBaseTest
     {
         private readonly Mock<ISnykOptions> optionsMock;
