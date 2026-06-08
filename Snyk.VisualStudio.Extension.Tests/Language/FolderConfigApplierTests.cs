@@ -95,6 +95,35 @@ namespace Snyk.VisualStudio.Extension.Tests.Language
         }
 
         [Fact]
+        public void Apply_PreservesLocalReferenceFolderPath_AcrossSync()
+        {
+            // ReferenceFolderPath is extension-local (set via the Branch Selector, never sent by
+            // the LS). A config push rebuilds the entry from the LS payload, so it must carry the
+            // prior local value over rather than wiping it.
+            var existing = new List<FolderConfig>
+            {
+                new FolderConfig { FolderPath = "/repo", ReferenceFolderPath = @"C:\refs\main" }
+            };
+            var incoming = new List<LspFolderConfig>
+            {
+                new LspFolderConfig
+                {
+                    FolderPath = "/repo",
+                    Settings = new Dictionary<string, ConfigSetting>
+                    {
+                        [PflagKeys.PreferredOrg] = ConfigSetting.Of("new-org")
+                    }
+                }
+            };
+
+            var result = FolderConfigApplier.Apply(existing, incoming);
+
+            Assert.Single(result);
+            Assert.Equal(@"C:\refs\main", result[0].ReferenceFolderPath);
+            Assert.Equal("new-org", result[0].PreferredOrg);
+        }
+
+        [Fact]
         public void Apply_ReturnsExisting_WhenIncomingIsEmpty()
         {
             var existing = new List<FolderConfig>

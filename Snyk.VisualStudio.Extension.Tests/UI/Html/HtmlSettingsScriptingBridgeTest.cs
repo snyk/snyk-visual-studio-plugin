@@ -453,6 +453,32 @@ namespace Snyk.VisualStudio.Extension.Tests.UI.Html
         }
 
         [Fact]
+        public void SaveIdeConfig_FolderConfigs_MultipleFolders_AppliedPerPath()
+        {
+            // Two workspace folders. Each posted entry must land on the stored config with the
+            // matching path — not collapse every edit onto the first entry.
+            var folderA = new FolderConfig { FolderPath = "/repo/a" };
+            var folderB = new FolderConfig { FolderPath = "/repo/b" };
+            optionsMock.SetupGet(o => o.FolderConfigs).Returns(new List<FolderConfig> { folderA, folderB });
+
+            var config = JsonConvert.SerializeObject(new IdeConfigData
+            {
+                FolderConfigs = new List<FolderConfigData>
+                {
+                    new FolderConfigData { FolderPath = "/repo/a", PreferredOrg = "org-a", SnykOssEnabled = true },
+                    new FolderConfigData { FolderPath = "/repo/b", PreferredOrg = "org-b", SnykOssEnabled = false },
+                },
+            });
+
+            bridge.__saveIdeConfig__(config);
+
+            Assert.Equal("org-a", folderA.PreferredOrg);
+            Assert.Equal(true, folderA.SnykOssEnabled);
+            Assert.Equal("org-b", folderB.PreferredOrg);
+            Assert.Equal(false, folderB.SnykOssEnabled);
+        }
+
+        [Fact]
         public void SaveIdeConfig_FolderConfigs_NoExistingConfig_DoesNotThrow()
         {
             // No matching global config entry (FolderConfigs stays null) — the mirror block is

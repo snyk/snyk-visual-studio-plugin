@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using Newtonsoft.Json.Linq;
 using Serilog;
 
@@ -29,7 +30,18 @@ namespace Snyk.VisualStudio.Extension.Language
                 if (inc == null || string.IsNullOrEmpty(inc.FolderPath))
                     continue;
 
-                result.Add(ToFolderConfig(inc));
+                var typed = ToFolderConfig(inc);
+
+                // Carry over extension-local state the LS neither sends nor persists — specifically
+                // ReferenceFolderPath (set via the Branch Selector, used for delta findings). The
+                // typed config is built fresh from the LS payload, so without this every config
+                // push would permanently wipe it.
+                var prior = existing?.FirstOrDefault(fc =>
+                    fc != null && string.Equals(fc.FolderPath, inc.FolderPath, StringComparison.OrdinalIgnoreCase));
+                if (prior != null)
+                    typed.ReferenceFolderPath = prior.ReferenceFolderPath;
+
+                result.Add(typed);
             }
 
             return result;

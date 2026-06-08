@@ -446,18 +446,17 @@ namespace Snyk.VisualStudio.Extension.UI.Html
         private Task SaveFolderConfigsAsync(List<FolderConfigData> folderConfigs)
         {
             // The form posts a changed-only folder object (only the fields the user actually
-            // touched). VS is single-solution and the LS is the source of truth for folder
-            // configs — it sends the current workspace's config keyed by the path it registered,
-            // which FolderConfigApplier stores as the sole entry in Options.FolderConfigs. So we
-            // mirror the form's changes into that single entry directly; no solution-path
-            // re-derivation or matching needed.
+            // touched, plus folderPath) per folder. The LS is the source of truth for folder
+            // configs — it sends each workspace folder's config keyed by the path it registered,
+            // which FolderConfigApplier stores in Options.FolderConfigs. We mirror the form's
+            // changes into the matching stored entry by path.
             if (folderConfigs == null || folderConfigs.Count == 0)
                 return Task.CompletedTask;
 
             try
             {
-                var existingConfig = Options.FolderConfigs?.FirstOrDefault();
-                if (existingConfig == null)
+                var optionsConfigs = Options.FolderConfigs;
+                if (optionsConfigs == null || optionsConfigs.Count == 0)
                 {
                     Logger.Warning("Cannot save folder configs - no folder config available for the current workspace");
                     return Task.CompletedTask;
@@ -466,6 +465,17 @@ namespace Snyk.VisualStudio.Extension.UI.Html
                 foreach (var folderConfig in folderConfigs)
                 {
                     if (folderConfig == null) continue;
+
+                    // Match each posted folder to its stored config BY PATH so multi-folder
+                    // workspaces don't collapse every folder's edits onto a single entry. Both
+                    // paths originate from the LS (the form is LS-rendered, the stored config from
+                    // the LS config push), so exact case-insensitive equality is reliable. Fall
+                    // back to the sole entry only when the payload omits the path (fallback form).
+                    var existingConfig = !string.IsNullOrEmpty(folderConfig.FolderPath)
+                        ? optionsConfigs.FirstOrDefault(fc => fc != null &&
+                            string.Equals(fc.FolderPath, folderConfig.FolderPath, StringComparison.OrdinalIgnoreCase))
+                        : (optionsConfigs.Count == 1 ? optionsConfigs[0] : null);
+                    if (existingConfig == null) continue;
 
                     // Mirror the changed fields into the in-memory FolderConfig so
                     // DidChangeConfiguration sends the updated values to the LS (the LS is master
