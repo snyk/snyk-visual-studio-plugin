@@ -10,7 +10,17 @@
              UseLayoutRounding="True"
              mc:Ignorable="d"
              d:DesignHeight="450" d:DesignWidth="300">
-    <Grid>
-        <wv2:WebView2 x:Name="TreeHtmlViewer" VerticalAlignment="Stretch" HorizontalAlignment="Stretch" />
+    <Grid x:Name="RootGrid">
+        <!-- Themed WPF placeholder shown until the first tree HTML arrives. The WebView2 is
+             collapsed until then so its dark pre-initialization surface is never visible
+             (DefaultBackgroundColor only applies once the browser controller exists). -->
+        <TextBlock x:Name="LoadingText"
+                   Text="Loading…"
+                   HorizontalAlignment="Center"
+                   VerticalAlignment="Center"/>
+        <wv2:WebView2 x:Name="TreeHtmlViewer"
+                      Visibility="Collapsed"
+                      VerticalAlignment="Stretch"
+                      HorizontalAlignment="Stretch" />
     </Grid>
 </UserControl>

@@ -1,6 +1,8 @@
 using System;
 using System.Windows.Controls;
+using Microsoft.VisualStudio.PlatformUI;
 using Microsoft.VisualStudio.Shell;
+using Newtonsoft.Json.Linq;
 using Serilog;
 using Snyk.VisualStudio.Extension.Language;
 using Snyk.VisualStudio.Extension.UI.Html;
@@ -42,6 +44,18 @@ namespace Snyk.VisualStudio.Extension.UI.Toolwindow
         public TreeHtmlPanel()
         {
             this.InitializeComponent();
+
+            // Theme the WPF placeholder (shown while the WebView2 is collapsed) and the WebView2's
+            // post-init surface so nothing reads as a mismatched dark block. The WebView2 stays
+            // collapsed until the first tree HTML arrives (see SetContent), so its dark
+            // pre-initialization surface is never shown.
+            var bgColor = VSColorTheme.GetThemedColor(EnvironmentColors.ToolWindowBackgroundColorKey);
+            var textColor = VSColorTheme.GetThemedColor(EnvironmentColors.ToolWindowTextColorKey);
+            RootGrid.Background = new System.Windows.Media.SolidColorBrush(
+                System.Windows.Media.Color.FromArgb(bgColor.A, bgColor.R, bgColor.G, bgColor.B));
+            LoadingText.Foreground = new System.Windows.Media.SolidColorBrush(
+                System.Windows.Media.Color.FromArgb(textColor.A, textColor.R, textColor.G, textColor.B));
+            TreeHtmlViewer.DefaultBackgroundColor = bgColor;
 
             var linkOpener = new SnykScriptManager(SnykVSPackage.ServiceProvider);
 
@@ -96,6 +110,14 @@ namespace Snyk.VisualStudio.Extension.UI.Toolwindow
             {
                 try
                 {
+                    await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
+
+                    // Reveal the WebView2 now that real content is ready and hide the WPF
+                    // placeholder. After the first reveal these are no-ops; re-renders paint the
+                    // themed DefaultBackgroundColor between navigations rather than the dark surface.
+                    TreeHtmlViewer.Visibility = System.Windows.Visibility.Visible;
+                    LoadingText.Visibility = System.Windows.Visibility.Collapsed;
+
                     await host.NavigateAsync(themedHtml);
                 }
                 catch (Exception ex)
@@ -106,22 +128,12 @@ namespace Snyk.VisualStudio.Extension.UI.Toolwindow
         }
 
         /// <summary>
-        /// Shows a lightweight placeholder until the first tree HTML arrives, then asks the LS for
-        /// the current tree (so the panel is populated even before the first scan-state change).
+        /// No-op: the panel starts in its placeholder state (themed WPF text, WebView2 collapsed)
+        /// directly from XAML. The WebView2 is revealed on the first <see cref="SetContent"/>.
+        /// Kept for symmetry with the other tool-window panels' lifecycle.
         /// </summary>
         public void Init()
         {
-            ThreadHelper.JoinableTaskFactory.RunAsync(async () =>
-            {
-                try
-                {
-                    await host.NavigateAsync("<html><body style='margin:0;padding:0;'>Loading...</body></html>");
-                }
-                catch (Exception ex)
-                {
-                    Logger.Error(ex, "Failed to initialize tree panel content");
-                }
-            }).FireAndForget();
         }
 
         /// <summary>

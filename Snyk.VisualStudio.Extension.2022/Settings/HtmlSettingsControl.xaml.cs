@@ -147,7 +147,7 @@ namespace Snyk.VisualStudio.Extension.Settings
         /// </summary>
         public bool IsStale { get; private set; }
 
-        private async void Control_IsVisibleChanged(object sender, DependencyPropertyChangedEventArgs e)
+        private void Control_IsVisibleChanged(object sender, DependencyPropertyChangedEventArgs e)
         {
             Logger.Information("[lifecycle] HtmlSettingsControl IsVisibleChanged; instance={Hash}, IsVisible={Visible}, initStarted={Started}",
                 GetHashCode(), IsVisible, _initStarted);
@@ -157,18 +157,21 @@ namespace Snyk.VisualStudio.Extension.Settings
 
             instance = this;
 
-            try
+            ThreadHelper.JoinableTaskFactory.RunAsync(async () =>
             {
-                await host.InitializeAsync();
-            }
-            catch (Exception ex)
-            {
-                Logger.Error(ex, "WebView2 initialization failed");
-                LoadingStatusLabel.Text = $"Failed to initialize browser: {ex.Message}";
-                return;
-            }
+                try
+                {
+                    await host.InitializeAsync();
+                }
+                catch (Exception ex)
+                {
+                    Logger.Error(ex, "WebView2 initialization failed");
+                    LoadingStatusLabel.Text = $"Failed to initialize browser: {ex.Message}";
+                    return;
+                }
 
-            await LoadHtmlSettingsAsync();
+                await LoadHtmlSettingsAsync();
+            }).FireAndForget();
         }
 
         private void Control_Unloaded(object sender, RoutedEventArgs e)

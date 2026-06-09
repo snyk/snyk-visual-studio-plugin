@@ -219,12 +219,12 @@ namespace Snyk.VisualStudio.Extension.Language
             return Task.CompletedTask;
         }
 
-        private async Task<string> GetLsDebugLevelAsync()
+        private Task<string> GetLsDebugLevelAsync()
         {
             var serviceProvider = SnykVSPackage.ServiceProvider;
             var folderConfigs = serviceProvider?.Options?.FolderConfigs;
             if (folderConfigs == null)
-                return "info";
+                return Task.FromResult("info");
 
             // Enable debug logging for the whole LS process if -d/--debug is set on ANY folder's
             // additional parameters, not just the first — workspaces can have multiple folders.
@@ -233,7 +233,7 @@ namespace Snyk.VisualStudio.Extension.Language
                 .SelectMany(fc => fc.AdditionalParameters)
                 .Any(p => p == "-d" || p == "--debug");
 
-            return anyDebug ? "debug" : "info";
+            return Task.FromResult(anyDebug ? "debug" : "info");
         }
 
         private void Rpc_Disconnected(object sender, JsonRpcDisconnectedEventArgs e)

@@ -10,9 +10,13 @@
              UseLayoutRounding="True"
              mc:Ignorable="d"
              d:DesignHeight="450" d:DesignWidth="800">
-    <Border BorderBrush="{x:Static SystemColors.WindowFrameBrush}" BorderThickness="1">
-        <Grid>
-            <wv2:WebView2 x:Name="SummaryHtmlViewer" VerticalAlignment="Stretch" HorizontalAlignment="Stretch" />
-        </Grid>
-    </Border>
+    <!-- RootGrid is painted the themed tool-window background in code so the area reads correctly
+         while the WebView2 is collapsed (until its first navigation completes), hiding WebView2's
+         dark pre-initialization surface. -->
+    <Grid x:Name="RootGrid">
+        <wv2:WebView2 x:Name="SummaryHtmlViewer"
+                      Visibility="Collapsed"
+                      VerticalAlignment="Stretch"
+                      HorizontalAlignment="Stretch" />
+    </Grid>
 </UserControl>

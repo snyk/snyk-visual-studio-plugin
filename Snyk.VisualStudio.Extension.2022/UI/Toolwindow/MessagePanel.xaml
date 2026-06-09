@@ -6,6 +6,7 @@
              xmlns:c="clr-namespace:Snyk.VisualStudio.Extension.UI.Controls"
              xmlns:toolkit="clr-namespace:Community.VisualStudio.Toolkit;assembly=Community.VisualStudio.Toolkit" 
              toolkit:Themes.UseVsTheme="True"
+             Background="Transparent"
              mc:Ignorable="d"
              d:DesignHeight="450" d:DesignWidth="800">
     <Grid VerticalAlignment="Center">

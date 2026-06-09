@@ -164,6 +164,10 @@ namespace Snyk.VisualStudio.Extension.UI.Html
                 // device-independent in WebView2, so this scales correctly with display DPI.
                 { "vscode-font-size", "12px" },
                 { "vscode-editor-background", editorBackground },
+                // The LS tree view paints its body with --vscode-sideBar-background; map it to the
+                // same themed tool-window background as the editor so the tree matches the summary
+                // and description panels (otherwise it falls back to "inherit" and renders darker).
+                { "vscode-sideBar-background", backgroundColor },
                 { "vscode-foreground", textColor },
                 { "vscode-input-foreground", textColor },
                 { "vscode-editor-foreground", editorForeground },

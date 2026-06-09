@@ -9,6 +9,7 @@ using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Media;
 using Microsoft.VisualStudio;
+using Microsoft.VisualStudio.PlatformUI;
 using Microsoft.VisualStudio.Shell;
 using Microsoft.VisualStudio.Shell.Interop;
 using Serilog;
@@ -55,6 +56,29 @@ namespace Snyk.VisualStudio.Extension.UI.Toolwindow
             this.SummaryPanel.Init();
             this.TreeHtmlPanel.Init();
             this.messagePanel.Context = this.context;
+
+            // Paint the WPF chrome (the area behind the message/overview panels and the splitter
+            // gaps) with the same themed tool-window background the WebView2 HTML panels use, so
+            // everything matches. Set in code via VSColorTheme because the legacy VsBrush.* string
+            // resources for these keys don't reliably resolve. Re-apply on theme switch.
+            this.ApplyThemedColors();
+            VSColorTheme.ThemeChanged += this.OnVsThemeChanged;
+        }
+
+        private void OnVsThemeChanged(ThemeChangedEventArgs e) => this.ApplyThemedColors();
+
+        private void ApplyThemedColors()
+        {
+            var bg = VSColorTheme.GetThemedColor(EnvironmentColors.ToolWindowBackgroundColorKey);
+            var border = VSColorTheme.GetThemedColor(EnvironmentColors.ToolWindowBorderColorKey);
+
+            this.mainGrid.Background = new SolidColorBrush(
+                System.Windows.Media.Color.FromArgb(bg.A, bg.R, bg.G, bg.B));
+
+            var borderBrush = new SolidColorBrush(
+                System.Windows.Media.Color.FromArgb(border.A, border.R, border.G, border.B));
+            this.horizontalDivider.Background = borderBrush;
+            this.verticalDivider.Background = borderBrush;
         }
 
         /// <summary>
@@ -596,6 +620,7 @@ namespace Snyk.VisualStudio.Extension.UI.Toolwindow
         // WPF Unloaded events that can fire during docking or theme changes.
         public void Dispose()
         {
+            VSColorTheme.ThemeChanged -= this.OnVsThemeChanged;
             this.DescriptionPanel?.Dispose();
             this.SummaryPanel?.Dispose();
             this.TreeHtmlPanel?.Dispose();

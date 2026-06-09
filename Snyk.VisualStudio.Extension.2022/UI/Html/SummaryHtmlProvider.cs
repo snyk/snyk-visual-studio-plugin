@@ -33,8 +33,10 @@ namespace Snyk.VisualStudio.Extension.UI.Html
 
         public override string GetCss()
         {
+            // overflow-y: auto shows a vertical scrollbar only when the summary content is taller
+            // than the (resizable) panel; overflow-x: hidden avoids a spurious horizontal bar.
             return @"
-            body { overflow: hidden; }
+            body { overflow-x: hidden; overflow-y: auto; }
             .body-padding { padding: 0px 4px 8px 4px; }
             ";
         }
