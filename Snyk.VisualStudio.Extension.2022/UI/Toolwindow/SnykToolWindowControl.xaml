@@ -3,7 +3,6 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
-             xmlns:tree="clr-namespace:Snyk.VisualStudio.Extension.UI.Tree"
              xmlns:window="clr-namespace:Snyk.VisualStudio.Extension.UI.Toolwindow"
              xmlns:toolkit="clr-namespace:Community.VisualStudio.Toolkit;assembly=Community.VisualStudio.Toolkit"
              toolkit:Themes.UseVsTheme="True"
@@ -32,7 +31,7 @@ Height="115"
                             VerticalAlignment="Top"
                             
                             />
-            <tree:SnykFilterableTree x:Name="resultsTree" SelectedVulnerabilityChanged="VulnerabilitiesTree_SelectetVulnerabilityChanged" Margin="0, 115, 0, 0"/>
+            <window:TreeHtmlPanel x:Name="TreeHtmlPanel" Margin="0, 115, 0, 0"/>
 
             <GridSplitter Grid.Column="1" Width="5" HorizontalAlignment="Stretch" Background="{DynamicResource VsBrush.Window}" Foreground="{DynamicResource VsBrush.WindowText}"/>
 

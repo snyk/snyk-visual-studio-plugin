@@ -28,6 +28,12 @@ namespace Snyk.VisualStudio.Extension.Tests.UI.Toolwindow
         }
 
         [Fact]
+        public void TreeHtmlPanel_ImplementsIDisposable()
+        {
+            Assert.True(typeof(IDisposable).IsAssignableFrom(typeof(TreeHtmlPanel)));
+        }
+
+        [Fact]
         public void SnykToolWindowControl_ImplementsIDisposable()
         {
             // ToolWindowPane.Dispose chains into Content.Dispose if Content is IDisposable —

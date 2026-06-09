@@ -157,6 +157,34 @@ namespace Snyk.VisualStudio.Extension.Tests.Language
         }
 
         [Fact]
+        public async Task OnTreeView_ShouldNotThrow_WhenHtmlMissing()
+        {
+            // Arrange — payload without treeViewHtml is ignored (no ToolWindow access).
+            var arg = JObject.Parse("{'totalIssues':0}");
+
+            // Act — must not throw
+            await cut.OnTreeView(arg);
+        }
+
+        [Fact]
+        public async Task OnTreeView_ShouldNotThrow_WhenToolWindowUnavailable()
+        {
+            // Arrange — valid payload, but ToolWindow is not set up on the mock (returns null),
+            // so the handler must guard and return without throwing.
+            var arg = JObject.Parse("{'treeViewHtml':'<html></html>','totalIssues':3}");
+
+            // Act — must not throw
+            await cut.OnTreeView(arg);
+        }
+
+        [Fact]
+        public async Task OnTreeView_ShouldNotThrow_WhenArgIsNull()
+        {
+            // Act — bare C# null (StreamJsonRpc may send null for a no-params notification)
+            await cut.OnTreeView(null);
+        }
+
+        [Fact]
         public async Task OnHasAuthenticated_ShouldHandleFailedAuthentication_WhenTokenIsNull()
         {
             // Arrange
