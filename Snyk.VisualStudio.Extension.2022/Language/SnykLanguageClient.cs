@@ -221,18 +221,19 @@ namespace Snyk.VisualStudio.Extension.Language
 
         private async Task<string> GetLsDebugLevelAsync()
         {
-            var logLevel = "info";
             var serviceProvider = SnykVSPackage.ServiceProvider;
-            var firstFolder = serviceProvider?.Options?.FolderConfigs?.FirstOrDefault();
-            var additionalCliParameters = firstFolder?.AdditionalParameters != null
-                ? string.Join(" ", firstFolder.AdditionalParameters)
-                : string.Empty;
-            if (!string.IsNullOrEmpty(additionalCliParameters) && (additionalCliParameters.Contains("-d") || additionalCliParameters.Contains("--debug")))
-            {
-                logLevel = "debug";
-            }
+            var folderConfigs = serviceProvider?.Options?.FolderConfigs;
+            if (folderConfigs == null)
+                return "info";
 
-            return logLevel;
+            // Enable debug logging for the whole LS process if -d/--debug is set on ANY folder's
+            // additional parameters, not just the first — workspaces can have multiple folders.
+            var anyDebug = folderConfigs
+                .Where(fc => fc?.AdditionalParameters != null)
+                .SelectMany(fc => fc.AdditionalParameters)
+                .Any(p => p == "-d" || p == "--debug");
+
+            return anyDebug ? "debug" : "info";
         }
 
         private void Rpc_Disconnected(object sender, JsonRpcDisconnectedEventArgs e)

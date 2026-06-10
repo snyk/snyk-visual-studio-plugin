@@ -453,42 +453,29 @@ namespace Snyk.VisualStudio.Extension.Tests.UI.Html
         }
 
         [Fact]
-        public void SaveIdeConfig_FolderConfigs_IgnoresEntriesForOtherFolders()
+        public void SaveIdeConfig_FolderConfigs_MultipleFolders_AppliedPerPath()
         {
-            // existingConfig is keyed to the current solution ("/path/to/solution"). A payload
-            // entry for a different folder must not clobber it or write to solution-scoped storage.
-            var existing = new FolderConfig
-            {
-                FolderPath = "/path/to/solution",
-                PreferredOrg = "solution-org",
-                SnykOssEnabled = true,
-            };
-            optionsMock.SetupGet(o => o.FolderConfigs).Returns(new List<FolderConfig> { existing });
+            // Two workspace folders. Each posted entry must land on the stored config with the
+            // matching path — not collapse every edit onto the first entry.
+            var folderA = new FolderConfig { FolderPath = "/repo/a" };
+            var folderB = new FolderConfig { FolderPath = "/repo/b" };
+            optionsMock.SetupGet(o => o.FolderConfigs).Returns(new List<FolderConfig> { folderA, folderB });
 
             var config = JsonConvert.SerializeObject(new IdeConfigData
             {
                 FolderConfigs = new List<FolderConfigData>
                 {
-                    new FolderConfigData
-                    {
-                        FolderPath = "/some/other/folder",
-                        PreferredOrg = "ghost-org",
-                        SnykOssEnabled = false,
-                    },
-                    new FolderConfigData
-                    {
-                        FolderPath = "/path/to/solution",
-                        PreferredOrg = "updated-org",
-                    },
+                    new FolderConfigData { FolderPath = "/repo/a", PreferredOrg = "org-a", SnykOssEnabled = true },
+                    new FolderConfigData { FolderPath = "/repo/b", PreferredOrg = "org-b", SnykOssEnabled = false },
                 },
             });
 
             bridge.__saveIdeConfig__(config);
 
-            // Only the current-solution entry is applied — no disk saves, only in-memory mirror.
-            Assert.Equal("updated-org", existing.PreferredOrg);
-            // The other folder's SnykOssEnabled=false must not have leaked onto the solution config.
-            Assert.Equal(true, existing.SnykOssEnabled);
+            Assert.Equal("org-a", folderA.PreferredOrg);
+            Assert.Equal(true, folderA.SnykOssEnabled);
+            Assert.Equal("org-b", folderB.PreferredOrg);
+            Assert.Equal(false, folderB.SnykOssEnabled);
         }
 
         [Fact]

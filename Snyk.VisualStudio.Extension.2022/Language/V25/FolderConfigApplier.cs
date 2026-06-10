@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using Newtonsoft.Json.Linq;
 using Serilog;
 
@@ -7,8 +8,12 @@ namespace Snyk.VisualStudio.Extension.Language
 {
     // Converts inbound LspFolderConfig (pflag-keyed Settings dict) into typed FolderConfig
     // and applies it to the in-memory Options.FolderConfigs list.
-    // Overwrite-by-path semantics: LS payload is authoritative and complete.
-    // No pruning — VS is single-solution; stale entries cause less harm than a missing entry.
+    // The LS is the source of truth: it sends the complete folder-config set for the current
+    // workspace, keyed by the paths it registered. We replace the stored list wholesale so stale
+    // entries (e.g. from a previously-opened solution in the same VS session) don't linger and
+    // can't be selected by mistake. The list is left unchanged only when the payload carries no
+    // folder configs (e.g. a global-only configuration update), so a partial notification doesn't
+    // wipe folder state.
     internal static class FolderConfigApplier
     {
         private static readonly ILogger Logger = LogManager.ForContext(typeof(FolderConfigApplier));
@@ -18,7 +23,7 @@ namespace Snyk.VisualStudio.Extension.Language
             if (incoming == null || incoming.Count == 0)
                 return existing ?? new List<FolderConfig>();
 
-            var result = existing != null ? new List<FolderConfig>(existing) : new List<FolderConfig>();
+            var result = new List<FolderConfig>(incoming.Count);
 
             foreach (var inc in incoming)
             {
@@ -26,11 +31,17 @@ namespace Snyk.VisualStudio.Extension.Language
                     continue;
 
                 var typed = ToFolderConfig(inc);
-                var idx = result.FindIndex(fc => PathsMatch(fc.FolderPath, inc.FolderPath));
-                if (idx >= 0)
-                    result[idx] = typed;
-                else
-                    result.Add(typed);
+
+                // Carry over extension-local state the LS neither sends nor persists — specifically
+                // ReferenceFolderPath (set via the Branch Selector, used for delta findings). The
+                // typed config is built fresh from the LS payload, so without this every config
+                // push would permanently wipe it.
+                var prior = existing?.FirstOrDefault(fc =>
+                    fc != null && string.Equals(fc.FolderPath, inc.FolderPath, StringComparison.OrdinalIgnoreCase));
+                if (prior != null)
+                    typed.ReferenceFolderPath = prior.ReferenceFolderPath;
+
+                result.Add(typed);
             }
 
             return result;
@@ -87,13 +98,6 @@ namespace Snyk.VisualStudio.Extension.Language
             }
 
             return fc;
-        }
-
-        private static bool PathsMatch(string a, string b)
-        {
-            if (string.IsNullOrEmpty(a) || string.IsNullOrEmpty(b))
-                return false;
-            return string.Equals(a, b, StringComparison.OrdinalIgnoreCase);
         }
     }
 }

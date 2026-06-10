@@ -84,7 +84,6 @@
     <Compile Include="Extension\StringExtensions.cs" />
     <Compile Include="Extension\UriExtensions.cs" />
     <Compile Include="Language\CustomInitializationOptions.cs" />
-    <Compile Include="Language\FolderConfigMatcher.cs" />
     <Compile Include="Language\FeatureFlagResponse.cs" />
     <Compile Include="Language\IJsonRpc.cs" />
     <Compile Include="Language\ILanguageClientManager.cs" />
@@ -170,7 +169,9 @@
     <Compile Include="Settings\HtmlSettingsControl.xaml.cs">
       <DependentUpon>HtmlSettingsControl.xaml</DependentUpon>
     </Compile>
-    <Compile Include="Settings\HtmlSettingsDialogPage.cs" />
+    <Compile Include="Settings\HtmlSettingsDialogPage.cs">
+      <SubType>Component</SubType>
+    </Compile>
     <Compile Include="Settings\IPersistableOption.cs" />
     <Compile Include="Settings\ISnykOptions.cs" />
     <Compile Include="Settings\ISnykOptionsManager.cs" />

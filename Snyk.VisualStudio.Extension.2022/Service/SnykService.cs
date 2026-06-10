@@ -37,7 +37,9 @@ namespace Snyk.VisualStudio.Extension.Service
 
         private SnykOptionsManager snykOptionsManager;
         private SnykFeatureFlagService featureFlagService;
-        private IAuthenticationFlowService authenticationFlowService;
+        // volatile: read lock-free in the AuthenticationFlowService getter's double-checked locking
+        // fast path, so it needs a memory barrier to avoid observing a partially-constructed instance.
+        private volatile IAuthenticationFlowService authenticationFlowService;
         private readonly object authenticationFlowServiceGate = new object();
 
         private IWorkspaceTrustService workspaceTrustService;

@@ -73,6 +73,57 @@ namespace Snyk.VisualStudio.Extension.Tests.Language
         }
 
         [Fact]
+        public void Apply_PrunesStaleEntries_NotInIncoming()
+        {
+            // LS is source of truth: an existing entry for a path the LS no longer sends
+            // (e.g. a previously-opened solution in the same VS session) must be dropped, so a
+            // later FirstOrDefault can't pick it up by mistake.
+            var existing = new List<FolderConfig>
+            {
+                new FolderConfig { FolderPath = "/old-solution", PreferredOrg = "stale-org" }
+            };
+            var incoming = new List<LspFolderConfig>
+            {
+                new LspFolderConfig { FolderPath = "/current-solution", Settings = new Dictionary<string, ConfigSetting>() }
+            };
+
+            var result = FolderConfigApplier.Apply(existing, incoming);
+
+            Assert.Single(result);
+            Assert.Equal("/current-solution", result[0].FolderPath);
+            Assert.DoesNotContain(result, fc => fc.FolderPath == "/old-solution");
+        }
+
+        [Fact]
+        public void Apply_PreservesLocalReferenceFolderPath_AcrossSync()
+        {
+            // ReferenceFolderPath is extension-local (set via the Branch Selector, never sent by
+            // the LS). A config push rebuilds the entry from the LS payload, so it must carry the
+            // prior local value over rather than wiping it.
+            var existing = new List<FolderConfig>
+            {
+                new FolderConfig { FolderPath = "/repo", ReferenceFolderPath = @"C:\refs\main" }
+            };
+            var incoming = new List<LspFolderConfig>
+            {
+                new LspFolderConfig
+                {
+                    FolderPath = "/repo",
+                    Settings = new Dictionary<string, ConfigSetting>
+                    {
+                        [PflagKeys.PreferredOrg] = ConfigSetting.Of("new-org")
+                    }
+                }
+            };
+
+            var result = FolderConfigApplier.Apply(existing, incoming);
+
+            Assert.Single(result);
+            Assert.Equal(@"C:\refs\main", result[0].ReferenceFolderPath);
+            Assert.Equal("new-org", result[0].PreferredOrg);
+        }
+
+        [Fact]
         public void Apply_ReturnsExisting_WhenIncomingIsEmpty()
         {
             var existing = new List<FolderConfig>
