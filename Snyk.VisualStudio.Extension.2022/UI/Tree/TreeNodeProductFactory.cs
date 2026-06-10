@@ -11,6 +11,7 @@ namespace Snyk.VisualStudio.Extension.UI.Tree
                 Product.Code => new CodeTreeNode(parent),
                 Product.Oss => new OssTreeNode(parent),
                 Product.Iac => new IacTreeNode(parent),
+                Product.Secrets => new SecretsTreeNode(parent),
                 _ => throw new NotImplementedException()
             };
         }
@@ -21,6 +22,7 @@ namespace Snyk.VisualStudio.Extension.UI.Tree
                 Product.Code => new CodeFileTreeNode(parent),
                 Product.Oss => new OssFileTreeNode(parent),
                 Product.Iac => new IacFileTreeNode(parent),
+                Product.Secrets => new SecretsFileTreeNode(parent),
                 _ => throw new NotImplementedException()
             };
         }

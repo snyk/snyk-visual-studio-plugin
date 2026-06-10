@@ -216,6 +216,7 @@
     <Compile Include="UI\Html\SummaryHtmlProvider.cs" />
     <Compile Include="UI\Html\OssHtmlProvider.cs" />
     <Compile Include="UI\Html\CodeHtmlProvider.cs" />
+    <Compile Include="UI\Html\SecretsHtmlProvider.cs" />
     <Compile Include="UI\Html\HtmlProviderFactory.cs" />
     <Compile Include="UI\Html\WebView2BridgeBindings.cs" />
     <Compile Include="UI\Html\WebView2Host.cs" />
@@ -268,6 +269,8 @@
     <Compile Include="UI\Tree\SnykIacRootTreeNode.cs" />
     <Compile Include="UI\Tree\SnykCodeSecurityRootTreeNode.cs" />
     <Compile Include="UI\Tree\CodeTreeNode.cs" />
+    <Compile Include="UI\Tree\SecretsTreeNode.cs" />
+    <Compile Include="UI\Tree\SecretsFileTreeNode.cs" />
     <Compile Include="UI\Tree\SnykFilterableTree.xaml.cs">
       <DependentUpon>SnykFilterableTree.xaml</DependentUpon>
     </Compile>

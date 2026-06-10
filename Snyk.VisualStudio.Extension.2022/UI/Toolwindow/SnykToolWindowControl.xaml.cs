@@ -820,6 +820,13 @@ namespace Snyk.VisualStudio.Extension.UI.Toolwindow
                     return;
                 }
 
+                if (this.resultsTree.SelectedItem is SecretsTreeNode)
+                {
+                    await this.HandleSecretsTreeNodeSelectedAsync();
+
+                    return;
+                }
+
                 var baseBranchTreeNode = this.resultsTree.SelectedItem as BaseBranchTreeNode;
                 if (baseBranchTreeNode != null && !BranchSelectorDialogWindow.IsOpen)
                 {
@@ -1058,6 +1065,27 @@ namespace Snyk.VisualStudio.Extension.UI.Toolwindow
             var issue = iacTreeNode.Issue;
             FillHtmlPanel(issue.Id, Product.Iac, issue.AdditionalData?.CustomUIContent);
 
+
+            VsCodeService.Instance.OpenAndNavigate(
+                issue.FilePath,
+                issue.Range.Start.Line,
+                issue.Range.Start.Character,
+                issue.Range.End.Line,
+                issue.Range.End.Character);
+        }
+
+#pragma warning disable CS1998 // Async method lacks 'await' operators and will run synchronously
+        private async Task HandleSecretsTreeNodeSelectedAsync()
+#pragma warning restore CS1998 // Async method lacks 'await' operators and will run synchronously
+        {
+            this.DescriptionPanel.Visibility = Visibility.Visible;
+
+            var secretsTreeNode = this.resultsTree.SelectedItem as SecretsTreeNode;
+            this.resultsTree.CurrentTreeNode = secretsTreeNode;
+            if (secretsTreeNode == null) return;
+
+            var issue = secretsTreeNode.Issue;
+            FillHtmlPanel(issue.Id, Product.Secrets, issue.AdditionalData?.Details);
 
             VsCodeService.Instance.OpenAndNavigate(
                 issue.FilePath,
