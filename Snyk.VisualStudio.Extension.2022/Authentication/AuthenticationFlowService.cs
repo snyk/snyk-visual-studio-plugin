@@ -54,6 +54,11 @@ namespace Snyk.VisualStudio.Extension.Authentication
 
                 Logger.Information("Api token is invalid. Attempting to authenticate via snyk auth");
 
+                // Arm the dialog's show/hide guard before launching login below. A fast
+                // success/failure can call HideForAuthResult() before ShowDialogForAuth() runs;
+                // arming first lets the show be skipped in that case instead of getting stuck.
+                AuthDialogWindow.Instance.ArmForShow();
+
                 // FireAndForget returns immediately, so the outer catch can't observe failures
                 // from these awaited LS calls — handle them here or any JSON-RPC error,
                 // ObjectDisposedException (client torn down) or cancellation goes unlogged.
@@ -87,8 +92,9 @@ namespace Snyk.VisualStudio.Extension.Authentication
                     if (options.AuthenticationMethod == AuthenticationType.Pat)
                         return;
                     await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
-                    Logger.Information("Attempting to call AuthDialogWindow.Instance.ShowDialog()");
-                    AuthDialogWindow.Instance.ShowDialog();
+                    Logger.Information("Attempting to call AuthDialogWindow.Instance.ShowDialogForAuth()");
+                    // Skips the show if the auth result already arrived (and hid the dialog) first.
+                    AuthDialogWindow.Instance.ShowDialogForAuth();
                 });
             }
             catch (Exception e)
@@ -105,7 +111,9 @@ namespace Snyk.VisualStudio.Extension.Authentication
             Logger.Information("Enter authenticate successCallback");
 
             await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
-            AuthDialogWindow.Instance.Hide();
+            // HideForAuthResult (not Hide) so that if this success arrives before the modal show
+            // has run, the pending show is suppressed rather than left stuck on screen.
+            AuthDialogWindow.Instance.HideForAuthResult();
 
             // The visible HTML settings form (if open) is updated by
             // SnykLanguageClientCustomTarget.OnHasAuthenticated calling
@@ -119,7 +127,9 @@ namespace Snyk.VisualStudio.Extension.Authentication
             Logger.Information("Enter authenticate errorCallback");
 
             await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
-            AuthDialogWindow.Instance.Hide();
+            // HideForAuthResult (not Hide) so a failure that beats the modal show to the UI thread
+            // suppresses the pending show instead of leaving a dialog nothing will close.
+            AuthDialogWindow.Instance.HideForAuthResult();
 
             var presentableError = new PresentableError
             {
