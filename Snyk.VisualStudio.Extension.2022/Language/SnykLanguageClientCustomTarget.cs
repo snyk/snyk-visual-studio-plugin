@@ -178,9 +178,18 @@ namespace Snyk.VisualStudio.Extension.Language
             // the token field updates immediately after an OAuth round-trip.
             HtmlSettingsControl.Instance?.UpdateAuthToken(token, apiUrl);
 
+            // Validate before persisting: only accept an absolute http/https URL so a malformed or
+            // unexpected apiUrl can't repoint the API host. Same guard as the JS snyk.login path.
             if (!string.IsNullOrEmpty(apiUrl))
             {
-                serviceProvider.Options.CustomEndpoint = apiUrl;
+                if (UriExtensions.IsValidWebUrl(apiUrl))
+                {
+                    serviceProvider.Options.CustomEndpoint = apiUrl;
+                }
+                else
+                {
+                    Logger.Warning("Ignoring authenticated apiUrl that is not an absolute http/https URL");
+                }
             }
 
             serviceProvider.Options.ApiToken = new AuthenticationToken(serviceProvider.Options.AuthenticationMethod, token);

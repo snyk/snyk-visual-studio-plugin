@@ -59,8 +59,8 @@ namespace Snyk.VisualStudio.Extension.Tests.Language
             // Act
             await cut.OnPublishDiagnostics316(arg);
 
-            // Assert
-            // Expect no exceptions when uri is null
+            // Assert — a missing uri is ignored, no dictionary entry created
+            Assert.Empty(cut.GetCodeDictionary());
         }
 
         [Fact]
@@ -72,7 +72,8 @@ namespace Snyk.VisualStudio.Extension.Tests.Language
             // Act
             await cut.OnPublishDiagnostics316(arg);
 
-            // Assert
+            // Assert — an empty diagnostics list adds no Code issues for the path
+            Assert.False(cut.GetCodeDictionary().ContainsKey("\\path\\to\\file"));
         }
 
         [Fact]
@@ -518,6 +519,10 @@ namespace Snyk.VisualStudio.Extension.Tests.Language
             Assert.NotNull(optionsMock.Object.FolderConfigs);
             Assert.Single(optionsMock.Object.FolderConfigs);
             Assert.Equal("/repo", optionsMock.Object.FolderConfigs[0].FolderPath);
+
+            // Assert — the global settings block was actually applied to Options, not just parsed.
+            Assert.True(optionsMock.Object.OssEnabled);
+            Assert.False(optionsMock.Object.SnykCodeSecurityEnabled);
         }
 
         [Fact]
@@ -535,7 +540,9 @@ namespace Snyk.VisualStudio.Extension.Tests.Language
             // Act
             await cut.OnSnykConfiguration(arg);
 
-            // Assert — options persisted without re-triggering DidChangeConfigurationAsync (triggerSettingsChangedEvent=false)
+            // Assert — the setting was applied to Options...
+            Assert.True(optionsMock.Object.OssEnabled);
+            // ...and persisted without re-triggering DidChangeConfigurationAsync (triggerSettingsChangedEvent=false)
             snykOptionsManagerMock.Verify(m => m.Save(It.IsAny<IPersistableOptions>(), false), Times.Once());
         }
     }

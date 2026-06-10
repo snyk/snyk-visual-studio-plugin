@@ -180,7 +180,6 @@
     <Compile Include="Settings\SnykSettings.cs" />
     <Compile Include="Settings\SnykSettingsChangedEventArgs.cs" />
     <Compile Include="Settings\SnykSettingsLoader.cs" />
-    <Compile Include="Settings\SnykSolutionSettings.cs" />
     <Compile Include="SnykGuids.cs" />
     <Compile Include="SnykIcons.Designer.cs">
       <DependentUpon>SnykIcons.resx</DependentUpon>

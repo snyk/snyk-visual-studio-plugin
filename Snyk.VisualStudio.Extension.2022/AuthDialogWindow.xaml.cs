@@ -11,12 +11,13 @@ namespace Snyk.VisualStudio.Extension
         public static AuthDialogWindow Instance { get; } = new AuthDialogWindow();
 
         // Guards the show/hide race in the auth flow: login runs fire-and-forget while the modal
-        // ShowDialog() is started separately, so a fast success/failure can call Hide() *before*
-        // ShowDialog() runs. A plain Hide() then no-ops and the dialog shows stuck. ArmForShow()
-        // resets this at the start of an attempt; HideForAuthResult() records that the result has
-        // arrived; ShowDialogForAuth() skips the show if it already has. Touched only on the UI
-        // thread (all callers SwitchToMainThread first); volatile guards the ArmForShow write that
-        // may originate off the UI thread.
+        // ShowDialog() is started separately, so a fast success/failure can call HideForAuthResult()
+        // *before* ShowDialogForAuth() runs. ArmForShow() resets this at the start of an attempt;
+        // HideForAuthResult() records that the result arrived; ShowDialogForAuth() skips the show if
+        // it already has. HideForAuthResult/ShowDialogForAuth touch UI state and run on the UI thread
+        // (their callers SwitchToMainThread first), but ArmForShow() is invoked synchronously from
+        // Authenticate(), which can run off the UI thread — hence volatile, so the flag write is
+        // visible to the UI-thread reads.
         private volatile bool authResultArrived;
 
         public AuthDialogWindow()
@@ -31,10 +32,13 @@ namespace Snyk.VisualStudio.Extension
         /// <summary>
         /// Shows the modal auth dialog, unless the auth result already arrived (and hid it) before
         /// we got here — which would otherwise leave a dialog on screen that nothing will close.
+        /// Also no-ops if the dialog is already visible, so a re-entrant auth attempt doesn't hit
+        /// <see cref="System.Windows.Window.ShowDialog"/> on a shown window (which throws
+        /// InvalidOperationException). UI-thread only.
         /// </summary>
         public void ShowDialogForAuth()
         {
-            if (this.authResultArrived)
+            if (this.authResultArrived || this.IsVisible)
                 return;
             this.ShowDialog();
         }

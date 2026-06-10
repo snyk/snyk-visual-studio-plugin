@@ -162,6 +162,20 @@ namespace Snyk.VisualStudio.Extension.Tests.UI.Html
             Assert.True(bridge.SaveCompletion.IsCompleted);
         }
 
+        [Theory]
+        [InlineData("null")]
+        [InlineData("")]
+        [InlineData("   ")]
+        public void SaveIdeConfig_PayloadDeserializesToNull_FailsSave(string json)
+        {
+            // A payload that maps to nothing (empty / "null" / whitespace) must fail the save so
+            // OnApply surfaces the failure dialog, rather than reporting success with no changes.
+            bridge.__saveIdeConfig__(json);
+
+            Assert.True(bridge.SaveCompletion.IsCompleted);
+            Assert.False(bridge.SaveCompletion.Result);
+        }
+
         [Fact]
         public void BeginSave_ResetsToNewIncompleteTask()
         {

@@ -151,6 +151,16 @@ namespace Snyk.VisualStudio.Extension.Settings
             // swap it out from under SaveAsync.
             var activeControl = Control;
 
+            // EnsureFreshControl returns without creating a control when Initialize() hasn't run yet
+            // (serviceProvider == null). Fail the apply explicitly rather than NRE'ing on SaveAsync
+            // below (which the outer catch would otherwise swallow into a silent CancelNoNavigate).
+            if (activeControl == null)
+            {
+                Logger.Warning("OnApply: no settings control available (service provider not initialized); cannot save");
+                e.ApplyBehavior = ApplyKind.CancelNoNavigate;
+                return;
+            }
+
             saveInProgress = true;
             try
             {

@@ -17,6 +17,8 @@ using Snyk.VisualStudio.Extension.Commands;
 using Snyk.VisualStudio.Extension.Language;
 using Snyk.VisualStudio.Extension.Service;
 using Snyk.VisualStudio.Extension.Settings;
+using Snyk.VisualStudio.Extension.UI.Html;
+using Snyk.VisualStudio.Extension.UI.Notifications;
 using Snyk.VisualStudio.Extension.UI.Toolwindow;
 using Task = System.Threading.Tasks.Task;
 
@@ -197,6 +199,11 @@ namespace Snyk.VisualStudio.Extension
                 await SnykCleanPanelCommand.InitializeAsync(this);
                 await SnykOpenSettingsCommand.InitializeAsync(this);
 
+                // The Edge WebView2 Runtime is a hard requirement now that the settings dialog and
+                // all tool-window panels are WebView2-hosted. Surface a clear, actionable error if
+                // it's missing rather than letting every panel fail opaquely on first navigation.
+                await WarnIfWebView2RuntimeMissingAsync();
+
                 // Notify package has been initialized
                 IsInitialized = true;
                 initializationTaskCompletionSource.SetResult(true);
@@ -205,6 +212,22 @@ namespace Snyk.VisualStudio.Extension
             {
                 Logger.Error(ex, "Error on intialize Snyk VS package");
             }
+        }
+
+        // Checks for the Edge WebView2 Runtime and, if absent, logs and shows an InfoBar pointing
+        // the user at the installer. Detection (GetAvailableBrowserVersionString) is thread-safe;
+        // the InfoBar must be shown on the UI thread.
+        private async Task WarnIfWebView2RuntimeMissingAsync()
+        {
+            if (WebView2Host.IsRuntimeAvailable())
+                return;
+
+            Logger.Error("Microsoft Edge WebView2 Runtime not found. Snyk settings and panels cannot render until it is installed.");
+
+            await JoinableTaskFactory.SwitchToMainThreadAsync();
+            NotificationService.Instance?.ShowErrorInfoBar(
+                "Snyk requires the Microsoft Edge WebView2 Runtime to display its settings and panels, but it is not installed. " +
+                "Install it from https://developer.microsoft.com/microsoft-edge/webview2/ and restart Visual Studio.");
         }
 
         /// <summary>

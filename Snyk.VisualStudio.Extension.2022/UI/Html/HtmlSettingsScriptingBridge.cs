@@ -10,6 +10,7 @@ using Newtonsoft.Json;
 using Serilog;
 using Snyk.VisualStudio.Extension;
 using Snyk.VisualStudio.Extension.Authentication;
+using Snyk.VisualStudio.Extension.Extension;
 using Snyk.VisualStudio.Extension.Language;
 using Snyk.VisualStudio.Extension.Service;
 using Snyk.VisualStudio.Extension.Settings;
@@ -88,6 +89,10 @@ namespace Snyk.VisualStudio.Extension.UI.Html
             // LS round-trip via $/snyk.configuration in v25) freezes the dispatcher.
             // RunAsync + FireAndForget lets the bridge handler return immediately; the
             // outer OnApply unblocks when saveCompletionTcs is signalled below.
+            // Snapshot the completion source: BeginSave() can swap saveCompletionTcs for a fresh
+            // one (next save attempt) while this lambda is still in flight, and we must signal the
+            // exact TCS that the matching SaveAsync is awaiting — not whatever is current later.
+            var tcs = saveCompletionTcs;
             ThreadHelper.JoinableTaskFactory.RunAsync(async () =>
             {
                 try
@@ -98,12 +103,12 @@ namespace Snyk.VisualStudio.Extension.UI.Html
                     // This triggers SettingsChanged event which notifies Language Server.
                     OptionsManager.Save(Options, triggerSettingsChangedEvent: true);
 
-                    saveCompletionTcs.TrySetResult(true);
+                    tcs.TrySetResult(true);
                 }
                 catch (Exception ex)
                 {
                     Logger.Error(ex, "Error saving configuration");
-                    saveCompletionTcs.TrySetResult(false);
+                    tcs.TrySetResult(false);
                 }
             }).FireAndForget();
         }
@@ -144,8 +149,26 @@ namespace Snyk.VisualStudio.Extension.UI.Html
                             "token" => AuthenticationType.Token,
                             _ => AuthenticationType.OAuth,
                         };
-                        serviceProvider.Options.CustomEndpoint = args[1]?.ToString() ?? string.Empty;
-                        serviceProvider.Options.IgnoreUnknownCA = args[2] is bool b ? b : Convert.ToBoolean(args[2]);
+
+                        // Validate the endpoint coming from the (LS-served) page before persisting:
+                        // only accept an absolute http/https URL, and allow empty to mean "reset to
+                        // default". An empty string clears the override; anything else malformed is
+                        // ignored so a page can't repoint the API host to a bogus value.
+                        var endpoint = args[1]?.ToString() ?? string.Empty;
+                        if (string.IsNullOrEmpty(endpoint))
+                        {
+                            serviceProvider.Options.CustomEndpoint = string.Empty;
+                        }
+                        else if (UriExtensions.IsValidWebUrl(endpoint))
+                        {
+                            serviceProvider.Options.CustomEndpoint = endpoint;
+                        }
+                        else
+                        {
+                            Logger.Warning("Ignoring snyk.login endpoint that is not an absolute http/https URL");
+                        }
+
+                        serviceProvider.Options.IgnoreUnknownCA = ParseJsBool(args[2]);
                     }
                 }
                 catch (Exception ex)
@@ -164,6 +187,23 @@ namespace Snyk.VisualStudio.Extension.UI.Html
                     onCommandResult,
                     SnykVSPackage.Instance.DisposalToken);
             }).FireAndForget();
+        }
+
+        // Deterministically coerce a JSON-deserialized arg to bool. JsonConvert yields bool, long,
+        // or string for JSON primitives; Convert.ToBoolean throws on "yes"/null/numbers-as-string,
+        // which previously surfaced as a silently-not-applied SSL toggle. Unknown shapes → false.
+        private static bool ParseJsBool(object value)
+        {
+            switch (value)
+            {
+                case null: return false;
+                case bool b: return b;
+                case long l: return l != 0;
+                case int i: return i != 0;
+                case string s:
+                    return bool.TryParse(s, out var parsed) ? parsed : s == "1";
+                default: return false;
+            }
         }
 
         /// <summary>
@@ -344,8 +384,10 @@ namespace Snyk.VisualStudio.Extension.UI.Html
                 if (normalizedNewToken != normalizedExistingToken)
                 {
                     // Use the authenticationMethod from this request if provided, otherwise uses existing value
-                    // Note: Requires caller to send authenticationMethod when updating token to ensure correct pairing
-                    Options.ApiToken = new AuthenticationToken(Options.AuthenticationMethod, config.Token);
+                    // Note: Requires caller to send authenticationMethod when updating token to ensure correct pairing.
+                    // Store the trimmed value (what we compared) so stray form whitespace doesn't get
+                    // baked into the token store and silently fail downstream IsValid() parsing.
+                    Options.ApiToken = new AuthenticationToken(Options.AuthenticationMethod, normalizedNewToken);
                 }
             }
 

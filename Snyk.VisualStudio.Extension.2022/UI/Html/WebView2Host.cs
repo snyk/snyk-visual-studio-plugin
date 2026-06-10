@@ -7,6 +7,7 @@ using System.Threading.Tasks;
 using Microsoft.Web.WebView2.Core;
 using Microsoft.Web.WebView2.Wpf;
 using Serilog;
+using Snyk.VisualStudio.Extension.Extension;
 #if DEBUG
 using Newtonsoft.Json.Linq;
 #endif
@@ -95,6 +96,29 @@ namespace Snyk.VisualStudio.Extension.UI.Html
         /// a subsequent <see cref="InitializeAsync"/> call resets <see cref="Ready"/> for retry.
         /// </summary>
         public Task Ready => _readyTcs.Task;
+
+        /// <summary>
+        /// True when the Microsoft Edge WebView2 Runtime is installed and usable. The runtime is a
+        /// hard requirement for the extension now that the settings dialog and tool-window panels
+        /// are all WebView2-hosted. VS 2022 ships the evergreen runtime, but locked-down or
+        /// customized environments can lack it — callers use this to surface an actionable error
+        /// instead of failing opaquely on first navigation.
+        /// </summary>
+        public static bool IsRuntimeAvailable()
+        {
+            try
+            {
+                // Throws WebView2RuntimeNotFoundException when no runtime is installed; returns the
+                // version string otherwise. Passing null uses the default evergreen runtime lookup.
+                var version = CoreWebView2Environment.GetAvailableBrowserVersionString(null);
+                return !string.IsNullOrEmpty(version);
+            }
+            catch (Exception ex)
+            {
+                Logger.Warning(ex, "WebView2 runtime availability check failed; treating runtime as not installed");
+                return false;
+            }
+        }
 
         /// <summary>
         /// Builds a per-context + per-VS-process user-data folder path under
@@ -246,6 +270,13 @@ namespace Snyk.VisualStudio.Extension.UI.Html
 
                 _webView.CoreWebView2.WebMessageReceived += OnWebMessageReceived;
 
+                // Lock the control to the content we load (our own about:/data:/scratch-file
+                // documents). LS-served HTML routes real links through window.OpenLink → the OS
+                // browser, so any in-control navigation to an off-origin URL is unexpected and is
+                // blocked here while the C# bridges stay wired. Popups are never opened in-place.
+                _webView.CoreWebView2.NavigationStarting += OnNavigationStarting;
+                _webView.CoreWebView2.NewWindowRequested += OnNewWindowRequested;
+
 #if DEBUG
                 await EnableJsDiagnosticsAsync();
 #endif
@@ -288,6 +319,8 @@ namespace Snyk.VisualStudio.Extension.UI.Html
             if (_webView?.CoreWebView2 != null)
             {
                 _webView.CoreWebView2.WebMessageReceived -= OnWebMessageReceived;
+                _webView.CoreWebView2.NavigationStarting -= OnNavigationStarting;
+                _webView.CoreWebView2.NewWindowRequested -= OnNewWindowRequested;
             }
             // WebView2.Dispose tears down the underlying msedgewebview2.exe renderer process —
             // without this, every settings-dialog close or tool-window refresh would leak one.
@@ -298,6 +331,76 @@ namespace Snyk.VisualStudio.Extension.UI.Html
         private void OnWebMessageReceived(object sender, CoreWebView2WebMessageReceivedEventArgs e)
         {
             _dispatcher.Dispatch(e.WebMessageAsJson);
+        }
+
+        // Cancel any top-level navigation that isn't to the content we loaded ourselves
+        // (about:/data: from NavigateToString, or a scratch file under our user-data folder).
+        // Anchor clicks in LS HTML are intercepted into window.OpenLink, so an off-origin
+        // navigation reaching here is a JS redirect / meta-refresh / injected content — not a
+        // user action — and is dropped rather than navigated with the bridges still live.
+        private void OnNavigationStarting(object sender, CoreWebView2NavigationStartingEventArgs e)
+        {
+            if (IsAllowedDocumentUri(e.Uri)) return;
+
+            Logger.Warning("Blocking WebView2 navigation to disallowed URI: {Uri}", e.Uri);
+            e.Cancel = true;
+        }
+
+        // Never open a popup window inside the control. Route a genuine http/https target (e.g.
+        // target="_blank") to the OS browser; drop anything else.
+        private void OnNewWindowRequested(object sender, CoreWebView2NewWindowRequestedEventArgs e)
+        {
+            e.Handled = true;
+            if (UriExtensions.IsValidWebUrl(e.Uri))
+            {
+                TryOpenExternally(e.Uri);
+            }
+            else
+            {
+                Logger.Warning("Blocking WebView2 new-window request for disallowed URI: {Uri}", e.Uri);
+            }
+        }
+
+        private bool IsAllowedDocumentUri(string uri)
+        {
+            if (string.IsNullOrEmpty(uri))
+                return true; // initial / empty document
+
+            // NavigateToString surfaces as about:blank or a data: document depending on size.
+            if (uri.StartsWith("about:", StringComparison.OrdinalIgnoreCase)
+                || uri.StartsWith("data:", StringComparison.OrdinalIgnoreCase))
+                return true;
+
+            // Oversized HTML is spilled to a scratch file and loaded via file://; only allow files
+            // under this host's own user-data folder.
+            if (uri.StartsWith("file:", StringComparison.OrdinalIgnoreCase))
+            {
+                try
+                {
+                    var path = Path.GetFullPath(new Uri(uri).LocalPath);
+                    var root = Path.GetFullPath(_userDataFolder).TrimEnd(
+                        Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar) + Path.DirectorySeparatorChar;
+                    return path.StartsWith(root, StringComparison.OrdinalIgnoreCase);
+                }
+                catch
+                {
+                    return false;
+                }
+            }
+
+            return false;
+        }
+
+        private static void TryOpenExternally(string url)
+        {
+            try
+            {
+                Process.Start(new ProcessStartInfo(url) { UseShellExecute = true });
+            }
+            catch (Exception ex)
+            {
+                Logger.Warning(ex, "Failed to open URL in the external browser: {Url}", url);
+            }
         }
 
         private static void ConfigureSettings(CoreWebView2Settings settings, bool enableDeveloperTools)

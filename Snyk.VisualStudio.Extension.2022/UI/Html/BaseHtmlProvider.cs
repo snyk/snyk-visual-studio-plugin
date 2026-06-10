@@ -53,11 +53,21 @@ namespace Snyk.VisualStudio.Extension.UI.Html
         }
         public string GetNonce()
         {
-            var allowedChars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789".ToCharArray();
-            var random = new Random();
-            return new string(Enumerable.Repeat(allowedChars, 32)
-                .Select(s => s[random.Next(s.Length)])
-                .ToArray());
+            // The nonce backs the page's `style-src 'nonce-...'` CSP, so it must be unpredictable —
+            // System.Random is not a CSPRNG and yields guessable nonces. Use a crypto RNG.
+            const string allowedChars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
+            var bytes = new byte[32];
+            using (var rng = System.Security.Cryptography.RandomNumberGenerator.Create())
+            {
+                rng.GetBytes(bytes);
+            }
+
+            var chars = new char[bytes.Length];
+            for (var i = 0; i < bytes.Length; i++)
+            {
+                chars[i] = allowedChars[bytes[i] % allowedChars.Length];
+            }
+            return new string(chars);
         }
 
         public virtual string ReplaceCssVariables(string html)

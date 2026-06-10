@@ -319,6 +319,35 @@ namespace Snyk.VisualStudio.Extension.Tests.Language
         }
 
         [Fact]
+        public void ToFolderConfig_SkipsBadCollectionValuesWithoutThrowing()
+        {
+            // The list/dict-typed keys go through ToObject<T>, which throws on a mistyped JToken.
+            // A malformed LS payload must be skipped per-key, not abort the whole conversion.
+            var src = new LspFolderConfig
+            {
+                FolderPath = "/repo",
+                Settings = new Dictionary<string, ConfigSetting>
+                {
+                    // AdditionalParameters expects an array of strings — send a scalar.
+                    [PflagKeys.AdditionalParameters] = new ConfigSetting { Value = JToken.Parse("42") },
+                    // LocalBranches expects an array — send a string scalar.
+                    [PflagKeys.LocalBranches] = new ConfigSetting { Value = JToken.Parse(@"""main""") },
+                    // ScanCommandConfig expects an object map — send an array.
+                    [PflagKeys.ScanCommandConfig] = new ConfigSetting { Value = JToken.Parse(@"[1, 2, 3]") },
+                    // A well-formed key alongside the bad ones must still be applied.
+                    [PflagKeys.PreferredOrg] = ConfigSetting.Of("my-org"),
+                }
+            };
+
+            var fc = FolderConfigApplier.ToFolderConfig(src);
+
+            Assert.Null(fc.AdditionalParameters);
+            Assert.Null(fc.LocalBranches);
+            Assert.Null(fc.ScanCommandConfig);
+            Assert.Equal("my-org", fc.PreferredOrg);
+        }
+
+        [Fact]
         public void ToFolderConfig_ReturnsEmptyConfig_WhenSettingsIsNull()
         {
             var src = new LspFolderConfig { FolderPath = "/repo", Settings = null };

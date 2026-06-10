@@ -89,6 +89,50 @@ namespace Snyk.VisualStudio.Extension.Language
                         case PflagKeys.ScanCommandConfig:
                             fc.ScanCommandConfig = val.ToObject<Dictionary<string, ScanCommandConfig>>();
                             break;
+
+                        // Per-folder org-scope overrides. These must mirror BuildFolderConfigs'
+                        // outbound emission exactly so a $/snyk.configuration echo round-trips the
+                        // user's per-folder override back into Options.FolderConfigs instead of
+                        // dropping it (kept in sync via the round-trip test in FolderConfigApplierTests).
+                        case PflagKeys.SnykOssEnabled:
+                            fc.SnykOssEnabled = val.Value<bool>();
+                            break;
+                        case PflagKeys.SnykCodeEnabled:
+                            fc.SnykCodeEnabled = val.Value<bool>();
+                            break;
+                        case PflagKeys.SnykIacEnabled:
+                            fc.SnykIacEnabled = val.Value<bool>();
+                            break;
+                        case PflagKeys.SnykSecretsEnabled:
+                            fc.SnykSecretsEnabled = val.Value<bool>();
+                            break;
+                        case PflagKeys.ScanAutomatic:
+                            fc.ScanAutomatic = val.Value<bool>();
+                            break;
+                        case PflagKeys.ScanNetNew:
+                            fc.ScanNetNew = val.Value<bool>();
+                            break;
+                        case PflagKeys.SeverityFilterCritical:
+                            fc.SeverityFilterCritical = val.Value<bool>();
+                            break;
+                        case PflagKeys.SeverityFilterHigh:
+                            fc.SeverityFilterHigh = val.Value<bool>();
+                            break;
+                        case PflagKeys.SeverityFilterMedium:
+                            fc.SeverityFilterMedium = val.Value<bool>();
+                            break;
+                        case PflagKeys.SeverityFilterLow:
+                            fc.SeverityFilterLow = val.Value<bool>();
+                            break;
+                        case PflagKeys.IssueViewOpenIssues:
+                            fc.IssueViewOpenIssues = val.Value<bool>();
+                            break;
+                        case PflagKeys.IssueViewIgnoredIssues:
+                            fc.IssueViewIgnoredIssues = val.Value<bool>();
+                            break;
+                        case PflagKeys.RiskScoreThreshold:
+                            fc.RiskScoreThreshold = val.Value<int>();
+                            break;
                     }
                 }
                 catch (Exception ex)
