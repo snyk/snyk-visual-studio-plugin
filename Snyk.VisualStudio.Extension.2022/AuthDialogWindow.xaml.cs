@@ -50,11 +50,16 @@ namespace Snyk.VisualStudio.Extension
         public void HideForAuthResult()
         {
             this.authResultArrived = true;
+            // Visibility.Hidden (not Close/DialogResult) because this window is a process-wide
+            // singleton, reused across auth attempts. Auth is fire and forget, so it's OK that
+            // ShowDialog() keeps going.
             this.Visibility = Visibility.Hidden;
         }
 
         private void AuthDialogWindow_Closing(object sender, System.ComponentModel.CancelEventArgs e)
         {
+            // Keep the singleton alive: cancel the close (X button / Cancel) and hide instead, so the
+            // window can be re-shown on the next auth attempt. 
             e.Cancel = true;
             this.Visibility = Visibility.Hidden;
         }
