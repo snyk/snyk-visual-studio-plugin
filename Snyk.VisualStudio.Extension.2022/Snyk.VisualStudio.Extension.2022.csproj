@@ -175,6 +175,8 @@
     <Compile Include="Settings\IPersistableOption.cs" />
     <Compile Include="Settings\ISnykOptions.cs" />
     <Compile Include="Settings\ISnykOptionsManager.cs" />
+    <Compile Include="Settings\LegacySolutionSettings.cs" />
+    <Compile Include="Settings\LegacySolutionSettingsMigrator.cs" />
     <Compile Include="Settings\SnykOptions.cs" />
     <Compile Include="Settings\SnykOptionsManager.cs" />
     <Compile Include="Settings\SnykSettings.cs" />

@@ -45,10 +45,10 @@ namespace Snyk.VisualStudio.Extension.Settings
                 var rawJson = File.ReadAllText(this.settingsFilePath, Encoding.UTF8);
 
                 // Visibility for support: the legacy per-solution store (solutionSettingsDict) was
-                // removed in IDE-1651. Folder-scoped settings are now owned/persisted by snyk-ls and
-                // re-sent via $/snyk.configuration, so no migration is performed — but warn if an
-                // upgrading user's settings.json still carries a non-empty legacy section, since
-                // those IDE-local values will be dropped on the next save.
+                // retired in IDE-1651. Its entries are now migrated into folder configs lazily, as
+                // each solution is opened (see SnykOptionsManager.MigrateLegacySolutionSettings); the
+                // section shrinks as solutions are reopened. Log when an upgrading user's settings.json
+                // still carries a non-empty legacy section so support can correlate.
                 WarnIfLegacySolutionSettingsPresent(rawJson);
 
                 snykSettings = Json.Deserialize<SnykSettings>(rawJson);
@@ -70,10 +70,10 @@ namespace Snyk.VisualStudio.Extension.Settings
                     as Newtonsoft.Json.Linq.JObject;
                 if (token != null && token.Count > 0)
                 {
-                    Logger.Warning(
+                    Logger.Information(
                         "settings.json contains a legacy 'solutionSettingsDict' with {Count} entr(ies). " +
-                        "Per-solution settings are now managed by the Language Server; these legacy IDE-local " +
-                        "values are ignored and will be removed on the next save.",
+                        "These are migrated into folder configs as each solution is opened, and the section " +
+                        "is removed once empty.",
                         token.Count);
                 }
             }

@@ -2,11 +2,15 @@
 // ABOUTME: It handles serialization/deserialization of settings to file and provides solution-specific configuration management
 using Snyk.VisualStudio.Extension.Authentication;
 using Snyk.VisualStudio.Extension.Service;
+using System;
 using System.Threading.Tasks;
+using Serilog;
 namespace Snyk.VisualStudio.Extension.Settings
 {
     public class SnykOptionsManager : ISnykOptionsManager
     {
+        private static readonly ILogger Logger = LogManager.ForContext<SnykOptionsManager>();
+
         private readonly ISnykServiceProvider serviceProvider;
         private readonly SnykSettingsLoader settingsLoader;
         private SnykSettings snykSettings;
@@ -31,6 +35,57 @@ namespace Snyk.VisualStudio.Extension.Settings
         public void SaveSettingsToFile()
         {
             this.settingsLoader.Save(snykSettings);
+        }
+
+        /// <summary>
+        /// One-time migration of legacy per-solution settings (IDE-1651). If the just-opened solution
+        /// has an entry in the retained-but-dead <c>solutionSettingsDict</c>, fold it into the folder
+        /// config for that path so it reaches the Language Server via the initialization options, then
+        /// drop the legacy entry (and the whole section once empty). Best-effort and idempotent: a
+        /// missing dict, a missing entry, or any failure is a no-op so it can never block LS startup.
+        /// </summary>
+        /// <param name="solutionFolderPath">The open solution folder (as returned by
+        /// <c>ISolutionService.GetSolutionFolderAsync</c>).</param>
+        /// <returns><c>true</c> if an entry was migrated.</returns>
+        public bool MigrateLegacySolutionSettings(string solutionFolderPath)
+        {
+            try
+            {
+                if (string.IsNullOrEmpty(solutionFolderPath))
+                    return false;
+
+                var legacy = snykSettings?.SolutionSettingsDict;
+                if (legacy == null || legacy.Count == 0)
+                    return false;
+
+                var hash = LegacySolutionSettingsMigrator.ComputeFolderHash(solutionFolderPath);
+                if (!legacy.TryGetValue(hash, out var entry) || entry == null)
+                    return false;
+
+                var options = serviceProvider.Options;
+                var migrated = LegacySolutionSettingsMigrator.ToFolderConfig(entry, solutionFolderPath);
+                options.FolderConfigs = LegacySolutionSettingsMigrator.Merge(options.FolderConfigs, migrated);
+
+                legacy.Remove(hash);
+                if (legacy.Count == 0)
+                    snykSettings.SolutionSettingsDict = null;
+
+                // Persist the seeded folder config plus the shrunken legacy section. No settings-changed
+                // event: the caller is about to (re)start the LS, which receives these via the
+                // initialization options, and Save leaves SolutionSettingsDict untouched so the shrink
+                // is what gets written.
+                Save(options, triggerSettingsChangedEvent: false);
+
+                Logger.Information(
+                    "Migrated legacy per-solution settings for '{Folder}' into a folder config.",
+                    solutionFolderPath);
+                return true;
+            }
+            catch (Exception e)
+            {
+                Logger.Warning(e, "Failed to migrate legacy per-solution settings for '{Folder}'.", solutionFolderPath);
+                return false;
+            }
         }
 
         public ISnykOptions Load()
