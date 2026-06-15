@@ -27,8 +27,11 @@ namespace Snyk.VisualStudio.Extension.UI.Html
     /// </list>
     /// Every <c>Apply*</c> helper in <see cref="HtmlSettingsScriptingBridge"/> guards on
     /// <c>HasValue</c> / <c>!= null</c> to honour this. A consequence: if a future LS HTML build
-    /// renames a key, that field deserialises to null and is silently skipped — so the save
-    /// path also fails fast when the whole payload deserialises to null (malformed JSON).
+    /// renames or adds a key, that field deserialises to null / is dropped. To stop that being
+    /// silent, the save path runs <see cref="IdeConfigContract"/> over the raw payload first — it
+    /// warns (naming the keys) when some posted keys are unmapped and fails the save outright when
+    /// none are recognised (a wholesale rename, which would otherwise no-op yet report success). It
+    /// also fails fast when the whole payload deserialises to null (malformed JSON).
     /// </para>
     /// </summary>
     public class IdeConfigData

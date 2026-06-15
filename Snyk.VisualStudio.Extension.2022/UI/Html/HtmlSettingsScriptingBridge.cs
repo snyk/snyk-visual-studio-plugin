@@ -254,6 +254,29 @@ namespace Snyk.VisualStudio.Extension.UI.Html
                     "Could not parse settings payload from the settings page; no settings were saved.");
             }
 
+            // Catch settings-HTML/plugin drift before applying: the form is synced from snyk-ls and
+            // can add keys this build doesn't bind, which Newtonsoft would otherwise drop silently.
+            // Warn (naming the keys) on a partial mismatch so the rest of the save still goes through,
+            // and fail loudly when nothing is recognised (a wholesale rename that would no-op yet
+            // report success).
+            var contract = IdeConfigContract.Analyze(jsonString);
+            if (contract.AllUnmapped)
+            {
+                throw new InvalidOperationException(
+                    "None of the keys posted by the settings page are recognised by this plugin build (keys: " +
+                    string.Join(", ", contract.UnmappedKeys) +
+                    "). The settings HTML is likely newer than the plugin; no settings were saved.");
+            }
+
+            if (contract.UnmappedKeys.Count > 0)
+            {
+                Logger.Warning(
+                    "Settings page posted {Count} key(s) this plugin build does not recognise and did not save: {Keys}. " +
+                    "The settings HTML (synced from snyk-ls) may be newer than this plugin.",
+                    contract.UnmappedKeys.Count,
+                    string.Join(", ", contract.UnmappedKeys));
+            }
+
             var isCliOnly = config.IsFallbackForm ?? false;
             Logger.Information("Saving workspace configuration (CLI only: {IsCliOnly})", isCliOnly);
 
