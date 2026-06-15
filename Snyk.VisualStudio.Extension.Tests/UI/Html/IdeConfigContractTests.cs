@@ -37,12 +37,68 @@ namespace Snyk.VisualStudio.Extension.Tests.UI.Html
             ""trusted_folders"": []
         }";
 
+        // A folder entry with the per-folder keys the form posts inside folderConfigs[], from the same
+        // snyk-ls snapshot. Pins FolderConfigData's bindings the same way the global block pins
+        // IdeConfigData's.
+        private const string AuthoritativeFolderEntry = @"{
+            ""additional_environment"": """",
+            ""additional_parameters"": [],
+            ""folderPath"": ""/workspace/project"",
+            ""issue_view_ignored_issues"": false,
+            ""issue_view_open_issues"": true,
+            ""org_set_by_user"": true,
+            ""preferred_org"": ""org-uuid"",
+            ""risk_score_threshold"": 500,
+            ""scan_automatic"": true,
+            ""scan_command_config"": { ""Snyk Code"": { ""preScanCommand"": """", ""preScanOnlyReferenceFolder"": false, ""postScanCommand"": """", ""postScanOnlyReferenceFolder"": false } },
+            ""scan_net_new"": false,
+            ""severity_filter_critical"": true,
+            ""severity_filter_high"": true,
+            ""severity_filter_low"": false,
+            ""severity_filter_medium"": false,
+            ""snyk_code_enabled"": true,
+            ""snyk_iac_enabled"": false,
+            ""snyk_oss_enabled"": true
+        }";
+
         [Fact]
         public void Analyze_AuthoritativePayload_HasNoUnmappedKeys()
         {
             var result = IdeConfigContract.Analyze(AuthoritativePayload);
 
             Assert.Empty(result.UnmappedKeys);
+            Assert.Empty(result.UnmappedFolderKeys);
+            Assert.False(result.AllUnmapped);
+            Assert.False(result.HasUnmappedKeys);
+        }
+
+        [Fact]
+        public void Analyze_AuthoritativeFolderEntry_HasNoUnmappedFolderKeys()
+        {
+            var json = @"{ ""folderConfigs"": [" + AuthoritativeFolderEntry + "] }";
+
+            var result = IdeConfigContract.Analyze(json);
+
+            Assert.Empty(result.UnmappedKeys);
+            Assert.Empty(result.UnmappedFolderKeys);
+        }
+
+        [Fact]
+        public void Analyze_FlagsUnrecognisedPerFolderKey()
+        {
+            // A new per-folder field added upstream that FolderConfigData does not yet bind.
+            var json = @"{
+                ""folderConfigs"": [
+                    { ""folderPath"": ""/a"", ""brand_new_folder_setting"": 1 },
+                    { ""folderPath"": ""/b"", ""brand_new_folder_setting"": 2 }
+                ]
+            }";
+
+            var result = IdeConfigContract.Analyze(json);
+
+            Assert.Empty(result.UnmappedKeys); // top-level "folderConfigs" is bound
+            Assert.Equal(new[] { "brand_new_folder_setting" }, result.UnmappedFolderKeys.ToArray()); // deduped across entries
+            Assert.True(result.HasUnmappedKeys);
             Assert.False(result.AllUnmapped);
         }
 
@@ -81,7 +137,9 @@ namespace Snyk.VisualStudio.Extension.Tests.UI.Html
             var result = IdeConfigContract.Analyze(json);
 
             Assert.Empty(result.UnmappedKeys);
+            Assert.Empty(result.UnmappedFolderKeys);
             Assert.False(result.AllUnmapped);
+            Assert.False(result.HasUnmappedKeys);
         }
     }
 }

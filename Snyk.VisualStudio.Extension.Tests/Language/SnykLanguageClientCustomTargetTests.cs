@@ -443,30 +443,28 @@ namespace Snyk.VisualStudio.Extension.Tests.Language
         [Fact]
         public async Task OnSnykConfiguration_ShouldOverwriteByPath_WhenSamePathArrivesTwice()
         {
-            // Arrange — pre-seed Options.FolderConfigs with one entry, then send same path with different org
+            // Arrange
             optionsMock.SetupProperty(o => o.FolderConfigs);
-            optionsMock.Object.FolderConfigs = new List<FolderConfig>
-            {
-                new FolderConfig { FolderPath = "/path/to/folder1", PreferredOrg = "old-org" }
-            };
 
-            var arg = JObject.Parse(@"{
+            JObject ConfigFor(string org) => JObject.Parse(@"{
                 ""settings"": {},
                 ""folderConfigs"": [
                     {
                         ""folderPath"": ""/path/to/folder1"",
                         ""settings"": {
-                            ""preferred_org"": { ""value"": ""new-org"", ""changed"": true }
+                            ""preferred_org"": { ""value"": """ + org + @""", ""changed"": true }
                         }
                     }
                 ]
             }");
 
-            // Act
-            await cut.OnSnykConfiguration(arg);
+            // Act — the SAME path arrives on two separate configuration pushes with different orgs.
+            await cut.OnSnykConfiguration(ConfigFor("old-org"));
+            await cut.OnSnykConfiguration(ConfigFor("new-org"));
 
-            // Assert — replaced, not appended
+            // Assert — the second push replaces the first by path: one entry, latest value wins.
             Assert.Single(optionsMock.Object.FolderConfigs);
+            Assert.Equal("/path/to/folder1", optionsMock.Object.FolderConfigs[0].FolderPath);
             Assert.Equal("new-org", optionsMock.Object.FolderConfigs[0].PreferredOrg);
         }
 

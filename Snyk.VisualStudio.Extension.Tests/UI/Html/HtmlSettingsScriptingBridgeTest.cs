@@ -46,6 +46,28 @@ namespace Snyk.VisualStudio.Extension.Tests.UI.Html
         }
 
         [Fact]
+        public void Dispatcher_RoutesRawMessageToBridge_EndToEnd()
+        {
+            // Exercise the full route the WebView2 host uses — raw {method,args} JSON → dispatcher →
+            // bridge — instead of calling the bridge method directly, wiring the dispatcher exactly
+            // as HtmlSettingsControl does.
+            var dispatcher = new WebView2MessageDispatcher()
+                .Register("__ideExecuteCommand__", 3, a =>
+                    bridge.__ideExecuteCommand__(a[0].Value<string>(), a[1].Value<string>(), a[2].Value<string>()));
+
+            var commandArgs = JsonConvert.SerializeObject(new object[] { "oauth", "https://api.snyk.io", false });
+            var message = JsonConvert.SerializeObject(new
+            {
+                method = "__ideExecuteCommand__",
+                args = new object[] { "snyk.login", commandArgs, string.Empty },
+            });
+
+            dispatcher.Dispatch(message);
+
+            optionsMock.VerifySet(o => o.AuthenticationMethod = AuthenticationType.OAuth);
+        }
+
+        [Fact]
         public void IdeExecuteCommand_SnykLogin_SavesPatMethod()
         {
             var args = JsonConvert.SerializeObject(new object[] { "pat", "https://api.snyk.io", false });
@@ -236,16 +258,61 @@ namespace Snyk.VisualStudio.Extension.Tests.UI.Html
         }
 
         [Fact]
-        public void IdeSaveAttemptFinished_DoesNotOverrideSuccessfulSave()
+        public async Task IdeSaveAttemptFinished_DoesNotOverrideSuccessfulSave()
         {
             // __saveIdeConfig__ wins first (TrySetResult); a later failure status is ignored.
             bridge.__saveIdeConfig__("{}");
-            Assert.True(bridge.SaveCompletion.IsCompleted);
-            Assert.True(bridge.SaveCompletion.Result);
+
+            // Await the completion (with a timeout) instead of assuming it has already completed
+            // synchronously, so the test stays valid if the save path ever becomes genuinely async.
+            Assert.True(await AwaitWithTimeout(bridge.SaveCompletion));
 
             bridge.__ideSaveAttemptFinished__("validation_error");
 
-            Assert.True(bridge.SaveCompletion.Result);
+            Assert.True(await AwaitWithTimeout(bridge.SaveCompletion));
+        }
+
+        [Fact]
+        public async Task SaveIdeConfig_RollsBackInMemoryOptions_WhenApplyThrows()
+        {
+            // Use a fully-stubbed options object so we can observe property state, and make a late
+            // apply step (risk score) throw exactly once — after earlier fields were already applied.
+            var localOptions = new Mock<ISnykOptions>();
+            localOptions.SetupAllProperties();
+            localOptions.Object.OssEnabled = false; // baseline we expect to be restored
+
+            var thrown = false;
+            localOptions.SetupSet(o => o.RiskScoreThreshold = It.IsAny<int?>())
+                .Callback<int?>(_ =>
+                {
+                    if (!thrown)
+                    {
+                        thrown = true;
+                        throw new InvalidOperationException("boom");
+                    }
+                });
+
+            var localManager = new Mock<ISnykOptionsManager>();
+            var sp = new Mock<ISnykServiceProvider>();
+            sp.SetupGet(x => x.Options).Returns(localOptions.Object);
+            sp.SetupGet(x => x.SnykOptionsManager).Returns(localManager.Object);
+            var localBridge = new HtmlSettingsScriptingBridge(sp.Object, onModified: () => { });
+
+            // snyk_oss_enabled is applied early; risk_score_threshold (which throws) is applied late.
+            var config = JsonConvert.SerializeObject(new { snyk_oss_enabled = true, risk_score_threshold = 500 });
+            localBridge.__saveIdeConfig__(config);
+
+            Assert.False(await AwaitWithTimeout(localBridge.SaveCompletion)); // apply failed
+            Assert.False(localOptions.Object.OssEnabled); // rolled back to baseline, not left at true
+            // A failed apply never reaches the persistence step.
+            localManager.Verify(m => m.Save(It.IsAny<IPersistableOptions>(), It.IsAny<bool>()), Times.Never);
+        }
+
+        private static async Task<bool> AwaitWithTimeout(Task<bool> task)
+        {
+            var completed = await Task.WhenAny(task, Task.Delay(TimeSpan.FromSeconds(5)));
+            Assert.True(completed == task, "SaveCompletion did not finish within the timeout");
+            return await task;
         }
 
         [Fact]

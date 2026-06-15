@@ -2,6 +2,7 @@
 // ABOUTME: Hosted by HtmlSettingsDialogPage as the Tools->Options "Snyk" page.
 
 using System;
+using System.Threading;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
@@ -37,6 +38,27 @@ namespace Snyk.VisualStudio.Extension.Settings
         /// the page is in the visual tree.
         /// </summary>
         public static HtmlSettingsControl Instance => instance;
+
+        // Latest LS-issued auth token awaiting delivery to the settings page. OnHasAuthenticated can
+        // fire when no control is loaded (between Unloaded and the next show) or before the page's
+        // setAuthToken JS exists; queuing here makes delivery at-least-once — whichever control next
+        // becomes page-ready flushes it, instead of the push being silently lost. Last-write-wins
+        // (only the newest token matters). All access goes through Interlocked for cross-thread
+        // visibility (written by the LS callback thread, read/consumed on the UI thread).
+        private static PendingAuthToken pendingAuthToken;
+
+        private sealed class PendingAuthToken
+        {
+            public PendingAuthToken(string token, string apiUrl)
+            {
+                this.Token = token;
+                this.ApiUrl = apiUrl;
+            }
+
+            public string Token { get; }
+
+            public string ApiUrl { get; }
+        }
 
         private readonly ISnykServiceProvider serviceProvider;
         protected readonly HtmlSettingsScriptingBridge scriptingBridge;
@@ -138,6 +160,11 @@ namespace Snyk.VisualStudio.Extension.Settings
         }
 
         private bool _initStarted;
+
+        // Set once the hosted page has finished navigating, i.e. once window.setAuthToken exists.
+        // A queued auth token is only flushed after this so the push can't no-op against a
+        // half-loaded page.
+        private bool _pageReady;
 
         /// <summary>
         /// Set to true after this control has been Unloaded. The host's WebView2 may already
@@ -250,6 +277,12 @@ namespace Snyk.VisualStudio.Extension.Settings
             // and loading label covered the area until this point.
             LoadingStatusLabel.Visibility = Visibility.Collapsed;
             SettingsBrowser.Visibility = Visibility.Visible;
+
+            // The page (and its window.setAuthToken) now exists — deliver any auth token that was
+            // queued before this control finished loading (e.g. an OAuth round-trip that completed
+            // while no settings page was open).
+            _pageReady = true;
+            FlushPendingAuthToken();
         }
 
         // Backstop for a *lost* WebView2 round-trip, NOT a Language Server timeout. SaveCompletion
@@ -291,9 +324,34 @@ namespace Snyk.VisualStudio.Extension.Settings
         }
 
         /// <summary>
+        /// Records the latest LS-issued token / apiUrl and delivers it to the live settings page if
+        /// one is ready. Safe to call when no settings page is open, or before its HTML has loaded —
+        /// the token is held and flushed by the next control to become page-ready, so a push is never
+        /// lost. Called from <see cref="SnykLanguageClientCustomTarget.OnHasAuthenticated"/>.
+        /// </summary>
+        public static void QueueAuthToken(string token, string apiUrl = null)
+        {
+            Interlocked.Exchange(ref pendingAuthToken, new PendingAuthToken(token, apiUrl));
+            instance?.FlushPendingAuthToken();
+        }
+
+        // Delivers the queued token to the page, but only once it is loaded (window.setAuthToken
+        // exists); otherwise it is left queued for SettingsBrowser_OnNavigationCompleted to flush.
+        // Exchange-to-null ensures a queued token is consumed at most once.
+        private void FlushPendingAuthToken()
+        {
+            if (!_pageReady) return;
+
+            var pending = Interlocked.Exchange(ref pendingAuthToken, null);
+            if (pending != null)
+            {
+                UpdateAuthToken(pending.Token, pending.ApiUrl);
+            }
+        }
+
+        /// <summary>
         /// Pushes a freshly-issued token / apiUrl into the still-open settings page so the
-        /// visible token field updates after an LS-driven OAuth flow. Called from
-        /// <see cref="SnykLanguageClientCustomTarget.OnHasAuthenticated"/>.
+        /// visible token field updates after an LS-driven OAuth flow.
         /// </summary>
         public void UpdateAuthToken(string token, string apiUrl = null)
         {

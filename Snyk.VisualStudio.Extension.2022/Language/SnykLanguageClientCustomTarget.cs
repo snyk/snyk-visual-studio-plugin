@@ -174,9 +174,11 @@ namespace Snyk.VisualStudio.Extension.Language
 
             var oldToken = serviceProvider.Options.ApiToken?.ToString() ?? string.Empty;
 
-            // Always notify the live HTML settings control (modal or Tools→Options page) so
-            // the token field updates immediately after an OAuth round-trip.
-            HtmlSettingsControl.Instance?.UpdateAuthToken(token, apiUrl);
+            // Queue the token for the HTML settings page so the token field updates after an OAuth
+            // round-trip. Queuing (rather than a direct push to a live instance) guarantees delivery
+            // even when no settings page is open yet or its HTML hasn't finished loading — the next
+            // control to become page-ready flushes it.
+            HtmlSettingsControl.QueueAuthToken(token, apiUrl);
 
             // Validate before persisting: only accept an absolute http/https URL so a malformed or
             // unexpected apiUrl can't repoint the API host. Same guard as the JS snyk.login path.

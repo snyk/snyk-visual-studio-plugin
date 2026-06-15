@@ -20,13 +20,17 @@ namespace Snyk.VisualStudio.Extension.UI.Html
     /// </summary>
     public static class IdeConfigContract
     {
-        // The snake_case keys IdeConfigData binds, derived from its [JsonProperty] attributes so the
-        // set stays correct automatically as fields are added/removed — no second list to maintain.
+        // The snake_case keys IdeConfigData / FolderConfigData bind, derived from their [JsonProperty]
+        // attributes so the sets stay correct automatically as fields are added/removed — no second
+        // list to maintain.
         private static readonly HashSet<string> BoundKeys = BuildBoundKeys(typeof(IdeConfigData));
+        private static readonly HashSet<string> BoundFolderKeys = BuildBoundKeys(typeof(FolderConfigData));
 
         /// <summary>
         /// Inspects a settings payload and reports the top-level keys that <see cref="IdeConfigData"/>
-        /// does not bind. A non-object/unparseable payload yields an empty result (handled elsewhere).
+        /// does not bind, plus the per-folder keys inside <c>folderConfigs[]</c> that
+        /// <see cref="FolderConfigData"/> does not bind (deduped across all folder entries). A
+        /// non-object/unparseable payload yields an empty result (handled elsewhere).
         /// </summary>
         public static UnmappedKeysResult Analyze(string json)
         {
@@ -37,15 +41,30 @@ namespace Snyk.VisualStudio.Extension.UI.Html
             }
             catch
             {
-                return new UnmappedKeysResult(0, new List<string>());
+                return new UnmappedKeysResult(0, new List<string>(), new List<string>());
             }
 
             if (root == null)
-                return new UnmappedKeysResult(0, new List<string>());
+                return new UnmappedKeysResult(0, new List<string>(), new List<string>());
 
             var incoming = root.Properties().Select(p => p.Name).ToList();
             var unmapped = incoming.Where(k => !BoundKeys.Contains(k)).ToList();
-            return new UnmappedKeysResult(incoming.Count, unmapped);
+
+            var unmappedFolderKeys = new List<string>();
+            if (root["folderConfigs"] is JArray folders)
+            {
+                var seen = new HashSet<string>(StringComparer.Ordinal);
+                foreach (var folder in folders.OfType<JObject>())
+                {
+                    foreach (var key in folder.Properties().Select(p => p.Name))
+                    {
+                        if (!BoundFolderKeys.Contains(key) && seen.Add(key))
+                            unmappedFolderKeys.Add(key);
+                    }
+                }
+            }
+
+            return new UnmappedKeysResult(incoming.Count, unmapped, unmappedFolderKeys);
         }
 
         private static HashSet<string> BuildBoundKeys(Type type)
@@ -64,10 +83,11 @@ namespace Snyk.VisualStudio.Extension.UI.Html
     /// <summary>Result of <see cref="IdeConfigContract.Analyze"/>.</summary>
     public sealed class UnmappedKeysResult
     {
-        public UnmappedKeysResult(int totalKeys, IReadOnlyList<string> unmappedKeys)
+        public UnmappedKeysResult(int totalKeys, IReadOnlyList<string> unmappedKeys, IReadOnlyList<string> unmappedFolderKeys)
         {
             this.TotalKeys = totalKeys;
             this.UnmappedKeys = unmappedKeys;
+            this.UnmappedFolderKeys = unmappedFolderKeys;
         }
 
         /// <summary>Number of top-level keys in the payload.</summary>
@@ -76,7 +96,16 @@ namespace Snyk.VisualStudio.Extension.UI.Html
         /// <summary>Top-level keys with no matching IdeConfigData binding.</summary>
         public IReadOnlyList<string> UnmappedKeys { get; }
 
+        /// <summary>
+        /// Per-folder keys (inside <c>folderConfigs[]</c>) with no matching FolderConfigData binding,
+        /// deduped across all folder entries.
+        /// </summary>
+        public IReadOnlyList<string> UnmappedFolderKeys { get; }
+
         /// <summary>True when the payload had keys but none of them were recognised (wholesale rename).</summary>
         public bool AllUnmapped => this.TotalKeys > 0 && this.UnmappedKeys.Count == this.TotalKeys;
+
+        /// <summary>True when any top-level or per-folder key was unmapped.</summary>
+        public bool HasUnmappedKeys => this.UnmappedKeys.Count > 0 || this.UnmappedFolderKeys.Count > 0;
     }
 }

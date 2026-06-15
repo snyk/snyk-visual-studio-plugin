@@ -371,9 +371,29 @@ namespace Snyk.VisualStudio.Extension
         {
             JoinableTaskFactory.RunAsync(async () =>
             {
-                if (LanguageClientHelper.IsLanguageServerReady())
+                if (!LanguageClientHelper.IsLanguageServerReady())
+                {
+                    return;
+                }
+
+                try
                 {
                     await this.serviceProvider.LanguageClientManager.DidChangeConfigurationAsync(DisposalToken);
+                }
+                catch (OperationCanceledException)
+                {
+                    // VS / LS client shutting down — not an error.
+                }
+                catch (Exception ex)
+                {
+                    // The save path reports success once settings are persisted to disk; pushing them
+                    // to the Language Server happens here, after, and is otherwise fire-and-forget — so
+                    // a failure would silently leave the running LS on the old settings while the user
+                    // believes the change took effect. Surface it instead of swallowing it.
+                    Logger.Error(ex, "Failed to push updated settings to the Language Server.");
+                    NotificationService.Instance?.ShowErrorInfoBar(
+                        "Snyk: your settings were saved but could not be sent to the Snyk Language Server. " +
+                        "They will be applied the next time it starts. See the Snyk logs for details.");
                 }
             }).FireAndForget();
         }
