@@ -4,14 +4,16 @@
     <MinimumVisualStudioVersion>16.0</MinimumVisualStudioVersion>
     <VSToolsPath Condition="'$(VSToolsPath)' == ''">$(MSBuildExtensionsPath32)\Microsoft\VisualStudio\v$(VisualStudioVersion)</VSToolsPath>
     <TargetFrameworkProfile />
-    <!-- Force the Community.VisualStudio.Toolkit.17 NewtonsoftJsonVersionCheck.targets
-         to use its modern [MSBuild]::VersionLessThanOrEquals() path. The toolkit's
-         MSBuildCapabilities.props is supposed to set this for MSBuild >= 16.5 but the
-         auto-detection misfires in some build contexts, sending the targets file down
-         a fallback path that does a naive numeric compare on "13.0.1" and fails the
-         build. VS 2022 ships MSBuild 17.x where the property functions definitely
-         exist, so forcing this is safe. -->
+    <!-- Harden the Community.VisualStudio.Toolkit.17 NewtonsoftJsonVersionCheck.targets, whose
+         companion props (MSBuildCapabilities.props sets CVST_VersionPropertyFunctionsExist,
+         Constants.props sets CVST_NewtonsoftJsonMaxVersion=13.0.1) don't always get imported —
+         e.g. an incomplete restore after a branch switch. We force the modern
+         [MSBuild]::VersionLessThanOrEquals() path AND supply the max-version constant it compares
+         against. Without the latter, the forced modern path evaluates
+         VersionLessThanOrEquals('13.0.1', '') and fails the build outright. Both values match the
+         toolkit's own defaults, so they're harmless when its props DO import (same value re-set). -->
     <CVST_VersionPropertyFunctionsExist>true</CVST_VersionPropertyFunctionsExist>
+    <CVST_NewtonsoftJsonMaxVersion>13.0.1</CVST_NewtonsoftJsonMaxVersion>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Debug|x86'">
     <LangVersion>latest</LangVersion>
