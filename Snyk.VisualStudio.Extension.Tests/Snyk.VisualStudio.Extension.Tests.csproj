@@ -52,6 +52,9 @@
     </PackageReference>
     <!-- Add missing dependencies from main project -->
     <PackageReference Include="Microsoft.VisualStudio.LanguageServer.Client" Version="17.4.1068" />
+    <!-- Transitive pin to the fixed MessagePack — see the same note in the extension project
+         (SNYK-DOTNET-MESSAGEPACK-17318029); keeps the scanned dependency graph clean here too. -->
+    <PackageReference Include="MessagePack" Version="2.5.301" />
     <PackageReference Include="Microsoft.VisualStudio.LanguageServer.Protocol" Version="17.2.8" />
     <PackageReference Include="Microsoft.VisualStudio.Threading" Version="17.6.40" />
     <PackageReference Include="Community.VisualStudio.Toolkit.17" Version="17.0.394" />
