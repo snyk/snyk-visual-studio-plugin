@@ -67,5 +67,44 @@ namespace Snyk.VisualStudio.Extension.Tests.UI.Html
         {
             Assert.Throws<ArgumentException>(() => WebView2Host.BuildUserDataFolder(panelKey));
         }
+
+        [Theory]
+        [InlineData(null)]
+        [InlineData("")]
+        [InlineData("about:blank")]
+        [InlineData("data:text/html,<p>hi</p>")]
+        public void IsAllowedDocumentUri_AllowsEmptyAboutAndData(string uri)
+        {
+            Assert.True(WebView2Host.IsAllowedDocumentUri(uri, @"C:\some\webview2\folder"));
+        }
+
+        [Theory]
+        [InlineData("https://evil.example.com")]
+        [InlineData("http://localhost:8080")]
+        [InlineData("ftp://example.com/x")]
+        [InlineData("javascript:alert(1)")]
+        public void IsAllowedDocumentUri_BlocksOffOriginNavigation(string uri)
+        {
+            Assert.False(WebView2Host.IsAllowedDocumentUri(uri, @"C:\some\webview2\folder"));
+        }
+
+        [Fact]
+        public void IsAllowedDocumentUri_AllowsFileUnderUserDataFolder_ButNotOutsideIt()
+        {
+            var folder = Path.Combine(Path.GetTempPath(), "snyk-webview2-test-" + Guid.NewGuid().ToString("N"));
+            Directory.CreateDirectory(folder);
+            try
+            {
+                var inside = new Uri(Path.Combine(folder, "index.html")).AbsoluteUri;
+                var outside = new Uri(Path.Combine(Path.GetTempPath(), "outside-" + Guid.NewGuid().ToString("N") + ".html")).AbsoluteUri;
+
+                Assert.True(WebView2Host.IsAllowedDocumentUri(inside, folder));
+                Assert.False(WebView2Host.IsAllowedDocumentUri(outside, folder));
+            }
+            finally
+            {
+                Directory.Delete(folder, recursive: true);
+            }
+        }
     }
 }

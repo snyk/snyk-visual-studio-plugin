@@ -17,10 +17,17 @@ namespace Snyk.VisualStudio.Extension.Authentication
         private static readonly ILogger Logger = LogManager.ForContext<AuthenticationFlowService>();
 
         private readonly ISnykServiceProvider serviceProvider;
+        private readonly IAuthDialog injectedAuthDialog;
 
-        public AuthenticationFlowService(ISnykServiceProvider serviceProvider)
+        // Resolve the dialog lazily: production passes null and falls back to the WPF singleton at
+        // first use (unchanged timing — constructing it eagerly here could run off the UI thread),
+        // while tests inject a fake so the orchestration runs without a real window.
+        private IAuthDialog AuthDialog => this.injectedAuthDialog ?? AuthDialogWindow.Instance;
+
+        public AuthenticationFlowService(ISnykServiceProvider serviceProvider, IAuthDialog authDialog = null)
         {
             this.serviceProvider = serviceProvider ?? throw new ArgumentNullException(nameof(serviceProvider));
+            this.injectedAuthDialog = authDialog;
         }
 
         public void Authenticate()
@@ -57,7 +64,7 @@ namespace Snyk.VisualStudio.Extension.Authentication
                 // Arm the dialog's show/hide guard before launching login below. A fast
                 // success/failure can call HideForAuthResult() before ShowDialogForAuth() runs;
                 // arming first lets the show be skipped in that case instead of getting stuck.
-                AuthDialogWindow.Instance.ArmForShow();
+                AuthDialog.ArmForShow();
 
                 // FireAndForget returns immediately, so the outer catch can't observe failures
                 // from these awaited LS calls — handle them here or any JSON-RPC error,
@@ -92,9 +99,9 @@ namespace Snyk.VisualStudio.Extension.Authentication
                     if (options.AuthenticationMethod == AuthenticationType.Pat)
                         return;
                     await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
-                    Logger.Information("Attempting to call AuthDialogWindow.Instance.ShowDialogForAuth()");
+                    Logger.Information("Attempting to call AuthDialog.ShowDialogForAuth()");
                     // Skips the show if the auth result already arrived (and hid the dialog) first.
-                    AuthDialogWindow.Instance.ShowDialogForAuth();
+                    AuthDialog.ShowDialogForAuth();
                 });
             }
             catch (Exception e)
@@ -113,7 +120,7 @@ namespace Snyk.VisualStudio.Extension.Authentication
             await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
             // HideForAuthResult (not Hide) so that if this success arrives before the modal show
             // has run, the pending show is suppressed rather than left stuck on screen.
-            AuthDialogWindow.Instance.HideForAuthResult();
+            AuthDialog.HideForAuthResult();
 
             // The visible HTML settings form (if open) is updated by
             // SnykLanguageClientCustomTarget.OnHasAuthenticated calling
@@ -129,7 +136,7 @@ namespace Snyk.VisualStudio.Extension.Authentication
             await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
             // HideForAuthResult (not Hide) so a failure that beats the modal show to the UI thread
             // suppresses the pending show instead of leaving a dialog nothing will close.
-            AuthDialogWindow.Instance.HideForAuthResult();
+            AuthDialog.HideForAuthResult();
 
             var presentableError = new PresentableError
             {

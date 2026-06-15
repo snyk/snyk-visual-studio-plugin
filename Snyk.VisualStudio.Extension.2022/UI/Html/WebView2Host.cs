@@ -152,12 +152,14 @@ namespace Snyk.VisualStudio.Extension.UI.Html
         // Per-folder environment cache so multiple WebView2 controls sharing the same
         // user-data folder share the same env instance — which is what WebView2 requires
         // for safe shared-folder operation (see WebView2Feedback#2323 + class-level remarks).
-        // The in-flight task is cached so concurrent callers join the same CreateAsync rather
-        // than racing on the exclusive folder lock; faulted/canceled entries are evicted on
-        // next access so a transient init failure doesn't permanently poison the slot.
-        private static readonly object EnvironmentGate = new object();
-        private static readonly Dictionary<string, Task<CoreWebView2Environment>> Environments =
-            new Dictionary<string, Task<CoreWebView2Environment>>(StringComparer.OrdinalIgnoreCase);
+        // The share/evict/faulted-recreate logic lives in WebView2EnvironmentCache (unit-tested);
+        // here it's wired to the real CoreWebView2Environment.CreateAsync.
+        private static readonly WebView2EnvironmentCache<CoreWebView2Environment> EnvironmentCache =
+            new WebView2EnvironmentCache<CoreWebView2Environment>(
+                userDataFolder => CoreWebView2Environment.CreateAsync(
+                    browserExecutableFolder: null,
+                    userDataFolder: userDataFolder,
+                    options: null));
 
         /// <summary>
         /// Drops the cached <see cref="CoreWebView2Environment"/> entry for the given user-data
@@ -167,33 +169,11 @@ namespace Snyk.VisualStudio.Extension.UI.Html
         /// description + summary panels under <c>"toolwindow"</c>) but lets the settings Dialog
         /// start clean each time (as there is no state to preserve).
         /// </summary>
-        public static void EvictEnvironmentCache(string userDataFolder)
-        {
-            if (string.IsNullOrEmpty(userDataFolder)) return;
-            lock (EnvironmentGate)
-            {
-                Environments.Remove(userDataFolder);
-            }
-        }
+        public static void EvictEnvironmentCache(string userDataFolder) =>
+            EnvironmentCache.Evict(userDataFolder);
 
-        private static Task<CoreWebView2Environment> GetOrCreateEnvironmentAsync(string userDataFolder)
-        {
-            lock (EnvironmentGate)
-            {
-                if (Environments.TryGetValue(userDataFolder, out var existing))
-                {
-                    if (!existing.IsFaulted && !existing.IsCanceled) return existing;
-                    Environments.Remove(userDataFolder);
-                }
-
-                var task = CoreWebView2Environment.CreateAsync(
-                    browserExecutableFolder: null,
-                    userDataFolder: userDataFolder,
-                    options: null);
-                Environments[userDataFolder] = task;
-                return task;
-            }
-        }
+        private static Task<CoreWebView2Environment> GetOrCreateEnvironmentAsync(string userDataFolder) =>
+            EnvironmentCache.GetOrCreate(userDataFolder);
 
         private static void TryCleanupOrphanFolders()
         {
@@ -340,7 +320,7 @@ namespace Snyk.VisualStudio.Extension.UI.Html
         // user action — and is dropped rather than navigated with the bridges still live.
         private void OnNavigationStarting(object sender, CoreWebView2NavigationStartingEventArgs e)
         {
-            if (IsAllowedDocumentUri(e.Uri)) return;
+            if (IsAllowedDocumentUri(e.Uri, _userDataFolder)) return;
 
             Logger.Warning("Blocking WebView2 navigation to disallowed URI: {Uri}", e.Uri);
             e.Cancel = true;
@@ -361,7 +341,9 @@ namespace Snyk.VisualStudio.Extension.UI.Html
             }
         }
 
-        private bool IsAllowedDocumentUri(string uri)
+        // internal static for testability (InternalsVisibleTo test project): pure allowlist logic
+        // with the user-data folder passed in rather than read from instance state.
+        internal static bool IsAllowedDocumentUri(string uri, string userDataFolder)
         {
             if (string.IsNullOrEmpty(uri))
                 return true; // initial / empty document
@@ -378,7 +360,7 @@ namespace Snyk.VisualStudio.Extension.UI.Html
                 try
                 {
                     var path = Path.GetFullPath(new Uri(uri).LocalPath);
-                    var root = Path.GetFullPath(_userDataFolder).TrimEnd(
+                    var root = Path.GetFullPath(userDataFolder).TrimEnd(
                         Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar) + Path.DirectorySeparatorChar;
                     return path.StartsWith(root, StringComparison.OrdinalIgnoreCase);
                 }

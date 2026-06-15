@@ -69,6 +69,35 @@ namespace Snyk.VisualStudio.Extension.Tests.UI.Html
         }
 
         [Fact]
+        public void ParseJsBool_HandlesJsValueShapesDeterministically()
+        {
+            Assert.True(HtmlSettingsScriptingBridge.ParseJsBool(true));
+            Assert.False(HtmlSettingsScriptingBridge.ParseJsBool(false));
+            Assert.False(HtmlSettingsScriptingBridge.ParseJsBool(null));
+            Assert.True(HtmlSettingsScriptingBridge.ParseJsBool("true"));
+            Assert.False(HtmlSettingsScriptingBridge.ParseJsBool("false"));
+            Assert.True(HtmlSettingsScriptingBridge.ParseJsBool("1"));
+            Assert.False(HtmlSettingsScriptingBridge.ParseJsBool("0"));
+            Assert.True(HtmlSettingsScriptingBridge.ParseJsBool(1L));
+            Assert.False(HtmlSettingsScriptingBridge.ParseJsBool(0L));
+            Assert.True(HtmlSettingsScriptingBridge.ParseJsBool(1));
+            // The original bug: Convert.ToBoolean threw on these; now they deterministically fall to false.
+            Assert.False(HtmlSettingsScriptingBridge.ParseJsBool("yes"));
+        }
+
+        [Fact]
+        public void SaveIdeConfig_AllKeysUnrecognised_FailsSave()
+        {
+            // A wholesale key rename (no recognised keys) must fail the save, not silently no-op.
+            var json = JsonConvert.SerializeObject(new { renamed_one = true, renamed_two = false });
+
+            bridge.__saveIdeConfig__(json);
+
+            Assert.True(bridge.SaveCompletion.IsCompleted);
+            Assert.False(bridge.SaveCompletion.Result);
+        }
+
+        [Fact]
         public void IdeExecuteCommand_SnykLogin_SavesPatMethod()
         {
             var args = JsonConvert.SerializeObject(new object[] { "pat", "https://api.snyk.io", false });

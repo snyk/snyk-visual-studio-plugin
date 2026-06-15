@@ -2,7 +2,6 @@
 // ABOUTME: Hosted by HtmlSettingsDialogPage as the Tools->Options "Snyk" page.
 
 using System;
-using System.Threading;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
@@ -42,23 +41,10 @@ namespace Snyk.VisualStudio.Extension.Settings
         // Latest LS-issued auth token awaiting delivery to the settings page. OnHasAuthenticated can
         // fire when no control is loaded (between Unloaded and the next show) or before the page's
         // setAuthToken JS exists; queuing here makes delivery at-least-once — whichever control next
-        // becomes page-ready flushes it, instead of the push being silently lost. Last-write-wins
-        // (only the newest token matters). All access goes through Interlocked for cross-thread
-        // visibility (written by the LS callback thread, read/consumed on the UI thread).
-        private static PendingAuthToken pendingAuthToken;
-
-        private sealed class PendingAuthToken
-        {
-            public PendingAuthToken(string token, string apiUrl)
-            {
-                this.Token = token;
-                this.ApiUrl = apiUrl;
-            }
-
-            public string Token { get; }
-
-            public string ApiUrl { get; }
-        }
+        // becomes page-ready flushes it, instead of the push being silently lost. The take-once /
+        // last-write-wins semantics live in PendingAuthTokenSlot (unit-tested); this control just
+        // gates the flush on page-readiness.
+        private static readonly PendingAuthTokenSlot AuthTokenSlot = new PendingAuthTokenSlot();
 
         private readonly ISnykServiceProvider serviceProvider;
         protected readonly HtmlSettingsScriptingBridge scriptingBridge;
@@ -331,18 +317,18 @@ namespace Snyk.VisualStudio.Extension.Settings
         /// </summary>
         public static void QueueAuthToken(string token, string apiUrl = null)
         {
-            Interlocked.Exchange(ref pendingAuthToken, new PendingAuthToken(token, apiUrl));
+            AuthTokenSlot.Set(token, apiUrl);
             instance?.FlushPendingAuthToken();
         }
 
         // Delivers the queued token to the page, but only once it is loaded (window.setAuthToken
         // exists); otherwise it is left queued for SettingsBrowser_OnNavigationCompleted to flush.
-        // Exchange-to-null ensures a queued token is consumed at most once.
+        // Take() returns the token at most once, so it can't be delivered twice.
         private void FlushPendingAuthToken()
         {
             if (!_pageReady) return;
 
-            var pending = Interlocked.Exchange(ref pendingAuthToken, null);
+            var pending = AuthTokenSlot.Take();
             if (pending != null)
             {
                 UpdateAuthToken(pending.Token, pending.ApiUrl);

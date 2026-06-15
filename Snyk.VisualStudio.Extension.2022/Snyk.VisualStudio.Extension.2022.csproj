@@ -73,7 +73,9 @@
     <Compile Include="Analytics\AbstractAnalyticsEvent.cs" />
     <Compile Include="Analytics\AnalyticsEvent.cs" />
     <Compile Include="Analytics\AnalyticsSender.cs" />
+    <Compile Include="AuthDialogState.cs" />
     <Compile Include="Authentication\AuthenticationFlowService.cs" />
+    <Compile Include="Authentication\IAuthDialog.cs" />
     <Compile Include="Authentication\AuthenticationToken.cs" />
     <Compile Include="Authentication\AuthenticationType.cs" />
     <Compile Include="Authentication\IAuthenticationFlowService.cs" />
@@ -177,6 +179,7 @@
     <Compile Include="Settings\ISnykOptionsManager.cs" />
     <Compile Include="Settings\LegacySolutionSettings.cs" />
     <Compile Include="Settings\LegacySolutionSettingsMigrator.cs" />
+    <Compile Include="Settings\PendingAuthTokenSlot.cs" />
     <Compile Include="Settings\SnykOptions.cs" />
     <Compile Include="Settings\SnykOptionsManager.cs" />
     <Compile Include="Settings\SnykSettings.cs" />
@@ -221,6 +224,7 @@
     <Compile Include="UI\Html\CodeHtmlProvider.cs" />
     <Compile Include="UI\Html\HtmlProviderFactory.cs" />
     <Compile Include="UI\Html\WebView2BridgeBindings.cs" />
+    <Compile Include="UI\Html\WebView2EnvironmentCache.cs" />
     <Compile Include="UI\Html\WebView2Host.cs" />
     <Compile Include="UI\Html\WebView2MessageDispatcher.cs" />
     <Compile Include="UI\Html\WebView2NavigationPreparer.cs" />

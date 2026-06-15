@@ -2,23 +2,20 @@
 using System.Windows.Input;
 using Microsoft.VisualStudio.PlatformUI;
 using Microsoft.VisualStudio.Shell;
+using Snyk.VisualStudio.Extension.Authentication;
 using Snyk.VisualStudio.Extension.Language;
 
 namespace Snyk.VisualStudio.Extension
 {
-    public partial class AuthDialogWindow : DialogWindow
+    public partial class AuthDialogWindow : DialogWindow, IAuthDialog
     {
         public static AuthDialogWindow Instance { get; } = new AuthDialogWindow();
 
-        // Guards the show/hide race in the auth flow: login runs fire-and-forget while the modal
-        // ShowDialog() is started separately, so a fast success/failure can call HideForAuthResult()
-        // *before* ShowDialogForAuth() runs. ArmForShow() resets this at the start of an attempt;
-        // HideForAuthResult() records that the result arrived; ShowDialogForAuth() skips the show if
-        // it already has. HideForAuthResult/ShowDialogForAuth touch UI state and run on the UI thread
-        // (their callers SwitchToMainThread first), but ArmForShow() is invoked synchronously from
-        // Authenticate(), which can run off the UI thread — hence volatile, so the flag write is
-        // visible to the UI-thread reads.
-        private volatile bool authResultArrived;
+        // Show/hide race guard. The flag logic lives in AuthDialogState (WPF-free, unit-tested);
+        // this window just maps it onto ShowDialog()/Visibility. Login runs fire-and-forget while
+        // the modal ShowDialog() is started separately, so a fast success/failure can call
+        // HideForAuthResult() *before* ShowDialogForAuth() runs.
+        private readonly AuthDialogState authState = new AuthDialogState();
 
         public AuthDialogWindow()
         {
@@ -27,7 +24,7 @@ namespace Snyk.VisualStudio.Extension
         }
 
         /// <summary>Resets the show/hide guard at the start of an authentication attempt.</summary>
-        public void ArmForShow() => this.authResultArrived = false;
+        public void ArmForShow() => this.authState.Arm();
 
         /// <summary>
         /// Shows the modal auth dialog, unless the auth result already arrived (and hid it) before
@@ -38,7 +35,7 @@ namespace Snyk.VisualStudio.Extension
         /// </summary>
         public void ShowDialogForAuth()
         {
-            if (this.authResultArrived || this.IsVisible)
+            if (!this.authState.ShouldShow(this.IsVisible))
                 return;
             this.ShowDialog();
         }
@@ -49,7 +46,7 @@ namespace Snyk.VisualStudio.Extension
         /// </summary>
         public void HideForAuthResult()
         {
-            this.authResultArrived = true;
+            this.authState.RecordResult();
             // Visibility.Hidden (not Close/DialogResult) because this window is a process-wide
             // singleton, reused across auth attempts. Auth is fire and forget, so it's OK that
             // ShowDialog() keeps going.

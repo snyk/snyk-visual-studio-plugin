@@ -192,7 +192,8 @@ namespace Snyk.VisualStudio.Extension.UI.Html
         // Deterministically coerce a JSON-deserialized arg to bool. JsonConvert yields bool, long,
         // or string for JSON primitives; Convert.ToBoolean throws on "yes"/null/numbers-as-string,
         // which previously surfaced as a silently-not-applied SSL toggle. Unknown shapes → false.
-        private static bool ParseJsBool(object value)
+        // internal for testability (InternalsVisibleTo test project).
+        internal static bool ParseJsBool(object value)
         {
             switch (value)
             {
