@@ -373,12 +373,6 @@
     <PackageReference Include="Microsoft.VisualStudio.LanguageServer.Client">
       <Version>17.4.1068</Version>
     </PackageReference>
-    <!-- Transitive pin: LanguageServer.Client > StreamJsonRpc 2.13.33 pulls MessagePack 2.4.35,
-         which has an out-of-bounds-read vuln (SNYK-DOTNET-MESSAGEPACK-17318029). StreamJsonRpc's
-         dependency is a minimum (>= 2.4.35), so this direct reference lifts the resolved version to
-         the fixed 2.5.x line without a downgrade conflict. Remove once a newer LanguageServer.Client
-         pulls a fixed MessagePack transitively. -->
-    <PackageReference Include="MessagePack" Version="2.5.301" />
     <PackageReference Include="Microsoft.VisualStudio.LanguageServer.Protocol">
       <Version>17.2.8</Version>
     </PackageReference>
