@@ -61,16 +61,4 @@ ignore:
           https://docs.snyk.io/scan-applications/supported-languages-and-frameworks/.net#tackling-vulnerabilities-from-runtime-dependencies
         expires: 2025-11-22T13:14:00.380Z
         created: 2024-10-23T13:14:00.384Z
-  SNYK-DOTNET-MESSAGEPACK-17318029:
-    - '*':
-        reason: >-
-          MessagePack is a transitive runtime dependency
-          (Microsoft.VisualStudio.LanguageServer.Client > StreamJsonRpc) whose loaded version is
-          provided by the Visual Studio host at runtime, not shipped/controlled by this extension.
-          A direct PackageReference pins it to the fixed 2.5.301, but the manifest-level scan still
-          reports StreamJsonRpc's declared 2.4.35. Same runtime-dependency category as the other
-          ignores here -
-          https://docs.snyk.io/scan-applications/supported-languages-and-frameworks/.net#tackling-vulnerabilities-from-runtime-dependencies
-        expires: 2027-06-15T00:00:00.000Z
-        created: 2026-06-15T00:00:00.000Z
 patch: {}
