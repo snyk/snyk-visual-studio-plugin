@@ -12,12 +12,6 @@
          build. VS 2022 ships MSBuild 17.x where the property functions definitely
          exist, so forcing this is safe. -->
     <CVST_VersionPropertyFunctionsExist>true</CVST_VersionPropertyFunctionsExist>
-    <!-- Emit a NuGet packages.lock.json recording the resolved dependency graph. The Snyk
-         all-projects scan otherwise reports a transitive package at the version its parent
-         declares (MessagePack 2.4.35 via StreamJsonRpc), ignoring our direct override pin; the
-         committed lock file gives Snyk the resolved versions (MessagePack 2.5.301), clearing
-         SNYK-DOTNET-MESSAGEPACK-17318029. Regenerate with "dotnet restore" after changing deps. -->
-    <RestorePackagesWithLockFile>true</RestorePackagesWithLockFile>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Debug|x86'">
     <LangVersion>latest</LangVersion>
