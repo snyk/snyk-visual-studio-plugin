@@ -25,8 +25,30 @@ namespace Snyk.VisualStudio.Extension.UI.Html
 
         public virtual string GetCss()
         {
-            return @"
+            return GetScrollbarCss() + @"
             .sn-issue-title { margin-left: 10px; }
+            ";
+        }
+
+        /// <summary>
+        /// Themed WebKit scrollbar styling shared by every WebView2 panel so they render an
+        /// identical thin, rounded, arrow-less scrollbar. Without this each surface inherits a
+        /// different default — the summary panel falls back to WebView2's native Chromium
+        /// scrollbar (rounded, with arrows) while the LS tree HTML ships its own thin dark one.
+        /// The colors reference the --vscode-scrollbarSlider-* variables, which
+        /// <see cref="ReplaceCssVariables"/> maps to the active VS theme (and to the forced-light
+        /// palette for the settings dialog), so no colors are hardcoded here. The injected
+        /// ${ideStyle} block sits after the template's own styles, so these rules win by source
+        /// order over anything the LS HTML ships.
+        /// </summary>
+        protected string GetScrollbarCss()
+        {
+            return @"
+            ::-webkit-scrollbar { width: 10px; height: 10px; }
+            ::-webkit-scrollbar-track { background: transparent; }
+            ::-webkit-scrollbar-thumb { background: var(--vscode-scrollbarSlider-background); border-radius: 5px; }
+            ::-webkit-scrollbar-thumb:hover { background: var(--vscode-scrollbarSlider-hoverBackground); }
+            ::-webkit-scrollbar-corner { background: transparent; }
             ";
         }
 

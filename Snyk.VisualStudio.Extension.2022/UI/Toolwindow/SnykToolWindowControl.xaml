@@ -26,10 +26,17 @@
                 <ColumnDefinition Width="6*"/>
             </Grid.ColumnDefinitions>
             <Grid Grid.Column="0">
+                <!-- Both panel rows are star-sized so the GridSplitter only redistributes a fixed
+                     total between them. A fixed-pixel + star mix lets WPF's GridSplitter grow the
+                     pixel row by the raw drag delta without clamping the sum to the container, so
+                     the splitter could be dragged past the bottom of the tool window — and because
+                     the WebView2 panels are HWND-hosted (airspace) the overflow isn't clipped and
+                     paints over other VS UI. Dual-star conserves the total and prevents that.
+                     The 2*:5* ratio approximates the previous ~170px summary default. -->
                 <Grid.RowDefinitions>
-                    <RowDefinition Height="170" MinHeight="40"/>
+                    <RowDefinition Height="2*" MinHeight="40"/>
                     <RowDefinition Height="Auto"/>
-                    <RowDefinition Height="*" MinHeight="60"/>
+                    <RowDefinition Height="5*" MinHeight="60"/>
                 </Grid.RowDefinitions>
                 <window:SummaryHtmlPanel Grid.Row="0" x:Name="SummaryPanel"/>
 
