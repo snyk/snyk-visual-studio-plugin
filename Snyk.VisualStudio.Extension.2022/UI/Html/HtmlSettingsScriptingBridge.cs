@@ -485,10 +485,20 @@ namespace Snyk.VisualStudio.Extension.UI.Html
 
         private void ApplyConnectionSettings(IdeConfigData config)
         {
-            // Allow empty values to reset settings
+            // Allow an empty value to reset to the default endpoint, but otherwise only accept an
+            // absolute http/https URL — same guard as the snyk.login bridge path and the
+            // OnHasAuthenticated LS callback — so a malformed or non-web URI (file:, javascript:, …)
+            // can't be persisted as the API host.
             if (config.ApiEndpoint != null)
             {
-                Options.CustomEndpoint = config.ApiEndpoint;
+                if (string.IsNullOrEmpty(config.ApiEndpoint) || UriExtensions.IsValidWebUrl(config.ApiEndpoint))
+                {
+                    Options.CustomEndpoint = config.ApiEndpoint;
+                }
+                else
+                {
+                    Logger.Warning("Ignoring settings endpoint that is not an absolute http/https URL");
+                }
             }
 
             if (config.Token != null)

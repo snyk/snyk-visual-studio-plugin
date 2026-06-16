@@ -97,6 +97,39 @@ namespace Snyk.VisualStudio.Extension.Tests.UI.Html
             Assert.False(bridge.SaveCompletion.Result);
         }
 
+        [Theory]
+        [InlineData("javascript:alert(1)")]
+        [InlineData("file:///etc/passwd")]
+        [InlineData("not a url")]
+        public void SaveIdeConfig_DoesNotPersistNonWebEndpoint(string endpoint)
+        {
+            var config = JsonConvert.SerializeObject(new { api_endpoint = endpoint });
+
+            bridge.__saveIdeConfig__(config);
+
+            optionsMock.VerifySet(o => o.CustomEndpoint = endpoint, Times.Never());
+        }
+
+        [Fact]
+        public void SaveIdeConfig_PersistsAbsoluteHttpsEndpoint()
+        {
+            var config = JsonConvert.SerializeObject(new { api_endpoint = "https://api.eu.snyk.io" });
+
+            bridge.__saveIdeConfig__(config);
+
+            optionsMock.VerifySet(o => o.CustomEndpoint = "https://api.eu.snyk.io");
+        }
+
+        [Fact]
+        public void SaveIdeConfig_AllowsEmptyEndpoint_ToResetToDefault()
+        {
+            var config = JsonConvert.SerializeObject(new { api_endpoint = "" });
+
+            bridge.__saveIdeConfig__(config);
+
+            optionsMock.VerifySet(o => o.CustomEndpoint = string.Empty);
+        }
+
         [Fact]
         public void IdeExecuteCommand_SnykLogin_SavesPatMethod()
         {
