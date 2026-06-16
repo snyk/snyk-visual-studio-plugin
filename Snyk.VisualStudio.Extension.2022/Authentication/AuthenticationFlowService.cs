@@ -91,9 +91,9 @@ namespace Snyk.VisualStudio.Extension.Authentication
                     {
                         try
                         {
-                            await serviceProvider.LanguageClientManager.InvokeLogout(SnykVSPackage.Instance.DisposalToken);
+                            await serviceProvider.LanguageClientManager.InvokeLogout(serviceProvider.DisposalToken);
                             Logger.Information("Invoking InvokeLogin for auth");
-                            await serviceProvider.LanguageClientManager.InvokeLogin(SnykVSPackage.Instance.DisposalToken);
+                            await serviceProvider.LanguageClientManager.InvokeLogin(serviceProvider.DisposalToken);
                         }
                         catch (OperationCanceledException)
                         {

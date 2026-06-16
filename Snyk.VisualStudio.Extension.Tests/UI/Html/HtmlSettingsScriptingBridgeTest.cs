@@ -131,6 +131,75 @@ namespace Snyk.VisualStudio.Extension.Tests.UI.Html
         }
 
         [Fact]
+        public void SaveIdeConfig_AppliesEveryGlobalSetting_FullRoundTrip()
+        {
+            // Pin the full snake_case payload -> Options mapping in one place: a missing/renamed
+            // [JsonProperty] on IdeConfigData or a broken Apply* wiring would drop a setting here with
+            // a failing assertion, rather than silently. Uses a fully-stubbed options object so the
+            // landed values can be read back.
+            var localOptions = new Mock<ISnykOptions>();
+            localOptions.SetupAllProperties();
+            localOptions.Object.AuthenticationMethod = AuthenticationType.OAuth; // same as payload → no token-clear
+
+            var sp = new Mock<ISnykServiceProvider>();
+            sp.SetupGet(x => x.Options).Returns(localOptions.Object);
+            sp.SetupGet(x => x.SnykOptionsManager).Returns(new Mock<ISnykOptionsManager>().Object);
+            var localBridge = new HtmlSettingsScriptingBridge(sp.Object, onModified: () => { });
+
+            var config = JsonConvert.SerializeObject(new
+            {
+                snyk_oss_enabled = true,
+                snyk_code_enabled = true,
+                snyk_iac_enabled = true,
+                snyk_secrets_enabled = true,
+                scan_automatic = true,
+                scan_net_new = true,
+                severity_filter_critical = true,
+                severity_filter_high = false,
+                severity_filter_medium = true,
+                severity_filter_low = false,
+                issue_view_open_issues = true,
+                issue_view_ignored_issues = true,
+                api_endpoint = "https://api.eu.snyk.io",
+                organization = "my-org",
+                proxy_insecure = true,
+                authentication_method = "oauth",
+                token = "my-token",
+                cli_path = @"C:\cli\snyk.exe",
+                automatic_download = false,
+                binary_base_url = "https://downloads.snyk.io",
+                cli_release_channel = "preview",
+                risk_score_threshold = 500,
+            });
+
+            localBridge.__saveIdeConfig__(config);
+
+            var o = localOptions.Object;
+            Assert.True(o.OssEnabled);
+            Assert.True(o.SnykCodeSecurityEnabled);
+            Assert.True(o.IacEnabled);
+            Assert.True(o.SecretsEnabled);
+            Assert.True(o.AutoScan);
+            Assert.True(o.EnableDeltaFindings);
+            Assert.True(o.FilterCritical);
+            Assert.False(o.FilterHigh);
+            Assert.True(o.FilterMedium);
+            Assert.False(o.FilterLow);
+            Assert.True(o.OpenIssuesEnabled);
+            Assert.True(o.IgnoredIssuesEnabled);
+            Assert.Equal("https://api.eu.snyk.io", o.CustomEndpoint);
+            Assert.Equal("my-org", o.Organization);
+            Assert.True(o.IgnoreUnknownCA);
+            Assert.Equal(AuthenticationType.OAuth, o.AuthenticationMethod);
+            Assert.Equal("my-token", o.ApiToken.ToString());
+            Assert.Equal(@"C:\cli\snyk.exe", o.CliCustomPath);
+            Assert.False(o.BinariesAutoUpdate);
+            Assert.Equal("https://downloads.snyk.io", o.CliBaseDownloadURL);
+            Assert.Equal("preview", o.CliReleaseChannel);
+            Assert.Equal(500, o.RiskScoreThreshold);
+        }
+
+        [Fact]
         public void IdeExecuteCommand_SnykLogin_SavesPatMethod()
         {
             var args = JsonConvert.SerializeObject(new object[] { "pat", "https://api.snyk.io", false });

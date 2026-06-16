@@ -172,6 +172,10 @@ namespace Snyk.VisualStudio.Extension.Settings
                 // dispatch the WebView2 message, so the bridge never fires and the save
                 // never completes. DispatcherFrame.PushFrame pumps the full dispatcher
                 // including WebView2 events, which is exactly what we need here.
+                // Tradeoff: pumping the full dispatcher also lets *unrelated* VS events (tool-window
+                // visibility changes, timer callbacks, a second Apply/OK click) fire while we block.
+                // The re-entrant Apply case is handled by the saveInProgress guard above; the rest is
+                // accepted as the cost of bridging the synchronous VS apply contract to async WebView2.
                 var saveSucceeded = false;
                 var saveFailedWithException = false;
                 var frame = new DispatcherFrame();
