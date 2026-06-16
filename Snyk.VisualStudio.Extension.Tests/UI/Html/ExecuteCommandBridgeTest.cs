@@ -74,8 +74,14 @@ namespace Snyk.VisualStudio.Extension.Tests.UI.Html
         [InlineData("snyk.login", true)]
         [InlineData("snyk.logout", true)]
         [InlineData("snyk.navigateToRange", true)]
-        [InlineData("snyk.anyCommand", true)]
-        public void IsAllowedCommand_AllowsSnykPrefixedCommands(string command, bool expected)
+        [InlineData("snyk.setNodeExpanded", true)]
+        [InlineData("snyk.showScanErrorDetails", true)]
+        [InlineData("snyk.toggleTreeFilter", true)]
+        [InlineData("snyk.updateFolderConfig", true)]
+        // Not on the allowlist — a snyk.* prefix is no longer sufficient.
+        [InlineData("snyk.anyCommand", false)]
+        [InlineData("snyk.clearCache", false)]
+        public void IsAllowedCommand_AllowsOnlyAllowlistedCommands(string command, bool expected)
         {
             Assert.Equal(expected, ExecuteCommandBridge.IsAllowedCommand(command));
         }
@@ -99,11 +105,17 @@ namespace Snyk.VisualStudio.Extension.Tests.UI.Html
         }
 
         [Fact]
-        public void BuildSetAuthTokenScript_InvokesSetAuthTokenWithEscapedArgs()
+        public void BuildSetAuthTokenScript_EscapesArgsAsDoubleQuotedLiterals()
         {
-            var script = ExecuteCommandBridge.BuildSetAuthTokenScript("t'ok", @"https://snyk.io/\path");
+            // A token with characters that could break out of a JS string literal or the inline
+            // <script> (double quote, </script>) must be neutralised by the JSON-literal escaping.
+            var script = ExecuteCommandBridge.BuildSetAuthTokenScript("a\"b</script>", "https://snyk.io");
 
-            Assert.Contains(@"window.setAuthToken('t\'ok', 'https://snyk.io/\\path')", script);
+            // Args are emitted as double-quoted JSON literals, not hand-wrapped single-quoted strings.
+            Assert.Contains("window.setAuthToken(\"", script);
+            // The raw breakout sequences do not survive escaping.
+            Assert.DoesNotContain("</script>", script);
+            Assert.DoesNotContain("a\"b", script);
         }
 
         [Fact]
@@ -111,7 +123,20 @@ namespace Snyk.VisualStudio.Extension.Tests.UI.Html
         {
             var script = ExecuteCommandBridge.BuildSetAuthTokenScript("tok", null);
 
-            Assert.Contains("window.setAuthToken('tok', '')", script);
+            Assert.Contains("window.setAuthToken(\"tok\", \"\")", script);
+        }
+
+        [Fact]
+        public void ToJsStringLiteral_ProducesQuotedAndEscapedLiteral()
+        {
+            Assert.Equal("\"plain\"", ExecuteCommandBridge.ToJsStringLiteral("plain"));
+            Assert.Equal("\"\"", ExecuteCommandBridge.ToJsStringLiteral(null));
+
+            var escaped = ExecuteCommandBridge.ToJsStringLiteral("</script><x a=\"1\">");
+            Assert.StartsWith("\"", escaped);
+            Assert.EndsWith("\"", escaped);
+            Assert.DoesNotContain("</script>", escaped); // < and > are escaped
+            Assert.DoesNotContain("a=\"1\"", escaped);    // inner double quotes are escaped
         }
 
         [Fact]
@@ -128,8 +153,8 @@ namespace Snyk.VisualStudio.Extension.Tests.UI.Html
         {
             var script = ExecuteCommandBridge.BuildCommandCallbackScript("__cb_42", "{\"ok\":true}");
 
-            Assert.Contains("window.__ideCallbacks__['__cb_42']", script);
-            Assert.Contains("delete window.__ideCallbacks__['__cb_42']", script);
+            Assert.Contains("window.__ideCallbacks__[\"__cb_42\"]", script);
+            Assert.Contains("delete window.__ideCallbacks__[\"__cb_42\"]", script);
             Assert.Contains("({\"ok\":true})", script);
         }
 
@@ -142,11 +167,14 @@ namespace Snyk.VisualStudio.Extension.Tests.UI.Html
         }
 
         [Fact]
-        public void BuildCommandCallbackScript_EscapesSingleQuotesInCallbackId()
+        public void BuildCommandCallbackScript_EmitsCallbackIdAsDoubleQuotedLiteral()
         {
+            // Defence-in-depth: even a callbackId containing a quote can't break out of the
+            // bracket access — it is emitted as a double-quoted, escaped JSON literal.
             var script = ExecuteCommandBridge.BuildCommandCallbackScript("__cb_1'evil", "null");
 
-            Assert.Contains(@"'__cb_1\'evil'", script);
+            Assert.DoesNotContain("['__cb_1'evil']", script); // no single-quoted breakout form
+            Assert.Contains("window.__ideCallbacks__[\"", script);
         }
     }
 }

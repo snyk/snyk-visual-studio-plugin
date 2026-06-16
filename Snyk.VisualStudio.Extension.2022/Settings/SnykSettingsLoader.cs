@@ -42,7 +42,16 @@ namespace Snyk.VisualStudio.Extension.Settings
                     return null;
                 }
 
-                snykSettings = Json.Deserialize<SnykSettings>(File.ReadAllText(this.settingsFilePath, Encoding.UTF8));
+                var rawJson = File.ReadAllText(this.settingsFilePath, Encoding.UTF8);
+
+                // Visibility for support: the legacy per-solution store (solutionSettingsDict) was
+                // retired in IDE-1651. Its entries are now migrated into folder configs lazily, as
+                // each solution is opened (see SnykOptionsManager.MigrateLegacySolutionSettings); the
+                // section shrinks as solutions are reopened. Log when an upgrading user's settings.json
+                // still carries a non-empty legacy section so support can correlate.
+                WarnIfLegacySolutionSettingsPresent(rawJson);
+
+                snykSettings = Json.Deserialize<SnykSettings>(rawJson);
                 return snykSettings;
             }
             catch (Exception e)
@@ -50,6 +59,28 @@ namespace Snyk.VisualStudio.Extension.Settings
                 Logger.Error(e, "Settings deserialize error on load.");
 
                 return null;
+            }
+        }
+
+        private static void WarnIfLegacySolutionSettingsPresent(string rawJson)
+        {
+            try
+            {
+                var token = Newtonsoft.Json.Linq.JObject.Parse(rawJson)["solutionSettingsDict"]
+                    as Newtonsoft.Json.Linq.JObject;
+                if (token != null && token.Count > 0)
+                {
+                    Logger.Information(
+                        "settings.json contains a legacy 'solutionSettingsDict' with {Count} entr(ies). " +
+                        "These are migrated into folder configs as each solution is opened, and the section " +
+                        "is removed once empty.",
+                        token.Count);
+                }
+            }
+            catch (Exception e)
+            {
+                // Best-effort diagnostics only — never block load on a malformed legacy section.
+                Logger.Debug(e, "Could not inspect settings.json for a legacy solutionSettingsDict section.");
             }
         }
 

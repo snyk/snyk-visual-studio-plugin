@@ -147,106 +147,6 @@ namespace Snyk.VisualStudio.Extension.Language
             return result;
         }
 
-        [JsonRpcMethod(LsConstants.SnykFolderConfig)]
-        public async Task OnFolderConfig(JToken arg)
-        {
-            var folderConfigs = arg.TryParse<FolderConfigsParam>();
-            if (folderConfigs == null) return;
-
-            serviceProvider.Options.FolderConfigs = folderConfigs.FolderConfigs;
-
-            // Get current solution folder path
-            var currentSolutionPath = await serviceProvider.SolutionService.GetSolutionFolderAsync();
-            var matchingFolderConfig = FindMatchingFolderConfig(folderConfigs.FolderConfigs, currentSolutionPath);
-
-            if (matchingFolderConfig != null)
-            {
-                // Extract auto-determined organization from matching folder config
-                // Language Server is authoritative - always use its data
-                if (!string.IsNullOrEmpty(matchingFolderConfig.AutoDeterminedOrg))
-                {
-                    // Save as auto-determined organization (from Language Server)
-                    await serviceProvider.SnykOptionsManager.SaveAutoDeterminedOrgAsync(matchingFolderConfig.AutoDeterminedOrg);
-                }
-
-                // Extract preferred organization from matching folder config
-                // Language Server is authoritative - always use its data, even if empty
-                await serviceProvider.SnykOptionsManager.SavePreferredOrgAsync(matchingFolderConfig.PreferredOrg);
-
-                // Extract orgSetByUser flag from Language Server
-                await serviceProvider.SnykOptionsManager.SaveOrgSetByUserAsync(matchingFolderConfig.OrgSetByUser);
-
-                // Do NOT update global organization when receiving folder configs from Language Server.
-                // The global organization should remain as the user set it and be used as a fallback.
-                // The Language Server handles the fallback logic: project-specific → global → web account preferred.
-
-                // Extract additional parameters from matching folder config
-                // Language Server is authoritative - always use its data
-                if (matchingFolderConfig.AdditionalParameters != null && matchingFolderConfig.AdditionalParameters.Count > 0)
-                {
-                    var additionalParams = string.Join(" ", matchingFolderConfig.AdditionalParameters);
-                    await serviceProvider.SnykOptionsManager.SaveAdditionalOptionsAsync(additionalParams);
-                }
-            }
-
-            serviceProvider.SnykOptionsManager.Save(serviceProvider.Options, false);
-
-            // Trigger first scan after folder config is received.
-            //
-            // AutoScan vs InternalAutoScan vs ScanningMode:
-            // - AutoScan: Persisted user preference ("I want auto-scanning")
-            // - InternalAutoScan: Runtime flag, starts false each session to prevent scanning until we are actually ready.
-            //     This controls ScanningMode, the string sent to LS ("auto"/"manual").
-            //
-            // We always start with InternalAutoScan=false and therefore ScanningMode="manual" during LS initialization to prevent the LS from auto-scanning before we are fully ready.
-            // Now folder configs have arrived, we can set InternalAutoScan=AutoScan and trigger the first scan if necessary.
-            if (serviceProvider.Options.AutoScan)
-            {
-                var isFolderTrusted = await this.serviceProvider.TasksService.IsFolderTrustedAsync();
-                await TaskScheduler.Default;
-                if (!isFolderTrusted)
-                    return;
-
-                if (!serviceProvider.Options.InternalAutoScan)
-                {
-                    // AutoScan is enabled but we haven't triggered the first scan yet (InternalAutoScan is still false).
-                    // So set InternalAutoScan=true, update LS with the true ScanningMode ("auto") and trigger the first scan.
-                    serviceProvider.Options.InternalAutoScan = true;
-                    await serviceProvider.LanguageClientManager.DidChangeConfigurationAsync(SnykVSPackage.Instance.DisposalToken);
-                    serviceProvider.TasksService.ScanAsync().FireAndForget();
-                }
-            }
-        }
-
-        private FolderConfig FindMatchingFolderConfig(List<FolderConfig> folderConfigs, string currentSolutionPath)
-        {
-            if (folderConfigs == null || string.IsNullOrEmpty(currentSolutionPath)) return null;
-
-            foreach (var folderConfig in folderConfigs)
-            {
-                if (string.IsNullOrEmpty(folderConfig.FolderPath)) continue;
-
-                // Check for exact match
-                if (folderConfig.FolderPath.Equals(currentSolutionPath, StringComparison.OrdinalIgnoreCase))
-                {
-                    return folderConfig;
-                }
-
-                // Check if current path is within the config path (subfolder)
-                // Note: This is a defensive check. In normal operation, the Language Server sends folder configs
-                // that match workspace folders exactly, so exact matches should be sufficient. This subfolder
-                // check handles edge cases where paths might not align perfectly (e.g., path normalization differences).
-                var trimmedConfigPath = folderConfig.FolderPath.TrimEnd('\\', '/');
-                if (currentSolutionPath.StartsWith(trimmedConfigPath + "\\", StringComparison.OrdinalIgnoreCase) ||
-                    currentSolutionPath.StartsWith(trimmedConfigPath + "/", StringComparison.OrdinalIgnoreCase))
-                {
-                    return folderConfig;
-                }
-            }
-
-            return null;
-        }
-
         [JsonRpcMethod(LsConstants.SnykScanSummary)]
         public async Task OnScanSummary(JToken arg)
         {
@@ -265,7 +165,7 @@ namespace Snyk.VisualStudio.Extension.Language
         {
             if (arg?["token"] == null)
             {
-                await serviceProvider.GeneralOptionsDialogPage.HandleFailedAuthentication("Authentication failed");
+                await serviceProvider.AuthenticationFlowService.HandleFailedAuthenticationAsync("Authentication failed");
                 return;
             }
 
@@ -274,12 +174,24 @@ namespace Snyk.VisualStudio.Extension.Language
 
             var oldToken = serviceProvider.Options.ApiToken?.ToString() ?? string.Empty;
 
-            // Always notify the HTML settings window so the token field updates immediately.
-            HtmlSettingsWindow.Instance?.UpdateAuthToken(token, apiUrl);
+            // Queue the token for the HTML settings page so the token field updates after an OAuth
+            // round-trip. Queuing (rather than a direct push to a live instance) guarantees delivery
+            // even when no settings page is open yet or its HTML hasn't finished loading — the next
+            // control to become page-ready flushes it.
+            HtmlSettingsControl.QueueAuthToken(token, apiUrl);
 
+            // Validate before persisting: only accept an absolute http/https URL so a malformed or
+            // unexpected apiUrl can't repoint the API host. Same guard as the JS snyk.login path.
             if (!string.IsNullOrEmpty(apiUrl))
             {
-                serviceProvider.Options.CustomEndpoint = apiUrl;
+                if (UriExtensions.IsValidWebUrl(apiUrl))
+                {
+                    serviceProvider.Options.CustomEndpoint = apiUrl;
+                }
+                else
+                {
+                    Logger.Warning("Ignoring authenticated apiUrl that is not an absolute http/https URL");
+                }
             }
 
             serviceProvider.Options.ApiToken = new AuthenticationToken(serviceProvider.Options.AuthenticationMethod, token);
@@ -293,7 +205,7 @@ namespace Snyk.VisualStudio.Extension.Language
             if (!isNewLogin)
                 return;
 
-            await serviceProvider.GeneralOptionsDialogPage.HandleAuthenticationSuccess(token, apiUrl);
+            await serviceProvider.AuthenticationFlowService.HandleAuthenticationSuccessAsync(token, apiUrl);
 
             if (!serviceProvider.Options.ApiToken.IsValid())
                 return;
@@ -313,10 +225,31 @@ namespace Snyk.VisualStudio.Extension.Language
 
             var options = serviceProvider.Options;
             GlobalSettingsApplier.Apply(param.Settings, options);
+            options.FolderConfigs = FolderConfigApplier.Apply(options.FolderConfigs, param.FolderConfigs);
             // Persist without re-triggering DidChangeConfigurationAsync (avoids feedback loop).
             this.serviceProvider.SnykOptionsManager.Save(options, false);
-            Logger.Debug("$/snyk.configuration applied: {KeyCount} global setting(s), {FolderCount} folder config(s)",
+            Logger.Debug("$/snyk.configuration applied: {KeyCount} global setting(s), {FolderCount} folder config(s) stored in-memory",
                 param.Settings?.Count ?? 0, param.FolderConfigs?.Count ?? 0);
+
+            // Trigger first scan now that folder configs have arrived.
+            // AutoScan vs InternalAutoScan vs ScanningMode:
+            // - AutoScan: persisted user preference
+            // - InternalAutoScan: runtime gate; false until we are ready to scan (avoids scanning before LS is initialized)
+            // $/snyk.configuration may arrive multiple times; the InternalAutoScan gate ensures we scan exactly once.
+            if (options.AutoScan)
+            {
+                var isFolderTrusted = await this.serviceProvider.TasksService.IsFolderTrustedAsync();
+                await TaskScheduler.Default;
+                if (!isFolderTrusted)
+                    return;
+
+                if (!options.InternalAutoScan)
+                {
+                    options.InternalAutoScan = true;
+                    await serviceProvider.LanguageClientManager.DidChangeConfigurationAsync(SnykVSPackage.Instance.DisposalToken);
+                    serviceProvider.TasksService.ScanAsync().FireAndForget();
+                }
+            }
         }
 
         [JsonRpcMethod(LsConstants.SnykAddTrustedFolders)]

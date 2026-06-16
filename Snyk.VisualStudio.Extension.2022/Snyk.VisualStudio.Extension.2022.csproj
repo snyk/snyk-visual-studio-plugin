@@ -4,14 +4,16 @@
     <MinimumVisualStudioVersion>16.0</MinimumVisualStudioVersion>
     <VSToolsPath Condition="'$(VSToolsPath)' == ''">$(MSBuildExtensionsPath32)\Microsoft\VisualStudio\v$(VisualStudioVersion)</VSToolsPath>
     <TargetFrameworkProfile />
-    <!-- Force the Community.VisualStudio.Toolkit.17 NewtonsoftJsonVersionCheck.targets
-         to use its modern [MSBuild]::VersionLessThanOrEquals() path. The toolkit's
-         MSBuildCapabilities.props is supposed to set this for MSBuild >= 16.5 but the
-         auto-detection misfires in some build contexts, sending the targets file down
-         a fallback path that does a naive numeric compare on "13.0.1" and fails the
-         build. VS 2022 ships MSBuild 17.x where the property functions definitely
-         exist, so forcing this is safe. -->
+    <!-- Harden the Community.VisualStudio.Toolkit.17 NewtonsoftJsonVersionCheck.targets, whose
+         companion props (MSBuildCapabilities.props sets CVST_VersionPropertyFunctionsExist,
+         Constants.props sets CVST_NewtonsoftJsonMaxVersion=13.0.1) don't always get imported —
+         e.g. an incomplete restore after a branch switch. We force the modern
+         [MSBuild]::VersionLessThanOrEquals() path AND supply the max-version constant it compares
+         against. Without the latter, the forced modern path evaluates
+         VersionLessThanOrEquals('13.0.1', '') and fails the build outright. Both values match the
+         toolkit's own defaults, so they're harmless when its props DO import (same value re-set). -->
     <CVST_VersionPropertyFunctionsExist>true</CVST_VersionPropertyFunctionsExist>
+    <CVST_NewtonsoftJsonMaxVersion>13.0.1</CVST_NewtonsoftJsonMaxVersion>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Debug|x86'">
     <LangVersion>latest</LangVersion>
@@ -73,8 +75,12 @@
     <Compile Include="Analytics\AbstractAnalyticsEvent.cs" />
     <Compile Include="Analytics\AnalyticsEvent.cs" />
     <Compile Include="Analytics\AnalyticsSender.cs" />
+    <Compile Include="AuthDialogState.cs" />
+    <Compile Include="Authentication\AuthenticationFlowService.cs" />
+    <Compile Include="Authentication\IAuthDialog.cs" />
     <Compile Include="Authentication\AuthenticationToken.cs" />
     <Compile Include="Authentication\AuthenticationType.cs" />
+    <Compile Include="Authentication\IAuthenticationFlowService.cs" />
     <Compile Include="Authentication\OAuthToken.cs" />
     <Compile Include="Download\Sha256.cs" />
     <Compile Include="Extension\CollectionExtensions.cs" />
@@ -95,6 +101,7 @@
     <Compile Include="Language\V25\InitializationOptionsV25.cs" />
     <Compile Include="Language\V25\LsSettingsV25.cs" />
     <Compile Include="Language\V25\GlobalSettingsApplier.cs" />
+    <Compile Include="Language\V25\FolderConfigApplier.cs" />
     <Compile Include="Language\LsAnalysisResult.cs" />
     <Compile Include="Language\SatisfyImportExtension.cs" />
     <Compile Include="Language\SnykContentDefinition.cs" />
@@ -163,82 +170,23 @@
     <Compile Include="Service\VsCodeService.cs" />
     <Compile Include="Service\WorkspaceTrustService.cs" />
     <Compile Include="Settings\ErrorProviderExtensions.cs" />
-    <Compile Include="Settings\DebugHtmlSettingsWindow.xaml.cs" />
-    <Compile Include="Settings\HtmlSettingsWindow.xaml.cs">
-      <DependentUpon>HtmlSettingsWindow.xaml</DependentUpon>
+    <Compile Include="Settings\HtmlSettingsControl.xaml.cs">
+      <DependentUpon>HtmlSettingsControl.xaml</DependentUpon>
     </Compile>
-    <Compile Include="Settings\BaseSnykUserControl.cs">
-      <SubType>UserControl</SubType>
+    <Compile Include="Settings\HtmlSettingsDialogPage.cs">
+      <SubType>Component</SubType>
     </Compile>
     <Compile Include="Settings\IPersistableOption.cs" />
-    <Compile Include="Settings\ISnykCliOptionsDialogPage.cs" />
-    <Compile Include="Settings\ISnykExperimentalDialogPage.cs" />
-    <Compile Include="Settings\ISnykGeneralOptionsDialogPage.cs" />
     <Compile Include="Settings\ISnykOptions.cs" />
     <Compile Include="Settings\ISnykOptionsManager.cs" />
-    <Compile Include="Settings\ISnykScanOptionsDialogPage.cs" />
-    <Compile Include="Settings\ISnykSolutionOptionsDialogPage.cs" />
-    <Compile Include="Settings\ISnykUserExperienceDialogPage.cs" />
-    <Compile Include="Settings\SnykCliOptionsDialogPage.cs">
-      <SubType>Component</SubType>
-    </Compile>
-    <Compile Include="Settings\SnykCliOptionsUserControl.cs">
-      <SubType>UserControl</SubType>
-    </Compile>
-    <Compile Include="Settings\SnykCliOptionsUserControl.Designer.cs">
-      <DependentUpon>SnykCliOptionsUserControl.cs</DependentUpon>
-    </Compile>
-    <Compile Include="Settings\SnykExperimentalDialogPage.cs">
-      <SubType>Component</SubType>
-    </Compile>
-    <Compile Include="Settings\SnykExperimentalUserControl.cs">
-      <SubType>UserControl</SubType>
-    </Compile>
-    <Compile Include="Settings\SnykExperimentalUserControl.Designer.cs">
-      <DependentUpon>SnykExperimentalUserControl.cs</DependentUpon>
-    </Compile>
-    <Compile Include="Settings\SnykGeneralOptionsDialogPage.cs">
-      <SubType>Component</SubType>
-    </Compile>
-    <Compile Include="Settings\SnykGeneralSettingsUserControl.cs">
-      <SubType>UserControl</SubType>
-    </Compile>
-    <Compile Include="Settings\SnykGeneralSettingsUserControl.Designer.cs">
-      <DependentUpon>SnykGeneralSettingsUserControl.cs</DependentUpon>
-    </Compile>
+    <Compile Include="Settings\LegacySolutionSettings.cs" />
+    <Compile Include="Settings\LegacySolutionSettingsMigrator.cs" />
+    <Compile Include="Settings\PendingAuthTokenSlot.cs" />
     <Compile Include="Settings\SnykOptions.cs" />
     <Compile Include="Settings\SnykOptionsManager.cs" />
-    <Compile Include="Settings\SnykScanOptionsDialogPage.cs">
-      <SubType>Component</SubType>
-    </Compile>
-    <Compile Include="Settings\SnykScanOptionsUserControl.cs">
-      <SubType>UserControl</SubType>
-    </Compile>
-    <Compile Include="Settings\SnykScanOptionsUserControl.Designer.cs">
-      <DependentUpon>SnykScanOptionsUserControl.cs</DependentUpon>
-    </Compile>
     <Compile Include="Settings\SnykSettings.cs" />
     <Compile Include="Settings\SnykSettingsChangedEventArgs.cs" />
     <Compile Include="Settings\SnykSettingsLoader.cs" />
-    <Compile Include="Settings\SnykSolutionOptionsDialogPage.cs">
-      <SubType>Component</SubType>
-    </Compile>
-    <Compile Include="Settings\SnykSolutionOptionsUserControl.cs">
-      <SubType>UserControl</SubType>
-    </Compile>
-    <Compile Include="Settings\SnykSolutionOptionsUserControl.Designer.cs">
-      <DependentUpon>SnykSolutionOptionsUserControl.cs</DependentUpon>
-    </Compile>
-    <Compile Include="Settings\SnykSolutionSettings.cs" />
-    <Compile Include="Settings\SnykUserExperienceDialogPage.cs">
-      <SubType>Component</SubType>
-    </Compile>
-    <Compile Include="Settings\SnykUserExperienceUserControl.cs">
-      <SubType>UserControl</SubType>
-    </Compile>
-    <Compile Include="Settings\SnykUserExperienceUserControl.Designer.cs">
-      <DependentUpon>SnykUserExperienceUserControl.cs</DependentUpon>
-    </Compile>
     <Compile Include="SnykGuids.cs" />
     <Compile Include="SnykIcons.Designer.cs">
       <DependentUpon>SnykIcons.resx</DependentUpon>
@@ -267,6 +215,7 @@
     <Compile Include="UI\Html\ColorExtension.cs" />
     <Compile Include="UI\Html\ExecuteCommandBridge.cs" />
     <Compile Include="UI\Html\HtmlSettingsScriptingBridge.cs" />
+    <Compile Include="UI\Html\IdeConfigContract.cs" />
     <Compile Include="UI\Html\IdeConfigData.cs" />
     <Compile Include="UI\Html\HtmlResourceLoader.cs" />
     <Compile Include="UI\Html\IacHtmlProvider.cs" />
@@ -277,6 +226,7 @@
     <Compile Include="UI\Html\CodeHtmlProvider.cs" />
     <Compile Include="UI\Html\HtmlProviderFactory.cs" />
     <Compile Include="UI\Html\WebView2BridgeBindings.cs" />
+    <Compile Include="UI\Html\WebView2EnvironmentCache.cs" />
     <Compile Include="UI\Html\WebView2Host.cs" />
     <Compile Include="UI\Html\WebView2MessageDispatcher.cs" />
     <Compile Include="UI\Html\WebView2NavigationPreparer.cs" />
@@ -428,7 +378,7 @@
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
     </Page>
-    <Page Include="Settings\HtmlSettingsWindow.xaml">
+    <Page Include="Settings\HtmlSettingsControl.xaml">
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
     </Page>
@@ -657,25 +607,6 @@
     <EmbeddedResource Include="Resources\settings-fallback.html" />
   </ItemGroup>
   <ItemGroup>
-    <EmbeddedResource Include="Settings\SnykCliOptionsUserControl.resx">
-      <DependentUpon>SnykCliOptionsUserControl.cs</DependentUpon>
-    </EmbeddedResource>
-    <EmbeddedResource Include="Settings\SnykExperimentalUserControl.resx">
-      <DependentUpon>SnykExperimentalUserControl.cs</DependentUpon>
-    </EmbeddedResource>
-    <EmbeddedResource Include="Settings\SnykGeneralSettingsUserControl.resx">
-      <DependentUpon>SnykGeneralSettingsUserControl.cs</DependentUpon>
-      <SubType>Designer</SubType>
-    </EmbeddedResource>
-    <EmbeddedResource Include="Settings\SnykScanOptionsUserControl.resx">
-      <DependentUpon>SnykScanOptionsUserControl.cs</DependentUpon>
-    </EmbeddedResource>
-    <EmbeddedResource Include="Settings\SnykSolutionOptionsUserControl.resx">
-      <DependentUpon>SnykSolutionOptionsUserControl.cs</DependentUpon>
-    </EmbeddedResource>
-    <EmbeddedResource Include="Settings\SnykUserExperienceUserControl.resx">
-      <DependentUpon>SnykUserExperienceUserControl.cs</DependentUpon>
-    </EmbeddedResource>
     <EmbeddedResource Include="SnykIcons.resx">
       <LastGenOutput>SnykIcons.Designer.cs</LastGenOutput>
       <Generator>ResXFileCodeGenerator</Generator>

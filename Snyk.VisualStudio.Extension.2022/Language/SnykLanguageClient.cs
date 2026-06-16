@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.ComponentModel.Composition;
 using System.Diagnostics;
 using System.Threading;
@@ -80,7 +81,7 @@ namespace Snyk.VisualStudio.Extension.Language
             }
             var options = serviceProvider.Options;
             // ReSharper disable once RedundantAssignment
-            var lsDebugLevel = await GetLsDebugLevelAsync(serviceProvider.SnykOptionsManager);
+            var lsDebugLevel = await GetLsDebugLevelAsync();
             var info = new ProcessStartInfo
             {
                 FileName = SnykCli.GetCliFilePath(options.CliCustomPath),
@@ -134,6 +135,8 @@ namespace Snyk.VisualStudio.Extension.Language
                     {
                         CustomMessageTarget = new SnykLanguageClientCustomTarget(SnykVSPackage.ServiceProvider);
                     }
+
+                    await MigrateLegacySolutionSettingsAsync();
 
                     Logger.Information("Starting Language Server");
                     await StartAsync.InvokeAsync(this, EventArgs.Empty);
@@ -218,16 +221,43 @@ namespace Snyk.VisualStudio.Extension.Language
             return Task.CompletedTask;
         }
 
-        private async Task<string> GetLsDebugLevelAsync(ISnykOptionsManager optionsManger)
+        private Task<string> GetLsDebugLevelAsync()
         {
-            var logLevel = "info";
-            var additionalCliParameters = await optionsManger.GetAdditionalOptionsAsync();
-            if (!string.IsNullOrEmpty(additionalCliParameters) && (additionalCliParameters.Contains("-d") || additionalCliParameters.Contains("--debug")))
-            {
-                logLevel = "debug";
-            }
+            var serviceProvider = SnykVSPackage.ServiceProvider;
+            var folderConfigs = serviceProvider?.Options?.FolderConfigs;
+            if (folderConfigs == null)
+                return Task.FromResult("info");
 
-            return logLevel;
+            // Enable debug logging for the whole LS process if -d/--debug is set on ANY folder's
+            // additional parameters, not just the first — workspaces can have multiple folders.
+            var anyDebug = folderConfigs
+                .Where(fc => fc?.AdditionalParameters != null)
+                .SelectMany(fc => fc.AdditionalParameters)
+                .Any(p => p == "-d" || p == "--debug");
+
+            return Task.FromResult(anyDebug ? "debug" : "info");
+        }
+
+        // One-time, best-effort migration of legacy per-solution settings (IDE-1651) into the folder
+        // config, run just before the LS starts so the migrated values reach it via the initialization
+        // options. Idempotent — once an entry is migrated it is removed, so later starts are no-ops.
+        private static async Task MigrateLegacySolutionSettingsAsync()
+        {
+            try
+            {
+                var serviceProvider = SnykVSPackage.ServiceProvider;
+                var optionsManager = serviceProvider?.SnykOptionsManager;
+                var solutionService = serviceProvider?.SolutionService;
+                if (optionsManager == null || solutionService == null)
+                    return;
+
+                var solutionFolder = await solutionService.GetSolutionFolderAsync();
+                optionsManager.MigrateLegacySolutionSettings(solutionFolder);
+            }
+            catch (Exception ex)
+            {
+                Logger.Warning(ex, "Legacy per-solution settings migration failed; continuing LS startup.");
+            }
         }
 
         private void Rpc_Disconnected(object sender, JsonRpcDisconnectedEventArgs e)

@@ -2,17 +2,18 @@
 // ABOUTME: It handles serialization/deserialization of settings to file and provides solution-specific configuration management
 using Snyk.VisualStudio.Extension.Authentication;
 using Snyk.VisualStudio.Extension.Service;
+using System;
 using System.Threading.Tasks;
 using Serilog;
-
 namespace Snyk.VisualStudio.Extension.Settings
 {
     public class SnykOptionsManager : ISnykOptionsManager
     {
+        private static readonly ILogger Logger = LogManager.ForContext<SnykOptionsManager>();
+
         private readonly ISnykServiceProvider serviceProvider;
         private readonly SnykSettingsLoader settingsLoader;
         private SnykSettings snykSettings;
-        private static readonly ILogger Logger = LogManager.ForContext<SnykOptionsManager>();
 
         public SnykOptionsManager(string settingsFilePath, ISnykServiceProvider serviceProvider)
         {
@@ -34,6 +35,57 @@ namespace Snyk.VisualStudio.Extension.Settings
         public void SaveSettingsToFile()
         {
             this.settingsLoader.Save(snykSettings);
+        }
+
+        /// <summary>
+        /// One-time migration of legacy per-solution settings (IDE-1651). If the just-opened solution
+        /// has an entry in the retained-but-dead <c>solutionSettingsDict</c>, fold it into the folder
+        /// config for that path so it reaches the Language Server via the initialization options, then
+        /// drop the legacy entry (and the whole section once empty). Best-effort and idempotent: a
+        /// missing dict, a missing entry, or any failure is a no-op so it can never block LS startup.
+        /// </summary>
+        /// <param name="solutionFolderPath">The open solution folder (as returned by
+        /// <c>ISolutionService.GetSolutionFolderAsync</c>).</param>
+        /// <returns><c>true</c> if an entry was migrated.</returns>
+        public bool MigrateLegacySolutionSettings(string solutionFolderPath)
+        {
+            try
+            {
+                if (string.IsNullOrEmpty(solutionFolderPath))
+                    return false;
+
+                var legacy = snykSettings?.SolutionSettingsDict;
+                if (legacy == null || legacy.Count == 0)
+                    return false;
+
+                var hash = LegacySolutionSettingsMigrator.ComputeFolderHash(solutionFolderPath);
+                if (!legacy.TryGetValue(hash, out var entry) || entry == null)
+                    return false;
+
+                var options = serviceProvider.Options;
+                var migrated = LegacySolutionSettingsMigrator.ToFolderConfig(entry, solutionFolderPath);
+                options.FolderConfigs = LegacySolutionSettingsMigrator.Merge(options.FolderConfigs, migrated);
+
+                legacy.Remove(hash);
+                if (legacy.Count == 0)
+                    snykSettings.SolutionSettingsDict = null;
+
+                // Persist the seeded folder config plus the shrunken legacy section. No settings-changed
+                // event: the caller is about to (re)start the LS, which receives these via the
+                // initialization options, and Save leaves SolutionSettingsDict untouched so the shrink
+                // is what gets written.
+                Save(options, triggerSettingsChangedEvent: false);
+
+                Logger.Information(
+                    "Migrated legacy per-solution settings for '{Folder}' into a folder config.",
+                    solutionFolderPath);
+                return true;
+            }
+            catch (Exception e)
+            {
+                Logger.Warning(e, "Failed to migrate legacy per-solution settings for '{Folder}'.", solutionFolderPath);
+                return false;
+            }
         }
 
         public ISnykOptions Load()
@@ -123,120 +175,12 @@ namespace Snyk.VisualStudio.Extension.Settings
         }
 
         /// <summary>
-        /// Get CLI additional options string.
-        /// </summary>
-        /// <returns>string.</returns>
-        public async Task<string> GetAdditionalOptionsAsync()
-        {
-            Logger.Information("Enter GetAdditionalOptions method");
-
-            var solutionPathHash = await this.GetSolutionPathHashAsync();
-
-            if (snykSettings == null || !snykSettings.SolutionSettingsDict.ContainsKey(solutionPathHash))
-            {
-                return string.Empty;
-            }
-
-            return snykSettings.SolutionSettingsDict[solutionPathHash].AdditionalOptions;
-        }
-
-        /// <summary>
-        /// Save additional options string.
-        /// </summary>
-        /// <param name="additionalOptions">CLI options string.</param>
-        /// <returns>A <see cref="Task"/> representing the asynchronous operation.</returns>
-        public async Task SaveAdditionalOptionsAsync(string additionalOptions)
-        {
-            // TODO: Move to SnykOptionsManager
-            Logger.Information("Enter SaveAdditionalOptions method");
-
-            var solutionPathHash = await this.GetSolutionPathHashAsync();
-
-            SnykSolutionSettings projectSettings;
-
-            if (snykSettings.SolutionSettingsDict.ContainsKey(solutionPathHash))
-            {
-                projectSettings = snykSettings.SolutionSettingsDict[solutionPathHash];
-            }
-            else
-            {
-                projectSettings = new SnykSolutionSettings();
-            }
-
-            projectSettings.AdditionalOptions = additionalOptions;
-
-            snykSettings.SolutionSettingsDict[solutionPathHash] = projectSettings;
-
-            this.SaveSettingsToFile();
-
-            Logger.Information("Leave SaveAdditionalOptions method");
-        }
-
-        /// <summary>
-        /// Get additional environment variables string.
-        /// </summary>
-        /// <returns>string.</returns>
-        public async Task<string> GetAdditionalEnvAsync()
-        {
-            Logger.Information("Enter GetAdditionalEnv method");
-
-            var solutionPathHash = await this.GetSolutionPathHashAsync();
-
-            if (snykSettings == null || !snykSettings.SolutionSettingsDict.ContainsKey(solutionPathHash))
-            {
-                return string.Empty;
-            }
-
-            return snykSettings.SolutionSettingsDict[solutionPathHash].AdditionalEnv;
-        }
-
-        /// <summary>
-        /// Save additional environment variables string.
-        /// </summary>
-        /// <param name="additionalEnv">Environment variables string.</param>
-        /// <returns>A <see cref="Task"/> representing the asynchronous operation.</returns>
-        public async Task SaveAdditionalEnvAsync(string additionalEnv)
-        {
-            Logger.Information("Enter SaveAdditionalEnv method");
-
-            var solutionPathHash = await this.GetSolutionPathHashAsync();
-
-            SnykSolutionSettings projectSettings;
-
-            if (snykSettings.SolutionSettingsDict.ContainsKey(solutionPathHash))
-            {
-                projectSettings = snykSettings.SolutionSettingsDict[solutionPathHash];
-            }
-            else
-            {
-                projectSettings = new SnykSolutionSettings();
-            }
-
-            projectSettings.AdditionalEnv = additionalEnv;
-
-            snykSettings.SolutionSettingsDict[solutionPathHash] = projectSettings;
-
-            this.SaveSettingsToFile();
-
-            Logger.Information("Leave SaveAdditionalEnv method");
-        }
-
-        /// <summary>
         /// Get organization string.
         /// </summary>
         /// <returns>string.</returns>
-        public async Task<string> GetOrganizationAsync()
+        public Task<string> GetOrganizationAsync()
         {
-            var solutionPathHash = await this.GetSolutionPathHashAsync();
-
-            if (snykSettings == null || !snykSettings.SolutionSettingsDict.ContainsKey(solutionPathHash))
-            {
-                Logger.Information("Leave GetOrganization method");
-                return string.Empty;
-            }
-
-            var organization = snykSettings.SolutionSettingsDict[solutionPathHash].Organization;
-            return organization;
+            return Task.FromResult(snykSettings?.Organization ?? string.Empty);
         }
 
         /// <summary>
@@ -246,198 +190,10 @@ namespace Snyk.VisualStudio.Extension.Settings
         /// <returns>A <see cref="Task"/> representing the asynchronous operation.</returns>
         public Task SaveOrganizationAsync(string organization)
         {
-            // Save to global organization setting (not solution-specific)
-            // This matches Eclipse behavior where global org is always editable and used as fallback
             snykSettings.Organization = organization;
             this.SaveSettingsToFile();
-            
-            // Update the options object to reflect the change
             serviceProvider.Options.Organization = organization;
             return Task.CompletedTask;
         }
-
-
-        /// <summary>           
-        /// Get auto-determined organization.
-        /// </summary>
-        /// <returns>Auto-determined organization string.</returns>
-        public async Task<string> GetAutoDeterminedOrgAsync()
-        {
-            var solutionPathHash = await this.GetSolutionPathHashAsync();
-
-            if (snykSettings == null || !snykSettings.SolutionSettingsDict.ContainsKey(solutionPathHash))
-            {
-                return string.Empty;
-            }
-
-            var autoDeterminedOrg = snykSettings.SolutionSettingsDict[solutionPathHash].AutoDeterminedOrg;
-            return autoDeterminedOrg ?? string.Empty;
-        }
-
-        /// <summary>
-        /// Save auto-determined organization.
-        /// </summary>
-        /// <param name="autoDeterminedOrg">Auto-determined organization string.</param>
-        /// <returns>A <see cref="Task"/> representing the asynchronous operation.</returns>
-        public async Task SaveAutoDeterminedOrgAsync(string autoDeterminedOrg)
-        {
-            var solutionPathHash = await this.GetSolutionPathHashAsync();
-
-            SnykSolutionSettings projectSettings;
-
-            if (snykSettings.SolutionSettingsDict.ContainsKey(solutionPathHash))
-            {
-                projectSettings = snykSettings.SolutionSettingsDict[solutionPathHash];
-            }
-            else
-            {
-                projectSettings = new SnykSolutionSettings();
-            }
-
-            projectSettings.AutoDeterminedOrg = autoDeterminedOrg;
-
-            snykSettings.SolutionSettingsDict[solutionPathHash] = projectSettings;
-
-            this.SaveSettingsToFile();
-        }
-
-        /// <summary>
-        /// Get preferred organization.
-        /// </summary>
-        /// <returns>Preferred organization string.</returns>
-        public async Task<string> GetPreferredOrgAsync()
-        {
-            var solutionPathHash = await this.GetSolutionPathHashAsync();
-
-            if (snykSettings == null || !snykSettings.SolutionSettingsDict.ContainsKey(solutionPathHash))
-            {
-                return string.Empty;
-            }
-
-            var preferredOrg = snykSettings.SolutionSettingsDict[solutionPathHash].PreferredOrg;
-            return preferredOrg ?? string.Empty;
-        }
-
-        /// <summary>
-        /// Save preferred organization.
-        /// </summary>
-        /// <param name="preferredOrg">Preferred organization string.</param>
-        /// <returns>A <see cref="Task"/> representing the asynchronous operation.</returns>
-        public async Task SavePreferredOrgAsync(string preferredOrg)
-        {
-            var solutionPathHash = await this.GetSolutionPathHashAsync();
-
-            SnykSolutionSettings projectSettings;
-
-            if (snykSettings.SolutionSettingsDict.ContainsKey(solutionPathHash))
-            {
-                projectSettings = snykSettings.SolutionSettingsDict[solutionPathHash];
-            }
-            else
-            {
-                projectSettings = new SnykSolutionSettings();
-            }
-
-            projectSettings.PreferredOrg = preferredOrg;
-
-            snykSettings.SolutionSettingsDict[solutionPathHash] = projectSettings;
-
-            this.SaveSettingsToFile();
-        }
-
-        /// <summary>
-        /// Get organization set by user flag.
-        /// </summary>
-        /// <returns>Organization set by user flag.</returns>
-        public async Task<bool> GetOrgSetByUserAsync()
-        {
-            var solutionPathHash = await this.GetSolutionPathHashAsync();
-
-            if (snykSettings == null || !snykSettings.SolutionSettingsDict.ContainsKey(solutionPathHash))
-            {
-                return false; // Default to false (auto mode)
-            }
-
-            var orgSetByUser = snykSettings.SolutionSettingsDict[solutionPathHash].OrgSetByUser;
-            return orgSetByUser;
-        }
-
-        /// <summary>
-        /// Save organization set by user flag.
-        /// </summary>
-        /// <param name="orgSetByUser">Organization set by user flag.</param>
-        /// <returns>A <see cref="Task"/> representing the asynchronous operation.</returns>
-        public async Task SaveOrgSetByUserAsync(bool orgSetByUser)
-        {
-            var solutionPathHash = await this.GetSolutionPathHashAsync();
-
-            SnykSolutionSettings projectSettings;
-
-            if (snykSettings.SolutionSettingsDict.ContainsKey(solutionPathHash))
-            {
-                projectSettings = snykSettings.SolutionSettingsDict[solutionPathHash];
-            }
-            else
-            {
-                projectSettings = new SnykSolutionSettings();
-            }
-
-            projectSettings.OrgSetByUser = orgSetByUser;
-
-            snykSettings.SolutionSettingsDict[solutionPathHash] = projectSettings;
-
-            this.SaveSettingsToFile();
-        }
-
-        /// <summary>
-        /// Get effective organization.
-        /// </summary>
-        /// <returns>Effective organization string.</returns>
-        public async Task<string> GetEffectiveOrganizationAsync()
-        {
-            var solutionPathHash = await this.GetSolutionPathHashAsync();
-
-            // Fallback hierarchy:
-            // 1. Folder-specific values (highest priority)
-            //    - autoDeterminedOrg when auto-detect is enabled
-            //    - preferredOrg when manual mode is enabled
-            // 2. Global organization setting (fallback)
-            // 3. Empty string (final fallback)
-
-            if (snykSettings != null && snykSettings.SolutionSettingsDict.ContainsKey(solutionPathHash))
-            {
-                var projectSettings = snykSettings.SolutionSettingsDict[solutionPathHash];
-                
-                // Check if organization was set by user (manual mode)
-                if (projectSettings.OrgSetByUser)
-                {
-                    // Use preferredOrg when manual mode is enabled
-                    if (!string.IsNullOrEmpty(projectSettings.PreferredOrg))
-                    {
-                        return projectSettings.PreferredOrg;
-                    }
-                }
-                else
-                {
-                    // Use autoDeterminedOrg when auto-detect is enabled
-                    if (!string.IsNullOrEmpty(projectSettings.AutoDeterminedOrg))
-                    {
-                        return projectSettings.AutoDeterminedOrg;
-                    }
-                }
-            }
-
-            // Fallback to global organization setting
-            if (!string.IsNullOrEmpty(snykSettings?.Organization))
-            {
-                return snykSettings.Organization;
-            }
-
-            // Final fallback to empty string
-            return string.Empty;
-        }
-
-        private async Task<int> GetSolutionPathHashAsync() =>
-            (await this.serviceProvider.SolutionService.GetSolutionFolderAsync()).ToLower().GetHashCode();
     }
 }

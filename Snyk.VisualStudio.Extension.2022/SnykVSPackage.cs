@@ -17,6 +17,8 @@ using Snyk.VisualStudio.Extension.Commands;
 using Snyk.VisualStudio.Extension.Language;
 using Snyk.VisualStudio.Extension.Service;
 using Snyk.VisualStudio.Extension.Settings;
+using Snyk.VisualStudio.Extension.UI.Html;
+using Snyk.VisualStudio.Extension.UI.Notifications;
 using Snyk.VisualStudio.Extension.UI.Toolwindow;
 using Task = System.Threading.Tasks.Task;
 
@@ -50,12 +52,7 @@ namespace Snyk.VisualStudio.Extension
     [ProvideService(typeof(ISnykService), IsAsyncQueryable = true)]
     [ProvideMenuResource("Menus.ctmenu", 1)]
     [ProvideToolWindow(typeof(SnykToolWindow), Style = VsDockStyle.Tabbed)]
-    [ProvideOptionPage(typeof(SnykGeneralOptionsDialogPage), "Snyk", "Account", 1000, 1001, true)]
-    [ProvideOptionPage(typeof(SnykScanOptionsDialogPage), "Snyk", "Scan Configuration", 1000, 1002, true)]
-    [ProvideOptionPage(typeof(SnykSolutionOptionsDialogPage), "Snyk", "Solution settings", 1000, 1003, true)]
-    [ProvideOptionPage(typeof(SnykCliOptionsDialogPage), "Snyk", "CLI settings", 1000, 1004, true)]
-    [ProvideOptionPage(typeof(SnykExperimentalDialogPage), "Snyk", "Experimental", 1000, 1005, true)]
-    [ProvideOptionPage(typeof(SnykUserExperienceDialogPage), "Snyk", "User Experience", 1000, 1006, true)]
+    [ProvideOptionPage(typeof(HtmlSettingsDialogPage), "Snyk", "General", 1000, 1001, true)]
     public sealed class SnykVSPackage : AsyncPackage
     {
         /// <summary>
@@ -105,12 +102,8 @@ namespace Snyk.VisualStudio.Extension
         /// Gets the Options
         /// </summary>
         public ISnykOptions Options { get; private set; }
-        public ISnykGeneralOptionsDialogPage SnykGeneralOptionsDialogPage { get; private set; }
-        public ISnykCliOptionsDialogPage SnykCliOptionsDialogPage { get; private set; }
-        public ISnykScanOptionsDialogPage SnykScanOptionsDialogPage { get; private set; }
-        public ISnykExperimentalDialogPage SnykExperimentalDialogPage { get; private set; }
-        public ISnykUserExperienceDialogPage SnykUserExperienceDialogPage { get; private set; }
-        public ISnykSolutionOptionsDialogPage SnykSolutionOptionsDialogPage { get; private set; }
+
+        public HtmlSettingsDialogPage HtmlSettingsDialogPage { get; private set; }
 
         /// <summary>
         /// Gets <see cref="SnykToolWindow"/> instance.
@@ -125,7 +118,7 @@ namespace Snyk.VisualStudio.Extension
         /// <summary>
         /// Show Options dialog.
         /// </summary>
-        public void ShowOptionPage() => ShowOptionPage(typeof(SnykGeneralOptionsDialogPage));
+        public void ShowOptionPage() => ShowOptionPage(typeof(HtmlSettingsDialogPage));
 
         /// <summary>
         /// Create <see cref="SnykService"/> object.
@@ -206,9 +199,11 @@ namespace Snyk.VisualStudio.Extension
                 await SnykCleanPanelCommand.InitializeAsync(this);
                 await SnykOpenSettingsCommand.InitializeAsync(this);
 
-                // Can be enabled if you want to do rapid CSS/layout testing
-                await Settings.DebugHtmlSettingsWindow.OpenDebugWindowIfEnabledAsync(serviceProvider);
-            
+                // The Edge WebView2 Runtime is a hard requirement now that the settings dialog and
+                // all tool-window panels are WebView2-hosted. Surface a clear, actionable error if
+                // it's missing rather than letting every panel fail opaquely on first navigation.
+                await WarnIfWebView2RuntimeMissingAsync();
+
                 // Notify package has been initialized
                 IsInitialized = true;
                 initializationTaskCompletionSource.SetResult(true);
@@ -219,12 +214,35 @@ namespace Snyk.VisualStudio.Extension
             }
         }
 
+        // Checks for the Edge WebView2 Runtime and, if absent, logs and shows an InfoBar pointing
+        // the user at the installer. Detection (GetAvailableBrowserVersionString) is thread-safe;
+        // the InfoBar must be shown on the UI thread.
+        private async Task WarnIfWebView2RuntimeMissingAsync()
+        {
+            if (WebView2Host.IsRuntimeAvailable())
+                return;
+
+            Logger.Error("Microsoft Edge WebView2 Runtime not found. Snyk settings and panels cannot render until it is installed.");
+
+            await JoinableTaskFactory.SwitchToMainThreadAsync();
+            NotificationService.Instance?.ShowErrorInfoBar(
+                "Snyk requires the Microsoft Edge WebView2 Runtime to display its settings and panels, but it is not installed. " +
+                "Install it from https://developer.microsoft.com/microsoft-edge/webview2/ and restart Visual Studio.");
+        }
+
         /// <summary>
         /// Dispose analytics service and package.
         /// </summary>
         /// <param name="disposing">Bool.</param>
         protected override void Dispose(bool disposing)
         {
+            if (disposing && Options != null)
+            {
+                // Detach the LS-push handler so it can't fire (and touch the LanguageClientManager)
+                // during or after package teardown.
+                Options.SettingsChanged -= OnOptionsSettingsChanged;
+            }
+
             base.Dispose(disposing);
         }
 
@@ -330,50 +348,54 @@ namespace Snyk.VisualStudio.Extension
                 Options.ApplicationVersion = vsMajorMinorVersion;
                 Options.IntegrationEnvironment = readableVsVersion;
                 Options.IntegrationEnvironmentVersion = vsMajorMinorVersion;
+
+                // Push IDE-side settings to the LS whenever they change. Previously wired in
+                // SnykGeneralOptionsDialogPage.Initialize; relocated here when that DialogPage
+                // was retired in favour of HtmlSettingsDialogPage. Unsubscribe-then-subscribe so
+                // the handler is never wired twice if Options is ever reloaded/reassigned.
+                Options.SettingsChanged -= OnOptionsSettingsChanged;
+                Options.SettingsChanged += OnOptionsSettingsChanged;
             }
 
-            if (SnykGeneralOptionsDialogPage == null)
-            {
-                SnykGeneralOptionsDialogPage =
-                    (SnykGeneralOptionsDialogPage)GetDialogPage(typeof(SnykGeneralOptionsDialogPage));
-                SnykGeneralOptionsDialogPage.Initialize(this.serviceProvider);
-            }
-
-            if (SnykCliOptionsDialogPage == null)
+            if (HtmlSettingsDialogPage == null)
             {
                 await JoinableTaskFactory.SwitchToMainThreadAsync();
 
-                SnykCliOptionsDialogPage =
-                    (SnykCliOptionsDialogPage)GetDialogPage(typeof(SnykCliOptionsDialogPage));
-                SnykCliOptionsDialogPage.Initialize(this.serviceProvider);
+                HtmlSettingsDialogPage =
+                    (HtmlSettingsDialogPage)GetDialogPage(typeof(HtmlSettingsDialogPage));
+                HtmlSettingsDialogPage.Initialize(this.serviceProvider);
             }
+        }
 
-            if (SnykScanOptionsDialogPage == null)
+        private void OnOptionsSettingsChanged(object sender, SnykSettingsChangedEventArgs e)
+        {
+            JoinableTaskFactory.RunAsync(async () =>
             {
-                SnykScanOptionsDialogPage =
-                    (SnykScanOptionsDialogPage)GetDialogPage(typeof(SnykScanOptionsDialogPage));
-                SnykScanOptionsDialogPage.Initialize(this.serviceProvider);
-            }
+                if (!LanguageClientHelper.IsLanguageServerReady())
+                {
+                    return;
+                }
 
-            if (SnykUserExperienceDialogPage == null)
-            {
-                SnykUserExperienceDialogPage =
-                    (SnykUserExperienceDialogPage)GetDialogPage(typeof(SnykUserExperienceDialogPage));
-                SnykUserExperienceDialogPage.Initialize(this.serviceProvider);
-            }
-
-            if (SnykExperimentalDialogPage == null)
-            {
-                SnykExperimentalDialogPage =
-                    (SnykExperimentalDialogPage)GetDialogPage(typeof(SnykExperimentalDialogPage));
-                SnykExperimentalDialogPage.Initialize(this.serviceProvider);
-            }
-            if (SnykSolutionOptionsDialogPage == null)
-            {
-                SnykSolutionOptionsDialogPage =
-                    (SnykSolutionOptionsDialogPage)GetDialogPage(typeof(SnykSolutionOptionsDialogPage));
-                SnykSolutionOptionsDialogPage.Initialize(this.serviceProvider);
-            }
+                try
+                {
+                    await this.serviceProvider.LanguageClientManager.DidChangeConfigurationAsync(DisposalToken);
+                }
+                catch (OperationCanceledException)
+                {
+                    // VS / LS client shutting down — not an error.
+                }
+                catch (Exception ex)
+                {
+                    // The save path reports success once settings are persisted to disk; pushing them
+                    // to the Language Server happens here, after, and is otherwise fire-and-forget — so
+                    // a failure would silently leave the running LS on the old settings while the user
+                    // believes the change took effect. Surface it instead of swallowing it.
+                    Logger.Error(ex, "Failed to push updated settings to the Language Server.");
+                    NotificationService.Instance?.ShowErrorInfoBar(
+                        "Snyk: your settings were saved but could not be sent to the Snyk Language Server. " +
+                        "They will be applied the next time it starts. See the Snyk logs for details.");
+                }
+            }).FireAndForget();
         }
 
         private async Task<string> GetVsVersionAsync()

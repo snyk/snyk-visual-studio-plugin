@@ -87,9 +87,14 @@ namespace Snyk.VisualStudio.Extension.Language
                     case PflagKeys.BaseBranch:
                         break;
 
-                    // TODO [IDE-1653]: The following pflag keys are not propagated at the global level.
-                    // Evaluate whether any need to be restored to avoid breaking changes:
-                    // SendErrorReports, EnableTelemetry, SnykCodeApi, Path, ActivateSnykCode, AutomaticAuthentication.
+                    // Any other inbound key (e.g. sendErrorReports, enableTelemetry, snykCodeApi,
+                    // path, automaticAuthentication) is intentionally not applied to IDE Options:
+                    // none is surfaced in the VS settings UI or owned by the IDE, so the LS echo is
+                    // ignored. Product enablement is handled above via the snyk_*_enabled pflags;
+                    // the legacy camelCase "activateSnyk*" keys are not part of the v25 contract.
+                    // The default arm is a deliberate no-op (the catch below still guards parse errors).
+                    default:
+                        break;
                 }
             }
             catch (Exception ex)

@@ -113,6 +113,37 @@ namespace Snyk.VisualStudio.Extension.Language
                 if (fc.ScanCommandConfig != null)
                     settings[PflagKeys.ScanCommandConfig] = ConfigSetting.Of(fc.ScanCommandConfig);
 
+                // Per-folder org-scope overrides — emitted only when the folder carries an
+                // explicit override (PATCH semantics). Keyed the same as the global settings map
+                // so the LS resolves folder-level over global. Matches the per-folder fields the
+                // LS settings HTML renders and that IntelliJ sends.
+                if (fc.SnykOssEnabled.HasValue)
+                    settings[PflagKeys.SnykOssEnabled] = ConfigSetting.Of(fc.SnykOssEnabled.Value);
+                if (fc.SnykCodeEnabled.HasValue)
+                    settings[PflagKeys.SnykCodeEnabled] = ConfigSetting.Of(fc.SnykCodeEnabled.Value);
+                if (fc.SnykIacEnabled.HasValue)
+                    settings[PflagKeys.SnykIacEnabled] = ConfigSetting.Of(fc.SnykIacEnabled.Value);
+                if (fc.SnykSecretsEnabled.HasValue)
+                    settings[PflagKeys.SnykSecretsEnabled] = ConfigSetting.Of(fc.SnykSecretsEnabled.Value);
+                if (fc.ScanAutomatic.HasValue)
+                    settings[PflagKeys.ScanAutomatic] = ConfigSetting.Of(fc.ScanAutomatic.Value);
+                if (fc.ScanNetNew.HasValue)
+                    settings[PflagKeys.ScanNetNew] = ConfigSetting.Of(fc.ScanNetNew.Value);
+                if (fc.SeverityFilterCritical.HasValue)
+                    settings[PflagKeys.SeverityFilterCritical] = ConfigSetting.Of(fc.SeverityFilterCritical.Value);
+                if (fc.SeverityFilterHigh.HasValue)
+                    settings[PflagKeys.SeverityFilterHigh] = ConfigSetting.Of(fc.SeverityFilterHigh.Value);
+                if (fc.SeverityFilterMedium.HasValue)
+                    settings[PflagKeys.SeverityFilterMedium] = ConfigSetting.Of(fc.SeverityFilterMedium.Value);
+                if (fc.SeverityFilterLow.HasValue)
+                    settings[PflagKeys.SeverityFilterLow] = ConfigSetting.Of(fc.SeverityFilterLow.Value);
+                if (fc.IssueViewOpenIssues.HasValue)
+                    settings[PflagKeys.IssueViewOpenIssues] = ConfigSetting.Of(fc.IssueViewOpenIssues.Value);
+                if (fc.IssueViewIgnoredIssues.HasValue)
+                    settings[PflagKeys.IssueViewIgnoredIssues] = ConfigSetting.Of(fc.IssueViewIgnoredIssues.Value);
+                if (fc.RiskScoreThreshold.HasValue)
+                    settings[PflagKeys.RiskScoreThreshold] = ConfigSetting.Of(fc.RiskScoreThreshold.Value);
+
                 result.Add(new LspFolderConfig
                 {
                     FolderPath = fc.FolderPath,

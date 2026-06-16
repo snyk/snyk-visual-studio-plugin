@@ -8,6 +8,7 @@ using Microsoft.VisualStudio.Settings;
 using Microsoft.VisualStudio.Shell;
 using Microsoft.VisualStudio.Shell.Settings;
 using Serilog;
+using Snyk.VisualStudio.Extension.Authentication;
 using Snyk.VisualStudio.Extension.Language;
 using Snyk.VisualStudio.Extension.Settings;
 using Snyk.VisualStudio.Extension.Theme;
@@ -36,6 +37,10 @@ namespace Snyk.VisualStudio.Extension.Service
 
         private SnykOptionsManager snykOptionsManager;
         private SnykFeatureFlagService featureFlagService;
+        // volatile: read lock-free in the AuthenticationFlowService getter's double-checked locking
+        // fast path, so it needs a memory barrier to avoid observing a partially-constructed instance.
+        private volatile IAuthenticationFlowService authenticationFlowService;
+        private readonly object authenticationFlowServiceGate = new object();
 
         private IWorkspaceTrustService workspaceTrustService;
         
@@ -57,7 +62,23 @@ namespace Snyk.VisualStudio.Extension.Service
         /// </summary>
         public ISnykOptions Options => this.Package.Options;
 
-        public ISnykGeneralOptionsDialogPage GeneralOptionsDialogPage => this.Package.SnykGeneralOptionsDialogPage;
+        public IAuthenticationFlowService AuthenticationFlowService
+        {
+            get
+            {
+                // Double-checked locking: the LS auth callbacks (OnHasAuthenticated) can run on a
+                // background thread while a UI-thread caller is also resolving this, so guard the
+                // lazy init to avoid constructing two instances.
+                if (this.authenticationFlowService != null)
+                    return this.authenticationFlowService;
+
+                lock (this.authenticationFlowServiceGate)
+                {
+                    return this.authenticationFlowService ??
+                           (this.authenticationFlowService = new AuthenticationFlowService(this));
+                }
+            }
+        }
 
         /// <summary>
         /// Gets solution service.
@@ -88,6 +109,9 @@ namespace Snyk.VisualStudio.Extension.Service
         /// Gets Snyk Extension package intance.
         /// </summary>
         public SnykVSPackage Package => this.serviceProvider as SnykVSPackage;
+
+        /// <inheritdoc/>
+        public CancellationToken DisposalToken => this.Package.DisposalToken;
 
         /// <summary>
         /// Gets implementation of IAsyncServiceProvider.

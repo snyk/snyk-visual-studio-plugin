@@ -157,7 +157,7 @@ namespace Snyk.VisualStudio.Extension.UI.Toolwindow
             try
             {
                 Logger.Information("Attempting to Auth");
-                this.ServiceProvider.GeneralOptionsDialogPage.Authenticate();
+                this.ServiceProvider.AuthenticationFlowService.Authenticate();
             }
             catch (FileNotFoundException)
             {

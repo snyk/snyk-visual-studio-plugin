@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using System.Runtime.InteropServices;
 using Microsoft.VisualStudio.Sdk.TestFramework;
 using Moq;
 using Newtonsoft.Json;
@@ -47,6 +48,51 @@ namespace Snyk.VisualStudio.Extension.Tests.Language
         }
 
         [Fact]
+        public void FolderConfigOverrides_RoundTripThroughBuildAndApply()
+        {
+            // Guards the outbound/inbound symmetry: BuildFolderConfigs emits the per-folder
+            // overrides and FolderConfigApplier.ToFolderConfig must read every one of them back,
+            // or a $/snyk.configuration echo silently drops the user's per-folder override.
+            SetupDefaults();
+            var original = new FolderConfig
+            {
+                FolderPath = "/repo",
+                SnykOssEnabled = true,
+                SnykCodeEnabled = false,
+                SnykIacEnabled = true,
+                SnykSecretsEnabled = false,
+                ScanAutomatic = true,
+                ScanNetNew = false,
+                SeverityFilterCritical = true,
+                SeverityFilterHigh = false,
+                SeverityFilterMedium = true,
+                SeverityFilterLow = false,
+                IssueViewOpenIssues = true,
+                IssueViewIgnoredIssues = false,
+                RiskScoreThreshold = 750,
+            };
+            optionsMock.SetupGet(o => o.FolderConfigs).Returns(new List<FolderConfig> { original });
+
+            // POCO -> BuildFolderConfigs (outbound) -> LspFolderConfig -> ToFolderConfig (inbound) -> POCO
+            var lspFolderConfig = cut.GetInitializationOptions().FolderConfigs[0];
+            var roundTripped = FolderConfigApplier.ToFolderConfig(lspFolderConfig);
+
+            Assert.Equal(true, roundTripped.SnykOssEnabled);
+            Assert.Equal(false, roundTripped.SnykCodeEnabled);
+            Assert.Equal(true, roundTripped.SnykIacEnabled);
+            Assert.Equal(false, roundTripped.SnykSecretsEnabled);
+            Assert.Equal(true, roundTripped.ScanAutomatic);
+            Assert.Equal(false, roundTripped.ScanNetNew);
+            Assert.Equal(true, roundTripped.SeverityFilterCritical);
+            Assert.Equal(false, roundTripped.SeverityFilterHigh);
+            Assert.Equal(true, roundTripped.SeverityFilterMedium);
+            Assert.Equal(false, roundTripped.SeverityFilterLow);
+            Assert.Equal(true, roundTripped.IssueViewOpenIssues);
+            Assert.Equal(false, roundTripped.IssueViewIgnoredIssues);
+            Assert.Equal(750, roundTripped.RiskScoreThreshold);
+        }
+
+        [Fact]
         public void GetInitializationOptions_ReturnsNonNull()
         {
             SetupDefaults();
@@ -77,9 +123,19 @@ namespace Snyk.VisualStudio.Extension.Tests.Language
         {
             SetupDefaults();
             var result = cut.GetInitializationOptions();
-            var valid = new[] { "amd64", "arm64", "386" };
-            // default fallback is allowed too, just must not be "x64" or "X64"
-            Assert.DoesNotMatch("^[Xx]64$", result.OsArch);
+
+            // Must be the GOARCH name for the current process architecture, never the .NET "X64"
+            // spelling the Language Server doesn't understand.
+            string expected;
+            switch (RuntimeInformation.OSArchitecture)
+            {
+                case Architecture.X64: expected = "amd64"; break;
+                case Architecture.Arm64: expected = "arm64"; break;
+                case Architecture.X86: expected = "386"; break;
+                default: expected = RuntimeInformation.OSArchitecture.ToString().ToLowerInvariant(); break;
+            }
+
+            Assert.Equal(expected, result.OsArch);
         }
 
         [Fact]
@@ -248,6 +304,60 @@ namespace Snyk.VisualStudio.Extension.Tests.Language
             Assert.True(fc.Settings.ContainsKey(PflagKeys.AdditionalParameters));
             var apValue = Assert.IsType<List<string>>(fc.Settings[PflagKeys.AdditionalParameters].Value);
             Assert.Equal(new List<string> { "--debug", "--verbose" }, apValue);
+        }
+
+        [Fact]
+        public void BuildFolderConfigs_PerFolderOverrides_MappedWhenSet()
+        {
+            SetupDefaults();
+            var folder = new FolderConfig
+            {
+                FolderPath = "/repo/myproject",
+                OrgSetByUser = false,
+                SnykCodeEnabled = false,
+                SnykOssEnabled = true,
+                SeverityFilterHigh = false,
+                ScanAutomatic = true,
+                IssueViewIgnoredIssues = false,
+                RiskScoreThreshold = 500,
+            };
+            optionsMock.SetupGet(o => o.FolderConfigs).Returns(new List<FolderConfig> { folder });
+
+            var result = cut.GetInitializationOptions();
+            var fc = result.FolderConfigs[0];
+
+            Assert.Equal(false, fc.Settings[PflagKeys.SnykCodeEnabled].Value);
+            Assert.Equal(true, fc.Settings[PflagKeys.SnykOssEnabled].Value);
+            Assert.Equal(false, fc.Settings[PflagKeys.SeverityFilterHigh].Value);
+            Assert.Equal(true, fc.Settings[PflagKeys.ScanAutomatic].Value);
+            Assert.Equal(false, fc.Settings[PflagKeys.IssueViewIgnoredIssues].Value);
+            Assert.Equal(500, fc.Settings[PflagKeys.RiskScoreThreshold].Value);
+            // Overrides not set on this folder must be omitted (PATCH semantics)
+            Assert.False(fc.Settings.ContainsKey(PflagKeys.SnykIacEnabled));
+            Assert.False(fc.Settings.ContainsKey(PflagKeys.SeverityFilterLow));
+        }
+
+        [Fact]
+        public void BuildFolderConfigs_PerFolderOverrides_OmittedWhenNull()
+        {
+            SetupDefaults();
+            var folder = new FolderConfig
+            {
+                FolderPath = "/repo/myproject",
+                OrgSetByUser = false,
+                // all org-scope override fields left null
+            };
+            optionsMock.SetupGet(o => o.FolderConfigs).Returns(new List<FolderConfig> { folder });
+
+            var result = cut.GetInitializationOptions();
+            var fc = result.FolderConfigs[0];
+
+            Assert.False(fc.Settings.ContainsKey(PflagKeys.SnykOssEnabled));
+            Assert.False(fc.Settings.ContainsKey(PflagKeys.SnykCodeEnabled));
+            Assert.False(fc.Settings.ContainsKey(PflagKeys.SeverityFilterCritical));
+            Assert.False(fc.Settings.ContainsKey(PflagKeys.ScanAutomatic));
+            Assert.False(fc.Settings.ContainsKey(PflagKeys.IssueViewOpenIssues));
+            Assert.False(fc.Settings.ContainsKey(PflagKeys.RiskScoreThreshold));
         }
 
         [Fact]

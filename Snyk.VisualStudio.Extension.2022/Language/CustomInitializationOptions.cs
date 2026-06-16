@@ -31,6 +31,24 @@ namespace Snyk.VisualStudio.Extension.Language
         public bool OrgMigratedFromGlobalConfig { get; set; }
         public bool OrgSetByUser { get; set; }
 
+        // Per-folder org-scope overrides (PATCH semantics: null = no folder-level override, so
+        // the global/default value applies). The LS settings HTML renders these in the per-folder
+        // section; BuildFolderConfigs emits them into the folder's pflag-keyed settings map only
+        // when set. Mirrors the per-folder fields IntelliJ's FolderConfigData carries.
+        public bool? SnykOssEnabled { get; set; }
+        public bool? SnykCodeEnabled { get; set; }
+        public bool? SnykIacEnabled { get; set; }
+        public bool? SnykSecretsEnabled { get; set; }
+        public bool? ScanAutomatic { get; set; }
+        public bool? ScanNetNew { get; set; }
+        public bool? SeverityFilterCritical { get; set; }
+        public bool? SeverityFilterHigh { get; set; }
+        public bool? SeverityFilterMedium { get; set; }
+        public bool? SeverityFilterLow { get; set; }
+        public bool? IssueViewOpenIssues { get; set; }
+        public bool? IssueViewIgnoredIssues { get; set; }
+        public int? RiskScoreThreshold { get; set; }
+
         public void SetScanCommandConfig(Dictionary<string, ScanCommandConfig> scanCommandConfig)
         {
             this.ScanCommandConfig = scanCommandConfig;
@@ -46,10 +64,6 @@ namespace Snyk.VisualStudio.Extension.Language
         public bool PostScanOnlyReferenceFolder { get; set; }
     }
 
-    public class FolderConfigsParam
-    {
-        public List<FolderConfig> FolderConfigs { get; set; }
-    }
     public class ScanSummaryParam
     {
         public string ScanSummary { get; set; }

@@ -8,6 +8,21 @@ namespace Snyk.VisualStudio.Extension.UI.Html
 {
     public class BaseHtmlProvider : IHtmlProvider
     {
+        private readonly bool forceLight;
+
+        public BaseHtmlProvider() : this(forceLight: false) { }
+
+        /// <summary>
+        /// <paramref name="forceLight"/>: when true, <see cref="ReplaceCssVariables"/> bypasses
+        /// VS theme detection and substitutes hardcoded light-mode colors. Used by the settings
+        /// dialog, which renders light regardless of the active VS theme. Tool-window HTML
+        /// (description / summary panels) keeps the default theme-following behaviour.
+        /// </summary>
+        public BaseHtmlProvider(bool forceLight)
+        {
+            this.forceLight = forceLight;
+        }
+
         public virtual string GetCss()
         {
             return @"
@@ -38,62 +53,123 @@ namespace Snyk.VisualStudio.Extension.UI.Html
         }
         public string GetNonce()
         {
-            var allowedChars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789".ToCharArray();
-            var random = new Random();
-            return new string(Enumerable.Repeat(allowedChars, 32)
-                .Select(s => s[random.Next(s.Length)])
-                .ToArray());
+            // The nonce backs the page's `style-src 'nonce-...'` CSP, so it must be unpredictable —
+            // System.Random is not a CSPRNG and yields guessable nonces. Use a crypto RNG.
+            const string allowedChars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
+            const int nonceLength = 32;
+
+            // Reject bytes at or above the largest multiple of the alphabet length (62 * 4 = 248) so
+            // the modulo below is unbiased. A plain `% 62` over a 0-255 byte would over-represent the
+            // first (256 % 62 == 8) characters (A-H) by ~25%.
+            var rejectAtOrAbove = 256 - (256 % allowedChars.Length);
+
+            var chars = new char[nonceLength];
+            var oneByte = new byte[1];
+            using (var rng = System.Security.Cryptography.RandomNumberGenerator.Create())
+            {
+                for (var i = 0; i < chars.Length; i++)
+                {
+                    do
+                    {
+                        rng.GetBytes(oneByte);
+                    }
+                    while (oneByte[0] >= rejectAtOrAbove);
+
+                    chars[i] = allowedChars[oneByte[0] % allowedChars.Length];
+                }
+            }
+
+            return new string(chars);
         }
 
         public virtual string ReplaceCssVariables(string html)
         {
-            var isDarkTheme = ThemeInfo.IsDarkTheme();
+            string backgroundColor;
+            string textColor;
+            string borderColor;
+            string linkColor;
+            string inputBackground;
+            string inputBorder;
+            string buttonBackground;
+            string buttonHoverBackground;
+            string disabledForeground;
+            string errorForeground;
+            string inactiveSelectionBackground;
+            string listHoverBackground;
+            string scrollbarBackground;
+            string scrollbarThumb;
+            string scrollbarThumbHover;
 
-            // Use proper tool window colors for consistent theming
-            var backgroundColor = VSColorTheme.GetThemedColor(EnvironmentColors.ToolWindowBackgroundColorKey).ToHex();
-            var textColor = VSColorTheme.GetThemedColor(EnvironmentColors.ToolWindowTextColorKey).ToHex();
-            var borderColor = VSColorTheme.GetThemedColor(EnvironmentColors.ToolWindowBorderColorKey).ToHex();
+            if (forceLight)
+            {
+                // Hardcoded light palette — approximates VS's Light theme so the settings
+                // dialog reads cleanly regardless of the user's active VS theme.
+                backgroundColor = "#FFFFFF";
+                textColor = "#1F1F1F";
+                borderColor = "#D4D4D4";
+                linkColor = "#0066CC";
+                inputBackground = "#FFFFFF";
+                inputBorder = "#CECECE";
+                buttonBackground = "#E1E1E1";
+                buttonHoverBackground = "#CECECE";
+                disabledForeground = "#A0A0A0";
+                errorForeground = "#A1260D";
+                inactiveSelectionBackground = "#E5EBF1";
+                listHoverBackground = "#F0F0F0";
+                scrollbarBackground = "#F0F0F0";
+                scrollbarThumb = "#C1C1C1";
+                scrollbarThumbHover = "#A8A8A8";
+            }
+            else
+            {
+                // Use proper tool window colors for consistent theming
+                backgroundColor = VSColorTheme.GetThemedColor(EnvironmentColors.ToolWindowBackgroundColorKey).ToHex();
+                textColor = VSColorTheme.GetThemedColor(EnvironmentColors.ToolWindowTextColorKey).ToHex();
+                borderColor = VSColorTheme.GetThemedColor(EnvironmentColors.ToolWindowBorderColorKey).ToHex();
 
-            // Links should use the standard hyperlink color
-            var linkColor = VSColorTheme.GetThemedColor(EnvironmentColors.PanelHyperlinkBrushKey).ToHex();
+                // Links should use the standard hyperlink color
+                linkColor = VSColorTheme.GetThemedColor(EnvironmentColors.PanelHyperlinkBrushKey).ToHex();
 
-            // Input fields - use ComboBox colors as they're designed for input controls
-            var inputBackground = VSColorTheme.GetThemedColor(EnvironmentColors.ComboBoxBackgroundColorKey).ToHex();
-            var inputBorder = VSColorTheme.GetThemedColor(EnvironmentColors.ComboBoxBorderColorKey).ToHex();
+                // Input fields - use ComboBox colors as they're designed for input controls
+                inputBackground = VSColorTheme.GetThemedColor(EnvironmentColors.ComboBoxBackgroundColorKey).ToHex();
+                inputBorder = VSColorTheme.GetThemedColor(EnvironmentColors.ComboBoxBorderColorKey).ToHex();
+
+                // Legacy vscode- prefixed button variables (kept for compatibility)
+                buttonBackground = VSColorTheme.GetThemedColor(EnvironmentColors.CommandBarMenuBackgroundGradientBeginColorKey).ToHex();
+                buttonHoverBackground = VSColorTheme.GetThemedColor(EnvironmentColors.CommandBarMouseOverBackgroundBeginColorKey).ToHex();
+
+                // Disabled and error states
+                disabledForeground = VSColorTheme.GetThemedColor(EnvironmentColors.SystemGrayTextColorKey).ToHex();
+                errorForeground = VSColorTheme.GetThemedColor(EnvironmentColors.VizSurfaceRedMediumBrushKey).ToHex();
+
+                // Section backgrounds - use grid colors which are designed for content separation
+                inactiveSelectionBackground = VSColorTheme.GetThemedColor(EnvironmentColors.GridHeadingBackgroundColorKey).ToHex();
+
+                // Hover and interaction states
+                listHoverBackground = VSColorTheme.GetThemedColor(EnvironmentColors.ComboBoxMouseOverBackgroundBeginColorKey).ToHex();
+
+                // Scrollbar colors
+                scrollbarBackground = VSColorTheme.GetThemedColor(EnvironmentColors.ScrollBarBackgroundColorKey).ToHex();
+                scrollbarThumb = VSColorTheme.GetThemedColor(EnvironmentColors.ScrollBarThumbBackgroundColorKey).ToHex();
+                scrollbarThumbHover = VSColorTheme.GetThemedColor(EnvironmentColors.ScrollBarThumbMouseOverBackgroundColorKey).ToHex();
+            }
 
             // Editor/main content area
             var editorBackground = backgroundColor;
             var editorForeground = textColor;
 
-            // Primary buttons - use hyperlink color for a prominent blue appearance
+            // Primary buttons - use hyperlink color for a prominent blue appearance.
+            // Hover in light mode goes slightly darker; in dark mode slightly lighter.
             var primaryButtonBackground = linkColor;
             var primaryButtonForeground = "#FFFFFF";
-            var primaryButtonHoverBackground = AdjustBrightness(primaryButtonBackground, 1.15f);
+            var primaryButtonHoverBackground = AdjustBrightness(primaryButtonBackground, forceLight ? 0.85f : 1.15f);
 
             // Secondary buttons - use input background for visible contrast with main background
             var secondaryButtonBackground = inputBackground;
             var secondaryButtonForeground = textColor;
-            var secondaryButtonHoverBackground = AdjustBrightness(secondaryButtonBackground, 1.15f);
+            var secondaryButtonHoverBackground = AdjustBrightness(secondaryButtonBackground, forceLight ? 0.92f : 1.15f);
 
-            // Legacy vscode- prefixed button variables (kept for compatibility)
-            var buttonBackground = VSColorTheme.GetThemedColor(EnvironmentColors.CommandBarMenuBackgroundGradientBeginColorKey).ToHex();
             var buttonText = textColor;
-            var buttonHoverBackground = VSColorTheme.GetThemedColor(EnvironmentColors.CommandBarMouseOverBackgroundBeginColorKey).ToHex();
-
-            // Disabled and error states
-            var disabledForeground = VSColorTheme.GetThemedColor(EnvironmentColors.SystemGrayTextColorKey).ToHex();
-            var errorForeground = VSColorTheme.GetThemedColor(EnvironmentColors.VizSurfaceRedMediumBrushKey).ToHex();
-
-            // Section backgrounds - use grid colors which are designed for content separation
-            var inactiveSelectionBackground = VSColorTheme.GetThemedColor(EnvironmentColors.GridHeadingBackgroundColorKey).ToHex();
-
-            // Hover and interaction states
-            var listHoverBackground = VSColorTheme.GetThemedColor(EnvironmentColors.ComboBoxMouseOverBackgroundBeginColorKey).ToHex();
-
-            // Scrollbar colors
-            var scrollbarBackground = VSColorTheme.GetThemedColor(EnvironmentColors.ScrollBarBackgroundColorKey).ToHex();
-            var scrollbarThumb = VSColorTheme.GetThemedColor(EnvironmentColors.ScrollBarThumbBackgroundColorKey).ToHex();
-            var scrollbarThumbHover = VSColorTheme.GetThemedColor(EnvironmentColors.ScrollBarThumbMouseOverBackgroundColorKey).ToHex();
 
             var varMap = ExtractRootCssVariables(html);
 
@@ -103,7 +179,12 @@ namespace Snyk.VisualStudio.Extension.UI.Html
                 // VS Code style variables (from LS HTML)
                 { "vscode-font-family", "'Segoe UI', Tahoma, Geneva, Verdana, sans-serif" },
                 { "vscode-editor-font-family", "'Consolas', 'Courier New', monospace" },
-                { "vscode-font-size", "13px" },
+                // Drives --base-font-size in the LS CSS. 12px matches Visual Studio's default 9pt
+                // environment font (9pt × 96/72 = 12px); the previous 13px rendered noticeably
+                // larger than native VS dialogs. Applies to every HTML surface (settings dialog +
+                // tool-window panels) since this map is shared by all providers. CSS px are
+                // device-independent in WebView2, so this scales correctly with display DPI.
+                { "vscode-font-size", "12px" },
                 { "vscode-editor-background", editorBackground },
                 { "vscode-foreground", textColor },
                 { "vscode-input-foreground", textColor },

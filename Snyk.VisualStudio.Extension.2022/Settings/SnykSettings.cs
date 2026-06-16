@@ -2,6 +2,7 @@
 // ABOUTME: It contains global and solution-specific configuration including authentication tokens, scan preferences, and folder configs
 using System;
 using System.Collections.Generic;
+using Newtonsoft.Json;
 using Snyk.VisualStudio.Extension.Authentication;
 using Snyk.VisualStudio.Extension.Download;
 using Snyk.VisualStudio.Extension.Language;
@@ -23,11 +24,6 @@ namespace Snyk.VisualStudio.Extension.Settings
         /// Gets or sets current Cli version.
         /// </summary>
         public string CurrentCliVersion { get; set; }
-
-        /// <summary>
-        /// Gets or sets solution settings dictionary.
-        /// </summary>
-        public IDictionary<int, SnykSolutionSettings> SolutionSettingsDict { get; set; } = new Dictionary<int, SnykSolutionSettings>();
 
         /// <summary>
         /// Gets or sets a value indicating whether snyk code security enabled.
@@ -84,5 +80,19 @@ namespace Snyk.VisualStudio.Extension.Settings
         public bool FilterLow { get; set; } = true;
         public string AdditionalEnv { get; set; } = string.Empty;
         public int? RiskScoreThreshold { get; set; } = null;
+
+        /// <summary>
+        /// Legacy per-solution settings, keyed by <c>solutionFolder.ToLower().GetHashCode()</c>
+        /// (the original key scheme). The live feature was removed in IDE-1651; this property is
+        /// retained ONLY so an upgrading user's existing entries survive on disk until they are
+        /// migrated into folder configs as each solution is opened (see
+        /// <see cref="LegacySolutionSettingsMigrator"/> and
+        /// <see cref="SnykOptionsManager.MigrateLegacySolutionSettings"/>). It is never written by
+        /// feature code; the migrator removes entries as they are migrated and nulls it out once
+        /// empty. Null when settings.json carries no legacy section, so it is not re-emitted
+        /// (NullValueHandling.Ignore keeps the key out of fresh users' settings.json entirely).
+        /// </summary>
+        [JsonProperty(NullValueHandling = NullValueHandling.Ignore)]
+        public Dictionary<int, LegacySolutionSettings> SolutionSettingsDict { get; set; }
     }
 }
