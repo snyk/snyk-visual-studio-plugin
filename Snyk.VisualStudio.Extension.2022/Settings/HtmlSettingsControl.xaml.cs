@@ -173,6 +173,10 @@ namespace Snyk.VisualStudio.Extension.Settings
 
             ThreadHelper.JoinableTaskFactory.RunAsync(async () =>
             {
+                // This handler used to be async void, which implicitly resumed on the UI thread.
+                // Under RunAsync the continuation isn't guaranteed to, so switch explicitly before
+                // touching the WebView2 (host.InitializeAsync) or the WPF LoadingStatusLabel below.
+                await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
                 try
                 {
                     await host.InitializeAsync();

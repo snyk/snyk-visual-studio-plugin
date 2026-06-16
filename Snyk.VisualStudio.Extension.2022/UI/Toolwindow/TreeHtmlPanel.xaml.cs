@@ -87,6 +87,10 @@ namespace Snyk.VisualStudio.Extension.UI.Toolwindow
             {
                 try
                 {
+                    // host.InitializeAsync drives WebView2/CoreWebView2 setup, which must run on the
+                    // UI thread. RunAsync alone doesn't guarantee the continuation resumes there, so
+                    // switch explicitly — matching SetContent/InvokeCommandCallback below.
+                    await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
                     await host.InitializeAsync();
                 }
                 catch (Exception ex)
