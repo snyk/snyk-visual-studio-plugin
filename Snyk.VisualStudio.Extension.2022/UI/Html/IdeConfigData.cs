@@ -12,10 +12,26 @@ namespace Snyk.VisualStudio.Extension.UI.Html
     /// CLI-only fallback HTML). Both forms emit a flat, snake_case pflag-keyed payload — the
     /// same key scheme the IDE uses when it sends settings to the Language Server (see
     /// <see cref="LsSettingsV25"/> / PflagKeys). Every field therefore binds explicitly to its
-    /// snake_case JSON key; relying on default camelCase matching silently drops snake_case keys,
+    /// snake_case JSON key; relying on default camelCase matching silently drops snake_case keys.
     /// <para>
-    /// The form sends only the fields that changed, so every property is nullable / reference
-    /// type and the bridge applies it only when present.
+    /// <b>Changed-only / false-vs-absent contract.</b> The form posts only the fields the user
+    /// actually changed (see <c>collectChangedData</c> in the LS form JS), so the payload is a
+    /// PATCH, not a full snapshot. Each field is therefore nullable and the bridge MUST treat:
+    /// <list type="bullet">
+    ///   <item><description><b>absent / null</b> = "not changed" → leave the corresponding
+    ///   <c>Options</c> value untouched. Applying a default here would silently revert settings
+    ///   the user didn't touch (e.g. wiping every other severity filter when one toggles).</description></item>
+    ///   <item><description><b>present with a value</b> (including <c>false</c> and empty string)
+    ///   = "the user set this" → apply it. <c>false</c> is a real value, NOT the same as absent —
+    ///   which is exactly why bool fields are <c>bool?</c> rather than <c>bool</c>.</description></item>
+    /// </list>
+    /// Every <c>Apply*</c> helper in <see cref="HtmlSettingsScriptingBridge"/> guards on
+    /// <c>HasValue</c> / <c>!= null</c> to honour this. A consequence: if a future LS HTML build
+    /// renames or adds a key, that field deserialises to null / is dropped. To stop that being
+    /// silent, the save path runs <see cref="IdeConfigContract"/> over the raw payload first — it
+    /// warns (naming the keys) when some posted keys are unmapped and fails the save outright when
+    /// none are recognised (a wholesale rename, which would otherwise no-op yet report success). It
+    /// also fails fast when the whole payload deserialises to null (malformed JSON).
     /// </para>
     /// </summary>
     public class IdeConfigData

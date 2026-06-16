@@ -59,8 +59,8 @@ namespace Snyk.VisualStudio.Extension.Tests.Language
             // Act
             await cut.OnPublishDiagnostics316(arg);
 
-            // Assert
-            // Expect no exceptions when uri is null
+            // Assert — a missing uri is ignored, no dictionary entry created
+            Assert.Empty(cut.GetCodeDictionary());
         }
 
         [Fact]
@@ -72,7 +72,8 @@ namespace Snyk.VisualStudio.Extension.Tests.Language
             // Act
             await cut.OnPublishDiagnostics316(arg);
 
-            // Assert
+            // Assert — an empty diagnostics list adds no Code issues for the path
+            Assert.False(cut.GetCodeDictionary().ContainsKey("\\path\\to\\file"));
         }
 
         [Fact]
@@ -470,30 +471,28 @@ namespace Snyk.VisualStudio.Extension.Tests.Language
         [Fact]
         public async Task OnSnykConfiguration_ShouldOverwriteByPath_WhenSamePathArrivesTwice()
         {
-            // Arrange — pre-seed Options.FolderConfigs with one entry, then send same path with different org
+            // Arrange
             optionsMock.SetupProperty(o => o.FolderConfigs);
-            optionsMock.Object.FolderConfigs = new List<FolderConfig>
-            {
-                new FolderConfig { FolderPath = "/path/to/folder1", PreferredOrg = "old-org" }
-            };
 
-            var arg = JObject.Parse(@"{
+            JObject ConfigFor(string org) => JObject.Parse(@"{
                 ""settings"": {},
                 ""folderConfigs"": [
                     {
                         ""folderPath"": ""/path/to/folder1"",
                         ""settings"": {
-                            ""preferred_org"": { ""value"": ""new-org"", ""changed"": true }
+                            ""preferred_org"": { ""value"": """ + org + @""", ""changed"": true }
                         }
                     }
                 ]
             }");
 
-            // Act
-            await cut.OnSnykConfiguration(arg);
+            // Act — the SAME path arrives on two separate configuration pushes with different orgs.
+            await cut.OnSnykConfiguration(ConfigFor("old-org"));
+            await cut.OnSnykConfiguration(ConfigFor("new-org"));
 
-            // Assert — replaced, not appended
+            // Assert — the second push replaces the first by path: one entry, latest value wins.
             Assert.Single(optionsMock.Object.FolderConfigs);
+            Assert.Equal("/path/to/folder1", optionsMock.Object.FolderConfigs[0].FolderPath);
             Assert.Equal("new-org", optionsMock.Object.FolderConfigs[0].PreferredOrg);
         }
 
@@ -546,6 +545,10 @@ namespace Snyk.VisualStudio.Extension.Tests.Language
             Assert.NotNull(optionsMock.Object.FolderConfigs);
             Assert.Single(optionsMock.Object.FolderConfigs);
             Assert.Equal("/repo", optionsMock.Object.FolderConfigs[0].FolderPath);
+
+            // Assert — the global settings block was actually applied to Options, not just parsed.
+            Assert.True(optionsMock.Object.OssEnabled);
+            Assert.False(optionsMock.Object.SnykCodeSecurityEnabled);
         }
 
         [Fact]
@@ -563,7 +566,9 @@ namespace Snyk.VisualStudio.Extension.Tests.Language
             // Act
             await cut.OnSnykConfiguration(arg);
 
-            // Assert — options persisted without re-triggering DidChangeConfigurationAsync (triggerSettingsChangedEvent=false)
+            // Assert — the setting was applied to Options...
+            Assert.True(optionsMock.Object.OssEnabled);
+            // ...and persisted without re-triggering DidChangeConfigurationAsync (triggerSettingsChangedEvent=false)
             snykOptionsManagerMock.Verify(m => m.Save(It.IsAny<IPersistableOptions>(), false), Times.Once());
         }
     }

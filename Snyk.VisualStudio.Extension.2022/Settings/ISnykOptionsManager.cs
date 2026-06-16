@@ -10,6 +10,15 @@ namespace Snyk.VisualStudio.Extension.Settings
     void Save(IPersistableOptions options, bool triggerSettingsChangedEvent = true);
 
     /// <summary>
+    /// Migrate the legacy per-solution settings entry for the given solution folder (if any) into the
+    /// folder config model, then drop the legacy entry. Best-effort and idempotent. See
+    /// <see cref="SnykOptionsManager.MigrateLegacySolutionSettings"/>.
+    /// </summary>
+    /// <param name="solutionFolderPath">The open solution folder path.</param>
+    /// <returns><c>true</c> if an entry was migrated.</returns>
+    bool MigrateLegacySolutionSettings(string solutionFolderPath);
+
+    /// <summary>
     /// Get global organization string.
     /// </summary>
     /// <returns>string.</returns>

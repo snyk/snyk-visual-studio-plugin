@@ -4,6 +4,7 @@ using System.Threading.Tasks;
 using Microsoft.VisualStudio.Sdk.TestFramework;
 using Moq;
 using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
 using Snyk.VisualStudio.Extension.Authentication;
 using Snyk.VisualStudio.Extension.Language;
 using Snyk.VisualStudio.Extension.Service;
@@ -43,6 +44,159 @@ namespace Snyk.VisualStudio.Extension.Tests.UI.Html
             bridge.__ideExecuteCommand__("snyk.login", args, "");
 
             optionsMock.VerifySet(o => o.AuthenticationMethod = AuthenticationType.OAuth);
+        }
+
+        [Fact]
+        public void Dispatcher_RoutesRawMessageToBridge_EndToEnd()
+        {
+            // Exercise the full route the WebView2 host uses — raw {method,args} JSON → dispatcher →
+            // bridge — instead of calling the bridge method directly, wiring the dispatcher exactly
+            // as HtmlSettingsControl does.
+            var dispatcher = new WebView2MessageDispatcher()
+                .Register("__ideExecuteCommand__", 3, a =>
+                    bridge.__ideExecuteCommand__(a[0].Value<string>(), a[1].Value<string>(), a[2].Value<string>()));
+
+            var commandArgs = JsonConvert.SerializeObject(new object[] { "oauth", "https://api.snyk.io", false });
+            var message = JsonConvert.SerializeObject(new
+            {
+                method = "__ideExecuteCommand__",
+                args = new object[] { "snyk.login", commandArgs, string.Empty },
+            });
+
+            dispatcher.Dispatch(message);
+
+            optionsMock.VerifySet(o => o.AuthenticationMethod = AuthenticationType.OAuth);
+        }
+
+        [Fact]
+        public void ParseJsBool_HandlesJsValueShapesDeterministically()
+        {
+            Assert.True(HtmlSettingsScriptingBridge.ParseJsBool(true));
+            Assert.False(HtmlSettingsScriptingBridge.ParseJsBool(false));
+            Assert.False(HtmlSettingsScriptingBridge.ParseJsBool(null));
+            Assert.True(HtmlSettingsScriptingBridge.ParseJsBool("true"));
+            Assert.False(HtmlSettingsScriptingBridge.ParseJsBool("false"));
+            Assert.True(HtmlSettingsScriptingBridge.ParseJsBool("1"));
+            Assert.False(HtmlSettingsScriptingBridge.ParseJsBool("0"));
+            Assert.True(HtmlSettingsScriptingBridge.ParseJsBool(1L));
+            Assert.False(HtmlSettingsScriptingBridge.ParseJsBool(0L));
+            Assert.True(HtmlSettingsScriptingBridge.ParseJsBool(1));
+            // The original bug: Convert.ToBoolean threw on these; now they deterministically fall to false.
+            Assert.False(HtmlSettingsScriptingBridge.ParseJsBool("yes"));
+        }
+
+        [Fact]
+        public void SaveIdeConfig_AllKeysUnrecognised_FailsSave()
+        {
+            // A wholesale key rename (no recognised keys) must fail the save, not silently no-op.
+            var json = JsonConvert.SerializeObject(new { renamed_one = true, renamed_two = false });
+
+            bridge.__saveIdeConfig__(json);
+
+            Assert.True(bridge.SaveCompletion.IsCompleted);
+            Assert.False(bridge.SaveCompletion.Result);
+        }
+
+        [Theory]
+        [InlineData("javascript:alert(1)")]
+        [InlineData("file:///etc/passwd")]
+        [InlineData("not a url")]
+        public void SaveIdeConfig_DoesNotPersistNonWebEndpoint(string endpoint)
+        {
+            var config = JsonConvert.SerializeObject(new { api_endpoint = endpoint });
+
+            bridge.__saveIdeConfig__(config);
+
+            optionsMock.VerifySet(o => o.CustomEndpoint = endpoint, Times.Never());
+        }
+
+        [Fact]
+        public void SaveIdeConfig_PersistsAbsoluteHttpsEndpoint()
+        {
+            var config = JsonConvert.SerializeObject(new { api_endpoint = "https://api.eu.snyk.io" });
+
+            bridge.__saveIdeConfig__(config);
+
+            optionsMock.VerifySet(o => o.CustomEndpoint = "https://api.eu.snyk.io");
+        }
+
+        [Fact]
+        public void SaveIdeConfig_AllowsEmptyEndpoint_ToResetToDefault()
+        {
+            var config = JsonConvert.SerializeObject(new { api_endpoint = "" });
+
+            bridge.__saveIdeConfig__(config);
+
+            optionsMock.VerifySet(o => o.CustomEndpoint = string.Empty);
+        }
+
+        [Fact]
+        public void SaveIdeConfig_AppliesEveryGlobalSetting_FullRoundTrip()
+        {
+            // Pin the full snake_case payload -> Options mapping in one place: a missing/renamed
+            // [JsonProperty] on IdeConfigData or a broken Apply* wiring would drop a setting here with
+            // a failing assertion, rather than silently. Uses a fully-stubbed options object so the
+            // landed values can be read back.
+            var localOptions = new Mock<ISnykOptions>();
+            localOptions.SetupAllProperties();
+            localOptions.Object.AuthenticationMethod = AuthenticationType.OAuth; // same as payload → no token-clear
+
+            var sp = new Mock<ISnykServiceProvider>();
+            sp.SetupGet(x => x.Options).Returns(localOptions.Object);
+            sp.SetupGet(x => x.SnykOptionsManager).Returns(new Mock<ISnykOptionsManager>().Object);
+            var localBridge = new HtmlSettingsScriptingBridge(sp.Object, onModified: () => { });
+
+            var config = JsonConvert.SerializeObject(new
+            {
+                snyk_oss_enabled = true,
+                snyk_code_enabled = true,
+                snyk_iac_enabled = true,
+                snyk_secrets_enabled = true,
+                scan_automatic = true,
+                scan_net_new = true,
+                severity_filter_critical = true,
+                severity_filter_high = false,
+                severity_filter_medium = true,
+                severity_filter_low = false,
+                issue_view_open_issues = true,
+                issue_view_ignored_issues = true,
+                api_endpoint = "https://api.eu.snyk.io",
+                organization = "my-org",
+                proxy_insecure = true,
+                authentication_method = "oauth",
+                token = "my-token",
+                cli_path = @"C:\cli\snyk.exe",
+                automatic_download = false,
+                binary_base_url = "https://downloads.snyk.io",
+                cli_release_channel = "preview",
+                risk_score_threshold = 500,
+            });
+
+            localBridge.__saveIdeConfig__(config);
+
+            var o = localOptions.Object;
+            Assert.True(o.OssEnabled);
+            Assert.True(o.SnykCodeSecurityEnabled);
+            Assert.True(o.IacEnabled);
+            Assert.True(o.SecretsEnabled);
+            Assert.True(o.AutoScan);
+            Assert.True(o.EnableDeltaFindings);
+            Assert.True(o.FilterCritical);
+            Assert.False(o.FilterHigh);
+            Assert.True(o.FilterMedium);
+            Assert.False(o.FilterLow);
+            Assert.True(o.OpenIssuesEnabled);
+            Assert.True(o.IgnoredIssuesEnabled);
+            Assert.Equal("https://api.eu.snyk.io", o.CustomEndpoint);
+            Assert.Equal("my-org", o.Organization);
+            Assert.True(o.IgnoreUnknownCA);
+            Assert.Equal(AuthenticationType.OAuth, o.AuthenticationMethod);
+            Assert.Equal("my-token", o.ApiToken.ToString());
+            Assert.Equal(@"C:\cli\snyk.exe", o.CliCustomPath);
+            Assert.False(o.BinariesAutoUpdate);
+            Assert.Equal("https://downloads.snyk.io", o.CliBaseDownloadURL);
+            Assert.Equal("preview", o.CliReleaseChannel);
+            Assert.Equal(500, o.RiskScoreThreshold);
         }
 
         [Fact]
@@ -162,6 +316,20 @@ namespace Snyk.VisualStudio.Extension.Tests.UI.Html
             Assert.True(bridge.SaveCompletion.IsCompleted);
         }
 
+        [Theory]
+        [InlineData("null")]
+        [InlineData("")]
+        [InlineData("   ")]
+        public void SaveIdeConfig_PayloadDeserializesToNull_FailsSave(string json)
+        {
+            // A payload that maps to nothing (empty / "null" / whitespace) must fail the save so
+            // OnApply surfaces the failure dialog, rather than reporting success with no changes.
+            bridge.__saveIdeConfig__(json);
+
+            Assert.True(bridge.SaveCompletion.IsCompleted);
+            Assert.False(bridge.SaveCompletion.Result);
+        }
+
         [Fact]
         public void BeginSave_ResetsToNewIncompleteTask()
         {
@@ -222,16 +390,61 @@ namespace Snyk.VisualStudio.Extension.Tests.UI.Html
         }
 
         [Fact]
-        public void IdeSaveAttemptFinished_DoesNotOverrideSuccessfulSave()
+        public async Task IdeSaveAttemptFinished_DoesNotOverrideSuccessfulSave()
         {
             // __saveIdeConfig__ wins first (TrySetResult); a later failure status is ignored.
             bridge.__saveIdeConfig__("{}");
-            Assert.True(bridge.SaveCompletion.IsCompleted);
-            Assert.True(bridge.SaveCompletion.Result);
+
+            // Await the completion (with a timeout) instead of assuming it has already completed
+            // synchronously, so the test stays valid if the save path ever becomes genuinely async.
+            Assert.True(await AwaitWithTimeout(bridge.SaveCompletion));
 
             bridge.__ideSaveAttemptFinished__("validation_error");
 
-            Assert.True(bridge.SaveCompletion.Result);
+            Assert.True(await AwaitWithTimeout(bridge.SaveCompletion));
+        }
+
+        [Fact]
+        public async Task SaveIdeConfig_RollsBackInMemoryOptions_WhenApplyThrows()
+        {
+            // Use a fully-stubbed options object so we can observe property state, and make a late
+            // apply step (risk score) throw exactly once — after earlier fields were already applied.
+            var localOptions = new Mock<ISnykOptions>();
+            localOptions.SetupAllProperties();
+            localOptions.Object.OssEnabled = false; // baseline we expect to be restored
+
+            var thrown = false;
+            localOptions.SetupSet(o => o.RiskScoreThreshold = It.IsAny<int?>())
+                .Callback<int?>(_ =>
+                {
+                    if (!thrown)
+                    {
+                        thrown = true;
+                        throw new InvalidOperationException("boom");
+                    }
+                });
+
+            var localManager = new Mock<ISnykOptionsManager>();
+            var sp = new Mock<ISnykServiceProvider>();
+            sp.SetupGet(x => x.Options).Returns(localOptions.Object);
+            sp.SetupGet(x => x.SnykOptionsManager).Returns(localManager.Object);
+            var localBridge = new HtmlSettingsScriptingBridge(sp.Object, onModified: () => { });
+
+            // snyk_oss_enabled is applied early; risk_score_threshold (which throws) is applied late.
+            var config = JsonConvert.SerializeObject(new { snyk_oss_enabled = true, risk_score_threshold = 500 });
+            localBridge.__saveIdeConfig__(config);
+
+            Assert.False(await AwaitWithTimeout(localBridge.SaveCompletion)); // apply failed
+            Assert.False(localOptions.Object.OssEnabled); // rolled back to baseline, not left at true
+            // A failed apply never reaches the persistence step.
+            localManager.Verify(m => m.Save(It.IsAny<IPersistableOptions>(), It.IsAny<bool>()), Times.Never);
+        }
+
+        private static async Task<bool> AwaitWithTimeout(Task<bool> task)
+        {
+            var completed = await Task.WhenAny(task, Task.Delay(TimeSpan.FromSeconds(5)));
+            Assert.True(completed == task, "SaveCompletion did not finish within the timeout");
+            return await task;
         }
 
         [Fact]

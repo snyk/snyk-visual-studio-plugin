@@ -53,11 +53,33 @@ namespace Snyk.VisualStudio.Extension.UI.Html
         }
         public string GetNonce()
         {
-            var allowedChars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789".ToCharArray();
-            var random = new Random();
-            return new string(Enumerable.Repeat(allowedChars, 32)
-                .Select(s => s[random.Next(s.Length)])
-                .ToArray());
+            // The nonce backs the page's `style-src 'nonce-...'` CSP, so it must be unpredictable —
+            // System.Random is not a CSPRNG and yields guessable nonces. Use a crypto RNG.
+            const string allowedChars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
+            const int nonceLength = 32;
+
+            // Reject bytes at or above the largest multiple of the alphabet length (62 * 4 = 248) so
+            // the modulo below is unbiased. A plain `% 62` over a 0-255 byte would over-represent the
+            // first (256 % 62 == 8) characters (A-H) by ~25%.
+            var rejectAtOrAbove = 256 - (256 % allowedChars.Length);
+
+            var chars = new char[nonceLength];
+            var oneByte = new byte[1];
+            using (var rng = System.Security.Cryptography.RandomNumberGenerator.Create())
+            {
+                for (var i = 0; i < chars.Length; i++)
+                {
+                    do
+                    {
+                        rng.GetBytes(oneByte);
+                    }
+                    while (oneByte[0] >= rejectAtOrAbove);
+
+                    chars[i] = allowedChars[oneByte[0] % allowedChars.Length];
+                }
+            }
+
+            return new string(chars);
         }
 
         public virtual string ReplaceCssVariables(string html)

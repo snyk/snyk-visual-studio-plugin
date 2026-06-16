@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Threading;
 using System.Threading.Tasks;
 using EnvDTE80;
 using Microsoft.VisualStudio.Settings;
@@ -25,6 +26,13 @@ namespace Snyk.VisualStudio.Extension.Service
         /// Gets Snyk package instance.
         /// </summary>
         SnykVSPackage Package { get; }
+
+        /// <summary>
+        /// Gets the package disposal token, cancelled when the extension shuts down. Exposed here
+        /// (rather than reaching through <see cref="SnykVSPackage"/>.Instance) so consumers stay
+        /// constructor-injectable and testable.
+        /// </summary>
+        CancellationToken DisposalToken { get; }
 
         /// <summary>
         /// Gets IAsyncServiceProvider implementation.
