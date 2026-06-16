@@ -213,6 +213,12 @@ namespace Snyk.VisualStudio.Extension.UI.Html
         /// </summary>
         public void __ideSaveAttemptFinished__(string status)
         {
+            // Snapshot the completion source up front, mirroring __saveIdeConfig__. It's a no-op while
+            // this handler stays synchronous (the UI thread can't swap the field mid-method, and
+            // BeginSave only ever runs on that thread), but keeps the pattern correct if a future edit
+            // introduces an await before the signal below.
+            var tcs = saveCompletionTcs;
+
             Logger.Information("Save attempt finished with status: {Status}", status);
 
             // Fast-fail the save when the page reports it did NOT persist (e.g. client-side
@@ -226,7 +232,7 @@ namespace Snyk.VisualStudio.Extension.UI.Html
             if (!string.IsNullOrEmpty(status) &&
                 !string.Equals(status, "success", StringComparison.OrdinalIgnoreCase))
             {
-                saveCompletionTcs.TrySetResult(false);
+                tcs.TrySetResult(false);
             }
         }
 
