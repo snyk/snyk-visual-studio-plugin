@@ -27,9 +27,15 @@ namespace Snyk.VisualStudio.Extension.Settings
         /// <c>ToLower()</c> (culture-sensitive, not invariant) is intentional: it matches the original
         /// key byte-for-byte. <c>String.GetHashCode()</c> is stable within a given runtime/architecture
         /// — the same condition under which the legacy feature read its data back across sessions — so
-        /// a lookup hits for any user who would have had working per-solution settings. If a user moves
-        /// to a different bitness/runtime the hash differs and the lookup simply misses (no migration,
-        /// defaults apply), which is acceptable.
+        /// a lookup hits for any user who would have had working per-solution settings.
+        /// <para>
+        /// Known limitation: <c>GetHashCode</c> is bitness-dependent on .NET Framework, so a user who
+        /// configured settings in 32-bit VS 2019 and then upgrades to 64-bit VS 2022 produces a
+        /// different hash — the lookup misses and those per-solution settings fall back to defaults.
+        /// We can't recompute the other-bitness hash (the algorithm differs) and the legacy entry
+        /// doesn't store the folder path, so this can't be recovered. It is non-destructive though: an
+        /// unmatched entry is left in the dict (and logged by SnykSettingsLoader), not deleted, and the
+        /// Language Server is the going-forward source of truth once the user re-enters the value.
         /// </para>
         /// </summary>
         public static int ComputeFolderHash(string folderPath) => folderPath.ToLower().GetHashCode();
