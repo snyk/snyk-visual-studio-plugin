@@ -162,6 +162,7 @@ namespace Snyk.VisualStudio.Extension.Settings
 
         private async void Control_IsVisibleChanged(object sender, DependencyPropertyChangedEventArgs e)
         {
+            if (_disposed) return;
             Logger.Information("[lifecycle] HtmlSettingsControl IsVisibleChanged; instance={Hash}, IsVisible={Visible}, initStarted={Started}",
                 GetHashCode(), IsVisible, _initStarted);
             if (!IsVisible) return;
@@ -258,6 +259,7 @@ namespace Snyk.VisualStudio.Extension.Settings
 
         private void SettingsBrowser_OnNavigationCompleted(object sender, CoreWebView2NavigationCompletedEventArgs e)
         {
+            if (_disposed) return;
             // Reveal the browser only now that the document has loaded, so the user never sees the
             // dark WebView2 surface before the (light-mode) HTML has painted. The white host Grid
             // and loading label covered the area until this point.
@@ -383,6 +385,15 @@ namespace Snyk.VisualStudio.Extension.Settings
         {
             if (_disposed) return;
             _disposed = true;
+
+            // Unsubscribe so a late WPF/WebView2 event can't fire on the now-disposed control — that
+            // would touch the disposed host/browser and throw ObjectDisposedException inside the
+            // handlers (swallowed by their FireAndForget), and the live handlers would otherwise keep
+            // this control rooted.
+            IsVisibleChanged -= Control_IsVisibleChanged;
+            Unloaded -= Control_Unloaded;
+            SettingsBrowser.NavigationCompleted -= SettingsBrowser_OnNavigationCompleted;
+
             host?.Dispose();
         }
     }
