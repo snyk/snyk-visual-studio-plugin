@@ -29,5 +29,22 @@ namespace Snyk.VisualStudio.Extension.Tests.Authentication
             dialog.Verify(d => d.ShowDialogForAuth(), Times.Never);
             dialog.Verify(d => d.HideForAuthResult(), Times.Never);
         }
+
+        [Fact]
+        public void Authenticate_ReleasesReentrancyGuard_AfterEachAttempt()
+        {
+            var options = new Mock<ISnykOptions>();
+            options.SetupGet(o => o.CliCustomPath).Returns(@"Z:\nonexistent\snyk-cli-does-not-exist.exe");
+
+            var serviceProvider = new Mock<ISnykServiceProvider>();
+            serviceProvider.SetupGet(p => p.Options).Returns(options.Object);
+
+            var cut = new AuthenticationFlowService(serviceProvider.Object, new Mock<IAuthDialog>().Object);
+
+            // The re-entrancy guard is released in the finally even when the attempt throws, so a
+            // second call isn't silently swallowed — both attempts reach the CLI check and throw.
+            Assert.Throws<FileNotFoundException>(() => cut.Authenticate());
+            Assert.Throws<FileNotFoundException>(() => cut.Authenticate());
+        }
     }
 }
