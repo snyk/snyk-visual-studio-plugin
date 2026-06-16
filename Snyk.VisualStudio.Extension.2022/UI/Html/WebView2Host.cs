@@ -7,6 +7,7 @@ using System.Threading.Tasks;
 using Microsoft.Web.WebView2.Core;
 using Microsoft.Web.WebView2.Wpf;
 using Serilog;
+using Snyk.VisualStudio.Extension.Extension;
 #if DEBUG
 using Newtonsoft.Json.Linq;
 #endif
@@ -97,6 +98,29 @@ namespace Snyk.VisualStudio.Extension.UI.Html
         public Task Ready => _readyTcs.Task;
 
         /// <summary>
+        /// True when the Microsoft Edge WebView2 Runtime is installed and usable. The runtime is a
+        /// hard requirement for the extension now that the settings dialog and tool-window panels
+        /// are all WebView2-hosted. VS 2022 ships the evergreen runtime, but locked-down or
+        /// customized environments can lack it — callers use this to surface an actionable error
+        /// instead of failing opaquely on first navigation.
+        /// </summary>
+        public static bool IsRuntimeAvailable()
+        {
+            try
+            {
+                // Throws WebView2RuntimeNotFoundException when no runtime is installed; returns the
+                // version string otherwise. Passing null uses the default evergreen runtime lookup.
+                var version = CoreWebView2Environment.GetAvailableBrowserVersionString(null);
+                return !string.IsNullOrEmpty(version);
+            }
+            catch (Exception ex)
+            {
+                Logger.Warning(ex, "WebView2 runtime availability check failed; treating runtime as not installed");
+                return false;
+            }
+        }
+
+        /// <summary>
         /// Builds a per-context + per-VS-process user-data folder path under
         /// <c>%LOCALAPPDATA%\Snyk\WebView2\&lt;pid&gt;\&lt;contextKey&gt;</c>. Production
         /// uses two keys: <c>"toolwindow"</c> (shared by the description and summary
@@ -128,12 +152,14 @@ namespace Snyk.VisualStudio.Extension.UI.Html
         // Per-folder environment cache so multiple WebView2 controls sharing the same
         // user-data folder share the same env instance — which is what WebView2 requires
         // for safe shared-folder operation (see WebView2Feedback#2323 + class-level remarks).
-        // The in-flight task is cached so concurrent callers join the same CreateAsync rather
-        // than racing on the exclusive folder lock; faulted/canceled entries are evicted on
-        // next access so a transient init failure doesn't permanently poison the slot.
-        private static readonly object EnvironmentGate = new object();
-        private static readonly Dictionary<string, Task<CoreWebView2Environment>> Environments =
-            new Dictionary<string, Task<CoreWebView2Environment>>(StringComparer.OrdinalIgnoreCase);
+        // The share/evict/faulted-recreate logic lives in WebView2EnvironmentCache (unit-tested);
+        // here it's wired to the real CoreWebView2Environment.CreateAsync.
+        private static readonly WebView2EnvironmentCache<CoreWebView2Environment> EnvironmentCache =
+            new WebView2EnvironmentCache<CoreWebView2Environment>(
+                userDataFolder => CoreWebView2Environment.CreateAsync(
+                    browserExecutableFolder: null,
+                    userDataFolder: userDataFolder,
+                    options: null));
 
         /// <summary>
         /// Drops the cached <see cref="CoreWebView2Environment"/> entry for the given user-data
@@ -143,33 +169,11 @@ namespace Snyk.VisualStudio.Extension.UI.Html
         /// description + summary panels under <c>"toolwindow"</c>) but lets the settings Dialog
         /// start clean each time (as there is no state to preserve).
         /// </summary>
-        public static void EvictEnvironmentCache(string userDataFolder)
-        {
-            if (string.IsNullOrEmpty(userDataFolder)) return;
-            lock (EnvironmentGate)
-            {
-                Environments.Remove(userDataFolder);
-            }
-        }
+        public static void EvictEnvironmentCache(string userDataFolder) =>
+            EnvironmentCache.Evict(userDataFolder);
 
-        private static Task<CoreWebView2Environment> GetOrCreateEnvironmentAsync(string userDataFolder)
-        {
-            lock (EnvironmentGate)
-            {
-                if (Environments.TryGetValue(userDataFolder, out var existing))
-                {
-                    if (!existing.IsFaulted && !existing.IsCanceled) return existing;
-                    Environments.Remove(userDataFolder);
-                }
-
-                var task = CoreWebView2Environment.CreateAsync(
-                    browserExecutableFolder: null,
-                    userDataFolder: userDataFolder,
-                    options: null);
-                Environments[userDataFolder] = task;
-                return task;
-            }
-        }
+        private static Task<CoreWebView2Environment> GetOrCreateEnvironmentAsync(string userDataFolder) =>
+            EnvironmentCache.GetOrCreate(userDataFolder);
 
         private static void TryCleanupOrphanFolders()
         {
@@ -246,6 +250,13 @@ namespace Snyk.VisualStudio.Extension.UI.Html
 
                 _webView.CoreWebView2.WebMessageReceived += OnWebMessageReceived;
 
+                // Lock the control to the content we load (our own about:/data:/scratch-file
+                // documents). LS-served HTML routes real links through window.OpenLink → the OS
+                // browser, so any in-control navigation to an off-origin URL is unexpected and is
+                // blocked here while the C# bridges stay wired. Popups are never opened in-place.
+                _webView.CoreWebView2.NavigationStarting += OnNavigationStarting;
+                _webView.CoreWebView2.NewWindowRequested += OnNewWindowRequested;
+
 #if DEBUG
                 await EnableJsDiagnosticsAsync();
 #endif
@@ -288,6 +299,8 @@ namespace Snyk.VisualStudio.Extension.UI.Html
             if (_webView?.CoreWebView2 != null)
             {
                 _webView.CoreWebView2.WebMessageReceived -= OnWebMessageReceived;
+                _webView.CoreWebView2.NavigationStarting -= OnNavigationStarting;
+                _webView.CoreWebView2.NewWindowRequested -= OnNewWindowRequested;
             }
             // WebView2.Dispose tears down the underlying msedgewebview2.exe renderer process —
             // without this, every settings-dialog close or tool-window refresh would leak one.
@@ -298,6 +311,78 @@ namespace Snyk.VisualStudio.Extension.UI.Html
         private void OnWebMessageReceived(object sender, CoreWebView2WebMessageReceivedEventArgs e)
         {
             _dispatcher.Dispatch(e.WebMessageAsJson);
+        }
+
+        // Cancel any top-level navigation that isn't to the content we loaded ourselves
+        // (about:/data: from NavigateToString, or a scratch file under our user-data folder).
+        // Anchor clicks in LS HTML are intercepted into window.OpenLink, so an off-origin
+        // navigation reaching here is a JS redirect / meta-refresh / injected content — not a
+        // user action — and is dropped rather than navigated with the bridges still live.
+        private void OnNavigationStarting(object sender, CoreWebView2NavigationStartingEventArgs e)
+        {
+            if (IsAllowedDocumentUri(e.Uri, _userDataFolder)) return;
+
+            Logger.Warning("Blocking WebView2 navigation to disallowed URI: {Uri}", e.Uri);
+            e.Cancel = true;
+        }
+
+        // Never open a popup window inside the control. Route a genuine http/https target (e.g.
+        // target="_blank") to the OS browser; drop anything else.
+        private void OnNewWindowRequested(object sender, CoreWebView2NewWindowRequestedEventArgs e)
+        {
+            e.Handled = true;
+            if (UriExtensions.IsValidWebUrl(e.Uri))
+            {
+                TryOpenExternally(e.Uri);
+            }
+            else
+            {
+                Logger.Warning("Blocking WebView2 new-window request for disallowed URI: {Uri}", e.Uri);
+            }
+        }
+
+        // internal static for testability (InternalsVisibleTo test project): pure allowlist logic
+        // with the user-data folder passed in rather than read from instance state.
+        internal static bool IsAllowedDocumentUri(string uri, string userDataFolder)
+        {
+            if (string.IsNullOrEmpty(uri))
+                return true; // initial / empty document
+
+            // NavigateToString surfaces as about:blank or a data: document depending on size.
+            if (uri.StartsWith("about:", StringComparison.OrdinalIgnoreCase)
+                || uri.StartsWith("data:", StringComparison.OrdinalIgnoreCase))
+                return true;
+
+            // Oversized HTML is spilled to a scratch file and loaded via file://; only allow files
+            // under this host's own user-data folder.
+            if (uri.StartsWith("file:", StringComparison.OrdinalIgnoreCase))
+            {
+                try
+                {
+                    var path = Path.GetFullPath(new Uri(uri).LocalPath);
+                    var root = Path.GetFullPath(userDataFolder).TrimEnd(
+                        Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar) + Path.DirectorySeparatorChar;
+                    return path.StartsWith(root, StringComparison.OrdinalIgnoreCase);
+                }
+                catch
+                {
+                    return false;
+                }
+            }
+
+            return false;
+        }
+
+        private static void TryOpenExternally(string url)
+        {
+            try
+            {
+                Process.Start(new ProcessStartInfo(url) { UseShellExecute = true });
+            }
+            catch (Exception ex)
+            {
+                Logger.Warning(ex, "Failed to open URL in the external browser: {Url}", url);
+            }
         }
 
         private static void ConfigureSettings(CoreWebView2Settings settings, bool enableDeveloperTools)

@@ -2,6 +2,7 @@
 // ABOUTME: Reusable by any WebView2-hosted LS HTML page (settings, tree view, etc.).
 
 using System;
+using System.Collections.Generic;
 using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
@@ -31,11 +32,15 @@ namespace Snyk.VisualStudio.Extension.UI.Html
         private static readonly Regex CallbackIdPattern = new Regex(@"^(__cb_\d+)?$", RegexOptions.Compiled);
 
         /// <summary>
-        /// Escapes a string for safe embedding inside a single-quoted JavaScript string literal.
-        /// Handles backslashes first, then single quotes, to avoid double-escaping.
+        /// Produces a complete, fully-escaped JavaScript string literal (including the surrounding
+        /// double quotes) for <paramref name="value"/>. Use the result directly in emitted JS —
+        /// do NOT wrap it in additional quotes. Newtonsoft with <see cref="StringEscapeHandling.EscapeHtml"/>
+        /// escapes quotes, backslashes, control chars, <c>&lt; &gt; &amp;</c> and the
+        /// U+2028/U+2029 line separators, so a token / apiUrl containing any of those (or
+        /// <c>&lt;/script&gt;</c>) can't break out of the literal or the surrounding inline script.
         /// </summary>
-        public static string EscapeForJsString(string value) =>
-            (value ?? string.Empty).Replace("\\", "\\\\").Replace("'", "\\'");
+        public static string ToJsStringLiteral(string value) =>
+            JsonConvert.ToString(value ?? string.Empty, '"', StringEscapeHandling.EscapeHtml);
 
         /// <summary>
         /// Returns true if <paramref name="callbackId"/> matches the expected format produced by
@@ -44,12 +49,28 @@ namespace Snyk.VisualStudio.Extension.UI.Html
         public static bool IsValidCallbackId(string callbackId) =>
             CallbackIdPattern.IsMatch(callbackId ?? string.Empty);
 
+        // Explicit allowlist of LS commands a WebView2-hosted page may dispatch, rather than any
+        // "snyk.*" command. This is the union of commands the LS-served HTML actually invokes via
+        // window.__ideExecuteCommand__ across the settings page and the tree view (per the snyk-ls
+        // templates). Keep in sync if the LS HTML starts invoking a new command — an unlisted
+        // command is rejected and logged in DispatchAsync.
+        private static readonly HashSet<string> AllowedCommands = new HashSet<string>(StringComparer.Ordinal)
+        {
+            "snyk.login",
+            "snyk.logout",
+            "snyk.navigateToRange",
+            "snyk.setNodeExpanded",
+            "snyk.showScanErrorDetails",
+            "snyk.toggleTreeFilter",
+            "snyk.updateFolderConfig",
+        };
+
         /// <summary>
-        /// Returns true if <paramref name="command"/> is in the <c>snyk.*</c> namespace and may be
-        /// dispatched from a webview.
+        /// Returns true if <paramref name="command"/> is one of the explicitly allowlisted LS
+        /// commands that a webview-hosted page is permitted to dispatch.
         /// </summary>
         public static bool IsAllowedCommand(string command) =>
-            !string.IsNullOrEmpty(command) && command.StartsWith("snyk.");
+            !string.IsNullOrEmpty(command) && AllowedCommands.Contains(command);
 
         /// <summary>
         /// Returns the ES5-compatible JavaScript that defines <c>window.__ideExecuteCommand__</c>
@@ -83,12 +104,12 @@ namespace Snyk.VisualStudio.Extension.UI.Html
         /// </summary>
         public static string BuildSetAuthTokenScript(string token, string apiUrl)
         {
-            var escapedToken = EscapeForJsString(token);
-            var escapedApiUrl = EscapeForJsString(apiUrl);
+            var tokenLiteral = ToJsStringLiteral(token);
+            var apiUrlLiteral = ToJsStringLiteral(apiUrl);
             return $@"
                 (function() {{
                     if (typeof window.setAuthToken === 'function') {{
-                        window.setAuthToken('{escapedToken}', '{escapedApiUrl}');
+                        window.setAuthToken({tokenLiteral}, {apiUrlLiteral});
                     }} else {{
                         console.warn('window.setAuthToken is not available');
                     }}
@@ -104,10 +125,10 @@ namespace Snyk.VisualStudio.Extension.UI.Html
         /// </summary>
         public static string BuildCommandCallbackScript(string callbackId, string resultJson)
         {
-            var escapedCallbackId = EscapeForJsString(callbackId);
-            return $"if(window.__ideCallbacks__&&window.__ideCallbacks__['{escapedCallbackId}']){{" +
-                   $"var cb=window.__ideCallbacks__['{escapedCallbackId}'];" +
-                   $"delete window.__ideCallbacks__['{escapedCallbackId}'];" +
+            var callbackIdLiteral = ToJsStringLiteral(callbackId);
+            return $"if(window.__ideCallbacks__&&window.__ideCallbacks__[{callbackIdLiteral}]){{" +
+                   $"var cb=window.__ideCallbacks__[{callbackIdLiteral}];" +
+                   $"delete window.__ideCallbacks__[{callbackIdLiteral}];" +
                    $"cb({resultJson});}}";
         }
 

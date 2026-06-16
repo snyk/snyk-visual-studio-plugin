@@ -136,6 +136,8 @@ namespace Snyk.VisualStudio.Extension.Language
                         CustomMessageTarget = new SnykLanguageClientCustomTarget(SnykVSPackage.ServiceProvider);
                     }
 
+                    await MigrateLegacySolutionSettingsAsync();
+
                     Logger.Information("Starting Language Server");
                     await StartAsync.InvokeAsync(this, EventArgs.Empty);
                 }
@@ -219,12 +221,12 @@ namespace Snyk.VisualStudio.Extension.Language
             return Task.CompletedTask;
         }
 
-        private async Task<string> GetLsDebugLevelAsync()
+        private Task<string> GetLsDebugLevelAsync()
         {
             var serviceProvider = SnykVSPackage.ServiceProvider;
             var folderConfigs = serviceProvider?.Options?.FolderConfigs;
             if (folderConfigs == null)
-                return "info";
+                return Task.FromResult("info");
 
             // Enable debug logging for the whole LS process if -d/--debug is set on ANY folder's
             // additional parameters, not just the first — workspaces can have multiple folders.
@@ -233,7 +235,29 @@ namespace Snyk.VisualStudio.Extension.Language
                 .SelectMany(fc => fc.AdditionalParameters)
                 .Any(p => p == "-d" || p == "--debug");
 
-            return anyDebug ? "debug" : "info";
+            return Task.FromResult(anyDebug ? "debug" : "info");
+        }
+
+        // One-time, best-effort migration of legacy per-solution settings (IDE-1651) into the folder
+        // config, run just before the LS starts so the migrated values reach it via the initialization
+        // options. Idempotent — once an entry is migrated it is removed, so later starts are no-ops.
+        private static async Task MigrateLegacySolutionSettingsAsync()
+        {
+            try
+            {
+                var serviceProvider = SnykVSPackage.ServiceProvider;
+                var optionsManager = serviceProvider?.SnykOptionsManager;
+                var solutionService = serviceProvider?.SolutionService;
+                if (optionsManager == null || solutionService == null)
+                    return;
+
+                var solutionFolder = await solutionService.GetSolutionFolderAsync();
+                optionsManager.MigrateLegacySolutionSettings(solutionFolder);
+            }
+            catch (Exception ex)
+            {
+                Logger.Warning(ex, "Legacy per-solution settings migration failed; continuing LS startup.");
+            }
         }
 
         private void Rpc_Disconnected(object sender, JsonRpcDisconnectedEventArgs e)

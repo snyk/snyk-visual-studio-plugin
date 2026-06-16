@@ -151,6 +151,16 @@ namespace Snyk.VisualStudio.Extension.Settings
             // swap it out from under SaveAsync.
             var activeControl = Control;
 
+            // EnsureFreshControl returns without creating a control when Initialize() hasn't run yet
+            // (serviceProvider == null). Fail the apply explicitly rather than NRE'ing on SaveAsync
+            // below (which the outer catch would otherwise swallow into a silent CancelNoNavigate).
+            if (activeControl == null)
+            {
+                Logger.Warning("OnApply: no settings control available (service provider not initialized); cannot save");
+                e.ApplyBehavior = ApplyKind.CancelNoNavigate;
+                return;
+            }
+
             saveInProgress = true;
             try
             {
@@ -162,6 +172,10 @@ namespace Snyk.VisualStudio.Extension.Settings
                 // dispatch the WebView2 message, so the bridge never fires and the save
                 // never completes. DispatcherFrame.PushFrame pumps the full dispatcher
                 // including WebView2 events, which is exactly what we need here.
+                // Tradeoff: pumping the full dispatcher also lets *unrelated* VS events (tool-window
+                // visibility changes, timer callbacks, a second Apply/OK click) fire while we block.
+                // The re-entrant Apply case is handled by the saveInProgress guard above; the rest is
+                // accepted as the cost of bridging the synchronous VS apply contract to async WebView2.
                 var saveSucceeded = false;
                 var saveFailedWithException = false;
                 var frame = new DispatcherFrame();

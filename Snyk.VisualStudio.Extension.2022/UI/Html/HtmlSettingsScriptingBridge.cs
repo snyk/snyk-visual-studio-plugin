@@ -10,6 +10,7 @@ using Newtonsoft.Json;
 using Serilog;
 using Snyk.VisualStudio.Extension;
 using Snyk.VisualStudio.Extension.Authentication;
+using Snyk.VisualStudio.Extension.Extension;
 using Snyk.VisualStudio.Extension.Language;
 using Snyk.VisualStudio.Extension.Service;
 using Snyk.VisualStudio.Extension.Settings;
@@ -88,6 +89,10 @@ namespace Snyk.VisualStudio.Extension.UI.Html
             // LS round-trip via $/snyk.configuration in v25) freezes the dispatcher.
             // RunAsync + FireAndForget lets the bridge handler return immediately; the
             // outer OnApply unblocks when saveCompletionTcs is signalled below.
+            // Snapshot the completion source: BeginSave() can swap saveCompletionTcs for a fresh
+            // one (next save attempt) while this lambda is still in flight, and we must signal the
+            // exact TCS that the matching SaveAsync is awaiting — not whatever is current later.
+            var tcs = saveCompletionTcs;
             ThreadHelper.JoinableTaskFactory.RunAsync(async () =>
             {
                 try
@@ -98,12 +103,12 @@ namespace Snyk.VisualStudio.Extension.UI.Html
                     // This triggers SettingsChanged event which notifies Language Server.
                     OptionsManager.Save(Options, triggerSettingsChangedEvent: true);
 
-                    saveCompletionTcs.TrySetResult(true);
+                    tcs.TrySetResult(true);
                 }
                 catch (Exception ex)
                 {
                     Logger.Error(ex, "Error saving configuration");
-                    saveCompletionTcs.TrySetResult(false);
+                    tcs.TrySetResult(false);
                 }
             }).FireAndForget();
         }
@@ -144,8 +149,26 @@ namespace Snyk.VisualStudio.Extension.UI.Html
                             "token" => AuthenticationType.Token,
                             _ => AuthenticationType.OAuth,
                         };
-                        serviceProvider.Options.CustomEndpoint = args[1]?.ToString() ?? string.Empty;
-                        serviceProvider.Options.IgnoreUnknownCA = args[2] is bool b ? b : Convert.ToBoolean(args[2]);
+
+                        // Validate the endpoint coming from the (LS-served) page before persisting:
+                        // only accept an absolute http/https URL, and allow empty to mean "reset to
+                        // default". An empty string clears the override; anything else malformed is
+                        // ignored so a page can't repoint the API host to a bogus value.
+                        var endpoint = args[1]?.ToString() ?? string.Empty;
+                        if (string.IsNullOrEmpty(endpoint))
+                        {
+                            serviceProvider.Options.CustomEndpoint = string.Empty;
+                        }
+                        else if (UriExtensions.IsValidWebUrl(endpoint))
+                        {
+                            serviceProvider.Options.CustomEndpoint = endpoint;
+                        }
+                        else
+                        {
+                            Logger.Warning("Ignoring snyk.login endpoint that is not an absolute http/https URL");
+                        }
+
+                        serviceProvider.Options.IgnoreUnknownCA = ParseJsBool(args[2]);
                     }
                 }
                 catch (Exception ex)
@@ -166,12 +189,36 @@ namespace Snyk.VisualStudio.Extension.UI.Html
             }).FireAndForget();
         }
 
+        // Deterministically coerce a JSON-deserialized arg to bool. JsonConvert yields bool, long,
+        // or string for JSON primitives; Convert.ToBoolean throws on "yes"/null/numbers-as-string,
+        // which previously surfaced as a silently-not-applied SSL toggle. Unknown shapes → false.
+        // internal for testability (InternalsVisibleTo test project).
+        internal static bool ParseJsBool(object value)
+        {
+            switch (value)
+            {
+                case null: return false;
+                case bool b: return b;
+                case long l: return l != 0;
+                case int i: return i != 0;
+                case string s:
+                    return bool.TryParse(s, out var parsed) ? parsed : s == "1";
+                default: return false;
+            }
+        }
+
         /// <summary>
         /// Called from LS HTML JavaScript: window.__ideSaveAttemptFinished__(status)
         /// Optional callback to track save attempt results.
         /// </summary>
         public void __ideSaveAttemptFinished__(string status)
         {
+            // Snapshot the completion source up front, mirroring __saveIdeConfig__. It's a no-op while
+            // this handler stays synchronous (the UI thread can't swap the field mid-method, and
+            // BeginSave only ever runs on that thread), but keeps the pattern correct if a future edit
+            // introduces an await before the signal below.
+            var tcs = saveCompletionTcs;
+
             Logger.Information("Save attempt finished with status: {Status}", status);
 
             // Fast-fail the save when the page reports it did NOT persist (e.g. client-side
@@ -185,7 +232,7 @@ namespace Snyk.VisualStudio.Extension.UI.Html
             if (!string.IsNullOrEmpty(status) &&
                 !string.Equals(status, "success", StringComparison.OrdinalIgnoreCase))
             {
-                saveCompletionTcs.TrySetResult(false);
+                tcs.TrySetResult(false);
             }
         }
 
@@ -214,32 +261,148 @@ namespace Snyk.VisualStudio.Extension.UI.Html
                     "Could not parse settings payload from the settings page; no settings were saved.");
             }
 
+            // Catch settings-HTML/plugin drift before applying: the form is synced from snyk-ls and
+            // can add keys this build doesn't bind, which Newtonsoft would otherwise drop silently.
+            // Warn (naming the keys) on a partial mismatch so the rest of the save still goes through,
+            // and fail loudly when nothing is recognised (a wholesale rename that would no-op yet
+            // report success).
+            var contract = IdeConfigContract.Analyze(jsonString);
+            if (contract.AllUnmapped)
+            {
+                throw new InvalidOperationException(
+                    "None of the keys posted by the settings page are recognised by this plugin build (keys: " +
+                    string.Join(", ", contract.UnmappedKeys) +
+                    "). The settings HTML is likely newer than the plugin; no settings were saved.");
+            }
+
+            if (contract.HasUnmappedKeys)
+            {
+                Logger.Warning(
+                    "Settings page posted key(s) this plugin build does not recognise and did not save " +
+                    "(global: [{GlobalKeys}], per-folder: [{FolderKeys}]). " +
+                    "The settings HTML (synced from snyk-ls) may be newer than this plugin.",
+                    string.Join(", ", contract.UnmappedKeys),
+                    string.Join(", ", contract.UnmappedFolderKeys));
+            }
+
             var isCliOnly = config.IsFallbackForm ?? false;
             Logger.Information("Saving workspace configuration (CLI only: {IsCliOnly})", isCliOnly);
 
-            // Always apply CLI settings and Insecure setting
-            ApplyCliSettings(config);
-            ApplyInsecureSetting(config);
-
-            // Only apply full settings when not in CLI-only mode
-            if (!isCliOnly)
+            // Apply directly to the live Options, but capture a rollback first. Apply* mutate Options
+            // in place (folder-config entries included) and OptionsManager.Save only runs after this
+            // method returns — so a mid-apply failure would otherwise leave Options half-applied in
+            // memory, diverging from disk until restart. On failure we restore and rethrow.
+            var rollback = SnapshotOptionsForRollback();
+            try
             {
-                ApplyScanSettings(config);
-                ApplyIssueViewSettings(config);
-                var previousAuthMethod = Options.AuthenticationMethod;
-                ApplyAuthenticationSettings(config);
-                // Clear stored token when auth method changes: a token from one method is not valid for another.
-                if (config.AuthenticationMethod != null && Options.AuthenticationMethod != previousAuthMethod)
-                {
-                    Options.ApiToken = new AuthenticationToken(Options.AuthenticationMethod, string.Empty);
-                }
+                // Always apply CLI settings and Insecure setting
+                ApplyCliSettings(config);
+                ApplyInsecureSetting(config);
 
-                ApplyConnectionSettings(config);
-                ApplyTrustedFolders(config);
-                ApplyFilterSettings(config);
-                ApplyMiscellaneousSettings(config);
-                await ApplyFolderConfigsAsync(config);
+                // Only apply full settings when not in CLI-only mode
+                if (!isCliOnly)
+                {
+                    ApplyScanSettings(config);
+                    ApplyIssueViewSettings(config);
+                    var previousAuthMethod = Options.AuthenticationMethod;
+                    ApplyAuthenticationSettings(config);
+                    // Clear stored token when auth method changes: a token from one method is not valid for another.
+                    if (config.AuthenticationMethod != null && Options.AuthenticationMethod != previousAuthMethod)
+                    {
+                        Options.ApiToken = new AuthenticationToken(Options.AuthenticationMethod, string.Empty);
+                    }
+
+                    ApplyConnectionSettings(config);
+                    ApplyTrustedFolders(config);
+                    ApplyFilterSettings(config);
+                    ApplyMiscellaneousSettings(config);
+                    await ApplyFolderConfigsAsync(config);
+                }
             }
+            catch
+            {
+                rollback();
+                throw;
+            }
+        }
+
+        // Captures the current Options state and returns an action that restores it, so a partially-
+        // applied save can be rolled back (see ParseAndSaveConfigAsync). Collections are deep-copied
+        // because the apply mutates folder-config entries in place and replaces TrustedFolders.
+        private Action SnapshotOptionsForRollback()
+        {
+            var o = Options;
+
+            var deviceId = o.DeviceId;
+            var autoScan = o.AutoScan;
+            var openIssues = o.OpenIssuesEnabled;
+            var ignoredIssues = o.IgnoredIssuesEnabled;
+            var apiToken = o.ApiToken;
+            var authMethod = o.AuthenticationMethod;
+            var customEndpoint = o.CustomEndpoint;
+            var organization = o.Organization;
+            var ignoreUnknownCa = o.IgnoreUnknownCA;
+            var ossEnabled = o.OssEnabled;
+            var iacEnabled = o.IacEnabled;
+            var codeEnabled = o.SnykCodeSecurityEnabled;
+            var secretsEnabled = o.SecretsEnabled;
+            var binariesAutoUpdate = o.BinariesAutoUpdate;
+            var cliCustomPath = o.CliCustomPath;
+            var cliReleaseChannel = o.CliReleaseChannel;
+            var cliBaseDownloadUrl = o.CliBaseDownloadURL;
+            var enableDelta = o.EnableDeltaFindings;
+            var currentCliVersion = o.CurrentCliVersion;
+            var analyticsSent = o.AnalyticsPluginInstalledSent;
+            var filterCritical = o.FilterCritical;
+            var filterHigh = o.FilterHigh;
+            var filterMedium = o.FilterMedium;
+            var filterLow = o.FilterLow;
+            var additionalEnv = o.AdditionalEnv;
+            var riskScoreThreshold = o.RiskScoreThreshold;
+            var folderConfigs = CloneFolderConfigs(o.FolderConfigs);
+            var trustedFolders = o.TrustedFolders == null ? null : new HashSet<string>(o.TrustedFolders);
+
+            return () =>
+            {
+                o.DeviceId = deviceId;
+                o.AutoScan = autoScan;
+                o.OpenIssuesEnabled = openIssues;
+                o.IgnoredIssuesEnabled = ignoredIssues;
+                o.ApiToken = apiToken;
+                o.AuthenticationMethod = authMethod;
+                o.CustomEndpoint = customEndpoint;
+                o.Organization = organization;
+                o.IgnoreUnknownCA = ignoreUnknownCa;
+                o.OssEnabled = ossEnabled;
+                o.IacEnabled = iacEnabled;
+                o.SnykCodeSecurityEnabled = codeEnabled;
+                o.SecretsEnabled = secretsEnabled;
+                o.BinariesAutoUpdate = binariesAutoUpdate;
+                o.CliCustomPath = cliCustomPath;
+                o.CliReleaseChannel = cliReleaseChannel;
+                o.CliBaseDownloadURL = cliBaseDownloadUrl;
+                o.EnableDeltaFindings = enableDelta;
+                o.CurrentCliVersion = currentCliVersion;
+                o.AnalyticsPluginInstalledSent = analyticsSent;
+                o.FilterCritical = filterCritical;
+                o.FilterHigh = filterHigh;
+                o.FilterMedium = filterMedium;
+                o.FilterLow = filterLow;
+                o.AdditionalEnv = additionalEnv;
+                o.RiskScoreThreshold = riskScoreThreshold;
+                o.FolderConfigs = folderConfigs;
+                o.TrustedFolders = trustedFolders;
+            };
+        }
+
+        private static List<FolderConfig> CloneFolderConfigs(List<FolderConfig> source)
+        {
+            if (source == null)
+                return null;
+
+            // Round-trip through JSON to deep-copy each entry, so in-place mutation during apply
+            // can't corrupt the rollback snapshot.
+            return JsonConvert.DeserializeObject<List<FolderConfig>>(JsonConvert.SerializeObject(source));
         }
 
         private void ApplyScanSettings(IdeConfigData config)
@@ -328,10 +491,20 @@ namespace Snyk.VisualStudio.Extension.UI.Html
 
         private void ApplyConnectionSettings(IdeConfigData config)
         {
-            // Allow empty values to reset settings
+            // Allow an empty value to reset to the default endpoint, but otherwise only accept an
+            // absolute http/https URL — same guard as the snyk.login bridge path and the
+            // OnHasAuthenticated LS callback — so a malformed or non-web URI (file:, javascript:, …)
+            // can't be persisted as the API host.
             if (config.ApiEndpoint != null)
             {
-                Options.CustomEndpoint = config.ApiEndpoint;
+                if (string.IsNullOrEmpty(config.ApiEndpoint) || UriExtensions.IsValidWebUrl(config.ApiEndpoint))
+                {
+                    Options.CustomEndpoint = config.ApiEndpoint;
+                }
+                else
+                {
+                    Logger.Warning("Ignoring settings endpoint that is not an absolute http/https URL");
+                }
             }
 
             if (config.Token != null)
@@ -344,8 +517,10 @@ namespace Snyk.VisualStudio.Extension.UI.Html
                 if (normalizedNewToken != normalizedExistingToken)
                 {
                     // Use the authenticationMethod from this request if provided, otherwise uses existing value
-                    // Note: Requires caller to send authenticationMethod when updating token to ensure correct pairing
-                    Options.ApiToken = new AuthenticationToken(Options.AuthenticationMethod, config.Token);
+                    // Note: Requires caller to send authenticationMethod when updating token to ensure correct pairing.
+                    // Store the trimmed value (what we compared) so stray form whitespace doesn't get
+                    // baked into the token store and silently fail downstream IsValid() parsing.
+                    Options.ApiToken = new AuthenticationToken(Options.AuthenticationMethod, normalizedNewToken);
                 }
             }
 

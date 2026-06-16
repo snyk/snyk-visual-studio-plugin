@@ -38,6 +38,14 @@ namespace Snyk.VisualStudio.Extension.Settings
         /// </summary>
         public static HtmlSettingsControl Instance => instance;
 
+        // Latest LS-issued auth token awaiting delivery to the settings page. OnHasAuthenticated can
+        // fire when no control is loaded (between Unloaded and the next show) or before the page's
+        // setAuthToken JS exists; queuing here makes delivery at-least-once — whichever control next
+        // becomes page-ready flushes it, instead of the push being silently lost. The take-once /
+        // last-write-wins semantics live in PendingAuthTokenSlot (unit-tested); this control just
+        // gates the flush on page-readiness.
+        private static readonly PendingAuthTokenSlot AuthTokenSlot = new PendingAuthTokenSlot();
+
         private readonly ISnykServiceProvider serviceProvider;
         protected readonly HtmlSettingsScriptingBridge scriptingBridge;
         protected readonly WebView2Host host;
@@ -139,6 +147,11 @@ namespace Snyk.VisualStudio.Extension.Settings
 
         private bool _initStarted;
 
+        // Set once the hosted page has finished navigating, i.e. once window.setAuthToken exists.
+        // A queued auth token is only flushed after this so the push can't no-op against a
+        // half-loaded page.
+        private bool _pageReady;
+
         /// <summary>
         /// Set to true after this control has been Unloaded. The host's WebView2 may already
         /// have been disposed by WPF's HwndHost cleanup at that point, so the parent
@@ -149,6 +162,7 @@ namespace Snyk.VisualStudio.Extension.Settings
 
         private async void Control_IsVisibleChanged(object sender, DependencyPropertyChangedEventArgs e)
         {
+            if (_disposed) return;
             Logger.Information("[lifecycle] HtmlSettingsControl IsVisibleChanged; instance={Hash}, IsVisible={Visible}, initStarted={Started}",
                 GetHashCode(), IsVisible, _initStarted);
             if (!IsVisible) return;
@@ -245,11 +259,18 @@ namespace Snyk.VisualStudio.Extension.Settings
 
         private void SettingsBrowser_OnNavigationCompleted(object sender, CoreWebView2NavigationCompletedEventArgs e)
         {
+            if (_disposed) return;
             // Reveal the browser only now that the document has loaded, so the user never sees the
             // dark WebView2 surface before the (light-mode) HTML has painted. The white host Grid
             // and loading label covered the area until this point.
             LoadingStatusLabel.Visibility = Visibility.Collapsed;
             SettingsBrowser.Visibility = Visibility.Visible;
+
+            // The page (and its window.setAuthToken) now exists — deliver any auth token that was
+            // queued before this control finished loading (e.g. an OAuth round-trip that completed
+            // while no settings page was open).
+            _pageReady = true;
+            FlushPendingAuthToken();
         }
 
         // Backstop for a *lost* WebView2 round-trip, NOT a Language Server timeout. SaveCompletion
@@ -291,9 +312,34 @@ namespace Snyk.VisualStudio.Extension.Settings
         }
 
         /// <summary>
+        /// Records the latest LS-issued token / apiUrl and delivers it to the live settings page if
+        /// one is ready. Safe to call when no settings page is open, or before its HTML has loaded —
+        /// the token is held and flushed by the next control to become page-ready, so a push is never
+        /// lost. Called from <see cref="SnykLanguageClientCustomTarget.OnHasAuthenticated"/>.
+        /// </summary>
+        public static void QueueAuthToken(string token, string apiUrl = null)
+        {
+            AuthTokenSlot.Set(token, apiUrl);
+            instance?.FlushPendingAuthToken();
+        }
+
+        // Delivers the queued token to the page, but only once it is loaded (window.setAuthToken
+        // exists); otherwise it is left queued for SettingsBrowser_OnNavigationCompleted to flush.
+        // Take() returns the token at most once, so it can't be delivered twice.
+        private void FlushPendingAuthToken()
+        {
+            if (!_pageReady) return;
+
+            var pending = AuthTokenSlot.Take();
+            if (pending != null)
+            {
+                UpdateAuthToken(pending.Token, pending.ApiUrl);
+            }
+        }
+
+        /// <summary>
         /// Pushes a freshly-issued token / apiUrl into the still-open settings page so the
-        /// visible token field updates after an LS-driven OAuth flow. Called from
-        /// <see cref="SnykLanguageClientCustomTarget.OnHasAuthenticated"/>.
+        /// visible token field updates after an LS-driven OAuth flow.
         /// </summary>
         public void UpdateAuthToken(string token, string apiUrl = null)
         {
@@ -339,6 +385,15 @@ namespace Snyk.VisualStudio.Extension.Settings
         {
             if (_disposed) return;
             _disposed = true;
+
+            // Unsubscribe so a late WPF/WebView2 event can't fire on the now-disposed control — that
+            // would touch the disposed host/browser and throw ObjectDisposedException inside the
+            // handlers (swallowed by their FireAndForget), and the live handlers would otherwise keep
+            // this control rooted.
+            IsVisibleChanged -= Control_IsVisibleChanged;
+            Unloaded -= Control_Unloaded;
+            SettingsBrowser.NavigationCompleted -= SettingsBrowser_OnNavigationCompleted;
+
             host?.Dispose();
         }
     }

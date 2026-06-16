@@ -6,6 +6,47 @@ namespace Snyk.VisualStudio.Extension.Tests.Language
 {
     public class LsAnalysisResultTest
     {
+        [Fact]
+        public void GetDisplayTitleWithLineNumber_ShouldUseStartLinePlusOne()
+        {
+            // LSP lines are 0-based; Start indicates issue location.
+            // Range.Start.Line == 4 → displayed as "line 5: ..."
+            var issue = new Issue
+            {
+                Title = "SQL Injection",
+                Range = new Range
+                {
+                    Start = new Start { Line = 4, Character = 0 },
+                    End = new End { Line = 4, Character = 20 }
+                },
+                Product = Product.Code,
+                AdditionalData = new AdditionalData { PriorityScore = 0 }
+            };
+
+            var result = issue.GetDisplayTitleWithLineNumber();
+
+            Assert.Contains("line 5:", result);
+            Assert.Contains("SQL Injection", result);
+        }
+
+        [Fact]
+        public void GetDisplayTitleWithLineNumber_NullRange_ShouldNotThrow()
+        {
+            var issue = new Issue
+            {
+                Title = "XSS",
+                Range = null,
+                Product = Product.Code,
+                AdditionalData = new AdditionalData { PriorityScore = 0 }
+            };
+
+            var result = issue.GetDisplayTitleWithLineNumber();
+
+            // Should still contain the title; line portion may be "line : " or similar
+            Assert.Contains("XSS", result);
+        }
+
+
         [Theory]
         [InlineData("critical", 4_000_000)]
         [InlineData("high", 3_000_000)]

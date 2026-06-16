@@ -223,7 +223,8 @@ namespace Snyk.VisualStudio.Extension.Language
             var fixIcon = HasFix() ? "⚡" : "";
 
             var ignoredPrefix = this.IsIgnored ? "[ Ignored ] " : "";
-            var line = "line " + this.Range?.End?.Line + ": " + this.GetDisplayTitle();
+            var startLine = this.Range?.Start != null ? (int?)(this.Range.Start.Line + 1) : null;
+            var line = "line " + startLine + ": " + this.GetDisplayTitle();
 
             return fixIcon + ignoredPrefix + line;
         }

@@ -110,6 +110,9 @@ namespace Snyk.VisualStudio.Extension.Service
         /// </summary>
         public SnykVSPackage Package => this.serviceProvider as SnykVSPackage;
 
+        /// <inheritdoc/>
+        public CancellationToken DisposalToken => this.Package.DisposalToken;
+
         /// <summary>
         /// Gets implementation of IAsyncServiceProvider.
         /// </summary>
