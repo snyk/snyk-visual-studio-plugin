@@ -30,5 +30,10 @@
         /// Gets or sets a value indicating whether local code engine enabled.
         /// </summary>
         public bool LocalCodeEngineEnabled { get; set; }
+
+        /// <summary>
+        /// Gets or sets a value indicating whether Secrets scanning enabled.
+        /// </summary>
+        public bool SecretsEnabled { get; set; }
     }
 }

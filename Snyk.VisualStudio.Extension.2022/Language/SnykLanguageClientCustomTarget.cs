@@ -24,6 +24,7 @@ namespace Snyk.VisualStudio.Extension.Language
         private readonly ConcurrentDictionary<string, IEnumerable<Issue>> snykCodeIssueDictionary = new();
         private readonly ConcurrentDictionary<string, IEnumerable<Issue>> snykOssIssueDictionary = new();
         private readonly ConcurrentDictionary<string, IEnumerable<Issue>> snykIaCIssueDictionary = new();
+        private readonly ConcurrentDictionary<string, IEnumerable<Issue>> snykSecretsIssueDictionary = new();
         public SnykLanguageClientCustomTarget(ISnykServiceProvider serviceProvider)
         {
             this.serviceProvider = serviceProvider;
@@ -46,6 +47,7 @@ namespace Snyk.VisualStudio.Extension.Language
                 snykCodeIssueDictionary.TryRemove(parsedUri.UncAwareAbsolutePath(), out _);
                 snykOssIssueDictionary.TryRemove(parsedUri.UncAwareAbsolutePath(), out _);
                 snykIaCIssueDictionary.TryRemove(parsedUri.UncAwareAbsolutePath(), out _);
+                snykSecretsIssueDictionary.TryRemove(parsedUri.UncAwareAbsolutePath(), out _);
                 return;
             }
 
@@ -77,6 +79,9 @@ namespace Snyk.VisualStudio.Extension.Language
                 case "iac":
                     snykIaCIssueDictionary.AddOrUpdate(parsedUri.UncAwareAbsolutePath(), issueList, (_, _) => issueList);
                     break;
+                case "secrets":
+                    snykSecretsIssueDictionary.AddOrUpdate(parsedUri.UncAwareAbsolutePath(), issueList, (_, _) => issueList);
+                    break;
                 default:
                     throw new InvalidProductTypeException();
 
@@ -104,6 +109,9 @@ namespace Snyk.VisualStudio.Extension.Language
                     break;
                 case Product.Iac:
                     await ProcessIacScanAsync(lspAnalysisResult);
+                    break;
+                case Product.Secrets:
+                    await ProcessSecretsScanAsync(lspAnalysisResult);
                     break;
             }
         }
@@ -323,6 +331,25 @@ namespace Snyk.VisualStudio.Extension.Language
             serviceProvider.TasksService.FireTaskFinished();
         }
 
+        private async Task ProcessSecretsScanAsync(LsAnalysisResult lsAnalysisResult)
+        {
+            if (lsAnalysisResult.Status == "inProgress")
+            {
+                serviceProvider.TasksService.FireSecretsScanningStartedEvent();
+                return;
+            }
+            if (lsAnalysisResult.Status == "error")
+            {
+                serviceProvider.TasksService.OnSecretsError(lsAnalysisResult.PresentableError);
+                serviceProvider.TasksService.FireTaskFinished();
+                return;
+            }
+
+            serviceProvider.TasksService.FireSecretsScanningUpdateEvent(snykSecretsIssueDictionary);
+            serviceProvider.TasksService.FireSecretsScanningFinishedEvent();
+            serviceProvider.TasksService.FireTaskFinished();
+        }
+
         private string LspSourceToProduct(string source)
         {
             return source switch
@@ -330,6 +357,7 @@ namespace Snyk.VisualStudio.Extension.Language
                 "Snyk Code" => "code",
                 "Snyk Open Source" => "oss",
                 "Snyk IaC" => "iac",
+                "Snyk Secrets" => "secrets",
                 _ => ""
             };
         }
@@ -338,6 +366,12 @@ namespace Snyk.VisualStudio.Extension.Language
         public ConcurrentDictionary<string, IEnumerable<Issue>> GetCodeDictionary()
         {
             return snykCodeIssueDictionary;
+        }
+
+        // Only used in tests
+        public ConcurrentDictionary<string, IEnumerable<Issue>> GetSecretsDictionary()
+        {
+            return snykSecretsIssueDictionary;
         }
 #pragma warning restore CS1998 // Async method lacks 'await' operators and will run synchronously
     }
