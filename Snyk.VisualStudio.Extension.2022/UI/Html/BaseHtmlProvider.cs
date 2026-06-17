@@ -43,12 +43,22 @@ namespace Snyk.VisualStudio.Extension.UI.Html
         /// </summary>
         protected string GetScrollbarCss()
         {
+            // Shaped to approximate the native VS scrollbar (which the WPF MessagePanel uses):
+            // a 17px-wide track (the OS logical scrollbar width — VS uses the same; it renders
+            // wider on high-DPI displays as WebView2 scales CSS px by the device scale factor)
+            // with a narrower rectangular thumb centred inside it. The thumb is inset with a
+            // transparent 4px border + background-clip: padding-box, so the ~9px-wide thumb floats
+            // in the track with the track colour showing through the inset — matching VS rather
+            // than the thumb filling the whole channel. Colors come from the --vscode-scrollbar*
+            // variables, which ReplaceCssVariables maps to the active VS theme. Arrow buttons are
+            // omitted — they'd need embedded SVG glyphs and depend on each page's CSP allowing
+            // data: images.
             return @"
-            ::-webkit-scrollbar { width: 10px; height: 10px; }
-            ::-webkit-scrollbar-track { background: transparent; }
-            ::-webkit-scrollbar-thumb { background: var(--vscode-scrollbarSlider-background); border-radius: 5px; }
-            ::-webkit-scrollbar-thumb:hover { background: var(--vscode-scrollbarSlider-hoverBackground); }
-            ::-webkit-scrollbar-corner { background: transparent; }
+            ::-webkit-scrollbar { width: 17px; height: 17px; }
+            ::-webkit-scrollbar-track { background: var(--vscode-scrollbar-track-background); }
+            ::-webkit-scrollbar-thumb { background-color: var(--vscode-scrollbarSlider-background); border: 4px solid transparent; background-clip: padding-box; }
+            ::-webkit-scrollbar-thumb:hover { background-color: var(--vscode-scrollbarSlider-hoverBackground); }
+            ::-webkit-scrollbar-corner { background: var(--vscode-scrollbar-track-background); }
             ";
         }
 
@@ -226,6 +236,8 @@ namespace Snyk.VisualStudio.Extension.UI.Html
                 { "vscode-scrollbarSlider-background", scrollbarThumb },
                 { "vscode-scrollbarSlider-hoverBackground", scrollbarThumbHover },
                 { "vscode-scrollbarSlider-activeBackground", scrollbarThumbHover },
+                // Track background for the IDE-injected ::-webkit-scrollbar rule (GetScrollbarCss).
+                { "vscode-scrollbar-track-background", scrollbarBackground },
                 // Button variables (vscode- prefix for legacy compatibility)
                 { "vscode-button-background", buttonBackground },
                 { "vscode-button-foreground", buttonText },
