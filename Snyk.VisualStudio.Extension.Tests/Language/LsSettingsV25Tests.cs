@@ -106,6 +106,9 @@ namespace Snyk.VisualStudio.Extension.Tests.Language
                     PflagKeys.SnykCodeEnabled,
                     PflagKeys.PreferredOrg,
                     PflagKeys.RiskScoreThreshold,
+                    PflagKeys.AdditionalParameters,
+                    PflagKeys.AdditionalEnvironment,
+                    PflagKeys.ScanCommandConfig,
                 },
             };
             optionsMock.SetupGet(o => o.FolderConfigs).Returns(new List<FolderConfig> { fc });
@@ -115,6 +118,70 @@ namespace Snyk.VisualStudio.Extension.Tests.Language
             AssertResetSetting(settings, PflagKeys.SnykCodeEnabled);
             AssertResetSetting(settings, PflagKeys.PreferredOrg);
             AssertResetSetting(settings, PflagKeys.RiskScoreThreshold);
+            AssertResetSetting(settings, PflagKeys.AdditionalParameters);
+            AssertResetSetting(settings, PflagKeys.AdditionalEnvironment);
+            AssertResetSetting(settings, PflagKeys.ScanCommandConfig);
+        }
+
+        [Fact]
+        public void BuildFolderConfigs_ResetWinsForNonScalarFields()
+        {
+            // additional_parameters (List), additional_environment (string) and scan_command_config
+            // (Dictionary) are non-scalar. A reset must emit {value:null, changed:true} even when a
+            // typed value is stored, so snyk-ls Unsets the user:folder: override.
+            SetupDefaults();
+            var fc = new FolderConfig
+            {
+                FolderPath = "/repo",
+                AdditionalParameters = new List<string> { "--debug" },
+                AdditionalEnv = "FOO=bar",
+                ScanCommandConfig = new Dictionary<string, ScanCommandConfig>
+                {
+                    ["oss"] = new ScanCommandConfig { PreScanCommand = "echo hi" },
+                },
+                ResetKeys = new HashSet<string>
+                {
+                    PflagKeys.AdditionalParameters,
+                    PflagKeys.AdditionalEnvironment,
+                    PflagKeys.ScanCommandConfig,
+                },
+            };
+            optionsMock.SetupGet(o => o.FolderConfigs).Returns(new List<FolderConfig> { fc });
+
+            var settings = cut.GetInitializationOptions().FolderConfigs[0].Settings;
+
+            AssertResetSetting(settings, PflagKeys.AdditionalParameters);
+            AssertResetSetting(settings, PflagKeys.AdditionalEnvironment);
+            AssertResetSetting(settings, PflagKeys.ScanCommandConfig);
+        }
+
+        [Fact]
+        public void BuildFolderConfigs_NonScalarResetWithNullStoredValue_StillEmitsNull()
+        {
+            // The ResetKeys-driven emit must win even when the stored non-scalar value is null/absent
+            // (the guarded emits at the top of BuildFolderConfigs skip nulls; the reset must not be
+            // dropped along with them).
+            SetupDefaults();
+            var fc = new FolderConfig
+            {
+                FolderPath = "/repo",
+                AdditionalParameters = null,
+                AdditionalEnv = null,
+                ScanCommandConfig = null,
+                ResetKeys = new HashSet<string>
+                {
+                    PflagKeys.AdditionalParameters,
+                    PflagKeys.AdditionalEnvironment,
+                    PflagKeys.ScanCommandConfig,
+                },
+            };
+            optionsMock.SetupGet(o => o.FolderConfigs).Returns(new List<FolderConfig> { fc });
+
+            var settings = cut.GetInitializationOptions().FolderConfigs[0].Settings;
+
+            AssertResetSetting(settings, PflagKeys.AdditionalParameters);
+            AssertResetSetting(settings, PflagKeys.AdditionalEnvironment);
+            AssertResetSetting(settings, PflagKeys.ScanCommandConfig);
         }
 
         [Fact]

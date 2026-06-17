@@ -711,5 +711,49 @@ namespace Snyk.VisualStudio.Extension.Tests.UI.Html
 
             bridge.__saveIdeConfig__(config);
         }
+
+        [Fact]
+        public void SaveIdeConfig_FolderConfigs_NonScalarReset_FlagsResetKeysAndClearsStoredOverride()
+        {
+            // "Reset overrides" sends the non-scalar folder fields as flat JSON null
+            // (additional_parameters: array, additional_environment: string, scan_command_config:
+            // object). Present-null can't be distinguished from absent by the typed model, so the
+            // bridge re-reads the raw JSON: each reset key must be flagged on the stored config's
+            // ResetKeys and its stored override cleared, so BuildFolderConfigs emits {value:null,
+            // changed:true} and snyk-ls Unsets the user:folder: override.
+            var existing = new FolderConfig
+            {
+                FolderPath = "/repo",
+                AdditionalParameters = new List<string> { "--debug" },
+                AdditionalEnv = "FOO=bar",
+                ScanCommandConfig = new Dictionary<string, ScanCommandConfig>
+                {
+                    ["oss"] = new ScanCommandConfig { PreScanCommand = "echo hi" },
+                },
+            };
+            optionsMock.SetupGet(o => o.FolderConfigs).Returns(new List<FolderConfig> { existing });
+
+            // Raw payload with explicit JSON nulls for the three non-scalar keys (array/string/object
+            // fields). This is the exact present-null shape the dialog's reset emits.
+            var config = "{" +
+                "\"folderConfigs\":[{" +
+                    "\"folderPath\":\"/repo\"," +
+                    "\"additional_parameters\":null," +
+                    "\"additional_environment\":null," +
+                    "\"scan_command_config\":null" +
+                "}]}";
+
+            bridge.__saveIdeConfig__(config);
+
+            Assert.NotNull(existing.ResetKeys);
+            Assert.Contains(PflagKeys.AdditionalParameters, existing.ResetKeys);
+            Assert.Contains(PflagKeys.AdditionalEnvironment, existing.ResetKeys);
+            Assert.Contains(PflagKeys.ScanCommandConfig, existing.ResetKeys);
+
+            // The stored typed override is cleared so a stale value can't leak past the reset emit.
+            Assert.Null(existing.AdditionalParameters);
+            Assert.Null(existing.AdditionalEnv);
+            Assert.Null(existing.ScanCommandConfig);
+        }
     }
 }

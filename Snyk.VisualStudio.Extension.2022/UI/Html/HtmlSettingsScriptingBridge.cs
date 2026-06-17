@@ -643,6 +643,9 @@ namespace Snyk.VisualStudio.Extension.UI.Html
             PflagKeys.IssueViewIgnoredIssues,
             PflagKeys.RiskScoreThreshold,
             PflagKeys.PreferredOrg,
+            PflagKeys.AdditionalParameters,
+            PflagKeys.AdditionalEnvironment,
+            PflagKeys.ScanCommandConfig,
         };
 
         private void ApplyFolderResetsFromRawJson(string rawJson)
@@ -716,6 +719,9 @@ namespace Snyk.VisualStudio.Extension.UI.Html
                 case PflagKeys.IssueViewIgnoredIssues: fc.IssueViewIgnoredIssues = null; break;
                 case PflagKeys.RiskScoreThreshold: fc.RiskScoreThreshold = null; break;
                 case PflagKeys.PreferredOrg: fc.PreferredOrg = null; break;
+                case PflagKeys.AdditionalParameters: fc.AdditionalParameters = null; break;
+                case PflagKeys.AdditionalEnvironment: fc.AdditionalEnv = null; break;
+                case PflagKeys.ScanCommandConfig: fc.ScanCommandConfig = null; break;
             }
         }
 
