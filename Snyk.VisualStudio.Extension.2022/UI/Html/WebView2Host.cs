@@ -41,7 +41,7 @@ namespace Snyk.VisualStudio.Extension.UI.Html
     /// WebView2Feedback#2323</a>.
     /// </para>
     /// </remarks>
-    public sealed class WebView2Host : IDisposable
+    public sealed class WebView2Host : IWebView2Host
     {
         private static readonly ILogger Logger = LogManager.ForContext<WebView2Host>();
 

@@ -85,20 +85,26 @@
                     VerticalAlignment="Stretch"
                     IsHitTestVisible="False"/>
 
-            <StackPanel Grid.Column="3" Name="progressBarPanel" Visibility="Collapsed" Orientation="Vertical" Margin="1" UseLayoutRounding="False">
+            <!-- The progress bar, description, and message panels all occupy the right-hand pane
+                 (column 2) and are shown one at a time via Visibility toggling. They were
+                 previously on columns 3/4/5, which don't exist on this 3-column grid (0,1,2) —
+                 WPF silently clamped them to the last valid column (2), so they happened to
+                 render in the right place. Pin them to column 2 explicitly so the layout is
+                 correct by intent rather than by clamping. -->
+            <StackPanel Grid.Column="2" Name="progressBarPanel" Visibility="Collapsed" Orientation="Vertical" Margin="1" UseLayoutRounding="False">
                 <Grid>
                     <ProgressBar x:Name="progressBar" Minimum="0" Maximum="100" Height="3"/>
                 </Grid>
             </StackPanel>
 
-            <window:HtmlDescriptionPanel Grid.Column="4" 
-                                     x:Name="DescriptionPanel" 
-                                     Visibility="Collapsed" 
-                                     HorizontalContentAlignment="Stretch" 
+            <window:HtmlDescriptionPanel Grid.Column="2"
+                                     x:Name="DescriptionPanel"
+                                     Visibility="Collapsed"
+                                     HorizontalContentAlignment="Stretch"
                                      VerticalContentAlignment="Stretch"/>
-            <window:MessagePanel Grid.Column="5" 
-                                 x:Name="messagePanel" 
-                                 HorizontalContentAlignment="Stretch" 
+            <window:MessagePanel Grid.Column="2"
+                                 x:Name="messagePanel"
+                                 HorizontalContentAlignment="Stretch"
                                  VerticalContentAlignment="Stretch"/>
         </Grid>
     </Grid>

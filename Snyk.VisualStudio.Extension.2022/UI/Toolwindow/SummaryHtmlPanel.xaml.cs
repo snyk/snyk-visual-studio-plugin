@@ -9,11 +9,11 @@ using Snyk.VisualStudio.Extension.UI.Html;
 
 namespace Snyk.VisualStudio.Extension.UI.Toolwindow
 {
-    public partial class SummaryHtmlPanel : UserControl, IDisposable
+    public partial class SummaryHtmlPanel : UserControl, IHtmlPanel, IDisposable
     {
         private static readonly ILogger Logger = LogManager.ForContext<SummaryHtmlPanel>();
 
-        private readonly WebView2Host host;
+        private readonly IWebView2Host host;
         private IHtmlProvider htmlProvider;
         private bool _disposed;
 

@@ -15,16 +15,22 @@ namespace Snyk.VisualStudio.Extension.UI.Html
 
         public override string ReplaceCssVariables(string html)
         {
-            // The tree template uses ${ideStyle} as a hook for IDE-specific style overrides.
-            // The only override we need is the shared scrollbar styling, which overrides the
-            // thin dark scrollbar the LS tree HTML ships so the tree matches the summary and
-            // description panels (the page CSP only allows nonce'd inline styles).
-            var css = "<style nonce=\"${nonce}\">" + GetScrollbarCss() + "</style>";
-            html = html.Replace("${ideStyle}", css);
+            html = InjectIdeStyle(html);
 
             // base fills ${nonce}/ideNonce and clears ${ideStyle}'s sibling ${ideScript}
             // (the __ideExecuteCommand__ bridge is injected via WebView2 init scripts instead).
             return base.ReplaceCssVariables(html);
+        }
+
+        // internal for testability (InternalsVisibleTo): substitutes the tree template's
+        // ${ideStyle} hook with the shared scrollbar styling, which overrides the thin dark
+        // scrollbar the LS tree HTML ships so the tree matches the summary and description panels.
+        // The block is nonce'd (${nonce} is filled later by the base provider) because the page CSP
+        // only allows nonce'd inline styles.
+        internal string InjectIdeStyle(string html)
+        {
+            var css = "<style nonce=\"${nonce}\">" + GetScrollbarCss() + "</style>";
+            return html.Replace("${ideStyle}", css);
         }
     }
 }

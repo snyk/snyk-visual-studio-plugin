@@ -52,11 +52,6 @@ namespace Snyk.VisualStudio.Extension.Service
         public event EventHandler<SnykOssScanEventArgs> OssScanningStarted;
 
         /// <summary>
-        /// Cli Scanning update event handler.
-        /// </summary>
-        public event EventHandler<SnykOssScanEventArgs> OssScanningUpdate;
-
-        /// <summary>
         /// OSS Scanning Disabled event handler.
         /// </summary>
         public event EventHandler<SnykOssScanEventArgs> OssScanningDisabled;
@@ -76,11 +71,6 @@ namespace Snyk.VisualStudio.Extension.Service
         /// IaC scanning started event handler.
         /// </summary>
         public event EventHandler<SnykCodeScanEventArgs> IacScanningStarted;
-
-        /// <summary>
-        /// Iac scanning update event handler.
-        /// </summary>
-        public event EventHandler<SnykCodeScanEventArgs> IacScanningUpdate;
 
         /// <summary>
         /// IaC Scanning Disabled event handler.
@@ -106,11 +96,6 @@ namespace Snyk.VisualStudio.Extension.Service
         /// Scanning SnykCode finished event handler.
         /// </summary>
         public event EventHandler<SnykCodeScanEventArgs> SnykCodeScanningFinished;
-
-        /// <summary>
-        /// SnykCode scanning update event handler.
-        /// </summary>
-        public event EventHandler<SnykCodeScanEventArgs> SnykCodeScanningUpdate;
 
         /// <summary>
         /// SnykCode scan error event handler.
@@ -599,32 +584,6 @@ namespace Snyk.VisualStudio.Extension.Service
                     IacEnabled = featuresSettings.IacEnabled
                 });
         }
-
-        /// <summary>
-        /// Fire scanning update with <see cref="SnykOssScanEventArgs"/> object.
-        /// </summary>
-        public void FireOssScanningUpdateEvent(IDictionary<string, IEnumerable<Issue>> scanResult)
-        {
-            this.IsOssScanning = true;
-            this.OssScanningUpdate?.Invoke(this, new SnykOssScanEventArgs(scanResult));
-        }
-
-        /// <summary>
-        /// Fire scanning update with <see cref="SnykCodeScanEventArgs"/> object.
-        /// </summary>
-        /// <param name="analysisResult"><see cref="AnalysisResult"/> object with vulnerabilities.</param>
-        public void FireCodeScanningUpdateEvent(IDictionary<string, IEnumerable<Issue>> analysisResult)
-        {
-            this.IsSnykCodeScanning = true;
-            this.SnykCodeScanningUpdate?.Invoke(this, new SnykCodeScanEventArgs(analysisResult));
-        }
-
-        public void FireIacScanningUpdateEvent(IDictionary<string, IEnumerable<Issue>> analysisResult)
-        {
-            this.IsIacScanning = true;
-            this.IacScanningUpdate?.Invoke(this, new SnykCodeScanEventArgs(analysisResult));
-        }
-
 
         /// <summary>
         /// Fire OSS scanning finished event.

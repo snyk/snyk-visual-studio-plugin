@@ -220,6 +220,7 @@
     <Compile Include="UI\Html\HtmlResourceLoader.cs" />
     <Compile Include="UI\Html\IacHtmlProvider.cs" />
     <Compile Include="UI\Html\IHtmlProvider.cs" />
+    <Compile Include="UI\Html\IWebView2Host.cs" />
     <Compile Include="UI\Html\StaticHtmlProvider.cs" />
     <Compile Include="UI\Html\SummaryHtmlProvider.cs" />
     <Compile Include="UI\Html\OssHtmlProvider.cs" />
@@ -248,6 +249,9 @@
     </Compile>
     <Compile Include="UI\Toolwindow\DownloadState.cs" />
     <Compile Include="UI\Toolwindow\EmptyState.cs" />
+    <Compile Include="UI\Toolwindow\IHtmlPanel.cs" />
+    <Compile Include="UI\Toolwindow\ISnykToolWindow.cs" />
+    <Compile Include="UI\Toolwindow\ITreeHtmlPanel.cs" />
     <Compile Include="UI\Toolwindow\MessagePanel.xaml.cs">
       <DependentUpon>MessagePanel.xaml</DependentUpon>
     </Compile>

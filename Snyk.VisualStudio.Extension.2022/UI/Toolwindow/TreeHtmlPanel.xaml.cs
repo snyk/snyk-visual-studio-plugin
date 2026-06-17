@@ -1,4 +1,5 @@
 using System;
+using System.Threading;
 using System.Windows.Controls;
 using Microsoft.VisualStudio.PlatformUI;
 using Microsoft.VisualStudio.Shell;
@@ -16,12 +17,23 @@ namespace Snyk.VisualStudio.Extension.UI.Toolwindow
     /// through the shared <see cref="ExecuteCommandBridge"/> <c>window.__ideExecuteCommand__</c>
     /// contract to the Language Server via <c>workspace/executeCommand</c>.
     /// </summary>
-    public partial class TreeHtmlPanel : UserControl, IDisposable
+    public partial class TreeHtmlPanel : UserControl, ITreeHtmlPanel, IDisposable
     {
         private static readonly ILogger Logger = LogManager.ForContext<TreeHtmlPanel>();
 
-        private readonly WebView2Host host;
+        private readonly IWebView2Host host;
         private readonly IHtmlProvider htmlProvider = TreeHtmlProvider.Instance;
+
+        // Cancelled in Dispose so in-flight LS replies / bridge callbacks abandon their main-thread
+        // continuations instead of touching the disposed host.
+        private readonly CancellationTokenSource cts = new CancellationTokenSource();
+
+        // Monotonic navigation token. SetContent can be driven by both the $/snyk.treeView push and
+        // the snyk.getTreeView pull (and re-fires of OnLanguageServerReadyAsync), which race; a
+        // navigation whose generation has been superseded by a newer one is dropped so a stale tree
+        // can't win the last NavigateAsync.
+        private long navGeneration;
+
         private bool _disposed;
 
         /// <summary>
@@ -101,20 +113,30 @@ namespace Snyk.VisualStudio.Extension.UI.Toolwindow
         }
 
         /// <summary>
-        /// Renders the LS-provided tree HTML. Called from the <c>$/snyk.treeView</c> notification
-        /// handler and from the initial <c>snyk.getTreeView</c> fetch.
+        /// Renders the LS-provided tree HTML and records the total issue count in one update.
+        /// Called from the <c>$/snyk.treeView</c> notification handler (push) and from the initial
+        /// <c>snyk.getTreeView</c> fetch (pull). HTML and count move together so a stale empty tree
+        /// can't be pinned while the count reflects a newer scan.
         /// </summary>
-        public void SetContent(string html)
+        public void SetContent(string html, int totalIssues)
         {
-            if (string.IsNullOrEmpty(html)) return;
+            if (_disposed || string.IsNullOrEmpty(html)) return;
+
+            TotalIssues = totalIssues;
 
             var themedHtml = htmlProvider.ReplaceCssVariables(html);
+            var generation = Interlocked.Increment(ref navGeneration);
 
             ThreadHelper.JoinableTaskFactory.RunAsync(async () =>
             {
                 try
                 {
-                    await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
+                    await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync(cts.Token);
+                    if (_disposed) return;
+
+                    // Drop this navigation if a newer SetContent started after us — that one carries
+                    // the more recent tree and must win the last NavigateAsync.
+                    if (Interlocked.Read(ref navGeneration) != generation) return;
 
                     // Reveal the WebView2 now that real content is ready and hide the WPF
                     // placeholder. After the first reveal these are no-ops; re-renders paint the
@@ -123,6 +145,10 @@ namespace Snyk.VisualStudio.Extension.UI.Toolwindow
                     LoadingText.Visibility = System.Windows.Visibility.Collapsed;
 
                     await host.NavigateAsync(themedHtml);
+                }
+                catch (OperationCanceledException)
+                {
+                    // Disposed mid-flight; nothing to render.
                 }
                 catch (Exception ex)
                 {
@@ -147,6 +173,8 @@ namespace Snyk.VisualStudio.Extension.UI.Toolwindow
         /// </summary>
         public void RequestInitialTree()
         {
+            if (_disposed) return;
+
             var languageClientManager = LanguageClientHelper.LanguageClientManager();
             if (languageClientManager == null) return;
 
@@ -155,11 +183,21 @@ namespace Snyk.VisualStudio.Extension.UI.Toolwindow
                 try
                 {
                     var result = await languageClientManager.InvokeExecuteCommandAsync(
-                        LsConstants.SnykGetTreeView, Array.Empty<object>(), SnykVSPackage.Instance.DisposalToken);
-                    if (result != null)
+                        LsConstants.SnykGetTreeView, Array.Empty<object>(), cts.Token);
+                    if (_disposed) return;
+
+                    // The reply uses the same envelope as the push ({ treeViewHtml, totalIssues }),
+                    // so parse it as TreeViewParams. Calling result.ToString() would feed the raw
+                    // JSON serialisation to the WebView2 as literal page text.
+                    var treeViewParam = (result as JToken)?.ToObject<TreeViewParams>();
+                    if (treeViewParam?.TreeViewHtml != null)
                     {
-                        SetContent(result.ToString());
+                        SetContent(treeViewParam.TreeViewHtml, treeViewParam.TotalIssues);
                     }
+                }
+                catch (OperationCanceledException)
+                {
+                    // Disposed while the fetch was in flight.
                 }
                 catch (Exception ex)
                 {
@@ -170,6 +208,8 @@ namespace Snyk.VisualStudio.Extension.UI.Toolwindow
 
         private void ExecuteCommandFromBridge(string command, string argsJson, string callbackId)
         {
+            if (_disposed) return;
+
             ThreadHelper.JoinableTaskFactory.RunAsync(async () =>
             {
                 await ExecuteCommandBridge.DispatchAsync(
@@ -178,12 +218,14 @@ namespace Snyk.VisualStudio.Extension.UI.Toolwindow
                     argsJson,
                     callbackId,
                     InvokeCommandCallback,
-                    SnykVSPackage.Instance.DisposalToken);
+                    cts.Token);
             }).FireAndForget();
         }
 
         private void InvokeCommandCallback(string callbackId, string resultJson)
         {
+            if (_disposed) return;
+
             if (!ExecuteCommandBridge.IsValidCallbackId(callbackId))
             {
                 Logger.Warning("Rejected callbackId with unexpected format: {CallbackId}", callbackId);
@@ -192,11 +234,16 @@ namespace Snyk.VisualStudio.Extension.UI.Toolwindow
 
             ThreadHelper.JoinableTaskFactory.RunAsync(async () =>
             {
-                await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
                 try
                 {
+                    await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync(cts.Token);
+                    if (_disposed) return;
                     await host.ExecuteScriptAsync(
                         ExecuteCommandBridge.BuildCommandCallbackScript(callbackId, resultJson));
+                }
+                catch (OperationCanceledException)
+                {
+                    // Disposed before the callback could run.
                 }
                 catch (Exception ex)
                 {
@@ -206,11 +253,14 @@ namespace Snyk.VisualStudio.Extension.UI.Toolwindow
         }
 
         // Disposes the underlying WebView2Host, which unsubscribes from WebMessageReceived and
-        // sweeps any oversized-HTML temp files. Called by SnykToolWindowControl.Dispose.
+        // sweeps any oversized-HTML temp files. Cancels in-flight LS replies / bridge callbacks so
+        // they abandon their continuations rather than touch the disposed host. Called by
+        // SnykToolWindowControl.Dispose.
         public void Dispose()
         {
             if (_disposed) return;
             _disposed = true;
+            cts.Cancel();
             host?.Dispose();
         }
     }

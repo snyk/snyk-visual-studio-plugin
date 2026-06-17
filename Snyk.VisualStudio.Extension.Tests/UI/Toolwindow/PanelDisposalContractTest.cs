@@ -1,43 +1,76 @@
 using System;
+using Microsoft.VisualStudio.Sdk.TestFramework;
+using Moq;
 using Snyk.VisualStudio.Extension.UI.Toolwindow;
 using Xunit;
 
 namespace Snyk.VisualStudio.Extension.Tests.UI.Toolwindow
 {
     /// <summary>
-    /// Pins the IDisposable chain that prevents temp-file accumulation in
-    /// <c>%LOCALAPPDATA%\Snyk\WebView2\&lt;pid&gt;\toolwindow\scratch</c> when the tool window
-    /// is destroyed. Constructing the panels directly is impractical (requires WPF + a real
-    /// WebView2 runtime), so we settle for the structural contract — anyone removing
-    /// <c>IDisposable</c> in a future refactor will fail this test as a flag.
-    /// The underlying cleanup behaviour itself is covered by
+    /// Pins the IDisposable chain that prevents WebView2 user-data folders / msedgewebview2.exe
+    /// processes from leaking when the tool window is destroyed.
+    /// <para>
+    /// <see cref="Microsoft.VisualStudio.Shell.WindowPane.Dispose(bool)"/> does NOT chain into the
+    /// <c>Content</c> control, so <see cref="SnykToolWindow"/> overrides Dispose to do it. The
+    /// behavioural tests below exercise that chaining via the internal seam
+    /// (<c>SnykToolWindow.DisposeContentOnce</c> + the createContent:false test constructor) so the
+    /// real WebView2-hosting panels — which need a live WPF + WebView2 runtime — don't have to be
+    /// constructed. The underlying host cleanup itself is covered by
     /// <c>WebView2NavigationPreparerTest.Dispose_SweepsAllRemainingTempFiles</c>.
+    /// </para>
     /// </summary>
+    [Collection(MockedVS.Collection)]
     public class PanelDisposalContractTest
     {
+        public PanelDisposalContractTest(GlobalServiceProvider sp)
+        {
+            sp.Reset();
+        }
+
         [Fact]
-        public void HtmlDescriptionPanel_ImplementsIDisposable()
+        public void SnykToolWindow_DisposesContent_WhenDisposed()
+        {
+            var content = new Mock<IDisposable>();
+            var toolWindow = new SnykToolWindow(createContent: false) { Content = content.Object };
+
+            toolWindow.DisposeContentOnce();
+
+            content.Verify(c => c.Dispose(), Times.Once);
+        }
+
+        [Fact]
+        public void SnykToolWindow_DisposesContentExactlyOnce_AcrossRepeatedDispose()
+        {
+            var content = new Mock<IDisposable>();
+            var toolWindow = new SnykToolWindow(createContent: false) { Content = content.Object };
+
+            toolWindow.DisposeContentOnce();
+            toolWindow.DisposeContentOnce();
+            toolWindow.DisposeContentOnce();
+
+            // The _disposed guard means the chained Dispose fires exactly once even though the base
+            // WindowPane.Dispose and our override can both run at teardown.
+            content.Verify(c => c.Dispose(), Times.Once);
+        }
+
+        [Fact]
+        public void SnykToolWindow_DoesNotThrow_WhenContentIsNotDisposable()
+        {
+            var toolWindow = new SnykToolWindow(createContent: false) { Content = new object() };
+
+            // Must be a no-op rather than throwing when Content doesn't implement IDisposable.
+            toolWindow.DisposeContentOnce();
+        }
+
+        // Secondary structural guards: the chain above only cleans up if each panel (the Content's
+        // children) is itself IDisposable. A refactor dropping IDisposable from a panel would
+        // silently reintroduce the leak, so keep these as a tripwire.
+        [Fact]
+        public void Panels_ImplementIDisposable()
         {
             Assert.True(typeof(IDisposable).IsAssignableFrom(typeof(HtmlDescriptionPanel)));
-        }
-
-        [Fact]
-        public void SummaryHtmlPanel_ImplementsIDisposable()
-        {
             Assert.True(typeof(IDisposable).IsAssignableFrom(typeof(SummaryHtmlPanel)));
-        }
-
-        [Fact]
-        public void TreeHtmlPanel_ImplementsIDisposable()
-        {
             Assert.True(typeof(IDisposable).IsAssignableFrom(typeof(TreeHtmlPanel)));
-        }
-
-        [Fact]
-        public void SnykToolWindowControl_ImplementsIDisposable()
-        {
-            // ToolWindowPane.Dispose chains into Content.Dispose if Content is IDisposable —
-            // this is the hook that makes the panels actually get cleaned up.
             Assert.True(typeof(IDisposable).IsAssignableFrom(typeof(SnykToolWindowControl)));
         }
     }

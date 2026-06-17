@@ -21,22 +21,64 @@ namespace Snyk.VisualStudio.Extension.UI.Toolwindow
     [Guid("b38c6cbc-524d-4f30-8a18-936e3104b734")]
     public class SnykToolWindow : ToolWindowPane
     {
+        private bool disposed;
+
         /// <summary>
         /// Initializes a new instance of the <see cref="SnykToolWindow"/> class.
         /// </summary>
         public SnykToolWindow()
+            : this(createContent: true)
+        {
+        }
+
+        // Test seam: createContent:false skips building the WPF control (which requires a WebView2
+        // runtime), so the Content-disposal chaining contract can be exercised with an injected
+        // IDisposable in unit tests.
+        internal SnykToolWindow(bool createContent)
             : base(null)
         {
             this.Caption = "Snyk";
 
-            // This is the user control hosted by the tool window; Note that, even if this class implements IDisposable,
-            // we are not calling Dispose on this object. This is because ToolWindowPane calls Dispose on
-            // the object returned by the Content property.
-            this.Content = new SnykToolWindowControl(this);
+            if (createContent)
+            {
+                this.Content = new SnykToolWindowControl(this);
+            }
 
             this.ToolBar = new CommandID(SnykGuids.SnykVSPackageCommandSet, SnykGuids.SnykToolbarId);
 
             this.ToolBarLocation = (int)VSTWT_LOCATION.VSTWT_TOP;
+        }
+
+        // WindowPane.Dispose (the base of ToolWindowPane) does NOT chain Dispose into the Content
+        // control, so the WebView2-hosting child panels — and their msedgewebview2.exe processes +
+        // %LOCALAPPDATA%\Snyk\WebView2 user-data folders — would leak when the tool window is
+        // destroyed. Dispose Content explicitly.
+        protected override void Dispose(bool disposing)
+        {
+            try
+            {
+                if (disposing)
+                {
+                    this.DisposeContentOnce();
+                }
+            }
+            finally
+            {
+                base.Dispose(disposing);
+            }
+        }
+
+        // internal for testability (InternalsVisibleTo): idempotent so a double Dispose disposes
+        // the Content panels exactly once.
+        internal void DisposeContentOnce()
+        {
+            if (this.disposed)
+            {
+                return;
+            }
+
+            this.disposed = true;
+            (this.Content as IDisposable)?.Dispose();
         }
 
         public override void OnToolWindowCreated()

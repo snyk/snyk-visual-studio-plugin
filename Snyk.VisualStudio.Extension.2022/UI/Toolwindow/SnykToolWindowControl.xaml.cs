@@ -29,7 +29,7 @@ namespace Snyk.VisualStudio.Extension.UI.Toolwindow
     /// <see cref="SnykToolWindow"/>'s base <c>ToolWindowPane.Dispose</c> chains cleanup into
     /// the WebView2-hosting child panels when the tool window is destroyed.
     /// </summary>
-    public partial class SnykToolWindowControl : UserControl, IDisposable
+    public partial class SnykToolWindowControl : UserControl, ISnykToolWindow, IDisposable
     {
         private static readonly ILogger Logger = LogManager.ForContext<SnykToolWindowControl>();
 
@@ -38,6 +38,31 @@ namespace Snyk.VisualStudio.Extension.UI.Toolwindow
         private ISnykServiceProvider serviceProvider;
 
         private ToolWindowContext context;
+
+        private bool disposed;
+
+        // Subscription owners + the lambda handlers, retained so Dispose can detach symmetrically.
+        // tasksService is a long-lived singleton, so a leaked subscription would keep firing
+        // handlers against this control after the tool window is torn down.
+        private ISnykTasksService tasksService;
+        private SnykSolutionService solutionService;
+        private ILanguageClientManager languageClientManager;
+        private EventHandler<SnykCodeScanEventArgs> codeScanningFinishedHandler;
+        private EventHandler<SnykOssScanEventArgs> ossScanErrorHandler;
+        private EventHandler<SnykOssScanEventArgs> ossScanningFinishedHandler;
+        private EventHandler<SnykCodeScanEventArgs> iacScanningFinishedHandler;
+        private EventHandler<EventArgs> taskFinishedHandler;
+        private EventHandler<SnykCliDownloadEventArgs> downloadStartedHandler;
+        private EventHandler<SnykCliDownloadEventArgs> downloadFinishedHandler;
+        private EventHandler<SnykCliDownloadEventArgs> downloadUpdateHandler;
+        private RoutedEventHandler loadedHandler;
+
+        // ISnykToolWindow seam. The x:Name fields below are the concrete WPF panels; these
+        // explicit members expose them as the testable interfaces used by ISnykServiceProvider
+        // collaborators (the LS message handlers, the auth flow).
+        ITreeHtmlPanel ISnykToolWindow.TreeHtmlPanel => this.TreeHtmlPanel;
+
+        IHtmlPanel ISnykToolWindow.SummaryPanel => this.SummaryPanel;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="SnykToolWindowControl"/> class.
@@ -101,50 +126,60 @@ namespace Snyk.VisualStudio.Extension.UI.Toolwindow
 
             Logger.Information("Initialize Solultion Event Listeners");
 
-            var solutionService = serviceProvider.SolutionService as SnykSolutionService;
+            this.solutionService = serviceProvider.SolutionService as SnykSolutionService;
 
-            solutionService.SolutionEvents.AfterCloseSolution += this.OnAfterCloseSolution;
+            this.solutionService.SolutionEvents.AfterCloseSolution += this.OnAfterCloseSolution;
 
             Logger.Information("Initialize CLI Event Listeners");
 
-            var tasksService = serviceProvider.TasksService;
+            this.tasksService = serviceProvider.TasksService;
 
             // Scan results are rendered by the LS-driven HTML tree (the $/snyk.treeView
             // notification), so the per-product ScanningUpdate/ScanningDisabled handlers that
             // populated the old native tree are gone. We still react to Started/Error/Finished to
             // drive the right-pane message panel, toolbar command state, and error notifications.
-            tasksService.SnykCodeScanningStarted += this.OnSnykCodeScanningStarted;
-            tasksService.SnykCodeScanError += this.OnSnykCodeDisplayError;
-            tasksService.SnykCodeScanningFinished += (sender, args) => ThreadHelper.JoinableTaskFactory.RunAsync(this.OnSnykCodeScanningFinishedAsync);
-
-            tasksService.OssScanningStarted += this.OnOssScanningStarted;
-            tasksService.OssScanError += (sender, args) => ThreadHelper.JoinableTaskFactory.RunAsync(() => this.OnOssDisplayErrorAsync(sender, args));
-            tasksService.OssScanningFinished += (sender, args) => ThreadHelper.JoinableTaskFactory.RunAsync(this.OnOssScanningFinishedAsync);
-
-            tasksService.IacScanningStarted += OnIacScanningStarted;
-            tasksService.IacScanError += OnIacScanError;
-            tasksService.IacScanningFinished += (sender, args) => ThreadHelper.JoinableTaskFactory.RunAsync(this.OnIacScanningFinishedAsync);
-
-
-            tasksService.ScanningCancelled += this.OnScanningCancelled;
-            tasksService.TaskFinished += (sender, args) => ThreadHelper.JoinableTaskFactory.RunAsync(this.OnTaskFinishedAsync);
-
-            Logger.Information("Initialize Download Event Listeners");
-
-            tasksService.DownloadStarted += (sender, args) =>
+            // Lambda handlers are stored in fields so Dispose can detach them symmetrically.
+            this.codeScanningFinishedHandler = (sender, args) => ThreadHelper.JoinableTaskFactory.RunAsync(this.OnSnykCodeScanningFinishedAsync);
+            this.ossScanErrorHandler = (sender, args) => ThreadHelper.JoinableTaskFactory.RunAsync(() => this.OnOssDisplayErrorAsync(sender, args));
+            this.ossScanningFinishedHandler = (sender, args) => ThreadHelper.JoinableTaskFactory.RunAsync(this.OnOssScanningFinishedAsync);
+            this.iacScanningFinishedHandler = (sender, args) => ThreadHelper.JoinableTaskFactory.RunAsync(this.OnIacScanningFinishedAsync);
+            this.taskFinishedHandler = (sender, args) => ThreadHelper.JoinableTaskFactory.RunAsync(this.OnTaskFinishedAsync);
+            this.downloadStartedHandler = (sender, args) =>
             {
                 if (LanguageClientHelper.IsLanguageServerReady())
                     ThreadHelper.JoinableTaskFactory.RunAsync(serviceProvider.LanguageClientManager.StopServerAsync).FireAndForget();
                 this.OnDownloadStarted(sender, args);
             };
-            tasksService.DownloadFinished += (sender, args) =>
+            this.downloadFinishedHandler = (sender, args) =>
             {
                 ThreadHelper.JoinableTaskFactory.RunAsync(async ()=> await serviceProvider.LanguageClientManager.StartServerAsync(true)).FireAndForget();
                 this.OnDownloadFinished(sender, args);
             };
-            tasksService.DownloadUpdate += (sender, args) => ThreadHelper.JoinableTaskFactory.RunAsync(() => this.OnDownloadUpdateAsync(sender, args));
-            tasksService.DownloadCancelled += this.OnDownloadCancelled;
-            tasksService.DownloadFailed += this.OnDownloadFailed;
+            this.downloadUpdateHandler = (sender, args) => ThreadHelper.JoinableTaskFactory.RunAsync(() => this.OnDownloadUpdateAsync(sender, args));
+
+            this.tasksService.SnykCodeScanningStarted += this.OnSnykCodeScanningStarted;
+            this.tasksService.SnykCodeScanError += this.OnSnykCodeDisplayError;
+            this.tasksService.SnykCodeScanningFinished += this.codeScanningFinishedHandler;
+
+            this.tasksService.OssScanningStarted += this.OnOssScanningStarted;
+            this.tasksService.OssScanError += this.ossScanErrorHandler;
+            this.tasksService.OssScanningFinished += this.ossScanningFinishedHandler;
+
+            this.tasksService.IacScanningStarted += this.OnIacScanningStarted;
+            this.tasksService.IacScanError += this.OnIacScanError;
+            this.tasksService.IacScanningFinished += this.iacScanningFinishedHandler;
+
+
+            this.tasksService.ScanningCancelled += this.OnScanningCancelled;
+            this.tasksService.TaskFinished += this.taskFinishedHandler;
+
+            Logger.Information("Initialize Download Event Listeners");
+
+            this.tasksService.DownloadStarted += this.downloadStartedHandler;
+            this.tasksService.DownloadFinished += this.downloadFinishedHandler;
+            this.tasksService.DownloadUpdate += this.downloadUpdateHandler;
+            this.tasksService.DownloadCancelled += this.OnDownloadCancelled;
+            this.tasksService.DownloadFailed += this.OnDownloadFailed;
 
             // The LanguageClientManager is created during package init (SetLanguageClientManagerAsync)
             // and can still be null here when VS restores the docked Snyk window early on startup, so
@@ -153,17 +188,18 @@ namespace Snyk.VisualStudio.Extension.UI.Toolwindow
             // RequestInitialTree already do. If the manager isn't ready yet the LS isn't ready either,
             // so there's no initial tree to pull; the LS pushes $/snyk.treeView once it comes up, which
             // renders the tree regardless of this (proactive-only) subscription.
-            var languageClientManager = LanguageClientHelper.LanguageClientManager();
-            if (languageClientManager != null)
+            this.languageClientManager = LanguageClientHelper.LanguageClientManager();
+            if (this.languageClientManager != null)
             {
-                languageClientManager.OnLanguageServerReadyAsync += OnOnLanguageServerReadyAsync;
+                this.languageClientManager.OnLanguageServerReadyAsync += OnOnLanguageServerReadyAsync;
             }
             else
             {
                 Logger.Warning("LanguageClientManager not available during InitializeEventListeners; skipping LS-ready subscription (tree will populate from $/snyk.treeView pushes).");
             }
 
-            this.Loaded += (sender, args) => tasksService.Download();
+            this.loadedHandler = (sender, args) => this.tasksService.Download();
+            this.Loaded += this.loadedHandler;
 
             SnykScanCommand.Instance.UpdateControlsStateCallback = (isEnabled) => ThreadHelper.JoinableTaskFactory.Run(async () =>
             {
@@ -637,7 +673,45 @@ namespace Snyk.VisualStudio.Extension.UI.Toolwindow
         // WPF Unloaded events that can fire during docking or theme changes.
         public void Dispose()
         {
+            if (this.disposed) return;
+            this.disposed = true;
+
             VSColorTheme.ThemeChanged -= this.OnVsThemeChanged;
+
+            if (this.solutionService?.SolutionEvents != null)
+            {
+                this.solutionService.SolutionEvents.AfterCloseSolution -= this.OnAfterCloseSolution;
+            }
+
+            if (this.tasksService != null)
+            {
+                this.tasksService.SnykCodeScanningStarted -= this.OnSnykCodeScanningStarted;
+                this.tasksService.SnykCodeScanError -= this.OnSnykCodeDisplayError;
+                this.tasksService.OssScanningStarted -= this.OnOssScanningStarted;
+                this.tasksService.IacScanningStarted -= this.OnIacScanningStarted;
+                this.tasksService.IacScanError -= this.OnIacScanError;
+                this.tasksService.ScanningCancelled -= this.OnScanningCancelled;
+                this.tasksService.DownloadCancelled -= this.OnDownloadCancelled;
+                this.tasksService.DownloadFailed -= this.OnDownloadFailed;
+
+                if (this.codeScanningFinishedHandler != null) this.tasksService.SnykCodeScanningFinished -= this.codeScanningFinishedHandler;
+                if (this.ossScanErrorHandler != null) this.tasksService.OssScanError -= this.ossScanErrorHandler;
+                if (this.ossScanningFinishedHandler != null) this.tasksService.OssScanningFinished -= this.ossScanningFinishedHandler;
+                if (this.iacScanningFinishedHandler != null) this.tasksService.IacScanningFinished -= this.iacScanningFinishedHandler;
+                if (this.taskFinishedHandler != null) this.tasksService.TaskFinished -= this.taskFinishedHandler;
+                if (this.downloadStartedHandler != null) this.tasksService.DownloadStarted -= this.downloadStartedHandler;
+                if (this.downloadFinishedHandler != null) this.tasksService.DownloadFinished -= this.downloadFinishedHandler;
+                if (this.downloadUpdateHandler != null) this.tasksService.DownloadUpdate -= this.downloadUpdateHandler;
+            }
+
+            if (this.loadedHandler != null) this.Loaded -= this.loadedHandler;
+
+            // OnLanguageServerReadyAsync fires RequestInitialTree on the tree panel; without this
+            // detach a post-teardown LS restart would touch the disposed panel. Re-resolve in case
+            // the manager was assigned after InitializeEventListeners ran.
+            var lcm = this.languageClientManager ?? LanguageClientHelper.LanguageClientManager();
+            if (lcm != null) lcm.OnLanguageServerReadyAsync -= OnOnLanguageServerReadyAsync;
+
             this.DescriptionPanel?.Dispose();
             this.SummaryPanel?.Dispose();
             this.TreeHtmlPanel?.Dispose();

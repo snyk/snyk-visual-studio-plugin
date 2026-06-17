@@ -14,7 +14,7 @@ namespace Snyk.VisualStudio.Extension.UI.Toolwindow
     {
         private static readonly ILogger Logger = LogManager.ForContext<HtmlDescriptionPanel>();
 
-        private readonly WebView2Host host;
+        private readonly IWebView2Host host;
         private IHtmlProvider htmlProvider;
         private bool _disposed;
 

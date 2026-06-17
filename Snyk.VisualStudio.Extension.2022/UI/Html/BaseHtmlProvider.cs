@@ -290,6 +290,14 @@ namespace Snyk.VisualStudio.Extension.UI.Html
             html = html.Replace("{{ERROR_BORDER_COLOR}}", "#f44336");
             html = html.Replace("{{ERROR_TEXT_COLOR}}", "#f44336");
 
+            return ReplacePlaceholders(html);
+        }
+
+        // internal for testability (InternalsVisibleTo): fills the non-theme template placeholders.
+        // A single nonce is generated per render and used for both ${nonce} and the legacy ideNonce
+        // token so the page's style-src 'nonce-...' CSP matches the injected styles.
+        internal string ReplacePlaceholders(string html)
+        {
             html = html.Replace("${headerEnd}", "");
             var nonce = GetNonce();
             html = html.Replace("${nonce}", nonce);
