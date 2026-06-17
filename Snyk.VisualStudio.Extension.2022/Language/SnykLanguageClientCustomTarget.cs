@@ -111,20 +111,48 @@ namespace Snyk.VisualStudio.Extension.Language
         [JsonRpcMethod(LsConstants.ShowDocument)]
         public async Task OnShowDocument(JToken arg)
         {
-            var lspAnalysisResult = arg.TryParse<ShowDocumentParams>();
-            if (lspAnalysisResult == null) return;
-            var uri = new Uri(Uri.UnescapeDataString(lspAnalysisResult.Uri));
+            var showDocumentParams = arg.TryParse<ShowDocumentParams>();
+            if (string.IsNullOrEmpty(showDocumentParams?.Uri)) return;
 
-            // Manually parse query parameters
+            var uri = new Uri(Uri.UnescapeDataString(showDocumentParams.Uri));
             var queryParams = ParseQueryString(uri.Query);
-            var issueId = queryParams["issueId"];
-            var product = LspSourceToProduct(queryParams["product"].Replace("+", " "));
-            var action = queryParams["action"];
-            if (action != "showInDetailPanel")
+            queryParams.TryGetValue("action", out var action);
+
+            // snyk:// detail-panel request (from a tree node click via snyk.navigateToRange):
+            // populate the issue description panel.
+            if (action == "showInDetailPanel")
             {
+                if (!queryParams.TryGetValue("issueId", out var issueId) ||
+                    !queryParams.TryGetValue("product", out var productRaw))
+                {
+                    return;
+                }
+                serviceProvider.ToolWindow.SelectedItemInTree(issueId, NormalizeProduct(productRaw));
                 return;
             }
-            serviceProvider.ToolWindow.SelectedItemInTree(issueId, product);
+
+            // Plain file-open request: navigate the editor to the selected range. The HTML tree
+            // triggers this via snyk.navigateToRange, which the LS turns into window/showDocument.
+            // External requests (open-in-browser) are not editor navigations.
+            if (showDocumentParams.External) return;
+            var selection = showDocumentParams.Selection;
+            if (selection?.Start == null || selection.End == null) return;
+
+            VsCodeService.Instance.OpenAndNavigate(
+                uri.LocalPath,
+                selection.Start.Line,
+                selection.Start.Character,
+                selection.End.Line,
+                selection.End.Character);
+        }
+
+        // The tree emits product codenames ("code"/"oss"/"iac") in the detail-panel URI, while
+        // other producers send display names ("Snyk Code"). Map display names, pass codenames through.
+        private string NormalizeProduct(string raw)
+        {
+            if (string.IsNullOrEmpty(raw)) return string.Empty;
+            var mapped = LspSourceToProduct(raw.Replace("+", " "));
+            return string.IsNullOrEmpty(mapped) ? raw.ToLowerInvariant() : mapped;
         }
 
         static Dictionary<string, string> ParseQueryString(string query)
@@ -157,6 +185,19 @@ namespace Snyk.VisualStudio.Extension.Language
             {
                 await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
                 serviceProvider.ToolWindow.SummaryPanel.SetContent(scanSummaryParam.ScanSummary, "summary");
+            }).FireAndForget();
+        }
+
+        [JsonRpcMethod(LsConstants.SnykTreeView)]
+        public async Task OnTreeView(JToken arg)
+        {
+            var treeViewParam = arg.TryParse<TreeViewParams>();
+            if (treeViewParam?.TreeViewHtml == null || serviceProvider?.ToolWindow?.TreeHtmlPanel == null) return;
+            ThreadHelper.JoinableTaskFactory.RunAsync(async () =>
+            {
+                await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
+                serviceProvider.ToolWindow.TreeHtmlPanel.TotalIssues = treeViewParam.TotalIssues;
+                serviceProvider.ToolWindow.TreeHtmlPanel.SetContent(treeViewParam.TreeViewHtml);
             }).FireAndForget();
         }
 

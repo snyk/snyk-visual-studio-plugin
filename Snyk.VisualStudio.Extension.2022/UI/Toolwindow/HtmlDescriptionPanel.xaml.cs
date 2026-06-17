@@ -1,6 +1,7 @@
 using System;
 using System.Windows;
 using System.Windows.Controls;
+using Microsoft.VisualStudio.PlatformUI;
 using Microsoft.VisualStudio.Shell;
 using Microsoft.Web.WebView2.Core;
 using Newtonsoft.Json.Linq;
@@ -20,6 +21,11 @@ namespace Snyk.VisualStudio.Extension.UI.Toolwindow
         public HtmlDescriptionPanel()
         {
             this.InitializeComponent();
+
+            // Themed surface before first render so the panel doesn't flash WebView2's dark
+            // default while content loads. Must be set before CoreWebView2 initialization.
+            HtmlViewer.DefaultBackgroundColor =
+                VSColorTheme.GetThemedColor(EnvironmentColors.ToolWindowBackgroundColorKey);
 
             var bridge = new SnykScriptManager(SnykVSPackage.ServiceProvider);
 
@@ -57,6 +63,9 @@ namespace Snyk.VisualStudio.Extension.UI.Toolwindow
             {
                 try
                 {
+                    // host.InitializeAsync drives WebView2/CoreWebView2 setup, which must run on the
+                    // UI thread; RunAsync alone doesn't guarantee the continuation resumes there.
+                    await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
                     await host.InitializeAsync();
                 }
                 catch (Exception ex)
@@ -70,24 +79,27 @@ namespace Snyk.VisualStudio.Extension.UI.Toolwindow
         // navigation completes, since NavigateAsync replaces the document. Skip when the
         // navigation itself failed — running the script against an error page would wire
         // the interceptors to the wrong document.
-        private async void OnNavigationCompleted(object sender, CoreWebView2NavigationCompletedEventArgs e)
+        private void OnNavigationCompleted(object sender, CoreWebView2NavigationCompletedEventArgs e)
         {
-            try
+            ThreadHelper.JoinableTaskFactory.RunAsync(async () =>
             {
-                if (!e.IsSuccess)
+                try
                 {
-                    Logger.Warning(
-                        "Description panel navigation failed (status {Status}); skipping init script",
-                        e.WebErrorStatus);
-                    return;
+                    if (!e.IsSuccess)
+                    {
+                        Logger.Warning(
+                            "Description panel navigation failed (status {Status}); skipping init script",
+                            e.WebErrorStatus);
+                        return;
+                    }
+                    if (htmlProvider == null) return;
+                    await host.ExecuteScriptAsync(htmlProvider.GetInitScript());
                 }
-                if (htmlProvider == null) return;
-                await host.ExecuteScriptAsync(htmlProvider.GetInitScript());
-            }
-            catch (Exception ex)
-            {
-                Logger.Error(ex, "Error running description init script");
-            }
+                catch (Exception ex)
+                {
+                    Logger.Error(ex, "Error running description init script");
+                }
+            }).FireAndForget();
         }
 
         public void SetContent(string html, string product)

@@ -15,6 +15,8 @@
         // We had to send the same notification but with a different to avoid Visual Studio's filtering behavior.
         public const string OnPublishDiagnostics316 = "$/snyk.publishDiagnostics316";
         public const string SnykScanSummary = "$/snyk.scanSummary";
+        // Server-rendered HTML issue tree, pushed on every scan-state change.
+        public const string SnykTreeView = "$/snyk.treeView";
         
         // Commands
         public const string WorkspaceChangeConfiguration = "workspace/didChangeConfiguration";
@@ -30,6 +32,7 @@
         public const string SnykCopyAuthLink = "snyk.copyAuthLink";
         public const string SnykGetFeatureFlagStatus = "snyk.getFeatureFlagStatus";
         public const string SnykGenerateIssueDescription = "snyk.generateIssueDescription";
+        public const string SnykGetTreeView = "snyk.getTreeView";
         public const string SnykReportAnalytics = "snyk.reportAnalytics";
         public const string SnykCodeFixDiffs = "snyk.code.fixDiffs";
         public const string SnykCodeFixApplyEdit = "snyk.code.fixApplyEdit";

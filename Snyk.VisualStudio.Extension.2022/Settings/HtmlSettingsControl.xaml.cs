@@ -160,7 +160,7 @@ namespace Snyk.VisualStudio.Extension.Settings
         /// </summary>
         public bool IsStale { get; private set; }
 
-        private async void Control_IsVisibleChanged(object sender, DependencyPropertyChangedEventArgs e)
+        private void Control_IsVisibleChanged(object sender, DependencyPropertyChangedEventArgs e)
         {
             if (_disposed) return;
             Logger.Information("[lifecycle] HtmlSettingsControl IsVisibleChanged; instance={Hash}, IsVisible={Visible}, initStarted={Started}",
@@ -171,18 +171,25 @@ namespace Snyk.VisualStudio.Extension.Settings
 
             instance = this;
 
-            try
+            ThreadHelper.JoinableTaskFactory.RunAsync(async () =>
             {
-                await host.InitializeAsync();
-            }
-            catch (Exception ex)
-            {
-                Logger.Error(ex, "WebView2 initialization failed");
-                LoadingStatusLabel.Text = $"Failed to initialize browser: {ex.Message}";
-                return;
-            }
+                // This handler used to be async void, which implicitly resumed on the UI thread.
+                // Under RunAsync the continuation isn't guaranteed to, so switch explicitly before
+                // touching the WebView2 (host.InitializeAsync) or the WPF LoadingStatusLabel below.
+                await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
+                try
+                {
+                    await host.InitializeAsync();
+                }
+                catch (Exception ex)
+                {
+                    Logger.Error(ex, "WebView2 initialization failed");
+                    LoadingStatusLabel.Text = $"Failed to initialize browser: {ex.Message}";
+                    return;
+                }
 
-            await LoadHtmlSettingsAsync();
+                await LoadHtmlSettingsAsync();
+            }).FireAndForget();
         }
 
         private void Control_Unloaded(object sender, RoutedEventArgs e)
