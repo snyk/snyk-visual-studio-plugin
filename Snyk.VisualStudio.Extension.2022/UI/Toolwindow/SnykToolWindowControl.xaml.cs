@@ -145,7 +145,24 @@ namespace Snyk.VisualStudio.Extension.UI.Toolwindow
             tasksService.DownloadUpdate += (sender, args) => ThreadHelper.JoinableTaskFactory.RunAsync(() => this.OnDownloadUpdateAsync(sender, args));
             tasksService.DownloadCancelled += this.OnDownloadCancelled;
             tasksService.DownloadFailed += this.OnDownloadFailed;
-            LanguageClientHelper.LanguageClientManager().OnLanguageServerReadyAsync += OnOnLanguageServerReadyAsync;
+
+            // The LanguageClientManager is created during package init (SetLanguageClientManagerAsync)
+            // and can still be null here when VS restores the docked Snyk window early on startup, so
+            // InitializeEventListeners runs before the manager is assigned — dereferencing it caused a
+            // NullReferenceException that aborted the whole tool window. Guard it like MessagePanel and
+            // RequestInitialTree already do. If the manager isn't ready yet the LS isn't ready either,
+            // so there's no initial tree to pull; the LS pushes $/snyk.treeView once it comes up, which
+            // renders the tree regardless of this (proactive-only) subscription.
+            var languageClientManager = LanguageClientHelper.LanguageClientManager();
+            if (languageClientManager != null)
+            {
+                languageClientManager.OnLanguageServerReadyAsync += OnOnLanguageServerReadyAsync;
+            }
+            else
+            {
+                Logger.Warning("LanguageClientManager not available during InitializeEventListeners; skipping LS-ready subscription (tree will populate from $/snyk.treeView pushes).");
+            }
+
             this.Loaded += (sender, args) => tasksService.Download();
 
             SnykScanCommand.Instance.UpdateControlsStateCallback = (isEnabled) => ThreadHelper.JoinableTaskFactory.Run(async () =>
