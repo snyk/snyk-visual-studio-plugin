@@ -74,10 +74,14 @@
                           VerticalAlignment="Stretch"
                           Background="Transparent"
                           ShowsPreview="False"/>
+            <!-- Left-aligned (not centred) so the 1px line butts directly against the tree/summary
+                 column's scrollbar. Centred, it left a ~2-3px sliver of mainGrid.Background between
+                 the scrollbar track and the line, which read as a seam (the track colour differs
+                 from the window background). The 6px GridSplitter grab area above is unchanged. -->
             <Border Grid.Column="1"
                     x:Name="verticalDivider"
                     Width="1"
-                    HorizontalAlignment="Center"
+                    HorizontalAlignment="Left"
                     VerticalAlignment="Stretch"
                     IsHitTestVisible="False"/>
 
