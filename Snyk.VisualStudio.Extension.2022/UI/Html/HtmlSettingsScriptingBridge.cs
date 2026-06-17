@@ -7,6 +7,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.VisualStudio.Shell;
 using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
 using Serilog;
 using Snyk.VisualStudio.Extension;
 using Snyk.VisualStudio.Extension.Authentication;
@@ -316,7 +317,7 @@ namespace Snyk.VisualStudio.Extension.UI.Html
                     ApplyTrustedFolders(config);
                     ApplyFilterSettings(config);
                     ApplyMiscellaneousSettings(config);
-                    await ApplyFolderConfigsAsync(config);
+                    await ApplyFolderConfigsAsync(config, jsonString);
                 }
             }
             catch
@@ -608,13 +609,113 @@ namespace Snyk.VisualStudio.Extension.UI.Html
             }
         }
 
-        private async Task ApplyFolderConfigsAsync(IdeConfigData config)
+        private async Task ApplyFolderConfigsAsync(IdeConfigData config, string rawJson)
         {
             // Apply per-solution/folder settings (folderConfigs: [...])
             // Save to solution-specific storage AND update in-memory global FolderConfigs
             if (config.FolderConfigs != null && config.FolderConfigs.Count > 0)
             {
                 await SaveFolderConfigsAsync(config.FolderConfigs);
+            }
+            // Detect folder fields sent as JSON null (the dialog's "Reset overrides" output). A
+            // nullable field can't distinguish present-null from absent, so this re-reads the raw
+            // JSON tree and flags the resets on the matching stored FolderConfig.
+            ApplyFolderResetsFromRawJson(rawJson);
+        }
+
+        // Org-scope folder fields the dialog's "Reset overrides" button clears (sent as JSON null).
+        // For these a null means "remove the user override" → emit {value:null, changed:true} so
+        // snyk-ls Unsets it (fallback to org/LDX/default). preferred_org is included; its LS reset
+        // also clears org_set_by_user. Must stay in sync with the JS FOLDER_RESET_FIELDS in snyk-ls.
+        private static readonly HashSet<string> FolderResetKeys = new HashSet<string>
+        {
+            PflagKeys.ScanAutomatic,
+            PflagKeys.ScanNetNew,
+            PflagKeys.SeverityFilterCritical,
+            PflagKeys.SeverityFilterHigh,
+            PflagKeys.SeverityFilterMedium,
+            PflagKeys.SeverityFilterLow,
+            PflagKeys.SnykOssEnabled,
+            PflagKeys.SnykCodeEnabled,
+            PflagKeys.SnykIacEnabled,
+            PflagKeys.SnykSecretsEnabled,
+            PflagKeys.IssueViewOpenIssues,
+            PflagKeys.IssueViewIgnoredIssues,
+            PflagKeys.RiskScoreThreshold,
+            PflagKeys.PreferredOrg,
+        };
+
+        private void ApplyFolderResetsFromRawJson(string rawJson)
+        {
+            if (string.IsNullOrWhiteSpace(rawJson))
+                return;
+
+            JObject root;
+            try
+            {
+                root = JObject.Parse(rawJson);
+            }
+            catch (JsonException ex)
+            {
+                Logger.Warning(ex, "Could not parse JSON for folder resets");
+                return;
+            }
+
+            if (!(root["folderConfigs"] is JArray folderConfigsJson))
+                return;
+
+            var optionsConfigs = Options.FolderConfigs;
+            if (optionsConfigs == null || optionsConfigs.Count == 0)
+                return;
+
+            foreach (var token in folderConfigsJson)
+            {
+                if (!(token is JObject folderObject))
+                    continue;
+
+                var folderPath = folderObject["folderPath"]?.Value<string>();
+
+                var existingConfig = !string.IsNullOrEmpty(folderPath)
+                    ? optionsConfigs.FirstOrDefault(fc => fc != null &&
+                        string.Equals(fc.FolderPath, folderPath, StringComparison.OrdinalIgnoreCase))
+                    : (optionsConfigs.Count == 1 ? optionsConfigs[0] : null);
+                if (existingConfig == null)
+                    continue;
+
+                foreach (var property in folderObject.Properties())
+                {
+                    if (property.Value.Type != JTokenType.Null)
+                        continue;
+                    if (!FolderResetKeys.Contains(property.Name))
+                        continue;
+
+                    // Clear the stored override and flag the key so BuildFolderConfigs emits
+                    // {value:null, changed:true} for it instead of a stale value.
+                    ClearStoredFolderOverride(existingConfig, property.Name);
+                    existingConfig.ResetKeys = existingConfig.ResetKeys ?? new HashSet<string>();
+                    existingConfig.ResetKeys.Add(property.Name);
+                }
+            }
+        }
+
+        private static void ClearStoredFolderOverride(FolderConfig fc, string key)
+        {
+            switch (key)
+            {
+                case PflagKeys.ScanAutomatic: fc.ScanAutomatic = null; break;
+                case PflagKeys.ScanNetNew: fc.ScanNetNew = null; break;
+                case PflagKeys.SeverityFilterCritical: fc.SeverityFilterCritical = null; break;
+                case PflagKeys.SeverityFilterHigh: fc.SeverityFilterHigh = null; break;
+                case PflagKeys.SeverityFilterMedium: fc.SeverityFilterMedium = null; break;
+                case PflagKeys.SeverityFilterLow: fc.SeverityFilterLow = null; break;
+                case PflagKeys.SnykOssEnabled: fc.SnykOssEnabled = null; break;
+                case PflagKeys.SnykCodeEnabled: fc.SnykCodeEnabled = null; break;
+                case PflagKeys.SnykIacEnabled: fc.SnykIacEnabled = null; break;
+                case PflagKeys.SnykSecretsEnabled: fc.SnykSecretsEnabled = null; break;
+                case PflagKeys.IssueViewOpenIssues: fc.IssueViewOpenIssues = null; break;
+                case PflagKeys.IssueViewIgnoredIssues: fc.IssueViewIgnoredIssues = null; break;
+                case PflagKeys.RiskScoreThreshold: fc.RiskScoreThreshold = null; break;
+                case PflagKeys.PreferredOrg: fc.PreferredOrg = null; break;
             }
         }
 

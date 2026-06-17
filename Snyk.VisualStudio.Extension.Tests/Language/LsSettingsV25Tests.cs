@@ -93,6 +93,79 @@ namespace Snyk.VisualStudio.Extension.Tests.Language
         }
 
         [Fact]
+        public void BuildFolderConfigs_EmitsNullChangedTrueForResetKeys()
+        {
+            // A reset folder field must go out as {value:null, changed:true} so snyk-ls Unsets the
+            // user:folder: override (fallback to org/LDX/default).
+            SetupDefaults();
+            var fc = new FolderConfig
+            {
+                FolderPath = "/repo",
+                ResetKeys = new HashSet<string>
+                {
+                    PflagKeys.SnykCodeEnabled,
+                    PflagKeys.PreferredOrg,
+                    PflagKeys.RiskScoreThreshold,
+                },
+            };
+            optionsMock.SetupGet(o => o.FolderConfigs).Returns(new List<FolderConfig> { fc });
+
+            var settings = cut.GetInitializationOptions().FolderConfigs[0].Settings;
+
+            AssertResetSetting(settings, PflagKeys.SnykCodeEnabled);
+            AssertResetSetting(settings, PflagKeys.PreferredOrg);
+            AssertResetSetting(settings, PflagKeys.RiskScoreThreshold);
+        }
+
+        [Fact]
+        public void BuildFolderConfigs_ResetKeyWinsOverStoredValue()
+        {
+            // If a key is both stored and reset, the reset (null) must win — the user cleared it.
+            SetupDefaults();
+            var fc = new FolderConfig
+            {
+                FolderPath = "/repo",
+                SnykCodeEnabled = true,
+                ResetKeys = new HashSet<string> { PflagKeys.SnykCodeEnabled },
+            };
+            optionsMock.SetupGet(o => o.FolderConfigs).Returns(new List<FolderConfig> { fc });
+
+            var settings = cut.GetInitializationOptions().FolderConfigs[0].Settings;
+
+            AssertResetSetting(settings, PflagKeys.SnykCodeEnabled);
+        }
+
+        [Fact]
+        public void BuildFolderConfigs_NullResetSettingSerializesValueNull()
+        {
+            // ConfigSetting.Value has no NullValueHandling.Ignore, so a reset serializes the explicit
+            // "value": null the LS reset path expects.
+            SetupDefaults();
+            var fc = new FolderConfig
+            {
+                FolderPath = "/repo",
+                ResetKeys = new HashSet<string> { PflagKeys.SnykCodeEnabled },
+            };
+            optionsMock.SetupGet(o => o.FolderConfigs).Returns(new List<FolderConfig> { fc });
+
+            var lspFolderConfig = cut.GetInitializationOptions().FolderConfigs[0];
+            var json = JObject.Parse(JsonConvert.SerializeObject(lspFolderConfig));
+            var setting = json["settings"][PflagKeys.SnykCodeEnabled];
+
+            Assert.Equal(JTokenType.Null, setting["value"].Type);
+            Assert.Equal(true, setting["changed"].Value<bool>());
+        }
+
+        private static void AssertResetSetting(
+            IDictionary<string, ConfigSetting> settings,
+            string key)
+        {
+            Assert.True(settings.ContainsKey(key), $"{key} reset setting should be present");
+            Assert.Null(settings[key].Value);
+            Assert.True(settings[key].Changed, $"{key} reset changed should be true");
+        }
+
+        [Fact]
         public void GetInitializationOptions_ReturnsNonNull()
         {
             SetupDefaults();

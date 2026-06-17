@@ -144,6 +144,15 @@ namespace Snyk.VisualStudio.Extension.Language
                 if (fc.RiskScoreThreshold.HasValue)
                     settings[PflagKeys.RiskScoreThreshold] = ConfigSetting.Of(fc.RiskScoreThreshold.Value);
 
+                // Reset overrides: emit {value:null, changed:true} so the LS Unsets the user:folder:
+                // override (fallback to org/LDX/default). Overwrites any value set above for the same
+                // key, so a reset always wins over a stale stored value.
+                if (fc.ResetKeys != null)
+                {
+                    foreach (var resetKey in fc.ResetKeys)
+                        settings[resetKey] = ConfigSetting.Of(null);
+                }
+
                 result.Add(new LspFolderConfig
                 {
                     FolderPath = fc.FolderPath,
