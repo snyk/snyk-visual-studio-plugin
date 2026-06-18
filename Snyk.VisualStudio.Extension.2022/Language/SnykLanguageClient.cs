@@ -29,6 +29,9 @@ namespace Snyk.VisualStudio.Extension.Language
         private static readonly ILogger Logger = LogManager.ForContext<SnykLanguageClient>();
         private readonly SemaphoreSlim semaphore = new SemaphoreSlim(1,1);
         private LsSettingsV25 settingsV25;
+        // Holds the delegate subscribed to SolutionEvents.AfterBackgroundSolutionLoadComplete so we
+        // can unsubscribe before re-subscribing on server restarts (idempotent wiring).
+        private EventHandler<EventArgs> solutionOpenedMigrationHandler;
 
         [ImportingConstructor]
         public SnykLanguageClient()
@@ -218,7 +221,35 @@ namespace Snyk.VisualStudio.Extension.Language
             FireOnLanguageServerReadyAsyncEvent();
             SendPluginInstalledEvent();
             Rpc.Disconnected += Rpc_Disconnected;
+            SubscribeToSolutionOpenedForMigration();
             return Task.CompletedTask;
+        }
+
+        // Subscribes MigrateLegacySolutionSettingsAsync to the solution-opened event so that
+        // per-solution legacy settings are migrated whenever the user opens a different solution
+        // while the LS stays alive (multi-solution VS session). Unsubscribes first so repeated
+        // server restarts don't accumulate duplicate handlers.
+        private void SubscribeToSolutionOpenedForMigration()
+        {
+            try
+            {
+                var solutionEvents = SnykVSPackage.ServiceProvider?.SolutionService?.SolutionEvents;
+                if (solutionEvents == null)
+                    return;
+
+                // Remove any previous subscription to stay idempotent across server restarts.
+                if (solutionOpenedMigrationHandler != null)
+                    solutionEvents.AfterBackgroundSolutionLoadComplete -= solutionOpenedMigrationHandler;
+
+                solutionOpenedMigrationHandler = (_, __) =>
+                    ThreadHelper.JoinableTaskFactory.RunAsync(MigrateLegacySolutionSettingsAsync).FireAndForget();
+
+                solutionEvents.AfterBackgroundSolutionLoadComplete += solutionOpenedMigrationHandler;
+            }
+            catch (Exception ex)
+            {
+                Logger.Warning(ex, "Could not subscribe to solution-opened event for legacy settings migration.");
+            }
         }
 
         private Task<string> GetLsDebugLevelAsync()

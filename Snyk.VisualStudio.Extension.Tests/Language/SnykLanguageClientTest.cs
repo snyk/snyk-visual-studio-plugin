@@ -6,6 +6,8 @@ using Microsoft.VisualStudio.LanguageServer.Client;
 using Microsoft.VisualStudio.Sdk.TestFramework;
 using Moq;
 using Snyk.VisualStudio.Extension.Language;
+using Snyk.VisualStudio.Extension.Service;
+using Snyk.VisualStudio.Extension.Settings;
 using StreamJsonRpc;
 using Xunit;
 using LSP = Microsoft.VisualStudio.LanguageServer.Protocol;
@@ -377,6 +379,54 @@ namespace Snyk.VisualStudio.Extension.Tests.Language
                     It.Is<LSP.ExecuteCommandParams>(param => param.Command == LsConstants.SnykLogin),
                 It.IsAny<CancellationToken>()),
                 Times.Once);
+        }
+
+        [Fact]
+        public async Task OnServerInitializedAsync_WhenSolutionOpenedAfterLsReady_RunsMigration()
+        {
+            // Arrange — wire a real SnykVsSolutionLoadEvents so we can fire AfterBackgroundSolutionLoadComplete.
+            // This test verifies Finding A: migration must run whenever a solution is opened while the LS
+            // is already alive (multi-solution VS session), not only at LS startup.
+            var migrationTcs = new TaskCompletionSource<bool>();
+
+            var solutionServiceMock = new Mock<ISolutionService>();
+            var solutionEvents = new SnykVsSolutionLoadEvents(solutionServiceMock.Object);
+            solutionServiceMock.SetupGet(s => s.SolutionEvents).Returns(solutionEvents);
+            solutionServiceMock.Setup(s => s.GetSolutionFolderAsync()).ReturnsAsync("/repo");
+
+            ServiceProviderMock.Setup(sp => sp.SolutionService).Returns(solutionServiceMock.Object);
+
+            OptionsManagerMock
+                .Setup(m => m.MigrateLegacySolutionSettings(It.IsAny<string>()))
+                .Callback<string>(_ => migrationTcs.TrySetResult(true))
+                .Returns(false);
+
+            // Act — simulate LS becoming ready (subscribes to solution-opened event)
+            await cut.OnServerInitializedAsync();
+
+            // Fire the solution-opened event (simulates user opening a different solution without restarting VS)
+            solutionEvents.OnAfterBackgroundSolutionLoadComplete();
+
+            // Wait up to 5 s for the async handler to call migration
+            var completed = await Task.WhenAny(migrationTcs.Task, Task.Delay(TimeSpan.FromSeconds(5)));
+
+            // Assert — migration must have been triggered by the solution-opened event
+            Assert.True(completed == migrationTcs.Task, "MigrateLegacySolutionSettings was not called after solution-opened event");
+            OptionsManagerMock.Verify(m => m.MigrateLegacySolutionSettings("/repo"), Times.AtLeastOnce);
+        }
+
+        [Fact]
+        public async Task OnServerInitializedAsync_WhenSolutionEventsNotAvailable_DoesNotThrow()
+        {
+            // ISolutionService.SolutionEvents returns null (e.g. service not yet initialized) —
+            // OnServerInitializedAsync must not throw, it just skips the subscription.
+            var solutionServiceMock = new Mock<ISolutionService>();
+            solutionServiceMock.SetupGet(s => s.SolutionEvents).Returns((SnykVsSolutionLoadEvents)null);
+            ServiceProviderMock.Setup(sp => sp.SolutionService).Returns(solutionServiceMock.Object);
+
+            // Act — should not throw
+            var ex = await Record.ExceptionAsync(() => cut.OnServerInitializedAsync());
+            Assert.Null(ex);
         }
     }
 }
