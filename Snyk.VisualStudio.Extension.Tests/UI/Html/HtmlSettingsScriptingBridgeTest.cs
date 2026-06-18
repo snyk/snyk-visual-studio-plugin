@@ -641,15 +641,19 @@ namespace Snyk.VisualStudio.Extension.Tests.UI.Html
             };
             optionsMock.SetupGet(o => o.FolderConfigs).Returns(new List<FolderConfig> { existing });
 
-            // Changed-only payload touching a single override.
-            var config = JsonConvert.SerializeObject(new IdeConfigData
+            // Changed-only payload touching a single override. Serialize an anonymous object with
+            // ONLY the touched wire keys (folderPath + snyk_code_enabled) so the JSON matches the
+            // real JS form output. Serializing a full FolderConfigData would emit every untouched
+            // nullable field as explicit null (incl. preferred_org), which the reset path would
+            // then treat as a deliberate reset and wrongly clobber the stored override.
+            var config = JsonConvert.SerializeObject(new
             {
-                FolderConfigs = new List<FolderConfigData>
+                folderConfigs = new[]
                 {
-                    new FolderConfigData
+                    new
                     {
-                        FolderPath = "/path/to/solution",
-                        SnykCodeEnabled = false,
+                        folderPath = "/path/to/solution",
+                        snyk_code_enabled = false,
                     },
                 },
             });
