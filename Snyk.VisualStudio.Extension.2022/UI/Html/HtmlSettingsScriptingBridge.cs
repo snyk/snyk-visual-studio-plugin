@@ -623,31 +623,10 @@ namespace Snyk.VisualStudio.Extension.UI.Html
             ApplyFolderResetsFromRawJson(rawJson);
         }
 
-        // Org-scope folder fields the dialog's "Reset overrides" button clears (sent as JSON null).
-        // For these a null means "remove the user override" → emit {value:null, changed:true} so
-        // snyk-ls Unsets it (fallback to org/LDX/default). preferred_org is included; its LS reset
-        // also clears org_set_by_user. Must stay in sync with the JS FOLDER_RESET_FIELDS in snyk-ls.
-        private static readonly HashSet<string> FolderResetKeys = new HashSet<string>
-        {
-            PflagKeys.ScanAutomatic,
-            PflagKeys.ScanNetNew,
-            PflagKeys.SeverityFilterCritical,
-            PflagKeys.SeverityFilterHigh,
-            PflagKeys.SeverityFilterMedium,
-            PflagKeys.SeverityFilterLow,
-            PflagKeys.SnykOssEnabled,
-            PflagKeys.SnykCodeEnabled,
-            PflagKeys.SnykIacEnabled,
-            PflagKeys.SnykSecretsEnabled,
-            PflagKeys.IssueViewOpenIssues,
-            PflagKeys.IssueViewIgnoredIssues,
-            PflagKeys.RiskScoreThreshold,
-            PflagKeys.PreferredOrg,
-            PflagKeys.AdditionalParameters,
-            PflagKeys.AdditionalEnvironment,
-            PflagKeys.ScanCommandConfig,
-        };
-
+        // Flags every folder field present in the raw JSON as an explicit null as a reset, then lets
+        // snyk-ls decide which keys are actually resettable. snyk-ls is authoritative over folder-scoped
+        // settings: it acts on the keys it recognizes and ignores nulls on the rest, so forwarding extra
+        // present-nulls is a safe no-op and we don't maintain a duplicate whitelist here.
         private void ApplyFolderResetsFromRawJson(string rawJson)
         {
             if (string.IsNullOrWhiteSpace(rawJson))
@@ -687,41 +666,17 @@ namespace Snyk.VisualStudio.Extension.UI.Html
 
                 foreach (var property in folderObject.Properties())
                 {
+                    if (property.Name == "folderPath")
+                        continue;
                     if (property.Value.Type != JTokenType.Null)
                         continue;
-                    if (!FolderResetKeys.Contains(property.Name))
-                        continue;
 
-                    // Clear the stored override and flag the key so BuildFolderConfigs emits
-                    // {value:null, changed:true} for it instead of a stale value.
-                    ClearStoredFolderOverride(existingConfig, property.Name);
-                    existingConfig.ResetKeys = existingConfig.ResetKeys ?? new HashSet<string>();
+                    // Flag the key so BuildFolderConfigs emits {value:null, changed:true} for it.
+                    // snyk-ls is authoritative: it acts on the keys it recognizes as folder-scoped
+                    // and ignores nulls on the rest, so forwarding every present-null is safe.
+                    existingConfig.ResetKeys ??= new HashSet<string>();
                     existingConfig.ResetKeys.Add(property.Name);
                 }
-            }
-        }
-
-        private static void ClearStoredFolderOverride(FolderConfig fc, string key)
-        {
-            switch (key)
-            {
-                case PflagKeys.ScanAutomatic: fc.ScanAutomatic = null; break;
-                case PflagKeys.ScanNetNew: fc.ScanNetNew = null; break;
-                case PflagKeys.SeverityFilterCritical: fc.SeverityFilterCritical = null; break;
-                case PflagKeys.SeverityFilterHigh: fc.SeverityFilterHigh = null; break;
-                case PflagKeys.SeverityFilterMedium: fc.SeverityFilterMedium = null; break;
-                case PflagKeys.SeverityFilterLow: fc.SeverityFilterLow = null; break;
-                case PflagKeys.SnykOssEnabled: fc.SnykOssEnabled = null; break;
-                case PflagKeys.SnykCodeEnabled: fc.SnykCodeEnabled = null; break;
-                case PflagKeys.SnykIacEnabled: fc.SnykIacEnabled = null; break;
-                case PflagKeys.SnykSecretsEnabled: fc.SnykSecretsEnabled = null; break;
-                case PflagKeys.IssueViewOpenIssues: fc.IssueViewOpenIssues = null; break;
-                case PflagKeys.IssueViewIgnoredIssues: fc.IssueViewIgnoredIssues = null; break;
-                case PflagKeys.RiskScoreThreshold: fc.RiskScoreThreshold = null; break;
-                case PflagKeys.PreferredOrg: fc.PreferredOrg = null; break;
-                case PflagKeys.AdditionalParameters: fc.AdditionalParameters = null; break;
-                case PflagKeys.AdditionalEnvironment: fc.AdditionalEnv = null; break;
-                case PflagKeys.ScanCommandConfig: fc.ScanCommandConfig = null; break;
             }
         }
 
