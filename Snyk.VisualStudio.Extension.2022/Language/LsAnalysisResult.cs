@@ -194,9 +194,10 @@ namespace Snyk.VisualStudio.Extension.Language
             if (AdditionalData == null)
                 return 0;
 
-            // OSS and IaC use riskScore, Code uses priorityScore
+            // OSS, IaC, and Secrets use riskScore; Code uses priorityScore
             if (Product == Snyk.VisualStudio.Extension.Product.Oss ||
-                Product == Snyk.VisualStudio.Extension.Product.Iac)
+                Product == Snyk.VisualStudio.Extension.Product.Iac ||
+                Product == Snyk.VisualStudio.Extension.Product.Secrets)
             {
                 return AdditionalData.RiskScore;
             }

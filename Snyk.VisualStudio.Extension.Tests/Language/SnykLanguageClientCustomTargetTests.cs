@@ -543,5 +543,100 @@ namespace Snyk.VisualStudio.Extension.Tests.Language
             // ...and persisted without re-triggering DidChangeConfigurationAsync (triggerSettingsChangedEvent=false)
             snykOptionsManagerMock.Verify(m => m.Save(It.IsAny<IPersistableOptions>(), false), Times.Once());
         }
+
+        // ─── Secrets product ──────────────────────────────────────────────────────
+
+        [Fact]
+        public async Task OnPublishDiagnostics316_WithSecretsSource_ShouldAddIssuesToSecretsDictionary()
+        {
+            // Arrange
+            var arg = JObject.Parse(@"{
+                'uri': 'file:///c:/repo/secret.cs',
+                'diagnostics': [
+                    {
+                        'source': 'Snyk Secrets',
+                        'data': { 'id': 'secrets-1', 'isIgnored': false }
+                    }
+                ]
+            }");
+            optionsMock.SetupProperty(o => o.ConsistentIgnoresEnabled, false);
+
+            // Act
+            await cut.OnPublishDiagnostics316(arg);
+
+            // Assert
+            Assert.True(cut.GetSecretsDictionary().ContainsKey("c:\\repo\\secret.cs"));
+            Assert.Empty(cut.GetCodeDictionary());
+        }
+
+        [Fact]
+        public async Task OnPublishDiagnostics316_EmptyDiagnostics_ShouldClearSecretsDictionary()
+        {
+            // Arrange — first populate secrets dict
+            var populate = JObject.Parse(@"{
+                'uri': 'file:///c:/repo/secret.cs',
+                'diagnostics': [
+                    {
+                        'source': 'Snyk Secrets',
+                        'data': { 'id': 'secrets-1', 'isIgnored': false }
+                    }
+                ]
+            }");
+            optionsMock.SetupProperty(o => o.ConsistentIgnoresEnabled, false);
+            await cut.OnPublishDiagnostics316(populate);
+            Assert.Single(cut.GetSecretsDictionary());
+
+            // Now send empty diagnostics for same file
+            var clear = JObject.Parse(@"{'uri': 'file:///c:/repo/secret.cs', 'diagnostics': []}");
+            await cut.OnPublishDiagnostics316(clear);
+
+            // Assert — cleared
+            Assert.Empty(cut.GetSecretsDictionary());
+        }
+
+        [Fact]
+        public async Task OnSnykScan_WithSecretsProductInProgress_ShouldFireStartedEvent()
+        {
+            // Arrange
+            var arg = JObject.Parse(@"{'status':'inProgress','product':'secrets','folderPath':'/repo'}");
+            tasksServiceMock.Setup(t => t.SnykScanTokenSource).Returns(new CancellationTokenSource());
+
+            // Act
+            await cut.OnSnykScan(arg);
+
+            // Assert
+            tasksServiceMock.Verify(t => t.FireSecretsScanningStartedEvent(), Times.Once);
+        }
+
+        [Fact]
+        public async Task OnSnykScan_WithSecretsProductError_ShouldFireErrorAndTaskFinished()
+        {
+            // Arrange
+            var arg = JObject.Parse(@"{'status':'error','product':'secrets','folderPath':'/repo','presentableError':{'error':'test error'}}");
+            tasksServiceMock.Setup(t => t.SnykScanTokenSource).Returns(new CancellationTokenSource());
+
+            // Act
+            await cut.OnSnykScan(arg);
+
+            // Assert
+            tasksServiceMock.Verify(t => t.OnSecretsError(It.IsAny<PresentableError>()), Times.Once);
+            tasksServiceMock.Verify(t => t.FireTaskFinished(), Times.Once);
+        }
+
+        [Fact]
+        public async Task OnSnykScan_WithSecretsProductSuccess_ShouldFireUpdateFinishedAndTaskFinished()
+        {
+            // Arrange
+            var arg = JObject.Parse(@"{'status':'success','product':'secrets','folderPath':'/repo'}");
+            tasksServiceMock.Setup(t => t.SnykScanTokenSource).Returns(new CancellationTokenSource());
+
+            // Act
+            await cut.OnSnykScan(arg);
+
+            // Assert
+            tasksServiceMock.Verify(t => t.FireSecretsScanningUpdateEvent(It.IsAny<IDictionary<string, IEnumerable<Issue>>>()), Times.Once);
+            tasksServiceMock.Verify(t => t.FireSecretsScanningFinishedEvent(), Times.Once);
+            tasksServiceMock.Verify(t => t.FireTaskFinished(), Times.Once);
+        }
     }
 }
