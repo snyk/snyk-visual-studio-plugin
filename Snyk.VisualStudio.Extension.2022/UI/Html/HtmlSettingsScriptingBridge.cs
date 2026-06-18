@@ -359,6 +359,7 @@ namespace Snyk.VisualStudio.Extension.UI.Html
             var filterLow = o.FilterLow;
             var additionalEnv = o.AdditionalEnv;
             var riskScoreThreshold = o.RiskScoreThreshold;
+            var consistentIgnoresEnabled = o.ConsistentIgnoresEnabled;
             var folderConfigs = CloneFolderConfigs(o.FolderConfigs);
             var trustedFolders = o.TrustedFolders == null ? null : new HashSet<string>(o.TrustedFolders);
 
@@ -390,6 +391,7 @@ namespace Snyk.VisualStudio.Extension.UI.Html
                 o.FilterLow = filterLow;
                 o.AdditionalEnv = additionalEnv;
                 o.RiskScoreThreshold = riskScoreThreshold;
+                o.ConsistentIgnoresEnabled = consistentIgnoresEnabled;
                 o.FolderConfigs = folderConfigs;
                 o.TrustedFolders = trustedFolders;
             };
