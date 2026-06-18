@@ -56,6 +56,7 @@ namespace Snyk.VisualStudio.Extension.UI.Toolwindow
         private EventHandler<SnykCliDownloadEventArgs> downloadFinishedHandler;
         private EventHandler<SnykCliDownloadEventArgs> downloadUpdateHandler;
         private RoutedEventHandler loadedHandler;
+        private SnykScanCommand.UpdateControlsState updateControlsStateCallback;
 
         // ISnykToolWindow seam. The x:Name fields below are the concrete WPF panels; these
         // explicit members expose them as the testable interfaces used by ISnykServiceProvider
@@ -201,7 +202,10 @@ namespace Snyk.VisualStudio.Extension.UI.Toolwindow
             this.loadedHandler = (sender, args) => this.tasksService.Download();
             this.Loaded += this.loadedHandler;
 
-            SnykScanCommand.Instance.UpdateControlsStateCallback = (isEnabled) => ThreadHelper.JoinableTaskFactory.Run(async () =>
+            // Stored in a field so Dispose can detach it: SnykScanCommand.Instance is a static
+            // singleton that outlives the tool window, and this lambda captures `this`. Without the
+            // teardown detach, a later UpdateState() call would touch the disposed control.
+            this.updateControlsStateCallback = (isEnabled) => ThreadHelper.JoinableTaskFactory.Run(async () =>
             {
                 await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
 
@@ -217,6 +221,7 @@ namespace Snyk.VisualStudio.Extension.UI.Toolwindow
                     this.DetermineInitScreen();
                 }
             });
+            SnykScanCommand.Instance.UpdateControlsStateCallback = this.updateControlsStateCallback;
 
             Logger.Information("Leave InitializeEventListenersAsync() method.");
         }
@@ -705,6 +710,15 @@ namespace Snyk.VisualStudio.Extension.UI.Toolwindow
             }
 
             if (this.loadedHandler != null) this.Loaded -= this.loadedHandler;
+
+            // Detach the scan-command callback from the static singleton, but only if it is still
+            // ours — a newer tool window may have replaced it, and we must not clobber that.
+            if (this.updateControlsStateCallback != null
+                && SnykScanCommand.Instance != null
+                && ReferenceEquals(SnykScanCommand.Instance.UpdateControlsStateCallback, this.updateControlsStateCallback))
+            {
+                SnykScanCommand.Instance.UpdateControlsStateCallback = null;
+            }
 
             // OnLanguageServerReadyAsync fires RequestInitialTree on the tree panel; without this
             // detach a post-teardown LS restart would touch the disposed panel. Re-resolve in case

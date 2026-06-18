@@ -88,7 +88,21 @@ namespace Snyk.VisualStudio.Extension.Language
             var showDocumentParams = arg.TryParse<ShowDocumentParams>();
             if (string.IsNullOrEmpty(showDocumentParams?.Uri)) return;
 
-            var uri = new Uri(Uri.UnescapeDataString(showDocumentParams.Uri));
+            // Build the Uri from the raw string. Do NOT pre-unescape it: ParseQueryString already
+            // unescapes each query value once, and pre-unescaping double-decodes any value with a
+            // percent sequence and can produce a string that makes new Uri(...) throw. Guard the
+            // parse so a malformed URI can't escape this JSON-RPC handler.
+            Uri uri;
+            try
+            {
+                uri = new Uri(showDocumentParams.Uri);
+            }
+            catch (UriFormatException ex)
+            {
+                Logger.Warning(ex, "Ignoring showDocument request with malformed URI");
+                return;
+            }
+
             var queryParams = ParseQueryString(uri.Query);
             queryParams.TryGetValue("action", out var action);
 
@@ -101,7 +115,7 @@ namespace Snyk.VisualStudio.Extension.Language
                 {
                     return;
                 }
-                serviceProvider.ToolWindow.SelectedItemInTree(issueId, NormalizeProduct(productRaw));
+                serviceProvider?.ToolWindow?.SelectedItemInTree(issueId, NormalizeProduct(productRaw));
                 return;
             }
 
@@ -138,13 +152,14 @@ namespace Snyk.VisualStudio.Extension.Language
 
             foreach (var pair in query.Split('&'))
             {
-                var parts = pair.Split('=');
-                if (parts.Length == 2)
-                {
-                    var key = Uri.UnescapeDataString(parts[0]);
-                    var value = Uri.UnescapeDataString(parts[1]);
-                    result[key] = value;
-                }
+                // Split on the FIRST '=' only: a value can legitimately contain '=' (e.g. base64
+                // issue IDs ending in '='/'=='), and splitting on every '=' would drop those pairs.
+                var separatorIndex = pair.IndexOf('=');
+                if (separatorIndex <= 0) continue;
+
+                var key = Uri.UnescapeDataString(pair.Substring(0, separatorIndex));
+                var value = Uri.UnescapeDataString(pair.Substring(separatorIndex + 1));
+                result[key] = value;
             }
             return result;
         }
@@ -169,9 +184,9 @@ namespace Snyk.VisualStudio.Extension.Language
             var treePanel = serviceProvider?.ToolWindow?.TreeHtmlPanel;
             if (treeViewParam?.TreeViewHtml == null || treePanel == null) return;
 
-            await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
-
-            // HTML and count are applied together so the "Clean" command's enabled state can never
+            // SetContent marshals to the UI thread itself, so we don't switch here — this keeps the
+            // JSON-RPC dispatch thread unblocked, matching OnScanSummary's non-blocking pattern. HTML
+            // and count are applied together so the "Clean" command's enabled state can never
             // disagree with the rendered tree (see TreeHtmlPanel.SetContent).
             treePanel.SetContent(treeViewParam.TreeViewHtml, treeViewParam.TotalIssues);
         }

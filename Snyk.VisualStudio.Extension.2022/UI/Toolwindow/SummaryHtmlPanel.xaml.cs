@@ -161,6 +161,7 @@ namespace Snyk.VisualStudio.Extension.UI.Toolwindow
         {
             if (_disposed) return;
             _disposed = true;
+            SummaryHtmlViewer.NavigationCompleted -= OnNavigationCompleted;
             host?.Dispose();
         }
     }

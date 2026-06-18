@@ -268,6 +268,45 @@ namespace Snyk.VisualStudio.Extension.Tests.Language
             await cut.OnShowDocument(arg);
         }
 
+        [Fact]
+        public async Task OnShowDocument_ShouldKeepIssueId_WhenValueContainsEquals()
+        {
+            // base64-ish issue IDs can end in '='/'=='. The pair must not be dropped, and the value
+            // must keep its trailing '=' characters.
+            var toolWindowMock = SetupToolWindow();
+            var arg = ShowDocument("snyk://x?action=showInDetailPanel&issueId=abc==&product=code");
+
+            await cut.OnShowDocument(arg);
+
+            toolWindowMock.Verify(t => t.SelectedItemInTree("abc==", "code"), Times.Once);
+        }
+
+        [Fact]
+        public async Task OnShowDocument_ShouldDecodeIssueIdOnce_WhenPercentEncoded()
+        {
+            // The issue id is unescaped exactly once. Double-unescaping would corrupt a value whose
+            // decoded form contains a reserved character (here '%26' would wrongly become '&').
+            var toolWindowMock = SetupToolWindow();
+            var arg = ShowDocument("snyk://x?action=showInDetailPanel&issueId=x%2526y&product=code");
+
+            await cut.OnShowDocument(arg);
+
+            // Exactly one unescape yields "x%26y"; the buggy double-unescape would yield "x&y".
+            // Assert "not double-decoded" rather than the exact form to stay robust against
+            // System.Uri query canonicalisation differences.
+            toolWindowMock.Verify(t => t.SelectedItemInTree(It.Is<string>(id => id != "x&y"), "code"), Times.Once);
+        }
+
+        [Fact]
+        public async Task OnShowDocument_ShouldNotThrow_WhenToolWindowUnavailableForDetailPanel()
+        {
+            // ToolWindow is null until OnToolWindowCreated runs; a tree click arriving before then
+            // must be a no-op rather than an NRE out of the JSON-RPC handler.
+            var arg = ShowDocument("snyk://x?action=showInDetailPanel&issueId=ISSUE1&product=code");
+
+            await cut.OnShowDocument(arg);
+        }
+
         private Mock<ISnykToolWindow> SetupToolWindow()
         {
             var toolWindowMock = new Mock<ISnykToolWindow>();
