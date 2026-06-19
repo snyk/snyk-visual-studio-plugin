@@ -86,5 +86,6 @@ public interface IPersistableOptions
     bool FilterLow { get; set; }
 
     string AdditionalEnv { get; set; }
+    List<string> AdditionalParameters { get; set; }
     int? RiskScoreThreshold { get; set; }
 }

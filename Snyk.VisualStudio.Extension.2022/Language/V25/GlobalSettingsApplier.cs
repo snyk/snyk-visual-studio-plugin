@@ -57,7 +57,8 @@ namespace Snyk.VisualStudio.Extension.Language
                     case PflagKeys.BinaryBaseUrl:        options.CliBaseDownloadURL = val.Value<string>(); break;
                     case PflagKeys.CliReleaseChannel:    options.CliReleaseChannel  = val.Value<string>(); break;
 
-                    case PflagKeys.AdditionalEnvironment: options.AdditionalEnv = val.Value<string>(); break;
+                    case PflagKeys.AdditionalEnvironment:  options.AdditionalEnv        = val.Value<string>(); break;
+                    case PflagKeys.AdditionalParameters:  options.AdditionalParameters  = val.ToObject<List<string>>(); break;
 
                     case PflagKeys.TrustedFolders:
                         var list = val.ToObject<List<string>>();

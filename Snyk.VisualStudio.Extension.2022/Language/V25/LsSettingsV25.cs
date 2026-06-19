@@ -42,8 +42,10 @@ namespace Snyk.VisualStudio.Extension.Language
         }
 
         // internal for testability (InternalsVisibleTo test project).
-        // Note: additional_parameters is folder-scoped in v25 (see snyk-ls ldx_sync_config.go)
-        // and is not included in the global settings map.
+        // Note: additional_parameters and additional_environment are sent both in the global
+        // settings map (Project Defaults tab) and per-folder in folderConfigs. The LS resolves
+        // folder-over-global. Global values are wired via ISnykOptions.AdditionalParameters /
+        // AdditionalEnv; per-folder values live in FolderConfig.
         internal Dictionary<string, ConfigSetting> BuildSettingsMap(ISnykOptions options)
         {
             var map = new Dictionary<string, ConfigSetting>
@@ -77,6 +79,7 @@ namespace Snyk.VisualStudio.Extension.Language
 
                 [PflagKeys.TrustedFolders] = ConfigSetting.Of(options.TrustedFolders?.ToList() ?? new List<string>()),
                 [PflagKeys.AdditionalEnvironment] = ConfigSetting.Of(options.AdditionalEnv ?? string.Empty),
+                [PflagKeys.AdditionalParameters] = ConfigSetting.Of(options.AdditionalParameters ?? new List<string>()),
 
                 [PflagKeys.DeviceId] = ConfigSetting.Of(options.DeviceId ?? string.Empty),
                 [PflagKeys.ClientProtocolVersion] = ConfigSetting.Of("25"),
