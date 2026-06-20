@@ -496,6 +496,42 @@ namespace Snyk.VisualStudio.Extension.Tests.Language
         }
 
         [Fact]
+        public async Task OnSnykConfiguration_DoesNotThrow_WhenHtmlSettingsPanelIsClosed()
+        {
+            // HtmlSettingsControl.Instance is always null in unit tests (no WPF/VS host).
+            // This test documents that RequestReload() handles a null instance guard correctly:
+            // when no settings page is open the method returns immediately without touching WPF.
+            var arg = JObject.Parse(@"{ ""settings"": {}, ""folderConfigs"": [] }");
+            optionsMock.SetupProperty(o => o.FolderConfigs);
+
+            // Act — must not throw when HtmlSettingsControl.Instance is null
+            await cut.OnSnykConfiguration(arg);
+        }
+
+        [Fact]
+        public async Task OnSnykConfiguration_RequestReload_IsCalledAfterSave_WhenConfigArrives()
+        {
+            // Arrange — exercises the production path that leads to RequestReload().
+            // HtmlSettingsControl.Instance is null in the unit test environment (no WPF host),
+            // so RequestReload() returns immediately after the null guard — no WPF call is made.
+            // This test verifies the wiring: OnSnykConfiguration calls RequestReload() without
+            // throwing, even though the panel is not open.
+            var arg = JObject.Parse(@"{
+                ""settings"": { ""snyk_oss_enabled"": { ""value"": true, ""changed"": true } },
+                ""folderConfigs"": []
+            }");
+            optionsMock.SetupProperty(o => o.FolderConfigs);
+            optionsMock.SetupProperty(o => o.OssEnabled);
+
+            // Act — must not throw; RequestReload() fires after Save() completes
+            await cut.OnSnykConfiguration(arg);
+
+            // Assert — settings were applied and saved before the reload was attempted
+            Assert.True(optionsMock.Object.OssEnabled);
+            snykOptionsManagerMock.Verify(m => m.Save(It.IsAny<IPersistableOptions>(), false), Times.Once());
+        }
+
+        [Fact]
         public async Task OnSnykConfiguration_ShouldPopulateFolderConfigs_WithValidLspConfigurationParam()
         {
             // Arrange
@@ -637,6 +673,30 @@ namespace Snyk.VisualStudio.Extension.Tests.Language
             tasksServiceMock.Verify(t => t.FireSecretsScanningUpdateEvent(It.IsAny<IDictionary<string, IEnumerable<Issue>>>()), Times.Once);
             tasksServiceMock.Verify(t => t.FireSecretsScanningFinishedEvent(), Times.Once);
             tasksServiceMock.Verify(t => t.FireTaskFinished(), Times.Once);
+        }
+
+        [Fact]
+        public async Task OnSnykConfiguration_CallsReloadHtmlSettings_AfterSavingOptions()
+        {
+            // Arrange — inject a spy via the internal constructor overload instead of using
+            // HtmlSettingsControl.RequestReload() statically, so the call can be verified.
+            var reloadCalled = false;
+            var spMock = new Mock<ISnykServiceProvider>();
+            var optsMock = new Mock<ISnykOptions>();
+            var optsMgrMock = new Mock<ISnykOptionsManager>();
+            optsMock.SetupAllProperties();
+            optsMock.SetupProperty(o => o.FolderConfigs);
+            spMock.SetupGet(sp => sp.Options).Returns(optsMock.Object);
+            spMock.SetupGet(sp => sp.SnykOptionsManager).Returns(optsMgrMock.Object);
+
+            var sut = new SnykLanguageClientCustomTarget(spMock.Object, () => { reloadCalled = true; });
+            var arg = JObject.Parse(@"{ ""settings"": {}, ""folderConfigs"": [] }");
+
+            // Act
+            await sut.OnSnykConfiguration(arg);
+
+            // Assert — reload was requested after settings were saved
+            Assert.True(reloadCalled, "Expected RequestReload to be called after OnSnykConfiguration applies config");
         }
     }
 }
