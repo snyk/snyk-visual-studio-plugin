@@ -150,7 +150,7 @@ namespace Snyk.VisualStudio.Extension.Settings
         // Set once the hosted page has finished navigating, i.e. once window.setAuthToken exists.
         // A queued auth token is only flushed after this so the push can't no-op against a
         // half-loaded page.
-        private bool _pageReady;
+        private volatile bool _pageReady;
 
         /// <summary>
         /// Set to true after this control has been Unloaded. The host's WebView2 may already
@@ -321,6 +321,24 @@ namespace Snyk.VisualStudio.Extension.Settings
         {
             AuthTokenSlot.Set(token, apiUrl);
             instance?.FlushPendingAuthToken();
+        }
+
+        /// <summary>
+        /// Re-fetches HTML from the LS and re-renders the settings page if one is currently open.
+        /// Safe to call from any thread; fire-and-forget. No-op when no settings page is open.
+        /// Called by <see cref="SnykLanguageClientCustomTarget.OnSnykConfiguration"/> after settings are applied.
+        /// </summary>
+        public static void RequestReload()
+        {
+            var currentInstance = instance;
+            if (currentInstance == null || currentInstance._disposed || !currentInstance._pageReady) return;
+
+            ThreadHelper.JoinableTaskFactory.RunAsync(async () =>
+            {
+                await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
+                if (currentInstance._disposed) return;
+                await currentInstance.LoadHtmlSettingsAsync();
+            }).FireAndForget();
         }
 
         // Delivers the queued token to the page, but only once it is loaded (window.setAuthToken

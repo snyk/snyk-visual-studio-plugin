@@ -21,13 +21,21 @@ namespace Snyk.VisualStudio.Extension.Language
     {
         private static readonly ILogger Logger = LogManager.ForContext<SnykLanguageClientCustomTarget>();
         private readonly ISnykServiceProvider serviceProvider;
+        private readonly Action _reloadHtmlSettings;
         private readonly ConcurrentDictionary<string, IEnumerable<Issue>> snykCodeIssueDictionary = new();
         private readonly ConcurrentDictionary<string, IEnumerable<Issue>> snykOssIssueDictionary = new();
         private readonly ConcurrentDictionary<string, IEnumerable<Issue>> snykIaCIssueDictionary = new();
         private readonly ConcurrentDictionary<string, IEnumerable<Issue>> snykSecretsIssueDictionary = new();
+
         public SnykLanguageClientCustomTarget(ISnykServiceProvider serviceProvider)
+            : this(serviceProvider, HtmlSettingsControl.RequestReload)
+        {
+        }
+
+        internal SnykLanguageClientCustomTarget(ISnykServiceProvider serviceProvider, Action reloadHtmlSettings)
         {
             this.serviceProvider = serviceProvider;
+            _reloadHtmlSettings = reloadHtmlSettings;
         }
 
 #pragma warning disable CS1998 // Async method lacks 'await' operators and will run synchronously
@@ -238,6 +246,9 @@ namespace Snyk.VisualStudio.Extension.Language
             this.serviceProvider.SnykOptionsManager.Save(options, false);
             Logger.Debug("$/snyk.configuration applied: {KeyCount} global setting(s), {FolderCount} folder config(s) stored in-memory",
                 param.Settings?.Count ?? 0, param.FolderConfigs?.Count ?? 0);
+
+            // Re-render the settings page if it is open so the user sees updated config.
+            _reloadHtmlSettings();
 
             // Trigger first scan now that folder configs have arrived.
             // AutoScan vs InternalAutoScan vs ScanningMode:
