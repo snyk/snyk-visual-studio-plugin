@@ -33,7 +33,7 @@ namespace Snyk.VisualStudio.Extension.Settings
     /// </remarks>
     public static class SettingsLocationMigrator
     {
-        private static readonly ILogger Logger = LogManager.ForContext<SettingsLocationMigrator>();
+        private static readonly ILogger Logger = LogManager.ForContext(typeof(SettingsLocationMigrator));
 
         /// <summary>
         /// Returns the byte-length of <paramref name="path"/>, or -1 if the file cannot be
