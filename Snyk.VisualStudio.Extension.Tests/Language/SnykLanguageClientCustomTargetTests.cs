@@ -703,5 +703,96 @@ namespace Snyk.VisualStudio.Extension.Tests.Language
             // ...and persisted without re-triggering DidChangeConfigurationAsync (triggerSettingsChangedEvent=false)
             snykOptionsManagerMock.Verify(m => m.Save(It.IsAny<IPersistableOptions>(), false), Times.Once());
         }
+
+        // ─── Secrets product ──────────────────────────────────────────────────────
+
+        [Fact]
+        public async Task OnPublishDiagnostics316_WithSecretsSource_ShouldNotEnableConsistentIgnores_WhenNoIssueIgnored()
+        {
+            // Arrange — rendering is driven by the LS HTML tree now, so the handler only inspects
+            // Secrets diagnostics for the Consistent Ignores flag.
+            var arg = JObject.Parse(@"{
+                'uri': 'file:///c:/repo/secret.cs',
+                'diagnostics': [
+                    {
+                        'source': 'Snyk Secrets',
+                        'data': { 'id': 'secrets-1', 'isIgnored': false }
+                    }
+                ]
+            }");
+            optionsMock.SetupProperty(o => o.ConsistentIgnoresEnabled, false);
+
+            // Act
+            await cut.OnPublishDiagnostics316(arg);
+
+            // Assert — no ignored issue seen, flag left alone
+            Assert.False(optionsMock.Object.ConsistentIgnoresEnabled);
+        }
+
+        [Fact]
+        public async Task OnPublishDiagnostics316_WithSecretsSource_ShouldEnableConsistentIgnores_WhenIssueIgnored()
+        {
+            // Arrange — an ignored Secrets issue flips the Consistent Ignores flag on.
+            var arg = JObject.Parse(@"{
+                'uri': 'file:///c:/repo/secret.cs',
+                'diagnostics': [
+                    {
+                        'source': 'Snyk Secrets',
+                        'data': { 'id': 'secrets-1', 'isIgnored': true }
+                    }
+                ]
+            }");
+            optionsMock.SetupProperty(o => o.ConsistentIgnoresEnabled, false);
+
+            // Act
+            await cut.OnPublishDiagnostics316(arg);
+
+            // Assert
+            Assert.True(optionsMock.Object.ConsistentIgnoresEnabled);
+        }
+
+        [Fact]
+        public async Task OnSnykScan_WithSecretsProductInProgress_ShouldFireStartedEvent()
+        {
+            // Arrange
+            var arg = JObject.Parse(@"{'status':'inProgress','product':'secrets','folderPath':'/repo'}");
+            tasksServiceMock.Setup(t => t.SnykScanTokenSource).Returns(new CancellationTokenSource());
+
+            // Act
+            await cut.OnSnykScan(arg);
+
+            // Assert
+            tasksServiceMock.Verify(t => t.FireSecretsScanningStartedEvent(), Times.Once);
+        }
+
+        [Fact]
+        public async Task OnSnykScan_WithSecretsProductError_ShouldFireErrorAndTaskFinished()
+        {
+            // Arrange
+            var arg = JObject.Parse(@"{'status':'error','product':'secrets','folderPath':'/repo','presentableError':{'error':'test error'}}");
+            tasksServiceMock.Setup(t => t.SnykScanTokenSource).Returns(new CancellationTokenSource());
+
+            // Act
+            await cut.OnSnykScan(arg);
+
+            // Assert
+            tasksServiceMock.Verify(t => t.OnSecretsError(It.IsAny<PresentableError>()), Times.Once);
+            tasksServiceMock.Verify(t => t.FireTaskFinished(), Times.Once);
+        }
+
+        [Fact]
+        public async Task OnSnykScan_WithSecretsProductSuccess_ShouldFireFinishedAndTaskFinished()
+        {
+            // Arrange
+            var arg = JObject.Parse(@"{'status':'success','product':'secrets','folderPath':'/repo'}");
+            tasksServiceMock.Setup(t => t.SnykScanTokenSource).Returns(new CancellationTokenSource());
+
+            // Act
+            await cut.OnSnykScan(arg);
+
+            // Assert
+            tasksServiceMock.Verify(t => t.FireSecretsScanningFinishedEvent(), Times.Once);
+            tasksServiceMock.Verify(t => t.FireTaskFinished(), Times.Once);
+        }
     }
 }

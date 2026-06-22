@@ -79,6 +79,9 @@ namespace Snyk.VisualStudio.Extension.Language
                 case Product.Iac:
                     await ProcessIacScanAsync(lspAnalysisResult);
                     break;
+                case Product.Secrets:
+                    await ProcessSecretsScanAsync(lspAnalysisResult);
+                    break;
             }
         }
 
@@ -351,6 +354,24 @@ namespace Snyk.VisualStudio.Extension.Language
             serviceProvider.TasksService.FireTaskFinished();
         }
 
+        private async Task ProcessSecretsScanAsync(LsAnalysisResult lsAnalysisResult)
+        {
+            if (lsAnalysisResult.Status == "inProgress")
+            {
+                serviceProvider.TasksService.FireSecretsScanningStartedEvent();
+                return;
+            }
+            if (lsAnalysisResult.Status == "error")
+            {
+                serviceProvider.TasksService.OnSecretsError(lsAnalysisResult.PresentableError);
+                serviceProvider.TasksService.FireTaskFinished();
+                return;
+            }
+
+            serviceProvider.TasksService.FireSecretsScanningFinishedEvent();
+            serviceProvider.TasksService.FireTaskFinished();
+        }
+
         private string LspSourceToProduct(string source)
         {
             return source switch
@@ -358,6 +379,7 @@ namespace Snyk.VisualStudio.Extension.Language
                 "Snyk Code" => "code",
                 "Snyk Open Source" => "oss",
                 "Snyk IaC" => "iac",
+                "Snyk Secrets" => "secrets",
                 _ => ""
             };
         }
