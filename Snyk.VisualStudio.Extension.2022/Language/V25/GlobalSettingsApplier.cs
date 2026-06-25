@@ -58,7 +58,15 @@ namespace Snyk.VisualStudio.Extension.Language
                     case PflagKeys.CliReleaseChannel:    options.CliReleaseChannel  = val.Value<string>(); break;
 
                     case PflagKeys.AdditionalEnvironment:  options.AdditionalEnv        = val.Value<string>(); break;
-                    case PflagKeys.AdditionalParameters:  options.AdditionalParameters  = val.ToObject<List<string>>(); break;
+                    case PflagKeys.AdditionalParameters:
+                        // LS sends additional_parameters as a space-joined string (strings.Join(..., " ")),
+                        // not a JSON array. Split on spaces; fall back to array deserialization for future-proofing.
+                        options.AdditionalParameters = val.Type == JTokenType.String
+                            ? (val.Value<string>() ?? string.Empty)
+                                .Split(new[] { ' ' }, StringSplitOptions.RemoveEmptyEntries)
+                                .ToList()
+                            : val.ToObject<List<string>>();
+                        break;
 
                     case PflagKeys.TrustedFolders:
                         var list = val.ToObject<List<string>>();

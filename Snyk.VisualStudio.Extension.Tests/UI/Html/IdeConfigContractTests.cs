@@ -13,7 +13,7 @@ namespace Snyk.VisualStudio.Extension.Tests.UI.Html
         // the setting at runtime.
         private const string AuthoritativePayload = @"{
             ""additional_environment"": """",
-            ""additional_parameters"": [],
+            ""additional_parameters"": """",
             ""api_endpoint"": ""https://api.snyk.io"",
             ""authentication_method"": ""oauth"",
             ""automatic_download"": false,

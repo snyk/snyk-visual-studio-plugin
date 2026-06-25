@@ -616,7 +616,9 @@ namespace Snyk.VisualStudio.Extension.UI.Html
             }
             if (config.AdditionalParameters != null)
             {
-                Options.AdditionalParameters = config.AdditionalParameters;
+                Options.AdditionalParameters = config.AdditionalParameters
+                    .Split(new[] { ' ' }, StringSplitOptions.RemoveEmptyEntries)
+                    .ToList();
             }
         }
 

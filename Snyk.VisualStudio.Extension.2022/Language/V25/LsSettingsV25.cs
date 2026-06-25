@@ -79,7 +79,10 @@ namespace Snyk.VisualStudio.Extension.Language
 
                 [PflagKeys.TrustedFolders] = ConfigSetting.Of(options.TrustedFolders?.ToList() ?? new List<string>()),
                 [PflagKeys.AdditionalEnvironment] = ConfigSetting.Of(options.AdditionalEnv ?? string.Empty),
-                [PflagKeys.AdditionalParameters] = ConfigSetting.Of(options.AdditionalParameters ?? new List<string>()),
+                // LS applyCliConfig reads additional_parameters via settingStr (string type-assert),
+                // so send as a space-joined string — same wire format LS uses on its outbound echo.
+                [PflagKeys.AdditionalParameters] = ConfigSetting.Of(
+                    string.Join(" ", options.AdditionalParameters ?? new List<string>())),
 
                 [PflagKeys.DeviceId] = ConfigSetting.Of(options.DeviceId ?? string.Empty),
                 [PflagKeys.ClientProtocolVersion] = ConfigSetting.Of("25"),

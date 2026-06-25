@@ -118,8 +118,9 @@ namespace Snyk.VisualStudio.Extension.UI.Html
         [JsonProperty("additional_environment")]
         public string AdditionalEnv { get; set; }
 
+        // Form sends additional_parameters as a raw string (text input); split on whitespace when applying.
         [JsonProperty("additional_parameters")]
-        public List<string> AdditionalParameters { get; set; }
+        public string AdditionalParameters { get; set; }
 
         // Trusted folders
         [JsonProperty("trusted_folders")]

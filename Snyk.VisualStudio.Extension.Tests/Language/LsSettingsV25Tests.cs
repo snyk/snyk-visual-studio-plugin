@@ -268,8 +268,9 @@ namespace Snyk.VisualStudio.Extension.Tests.Language
             var map = cut.BuildSettingsMap(optionsMock.Object);
 
             Assert.True(map.ContainsKey(PflagKeys.AdditionalParameters));
-            var value = Assert.IsType<List<string>>(map[PflagKeys.AdditionalParameters].Value);
-            Assert.Equal(expectedParams, value);
+            // Sent as space-joined string — LS applyCliConfig reads via settingStr (string type-assert).
+            var value = Assert.IsType<string>(map[PflagKeys.AdditionalParameters].Value);
+            Assert.Equal("--severity-threshold=high --debug", value);
         }
 
         [Fact]
