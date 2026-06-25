@@ -179,5 +179,43 @@ namespace Snyk.VisualStudio.Extension.Tests.Language
             GlobalSettingsApplier.Apply(settings, options);
             Assert.True(options.OssEnabled);
         }
+
+        [Fact]
+        public void Apply_AdditionalParameters_SplitsSpaceJoinedString()
+        {
+            // LS sends additional_parameters as a space-joined string (strings.Join(..., " ")).
+            var options = MakeOptions();
+            var settings = new Dictionary<string, ConfigSetting>
+            {
+                [PflagKeys.AdditionalParameters] = new ConfigSetting { Value = JToken.FromObject("--debug --severity-threshold=high"), Changed = true }
+            };
+            GlobalSettingsApplier.Apply(settings, options);
+            Assert.Equal(new List<string> { "--debug", "--severity-threshold=high" }, options.AdditionalParameters);
+        }
+
+        [Fact]
+        public void Apply_AdditionalParameters_HandlesEmptyString()
+        {
+            var options = MakeOptions();
+            var settings = new Dictionary<string, ConfigSetting>
+            {
+                [PflagKeys.AdditionalParameters] = new ConfigSetting { Value = JToken.FromObject(""), Changed = true }
+            };
+            GlobalSettingsApplier.Apply(settings, options);
+            Assert.Empty(options.AdditionalParameters);
+        }
+
+        [Fact]
+        public void Apply_AdditionalParameters_HandlesJsonArray()
+        {
+            // Future-proofing: if LS ever sends an array, it should still work.
+            var options = MakeOptions();
+            var settings = new Dictionary<string, ConfigSetting>
+            {
+                [PflagKeys.AdditionalParameters] = new ConfigSetting { Value = JToken.FromObject(new[] { "--debug", "--verbose" }), Changed = true }
+            };
+            GlobalSettingsApplier.Apply(settings, options);
+            Assert.Equal(new List<string> { "--debug", "--verbose" }, options.AdditionalParameters);
+        }
     }
 }
