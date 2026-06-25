@@ -50,6 +50,7 @@ namespace Snyk.VisualStudio.Extension.Language
                 if (data == null) continue;
 
                 var issue = data.TryParse<Issue>();
+                if (issue == null) continue;
                 if (issue.IsIgnored)
                 {
                     serviceProvider.Options.ConsistentIgnoresEnabled = true;

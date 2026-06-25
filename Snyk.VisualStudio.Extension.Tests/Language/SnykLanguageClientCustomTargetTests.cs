@@ -704,6 +704,52 @@ namespace Snyk.VisualStudio.Extension.Tests.Language
             snykOptionsManagerMock.Verify(m => m.Save(It.IsAny<IPersistableOptions>(), false), Times.Once());
         }
 
+        [Fact]
+        public async Task OnPublishDiagnostics316_ShouldNotThrow_WhenDiagnosticDataIsNonDeserializable()
+        {
+            // Arrange — `data` is present but cannot be deserialized as Issue (it is a plain integer).
+            // TryParse<Issue> returns null in this case; the handler must skip the entry rather than
+            // throwing NullReferenceException on `issue.IsIgnored`.
+            var arg = JObject.Parse(@"{
+                'uri': 'file:///path/to/file',
+                'diagnostics': [
+                    {
+                        'source': 'Snyk Code',
+                        'data': 42
+                    }
+                ]
+            }");
+            optionsMock.SetupProperty(o => o.ConsistentIgnoresEnabled, false);
+
+            // Act — must not throw
+            await cut.OnPublishDiagnostics316(arg);
+
+            // Assert — no valid issue parsed, flag stays false
+            Assert.False(optionsMock.Object.ConsistentIgnoresEnabled);
+        }
+
+        [Fact]
+        public async Task OnPublishDiagnostics316_ShouldNotThrow_WhenDiagnosticDataIsNonDeserializableString()
+        {
+            // Arrange — `data` is a bare string, not an Issue object.
+            var arg = JObject.Parse(@"{
+                'uri': 'file:///path/to/file',
+                'diagnostics': [
+                    {
+                        'source': 'Snyk Code',
+                        'data': 'not-an-issue'
+                    }
+                ]
+            }");
+            optionsMock.SetupProperty(o => o.ConsistentIgnoresEnabled, false);
+
+            // Act — must not throw
+            await cut.OnPublishDiagnostics316(arg);
+
+            // Assert
+            Assert.False(optionsMock.Object.ConsistentIgnoresEnabled);
+        }
+
         // ─── Secrets product ──────────────────────────────────────────────────────
 
         [Fact]

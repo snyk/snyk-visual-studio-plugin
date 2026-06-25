@@ -28,6 +28,13 @@ namespace Snyk.VisualStudio.Extension.UI.Toolwindow
         // continuations instead of touching the disposed host.
         private readonly CancellationTokenSource cts = new CancellationTokenSource();
 
+        // Captured once from cts.Token immediately after construction, before any lambda closes over
+        // it. On .NET Framework 4.8, reading CancellationTokenSource.Token after Dispose() throws
+        // ObjectDisposedException. A CancellationToken struct captured before disposal stays safe to
+        // read after the source is disposed: IsCancellationRequested returns true, and passing it to
+        // SwitchToMainThreadAsync / InvokeExecuteCommandAsync yields the expected OperationCanceledException.
+        private readonly CancellationToken ctsToken;
+
         // Monotonic navigation token. SetContent can be driven by both the $/snyk.treeView push and
         // the snyk.getTreeView pull (and re-fires of OnLanguageServerReadyAsync), which race; a
         // navigation whose generation has been superseded by a newer one is dropped so a stale tree
@@ -55,6 +62,7 @@ namespace Snyk.VisualStudio.Extension.UI.Toolwindow
 
         public TreeHtmlPanel()
         {
+            ctsToken = cts.Token;
             this.InitializeComponent();
 
             // Theme the WPF placeholder (shown while the WebView2 is collapsed) and the WebView2's
@@ -122,21 +130,28 @@ namespace Snyk.VisualStudio.Extension.UI.Toolwindow
         {
             if (_disposed || string.IsNullOrEmpty(html)) return;
 
-            TotalIssues = totalIssues;
-
-            var themedHtml = htmlProvider.ReplaceCssVariables(html);
+            // Increment synchronously so a later call's generation supersedes this one before
+            // either lambda reaches the UI thread.
             var generation = Interlocked.Increment(ref navGeneration);
 
             ThreadHelper.JoinableTaskFactory.RunAsync(async () =>
             {
                 try
                 {
-                    await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync(cts.Token);
+                    await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync(ctsToken);
                     if (_disposed) return;
 
                     // Drop this navigation if a newer SetContent started after us — that one carries
                     // the more recent tree and must win the last NavigateAsync.
                     if (Interlocked.Read(ref navGeneration) != generation) return;
+
+                    // Both TotalIssues and ReplaceCssVariables run on the UI thread so they are
+                    // always consistent with the navigation that wins the staleness race:
+                    // a superseded SetContent never commits its count or resolves theme colours.
+                    // TotalIssues is UI-thread-confined: all reads (IsTreeContentNotEmpty) and
+                    // writes (Clean, here) switch to the UI thread before touching it.
+                    TotalIssues = totalIssues;
+                    var themedHtml = htmlProvider.ReplaceCssVariables(html);
 
                     // Reveal the WebView2 now that real content is ready and hide the WPF
                     // placeholder. After the first reveal these are no-ops; re-renders paint the
@@ -183,7 +198,7 @@ namespace Snyk.VisualStudio.Extension.UI.Toolwindow
                 try
                 {
                     var result = await languageClientManager.InvokeExecuteCommandAsync(
-                        LsConstants.SnykGetTreeView, Array.Empty<object>(), cts.Token);
+                        LsConstants.SnykGetTreeView, Array.Empty<object>(), ctsToken);
                     if (_disposed) return;
 
                     // The reply uses the same envelope as the push ({ treeViewHtml, totalIssues }),
@@ -218,7 +233,7 @@ namespace Snyk.VisualStudio.Extension.UI.Toolwindow
                     argsJson,
                     callbackId,
                     InvokeCommandCallback,
-                    cts.Token);
+                    ctsToken);
             }).FireAndForget();
         }
 
@@ -236,7 +251,7 @@ namespace Snyk.VisualStudio.Extension.UI.Toolwindow
             {
                 try
                 {
-                    await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync(cts.Token);
+                    await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync(ctsToken);
                     if (_disposed) return;
                     await host.ExecuteScriptAsync(
                         ExecuteCommandBridge.BuildCommandCallbackScript(callbackId, resultJson));
@@ -261,6 +276,7 @@ namespace Snyk.VisualStudio.Extension.UI.Toolwindow
             if (_disposed) return;
             _disposed = true;
             cts.Cancel();
+            cts.Dispose();
             host?.Dispose();
         }
     }

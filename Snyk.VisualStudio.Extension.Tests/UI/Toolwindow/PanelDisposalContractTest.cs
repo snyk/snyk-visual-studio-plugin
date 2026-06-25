@@ -73,5 +73,27 @@ namespace Snyk.VisualStudio.Extension.Tests.UI.Toolwindow
             Assert.True(typeof(IDisposable).IsAssignableFrom(typeof(TreeHtmlPanel)));
             Assert.True(typeof(IDisposable).IsAssignableFrom(typeof(SnykToolWindowControl)));
         }
+
+        // Regression guard for IDE-1842: TreeHtmlPanel.Dispose() calls cts.Dispose() after
+        // cts.Cancel(). On .NET Framework 4.8, reading CancellationTokenSource.Token after Dispose()
+        // throws ObjectDisposedException, which would corrupt any lambda that closed over cts.Token
+        // directly. The fix captures the token once at construction (ctsToken = cts.Token) and uses
+        // the captured struct in all lambdas. This test pins the BCL contract that a CancellationToken
+        // struct captured before disposal is safe to read (IsCancellationRequested) after the source
+        // is disposed — it must not throw. If this test fails the fix's fundamental assumption is
+        // wrong and needs revisiting.
+        [Fact]
+        public void CapturedCancellationToken_IsSafeToRead_AfterSourceDisposed()
+        {
+            var cts = new System.Threading.CancellationTokenSource();
+            // Capture the token struct before disposal — mirrors what TreeHtmlPanel does in its ctor.
+            var captured = cts.Token;
+
+            cts.Cancel();
+            cts.Dispose();
+
+            // Must not throw ObjectDisposedException; captured token reflects cancelled state.
+            Assert.True(captured.IsCancellationRequested);
+        }
     }
 }
