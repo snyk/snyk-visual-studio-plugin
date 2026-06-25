@@ -95,5 +95,6 @@ namespace Snyk.VisualStudio.Extension.Tests.UI.Toolwindow
             // Must not throw ObjectDisposedException; captured token reflects cancelled state.
             Assert.True(captured.IsCancellationRequested);
         }
+
     }
 }

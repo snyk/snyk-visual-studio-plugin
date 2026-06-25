@@ -182,6 +182,35 @@ namespace Snyk.VisualStudio.Extension.UI.Toolwindow
         }
 
         /// <summary>
+        /// Clears the panel immediately and invalidates any in-flight <see cref="SetContent"/>
+        /// navigations so a queued push cannot resurrect a tree that the user or
+        /// <c>SnykToolWindowControl.Clean()</c> just cleared.
+        /// <para>
+        /// Bumping <c>navGeneration</c> causes any lambda already queued by <see cref="SetContent"/>
+        /// to fail the <c>Interlocked.Read(ref navGeneration) != generation</c> staleness check on
+        /// the UI thread and drop silently, preventing the cleared panel from being re-populated by
+        /// a stale LS push or pull result.
+        /// </para>
+        /// Must be called on the UI thread (same requirement as <see cref="SetContent"/>).
+        /// </summary>
+        public void Reset()
+        {
+            ThreadHelper.ThrowIfNotOnUIThread();
+            if (_disposed) return;
+
+            // Advance the generation so any SetContent lambda already queued (but not yet committed
+            // to the UI thread) sees a generation mismatch and discards itself.
+            Interlocked.Increment(ref navGeneration);
+
+            TotalIssues = 0;
+
+            // Return the panel to its initial placeholder state: collapse the WebView2 viewer and
+            // restore the loading/placeholder text — mirroring what SetContent does in reverse.
+            TreeHtmlViewer.Visibility = System.Windows.Visibility.Collapsed;
+            LoadingText.Visibility = System.Windows.Visibility.Visible;
+        }
+
+        /// <summary>
         /// Fetches the current tree HTML from the Language Server via <c>snyk.getTreeView</c> and
         /// renders it. Safe to call once the LS is ready; the LS also pushes updates via
         /// <c>$/snyk.treeView</c> on every scan-state change.

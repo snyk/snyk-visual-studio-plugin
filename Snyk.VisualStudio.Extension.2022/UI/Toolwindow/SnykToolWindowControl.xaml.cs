@@ -537,7 +537,7 @@ namespace Snyk.VisualStudio.Extension.UI.Toolwindow
         {
             await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
 
-            this.TreeHtmlPanel.TotalIssues = 0;
+            this.TreeHtmlPanel.Reset();
             this.DetermineInitScreen();
         });
 

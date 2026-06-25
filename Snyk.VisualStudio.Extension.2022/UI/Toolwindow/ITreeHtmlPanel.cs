@@ -12,5 +12,11 @@ namespace Snyk.VisualStudio.Extension.UI.Toolwindow
         /// (<c>snyk.getTreeView</c>) paths.
         /// </summary>
         void SetContent(string html, int totalIssues);
+
+        /// <summary>
+        /// Clears the panel and invalidates any in-flight <see cref="SetContent"/> navigations.
+        /// Must be called on the UI thread.
+        /// </summary>
+        void Reset();
     }
 }
