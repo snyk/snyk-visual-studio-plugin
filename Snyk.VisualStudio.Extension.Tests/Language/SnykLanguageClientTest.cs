@@ -1,5 +1,7 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.IO;
+using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.VisualStudio.LanguageServer.Client;
@@ -345,6 +347,52 @@ namespace Snyk.VisualStudio.Extension.Tests.Language
             Assert.True(eventInvoked);
         }
 
+
+        [Theory]
+        [InlineData("-d")]
+        [InlineData("--debug")]
+        public async Task GetLsDebugLevelAsync_ReturnsDebug_WhenGlobalAdditionalParametersContainsDebugFlag(string flag)
+        {
+            OptionsMock.SetupGet(o => o.AdditionalParameters).Returns(new List<string> { flag });
+            OptionsMock.SetupGet(o => o.FolderConfigs).Returns(new List<FolderConfig>());
+
+            var method = typeof(SnykLanguageClient).GetMethod("GetLsDebugLevelAsync", BindingFlags.NonPublic | BindingFlags.Instance);
+            var level = await (Task<string>)method.Invoke(cut, null);
+
+            Assert.Equal("debug", level);
+        }
+
+        [Theory]
+        [InlineData("-d")]
+        [InlineData("--debug")]
+        public async Task GetLsDebugLevelAsync_ReturnsDebug_WhenFolderAdditionalParametersContainsDebugFlag(string flag)
+        {
+            OptionsMock.SetupGet(o => o.AdditionalParameters).Returns(new List<string>());
+            OptionsMock.SetupGet(o => o.FolderConfigs).Returns(new List<FolderConfig>
+            {
+                new FolderConfig { AdditionalParameters = new List<string> { flag } }
+            });
+
+            var method = typeof(SnykLanguageClient).GetMethod("GetLsDebugLevelAsync", BindingFlags.NonPublic | BindingFlags.Instance);
+            var level = await (Task<string>)method.Invoke(cut, null);
+
+            Assert.Equal("debug", level);
+        }
+
+        [Fact]
+        public async Task GetLsDebugLevelAsync_ReturnsInfo_WhenNoDebugFlagAnywhere()
+        {
+            OptionsMock.SetupGet(o => o.AdditionalParameters).Returns(new List<string> { "--some-other-flag" });
+            OptionsMock.SetupGet(o => o.FolderConfigs).Returns(new List<FolderConfig>
+            {
+                new FolderConfig { AdditionalParameters = new List<string> { "--filter=something" } }
+            });
+
+            var method = typeof(SnykLanguageClient).GetMethod("GetLsDebugLevelAsync", BindingFlags.NonPublic | BindingFlags.Instance);
+            var level = await (Task<string>)method.Invoke(cut, null);
+
+            Assert.Equal("info", level);
+        }
 
         [Fact]
         public async Task InvokeLogin_ShouldReturnNull_WhenNotReady()

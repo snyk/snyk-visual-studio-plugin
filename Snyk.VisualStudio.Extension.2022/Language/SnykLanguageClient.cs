@@ -224,16 +224,18 @@ namespace Snyk.VisualStudio.Extension.Language
         private Task<string> GetLsDebugLevelAsync()
         {
             var serviceProvider = SnykVSPackage.ServiceProvider;
-            var folderConfigs = serviceProvider?.Options?.FolderConfigs;
-            if (folderConfigs == null)
+            var options = serviceProvider?.Options;
+            if (options == null)
                 return Task.FromResult("info");
 
-            // Enable debug logging for the whole LS process if -d/--debug is set on ANY folder's
-            // additional parameters, not just the first — workspaces can have multiple folders.
-            var anyDebug = folderConfigs
+            // Enable debug logging for the whole LS process if -d/--debug is set in global
+            // additional parameters OR in ANY folder's additional parameters.
+            var globalParams = options.AdditionalParameters ?? Enumerable.Empty<string>();
+            var folderParams = (options.FolderConfigs ?? Enumerable.Empty<FolderConfig>())
                 .Where(fc => fc?.AdditionalParameters != null)
-                .SelectMany(fc => fc.AdditionalParameters)
-                .Any(p => p == "-d" || p == "--debug");
+                .SelectMany(fc => fc.AdditionalParameters);
+
+            var anyDebug = globalParams.Concat(folderParams).Any(p => p == "-d" || p == "--debug");
 
             return Task.FromResult(anyDebug ? "debug" : "info");
         }
