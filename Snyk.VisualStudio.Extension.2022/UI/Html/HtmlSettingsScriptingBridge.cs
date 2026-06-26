@@ -7,6 +7,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.VisualStudio.Shell;
 using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
 using Serilog;
 using Snyk.VisualStudio.Extension;
 using Snyk.VisualStudio.Extension.Authentication;
@@ -316,7 +317,7 @@ namespace Snyk.VisualStudio.Extension.UI.Html
                     ApplyTrustedFolders(config);
                     ApplyFilterSettings(config);
                     ApplyMiscellaneousSettings(config);
-                    await ApplyFolderConfigsAsync(config);
+                    await ApplyFolderConfigsAsync(config, jsonString);
                 }
             }
             catch
@@ -624,13 +625,74 @@ namespace Snyk.VisualStudio.Extension.UI.Html
             }
         }
 
-        private async Task ApplyFolderConfigsAsync(IdeConfigData config)
+        private async Task ApplyFolderConfigsAsync(IdeConfigData config, string rawJson)
         {
             // Apply per-solution/folder settings (folderConfigs: [...])
             // Save to solution-specific storage AND update in-memory global FolderConfigs
             if (config.FolderConfigs != null && config.FolderConfigs.Count > 0)
             {
                 await SaveFolderConfigsAsync(config.FolderConfigs);
+            }
+            // Detect folder fields sent as JSON null (the dialog's "Reset overrides" output). A
+            // nullable field can't distinguish present-null from absent, so this re-reads the raw
+            // JSON tree and flags the resets on the matching stored FolderConfig.
+            ApplyFolderResetsFromRawJson(rawJson);
+        }
+
+        // Flags every folder field present in the raw JSON as an explicit null as a reset, then lets
+        // snyk-ls decide which keys are actually resettable. snyk-ls is authoritative over folder-scoped
+        // settings: it acts on the keys it recognizes and ignores nulls on the rest, so forwarding extra
+        // present-nulls is a safe no-op and we don't maintain a duplicate whitelist here.
+        private void ApplyFolderResetsFromRawJson(string rawJson)
+        {
+            if (string.IsNullOrWhiteSpace(rawJson))
+                return;
+
+            JObject root;
+            try
+            {
+                root = JObject.Parse(rawJson);
+            }
+            catch (JsonException ex)
+            {
+                Logger.Warning(ex, "Could not parse JSON for folder resets");
+                return;
+            }
+
+            if (!(root["folderConfigs"] is JArray folderConfigsJson))
+                return;
+
+            var optionsConfigs = Options.FolderConfigs;
+            if (optionsConfigs == null || optionsConfigs.Count == 0)
+                return;
+
+            foreach (var token in folderConfigsJson)
+            {
+                if (!(token is JObject folderObject))
+                    continue;
+
+                var folderPath = folderObject["folderPath"]?.Value<string>();
+
+                var existingConfig = !string.IsNullOrEmpty(folderPath)
+                    ? optionsConfigs.FirstOrDefault(fc => fc != null &&
+                        string.Equals(fc.FolderPath, folderPath, StringComparison.OrdinalIgnoreCase))
+                    : (optionsConfigs.Count == 1 ? optionsConfigs[0] : null);
+                if (existingConfig == null)
+                    continue;
+
+                foreach (var property in folderObject.Properties())
+                {
+                    if (property.Name == "folderPath")
+                        continue;
+                    if (property.Value.Type != JTokenType.Null)
+                        continue;
+
+                    // Flag the key so BuildFolderConfigs emits {value:null, changed:true} for it.
+                    // snyk-ls is authoritative: it acts on the keys it recognizes as folder-scoped
+                    // and ignores nulls on the rest, so forwarding every present-null is safe.
+                    existingConfig.ResetKeys ??= new HashSet<string>();
+                    existingConfig.ResetKeys.Add(property.Name);
+                }
             }
         }
 

@@ -677,15 +677,19 @@ namespace Snyk.VisualStudio.Extension.Tests.UI.Html
             };
             optionsMock.SetupGet(o => o.FolderConfigs).Returns(new List<FolderConfig> { existing });
 
-            // Changed-only payload touching a single override.
-            var config = JsonConvert.SerializeObject(new IdeConfigData
+            // Changed-only payload touching a single override. Serialize an anonymous object with
+            // ONLY the touched wire keys (folderPath + snyk_code_enabled) so the JSON matches the
+            // real JS form output. Serializing a full FolderConfigData would emit every untouched
+            // nullable field as explicit null (incl. preferred_org), which the reset path would
+            // then treat as a deliberate reset and wrongly clobber the stored override.
+            var config = JsonConvert.SerializeObject(new
             {
-                FolderConfigs = new List<FolderConfigData>
+                folderConfigs = new[]
                 {
-                    new FolderConfigData
+                    new
                     {
-                        FolderPath = "/path/to/solution",
-                        SnykCodeEnabled = false,
+                        folderPath = "/path/to/solution",
+                        snyk_code_enabled = false,
                     },
                 },
             });
@@ -767,6 +771,71 @@ namespace Snyk.VisualStudio.Extension.Tests.UI.Html
             });
 
             bridge.__saveIdeConfig__(config);
+        }
+
+        [Fact]
+        public void SaveIdeConfig_FolderConfigs_PresentNullFields_FlagsResetKeys()
+        {
+            // "Reset overrides" sends folder fields as flat JSON null (here the non-scalar
+            // additional_parameters: array, additional_environment: string, scan_command_config:
+            // object). Present-null can't be distinguished from absent by the typed model, so the
+            // bridge re-reads the raw JSON: every folder field present as JSON null (except
+            // folderPath) is flagged on the stored config's ResetKeys, so BuildFolderConfigs emits
+            // {value:null, changed:true}. snyk-ls is authoritative and Unsets the user:folder:
+            // override for the keys it recognizes. The bridge no longer clears the stored typed
+            // value — BuildFolderConfigs's reset emit already overwrites any stored value.
+            var existing = new FolderConfig
+            {
+                FolderPath = "/repo",
+                AdditionalParameters = new List<string> { "--debug" },
+                AdditionalEnv = "FOO=bar",
+                ScanCommandConfig = new Dictionary<string, ScanCommandConfig>
+                {
+                    ["oss"] = new ScanCommandConfig { PreScanCommand = "echo hi" },
+                },
+            };
+            optionsMock.SetupGet(o => o.FolderConfigs).Returns(new List<FolderConfig> { existing });
+
+            // Raw payload with explicit JSON nulls for the three non-scalar keys (array/string/object
+            // fields). This is the exact present-null shape the dialog's reset emits.
+            var config = "{" +
+                "\"folderConfigs\":[{" +
+                    "\"folderPath\":\"/repo\"," +
+                    "\"additional_parameters\":null," +
+                    "\"additional_environment\":null," +
+                    "\"scan_command_config\":null" +
+                "}]}";
+
+            bridge.__saveIdeConfig__(config);
+
+            // Every present-null field is forwarded as a reset; folderPath is never flagged.
+            Assert.NotNull(existing.ResetKeys);
+            Assert.Contains(PflagKeys.AdditionalParameters, existing.ResetKeys);
+            Assert.Contains(PflagKeys.AdditionalEnvironment, existing.ResetKeys);
+            Assert.Contains(PflagKeys.ScanCommandConfig, existing.ResetKeys);
+            Assert.DoesNotContain("folderPath", existing.ResetKeys);
+        }
+
+        [Fact]
+        public void SaveIdeConfig_FolderConfigs_UnknownPresentNullField_StillForwardedAsReset()
+        {
+            // The whitelist is gone: any folder field sent as JSON null is forwarded as a reset,
+            // even one this build has no typed property for. snyk-ls is authoritative and ignores
+            // nulls on keys it doesn't treat as folder-scoped, so forwarding extra present-nulls is
+            // a safe no-op rather than something the IDE must filter.
+            var existing = new FolderConfig { FolderPath = "/repo" };
+            optionsMock.SetupGet(o => o.FolderConfigs).Returns(new List<FolderConfig> { existing });
+
+            var config = "{" +
+                "\"folderConfigs\":[{" +
+                    "\"folderPath\":\"/repo\"," +
+                    "\"some_future_folder_key\":null" +
+                "}]}";
+
+            bridge.__saveIdeConfig__(config);
+
+            Assert.NotNull(existing.ResetKeys);
+            Assert.Contains("some_future_folder_key", existing.ResetKeys);
         }
     }
 }

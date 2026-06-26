@@ -49,6 +49,14 @@ namespace Snyk.VisualStudio.Extension.Language
         public bool? IssueViewIgnoredIssues { get; set; }
         public int? RiskScoreThreshold { get; set; }
 
+        // LS keys the user reset via the settings dialog (sent as JSON null). A nullable field
+        // can't distinguish present-null from absent, so the reset is tracked here instead.
+        // BuildFolderConfigs emits {value:null, changed:true} for each, which makes snyk-ls Unset
+        // the user:folder: override (fallback to org/LDX/default). Transient + one-shot: not
+        // persisted to disk, consumed within the same in-memory save→DidChangeConfiguration cycle.
+        [JsonIgnore]
+        public HashSet<string> ResetKeys { get; set; }
+
         public void SetScanCommandConfig(Dictionary<string, ScanCommandConfig> scanCommandConfig)
         {
             this.ScanCommandConfig = scanCommandConfig;
