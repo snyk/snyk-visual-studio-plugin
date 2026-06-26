@@ -185,6 +185,11 @@ namespace Snyk.VisualStudio.Extension.Settings
                 {
                     Logger.Error(ex, "WebView2 initialization failed");
                     LoadingStatusLabel.Text = $"Failed to initialize browser: {ex.Message}";
+                    // A failed InitializeAsync can leave the WebView2 env/host in a broken state, and
+                    // _initStarted would otherwise block any retry for this control's lifetime. Mark
+                    // stale so EnsureFreshControl disposes this instance, evicts the env cache, and
+                    // builds a fresh control+host on the next show rather than leaving a dead page.
+                    IsStale = true;
                     return;
                 }
 

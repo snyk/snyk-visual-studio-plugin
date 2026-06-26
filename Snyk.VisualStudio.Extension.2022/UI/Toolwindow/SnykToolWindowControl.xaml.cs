@@ -80,7 +80,6 @@ namespace Snyk.VisualStudio.Extension.UI.Toolwindow
             this.DescriptionPanel.Init();
 
             this.SummaryPanel.Init();
-            this.TreeHtmlPanel.Init();
             this.messagePanel.Context = this.context;
 
             // Paint the WPF chrome (the area behind the message/overview panels and the splitter
@@ -721,10 +720,13 @@ namespace Snyk.VisualStudio.Extension.UI.Toolwindow
             }
 
             // OnLanguageServerReadyAsync fires RequestInitialTree on the tree panel; without this
-            // detach a post-teardown LS restart would touch the disposed panel. Re-resolve in case
-            // the manager was assigned after InitializeEventListeners ran.
-            var lcm = this.languageClientManager ?? LanguageClientHelper.LanguageClientManager();
-            if (lcm != null) lcm.OnLanguageServerReadyAsync -= OnOnLanguageServerReadyAsync;
+            // detach a post-teardown LS restart would touch the disposed panel. Detach only the
+            // instance we actually subscribed (captured in this.languageClientManager). Re-resolving
+            // via LanguageClientHelper could return a different instance after an LS restart and
+            // detach a handler we never attached, leaving ours live on the original instance. If the
+            // field was null at subscribe time we never subscribed, so this guard is a correct no-op.
+            if (this.languageClientManager != null)
+                this.languageClientManager.OnLanguageServerReadyAsync -= OnOnLanguageServerReadyAsync;
 
             this.DescriptionPanel?.Dispose();
             this.SummaryPanel?.Dispose();

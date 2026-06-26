@@ -142,8 +142,14 @@ namespace Snyk.VisualStudio.Extension.UI.Toolwindow
                     if (_disposed) return;
 
                     // Drop this navigation if a newer SetContent started after us — that one carries
-                    // the more recent tree and must win the last NavigateAsync.
-                    if (Interlocked.Read(ref navGeneration) != generation) return;
+                    // the more recent tree and must win. host.NavigateAsync awaits host.Ready
+                    // internally; on first-time WebView2 init that await yields the UI thread, so a
+                    // newer SetContent could navigate in that window and this older call would then
+                    // resume and overwrite it with stale HTML. Await readiness here and re-check the
+                    // generation AFTER it — the only yield before the actual NavigateToString — so the
+                    // staleness guard, the count, and the navigation all commit together with no gap.
+                    await host.Ready;
+                    if (_disposed || Interlocked.Read(ref navGeneration) != generation) return;
 
                     // Both TotalIssues and ReplaceCssVariables run on the UI thread so they are
                     // always consistent with the navigation that wins the staleness race:
@@ -170,15 +176,6 @@ namespace Snyk.VisualStudio.Extension.UI.Toolwindow
                     Logger.Error(ex, "Failed to navigate tree panel");
                 }
             }).FireAndForget();
-        }
-
-        /// <summary>
-        /// No-op: the panel starts in its placeholder state (themed WPF text, WebView2 collapsed)
-        /// directly from XAML. The WebView2 is revealed on the first <see cref="SetContent"/>.
-        /// Kept for symmetry with the other tool-window panels' lifecycle.
-        /// </summary>
-        public void Init()
-        {
         }
 
         /// <summary>
@@ -254,10 +251,24 @@ namespace Snyk.VisualStudio.Extension.UI.Toolwindow
         {
             if (_disposed) return;
 
+            // SnykVSPackage.ServiceProvider (or its LanguageClientManager) can be null during
+            // startup/teardown. Dereferencing it directly here threw inside the FireAndForget lambda,
+            // where the NRE was swallowed and the JS caller's callback promise hung forever. Resolve
+            // defensively and, when unavailable, complete the callback with "null" (matching
+            // DispatchAsync's null-result path) so the bridge promise resolves instead of hanging.
+            var languageClientManager = SnykVSPackage.ServiceProvider?.LanguageClientManager;
+            if (languageClientManager == null)
+            {
+                Logger.Warning("Cannot execute bridge command {Command}: LanguageClientManager unavailable", command);
+                if (!string.IsNullOrEmpty(callbackId))
+                    InvokeCommandCallback(callbackId, "null");
+                return;
+            }
+
             ThreadHelper.JoinableTaskFactory.RunAsync(async () =>
             {
                 await ExecuteCommandBridge.DispatchAsync(
-                    SnykVSPackage.ServiceProvider.LanguageClientManager,
+                    languageClientManager,
                     command,
                     argsJson,
                     callbackId,
