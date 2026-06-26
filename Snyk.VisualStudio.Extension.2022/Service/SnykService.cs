@@ -35,7 +35,10 @@ namespace Snyk.VisualStudio.Extension.Service
 
         private DTE2 dte;
 
-        private SnykOptionsManager snykOptionsManager;
+        // volatile: read lock-free in the SnykOptionsManager getter's double-checked locking
+        // fast path, so it needs a memory barrier to avoid observing a partially-constructed instance.
+        private volatile SnykOptionsManager snykOptionsManager;
+        private readonly object snykOptionsManagerGate = new object();
         private SnykFeatureFlagService featureFlagService;
         // volatile: read lock-free in the AuthenticationFlowService getter's double-checked locking
         // fast path, so it needs a memory barrier to avoid observing a partially-constructed instance.
@@ -127,14 +130,28 @@ namespace Snyk.VisualStudio.Extension.Service
         {
             get
             {
-                if (this.snykOptionsManager == null)
+                // Double-checked locking: UI-thread startup and background LS JSON-RPC callbacks
+                // can both resolve this concurrently.  Without synchronisation two threads could
+                // each observe null, both run migration, and both construct a manager — the second
+                // silently discarding the first.  Mirrors the authenticationFlowService pattern.
+                if (this.snykOptionsManager != null)
+                    return this.snykOptionsManager;
+
+                lock (this.snykOptionsManagerGate)
                 {
-                    string settingsFilePath = Path.Combine(SnykExtension.GetExtensionDirectoryPath(), "settings.json");
+                    if (this.snykOptionsManager != null)
+                        return this.snykOptionsManager;
 
-                    this.snykOptionsManager = new SnykOptionsManager(settingsFilePath, this);
+                    // IDE-1483: settings are persisted to the stable per-user AppData location
+                    // (%LocalAppData%\Snyk\settings.json) so they survive VS restarts and are
+                    // shared across concurrent VS windows regardless of the VSIX install directory.
+                    string newPath = SnykDirectory.GetSettingsFilePath();
+                    string oldPath = Path.Combine(SnykExtension.GetExtensionDirectoryPath(), "settings.json");
+                    SettingsLocationMigrator.MigrateIfNeeded(oldPath, newPath);
+
+                    this.snykOptionsManager = new SnykOptionsManager(newPath, this);
+                    return this.snykOptionsManager;
                 }
-
-                return this.snykOptionsManager;
             }
         }
 

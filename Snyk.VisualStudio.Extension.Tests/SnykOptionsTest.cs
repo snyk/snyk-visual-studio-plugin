@@ -1,4 +1,5 @@
-﻿using System.IO;
+﻿using System;
+using System.IO;
 using Microsoft.VisualStudio.Sdk.TestFramework;
 using Moq;
 using Snyk.VisualStudio.Extension.Service;
@@ -8,9 +9,11 @@ using Xunit;
 namespace Snyk.VisualStudio.Extension.Tests
 {
     [Collection(MockedVS.Collection)]
-    public class SnykOptionsTest
+    public class SnykOptionsTest : IDisposable
     {
         private readonly SnykOptions cut;
+        private readonly string settingsFilePath;
+
         public SnykOptionsTest(GlobalServiceProvider sp)
         {
             sp.Reset();
@@ -18,9 +21,26 @@ namespace Snyk.VisualStudio.Extension.Tests
             var snykSolutionService = new SnykSolutionService();
             serviceProviderMock.Setup(x => x.SolutionService).Returns(snykSolutionService);
             var serviceProvider = serviceProviderMock.Object;
-            var settingsFilePath = Path.Combine(SnykExtension.GetExtensionDirectoryPath(), "settings.json");
+            // IDE-1483: use a non-pre-created unique path so the file does not exist at
+            // construction time (avoids the JSON-parse error that Path.GetTempFileName()'s
+            // empty pre-created file causes) and does not accumulate toward the Windows
+            // GetTempFileName 65535-file ceiling on long-lived CI agents.
+            settingsFilePath = Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString("N") + ".json");
             serviceProviderMock.Setup(x => x.SnykOptionsManager).Returns(new SnykOptionsManager(settingsFilePath, serviceProvider));
             cut = new SnykOptions();
+        }
+
+        public void Dispose()
+        {
+            try
+            {
+                if (File.Exists(settingsFilePath))
+                    File.Delete(settingsFilePath);
+            }
+            catch (Exception)
+            {
+                // Swallow cleanup errors so they cannot mask a real test failure.
+            }
         }
 
         [Theory]
