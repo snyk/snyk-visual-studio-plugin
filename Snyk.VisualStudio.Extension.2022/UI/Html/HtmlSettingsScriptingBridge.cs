@@ -360,6 +360,7 @@ namespace Snyk.VisualStudio.Extension.UI.Html
             var additionalEnv = o.AdditionalEnv;
             var additionalParameters = o.AdditionalParameters != null ? new System.Collections.Generic.List<string>(o.AdditionalParameters) : null;
             var riskScoreThreshold = o.RiskScoreThreshold;
+            var consistentIgnoresEnabled = o.ConsistentIgnoresEnabled;
             var folderConfigs = CloneFolderConfigs(o.FolderConfigs);
             var trustedFolders = o.TrustedFolders == null ? null : new HashSet<string>(o.TrustedFolders);
 
@@ -392,6 +393,7 @@ namespace Snyk.VisualStudio.Extension.UI.Html
                 o.AdditionalEnv = additionalEnv;
                 o.AdditionalParameters = additionalParameters;
                 o.RiskScoreThreshold = riskScoreThreshold;
+                o.ConsistentIgnoresEnabled = consistentIgnoresEnabled;
                 o.FolderConfigs = folderConfigs;
                 o.TrustedFolders = trustedFolders;
             };
