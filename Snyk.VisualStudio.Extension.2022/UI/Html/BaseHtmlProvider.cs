@@ -228,6 +228,17 @@ namespace Snyk.VisualStudio.Extension.UI.Html
                 { "vscode-disabledForeground", disabledForeground },
                 { "vscode-errorForeground", errorForeground },
                 { "vscode-input-background", inputBackground },
+                // Dropdown / popover surfaces. The LS tree-view filter popover styles itself with
+                // --vscode-dropdown-* (background/foreground/border). Without these mappings the LS
+                // :root fallbacks win (--vscode-dropdown-background defaults to #fff, foreground to
+                // inherit), so in a dark VS theme the popover renders as white-on-white. Map them to
+                // the themed input/combo-box colours so the popover follows the active theme.
+                { "vscode-dropdown-background", inputBackground },
+                { "vscode-dropdown-foreground", textColor },
+                { "vscode-dropdown-border", inputBorder },
+                // Secondary/dimmed text (filter popover trigger, risk-score value, reset button) —
+                // unmapped it falls back to a hardcoded #888 instead of the themed grey.
+                { "vscode-descriptionForeground", disabledForeground },
                 { "vscode-editor-inactiveSelectionBackground", inactiveSelectionBackground },
                 { "vscode-list-hoverBackground", listHoverBackground },
                 { "vscode-input-border", inputBorder },
