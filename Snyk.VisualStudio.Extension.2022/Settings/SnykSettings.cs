@@ -79,6 +79,7 @@ namespace Snyk.VisualStudio.Extension.Settings
         public bool FilterMedium { get; set; } = true;
         public bool FilterLow { get; set; } = true;
         public string AdditionalEnv { get; set; } = string.Empty;
+        public List<string> AdditionalParameters { get; set; } = new List<string>();
         public int? RiskScoreThreshold { get; set; } = null;
 
         /// <summary>

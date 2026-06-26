@@ -113,6 +113,15 @@ namespace Snyk.VisualStudio.Extension.UI.Html
         [JsonProperty("risk_score_threshold")]
         public int? RiskScoreThreshold { get; set; }
 
+        // Global (Project Defaults) advanced settings — top-level keys, distinct from
+        // the per-folder additional_* fields on FolderConfigData.
+        [JsonProperty("additional_environment")]
+        public string AdditionalEnv { get; set; }
+
+        // Form sends additional_parameters as a raw string (text input); split on whitespace when applying.
+        [JsonProperty("additional_parameters")]
+        public string AdditionalParameters { get; set; }
+
         // Trusted folders
         [JsonProperty("trusted_folders")]
         public List<string> TrustedFolders { get; set; }

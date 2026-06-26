@@ -728,6 +728,27 @@ namespace Snyk.VisualStudio.Extension.Tests.UI.Html
         }
 
         [Fact]
+        public void SaveIdeConfig_GlobalAdditionalParameters_SplitsSpaceJoinedString()
+        {
+            // Form sends additional_parameters as a plain string (text input → setFieldValue → string).
+            var config = JsonConvert.SerializeObject(new { additional_parameters = "--debug --severity-threshold=high" });
+
+            bridge.__saveIdeConfig__(config);
+
+            optionsMock.VerifySet(o => o.AdditionalParameters = new List<string> { "--debug", "--severity-threshold=high" });
+        }
+
+        [Fact]
+        public void SaveIdeConfig_GlobalAdditionalParameters_EmptyString_SetsEmptyList()
+        {
+            var config = JsonConvert.SerializeObject(new { additional_parameters = "" });
+
+            bridge.__saveIdeConfig__(config);
+
+            optionsMock.VerifySet(o => o.AdditionalParameters = new List<string>());
+        }
+
+        [Fact]
         public void SaveIdeConfig_FolderConfigs_NoExistingConfig_DoesNotThrow()
         {
             // No matching global config entry (FolderConfigs stays null) — the mirror block is

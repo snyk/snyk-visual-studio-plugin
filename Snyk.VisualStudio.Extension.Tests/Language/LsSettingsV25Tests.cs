@@ -43,6 +43,7 @@ namespace Snyk.VisualStudio.Extension.Tests.Language
             optionsMock.SetupGet(o => o.CliReleaseChannel).Returns("stable");
             optionsMock.SetupGet(o => o.CliBaseDownloadURL).Returns("https://downloads.snyk.io");
             optionsMock.SetupGet(o => o.AdditionalEnv).Returns(string.Empty);
+            optionsMock.SetupGet(o => o.AdditionalParameters).Returns(new List<string>());
             optionsMock.SetupGet(o => o.RiskScoreThreshold).Returns((int?)null);
             optionsMock.SetupGet(o => o.InternalAutoScan).Returns(false);
         }
@@ -257,12 +258,32 @@ namespace Snyk.VisualStudio.Extension.Tests.Language
         }
 
         [Fact]
-        public void BuildSettingsMap_AdditionalParameters_NotInGlobalMap()
+        public void BuildSettingsMap_AdditionalParameters_InGlobalMap()
         {
-            // additional_parameters is folder-scoped in v25; must not appear in global settings
+            // additional_parameters is now sent in the global settings map (Project Defaults tab)
             SetupDefaults();
+            var expectedParams = new List<string> { "--severity-threshold=high", "--debug" };
+            optionsMock.SetupGet(o => o.AdditionalParameters).Returns(expectedParams);
+
             var map = cut.BuildSettingsMap(optionsMock.Object);
-            Assert.False(map.ContainsKey(PflagKeys.AdditionalParameters));
+
+            Assert.True(map.ContainsKey(PflagKeys.AdditionalParameters));
+            // Sent as space-joined string — LS applyCliConfig reads via settingStr (string type-assert).
+            var value = Assert.IsType<string>(map[PflagKeys.AdditionalParameters].Value);
+            Assert.Equal("--severity-threshold=high --debug", value);
+        }
+
+        [Fact]
+        public void BuildSettingsMap_AdditionalEnvironment_InGlobalMap()
+        {
+            // additional_environment is sent in the global settings map (Project Defaults tab)
+            SetupDefaults();
+            optionsMock.SetupGet(o => o.AdditionalEnv).Returns("VAR1=a;VAR2=b");
+
+            var map = cut.BuildSettingsMap(optionsMock.Object);
+
+            Assert.True(map.ContainsKey(PflagKeys.AdditionalEnvironment));
+            Assert.Equal("VAR1=a;VAR2=b", map[PflagKeys.AdditionalEnvironment].Value);
         }
 
         [Fact]
