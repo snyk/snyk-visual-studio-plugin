@@ -358,7 +358,9 @@ namespace Snyk.VisualStudio.Extension.UI.Html
             var filterMedium = o.FilterMedium;
             var filterLow = o.FilterLow;
             var additionalEnv = o.AdditionalEnv;
+            var additionalParameters = o.AdditionalParameters != null ? new System.Collections.Generic.List<string>(o.AdditionalParameters) : null;
             var riskScoreThreshold = o.RiskScoreThreshold;
+            var consistentIgnoresEnabled = o.ConsistentIgnoresEnabled;
             var folderConfigs = CloneFolderConfigs(o.FolderConfigs);
             var trustedFolders = o.TrustedFolders == null ? null : new HashSet<string>(o.TrustedFolders);
 
@@ -389,7 +391,9 @@ namespace Snyk.VisualStudio.Extension.UI.Html
                 o.FilterMedium = filterMedium;
                 o.FilterLow = filterLow;
                 o.AdditionalEnv = additionalEnv;
+                o.AdditionalParameters = additionalParameters;
                 o.RiskScoreThreshold = riskScoreThreshold;
+                o.ConsistentIgnoresEnabled = consistentIgnoresEnabled;
                 o.FolderConfigs = folderConfigs;
                 o.TrustedFolders = trustedFolders;
             };
@@ -605,6 +609,18 @@ namespace Snyk.VisualStudio.Extension.UI.Html
             if (config.RiskScoreThreshold.HasValue)
             {
                 Options.RiskScoreThreshold = config.RiskScoreThreshold;
+            }
+
+            // Global (Project Defaults) advanced settings — absent (null) means no change.
+            if (config.AdditionalEnv != null)
+            {
+                Options.AdditionalEnv = config.AdditionalEnv;
+            }
+            if (config.AdditionalParameters != null)
+            {
+                Options.AdditionalParameters = config.AdditionalParameters
+                    .Split(new[] { ' ' }, StringSplitOptions.RemoveEmptyEntries)
+                    .ToList();
             }
         }
 

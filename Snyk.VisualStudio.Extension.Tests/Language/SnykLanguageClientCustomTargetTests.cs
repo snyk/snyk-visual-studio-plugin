@@ -8,6 +8,7 @@ using Snyk.VisualStudio.Extension.Authentication;
 using Snyk.VisualStudio.Extension.Language;
 using Snyk.VisualStudio.Extension.Service;
 using Snyk.VisualStudio.Extension.Settings;
+using Snyk.VisualStudio.Extension.UI.Toolwindow;
 using Xunit;
 
 namespace Snyk.VisualStudio.Extension.Tests.Language
@@ -15,6 +16,7 @@ namespace Snyk.VisualStudio.Extension.Tests.Language
     [Collection(MockedVS.Collection)]
     public class SnykLanguageClientCustomTargetTests : PackageBaseTest
     {
+        private readonly Mock<ISnykServiceProvider> serviceProviderMock;
         private readonly Mock<ISnykTasksService> tasksServiceMock;
         private readonly Mock<ISnykOptions> optionsMock;
         private readonly Mock<ISnykOptionsManager> snykOptionsManagerMock;
@@ -25,7 +27,7 @@ namespace Snyk.VisualStudio.Extension.Tests.Language
 
         public SnykLanguageClientCustomTargetTests(GlobalServiceProvider gsp) : base(gsp)
         {
-            var serviceProviderMock = new Mock<ISnykServiceProvider>();
+            serviceProviderMock = new Mock<ISnykServiceProvider>();
             tasksServiceMock = new Mock<ISnykTasksService>();
             optionsMock = new Mock<ISnykOptions>();
             authenticationFlowServiceMock = new Mock<IAuthenticationFlowService>();
@@ -51,33 +53,34 @@ namespace Snyk.VisualStudio.Extension.Tests.Language
         }
 
         [Fact]
-        public async Task OnPublishDiagnostics316_ShouldHandleNullUri()
+        public async Task OnPublishDiagnostics316_ShouldNotThrow_WhenUriMissing()
         {
-            // Arrange
+            // Arrange — a missing uri is ignored. Rendering is driven by the LS HTML tree now, so
+            // the handler only inspects diagnostics for the Consistent Ignores flag.
             var arg = JObject.Parse("{\"diagnostics\":[]}");
 
-            // Act
+            // Act — must not throw
             await cut.OnPublishDiagnostics316(arg);
 
-            // Assert — a missing uri is ignored, no dictionary entry created
-            Assert.Empty(cut.GetCodeDictionary());
+            // Assert — no ignored issue seen, flag left alone
+            Assert.False(optionsMock.Object.ConsistentIgnoresEnabled);
         }
 
         [Fact]
-        public async Task OnPublishDiagnostics316_ShouldHandleEmptyDiagnostics()
+        public async Task OnPublishDiagnostics316_ShouldNotThrow_WhenDiagnosticsEmpty()
         {
             // Arrange
             var arg = JObject.Parse("{\"uri\":\"file:///path/to/file\",\"diagnostics\":[]}");
 
-            // Act
+            // Act — must not throw
             await cut.OnPublishDiagnostics316(arg);
 
-            // Assert — an empty diagnostics list adds no Code issues for the path
-            Assert.False(cut.GetCodeDictionary().ContainsKey("\\path\\to\\file"));
+            // Assert
+            Assert.False(optionsMock.Object.ConsistentIgnoresEnabled);
         }
 
         [Fact]
-        public async Task OnPublishDiagnostics316_ShouldAddIssuesToDictionary()
+        public async Task OnPublishDiagnostics316_ShouldNotEnableConsistentIgnores_WhenNoIssueIgnored()
         {
             // Arrange
             var arg = JObject.Parse(@"{
@@ -95,51 +98,35 @@ namespace Snyk.VisualStudio.Extension.Tests.Language
             // Act
             await cut.OnPublishDiagnostics316(arg);
 
-            // Assert
-            // Verify that ConsistentIgnoresEnabled remains false
+            // Assert — ConsistentIgnoresEnabled stays false when no issue is ignored
             Assert.False(optionsMock.Object.ConsistentIgnoresEnabled);
         }
 
         [Fact]
-        public async Task OnPublishDiagnostics316_ShouldHandleNonAsciiPath()
+        public async Task OnPublishDiagnostics316_ShouldEnableConsistentIgnores_WhenAnyIssueIgnored()
         {
             // Arrange
             var arg = JObject.Parse(@"{
-                'uri': 'file:///c:/users/user/dir - with - space üaöä中文/file.cs',
+                'uri': 'file:///path/to/file',
                 'diagnostics': [
                     {
                         'source': 'Snyk Code',
                         'data': { 'id': 'issue1', 'isIgnored': false }
-                    }
-                ]
-            }");
-
-            // Act
-            await cut.OnPublishDiagnostics316(arg);
-
-            // Assert
-            Assert.True(cut.GetCodeDictionary().ContainsKey("c:\\users\\user\\dir - with - space üaöä中文\\file.cs"));
-        }
-
-        [Fact]
-        public async Task OnPublishDiagnostics316_ShouldHandlePath()
-        {
-            // Arrange
-            var arg = JObject.Parse(@"{
-                'uri': 'file:///c:/users/user/dir/file.cs',
-                'diagnostics': [
+                    },
                     {
                         'source': 'Snyk Code',
-                        'data': { 'id': 'issue1', 'isIgnored': false }
+                        'data': { 'id': 'issue2', 'isIgnored': true }
                     }
                 ]
             }");
 
+            optionsMock.SetupProperty(o => o.ConsistentIgnoresEnabled, false);
+
             // Act
             await cut.OnPublishDiagnostics316(arg);
 
-            // Assert
-            Assert.True(cut.GetCodeDictionary().ContainsKey("c:\\users\\user\\dir\\file.cs"));
+            // Assert — an ignored issue flips the Consistent Ignores flag on
+            Assert.True(optionsMock.Object.ConsistentIgnoresEnabled);
         }
 
         [Fact]
@@ -156,6 +143,179 @@ namespace Snyk.VisualStudio.Extension.Tests.Language
             // Assert
             tasksServiceMock.Verify(t => t.FireScanningCancelledEvent(), Times.Once);
         }
+
+        [Fact]
+        public async Task OnTreeView_ShouldNotThrow_WhenHtmlMissing()
+        {
+            // Arrange — payload without treeViewHtml is ignored (no ToolWindow access).
+            var arg = JObject.Parse("{'totalIssues':0}");
+
+            // Act — must not throw
+            await cut.OnTreeView(arg);
+        }
+
+        [Fact]
+        public async Task OnTreeView_ShouldNotThrow_WhenToolWindowUnavailable()
+        {
+            // Arrange — valid payload, but ToolWindow is not set up on the mock (returns null),
+            // so the handler must guard and return without throwing.
+            var arg = JObject.Parse("{'treeViewHtml':'<html></html>','totalIssues':3}");
+
+            // Act — must not throw
+            await cut.OnTreeView(arg);
+        }
+
+        [Fact]
+        public async Task OnTreeView_ShouldNotThrow_WhenArgIsNull()
+        {
+            // Act — bare C# null (StreamJsonRpc may send null for a no-params notification)
+            await cut.OnTreeView(null);
+        }
+
+        [Fact]
+        public async Task OnTreeView_ShouldRenderHtmlAndCountTogether_WhenPayloadValid()
+        {
+            // Arrange — valid payload + a wired tool window/tree panel.
+            var treePanelMock = new Mock<ITreeHtmlPanel>();
+            var toolWindowMock = new Mock<ISnykToolWindow>();
+            toolWindowMock.SetupGet(t => t.TreeHtmlPanel).Returns(treePanelMock.Object);
+            serviceProviderMock.SetupGet(sp => sp.ToolWindow).Returns(toolWindowMock.Object);
+
+            var arg = JObject.Parse("{'treeViewHtml':'<html>tree</html>','totalIssues':7}");
+
+            // Act
+            await cut.OnTreeView(arg);
+
+            // Assert — HTML and count are applied together in a single SetContent call.
+            treePanelMock.Verify(p => p.SetContent("<html>tree</html>", 7), Times.Once);
+        }
+
+        [Fact]
+        public async Task OnShowDocument_ShouldSelectIssue_WhenDetailPanelRequestWithCodename()
+        {
+            var toolWindowMock = SetupToolWindow();
+            var arg = ShowDocument("snyk://x?action=showInDetailPanel&issueId=ISSUE1&product=code");
+
+            await cut.OnShowDocument(arg);
+
+            toolWindowMock.Verify(t => t.SelectedItemInTree("ISSUE1", "code"), Times.Once);
+        }
+
+        [Fact]
+        public async Task OnShowDocument_ShouldNormalizeDisplayNameToCodename_ForDetailPanel()
+        {
+            var toolWindowMock = SetupToolWindow();
+            // "Snyk+Code" — NormalizeProduct maps the "+"-encoded display name to the codename.
+            var arg = ShowDocument("snyk://x?action=showInDetailPanel&issueId=ISSUE1&product=Snyk+Code");
+
+            await cut.OnShowDocument(arg);
+
+            toolWindowMock.Verify(t => t.SelectedItemInTree("ISSUE1", "code"), Times.Once);
+        }
+
+        [Fact]
+        public async Task OnShowDocument_ShouldNotSelectIssue_WhenIssueIdMissing()
+        {
+            var toolWindowMock = SetupToolWindow();
+            var arg = ShowDocument("snyk://x?action=showInDetailPanel&product=code");
+
+            await cut.OnShowDocument(arg);
+
+            toolWindowMock.Verify(t => t.SelectedItemInTree(It.IsAny<string>(), It.IsAny<string>()), Times.Never);
+        }
+
+        [Fact]
+        public async Task OnShowDocument_ShouldNotSelectIssue_WhenProductMissing()
+        {
+            var toolWindowMock = SetupToolWindow();
+            var arg = ShowDocument("snyk://x?action=showInDetailPanel&issueId=ISSUE1");
+
+            await cut.OnShowDocument(arg);
+
+            toolWindowMock.Verify(t => t.SelectedItemInTree(It.IsAny<string>(), It.IsAny<string>()), Times.Never);
+        }
+
+        [Fact]
+        public async Task OnShowDocument_ShouldReturn_WhenExternalRequest()
+        {
+            var toolWindowMock = SetupToolWindow();
+            // Non-detail action + External=true: an open-in-browser request, not an editor nav.
+            var arg = ShowDocument("snyk://x?action=open", external: true);
+
+            // Must not throw (would NRE if it reached VsCodeService) and must not select an issue.
+            await cut.OnShowDocument(arg);
+
+            toolWindowMock.Verify(t => t.SelectedItemInTree(It.IsAny<string>(), It.IsAny<string>()), Times.Never);
+        }
+
+        [Fact]
+        public async Task OnShowDocument_ShouldReturn_WhenSelectionMissing()
+        {
+            var toolWindowMock = SetupToolWindow();
+            // Plain file-open request with no selection range: nothing to navigate to.
+            var arg = ShowDocument("snyk://x");
+
+            await cut.OnShowDocument(arg);
+
+            toolWindowMock.Verify(t => t.SelectedItemInTree(It.IsAny<string>(), It.IsAny<string>()), Times.Never);
+        }
+
+        [Fact]
+        public async Task OnShowDocument_ShouldNotThrow_WhenUriEmpty()
+        {
+            var arg = JObject.Parse("{'uri':''}");
+
+            await cut.OnShowDocument(arg);
+        }
+
+        [Fact]
+        public async Task OnShowDocument_ShouldKeepIssueId_WhenValueContainsEquals()
+        {
+            // base64-ish issue IDs can end in '='/'=='. The pair must not be dropped, and the value
+            // must keep its trailing '=' characters.
+            var toolWindowMock = SetupToolWindow();
+            var arg = ShowDocument("snyk://x?action=showInDetailPanel&issueId=abc==&product=code");
+
+            await cut.OnShowDocument(arg);
+
+            toolWindowMock.Verify(t => t.SelectedItemInTree("abc==", "code"), Times.Once);
+        }
+
+        [Fact]
+        public async Task OnShowDocument_ShouldDecodeIssueIdOnce_WhenPercentEncoded()
+        {
+            // The issue id is unescaped exactly once. Double-unescaping would corrupt a value whose
+            // decoded form contains a reserved character (here '%26' would wrongly become '&').
+            var toolWindowMock = SetupToolWindow();
+            var arg = ShowDocument("snyk://x?action=showInDetailPanel&issueId=x%2526y&product=code");
+
+            await cut.OnShowDocument(arg);
+
+            // Exactly one unescape yields "x%26y"; the buggy double-unescape would yield "x&y".
+            // Assert "not double-decoded" rather than the exact form to stay robust against
+            // System.Uri query canonicalisation differences.
+            toolWindowMock.Verify(t => t.SelectedItemInTree(It.Is<string>(id => id != "x&y"), "code"), Times.Once);
+        }
+
+        [Fact]
+        public async Task OnShowDocument_ShouldNotThrow_WhenToolWindowUnavailableForDetailPanel()
+        {
+            // ToolWindow is null until OnToolWindowCreated runs; a tree click arriving before then
+            // must be a no-op rather than an NRE out of the JSON-RPC handler.
+            var arg = ShowDocument("snyk://x?action=showInDetailPanel&issueId=ISSUE1&product=code");
+
+            await cut.OnShowDocument(arg);
+        }
+
+        private Mock<ISnykToolWindow> SetupToolWindow()
+        {
+            var toolWindowMock = new Mock<ISnykToolWindow>();
+            serviceProviderMock.SetupGet(sp => sp.ToolWindow).Returns(toolWindowMock.Object);
+            return toolWindowMock;
+        }
+
+        private static JObject ShowDocument(string uri, bool external = false) =>
+            JObject.FromObject(new { uri, external });
 
         [Fact]
         public async Task OnHasAuthenticated_ShouldHandleFailedAuthentication_WhenTokenIsNull()
@@ -544,12 +704,59 @@ namespace Snyk.VisualStudio.Extension.Tests.Language
             snykOptionsManagerMock.Verify(m => m.Save(It.IsAny<IPersistableOptions>(), false), Times.Once());
         }
 
+        [Fact]
+        public async Task OnPublishDiagnostics316_ShouldNotThrow_WhenDiagnosticDataIsNonDeserializable()
+        {
+            // Arrange — `data` is present but cannot be deserialized as Issue (it is a plain integer).
+            // TryParse<Issue> returns null in this case; the handler must skip the entry rather than
+            // throwing NullReferenceException on `issue.IsIgnored`.
+            var arg = JObject.Parse(@"{
+                'uri': 'file:///path/to/file',
+                'diagnostics': [
+                    {
+                        'source': 'Snyk Code',
+                        'data': 42
+                    }
+                ]
+            }");
+            optionsMock.SetupProperty(o => o.ConsistentIgnoresEnabled, false);
+
+            // Act — must not throw
+            await cut.OnPublishDiagnostics316(arg);
+
+            // Assert — no valid issue parsed, flag stays false
+            Assert.False(optionsMock.Object.ConsistentIgnoresEnabled);
+        }
+
+        [Fact]
+        public async Task OnPublishDiagnostics316_ShouldNotThrow_WhenDiagnosticDataIsNonDeserializableString()
+        {
+            // Arrange — `data` is a bare string, not an Issue object.
+            var arg = JObject.Parse(@"{
+                'uri': 'file:///path/to/file',
+                'diagnostics': [
+                    {
+                        'source': 'Snyk Code',
+                        'data': 'not-an-issue'
+                    }
+                ]
+            }");
+            optionsMock.SetupProperty(o => o.ConsistentIgnoresEnabled, false);
+
+            // Act — must not throw
+            await cut.OnPublishDiagnostics316(arg);
+
+            // Assert
+            Assert.False(optionsMock.Object.ConsistentIgnoresEnabled);
+        }
+
         // ─── Secrets product ──────────────────────────────────────────────────────
 
         [Fact]
-        public async Task OnPublishDiagnostics316_WithSecretsSource_ShouldAddIssuesToSecretsDictionary()
+        public async Task OnPublishDiagnostics316_WithSecretsSource_ShouldNotEnableConsistentIgnores_WhenNoIssueIgnored()
         {
-            // Arrange
+            // Arrange — rendering is driven by the LS HTML tree now, so the handler only inspects
+            // Secrets diagnostics for the Consistent Ignores flag.
             var arg = JObject.Parse(@"{
                 'uri': 'file:///c:/repo/secret.cs',
                 'diagnostics': [
@@ -564,34 +771,30 @@ namespace Snyk.VisualStudio.Extension.Tests.Language
             // Act
             await cut.OnPublishDiagnostics316(arg);
 
-            // Assert
-            Assert.True(cut.GetSecretsDictionary().ContainsKey("c:\\repo\\secret.cs"));
-            Assert.Empty(cut.GetCodeDictionary());
+            // Assert — no ignored issue seen, flag left alone
+            Assert.False(optionsMock.Object.ConsistentIgnoresEnabled);
         }
 
         [Fact]
-        public async Task OnPublishDiagnostics316_EmptyDiagnostics_ShouldClearSecretsDictionary()
+        public async Task OnPublishDiagnostics316_WithSecretsSource_ShouldEnableConsistentIgnores_WhenIssueIgnored()
         {
-            // Arrange — first populate secrets dict
-            var populate = JObject.Parse(@"{
+            // Arrange — an ignored Secrets issue flips the Consistent Ignores flag on.
+            var arg = JObject.Parse(@"{
                 'uri': 'file:///c:/repo/secret.cs',
                 'diagnostics': [
                     {
                         'source': 'Snyk Secrets',
-                        'data': { 'id': 'secrets-1', 'isIgnored': false }
+                        'data': { 'id': 'secrets-1', 'isIgnored': true }
                     }
                 ]
             }");
             optionsMock.SetupProperty(o => o.ConsistentIgnoresEnabled, false);
-            await cut.OnPublishDiagnostics316(populate);
-            Assert.Single(cut.GetSecretsDictionary());
 
-            // Now send empty diagnostics for same file
-            var clear = JObject.Parse(@"{'uri': 'file:///c:/repo/secret.cs', 'diagnostics': []}");
-            await cut.OnPublishDiagnostics316(clear);
+            // Act
+            await cut.OnPublishDiagnostics316(arg);
 
-            // Assert — cleared
-            Assert.Empty(cut.GetSecretsDictionary());
+            // Assert
+            Assert.True(optionsMock.Object.ConsistentIgnoresEnabled);
         }
 
         [Fact]
@@ -624,7 +827,7 @@ namespace Snyk.VisualStudio.Extension.Tests.Language
         }
 
         [Fact]
-        public async Task OnSnykScan_WithSecretsProductSuccess_ShouldFireUpdateFinishedAndTaskFinished()
+        public async Task OnSnykScan_WithSecretsProductSuccess_ShouldFireFinishedAndTaskFinished()
         {
             // Arrange
             var arg = JObject.Parse(@"{'status':'success','product':'secrets','folderPath':'/repo'}");
@@ -634,7 +837,6 @@ namespace Snyk.VisualStudio.Extension.Tests.Language
             await cut.OnSnykScan(arg);
 
             // Assert
-            tasksServiceMock.Verify(t => t.FireSecretsScanningUpdateEvent(It.IsAny<IDictionary<string, IEnumerable<Issue>>>()), Times.Once);
             tasksServiceMock.Verify(t => t.FireSecretsScanningFinishedEvent(), Times.Once);
             tasksServiceMock.Verify(t => t.FireTaskFinished(), Times.Once);
         }

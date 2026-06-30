@@ -405,6 +405,42 @@ namespace Snyk.VisualStudio.Extension.Tests.UI.Html
         }
 
         [Fact]
+        public async Task SaveIdeConfig_RollsBackConsistentIgnoresEnabled_WhenApplyThrows()
+        {
+            // ConsistentIgnoresEnabled must be captured in the rollback snapshot so a failed save
+            // does not leave it in a partially-applied state (IDE-1842 finding B).
+            var localOptions = new Mock<ISnykOptions>();
+            localOptions.SetupAllProperties();
+            localOptions.Object.ConsistentIgnoresEnabled = true; // baseline to be restored
+
+            var thrown = false;
+            localOptions.SetupSet(o => o.RiskScoreThreshold = It.IsAny<int?>())
+                .Callback<int?>(_ =>
+                {
+                    if (!thrown)
+                    {
+                        thrown = true;
+                        throw new InvalidOperationException("boom");
+                    }
+                });
+
+            var localManager = new Mock<ISnykOptionsManager>();
+            var sp = new Mock<ISnykServiceProvider>();
+            sp.SetupGet(x => x.Options).Returns(localOptions.Object);
+            sp.SetupGet(x => x.SnykOptionsManager).Returns(localManager.Object);
+            var localBridge = new HtmlSettingsScriptingBridge(sp.Object, onModified: () => { });
+
+            // snyk_oss_enabled is applied early (before risk_score_threshold which throws).
+            // ConsistentIgnoresEnabled is runtime-only so cannot be included in the config payload;
+            // the test verifies that the snapshot captured it before apply and restores it on rollback.
+            var config = JsonConvert.SerializeObject(new { snyk_oss_enabled = true, risk_score_threshold = 500 });
+            localBridge.__saveIdeConfig__(config);
+
+            Assert.False(await AwaitWithTimeout(localBridge.SaveCompletion)); // apply failed
+            Assert.True(localOptions.Object.ConsistentIgnoresEnabled); // rolled back to baseline (true)
+        }
+
+        [Fact]
         public async Task SaveIdeConfig_RollsBackInMemoryOptions_WhenApplyThrows()
         {
             // Use a fully-stubbed options object so we can observe property state, and make a late
@@ -689,6 +725,27 @@ namespace Snyk.VisualStudio.Extension.Tests.UI.Html
             Assert.Equal(true, folderA.SnykOssEnabled);
             Assert.Equal("org-b", folderB.PreferredOrg);
             Assert.Equal(false, folderB.SnykOssEnabled);
+        }
+
+        [Fact]
+        public void SaveIdeConfig_GlobalAdditionalParameters_SplitsSpaceJoinedString()
+        {
+            // Form sends additional_parameters as a plain string (text input → setFieldValue → string).
+            var config = JsonConvert.SerializeObject(new { additional_parameters = "--debug --severity-threshold=high" });
+
+            bridge.__saveIdeConfig__(config);
+
+            optionsMock.VerifySet(o => o.AdditionalParameters = new List<string> { "--debug", "--severity-threshold=high" });
+        }
+
+        [Fact]
+        public void SaveIdeConfig_GlobalAdditionalParameters_EmptyString_SetsEmptyList()
+        {
+            var config = JsonConvert.SerializeObject(new { additional_parameters = "" });
+
+            bridge.__saveIdeConfig__(config);
+
+            optionsMock.VerifySet(o => o.AdditionalParameters = new List<string>());
         }
 
         [Fact]

@@ -126,6 +126,7 @@ namespace Snyk.VisualStudio.Extension.Settings
                 FilterLow = snykSettings.FilterLow,
 
                 AdditionalEnv = snykSettings.AdditionalEnv,
+                AdditionalParameters = snykSettings.AdditionalParameters,
                 RiskScoreThreshold = snykSettings.RiskScoreThreshold,
             };
         }
@@ -167,6 +168,7 @@ namespace Snyk.VisualStudio.Extension.Settings
             snykSettings.FilterLow = options.FilterLow;
 
             snykSettings.AdditionalEnv = options.AdditionalEnv;
+            snykSettings.AdditionalParameters = options.AdditionalParameters;
             snykSettings.RiskScoreThreshold = options.RiskScoreThreshold;
 
             this.SaveSettingsToFile();

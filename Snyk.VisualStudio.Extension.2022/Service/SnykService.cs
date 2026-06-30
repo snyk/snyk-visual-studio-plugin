@@ -156,7 +156,7 @@ namespace Snyk.VisualStudio.Extension.Service
         }
 
         /// <inheritdoc/>
-        public SnykToolWindowControl ToolWindow => this.Package.ToolWindowControl;
+        public ISnykToolWindow ToolWindow => this.Package.ToolWindowControl;
 
         /// <summary>
         /// Get Visual Studio service by type.

@@ -221,6 +221,7 @@
     <Compile Include="UI\Html\HtmlResourceLoader.cs" />
     <Compile Include="UI\Html\IacHtmlProvider.cs" />
     <Compile Include="UI\Html\IHtmlProvider.cs" />
+    <Compile Include="UI\Html\IWebView2Host.cs" />
     <Compile Include="UI\Html\StaticHtmlProvider.cs" />
     <Compile Include="UI\Html\SummaryHtmlProvider.cs" />
     <Compile Include="UI\Html\OssHtmlProvider.cs" />
@@ -232,22 +233,27 @@
     <Compile Include="UI\Html\WebView2Host.cs" />
     <Compile Include="UI\Html\WebView2MessageDispatcher.cs" />
     <Compile Include="UI\Html\WebView2NavigationPreparer.cs" />
-    <Compile Include="UI\IRefreshable.cs" />
     <Compile Include="UI\Notifications\NotificationService.cs" />
     <Compile Include="UI\Notifications\VsInfoBarService.cs" />
     <Compile Include="UI\Notifications\VsStatusBar.cs" />
     <Compile Include="UI\Notifications\VsStatusBarNotificationService.cs" />
     <Compile Include="UI\ResourceLoader.cs" />
-    <Compile Include="UI\SeverityFilter.cs" />
     <Compile Include="UI\SnykIconProvider.cs" />
+    <Compile Include="UI\Html\TreeHtmlProvider.cs" />
     <Compile Include="UI\Toolwindow\SummaryHtmlPanel.xaml.cs">
       <DependentUpon>SummaryHtmlPanel.xaml</DependentUpon>
     </Compile>
     <Compile Include="UI\Toolwindow\HtmlDescriptionPanel.xaml.cs">
       <DependentUpon>HtmlDescriptionPanel.xaml</DependentUpon>
     </Compile>
+    <Compile Include="UI\Toolwindow\TreeHtmlPanel.xaml.cs">
+      <DependentUpon>TreeHtmlPanel.xaml</DependentUpon>
+    </Compile>
     <Compile Include="UI\Toolwindow\DownloadState.cs" />
     <Compile Include="UI\Toolwindow\EmptyState.cs" />
+    <Compile Include="UI\Toolwindow\IHtmlPanel.cs" />
+    <Compile Include="UI\Toolwindow\ISnykToolWindow.cs" />
+    <Compile Include="UI\Toolwindow\ITreeHtmlPanel.cs" />
     <Compile Include="UI\Toolwindow\MessagePanel.xaml.cs">
       <DependentUpon>MessagePanel.xaml</DependentUpon>
     </Compile>
@@ -264,27 +270,6 @@
     <Compile Include="UI\Toolwindow\ToolWindowContext.cs" />
     <Compile Include="UI\Toolwindow\ToolWindowState.cs" />
     <Compile Include="UI\Toolwindow\UpdateDownloadState.cs" />
-    <Compile Include="UI\Tree\BaseBranchTreeNode.cs" />
-    <Compile Include="UI\Tree\FileTreeNode.cs" />
-    <Compile Include="UI\Tree\InfoTreeNode.cs" />
-    <Compile Include="UI\Tree\IssueTreeNode.cs" />
-    <Compile Include="UI\Tree\OssRootTreeNode.cs" />
-    <Compile Include="UI\Tree\OssFileTreeNode.cs" />
-    <Compile Include="UI\Tree\OssTreeNode.cs" />
-    <Compile Include="UI\Tree\RootTreeNode.cs" />
-    <Compile Include="UI\Tree\RootTreeNodeState.cs" />
-    <Compile Include="UI\Tree\IacFileTreeNode.cs" />
-    <Compile Include="UI\Tree\CodeFileTreeNode.cs" />
-    <Compile Include="UI\Tree\IacTreeNode.cs" />
-    <Compile Include="UI\Tree\SnykIacRootTreeNode.cs" />
-    <Compile Include="UI\Tree\SnykCodeSecurityRootTreeNode.cs" />
-    <Compile Include="UI\Tree\CodeTreeNode.cs" />
-    <Compile Include="UI\Tree\SnykFilterableTree.xaml.cs">
-      <DependentUpon>SnykFilterableTree.xaml</DependentUpon>
-    </Compile>
-    <Compile Include="UI\Tree\ThreadSafeObservableCollection.cs" />
-    <Compile Include="UI\Tree\TreeNode.cs" />
-    <Compile Include="UI\Tree\TreeNodeProductFactory.cs" />
     <Compile Include="Utils\Json.cs" />
     <Compile Include="Utils\SnykDirectory.cs" />
     <Compile Include="Utils\SnykExtension.cs" />
@@ -396,15 +381,15 @@
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
     </Page>
+    <Page Include="UI\Toolwindow\TreeHtmlPanel.xaml">
+      <Generator>MSBuild:Compile</Generator>
+      <SubType>Designer</SubType>
+    </Page>
     <Page Include="UI\Toolwindow\MessagePanel.xaml">
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
     </Page>
     <Page Include="UI\Toolwindow\SnykToolWindowControl.xaml">
-      <Generator>MSBuild:Compile</Generator>
-      <SubType>Designer</SubType>
-    </Page>
-    <Page Include="UI\Tree\SnykFilterableTree.xaml">
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
     </Page>

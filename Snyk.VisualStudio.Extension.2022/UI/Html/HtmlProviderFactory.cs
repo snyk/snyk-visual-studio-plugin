@@ -16,6 +16,8 @@
                     return SecretsHtmlProvider.Instance;
                 case "summary":
                     return SummaryHtmlProvider.Instance;
+                case "tree":
+                    return TreeHtmlProvider.Instance;
                 case "static":
                     return StaticHtmlProvider.Instance;
                 default:
