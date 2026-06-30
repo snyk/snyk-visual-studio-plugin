@@ -41,7 +41,7 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="ExtensionStartupNoSolutionTests.cs" />
+    <Compile Include="NoSolutionInitTests.cs" />
     <Compile Include="ExtensionStartupTests.cs" />
     <Compile Include="GlobalSuppressions.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />

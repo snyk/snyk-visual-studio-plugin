@@ -19,12 +19,12 @@ namespace Integration.Tests
     /// Acceptance tests for IDE-1752: Snyk extension must reach initialized/ready state when
     /// Visual Studio opens with no solution or folder open.
     /// </summary>
-    public class ExtensionStartupNoSolutionTests
+    public class NoSolutionInitTests
     {
         private const int testTimeoutInSeconds = 90;
         private readonly ITestOutputHelper output;
 
-        public ExtensionStartupNoSolutionTests(ITestOutputHelper output)
+        public NoSolutionInitTests(ITestOutputHelper output)
         {
             this.output = output;
         }
@@ -49,7 +49,7 @@ namespace Integration.Tests
         /// </summary>
         [Trait("integration", "true")]
         [IdeFact]
-        public async Task NoSolutionOpen_ExtensionReachesInitializedState()
+        public async Task InitializesWhenNoSolution()
         {
             await Test().WithTimeout(TimeSpan.FromSeconds(testTimeoutInSeconds));
 
@@ -128,7 +128,7 @@ namespace Integration.Tests
         /// </summary>
         [Trait("integration", "true")]
         [IdeFact]
-        public async Task NoSolutionOpen_ExtensionInitializesWithinResponsivenessDeadline()
+        public async Task InitializesWithinDeadline()
         {
             await Test().WithTimeout(TimeSpan.FromSeconds(testTimeoutInSeconds));
 
