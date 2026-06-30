@@ -599,17 +599,17 @@ namespace Snyk.VisualStudio.Extension.Tests.UI.Html
                 new FolderConfig { FolderPath = "/path/to/solution" }
             });
 
-            var config = JsonConvert.SerializeObject(new IdeConfigData
+            var config = JsonConvert.SerializeObject(new
             {
-                FolderConfigs = new List<FolderConfigData>
+                folderConfigs = new[]
                 {
-                    new FolderConfigData
+                    new
                     {
-                        PreferredOrg = "my-org",
-                        OrgSetByUser = true,
-                        AdditionalParameters = new List<string>(),
-                        AdditionalEnv = "ENV_VAR=1",
-                        AutoDeterminedOrg = "auto-org",
+                        preferred_org = "my-org",
+                        org_set_by_user = true,
+                        additional_parameters = new string[0],
+                        additional_environment = "ENV_VAR=1",
+                        auto_determined_org = "auto-org",
                     },
                 },
             });
@@ -631,21 +631,21 @@ namespace Snyk.VisualStudio.Extension.Tests.UI.Html
             var existing = new FolderConfig { FolderPath = "/path/to/solution" };
             optionsMock.SetupGet(o => o.FolderConfigs).Returns(new List<FolderConfig> { existing });
 
-            var config = JsonConvert.SerializeObject(new IdeConfigData
+            var config = JsonConvert.SerializeObject(new
             {
-                FolderConfigs = new List<FolderConfigData>
+                folderConfigs = new[]
                 {
-                    new FolderConfigData
+                    new
                     {
-                        FolderPath = "/path/to/solution",
-                        PreferredOrg = "my-org",
-                        BaseBranch = "develop",
-                        SnykOssEnabled = true,
-                        SnykCodeEnabled = false,
-                        SeverityFilterHigh = false,
-                        ScanAutomatic = true,
-                        IssueViewIgnoredIssues = false,
-                        RiskScoreThreshold = 500,
+                        folderPath = "/path/to/solution",
+                        preferred_org = "my-org",
+                        base_branch = "develop",
+                        snyk_oss_enabled = true,
+                        snyk_code_enabled = false,
+                        severity_filter_high = false,
+                        scan_automatic = true,
+                        issue_view_ignored_issues = false,
+                        risk_score_threshold = 500,
                     },
                 },
             });
@@ -674,11 +674,9 @@ namespace Snyk.VisualStudio.Extension.Tests.UI.Html
             existing.Set(PflagKeys.RiskScoreThreshold, 700);
             optionsMock.SetupGet(o => o.FolderConfigs).Returns(new List<FolderConfig> { existing });
 
-            // Changed-only payload touching a single override. Serialize an anonymous object with
-            // ONLY the touched wire keys (folderPath + snyk_code_enabled) so the JSON matches the
-            // real JS form output. Serializing a full FolderConfigData would emit every untouched
-            // nullable field as explicit null (incl. preferred_org), which the reset path would
-            // then treat as a deliberate reset and wrongly clobber the stored override.
+            // Changed-only payload touching a single override — only the touched wire keys
+            // (folderPath + snyk_code_enabled), matching the real JS form output. An absent key means
+            // "no change"; only a present JSON null is a reset, so untouched overrides must survive.
             var config = JsonConvert.SerializeObject(new
             {
                 folderConfigs = new[]
@@ -711,12 +709,12 @@ namespace Snyk.VisualStudio.Extension.Tests.UI.Html
             var folderB = new FolderConfig { FolderPath = "/repo/b" };
             optionsMock.SetupGet(o => o.FolderConfigs).Returns(new List<FolderConfig> { folderA, folderB });
 
-            var config = JsonConvert.SerializeObject(new IdeConfigData
+            var config = JsonConvert.SerializeObject(new
             {
-                FolderConfigs = new List<FolderConfigData>
+                folderConfigs = new[]
                 {
-                    new FolderConfigData { FolderPath = "/repo/a", PreferredOrg = "org-a", SnykOssEnabled = true },
-                    new FolderConfigData { FolderPath = "/repo/b", PreferredOrg = "org-b", SnykOssEnabled = false },
+                    new { folderPath = "/repo/a", preferred_org = "org-a", snyk_oss_enabled = true },
+                    new { folderPath = "/repo/b", preferred_org = "org-b", snyk_oss_enabled = false },
                 },
             });
 
@@ -754,15 +752,15 @@ namespace Snyk.VisualStudio.Extension.Tests.UI.Html
         {
             // No matching global config entry (FolderConfigs stays null) — the mirror block is
             // skipped; no exception is thrown; no in-memory update since no matching FolderConfig exists.
-            var config = JsonConvert.SerializeObject(new IdeConfigData
+            var config = JsonConvert.SerializeObject(new
             {
-                FolderConfigs = new List<FolderConfigData>
+                folderConfigs = new[]
                 {
-                    new FolderConfigData
+                    new
                     {
-                        FolderPath = "/path/to/solution",
-                        PreferredOrg = "my-org",
-                        SnykOssEnabled = true,
+                        folderPath = "/path/to/solution",
+                        preferred_org = "my-org",
+                        snyk_oss_enabled = true,
                     },
                 },
             });
@@ -771,16 +769,12 @@ namespace Snyk.VisualStudio.Extension.Tests.UI.Html
         }
 
         [Fact]
-        public void SaveIdeConfig_FolderConfigs_PresentNullFields_FlagsResetKeys()
+        public void SaveIdeConfig_FolderConfigs_PresentNullFields_StoredAsNullReset()
         {
-            // "Reset overrides" sends folder fields as flat JSON null (here the non-scalar
-            // additional_parameters: array, additional_environment: string, scan_command_config:
-            // object). Present-null can't be distinguished from absent by the typed model, so the
-            // bridge re-reads the raw JSON: every folder field present as JSON null (except
-            // folderPath) is flagged on the stored config's ResetKeys, so BuildFolderConfigs emits
-            // {value:null, changed:true}. snyk-ls is authoritative and Unsets the user:folder:
-            // override for the keys it recognizes. The bridge no longer clears the stored typed
-            // value — BuildFolderConfigs's reset emit already overwrites any stored value.
+            // "Reset overrides" sends folder fields as flat JSON null. Looping the raw JSON keeps
+            // present-null distinct from absent, so each present-null key is Set to null in the
+            // opaque map → BuildFolderConfigs emits {value:null, changed:true} and snyk-ls Unsets
+            // the user:folder: override. folderPath is never written as a setting.
             var existing = new FolderConfig { FolderPath = "/repo" };
             existing.Set(PflagKeys.AdditionalParameters, new List<string> { "--debug" });
             existing.SetString(PflagKeys.AdditionalEnvironment, "FOO=bar");
@@ -790,8 +784,7 @@ namespace Snyk.VisualStudio.Extension.Tests.UI.Html
             });
             optionsMock.SetupGet(o => o.FolderConfigs).Returns(new List<FolderConfig> { existing });
 
-            // Raw payload with explicit JSON nulls for the three non-scalar keys (array/string/object
-            // fields). This is the exact present-null shape the dialog's reset emits.
+            // Raw payload with explicit JSON nulls — the exact present-null shape the dialog's reset emits.
             var config = "{" +
                 "\"folderConfigs\":[{" +
                     "\"folderPath\":\"/repo\"," +
@@ -802,21 +795,20 @@ namespace Snyk.VisualStudio.Extension.Tests.UI.Html
 
             bridge.__saveIdeConfig__(config);
 
-            // Every present-null field is forwarded as a reset; folderPath is never flagged.
-            Assert.NotNull(existing.ResetKeys);
-            Assert.Contains(PflagKeys.AdditionalParameters, existing.ResetKeys);
-            Assert.Contains(PflagKeys.AdditionalEnvironment, existing.ResetKeys);
-            Assert.Contains(PflagKeys.ScanCommandConfig, existing.ResetKeys);
-            Assert.DoesNotContain("folderPath", existing.ResetKeys);
+            // Each present-null field is now a null-valued ConfigSetting (the reset); folderPath isn't a setting.
+            Assert.Null(existing.Settings[PflagKeys.AdditionalParameters].Value);
+            Assert.Null(existing.Settings[PflagKeys.AdditionalEnvironment].Value);
+            Assert.Null(existing.Settings[PflagKeys.ScanCommandConfig].Value);
+            Assert.True(existing.Settings[PflagKeys.AdditionalParameters].Changed);
+            Assert.False(existing.Settings.ContainsKey("folderPath"));
         }
 
         [Fact]
         public void SaveIdeConfig_FolderConfigs_UnknownPresentNullField_StillForwardedAsReset()
         {
-            // The whitelist is gone: any folder field sent as JSON null is forwarded as a reset,
-            // even one this build has no typed property for. snyk-ls is authoritative and ignores
-            // nulls on keys it doesn't treat as folder-scoped, so forwarding extra present-nulls is
-            // a safe no-op rather than something the IDE must filter.
+            // The IDE is dumb: any folder field sent as JSON null is forwarded as a reset, even one
+            // this build has no typed property for. snyk-ls is authoritative and ignores nulls on
+            // keys it doesn't treat as folder-scoped, so forwarding extra present-nulls is safe.
             var existing = new FolderConfig { FolderPath = "/repo" };
             optionsMock.SetupGet(o => o.FolderConfigs).Returns(new List<FolderConfig> { existing });
 
@@ -828,8 +820,8 @@ namespace Snyk.VisualStudio.Extension.Tests.UI.Html
 
             bridge.__saveIdeConfig__(config);
 
-            Assert.NotNull(existing.ResetKeys);
-            Assert.Contains("some_future_folder_key", existing.ResetKeys);
+            Assert.True(existing.Settings.ContainsKey("some_future_folder_key"));
+            Assert.Null(existing.Settings["some_future_folder_key"].Value);
         }
     }
 }

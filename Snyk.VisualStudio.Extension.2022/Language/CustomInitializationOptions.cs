@@ -42,14 +42,6 @@ namespace Snyk.VisualStudio.Extension.Language
         // unchanged: inbound from the LS, persisted, and sent back on DidChangeConfiguration.
         public Dictionary<string, ConfigSetting> Settings { get; set; } = new Dictionary<string, ConfigSetting>();
 
-        // LS keys the user reset via the settings dialog (sent as JSON null). A present-null can't be
-        // distinguished from absent once mapped, so resets are tracked here instead. BuildFolderConfigs
-        // emits {value:null, changed:true} for each, which makes snyk-ls Unset the user:folder:
-        // override (fallback to org/LDX/default). Transient + one-shot: not persisted to disk,
-        // consumed within the same in-memory save→DidChangeConfiguration cycle.
-        [JsonIgnore]
-        public HashSet<string> ResetKeys { get; set; }
-
         // ----- Typed accessors over the opaque map (keyed by PflagKeys.*) -----
         // These let the dialog and the handful of IDE-side readers stay readable without
         // re-introducing typed fields. Values are stored as ConfigSetting.Of(...) so the round-trip
@@ -63,16 +55,11 @@ namespace Snyk.VisualStudio.Extension.Language
         {
             if (value == null) Settings.Remove(key);
             else Settings[key] = ConfigSetting.Of(value);
-            ResetKeys?.Remove(key);
         }
 
-        public void Set(string key, object value)
-        {
-            Settings[key] = ConfigSetting.Of(value);
-            // A re-set wins over a pending reset: clearing the ResetKey stops BuildFolderConfigs
-            // from clobbering this just-set value back to {value:null} on the next send.
-            ResetKeys?.Remove(key);
-        }
+        // Stores the value (incl. null for a reset → {value:null, changed:true} on the wire so the
+        // LS Unsets the user:folder: override). A re-set in the same cycle simply overwrites.
+        public void Set(string key, object value) => Settings[key] = ConfigSetting.Of(value);
 
         // Returns the raw stored value as a JToken for typed extraction. Values arrive either as
         // JTokens (Json.NET deserialization of the LS payload) or as boxed CLR objects (set IDE-side);

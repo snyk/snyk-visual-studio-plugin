@@ -55,7 +55,12 @@ namespace Snyk.VisualStudio.Extension.Language
                 [PflagKeys.SnykIacEnabled] = ConfigSetting.Of(options.IacEnabled),
                 [PflagKeys.SnykSecretsEnabled] = ConfigSetting.Of(options.SecretsEnabled),
 
-                [PflagKeys.ScanAutomatic] = ConfigSetting.Of(options.InternalAutoScan),
+                // Send the persisted user preference (AutoScan), not the InternalAutoScan runtime
+                // gate. The gate only delays the *first* scan until the IDE is ready (handled by the
+                // scan-trigger logic in OnSnykConfiguration / OnHasAuthenticated) — it must not be the
+                // value we tell the LS to persist, or a manual-mode choice gets overwritten by the
+                // gate's post-first-scan `true` on the next config round-trip.
+                [PflagKeys.ScanAutomatic] = ConfigSetting.Of(options.AutoScan),
                 [PflagKeys.ScanNetNew] = ConfigSetting.Of(options.EnableDeltaFindings),
 
                 [PflagKeys.SeverityFilterCritical] = ConfigSetting.Of(options.FilterCritical),
@@ -106,20 +111,11 @@ namespace Snyk.VisualStudio.Extension.Language
 
                 // Round-trip the opaque settings map verbatim — the LS is authoritative over
                 // folder-scoped settings, so the IDE forwards every key it was sent (and every key
-                // it set IDE-side) without cherry-picking. Copy so the reset overlay below doesn't
-                // mutate the stored map.
+                // it set IDE-side, incl. resets stored as {value:null, changed:true}) without
+                // cherry-picking. Copy so callers don't mutate the stored map.
                 var settings = fc.Settings != null
                     ? new Dictionary<string, ConfigSetting>(fc.Settings, StringComparer.Ordinal)
                     : new Dictionary<string, ConfigSetting>();
-
-                // Reset overrides: emit {value:null, changed:true} so the LS Unsets the user:folder:
-                // override (fallback to org/LDX/default). Overwrites any value carried in the map for
-                // the same key, so a reset always wins over a stale stored value.
-                if (fc.ResetKeys != null)
-                {
-                    foreach (var resetKey in fc.ResetKeys)
-                        settings[resetKey] = ConfigSetting.Of(null);
-                }
 
                 result.Add(new LspFolderConfig
                 {

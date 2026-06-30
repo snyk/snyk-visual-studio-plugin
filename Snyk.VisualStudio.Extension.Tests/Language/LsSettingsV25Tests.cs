@@ -88,24 +88,22 @@ namespace Snyk.VisualStudio.Extension.Tests.Language
         }
 
         [Fact]
-        public void BuildFolderConfigs_EmitsNullChangedTrueForResetKeys()
+        public void BuildFolderConfigs_RoundTripsNullValuedResetSettingsVerbatim()
         {
-            // A reset folder field must go out as {value:null, changed:true} so snyk-ls Unsets the
-            // user:folder: override (fallback to org/LDX/default).
+            // A reset is stored as a null-valued ConfigSetting directly in the opaque map (the bridge
+            // Sets the key to null for a present-null form field). BuildFolderConfigs round-trips the
+            // map verbatim, so each must go out as {value:null, changed:true} for snyk-ls to Unset the
+            // user:folder: override.
             SetupDefaults();
-            var fc = new FolderConfig
+            var fc = new FolderConfig { FolderPath = "/repo" };
+            foreach (var key in new[]
             {
-                FolderPath = "/repo",
-                ResetKeys = new HashSet<string>
-                {
-                    PflagKeys.SnykCodeEnabled,
-                    PflagKeys.PreferredOrg,
-                    PflagKeys.RiskScoreThreshold,
-                    PflagKeys.AdditionalParameters,
-                    PflagKeys.AdditionalEnvironment,
-                    PflagKeys.ScanCommandConfig,
-                },
-            };
+                PflagKeys.SnykCodeEnabled, PflagKeys.PreferredOrg, PflagKeys.RiskScoreThreshold,
+                PflagKeys.AdditionalParameters, PflagKeys.AdditionalEnvironment, PflagKeys.ScanCommandConfig,
+            })
+            {
+                fc.Set(key, null);
+            }
             optionsMock.SetupGet(o => o.FolderConfigs).Returns(new List<FolderConfig> { fc });
 
             var settings = cut.GetInitializationOptions().FolderConfigs[0].Settings;
@@ -119,92 +117,13 @@ namespace Snyk.VisualStudio.Extension.Tests.Language
         }
 
         [Fact]
-        public void BuildFolderConfigs_ResetWinsForNonScalarFields()
-        {
-            // additional_parameters (List), additional_environment (string) and scan_command_config
-            // (Dictionary) are non-scalar. A reset must emit {value:null, changed:true} even when a
-            // typed value is stored, so snyk-ls Unsets the user:folder: override.
-            SetupDefaults();
-            var fc = new FolderConfig
-            {
-                FolderPath = "/repo",
-                ResetKeys = new HashSet<string>
-                {
-                    PflagKeys.AdditionalParameters,
-                    PflagKeys.AdditionalEnvironment,
-                    PflagKeys.ScanCommandConfig,
-                },
-            };
-            fc.Set(PflagKeys.AdditionalParameters, new List<string> { "--debug" });
-            fc.Set(PflagKeys.AdditionalEnvironment, "FOO=bar");
-            fc.Set(PflagKeys.ScanCommandConfig, new Dictionary<string, ScanCommandConfig>
-            {
-                ["oss"] = new ScanCommandConfig { PreScanCommand = "echo hi" },
-            });
-            optionsMock.SetupGet(o => o.FolderConfigs).Returns(new List<FolderConfig> { fc });
-
-            var settings = cut.GetInitializationOptions().FolderConfigs[0].Settings;
-
-            AssertResetSetting(settings, PflagKeys.AdditionalParameters);
-            AssertResetSetting(settings, PflagKeys.AdditionalEnvironment);
-            AssertResetSetting(settings, PflagKeys.ScanCommandConfig);
-        }
-
-        [Fact]
-        public void BuildFolderConfigs_NonScalarResetWithNullStoredValue_StillEmitsNull()
-        {
-            // The ResetKeys-driven emit must win even when the stored non-scalar value is null/absent
-            // (the guarded emits at the top of BuildFolderConfigs skip nulls; the reset must not be
-            // dropped along with them).
-            SetupDefaults();
-            var fc = new FolderConfig
-            {
-                FolderPath = "/repo",
-                ResetKeys = new HashSet<string>
-                {
-                    PflagKeys.AdditionalParameters,
-                    PflagKeys.AdditionalEnvironment,
-                    PflagKeys.ScanCommandConfig,
-                },
-            };
-            optionsMock.SetupGet(o => o.FolderConfigs).Returns(new List<FolderConfig> { fc });
-
-            var settings = cut.GetInitializationOptions().FolderConfigs[0].Settings;
-
-            AssertResetSetting(settings, PflagKeys.AdditionalParameters);
-            AssertResetSetting(settings, PflagKeys.AdditionalEnvironment);
-            AssertResetSetting(settings, PflagKeys.ScanCommandConfig);
-        }
-
-        [Fact]
-        public void BuildFolderConfigs_ResetKeyWinsOverStoredValue()
-        {
-            // If a key is both stored and reset, the reset (null) must win — the user cleared it.
-            SetupDefaults();
-            var fc = new FolderConfig
-            {
-                FolderPath = "/repo",
-                ResetKeys = new HashSet<string> { PflagKeys.SnykCodeEnabled },
-            };
-            fc.Set(PflagKeys.SnykCodeEnabled, true);
-            optionsMock.SetupGet(o => o.FolderConfigs).Returns(new List<FolderConfig> { fc });
-
-            var settings = cut.GetInitializationOptions().FolderConfigs[0].Settings;
-
-            AssertResetSetting(settings, PflagKeys.SnykCodeEnabled);
-        }
-
-        [Fact]
         public void BuildFolderConfigs_NullResetSettingSerializesValueNull()
         {
             // ConfigSetting.Value has no NullValueHandling.Ignore, so a reset serializes the explicit
             // "value": null the LS reset path expects.
             SetupDefaults();
-            var fc = new FolderConfig
-            {
-                FolderPath = "/repo",
-                ResetKeys = new HashSet<string> { PflagKeys.SnykCodeEnabled },
-            };
+            var fc = new FolderConfig { FolderPath = "/repo" };
+            fc.Set(PflagKeys.SnykCodeEnabled, null);
             optionsMock.SetupGet(o => o.FolderConfigs).Returns(new List<FolderConfig> { fc });
 
             var lspFolderConfig = cut.GetInitializationOptions().FolderConfigs[0];
@@ -365,6 +284,21 @@ namespace Snyk.VisualStudio.Extension.Tests.Language
             Assert.True(obj.ContainsKey("requiredProtocolVersion"), "requiredProtocolVersion should be camelCase");
             Assert.True(obj.ContainsKey("integrationName"), "integrationName should be camelCase");
             Assert.False(obj.ContainsKey("RequiredProtocolVersion"), "PascalCase must not appear");
+        }
+
+        [Fact]
+        public void BuildSettingsMap_ScanAutomatic_SourcesPersistedAutoScan_NotRuntimeGate()
+        {
+            // Regression: scan_automatic must carry the persisted user preference (AutoScan), not the
+            // InternalAutoScan runtime gate. Sourcing the gate let the gate's post-first-scan `true`
+            // overwrite a manual-mode choice on the next config round-trip, so manual mode never stuck.
+            SetupDefaults();
+            optionsMock.SetupGet(o => o.AutoScan).Returns(false);   // user picked manual
+            optionsMock.SetupGet(o => o.InternalAutoScan).Returns(true); // gate already flipped after first scan
+
+            var map = cut.BuildSettingsMap(optionsMock.Object);
+
+            Assert.Equal(false, map[PflagKeys.ScanAutomatic].Value);
         }
 
         [Fact]
