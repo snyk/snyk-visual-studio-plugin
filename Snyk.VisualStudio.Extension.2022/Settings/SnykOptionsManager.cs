@@ -17,6 +17,16 @@ namespace Snyk.VisualStudio.Extension.Settings
         private readonly SnykSettingsLoader settingsLoader;
         private SnykSettings snykSettings;
 
+        // Singleton tracker that lives alongside this manager (composed in the same root).
+        // Exposed for injection into LsSettingsV25 via ISnykOptionsManager.OverrideTracker.
+        private readonly UserOverrideTracker overrideTracker = new UserOverrideTracker();
+
+        /// <summary>
+        /// The user-override tracker owned by this manager. LsSettingsV25 uses this to set
+        /// the <c>changed</c> flag on each ConfigSetting (IDE-2152).
+        /// </summary>
+        public IUserOverrideTracker OverrideTracker => overrideTracker;
+
         public SnykOptionsManager(string settingsFilePath, ISnykServiceProvider serviceProvider)
         {
             this.serviceProvider = serviceProvider;
@@ -76,7 +86,9 @@ namespace Snyk.VisualStudio.Extension.Settings
                 // event: the caller is about to (re)start the LS, which receives these via the
                 // initialization options, and Save leaves SolutionSettingsDict untouched so the shrink
                 // is what gets written.
-                Save(options, triggerSettingsChangedEvent: false);
+                // updateOverrideTracker:false — migration is system-driven, not a user override action;
+                // calling ApplyUserEdits over migrated values would create phantom overrides.
+                Save(options, triggerSettingsChangedEvent: false, updateOverrideTracker: false);
 
                 Logger.Information(
                     "Migrated legacy per-solution settings for '{Folder}' into a folder config.",
@@ -92,7 +104,10 @@ namespace Snyk.VisualStudio.Extension.Settings
 
         public ISnykOptions Load()
         {
-            return new SnykOptions
+            // Copy the persisted override set into options, or null when not present on disk.
+            var persistedKeys = snykSettings.ChangedConfigKeys;
+
+            var options = new SnykOptions
             {
                 DeviceId = snykSettings.DeviceId,
                 TrustedFolders = snykSettings.TrustedFolders,
@@ -134,9 +149,37 @@ namespace Snyk.VisualStudio.Extension.Settings
                 AdditionalParameters = snykSettings.AdditionalParameters,
                 RiskScoreThreshold = snykSettings.RiskScoreThreshold,
             };
+
+            // Clear only the changed marks so a second Load() on the same manager instance never
+            // unions stale marks from a previous load cycle. pendingResets is preserved: any reset
+            // signals enqueued by ApplyUserEdits between saves must survive into the next BuildSettingsMap call.
+            overrideTracker.ClearChanged();
+
+            // Hydrate the in-memory tracker from the persisted set.
+            // If the persisted set is null/empty (first load / upgrade path), seed by comparing
+            // each value against its plugin default so pre-existing non-default values are picked up.
+            // SeedFrom sets IsSeeded = true internally.
+            if (persistedKeys == null || persistedKeys.Count == 0)
+            {
+                overrideTracker.SeedFrom(options);
+            }
+            else
+            {
+                foreach (var key in persistedKeys)
+                    overrideTracker.Mark(key);
+                // Mark seeded after the explicit Mark-loop so BuildSettingsMap's IsSeeded gate
+                // becomes active once the tracker has been hydrated from persisted keys.
+                overrideTracker.MarkSeeded();
+            }
+
+            // Write the seeded set back so it is available on the returned options object.
+            options.ChangedConfigKeys = overrideTracker.Snapshot();
+            return options;
         }
 
-        public void Save(IPersistableOptions options, bool triggerSettingsChangedEvent = true)
+        public void Save(IPersistableOptions options, bool triggerSettingsChangedEvent = true,
+                         bool updateOverrideTracker = true,
+                         IReadOnlyCollection<string> editedKeys = null)
         {
             snykSettings.DeviceId = options.DeviceId;
             snykSettings.TrustedFolders = options.TrustedFolders;
@@ -177,6 +220,23 @@ namespace Snyk.VisualStudio.Extension.Settings
             snykSettings.AdditionalEnv = options.AdditionalEnv;
             snykSettings.AdditionalParameters = options.AdditionalParameters;
             snykSettings.RiskScoreThreshold = options.RiskScoreThreshold;
+
+            if (updateOverrideTracker)
+            {
+                // User-initiated save: apply only the edit-delta (the keys the user actually
+                // changed in this action) so org-pushed values sitting in Options are never
+                // recorded as user overrides. editedKeys==null/empty → mark nothing (safe default).
+                // Snapshot() returns a fresh copy; no need to wrap in another HashSet.
+                overrideTracker.ApplyUserEdits(options, editedKeys ?? new List<string>());
+                var snapshot = overrideTracker.Snapshot();
+                snykSettings.ChangedConfigKeys = snapshot.Count > 0
+                    ? snapshot
+                    : null; // keep out of settings.json when empty (NullValueHandling.Ignore)
+            }
+            // When updateOverrideTracker is false (LS/system-originated save): skip tracker
+            // mutation so LS-pushed values (org, LDX flags, etc.) are never recorded as user
+            // overrides. snykSettings.ChangedConfigKeys is intentionally left unchanged — the
+            // user's persisted override set must survive every LS-push round-trip.
 
             this.SaveSettingsToFile();
             if(triggerSettingsChangedEvent)

@@ -94,5 +94,15 @@ namespace Snyk.VisualStudio.Extension.Settings
         /// </summary>
         [JsonProperty(NullValueHandling = NullValueHandling.Ignore)]
         public Dictionary<int, LegacySolutionSettings> SolutionSettingsDict { get; set; }
+
+        /// <summary>
+        /// Set of pflag keys the user explicitly overrode from plugin defaults (IDE-2152).
+        /// Null when absent from disk (first load / pre-upgrade file) — treated as empty by
+        /// <see cref="SnykOptionsManager.Load"/>, which seeds from values in that case.
+        /// NullValueHandling.Ignore keeps the key out of settings.json until at least one key
+        /// is tracked, matching the behaviour of <see cref="SolutionSettingsDict"/>.
+        /// </summary>
+        [JsonProperty(NullValueHandling = NullValueHandling.Ignore)]
+        public HashSet<string> ChangedConfigKeys { get; set; }
     }
 }

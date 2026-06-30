@@ -58,7 +58,11 @@ namespace Snyk.VisualStudio.Extension
 
             var options = SnykVSPackage.ServiceProvider.Options;
             options.FolderConfigs = currentList;
-            SnykVSPackage.ServiceProvider.SnykOptionsManager.Save(options);
+            // editedKeys: empty — only folder config (per-folder) keys changed here; no global
+            // pflag keys were edited by the user, so the tracker should mark nothing.
+            SnykVSPackage.ServiceProvider.SnykOptionsManager.Save(
+                options,
+                editedKeys: new System.Collections.Generic.List<string>());
             if (SnykVSPackage.Instance.Options.AutoScan)
             {
                 ThreadHelper.JoinableTaskFactory.RunAsync(serviceProvider.TasksService.ScanAsync).FireAndForget();

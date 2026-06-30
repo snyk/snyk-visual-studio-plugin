@@ -43,6 +43,10 @@ namespace Snyk.VisualStudio.Extension.Language
 
         // Trust
         public const string TrustedFolders = "trusted_folders";
+        // Keys for always-changed set per AC M4 (defined in LS spec; not currently in VS BuildSettingsMap
+        // but included so the AlwaysChanged set is complete for when they are added).
+        public const string TrustEnabled = "trust_enabled";
+        public const string AutomaticAuthentication = "automatic_authentication";
 
         // Folder-level
         public const string AdditionalParameters = "additional_parameters";
@@ -59,5 +63,21 @@ namespace Snyk.VisualStudio.Extension.Language
         // there, not from the Settings map — the Settings-map copies are harmless redundancy.
         public const string ClientProtocolVersion = "client_protocol_version";
         public const string DeviceId = "device_id";
+
+        // Keys that are always sent with changed:true regardless of user action (requirement M4).
+        // trusted_folders must always signal intent so the LS never silently inherits an org default.
+        // Private to prevent external mutation; callers use IsAlwaysChanged(key).
+        private static readonly HashSet<string> _alwaysChanged = new HashSet<string>
+        {
+            TrustedFolders,
+            TrustEnabled,
+            AutomaticAuthentication,
+        };
+
+        /// <summary>
+        /// Returns true when <paramref name="key"/> must always be sent with <c>changed:true</c>
+        /// regardless of whether the user has explicitly overridden it (requirement M4).
+        /// </summary>
+        public static bool IsAlwaysChanged(string key) => _alwaysChanged.Contains(key);
     }
 }

@@ -98,11 +98,17 @@ namespace Snyk.VisualStudio.Extension.UI.Html
             {
                 try
                 {
-                    await ParseAndSaveConfigAsync(jsonString);
+                    // ParseAndSaveConfigAsync applies the form values to Options and returns the
+                    // edit-delta (the set of global pflag keys whose value actually changed from
+                    // the pre-apply snapshot). Only these keys are passed to Save so the tracker
+                    // marks only genuinely user-edited keys — not org-pushed values that merely
+                    // sit in Options unchanged.
+                    var editedKeys = await ParseAndSaveConfigAsync(jsonString);
 
                     // Persist all settings to storage at the end.
                     // This triggers SettingsChanged event which notifies Language Server.
-                    OptionsManager.Save(Options, triggerSettingsChangedEvent: true);
+                    OptionsManager.Save(Options, triggerSettingsChangedEvent: true,
+                                        updateOverrideTracker: true, editedKeys: editedKeys);
 
                     tcs.TrySetResult(true);
                 }
@@ -237,7 +243,10 @@ namespace Snyk.VisualStudio.Extension.UI.Html
             }
         }
 
-        private async Task ParseAndSaveConfigAsync(string jsonString)
+        // Returns the set of global pflag keys whose value changed during this save action
+        // (the edit-delta). The caller passes this to OptionsManager.Save so only genuinely
+        // user-edited keys are marked as user overrides in the tracker.
+        private async Task<IReadOnlyCollection<string>> ParseAndSaveConfigAsync(string jsonString)
         {
             // LS HTML JavaScript handles all validation - we just parse and save.
             // Throw on a null result (malformed/empty JSON that maps to nothing) rather than
@@ -288,6 +297,12 @@ namespace Snyk.VisualStudio.Extension.UI.Html
             var isCliOnly = config.IsFallbackForm ?? false;
             Logger.Information("Saving workspace configuration (CLI only: {IsCliOnly})", isCliOnly);
 
+            // Capture the global pflag key→value snapshot BEFORE applying the form values.
+            // After apply we diff this against the post-apply Options to produce the edit-delta:
+            // only keys whose value actually changed are passed to the tracker, so org-pushed
+            // values that the user didn't touch are never recorded as user overrides.
+            var preApplySnapshot = UserOverrideTracker.SnapshotGlobalKeys(Options);
+
             // Apply directly to the live Options, but capture a rollback first. Apply* mutate Options
             // in place (folder-config entries included) and OptionsManager.Save only runs after this
             // method returns — so a mid-apply failure would otherwise leave Options half-applied in
@@ -324,6 +339,11 @@ namespace Snyk.VisualStudio.Extension.UI.Html
                 rollback();
                 throw;
             }
+
+            // Derive the edit-delta: keys whose value differs between the pre-apply snapshot and
+            // the post-apply Options state. This is what the user actually changed in this save
+            // action. The tracker will mark/unmark only these keys.
+            return UserOverrideTracker.DiffGlobalKeys(preApplySnapshot, Options);
         }
 
         // Captures the current Options state and returns an action that restores it, so a partially-
