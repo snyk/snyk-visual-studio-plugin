@@ -730,56 +730,58 @@ namespace Snyk.VisualStudio.Extension.UI.Html
                         : (optionsConfigs.Count == 1 ? optionsConfigs[0] : null);
                     if (existingConfig == null) continue;
 
-                    // Mirror the changed fields into the in-memory FolderConfig so
-                    // DidChangeConfiguration sends the updated values to the LS (the LS is master
-                    // for folder-config storage, incl. base branch which has no solution-storage
-                    // slot of its own). Apply each field only when present so a single-field edit
-                    // doesn't blank out the siblings.
+                    // Mirror the changed fields into the in-memory FolderConfig's opaque settings
+                    // map so DidChangeConfiguration sends them to the LS (the LS is master for
+                    // folder-config storage, incl. base branch which has no solution-storage slot of
+                    // its own). Write each key only when the form posted it (changed-only PATCH) so a
+                    // single-field edit doesn't blank out the siblings. Keyed by PflagKeys so it
+                    // round-trips exactly as the LS expects. Present-null fields are handled
+                    // separately by ApplyFolderResetsFromRawJson (they become ResetKeys, not values).
                     {
                         if (folderConfig.PreferredOrg != null)
-                            existingConfig.PreferredOrg = folderConfig.PreferredOrg;
+                            existingConfig.Set(PflagKeys.PreferredOrg, folderConfig.PreferredOrg);
                         if (folderConfig.AutoDeterminedOrg != null)
-                            existingConfig.AutoDeterminedOrg = folderConfig.AutoDeterminedOrg;
+                            existingConfig.Set(PflagKeys.AutoDeterminedOrg, folderConfig.AutoDeterminedOrg);
                         if (folderConfig.OrgSetByUser.HasValue)
-                            existingConfig.OrgSetByUser = folderConfig.OrgSetByUser.Value;
+                            existingConfig.Set(PflagKeys.OrgSetByUser, folderConfig.OrgSetByUser.Value);
                         if (folderConfig.AdditionalParameters != null)
-                            existingConfig.AdditionalParameters = folderConfig.AdditionalParameters;
+                            existingConfig.Set(PflagKeys.AdditionalParameters, folderConfig.AdditionalParameters);
                         if (folderConfig.AdditionalEnv != null)
-                            existingConfig.AdditionalEnv = folderConfig.AdditionalEnv;
+                            existingConfig.Set(PflagKeys.AdditionalEnvironment, folderConfig.AdditionalEnv);
                         if (folderConfig.BaseBranch != null)
-                            existingConfig.BaseBranch = folderConfig.BaseBranch;
+                            existingConfig.Set(PflagKeys.BaseBranch, folderConfig.BaseBranch);
                         if (folderConfig.ScanCommandConfig != null)
-                            existingConfig.ScanCommandConfig = folderConfig.ScanCommandConfig;
+                            existingConfig.Set(PflagKeys.ScanCommandConfig, folderConfig.ScanCommandConfig);
 
                         // Per-folder org-scope overrides (product enablement, severity, scan,
-                        // issue view, risk score). Mirrored so BuildFolderConfigs emits them in
+                        // issue view, risk score). Written so BuildFolderConfigs forwards them in
                         // the folder's settings map and the LS resolves folder-over-global.
                         if (folderConfig.SnykOssEnabled.HasValue)
-                            existingConfig.SnykOssEnabled = folderConfig.SnykOssEnabled;
+                            existingConfig.Set(PflagKeys.SnykOssEnabled, folderConfig.SnykOssEnabled.Value);
                         if (folderConfig.SnykCodeEnabled.HasValue)
-                            existingConfig.SnykCodeEnabled = folderConfig.SnykCodeEnabled;
+                            existingConfig.Set(PflagKeys.SnykCodeEnabled, folderConfig.SnykCodeEnabled.Value);
                         if (folderConfig.SnykIacEnabled.HasValue)
-                            existingConfig.SnykIacEnabled = folderConfig.SnykIacEnabled;
+                            existingConfig.Set(PflagKeys.SnykIacEnabled, folderConfig.SnykIacEnabled.Value);
                         if (folderConfig.SnykSecretsEnabled.HasValue)
-                            existingConfig.SnykSecretsEnabled = folderConfig.SnykSecretsEnabled;
+                            existingConfig.Set(PflagKeys.SnykSecretsEnabled, folderConfig.SnykSecretsEnabled.Value);
                         if (folderConfig.ScanAutomatic.HasValue)
-                            existingConfig.ScanAutomatic = folderConfig.ScanAutomatic;
+                            existingConfig.Set(PflagKeys.ScanAutomatic, folderConfig.ScanAutomatic.Value);
                         if (folderConfig.ScanNetNew.HasValue)
-                            existingConfig.ScanNetNew = folderConfig.ScanNetNew;
+                            existingConfig.Set(PflagKeys.ScanNetNew, folderConfig.ScanNetNew.Value);
                         if (folderConfig.SeverityFilterCritical.HasValue)
-                            existingConfig.SeverityFilterCritical = folderConfig.SeverityFilterCritical;
+                            existingConfig.Set(PflagKeys.SeverityFilterCritical, folderConfig.SeverityFilterCritical.Value);
                         if (folderConfig.SeverityFilterHigh.HasValue)
-                            existingConfig.SeverityFilterHigh = folderConfig.SeverityFilterHigh;
+                            existingConfig.Set(PflagKeys.SeverityFilterHigh, folderConfig.SeverityFilterHigh.Value);
                         if (folderConfig.SeverityFilterMedium.HasValue)
-                            existingConfig.SeverityFilterMedium = folderConfig.SeverityFilterMedium;
+                            existingConfig.Set(PflagKeys.SeverityFilterMedium, folderConfig.SeverityFilterMedium.Value);
                         if (folderConfig.SeverityFilterLow.HasValue)
-                            existingConfig.SeverityFilterLow = folderConfig.SeverityFilterLow;
+                            existingConfig.Set(PflagKeys.SeverityFilterLow, folderConfig.SeverityFilterLow.Value);
                         if (folderConfig.IssueViewOpenIssues.HasValue)
-                            existingConfig.IssueViewOpenIssues = folderConfig.IssueViewOpenIssues;
+                            existingConfig.Set(PflagKeys.IssueViewOpenIssues, folderConfig.IssueViewOpenIssues.Value);
                         if (folderConfig.IssueViewIgnoredIssues.HasValue)
-                            existingConfig.IssueViewIgnoredIssues = folderConfig.IssueViewIgnoredIssues;
+                            existingConfig.Set(PflagKeys.IssueViewIgnoredIssues, folderConfig.IssueViewIgnoredIssues.Value);
                         if (folderConfig.RiskScoreThreshold.HasValue)
-                            existingConfig.RiskScoreThreshold = folderConfig.RiskScoreThreshold;
+                            existingConfig.Set(PflagKeys.RiskScoreThreshold, folderConfig.RiskScoreThreshold.Value);
 
                         Logger.Information("Mirrored folder config: {FolderPath}", existingConfig.FolderPath);
                     }

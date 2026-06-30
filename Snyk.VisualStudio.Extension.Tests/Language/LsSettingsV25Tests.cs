@@ -51,46 +51,40 @@ namespace Snyk.VisualStudio.Extension.Tests.Language
         [Fact]
         public void FolderConfigOverrides_RoundTripThroughBuildAndApply()
         {
-            // Guards the outbound/inbound symmetry: BuildFolderConfigs emits the per-folder
-            // overrides and FolderConfigApplier.ToFolderConfig must read every one of them back,
-            // or a $/snyk.configuration echo silently drops the user's per-folder override.
+            // Guards the outbound/inbound symmetry: BuildFolderConfigs forwards the per-folder
+            // settings map and FolderConfigApplier.ToFolderConfig must round-trip every key back,
+            // or a $/snyk.configuration echo silently drops the user's per-folder override. With the
+            // opaque-map model this is verbatim, including reference_folder and local_branches — the
+            // two keys the old cherry-pick model dropped.
             SetupDefaults();
-            var original = new FolderConfig
-            {
-                FolderPath = "/repo",
-                SnykOssEnabled = true,
-                SnykCodeEnabled = false,
-                SnykIacEnabled = true,
-                SnykSecretsEnabled = false,
-                ScanAutomatic = true,
-                ScanNetNew = false,
-                SeverityFilterCritical = true,
-                SeverityFilterHigh = false,
-                SeverityFilterMedium = true,
-                SeverityFilterLow = false,
-                IssueViewOpenIssues = true,
-                IssueViewIgnoredIssues = false,
-                RiskScoreThreshold = 750,
-            };
+            var original = new FolderConfig { FolderPath = "/repo" };
+            original.Set(PflagKeys.SnykOssEnabled, true);
+            original.Set(PflagKeys.SnykCodeEnabled, false);
+            original.Set(PflagKeys.SnykIacEnabled, true);
+            original.Set(PflagKeys.ScanAutomatic, true);
+            original.Set(PflagKeys.SeverityFilterCritical, true);
+            original.Set(PflagKeys.IssueViewOpenIssues, true);
+            original.Set(PflagKeys.RiskScoreThreshold, 750);
+            original.SetString(PflagKeys.BaseBranch, "main");
+            original.SetString(PflagKeys.ReferenceFolder, @"C:\refs\main");
+            original.Set(PflagKeys.LocalBranches, new List<string> { "main", "dev" });
             optionsMock.SetupGet(o => o.FolderConfigs).Returns(new List<FolderConfig> { original });
 
             // POCO -> BuildFolderConfigs (outbound) -> LspFolderConfig -> ToFolderConfig (inbound) -> POCO
             var lspFolderConfig = cut.GetInitializationOptions().FolderConfigs[0];
             var roundTripped = FolderConfigApplier.ToFolderConfig(lspFolderConfig);
 
-            Assert.Equal(true, roundTripped.SnykOssEnabled);
-            Assert.Equal(false, roundTripped.SnykCodeEnabled);
-            Assert.Equal(true, roundTripped.SnykIacEnabled);
-            Assert.Equal(false, roundTripped.SnykSecretsEnabled);
-            Assert.Equal(true, roundTripped.ScanAutomatic);
-            Assert.Equal(false, roundTripped.ScanNetNew);
-            Assert.Equal(true, roundTripped.SeverityFilterCritical);
-            Assert.Equal(false, roundTripped.SeverityFilterHigh);
-            Assert.Equal(true, roundTripped.SeverityFilterMedium);
-            Assert.Equal(false, roundTripped.SeverityFilterLow);
-            Assert.Equal(true, roundTripped.IssueViewOpenIssues);
-            Assert.Equal(false, roundTripped.IssueViewIgnoredIssues);
-            Assert.Equal(750, roundTripped.RiskScoreThreshold);
+            Assert.Equal(true, roundTripped.Settings[PflagKeys.SnykOssEnabled].Value);
+            Assert.Equal(false, roundTripped.Settings[PflagKeys.SnykCodeEnabled].Value);
+            Assert.Equal(true, roundTripped.Settings[PflagKeys.SnykIacEnabled].Value);
+            Assert.Equal(true, roundTripped.Settings[PflagKeys.ScanAutomatic].Value);
+            Assert.Equal(true, roundTripped.Settings[PflagKeys.SeverityFilterCritical].Value);
+            Assert.Equal(true, roundTripped.Settings[PflagKeys.IssueViewOpenIssues].Value);
+            Assert.Equal(750, roundTripped.Settings[PflagKeys.RiskScoreThreshold].Value);
+            Assert.Equal("main", roundTripped.GetString(PflagKeys.BaseBranch));
+            // The original gap: these two now round-trip instead of being dropped.
+            Assert.Equal(@"C:\refs\main", roundTripped.GetString(PflagKeys.ReferenceFolder));
+            Assert.Equal(new List<string> { "main", "dev" }, roundTripped.GetStringList(PflagKeys.LocalBranches));
         }
 
         [Fact]
@@ -134,12 +128,6 @@ namespace Snyk.VisualStudio.Extension.Tests.Language
             var fc = new FolderConfig
             {
                 FolderPath = "/repo",
-                AdditionalParameters = new List<string> { "--debug" },
-                AdditionalEnv = "FOO=bar",
-                ScanCommandConfig = new Dictionary<string, ScanCommandConfig>
-                {
-                    ["oss"] = new ScanCommandConfig { PreScanCommand = "echo hi" },
-                },
                 ResetKeys = new HashSet<string>
                 {
                     PflagKeys.AdditionalParameters,
@@ -147,6 +135,12 @@ namespace Snyk.VisualStudio.Extension.Tests.Language
                     PflagKeys.ScanCommandConfig,
                 },
             };
+            fc.Set(PflagKeys.AdditionalParameters, new List<string> { "--debug" });
+            fc.Set(PflagKeys.AdditionalEnvironment, "FOO=bar");
+            fc.Set(PflagKeys.ScanCommandConfig, new Dictionary<string, ScanCommandConfig>
+            {
+                ["oss"] = new ScanCommandConfig { PreScanCommand = "echo hi" },
+            });
             optionsMock.SetupGet(o => o.FolderConfigs).Returns(new List<FolderConfig> { fc });
 
             var settings = cut.GetInitializationOptions().FolderConfigs[0].Settings;
@@ -166,9 +160,6 @@ namespace Snyk.VisualStudio.Extension.Tests.Language
             var fc = new FolderConfig
             {
                 FolderPath = "/repo",
-                AdditionalParameters = null,
-                AdditionalEnv = null,
-                ScanCommandConfig = null,
                 ResetKeys = new HashSet<string>
                 {
                     PflagKeys.AdditionalParameters,
@@ -193,9 +184,9 @@ namespace Snyk.VisualStudio.Extension.Tests.Language
             var fc = new FolderConfig
             {
                 FolderPath = "/repo",
-                SnykCodeEnabled = true,
                 ResetKeys = new HashSet<string> { PflagKeys.SnykCodeEnabled },
             };
+            fc.Set(PflagKeys.SnykCodeEnabled, true);
             optionsMock.SetupGet(o => o.FolderConfigs).Returns(new List<FolderConfig> { fc });
 
             var settings = cut.GetInitializationOptions().FolderConfigs[0].Settings;
@@ -437,19 +428,18 @@ namespace Snyk.VisualStudio.Extension.Tests.Language
         }
 
         [Fact]
-        public void BuildFolderConfigs_FolderWithAllFields_MapsToSettings()
+        public void BuildFolderConfigs_ForwardsSettingsMapVerbatim()
         {
+            // Opaque-map model: every key in the folder's Settings map is forwarded as-is, no
+            // cherry-pick. Replaces the old per-field MapsToSettings test.
             SetupDefaults();
-            var folder = new FolderConfig
-            {
-                FolderPath = "/repo/myproject",
-                BaseBranch = "main",
-                PreferredOrg = "my-org",
-                OrgSetByUser = true,
-                AutoDeterminedOrg = "auto-org",
-                AdditionalParameters = new List<string> { "--debug", "--verbose" },
-                AdditionalEnv = "FOO=bar",
-            };
+            var folder = new FolderConfig { FolderPath = "/repo/myproject" };
+            folder.SetString(PflagKeys.BaseBranch, "main");
+            folder.SetString(PflagKeys.PreferredOrg, "my-org");
+            folder.Set(PflagKeys.OrgSetByUser, true);
+            folder.SetString(PflagKeys.AutoDeterminedOrg, "auto-org");
+            folder.Set(PflagKeys.AdditionalParameters, new List<string> { "--debug", "--verbose" });
+            folder.SetString(PflagKeys.AdditionalEnvironment, "FOO=bar");
             optionsMock.SetupGet(o => o.FolderConfigs).Returns(new List<FolderConfig> { folder });
 
             var result = cut.GetInitializationOptions();
@@ -457,31 +447,24 @@ namespace Snyk.VisualStudio.Extension.Tests.Language
             Assert.Single(result.FolderConfigs);
             var fc = result.FolderConfigs[0];
             Assert.Equal("/repo/myproject", fc.FolderPath);
-            Assert.True(fc.Settings.ContainsKey(PflagKeys.BaseBranch));
             Assert.Equal("main", fc.Settings[PflagKeys.BaseBranch].Value);
-            Assert.True(fc.Settings.ContainsKey(PflagKeys.PreferredOrg));
-            Assert.True(fc.Settings.ContainsKey(PflagKeys.OrgSetByUser));
+            Assert.Equal("my-org", fc.Settings[PflagKeys.PreferredOrg].Value);
             Assert.Equal(true, fc.Settings[PflagKeys.OrgSetByUser].Value);
-            Assert.True(fc.Settings.ContainsKey(PflagKeys.AdditionalParameters));
+            Assert.Equal("auto-org", fc.Settings[PflagKeys.AutoDeterminedOrg].Value);
             var apValue = Assert.IsType<List<string>>(fc.Settings[PflagKeys.AdditionalParameters].Value);
             Assert.Equal(new List<string> { "--debug", "--verbose" }, apValue);
         }
 
         [Fact]
-        public void BuildFolderConfigs_PerFolderOverrides_MappedWhenSet()
+        public void BuildFolderConfigs_OnlyKeysInMapAreEmitted()
         {
+            // Opaque-map model: keys absent from the map are not emitted (PATCH semantics). Unlike
+            // the old typed model, OrgSetByUser is no longer always emitted — only when set.
             SetupDefaults();
-            var folder = new FolderConfig
-            {
-                FolderPath = "/repo/myproject",
-                OrgSetByUser = false,
-                SnykCodeEnabled = false,
-                SnykOssEnabled = true,
-                SeverityFilterHigh = false,
-                ScanAutomatic = true,
-                IssueViewIgnoredIssues = false,
-                RiskScoreThreshold = 500,
-            };
+            var folder = new FolderConfig { FolderPath = "/repo/myproject" };
+            folder.Set(PflagKeys.SnykCodeEnabled, false);
+            folder.Set(PflagKeys.SnykOssEnabled, true);
+            folder.Set(PflagKeys.RiskScoreThreshold, 500);
             optionsMock.SetupGet(o => o.FolderConfigs).Returns(new List<FolderConfig> { folder });
 
             var result = cut.GetInitializationOptions();
@@ -489,77 +472,31 @@ namespace Snyk.VisualStudio.Extension.Tests.Language
 
             Assert.Equal(false, fc.Settings[PflagKeys.SnykCodeEnabled].Value);
             Assert.Equal(true, fc.Settings[PflagKeys.SnykOssEnabled].Value);
-            Assert.Equal(false, fc.Settings[PflagKeys.SeverityFilterHigh].Value);
-            Assert.Equal(true, fc.Settings[PflagKeys.ScanAutomatic].Value);
-            Assert.Equal(false, fc.Settings[PflagKeys.IssueViewIgnoredIssues].Value);
             Assert.Equal(500, fc.Settings[PflagKeys.RiskScoreThreshold].Value);
-            // Overrides not set on this folder must be omitted (PATCH semantics)
             Assert.False(fc.Settings.ContainsKey(PflagKeys.SnykIacEnabled));
             Assert.False(fc.Settings.ContainsKey(PflagKeys.SeverityFilterLow));
+            Assert.False(fc.Settings.ContainsKey(PflagKeys.OrgSetByUser));
         }
 
         [Fact]
-        public void BuildFolderConfigs_PerFolderOverrides_OmittedWhenNull()
+        public void BuildFolderConfigs_EmptyMap_EmitsEmptySettings()
         {
             SetupDefaults();
-            var folder = new FolderConfig
-            {
-                FolderPath = "/repo/myproject",
-                OrgSetByUser = false,
-                // all org-scope override fields left null
-            };
+            var folder = new FolderConfig { FolderPath = "/repo/myproject" };
             optionsMock.SetupGet(o => o.FolderConfigs).Returns(new List<FolderConfig> { folder });
 
             var result = cut.GetInitializationOptions();
             var fc = result.FolderConfigs[0];
 
-            Assert.False(fc.Settings.ContainsKey(PflagKeys.SnykOssEnabled));
-            Assert.False(fc.Settings.ContainsKey(PflagKeys.SnykCodeEnabled));
-            Assert.False(fc.Settings.ContainsKey(PflagKeys.SeverityFilterCritical));
-            Assert.False(fc.Settings.ContainsKey(PflagKeys.ScanAutomatic));
-            Assert.False(fc.Settings.ContainsKey(PflagKeys.IssueViewOpenIssues));
-            Assert.False(fc.Settings.ContainsKey(PflagKeys.RiskScoreThreshold));
-        }
-
-        [Fact]
-        public void BuildFolderConfigs_NullOptionalFields_OmitsThoseKeys()
-        {
-            SetupDefaults();
-            var folder = new FolderConfig
-            {
-                FolderPath = "/repo/myproject",
-                AdditionalParameters = null,
-                AdditionalEnv = null,
-                PreferredOrg = null,
-                BaseBranch = null,
-                ScanCommandConfig = null,
-                AutoDeterminedOrg = null,
-                OrgSetByUser = false,
-            };
-            optionsMock.SetupGet(o => o.FolderConfigs).Returns(new List<FolderConfig> { folder });
-
-            var result = cut.GetInitializationOptions();
-            var fc = result.FolderConfigs[0];
-
-            Assert.False(fc.Settings.ContainsKey(PflagKeys.AdditionalParameters));
-            Assert.False(fc.Settings.ContainsKey(PflagKeys.AdditionalEnvironment));
-            Assert.False(fc.Settings.ContainsKey(PflagKeys.PreferredOrg));
-            Assert.False(fc.Settings.ContainsKey(PflagKeys.BaseBranch));
-            Assert.False(fc.Settings.ContainsKey(PflagKeys.ScanCommandConfig));
-            // OrgSetByUser is always included (bool, not nullable)
-            Assert.True(fc.Settings.ContainsKey(PflagKeys.OrgSetByUser));
+            Assert.Empty(fc.Settings);
         }
 
         [Fact]
         public void BuildFolderConfigs_AdditionalParameters_SerializesAsArray()
         {
             SetupDefaults();
-            var folder = new FolderConfig
-            {
-                FolderPath = "/repo",
-                AdditionalParameters = new List<string> { "--debug" },
-                OrgSetByUser = false,
-            };
+            var folder = new FolderConfig { FolderPath = "/repo" };
+            folder.Set(PflagKeys.AdditionalParameters, new List<string> { "--debug" });
             optionsMock.SetupGet(o => o.FolderConfigs).Returns(new List<FolderConfig> { folder });
 
             var result = cut.GetInitializationOptions();

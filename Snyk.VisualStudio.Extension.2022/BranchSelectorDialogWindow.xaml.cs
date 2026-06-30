@@ -29,9 +29,9 @@ namespace Snyk.VisualStudio.Extension
                 return;
             LblFolderPathForBranch.Text = FolderConfig.FolderPath;
             LblFolderPathForReferenceFolder.Text = FolderConfig.FolderPath;
-            CbBranchList.ItemsSource = FolderConfig.LocalBranches;
-            CbBranchList.SelectedItem = FolderConfig.BaseBranch;
-            SelectedFolderPath.Text = FolderConfig.ReferenceFolderPath;
+            CbBranchList.ItemsSource = FolderConfig.GetStringList(PflagKeys.LocalBranches);
+            CbBranchList.SelectedItem = FolderConfig.GetString(PflagKeys.BaseBranch);
+            SelectedFolderPath.Text = FolderConfig.GetString(PflagKeys.ReferenceFolder);
             IsOpen = true;
         }
 
@@ -49,8 +49,8 @@ namespace Snyk.VisualStudio.Extension
             {
                 return;
             }
-            FolderConfig.BaseBranch = CbBranchList.SelectedItem.ToString();
-            FolderConfig.ReferenceFolderPath = SelectedFolderPath.Text;
+            FolderConfig.SetString(PflagKeys.BaseBranch, CbBranchList.SelectedItem.ToString());
+            FolderConfig.SetString(PflagKeys.ReferenceFolder, SelectedFolderPath.Text);
 
             var folderConfigList = this.serviceProvider.Options.FolderConfigs;
             var currentList = folderConfigList.Where(x => x.FolderPath != FolderConfig.FolderPath).ToList();

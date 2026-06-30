@@ -1,12 +1,39 @@
+using System;
 using System.Collections.Generic;
 using Newtonsoft.Json.Linq;
 using Snyk.VisualStudio.Extension.Language;
+using Snyk.VisualStudio.Extension.Utils;
 using Xunit;
 
 namespace Snyk.VisualStudio.Extension.Tests.Language
 {
     public class FolderConfigApplierTests
     {
+        [Fact]
+        public void Deserialize_LegacyTypedFolderConfigJson_DoesNotThrow_AndKeepsFolderPath()
+        {
+            // Persistence migration: settings.json written by a pre-opaque-map build stored typed
+            // folder props (baseBranch, preferredOrg, ...). After the refactor those are unknown JSON
+            // members; deserialization must tolerate them (no MissingMemberHandling.Error) and keep
+            // FolderPath. The user-set keys live on the LS, which repopulates Settings on its next
+            // $/snyk.configuration push — so a near-empty map on load is fine.
+            const string legacyJson = @"{
+                ""folderPath"": ""/repo"",
+                ""baseBranch"": ""main"",
+                ""referenceFolderPath"": ""C:\\refs\\main"",
+                ""preferredOrg"": ""my-org"",
+                ""orgSetByUser"": true,
+                ""snykOssEnabled"": true,
+                ""riskScoreThreshold"": 500
+            }";
+
+            var fc = Json.Deserialize<FolderConfig>(legacyJson);
+
+            Assert.NotNull(fc);
+            Assert.Equal("/repo", fc.FolderPath);
+            Assert.NotNull(fc.Settings); // default-initialized, not null
+        }
+
         [Fact]
         public void Apply_AddsNewEntry_WhenPathNotInExisting()
         {
@@ -25,10 +52,7 @@ namespace Snyk.VisualStudio.Extension.Tests.Language
         [Fact]
         public void Apply_ReplacesExistingEntry_WhenPathMatches()
         {
-            var existing = new List<FolderConfig>
-            {
-                new FolderConfig { FolderPath = "/repo", PreferredOrg = "old-org" }
-            };
+            var existing = new List<FolderConfig> { NewFolderConfig("/repo", PflagKeys.PreferredOrg, "old-org") };
             var incoming = new List<LspFolderConfig>
             {
                 new LspFolderConfig
@@ -44,16 +68,13 @@ namespace Snyk.VisualStudio.Extension.Tests.Language
             var result = FolderConfigApplier.Apply(existing, incoming);
 
             Assert.Single(result);
-            Assert.Equal("new-org", result[0].PreferredOrg);
+            Assert.Equal("new-org", result[0].GetString(PflagKeys.PreferredOrg));
         }
 
         [Fact]
         public void Apply_PathMatchIsCaseInsensitive()
         {
-            var existing = new List<FolderConfig>
-            {
-                new FolderConfig { FolderPath = "/Repo", PreferredOrg = "old-org" }
-            };
+            var existing = new List<FolderConfig> { NewFolderConfig("/Repo", PflagKeys.PreferredOrg, "old-org") };
             var incoming = new List<LspFolderConfig>
             {
                 new LspFolderConfig
@@ -69,7 +90,7 @@ namespace Snyk.VisualStudio.Extension.Tests.Language
             var result = FolderConfigApplier.Apply(existing, incoming);
 
             Assert.Single(result);
-            Assert.Equal("new-org", result[0].PreferredOrg);
+            Assert.Equal("new-org", result[0].GetString(PflagKeys.PreferredOrg));
         }
 
         [Fact]
@@ -78,10 +99,7 @@ namespace Snyk.VisualStudio.Extension.Tests.Language
             // LS is source of truth: an existing entry for a path the LS no longer sends
             // (e.g. a previously-opened solution in the same VS session) must be dropped, so a
             // later FirstOrDefault can't pick it up by mistake.
-            var existing = new List<FolderConfig>
-            {
-                new FolderConfig { FolderPath = "/old-solution", PreferredOrg = "stale-org" }
-            };
+            var existing = new List<FolderConfig> { NewFolderConfig("/old-solution", PflagKeys.PreferredOrg, "stale-org") };
             var incoming = new List<LspFolderConfig>
             {
                 new LspFolderConfig { FolderPath = "/current-solution", Settings = new Dictionary<string, ConfigSetting>() }
@@ -95,15 +113,11 @@ namespace Snyk.VisualStudio.Extension.Tests.Language
         }
 
         [Fact]
-        public void Apply_PreservesLocalReferenceFolderPath_AcrossSync()
+        public void Apply_ReferenceFolder_ComesFromLsPayload()
         {
-            // ReferenceFolderPath is extension-local (set via the Branch Selector, never sent by
-            // the LS). A config push rebuilds the entry from the LS payload, so it must carry the
-            // prior local value over rather than wiping it.
-            var existing = new List<FolderConfig>
-            {
-                new FolderConfig { FolderPath = "/repo", ReferenceFolderPath = @"C:\refs\main" }
-            };
+            // reference_folder now lives in the LS-sent settings map (the old extension-local
+            // carry-over was removed). A config push must surface whatever the LS sent verbatim.
+            var existing = new List<FolderConfig> { new FolderConfig { FolderPath = "/repo" } };
             var incoming = new List<LspFolderConfig>
             {
                 new LspFolderConfig
@@ -111,6 +125,7 @@ namespace Snyk.VisualStudio.Extension.Tests.Language
                     FolderPath = "/repo",
                     Settings = new Dictionary<string, ConfigSetting>
                     {
+                        [PflagKeys.ReferenceFolder] = ConfigSetting.Of(@"C:\refs\main"),
                         [PflagKeys.PreferredOrg] = ConfigSetting.Of("new-org")
                     }
                 }
@@ -119,8 +134,8 @@ namespace Snyk.VisualStudio.Extension.Tests.Language
             var result = FolderConfigApplier.Apply(existing, incoming);
 
             Assert.Single(result);
-            Assert.Equal(@"C:\refs\main", result[0].ReferenceFolderPath);
-            Assert.Equal("new-org", result[0].PreferredOrg);
+            Assert.Equal(@"C:\refs\main", result[0].GetString(PflagKeys.ReferenceFolder));
+            Assert.Equal("new-org", result[0].GetString(PflagKeys.PreferredOrg));
         }
 
         [Fact]
@@ -176,7 +191,7 @@ namespace Snyk.VisualStudio.Extension.Tests.Language
 
             var fc = FolderConfigApplier.ToFolderConfig(src);
 
-            Assert.Equal("my-org", fc.PreferredOrg);
+            Assert.Equal("my-org", fc.GetString(PflagKeys.PreferredOrg));
         }
 
         [Fact]
@@ -193,7 +208,7 @@ namespace Snyk.VisualStudio.Extension.Tests.Language
 
             var fc = FolderConfigApplier.ToFolderConfig(src);
 
-            Assert.Equal("auto-org", fc.AutoDeterminedOrg);
+            Assert.Equal("auto-org", fc.GetString(PflagKeys.AutoDeterminedOrg));
         }
 
         [Fact]
@@ -210,7 +225,7 @@ namespace Snyk.VisualStudio.Extension.Tests.Language
 
             var fc = FolderConfigApplier.ToFolderConfig(src);
 
-            Assert.True(fc.OrgSetByUser);
+            Assert.True(Convert.ToBoolean(fc.Settings[PflagKeys.OrgSetByUser].Value));
         }
 
         [Fact]
@@ -227,7 +242,7 @@ namespace Snyk.VisualStudio.Extension.Tests.Language
 
             var fc = FolderConfigApplier.ToFolderConfig(src);
 
-            Assert.Equal("main", fc.BaseBranch);
+            Assert.Equal("main", fc.GetString(PflagKeys.BaseBranch));
         }
 
         [Fact]
@@ -245,7 +260,7 @@ namespace Snyk.VisualStudio.Extension.Tests.Language
 
             var fc = FolderConfigApplier.ToFolderConfig(src);
 
-            Assert.Equal(branches, fc.LocalBranches);
+            Assert.Equal(branches, fc.GetStringList(PflagKeys.LocalBranches));
         }
 
         [Fact]
@@ -262,7 +277,7 @@ namespace Snyk.VisualStudio.Extension.Tests.Language
 
             var fc = FolderConfigApplier.ToFolderConfig(src);
 
-            Assert.Equal(new List<string> { "-d", "--flag" }, fc.AdditionalParameters);
+            Assert.Equal(new List<string> { "-d", "--flag" }, fc.GetStringList(PflagKeys.AdditionalParameters));
         }
 
         [Fact]
@@ -279,7 +294,7 @@ namespace Snyk.VisualStudio.Extension.Tests.Language
 
             var fc = FolderConfigApplier.ToFolderConfig(src);
 
-            Assert.Equal("KEY=VALUE", fc.AdditionalEnv);
+            Assert.Equal("KEY=VALUE", fc.GetString(PflagKeys.AdditionalEnvironment));
         }
 
         [Fact]
@@ -296,55 +311,32 @@ namespace Snyk.VisualStudio.Extension.Tests.Language
 
             var fc = FolderConfigApplier.ToFolderConfig(src);
 
-            Assert.Null(fc.PreferredOrg);
+            Assert.Null(fc.GetString(PflagKeys.PreferredOrg));
         }
 
         [Fact]
-        public void ToFolderConfig_SkipsBadValueWithoutThrowing()
+        public void ToFolderConfig_CopiesSettingsVerbatim_WithoutParsing()
         {
+            // The applier no longer parses inbound values per-key — it copies the settings map
+            // verbatim. Odd/mistyped values that the old switch would have skipped must now survive
+            // untouched in the map, and the copy must not throw on them.
             var src = new LspFolderConfig
             {
                 FolderPath = "/repo",
                 Settings = new Dictionary<string, ConfigSetting>
                 {
-                    // org_set_by_user expects bool; send a non-parseable object
-                    [PflagKeys.OrgSetByUser] = new ConfigSetting { Value = JToken.Parse(@"{ ""not"": ""a bool"" }") }
-                }
-            };
-
-            var fc = FolderConfigApplier.ToFolderConfig(src);
-
-            // Default false — key skipped, no exception
-            Assert.False(fc.OrgSetByUser);
-        }
-
-        [Fact]
-        public void ToFolderConfig_SkipsBadCollectionValuesWithoutThrowing()
-        {
-            // The list/dict-typed keys go through ToObject<T>, which throws on a mistyped JToken.
-            // A malformed LS payload must be skipped per-key, not abort the whole conversion.
-            var src = new LspFolderConfig
-            {
-                FolderPath = "/repo",
-                Settings = new Dictionary<string, ConfigSetting>
-                {
-                    // AdditionalParameters expects an array of strings — send a scalar.
+                    // A scalar where a string-list would be expected — copied raw, no parse.
                     [PflagKeys.AdditionalParameters] = new ConfigSetting { Value = JToken.Parse("42") },
-                    // LocalBranches expects an array — send a string scalar.
-                    [PflagKeys.LocalBranches] = new ConfigSetting { Value = JToken.Parse(@"""main""") },
-                    // ScanCommandConfig expects an object map — send an array.
-                    [PflagKeys.ScanCommandConfig] = new ConfigSetting { Value = JToken.Parse(@"[1, 2, 3]") },
-                    // A well-formed key alongside the bad ones must still be applied.
+                    // A well-formed key alongside it.
                     [PflagKeys.PreferredOrg] = ConfigSetting.Of("my-org"),
                 }
             };
 
             var fc = FolderConfigApplier.ToFolderConfig(src);
 
-            Assert.Null(fc.AdditionalParameters);
-            Assert.Null(fc.LocalBranches);
-            Assert.Null(fc.ScanCommandConfig);
-            Assert.Equal("my-org", fc.PreferredOrg);
+            // The raw value survives verbatim in the map.
+            Assert.Equal(42, ((JToken)fc.Settings[PflagKeys.AdditionalParameters].Value).Value<int>());
+            Assert.Equal("my-org", fc.GetString(PflagKeys.PreferredOrg));
         }
 
         [Fact]
@@ -355,7 +347,7 @@ namespace Snyk.VisualStudio.Extension.Tests.Language
             var fc = FolderConfigApplier.ToFolderConfig(src);
 
             Assert.Equal("/repo", fc.FolderPath);
-            Assert.Null(fc.PreferredOrg);
+            Assert.Empty(fc.Settings);
         }
 
         [Fact]
@@ -376,7 +368,14 @@ namespace Snyk.VisualStudio.Extension.Tests.Language
 
             var result = FolderConfigApplier.Apply(new List<FolderConfig>(), incoming);
 
-            Assert.Equal(branches, result[0].LocalBranches);
+            Assert.Equal(branches, result[0].GetStringList(PflagKeys.LocalBranches));
+        }
+
+        private static FolderConfig NewFolderConfig(string folderPath, string key, string value)
+        {
+            var fc = new FolderConfig { FolderPath = folderPath };
+            fc.SetString(key, value);
+            return fc;
         }
     }
 }
