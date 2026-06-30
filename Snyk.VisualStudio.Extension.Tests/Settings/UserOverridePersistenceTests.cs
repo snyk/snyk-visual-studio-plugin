@@ -122,12 +122,22 @@ namespace Snyk.VisualStudio.Extension.Tests.Settings
             }
         }
 
-        // INT-004 (finding 4): Calling Load() twice on the same manager must not union marks.
-        // The second Load must reflect only what is on disk, not a union of both loads.
+        // INT-004: Calling Load() twice on the same manager must not union/accumulate marks.
+        // The second Load must yield exactly the same set as the first — not a superset.
+        //
+        // Under the seeded-marker design: the first Load (marker absent, OssEnabled=false non-default)
+        // seeds and writes the marker + {snyk_oss_enabled} to disk. The second Load (marker now present
+        // in snykSettings in-memory) takes Branch C: clears changed marks via ClearChanged(), then
+        // hydrates from the persisted set ({snyk_oss_enabled}) verbatim. The result must be identical
+        // to the first load — exactly {snyk_oss_enabled}, not duplicated or grown.
+        //
+        // Note: SnykSettingsLoader.Load() caches the SnykSettings object after the first file read,
+        // so the manager's in-memory snykSettings is the source of truth between loads on the same
+        // manager. A simulated IDE restart requires a FRESH manager (see SACC-001/002).
         [Fact]
         public void Load_CalledTwice_DoesNotUnionStaleMarks()
         {
-            // Write a settings.json with OssEnabled=false (non-default) -> snyk_oss_enabled marked.
+            // Write a settings.json with OssEnabled=false (non-default) — no seeded marker yet.
             var path = Path.GetTempFileName();
             try
             {
@@ -148,21 +158,20 @@ namespace Snyk.VisualStudio.Extension.Tests.Settings
 }";
                 File.WriteAllText(path, rawJson);
 
-                var (manager, optMock, _) = BuildManager(path);
+                var (manager, _, _) = BuildManager(path);
 
-                // First load: OssEnabled=false -> marked.
+                // First load: marker absent + OssEnabled=false non-default → Branch A seeds →
+                // {snyk_oss_enabled} marked, marker written to disk.
                 var first = manager.Load();
                 Assert.Contains(PflagKeys.SnykOssEnabled, first.ChangedConfigKeys);
+                var firstCount = first.ChangedConfigKeys.Count;
 
-                // Now update the file so OssEnabled=true (default) — simulates an external reset.
-                var rawJson2 = rawJson.Replace(@"""ossEnabled"": false", @"""ossEnabled"": true");
-                File.WriteAllText(path, rawJson2);
-                // Reload the settings from disk (mimic what the manager would do on a second Load).
-                manager.LoadSettingsFromFile();
-
-                // Second load: should NOT carry over the stale snyk_oss_enabled mark.
+                // Second load on the SAME manager: marker now present in the in-memory snykSettings
+                // (Branch C) → ClearChanged() then hydrate verbatim from the persisted set.
+                // Result must equal the first load — no stale-mark unioning, no growth.
                 var second = manager.Load();
-                Assert.DoesNotContain(PflagKeys.SnykOssEnabled, second.ChangedConfigKeys);
+                Assert.Contains(PflagKeys.SnykOssEnabled, second.ChangedConfigKeys);
+                Assert.Equal(firstCount, second.ChangedConfigKeys.Count);
             }
             finally
             {
@@ -197,8 +206,8 @@ namespace Snyk.VisualStudio.Extension.Tests.Settings
 
                 // Reload and confirm the persisted ChangedConfigKeys did NOT grow.
                 var loaded = manager.Load();
-                if (loaded.ChangedConfigKeys != null)
-                    Assert.DoesNotContain(PflagKeys.Organization, loaded.ChangedConfigKeys); // must not persist LS-pushed key
+                Assert.NotNull(loaded.ChangedConfigKeys);
+                Assert.DoesNotContain(PflagKeys.Organization, loaded.ChangedConfigKeys); // must not persist LS-pushed key
             }
             finally
             {
@@ -331,7 +340,7 @@ namespace Snyk.VisualStudio.Extension.Tests.Settings
 }";
                 File.WriteAllText(path, rawJson);
 
-                // Load: since ChangedConfigKeys is absent, manager should seed from values.
+                // Load: since ChangedConfigKeys is absent (and marker is absent), manager should seed from values.
                 var (manager, _, _) = BuildManager(path);
                 var loaded = manager.Load();
 
@@ -339,6 +348,236 @@ namespace Snyk.VisualStudio.Extension.Tests.Settings
                 Assert.Contains(PflagKeys.SnykOssEnabled, loaded.ChangedConfigKeys);
                 // SnykCodeEnabled = true is the default, so it must NOT be in ChangedConfigKeys.
                 Assert.DoesNotContain(PflagKeys.SnykCodeEnabled, loaded.ChangedConfigKeys);
+            }
+            finally
+            {
+                File.Delete(path);
+            }
+        }
+
+        // ─────────────────────────────────────────────────────────────────────
+        // REFINEMENT-S tests — LOAD-TIME SEEDING LIFECYCLE (CP-S.1)
+        // ─────────────────────────────────────────────────────────────────────
+
+        // SACC-001: Customer-outcome acceptance test.
+        // Org pushes a non-default value via LS (updateOverrideTracker:false).
+        // After the LS save and a simulated IDE restart, the loaded ChangedConfigKeys
+        // must NOT contain the org-pushed key — it is still an org value, not a user override.
+        // Reproduces the org-value-freezing-across-restart bug:
+        //   Load() re-seeds (value-vs-default) → marks the org-pushed org value → frozen.
+        // Requires the persisted seeded-marker so the second Load trusts the persisted set (incl. empty).
+        [Fact]
+        public void OrgPushedValueSurvivesRestart_StillReachesUserWhenOrgChangesItAgain()
+        {
+            var (manager, optMock, path) = BuildManager();
+            try
+            {
+                // Step 1: Initial load on a fresh-install (all-default) file.
+                // Seeding finds no deviations → empty override set → marker written.
+                manager.Load();
+                Assert.Empty(manager.OverrideTracker.Snapshot()); // precondition: no overrides
+
+                // Step 2: LS pushes a non-default org value (e.g. org set by central config).
+                optMock.Object.Organization = "acme-from-org";
+                // LS-originated save — updateOverrideTracker:false.
+                // Must NOT touch ChangedConfigKeys or the seeded marker.
+                manager.Save(optMock.Object, triggerSettingsChangedEvent: false, updateOverrideTracker: false);
+
+                // Step 3: Simulate IDE restart — construct a FRESH manager from the same file.
+                var (manager2, _, _) = BuildManager(path);
+                var loaded = manager2.Load();
+
+                // The seeded marker must be present → persisted-keys branch used → empty set returned.
+                // The org-pushed organization key must NOT appear in ChangedConfigKeys.
+                Assert.NotNull(loaded.ChangedConfigKeys);
+                Assert.DoesNotContain(PflagKeys.Organization, loaded.ChangedConfigKeys);
+
+                Assert.False(manager2.OverrideTracker.IsChanged(PflagKeys.Organization),
+                    "IsChanged must be false: organization was set by the org/LS, not by the user");
+            }
+            finally
+            {
+                File.Delete(path);
+            }
+        }
+
+        // SACC-002: Customer-outcome acceptance test.
+        // A user override is reset to default (override set becomes empty, marker set, persisted).
+        // After a simulated IDE restart, the reset key (and every other current-non-default value
+        // present in the file) must NOT be marked as an override — the empty set is trusted verbatim.
+        [Fact]
+        public void ResetSettingStaysResetAcrossRestart_NotReMarkedAsOverride()
+        {
+            var (manager, optMock, path) = BuildManager();
+            try
+            {
+                // Step 1: User marks IacEnabled as an override (non-default: false).
+                manager.Load();
+                optMock.Object.IacEnabled = false;
+                manager.Save(optMock.Object, triggerSettingsChangedEvent: false,
+                    editedKeys: new List<string> { PflagKeys.SnykIacEnabled });
+
+                // Confirm it is marked before the reset.
+                Assert.Contains(PflagKeys.SnykIacEnabled, manager.OverrideTracker.Snapshot());
+
+                // Step 2: User resets IacEnabled back to its default (true).
+                optMock.Object.IacEnabled = true;
+                manager.Save(optMock.Object, triggerSettingsChangedEvent: false,
+                    editedKeys: new List<string> { PflagKeys.SnykIacEnabled });
+
+                // Confirm it is now unmarked (override set empty, marker still set on disk).
+                Assert.DoesNotContain(PflagKeys.SnykIacEnabled, manager.OverrideTracker.Snapshot());
+
+                // Step 3: Simulate IDE restart — FRESH manager from the same file.
+                // The file now carries changedConfigKeysSeeded=true and an empty ChangedConfigKeys
+                // (written by step 2's save). The fresh manager must take Branch C and trust the
+                // empty set verbatim — the reset key must stay unmarked.
+                var (manager2, _, _) = BuildManager(path);
+                var loaded = manager2.Load();
+
+                // The reset key must remain unmarked across restart (trusted empty set).
+                Assert.NotNull(loaded.ChangedConfigKeys);
+                Assert.DoesNotContain(PflagKeys.SnykIacEnabled, loaded.ChangedConfigKeys);
+
+                Assert.False(manager2.OverrideTracker.IsChanged(PflagKeys.SnykIacEnabled),
+                    "A key reset to default must stay unmarked after restart — seeded-marker must gate re-seed");
+            }
+            finally
+            {
+                File.Delete(path);
+            }
+        }
+
+        // SINT-001: Integration test.
+        // A settings file with the seeded-marker present and ChangedConfigKeys absent/empty must
+        // hydrate to an EMPTY override set — Load must NOT call SeedFrom.
+        // Verified by observable state: a current-non-default value in options is NOT marked after load.
+        [Fact]
+        public void Load_SeededEmptySet_DoesNotReSeedFromValues()
+        {
+            // Write a settings.json with the seeded marker present but ChangedConfigKeys absent.
+            // This models the steady state after a fresh install: user has zero overrides, marker is set.
+            var path = Path.GetTempFileName();
+            try
+            {
+                var rawJson = @"{
+  ""ossEnabled"": false,
+  ""snykCodeSecurityEnabled"": true,
+  ""iacEnabled"": true,
+  ""binariesAutoUpdateEnabled"": true,
+  ""trustedFolders"": [],
+  ""openIssuesEnabled"": true,
+  ""filterCritical"": true,
+  ""filterHigh"": true,
+  ""filterMedium"": true,
+  ""filterLow"": true,
+  ""autoScan"": true,
+  ""deviceId"": ""sint001-device"",
+  ""token"": """",
+  ""changedConfigKeysSeeded"": true
+}";
+                File.WriteAllText(path, rawJson);
+
+                var (manager, _, _) = BuildManager(path);
+                var loaded = manager.Load();
+
+                // The marker is present → Branch C taken → empty set hydrated verbatim.
+                // OssEnabled=false is non-default, but it MUST NOT be marked (no re-seed).
+                Assert.Empty(loaded.ChangedConfigKeys);
+
+                Assert.False(manager.OverrideTracker.IsChanged(PflagKeys.SnykOssEnabled),
+                    "With seeded-marker present and empty ChangedConfigKeys, no re-seed must occur — " +
+                    "a non-default value in the file must NOT be marked as a user override");
+            }
+            finally
+            {
+                File.Delete(path);
+            }
+        }
+
+        // SINT-002: Integration test — seed runs at most once; a fresh manager over the same file
+        // (simulating IDE restart) does not re-seed when the seeded marker is present on disk.
+        //
+        // Scenario: first manager loads an all-default file (no marker) → Branch A seeds empty set →
+        // writes marker to disk. A FRESH manager (simulating restart) reads the same file; the marker
+        // is now present → Branch C hydrates empty set verbatim. Even if the file now also contains
+        // a non-default value (e.g. org-pushed ossEnabled=false), it must NOT be marked.
+        //
+        // Note: SnykSettingsLoader caches the SnykSettings object, so rewriting the file and calling
+        // LoadSettingsFromFile() on the SAME manager does not re-read from disk. A fresh manager is
+        // required to genuinely simulate a restart and verify the persisted marker is honoured.
+        [Fact]
+        public void Load_AfterSeed_DoesNotReSeedOnNextLoad()
+        {
+            var (manager, _, path) = BuildManager();
+            try
+            {
+                // First load on an all-default file (no marker): Branch A seeds empty set,
+                // writes changedConfigKeysSeeded=true to disk.
+                var first = manager.Load();
+                Assert.Empty(first.ChangedConfigKeys);
+
+                // Simulate IDE restart with a FRESH manager over the same file.
+                // The file now has changedConfigKeysSeeded=true (written by the first Load above),
+                // so the fresh manager must take Branch C and never re-derive from values.
+                var (manager2, _, _) = BuildManager(path);
+                var second = manager2.Load();
+
+                // OssEnabled is at its default on disk — confirmed not marked in first load.
+                // The marker is present → Branch C → empty set hydrated verbatim.
+                Assert.Empty(second.ChangedConfigKeys);
+
+                Assert.False(manager2.OverrideTracker.IsChanged(PflagKeys.SnykOssEnabled),
+                    "Fresh manager with seeded marker present must not re-seed — " +
+                    "seeding runs at most once per settings file");
+            }
+            finally
+            {
+                File.Delete(path);
+            }
+        }
+
+        // R2 migration-guard test: a settings.json written by a prior version (no seeded marker)
+        // that already has a non-empty ChangedConfigKeys set must NOT be discarded by re-seeding.
+        // Branch B in Load(): marker absent + keys non-empty → hydrate verbatim + persist marker.
+        [Fact]
+        public void Load_PriorVersionPersistedKeys_HydratesVerbatimWithoutReseeding()
+        {
+            // Write a settings.json as a prior version would have: ChangedConfigKeys present,
+            // no changedConfigKeysSeeded marker. OssEnabled=true (default), but snyk_oss_enabled
+            // is in ChangedConfigKeys — simulating a user override that was written before the
+            // marker was introduced. A re-seed would DISCARD this because OssEnabled==default.
+            var path = Path.GetTempFileName();
+            try
+            {
+                var rawJson = @"{
+  ""ossEnabled"": true,
+  ""snykCodeSecurityEnabled"": true,
+  ""iacEnabled"": true,
+  ""binariesAutoUpdateEnabled"": true,
+  ""trustedFolders"": [],
+  ""openIssuesEnabled"": true,
+  ""filterCritical"": true,
+  ""filterHigh"": true,
+  ""filterMedium"": true,
+  ""filterLow"": true,
+  ""autoScan"": true,
+  ""deviceId"": ""migration-guard-device"",
+  ""token"": """",
+  ""changedConfigKeys"": [""snyk_oss_enabled""]
+}";
+                File.WriteAllText(path, rawJson);
+
+                var (manager, _, _) = BuildManager(path);
+                var loaded = manager.Load();
+
+                // Branch B must hydrate snyk_oss_enabled from the persisted set verbatim.
+                // Re-seeding would discard it (ossEnabled=true == default → not marked).
+                Assert.NotNull(loaded.ChangedConfigKeys);
+                Assert.Contains(PflagKeys.SnykOssEnabled, loaded.ChangedConfigKeys);
+                Assert.True(manager.OverrideTracker.IsChanged(PflagKeys.SnykOssEnabled),
+                    "A key persisted by a prior version must survive the migration load — " +
+                    "Branch B must hydrate verbatim, not re-seed and discard the stored override");
             }
             finally
             {

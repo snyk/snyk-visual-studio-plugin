@@ -155,20 +155,56 @@ namespace Snyk.VisualStudio.Extension.Settings
             // signals enqueued by ApplyUserEdits between saves must survive into the next BuildSettingsMap call.
             overrideTracker.ClearChanged();
 
-            // Hydrate the in-memory tracker from the persisted set.
-            // If the persisted set is null/empty (first load / upgrade path), seed by comparing
-            // each value against its plugin default so pre-existing non-default values are picked up.
-            // SeedFrom sets IsSeeded = true internally.
-            if (persistedKeys == null || persistedKeys.Count == 0)
+            // Seeded-marker lifecycle (IDE-2152 refinement S) — three branches:
+            //
+            // Branch A — marker ABSENT + keys null/empty (true first run / fresh install):
+            //   Seed once from value-vs-default (SeedFrom), then IMMEDIATELY persist both the
+            //   resulting ChangedConfigKeys and the marker so the seed is authoritative even if
+            //   the IDE crashes before a user-edit save. SeedFrom sets IsSeeded = true.
+            //
+            // Branch B — marker ABSENT + keys non-empty (migration: prior version wrote a set
+            //   without the marker — treat as already-seeded, do NOT re-derive):
+            //   Hydrate verbatim (Mark each key + MarkSeeded), then persist the marker so the
+            //   next load follows Branch C and never re-derives.
+            //
+            // Branch C — marker PRESENT (steady state):
+            //   The persisted set is the durable source of truth. Hydrate verbatim including an
+            //   empty set, which means "seeded, zero user overrides." Never re-derive.
+            if (!snykSettings.ChangedConfigKeysSeeded && (persistedKeys == null || persistedKeys.Count == 0))
             {
+                // Branch A: true first run — seed from value-vs-default.
+                // SeedFrom() performs a full Clear() (changed + pendingResets) before deriving marks,
+                // so any pendingResets accumulated before this load are intentionally discarded here
+                // (there is no prior user session to have enqueued them). The "pendingResets preserved
+                // by ClearChanged()" note above applies to Branches B and C only.
                 overrideTracker.SeedFrom(options);
+                var seeded = overrideTracker.Snapshot();
+                // ChangedConfigKeys is omitted from settings.json when null (NullValueHandling.Ignore
+                // on the HashSet property), which happens when seeding finds zero non-default values.
+                // ChangedConfigKeysSeeded (the bool marker) is omitted when false
+                // (DefaultValueHandling.Ignore on the bool property) — it is now set to true so it
+                // will be written, marking this file as seeded for all future loads (Branch C).
+                snykSettings.ChangedConfigKeys = seeded.Count > 0 ? seeded : null;
+                snykSettings.ChangedConfigKeysSeeded = true;
+                SaveSettingsToFile();
+            }
+            else if (!snykSettings.ChangedConfigKeysSeeded)
+            {
+                // Branch B: marker absent but keys non-empty — prior-version migration.
+                // Hydrate verbatim; persist the marker so next load uses Branch C.
+                foreach (var key in persistedKeys)
+                    overrideTracker.Mark(key);
+                overrideTracker.MarkSeeded();
+                snykSettings.ChangedConfigKeysSeeded = true;
+                SaveSettingsToFile();
             }
             else
             {
-                foreach (var key in persistedKeys)
+                // Branch C: marker present — hydrate verbatim (may be null/empty; that is correct).
+                foreach (var key in persistedKeys ?? System.Linq.Enumerable.Empty<string>())
                     overrideTracker.Mark(key);
-                // Mark seeded after the explicit Mark-loop so BuildSettingsMap's IsSeeded gate
-                // becomes active once the tracker has been hydrated from persisted keys.
+                // MarkSeeded activates BuildSettingsMap's IsSeeded gate so it consults the
+                // tracker rather than falling back to changed:true for every key.
                 overrideTracker.MarkSeeded();
             }
 

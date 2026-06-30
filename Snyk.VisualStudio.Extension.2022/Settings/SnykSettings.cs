@@ -104,5 +104,24 @@ namespace Snyk.VisualStudio.Extension.Settings
         /// </summary>
         [JsonProperty(NullValueHandling = NullValueHandling.Ignore)]
         public HashSet<string> ChangedConfigKeys { get; set; }
+
+        /// <summary>
+        /// Persisted seeded-marker for the load-time seeding lifecycle (IDE-2152).
+        /// Absent (false) on pre-feature / fresh-install settings files. <see cref="SnykOptionsManager.Load"/>
+        /// checks this flag to determine whether the override set has ever been seeded:
+        /// <list type="bullet">
+        ///   <item>Absent/false + <see cref="ChangedConfigKeys"/> null/empty → seed once from value-vs-default,
+        ///   then persist both the resulting set and this marker to disk.</item>
+        ///   <item>Absent/false + <see cref="ChangedConfigKeys"/> non-empty → keys were written by a prior
+        ///   version without the marker; hydrate verbatim and persist the marker.</item>
+        ///   <item>True → the persisted set is the authoritative source of truth; hydrate verbatim
+        ///   (including an empty set = "seeded, zero user overrides").</item>
+        /// </list>
+        /// <see cref="DefaultValueHandling.Ignore"/> keeps the key out of settings.json when false
+        /// (matching "absent on pre-feature files"). IDE-only: never added to
+        /// <see cref="ChangedConfigKeys"/> and never sent over the language-server wire.
+        /// </summary>
+        [JsonProperty(DefaultValueHandling = DefaultValueHandling.Ignore)]
+        public bool ChangedConfigKeysSeeded { get; set; }
     }
 }
