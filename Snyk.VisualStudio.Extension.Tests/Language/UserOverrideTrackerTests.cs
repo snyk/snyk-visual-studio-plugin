@@ -96,8 +96,7 @@ namespace Snyk.VisualStudio.Extension.Tests.Language
             // SeedFrom with all-default options — should clear the prior mark.
             sut.SeedFrom(DefaultOptions().Object);
 
-            Assert.Empty(sut.Snapshot(),
-                "SeedFrom with all-default options must clear prior marks — replace, not accumulate");
+            Assert.Empty(sut.Snapshot()); // SeedFrom with all-default options must clear prior marks
             Assert.False(sut.IsChanged(PflagKeys.SnykOssEnabled),
                 "A key marked before SeedFrom(all-defaults) must no longer be considered changed");
         }
@@ -118,9 +117,7 @@ namespace Snyk.VisualStudio.Extension.Tests.Language
 
             // The pending reset must be gone — Clear() at the top of SeedFrom drains it.
             var resets = sut.ConsumePendingResets();
-            Assert.DoesNotContain(PflagKeys.SnykOssEnabled, resets,
-                "SeedFrom must clear pendingResets (uses Clear(), not ClearChanged()). " +
-                "A stale pending reset before SeedFrom must NOT survive into BuildSettingsMap.");
+            Assert.DoesNotContain(PflagKeys.SnykOssEnabled, resets); // SeedFrom must drain pendingResets
         }
 
         // UNIT-005: SeedFrom marks only keys whose persisted value differs from the plugin default.
@@ -308,8 +305,8 @@ namespace Snyk.VisualStudio.Extension.Tests.Language
             allNonDefault.SetupGet(x => x.IgnoredIssuesEnabled).Returns(true);
             allNonDefault.SetupGet(x => x.CustomEndpoint).Returns("https://custom.endpoint");
             allNonDefault.SetupGet(x => x.ApiToken).Returns(
-                new Authentication.AuthenticationToken(Authentication.AuthenticationType.Pat, "tok"));
-            allNonDefault.SetupGet(x => x.AuthenticationMethod).Returns(Authentication.AuthenticationType.Pat);
+                new AuthenticationToken(AuthenticationType.Pat, "tok"));
+            allNonDefault.SetupGet(x => x.AuthenticationMethod).Returns(AuthenticationType.Pat);
             allNonDefault.SetupGet(x => x.Organization).Returns("my-org");
             allNonDefault.SetupGet(x => x.IgnoreUnknownCA).Returns(true);
             allNonDefault.SetupGet(x => x.BinariesAutoUpdate).Returns(false);
@@ -332,17 +329,13 @@ namespace Snyk.VisualStudio.Extension.Tests.Language
                 // AlwaysChanged keys are always IsChanged=true regardless of Snapshot,
                 // so exclude them from the Snapshot check (they never appear in the changed set).
                 if (PflagKeys.IsAlwaysChanged(key)) continue;
-                Assert.Contains(key, trackedKeys,
-                    $"GetGlobalKeyValues must yield '{key}' — it is tracked by BuildSettingsMap via Cs() " +
-                    "but was not found in the tracker snapshot after SeedFrom with all-non-default options");
+                Assert.Contains(key, trackedKeys); // GetGlobalKeyValues must yield this key
             }
 
             // Conversely, no key should appear in the tracker that isn't in the BuildSettingsMap set.
             foreach (var key in trackedKeys)
             {
-                Assert.Contains(key, buildSettingsMapTrackerKeys,
-                    $"GetGlobalKeyValues yielded '{key}' which is NOT in BuildSettingsMap's Cs() key set — " +
-                    "remove it from GetGlobalKeyValues or add it to BuildSettingsMap");
+                Assert.Contains(key, buildSettingsMapTrackerKeys); // key must be in BuildSettingsMap Cs() set
             }
         }
 
@@ -374,8 +367,7 @@ namespace Snyk.VisualStudio.Extension.Tests.Language
 
             // The pending reset for SnykOssEnabled is still consumable.
             var resets = sut.ConsumePendingResets();
-            Assert.Contains(PflagKeys.SnykOssEnabled, resets,
-                "ClearChanged() must NOT discard pending resets — they are still needed by BuildSettingsMap");
+            Assert.Contains(PflagKeys.SnykOssEnabled, resets); // ClearChanged must NOT discard pending resets
         }
 
         // R3-2: Mark() for an AlwaysChanged key must be a no-op on the changed set.
@@ -472,9 +464,7 @@ namespace Snyk.VisualStudio.Extension.Tests.Language
 
             // Assert: pending reset must be cancelled (not in ConsumePendingResets output).
             var resets = sut.ConsumePendingResets();
-            Assert.DoesNotContain(PflagKeys.SnykOssEnabled, resets,
-                "Mark() after Unmark() must cancel the pending reset — " +
-                "otherwise BuildSettingsMap overwrites the active override with a Reset() signal");
+            Assert.DoesNotContain(PflagKeys.SnykOssEnabled, resets); // Mark after Unmark must cancel pending reset
 
             // Assert: IsChanged must be true because the key is back in the changed set.
             Assert.True(sut.IsChanged(PflagKeys.SnykOssEnabled),
@@ -537,8 +527,7 @@ namespace Snyk.VisualStudio.Extension.Tests.Language
 
             // Must have a pending reset so BuildSettingsMap can emit {value:null, changed:true}.
             var resets = sut.ConsumePendingResets();
-            Assert.Contains(PflagKeys.SnykOssEnabled, resets,
-                "An edited key reset to default must produce a pending reset signal");
+            Assert.Contains(PflagKeys.SnykOssEnabled, resets); // edited key reset to default must produce pending reset
         }
     }
 }

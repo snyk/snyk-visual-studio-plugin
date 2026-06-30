@@ -4,6 +4,7 @@
 using System.Collections.Generic;
 using System.IO;
 using Moq;
+using Snyk.VisualStudio.Extension.Authentication;
 using Snyk.VisualStudio.Extension.Download;
 using Snyk.VisualStudio.Extension.Language;
 using Snyk.VisualStudio.Extension.Service;
@@ -48,8 +49,8 @@ namespace Snyk.VisualStudio.Extension.Tests.Settings
             // Fresh-install default: OAuth is the zero value of AuthenticationType (pinned by R3-4 test).
             // Using Token here would mask auth-seeding regressions because SeedFrom would see a
             // non-default auth method and spuriously mark AuthenticationMethod as changed.
-            optMock.Object.ApiToken = new Authentication.AuthenticationToken(
-                Authentication.AuthenticationType.OAuth, string.Empty);
+            optMock.Object.ApiToken = new AuthenticationToken(
+                AuthenticationType.OAuth, string.Empty);
 
             var spMock = new Mock<ISnykServiceProvider>();
             spMock.Setup(x => x.Options).Returns(optMock.Object);
@@ -190,16 +191,14 @@ namespace Snyk.VisualStudio.Extension.Tests.Settings
                 manager.Save(optMock.Object, triggerSettingsChangedEvent: false, updateOverrideTracker: false);
 
                 // Tracker must stay clean — no phantom user override.
-                Assert.DoesNotContain(PflagKeys.Organization, manager.OverrideTracker.Snapshot(),
-                    "Save(updateOverrideTracker:false) must NOT mark LS-pushed values as user overrides");
+                Assert.DoesNotContain(PflagKeys.Organization, manager.OverrideTracker.Snapshot()); // LS-pushed must not be marked
                 Assert.False(manager.OverrideTracker.IsChanged(PflagKeys.Organization),
                     "IsChanged must be false for a key set only by the LS, not the user");
 
                 // Reload and confirm the persisted ChangedConfigKeys did NOT grow.
                 var loaded = manager.Load();
                 if (loaded.ChangedConfigKeys != null)
-                    Assert.DoesNotContain(PflagKeys.Organization, loaded.ChangedConfigKeys,
-                        "ChangedConfigKeys must not persist the LS-pushed key as a user override");
+                    Assert.DoesNotContain(PflagKeys.Organization, loaded.ChangedConfigKeys); // must not persist LS-pushed key
             }
             finally
             {
@@ -226,8 +225,7 @@ namespace Snyk.VisualStudio.Extension.Tests.Settings
                     editedKeys: new List<string> { PflagKeys.SnykOssEnabled });
 
                 // Tracker must record the override.
-                Assert.Contains(PflagKeys.SnykOssEnabled, manager.OverrideTracker.Snapshot(),
-                    "Save(updateOverrideTracker:true) with editedKeys must mark user-changed values");
+                Assert.Contains(PflagKeys.SnykOssEnabled, manager.OverrideTracker.Snapshot());
                 Assert.True(manager.OverrideTracker.IsChanged(PflagKeys.SnykOssEnabled),
                     "IsChanged must be true for a key the user explicitly changed");
             }
@@ -259,12 +257,10 @@ namespace Snyk.VisualStudio.Extension.Tests.Settings
                     editedKeys: new List<string> { PflagKeys.SnykIacEnabled });
 
                 // IacEnabled was edited and its value (false) deviates from default (true) → marked.
-                Assert.Contains(PflagKeys.SnykIacEnabled, manager.OverrideTracker.Snapshot(),
-                    "An edited key with a non-default value must be marked as a user override");
+                Assert.Contains(PflagKeys.SnykIacEnabled, manager.OverrideTracker.Snapshot());
 
                 // OssEnabled was NOT in editedKeys (org-pushed) → must NOT be marked.
-                Assert.DoesNotContain(PflagKeys.SnykOssEnabled, manager.OverrideTracker.Snapshot(),
-                    "An org-pushed value not in editedKeys must NOT be marked as a user override");
+                Assert.DoesNotContain(PflagKeys.SnykOssEnabled, manager.OverrideTracker.Snapshot());
             }
             finally
             {
@@ -291,8 +287,7 @@ namespace Snyk.VisualStudio.Extension.Tests.Settings
                     editedKeys: new List<string> { PflagKeys.SnykIacEnabled });
 
                 // Immediately: tracker has the key marked.
-                Assert.Contains(PflagKeys.SnykIacEnabled, manager.OverrideTracker.Snapshot(),
-                    "ApplyUserEdits must mark the edited non-default key immediately");
+                Assert.Contains(PflagKeys.SnykIacEnabled, manager.OverrideTracker.Snapshot());
 
                 // After restart (fresh manager from same file): the key must come back via
                 // the persisted-keys branch of Load (ChangedConfigKeys is non-null on disk).
@@ -300,11 +295,9 @@ namespace Snyk.VisualStudio.Extension.Tests.Settings
                 var loaded = manager2.Load();
 
                 Assert.NotNull(loaded.ChangedConfigKeys);
-                Assert.Contains(PflagKeys.SnykIacEnabled, loaded.ChangedConfigKeys,
-                    "The edited key must survive a full save→reload cycle via persisted-keys branch");
+                Assert.Contains(PflagKeys.SnykIacEnabled, loaded.ChangedConfigKeys);
                 // OssEnabled was never edited — must not appear.
-                Assert.DoesNotContain(PflagKeys.SnykOssEnabled, loaded.ChangedConfigKeys,
-                    "Only explicitly edited keys must appear in ChangedConfigKeys");
+                Assert.DoesNotContain(PflagKeys.SnykOssEnabled, loaded.ChangedConfigKeys);
             }
             finally
             {

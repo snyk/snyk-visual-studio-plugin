@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.Runtime.InteropServices;
 using Microsoft.VisualStudio.Sdk.TestFramework;
@@ -743,8 +744,8 @@ namespace Snyk.VisualStudio.Extension.Tests.Language
                     o.SetupGet(x => x.RiskScoreThreshold).Returns((int?)null);
                     o.SetupGet(x => x.TrustedFolders).Returns(new System.Collections.Generic.HashSet<string>());
                     o.SetupGet(x => x.ApiToken).Returns(
-                        new Authentication.AuthenticationToken(Authentication.AuthenticationType.OAuth, string.Empty));
-                    o.SetupGet(x => x.AuthenticationMethod).Returns(default(Authentication.AuthenticationType));
+                        new AuthenticationToken(AuthenticationType.OAuth, string.Empty));
+                    o.SetupGet(x => x.AuthenticationMethod).Returns(default(AuthenticationType));
                     return o.Object;
                 })(),
                 // editedKeys: only IacEnabled (the bridge derives this from the pre/post snapshot diff)
@@ -801,8 +802,8 @@ namespace Snyk.VisualStudio.Extension.Tests.Language
             options.SetupGet(x => x.RiskScoreThreshold).Returns((int?)null);
             options.SetupGet(x => x.TrustedFolders).Returns(new System.Collections.Generic.HashSet<string>());
             options.SetupGet(x => x.ApiToken).Returns(
-                new Authentication.AuthenticationToken(Authentication.AuthenticationType.OAuth, string.Empty));
-            options.SetupGet(x => x.AuthenticationMethod).Returns(default(Authentication.AuthenticationType));
+                new AuthenticationToken(AuthenticationType.OAuth, string.Empty));
+            options.SetupGet(x => x.AuthenticationMethod).Returns(default(AuthenticationType));
 
             realTracker.ApplyUserEdits(options.Object, new List<string> { PflagKeys.SnykOssEnabled });
 
@@ -814,15 +815,13 @@ namespace Snyk.VisualStudio.Extension.Tests.Language
             // OssEnabled was in editedKeys and reset to default → reset signal emitted.
             Assert.True(map.ContainsKey(PflagKeys.SnykOssEnabled),
                 "OssEnabled must be in the map (as a reset entry)");
-            Assert.Null(map[PflagKeys.SnykOssEnabled].Value,
-                "OssEnabled reset must emit value:null");
+            Assert.Null(map[PflagKeys.SnykOssEnabled].Value);    // reset must emit value:null
             Assert.True(map[PflagKeys.SnykOssEnabled].Changed,
                 "OssEnabled reset must emit changed:true");
 
             // IacEnabled was NOT in editedKeys → no reset emitted (its normal value entry is present).
             // If IacEnabled emitted a reset spuriously, its Value would be null — assert it is not.
-            Assert.NotNull(map[PflagKeys.SnykIacEnabled].Value,
-                "IacEnabled was NOT edited → must NOT emit a reset; its value entry must be present");
+            Assert.NotNull(map[PflagKeys.SnykIacEnabled].Value); // not edited → must not emit a reset
         }
 
         // UNIT-008: ConfigSetting.Of(value, changed) overload sets Changed correctly;

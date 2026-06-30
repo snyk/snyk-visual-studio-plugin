@@ -1,4 +1,5 @@
 // ABOUTME: Unit tests for ConfigDefaults covering UNIT-007, UNIT-012 from the IDE-2152 test plan.
+using Snyk.VisualStudio.Extension.Authentication;
 using Snyk.VisualStudio.Extension.Download;
 using Snyk.VisualStudio.Extension.Language;
 using Xunit;
@@ -71,7 +72,7 @@ namespace Snyk.VisualStudio.Extension.Tests.Language
         [Fact]
         public void IsDefault_AuthenticationMethod_MatchesEnumDefault()
         {
-            var defaultValue = default(Authentication.AuthenticationType).ToString().ToLowerInvariant();
+            var defaultValue = default(AuthenticationType).ToString().ToLowerInvariant();
 
             Assert.True(ConfigDefaults.IsDefault(PflagKeys.AuthenticationMethod, defaultValue),
                 $"IsDefault should return true for default auth method '{defaultValue}'");
@@ -99,10 +100,8 @@ namespace Snyk.VisualStudio.Extension.Tests.Language
         {
             // OAuth must be the zero value so default(AuthenticationType) == OAuth.
             Assert.Equal(
-                Authentication.AuthenticationType.OAuth.ToString().ToLowerInvariant(),
-                default(Authentication.AuthenticationType).ToString().ToLowerInvariant(),
-                "AuthenticationType.OAuth must be the enum zero value. If this fails, ConfigDefaults " +
-                "authentication_method default is wrong and must be corrected to match the new zero value.");
+                AuthenticationType.OAuth.ToString().ToLowerInvariant(),
+                default(AuthenticationType).ToString().ToLowerInvariant());
         }
     }
 }

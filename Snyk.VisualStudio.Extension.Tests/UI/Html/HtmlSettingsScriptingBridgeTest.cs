@@ -473,7 +473,7 @@ namespace Snyk.VisualStudio.Extension.Tests.UI.Html
             Assert.False(await AwaitWithTimeout(localBridge.SaveCompletion)); // apply failed
             Assert.False(localOptions.Object.OssEnabled); // rolled back to baseline, not left at true
             // A failed apply never reaches the persistence step.
-            localManager.Verify(m => m.Save(It.IsAny<IPersistableOptions>(), It.IsAny<bool>()), Times.Never);
+            localManager.Verify(m => m.Save(It.IsAny<IPersistableOptions>(), It.IsAny<bool>(), It.IsAny<bool>(), It.IsAny<System.Collections.Generic.IReadOnlyCollection<string>>()), Times.Never);
         }
 
         private static async Task<bool> AwaitWithTimeout(Task<bool> task)

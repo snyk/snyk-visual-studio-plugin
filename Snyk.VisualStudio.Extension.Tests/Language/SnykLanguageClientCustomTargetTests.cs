@@ -404,7 +404,7 @@ namespace Snyk.VisualStudio.Extension.Tests.Language
             Assert.Contains("/folder1", optionsMock.Object.TrustedFolders);
             Assert.Contains("/folder2", optionsMock.Object.TrustedFolders);
             // updateOverrideTracker:false — LS is pushing trusted-folder set back; must not record as user override.
-            snykOptionsManagerMock.Verify(s => s.Save(It.IsAny<IPersistableOptions>(), false, false), Times.Once);
+            snykOptionsManagerMock.Verify(s => s.Save(It.IsAny<IPersistableOptions>(), false, false, It.IsAny<System.Collections.Generic.IReadOnlyCollection<string>>()), Times.Once);
             // Note: DidChangeConfigurationAsync is intentionally not called to avoid infinite loop
             languageClientManagerMock.Verify(s => s.DidChangeConfigurationAsync(It.IsAny<CancellationToken>()), Times.Never);
         }
@@ -706,7 +706,7 @@ namespace Snyk.VisualStudio.Extension.Tests.Language
             Assert.True(optionsMock.Object.OssEnabled);
             // ...and persisted without re-triggering DidChangeConfigurationAsync (triggerSettingsChangedEvent=false)
             // updateOverrideTracker:false — LS-pushed values must never be recorded as user overrides (IDE-2152).
-            snykOptionsManagerMock.Verify(m => m.Save(It.IsAny<IPersistableOptions>(), false, false), Times.Once());
+            snykOptionsManagerMock.Verify(m => m.Save(It.IsAny<IPersistableOptions>(), false, false, It.IsAny<System.Collections.Generic.IReadOnlyCollection<string>>()), Times.Once());
         }
 
         [Fact]
