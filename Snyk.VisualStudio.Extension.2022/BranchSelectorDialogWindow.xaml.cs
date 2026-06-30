@@ -49,7 +49,7 @@ namespace Snyk.VisualStudio.Extension
             {
                 return;
             }
-            FolderConfig.SetString(PflagKeys.BaseBranch, CbBranchList.SelectedItem.ToString());
+            FolderConfig.SetString(PflagKeys.BaseBranch, CbBranchList.SelectedItem?.ToString());
             FolderConfig.SetString(PflagKeys.ReferenceFolder, SelectedFolderPath.Text);
 
             var folderConfigList = this.serviceProvider.Options.FolderConfigs;

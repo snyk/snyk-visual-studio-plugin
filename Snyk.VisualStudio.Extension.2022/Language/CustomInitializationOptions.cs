@@ -63,9 +63,16 @@ namespace Snyk.VisualStudio.Extension.Language
         {
             if (value == null) Settings.Remove(key);
             else Settings[key] = ConfigSetting.Of(value);
+            ResetKeys?.Remove(key);
         }
 
-        public void Set(string key, object value) => Settings[key] = ConfigSetting.Of(value);
+        public void Set(string key, object value)
+        {
+            Settings[key] = ConfigSetting.Of(value);
+            // A re-set wins over a pending reset: clearing the ResetKey stops BuildFolderConfigs
+            // from clobbering this just-set value back to {value:null} on the next send.
+            ResetKeys?.Remove(key);
+        }
 
         // Returns the raw stored value as a JToken for typed extraction. Values arrive either as
         // JTokens (Json.NET deserialization of the LS payload) or as boxed CLR objects (set IDE-side);

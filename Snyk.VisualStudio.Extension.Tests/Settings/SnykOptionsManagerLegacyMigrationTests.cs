@@ -70,11 +70,11 @@ namespace Snyk.VisualStudio.Extension.Tests.Settings
             Assert.Equal("seed-org", fc.GetString(PflagKeys.PreferredOrg));
             Assert.True(Convert.ToBoolean(fc.Settings[PflagKeys.OrgSetByUser].Value));
 
-            // The migrated values and the now-empty legacy section are persisted.
+            // The now-empty legacy section is persisted (so the migration is idempotent across
+            // restarts). FolderConfigs are NOT persisted — the LS owns them and re-pushes after
+            // init; the migrated values reach the LS via the in-memory options at init-send time.
             var reloaded = Json.Deserialize<SnykSettings>(File.ReadAllText(this.testSettingsPath, Encoding.UTF8));
             Assert.Null(reloaded.SolutionSettingsDict);
-            Assert.Single(reloaded.FolderConfigs);
-            Assert.Equal("seed-org", reloaded.FolderConfigs[0].GetString(PflagKeys.PreferredOrg));
         }
 
         [Fact]

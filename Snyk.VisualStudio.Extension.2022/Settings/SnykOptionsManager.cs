@@ -1,8 +1,10 @@
 ﻿// ABOUTME: This file manages loading and saving Snyk settings from persistent storage
 // ABOUTME: It handles serialization/deserialization of settings to file and provides solution-specific configuration management
 using Snyk.VisualStudio.Extension.Authentication;
+using Snyk.VisualStudio.Extension.Language;
 using Snyk.VisualStudio.Extension.Service;
 using System;
+using System.Collections.Generic;
 using System.Threading.Tasks;
 using Serilog;
 namespace Snyk.VisualStudio.Extension.Settings
@@ -109,7 +111,10 @@ namespace Snyk.VisualStudio.Extension.Settings
                 CustomEndpoint = snykSettings.CustomEndpoint,
                 Organization = snykSettings.Organization,
 
-                FolderConfigs = snykSettings.FolderConfigs,
+                // FolderConfigs are NOT loaded from disk: the LS is the source of truth and pushes
+                // the full set via $/snyk.configuration after init (matching vscode/eclipse, which
+                // never persist them). Start empty; the LS repopulates the in-memory list.
+                FolderConfigs = new List<FolderConfig>(),
                 EnableDeltaFindings = snykSettings.EnableDeltaFindings,
 
                 OpenIssuesEnabled = snykSettings.OpenIssuesEnabled,
@@ -151,7 +156,9 @@ namespace Snyk.VisualStudio.Extension.Settings
             snykSettings.CustomEndpoint = options.CustomEndpoint;
             snykSettings.Organization = options.Organization;
 
-            snykSettings.FolderConfigs = options.FolderConfigs;
+            // FolderConfigs are intentionally not persisted — the LS owns them and re-pushes after
+            // init. Persisting would let stale folder overrides (and stale resets) survive a restart
+            // and be re-sent, undoing the user's changes.
             snykSettings.EnableDeltaFindings = options.EnableDeltaFindings;
 
             snykSettings.OpenIssuesEnabled = options.OpenIssuesEnabled;
