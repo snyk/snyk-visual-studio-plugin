@@ -6,7 +6,7 @@ namespace Snyk.VisualStudio.Extension
 {
     public class SnykDirectory
     {
-        private static readonly ILogger Logger = LogManager.ForContext<SnykDirectory>();
+        private static readonly ILogger Logger = LogManager.ForContext(typeof(SnykDirectory));
 
         /// <summary>
         /// Directory name for store Snyk CLI.
