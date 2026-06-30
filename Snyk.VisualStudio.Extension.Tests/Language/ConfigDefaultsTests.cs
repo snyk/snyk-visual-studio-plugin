@@ -103,5 +103,85 @@ namespace Snyk.VisualStudio.Extension.Tests.Language
                 AuthenticationType.OAuth.ToString().ToLowerInvariant(),
                 default(AuthenticationType).ToString().ToLowerInvariant());
         }
+
+        // PR-REV-2b-1: IsDefault for AdditionalParameters with an empty string must return true.
+        // The form sends AdditionalParameters as a space-joined text string (from a text input),
+        // not as a collection. An empty string is the form's representation of "no parameters",
+        // which must equal the default (empty list → space-joined → empty string).
+        [Fact]
+        public void IsDefault_AdditionalParameters_EmptyStringIsDefault()
+        {
+            Assert.True(ConfigDefaults.IsDefault(PflagKeys.AdditionalParameters, string.Empty),
+                "An empty string for AdditionalParameters must be the default — " +
+                "the form sends a space-joined string; empty string == empty list (the SnykSettings default)");
+        }
+
+        // PR-REV-2b-2: IsDefault for AdditionalParameters with a whitespace-only string must also
+        // return true. A form field with only spaces should also be treated as "no parameters set".
+        [Fact]
+        public void IsDefault_AdditionalParameters_WhitespaceOnlyStringIsDefault()
+        {
+            Assert.True(ConfigDefaults.IsDefault(PflagKeys.AdditionalParameters, "   "),
+                "A whitespace-only string for AdditionalParameters must be the default — " +
+                "it is semantically equivalent to the empty list (splits to no tokens)");
+        }
+
+        // PR-REV-2b-3: IsDefault for AdditionalParameters with a non-empty string must return false.
+        [Fact]
+        public void IsDefault_AdditionalParameters_NonEmptyStringIsNotDefault()
+        {
+            Assert.False(ConfigDefaults.IsDefault(PflagKeys.AdditionalParameters, "--debug"),
+                "A non-empty AdditionalParameters string must NOT be the default");
+        }
+
+        // PR-REV-3-1: ConfigDefaults boolean values for product-enablement must match
+        // the canonical SnykSettings field initializers. This acts as a drift guard:
+        // if SnykSettings changes a default, the test (which reads the SnykSettings field
+        // via new SnykSettings()) will catch the mismatch.
+        // Note: SnykSettings uses inline field initializers (not named constants), so we compare
+        // by constructing a default instance and reading each field.
+        [Fact]
+        public void ConfigDefaults_BooleanValues_MatchSnykSettingsFieldInitializers()
+        {
+            var defaults = new Snyk.VisualStudio.Extension.Settings.SnykSettings();
+
+            // Product enablement
+            Assert.True((bool)ConfigDefaults.GetDefaultForTest(PflagKeys.SnykOssEnabled) == defaults.OssEnabled,
+                "SnykOssEnabled default must match SnykSettings.OssEnabled initializer");
+            Assert.True((bool)ConfigDefaults.GetDefaultForTest(PflagKeys.SnykCodeEnabled) == defaults.SnykCodeSecurityEnabled,
+                "SnykCodeEnabled default must match SnykSettings.SnykCodeSecurityEnabled initializer");
+            Assert.True((bool)ConfigDefaults.GetDefaultForTest(PflagKeys.SnykIacEnabled) == defaults.IacEnabled,
+                "SnykIacEnabled default must match SnykSettings.IacEnabled initializer");
+            Assert.True((bool)ConfigDefaults.GetDefaultForTest(PflagKeys.SnykSecretsEnabled) == defaults.SecretsEnabled,
+                "SnykSecretsEnabled default must match SnykSettings.SecretsEnabled initializer");
+
+            // Scan
+            Assert.True((bool)ConfigDefaults.GetDefaultForTest(PflagKeys.ScanAutomatic) == defaults.AutoScan,
+                "ScanAutomatic default must match SnykSettings.AutoScan initializer");
+            Assert.True((bool)ConfigDefaults.GetDefaultForTest(PflagKeys.ScanNetNew) == defaults.EnableDeltaFindings,
+                "ScanNetNew default must match SnykSettings.EnableDeltaFindings initializer");
+
+            // Severity filters
+            Assert.True((bool)ConfigDefaults.GetDefaultForTest(PflagKeys.SeverityFilterCritical) == defaults.FilterCritical,
+                "SeverityFilterCritical default must match SnykSettings.FilterCritical initializer");
+            Assert.True((bool)ConfigDefaults.GetDefaultForTest(PflagKeys.SeverityFilterHigh) == defaults.FilterHigh,
+                "SeverityFilterHigh default must match SnykSettings.FilterHigh initializer");
+            Assert.True((bool)ConfigDefaults.GetDefaultForTest(PflagKeys.SeverityFilterMedium) == defaults.FilterMedium,
+                "SeverityFilterMedium default must match SnykSettings.FilterMedium initializer");
+            Assert.True((bool)ConfigDefaults.GetDefaultForTest(PflagKeys.SeverityFilterLow) == defaults.FilterLow,
+                "SeverityFilterLow default must match SnykSettings.FilterLow initializer");
+
+            // Issue view
+            Assert.True((bool)ConfigDefaults.GetDefaultForTest(PflagKeys.IssueViewOpenIssues) == defaults.OpenIssuesEnabled,
+                "IssueViewOpenIssues default must match SnykSettings.OpenIssuesEnabled initializer");
+            Assert.True((bool)ConfigDefaults.GetDefaultForTest(PflagKeys.IssueViewIgnoredIssues) == defaults.IgnoredIssuesEnabled,
+                "IssueViewIgnoredIssues default must match SnykSettings.IgnoredIssuesEnabled initializer");
+
+            // CLI / binary booleans
+            Assert.True((bool)ConfigDefaults.GetDefaultForTest(PflagKeys.AutomaticDownload) == defaults.BinariesAutoUpdateEnabled,
+                "AutomaticDownload default must match SnykSettings.BinariesAutoUpdateEnabled initializer");
+            Assert.True((bool)ConfigDefaults.GetDefaultForTest(PflagKeys.ProxyInsecure) == defaults.IgnoreUnknownCa,
+                "ProxyInsecure default must match SnykSettings.IgnoreUnknownCa initializer");
+        }
     }
 }

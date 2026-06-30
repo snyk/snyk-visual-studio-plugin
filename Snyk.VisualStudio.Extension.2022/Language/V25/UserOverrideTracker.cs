@@ -1,6 +1,5 @@
 // ABOUTME: Tracks which global LSP pflag keys the user explicitly overrode from plugin defaults.
 // ABOUTME: Persists via SnykSettings.ChangedConfigKeys; seeds from options on first load (IDE-2152).
-using System;
 using System.Collections.Generic;
 using System.Linq;
 using Snyk.VisualStudio.Extension.Download;
@@ -190,52 +189,5 @@ namespace Snyk.VisualStudio.Extension.Language
 
         private static KeyValuePair<string, object> Pair(string key, object value)
             => new KeyValuePair<string, object>(key, value);
-
-        /// <summary>
-        /// Returns a snapshot of the global pflag key → current value pairs for
-        /// <paramref name="options"/>. The snapshot has the same set of keys that
-        /// <see cref="GetGlobalKeyValues"/> produces, using the same value normalisations.
-        /// <para>
-        /// Called by <see cref="HtmlSettingsScriptingBridge"/> to build a pre-apply snapshot,
-        /// then compared against the post-apply <see cref="ISnykOptions"/> to derive the
-        /// edit-delta for <see cref="ApplyUserEdits"/>.
-        /// </para>
-        /// </summary>
-        internal static Dictionary<string, object> SnapshotGlobalKeys(IPersistableOptions options)
-        {
-            if (options == null) return new Dictionary<string, object>();
-            var result = new Dictionary<string, object>();
-            foreach (var kv in GetGlobalKeyValues(options))
-                result[kv.Key] = kv.Value;
-            return result;
-        }
-
-        /// <summary>
-        /// Computes the set of pflag keys whose value in <paramref name="after"/> differs from
-        /// the corresponding value in <paramref name="before"/>. Used by
-        /// <see cref="HtmlSettingsScriptingBridge"/> to build the edit-delta passed to
-        /// <see cref="ApplyUserEdits"/>.
-        /// </summary>
-        internal static IReadOnlyCollection<string> DiffGlobalKeys(
-            Dictionary<string, object> before, IPersistableOptions after)
-        {
-            if (before == null || after == null) return new List<string>();
-            var edited = new List<string>();
-            var afterValues = SnapshotGlobalKeys(after);
-            foreach (var kv in afterValues)
-            {
-                if (!before.TryGetValue(kv.Key, out var prev))
-                {
-                    edited.Add(kv.Key); // new key — treat as edited
-                    continue;
-                }
-                // Compare by string representation to avoid boxing-equality issues with object.
-                var prevStr = prev == null ? string.Empty : prev.ToString();
-                var afterStr = kv.Value == null ? string.Empty : kv.Value.ToString();
-                if (!string.Equals(prevStr, afterStr, StringComparison.Ordinal))
-                    edited.Add(kv.Key);
-            }
-            return edited;
-        }
     }
 }

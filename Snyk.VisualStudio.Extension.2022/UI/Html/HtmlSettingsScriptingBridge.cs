@@ -99,10 +99,11 @@ namespace Snyk.VisualStudio.Extension.UI.Html
                 try
                 {
                     // ParseAndSaveConfigAsync applies the form values to Options and returns the
-                    // edit-delta (the set of global pflag keys whose value actually changed from
-                    // the pre-apply snapshot). Only these keys are passed to Save so the tracker
-                    // marks only genuinely user-edited keys — not org-pushed values that merely
-                    // sit in Options unchanged.
+                    // form-driven edit-delta (the global pflag keys the form actually sent — i.e.
+                    // the keys the user touched in the UI). Only these keys are passed to Save so
+                    // the tracker marks/unmarks only genuinely user-edited keys — org-pushed values
+                    // that were never touched by the user are absent from the payload and therefore
+                    // never marked as user overrides.
                     var editedKeys = await ParseAndSaveConfigAsync(jsonString);
 
                     // Persist all settings to storage at the end.
@@ -243,9 +244,10 @@ namespace Snyk.VisualStudio.Extension.UI.Html
             }
         }
 
-        // Returns the set of global pflag keys whose value changed during this save action
-        // (the edit-delta). The caller passes this to OptionsManager.Save so only genuinely
-        // user-edited keys are marked as user overrides in the tracker.
+        // Returns the form-driven edit-delta: the global pflag keys that each Apply* method
+        // actually applied in this save action. Because detection is co-located with the
+        // mutation, keys with extra gating (e.g. ApplyConnectionSettings rejects malformed URLs)
+        // are recorded only when the value is genuinely applied — one source of truth per key.
         private async Task<IReadOnlyCollection<string>> ParseAndSaveConfigAsync(string jsonString)
         {
             // LS HTML JavaScript handles all validation - we just parse and save.
@@ -297,11 +299,12 @@ namespace Snyk.VisualStudio.Extension.UI.Html
             var isCliOnly = config.IsFallbackForm ?? false;
             Logger.Information("Saving workspace configuration (CLI only: {IsCliOnly})", isCliOnly);
 
-            // Capture the global pflag key→value snapshot BEFORE applying the form values.
-            // After apply we diff this against the post-apply Options to produce the edit-delta:
-            // only keys whose value actually changed are passed to the tracker, so org-pushed
-            // values that the user didn't touch are never recorded as user overrides.
-            var preApplySnapshot = UserOverrideTracker.SnapshotGlobalKeys(Options);
+            // Each Apply* method appends the pflag key it applies to this list (form-driven
+            // edit-delta). Detection is co-located with the mutation so extra gating in Apply*
+            // (e.g. URL validation in ApplyConnectionSettings) is reflected correctly. The
+            // isCliOnly split falls out naturally: Apply* methods not called in CLI-only mode
+            // contribute nothing.
+            var editedKeys = new List<string>();
 
             // Apply directly to the live Options, but capture a rollback first. Apply* mutate Options
             // in place (folder-config entries included) and OptionsManager.Save only runs after this
@@ -311,26 +314,26 @@ namespace Snyk.VisualStudio.Extension.UI.Html
             try
             {
                 // Always apply CLI settings and Insecure setting
-                ApplyCliSettings(config);
-                ApplyInsecureSetting(config);
+                ApplyCliSettings(config, editedKeys);
+                ApplyInsecureSetting(config, editedKeys);
 
                 // Only apply full settings when not in CLI-only mode
                 if (!isCliOnly)
                 {
-                    ApplyScanSettings(config);
-                    ApplyIssueViewSettings(config);
+                    ApplyScanSettings(config, editedKeys);
+                    ApplyIssueViewSettings(config, editedKeys);
                     var previousAuthMethod = Options.AuthenticationMethod;
-                    ApplyAuthenticationSettings(config);
+                    ApplyAuthenticationSettings(config, editedKeys);
                     // Clear stored token when auth method changes: a token from one method is not valid for another.
                     if (config.AuthenticationMethod != null && Options.AuthenticationMethod != previousAuthMethod)
                     {
                         Options.ApiToken = new AuthenticationToken(Options.AuthenticationMethod, string.Empty);
                     }
 
-                    ApplyConnectionSettings(config);
-                    ApplyTrustedFolders(config);
-                    ApplyFilterSettings(config);
-                    ApplyMiscellaneousSettings(config);
+                    ApplyConnectionSettings(config, editedKeys);
+                    ApplyTrustedFolders(config, editedKeys);
+                    ApplyFilterSettings(config, editedKeys);
+                    ApplyMiscellaneousSettings(config, editedKeys);
                     await ApplyFolderConfigsAsync(jsonString);
                 }
             }
@@ -340,10 +343,7 @@ namespace Snyk.VisualStudio.Extension.UI.Html
                 throw;
             }
 
-            // Derive the edit-delta: keys whose value differs between the pre-apply snapshot and
-            // the post-apply Options state. This is what the user actually changed in this save
-            // action. The tracker will mark/unmark only these keys.
-            return UserOverrideTracker.DiffGlobalKeys(preApplySnapshot, Options);
+            return editedKeys;
         }
 
         // Captures the current Options state and returns an action that restores it, so a partially-
@@ -429,57 +429,65 @@ namespace Snyk.VisualStudio.Extension.UI.Html
             return JsonConvert.DeserializeObject<List<FolderConfig>>(JsonConvert.SerializeObject(source));
         }
 
-        private void ApplyScanSettings(IdeConfigData config)
+        private void ApplyScanSettings(IdeConfigData config, ICollection<string> editedKeys)
         {
             // Product enablement (snyk_oss_enabled, snyk_code_enabled, snyk_iac_enabled, snyk_secrets_enabled)
             if (config.SnykOssEnabled.HasValue)
             {
                 Options.OssEnabled = config.SnykOssEnabled.Value;
+                editedKeys.Add(PflagKeys.SnykOssEnabled);
             }
 
             if (config.SnykCodeEnabled.HasValue)
             {
                 Options.SnykCodeSecurityEnabled = config.SnykCodeEnabled.Value;
+                editedKeys.Add(PflagKeys.SnykCodeEnabled);
             }
 
             if (config.SnykIacEnabled.HasValue)
             {
                 Options.IacEnabled = config.SnykIacEnabled.Value;
+                editedKeys.Add(PflagKeys.SnykIacEnabled);
             }
 
             if (config.SnykSecretsEnabled.HasValue)
             {
                 Options.SecretsEnabled = config.SnykSecretsEnabled.Value;
+                editedKeys.Add(PflagKeys.SnykSecretsEnabled);
             }
 
             // Apply automatic-scan toggle (scan_automatic)
             if (config.ScanAutomatic.HasValue)
             {
                 Options.AutoScan = config.ScanAutomatic.Value;
+                editedKeys.Add(PflagKeys.ScanAutomatic);
             }
         }
 
-        private void ApplyIssueViewSettings(IdeConfigData config)
+        private void ApplyIssueViewSettings(IdeConfigData config, ICollection<string> editedKeys)
         {
             // Apply issue view options (issue_view_open_issues, issue_view_ignored_issues)
             if (config.IssueViewOpenIssues.HasValue)
             {
                 Options.OpenIssuesEnabled = config.IssueViewOpenIssues.Value;
+                editedKeys.Add(PflagKeys.IssueViewOpenIssues);
             }
 
             if (config.IssueViewIgnoredIssues.HasValue)
             {
                 Options.IgnoredIssuesEnabled = config.IssueViewIgnoredIssues.Value;
+                editedKeys.Add(PflagKeys.IssueViewIgnoredIssues);
             }
 
             // Apply net-new / delta findings (scan_net_new)
             if (config.ScanNetNew.HasValue)
             {
                 Options.EnableDeltaFindings = config.ScanNetNew.Value;
+                editedKeys.Add(PflagKeys.ScanNetNew);
             }
         }
 
-        private void ApplyAuthenticationSettings(IdeConfigData config)
+        private void ApplyAuthenticationSettings(IdeConfigData config, ICollection<string> editedKeys)
         {
             // Apply authentication method (authenticationMethod: "oauth"/"token"/"pat")
             if (config.AuthenticationMethod != null)
@@ -501,19 +509,21 @@ namespace Snyk.VisualStudio.Extension.UI.Html
                         Options.AuthenticationMethod = AuthenticationType.OAuth;
                         break;
                 }
+                editedKeys.Add(PflagKeys.AuthenticationMethod);
             }
         }
 
-        private void ApplyInsecureSetting(IdeConfigData config)
+        private void ApplyInsecureSetting(IdeConfigData config, ICollection<string> editedKeys)
         {
             // Apply Insecure (SSL) setting - available in both CLI-only and full mode
             if (config.Insecure.HasValue)
             {
                 Options.IgnoreUnknownCA = config.Insecure.Value;
+                editedKeys.Add(PflagKeys.ProxyInsecure);
             }
         }
 
-        private void ApplyConnectionSettings(IdeConfigData config)
+        private void ApplyConnectionSettings(IdeConfigData config, ICollection<string> editedKeys)
         {
             // Allow an empty value to reset to the default endpoint, but otherwise only accept an
             // absolute http/https URL — same guard as the snyk.login bridge path and the
@@ -524,6 +534,7 @@ namespace Snyk.VisualStudio.Extension.UI.Html
                 if (string.IsNullOrEmpty(config.ApiEndpoint) || UriExtensions.IsValidWebUrl(config.ApiEndpoint))
                 {
                     Options.CustomEndpoint = config.ApiEndpoint;
+                    editedKeys.Add(PflagKeys.ApiEndpoint);
                 }
                 else
                 {
@@ -545,16 +556,18 @@ namespace Snyk.VisualStudio.Extension.UI.Html
                     // Store the trimmed value (what we compared) so stray form whitespace doesn't get
                     // baked into the token store and silently fail downstream IsValid() parsing.
                     Options.ApiToken = new AuthenticationToken(Options.AuthenticationMethod, normalizedNewToken);
+                    editedKeys.Add(PflagKeys.Token);
                 }
             }
 
             if (config.Organization != null)
             {
                 Options.Organization = config.Organization;
+                editedKeys.Add(PflagKeys.Organization);
             }
         }
 
-        private void ApplyTrustedFolders(IdeConfigData config)
+        private void ApplyTrustedFolders(IdeConfigData config, ICollection<string> editedKeys)
         {
             // Allow empty list to clear trusted folders
             if (config.TrustedFolders == null)
@@ -571,76 +584,91 @@ namespace Snyk.VisualStudio.Extension.UI.Html
 
             // Set even if empty to allow clearing
             Options.TrustedFolders = trustedFolders;
+            // TrustedFolders: always-changed (AlwaysChanged set in PflagKeys); included so
+            // ApplyUserEdits is notified (IsAlwaysChanged gates Mark, so it's a no-op for the
+            // tracker set, but correct and future-proof to record).
+            editedKeys.Add(PflagKeys.TrustedFolders);
         }
 
-        private void ApplyCliSettings(IdeConfigData config)
+        private void ApplyCliSettings(IdeConfigData config, ICollection<string> editedKeys)
         {
             // Allow empty values to reset settings
             if (config.CliPath != null)
             {
                 Options.CliCustomPath = config.CliPath;
+                editedKeys.Add(PflagKeys.CliPath);
             }
 
             if (config.ManageBinariesAutomatically.HasValue)
             {
                 Options.BinariesAutoUpdate = config.ManageBinariesAutomatically.Value;
+                editedKeys.Add(PflagKeys.AutomaticDownload);
             }
 
             if (config.CliBaseDownloadURL != null)
             {
                 Options.CliBaseDownloadURL = config.CliBaseDownloadURL;
+                editedKeys.Add(PflagKeys.BinaryBaseUrl);
             }
 
             if (config.CliReleaseChannel != null)
             {
                 Options.CliReleaseChannel = config.CliReleaseChannel;
+                editedKeys.Add(PflagKeys.CliReleaseChannel);
             }
         }
 
-        private void ApplyFilterSettings(IdeConfigData config)
+        private void ApplyFilterSettings(IdeConfigData config, ICollection<string> editedKeys)
         {
             // Severity filters arrive as individual flat keys (severity_filter_*). The form
             // only sends the ones that changed, so each is applied independently.
             if (config.SeverityFilterCritical.HasValue)
             {
                 Options.FilterCritical = config.SeverityFilterCritical.Value;
+                editedKeys.Add(PflagKeys.SeverityFilterCritical);
             }
 
             if (config.SeverityFilterHigh.HasValue)
             {
                 Options.FilterHigh = config.SeverityFilterHigh.Value;
+                editedKeys.Add(PflagKeys.SeverityFilterHigh);
             }
 
             if (config.SeverityFilterMedium.HasValue)
             {
                 Options.FilterMedium = config.SeverityFilterMedium.Value;
+                editedKeys.Add(PflagKeys.SeverityFilterMedium);
             }
 
             if (config.SeverityFilterLow.HasValue)
             {
                 Options.FilterLow = config.SeverityFilterLow.Value;
+                editedKeys.Add(PflagKeys.SeverityFilterLow);
             }
         }
 
-        private void ApplyMiscellaneousSettings(IdeConfigData config)
+        private void ApplyMiscellaneousSettings(IdeConfigData config, ICollection<string> editedKeys)
         {
             // Apply risk score threshold only when present — the form sends a changed-only
             // payload, so an absent value must not clobber the stored threshold with null.
             if (config.RiskScoreThreshold.HasValue)
             {
                 Options.RiskScoreThreshold = config.RiskScoreThreshold;
+                editedKeys.Add(PflagKeys.RiskScoreThreshold);
             }
 
             // Global (Project Defaults) advanced settings — absent (null) means no change.
             if (config.AdditionalEnv != null)
             {
                 Options.AdditionalEnv = config.AdditionalEnv;
+                editedKeys.Add(PflagKeys.AdditionalEnvironment);
             }
             if (config.AdditionalParameters != null)
             {
                 Options.AdditionalParameters = config.AdditionalParameters
                     .Split(new[] { ' ' }, StringSplitOptions.RemoveEmptyEntries)
                     .ToList();
+                editedKeys.Add(PflagKeys.AdditionalParameters);
             }
         }
 

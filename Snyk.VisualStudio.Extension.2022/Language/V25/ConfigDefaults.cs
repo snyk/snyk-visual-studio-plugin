@@ -11,8 +11,11 @@ namespace Snyk.VisualStudio.Extension.Language
     internal static class ConfigDefaults
     {
         // Mirrors SnykSettings field initializers exactly so seed comparison is accurate.
-        // CLI string defaults use SnykCliDownloader constants (same source as SnykSettings initializers)
-        // so this map cannot silently drift from SnykSettings.
+        // CLI string defaults reference SnykCliDownloader constants (same source as SnykSettings
+        // initializers) so they cannot silently drift. Boolean product/scan/severity/view defaults
+        // are set to the same literal values as SnykSettings field initializers; the test
+        // ConfigDefaults_BooleanValues_MatchSnykSettingsFieldInitializers (ConfigDefaultsTests.cs)
+        // acts as a drift guard by constructing new SnykSettings() and comparing via GetDefaultForTest.
         private static readonly Dictionary<string, object> Defaults = new Dictionary<string, object>
         {
             // Products
@@ -88,7 +91,25 @@ namespace Snyk.VisualStudio.Extension.Language
                 return false;
             }
 
+            // AdditionalParameters: the form sends a space-joined string from a text input.
+            // An empty or whitespace-only string ("   ") is semantically equivalent to the empty
+            // default (no parameters) — splitting on spaces produces an empty token list either way.
+            if (key == PflagKeys.AdditionalParameters && value is string paramStr)
+                return string.IsNullOrWhiteSpace(paramStr);
+
             return defaultValue.Equals(value);
+        }
+
+        /// <summary>
+        /// Test helper: returns the raw default value for <paramref name="key"/> from the
+        /// <see cref="Defaults"/> map, or null when the key is absent. Used by drift-guard tests
+        /// to compare ConfigDefaults entries against <see cref="Settings.SnykSettings"/> field
+        /// initializers without exposing the dictionary publicly.
+        /// </summary>
+        internal static object GetDefaultForTest(string key)
+        {
+            Defaults.TryGetValue(key, out var value);
+            return value;
         }
     }
 }

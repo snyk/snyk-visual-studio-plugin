@@ -529,5 +529,53 @@ namespace Snyk.VisualStudio.Extension.Tests.Language
             var resets = sut.ConsumePendingResets();
             Assert.Contains(PflagKeys.SnykOssEnabled, resets); // edited key reset to default must produce pending reset
         }
+
+        // PR-REV-001: Re-typing the same org-pushed value the user genuinely owns must still be
+        // recorded as an override when the form sends the key.
+        // OLD behaviour (snapshot/diff path): before==after equality caused the key to be DROPPED
+        // from the edit-delta, so a user who re-typed a value that happened to equal the current
+        // (org-pushed) Options value would lose their override mark.
+        // NEW behaviour (form-driven): if the form sent the key (HasValue/!=null) it is in
+        // editedKeys, so ApplyUserEdits sees it. Even when the current value is non-default,
+        // the key is classified by IsDefault → Mark (not Unmark), and the override is preserved.
+        [Fact]
+        public void ApplyUserEdits_ReTypingSameOrgPushedValue_IsStillRecordedAsOverride()
+        {
+            // Simulate: org pushed OssEnabled=false (non-default). The tracker was NOT updated
+            // (updateOverrideTracker:false on the LS-push path), so OssEnabled is NOT marked.
+            var options = DefaultOptions();
+            options.SetupGet(x => x.OssEnabled).Returns(false); // org-pushed non-default value
+
+            // User re-types the same value (false) in the form — the form sends the key.
+            // The form-driven approach records this as an edit because the form sent the key.
+            sut.ApplyUserEdits(options.Object, new List<string> { PflagKeys.SnykOssEnabled });
+
+            // The key must be marked as a user override (value is non-default).
+            Assert.True(sut.IsChanged(PflagKeys.SnykOssEnabled),
+                "Re-typing an org-pushed non-default value must be recorded as an override " +
+                "because the form sent the key — the value is non-default so IsDefault→Mark");
+        }
+
+        // PR-REV-002: ApplyUserEdits with AdditionalParameters key (List<string> in options,
+        // but the tracker compares the space-joined string representation) must record an override
+        // when the user types any non-empty value. Previously the snapshot/diff path used
+        // ToString() on a List<string> ("System.Collections.Generic.List`1[System.String]") and
+        // compared it to the string "System.Collections.Generic.List`1[System.String]" — which
+        // always compared as equal, so editing AdditionalParameters never registered.
+        [Fact]
+        public void ApplyUserEdits_AdditionalParameters_RecordsOverrideWhenNonEmpty()
+        {
+            // Options: AdditionalParameters has a non-default value (non-empty list → space-joined non-empty string).
+            var options = DefaultOptions();
+            options.SetupGet(x => x.AdditionalParameters).Returns(new List<string> { "--debug" });
+
+            // The form sent additional_parameters.
+            sut.ApplyUserEdits(options.Object, new List<string> { PflagKeys.AdditionalParameters });
+
+            // Must be marked as a user override.
+            Assert.True(sut.IsChanged(PflagKeys.AdditionalParameters),
+                "AdditionalParameters with a non-empty list must be marked as an override — " +
+                "the tracker normalises it to a space-joined string before comparing to default");
+        }
     }
 }

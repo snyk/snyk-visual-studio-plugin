@@ -483,6 +483,82 @@ namespace Snyk.VisualStudio.Extension.Tests.UI.Html
             return await task;
         }
 
+        // PR-REV-BRIDGE-001: Form-driven edit detection — keys present in the form payload must
+        // be passed to Save as editedKeys, regardless of whether the value changed in Options.
+        // This replaces the old snapshot/diff mechanism which dropped keys when before==after.
+        [Fact]
+        public void SaveIdeConfig_FormSentKey_PassesKeyToSaveAsEditedKey()
+        {
+            // Capture what editedKeys is passed to OptionsManager.Save.
+            IReadOnlyCollection<string> capturedEditedKeys = null;
+            snykOptionsManagerMock
+                .Setup(m => m.Save(
+                    It.IsAny<IPersistableOptions>(),
+                    It.IsAny<bool>(),
+                    It.IsAny<bool>(),
+                    It.IsAny<IReadOnlyCollection<string>>()))
+                .Callback<IPersistableOptions, bool, bool, IReadOnlyCollection<string>>(
+                    (_, __, ___, keys) => capturedEditedKeys = keys);
+
+            // Form sends snyk_oss_enabled.
+            var config = JsonConvert.SerializeObject(new { snyk_oss_enabled = true });
+            bridge.__saveIdeConfig__(config);
+
+            Assert.NotNull(capturedEditedKeys);
+            Assert.Contains(PflagKeys.SnykOssEnabled, capturedEditedKeys);
+        }
+
+        // PR-REV-BRIDGE-002: Form-driven edit detection — AdditionalParameters in form payload
+        // must produce PflagKeys.AdditionalParameters in editedKeys.
+        // The old snapshot/diff path used ToString() on List<string> and always got equality
+        // (both before and after = "System.Collections.Generic.List`1[...]"), silently dropping
+        // AdditionalParameters from the edit-delta and never recording it as a user override.
+        [Fact]
+        public void SaveIdeConfig_AdditionalParameters_PassedAsEditedKeyToSave()
+        {
+            IReadOnlyCollection<string> capturedEditedKeys = null;
+            snykOptionsManagerMock
+                .Setup(m => m.Save(
+                    It.IsAny<IPersistableOptions>(),
+                    It.IsAny<bool>(),
+                    It.IsAny<bool>(),
+                    It.IsAny<IReadOnlyCollection<string>>()))
+                .Callback<IPersistableOptions, bool, bool, IReadOnlyCollection<string>>(
+                    (_, __, ___, keys) => capturedEditedKeys = keys);
+
+            optionsMock.SetupAllProperties();
+
+            // Form sends additional_parameters — a value the user typed.
+            var config = JsonConvert.SerializeObject(new { additional_parameters = "--debug" });
+            bridge.__saveIdeConfig__(config);
+
+            Assert.NotNull(capturedEditedKeys);
+            Assert.Contains(PflagKeys.AdditionalParameters, capturedEditedKeys);
+        }
+
+        // PR-REV-BRIDGE-003: Keys NOT sent by the form must NOT appear in editedKeys.
+        // Only the keys the form actually sent should be passed to Save.
+        [Fact]
+        public void SaveIdeConfig_AbsentKey_NotPassedAsEditedKeyToSave()
+        {
+            IReadOnlyCollection<string> capturedEditedKeys = null;
+            snykOptionsManagerMock
+                .Setup(m => m.Save(
+                    It.IsAny<IPersistableOptions>(),
+                    It.IsAny<bool>(),
+                    It.IsAny<bool>(),
+                    It.IsAny<IReadOnlyCollection<string>>()))
+                .Callback<IPersistableOptions, bool, bool, IReadOnlyCollection<string>>(
+                    (_, __, ___, keys) => capturedEditedKeys = keys);
+
+            // Form only sends snyk_oss_enabled; snyk_iac_enabled is absent.
+            var config = JsonConvert.SerializeObject(new { snyk_oss_enabled = true });
+            bridge.__saveIdeConfig__(config);
+
+            Assert.NotNull(capturedEditedKeys);
+            Assert.DoesNotContain(PflagKeys.SnykIacEnabled, capturedEditedKeys);
+        }
+
         [Fact]
         public void SaveIdeConfig_SetsOssEnabled_FromSnakeCaseKey()
         {
