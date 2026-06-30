@@ -405,6 +405,42 @@ namespace Snyk.VisualStudio.Extension.Tests.UI.Html
         }
 
         [Fact]
+        public async Task SaveIdeConfig_RollsBackConsistentIgnoresEnabled_WhenApplyThrows()
+        {
+            // ConsistentIgnoresEnabled must be captured in the rollback snapshot so a failed save
+            // does not leave it in a partially-applied state (IDE-1842 finding B).
+            var localOptions = new Mock<ISnykOptions>();
+            localOptions.SetupAllProperties();
+            localOptions.Object.ConsistentIgnoresEnabled = true; // baseline to be restored
+
+            var thrown = false;
+            localOptions.SetupSet(o => o.RiskScoreThreshold = It.IsAny<int?>())
+                .Callback<int?>(_ =>
+                {
+                    if (!thrown)
+                    {
+                        thrown = true;
+                        throw new InvalidOperationException("boom");
+                    }
+                });
+
+            var localManager = new Mock<ISnykOptionsManager>();
+            var sp = new Mock<ISnykServiceProvider>();
+            sp.SetupGet(x => x.Options).Returns(localOptions.Object);
+            sp.SetupGet(x => x.SnykOptionsManager).Returns(localManager.Object);
+            var localBridge = new HtmlSettingsScriptingBridge(sp.Object, onModified: () => { });
+
+            // snyk_oss_enabled is applied early (before risk_score_threshold which throws).
+            // ConsistentIgnoresEnabled is runtime-only so cannot be included in the config payload;
+            // the test verifies that the snapshot captured it before apply and restores it on rollback.
+            var config = JsonConvert.SerializeObject(new { snyk_oss_enabled = true, risk_score_threshold = 500 });
+            localBridge.__saveIdeConfig__(config);
+
+            Assert.False(await AwaitWithTimeout(localBridge.SaveCompletion)); // apply failed
+            Assert.True(localOptions.Object.ConsistentIgnoresEnabled); // rolled back to baseline (true)
+        }
+
+        [Fact]
         public async Task SaveIdeConfig_RollsBackInMemoryOptions_WhenApplyThrows()
         {
             // Use a fully-stubbed options object so we can observe property state, and make a late
@@ -563,17 +599,17 @@ namespace Snyk.VisualStudio.Extension.Tests.UI.Html
                 new FolderConfig { FolderPath = "/path/to/solution" }
             });
 
-            var config = JsonConvert.SerializeObject(new IdeConfigData
+            var config = JsonConvert.SerializeObject(new
             {
-                FolderConfigs = new List<FolderConfigData>
+                folderConfigs = new[]
                 {
-                    new FolderConfigData
+                    new
                     {
-                        PreferredOrg = "my-org",
-                        OrgSetByUser = true,
-                        AdditionalParameters = new List<string>(),
-                        AdditionalEnv = "ENV_VAR=1",
-                        AutoDeterminedOrg = "auto-org",
+                        preferred_org = "my-org",
+                        org_set_by_user = true,
+                        additional_parameters = new string[0],
+                        additional_environment = "ENV_VAR=1",
+                        auto_determined_org = "auto-org",
                     },
                 },
             });
@@ -582,10 +618,10 @@ namespace Snyk.VisualStudio.Extension.Tests.UI.Html
 
             // In-memory state updated — LS is the real persistence (no disk Save*Async calls)
             var fc = optionsMock.Object.FolderConfigs[0];
-            Assert.Equal("my-org", fc.PreferredOrg);
-            Assert.True(fc.OrgSetByUser);
-            Assert.Equal("ENV_VAR=1", fc.AdditionalEnv);
-            Assert.Equal("auto-org", fc.AutoDeterminedOrg);
+            Assert.Equal("my-org", fc.GetString(PflagKeys.PreferredOrg));
+            Assert.True(Convert.ToBoolean(fc.Settings[PflagKeys.OrgSetByUser].Value));
+            Assert.Equal("ENV_VAR=1", fc.GetString(PflagKeys.AdditionalEnvironment));
+            Assert.Equal("auto-org", fc.GetString(PflagKeys.AutoDeterminedOrg));
         }
 
         [Fact]
@@ -595,61 +631,60 @@ namespace Snyk.VisualStudio.Extension.Tests.UI.Html
             var existing = new FolderConfig { FolderPath = "/path/to/solution" };
             optionsMock.SetupGet(o => o.FolderConfigs).Returns(new List<FolderConfig> { existing });
 
-            var config = JsonConvert.SerializeObject(new IdeConfigData
+            var config = JsonConvert.SerializeObject(new
             {
-                FolderConfigs = new List<FolderConfigData>
+                folderConfigs = new[]
                 {
-                    new FolderConfigData
+                    new
                     {
-                        FolderPath = "/path/to/solution",
-                        PreferredOrg = "my-org",
-                        BaseBranch = "develop",
-                        SnykOssEnabled = true,
-                        SnykCodeEnabled = false,
-                        SeverityFilterHigh = false,
-                        ScanAutomatic = true,
-                        IssueViewIgnoredIssues = false,
-                        RiskScoreThreshold = 500,
+                        folderPath = "/path/to/solution",
+                        preferred_org = "my-org",
+                        base_branch = "develop",
+                        snyk_oss_enabled = true,
+                        snyk_code_enabled = false,
+                        severity_filter_high = false,
+                        scan_automatic = true,
+                        issue_view_ignored_issues = false,
+                        risk_score_threshold = 500,
                     },
                 },
             });
 
             bridge.__saveIdeConfig__(config);
 
-            Assert.Equal("my-org", existing.PreferredOrg);
+            Assert.Equal("my-org", existing.GetString(PflagKeys.PreferredOrg));
             // BaseBranch has no solution-storage slot — only the mirror persists it.
-            Assert.Equal("develop", existing.BaseBranch);
-            Assert.Equal(true, existing.SnykOssEnabled);
-            Assert.Equal(false, existing.SnykCodeEnabled);
-            Assert.Equal(false, existing.SeverityFilterHigh);
-            Assert.Equal(true, existing.ScanAutomatic);
-            Assert.Equal(false, existing.IssueViewIgnoredIssues);
-            Assert.Equal(500, existing.RiskScoreThreshold);
+            Assert.Equal("develop", existing.GetString(PflagKeys.BaseBranch));
+            Assert.True(Convert.ToBoolean(existing.Settings[PflagKeys.SnykOssEnabled].Value));
+            Assert.False(Convert.ToBoolean(existing.Settings[PflagKeys.SnykCodeEnabled].Value));
+            Assert.False(Convert.ToBoolean(existing.Settings[PflagKeys.SeverityFilterHigh].Value));
+            Assert.True(Convert.ToBoolean(existing.Settings[PflagKeys.ScanAutomatic].Value));
+            Assert.False(Convert.ToBoolean(existing.Settings[PflagKeys.IssueViewIgnoredIssues].Value));
+            Assert.Equal(500, Convert.ToInt32(existing.Settings[PflagKeys.RiskScoreThreshold].Value));
         }
 
         [Fact]
         public void SaveIdeConfig_FolderConfigs_AbsentFieldsDoNotClobberExistingOverrides()
         {
             // Existing config already carries several per-folder overrides.
-            var existing = new FolderConfig
-            {
-                FolderPath = "/path/to/solution",
-                PreferredOrg = "original-org",
-                SnykOssEnabled = true,
-                SeverityFilterHigh = true,
-                RiskScoreThreshold = 700,
-            };
+            var existing = new FolderConfig { FolderPath = "/path/to/solution" };
+            existing.SetString(PflagKeys.PreferredOrg, "original-org");
+            existing.Set(PflagKeys.SnykOssEnabled, true);
+            existing.Set(PflagKeys.SeverityFilterHigh, true);
+            existing.Set(PflagKeys.RiskScoreThreshold, 700);
             optionsMock.SetupGet(o => o.FolderConfigs).Returns(new List<FolderConfig> { existing });
 
-            // Changed-only payload touching a single override.
-            var config = JsonConvert.SerializeObject(new IdeConfigData
+            // Changed-only payload touching a single override — only the touched wire keys
+            // (folderPath + snyk_code_enabled), matching the real JS form output. An absent key means
+            // "no change"; only a present JSON null is a reset, so untouched overrides must survive.
+            var config = JsonConvert.SerializeObject(new
             {
-                FolderConfigs = new List<FolderConfigData>
+                folderConfigs = new[]
                 {
-                    new FolderConfigData
+                    new
                     {
-                        FolderPath = "/path/to/solution",
-                        SnykCodeEnabled = false,
+                        folderPath = "/path/to/solution",
+                        snyk_code_enabled = false,
                     },
                 },
             });
@@ -657,12 +692,12 @@ namespace Snyk.VisualStudio.Extension.Tests.UI.Html
             bridge.__saveIdeConfig__(config);
 
             // The one changed field is applied...
-            Assert.Equal(false, existing.SnykCodeEnabled);
+            Assert.False(Convert.ToBoolean(existing.Settings[PflagKeys.SnykCodeEnabled].Value));
             // ...and every untouched field survives.
-            Assert.Equal("original-org", existing.PreferredOrg);
-            Assert.Equal(true, existing.SnykOssEnabled);
-            Assert.Equal(true, existing.SeverityFilterHigh);
-            Assert.Equal(700, existing.RiskScoreThreshold);
+            Assert.Equal("original-org", existing.GetString(PflagKeys.PreferredOrg));
+            Assert.True(Convert.ToBoolean(existing.Settings[PflagKeys.SnykOssEnabled].Value));
+            Assert.True(Convert.ToBoolean(existing.Settings[PflagKeys.SeverityFilterHigh].Value));
+            Assert.Equal(700, Convert.ToInt32(existing.Settings[PflagKeys.RiskScoreThreshold].Value));
         }
 
         [Fact]
@@ -674,21 +709,42 @@ namespace Snyk.VisualStudio.Extension.Tests.UI.Html
             var folderB = new FolderConfig { FolderPath = "/repo/b" };
             optionsMock.SetupGet(o => o.FolderConfigs).Returns(new List<FolderConfig> { folderA, folderB });
 
-            var config = JsonConvert.SerializeObject(new IdeConfigData
+            var config = JsonConvert.SerializeObject(new
             {
-                FolderConfigs = new List<FolderConfigData>
+                folderConfigs = new[]
                 {
-                    new FolderConfigData { FolderPath = "/repo/a", PreferredOrg = "org-a", SnykOssEnabled = true },
-                    new FolderConfigData { FolderPath = "/repo/b", PreferredOrg = "org-b", SnykOssEnabled = false },
+                    new { folderPath = "/repo/a", preferred_org = "org-a", snyk_oss_enabled = true },
+                    new { folderPath = "/repo/b", preferred_org = "org-b", snyk_oss_enabled = false },
                 },
             });
 
             bridge.__saveIdeConfig__(config);
 
-            Assert.Equal("org-a", folderA.PreferredOrg);
-            Assert.Equal(true, folderA.SnykOssEnabled);
-            Assert.Equal("org-b", folderB.PreferredOrg);
-            Assert.Equal(false, folderB.SnykOssEnabled);
+            Assert.Equal("org-a", folderA.GetString(PflagKeys.PreferredOrg));
+            Assert.True(Convert.ToBoolean(folderA.Settings[PflagKeys.SnykOssEnabled].Value));
+            Assert.Equal("org-b", folderB.GetString(PflagKeys.PreferredOrg));
+            Assert.False(Convert.ToBoolean(folderB.Settings[PflagKeys.SnykOssEnabled].Value));
+        }
+
+        [Fact]
+        public void SaveIdeConfig_GlobalAdditionalParameters_SplitsSpaceJoinedString()
+        {
+            // Form sends additional_parameters as a plain string (text input → setFieldValue → string).
+            var config = JsonConvert.SerializeObject(new { additional_parameters = "--debug --severity-threshold=high" });
+
+            bridge.__saveIdeConfig__(config);
+
+            optionsMock.VerifySet(o => o.AdditionalParameters = new List<string> { "--debug", "--severity-threshold=high" });
+        }
+
+        [Fact]
+        public void SaveIdeConfig_GlobalAdditionalParameters_EmptyString_SetsEmptyList()
+        {
+            var config = JsonConvert.SerializeObject(new { additional_parameters = "" });
+
+            bridge.__saveIdeConfig__(config);
+
+            optionsMock.VerifySet(o => o.AdditionalParameters = new List<string>());
         }
 
         [Fact]
@@ -696,20 +752,76 @@ namespace Snyk.VisualStudio.Extension.Tests.UI.Html
         {
             // No matching global config entry (FolderConfigs stays null) — the mirror block is
             // skipped; no exception is thrown; no in-memory update since no matching FolderConfig exists.
-            var config = JsonConvert.SerializeObject(new IdeConfigData
+            var config = JsonConvert.SerializeObject(new
             {
-                FolderConfigs = new List<FolderConfigData>
+                folderConfigs = new[]
                 {
-                    new FolderConfigData
+                    new
                     {
-                        FolderPath = "/path/to/solution",
-                        PreferredOrg = "my-org",
-                        SnykOssEnabled = true,
+                        folderPath = "/path/to/solution",
+                        preferred_org = "my-org",
+                        snyk_oss_enabled = true,
                     },
                 },
             });
 
             bridge.__saveIdeConfig__(config);
+        }
+
+        [Fact]
+        public void SaveIdeConfig_FolderConfigs_PresentNullFields_StoredAsNullReset()
+        {
+            // "Reset overrides" sends folder fields as flat JSON null. Looping the raw JSON keeps
+            // present-null distinct from absent, so each present-null key is Set to null in the
+            // opaque map → BuildFolderConfigs emits {value:null, changed:true} and snyk-ls Unsets
+            // the user:folder: override. folderPath is never written as a setting.
+            var existing = new FolderConfig { FolderPath = "/repo" };
+            existing.Set(PflagKeys.AdditionalParameters, new List<string> { "--debug" });
+            existing.SetString(PflagKeys.AdditionalEnvironment, "FOO=bar");
+            existing.Set(PflagKeys.ScanCommandConfig, new Dictionary<string, ScanCommandConfig>
+            {
+                ["oss"] = new ScanCommandConfig { PreScanCommand = "echo hi" },
+            });
+            optionsMock.SetupGet(o => o.FolderConfigs).Returns(new List<FolderConfig> { existing });
+
+            // Raw payload with explicit JSON nulls — the exact present-null shape the dialog's reset emits.
+            var config = "{" +
+                "\"folderConfigs\":[{" +
+                    "\"folderPath\":\"/repo\"," +
+                    "\"additional_parameters\":null," +
+                    "\"additional_environment\":null," +
+                    "\"scan_command_config\":null" +
+                "}]}";
+
+            bridge.__saveIdeConfig__(config);
+
+            // Each present-null field is now a null-valued ConfigSetting (the reset); folderPath isn't a setting.
+            Assert.Null(existing.Settings[PflagKeys.AdditionalParameters].Value);
+            Assert.Null(existing.Settings[PflagKeys.AdditionalEnvironment].Value);
+            Assert.Null(existing.Settings[PflagKeys.ScanCommandConfig].Value);
+            Assert.True(existing.Settings[PflagKeys.AdditionalParameters].Changed);
+            Assert.False(existing.Settings.ContainsKey("folderPath"));
+        }
+
+        [Fact]
+        public void SaveIdeConfig_FolderConfigs_UnknownPresentNullField_StillForwardedAsReset()
+        {
+            // The IDE is dumb: any folder field sent as JSON null is forwarded as a reset, even one
+            // this build has no typed property for. snyk-ls is authoritative and ignores nulls on
+            // keys it doesn't treat as folder-scoped, so forwarding extra present-nulls is safe.
+            var existing = new FolderConfig { FolderPath = "/repo" };
+            optionsMock.SetupGet(o => o.FolderConfigs).Returns(new List<FolderConfig> { existing });
+
+            var config = "{" +
+                "\"folderConfigs\":[{" +
+                    "\"folderPath\":\"/repo\"," +
+                    "\"some_future_folder_key\":null" +
+                "}]}";
+
+            bridge.__saveIdeConfig__(config);
+
+            Assert.True(existing.Settings.ContainsKey("some_future_folder_key"));
+            Assert.Null(existing.Settings["some_future_folder_key"].Value);
         }
     }
 }

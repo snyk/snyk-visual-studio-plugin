@@ -253,6 +253,8 @@ CLAUDE.md
 .commit-progress
 .verify-range
 .commit-reviewed
+.verify-metrics-pending
+.verify-agent-progress
 .pr-review-*.md
 .verify-complete
 .verify-precommit-hash
@@ -260,7 +262,6 @@ CLAUDE.md
 .verify-counts
 .verify-staged-hash
 *_????????_??????_*.log
-.verify-metrics-pending
 .verify-staged-diff
 .verify-branch-diff
 .verify-pr-context
@@ -279,7 +280,6 @@ CLAUDE.md
 .snyk-code-output.json
 .snyk-code-output.err
 .verification-result.*
-.verify-agent-progress
 
 # Added by ggshield
 .cache_ggshield

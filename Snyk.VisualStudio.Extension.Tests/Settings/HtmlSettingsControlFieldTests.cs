@@ -47,5 +47,24 @@ namespace Snyk.VisualStudio.Extension.Tests.Settings
             var requiredMods = field.GetRequiredCustomModifiers();
             Assert.Contains(typeof(IsVolatile), requiredMods);
         }
+
+        /// <summary>
+        /// _disposed is read on the background LS thread (via RequestReload → early-exit guard at
+        /// line 346) and written on the UI thread (Dispose). The volatile modifier prevents the JIT
+        /// from caching a stale value in a register, matching the same pattern as _pageReady above.
+        /// </summary>
+        [Fact]
+        public void _disposed_IsVolatile_MatchingInstanceFieldPattern()
+        {
+            var field = typeof(HtmlSettingsControl).GetField(
+                "_disposed",
+                BindingFlags.Instance | BindingFlags.NonPublic);
+
+            Assert.NotNull(field); // field must exist
+
+            // A volatile field carries IsVolatile as a required custom modifier.
+            var requiredMods = field.GetRequiredCustomModifiers();
+            Assert.Contains(typeof(IsVolatile), requiredMods);
+        }
     }
 }

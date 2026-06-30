@@ -71,7 +71,6 @@ namespace Snyk.VisualStudio.Extension.Settings
         public string DeviceId { get; set; } = Guid.NewGuid().ToString();
         public bool OpenIssuesEnabled { get; set; } = true;
         public bool IgnoredIssuesEnabled { get; set; } = false;
-        public List<FolderConfig> FolderConfigs { get; set; }
         public bool EnableDeltaFindings { get; set; }
         public bool AnalyticsPluginInstalledSent { get; set; }
         public bool FilterCritical { get; set; } = true;
@@ -79,6 +78,7 @@ namespace Snyk.VisualStudio.Extension.Settings
         public bool FilterMedium { get; set; } = true;
         public bool FilterLow { get; set; } = true;
         public string AdditionalEnv { get; set; } = string.Empty;
+        public List<string> AdditionalParameters { get; set; } = new List<string>();
         public int? RiskScoreThreshold { get; set; } = null;
 
         /// <summary>

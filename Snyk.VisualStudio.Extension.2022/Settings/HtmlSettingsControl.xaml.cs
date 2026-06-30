@@ -49,7 +49,7 @@ namespace Snyk.VisualStudio.Extension.Settings
         private readonly ISnykServiceProvider serviceProvider;
         protected readonly HtmlSettingsScriptingBridge scriptingBridge;
         protected readonly WebView2Host host;
-        private bool _disposed;
+        private volatile bool _disposed;
 
         public static readonly DependencyProperty IsDirtyProperty =
             DependencyProperty.Register(
@@ -160,7 +160,7 @@ namespace Snyk.VisualStudio.Extension.Settings
         /// </summary>
         public bool IsStale { get; private set; }
 
-        private async void Control_IsVisibleChanged(object sender, DependencyPropertyChangedEventArgs e)
+        private void Control_IsVisibleChanged(object sender, DependencyPropertyChangedEventArgs e)
         {
             if (_disposed) return;
             Logger.Information("[lifecycle] HtmlSettingsControl IsVisibleChanged; instance={Hash}, IsVisible={Visible}, initStarted={Started}",
@@ -171,18 +171,30 @@ namespace Snyk.VisualStudio.Extension.Settings
 
             instance = this;
 
-            try
+            ThreadHelper.JoinableTaskFactory.RunAsync(async () =>
             {
-                await host.InitializeAsync();
-            }
-            catch (Exception ex)
-            {
-                Logger.Error(ex, "WebView2 initialization failed");
-                LoadingStatusLabel.Text = $"Failed to initialize browser: {ex.Message}";
-                return;
-            }
+                // This handler used to be async void, which implicitly resumed on the UI thread.
+                // Under RunAsync the continuation isn't guaranteed to, so switch explicitly before
+                // touching the WebView2 (host.InitializeAsync) or the WPF LoadingStatusLabel below.
+                await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
+                try
+                {
+                    await host.InitializeAsync();
+                }
+                catch (Exception ex)
+                {
+                    Logger.Error(ex, "WebView2 initialization failed");
+                    LoadingStatusLabel.Text = $"Failed to initialize browser: {ex.Message}";
+                    // A failed InitializeAsync can leave the WebView2 env/host in a broken state, and
+                    // _initStarted would otherwise block any retry for this control's lifetime. Mark
+                    // stale so EnsureFreshControl disposes this instance, evicts the env cache, and
+                    // builds a fresh control+host on the next show rather than leaving a dead page.
+                    IsStale = true;
+                    return;
+                }
 
-            await LoadHtmlSettingsAsync();
+                await LoadHtmlSettingsAsync();
+            }).FireAndForget();
         }
 
         private void Control_Unloaded(object sender, RoutedEventArgs e)

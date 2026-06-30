@@ -3,6 +3,7 @@
 
 using System.Collections.Generic;
 using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
 using Snyk.VisualStudio.Extension.Language;
 
 namespace Snyk.VisualStudio.Extension.UI.Html
@@ -113,89 +114,25 @@ namespace Snyk.VisualStudio.Extension.UI.Html
         [JsonProperty("risk_score_threshold")]
         public int? RiskScoreThreshold { get; set; }
 
+        // Global (Project Defaults) advanced settings — top-level keys, distinct from the
+        // per-folder additional_* keys (those are forwarded verbatim, not modeled here).
+        [JsonProperty("additional_environment")]
+        public string AdditionalEnv { get; set; }
+
+        // Form sends additional_parameters as a raw string (text input); split on whitespace when applying.
+        [JsonProperty("additional_parameters")]
+        public string AdditionalParameters { get; set; }
+
         // Trusted folders
         [JsonProperty("trusted_folders")]
         public List<string> TrustedFolders { get; set; }
 
-        // Folder configs (key stays camelCase: both forms emit "folderConfigs")
+        // Per-folder settings (folderConfigs: [...]). The inner folder fields are intentionally NOT
+        // modeled — ApplyFolderConfigsAsync forwards them verbatim from the raw JSON to the LS (the
+        // IDE is "dumb" about folder-scoped keys, matching vscode/eclipse). This property exists only
+        // so IdeConfigContract recognizes the top-level "folderConfigs" key as bound; it is otherwise
+        // unused (the typed global save path doesn't read it).
         [JsonProperty("folderConfigs")]
-        public List<FolderConfigData> FolderConfigs { get; set; }
-    }
-
-    /// <summary>
-    /// Per-solution/folder configuration. Folder fields are flattened by the form from
-    /// <c>folder_INDEX_FIELD</c> input names into snake_case keys.
-    /// <para>
-    /// The form sends a changed-only folder object (just the fields that differ, plus
-    /// <c>folderPath</c>). Every field is therefore nullable so the bridge can tell "absent"
-    /// from a real value and avoid clobbering unchanged sibling fields.
-    /// </para>
-    /// </summary>
-    public class FolderConfigData
-    {
-        [JsonProperty("folderPath")]
-        public string FolderPath { get; set; }
-
-        [JsonProperty("additional_parameters")]
-        public List<string> AdditionalParameters { get; set; }
-
-        [JsonProperty("additional_environment")]
-        public string AdditionalEnv { get; set; }
-
-        [JsonProperty("preferred_org")]
-        public string PreferredOrg { get; set; }
-
-        [JsonProperty("auto_determined_org")]
-        public string AutoDeterminedOrg { get; set; }
-
-        [JsonProperty("org_set_by_user")]
-        public bool? OrgSetByUser { get; set; }
-
-        [JsonProperty("base_branch")]
-        public string BaseBranch { get; set; }
-
-        [JsonProperty("scan_command_config")]
-        public Dictionary<string, ScanCommandConfig> ScanCommandConfig { get; set; }
-
-        // Per-folder org-scope overrides rendered in the form's per-folder section. Nullable so an
-        // absent field (changed-only payload) means "no change", not "clear the override".
-        [JsonProperty("snyk_oss_enabled")]
-        public bool? SnykOssEnabled { get; set; }
-
-        [JsonProperty("snyk_code_enabled")]
-        public bool? SnykCodeEnabled { get; set; }
-
-        [JsonProperty("snyk_iac_enabled")]
-        public bool? SnykIacEnabled { get; set; }
-
-        [JsonProperty("snyk_secrets_enabled")]
-        public bool? SnykSecretsEnabled { get; set; }
-
-        [JsonProperty("scan_automatic")]
-        public bool? ScanAutomatic { get; set; }
-
-        [JsonProperty("scan_net_new")]
-        public bool? ScanNetNew { get; set; }
-
-        [JsonProperty("severity_filter_critical")]
-        public bool? SeverityFilterCritical { get; set; }
-
-        [JsonProperty("severity_filter_high")]
-        public bool? SeverityFilterHigh { get; set; }
-
-        [JsonProperty("severity_filter_medium")]
-        public bool? SeverityFilterMedium { get; set; }
-
-        [JsonProperty("severity_filter_low")]
-        public bool? SeverityFilterLow { get; set; }
-
-        [JsonProperty("issue_view_open_issues")]
-        public bool? IssueViewOpenIssues { get; set; }
-
-        [JsonProperty("issue_view_ignored_issues")]
-        public bool? IssueViewIgnoredIssues { get; set; }
-
-        [JsonProperty("risk_score_threshold")]
-        public int? RiskScoreThreshold { get; set; }
+        public JArray FolderConfigs { get; set; }
     }
 }

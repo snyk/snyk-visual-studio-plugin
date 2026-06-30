@@ -52,21 +52,21 @@ namespace Snyk.VisualStudio.Extension.Settings
 
             var args = SplitArguments(legacy.AdditionalOptions);
             if (args.Count > 0)
-                fc.AdditionalParameters = args;
+                fc.Set(PflagKeys.AdditionalParameters, args);
 
             if (!string.IsNullOrEmpty(legacy.AdditionalEnv))
-                fc.AdditionalEnv = legacy.AdditionalEnv;
+                fc.Set(PflagKeys.AdditionalEnvironment, legacy.AdditionalEnv);
 
             // Prefer the newer per-folder PreferredOrg; fall back to the pre-split single Organization
             // field, which was itself a user-set per-solution override, so older profiles still migrate.
             var preferredOrg = !string.IsNullOrEmpty(legacy.PreferredOrg) ? legacy.PreferredOrg : legacy.Organization;
             if (!string.IsNullOrEmpty(preferredOrg))
-                fc.PreferredOrg = preferredOrg;
+                fc.Set(PflagKeys.PreferredOrg, preferredOrg);
             if (!string.IsNullOrEmpty(legacy.AutoDeterminedOrg))
-                fc.AutoDeterminedOrg = legacy.AutoDeterminedOrg;
+                fc.Set(PflagKeys.AutoDeterminedOrg, legacy.AutoDeterminedOrg);
             // Treat the org as user-set if the legacy flag said so, or if we recovered one from the
             // legacy Organization field (which only existed because the user set it).
-            fc.OrgSetByUser = legacy.OrgSetByUser || !string.IsNullOrEmpty(preferredOrg);
+            fc.Set(PflagKeys.OrgSetByUser, legacy.OrgSetByUser || !string.IsNullOrEmpty(preferredOrg));
 
             return fc;
         }
@@ -89,21 +89,29 @@ namespace Snyk.VisualStudio.Extension.Settings
                 return result;
             }
 
-            if ((match.AdditionalParameters == null || match.AdditionalParameters.Count == 0)
-                && migrated.AdditionalParameters != null)
-                match.AdditionalParameters = migrated.AdditionalParameters;
+            // Fill only the keys the match is missing, so a value the Language Server already
+            // provided for that folder is never overwritten. Keys are read from / written to the
+            // opaque settings map (see FolderConfig).
+            var matchParams = match.GetStringList(PflagKeys.AdditionalParameters);
+            var migratedParams = migrated.GetStringList(PflagKeys.AdditionalParameters);
+            if ((matchParams == null || matchParams.Count == 0) && migratedParams != null)
+                match.Set(PflagKeys.AdditionalParameters, migratedParams);
 
-            if (string.IsNullOrEmpty(match.AdditionalEnv) && !string.IsNullOrEmpty(migrated.AdditionalEnv))
-                match.AdditionalEnv = migrated.AdditionalEnv;
+            if (string.IsNullOrEmpty(match.GetString(PflagKeys.AdditionalEnvironment))
+                && !string.IsNullOrEmpty(migrated.GetString(PflagKeys.AdditionalEnvironment)))
+                match.SetString(PflagKeys.AdditionalEnvironment, migrated.GetString(PflagKeys.AdditionalEnvironment));
 
-            if (string.IsNullOrEmpty(match.PreferredOrg) && !string.IsNullOrEmpty(migrated.PreferredOrg))
+            if (string.IsNullOrEmpty(match.GetString(PflagKeys.PreferredOrg))
+                && !string.IsNullOrEmpty(migrated.GetString(PflagKeys.PreferredOrg)))
             {
-                match.PreferredOrg = migrated.PreferredOrg;
-                match.OrgSetByUser = migrated.OrgSetByUser;
+                match.SetString(PflagKeys.PreferredOrg, migrated.GetString(PflagKeys.PreferredOrg));
+                if (migrated.Settings.TryGetValue(PflagKeys.OrgSetByUser, out var orgSetByUser))
+                    match.Settings[PflagKeys.OrgSetByUser] = orgSetByUser;
             }
 
-            if (string.IsNullOrEmpty(match.AutoDeterminedOrg) && !string.IsNullOrEmpty(migrated.AutoDeterminedOrg))
-                match.AutoDeterminedOrg = migrated.AutoDeterminedOrg;
+            if (string.IsNullOrEmpty(match.GetString(PflagKeys.AutoDeterminedOrg))
+                && !string.IsNullOrEmpty(migrated.GetString(PflagKeys.AutoDeterminedOrg)))
+                match.SetString(PflagKeys.AutoDeterminedOrg, migrated.GetString(PflagKeys.AutoDeterminedOrg));
 
             return result;
         }

@@ -72,9 +72,9 @@ namespace Snyk.VisualStudio.Extension.Service
         SnykVsThemeService VsThemeService { get; }
 
         /// <summary>
-        /// Gets <see cref="SnykToolWindowControl"/> instance.
+        /// Gets the tool window seam (implemented by <see cref="SnykToolWindowControl"/>).
         /// </summary>
-        SnykToolWindowControl ToolWindow { get; }
+        ISnykToolWindow ToolWindow { get; }
 
         /// <summary>
         /// Get Visual Studio service (async).

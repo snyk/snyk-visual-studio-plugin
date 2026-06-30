@@ -1,7 +1,6 @@
 ﻿// ABOUTME: This file implements custom JSON-RPC message handlers for the Snyk Language Client
 // ABOUTME: It processes diagnostics, authentication, and scan results from the Language Server
 using System;
-using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
@@ -22,11 +21,6 @@ namespace Snyk.VisualStudio.Extension.Language
         private static readonly ILogger Logger = LogManager.ForContext<SnykLanguageClientCustomTarget>();
         private readonly ISnykServiceProvider serviceProvider;
         private readonly Action _reloadHtmlSettings;
-        private readonly ConcurrentDictionary<string, IEnumerable<Issue>> snykCodeIssueDictionary = new();
-        private readonly ConcurrentDictionary<string, IEnumerable<Issue>> snykOssIssueDictionary = new();
-        private readonly ConcurrentDictionary<string, IEnumerable<Issue>> snykIaCIssueDictionary = new();
-        private readonly ConcurrentDictionary<string, IEnumerable<Issue>> snykSecretsIssueDictionary = new();
-
         public SnykLanguageClientCustomTarget(ISnykServiceProvider serviceProvider)
             : this(serviceProvider, HtmlSettingsControl.RequestReload)
         {
@@ -42,20 +36,13 @@ namespace Snyk.VisualStudio.Extension.Language
         [JsonRpcMethod(LsConstants.OnPublishDiagnostics316)]
         public async Task OnPublishDiagnostics316(JToken arg)
         {
-            var uri = arg["uri"];
-            var diagnosticsArray = (JArray)arg["diagnostics"];
-            if (uri == null)
+            // Issue rendering is driven entirely by the LS HTML tree ($/snyk.treeView); the IDE no
+            // longer caches diagnostics per file. We still inspect them for the one piece of state
+            // the IDE derives locally: whether any issue is ignored, which enables the Consistent
+            // Ignores UI.
+            var diagnosticsArray = arg?["diagnostics"] as JArray;
+            if (arg?["uri"] == null || diagnosticsArray == null || diagnosticsArray.Count == 0)
             {
-                return;
-            }
-
-            var parsedUri = new Uri(uri.ToString());
-            if (diagnosticsArray == null || diagnosticsArray.Count == 0)
-            {
-                snykCodeIssueDictionary.TryRemove(parsedUri.UncAwareAbsolutePath(), out _);
-                snykOssIssueDictionary.TryRemove(parsedUri.UncAwareAbsolutePath(), out _);
-                snykIaCIssueDictionary.TryRemove(parsedUri.UncAwareAbsolutePath(), out _);
-                snykSecretsIssueDictionary.TryRemove(parsedUri.UncAwareAbsolutePath(), out _);
                 return;
             }
 
@@ -64,35 +51,17 @@ namespace Snyk.VisualStudio.Extension.Language
                 return;
             }
 
-            var source = LspSourceToProduct(diagnosticsArray[0]["source"].ToString());
-            var issueList = diagnosticsArray.Where(x => x["data"] != null)
-                .Select(x =>
-                {
-                    var issue = x["data"].TryParse<Issue>();
-                    if (issue.IsIgnored)
-                    {
-                        serviceProvider.Options.ConsistentIgnoresEnabled = true;
-                    }
-                    return issue;
-                }).ToList();
-
-            switch (source)
+            foreach (var diagnostic in diagnosticsArray)
             {
-                case "code":
-                    snykCodeIssueDictionary.AddOrUpdate(parsedUri.UncAwareAbsolutePath(), issueList, (_, _) => issueList);
-                    break;
-                case "oss":
-                    snykOssIssueDictionary.AddOrUpdate(parsedUri.UncAwareAbsolutePath(), issueList, (_, _) => issueList);
-                    break;
-                case "iac":
-                    snykIaCIssueDictionary.AddOrUpdate(parsedUri.UncAwareAbsolutePath(), issueList, (_, _) => issueList);
-                    break;
-                case "secrets":
-                    snykSecretsIssueDictionary.AddOrUpdate(parsedUri.UncAwareAbsolutePath(), issueList, (_, _) => issueList);
-                    break;
-                default:
-                    throw new InvalidProductTypeException();
+                var data = diagnostic["data"];
+                if (data == null) continue;
 
+                var issue = data.TryParse<Issue>();
+                if (issue == null) continue;
+                if (issue.IsIgnored)
+                {
+                    serviceProvider.Options.ConsistentIgnoresEnabled = true;
+                }
             }
         }
 
@@ -127,20 +96,62 @@ namespace Snyk.VisualStudio.Extension.Language
         [JsonRpcMethod(LsConstants.ShowDocument)]
         public async Task OnShowDocument(JToken arg)
         {
-            var lspAnalysisResult = arg.TryParse<ShowDocumentParams>();
-            if (lspAnalysisResult == null) return;
-            var uri = new Uri(Uri.UnescapeDataString(lspAnalysisResult.Uri));
+            var showDocumentParams = arg.TryParse<ShowDocumentParams>();
+            if (string.IsNullOrEmpty(showDocumentParams?.Uri)) return;
 
-            // Manually parse query parameters
-            var queryParams = ParseQueryString(uri.Query);
-            var issueId = queryParams["issueId"];
-            var product = LspSourceToProduct(queryParams["product"].Replace("+", " "));
-            var action = queryParams["action"];
-            if (action != "showInDetailPanel")
+            // Build the Uri from the raw string. Do NOT pre-unescape it: ParseQueryString already
+            // unescapes each query value once, and pre-unescaping double-decodes any value with a
+            // percent sequence and can produce a string that makes new Uri(...) throw. Guard the
+            // parse so a malformed URI can't escape this JSON-RPC handler.
+            Uri uri;
+            try
             {
+                uri = new Uri(showDocumentParams.Uri);
+            }
+            catch (UriFormatException ex)
+            {
+                Logger.Warning(ex, "Ignoring showDocument request with malformed URI");
                 return;
             }
-            serviceProvider.ToolWindow.SelectedItemInTree(issueId, product);
+
+            var queryParams = ParseQueryString(uri.Query);
+            queryParams.TryGetValue("action", out var action);
+
+            // snyk:// detail-panel request (from a tree node click via snyk.navigateToRange):
+            // populate the issue description panel.
+            if (action == "showInDetailPanel")
+            {
+                if (!queryParams.TryGetValue("issueId", out var issueId) ||
+                    !queryParams.TryGetValue("product", out var productRaw))
+                {
+                    return;
+                }
+                serviceProvider?.ToolWindow?.SelectedItemInTree(issueId, NormalizeProduct(productRaw));
+                return;
+            }
+
+            // Plain file-open request: navigate the editor to the selected range. The HTML tree
+            // triggers this via snyk.navigateToRange, which the LS turns into window/showDocument.
+            // External requests (open-in-browser) are not editor navigations.
+            if (showDocumentParams.External) return;
+            var selection = showDocumentParams.Selection;
+            if (selection?.Start == null || selection.End == null) return;
+
+            VsCodeService.Instance.OpenAndNavigate(
+                uri.LocalPath,
+                selection.Start.Line,
+                selection.Start.Character,
+                selection.End.Line,
+                selection.End.Character);
+        }
+
+        // The tree emits product codenames ("code"/"oss"/"iac") in the detail-panel URI, while
+        // other producers send display names ("Snyk Code"). Map display names, pass codenames through.
+        private string NormalizeProduct(string raw)
+        {
+            if (string.IsNullOrEmpty(raw)) return string.Empty;
+            var mapped = LspSourceToProduct(raw.Replace("+", " "));
+            return string.IsNullOrEmpty(mapped) ? raw.ToLowerInvariant() : mapped;
         }
 
         static Dictionary<string, string> ParseQueryString(string query)
@@ -152,13 +163,14 @@ namespace Snyk.VisualStudio.Extension.Language
 
             foreach (var pair in query.Split('&'))
             {
-                var parts = pair.Split('=');
-                if (parts.Length == 2)
-                {
-                    var key = Uri.UnescapeDataString(parts[0]);
-                    var value = Uri.UnescapeDataString(parts[1]);
-                    result[key] = value;
-                }
+                // Split on the FIRST '=' only: a value can legitimately contain '=' (e.g. base64
+                // issue IDs ending in '='/'=='), and splitting on every '=' would drop those pairs.
+                var separatorIndex = pair.IndexOf('=');
+                if (separatorIndex <= 0) continue;
+
+                var key = Uri.UnescapeDataString(pair.Substring(0, separatorIndex));
+                var value = Uri.UnescapeDataString(pair.Substring(separatorIndex + 1));
+                result[key] = value;
             }
             return result;
         }
@@ -174,6 +186,20 @@ namespace Snyk.VisualStudio.Extension.Language
                 await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
                 serviceProvider.ToolWindow.SummaryPanel.SetContent(scanSummaryParam.ScanSummary, "summary");
             }).FireAndForget();
+        }
+
+        [JsonRpcMethod(LsConstants.SnykTreeView)]
+        public async Task OnTreeView(JToken arg)
+        {
+            var treeViewParam = arg.TryParse<TreeViewParams>();
+            var treePanel = serviceProvider?.ToolWindow?.TreeHtmlPanel;
+            if (treeViewParam?.TreeViewHtml == null || treePanel == null) return;
+
+            // SetContent marshals to the UI thread itself, so we don't switch here — this keeps the
+            // JSON-RPC dispatch thread unblocked, matching OnScanSummary's non-blocking pattern. HTML
+            // and count are applied together so the "Clean" command's enabled state can never
+            // disagree with the rendered tree (see TreeHtmlPanel.SetContent).
+            treePanel.SetContent(treeViewParam.TreeViewHtml, treeViewParam.TotalIssues);
         }
 
         [JsonRpcMethod(LsConstants.SnykHasAuthenticated)]
@@ -251,10 +277,9 @@ namespace Snyk.VisualStudio.Extension.Language
             _reloadHtmlSettings();
 
             // Trigger first scan now that folder configs have arrived.
-            // AutoScan vs InternalAutoScan vs ScanningMode:
-            // - AutoScan: persisted user preference
-            // - InternalAutoScan: runtime gate; false until we are ready to scan (avoids scanning before LS is initialized)
-            // $/snyk.configuration may arrive multiple times; the InternalAutoScan gate ensures we scan exactly once.
+            // AutoScan: persisted user preference (also sent to the LS as scan_automatic).
+            // InternalAutoScan: IDE-side runtime gate only (NOT sent to the LS); $/snyk.configuration
+            // may arrive multiple times, so the gate ensures we trigger the IDE-side scan exactly once.
             if (options.AutoScan)
             {
                 var isFolderTrusted = await this.serviceProvider.TasksService.IsFolderTrustedAsync();
@@ -298,7 +323,6 @@ namespace Snyk.VisualStudio.Extension.Language
                 return;
             }
 
-            serviceProvider.TasksService.FireCodeScanningUpdateEvent(snykCodeIssueDictionary);
             serviceProvider.TasksService.FireSnykCodeScanningFinishedEvent();
             serviceProvider.TasksService.FireTaskFinished();
         }
@@ -317,7 +341,6 @@ namespace Snyk.VisualStudio.Extension.Language
                 return;
             }
 
-            serviceProvider.TasksService.FireOssScanningUpdateEvent(snykOssIssueDictionary);
             serviceProvider.TasksService.FireOssScanningFinishedEvent();
             serviceProvider.TasksService.FireTaskFinished();
         }
@@ -337,7 +360,6 @@ namespace Snyk.VisualStudio.Extension.Language
                 return;
             }
 
-            serviceProvider.TasksService.FireIacScanningUpdateEvent(snykIaCIssueDictionary);
             serviceProvider.TasksService.FireIacScanningFinishedEvent();
             serviceProvider.TasksService.FireTaskFinished();
         }
@@ -356,7 +378,6 @@ namespace Snyk.VisualStudio.Extension.Language
                 return;
             }
 
-            serviceProvider.TasksService.FireSecretsScanningUpdateEvent(snykSecretsIssueDictionary);
             serviceProvider.TasksService.FireSecretsScanningFinishedEvent();
             serviceProvider.TasksService.FireTaskFinished();
         }
@@ -371,18 +392,6 @@ namespace Snyk.VisualStudio.Extension.Language
                 "Snyk Secrets" => "secrets",
                 _ => ""
             };
-        }
-
-        // Only used in tests
-        public ConcurrentDictionary<string, IEnumerable<Issue>> GetCodeDictionary()
-        {
-            return snykCodeIssueDictionary;
-        }
-
-        // Only used in tests
-        public ConcurrentDictionary<string, IEnumerable<Issue>> GetSecretsDictionary()
-        {
-            return snykSecretsIssueDictionary;
         }
 #pragma warning restore CS1998 // Async method lacks 'await' operators and will run synchronously
     }

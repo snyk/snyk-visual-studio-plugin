@@ -9,6 +9,13 @@ namespace Snyk.VisualStudio.Extension.Service
     public interface ISolutionService
     {
         /// <summary>
+        /// Gets the VS solution-load event source (null until the service is initialized).
+        /// Exposed on the interface so that LanguageClient and other consumers can subscribe to
+        /// solution-lifecycle events without downcasting to the concrete SnykSolutionService.
+        /// </summary>
+        SnykVsSolutionLoadEvents SolutionEvents { get; }
+
+        /// <summary>
         /// Get solution folder path.
         /// </summary>
         /// <returns>Path string.</returns>

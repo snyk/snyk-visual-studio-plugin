@@ -29,6 +29,9 @@ namespace Snyk.VisualStudio.Extension.Language
         private static readonly ILogger Logger = LogManager.ForContext<SnykLanguageClient>();
         private readonly SemaphoreSlim semaphore = new SemaphoreSlim(1,1);
         private LsSettingsV25 settingsV25;
+        // Holds the delegate subscribed to SolutionEvents.AfterBackgroundSolutionLoadComplete so we
+        // can unsubscribe before re-subscribing on server restarts (idempotent wiring).
+        private EventHandler<EventArgs> solutionOpenedMigrationHandler;
 
         [ImportingConstructor]
         public SnykLanguageClient()
@@ -175,6 +178,10 @@ namespace Snyk.VisualStudio.Extension.Language
 
         public async Task StopServerAsync()
         {
+            // Detach the solution-opened migration handler as part of stop teardown so a permanent
+            // stop (extension disable / VS shutdown) doesn't leave it running against a dead LS.
+            UnsubscribeFromSolutionOpenedForMigration();
+
             if (StopAsync != null)
             {
                 try
@@ -218,22 +225,77 @@ namespace Snyk.VisualStudio.Extension.Language
             FireOnLanguageServerReadyAsyncEvent();
             SendPluginInstalledEvent();
             Rpc.Disconnected += Rpc_Disconnected;
+            SubscribeToSolutionOpenedForMigration();
             return Task.CompletedTask;
+        }
+
+        // Subscribes MigrateLegacySolutionSettingsAsync to the solution-opened event so that
+        // per-solution legacy settings are migrated whenever the user opens a different solution
+        // while the LS stays alive (multi-solution VS session). Unsubscribes first so repeated
+        // server restarts don't accumulate duplicate handlers.
+        private void SubscribeToSolutionOpenedForMigration()
+        {
+            try
+            {
+                // Remove any previous subscription to stay idempotent across server restarts.
+                UnsubscribeFromSolutionOpenedForMigration();
+
+                var solutionEvents = SnykVSPackage.ServiceProvider?.SolutionService?.SolutionEvents;
+                if (solutionEvents == null)
+                    return;
+
+                solutionOpenedMigrationHandler = (_, __) =>
+                    ThreadHelper.JoinableTaskFactory.RunAsync(MigrateLegacySolutionSettingsAsync).FireAndForget();
+
+                solutionEvents.AfterBackgroundSolutionLoadComplete += solutionOpenedMigrationHandler;
+            }
+            catch (Exception ex)
+            {
+                Logger.Warning(ex, "Could not subscribe to solution-opened event for legacy settings migration.");
+            }
+        }
+
+        // Detaches the solution-opened migration handler if subscribed. Idempotent and best-effort,
+        // so it is safe to call from both the explicit stop teardown (StopServerAsync) and the RPC
+        // disconnect path: when the LS stops for good (extension disable / VS shutdown) this stops a
+        // later solution-open from running MigrateLegacySolutionSettingsAsync against a dead LS and
+        // leaking the closure. On a transient disconnect the handler is re-attached by the next
+        // OnServerInitializedAsync.
+        private void UnsubscribeFromSolutionOpenedForMigration()
+        {
+            try
+            {
+                if (solutionOpenedMigrationHandler == null)
+                    return;
+
+                var solutionEvents = SnykVSPackage.ServiceProvider?.SolutionService?.SolutionEvents;
+                if (solutionEvents != null)
+                    solutionEvents.AfterBackgroundSolutionLoadComplete -= solutionOpenedMigrationHandler;
+
+                solutionOpenedMigrationHandler = null;
+            }
+            catch (Exception ex)
+            {
+                Logger.Warning(ex, "Could not unsubscribe from solution-opened event for legacy settings migration.");
+            }
         }
 
         private Task<string> GetLsDebugLevelAsync()
         {
             var serviceProvider = SnykVSPackage.ServiceProvider;
-            var folderConfigs = serviceProvider?.Options?.FolderConfigs;
-            if (folderConfigs == null)
+            var options = serviceProvider?.Options;
+            if (options == null)
                 return Task.FromResult("info");
 
-            // Enable debug logging for the whole LS process if -d/--debug is set on ANY folder's
-            // additional parameters, not just the first — workspaces can have multiple folders.
-            var anyDebug = folderConfigs
-                .Where(fc => fc?.AdditionalParameters != null)
-                .SelectMany(fc => fc.AdditionalParameters)
-                .Any(p => p == "-d" || p == "--debug");
+            // Enable debug logging for the whole LS process if -d/--debug is set in global
+            // additional parameters OR in ANY folder's additional parameters.
+            var globalParams = options.AdditionalParameters ?? Enumerable.Empty<string>();
+            var folderParams = (options.FolderConfigs ?? Enumerable.Empty<FolderConfig>())
+                .Select(fc => fc?.GetStringList(PflagKeys.AdditionalParameters))
+                .Where(p => p != null)
+                .SelectMany(p => p);
+
+            var anyDebug = globalParams.Concat(folderParams).Any(p => p == "-d" || p == "--debug");
 
             return Task.FromResult(anyDebug ? "debug" : "info");
         }
@@ -256,13 +318,19 @@ namespace Snyk.VisualStudio.Extension.Language
             }
             catch (Exception ex)
             {
-                Logger.Warning(ex, "Legacy per-solution settings migration failed; continuing LS startup.");
+                // Error (not Warning) so a genuine migration failure is visible in diagnostics — the
+                // no-op path returns without throwing, so reaching here means real legacy settings
+                // (which can include auth tokens / custom filters) failed to migrate. Still best-effort
+                // and non-fatal: the migration is idempotent and retries on the next solution-open or
+                // LS restart, so we continue startup without a disruptive user-facing prompt.
+                Logger.Error(ex, "Legacy per-solution settings migration failed; continuing LS startup.");
             }
         }
 
         private void Rpc_Disconnected(object sender, JsonRpcDisconnectedEventArgs e)
         {
             IsReady = false;
+            UnsubscribeFromSolutionOpenedForMigration();
         }
 
         public async Task AttachForCustomMessageAsync(JsonRpc rpc)
