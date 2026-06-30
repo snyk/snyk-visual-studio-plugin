@@ -49,6 +49,7 @@ namespace Snyk.VisualStudio.Extension.Settings
         public bool FilterMedium { get; set; }
         public bool FilterLow { get; set; }
         public string AdditionalEnv { get; set; }
+        public List<string> AdditionalParameters { get; set; }
         public int? RiskScoreThreshold { get; set; }
         public string SnykCodeSettingsUrl => $"{this.GetBaseAppUrl()}/manage/snyk-code";
         public event EventHandler<SnykSettingsChangedEventArgs> SettingsChanged;

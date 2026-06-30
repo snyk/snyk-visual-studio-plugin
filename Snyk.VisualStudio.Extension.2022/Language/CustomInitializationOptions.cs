@@ -77,4 +77,16 @@ namespace Snyk.VisualStudio.Extension.Language
         public string ScanSummary { get; set; }
     }
 
+    /// <summary>
+    /// Payload of the <c>$/snyk.treeView</c> notification: the server-rendered HTML issue tree.
+    /// </summary>
+    public class TreeViewParams
+    {
+        [JsonProperty("treeViewHtml")]
+        public string TreeViewHtml { get; set; }
+
+        [JsonProperty("totalIssues")]
+        public int TotalIssues { get; set; }
+    }
+
 }

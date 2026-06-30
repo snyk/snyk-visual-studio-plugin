@@ -12,6 +12,8 @@ namespace Snyk.VisualStudio.Extension.Tests.UI.Html
         // renamed, this test fails — surfacing the drift at build time instead of silently dropping
         // the setting at runtime.
         private const string AuthoritativePayload = @"{
+            ""additional_environment"": """",
+            ""additional_parameters"": """",
             ""api_endpoint"": ""https://api.snyk.io"",
             ""authentication_method"": ""oauth"",
             ""automatic_download"": false,

@@ -23,11 +23,6 @@ public interface ISnykTasksService
     event EventHandler<SnykOssScanEventArgs> OssScanningStarted;
 
     /// <summary>
-    /// Cli Scanning update event handler.
-    /// </summary>
-    event EventHandler<SnykOssScanEventArgs> OssScanningUpdate;
-
-    /// <summary>
     /// OSS Scanning Disabled event handler.
     /// </summary>
     event EventHandler<SnykOssScanEventArgs> OssScanningDisabled;
@@ -46,11 +41,6 @@ public interface ISnykTasksService
     /// IaC scanning started event handler.
     /// </summary>
     event EventHandler<SnykCodeScanEventArgs> IacScanningStarted;
-
-    /// <summary>
-    /// Iac scanning update event handler.
-    /// </summary>
-    event EventHandler<SnykCodeScanEventArgs> IacScanningUpdate;
 
     /// <summary>
     /// IaC Scanning Disabled event handler.
@@ -78,11 +68,6 @@ public interface ISnykTasksService
     event EventHandler<SnykCodeScanEventArgs> SnykCodeScanningFinished;
 
     /// <summary>
-    /// SnykCode scanning update event handler.
-    /// </summary>
-    event EventHandler<SnykCodeScanEventArgs> SnykCodeScanningUpdate;
-
-    /// <summary>
     /// SnykCode scan error event handler.
     /// </summary>
     event EventHandler<SnykCodeScanEventArgs> SnykCodeScanError;
@@ -96,11 +81,6 @@ public interface ISnykTasksService
     /// Secrets scanning started event handler.
     /// </summary>
     event EventHandler<SnykOssScanEventArgs> SecretsScanningStarted;
-
-    /// <summary>
-    /// Secrets scanning update event handler.
-    /// </summary>
-    event EventHandler<SnykOssScanEventArgs> SecretsScanningUpdate;
 
     /// <summary>
     /// Secrets scanning finished event handler.
@@ -224,22 +204,7 @@ public interface ISnykTasksService
 
     void FireIacScanningStartedEvent(FeaturesSettings featuresSettings);
 
-    /// <summary>
-    /// Fire scanning update with <see cref="SnykOssScanEventArgs"/> object.
-    /// </summary>
-    void FireOssScanningUpdateEvent(IDictionary<string, IEnumerable<Issue>> scanResult);
-
-    /// <summary>
-    /// Fire scanning update with <see cref="SnykCodeScanEventArgs"/> object.
-    /// </summary>
-    /// <param name="analysisResult"><see cref="AnalysisResult"/> object with vulnerabilities.</param>
-    void FireCodeScanningUpdateEvent(IDictionary<string, IEnumerable<Issue>> analysisResult);
-
-    void FireIacScanningUpdateEvent(IDictionary<string, IEnumerable<Issue>> analysisResult);
-
     void FireSecretsScanningStartedEvent();
-
-    void FireSecretsScanningUpdateEvent(IDictionary<string, IEnumerable<Issue>> scanResult);
 
     void FireSecretsScanningFinishedEvent();
 

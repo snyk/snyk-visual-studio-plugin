@@ -3,7 +3,6 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
-             xmlns:tree="clr-namespace:Snyk.VisualStudio.Extension.UI.Tree"
              xmlns:window="clr-namespace:Snyk.VisualStudio.Extension.UI.Toolwindow"
              xmlns:toolkit="clr-namespace:Community.VisualStudio.Toolkit;assembly=Community.VisualStudio.Toolkit"
              toolkit:Themes.UseVsTheme="True"
@@ -23,33 +22,89 @@
         <Grid Grid.Row="1" Grid.Column="0" Name="mainGrid">
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="3*"/>
-                <ColumnDefinition Width="5"/>
+                <ColumnDefinition Width="6"/>
                 <ColumnDefinition Width="6*"/>
             </Grid.ColumnDefinitions>
-            <window:SummaryHtmlPanel  
- x:Name="SummaryPanel" 
-Height="115"
-                            VerticalAlignment="Top"
-                            
-                            />
-            <tree:SnykFilterableTree x:Name="resultsTree" SelectedVulnerabilityChanged="VulnerabilitiesTree_SelectetVulnerabilityChanged" Margin="0, 115, 0, 0"/>
+            <Grid Grid.Column="0">
+                <!-- Both panel rows are star-sized so the GridSplitter only redistributes a fixed
+                     total between them. A fixed-pixel + star mix lets WPF's GridSplitter grow the
+                     pixel row by the raw drag delta without clamping the sum to the container, so
+                     the splitter could be dragged past the bottom of the tool window — and because
+                     the WebView2 panels are HWND-hosted (airspace) the overflow isn't clipped and
+                     paints over other VS UI. Dual-star conserves the total and prevents that.
+                     The 2*:5* ratio approximates the previous ~170px summary default. -->
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="2*" MinHeight="40"/>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="5*" MinHeight="60"/>
+                </Grid.RowDefinitions>
+                <window:SummaryHtmlPanel Grid.Row="0" x:Name="SummaryPanel"/>
 
-            <GridSplitter Grid.Column="1" Width="5" HorizontalAlignment="Stretch" Background="{DynamicResource VsBrush.Window}" Foreground="{DynamicResource VsBrush.WindowText}"/>
+                <!-- Idiomatic VS divider: a 1px themed separator line drawn over a wider (6px),
+                     transparent GridSplitter grab area. The splitter supplies the SizeNS resize
+                     cursor on hover, which is VS's primary "draggable" affordance.
+                     ShowsPreview is OFF deliberately: the preview is a WPF adorner, and the
+                     WebView2 panels are HWND-hosted (airspace) so they always render above WPF
+                     content — the preview bar would be hidden behind them. Live resize avoids
+                     this entirely. -->
+                <GridSplitter Grid.Row="1"
+                              Height="6"
+                              ResizeDirection="Rows"
+                              HorizontalAlignment="Stretch"
+                              VerticalAlignment="Center"
+                              Background="Transparent"
+                              ShowsPreview="False"/>
+                <Border Grid.Row="1"
+                        x:Name="horizontalDivider"
+                        Height="1"
+                        VerticalAlignment="Center"
+                        HorizontalAlignment="Stretch"
+                        IsHitTestVisible="False"/>
 
-            <StackPanel Grid.Column="3" Name="progressBarPanel" Visibility="Collapsed" Orientation="Vertical" Margin="1" UseLayoutRounding="False">
+                <window:TreeHtmlPanel Grid.Row="2" x:Name="TreeHtmlPanel"/>
+            </Grid>
+
+            <!-- Vertical divider between the summary/tree column and the issue-details column.
+                 Same pattern as the horizontal one: transparent 6px grab area + 1px themed line,
+                 live resize (no occluded preview adorner over the WebView2 panels). -->
+            <GridSplitter Grid.Column="1"
+                          Width="6"
+                          ResizeDirection="Columns"
+                          HorizontalAlignment="Center"
+                          VerticalAlignment="Stretch"
+                          Background="Transparent"
+                          ShowsPreview="False"/>
+            <!-- Left-aligned (not centred) so the 1px line butts directly against the tree/summary
+                 column's scrollbar. Centred, it left a ~2-3px sliver of mainGrid.Background between
+                 the scrollbar track and the line, which read as a seam (the track colour differs
+                 from the window background). The 6px GridSplitter grab area above is unchanged. -->
+            <Border Grid.Column="1"
+                    x:Name="verticalDivider"
+                    Width="1"
+                    HorizontalAlignment="Left"
+                    VerticalAlignment="Stretch"
+                    IsHitTestVisible="False"/>
+
+            <!-- The progress bar, description, and message panels all occupy the right-hand pane
+                 (column 2) and are shown one at a time via Visibility toggling. They were
+                 previously on columns 3/4/5, which don't exist on this 3-column grid (0,1,2) —
+                 WPF silently clamped them to the last valid column (2), so they happened to
+                 render in the right place. Pin them to column 2 explicitly so the layout is
+                 correct by intent rather than by clamping. -->
+            <StackPanel Grid.Column="2" Name="progressBarPanel" Visibility="Collapsed" Orientation="Vertical" Margin="1" UseLayoutRounding="False">
                 <Grid>
                     <ProgressBar x:Name="progressBar" Minimum="0" Maximum="100" Height="3"/>
                 </Grid>
             </StackPanel>
 
-            <window:HtmlDescriptionPanel Grid.Column="4" 
-                                     x:Name="DescriptionPanel" 
-                                     Visibility="Collapsed" 
-                                     HorizontalContentAlignment="Stretch" 
+            <window:HtmlDescriptionPanel Grid.Column="2"
+                                     x:Name="DescriptionPanel"
+                                     Visibility="Collapsed"
+                                     HorizontalContentAlignment="Stretch"
                                      VerticalContentAlignment="Stretch"/>
-            <window:MessagePanel Grid.Column="5" 
-                                 x:Name="messagePanel" 
-                                 HorizontalContentAlignment="Stretch" 
+            <window:MessagePanel Grid.Column="2"
+                                 x:Name="messagePanel"
+                                 HorizontalContentAlignment="Stretch"
                                  VerticalContentAlignment="Stretch"/>
         </Grid>
     </Grid>

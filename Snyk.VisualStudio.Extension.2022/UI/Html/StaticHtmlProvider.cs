@@ -33,8 +33,11 @@ namespace Snyk.VisualStudio.Extension.UI.Html
             // IDE-applied scale factor, so we have to anchor the root size explicitly.
             // The page applies `font-size: 1.3rem` to <p>, so root at 10px renders the loader
             // text at ~13px — matching the body font-size we used to hard-code in this file.
-            const string ideStyleOverride =
-                "<style nonce=\"ideNonce\">:root { --main-font-size: 10px; }</style>";
+            // GetScrollbarCss() themes the loader's scrollbar to match the summary/tree/description
+            // panels, so the "Snyk Security is loading" banner doesn't briefly flash the default
+            // Chromium scrollbar before the real summary content swaps in.
+            var ideStyleOverride =
+                "<style nonce=\"ideNonce\">:root { --main-font-size: 10px; }" + GetScrollbarCss() + "</style>";
             html = html.Replace("${ideStyle}", ideStyleOverride);
             return base.ReplaceCssVariables(html);
         }
