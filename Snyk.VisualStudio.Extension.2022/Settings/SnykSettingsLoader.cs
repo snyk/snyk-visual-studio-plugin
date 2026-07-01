@@ -1,7 +1,6 @@
 ﻿using System;
 using System.IO;
 using System.Text;
-using Serilog;
 using Snyk.VisualStudio.Extension.Utils;
 
 namespace Snyk.VisualStudio.Extension.Settings
@@ -11,7 +10,11 @@ namespace Snyk.VisualStudio.Extension.Settings
     /// </summary>
     public class SnykSettingsLoader
     {
-        private static readonly ILogger Logger = LogManager.ForContext<SnykSettingsLoader>();
+        // No static Logger field: LogManager.ForContext() depends on SnykDirectory (via the
+        // Lazy<Logger> in LogManager). A static readonly field initialised at class-load time
+        // risks re-entrancy if this class is loaded during that Lazy's construction.
+        // Acquire the logger inline at each call site — identical to SnykDirectory and
+        // SettingsLocationMigrator.
 
         private readonly string settingsFilePath;
 
@@ -28,22 +31,61 @@ namespace Snyk.VisualStudio.Extension.Settings
 
         /// <summary>
         /// Load <see cref="SnykSettings"/> instance.
+        /// Delegates to <see cref="Load(out bool)"/>; use that overload when the caller
+        /// needs to distinguish a genuinely absent file from a present-but-unreadable one.
         /// </summary>
-        /// <returns>SnykSettings object.</returns>
+        /// <returns>SnykSettings object, or null when the file is absent or unreadable.</returns>
         public SnykSettings Load()
         {
+            return Load(out _);
+        }
+
+        /// <summary>
+        /// Load <see cref="SnykSettings"/> instance using a single read attempt so the
+        /// absent-vs-corrupt decision is derived from ONE filesystem operation (no TOCTOU
+        /// window between a probe and the read — IDE-1483 FIX-D1).
+        /// </summary>
+        /// <param name="fileWasAbsent">
+        /// Set to <c>true</c> when the file was genuinely not present
+        /// (<see cref="FileNotFoundException"/> / <see cref="DirectoryNotFoundException"/>).
+        /// Set to <c>false</c> when the file exists (even if it could not be read or
+        /// deserialised).  The caller uses this flag to decide whether writing defaults
+        /// is safe (absent = safe; present-but-unreadable = do NOT overwrite).
+        /// </param>
+        /// <returns>SnykSettings object, or null when the file is absent or unreadable.</returns>
+        public SnykSettings Load(out bool fileWasAbsent)
+        {
+            fileWasAbsent = false;
+
             if (snykSettings != null)
                 return snykSettings;
 
+            string rawJson;
             try
             {
-                if (!File.Exists(this.settingsFilePath))
-                {
-                    return null;
-                }
+                // Single read: determines absent-vs-exists AND provides the content.
+                // FileNotFoundException / DirectoryNotFoundException => genuinely absent.
+                // Any other exception => file exists but is unreadable (IO error, locked, etc.).
+                rawJson = File.ReadAllText(this.settingsFilePath, Encoding.UTF8);
+            }
+            catch (FileNotFoundException)
+            {
+                fileWasAbsent = true;
+                return null;
+            }
+            catch (DirectoryNotFoundException)
+            {
+                fileWasAbsent = true;
+                return null;
+            }
+            catch (Exception e)
+            {
+                LogManager.ForContext(typeof(SnykSettingsLoader)).Error(e, "Settings read error on load.");
+                return null;
+            }
 
-                var rawJson = File.ReadAllText(this.settingsFilePath, Encoding.UTF8);
-
+            try
+            {
                 // Visibility for support: the legacy per-solution store (solutionSettingsDict) was
                 // retired in IDE-1651. Its entries are now migrated into folder configs lazily, as
                 // each solution is opened (see SnykOptionsManager.MigrateLegacySolutionSettings); the
@@ -56,8 +98,7 @@ namespace Snyk.VisualStudio.Extension.Settings
             }
             catch (Exception e)
             {
-                Logger.Error(e, "Settings deserialize error on load.");
-
+                LogManager.ForContext(typeof(SnykSettingsLoader)).Error(e, "Settings deserialize error on load.");
                 return null;
             }
         }
@@ -70,7 +111,7 @@ namespace Snyk.VisualStudio.Extension.Settings
                     as Newtonsoft.Json.Linq.JObject;
                 if (token != null && token.Count > 0)
                 {
-                    Logger.Information(
+                    LogManager.ForContext(typeof(SnykSettingsLoader)).Information(
                         "settings.json contains a legacy 'solutionSettingsDict' with {Count} entr(ies). " +
                         "These are migrated into folder configs as each solution is opened, and the section " +
                         "is removed once empty.",
@@ -80,7 +121,7 @@ namespace Snyk.VisualStudio.Extension.Settings
             catch (Exception e)
             {
                 // Best-effort diagnostics only — never block load on a malformed legacy section.
-                Logger.Debug(e, "Could not inspect settings.json for a legacy solutionSettingsDict section.");
+                LogManager.ForContext(typeof(SnykSettingsLoader)).Debug(e, "Could not inspect settings.json for a legacy solutionSettingsDict section.");
             }
         }
 
@@ -96,7 +137,7 @@ namespace Snyk.VisualStudio.Extension.Settings
             }
             catch (Exception e)
             {
-                Logger.Error(e, "Settings serialize error on save.");
+                LogManager.ForContext(typeof(SnykSettingsLoader)).Error(e, "Settings serialize error on save.");
             }
         }
     }
