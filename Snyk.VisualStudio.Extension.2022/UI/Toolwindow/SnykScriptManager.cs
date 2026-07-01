@@ -4,6 +4,7 @@ using System.Diagnostics;
 using System.Threading.Tasks;
 using Microsoft.VisualStudio.Shell;
 using Serilog;
+using Snyk.VisualStudio.Extension.Extension;
 using Snyk.VisualStudio.Extension.Language;
 
 namespace Snyk.VisualStudio.Extension.UI.Toolwindow
@@ -40,9 +41,23 @@ namespace Snyk.VisualStudio.Extension.UI.Toolwindow
 
         public void OpenLink(string link)
         {
-            if (string.IsNullOrEmpty(link) || !link.StartsWith("http"))
+            // Only launch absolute http/https URLs. The old StartsWith("http") check also matched
+            // e.g. "httpx://…" and handed arbitrary strings to the shell (UseShellExecute), which
+            // could launch any registered URI handler. Validate before Process.Start.
+            if (!UriExtensions.IsValidWebUrl(link))
+            {
+                Logger.Warning("Ignoring OpenLink request that is not an absolute http/https URL");
                 return;
-            Process.Start(link);
+            }
+
+            try
+            {
+                Process.Start(new ProcessStartInfo(link) { UseShellExecute = true });
+            }
+            catch (Exception e)
+            {
+                Logger.Error(e, "Failed to open link");
+            }
         }
 
         public void EnableDelta(bool isEnabled)

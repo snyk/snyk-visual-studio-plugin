@@ -1,5 +1,6 @@
 using System;
 using System.Windows.Controls;
+using Microsoft.VisualStudio.PlatformUI;
 using Microsoft.VisualStudio.Shell;
 using Microsoft.Web.WebView2.Core;
 using Newtonsoft.Json.Linq;
@@ -8,17 +9,26 @@ using Snyk.VisualStudio.Extension.UI.Html;
 
 namespace Snyk.VisualStudio.Extension.UI.Toolwindow
 {
-    public partial class SummaryHtmlPanel : UserControl, IDisposable
+    public partial class SummaryHtmlPanel : UserControl, IHtmlPanel, IDisposable
     {
         private static readonly ILogger Logger = LogManager.ForContext<SummaryHtmlPanel>();
 
-        private readonly WebView2Host host;
+        private readonly IWebView2Host host;
         private IHtmlProvider htmlProvider;
         private bool _disposed;
 
         public SummaryHtmlPanel()
         {
             this.InitializeComponent();
+
+            // Themed surface before first render so the panel doesn't flash WebView2's dark
+            // default while content loads. DefaultBackgroundColor themes the post-init surface;
+            // RootGrid + the collapsed WebView2 (revealed on first NavigationCompleted) hide the
+            // dark pre-initialization surface.
+            var bgColor = VSColorTheme.GetThemedColor(EnvironmentColors.ToolWindowBackgroundColorKey);
+            SummaryHtmlViewer.DefaultBackgroundColor = bgColor;
+            RootGrid.Background = new System.Windows.Media.SolidColorBrush(
+                System.Windows.Media.Color.FromArgb(bgColor.A, bgColor.R, bgColor.G, bgColor.B));
 
             var bridge = new SnykScriptManager(SnykVSPackage.ServiceProvider);
 
@@ -55,6 +65,9 @@ namespace Snyk.VisualStudio.Extension.UI.Toolwindow
             {
                 try
                 {
+                    // host.InitializeAsync drives WebView2/CoreWebView2 setup, which must run on the
+                    // UI thread; RunAsync alone doesn't guarantee the continuation resumes there.
+                    await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
                     await host.InitializeAsync();
                 }
                 catch (Exception ex)
@@ -68,24 +81,34 @@ namespace Snyk.VisualStudio.Extension.UI.Toolwindow
         // navigation completes, since NavigateAsync replaces the document. Skip when the
         // navigation itself failed — running the script against an error page would wire
         // the interceptors to the wrong document.
-        private async void OnNavigationCompleted(object sender, CoreWebView2NavigationCompletedEventArgs e)
+        private void OnNavigationCompleted(object sender, CoreWebView2NavigationCompletedEventArgs e)
         {
-            try
+            ThreadHelper.JoinableTaskFactory.RunAsync(async () =>
             {
-                if (!e.IsSuccess)
+                try
                 {
-                    Logger.Warning(
-                        "Summary panel navigation failed (status {Status}); skipping init script",
-                        e.WebErrorStatus);
-                    return;
+                    if (!e.IsSuccess)
+                    {
+                        Logger.Warning(
+                            "Summary panel navigation failed (status {Status}); skipping init script",
+                            e.WebErrorStatus);
+                        return;
+                    }
+
+                    await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
+
+                    // Reveal the WebView2 now that content has painted (hides the dark pre-init
+                    // surface). Idempotent after the first navigation.
+                    SummaryHtmlViewer.Visibility = System.Windows.Visibility.Visible;
+
+                    if (htmlProvider == null) return;
+                    await host.ExecuteScriptAsync(htmlProvider.GetInitScript());
                 }
-                if (htmlProvider == null) return;
-                await host.ExecuteScriptAsync(htmlProvider.GetInitScript());
-            }
-            catch (Exception ex)
-            {
-                Logger.Error(ex, "Error running summary init script");
-            }
+                catch (Exception ex)
+                {
+                    Logger.Error(ex, "Error running summary init script");
+                }
+            }).FireAndForget();
         }
 
         public void SetContent(string html, string product)
@@ -138,6 +161,7 @@ namespace Snyk.VisualStudio.Extension.UI.Toolwindow
         {
             if (_disposed) return;
             _disposed = true;
+            SummaryHtmlViewer.NavigationCompleted -= OnNavigationCompleted;
             host?.Dispose();
         }
     }

@@ -1,5 +1,4 @@
-﻿using System.IO;
-using System.Threading.Tasks;
+using System.IO;
 using Moq;
 using Snyk.VisualStudio.Extension.Authentication;
 using Snyk.VisualStudio.Extension.Service;
@@ -16,33 +15,15 @@ namespace Snyk.VisualStudio.Extension.Tests
         private SnykOptionsManager cut;
         private readonly string settingsFilePath;
         private readonly Mock<ISnykServiceProvider> serviceProviderMock;
-        private readonly Mock<ISolutionService> solutionServiceMock;
 
         public SnykOptionsManagerTest()
         {
             this.settingsFilePath = Path.GetTempFileName();
             this.serviceProviderMock = new Mock<ISnykServiceProvider>();
-            this.solutionServiceMock = new Mock<ISolutionService>();
             cut = new SnykOptionsManager(settingsFilePath, serviceProviderMock.Object);
-            serviceProviderMock
-                .Setup(serviceProvider => serviceProvider.SolutionService)
-                .Returns(solutionServiceMock.Object);
             var optionsMock = new Mock<ISnykOptions>();
             optionsMock.Setup(x => x.InvokeSettingsChangedEvent());
             serviceProviderMock.Setup(x => x.Options).Returns(optionsMock.Object);
-        }
-
-        [Fact]
-        public async Task ProjectNameNotExists_SaveAdditionalOptionsSuccessfullAsync()
-        {
-            solutionServiceMock
-                .Setup(solutionService => solutionService.GetSolutionFolderAsync())
-                .ReturnsAsync("C:\\Projects\\TestProj");
-
-
-            await cut.SaveAdditionalOptionsAsync("--test-command");
-
-            Assert.Equal("--test-command", await cut.GetAdditionalOptionsAsync());
         }
 
         [Fact]
@@ -85,32 +66,6 @@ namespace Snyk.VisualStudio.Extension.Tests
             Assert.True(reloadedOptions.IacEnabled);
             Assert.True(reloadedOptions.SnykCodeSecurityEnabled);
             Assert.True(reloadedOptions.OssEnabled);
-        }
-
-        [Fact]
-        public async Task GetAdditionalOptions_EmptyIfNoExistingSettings()
-        {
-            solutionServiceMock
-                .Setup(solutionService => solutionService.GetSolutionFolderAsync())
-                .ReturnsAsync("C:\\Projects\\NonExistentProj");
-
-            Assert.Equal(string.Empty, await cut.GetAdditionalOptionsAsync());
-        }
-
-        [Fact]
-        public async Task OverwriteAdditionalOptionsSuccessfully()
-        {
-            solutionServiceMock
-                .Setup(solutionService => solutionService.GetSolutionFolderAsync())
-                .ReturnsAsync("C:\\Projects\\NonExistentProj");
-
-            // Save initial options
-            await cut.SaveAdditionalOptionsAsync("--first-command");
-            Assert.Equal("--first-command", await cut.GetAdditionalOptionsAsync());
-
-            // Overwrite with new options
-            await cut.SaveAdditionalOptionsAsync("--second-command");
-            Assert.Equal("--second-command", await cut.GetAdditionalOptionsAsync());
         }
     }
 }

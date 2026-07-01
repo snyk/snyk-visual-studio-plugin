@@ -2,6 +2,7 @@
 // ABOUTME: It contains data models for folder configs, scan commands, and initialization parameters sent to the Language Server
 using System.Collections.Generic;
 using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
 using Newtonsoft.Json.Serialization;
 
 namespace Snyk.VisualStudio.Extension.Language
@@ -16,62 +17,58 @@ namespace Snyk.VisualStudio.Extension.Language
         }
     }
 
-    [JsonObject(NamingStrategyType = typeof(CamelCaseNamingStrategy))]
-    public class SnykLsInitializationOptions
-    {
-        public string RequiredProtocolVersion { get; set; }
-        public string ActivateSnykOpenSource { get; set; }
-        public string ActivateSnykCode { get; set; }
-        public string ActivateSnykIac { get; set; }
-        public string Insecure { get; set; }
-        public string Endpoint { get; set; }
-        public string AdditionalParams { get; set; }
-        public string AdditionalEnv { get; set; }
-        public string Path { get; set; }
-        public string SendErrorReports { get; set; }
-        public string Organization { get; set; }
-        public string EnableTelemetry { get; set; }
-        public string ManageBinariesAutomatically { get; set; }
-        public string CliPath { get; set; }
-        public string Token { get; set; }
-        public string AutomaticAuthentication { get; set; }
-        public string EnableTrustedFoldersFeature { get; set; }
-        public List<string> TrustedFolders { get; set; }
-        public string ActivateSnykCodeSecurity { get; set; }
-        public string DeviceId { get; set; }
-        public string IntegrationName { get; set; }
-        public string IntegrationVersion { get; set; }
-        public FilterSeverityOptions FilterSeverity { get; set; }
-        public IssueViewOptions IssueViewOptions { get; set; }
-        public string ScanningMode { get; set; }
-        public string AuthenticationMethod { get; set; }
-        public string SnykCodeApi { get; set; }
-        public int HoverVerbosity { get; set; }
-        public string OutputFormat { get; set; }
-        public string EnableDeltaFindings { get; set; }
-        public List<FolderConfig> FolderConfigs { get; set; }
-        public string CliBaseDownloadUrl { get; set; }
-        public int? RiskScoreThreshold { get; set; }
-    }
-
+    /// <summary>
+    /// Per-folder configuration. snyk-ls is authoritative over folder-scoped settings, so this is an
+    /// opaque pflag-keyed settings map round-tripped verbatim (matching vscode/eclipse) rather than a
+    /// set of typed fields the IDE cherry-picks. The IDE is "dumb": any folder key the LS sends is
+    /// stored and echoed back without the IDE needing to model it. The few keys the IDE itself reads
+    /// or writes (base branch, local branches, reference folder, additional params for debug level)
+    /// go through the typed accessors below, keyed by <see cref="PflagKeys"/>.
+    /// <para>
+    /// <see cref="Settings"/> serializes verbatim to disk and over the wire as the LspFolderConfig
+    /// <c>settings</c> map. On-disk entries written by older builds carried typed props instead; they
+    /// are tolerated (unknown JSON props are ignored on load) and the LS repopulates the map on its
+    /// next <c>$/snyk.configuration</c> push, so the user-set keys it persists (preferred_org,
+    /// org_set_by_user, reference_folder, base_branch) come back.
+    /// </para>
+    /// </summary>
     [JsonObject(NamingStrategyType = typeof(CamelCasePreserveDictionaryKeysNamingStrategy))]
     public class FolderConfig
     {
         public string FolderPath { get; set; }
-        public string BaseBranch { get; set; }
-        public List<string> LocalBranches { get; set; }
-        public List<string> AdditionalParameters { get; set; }
-        public string AdditionalEnv { get; set; }
-        public string ReferenceFolderPath { get; set; }
-        public Dictionary<string, ScanCommandConfig> ScanCommandConfig { get; set; }
-        public string PreferredOrg { get; set; }
-        public string AutoDeterminedOrg { get; set; }
-        public bool OrgMigratedFromGlobalConfig { get; set; }
-        public bool OrgSetByUser { get; set; }
 
-        public void SetScanCommandConfig(Dictionary<string, ScanCommandConfig> scanCommandConfig)
+        // The pflag-keyed folder settings map, verbatim. Each value is a ConfigSetting wrapping the
+        // raw value (the LS may also populate Source/OriginScope/IsLocked metadata). Round-tripped
+        // unchanged: inbound from the LS, persisted, and sent back on DidChangeConfiguration.
+        public Dictionary<string, ConfigSetting> Settings { get; set; } = new Dictionary<string, ConfigSetting>();
+
+        // ----- Typed accessors over the opaque map (keyed by PflagKeys.*) -----
+        // These let the dialog and the handful of IDE-side readers stay readable without
+        // re-introducing typed fields. Values are stored as ConfigSetting.Of(...) so the round-trip
+        // back to the LS carries Changed=true.
+
+        public string GetString(string key) => GetValueToken(key)?.Value<string>();
+
+        public List<string> GetStringList(string key) => GetValueToken(key)?.ToObject<List<string>>();
+
+        public void SetString(string key, string value)
         {
-            this.ScanCommandConfig = scanCommandConfig;
+            if (value == null) Settings.Remove(key);
+            else Settings[key] = ConfigSetting.Of(value);
+        }
+
+        // Stores the value (incl. null for a reset → {value:null, changed:true} on the wire so the
+        // LS Unsets the user:folder: override). A re-set in the same cycle simply overwrites.
+        public void Set(string key, object value) => Settings[key] = ConfigSetting.Of(value);
+
+        // Returns the raw stored value as a JToken for typed extraction. Values arrive either as
+        // JTokens (Json.NET deserialization of the LS payload) or as boxed CLR objects (set IDE-side);
+        // normalize both to JToken. Null/missing → null.
+        private JToken GetValueToken(string key)
+        {
+            if (Settings == null || !Settings.TryGetValue(key, out var setting) || setting?.Value == null)
+                return null;
+            return setting.Value is JToken jt ? jt : JToken.FromObject(setting.Value);
         }
     }
 
@@ -84,26 +81,21 @@ namespace Snyk.VisualStudio.Extension.Language
         public bool PostScanOnlyReferenceFolder { get; set; }
     }
 
-    public class FolderConfigsParam
-    {
-        public List<FolderConfig> FolderConfigs { get; set; }
-    }
     public class ScanSummaryParam
     {
         public string ScanSummary { get; set; }
     }
 
-    public class FilterSeverityOptions
+    /// <summary>
+    /// Payload of the <c>$/snyk.treeView</c> notification: the server-rendered HTML issue tree.
+    /// </summary>
+    public class TreeViewParams
     {
-        public bool Critical { get; set; }
-        public bool High { get; set; }
-        public bool Medium { get; set; }
-        public bool Low { get; set; }
+        [JsonProperty("treeViewHtml")]
+        public string TreeViewHtml { get; set; }
+
+        [JsonProperty("totalIssues")]
+        public int TotalIssues { get; set; }
     }
 
-    public class IssueViewOptions
-    {
-        public bool OpenIssues { get; set; }
-        public bool IgnoredIssues { get; set; }
-    }
 }

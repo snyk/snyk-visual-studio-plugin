@@ -1,11 +1,15 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.IO;
+using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.VisualStudio.LanguageServer.Client;
 using Microsoft.VisualStudio.Sdk.TestFramework;
 using Moq;
 using Snyk.VisualStudio.Extension.Language;
+using Snyk.VisualStudio.Extension.Service;
+using Snyk.VisualStudio.Extension.Settings;
 using StreamJsonRpc;
 using Xunit;
 using LSP = Microsoft.VisualStudio.LanguageServer.Protocol;
@@ -56,6 +60,28 @@ namespace Snyk.VisualStudio.Extension.Tests.Language
             var result = await cut.DidChangeConfigurationAsync(CancellationToken.None);
 
             // Assert
+            jsonRpcMock.Verify(x => x.InvokeWithParameterObjectAsync<object>(LsConstants.WorkspaceChangeConfiguration,
+                It.IsAny<LSP.DidChangeConfigurationParams>(),
+                It.IsAny<CancellationToken>()),
+                Times.Never);
+            Assert.Null(result);
+        }
+
+        [Fact]
+        public async Task DidChangeConfigurationAsync_ShouldReturnDefault_WhenConfigIsNull()
+        {
+            // Arrange – make ServiceProvider null so LsSettingsV25.GetLspConfigurationParam returns null
+            cut.IsReady = true;
+            VsPackage.SetServiceProvider(null);
+
+            // Act – must not throw even when the config param cannot be built
+            var result = await cut.DidChangeConfigurationAsync(CancellationToken.None);
+
+            // Assert – nothing sent to the language server.
+            // Note: Logger.Warning is intentionally not asserted here. SnykLanguageClient uses
+            // LogManager.ForContext<T>() which writes to a Lazy<Logger> backed by a file sink,
+            // not to Serilog.Log.Logger (the mock set in PackageBaseTest). The warning cannot
+            // be intercepted without injecting the logger — a larger refactor outside this scope.
             jsonRpcMock.Verify(x => x.InvokeWithParameterObjectAsync<object>(LsConstants.WorkspaceChangeConfiguration,
                 It.IsAny<LSP.DidChangeConfigurationParams>(),
                 It.IsAny<CancellationToken>()),
@@ -324,6 +350,50 @@ namespace Snyk.VisualStudio.Extension.Tests.Language
         }
 
 
+        [Theory]
+        [InlineData("-d")]
+        [InlineData("--debug")]
+        public async Task GetLsDebugLevelAsync_ReturnsDebug_WhenGlobalAdditionalParametersContainsDebugFlag(string flag)
+        {
+            OptionsMock.SetupGet(o => o.AdditionalParameters).Returns(new List<string> { flag });
+            OptionsMock.SetupGet(o => o.FolderConfigs).Returns(new List<FolderConfig>());
+
+            var method = typeof(SnykLanguageClient).GetMethod("GetLsDebugLevelAsync", BindingFlags.NonPublic | BindingFlags.Instance);
+            var level = await (Task<string>)method.Invoke(cut, null);
+
+            Assert.Equal("debug", level);
+        }
+
+        [Theory]
+        [InlineData("-d")]
+        [InlineData("--debug")]
+        public async Task GetLsDebugLevelAsync_ReturnsDebug_WhenFolderAdditionalParametersContainsDebugFlag(string flag)
+        {
+            OptionsMock.SetupGet(o => o.AdditionalParameters).Returns(new List<string>());
+            var folderConfig = new FolderConfig();
+            folderConfig.Set(PflagKeys.AdditionalParameters, new List<string> { flag });
+            OptionsMock.SetupGet(o => o.FolderConfigs).Returns(new List<FolderConfig> { folderConfig });
+
+            var method = typeof(SnykLanguageClient).GetMethod("GetLsDebugLevelAsync", BindingFlags.NonPublic | BindingFlags.Instance);
+            var level = await (Task<string>)method.Invoke(cut, null);
+
+            Assert.Equal("debug", level);
+        }
+
+        [Fact]
+        public async Task GetLsDebugLevelAsync_ReturnsInfo_WhenNoDebugFlagAnywhere()
+        {
+            OptionsMock.SetupGet(o => o.AdditionalParameters).Returns(new List<string> { "--some-other-flag" });
+            var folderConfig = new FolderConfig();
+            folderConfig.Set(PflagKeys.AdditionalParameters, new List<string> { "--filter=something" });
+            OptionsMock.SetupGet(o => o.FolderConfigs).Returns(new List<FolderConfig> { folderConfig });
+
+            var method = typeof(SnykLanguageClient).GetMethod("GetLsDebugLevelAsync", BindingFlags.NonPublic | BindingFlags.Instance);
+            var level = await (Task<string>)method.Invoke(cut, null);
+
+            Assert.Equal("info", level);
+        }
+
         [Fact]
         public async Task InvokeLogin_ShouldReturnNull_WhenNotReady()
         {
@@ -355,6 +425,54 @@ namespace Snyk.VisualStudio.Extension.Tests.Language
                     It.Is<LSP.ExecuteCommandParams>(param => param.Command == LsConstants.SnykLogin),
                 It.IsAny<CancellationToken>()),
                 Times.Once);
+        }
+
+        [Fact]
+        public async Task OnServerInitializedAsync_WhenSolutionOpenedAfterLsReady_RunsMigration()
+        {
+            // Arrange — wire a real SnykVsSolutionLoadEvents so we can fire AfterBackgroundSolutionLoadComplete.
+            // This test verifies Finding A: migration must run whenever a solution is opened while the LS
+            // is already alive (multi-solution VS session), not only at LS startup.
+            var migrationTcs = new TaskCompletionSource<bool>();
+
+            var solutionServiceMock = new Mock<ISolutionService>();
+            var solutionEvents = new SnykVsSolutionLoadEvents(solutionServiceMock.Object);
+            solutionServiceMock.SetupGet(s => s.SolutionEvents).Returns(solutionEvents);
+            solutionServiceMock.Setup(s => s.GetSolutionFolderAsync()).ReturnsAsync("/repo");
+
+            ServiceProviderMock.Setup(sp => sp.SolutionService).Returns(solutionServiceMock.Object);
+
+            OptionsManagerMock
+                .Setup(m => m.MigrateLegacySolutionSettings(It.IsAny<string>()))
+                .Callback<string>(_ => migrationTcs.TrySetResult(true))
+                .Returns(false);
+
+            // Act — simulate LS becoming ready (subscribes to solution-opened event)
+            await cut.OnServerInitializedAsync();
+
+            // Fire the solution-opened event (simulates user opening a different solution without restarting VS)
+            solutionEvents.OnAfterBackgroundSolutionLoadComplete();
+
+            // Wait up to 5 s for the async handler to call migration
+            var completed = await Task.WhenAny(migrationTcs.Task, Task.Delay(TimeSpan.FromSeconds(5)));
+
+            // Assert — migration must have been triggered by the solution-opened event
+            Assert.True(completed == migrationTcs.Task, "MigrateLegacySolutionSettings was not called after solution-opened event");
+            OptionsManagerMock.Verify(m => m.MigrateLegacySolutionSettings("/repo"), Times.AtLeastOnce);
+        }
+
+        [Fact]
+        public async Task OnServerInitializedAsync_WhenSolutionEventsNotAvailable_DoesNotThrow()
+        {
+            // ISolutionService.SolutionEvents returns null (e.g. service not yet initialized) —
+            // OnServerInitializedAsync must not throw, it just skips the subscription.
+            var solutionServiceMock = new Mock<ISolutionService>();
+            solutionServiceMock.SetupGet(s => s.SolutionEvents).Returns((SnykVsSolutionLoadEvents)null);
+            ServiceProviderMock.Setup(sp => sp.SolutionService).Returns(solutionServiceMock.Object);
+
+            // Act — should not throw
+            var ex = await Record.ExceptionAsync(() => cut.OnServerInitializedAsync());
+            Assert.Null(ex);
         }
     }
 }

@@ -194,9 +194,10 @@ namespace Snyk.VisualStudio.Extension.Language
             if (AdditionalData == null)
                 return 0;
 
-            // OSS and IaC use riskScore, Code uses priorityScore
+            // OSS, IaC, and Secrets use riskScore; Code uses priorityScore
             if (Product == Snyk.VisualStudio.Extension.Product.Oss ||
-                Product == Snyk.VisualStudio.Extension.Product.Iac)
+                Product == Snyk.VisualStudio.Extension.Product.Iac ||
+                Product == Snyk.VisualStudio.Extension.Product.Secrets)
             {
                 return AdditionalData.RiskScore;
             }
@@ -222,7 +223,8 @@ namespace Snyk.VisualStudio.Extension.Language
             var fixIcon = HasFix() ? "⚡" : "";
 
             var ignoredPrefix = this.IsIgnored ? "[ Ignored ] " : "";
-            var line = "line " + this.Range?.End?.Line + ": " + this.GetDisplayTitle();
+            var startLine = this.Range?.Start != null ? (int?)(this.Range.Start.Line + 1) : null;
+            var line = "line " + startLine + ": " + this.GetDisplayTitle();
 
             return fixIcon + ignoredPrefix + line;
         }

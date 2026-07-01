@@ -5,9 +5,7 @@
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
              xmlns:local="clr-namespace:Snyk.VisualStudio.Extension.UI.Controls"
              TextWrapping="Wrap"
-             Background="Transparent" Foreground="{DynamicResource VsBrush.WindowText}" 
-             xmlns:toolkit="clr-namespace:Community.VisualStudio.Toolkit;assembly=Community.VisualStudio.Toolkit"
-             toolkit:Themes.UseVsTheme="True"
+             Background="Transparent" Foreground="{DynamicResource VsBrush.WindowText}"
              BorderThickness="0"
              IsReadOnly="True"
              VerticalAlignment="Center">

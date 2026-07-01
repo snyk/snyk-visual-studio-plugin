@@ -1,8 +1,10 @@
 ﻿using System;
+using System.Threading;
 using System.Threading.Tasks;
 using EnvDTE80;
 using Microsoft.VisualStudio.Settings;
 using Microsoft.VisualStudio.Shell;
+using Snyk.VisualStudio.Extension.Authentication;
 using Snyk.VisualStudio.Extension.Language;
 using Snyk.VisualStudio.Extension.Settings;
 using Snyk.VisualStudio.Extension.Theme;
@@ -26,6 +28,13 @@ namespace Snyk.VisualStudio.Extension.Service
         SnykVSPackage Package { get; }
 
         /// <summary>
+        /// Gets the package disposal token, cancelled when the extension shuts down. Exposed here
+        /// (rather than reaching through <see cref="SnykVSPackage"/>.Instance) so consumers stay
+        /// constructor-injectable and testable.
+        /// </summary>
+        CancellationToken DisposalToken { get; }
+
+        /// <summary>
         /// Gets IAsyncServiceProvider implementation.
         /// </summary>
         IAsyncServiceProvider AsyncServiceProvider { get; }
@@ -46,8 +55,12 @@ namespace Snyk.VisualStudio.Extension.Service
         /// Gets <see cref="ISnykOptions"/> (Settings) implementation instance.
         /// </summary>
         ISnykOptions Options { get; }
-        ISnykGeneralOptionsDialogPage GeneralOptionsDialogPage { get; }
         ISnykOptionsManager SnykOptionsManager { get; }
+
+        /// <summary>
+        /// Orchestrates IDE-side auth flow (login/logout, modal auth dialog).
+        /// </summary>
+        IAuthenticationFlowService AuthenticationFlowService { get; }
         /// <summary>
         /// Gets Visual Studio Settiings Manager instance.
         /// </summary>
@@ -59,9 +72,9 @@ namespace Snyk.VisualStudio.Extension.Service
         SnykVsThemeService VsThemeService { get; }
 
         /// <summary>
-        /// Gets <see cref="SnykToolWindowControl"/> instance.
+        /// Gets the tool window seam (implemented by <see cref="SnykToolWindowControl"/>).
         /// </summary>
-        SnykToolWindowControl ToolWindow { get; }
+        ISnykToolWindow ToolWindow { get; }
 
         /// <summary>
         /// Get Visual Studio service (async).

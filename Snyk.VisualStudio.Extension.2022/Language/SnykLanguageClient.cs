@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.ComponentModel.Composition;
 using System.Diagnostics;
 using System.Threading;
@@ -27,8 +28,10 @@ namespace Snyk.VisualStudio.Extension.Language
     {
         private static readonly ILogger Logger = LogManager.ForContext<SnykLanguageClient>();
         private readonly SemaphoreSlim semaphore = new SemaphoreSlim(1,1);
-        private LsSettings settings;
         private LsSettingsV25 settingsV25;
+        // Holds the delegate subscribed to SolutionEvents.AfterBackgroundSolutionLoadComplete so we
+        // can unsubscribe before re-subscribing on server restarts (idempotent wiring).
+        private EventHandler<EventArgs> solutionOpenedMigrationHandler;
 
         [ImportingConstructor]
         public SnykLanguageClient()
@@ -50,16 +53,8 @@ namespace Snyk.VisualStudio.Extension.Language
 
         public object GetInitializationOptions()
         {
-            if (V25Feature.Enabled)
-            {
-                if (settingsV25 == null)
-                    settingsV25 = new LsSettingsV25(SnykVSPackage.ServiceProvider);
-                return settingsV25.GetInitializationOptions();
-            }
-
-            if (settings == null)
-                settings = new LsSettings(SnykVSPackage.ServiceProvider);
-            return settings.GetInitializationOptions();
+            settingsV25 ??= new LsSettingsV25(SnykVSPackage.ServiceProvider);
+            return settingsV25.GetInitializationOptions();
         }
 
         public IEnumerable<string> FilesToWatch => null;
@@ -89,7 +84,7 @@ namespace Snyk.VisualStudio.Extension.Language
             }
             var options = serviceProvider.Options;
             // ReSharper disable once RedundantAssignment
-            var lsDebugLevel = await GetLsDebugLevelAsync(serviceProvider.SnykOptionsManager);
+            var lsDebugLevel = await GetLsDebugLevelAsync();
             var info = new ProcessStartInfo
             {
                 FileName = SnykCli.GetCliFilePath(options.CliCustomPath),
@@ -144,6 +139,8 @@ namespace Snyk.VisualStudio.Extension.Language
                         CustomMessageTarget = new SnykLanguageClientCustomTarget(SnykVSPackage.ServiceProvider);
                     }
 
+                    await MigrateLegacySolutionSettingsAsync();
+
                     Logger.Information("Starting Language Server");
                     await StartAsync.InvokeAsync(this, EventArgs.Empty);
                 }
@@ -181,6 +178,10 @@ namespace Snyk.VisualStudio.Extension.Language
 
         public async Task StopServerAsync()
         {
+            // Detach the solution-opened migration handler as part of stop teardown so a permanent
+            // stop (extension disable / VS shutdown) doesn't leave it running against a dead LS.
+            UnsubscribeFromSolutionOpenedForMigration();
+
             if (StopAsync != null)
             {
                 try
@@ -224,24 +225,112 @@ namespace Snyk.VisualStudio.Extension.Language
             FireOnLanguageServerReadyAsyncEvent();
             SendPluginInstalledEvent();
             Rpc.Disconnected += Rpc_Disconnected;
+            SubscribeToSolutionOpenedForMigration();
             return Task.CompletedTask;
         }
 
-        private async Task<string> GetLsDebugLevelAsync(ISnykOptionsManager optionsManger)
+        // Subscribes MigrateLegacySolutionSettingsAsync to the solution-opened event so that
+        // per-solution legacy settings are migrated whenever the user opens a different solution
+        // while the LS stays alive (multi-solution VS session). Unsubscribes first so repeated
+        // server restarts don't accumulate duplicate handlers.
+        private void SubscribeToSolutionOpenedForMigration()
         {
-            var logLevel = "info";
-            var additionalCliParameters = await optionsManger.GetAdditionalOptionsAsync();
-            if (!string.IsNullOrEmpty(additionalCliParameters) && (additionalCliParameters.Contains("-d") || additionalCliParameters.Contains("--debug")))
+            try
             {
-                logLevel = "debug";
-            }
+                // Remove any previous subscription to stay idempotent across server restarts.
+                UnsubscribeFromSolutionOpenedForMigration();
 
-            return logLevel;
+                var solutionEvents = SnykVSPackage.ServiceProvider?.SolutionService?.SolutionEvents;
+                if (solutionEvents == null)
+                    return;
+
+                solutionOpenedMigrationHandler = (_, __) =>
+                    ThreadHelper.JoinableTaskFactory.RunAsync(MigrateLegacySolutionSettingsAsync).FireAndForget();
+
+                solutionEvents.AfterBackgroundSolutionLoadComplete += solutionOpenedMigrationHandler;
+            }
+            catch (Exception ex)
+            {
+                Logger.Warning(ex, "Could not subscribe to solution-opened event for legacy settings migration.");
+            }
+        }
+
+        // Detaches the solution-opened migration handler if subscribed. Idempotent and best-effort,
+        // so it is safe to call from both the explicit stop teardown (StopServerAsync) and the RPC
+        // disconnect path: when the LS stops for good (extension disable / VS shutdown) this stops a
+        // later solution-open from running MigrateLegacySolutionSettingsAsync against a dead LS and
+        // leaking the closure. On a transient disconnect the handler is re-attached by the next
+        // OnServerInitializedAsync.
+        private void UnsubscribeFromSolutionOpenedForMigration()
+        {
+            try
+            {
+                if (solutionOpenedMigrationHandler == null)
+                    return;
+
+                var solutionEvents = SnykVSPackage.ServiceProvider?.SolutionService?.SolutionEvents;
+                if (solutionEvents != null)
+                    solutionEvents.AfterBackgroundSolutionLoadComplete -= solutionOpenedMigrationHandler;
+
+                solutionOpenedMigrationHandler = null;
+            }
+            catch (Exception ex)
+            {
+                Logger.Warning(ex, "Could not unsubscribe from solution-opened event for legacy settings migration.");
+            }
+        }
+
+        private Task<string> GetLsDebugLevelAsync()
+        {
+            var serviceProvider = SnykVSPackage.ServiceProvider;
+            var options = serviceProvider?.Options;
+            if (options == null)
+                return Task.FromResult("info");
+
+            // Enable debug logging for the whole LS process if -d/--debug is set in global
+            // additional parameters OR in ANY folder's additional parameters.
+            var globalParams = options.AdditionalParameters ?? Enumerable.Empty<string>();
+            var folderParams = (options.FolderConfigs ?? Enumerable.Empty<FolderConfig>())
+                .Select(fc => fc?.GetStringList(PflagKeys.AdditionalParameters))
+                .Where(p => p != null)
+                .SelectMany(p => p);
+
+            var anyDebug = globalParams.Concat(folderParams).Any(p => p == "-d" || p == "--debug");
+
+            return Task.FromResult(anyDebug ? "debug" : "info");
+        }
+
+        // One-time, best-effort migration of legacy per-solution settings (IDE-1651) into the folder
+        // config, run just before the LS starts so the migrated values reach it via the initialization
+        // options. Idempotent — once an entry is migrated it is removed, so later starts are no-ops.
+        private static async Task MigrateLegacySolutionSettingsAsync()
+        {
+            try
+            {
+                var serviceProvider = SnykVSPackage.ServiceProvider;
+                var optionsManager = serviceProvider?.SnykOptionsManager;
+                var solutionService = serviceProvider?.SolutionService;
+                if (optionsManager == null || solutionService == null)
+                    return;
+
+                var solutionFolder = await solutionService.GetSolutionFolderAsync();
+                optionsManager.MigrateLegacySolutionSettings(solutionFolder);
+            }
+            catch (Exception ex)
+            {
+                // Error (not Warning) so a genuine migration failure is visible in diagnostics — the
+                // no-op path returns without throwing, so reaching here means real legacy settings
+                // (which can include auth tokens / custom filters) failed to migrate. Still best-effort
+                // and non-fatal: the migration is idempotent and retries on the next solution-open or
+                // LS restart, so we continue startup without a disruptive user-facing prompt.
+                Logger.Error(ex, "Legacy per-solution settings migration failed; continuing LS startup.");
+            }
         }
 
         private void Rpc_Disconnected(object sender, JsonRpcDisconnectedEventArgs e)
         {
             IsReady = false;
+            UnsubscribeFromSolutionOpenedForMigration();
         }
 
         public async Task AttachForCustomMessageAsync(JsonRpc rpc)
@@ -438,21 +527,14 @@ namespace Snyk.VisualStudio.Extension.Language
         {
             if (!IsReady) return default;
 
-            LSP.DidChangeConfigurationParams param;
-            if (V25Feature.Enabled)
+            settingsV25 ??= new LsSettingsV25(SnykVSPackage.ServiceProvider);
+            var config = settingsV25.GetLspConfigurationParam();
+            if (config == null)
             {
-                if (settingsV25 == null)
-                    settingsV25 = new LsSettingsV25(SnykVSPackage.ServiceProvider);
-                var config = settingsV25.GetLspConfigurationParam();
-                if (config == null) return default;
-                param = new LSP.DidChangeConfigurationParams { Settings = config };
+                Logger.Warning("DidChangeConfigurationAsync: GetLspConfigurationParam returned null; skipping workspace/didChangeConfiguration notification.");
+                return default;
             }
-            else
-            {
-                // v24 deviation: sends full InitializationOptions; snyk-ls tolerates extra fields
-                param = new LSP.DidChangeConfigurationParams { Settings = GetInitializationOptions() };
-            }
-
+            var param = new LSP.DidChangeConfigurationParams { Settings = config };
             return await InvokeWithParametersAsync<object>(LsConstants.WorkspaceChangeConfiguration, param, cancellationToken).ConfigureAwait(false);
         }
 

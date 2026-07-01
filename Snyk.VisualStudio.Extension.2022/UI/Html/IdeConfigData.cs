@@ -1,64 +1,103 @@
 // ABOUTME: Data classes for deserializing IDE configuration JSON from HTML settings
-// ABOUTME: Used by ConfigScriptingBridge to parse configuration with strong typing
+// ABOUTME: Used by HtmlSettingsScriptingBridge to parse configuration with strong typing
 
 using System.Collections.Generic;
 using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
 using Snyk.VisualStudio.Extension.Language;
 
 namespace Snyk.VisualStudio.Extension.UI.Html
 {
     /// <summary>
-    /// Represents the complete IDE configuration sent from LS HTML JavaScript.
+    /// Represents the IDE configuration posted from the LS-served settings HTML (and the
+    /// CLI-only fallback HTML). Both forms emit a flat, snake_case pflag-keyed payload — the
+    /// same key scheme the IDE uses when it sends settings to the Language Server (see
+    /// <see cref="LsSettingsV25"/> / PflagKeys). Every field therefore binds explicitly to its
+    /// snake_case JSON key; relying on default camelCase matching silently drops snake_case keys.
+    /// <para>
+    /// <b>Changed-only / false-vs-absent contract.</b> The form posts only the fields the user
+    /// actually changed (see <c>collectChangedData</c> in the LS form JS), so the payload is a
+    /// PATCH, not a full snapshot. Each field is therefore nullable and the bridge MUST treat:
+    /// <list type="bullet">
+    ///   <item><description><b>absent / null</b> = "not changed" → leave the corresponding
+    ///   <c>Options</c> value untouched. Applying a default here would silently revert settings
+    ///   the user didn't touch (e.g. wiping every other severity filter when one toggles).</description></item>
+    ///   <item><description><b>present with a value</b> (including <c>false</c> and empty string)
+    ///   = "the user set this" → apply it. <c>false</c> is a real value, NOT the same as absent —
+    ///   which is exactly why bool fields are <c>bool?</c> rather than <c>bool</c>.</description></item>
+    /// </list>
+    /// Every <c>Apply*</c> helper in <see cref="HtmlSettingsScriptingBridge"/> guards on
+    /// <c>HasValue</c> / <c>!= null</c> to honour this. A consequence: if a future LS HTML build
+    /// renames or adds a key, that field deserialises to null / is dropped. To stop that being
+    /// silent, the save path runs <see cref="IdeConfigContract"/> over the raw payload first — it
+    /// warns (naming the keys) when some posted keys are unmapped and fails the save outright when
+    /// none are recognised (a wholesale rename, which would otherwise no-op yet report success). It
+    /// also fails fast when the whole payload deserialises to null (malformed JSON).
+    /// </para>
     /// </summary>
     public class IdeConfigData
     {
-        // Form Type
+        // Form type — the CLI-only fallback form posts camelCase "isFallbackForm".
+        [JsonProperty("isFallbackForm")]
         public bool? IsFallbackForm { get; set; }
 
-        // Scan Settings
-        public bool? ActivateSnykOpenSource { get; set; }
-        public bool? ActivateSnykCode { get; set; }
-        public bool? ActivateSnykIac { get; set; }
+        // Product enablement
+        [JsonProperty("snyk_oss_enabled")]
+        public bool? SnykOssEnabled { get; set; }
 
-        /// <summary>
-        /// Secrets scanning enable flag. Used by the LS HTML form (camelCase key).
-        /// </summary>
-        [JsonProperty("activateSnykSecrets")]
-        public bool? ActivateSnykSecrets { get; set; }
+        [JsonProperty("snyk_code_enabled")]
+        public bool? SnykCodeEnabled { get; set; }
 
-        /// <summary>
-        /// Secrets scanning enable flag. Used by the fallback HTML form (snake_case key).
-        /// Mirrors <see cref="ActivateSnykSecrets"/> so both form variants land on the same setting.
-        /// </summary>
+        [JsonProperty("snyk_iac_enabled")]
+        public bool? SnykIacEnabled { get; set; }
+
         [JsonProperty("snyk_secrets_enabled")]
-        public bool? SnykSecretsEnabledFallback { get; set; }
+        public bool? SnykSecretsEnabled { get; set; }
 
-        public string ScanningMode { get; set; }
+        // Scan
+        [JsonProperty("scan_automatic")]
+        public bool? ScanAutomatic { get; set; }
 
-        // Issue View Settings
-        public IssueViewOptions IssueViewOptions { get; set; }
-        public bool? EnableDeltaFindings { get; set; }
+        [JsonProperty("scan_net_new")]
+        public bool? ScanNetNew { get; set; }
 
-        // Authentication Settings
-        public string AuthenticationMethod { get; set; }
+        // Severity filter (flat snake_case keys, not a nested object)
+        [JsonProperty("severity_filter_critical")]
+        public bool? SeverityFilterCritical { get; set; }
 
-        // Connection Settings
-        public string Endpoint { get; set; }
+        [JsonProperty("severity_filter_high")]
+        public bool? SeverityFilterHigh { get; set; }
+
+        [JsonProperty("severity_filter_medium")]
+        public bool? SeverityFilterMedium { get; set; }
+
+        [JsonProperty("severity_filter_low")]
+        public bool? SeverityFilterLow { get; set; }
+
+        // Issue view (flat snake_case keys, not a nested object)
+        [JsonProperty("issue_view_open_issues")]
+        public bool? IssueViewOpenIssues { get; set; }
+
+        [JsonProperty("issue_view_ignored_issues")]
+        public bool? IssueViewIgnoredIssues { get; set; }
+
+        // Connection & authentication
+        [JsonProperty("api_endpoint")]
+        public string ApiEndpoint { get; set; }
+
+        [JsonProperty("token")]
         public string Token { get; set; }
+
+        [JsonProperty("organization")]
         public string Organization { get; set; }
 
-        // The fallback HTML form posts this field as "proxy_insecure" (snake_case); the
-        // full LS-served form's contract on the same flag also lands here. Explicit
-        // JsonProperty so the property does not silently miss the JSON key.
+        [JsonProperty("authentication_method")]
+        public string AuthenticationMethod { get; set; }
+
         [JsonProperty("proxy_insecure")]
         public bool? Insecure { get; set; }
 
-        // Trusted Folders
-        public List<string> TrustedFolders { get; set; }
-
-        // CLI Settings — the fallback HTML form uses snake_case JSON keys that do not match
-        // these PascalCase C# property names by default. Explicit JsonProperty bindings keep
-        // the form's saves landing on the right fields.
+        // CLI settings
         [JsonProperty("cli_path")]
         public string CliPath { get; set; }
 
@@ -71,46 +110,29 @@ namespace Snyk.VisualStudio.Extension.UI.Html
         [JsonProperty("cli_release_channel")]
         public string CliReleaseChannel { get; set; }
 
-        // Filter Settings
-        public FilterSeverity FilterSeverity { get; set; }
-
-        // Miscellaneous Settings
+        // Filtering
+        [JsonProperty("risk_score_threshold")]
         public int? RiskScoreThreshold { get; set; }
 
-        // Folder Configs
-        public List<FolderConfigData> FolderConfigs { get; set; }
-    }
-
-    /// <summary>
-    /// Issue view configuration options.
-    /// </summary>
-    public class IssueViewOptions
-    {
-        public bool OpenIssues { get; set; }
-        public bool IgnoredIssues { get; set; }
-    }
-
-    /// <summary>
-    /// Severity filter configuration.
-    /// </summary>
-    public class FilterSeverity
-    {
-        public bool Critical { get; set; }
-        public bool High { get; set; }
-        public bool Medium { get; set; }
-        public bool Low { get; set; }
-    }
-
-    /// <summary>
-    /// Per-solution/folder configuration.
-    /// </summary>
-    public class FolderConfigData
-    {
-        public List<string> AdditionalParameters { get; set; }
+        // Global (Project Defaults) advanced settings — top-level keys, distinct from the
+        // per-folder additional_* keys (those are forwarded verbatim, not modeled here).
+        [JsonProperty("additional_environment")]
         public string AdditionalEnv { get; set; }
-        public string PreferredOrg { get; set; }
-        public string AutoDeterminedOrg { get; set; }
-        public bool OrgSetByUser { get; set; }
-        public Dictionary<string, ScanCommandConfig> ScanCommandConfig { get; set; }
+
+        // Form sends additional_parameters as a raw string (text input); split on whitespace when applying.
+        [JsonProperty("additional_parameters")]
+        public string AdditionalParameters { get; set; }
+
+        // Trusted folders
+        [JsonProperty("trusted_folders")]
+        public List<string> TrustedFolders { get; set; }
+
+        // Per-folder settings (folderConfigs: [...]). The inner folder fields are intentionally NOT
+        // modeled — ApplyFolderConfigsAsync forwards them verbatim from the raw JSON to the LS (the
+        // IDE is "dumb" about folder-scoped keys, matching vscode/eclipse). This property exists only
+        // so IdeConfigContract recognizes the top-level "folderConfigs" key as bound; it is otherwise
+        // unused (the typed global save path doesn't read it).
+        [JsonProperty("folderConfigs")]
+        public JArray FolderConfigs { get; set; }
     }
 }

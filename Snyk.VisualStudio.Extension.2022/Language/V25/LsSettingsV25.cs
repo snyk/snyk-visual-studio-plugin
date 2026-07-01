@@ -9,7 +9,6 @@ using Snyk.VisualStudio.Extension.Settings;
 namespace Snyk.VisualStudio.Extension.Language
 {
     // Converts ISnykOptions to the v25 pflag-keyed wire shape.
-    // Not wired into SnykLanguageClient yet — that happens behind V25Feature.Enabled in PR-3.
     public class LsSettingsV25
     {
         private readonly ISnykServiceProvider serviceProvider;
@@ -43,8 +42,10 @@ namespace Snyk.VisualStudio.Extension.Language
         }
 
         // internal for testability (InternalsVisibleTo test project).
-        // Note: additional_parameters is folder-scoped in v25 (see snyk-ls ldx_sync_config.go)
-        // and is not included in the global settings map.
+        // Note: additional_parameters and additional_environment are sent both in the global
+        // settings map (Project Defaults tab) and per-folder in folderConfigs. The LS resolves
+        // folder-over-global. Global values are wired via ISnykOptions.AdditionalParameters /
+        // AdditionalEnv; per-folder values live in FolderConfig.
         internal Dictionary<string, ConfigSetting> BuildSettingsMap(ISnykOptions options)
         {
             var map = new Dictionary<string, ConfigSetting>
@@ -54,7 +55,12 @@ namespace Snyk.VisualStudio.Extension.Language
                 [PflagKeys.SnykIacEnabled] = ConfigSetting.Of(options.IacEnabled),
                 [PflagKeys.SnykSecretsEnabled] = ConfigSetting.Of(options.SecretsEnabled),
 
-                [PflagKeys.ScanAutomatic] = ConfigSetting.Of(options.InternalAutoScan),
+                // Send the persisted user preference (AutoScan), not the InternalAutoScan runtime
+                // gate. The gate only delays the *first* scan until the IDE is ready (handled by the
+                // scan-trigger logic in OnSnykConfiguration / OnHasAuthenticated) — it must not be the
+                // value we tell the LS to persist, or a manual-mode choice gets overwritten by the
+                // gate's post-first-scan `true` on the next config round-trip.
+                [PflagKeys.ScanAutomatic] = ConfigSetting.Of(options.AutoScan),
                 [PflagKeys.ScanNetNew] = ConfigSetting.Of(options.EnableDeltaFindings),
 
                 [PflagKeys.SeverityFilterCritical] = ConfigSetting.Of(options.FilterCritical),
@@ -78,6 +84,10 @@ namespace Snyk.VisualStudio.Extension.Language
 
                 [PflagKeys.TrustedFolders] = ConfigSetting.Of(options.TrustedFolders?.ToList() ?? new List<string>()),
                 [PflagKeys.AdditionalEnvironment] = ConfigSetting.Of(options.AdditionalEnv ?? string.Empty),
+                // LS applyCliConfig reads additional_parameters via settingStr (string type-assert),
+                // so send as a space-joined string — same wire format LS uses on its outbound echo.
+                [PflagKeys.AdditionalParameters] = ConfigSetting.Of(
+                    string.Join(" ", options.AdditionalParameters ?? new List<string>())),
 
                 [PflagKeys.DeviceId] = ConfigSetting.Of(options.DeviceId ?? string.Empty),
                 [PflagKeys.ClientProtocolVersion] = ConfigSetting.Of("25"),
@@ -98,21 +108,14 @@ namespace Snyk.VisualStudio.Extension.Language
             foreach (var fc in folderConfigs)
             {
                 if (fc == null) continue;
-                var settings = new Dictionary<string, ConfigSetting>();
 
-                if (fc.AdditionalParameters != null)
-                    settings[PflagKeys.AdditionalParameters] = ConfigSetting.Of(fc.AdditionalParameters);
-                if (fc.AdditionalEnv != null)
-                    settings[PflagKeys.AdditionalEnvironment] = ConfigSetting.Of(fc.AdditionalEnv);
-                if (fc.PreferredOrg != null)
-                    settings[PflagKeys.PreferredOrg] = ConfigSetting.Of(fc.PreferredOrg);
-                settings[PflagKeys.OrgSetByUser] = ConfigSetting.Of(fc.OrgSetByUser);
-                if (fc.AutoDeterminedOrg != null)
-                    settings[PflagKeys.AutoDeterminedOrg] = ConfigSetting.Of(fc.AutoDeterminedOrg);
-                if (fc.BaseBranch != null)
-                    settings[PflagKeys.BaseBranch] = ConfigSetting.Of(fc.BaseBranch);
-                if (fc.ScanCommandConfig != null)
-                    settings[PflagKeys.ScanCommandConfig] = ConfigSetting.Of(fc.ScanCommandConfig);
+                // Round-trip the opaque settings map verbatim — the LS is authoritative over
+                // folder-scoped settings, so the IDE forwards every key it was sent (and every key
+                // it set IDE-side, incl. resets stored as {value:null, changed:true}) without
+                // cherry-picking. Copy so callers don't mutate the stored map.
+                var settings = fc.Settings != null
+                    ? new Dictionary<string, ConfigSetting>(fc.Settings, StringComparer.Ordinal)
+                    : new Dictionary<string, ConfigSetting>();
 
                 result.Add(new LspFolderConfig
                 {
@@ -129,8 +132,6 @@ namespace Snyk.VisualStudio.Extension.Language
                 return null;
 
             var options = serviceProvider.Options;
-            // TODO (IDE-1653 flip): options.FolderConfigs is populated by OnSnykConfiguration in v25 mode
-            // (phase 4). Until then, FolderConfigs is sent from the last $/snyk.folderConfigs push.
             return new LspConfigurationParam
             {
                 Settings = BuildSettingsMap(options),

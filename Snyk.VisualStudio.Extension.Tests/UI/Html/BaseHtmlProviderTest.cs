@@ -16,6 +16,24 @@ namespace Snyk.VisualStudio.Extension.Tests.UI.Html
             _provider = new BaseHtmlProvider();
         }
 
+        [Fact]
+        public void GetNonce_Returns32CharsFromTheAllowedAlphabet()
+        {
+            const string allowed = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
+
+            var nonce = _provider.GetNonce();
+
+            Assert.Equal(32, nonce.Length);
+            Assert.All(nonce, c => Assert.Contains(c, allowed));
+        }
+
+        [Fact]
+        public void GetNonce_ProducesDifferentValuesAcrossCalls()
+        {
+            // Sanity check that the CSPRNG path actually varies (not a uniformity test).
+            Assert.NotEqual(_provider.GetNonce(), _provider.GetNonce());
+        }
+
         #region ExtractRootCssVariables Tests
 
         [Fact]

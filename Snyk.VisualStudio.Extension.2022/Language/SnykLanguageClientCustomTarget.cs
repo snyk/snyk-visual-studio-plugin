@@ -1,7 +1,6 @@
 ﻿// ABOUTME: This file implements custom JSON-RPC message handlers for the Snyk Language Client
 // ABOUTME: It processes diagnostics, authentication, and scan results from the Language Server
 using System;
-using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
@@ -21,9 +20,6 @@ namespace Snyk.VisualStudio.Extension.Language
     {
         private static readonly ILogger Logger = LogManager.ForContext<SnykLanguageClientCustomTarget>();
         private readonly ISnykServiceProvider serviceProvider;
-        private readonly ConcurrentDictionary<string, IEnumerable<Issue>> snykCodeIssueDictionary = new();
-        private readonly ConcurrentDictionary<string, IEnumerable<Issue>> snykOssIssueDictionary = new();
-        private readonly ConcurrentDictionary<string, IEnumerable<Issue>> snykIaCIssueDictionary = new();
         public SnykLanguageClientCustomTarget(ISnykServiceProvider serviceProvider)
         {
             this.serviceProvider = serviceProvider;
@@ -33,19 +29,13 @@ namespace Snyk.VisualStudio.Extension.Language
         [JsonRpcMethod(LsConstants.OnPublishDiagnostics316)]
         public async Task OnPublishDiagnostics316(JToken arg)
         {
-            var uri = arg["uri"];
-            var diagnosticsArray = (JArray)arg["diagnostics"];
-            if (uri == null)
+            // Issue rendering is driven entirely by the LS HTML tree ($/snyk.treeView); the IDE no
+            // longer caches diagnostics per file. We still inspect them for the one piece of state
+            // the IDE derives locally: whether any issue is ignored, which enables the Consistent
+            // Ignores UI.
+            var diagnosticsArray = arg?["diagnostics"] as JArray;
+            if (arg?["uri"] == null || diagnosticsArray == null || diagnosticsArray.Count == 0)
             {
-                return;
-            }
-
-            var parsedUri = new Uri(uri.ToString());
-            if (diagnosticsArray == null || diagnosticsArray.Count == 0)
-            {
-                snykCodeIssueDictionary.TryRemove(parsedUri.UncAwareAbsolutePath(), out _);
-                snykOssIssueDictionary.TryRemove(parsedUri.UncAwareAbsolutePath(), out _);
-                snykIaCIssueDictionary.TryRemove(parsedUri.UncAwareAbsolutePath(), out _);
                 return;
             }
 
@@ -54,32 +44,17 @@ namespace Snyk.VisualStudio.Extension.Language
                 return;
             }
 
-            var source = LspSourceToProduct(diagnosticsArray[0]["source"].ToString());
-            var issueList = diagnosticsArray.Where(x => x["data"] != null)
-                .Select(x =>
-                {
-                    var issue = x["data"].TryParse<Issue>();
-                    if (issue.IsIgnored)
-                    {
-                        serviceProvider.Options.ConsistentIgnoresEnabled = true;
-                    }
-                    return issue;
-                }).ToList();
-
-            switch (source)
+            foreach (var diagnostic in diagnosticsArray)
             {
-                case "code":
-                    snykCodeIssueDictionary.AddOrUpdate(parsedUri.UncAwareAbsolutePath(), issueList, (_, _) => issueList);
-                    break;
-                case "oss":
-                    snykOssIssueDictionary.AddOrUpdate(parsedUri.UncAwareAbsolutePath(), issueList, (_, _) => issueList);
-                    break;
-                case "iac":
-                    snykIaCIssueDictionary.AddOrUpdate(parsedUri.UncAwareAbsolutePath(), issueList, (_, _) => issueList);
-                    break;
-                default:
-                    throw new InvalidProductTypeException();
+                var data = diagnostic["data"];
+                if (data == null) continue;
 
+                var issue = data.TryParse<Issue>();
+                if (issue == null) continue;
+                if (issue.IsIgnored)
+                {
+                    serviceProvider.Options.ConsistentIgnoresEnabled = true;
+                }
             }
         }
 
@@ -105,26 +80,71 @@ namespace Snyk.VisualStudio.Extension.Language
                 case Product.Iac:
                     await ProcessIacScanAsync(lspAnalysisResult);
                     break;
+                case Product.Secrets:
+                    await ProcessSecretsScanAsync(lspAnalysisResult);
+                    break;
             }
         }
 
         [JsonRpcMethod(LsConstants.ShowDocument)]
         public async Task OnShowDocument(JToken arg)
         {
-            var lspAnalysisResult = arg.TryParse<ShowDocumentParams>();
-            if (lspAnalysisResult == null) return;
-            var uri = new Uri(Uri.UnescapeDataString(lspAnalysisResult.Uri));
+            var showDocumentParams = arg.TryParse<ShowDocumentParams>();
+            if (string.IsNullOrEmpty(showDocumentParams?.Uri)) return;
 
-            // Manually parse query parameters
-            var queryParams = ParseQueryString(uri.Query);
-            var issueId = queryParams["issueId"];
-            var product = LspSourceToProduct(queryParams["product"].Replace("+", " "));
-            var action = queryParams["action"];
-            if (action != "showInDetailPanel")
+            // Build the Uri from the raw string. Do NOT pre-unescape it: ParseQueryString already
+            // unescapes each query value once, and pre-unescaping double-decodes any value with a
+            // percent sequence and can produce a string that makes new Uri(...) throw. Guard the
+            // parse so a malformed URI can't escape this JSON-RPC handler.
+            Uri uri;
+            try
             {
+                uri = new Uri(showDocumentParams.Uri);
+            }
+            catch (UriFormatException ex)
+            {
+                Logger.Warning(ex, "Ignoring showDocument request with malformed URI");
                 return;
             }
-            serviceProvider.ToolWindow.SelectedItemInTree(issueId, product);
+
+            var queryParams = ParseQueryString(uri.Query);
+            queryParams.TryGetValue("action", out var action);
+
+            // snyk:// detail-panel request (from a tree node click via snyk.navigateToRange):
+            // populate the issue description panel.
+            if (action == "showInDetailPanel")
+            {
+                if (!queryParams.TryGetValue("issueId", out var issueId) ||
+                    !queryParams.TryGetValue("product", out var productRaw))
+                {
+                    return;
+                }
+                serviceProvider?.ToolWindow?.SelectedItemInTree(issueId, NormalizeProduct(productRaw));
+                return;
+            }
+
+            // Plain file-open request: navigate the editor to the selected range. The HTML tree
+            // triggers this via snyk.navigateToRange, which the LS turns into window/showDocument.
+            // External requests (open-in-browser) are not editor navigations.
+            if (showDocumentParams.External) return;
+            var selection = showDocumentParams.Selection;
+            if (selection?.Start == null || selection.End == null) return;
+
+            VsCodeService.Instance.OpenAndNavigate(
+                uri.LocalPath,
+                selection.Start.Line,
+                selection.Start.Character,
+                selection.End.Line,
+                selection.End.Character);
+        }
+
+        // The tree emits product codenames ("code"/"oss"/"iac") in the detail-panel URI, while
+        // other producers send display names ("Snyk Code"). Map display names, pass codenames through.
+        private string NormalizeProduct(string raw)
+        {
+            if (string.IsNullOrEmpty(raw)) return string.Empty;
+            var mapped = LspSourceToProduct(raw.Replace("+", " "));
+            return string.IsNullOrEmpty(mapped) ? raw.ToLowerInvariant() : mapped;
         }
 
         static Dictionary<string, string> ParseQueryString(string query)
@@ -136,115 +156,16 @@ namespace Snyk.VisualStudio.Extension.Language
 
             foreach (var pair in query.Split('&'))
             {
-                var parts = pair.Split('=');
-                if (parts.Length == 2)
-                {
-                    var key = Uri.UnescapeDataString(parts[0]);
-                    var value = Uri.UnescapeDataString(parts[1]);
-                    result[key] = value;
-                }
+                // Split on the FIRST '=' only: a value can legitimately contain '=' (e.g. base64
+                // issue IDs ending in '='/'=='), and splitting on every '=' would drop those pairs.
+                var separatorIndex = pair.IndexOf('=');
+                if (separatorIndex <= 0) continue;
+
+                var key = Uri.UnescapeDataString(pair.Substring(0, separatorIndex));
+                var value = Uri.UnescapeDataString(pair.Substring(separatorIndex + 1));
+                result[key] = value;
             }
             return result;
-        }
-
-        [JsonRpcMethod(LsConstants.SnykFolderConfig)]
-        public async Task OnFolderConfig(JToken arg)
-        {
-            var folderConfigs = arg.TryParse<FolderConfigsParam>();
-            if (folderConfigs == null) return;
-
-            serviceProvider.Options.FolderConfigs = folderConfigs.FolderConfigs;
-
-            // Get current solution folder path
-            var currentSolutionPath = await serviceProvider.SolutionService.GetSolutionFolderAsync();
-            var matchingFolderConfig = FindMatchingFolderConfig(folderConfigs.FolderConfigs, currentSolutionPath);
-
-            if (matchingFolderConfig != null)
-            {
-                // Extract auto-determined organization from matching folder config
-                // Language Server is authoritative - always use its data
-                if (!string.IsNullOrEmpty(matchingFolderConfig.AutoDeterminedOrg))
-                {
-                    // Save as auto-determined organization (from Language Server)
-                    await serviceProvider.SnykOptionsManager.SaveAutoDeterminedOrgAsync(matchingFolderConfig.AutoDeterminedOrg);
-                }
-
-                // Extract preferred organization from matching folder config
-                // Language Server is authoritative - always use its data, even if empty
-                await serviceProvider.SnykOptionsManager.SavePreferredOrgAsync(matchingFolderConfig.PreferredOrg);
-
-                // Extract orgSetByUser flag from Language Server
-                await serviceProvider.SnykOptionsManager.SaveOrgSetByUserAsync(matchingFolderConfig.OrgSetByUser);
-
-                // Do NOT update global organization when receiving folder configs from Language Server.
-                // The global organization should remain as the user set it and be used as a fallback.
-                // The Language Server handles the fallback logic: project-specific → global → web account preferred.
-
-                // Extract additional parameters from matching folder config
-                // Language Server is authoritative - always use its data
-                if (matchingFolderConfig.AdditionalParameters != null && matchingFolderConfig.AdditionalParameters.Count > 0)
-                {
-                    var additionalParams = string.Join(" ", matchingFolderConfig.AdditionalParameters);
-                    await serviceProvider.SnykOptionsManager.SaveAdditionalOptionsAsync(additionalParams);
-                }
-            }
-
-            serviceProvider.SnykOptionsManager.Save(serviceProvider.Options, false);
-
-            // Trigger first scan after folder config is received.
-            //
-            // AutoScan vs InternalAutoScan vs ScanningMode:
-            // - AutoScan: Persisted user preference ("I want auto-scanning")
-            // - InternalAutoScan: Runtime flag, starts false each session to prevent scanning until we are actually ready.
-            //     This controls ScanningMode, the string sent to LS ("auto"/"manual").
-            //
-            // We always start with InternalAutoScan=false and therefore ScanningMode="manual" during LS initialization to prevent the LS from auto-scanning before we are fully ready.
-            // Now folder configs have arrived, we can set InternalAutoScan=AutoScan and trigger the first scan if necessary.
-            if (serviceProvider.Options.AutoScan)
-            {
-                var isFolderTrusted = await this.serviceProvider.TasksService.IsFolderTrustedAsync();
-                await TaskScheduler.Default;
-                if (!isFolderTrusted)
-                    return;
-
-                if (!serviceProvider.Options.InternalAutoScan)
-                {
-                    // AutoScan is enabled but we haven't triggered the first scan yet (InternalAutoScan is still false).
-                    // So set InternalAutoScan=true, update LS with the true ScanningMode ("auto") and trigger the first scan.
-                    serviceProvider.Options.InternalAutoScan = true;
-                    await serviceProvider.LanguageClientManager.DidChangeConfigurationAsync(SnykVSPackage.Instance.DisposalToken);
-                    serviceProvider.TasksService.ScanAsync().FireAndForget();
-                }
-            }
-        }
-
-        private FolderConfig FindMatchingFolderConfig(List<FolderConfig> folderConfigs, string currentSolutionPath)
-        {
-            if (folderConfigs == null || string.IsNullOrEmpty(currentSolutionPath)) return null;
-
-            foreach (var folderConfig in folderConfigs)
-            {
-                if (string.IsNullOrEmpty(folderConfig.FolderPath)) continue;
-
-                // Check for exact match
-                if (folderConfig.FolderPath.Equals(currentSolutionPath, StringComparison.OrdinalIgnoreCase))
-                {
-                    return folderConfig;
-                }
-
-                // Check if current path is within the config path (subfolder)
-                // Note: This is a defensive check. In normal operation, the Language Server sends folder configs
-                // that match workspace folders exactly, so exact matches should be sufficient. This subfolder
-                // check handles edge cases where paths might not align perfectly (e.g., path normalization differences).
-                var trimmedConfigPath = folderConfig.FolderPath.TrimEnd('\\', '/');
-                if (currentSolutionPath.StartsWith(trimmedConfigPath + "\\", StringComparison.OrdinalIgnoreCase) ||
-                    currentSolutionPath.StartsWith(trimmedConfigPath + "/", StringComparison.OrdinalIgnoreCase))
-                {
-                    return folderConfig;
-                }
-            }
-
-            return null;
         }
 
         [JsonRpcMethod(LsConstants.SnykScanSummary)]
@@ -260,12 +181,26 @@ namespace Snyk.VisualStudio.Extension.Language
             }).FireAndForget();
         }
 
+        [JsonRpcMethod(LsConstants.SnykTreeView)]
+        public async Task OnTreeView(JToken arg)
+        {
+            var treeViewParam = arg.TryParse<TreeViewParams>();
+            var treePanel = serviceProvider?.ToolWindow?.TreeHtmlPanel;
+            if (treeViewParam?.TreeViewHtml == null || treePanel == null) return;
+
+            // SetContent marshals to the UI thread itself, so we don't switch here — this keeps the
+            // JSON-RPC dispatch thread unblocked, matching OnScanSummary's non-blocking pattern. HTML
+            // and count are applied together so the "Clean" command's enabled state can never
+            // disagree with the rendered tree (see TreeHtmlPanel.SetContent).
+            treePanel.SetContent(treeViewParam.TreeViewHtml, treeViewParam.TotalIssues);
+        }
+
         [JsonRpcMethod(LsConstants.SnykHasAuthenticated)]
         public async Task OnHasAuthenticated(JToken arg)
         {
             if (arg?["token"] == null)
             {
-                await serviceProvider.GeneralOptionsDialogPage.HandleFailedAuthentication("Authentication failed");
+                await serviceProvider.AuthenticationFlowService.HandleFailedAuthenticationAsync("Authentication failed");
                 return;
             }
 
@@ -274,12 +209,24 @@ namespace Snyk.VisualStudio.Extension.Language
 
             var oldToken = serviceProvider.Options.ApiToken?.ToString() ?? string.Empty;
 
-            // Always notify the HTML settings window so the token field updates immediately.
-            HtmlSettingsWindow.Instance?.UpdateAuthToken(token, apiUrl);
+            // Queue the token for the HTML settings page so the token field updates after an OAuth
+            // round-trip. Queuing (rather than a direct push to a live instance) guarantees delivery
+            // even when no settings page is open yet or its HTML hasn't finished loading — the next
+            // control to become page-ready flushes it.
+            HtmlSettingsControl.QueueAuthToken(token, apiUrl);
 
+            // Validate before persisting: only accept an absolute http/https URL so a malformed or
+            // unexpected apiUrl can't repoint the API host. Same guard as the JS snyk.login path.
             if (!string.IsNullOrEmpty(apiUrl))
             {
-                serviceProvider.Options.CustomEndpoint = apiUrl;
+                if (UriExtensions.IsValidWebUrl(apiUrl))
+                {
+                    serviceProvider.Options.CustomEndpoint = apiUrl;
+                }
+                else
+                {
+                    Logger.Warning("Ignoring authenticated apiUrl that is not an absolute http/https URL");
+                }
             }
 
             serviceProvider.Options.ApiToken = new AuthenticationToken(serviceProvider.Options.AuthenticationMethod, token);
@@ -293,7 +240,7 @@ namespace Snyk.VisualStudio.Extension.Language
             if (!isNewLogin)
                 return;
 
-            await serviceProvider.GeneralOptionsDialogPage.HandleAuthenticationSuccess(token, apiUrl);
+            await serviceProvider.AuthenticationFlowService.HandleAuthenticationSuccessAsync(token, apiUrl);
 
             if (!serviceProvider.Options.ApiToken.IsValid())
                 return;
@@ -311,9 +258,32 @@ namespace Snyk.VisualStudio.Extension.Language
             var param = arg.TryParse<LspConfigurationParam>();
             if (param == null) return;
 
-            // TODO (IDE-1653 flip): apply param.Settings and param.FolderConfigs to serviceProvider.Options
-            // Full inbound settings application is implemented in phase 4 (PR-4).
-            Logger.Debug("$/snyk.configuration received: {FolderConfigCount} folder config(s)", param.FolderConfigs?.Count ?? 0);
+            var options = serviceProvider.Options;
+            GlobalSettingsApplier.Apply(param.Settings, options);
+            options.FolderConfigs = FolderConfigApplier.Apply(options.FolderConfigs, param.FolderConfigs);
+            // Persist without re-triggering DidChangeConfigurationAsync (avoids feedback loop).
+            this.serviceProvider.SnykOptionsManager.Save(options, false);
+            Logger.Debug("$/snyk.configuration applied: {KeyCount} global setting(s), {FolderCount} folder config(s) stored in-memory",
+                param.Settings?.Count ?? 0, param.FolderConfigs?.Count ?? 0);
+
+            // Trigger first scan now that folder configs have arrived.
+            // AutoScan: persisted user preference (also sent to the LS as scan_automatic).
+            // InternalAutoScan: IDE-side runtime gate only (NOT sent to the LS); $/snyk.configuration
+            // may arrive multiple times, so the gate ensures we trigger the IDE-side scan exactly once.
+            if (options.AutoScan)
+            {
+                var isFolderTrusted = await this.serviceProvider.TasksService.IsFolderTrustedAsync();
+                await TaskScheduler.Default;
+                if (!isFolderTrusted)
+                    return;
+
+                if (!options.InternalAutoScan)
+                {
+                    options.InternalAutoScan = true;
+                    await serviceProvider.LanguageClientManager.DidChangeConfigurationAsync(SnykVSPackage.Instance.DisposalToken);
+                    serviceProvider.TasksService.ScanAsync().FireAndForget();
+                }
+            }
         }
 
         [JsonRpcMethod(LsConstants.SnykAddTrustedFolders)]
@@ -343,7 +313,6 @@ namespace Snyk.VisualStudio.Extension.Language
                 return;
             }
 
-            serviceProvider.TasksService.FireCodeScanningUpdateEvent(snykCodeIssueDictionary);
             serviceProvider.TasksService.FireSnykCodeScanningFinishedEvent();
             serviceProvider.TasksService.FireTaskFinished();
         }
@@ -362,7 +331,6 @@ namespace Snyk.VisualStudio.Extension.Language
                 return;
             }
 
-            serviceProvider.TasksService.FireOssScanningUpdateEvent(snykOssIssueDictionary);
             serviceProvider.TasksService.FireOssScanningFinishedEvent();
             serviceProvider.TasksService.FireTaskFinished();
         }
@@ -382,8 +350,25 @@ namespace Snyk.VisualStudio.Extension.Language
                 return;
             }
 
-            serviceProvider.TasksService.FireIacScanningUpdateEvent(snykIaCIssueDictionary);
             serviceProvider.TasksService.FireIacScanningFinishedEvent();
+            serviceProvider.TasksService.FireTaskFinished();
+        }
+
+        private async Task ProcessSecretsScanAsync(LsAnalysisResult lsAnalysisResult)
+        {
+            if (lsAnalysisResult.Status == "inProgress")
+            {
+                serviceProvider.TasksService.FireSecretsScanningStartedEvent();
+                return;
+            }
+            if (lsAnalysisResult.Status == "error")
+            {
+                serviceProvider.TasksService.OnSecretsError(lsAnalysisResult.PresentableError);
+                serviceProvider.TasksService.FireTaskFinished();
+                return;
+            }
+
+            serviceProvider.TasksService.FireSecretsScanningFinishedEvent();
             serviceProvider.TasksService.FireTaskFinished();
         }
 
@@ -394,14 +379,9 @@ namespace Snyk.VisualStudio.Extension.Language
                 "Snyk Code" => "code",
                 "Snyk Open Source" => "oss",
                 "Snyk IaC" => "iac",
+                "Snyk Secrets" => "secrets",
                 _ => ""
             };
-        }
-
-        // Only used in tests
-        public ConcurrentDictionary<string, IEnumerable<Issue>> GetCodeDictionary()
-        {
-            return snykCodeIssueDictionary;
         }
 #pragma warning restore CS1998 // Async method lacks 'await' operators and will run synchronously
     }

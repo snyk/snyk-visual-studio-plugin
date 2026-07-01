@@ -32,6 +32,7 @@ namespace Snyk.VisualStudio.Extension.Service
 
         public bool IsSnykCodeScanning { get; set; }
         public bool IsIacScanning { get; set; }
+        public bool IsSecretsScanning { get; set; }
 
         private bool isCliDownloading;
 
@@ -50,11 +51,6 @@ namespace Snyk.VisualStudio.Extension.Service
         /// Cli scanning started event handler.
         /// </summary>
         public event EventHandler<SnykOssScanEventArgs> OssScanningStarted;
-
-        /// <summary>
-        /// Cli Scanning update event handler.
-        /// </summary>
-        public event EventHandler<SnykOssScanEventArgs> OssScanningUpdate;
 
         /// <summary>
         /// OSS Scanning Disabled event handler.
@@ -76,11 +72,6 @@ namespace Snyk.VisualStudio.Extension.Service
         /// IaC scanning started event handler.
         /// </summary>
         public event EventHandler<SnykCodeScanEventArgs> IacScanningStarted;
-
-        /// <summary>
-        /// Iac scanning update event handler.
-        /// </summary>
-        public event EventHandler<SnykCodeScanEventArgs> IacScanningUpdate;
 
         /// <summary>
         /// IaC Scanning Disabled event handler.
@@ -108,11 +99,6 @@ namespace Snyk.VisualStudio.Extension.Service
         public event EventHandler<SnykCodeScanEventArgs> SnykCodeScanningFinished;
 
         /// <summary>
-        /// SnykCode scanning update event handler.
-        /// </summary>
-        public event EventHandler<SnykCodeScanEventArgs> SnykCodeScanningUpdate;
-
-        /// <summary>
         /// SnykCode scan error event handler.
         /// </summary>
         public event EventHandler<SnykCodeScanEventArgs> SnykCodeScanError;
@@ -121,6 +107,26 @@ namespace Snyk.VisualStudio.Extension.Service
         /// SnykCode disabled event handler.
         /// </summary>
         public event EventHandler<SnykCodeScanEventArgs> SnykCodeDisabled;
+
+        /// <summary>
+        /// Secrets scanning started event handler.
+        /// </summary>
+        public event EventHandler<SnykOssScanEventArgs> SecretsScanningStarted;
+
+        /// <summary>
+        /// Secrets scanning finished event handler.
+        /// </summary>
+        public event EventHandler<SnykOssScanEventArgs> SecretsScanningFinished;
+
+        /// <summary>
+        /// Secrets scan error event handler.
+        /// </summary>
+        public event EventHandler<SnykOssScanEventArgs> SecretsScanError;
+
+        /// <summary>
+        /// Secrets scanning disabled event handler.
+        /// </summary>
+        public event EventHandler<SnykOssScanEventArgs> SecretsScanningDisabled;
 
         /// <summary>
         /// Scanning cancelled event handler.
@@ -193,7 +199,7 @@ namespace Snyk.VisualStudio.Extension.Service
         /// Check is Scan running (oss or snykcode) or CLI download.
         /// </summary>
         /// <returns>True if Oss or SnykCode scan running.</returns>
-        public bool IsTaskRunning() => this.IsOssScanning || this.IsSnykCodeScanning || this.isCliDownloading;
+        public bool IsTaskRunning() => this.IsOssScanning || this.IsSnykCodeScanning || this.IsIacScanning || this.IsSecretsScanning || this.isCliDownloading;
 
         /// <summary>
         /// Cancel current task.
@@ -206,6 +212,8 @@ namespace Snyk.VisualStudio.Extension.Service
                 {
                     this.IsOssScanning = false;
                     this.IsSnykCodeScanning = false;
+                    this.IsIacScanning = false;
+                    this.IsSecretsScanning = false;
                     this.isCliDownloading = false;
 
                     this.CancelTask(this.SnykScanTokenSource);
@@ -246,6 +254,11 @@ namespace Snyk.VisualStudio.Extension.Service
                 if (!selectedFeatures.IacEnabled)
                 {
                     FireSnykIacDisabledError(selectedFeatures.IacEnabled);
+                }
+
+                if (!selectedFeatures.SecretsEnabled)
+                {
+                    FireSecretsScanningDisabledEvent();
                 }
 
                 if (!LanguageClientHelper.IsLanguageServerReady())
@@ -601,32 +614,6 @@ namespace Snyk.VisualStudio.Extension.Service
         }
 
         /// <summary>
-        /// Fire scanning update with <see cref="SnykOssScanEventArgs"/> object.
-        /// </summary>
-        public void FireOssScanningUpdateEvent(IDictionary<string, IEnumerable<Issue>> scanResult)
-        {
-            this.IsOssScanning = true;
-            this.OssScanningUpdate?.Invoke(this, new SnykOssScanEventArgs(scanResult));
-        }
-
-        /// <summary>
-        /// Fire scanning update with <see cref="SnykCodeScanEventArgs"/> object.
-        /// </summary>
-        /// <param name="analysisResult"><see cref="AnalysisResult"/> object with vulnerabilities.</param>
-        public void FireCodeScanningUpdateEvent(IDictionary<string, IEnumerable<Issue>> analysisResult)
-        {
-            this.IsSnykCodeScanning = true;
-            this.SnykCodeScanningUpdate?.Invoke(this, new SnykCodeScanEventArgs(analysisResult));
-        }
-
-        public void FireIacScanningUpdateEvent(IDictionary<string, IEnumerable<Issue>> analysisResult)
-        {
-            this.IsIacScanning = true;
-            this.IacScanningUpdate?.Invoke(this, new SnykCodeScanEventArgs(analysisResult));
-        }
-
-
-        /// <summary>
         /// Fire OSS scanning finished event.
         /// </summary>
         public void FireOssScanningFinishedEvent()
@@ -655,6 +642,38 @@ namespace Snyk.VisualStudio.Extension.Service
         }
 
         /// <summary>
+        /// Fire Secrets scanning started event.
+        /// </summary>
+        public void FireSecretsScanningStartedEvent()
+        {
+            this.IsSecretsScanning = true;
+            this.SecretsScanningStarted?.Invoke(this, new SnykOssScanEventArgs());
+        }
+
+        /// <summary>
+        /// Fire Secrets scanning finished event.
+        /// </summary>
+        public void FireSecretsScanningFinishedEvent()
+        {
+            this.IsSecretsScanning = false;
+            this.SecretsScanningFinished?.Invoke(this, new SnykOssScanEventArgs());
+        }
+
+        /// <summary>
+        /// Fire Secrets scan error event.
+        /// </summary>
+        public void OnSecretsError(Language.PresentableError presentableError)
+        {
+            this.IsSecretsScanning = false;
+            this.SecretsScanError?.Invoke(this, new SnykOssScanEventArgs(null, presentableError));
+        }
+
+        /// <summary>
+        /// Fire Secrets scanning disabled event.
+        /// </summary>
+        private void FireSecretsScanningDisabledEvent() => this.SecretsScanningDisabled?.Invoke(this, new SnykOssScanEventArgs());
+
+        /// <summary>
         /// Fire scanning cancelled event.
         /// </summary>
         public void FireScanningCancelledEvent() => this.ScanningCancelled?.Invoke(this, new SnykOssScanEventArgs());
@@ -671,7 +690,8 @@ namespace Snyk.VisualStudio.Extension.Service
                 SastOnServerEnabled = true,
                 CodeSecurityEnabled = options.SnykCodeSecurityEnabled,
                 LocalCodeEngineEnabled = false,
-                IacEnabled = options.IacEnabled
+                IacEnabled = options.IacEnabled,
+                SecretsEnabled = options.SecretsEnabled
             });
         }
 
