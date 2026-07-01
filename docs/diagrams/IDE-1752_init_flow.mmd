@@ -1,0 +1,17 @@
+flowchart TD
+    A[VS opens, Snyk extension loads] --> B[OnLoadedAsync: shouldStart = isInitialized AND not ShouldDownloadCli]
+    B -->|shouldStart false e.g. CLI still downloading| C[FireOnLanguageClientNotInitializedAsync]
+    C --> D[Not-initialized handler]
+    D --> E{Is LS ready?}
+    E -->|yes| Z[Panel usable - done]
+    E -->|no - BEFORE FIX| F["await Task.Delay(3000) loop (gated on IsSolutionOpen)"]
+    F -->|no solution open: never activates| X[STUCK: 'waiting for Visual Studio to initialize']
+
+    E -->|no - AFTER FIX IDE-1752| G["Open Resources/SnykLsInit.cs → activates ILanguageClient → LS starts"]
+    G --> Y[OnLanguageServerReadyAsync closes temp window → panel usable]
+
+    style X fill:#f8d7da,stroke:#b02a37
+    style F fill:#f8d7da,stroke:#b02a37
+    style G fill:#d1e7dd,stroke:#0f5132
+    style Y fill:#d1e7dd,stroke:#0f5132
+    style Z fill:#d1e7dd,stroke:#0f5132
