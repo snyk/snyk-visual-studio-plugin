@@ -21,7 +21,8 @@ namespace Snyk.VisualStudio.Extension.Settings
         public bool AutoScan { get; set; }
 
         /// <summary>
-        /// Runtime flag (not persisted) that delays telling LS about auto mode until we are actually ready to scan.
+        /// IDE-side runtime gate (not persisted, not sent to the LS). Ensures the IDE triggers the
+        /// first scan exactly once after it is ready. The persisted user preference is <see cref="AutoScan"/>.
         /// </summary>
         public bool InternalAutoScan { get; set; }
         public bool OpenIssuesEnabled { get; set; }

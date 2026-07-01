@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.VisualStudio.Sdk.TestFramework;
@@ -425,9 +426,9 @@ namespace Snyk.VisualStudio.Extension.Tests.Language
             Assert.NotNull(optionsMock.Object.FolderConfigs);
             Assert.Equal(2, optionsMock.Object.FolderConfigs.Count);
             Assert.Equal("/path/to/folder1", optionsMock.Object.FolderConfigs[0].FolderPath);
-            Assert.Equal("main", optionsMock.Object.FolderConfigs[0].BaseBranch);
+            Assert.Equal("main", optionsMock.Object.FolderConfigs[0].GetString(PflagKeys.BaseBranch));
             Assert.Equal("/path/to/folder2", optionsMock.Object.FolderConfigs[1].FolderPath);
-            Assert.Equal("master", optionsMock.Object.FolderConfigs[1].BaseBranch);
+            Assert.Equal("master", optionsMock.Object.FolderConfigs[1].GetString(PflagKeys.BaseBranch));
         }
 
         [Fact]
@@ -472,9 +473,9 @@ namespace Snyk.VisualStudio.Extension.Tests.Language
 
             // Assert — org fields stored in-memory; no disk Save*Async calls
             var fc = optionsMock.Object.FolderConfigs[0];
-            Assert.Equal("auto-determined-org", fc.AutoDeterminedOrg);
-            Assert.Equal("", fc.PreferredOrg);
-            Assert.False(fc.OrgSetByUser);
+            Assert.Equal("auto-determined-org", fc.GetString(PflagKeys.AutoDeterminedOrg));
+            Assert.Equal("", fc.GetString(PflagKeys.PreferredOrg));
+            Assert.False(Convert.ToBoolean(fc.Settings[PflagKeys.OrgSetByUser].Value));
         }
 
         [Fact]
@@ -537,9 +538,9 @@ namespace Snyk.VisualStudio.Extension.Tests.Language
             // Assert — both configs stored; no disk calls
             Assert.Equal(2, optionsMock.Object.FolderConfigs.Count);
             var fc1 = optionsMock.Object.FolderConfigs[0];
-            Assert.Equal("auto-determined-org", fc1.AutoDeterminedOrg);
-            Assert.Equal("user-specified-org", fc1.PreferredOrg);
-            Assert.True(fc1.OrgSetByUser);
+            Assert.Equal("auto-determined-org", fc1.GetString(PflagKeys.AutoDeterminedOrg));
+            Assert.Equal("user-specified-org", fc1.GetString(PflagKeys.PreferredOrg));
+            Assert.True(Convert.ToBoolean(fc1.Settings[PflagKeys.OrgSetByUser].Value));
         }
 
         [Fact]
@@ -566,9 +567,9 @@ namespace Snyk.VisualStudio.Extension.Tests.Language
 
             // Assert
             var fc = optionsMock.Object.FolderConfigs[0];
-            Assert.Equal("auto-detected-org", fc.AutoDeterminedOrg);
-            Assert.Equal("user-preferred-org", fc.PreferredOrg);
-            Assert.True(fc.OrgSetByUser);
+            Assert.Equal("auto-detected-org", fc.GetString(PflagKeys.AutoDeterminedOrg));
+            Assert.Equal("user-preferred-org", fc.GetString(PflagKeys.PreferredOrg));
+            Assert.True(Convert.ToBoolean(fc.Settings[PflagKeys.OrgSetByUser].Value));
         }
 
         [Fact]
@@ -595,9 +596,9 @@ namespace Snyk.VisualStudio.Extension.Tests.Language
 
             // Assert
             var fc = optionsMock.Object.FolderConfigs[0];
-            Assert.Equal("auto-detected-org", fc.AutoDeterminedOrg);
-            Assert.Equal("", fc.PreferredOrg);
-            Assert.False(fc.OrgSetByUser);
+            Assert.Equal("auto-detected-org", fc.GetString(PflagKeys.AutoDeterminedOrg));
+            Assert.Equal("", fc.GetString(PflagKeys.PreferredOrg));
+            Assert.False(Convert.ToBoolean(fc.Settings[PflagKeys.OrgSetByUser].Value));
         }
 
         [Fact]
@@ -625,7 +626,7 @@ namespace Snyk.VisualStudio.Extension.Tests.Language
             // Assert — the second push replaces the first by path: one entry, latest value wins.
             Assert.Single(optionsMock.Object.FolderConfigs);
             Assert.Equal("/path/to/folder1", optionsMock.Object.FolderConfigs[0].FolderPath);
-            Assert.Equal("new-org", optionsMock.Object.FolderConfigs[0].PreferredOrg);
+            Assert.Equal("new-org", optionsMock.Object.FolderConfigs[0].GetString(PflagKeys.PreferredOrg));
         }
 
         [Fact]

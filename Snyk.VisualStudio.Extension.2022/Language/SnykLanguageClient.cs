@@ -291,8 +291,9 @@ namespace Snyk.VisualStudio.Extension.Language
             // additional parameters OR in ANY folder's additional parameters.
             var globalParams = options.AdditionalParameters ?? Enumerable.Empty<string>();
             var folderParams = (options.FolderConfigs ?? Enumerable.Empty<FolderConfig>())
-                .Where(fc => fc?.AdditionalParameters != null)
-                .SelectMany(fc => fc.AdditionalParameters);
+                .Select(fc => fc?.GetStringList(PflagKeys.AdditionalParameters))
+                .Where(p => p != null)
+                .SelectMany(p => p);
 
             var anyDebug = globalParams.Concat(folderParams).Any(p => p == "-d" || p == "--debug");
 

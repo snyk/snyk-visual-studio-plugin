@@ -370,10 +370,9 @@ namespace Snyk.VisualStudio.Extension.Tests.Language
         public async Task GetLsDebugLevelAsync_ReturnsDebug_WhenFolderAdditionalParametersContainsDebugFlag(string flag)
         {
             OptionsMock.SetupGet(o => o.AdditionalParameters).Returns(new List<string>());
-            OptionsMock.SetupGet(o => o.FolderConfigs).Returns(new List<FolderConfig>
-            {
-                new FolderConfig { AdditionalParameters = new List<string> { flag } }
-            });
+            var folderConfig = new FolderConfig();
+            folderConfig.Set(PflagKeys.AdditionalParameters, new List<string> { flag });
+            OptionsMock.SetupGet(o => o.FolderConfigs).Returns(new List<FolderConfig> { folderConfig });
 
             var method = typeof(SnykLanguageClient).GetMethod("GetLsDebugLevelAsync", BindingFlags.NonPublic | BindingFlags.Instance);
             var level = await (Task<string>)method.Invoke(cut, null);
@@ -385,10 +384,9 @@ namespace Snyk.VisualStudio.Extension.Tests.Language
         public async Task GetLsDebugLevelAsync_ReturnsInfo_WhenNoDebugFlagAnywhere()
         {
             OptionsMock.SetupGet(o => o.AdditionalParameters).Returns(new List<string> { "--some-other-flag" });
-            OptionsMock.SetupGet(o => o.FolderConfigs).Returns(new List<FolderConfig>
-            {
-                new FolderConfig { AdditionalParameters = new List<string> { "--filter=something" } }
-            });
+            var folderConfig = new FolderConfig();
+            folderConfig.Set(PflagKeys.AdditionalParameters, new List<string> { "--filter=something" });
+            OptionsMock.SetupGet(o => o.FolderConfigs).Returns(new List<FolderConfig> { folderConfig });
 
             var method = typeof(SnykLanguageClient).GetMethod("GetLsDebugLevelAsync", BindingFlags.NonPublic | BindingFlags.Instance);
             var level = await (Task<string>)method.Invoke(cut, null);

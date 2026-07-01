@@ -1,8 +1,10 @@
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Text;
 using Moq;
 using Snyk.VisualStudio.Extension.Authentication;
+using Snyk.VisualStudio.Extension.Language;
 using Snyk.VisualStudio.Extension.Service;
 using Snyk.VisualStudio.Extension.Settings;
 using Snyk.VisualStudio.Extension.Utils;
@@ -63,16 +65,16 @@ namespace Snyk.VisualStudio.Extension.Tests.Settings
 
             var fc = Assert.Single(this.options.FolderConfigs);
             Assert.Equal(SolutionFolder, fc.FolderPath);
-            Assert.Equal(new List<string> { "-d", "--all-projects" }, fc.AdditionalParameters);
-            Assert.Equal("KEY=VALUE", fc.AdditionalEnv);
-            Assert.Equal("seed-org", fc.PreferredOrg);
-            Assert.True(fc.OrgSetByUser);
+            Assert.Equal(new List<string> { "-d", "--all-projects" }, fc.GetStringList(PflagKeys.AdditionalParameters));
+            Assert.Equal("KEY=VALUE", fc.GetString(PflagKeys.AdditionalEnvironment));
+            Assert.Equal("seed-org", fc.GetString(PflagKeys.PreferredOrg));
+            Assert.True(Convert.ToBoolean(fc.Settings[PflagKeys.OrgSetByUser].Value));
 
-            // The migrated values and the now-empty legacy section are persisted.
+            // The now-empty legacy section is persisted (so the migration is idempotent across
+            // restarts). FolderConfigs are NOT persisted — the LS owns them and re-pushes after
+            // init; the migrated values reach the LS via the in-memory options at init-send time.
             var reloaded = Json.Deserialize<SnykSettings>(File.ReadAllText(this.testSettingsPath, Encoding.UTF8));
             Assert.Null(reloaded.SolutionSettingsDict);
-            Assert.Single(reloaded.FolderConfigs);
-            Assert.Equal("seed-org", reloaded.FolderConfigs[0].PreferredOrg);
         }
 
         [Fact]

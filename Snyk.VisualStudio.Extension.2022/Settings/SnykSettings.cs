@@ -71,7 +71,6 @@ namespace Snyk.VisualStudio.Extension.Settings
         public string DeviceId { get; set; } = Guid.NewGuid().ToString();
         public bool OpenIssuesEnabled { get; set; } = true;
         public bool IgnoredIssuesEnabled { get; set; } = false;
-        public List<FolderConfig> FolderConfigs { get; set; }
         public bool EnableDeltaFindings { get; set; }
         public bool AnalyticsPluginInstalledSent { get; set; }
         public bool FilterCritical { get; set; } = true;
