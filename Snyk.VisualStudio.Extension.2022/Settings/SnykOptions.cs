@@ -52,6 +52,7 @@ namespace Snyk.VisualStudio.Extension.Settings
         public string AdditionalEnv { get; set; }
         public List<string> AdditionalParameters { get; set; }
         public int? RiskScoreThreshold { get; set; }
+        public ISet<string> ChangedConfigKeys { get; set; } = new HashSet<string>();
         public string SnykCodeSettingsUrl => $"{this.GetBaseAppUrl()}/manage/snyk-code";
         public event EventHandler<SnykSettingsChangedEventArgs> SettingsChanged;
 

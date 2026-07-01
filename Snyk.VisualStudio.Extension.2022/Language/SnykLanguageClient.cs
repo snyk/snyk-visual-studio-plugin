@@ -51,9 +51,32 @@ namespace Snyk.VisualStudio.Extension.Language
         public bool IsReady { get; set; }
         public object InitializationOptions => GetInitializationOptions();
 
+        // Serializes the peek→send→commit sequence of DidChangeConfigurationAsync (IDE-2152 fix #3).
+        // The config push is fire-and-forget from several call sites; without this, two overlapping
+        // sends would each peek the same queue and double-deliver, and their commits could race the
+        // tracker/persistence. Distinct from `semaphore` (which guards start/stop).
+        private readonly SemaphoreSlim configSendGate = new SemaphoreSlim(1, 1);
+
         public object GetInitializationOptions()
         {
             settingsV25 ??= new LsSettingsV25(SnykVSPackage.ServiceProvider);
+
+            // Init folds in the current pending resets (non-destructively) but does NOT commit them
+            // here (IDE-2152 fix #3): committing at init ran on a separate code path that could not be
+            // serialized with the DidChangeConfiguration commits. Instead the first successful
+            // DidChangeConfiguration commits, and persistence (fix #2) re-delivers across a restart if
+            // the handshake never confirms. Re-sending the same reset is idempotent for the LS.
+            //
+            // Deferred-commit invariant (IDE-2152 fix #3, made explicit): after a SUCCESSFUL init that
+            // carried the resets to the LS, those resets REMAIN queued in the tracker AND persisted in
+            // settings.json (PendingResetConfigKeys) — init never drains them. They are drained by the
+            // NEXT successful DidChangeConfigurationAsync, which peeks the same queue, sends, and only
+            // then commits (peek→send→commit, through the options manager so persistence stays in
+            // sync). This is safe precisely because a reset is idempotent for the LS: init delivering a
+            // reset and the first config-update re-delivering the same reset produce the same LS state,
+            // so double-delivery across the init→first-update boundary cannot corrupt anything. It also
+            // means a crash between a successful init and the first config-update loses nothing — the
+            // persisted queue re-delivers on the next session.
             return settingsV25.GetInitializationOptions();
         }
 
@@ -222,6 +245,12 @@ namespace Snyk.VisualStudio.Extension.Language
         public Task OnServerInitializedAsync()
         {
             IsReady = true;
+
+            // Note: pending resets are NOT committed here (IDE-2152 fix #3). The init options already
+            // carried them to the LS, but committing is deferred to the first successful
+            // DidChangeConfiguration (peek→send→commit), which is serialized and commits through the
+            // options manager so persistence stays in sync. If the handshake never confirms, the
+            // persisted pending-reset set (fix #2) re-delivers them after a restart.
             FireOnLanguageServerReadyAsyncEvent();
             SendPluginInstalledEvent();
             Rpc.Disconnected += Rpc_Disconnected;
@@ -525,17 +554,84 @@ namespace Snyk.VisualStudio.Extension.Language
 
         public async Task<object> DidChangeConfigurationAsync(CancellationToken cancellationToken)
         {
+            // Early-return BEFORE taking the gate: after a FAILED init, IsReady stays false so this
+            // returns without sending. Recovery from a failed init is NOT via a config update — it is
+            // the next successful (re-)initialization handshake, which flips IsReady back to true
+            // (IDE-2152 fix #6: correct the previous stale comment that claimed a config-update
+            // recovered a failed init).
             if (!IsReady) return default;
 
             settingsV25 ??= new LsSettingsV25(SnykVSPackage.ServiceProvider);
-            var config = settingsV25.GetLspConfigurationParam();
-            if (config == null)
+            var optionsManager = SnykVSPackage.ServiceProvider?.SnykOptionsManager;
+
+            // Serialize the whole peek→send→commit sequence (IDE-2152 fix #3): the config push is
+            // fire-and-forget from several call sites, so overlapping calls would otherwise each peek
+            // the same pending-reset queue and double-deliver, and their commits would race the tracker
+            // and its persistence. The gate makes exactly one push + its commit run at a time.
+            await configSendGate.WaitAsync(cancellationToken).ConfigureAwait(false);
+            try
             {
-                Logger.Warning("DidChangeConfigurationAsync: GetLspConfigurationParam returned null; skipping workspace/didChangeConfiguration notification.");
-                return default;
+                // Re-check readiness after acquiring the gate: a Rpc disconnect may have flipped IsReady
+                // to false while we were queued behind another send.
+                if (!IsReady) return default;
+
+                // Peek the pending resets ONCE, then thread this EXACT snapshot through the settings-map
+                // build AND the commit, so committed == sent by construction. Building the map with a
+                // second independent peek (as before) let a reset enqueued between the two reads be
+                // sent-but-not-committed (re-sent) or committed-but-not-sent (dropped).
+                var pendingResets = optionsManager?.OverrideTracker?.PeekPendingResets();
+
+                var config = settingsV25.GetLspConfigurationParam(pendingResets);
+                if (config == null)
+                {
+                    Logger.Warning("DidChangeConfigurationAsync: GetLspConfigurationParam returned null; skipping workspace/didChangeConfiguration notification.");
+                    return default;
+                }
+                var param = new LSP.DidChangeConfigurationParams { Settings = config };
+
+                // Do NOT route through InvokeWithParametersAsync here: that helper swallows every
+                // exception and returns default, which would hide a failed send and let the peeked
+                // resets be committed anyway. The config-update path must OBSERVE success/failure so it
+                // can decide whether to commit the resets. On failure we log and leave the queue intact.
+                try
+                {
+                    var result = await Rpc.InvokeWithParameterObjectAsync<object>(
+                        LsConstants.WorkspaceChangeConfiguration, param, cancellationToken).ConfigureAwait(false);
+
+                    // Confirmed successful send: commit EXACTLY the snapshot we sent, through the options
+                    // manager so the pending-reset persistence is updated too (IDE-2152 fix #2). Never a
+                    // blanket clear — a newer reset for a different key enqueued after this peek is not
+                    // in `pendingResets`, so it survives for the next update.
+                    //
+                    // Marshal to the UI thread BEFORE committing (IDE-2152 fix #7). CommitPendingResets
+                    // persists settings.json, and the whole settings-persistence subsystem was written
+                    // assuming UI-thread-only saves. Committing here (the RPC continuation runs on a
+                    // thread-pool thread after `ConfigureAwait(false)` above) would make this the first
+                    // background-thread settings writer, racing the pre-existing unlocked UI-thread
+                    // mutation sites (MigrateLegacySolutionSettings, LoadSettingsFromFile) and throwing
+                    // "collection was modified" mid-serialize. Switching to the main thread makes this
+                    // commit persist exactly like every other settings save — no background writer, so
+                    // the entire race class dissolves. Same pattern as HtmlSettingsControl /
+                    // AuthenticationFlowService. The switch happens only AFTER a confirmed send, still
+                    // inside the configSendGate region; holding that SemaphoreSlim (async, not a Monitor)
+                    // across the await is safe. On failure (catch below) we never switch and never commit.
+                    await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync(cancellationToken);
+                    optionsManager?.CommitPendingResets(pendingResets);
+                    return result;
+                }
+                catch (Exception ex)
+                {
+                    // Transient failure: leave pendingResets in the queue (and in persistence) so the
+                    // next configuration update re-delivers them. Match the (silent-to-caller) contract
+                    // of the previous send helper.
+                    Logger.Error("{Ex}", ex);
+                    return default;
+                }
             }
-            var param = new LSP.DidChangeConfigurationParams { Settings = config };
-            return await InvokeWithParametersAsync<object>(LsConstants.WorkspaceChangeConfiguration, param, cancellationToken).ConfigureAwait(false);
+            finally
+            {
+                configSendGate.Release();
+            }
         }
 
         public async Task RestartServerAsync()

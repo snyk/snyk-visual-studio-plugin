@@ -94,5 +94,47 @@ namespace Snyk.VisualStudio.Extension.Settings
         /// </summary>
         [JsonProperty(NullValueHandling = NullValueHandling.Ignore)]
         public Dictionary<int, LegacySolutionSettings> SolutionSettingsDict { get; set; }
+
+        /// <summary>
+        /// Set of pflag keys the user explicitly overrode from plugin defaults (IDE-2152).
+        /// Null when absent from disk (first load / pre-upgrade file) — treated as empty by
+        /// <see cref="SnykOptionsManager.Load"/>, which seeds from values in that case.
+        /// NullValueHandling.Ignore keeps the key out of settings.json until at least one key
+        /// is tracked, matching the behaviour of <see cref="SolutionSettingsDict"/>.
+        /// </summary>
+        [JsonProperty(NullValueHandling = NullValueHandling.Ignore)]
+        public HashSet<string> ChangedConfigKeys { get; set; }
+
+        /// <summary>
+        /// Set of global pflag keys with a pending reset-to-default that has NOT yet been
+        /// confirmed-delivered to the Language Server (IDE-2152 critical fix #2). A reset applied
+        /// while the LS is not ready lives here so it survives a restart and is re-delivered on the
+        /// next configuration update; a reset is removed once its config send is confirmed
+        /// (<see cref="SnykOptionsManager.CommitPendingResets"/>). Null when absent from disk /
+        /// nothing pending. NullValueHandling.Ignore keeps the key out of settings.json until at
+        /// least one reset is pending, matching <see cref="ChangedConfigKeys"/>. IDE-only: never sent
+        /// over the language-server wire as-is (it drives which keys emit a reset signal, not a value).
+        /// </summary>
+        [JsonProperty(NullValueHandling = NullValueHandling.Ignore)]
+        public HashSet<string> PendingResetConfigKeys { get; set; }
+
+        /// <summary>
+        /// Persisted seeded-marker for the load-time seeding lifecycle (IDE-2152).
+        /// Absent (false) on pre-feature / fresh-install settings files. <see cref="SnykOptionsManager.Load"/>
+        /// checks this flag to determine whether the override set has ever been seeded:
+        /// <list type="bullet">
+        ///   <item>Absent/false + <see cref="ChangedConfigKeys"/> null/empty → seed once from value-vs-default,
+        ///   then persist both the resulting set and this marker to disk.</item>
+        ///   <item>Absent/false + <see cref="ChangedConfigKeys"/> non-empty → keys were written by a prior
+        ///   version without the marker; hydrate verbatim and persist the marker.</item>
+        ///   <item>True → the persisted set is the authoritative source of truth; hydrate verbatim
+        ///   (including an empty set = "seeded, zero user overrides").</item>
+        /// </list>
+        /// <see cref="DefaultValueHandling.Ignore"/> keeps the key out of settings.json when false
+        /// (matching "absent on pre-feature files"). IDE-only: never added to
+        /// <see cref="ChangedConfigKeys"/> and never sent over the language-server wire.
+        /// </summary>
+        [JsonProperty(DefaultValueHandling = DefaultValueHandling.Ignore)]
+        public bool ChangedConfigKeysSeeded { get; set; }
     }
 }

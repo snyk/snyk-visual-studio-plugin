@@ -64,8 +64,19 @@ namespace Snyk.VisualStudio.Extension.UI.Toolwindow
         {
             ThreadHelper.JoinableTaskFactory.RunAsync(async () =>
             {
+                // Capture previous value before mutating so we can detect a real change.
+                var previous = this.serviceProvider.Options.EnableDeltaFindings;
                 this.serviceProvider.Options.EnableDeltaFindings = isEnabled;
-                this.serviceProvider.SnykOptionsManager.Save(this.serviceProvider.Options);
+
+                // Only declare ScanNetNew as edited when the value actually changed.
+                // An idempotent call (isEnabled == previous) must not enqueue a spurious reset signal.
+                var edited = isEnabled != previous
+                    ? new System.Collections.Generic.List<string> { Language.PflagKeys.ScanNetNew }
+                    : new System.Collections.Generic.List<string>();
+
+                this.serviceProvider.SnykOptionsManager.Save(
+                    this.serviceProvider.Options,
+                    editedKeys: edited);
                 await LanguageClientHelper.LanguageClientManager().DidChangeConfigurationAsync(SnykVSPackage.Instance.DisposalToken);
 
             }).FireAndForget();

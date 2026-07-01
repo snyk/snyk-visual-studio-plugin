@@ -98,11 +98,22 @@ namespace Snyk.VisualStudio.Extension.UI.Html
             {
                 try
                 {
-                    await ParseAndSaveConfigAsync(jsonString);
+                    // ParseAndSaveConfigAsync applies the form values to Options and returns the
+                    // form-driven edit-delta (the global pflag keys the form actually sent — i.e.
+                    // the keys the user touched in the UI). Only these keys are passed to Save so
+                    // the tracker marks/unmarks only genuinely user-edited keys — org-pushed values
+                    // that were never touched by the user are absent from the payload and therefore
+                    // never marked as user overrides.
+                    var applyResult = await ParseAndSaveConfigAsync(jsonString);
 
                     // Persist all settings to storage at the end.
                     // This triggers SettingsChanged event which notifies Language Server.
-                    OptionsManager.Save(Options, triggerSettingsChangedEvent: true);
+                    // resetKeys carries the "Reset overrides" nulls (disjoint from editedKeys) so the
+                    // tracker un-marks them and the LS receives {value:null, changed:true} (IDE-2152).
+                    OptionsManager.Save(Options, triggerSettingsChangedEvent: true,
+                                        updateOverrideTracker: true,
+                                        editedKeys: applyResult.EditedKeys,
+                                        resetKeys: applyResult.ResetKeys);
 
                     tcs.TrySetResult(true);
                 }
@@ -237,7 +248,30 @@ namespace Snyk.VisualStudio.Extension.UI.Html
             }
         }
 
-        private async Task ParseAndSaveConfigAsync(string jsonString)
+        // Result of parsing + applying a save payload: the form-driven edit-delta (keys applied to a
+        // value) and the disjoint reset-delta (reset-eligible global keys posted as explicit JSON
+        // null by "Reset overrides"). The two channels never overlap for a single save.
+        private readonly struct ApplyResult
+        {
+            public ApplyResult(IReadOnlyCollection<string> editedKeys, IReadOnlyCollection<string> resetKeys)
+            {
+                EditedKeys = editedKeys;
+                ResetKeys = resetKeys;
+            }
+
+            public IReadOnlyCollection<string> EditedKeys { get; }
+            public IReadOnlyCollection<string> ResetKeys { get; }
+        }
+
+        // Returns the form-driven edit-delta: the global pflag keys that each Apply* method
+        // actually applied in this save action. Because detection is co-located with the
+        // mutation, keys with extra gating (e.g. ApplyConnectionSettings rejects malformed URLs)
+        // are recorded only when the value is genuinely applied — one source of truth per key.
+        // Also returns the reset-delta: top-level reset-eligible global keys posted as explicit JSON
+        // null (the "Reset overrides" action), detected from the raw JSON so present-null stays
+        // distinct from absent (a distinction the nullable typed model cannot carry) — mirroring the
+        // raw-JSON handling already used by ApplyFolderConfigsAsync for folder resets.
+        private async Task<ApplyResult> ParseAndSaveConfigAsync(string jsonString)
         {
             // LS HTML JavaScript handles all validation - we just parse and save.
             // Throw on a null result (malformed/empty JSON that maps to nothing) rather than
@@ -285,8 +319,22 @@ namespace Snyk.VisualStudio.Extension.UI.Html
                     string.Join(", ", contract.UnmappedKeys));
             }
 
+            // Parse the raw JSON to a JObject ONCE here, then pass it to both the global-reset detector
+            // and the folder-config applier (IDE-2152 cleanup #5). Previously each parsed the string
+            // independently with copy-pasted try/catch. A parse failure is non-fatal for these raw-JSON
+            // passes (the typed model already applied successfully), so a null root means "no raw-JSON
+            // work to do" — the typed apply still stands.
+            var root = TryParseJObject(jsonString);
+
             var isCliOnly = config.IsFallbackForm ?? false;
             Logger.Information("Saving workspace configuration (CLI only: {IsCliOnly})", isCliOnly);
+
+            // Each Apply* method appends the pflag key it applies to this list (form-driven
+            // edit-delta). Detection is co-located with the mutation so extra gating in Apply*
+            // (e.g. URL validation in ApplyConnectionSettings) is reflected correctly. The
+            // isCliOnly split falls out naturally: Apply* methods not called in CLI-only mode
+            // contribute nothing.
+            var editedKeys = new List<string>();
 
             // Apply directly to the live Options, but capture a rollback first. Apply* mutate Options
             // in place (folder-config entries included) and OptionsManager.Save only runs after this
@@ -296,27 +344,27 @@ namespace Snyk.VisualStudio.Extension.UI.Html
             try
             {
                 // Always apply CLI settings and Insecure setting
-                ApplyCliSettings(config);
-                ApplyInsecureSetting(config);
+                ApplyCliSettings(config, editedKeys);
+                ApplyInsecureSetting(config, editedKeys);
 
                 // Only apply full settings when not in CLI-only mode
                 if (!isCliOnly)
                 {
-                    ApplyScanSettings(config);
-                    ApplyIssueViewSettings(config);
+                    ApplyScanSettings(config, editedKeys);
+                    ApplyIssueViewSettings(config, editedKeys);
                     var previousAuthMethod = Options.AuthenticationMethod;
-                    ApplyAuthenticationSettings(config);
+                    ApplyAuthenticationSettings(config, editedKeys);
                     // Clear stored token when auth method changes: a token from one method is not valid for another.
                     if (config.AuthenticationMethod != null && Options.AuthenticationMethod != previousAuthMethod)
                     {
                         Options.ApiToken = new AuthenticationToken(Options.AuthenticationMethod, string.Empty);
                     }
 
-                    ApplyConnectionSettings(config);
-                    ApplyTrustedFolders(config);
-                    ApplyFilterSettings(config);
-                    ApplyMiscellaneousSettings(config);
-                    await ApplyFolderConfigsAsync(jsonString);
+                    ApplyConnectionSettings(config, editedKeys);
+                    ApplyTrustedFolders(config, editedKeys);
+                    ApplyFilterSettings(config, editedKeys);
+                    ApplyMiscellaneousSettings(config, editedKeys);
+                    await ApplyFolderConfigsAsync(root);
                 }
             }
             catch
@@ -324,6 +372,54 @@ namespace Snyk.VisualStudio.Extension.UI.Html
                 rollback();
                 throw;
             }
+
+            // Detect top-level reset-eligible global keys posted as explicit JSON null (the "Reset
+            // overrides" action). Read from the parsed root so present-null stays distinct from absent —
+            // the nullable typed model collapses both to C# null, so a reset would otherwise be
+            // silently dropped by the .HasValue/!= null guards in the Apply* helpers above. A reset
+            // key is never a value-apply, so this channel is disjoint from editedKeys by construction.
+            var resetKeys = DetectGlobalResetKeys(root);
+
+            return new ApplyResult(editedKeys, resetKeys);
+        }
+
+        // Parses the raw settings-save JSON to a JObject a SINGLE time (IDE-2152 cleanup #5). The
+        // result is shared by DetectGlobalResetKeys and ApplyFolderConfigsAsync. Returns null on
+        // empty/whitespace or a parse failure — both raw-JSON passes treat null as "nothing to do",
+        // which is non-fatal because the typed model has already applied successfully.
+        private static JObject TryParseJObject(string rawJson)
+        {
+            if (string.IsNullOrWhiteSpace(rawJson))
+                return null;
+
+            try
+            {
+                return JObject.Parse(rawJson);
+            }
+            catch (JsonException ex)
+            {
+                Logger.Warning(ex, "Could not parse settings-save JSON for raw-JSON passes (reset detection / folder configs)");
+                return null;
+            }
+        }
+
+        // Inspects the parsed root for top-level properties present with a JSON null value whose key is
+        // a reset-eligible global setting (PflagKeys.IsGlobalResettable). These are the "Reset
+        // overrides" nulls. Folder-scoped resets live under folderConfigs[] and are handled separately
+        // by ApplyFolderConfigsAsync — this only considers top-level keys.
+        private static IReadOnlyCollection<string> DetectGlobalResetKeys(JObject root)
+        {
+            var resetKeys = new List<string>();
+            if (root == null)
+                return resetKeys;
+
+            foreach (var property in root.Properties())
+            {
+                if (property.Value.Type == JTokenType.Null && PflagKeys.IsGlobalResettable(property.Name))
+                    resetKeys.Add(property.Name);
+            }
+
+            return resetKeys;
         }
 
         // Captures the current Options state and returns an action that restores it, so a partially-
@@ -409,57 +505,65 @@ namespace Snyk.VisualStudio.Extension.UI.Html
             return JsonConvert.DeserializeObject<List<FolderConfig>>(JsonConvert.SerializeObject(source));
         }
 
-        private void ApplyScanSettings(IdeConfigData config)
+        private void ApplyScanSettings(IdeConfigData config, ICollection<string> editedKeys)
         {
             // Product enablement (snyk_oss_enabled, snyk_code_enabled, snyk_iac_enabled, snyk_secrets_enabled)
             if (config.SnykOssEnabled.HasValue)
             {
                 Options.OssEnabled = config.SnykOssEnabled.Value;
+                editedKeys.Add(PflagKeys.SnykOssEnabled);
             }
 
             if (config.SnykCodeEnabled.HasValue)
             {
                 Options.SnykCodeSecurityEnabled = config.SnykCodeEnabled.Value;
+                editedKeys.Add(PflagKeys.SnykCodeEnabled);
             }
 
             if (config.SnykIacEnabled.HasValue)
             {
                 Options.IacEnabled = config.SnykIacEnabled.Value;
+                editedKeys.Add(PflagKeys.SnykIacEnabled);
             }
 
             if (config.SnykSecretsEnabled.HasValue)
             {
                 Options.SecretsEnabled = config.SnykSecretsEnabled.Value;
+                editedKeys.Add(PflagKeys.SnykSecretsEnabled);
             }
 
             // Apply automatic-scan toggle (scan_automatic)
             if (config.ScanAutomatic.HasValue)
             {
                 Options.AutoScan = config.ScanAutomatic.Value;
+                editedKeys.Add(PflagKeys.ScanAutomatic);
             }
         }
 
-        private void ApplyIssueViewSettings(IdeConfigData config)
+        private void ApplyIssueViewSettings(IdeConfigData config, ICollection<string> editedKeys)
         {
             // Apply issue view options (issue_view_open_issues, issue_view_ignored_issues)
             if (config.IssueViewOpenIssues.HasValue)
             {
                 Options.OpenIssuesEnabled = config.IssueViewOpenIssues.Value;
+                editedKeys.Add(PflagKeys.IssueViewOpenIssues);
             }
 
             if (config.IssueViewIgnoredIssues.HasValue)
             {
                 Options.IgnoredIssuesEnabled = config.IssueViewIgnoredIssues.Value;
+                editedKeys.Add(PflagKeys.IssueViewIgnoredIssues);
             }
 
             // Apply net-new / delta findings (scan_net_new)
             if (config.ScanNetNew.HasValue)
             {
                 Options.EnableDeltaFindings = config.ScanNetNew.Value;
+                editedKeys.Add(PflagKeys.ScanNetNew);
             }
         }
 
-        private void ApplyAuthenticationSettings(IdeConfigData config)
+        private void ApplyAuthenticationSettings(IdeConfigData config, ICollection<string> editedKeys)
         {
             // Apply authentication method (authenticationMethod: "oauth"/"token"/"pat")
             if (config.AuthenticationMethod != null)
@@ -481,19 +585,21 @@ namespace Snyk.VisualStudio.Extension.UI.Html
                         Options.AuthenticationMethod = AuthenticationType.OAuth;
                         break;
                 }
+                editedKeys.Add(PflagKeys.AuthenticationMethod);
             }
         }
 
-        private void ApplyInsecureSetting(IdeConfigData config)
+        private void ApplyInsecureSetting(IdeConfigData config, ICollection<string> editedKeys)
         {
             // Apply Insecure (SSL) setting - available in both CLI-only and full mode
             if (config.Insecure.HasValue)
             {
                 Options.IgnoreUnknownCA = config.Insecure.Value;
+                editedKeys.Add(PflagKeys.ProxyInsecure);
             }
         }
 
-        private void ApplyConnectionSettings(IdeConfigData config)
+        private void ApplyConnectionSettings(IdeConfigData config, ICollection<string> editedKeys)
         {
             // Allow an empty value to reset to the default endpoint, but otherwise only accept an
             // absolute http/https URL — same guard as the snyk.login bridge path and the
@@ -504,6 +610,7 @@ namespace Snyk.VisualStudio.Extension.UI.Html
                 if (string.IsNullOrEmpty(config.ApiEndpoint) || UriExtensions.IsValidWebUrl(config.ApiEndpoint))
                 {
                     Options.CustomEndpoint = config.ApiEndpoint;
+                    editedKeys.Add(PflagKeys.ApiEndpoint);
                 }
                 else
                 {
@@ -525,16 +632,18 @@ namespace Snyk.VisualStudio.Extension.UI.Html
                     // Store the trimmed value (what we compared) so stray form whitespace doesn't get
                     // baked into the token store and silently fail downstream IsValid() parsing.
                     Options.ApiToken = new AuthenticationToken(Options.AuthenticationMethod, normalizedNewToken);
+                    editedKeys.Add(PflagKeys.Token);
                 }
             }
 
             if (config.Organization != null)
             {
                 Options.Organization = config.Organization;
+                editedKeys.Add(PflagKeys.Organization);
             }
         }
 
-        private void ApplyTrustedFolders(IdeConfigData config)
+        private void ApplyTrustedFolders(IdeConfigData config, ICollection<string> editedKeys)
         {
             // Allow empty list to clear trusted folders
             if (config.TrustedFolders == null)
@@ -551,76 +660,91 @@ namespace Snyk.VisualStudio.Extension.UI.Html
 
             // Set even if empty to allow clearing
             Options.TrustedFolders = trustedFolders;
+            // TrustedFolders: always-changed (AlwaysChanged set in PflagKeys); included so
+            // ApplyUserEdits is notified (IsAlwaysChanged gates Mark, so it's a no-op for the
+            // tracker set, but correct and future-proof to record).
+            editedKeys.Add(PflagKeys.TrustedFolders);
         }
 
-        private void ApplyCliSettings(IdeConfigData config)
+        private void ApplyCliSettings(IdeConfigData config, ICollection<string> editedKeys)
         {
             // Allow empty values to reset settings
             if (config.CliPath != null)
             {
                 Options.CliCustomPath = config.CliPath;
+                editedKeys.Add(PflagKeys.CliPath);
             }
 
             if (config.ManageBinariesAutomatically.HasValue)
             {
                 Options.BinariesAutoUpdate = config.ManageBinariesAutomatically.Value;
+                editedKeys.Add(PflagKeys.AutomaticDownload);
             }
 
             if (config.CliBaseDownloadURL != null)
             {
                 Options.CliBaseDownloadURL = config.CliBaseDownloadURL;
+                editedKeys.Add(PflagKeys.BinaryBaseUrl);
             }
 
             if (config.CliReleaseChannel != null)
             {
                 Options.CliReleaseChannel = config.CliReleaseChannel;
+                editedKeys.Add(PflagKeys.CliReleaseChannel);
             }
         }
 
-        private void ApplyFilterSettings(IdeConfigData config)
+        private void ApplyFilterSettings(IdeConfigData config, ICollection<string> editedKeys)
         {
             // Severity filters arrive as individual flat keys (severity_filter_*). The form
             // only sends the ones that changed, so each is applied independently.
             if (config.SeverityFilterCritical.HasValue)
             {
                 Options.FilterCritical = config.SeverityFilterCritical.Value;
+                editedKeys.Add(PflagKeys.SeverityFilterCritical);
             }
 
             if (config.SeverityFilterHigh.HasValue)
             {
                 Options.FilterHigh = config.SeverityFilterHigh.Value;
+                editedKeys.Add(PflagKeys.SeverityFilterHigh);
             }
 
             if (config.SeverityFilterMedium.HasValue)
             {
                 Options.FilterMedium = config.SeverityFilterMedium.Value;
+                editedKeys.Add(PflagKeys.SeverityFilterMedium);
             }
 
             if (config.SeverityFilterLow.HasValue)
             {
                 Options.FilterLow = config.SeverityFilterLow.Value;
+                editedKeys.Add(PflagKeys.SeverityFilterLow);
             }
         }
 
-        private void ApplyMiscellaneousSettings(IdeConfigData config)
+        private void ApplyMiscellaneousSettings(IdeConfigData config, ICollection<string> editedKeys)
         {
             // Apply risk score threshold only when present — the form sends a changed-only
             // payload, so an absent value must not clobber the stored threshold with null.
             if (config.RiskScoreThreshold.HasValue)
             {
                 Options.RiskScoreThreshold = config.RiskScoreThreshold;
+                editedKeys.Add(PflagKeys.RiskScoreThreshold);
             }
 
             // Global (Project Defaults) advanced settings — absent (null) means no change.
             if (config.AdditionalEnv != null)
             {
                 Options.AdditionalEnv = config.AdditionalEnv;
+                editedKeys.Add(PflagKeys.AdditionalEnvironment);
             }
             if (config.AdditionalParameters != null)
             {
                 Options.AdditionalParameters = config.AdditionalParameters
                     .Split(new[] { ' ' }, StringSplitOptions.RemoveEmptyEntries)
                     .ToList();
+                editedKeys.Add(PflagKeys.AdditionalParameters);
             }
         }
 
@@ -633,21 +757,10 @@ namespace Snyk.VisualStudio.Extension.UI.Html
         // we Set the key to null so BuildFolderConfigs emits {value:null, changed:true} and the LS
         // Unsets the user:folder: override. Going through the raw JSON keeps null-vs-absent distinct,
         // which a nullable typed model can't — so no ResetKeys side-channel is needed.
-        private Task ApplyFolderConfigsAsync(string rawJson)
+        private Task ApplyFolderConfigsAsync(JObject root)
         {
-            if (string.IsNullOrWhiteSpace(rawJson))
+            if (root == null)
                 return Task.CompletedTask;
-
-            JObject root;
-            try
-            {
-                root = JObject.Parse(rawJson);
-            }
-            catch (JsonException ex)
-            {
-                Logger.Warning(ex, "Could not parse JSON for folder configs");
-                return Task.CompletedTask;
-            }
 
             if (!(root["folderConfigs"] is JArray folderConfigsJson) || folderConfigsJson.Count == 0)
                 return Task.CompletedTask;

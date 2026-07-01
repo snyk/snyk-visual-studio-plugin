@@ -769,7 +769,13 @@ namespace Snyk.VisualStudio.Extension.Service
                 downloadFinishedCallbacks.Add(() =>
                 {
                     this.serviceProvider.Options.CurrentCliVersion = cliDownloader.GetLatestReleaseInfo().Name;
-                    this.serviceProvider.SnykOptionsManager.Save(this.serviceProvider.Options);
+                    // System-driven update: suppress both the SettingsChanged event (would re-send
+                    // DidChangeConfigurationAsync for a CLI-version bump) and tracker mutation (recording
+                    // the new CurrentCliVersion as a user override would create a phantom ChangedConfigKeys entry).
+                    this.serviceProvider.SnykOptionsManager.Save(
+                        this.serviceProvider.Options,
+                        triggerSettingsChangedEvent: false,
+                        updateOverrideTracker: false);
                     DisposeCancellationTokenSource(this.downloadCliTokenSource);
                 });
 

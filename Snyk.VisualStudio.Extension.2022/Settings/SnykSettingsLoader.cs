@@ -18,6 +18,13 @@ namespace Snyk.VisualStudio.Extension.Settings
 
         private readonly string settingsFilePath;
 
+        /// <summary>
+        /// The settings file path this loader reads/writes. Exposed so the owning
+        /// <see cref="SnykOptionsManager"/> can back up a present-but-unreadable file to a sidecar
+        /// before the first overwrite (IDE-1483 × IDE-2152 FIX-D2).
+        /// </summary>
+        public string SettingsFilePath => this.settingsFilePath;
+
         private SnykSettings snykSettings;
 
         /// <summary>
@@ -81,6 +88,18 @@ namespace Snyk.VisualStudio.Extension.Settings
             catch (Exception e)
             {
                 LogManager.ForContext(typeof(SnykSettingsLoader)).Error(e, "Settings read error on load.");
+                return null;
+            }
+
+            // An empty or whitespace-only file is not corrupt — File.ReadAllText returns "" (no throw)
+            // and Json.Deserialize("") returns null (no throw), which would otherwise be misclassified
+            // as present-but-unreadable (fileWasAbsent stays false) and never repaired, leaving a
+            // useless empty .bak on the first Save. Treat it as ABSENT so the caller's fresh-install
+            // path writes defaults and self-heals. A genuinely truncated file with partial JSON still
+            // throws on deserialize below and remains correctly classified as corrupt/preserved.
+            if (string.IsNullOrWhiteSpace(rawJson))
+            {
+                fileWasAbsent = true;
                 return null;
             }
 

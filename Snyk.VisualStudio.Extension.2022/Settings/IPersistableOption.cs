@@ -88,4 +88,11 @@ public interface IPersistableOptions
     string AdditionalEnv { get; set; }
     List<string> AdditionalParameters { get; set; }
     int? RiskScoreThreshold { get; set; }
+
+    /// <summary>
+    /// Set of pflag keys that the user explicitly overrode from the plugin default.
+    /// Persisted to settings.json so the override set survives IDE restarts (IDE-2152).
+    /// Null when absent from disk (first load / upgrade path) — treated as empty by the tracker.
+    /// </summary>
+    ISet<string> ChangedConfigKeys { get; set; }
 }

@@ -231,8 +231,15 @@ namespace Snyk.VisualStudio.Extension.Language
 
             serviceProvider.Options.ApiToken = new AuthenticationToken(serviceProvider.Options.AuthenticationMethod, token);
 
-            // Persist without triggering SettingsChanged → DidChangeConfigurationAsync back to the LS.
-            serviceProvider.SnykOptionsManager.Save(serviceProvider.Options, false);
+            // LS-delivered auth result (OAuth flow completed by the LS): persist the token but
+            // do NOT trigger SettingsChanged (would send DidChangeConfigurationAsync back to the LS),
+            // and do NOT update the override tracker — recording an LS-delivered token as a user
+            // override would corrupt ChangedConfigKeys, especially during early-startup auth before
+            // Load() has seeded the tracker (snapshot would be empty → persisted set overwritten null).
+            serviceProvider.SnykOptionsManager.Save(
+                serviceProvider.Options,
+                triggerSettingsChangedEvent: false,
+                updateOverrideTracker: false);
 
             // Scan only when this is a new login (old token was blank).
             // Token refresh also has old token non-blank, so no scan.
@@ -262,7 +269,10 @@ namespace Snyk.VisualStudio.Extension.Language
             GlobalSettingsApplier.Apply(param.Settings, options);
             options.FolderConfigs = FolderConfigApplier.Apply(options.FolderConfigs, param.FolderConfigs);
             // Persist without re-triggering DidChangeConfigurationAsync (avoids feedback loop).
-            this.serviceProvider.SnykOptionsManager.Save(options, false);
+            // updateOverrideTracker:false — LS-pushed values (org, LDX flags) must NEVER be recorded
+            // as user overrides; doing so would defeat the purpose of IDE-2152 by re-sending them
+            // with changed:true and clobbering the very org defaults this feature preserves.
+            this.serviceProvider.SnykOptionsManager.Save(options, triggerSettingsChangedEvent: false, updateOverrideTracker: false);
             Logger.Debug("$/snyk.configuration applied: {KeyCount} global setting(s), {FolderCount} folder config(s) stored in-memory",
                 param.Settings?.Count ?? 0, param.FolderConfigs?.Count ?? 0);
 
@@ -293,7 +303,9 @@ namespace Snyk.VisualStudio.Extension.Language
             if (trustedFolders == null) return;
 
             serviceProvider.Options.TrustedFolders = new HashSet<string>(trustedFolders.TrustedFolders);
-            this.serviceProvider.SnykOptionsManager.Save(serviceProvider.Options, false);
+            // updateOverrideTracker:false — LS is pushing the resolved trusted-folder set back;
+            // this is not a user override action and must not pollute ChangedConfigKeys.
+            this.serviceProvider.SnykOptionsManager.Save(serviceProvider.Options, triggerSettingsChangedEvent: false, updateOverrideTracker: false);
             // Don't call DidChangeConfigurationAsync here as it creates an infinite loop
             // The Language Server already knows about the trusted folders changes
         }

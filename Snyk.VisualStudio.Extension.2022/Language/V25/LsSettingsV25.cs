@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Runtime.InteropServices;
 using Snyk.VisualStudio.Extension.CLI;
+using Snyk.VisualStudio.Extension.Download;
 using Snyk.VisualStudio.Extension.Service;
 using Snyk.VisualStudio.Extension.Settings;
 
@@ -24,6 +25,11 @@ namespace Snyk.VisualStudio.Extension.Language
                 return null;
 
             var options = serviceProvider.Options;
+            // Init path: BuildSettingsMap(options) with no explicit snapshot folds in the tracker's
+            // current pending resets non-destructively and does NOT commit them (IDE-2152 fix #3). The
+            // handshake sends them, but the first successful DidChangeConfiguration is what commits
+            // (peek→send→commit), and persistence (fix #2) re-delivers them if init/handshake never
+            // confirms. This removes the fragile init-time commit that ran on a separate code path.
             return new InitializationOptionsV25
             {
                 Settings = BuildSettingsMap(options),
@@ -46,55 +52,101 @@ namespace Snyk.VisualStudio.Extension.Language
         // settings map (Project Defaults tab) and per-folder in folderConfigs. The LS resolves
         // folder-over-global. Global values are wired via ISnykOptions.AdditionalParameters /
         // AdditionalEnv; per-folder values live in FolderConfig.
-        internal Dictionary<string, ConfigSetting> BuildSettingsMap(ISnykOptions options)
+        //
+        // pendingResets (IDE-2152 CP 2.2 / fix #3): when non-null, EXACTLY this snapshot of reset keys
+        // is folded into the map — the caller peeked it once and will commit exactly this same set on
+        // confirmed send, so committed == sent by construction (no second independent peek that could
+        // race). When null, the map is built with the tracker's current pending resets (peeked here) —
+        // used by the init path, which does not commit at build time.
+        internal Dictionary<string, ConfigSetting> BuildSettingsMap(ISnykOptions options,
+            IReadOnlyCollection<string> pendingResets = null)
         {
+            // Obtain the tracker from the options manager. When null (e.g. in tests that do not wire
+            // the manager), fall back to changed:true so every key is treated as user-overridden
+            // (safe: matches the pre-IDE-2152 behaviour).
+            var tracker = serviceProvider?.SnykOptionsManager?.OverrideTracker;
+
+            // Helper: sets the changed flag from the tracker for this key.
+            // Gate on IsSeeded: an unseeded tracker (Load() has not run yet) falls back to
+            // changed:true so a startup-ordering race cannot silently downgrade user overrides by
+            // sending changed:false before persistence has been read. Once seeded, the tracker
+            // distinguishes overridden keys (changed:true) from untouched ones (changed:false).
+            var trackerSeeded = tracker != null && tracker.IsSeeded;
+            ConfigSetting Cs(string key, object value) =>
+                ConfigSetting.Of(value, trackerSeeded ? tracker.IsChanged(key) : true);
+
             var map = new Dictionary<string, ConfigSetting>
             {
-                [PflagKeys.SnykOssEnabled] = ConfigSetting.Of(options.OssEnabled),
-                [PflagKeys.SnykCodeEnabled] = ConfigSetting.Of(options.SnykCodeSecurityEnabled),
-                [PflagKeys.SnykIacEnabled] = ConfigSetting.Of(options.IacEnabled),
-                [PflagKeys.SnykSecretsEnabled] = ConfigSetting.Of(options.SecretsEnabled),
+                [PflagKeys.SnykOssEnabled]          = Cs(PflagKeys.SnykOssEnabled,         options.OssEnabled),
+                [PflagKeys.SnykCodeEnabled]         = Cs(PflagKeys.SnykCodeEnabled,        options.SnykCodeSecurityEnabled),
+                [PflagKeys.SnykIacEnabled]          = Cs(PflagKeys.SnykIacEnabled,         options.IacEnabled),
+                [PflagKeys.SnykSecretsEnabled]      = Cs(PflagKeys.SnykSecretsEnabled,     options.SecretsEnabled),
 
                 // Send the persisted user preference (AutoScan), not the InternalAutoScan runtime
                 // gate. The gate only delays the *first* scan until the IDE is ready (handled by the
                 // scan-trigger logic in OnSnykConfiguration / OnHasAuthenticated) — it must not be the
                 // value we tell the LS to persist, or a manual-mode choice gets overwritten by the
                 // gate's post-first-scan `true` on the next config round-trip.
-                [PflagKeys.ScanAutomatic] = ConfigSetting.Of(options.AutoScan),
-                [PflagKeys.ScanNetNew] = ConfigSetting.Of(options.EnableDeltaFindings),
+                [PflagKeys.ScanAutomatic]           = Cs(PflagKeys.ScanAutomatic,          options.AutoScan),
+                [PflagKeys.ScanNetNew]              = Cs(PflagKeys.ScanNetNew,             options.EnableDeltaFindings),
 
-                [PflagKeys.SeverityFilterCritical] = ConfigSetting.Of(options.FilterCritical),
-                [PflagKeys.SeverityFilterHigh] = ConfigSetting.Of(options.FilterHigh),
-                [PflagKeys.SeverityFilterMedium] = ConfigSetting.Of(options.FilterMedium),
-                [PflagKeys.SeverityFilterLow] = ConfigSetting.Of(options.FilterLow),
+                [PflagKeys.SeverityFilterCritical]  = Cs(PflagKeys.SeverityFilterCritical, options.FilterCritical),
+                [PflagKeys.SeverityFilterHigh]      = Cs(PflagKeys.SeverityFilterHigh,     options.FilterHigh),
+                [PflagKeys.SeverityFilterMedium]    = Cs(PflagKeys.SeverityFilterMedium,   options.FilterMedium),
+                [PflagKeys.SeverityFilterLow]       = Cs(PflagKeys.SeverityFilterLow,      options.FilterLow),
 
-                [PflagKeys.IssueViewOpenIssues] = ConfigSetting.Of(options.OpenIssuesEnabled),
-                [PflagKeys.IssueViewIgnoredIssues] = ConfigSetting.Of(options.IgnoredIssuesEnabled),
+                [PflagKeys.IssueViewOpenIssues]     = Cs(PflagKeys.IssueViewOpenIssues,    options.OpenIssuesEnabled),
+                [PflagKeys.IssueViewIgnoredIssues]  = Cs(PflagKeys.IssueViewIgnoredIssues, options.IgnoredIssuesEnabled),
 
-                [PflagKeys.ApiEndpoint] = ConfigSetting.Of(options.CustomEndpoint ?? string.Empty),
-                [PflagKeys.Token] = ConfigSetting.Of(options.ApiToken?.ToString() ?? string.Empty),
-                [PflagKeys.Organization] = ConfigSetting.Of(options.Organization ?? string.Empty),
-                [PflagKeys.AuthenticationMethod] = ConfigSetting.Of(options.AuthenticationMethod.ToString().ToLowerInvariant()),
-                [PflagKeys.ProxyInsecure] = ConfigSetting.Of(options.IgnoreUnknownCA),
+                [PflagKeys.ApiEndpoint]             = Cs(PflagKeys.ApiEndpoint,            options.CustomEndpoint ?? string.Empty),
+                [PflagKeys.Token]                   = Cs(PflagKeys.Token,                  options.ApiToken?.ToString() ?? string.Empty),
+                [PflagKeys.Organization]            = Cs(PflagKeys.Organization,           options.Organization ?? string.Empty),
+                [PflagKeys.AuthenticationMethod]    = Cs(PflagKeys.AuthenticationMethod,   options.AuthenticationMethod.ToString().ToLowerInvariant()),
+                [PflagKeys.ProxyInsecure]           = Cs(PflagKeys.ProxyInsecure,          options.IgnoreUnknownCA),
 
-                [PflagKeys.AutomaticDownload] = ConfigSetting.Of(options.BinariesAutoUpdate),
-                [PflagKeys.CliPath] = ConfigSetting.Of(SnykCli.GetCliFilePath(options.CliCustomPath)),
-                [PflagKeys.BinaryBaseUrl] = ConfigSetting.Of(options.CliBaseDownloadURL ?? string.Empty),
-                [PflagKeys.CliReleaseChannel] = ConfigSetting.Of(options.CliReleaseChannel ?? string.Empty),
+                [PflagKeys.AutomaticDownload]       = Cs(PflagKeys.AutomaticDownload,      options.BinariesAutoUpdate),
+                [PflagKeys.CliPath]                 = Cs(PflagKeys.CliPath,                SnykCli.GetCliFilePath(options.CliCustomPath)),
+                [PflagKeys.BinaryBaseUrl]           = Cs(PflagKeys.BinaryBaseUrl,
+                                                         options.CliBaseDownloadURL ?? SnykCliDownloader.DefaultBaseDownloadUrl),
+                [PflagKeys.CliReleaseChannel]       = Cs(PflagKeys.CliReleaseChannel,
+                                                         options.CliReleaseChannel ?? SnykCliDownloader.DefaultReleaseChannel),
 
-                [PflagKeys.TrustedFolders] = ConfigSetting.Of(options.TrustedFolders?.ToList() ?? new List<string>()),
-                [PflagKeys.AdditionalEnvironment] = ConfigSetting.Of(options.AdditionalEnv ?? string.Empty),
+                // TrustedFolders is in AlwaysChanged so IsChanged returns true regardless.
+                [PflagKeys.TrustedFolders]          = Cs(PflagKeys.TrustedFolders,         options.TrustedFolders?.ToList() ?? new List<string>()),
+                [PflagKeys.AdditionalEnvironment]   = Cs(PflagKeys.AdditionalEnvironment,  options.AdditionalEnv ?? string.Empty),
                 // LS applyCliConfig reads additional_parameters via settingStr (string type-assert),
                 // so send as a space-joined string — same wire format LS uses on its outbound echo.
-                [PflagKeys.AdditionalParameters] = ConfigSetting.Of(
-                    string.Join(" ", options.AdditionalParameters ?? new List<string>())),
+                [PflagKeys.AdditionalParameters]    = Cs(PflagKeys.AdditionalParameters,
+                                                         string.Join(" ", options.AdditionalParameters ?? new List<string>())),
 
-                [PflagKeys.DeviceId] = ConfigSetting.Of(options.DeviceId ?? string.Empty),
-                [PflagKeys.ClientProtocolVersion] = ConfigSetting.Of("25"),
+                // DeviceId and ClientProtocolVersion are not user-settable; send as always-changed
+                // to preserve backward compatibility (LS needs them on every handshake).
+                [PflagKeys.DeviceId]                = ConfigSetting.Of(options.DeviceId ?? string.Empty),
+                [PflagKeys.ClientProtocolVersion]   = ConfigSetting.Of("25"),
             };
 
             if (options.RiskScoreThreshold.HasValue)
-                map[PflagKeys.RiskScoreThreshold] = ConfigSetting.Of(options.RiskScoreThreshold.Value);
+                map[PflagKeys.RiskScoreThreshold] = Cs(PflagKeys.RiskScoreThreshold,
+                    options.RiskScoreThreshold.Value);
+
+            // Emit reset signals for keys that were just un-marked (returned to default).
+            // These override the regular value entry for that key with {value:null, changed:true}.
+            //
+            // Single-snapshot discipline (IDE-2152 fix #3): when the caller passed an explicit
+            // pendingResets snapshot, fold in EXACTLY that set — the caller peeked it once and commits
+            // the same set on confirmed send, so sent == committed with no second racing peek. When
+            // null (init path), fall back to a fresh non-destructive peek; the init path sends but does
+            // not commit at build time (the first successful DidChangeConfiguration commits, or
+            // persistence re-delivers after a restart — IDE-2152 fix #2).
+            //
+            // Guard on trackerSeeded: an unseeded tracker has no meaningful pending resets
+            // (it has never been hydrated from persistence, so nothing could have been un-marked).
+            var resetsToFold = pendingResets ?? (trackerSeeded ? tracker.PeekPendingResets() : null);
+            if (trackerSeeded && resetsToFold != null)
+            {
+                foreach (var resetKey in resetsToFold)
+                    map[resetKey] = ConfigSetting.Reset();
+            }
 
             return map;
         }
@@ -126,7 +178,13 @@ namespace Snyk.VisualStudio.Extension.Language
             return result;
         }
 
-        public LspConfigurationParam GetLspConfigurationParam()
+        // pendingResets: the EXACT reset snapshot the caller peeked once (IDE-2152 fix #3). It is
+        // threaded through BuildSettingsMap so the settings map folds in precisely the set the caller
+        // will commit on confirmed send — sent == committed by construction. The caller
+        // (DidChangeConfigurationAsync) sends this param and commits that same snapshot on success
+        // (via ISnykOptionsManager.CommitPendingResets), so a transient RPC failure leaves the queue
+        // intact for re-delivery on the next configuration update (IDE-2152 CP 2.2).
+        public LspConfigurationParam GetLspConfigurationParam(IReadOnlyCollection<string> pendingResets = null)
         {
             if (serviceProvider == null)
                 return null;
@@ -134,7 +192,7 @@ namespace Snyk.VisualStudio.Extension.Language
             var options = serviceProvider.Options;
             return new LspConfigurationParam
             {
-                Settings = BuildSettingsMap(options),
+                Settings = BuildSettingsMap(options, pendingResets),
                 FolderConfigs = BuildFolderConfigs(options.FolderConfigs),
             };
         }

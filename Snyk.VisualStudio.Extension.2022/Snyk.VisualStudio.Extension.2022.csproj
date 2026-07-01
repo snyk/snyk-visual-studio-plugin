@@ -96,6 +96,9 @@
     <Compile Include="Language\LsConstants.cs" />
     <Compile Include="Language\V25\PflagKeys.cs" />
     <Compile Include="Language\V25\ConfigSetting.cs" />
+    <Compile Include="Language\V25\ConfigDefaults.cs" />
+    <Compile Include="Language\V25\IUserOverrideTracker.cs" />
+    <Compile Include="Language\V25\UserOverrideTracker.cs" />
     <Compile Include="Language\V25\LspFolderConfig.cs" />
     <Compile Include="Language\V25\LspConfigurationParam.cs" />
     <Compile Include="Language\V25\InitializationOptionsV25.cs" />

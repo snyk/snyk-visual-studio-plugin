@@ -43,6 +43,10 @@ namespace Snyk.VisualStudio.Extension.Language
 
         // Trust
         public const string TrustedFolders = "trusted_folders";
+        // Keys for always-changed set per AC M4 (defined in LS spec; not currently in VS BuildSettingsMap
+        // but included so the AlwaysChanged set is complete for when they are added).
+        public const string TrustEnabled = "trust_enabled";
+        public const string AutomaticAuthentication = "automatic_authentication";
 
         // Folder-level
         public const string AdditionalParameters = "additional_parameters";
@@ -59,5 +63,51 @@ namespace Snyk.VisualStudio.Extension.Language
         // there, not from the Settings map — the Settings-map copies are harmless redundancy.
         public const string ClientProtocolVersion = "client_protocol_version";
         public const string DeviceId = "device_id";
+
+        // Keys that are always sent with changed:true regardless of user action (requirement M4).
+        // trusted_folders must always signal intent so the LS never silently inherits an org default.
+        // Private to prevent external mutation; callers use IsAlwaysChanged(key).
+        private static readonly HashSet<string> _alwaysChanged = new HashSet<string>
+        {
+            TrustedFolders,
+            TrustEnabled,
+            AutomaticAuthentication,
+        };
+
+        /// <summary>
+        /// Returns true when <paramref name="key"/> must always be sent with <c>changed:true</c>
+        /// regardless of whether the user has explicitly overridden it (requirement M4).
+        /// </summary>
+        public static bool IsAlwaysChanged(string key) => _alwaysChanged.Contains(key);
+
+        // Global (Project Defaults / org-scope) settings the user can reset to default via the
+        // "Reset overrides" button. Mirrors snyk-ls GlobalResettableSettings (IDE-2149): a form save
+        // that posts one of these keys as explicit JSON null is a reset — the plugin un-marks the
+        // local override and sends {value:null, changed:true} so the LS Unsets the user:global
+        // override and the org/LDX-sync default takes effect. Private; callers use IsGlobalResettable.
+        private static readonly HashSet<string> _globalResettable = new HashSet<string>
+        {
+            SnykOssEnabled,
+            SnykCodeEnabled,
+            SnykIacEnabled,
+            SnykSecretsEnabled,
+            ScanAutomatic,
+            ScanNetNew,
+            SeverityFilterCritical,
+            SeverityFilterHigh,
+            SeverityFilterMedium,
+            SeverityFilterLow,
+            IssueViewOpenIssues,
+            IssueViewIgnoredIssues,
+            RiskScoreThreshold,
+            Organization,
+        };
+
+        /// <summary>
+        /// Returns true when <paramref name="key"/> is a global (Project Defaults) setting that the
+        /// user can reset to default. A form save posting this key as explicit JSON null is a reset
+        /// (IDE-2152). Mirrors snyk-ls <c>GlobalResettableSettings</c>.
+        /// </summary>
+        public static bool IsGlobalResettable(string key) => _globalResettable.Contains(key);
     }
 }

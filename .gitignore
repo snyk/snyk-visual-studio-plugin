@@ -280,5 +280,6 @@ CLAUDE.md
 .snyk-code-output.json
 .snyk-code-output.err
 .verification-result.*
+.cache_ggshield
 IDE-1752_implementation_plan.md
 tests.json
