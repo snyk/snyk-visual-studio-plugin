@@ -493,41 +493,41 @@ namespace Snyk.VisualStudio.Extension.Tests.Settings
             }
         }
 
-        // SINT-002: Integration test — seed runs at most once; a fresh manager over the same file
-        // (simulating IDE restart) does not re-seed when the seeded marker is present on disk.
+        // SINT-002: Integration test — seeding is idempotent across a restart on an all-default file:
+        // a fresh manager over the same file yields the SAME (empty) override set and does not spuriously
+        // mark a still-default value.
         //
-        // Scenario: first manager loads an all-default file (no marker) → Branch A seeds empty set →
-        // writes marker to disk. A FRESH manager (simulating restart) reads the same file; the marker
-        // is now present → Branch C hydrates empty set verbatim. Even if the file now also contains
-        // a non-default value (e.g. org-pushed ossEnabled=false), it must NOT be marked.
+        // Scenario: first manager loads an all-default file (no marker) → Branch A seeds an empty set
+        // (in memory; the marker write is DEFERRED to the next real Save — IDE-1483 × IDE-2152 merge
+        // fix — so a valid file is left byte-unchanged by Load()). No real Save runs here, so the file
+        // still has no marker. A FRESH manager (simulating restart) re-seeds via Branch A; because the
+        // on-disk value is still the default, the re-seed is idempotent (empty set, nothing marked).
         //
         // Note: SnykSettingsLoader caches the SnykSettings object, so rewriting the file and calling
         // LoadSettingsFromFile() on the SAME manager does not re-read from disk. A fresh manager is
-        // required to genuinely simulate a restart and verify the persisted marker is honoured.
+        // required to genuinely simulate a restart.
         [Fact]
         public void Load_AfterSeed_DoesNotReSeedOnNextLoad()
         {
             var (manager, _, path) = BuildManager();
             try
             {
-                // First load on an all-default file (no marker): Branch A seeds empty set,
-                // writes changedConfigKeysSeeded=true to disk.
+                // First load on an all-default file (no marker): Branch A seeds an empty set in memory
+                // (marker write deferred to the next real Save).
                 var first = manager.Load();
                 Assert.Empty(first.ChangedConfigKeys);
 
-                // Simulate IDE restart with a FRESH manager over the same file.
-                // The file now has changedConfigKeysSeeded=true (written by the first Load above),
-                // so the fresh manager must take Branch C and never re-derive from values.
+                // Simulate IDE restart with a FRESH manager over the same file. No real Save ran, so the
+                // marker is still absent → Branch A re-seeds. The on-disk value is the default, so the
+                // re-seed is idempotent: still empty, nothing marked.
                 var (manager2, _, _) = BuildManager(path);
                 var second = manager2.Load();
 
                 // OssEnabled is at its default on disk — confirmed not marked in first load.
-                // The marker is present → Branch C → empty set hydrated verbatim.
                 Assert.Empty(second.ChangedConfigKeys);
 
                 Assert.False(manager2.OverrideTracker.IsChanged(PflagKeys.SnykOssEnabled),
-                    "Fresh manager with seeded marker present must not re-seed — " +
-                    "seeding runs at most once per settings file");
+                    "Re-seeding a still-default file is idempotent — a default value must not be marked");
             }
             finally
             {

@@ -6,16 +6,34 @@ using Snyk.VisualStudio.Extension.Service;
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
-using Serilog;
 namespace Snyk.VisualStudio.Extension.Settings
 {
     public class SnykOptionsManager : ISnykOptionsManager
     {
-        private static readonly ILogger Logger = LogManager.ForContext<SnykOptionsManager>();
+        // No static Logger field: LogManager.ForContext() depends on SnykDirectory (via the
+        // Lazy<Logger> in LogManager). A static readonly field initialised at class-load time
+        // risks re-entrancy if this class is loaded during that Lazy's construction.
+        // Acquire the logger inline at each call site — identical to SnykDirectory and
+        // SettingsLocationMigrator.
 
         private readonly ISnykServiceProvider serviceProvider;
         private readonly SnykSettingsLoader settingsLoader;
         private SnykSettings snykSettings;
+
+        // True when the on-disk settings.json existed but could not be read/deserialised (corrupt or
+        // mid-write) — as opposed to genuinely absent. Threaded from LoadSettingsFromFile (which gets
+        // fileWasAbsent from SnykSettingsLoader.Load(out bool)) into Load(), where it hardens the
+        // never-overwrite-a-recoverable-file guarantee (IDE-1483 FIX-D1) against the IDE-2152 seed
+        // lifecycle: after a corrupt read snykSettings is a fresh unseeded SnykSettings() —
+        // indistinguishable from a fresh install — so Load()'s Branch A would otherwise SeedFrom +
+        // SaveSettingsToFile and clobber the recoverable token. When this is true, Load() seeds the
+        // tracker IN MEMORY only and never writes to disk, leaving the recoverable file intact.
+        private bool settingsFileWasUnreadable;
+
+        // internal for testability (InternalsVisibleTo the test project): lets the corrupt-file tests
+        // assert that a FAILED backup leaves the flag set (so a later Save retries the backup) and a
+        // successful backup clears it. Not part of the public contract.
+        internal bool SettingsFileWasUnreadableForTest => settingsFileWasUnreadable;
 
         // Serializes ALL settings-file persistence (IDE-2152 fix #4). Persisting callers still run on
         // different threads even after the DidChangeConfiguration reset-commit was marshaled to the UI
@@ -54,12 +72,29 @@ namespace Snyk.VisualStudio.Extension.Settings
 
         public void LoadSettingsFromFile()
         {
-            this.snykSettings = this.settingsLoader.Load();
+            // Single-read discrimination (IDE-1483 FIX-D1): Load(out bool) performs ONE
+            // File.ReadAllText and sets fileWasAbsent from the exception type, eliminating
+            // the TOCTOU window that existed when a separate FileExists() probe was used.
+            //   fileWasAbsent = true  => file genuinely not on disk (fresh install) — safe to write defaults.
+            //   fileWasAbsent = false, result null => file exists but unreadable/corrupt
+            //                                        — must NOT overwrite (token may be recoverable).
+            this.snykSettings = this.settingsLoader.Load(out bool fileWasAbsent);
 
-            if (this.snykSettings != null) return;
+            if (this.snykSettings != null)
+            {
+                // File read + deserialised cleanly (absent or corrupt did not occur).
+                this.settingsFileWasUnreadable = false;
+                return;
+            }
+
+            // snykSettings == null: either genuinely absent OR present-but-unreadable/corrupt.
+            //   fileWasAbsent == false here => the file exists but could not be read/deserialised.
+            // Record that signal so Load() never persists over a recoverable file (IDE-1483 × IDE-2152).
+            this.settingsFileWasUnreadable = !fileWasAbsent;
 
             this.snykSettings = new SnykSettings();
-            SaveSettingsToFile();
+            if (fileWasAbsent)
+                SaveSettingsToFile();
         }
 
         public void SaveSettingsToFile()
@@ -70,8 +105,84 @@ namespace Snyk.VisualStudio.Extension.Settings
             // CommitPendingResets) re-enter here safely, keeping their mutate+serialize+write atomic.
             lock (persistGate)
             {
+                // Never-clobber-a-recoverable-file guard (IDE-1483 × IDE-2152, FIX-D2). After a
+                // present-but-corrupt read (settingsFileWasUnreadable == true) snykSettings is a blank-
+                // defaults object (Token="") — the Load-time fix keeps Load() from writing, but the FIRST
+                // real Save (the LS-push Save(updateOverrideTracker:false) from SnykLanguageClientCustom-
+                // Target, or CommitPendingResets / SaveOrganizationAsync / MigrateLegacySolutionSettings)
+                // would serialize the blank object and overwrite the recoverable bytes → the auth token is
+                // permanently lost. So on the FIRST write after a corrupt load, back the on-disk file up to
+                // a sidecar BEFORE overwriting, so the recoverable token bytes are never destroyed. Then
+                // clear the flag so subsequent saves in this session write normally (no repeated backups).
+                if (settingsFileWasUnreadable)
+                {
+                    // A failed backup must BLOCK the destructive overwrite (IDE-1483 × IDE-2152,
+                    // FIX-D2 hardening). BackupUnreadableSettingsFile returns TRUE when the backup
+                    // succeeded OR there is nothing to protect (file absent/empty → safe to write);
+                    // FALSE only when a real File.Copy of an existing non-empty file threw. On FALSE
+                    // we must NOT clear the flag and must NOT overwrite: return early so the
+                    // recoverable file survives and the NEXT Save retries the backup. Clearing the
+                    // flag or writing here would overwrite the recoverable token with blank state and
+                    // leave no backup — the exact loss this guard exists to prevent.
+                    if (!BackupUnreadableSettingsFile())
+                        return;
+                    settingsFileWasUnreadable = false;
+                }
+
                 this.settingsLoader.Save(snykSettings);
             }
+        }
+
+        // Best-effort backup of a present-but-unreadable settings.json to a timestamped sidecar
+        // (settings.json.corrupt-<UTC>.bak) before the first overwrite. Never THROWS (the File.Copy
+        // is wrapped in a catch), but its RETURN VALUE now gates the destructive overwrite:
+        //   TRUE  => the backup succeeded, OR there is nothing to protect (file absent or empty) —
+        //            the caller may clear the unreadable flag and proceed with the write.
+        //   FALSE => a real File.Copy of an existing NON-EMPTY file threw — the caller must NOT clear
+        //            the flag and must NOT overwrite, so the recoverable token survives for the next
+        //            Save to retry (SaveSettingsToFile returns early on FALSE).
+        // Called only while holding persistGate. Uses CopyFile (a seam over File.Copy(overwrite:false))
+        // with a unique timestamp so an existing backup is never clobbered.
+        private bool BackupUnreadableSettingsFile()
+        {
+            try
+            {
+                var settingsFilePath = this.settingsLoader.SettingsFilePath;
+                // Nothing to protect: no path, or the file is absent. Allow the write (it cannot lose
+                // a recoverable token because there is no file to back up).
+                if (string.IsNullOrEmpty(settingsFilePath) || !System.IO.File.Exists(settingsFilePath))
+                    return true;
+
+                // An empty (0-byte) on-disk file carries no recoverable bytes. Backing it up would
+                // create a useless empty .bak, so treat it as nothing-to-protect and allow the write.
+                if (new System.IO.FileInfo(settingsFilePath).Length == 0)
+                    return true;
+
+                var backupPath = settingsFilePath + ".corrupt-" +
+                    DateTime.UtcNow.ToString("yyyyMMddTHHmmssfffZ") + ".bak";
+                CopyFile(settingsFilePath, backupPath);
+
+                LogManager.ForContext(typeof(SnykOptionsManager)).Warning(
+                    "settings.json was unreadable at load; backed it up to '{BackupPath}' before overwriting so a recoverable token is not lost.",
+                    backupPath);
+                return true;
+            }
+            catch (Exception e)
+            {
+                // A real backup failure of an existing non-empty file: block the overwrite so the
+                // recoverable token is not destroyed. The caller keeps settingsFileWasUnreadable set
+                // and skips this write; the next Save retries the backup.
+                LogManager.ForContext(typeof(SnykOptionsManager)).Warning(e,
+                    "Failed to back up an unreadable settings.json; skipping this overwrite to preserve the recoverable file.");
+                return false;
+            }
+        }
+
+        // Seam over File.Copy(overwrite:false) so tests can force a backup-copy failure
+        // deterministically on any platform. Production behaviour is a plain File.Copy.
+        protected virtual void CopyFile(string source, string destination)
+        {
+            System.IO.File.Copy(source, destination, overwrite: false);
         }
 
         /// <summary>
@@ -115,14 +226,14 @@ namespace Snyk.VisualStudio.Extension.Settings
                 // calling ApplyUserEdits over migrated values would create phantom overrides.
                 Save(options, triggerSettingsChangedEvent: false, updateOverrideTracker: false);
 
-                Logger.Information(
+                LogManager.ForContext(typeof(SnykOptionsManager)).Information(
                     "Migrated legacy per-solution settings for '{Folder}' into a folder config.",
                     solutionFolderPath);
                 return true;
             }
             catch (Exception e)
             {
-                Logger.Warning(e, "Failed to migrate legacy per-solution settings for '{Folder}'.", solutionFolderPath);
+                LogManager.ForContext(typeof(SnykOptionsManager)).Warning(e, "Failed to migrate legacy per-solution settings for '{Folder}'.", solutionFolderPath);
                 return false;
             }
         }
@@ -183,18 +294,28 @@ namespace Snyk.VisualStudio.Extension.Settings
             // Seeded-marker lifecycle (IDE-2152 refinement S) — three branches:
             //
             // Branch A — marker ABSENT + keys null/empty (true first run / fresh install):
-            //   Seed once from value-vs-default (SeedFrom), then IMMEDIATELY persist both the
-            //   resulting ChangedConfigKeys and the marker so the seed is authoritative even if
-            //   the IDE crashes before a user-edit save. SeedFrom sets IsSeeded = true.
+            //   Seed once from value-vs-default (SeedFrom). SeedFrom sets IsSeeded = true.
             //
             // Branch B — marker ABSENT + keys non-empty (migration: prior version wrote a set
             //   without the marker — treat as already-seeded, do NOT re-derive):
-            //   Hydrate verbatim (Mark each key + MarkSeeded), then persist the marker so the
-            //   next load follows Branch C and never re-derives.
+            //   Hydrate verbatim (Mark each key + MarkSeeded).
             //
             // Branch C — marker PRESENT (steady state):
             //   The persisted set is the durable source of truth. Hydrate verbatim including an
             //   empty set, which means "seeded, zero user overrides." Never re-derive.
+            //
+            // DEFERRED-PERSIST (IDE-1483 × IDE-2152 merge fix): Branches A and B seed the tracker and
+            // set the seeded marker + keys ON snykSettings IN MEMORY, but do NOT write to disk during
+            // Load(). Persisting during Load would (1) overwrite a present-but-corrupt/unreadable
+            // settings.json with blank defaults, permanently losing a recoverable auth token
+            // (settingsFileWasUnreadable == true, snykSettings is a fresh unseeded object that looks
+            // exactly like a fresh install → Branch A), and (2) rewrite a VALID-but-unmarked
+            // (upgrading) file, breaking IDE-1483 D1-UNIT-003's "Load leaves a valid file
+            // byte-unchanged" guarantee. Instead the seeded marker/keys are persisted lazily by the
+            // next real Save (which serialises the whole snykSettings, marker included) or by
+            // CommitPendingResets. Re-seeding in memory on each load before that first save is
+            // idempotent: a fresh install re-derives the same empty/value-vs-default set every time,
+            // and once a real Save runs the file gains the marker and all future loads take Branch C.
             if (!snykSettings.ChangedConfigKeysSeeded && (persistedKeys == null || persistedKeys.Count == 0))
             {
                 // Branch A: true first run — seed from value-vs-default.
@@ -204,33 +325,39 @@ namespace Snyk.VisualStudio.Extension.Settings
                 // by ClearChanged()" note above applies to Branches B and C only.
                 overrideTracker.SeedFrom(options);
                 var seeded = overrideTracker.Snapshot();
-                // ChangedConfigKeys is omitted from settings.json when null (NullValueHandling.Ignore
-                // on the HashSet property), which happens when seeding finds zero non-default values.
-                // ChangedConfigKeysSeeded (the bool marker) is omitted when false
-                // (DefaultValueHandling.Ignore on the bool property) — it is now set to true so it
-                // will be written, marking this file as seeded for all future loads (Branch C).
-                // Mutate snykSettings + write under persistGate (IDE-2152 fix #4) so this load-time
-                // seed-write is atomic with respect to any concurrent Save/CommitPendingResets.
-                lock (persistGate)
+                // Set the marker/keys ON snykSettings IN MEMORY only (no SaveSettingsToFile — see
+                // DEFERRED-PERSIST above). A same-manager second Load() then observes the in-memory
+                // marker and takes Branch C (no re-seed, no stale-mark unioning). Persistence is
+                // deferred to the next real Save. Mutate under persistGate so a concurrent
+                // Save/CommitPendingResets never reads a half-updated snykSettings.
+                //
+                // settingsFileWasUnreadable guard: after a present-but-corrupt read, snykSettings is a
+                // fresh blank-defaults object that only LOOKS like a fresh install. Do NOT stamp the
+                // seeded marker onto it in that case — leaving the marker unset keeps this blank object
+                // from ever being mistaken for an authoritative seeded snapshot, so the recoverable
+                // file is re-read and re-seeded fresh on the next process start. The tracker is still
+                // seeded in memory (above) so this session behaves correctly.
+                if (!settingsFileWasUnreadable)
                 {
-                    snykSettings.ChangedConfigKeys = seeded.Count > 0 ? seeded : null;
-                    snykSettings.ChangedConfigKeysSeeded = true;
-                    SaveSettingsToFile();
+                    lock (persistGate)
+                    {
+                        snykSettings.ChangedConfigKeys = seeded.Count > 0 ? seeded : null;
+                        snykSettings.ChangedConfigKeysSeeded = true;
+                    }
                 }
             }
             else if (!snykSettings.ChangedConfigKeysSeeded)
             {
                 // Branch B: marker absent but keys non-empty — prior-version migration.
-                // Hydrate verbatim; persist the marker so next load uses Branch C.
+                // Hydrate verbatim; set the marker IN MEMORY so a same-manager next load uses Branch C.
+                // Write is deferred to the next real Save (see DEFERRED-PERSIST above) so an upgrading
+                // user's valid file is left byte-unchanged by Load().
                 foreach (var key in persistedKeys)
                     overrideTracker.Mark(key);
                 overrideTracker.MarkSeeded();
-                // Mutate snykSettings + write under persistGate (IDE-2152 fix #4), same rationale as
-                // Branch A: keep the marker-write atomic against concurrent persisters.
                 lock (persistGate)
                 {
                     snykSettings.ChangedConfigKeysSeeded = true;
-                    SaveSettingsToFile();
                 }
             }
             else
