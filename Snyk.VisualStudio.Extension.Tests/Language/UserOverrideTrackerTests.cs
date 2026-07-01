@@ -1,5 +1,8 @@
 // ABOUTME: Unit tests for UserOverrideTracker covering UNIT-001..010 from the IDE-2152 test plan.
 using System.Collections.Generic;
+using System.Linq;
+using System.Threading;
+using System.Threading.Tasks;
 using Moq;
 using Snyk.VisualStudio.Extension.Authentication;
 using Snyk.VisualStudio.Extension.Download;
@@ -69,17 +72,20 @@ namespace Snyk.VisualStudio.Extension.Tests.Language
             Assert.False(sut.IsChanged(PflagKeys.SnykOssEnabled));
         }
 
-        // UNIT-004: Unmark enqueues a pending reset; ConsumePendingResets returns it once, then empty.
+        // UNIT-004: Unmark enqueues a pending reset; PeekPendingResets returns it, and after
+        // CommitPendingResets confirms delivery the queue no longer contains it.
         [Fact]
-        public void Unmark_EnqueuesPendingReset_ConsumedOnce()
+        public void Unmark_EnqueuesPendingReset_ClearedAfterCommit()
         {
             sut.Mark(PflagKeys.SnykOssEnabled);
             sut.Unmark(PflagKeys.SnykOssEnabled);
 
-            var first = sut.ConsumePendingResets();
+            var first = sut.PeekPendingResets();
             Assert.Contains(PflagKeys.SnykOssEnabled, first);
 
-            var second = sut.ConsumePendingResets();
+            sut.CommitPendingResets(first);
+
+            var second = sut.PeekPendingResets();
             Assert.Empty(second);
         }
 
@@ -116,7 +122,7 @@ namespace Snyk.VisualStudio.Extension.Tests.Language
             sut.SeedFrom(DefaultOptions().Object);
 
             // The pending reset must be gone — Clear() at the top of SeedFrom drains it.
-            var resets = sut.ConsumePendingResets();
+            var resets = sut.PeekPendingResets();
             Assert.DoesNotContain(PflagKeys.SnykOssEnabled, resets); // SeedFrom must drain pendingResets
         }
 
@@ -153,7 +159,7 @@ namespace Snyk.VisualStudio.Extension.Tests.Language
             // Edited key is an explicit user choice → remains marked; no reset inferred from default.
             Assert.True(sut.IsChanged(PflagKeys.SnykOssEnabled),
                 "An edited key at the default value must remain marked — reset is not inferred here");
-            var pending = sut.ConsumePendingResets();
+            var pending = sut.PeekPendingResets();
             Assert.DoesNotContain(PflagKeys.SnykOssEnabled, pending);
         }
 
@@ -203,7 +209,7 @@ namespace Snyk.VisualStudio.Extension.Tests.Language
 
             Assert.True(sut.IsChanged(PflagKeys.RiskScoreThreshold),
                 "An edited RiskScoreThreshold key is an explicit user choice and must be marked");
-            var pending = sut.ConsumePendingResets();
+            var pending = sut.PeekPendingResets();
             Assert.DoesNotContain(PflagKeys.RiskScoreThreshold, pending); // no inferred reset from value==default
         }
 
@@ -366,7 +372,7 @@ namespace Snyk.VisualStudio.Extension.Tests.Language
                 "ClearChanged() must clear the changed set");
 
             // The pending reset for SnykOssEnabled is still consumable.
-            var resets = sut.ConsumePendingResets();
+            var resets = sut.PeekPendingResets();
             Assert.Contains(PflagKeys.SnykOssEnabled, resets); // ClearChanged must NOT discard pending resets
         }
 
@@ -452,7 +458,7 @@ namespace Snyk.VisualStudio.Extension.Tests.Language
 
         // R4-1: Mark after Unmark (Mark→Unmark→Mark cycle) must cancel the pending reset.
         // Scenario: user sets OssEnabled=false (Mark), resets to default true (Unmark → pending reset),
-        // then sets false again (Mark). The next ConsumePendingResets() must NOT contain OssEnabled
+        // then sets false again (Mark). The pending-reset queue must NOT contain OssEnabled
         // because the user re-applied the override — sending Reset() would silently drop their change.
         [Fact]
         public void Mark_AfterUnmark_CancelsPendingReset()
@@ -462,8 +468,8 @@ namespace Snyk.VisualStudio.Extension.Tests.Language
             sut.Unmark(PflagKeys.SnykOssEnabled);   // enqueues pending reset
             sut.Mark(PflagKeys.SnykOssEnabled);      // user re-applies the override
 
-            // Assert: pending reset must be cancelled (not in ConsumePendingResets output).
-            var resets = sut.ConsumePendingResets();
+            // Assert: pending reset must be cancelled (not in the pending-reset queue).
+            var resets = sut.PeekPendingResets();
             Assert.DoesNotContain(PflagKeys.SnykOssEnabled, resets); // Mark after Unmark must cancel pending reset
 
             // Assert: IsChanged must be true because the key is back in the changed set.
@@ -528,7 +534,7 @@ namespace Snyk.VisualStudio.Extension.Tests.Language
                 "and must be marked changed — reset is never inferred from value==default");
 
             // No reset must be enqueued via this path — value==default no longer implies a reset.
-            var resets = sut.ConsumePendingResets();
+            var resets = sut.PeekPendingResets();
             Assert.DoesNotContain(PflagKeys.SnykCodeEnabled, resets); // no inferred reset from value==default
         }
 
@@ -558,6 +564,163 @@ namespace Snyk.VisualStudio.Extension.Tests.Language
                 "because the form sent the key — the value is non-default so IsDefault→Mark");
         }
 
+        // IDE-2152-UNIT-003a: Peek is non-destructive — the reset stays queued after a peek, so a
+        // build-without-commit (e.g. a config send that fails) does not lose the reset intent.
+        [Fact]
+        public void PeekPendingResets_IsNonDestructive_QueueSurvives()
+        {
+            sut.ApplyUserResets(new List<string> { PflagKeys.SnykOssEnabled });
+
+            var first = sut.PeekPendingResets();
+            Assert.Contains(PflagKeys.SnykOssEnabled, first);
+
+            // A second peek still sees it — nothing was consumed.
+            var second = sut.PeekPendingResets();
+            Assert.Contains(PflagKeys.SnykOssEnabled, second);
+        }
+
+        // IDE-2152-UNIT-003b: Commit clears only the named (delivered) keys, never the whole queue.
+        [Fact]
+        public void CommitPendingResets_ClearsOnlyNamedKeys()
+        {
+            sut.ApplyUserResets(new List<string> { PflagKeys.SnykOssEnabled, PflagKeys.SnykCodeEnabled });
+
+            // Only OssEnabled was delivered.
+            sut.CommitPendingResets(new List<string> { PflagKeys.SnykOssEnabled });
+
+            var remaining = sut.PeekPendingResets();
+            Assert.DoesNotContain(PflagKeys.SnykOssEnabled, remaining); // delivered → cleared
+            Assert.Contains(PflagKeys.SnykCodeEnabled, remaining);      // not delivered → still queued
+        }
+
+        // IDE-2152-UNIT-003c: A reset for a DIFFERENT key enqueued between the peek (what the build
+        // folded in and sent) and the commit must survive the commit — commit removes exactly the
+        // sent set, never a blanket clear. This is the interleaving the re-delivery design must not
+        // lose: the newer key was never in the confirmed message, so it must remain queued.
+        [Fact]
+        public void CommitPendingResets_InterleavedResetForDifferentKey_Survives()
+        {
+            sut.ApplyUserResets(new List<string> { PflagKeys.SnykOssEnabled });
+            var peeked = sut.PeekPendingResets(); // what the build folded in and sent
+
+            // Between the send and the commit, a reset for a different key is enqueued.
+            sut.ApplyUserResets(new List<string> { PflagKeys.SnykCodeEnabled });
+
+            // The send is confirmed only for the originally peeked keys; commit removes exactly those.
+            sut.CommitPendingResets(peeked);
+
+            var remaining = sut.PeekPendingResets();
+            Assert.DoesNotContain(PflagKeys.SnykOssEnabled, remaining); // delivered → cleared
+            Assert.Contains(PflagKeys.SnykCodeEnabled, remaining);      // enqueued after send → survives
+        }
+
+        // IDE-2152-UNIT-003d: CommitPendingResets is a safe no-op on null/empty.
+        [Fact]
+        public void CommitPendingResets_NullOrEmpty_IsNoOp()
+        {
+            sut.ApplyUserResets(new List<string> { PflagKeys.SnykOssEnabled });
+
+            sut.CommitPendingResets(null);
+            sut.CommitPendingResets(new List<string>());
+
+            Assert.Contains(PflagKeys.SnykOssEnabled, sut.PeekPendingResets());
+        }
+
+        // IDE-2152-UNIT-002a: ApplyUserResets un-marks each reset key (drops out of Snapshot) and
+        // enqueues a pending reset that BuildSettingsMap will consume as {value:null, changed:true}.
+        [Fact]
+        public void ApplyUserResets_UnmarksKey_AndEnqueuesPendingReset()
+        {
+            // The key was previously a user override.
+            sut.Mark(PflagKeys.SnykOssEnabled);
+            Assert.Contains(PflagKeys.SnykOssEnabled, sut.Snapshot());
+
+            sut.ApplyUserResets(new List<string> { PflagKeys.SnykOssEnabled });
+
+            // No longer a persisted override.
+            Assert.DoesNotContain(PflagKeys.SnykOssEnabled, sut.Snapshot());
+            Assert.False(sut.IsChanged(PflagKeys.SnykOssEnabled));
+
+            // Reset signal is queued.
+            var resets = sut.PeekPendingResets();
+            Assert.Contains(PflagKeys.SnykOssEnabled, resets);
+        }
+
+        // IDE-2152-UNIT-002b: A form reset ALWAYS enqueues the LS reset signal — even when the plugin
+        // had no local mark for the key (e.g. an org-pushed value the user wants cleared). Local
+        // un-mark is best-effort; the LS still needs {value:null, changed:true} to Unset user:global.
+        [Fact]
+        public void ApplyUserResets_KeyNeverMarked_StillEnqueuesResetSignal()
+        {
+            Assert.DoesNotContain(PflagKeys.Organization, sut.Snapshot()); // precondition: no mark
+
+            sut.ApplyUserResets(new List<string> { PflagKeys.Organization });
+
+            var resets = sut.PeekPendingResets();
+            Assert.Contains(PflagKeys.Organization, resets);
+        }
+
+        // IDE-2152-UNIT-002c: Re-enabling a key (Mark) after a reset was queued cancels that reset —
+        // the user re-applied an override, so the next build must not clobber it with a reset signal.
+        [Fact]
+        public void ApplyUserResets_ThenMark_CancelsQueuedReset()
+        {
+            sut.ApplyUserResets(new List<string> { PflagKeys.SnykOssEnabled }); // reset queued
+            sut.Mark(PflagKeys.SnykOssEnabled); // user re-applies the override
+
+            var resets = sut.PeekPendingResets();
+            Assert.DoesNotContain(PflagKeys.SnykOssEnabled, resets);
+            Assert.True(sut.IsChanged(PflagKeys.SnykOssEnabled));
+        }
+
+        // IDE-2152-UNIT-002d: ApplyUserResets with a null/empty set is a harmless no-op.
+        [Fact]
+        public void ApplyUserResets_NullOrEmpty_IsNoOp()
+        {
+            sut.Mark(PflagKeys.SnykOssEnabled);
+
+            sut.ApplyUserResets(null);
+            sut.ApplyUserResets(new List<string>());
+
+            Assert.Contains(PflagKeys.SnykOssEnabled, sut.Snapshot());
+            Assert.Empty(sut.PeekPendingResets());
+        }
+
+        // IDE-2152-UNIT-P1 (fix #2): RehydratePendingResets re-queues persisted-but-unconfirmed resets
+        // on Load without un-marking anything (Load hydrates `changed` separately). The rehydrated key
+        // must appear in the pending-reset queue for re-delivery.
+        [Fact]
+        public void RehydratePendingResets_ReQueuesPersistedReset()
+        {
+            sut.RehydratePendingResets(new List<string> { PflagKeys.SnykOssEnabled });
+
+            Assert.Contains(PflagKeys.SnykOssEnabled, sut.PeekPendingResets());
+        }
+
+        // IDE-2152-UNIT-P2 (fix #2): RehydratePendingResets must NOT re-queue a reset for a key that is
+        // a live override mark — a persisted override means the user re-applied the key after the reset
+        // was queued, so the override wins (invariant: never in both `changed` and pendingResets).
+        [Fact]
+        public void RehydratePendingResets_SkipsKeyThatIsLiveOverride()
+        {
+            sut.Mark(PflagKeys.SnykOssEnabled); // live override
+
+            sut.RehydratePendingResets(new List<string> { PflagKeys.SnykOssEnabled });
+
+            Assert.DoesNotContain(PflagKeys.SnykOssEnabled, sut.PeekPendingResets());
+            Assert.True(sut.IsChanged(PflagKeys.SnykOssEnabled));
+        }
+
+        // IDE-2152-UNIT-P3 (fix #2): RehydratePendingResets with a null/empty set is a harmless no-op.
+        [Fact]
+        public void RehydratePendingResets_NullOrEmpty_IsNoOp()
+        {
+            sut.RehydratePendingResets(null);
+            sut.RehydratePendingResets(new List<string>());
+
+            Assert.Empty(sut.PeekPendingResets());
+        }
+
         // PR-REV-002: ApplyUserEdits with AdditionalParameters key (List<string> in options,
         // but the tracker compares the space-joined string representation) must record an override
         // when the user types any non-empty value. Previously the snapshot/diff path used
@@ -578,6 +741,108 @@ namespace Snyk.VisualStudio.Extension.Tests.Language
             Assert.True(sut.IsChanged(PflagKeys.AdditionalParameters),
                 "AdditionalParameters with a non-empty list must be marked as an override — " +
                 "the tracker normalises it to a space-joined string before comparing to default");
+        }
+
+        // ─────────────────────────────────────────────────────────────────────
+        // THREAD-SAFETY tests (IDE-2152 critical fix #1)
+        // The tracker's `changed` / `pendingResets` are mutated from the UI thread (Save →
+        // ApplyUserEdits/ApplyUserResets) AND from thread-pool continuations (the config-send
+        // path commits after `await ...ConfigureAwait(false)`), from multiple fire-and-forget
+        // call sites. Every read and mutation must be guarded by a single lock, and Peek/Snapshot
+        // must return an independent copy taken under the lock.
+        // ─────────────────────────────────────────────────────────────────────
+
+        // TS-001: Snapshot returns an independent copy — mutating the tracker after taking a
+        // snapshot must not change the already-returned snapshot, and vice versa.
+        [Fact]
+        public void Snapshot_ReturnsIndependentCopy()
+        {
+            sut.Mark(PflagKeys.SnykOssEnabled);
+
+            var snap = sut.Snapshot();
+            Assert.Contains(PflagKeys.SnykOssEnabled, snap);
+
+            // Mutate the tracker after the snapshot was taken.
+            sut.Mark(PflagKeys.SnykCodeEnabled);
+            // The previously-returned snapshot must be unaffected.
+            Assert.DoesNotContain(PflagKeys.SnykCodeEnabled, snap);
+
+            // Mutating the returned copy must not affect the tracker.
+            snap.Add(PflagKeys.SnykIacEnabled);
+            Assert.False(sut.IsChanged(PflagKeys.SnykIacEnabled),
+                "Mutating the returned Snapshot copy must not leak back into the tracker");
+        }
+
+        // TS-002: PeekPendingResets returns an independent copy — enqueuing a further reset after a
+        // peek must not change the already-returned peek result.
+        [Fact]
+        public void PeekPendingResets_ReturnsIndependentCopy()
+        {
+            sut.ApplyUserResets(new List<string> { PflagKeys.SnykOssEnabled });
+
+            var peek = sut.PeekPendingResets();
+            Assert.Contains(PflagKeys.SnykOssEnabled, peek);
+
+            sut.ApplyUserResets(new List<string> { PflagKeys.SnykCodeEnabled });
+            Assert.DoesNotContain(PflagKeys.SnykCodeEnabled, peek);
+        }
+
+        // TS-003: Concurrent access from many threads must not throw or corrupt state, and the core
+        // invariant — a key is never simultaneously in both `changed` and `pendingResets` — must
+        // hold after the storm. With plain (unsynchronised) HashSets this test throws
+        // InvalidOperationException ("collection was modified") or corrupts the sets; the single
+        // lock makes every method atomic so it passes.
+        [Fact]
+        public void ConcurrentAccess_DoesNotThrowOrCorruptState()
+        {
+            var keys = new[]
+            {
+                PflagKeys.SnykOssEnabled, PflagKeys.SnykCodeEnabled, PflagKeys.SnykIacEnabled,
+                PflagKeys.SnykSecretsEnabled, PflagKeys.ScanAutomatic, PflagKeys.ScanNetNew,
+                PflagKeys.SeverityFilterCritical, PflagKeys.SeverityFilterHigh,
+                PflagKeys.SeverityFilterMedium, PflagKeys.SeverityFilterLow,
+            };
+
+            const int threads = 8;
+            const int iterations = 2000;
+            var barrier = new Barrier(threads);
+            var exceptions = new System.Collections.Concurrent.ConcurrentQueue<System.Exception>();
+
+            var tasks = Enumerable.Range(0, threads).Select(t => Task.Run(() =>
+            {
+                barrier.SignalAndWait();
+                try
+                {
+                    for (var i = 0; i < iterations; i++)
+                    {
+                        var key = keys[(t + i) % keys.Length];
+                        switch (i % 6)
+                        {
+                            case 0: sut.Mark(key); break;
+                            case 1: sut.ApplyUserResets(new List<string> { key }); break;
+                            case 2: sut.CommitPendingResets(sut.PeekPendingResets()); break;
+                            case 3: _ = sut.Snapshot(); break;
+                            case 4: _ = sut.IsChanged(key); break;
+                            case 5: sut.ApplyUserEdits(null, new List<string> { key }); break;
+                        }
+                    }
+                }
+                catch (System.Exception ex)
+                {
+                    exceptions.Enqueue(ex);
+                }
+            })).ToArray();
+
+            Task.WaitAll(tasks);
+
+            Assert.True(exceptions.IsEmpty,
+                "Concurrent tracker access must not throw — the internal sets must be lock-guarded. " +
+                "First exception: " + (exceptions.TryPeek(out var first) ? first.ToString() : "none"));
+
+            // Invariant: no key is in both the changed set and the pending-reset queue.
+            var changed = sut.Snapshot();
+            var resets = sut.PeekPendingResets();
+            Assert.Empty(changed.Intersect(resets));
         }
     }
 }

@@ -104,12 +104,16 @@ namespace Snyk.VisualStudio.Extension.UI.Html
                     // the tracker marks/unmarks only genuinely user-edited keys — org-pushed values
                     // that were never touched by the user are absent from the payload and therefore
                     // never marked as user overrides.
-                    var editedKeys = await ParseAndSaveConfigAsync(jsonString);
+                    var applyResult = await ParseAndSaveConfigAsync(jsonString);
 
                     // Persist all settings to storage at the end.
                     // This triggers SettingsChanged event which notifies Language Server.
+                    // resetKeys carries the "Reset overrides" nulls (disjoint from editedKeys) so the
+                    // tracker un-marks them and the LS receives {value:null, changed:true} (IDE-2152).
                     OptionsManager.Save(Options, triggerSettingsChangedEvent: true,
-                                        updateOverrideTracker: true, editedKeys: editedKeys);
+                                        updateOverrideTracker: true,
+                                        editedKeys: applyResult.EditedKeys,
+                                        resetKeys: applyResult.ResetKeys);
 
                     tcs.TrySetResult(true);
                 }
@@ -244,11 +248,30 @@ namespace Snyk.VisualStudio.Extension.UI.Html
             }
         }
 
+        // Result of parsing + applying a save payload: the form-driven edit-delta (keys applied to a
+        // value) and the disjoint reset-delta (reset-eligible global keys posted as explicit JSON
+        // null by "Reset overrides"). The two channels never overlap for a single save.
+        private readonly struct ApplyResult
+        {
+            public ApplyResult(IReadOnlyCollection<string> editedKeys, IReadOnlyCollection<string> resetKeys)
+            {
+                EditedKeys = editedKeys;
+                ResetKeys = resetKeys;
+            }
+
+            public IReadOnlyCollection<string> EditedKeys { get; }
+            public IReadOnlyCollection<string> ResetKeys { get; }
+        }
+
         // Returns the form-driven edit-delta: the global pflag keys that each Apply* method
         // actually applied in this save action. Because detection is co-located with the
         // mutation, keys with extra gating (e.g. ApplyConnectionSettings rejects malformed URLs)
         // are recorded only when the value is genuinely applied — one source of truth per key.
-        private async Task<IReadOnlyCollection<string>> ParseAndSaveConfigAsync(string jsonString)
+        // Also returns the reset-delta: top-level reset-eligible global keys posted as explicit JSON
+        // null (the "Reset overrides" action), detected from the raw JSON so present-null stays
+        // distinct from absent (a distinction the nullable typed model cannot carry) — mirroring the
+        // raw-JSON handling already used by ApplyFolderConfigsAsync for folder resets.
+        private async Task<ApplyResult> ParseAndSaveConfigAsync(string jsonString)
         {
             // LS HTML JavaScript handles all validation - we just parse and save.
             // Throw on a null result (malformed/empty JSON that maps to nothing) rather than
@@ -296,6 +319,13 @@ namespace Snyk.VisualStudio.Extension.UI.Html
                     string.Join(", ", contract.UnmappedKeys));
             }
 
+            // Parse the raw JSON to a JObject ONCE here, then pass it to both the global-reset detector
+            // and the folder-config applier (IDE-2152 cleanup #5). Previously each parsed the string
+            // independently with copy-pasted try/catch. A parse failure is non-fatal for these raw-JSON
+            // passes (the typed model already applied successfully), so a null root means "no raw-JSON
+            // work to do" — the typed apply still stands.
+            var root = TryParseJObject(jsonString);
+
             var isCliOnly = config.IsFallbackForm ?? false;
             Logger.Information("Saving workspace configuration (CLI only: {IsCliOnly})", isCliOnly);
 
@@ -334,7 +364,7 @@ namespace Snyk.VisualStudio.Extension.UI.Html
                     ApplyTrustedFolders(config, editedKeys);
                     ApplyFilterSettings(config, editedKeys);
                     ApplyMiscellaneousSettings(config, editedKeys);
-                    await ApplyFolderConfigsAsync(jsonString);
+                    await ApplyFolderConfigsAsync(root);
                 }
             }
             catch
@@ -343,7 +373,53 @@ namespace Snyk.VisualStudio.Extension.UI.Html
                 throw;
             }
 
-            return editedKeys;
+            // Detect top-level reset-eligible global keys posted as explicit JSON null (the "Reset
+            // overrides" action). Read from the parsed root so present-null stays distinct from absent —
+            // the nullable typed model collapses both to C# null, so a reset would otherwise be
+            // silently dropped by the .HasValue/!= null guards in the Apply* helpers above. A reset
+            // key is never a value-apply, so this channel is disjoint from editedKeys by construction.
+            var resetKeys = DetectGlobalResetKeys(root);
+
+            return new ApplyResult(editedKeys, resetKeys);
+        }
+
+        // Parses the raw settings-save JSON to a JObject a SINGLE time (IDE-2152 cleanup #5). The
+        // result is shared by DetectGlobalResetKeys and ApplyFolderConfigsAsync. Returns null on
+        // empty/whitespace or a parse failure — both raw-JSON passes treat null as "nothing to do",
+        // which is non-fatal because the typed model has already applied successfully.
+        private static JObject TryParseJObject(string rawJson)
+        {
+            if (string.IsNullOrWhiteSpace(rawJson))
+                return null;
+
+            try
+            {
+                return JObject.Parse(rawJson);
+            }
+            catch (JsonException ex)
+            {
+                Logger.Warning(ex, "Could not parse settings-save JSON for raw-JSON passes (reset detection / folder configs)");
+                return null;
+            }
+        }
+
+        // Inspects the parsed root for top-level properties present with a JSON null value whose key is
+        // a reset-eligible global setting (PflagKeys.IsGlobalResettable). These are the "Reset
+        // overrides" nulls. Folder-scoped resets live under folderConfigs[] and are handled separately
+        // by ApplyFolderConfigsAsync — this only considers top-level keys.
+        private static IReadOnlyCollection<string> DetectGlobalResetKeys(JObject root)
+        {
+            var resetKeys = new List<string>();
+            if (root == null)
+                return resetKeys;
+
+            foreach (var property in root.Properties())
+            {
+                if (property.Value.Type == JTokenType.Null && PflagKeys.IsGlobalResettable(property.Name))
+                    resetKeys.Add(property.Name);
+            }
+
+            return resetKeys;
         }
 
         // Captures the current Options state and returns an action that restores it, so a partially-
@@ -681,21 +757,10 @@ namespace Snyk.VisualStudio.Extension.UI.Html
         // we Set the key to null so BuildFolderConfigs emits {value:null, changed:true} and the LS
         // Unsets the user:folder: override. Going through the raw JSON keeps null-vs-absent distinct,
         // which a nullable typed model can't — so no ResetKeys side-channel is needed.
-        private Task ApplyFolderConfigsAsync(string rawJson)
+        private Task ApplyFolderConfigsAsync(JObject root)
         {
-            if (string.IsNullOrWhiteSpace(rawJson))
+            if (root == null)
                 return Task.CompletedTask;
-
-            JObject root;
-            try
-            {
-                root = JObject.Parse(rawJson);
-            }
-            catch (JsonException ex)
-            {
-                Logger.Warning(ex, "Could not parse JSON for folder configs");
-                return Task.CompletedTask;
-            }
 
             if (!(root["folderConfigs"] is JArray folderConfigsJson) || folderConfigsJson.Count == 0)
                 return Task.CompletedTask;

@@ -473,7 +473,7 @@ namespace Snyk.VisualStudio.Extension.Tests.UI.Html
             Assert.False(await AwaitWithTimeout(localBridge.SaveCompletion)); // apply failed
             Assert.False(localOptions.Object.OssEnabled); // rolled back to baseline, not left at true
             // A failed apply never reaches the persistence step.
-            localManager.Verify(m => m.Save(It.IsAny<IPersistableOptions>(), It.IsAny<bool>(), It.IsAny<bool>(), It.IsAny<System.Collections.Generic.IReadOnlyCollection<string>>()), Times.Never);
+            localManager.Verify(m => m.Save(It.IsAny<IPersistableOptions>(), It.IsAny<bool>(), It.IsAny<bool>(), It.IsAny<System.Collections.Generic.IReadOnlyCollection<string>>(), It.IsAny<System.Collections.Generic.IReadOnlyCollection<string>>()), Times.Never);
         }
 
         private static async Task<bool> AwaitWithTimeout(Task<bool> task)
@@ -496,9 +496,10 @@ namespace Snyk.VisualStudio.Extension.Tests.UI.Html
                     It.IsAny<IPersistableOptions>(),
                     It.IsAny<bool>(),
                     It.IsAny<bool>(),
+                    It.IsAny<IReadOnlyCollection<string>>(),
                     It.IsAny<IReadOnlyCollection<string>>()))
-                .Callback<IPersistableOptions, bool, bool, IReadOnlyCollection<string>>(
-                    (_, __, ___, keys) => capturedEditedKeys = keys);
+                .Callback<IPersistableOptions, bool, bool, IReadOnlyCollection<string>, IReadOnlyCollection<string>>(
+                    (_, __, ___, keys, ____) => capturedEditedKeys = keys);
 
             // Form sends snyk_oss_enabled.
             var config = JsonConvert.SerializeObject(new { snyk_oss_enabled = true });
@@ -522,9 +523,10 @@ namespace Snyk.VisualStudio.Extension.Tests.UI.Html
                     It.IsAny<IPersistableOptions>(),
                     It.IsAny<bool>(),
                     It.IsAny<bool>(),
+                    It.IsAny<IReadOnlyCollection<string>>(),
                     It.IsAny<IReadOnlyCollection<string>>()))
-                .Callback<IPersistableOptions, bool, bool, IReadOnlyCollection<string>>(
-                    (_, __, ___, keys) => capturedEditedKeys = keys);
+                .Callback<IPersistableOptions, bool, bool, IReadOnlyCollection<string>, IReadOnlyCollection<string>>(
+                    (_, __, ___, keys, ____) => capturedEditedKeys = keys);
 
             optionsMock.SetupAllProperties();
 
@@ -547,9 +549,10 @@ namespace Snyk.VisualStudio.Extension.Tests.UI.Html
                     It.IsAny<IPersistableOptions>(),
                     It.IsAny<bool>(),
                     It.IsAny<bool>(),
+                    It.IsAny<IReadOnlyCollection<string>>(),
                     It.IsAny<IReadOnlyCollection<string>>()))
-                .Callback<IPersistableOptions, bool, bool, IReadOnlyCollection<string>>(
-                    (_, __, ___, keys) => capturedEditedKeys = keys);
+                .Callback<IPersistableOptions, bool, bool, IReadOnlyCollection<string>, IReadOnlyCollection<string>>(
+                    (_, __, ___, keys, ____) => capturedEditedKeys = keys);
 
             // Form only sends snyk_oss_enabled; snyk_iac_enabled is absent.
             var config = JsonConvert.SerializeObject(new { snyk_oss_enabled = true });
@@ -557,6 +560,66 @@ namespace Snyk.VisualStudio.Extension.Tests.UI.Html
 
             Assert.NotNull(capturedEditedKeys);
             Assert.DoesNotContain(PflagKeys.SnykIacEnabled, capturedEditedKeys);
+        }
+
+        // IDE-2152-UNIT-001: Raw-JSON reset detection distinguishes three cases for a reset-eligible
+        // global key: present JSON null → reset (in resetKeys, NOT in editedKeys); present with a value
+        // → edit (in editedKeys, NOT in resetKeys); absent → untouched (in neither). The reset and
+        // edit channels are disjoint.
+        [Fact]
+        public void SaveIdeConfig_ResetNull_RoutedToResetKeys_DisjointFromEditedKeys()
+        {
+            IReadOnlyCollection<string> capturedEdited = null;
+            IReadOnlyCollection<string> capturedResets = null;
+            snykOptionsManagerMock
+                .Setup(m => m.Save(
+                    It.IsAny<IPersistableOptions>(),
+                    It.IsAny<bool>(),
+                    It.IsAny<bool>(),
+                    It.IsAny<IReadOnlyCollection<string>>(),
+                    It.IsAny<IReadOnlyCollection<string>>()))
+                .Callback<IPersistableOptions, bool, bool, IReadOnlyCollection<string>, IReadOnlyCollection<string>>(
+                    (_, __, ___, edited, resets) => { capturedEdited = edited; capturedResets = resets; });
+
+            // snyk_code_enabled = null (reset), snyk_oss_enabled = false (edit), snyk_iac_enabled absent.
+            var config = "{\"snyk_code_enabled\":null,\"snyk_oss_enabled\":false}";
+            bridge.__saveIdeConfig__(config);
+
+            Assert.NotNull(capturedResets);
+            Assert.Contains(PflagKeys.SnykCodeEnabled, capturedResets);
+            Assert.DoesNotContain(PflagKeys.SnykOssEnabled, capturedResets);
+            Assert.DoesNotContain(PflagKeys.SnykIacEnabled, capturedResets);
+
+            Assert.NotNull(capturedEdited);
+            Assert.Contains(PflagKeys.SnykOssEnabled, capturedEdited);
+            // Disjointness: a reset-null key must NOT also be in the edited channel.
+            Assert.DoesNotContain(PflagKeys.SnykCodeEnabled, capturedEdited);
+        }
+
+        // IDE-2152-UNIT-001b: A present JSON null on a key that is NOT reset-eligible must NOT be
+        // routed as a reset (only the 14 GlobalResettableSettings are reset-eligible).
+        [Fact]
+        public void SaveIdeConfig_NullOnNonResettableKey_NotRoutedAsReset()
+        {
+            IReadOnlyCollection<string> capturedResets = null;
+            snykOptionsManagerMock
+                .Setup(m => m.Save(
+                    It.IsAny<IPersistableOptions>(),
+                    It.IsAny<bool>(),
+                    It.IsAny<bool>(),
+                    It.IsAny<IReadOnlyCollection<string>>(),
+                    It.IsAny<IReadOnlyCollection<string>>()))
+                .Callback<IPersistableOptions, bool, bool, IReadOnlyCollection<string>, IReadOnlyCollection<string>>(
+                    (_, __, ___, ____, resets) => capturedResets = resets);
+
+            // cli_path is a global key but NOT in the reset-eligible set; a null must not be a reset.
+            // Include a reset-eligible null so the save has at least one recognised key and succeeds.
+            var config = "{\"cli_path\":null,\"organization\":null}";
+            bridge.__saveIdeConfig__(config);
+
+            Assert.NotNull(capturedResets);
+            Assert.DoesNotContain(PflagKeys.CliPath, capturedResets);
+            Assert.Contains(PflagKeys.Organization, capturedResets);
         }
 
         [Fact]

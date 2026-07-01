@@ -347,7 +347,7 @@ namespace Snyk.VisualStudio.Extension.Tests.Language
             // and without updating the override tracker (LS-delivered auth result, not a user settings-edit).
             optionsMock.VerifySet(o => o.CustomEndpoint = "https://api.snyk.io");
             optionsMock.VerifySet(o => o.ApiToken = It.Is<AuthenticationToken>(t => t.Type == AuthenticationType.OAuth && t.ToString() == "test-token"));
-            snykOptionsManagerMock.Verify(s => s.Save(It.IsAny<IPersistableOptions>(), false, false, null), Times.Once);
+            snykOptionsManagerMock.Verify(s => s.Save(It.IsAny<IPersistableOptions>(), false, false, null, null), Times.Once);
             authenticationFlowServiceMock.Verify(o => o.HandleAuthenticationSuccessAsync("test-token", "https://api.snyk.io"), Times.Once);
         }
 
@@ -365,7 +365,7 @@ namespace Snyk.VisualStudio.Extension.Tests.Language
 
             // Assert — Save must be called with triggerSettingsChangedEvent=false (avoid loop) and
             // updateOverrideTracker=false (LS-delivered auth, not a user settings-edit).
-            snykOptionsManagerMock.Verify(s => s.Save(It.IsAny<IPersistableOptions>(), false, false, null), Times.Once);
+            snykOptionsManagerMock.Verify(s => s.Save(It.IsAny<IPersistableOptions>(), false, false, null, null), Times.Once);
             // HandleAuthenticationSuccessAsync must NOT be called — not a new login
             authenticationFlowServiceMock.Verify(o => o.HandleAuthenticationSuccessAsync(It.IsAny<string>(), It.IsAny<string>()), Times.Never);
             // No scan on refresh — old token was non-blank
@@ -404,7 +404,7 @@ namespace Snyk.VisualStudio.Extension.Tests.Language
             Assert.Contains("/folder1", optionsMock.Object.TrustedFolders);
             Assert.Contains("/folder2", optionsMock.Object.TrustedFolders);
             // updateOverrideTracker:false — LS is pushing trusted-folder set back; must not record as user override.
-            snykOptionsManagerMock.Verify(s => s.Save(It.IsAny<IPersistableOptions>(), false, false, It.IsAny<System.Collections.Generic.IReadOnlyCollection<string>>()), Times.Once);
+            snykOptionsManagerMock.Verify(s => s.Save(It.IsAny<IPersistableOptions>(), false, false, It.IsAny<System.Collections.Generic.IReadOnlyCollection<string>>(), It.IsAny<System.Collections.Generic.IReadOnlyCollection<string>>()), Times.Once);
             // Note: DidChangeConfigurationAsync is intentionally not called to avoid infinite loop
             languageClientManagerMock.Verify(s => s.DidChangeConfigurationAsync(It.IsAny<CancellationToken>()), Times.Never);
         }
@@ -706,7 +706,7 @@ namespace Snyk.VisualStudio.Extension.Tests.Language
             Assert.True(optionsMock.Object.OssEnabled);
             // ...and persisted without re-triggering DidChangeConfigurationAsync (triggerSettingsChangedEvent=false)
             // updateOverrideTracker:false — LS-pushed values must never be recorded as user overrides (IDE-2152).
-            snykOptionsManagerMock.Verify(m => m.Save(It.IsAny<IPersistableOptions>(), false, false, It.IsAny<System.Collections.Generic.IReadOnlyCollection<string>>()), Times.Once());
+            snykOptionsManagerMock.Verify(m => m.Save(It.IsAny<IPersistableOptions>(), false, false, It.IsAny<System.Collections.Generic.IReadOnlyCollection<string>>(), It.IsAny<System.Collections.Generic.IReadOnlyCollection<string>>()), Times.Once());
         }
 
         [Fact]

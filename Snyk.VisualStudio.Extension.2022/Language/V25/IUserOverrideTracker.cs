@@ -9,8 +9,11 @@ namespace Snyk.VisualStudio.Extension.Language
     /// Tracks which global pflag keys the user has explicitly set away from plugin defaults.
     /// Keys for which <see cref="PflagKeys.IsAlwaysChanged"/> returns true are always treated as
     /// changed regardless of user action.
-    /// Thread-safety: implementations are single-threaded (UI thread / settings thread); no
-    /// concurrent access guarantee is required.
+    /// Thread-safety: implementations MUST be safe for concurrent access. The tracker is mutated
+    /// from the UI thread (settings Save) and from thread-pool continuations (the fire-and-forget
+    /// config-send path commits resets after an awaited RPC), so every read and mutation must be
+    /// internally synchronised and <see cref="PeekPendingResets"/>/<see cref="Snapshot"/> must
+    /// return independent copies.
     /// </summary>
     public interface IUserOverrideTracker
     {
@@ -49,10 +52,44 @@ namespace Snyk.VisualStudio.Extension.Language
         void Unmark(string key);
 
         /// <summary>
-        /// Returns and clears the set of keys that need a reset signal (<c>{value:null, changed:true}</c>)
-        /// on the next settings push. Idempotent: second call returns empty set.
+        /// Returns the set of keys that need a reset signal (<c>{value:null, changed:true}</c>) on the
+        /// next settings push WITHOUT clearing them (IDE-2152 CP 2.2). Use this from
+        /// <see cref="Language.V25.LsSettingsV25.BuildSettingsMap"/> so a transient RPC failure does
+        /// not lose the reset intent — the queue is cleared only by <see cref="CommitPendingResets"/>
+        /// after a confirmed successful config-update send.
         /// </summary>
-        IReadOnlyCollection<string> ConsumePendingResets();
+        IReadOnlyCollection<string> PeekPendingResets();
+
+        /// <summary>
+        /// Removes only the named <paramref name="sentKeys"/> from the pending-reset queue, after they
+        /// were confirmed delivered to the LS (IDE-2152 CP 2.2). Never a blanket clear: a newer reset
+        /// for the same key enqueued between the peek and the commit is preserved. No-op on null/empty.
+        /// </summary>
+        void CommitPendingResets(IReadOnlyCollection<string> sentKeys);
+
+        /// <summary>
+        /// Applies an explicit user reset to each key in <paramref name="resetKeys"/> (IDE-2152): removes
+        /// the local override mark (so the key drops out of <see cref="Snapshot"/>) AND enqueues a
+        /// pending reset so the next <see cref="Language.V25.LsSettingsV25.BuildSettingsMap"/> emits
+        /// <c>{value:null, changed:true}</c>. Unlike <see cref="Unmark"/>, the reset signal is ALWAYS
+        /// enqueued — even when the key had no local mark — because a form reset must still tell the LS
+        /// to Unset any <c>user:global</c> override (e.g. an org-pushed value the user wants cleared);
+        /// the local un-mark is best-effort. No-op on null/empty. Reset and edit (<see cref="Mark"/>)
+        /// are disjoint per save: a key is either edited-to-a-value or reset, never both.
+        /// </summary>
+        void ApplyUserResets(IReadOnlyCollection<string> resetKeys);
+
+        /// <summary>
+        /// Re-queues persisted-but-unconfirmed reset keys on <see cref="ISnykOptionsManager.Load"/>
+        /// so a reset applied while the LS was not ready survives a restart and is re-delivered on the
+        /// next configuration update (IDE-2152 critical fix #2). Unlike <see cref="ApplyUserResets"/>,
+        /// this does NOT un-mark anything (Load hydrates <c>changed</c> separately) and skips any key
+        /// that is currently a live override mark — a persisted override means the user re-applied the
+        /// key after the reset was queued, so the override wins and no reset is re-emitted. No-op on
+        /// null/empty. Preserves the invariant that a key is never in both <c>changed</c> and the
+        /// pending-reset queue.
+        /// </summary>
+        void RehydratePendingResets(IReadOnlyCollection<string> resetKeys);
 
         /// <summary>
         /// Seeds the tracker from the persisted options on first load (upgrade path): marks any
@@ -98,9 +135,9 @@ namespace Snyk.VisualStudio.Extension.Language
         /// Clears only the <c>changed</c> marks, preserving the pending-reset queue.
         /// Call at the start of <see cref="ISnykOptionsManager.Load"/> hydration so that a second
         /// Load on the same manager never unions stale marks, while any reset signals that were
-        /// enqueued (via <see cref="ApplyUserEdits"/> or <see cref="Unmark"/>) between saves are
-        /// not discarded before <see cref="ConsumePendingResets"/> picks them up in the next
-        /// BuildSettingsMap call.
+        /// enqueued (via <see cref="ApplyUserResets"/> or <see cref="Unmark"/>) between saves are
+        /// not discarded before <see cref="PeekPendingResets"/> folds them into the next
+        /// BuildSettingsMap call (committed on confirmed send success).
         /// </summary>
         void ClearChanged();
 

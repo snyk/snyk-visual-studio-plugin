@@ -10,6 +10,17 @@ namespace Snyk.VisualStudio.Extension.Language
     /// <inheritdoc cref="IUserOverrideTracker"/>
     public class UserOverrideTracker : IUserOverrideTracker
     {
+        // Single lock guarding ALL access to `changed`, `pendingResets`, and `isSeeded`.
+        // The tracker is mutated from the UI thread (SnykOptionsManager.Save →
+        // ApplyUserEdits/ApplyUserResets) AND from thread-pool continuations (the fire-and-forget
+        // config-send path commits after `await ...ConfigureAwait(false)`), from multiple call
+        // sites. A non-thread-safe HashSet mutated concurrently can throw or corrupt state, so every
+        // public read and mutation takes this lock. Public methods must never call each other while
+        // holding the lock except through the *NoLock helpers below (C# locks are reentrant, but the
+        // explicit split keeps the atomic boundary obvious). Peek/Snapshot copy under the lock so the
+        // returned collection can never be observed mid-mutation.
+        private readonly object gate = new object();
+
         // Keys that the user has explicitly set away from plugin defaults.
         private readonly HashSet<string> changed = new HashSet<string>();
 
@@ -22,17 +33,29 @@ namespace Snyk.VisualStudio.Extension.Language
         private bool isSeeded;
 
         /// <inheritdoc/>
-        public bool IsSeeded => isSeeded;
+        public bool IsSeeded
+        {
+            get { lock (gate) return isSeeded; }
+        }
 
         /// <inheritdoc/>
         public bool IsChanged(string key)
         {
             if (string.IsNullOrEmpty(key)) return false;
-            return changed.Contains(key) || PflagKeys.IsAlwaysChanged(key);
+            // IsAlwaysChanged reads an immutable static set — safe outside the lock; but `changed`
+            // must be read under the lock.
+            if (PflagKeys.IsAlwaysChanged(key)) return true;
+            lock (gate) return changed.Contains(key);
         }
 
         /// <inheritdoc/>
         public void Mark(string key)
+        {
+            lock (gate) MarkNoLock(key);
+        }
+
+        // Core Mark logic; caller must hold `gate`.
+        private void MarkNoLock(string key)
         {
             if (string.IsNullOrEmpty(key)) return;
             // Always-changed keys are handled by IsAlwaysChanged(); adding them to the `changed`
@@ -50,36 +73,100 @@ namespace Snyk.VisualStudio.Extension.Language
         public void Unmark(string key)
         {
             if (string.IsNullOrEmpty(key)) return;
-            if (changed.Remove(key))
-                pendingResets.Add(key);
+            lock (gate)
+            {
+                if (changed.Remove(key))
+                    pendingResets.Add(key);
+            }
         }
 
         /// <inheritdoc/>
-        public IReadOnlyCollection<string> ConsumePendingResets()
+        public IReadOnlyCollection<string> PeekPendingResets()
         {
-            var result = pendingResets.ToList();
-            pendingResets.Clear();
-            return result;
+            // Non-destructive: return a copy TAKEN UNDER THE LOCK so the caller can iterate while the
+            // queue stays intact until CommitPendingResets confirms delivery (IDE-2152 CP 2.2). The
+            // copy also isolates the caller from concurrent mutation of the live set.
+            lock (gate) return pendingResets.ToList();
+        }
+
+        /// <inheritdoc/>
+        public void CommitPendingResets(IReadOnlyCollection<string> sentKeys)
+        {
+            if (sentKeys == null) return;
+            lock (gate)
+            {
+                // Remove only the keys that were actually delivered. Never a blanket Clear(): a reset
+                // for a DIFFERENT key enqueued between the peek (what was sent) and this commit was
+                // never in the confirmed message, so it must survive to be re-delivered on the next
+                // config update.
+                foreach (var key in sentKeys)
+                    pendingResets.Remove(key);
+            }
+        }
+
+        /// <inheritdoc/>
+        public void ApplyUserResets(IReadOnlyCollection<string> resetKeys)
+        {
+            if (resetKeys == null || resetKeys.Count == 0) return;
+            lock (gate)
+            {
+                foreach (var key in resetKeys)
+                {
+                    if (string.IsNullOrEmpty(key)) continue;
+                    // Best-effort local un-mark: drop the override so the key leaves Snapshot() (and
+                    // thus the persisted ChangedConfigKeys set). Remove returns false when there was
+                    // no mark — that is fine, we still enqueue the LS reset signal below.
+                    changed.Remove(key);
+                    // Always enqueue the reset signal, even when there was no local mark: a form reset
+                    // must tell the LS to Unset any user:global override (e.g. an org-pushed value the
+                    // user wants cleared). This is the key difference from Unmark, which only enqueues
+                    // when the key was previously in the changed set.
+                    pendingResets.Add(key);
+                }
+            }
+        }
+
+        /// <inheritdoc/>
+        public void RehydratePendingResets(IReadOnlyCollection<string> resetKeys)
+        {
+            if (resetKeys == null || resetKeys.Count == 0) return;
+            lock (gate)
+            {
+                foreach (var key in resetKeys)
+                {
+                    if (string.IsNullOrEmpty(key)) continue;
+                    // Re-queue a persisted-but-unconfirmed reset on Load() so it is re-delivered after
+                    // a restart. Mirror the ApplyUserResets invariant: a rehydrated reset must never
+                    // coexist with a live override mark for the same key (a persisted override wins —
+                    // it means the user re-applied the key after the reset was queued).
+                    if (!changed.Contains(key))
+                        pendingResets.Add(key);
+                }
+            }
         }
 
         /// <inheritdoc/>
         public void SeedFrom(IPersistableOptions options)
         {
             if (options == null) return;
-            // Replace-semantics: clear BOTH changed and pendingResets before re-hydrating from
-            // options. SeedFrom is a from-scratch operation (first load / upgrade path); any
-            // pendingResets accumulated before seeding have no corresponding consumer and must
-            // not survive into the first BuildSettingsMap call, where they would emit spurious
-            // {value:null, changed:true} reset signals for keys the user never touched.
-            Clear();
-            foreach (var kv in GetGlobalKeyValues(options))
+            lock (gate)
             {
-                if (!ConfigDefaults.IsDefault(kv.Key, kv.Value))
-                    Mark(kv.Key);
+                // Replace-semantics: clear BOTH changed and pendingResets before re-hydrating from
+                // options. SeedFrom is a from-scratch operation (first load / upgrade path); any
+                // pendingResets accumulated before seeding have no corresponding consumer and must
+                // not survive into the first BuildSettingsMap call, where they would emit spurious
+                // {value:null, changed:true} reset signals for keys the user never touched.
+                changed.Clear();
+                pendingResets.Clear();
+                foreach (var kv in GetGlobalKeyValues(options))
+                {
+                    if (!ConfigDefaults.IsDefault(kv.Key, kv.Value))
+                        MarkNoLock(kv.Key);
+                }
+                // Mark seeded after the loop so BuildSettingsMap's IsSeeded gate becomes active
+                // once the tracker genuinely has data from persistence.
+                isSeeded = true;
             }
-            // Mark seeded after the loop so BuildSettingsMap's IsSeeded gate becomes active
-            // once the tracker genuinely has data from persistence.
-            isSeeded = true;
         }
 
         /// <inheritdoc/>
@@ -97,26 +184,29 @@ namespace Snyk.VisualStudio.Extension.Language
             // Reset-to-default is henceforth an explicit user action only (via Unmark), never
             // inferred from the value equalling the default. Mark() already no-ops on null/empty
             // keys and on IsAlwaysChanged keys, and cancels any pending reset for the key.
-            foreach (var key in editedKeys)
-                Mark(key);
+            lock (gate)
+            {
+                foreach (var key in editedKeys)
+                    MarkNoLock(key);
+            }
         }
 
         /// <inheritdoc/>
         public HashSet<string> Snapshot()
         {
-            return new HashSet<string>(changed);
+            lock (gate) return new HashSet<string>(changed);
         }
 
         /// <inheritdoc/>
         public void MarkSeeded()
         {
-            isSeeded = true;
+            lock (gate) isSeeded = true;
         }
 
         /// <inheritdoc/>
         public void ClearChanged()
         {
-            changed.Clear();
+            lock (gate) changed.Clear();
             // pendingResets is intentionally preserved: resets enqueued by ApplyUserEdits / Unmark
             // between saves must survive into the next BuildSettingsMap call to emit
             // {value:null, changed:true} reset signals.
@@ -126,8 +216,11 @@ namespace Snyk.VisualStudio.Extension.Language
         /// <inheritdoc/>
         public void Clear()
         {
-            changed.Clear();
-            pendingResets.Clear();
+            lock (gate)
+            {
+                changed.Clear();
+                pendingResets.Clear();
+            }
             // isSeeded is intentionally NOT reset — once seeded, always seeded.
         }
 

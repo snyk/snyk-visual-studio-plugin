@@ -262,7 +262,7 @@ namespace Snyk.VisualStudio.Extension.Tests.Language
             var trackerMock = new Mock<IUserOverrideTracker>();
             trackerMock.Setup(t => t.IsSeeded).Returns(true); // seeded so the gate is active
             trackerMock.Setup(t => t.IsChanged(It.IsAny<string>())).Returns(false);
-            trackerMock.Setup(t => t.ConsumePendingResets()).Returns(new List<string>());
+            trackerMock.Setup(t => t.PeekPendingResets()).Returns(new List<string>());
             optionsManagerMock.Setup(m => m.OverrideTracker).Returns(trackerMock.Object);
 
             var map = cut.BuildSettingsMap(optionsMock.Object);
@@ -280,7 +280,7 @@ namespace Snyk.VisualStudio.Extension.Tests.Language
             trackerMock.Setup(t => t.IsSeeded).Returns(true); // seeded so the gate is active
             trackerMock.Setup(t => t.IsChanged(PflagKeys.SnykOssEnabled)).Returns(true);
             trackerMock.Setup(t => t.IsChanged(It.Is<string>(k => k != PflagKeys.SnykOssEnabled))).Returns(false);
-            trackerMock.Setup(t => t.ConsumePendingResets()).Returns(new List<string>());
+            trackerMock.Setup(t => t.PeekPendingResets()).Returns(new List<string>());
             optionsManagerMock.Setup(m => m.OverrideTracker).Returns(trackerMock.Object);
 
             var map = cut.BuildSettingsMap(optionsMock.Object);
@@ -309,16 +309,18 @@ namespace Snyk.VisualStudio.Extension.Tests.Language
                 "because PflagKeys.IsAlwaysChanged must return true for it");
         }
 
-        // ACC-004: A key that was reset emits {value:null, changed:true} and is not re-emitted.
+        // ACC-004: A peeked pending reset is folded into the map as {value:null, changed:true}.
+        // BuildSettingsMap peeks non-destructively (IDE-2152 CP 2.2); the caller commits on send success.
         [Fact]
-        public void BuildSettingsMap_ResetKey_EmitsNullChangedTrue_AndUnmarks()
+        public void BuildSettingsMap_ResetKey_EmitsNullChangedTrue()
         {
             SetupDefaults();
             var trackerMock = new Mock<IUserOverrideTracker>();
             trackerMock.Setup(t => t.IsSeeded).Returns(true); // seeded so pending-reset loop runs
             trackerMock.Setup(t => t.IsChanged(It.IsAny<string>())).Returns(false);
-            // ConsumePendingResets returns SnykOssEnabled as a key to reset.
-            trackerMock.Setup(t => t.ConsumePendingResets())
+            // PeekPendingResets returns SnykOssEnabled as a key to reset (non-destructive; the send path
+            // commits only on confirmed success — IDE-2152 CP 2.2).
+            trackerMock.Setup(t => t.PeekPendingResets())
                        .Returns(new List<string> { PflagKeys.SnykOssEnabled });
             optionsManagerMock.Setup(m => m.OverrideTracker).Returns(trackerMock.Object);
 
@@ -342,7 +344,7 @@ namespace Snyk.VisualStudio.Extension.Tests.Language
             trackerMock.Setup(t => t.IsChanged(It.IsAny<string>()))
                        .Callback<string>(_ => trackerCalled = true)
                        .Returns(false);
-            trackerMock.Setup(t => t.ConsumePendingResets()).Returns(new List<string>());
+            trackerMock.Setup(t => t.PeekPendingResets()).Returns(new List<string>());
             optionsManagerMock.Setup(m => m.OverrideTracker).Returns(trackerMock.Object);
 
             cut.BuildSettingsMap(optionsMock.Object);

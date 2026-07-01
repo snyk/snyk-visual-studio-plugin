@@ -106,6 +106,19 @@ namespace Snyk.VisualStudio.Extension.Settings
         public HashSet<string> ChangedConfigKeys { get; set; }
 
         /// <summary>
+        /// Set of global pflag keys with a pending reset-to-default that has NOT yet been
+        /// confirmed-delivered to the Language Server (IDE-2152 critical fix #2). A reset applied
+        /// while the LS is not ready lives here so it survives a restart and is re-delivered on the
+        /// next configuration update; a reset is removed once its config send is confirmed
+        /// (<see cref="SnykOptionsManager.CommitPendingResets"/>). Null when absent from disk /
+        /// nothing pending. NullValueHandling.Ignore keeps the key out of settings.json until at
+        /// least one reset is pending, matching <see cref="ChangedConfigKeys"/>. IDE-only: never sent
+        /// over the language-server wire as-is (it drives which keys emit a reset signal, not a value).
+        /// </summary>
+        [JsonProperty(NullValueHandling = NullValueHandling.Ignore)]
+        public HashSet<string> PendingResetConfigKeys { get; set; }
+
+        /// <summary>
         /// Persisted seeded-marker for the load-time seeding lifecycle (IDE-2152).
         /// Absent (false) on pre-feature / fresh-install settings files. <see cref="SnykOptionsManager.Load"/>
         /// checks this flag to determine whether the override set has ever been seeded:

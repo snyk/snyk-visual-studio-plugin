@@ -535,6 +535,142 @@ namespace Snyk.VisualStudio.Extension.Tests.Settings
             }
         }
 
+        // PENDING-RESET-PERSIST-001 (fix #2): A reset applied but not yet confirmed-delivered persists
+        // to settings.json and is rehydrated into the tracker's pending-reset queue by a fresh manager
+        // over the same file (simulated restart). Uses Save(resetKeys:...) — the same channel the bridge
+        // uses — so the tracker un-marks + enqueues, and Save persists PendingResetConfigKeys.
+        [Fact]
+        public void PendingReset_PersistsAndRehydratesAcrossRestart()
+        {
+            var (manager, optMock, path) = BuildManager();
+            try
+            {
+                manager.Load(); // seed tracker
+
+                // First: user overrides OssEnabled (so there is a mark to un-mark on reset).
+                optMock.Object.OssEnabled = false;
+                manager.Save(optMock.Object, triggerSettingsChangedEvent: false,
+                    editedKeys: new List<string> { PflagKeys.SnykOssEnabled });
+                Assert.Contains(PflagKeys.SnykOssEnabled, manager.OverrideTracker.Snapshot());
+
+                // Then: user resets it. Not committed (LS not ready) → stays pending + persisted.
+                manager.Save(optMock.Object, triggerSettingsChangedEvent: false,
+                    resetKeys: new List<string> { PflagKeys.SnykOssEnabled });
+                Assert.Contains(PflagKeys.SnykOssEnabled, manager.OverrideTracker.PeekPendingResets());
+                // Un-marked → no longer in the persisted override set.
+                Assert.DoesNotContain(PflagKeys.SnykOssEnabled, manager.OverrideTracker.Snapshot());
+
+                // Restart: fresh manager over the same file must rehydrate the pending reset.
+                var (manager2, _, _) = BuildManager(path);
+                manager2.Load();
+
+                Assert.Contains(PflagKeys.SnykOssEnabled, manager2.OverrideTracker.PeekPendingResets());
+            }
+            finally
+            {
+                File.Delete(path);
+            }
+        }
+
+        // INIT-DEFERRED-COMMIT-001 (fix #3 invariant): An init-only delivery folds the pending reset
+        // into the handshake wire map (proving it is SENT at init) but must NOT commit it — after init
+        // the reset stays QUEUED in the tracker AND PERSISTED in settings.json (so a crash before the
+        // first config-update does not lose it). A subsequent SUCCESSFUL config-update (peek→send→
+        // commit, simulated via CommitPendingResets of the peeked snapshot) then drains it from both
+        // the queue and persistence. This pins the deferred-commit invariant documented on
+        // SnykLanguageClient.GetInitializationOptions.
+        [Fact]
+        public void InitOnlyDelivery_LeavesResetQueuedAndPersisted_SubsequentConfigUpdateCommits()
+        {
+            var (manager, optMock, path) = BuildManager();
+            try
+            {
+                manager.Load(); // seed tracker
+
+                // User overrides then resets OssEnabled → reset queued + persisted (LS not ready yet).
+                optMock.Object.OssEnabled = false;
+                manager.Save(optMock.Object, triggerSettingsChangedEvent: false,
+                    editedKeys: new List<string> { PflagKeys.SnykOssEnabled });
+                manager.Save(optMock.Object, triggerSettingsChangedEvent: false,
+                    resetKeys: new List<string> { PflagKeys.SnykOssEnabled });
+                Assert.Contains(PflagKeys.SnykOssEnabled, manager.OverrideTracker.PeekPendingResets());
+
+                // Wire a real LsSettingsV25 to the same real options + real manager (so it reads the
+                // manager's real tracker). This is the exact init path SnykLanguageClient uses.
+                var spMock = new Mock<ISnykServiceProvider>();
+                spMock.Setup(x => x.Options).Returns(optMock.Object);
+                spMock.Setup(x => x.SnykOptionsManager).Returns(manager);
+                optMock.Object.FolderConfigs = new List<FolderConfig>();
+                var lsSettings = new LsSettingsV25(spMock.Object);
+
+                // Init-only delivery: build the handshake options. This folds the reset into the wire
+                // map (SENT) but must NOT commit it.
+                var init = lsSettings.GetInitializationOptions();
+
+                // The reset was folded into the init settings map as {value:null, changed:true}.
+                Assert.True(init.Settings.ContainsKey(PflagKeys.SnykOssEnabled));
+                Assert.Null(init.Settings[PflagKeys.SnykOssEnabled].Value);
+                Assert.True(init.Settings[PflagKeys.SnykOssEnabled].Changed);
+
+                // Invariant part 1: after init the reset is STILL queued in the tracker (not committed).
+                Assert.Contains(PflagKeys.SnykOssEnabled, manager.OverrideTracker.PeekPendingResets());
+
+                // Invariant part 2: it is STILL persisted — a fresh manager over the same file (a crash
+                // right after a successful init) rehydrates it, so nothing is lost.
+                var (managerAfterCrash, _, _) = BuildManager(path);
+                managerAfterCrash.Load();
+                Assert.Contains(PflagKeys.SnykOssEnabled,
+                    managerAfterCrash.OverrideTracker.PeekPendingResets());
+
+                // Subsequent successful config-update: peek→send→commit. Commit the exact peeked set
+                // through the manager (what DidChangeConfigurationAsync does on RPC success).
+                var peeked = manager.OverrideTracker.PeekPendingResets();
+                manager.CommitPendingResets(peeked);
+
+                // Now drained from the queue...
+                Assert.DoesNotContain(PflagKeys.SnykOssEnabled, manager.OverrideTracker.PeekPendingResets());
+                // ...and from persistence: a fresh manager over the same file does NOT rehydrate it.
+                var (managerAfterCommit, _, _) = BuildManager(path);
+                managerAfterCommit.Load();
+                Assert.DoesNotContain(PflagKeys.SnykOssEnabled,
+                    managerAfterCommit.OverrideTracker.PeekPendingResets());
+            }
+            finally
+            {
+                File.Delete(path);
+            }
+        }
+
+        // PENDING-RESET-PERSIST-002 (fix #2): A committed (confirmed-delivered) reset is removed from
+        // persistence too, so a fresh manager over the same file does NOT rehydrate it.
+        [Fact]
+        public void CommittedPendingReset_RemovedFromPersistence_NotRehydrated()
+        {
+            var (manager, optMock, path) = BuildManager();
+            try
+            {
+                manager.Load();
+
+                manager.Save(optMock.Object, triggerSettingsChangedEvent: false,
+                    resetKeys: new List<string> { PflagKeys.Organization });
+                Assert.Contains(PflagKeys.Organization, manager.OverrideTracker.PeekPendingResets());
+
+                // Confirmed-delivered → commit through the manager (updates persistence too).
+                manager.CommitPendingResets(new List<string> { PflagKeys.Organization });
+                Assert.DoesNotContain(PflagKeys.Organization, manager.OverrideTracker.PeekPendingResets());
+
+                // Restart: the committed reset must NOT come back.
+                var (manager2, _, _) = BuildManager(path);
+                manager2.Load();
+
+                Assert.DoesNotContain(PflagKeys.Organization, manager2.OverrideTracker.PeekPendingResets());
+            }
+            finally
+            {
+                File.Delete(path);
+            }
+        }
+
         // R2 migration-guard test: a settings.json written by a prior version (no seeded marker)
         // that already has a non-empty ChangedConfigKeys set must NOT be discarded by re-seeding.
         // Branch B in Load(): marker absent + keys non-empty → hydrate verbatim + persist marker.

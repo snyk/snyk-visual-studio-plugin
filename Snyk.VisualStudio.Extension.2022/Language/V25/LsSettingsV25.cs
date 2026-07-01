@@ -25,9 +25,11 @@ namespace Snyk.VisualStudio.Extension.Language
                 return null;
 
             var options = serviceProvider.Options;
-            // BuildSettingsMap consumes pending resets destructively (ConsumePendingResets clears the
-            // queue). The result MUST be sent to the LS immediately — do not call BuildSettingsMap
-            // for inspection only, as doing so would silently discard queued reset signals.
+            // Init path: BuildSettingsMap(options) with no explicit snapshot folds in the tracker's
+            // current pending resets non-destructively and does NOT commit them (IDE-2152 fix #3). The
+            // handshake sends them, but the first successful DidChangeConfiguration is what commits
+            // (peek→send→commit), and persistence (fix #2) re-delivers them if init/handshake never
+            // confirms. This removes the fragile init-time commit that ran on a separate code path.
             return new InitializationOptionsV25
             {
                 Settings = BuildSettingsMap(options),
@@ -50,7 +52,14 @@ namespace Snyk.VisualStudio.Extension.Language
         // settings map (Project Defaults tab) and per-folder in folderConfigs. The LS resolves
         // folder-over-global. Global values are wired via ISnykOptions.AdditionalParameters /
         // AdditionalEnv; per-folder values live in FolderConfig.
-        internal Dictionary<string, ConfigSetting> BuildSettingsMap(ISnykOptions options)
+        //
+        // pendingResets (IDE-2152 CP 2.2 / fix #3): when non-null, EXACTLY this snapshot of reset keys
+        // is folded into the map — the caller peeked it once and will commit exactly this same set on
+        // confirmed send, so committed == sent by construction (no second independent peek that could
+        // race). When null, the map is built with the tracker's current pending resets (peeked here) —
+        // used by the init path, which does not commit at build time.
+        internal Dictionary<string, ConfigSetting> BuildSettingsMap(ISnykOptions options,
+            IReadOnlyCollection<string> pendingResets = null)
         {
             // Obtain the tracker from the options manager. When null (e.g. in tests that do not wire
             // the manager), fall back to changed:true so every key is treated as user-overridden
@@ -123,17 +132,19 @@ namespace Snyk.VisualStudio.Extension.Language
             // Emit reset signals for keys that were just un-marked (returned to default).
             // These override the regular value entry for that key with {value:null, changed:true}.
             //
-            // ConsumePendingResets() is destructive (clears the set). This is safe because
-            // BuildSettingsMap is only ever called immediately before sending to the LS:
-            //   • GetInitializationOptions()   → passed directly to SnykLanguageClient.InitializationOptions
-            //   • GetLspConfigurationParam()   → passed directly to DidChangeConfigurationAsync
-            // There is no build-without-send path, so resets cannot be silently discarded.
+            // Single-snapshot discipline (IDE-2152 fix #3): when the caller passed an explicit
+            // pendingResets snapshot, fold in EXACTLY that set — the caller peeked it once and commits
+            // the same set on confirmed send, so sent == committed with no second racing peek. When
+            // null (init path), fall back to a fresh non-destructive peek; the init path sends but does
+            // not commit at build time (the first successful DidChangeConfiguration commits, or
+            // persistence re-delivers after a restart — IDE-2152 fix #2).
             //
             // Guard on trackerSeeded: an unseeded tracker has no meaningful pending resets
             // (it has never been hydrated from persistence, so nothing could have been un-marked).
-            if (trackerSeeded)
+            var resetsToFold = pendingResets ?? (trackerSeeded ? tracker.PeekPendingResets() : null);
+            if (trackerSeeded && resetsToFold != null)
             {
-                foreach (var resetKey in tracker.ConsumePendingResets())
+                foreach (var resetKey in resetsToFold)
                     map[resetKey] = ConfigSetting.Reset();
             }
 
@@ -167,18 +178,21 @@ namespace Snyk.VisualStudio.Extension.Language
             return result;
         }
 
-        public LspConfigurationParam GetLspConfigurationParam()
+        // pendingResets: the EXACT reset snapshot the caller peeked once (IDE-2152 fix #3). It is
+        // threaded through BuildSettingsMap so the settings map folds in precisely the set the caller
+        // will commit on confirmed send — sent == committed by construction. The caller
+        // (DidChangeConfigurationAsync) sends this param and commits that same snapshot on success
+        // (via ISnykOptionsManager.CommitPendingResets), so a transient RPC failure leaves the queue
+        // intact for re-delivery on the next configuration update (IDE-2152 CP 2.2).
+        public LspConfigurationParam GetLspConfigurationParam(IReadOnlyCollection<string> pendingResets = null)
         {
             if (serviceProvider == null)
                 return null;
 
             var options = serviceProvider.Options;
-            // BuildSettingsMap consumes pending resets destructively (ConsumePendingResets clears the
-            // queue). The result MUST be sent to the LS immediately — do not call BuildSettingsMap
-            // for inspection only, as doing so would silently discard queued reset signals.
             return new LspConfigurationParam
             {
-                Settings = BuildSettingsMap(options),
+                Settings = BuildSettingsMap(options, pendingResets),
                 FolderConfigs = BuildFolderConfigs(options.FolderConfigs),
             };
         }
