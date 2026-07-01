@@ -1,5 +1,9 @@
 # Snyk Security Changelog
 
+## [Unreleased]
+### Fixed
+- The Snyk extension now finishes initializing and becomes usable when Visual Studio is opened with no solution or folder open, instead of hanging indefinitely on "Snyk Security is waiting for Visual Studio to initialize".
+
 ## [2.7.0]
 ### Changed
 - Added support for improved Settings UI for simpler configuration of Snyk settings (experimental).
