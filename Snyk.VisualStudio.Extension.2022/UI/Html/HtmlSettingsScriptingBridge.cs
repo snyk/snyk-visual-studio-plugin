@@ -7,6 +7,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.VisualStudio.Shell;
 using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
 using Serilog;
 using Snyk.VisualStudio.Extension;
 using Snyk.VisualStudio.Extension.Authentication;
@@ -278,11 +279,10 @@ namespace Snyk.VisualStudio.Extension.UI.Html
             if (contract.HasUnmappedKeys)
             {
                 Logger.Warning(
-                    "Settings page posted key(s) this plugin build does not recognise and did not save " +
-                    "(global: [{GlobalKeys}], per-folder: [{FolderKeys}]). " +
-                    "The settings HTML (synced from snyk-ls) may be newer than this plugin.",
-                    string.Join(", ", contract.UnmappedKeys),
-                    string.Join(", ", contract.UnmappedFolderKeys));
+                    "Settings page posted top-level key(s) this plugin build does not recognise and did " +
+                    "not save (global: [{GlobalKeys}]). The settings HTML (synced from snyk-ls) may be " +
+                    "newer than this plugin.",
+                    string.Join(", ", contract.UnmappedKeys));
             }
 
             var isCliOnly = config.IsFallbackForm ?? false;
@@ -316,7 +316,7 @@ namespace Snyk.VisualStudio.Extension.UI.Html
                     ApplyTrustedFolders(config);
                     ApplyFilterSettings(config);
                     ApplyMiscellaneousSettings(config);
-                    await ApplyFolderConfigsAsync(config);
+                    await ApplyFolderConfigsAsync(jsonString);
                 }
             }
             catch
@@ -624,113 +624,74 @@ namespace Snyk.VisualStudio.Extension.UI.Html
             }
         }
 
-        private async Task ApplyFolderConfigsAsync(IdeConfigData config)
+        // Mirror the form's per-folder edits into the in-memory FolderConfig opaque settings map by
+        // looping the raw folderConfigs[] JSON verbatim — no typed model, no per-field branches
+        // (matching vscode/eclipse). The IDE is "dumb": every key the form posts is forwarded to the
+        // LS, which is authoritative over folder-scoped settings and ignores keys it doesn't own.
+        // The form posts a changed-only object (only touched fields + folderPath) per folder, so a
+        // present key is an edit and an absent key is "no change". A present JSON null is a reset:
+        // we Set the key to null so BuildFolderConfigs emits {value:null, changed:true} and the LS
+        // Unsets the user:folder: override. Going through the raw JSON keeps null-vs-absent distinct,
+        // which a nullable typed model can't — so no ResetKeys side-channel is needed.
+        private Task ApplyFolderConfigsAsync(string rawJson)
         {
-            // Apply per-solution/folder settings (folderConfigs: [...])
-            // Save to solution-specific storage AND update in-memory global FolderConfigs
-            if (config.FolderConfigs != null && config.FolderConfigs.Count > 0)
-            {
-                await SaveFolderConfigsAsync(config.FolderConfigs);
-            }
-        }
-
-        private Task SaveFolderConfigsAsync(List<FolderConfigData> folderConfigs)
-        {
-            // The form posts a changed-only folder object (only the fields the user actually
-            // touched, plus folderPath) per folder. The LS is the source of truth for folder
-            // configs — it sends each workspace folder's config keyed by the path it registered,
-            // which FolderConfigApplier stores in Options.FolderConfigs. We mirror the form's
-            // changes into the matching stored entry by path.
-            if (folderConfigs == null || folderConfigs.Count == 0)
+            if (string.IsNullOrWhiteSpace(rawJson))
                 return Task.CompletedTask;
 
+            JObject root;
             try
             {
-                var optionsConfigs = Options.FolderConfigs;
-                if (optionsConfigs == null || optionsConfigs.Count == 0)
-                {
-                    Logger.Warning("Cannot save folder configs - no folder config available for the current workspace");
-                    return Task.CompletedTask;
-                }
-
-                foreach (var folderConfig in folderConfigs)
-                {
-                    if (folderConfig == null) continue;
-
-                    // Match each posted folder to its stored config BY PATH so multi-folder
-                    // workspaces don't collapse every folder's edits onto a single entry. Both
-                    // paths originate from the LS (the form is LS-rendered, the stored config from
-                    // the LS config push), so exact case-insensitive equality is reliable. Fall
-                    // back to the sole entry only when the payload omits the path (fallback form).
-                    var existingConfig = !string.IsNullOrEmpty(folderConfig.FolderPath)
-                        ? optionsConfigs.FirstOrDefault(fc => fc != null &&
-                            string.Equals(fc.FolderPath, folderConfig.FolderPath, StringComparison.OrdinalIgnoreCase))
-                        : (optionsConfigs.Count == 1 ? optionsConfigs[0] : null);
-                    if (existingConfig == null) continue;
-
-                    // Mirror the changed fields into the in-memory FolderConfig so
-                    // DidChangeConfiguration sends the updated values to the LS (the LS is master
-                    // for folder-config storage, incl. base branch which has no solution-storage
-                    // slot of its own). Apply each field only when present so a single-field edit
-                    // doesn't blank out the siblings.
-                    {
-                        if (folderConfig.PreferredOrg != null)
-                            existingConfig.PreferredOrg = folderConfig.PreferredOrg;
-                        if (folderConfig.AutoDeterminedOrg != null)
-                            existingConfig.AutoDeterminedOrg = folderConfig.AutoDeterminedOrg;
-                        if (folderConfig.OrgSetByUser.HasValue)
-                            existingConfig.OrgSetByUser = folderConfig.OrgSetByUser.Value;
-                        if (folderConfig.AdditionalParameters != null)
-                            existingConfig.AdditionalParameters = folderConfig.AdditionalParameters;
-                        if (folderConfig.AdditionalEnv != null)
-                            existingConfig.AdditionalEnv = folderConfig.AdditionalEnv;
-                        if (folderConfig.BaseBranch != null)
-                            existingConfig.BaseBranch = folderConfig.BaseBranch;
-                        if (folderConfig.ScanCommandConfig != null)
-                            existingConfig.ScanCommandConfig = folderConfig.ScanCommandConfig;
-
-                        // Per-folder org-scope overrides (product enablement, severity, scan,
-                        // issue view, risk score). Mirrored so BuildFolderConfigs emits them in
-                        // the folder's settings map and the LS resolves folder-over-global.
-                        if (folderConfig.SnykOssEnabled.HasValue)
-                            existingConfig.SnykOssEnabled = folderConfig.SnykOssEnabled;
-                        if (folderConfig.SnykCodeEnabled.HasValue)
-                            existingConfig.SnykCodeEnabled = folderConfig.SnykCodeEnabled;
-                        if (folderConfig.SnykIacEnabled.HasValue)
-                            existingConfig.SnykIacEnabled = folderConfig.SnykIacEnabled;
-                        if (folderConfig.SnykSecretsEnabled.HasValue)
-                            existingConfig.SnykSecretsEnabled = folderConfig.SnykSecretsEnabled;
-                        if (folderConfig.ScanAutomatic.HasValue)
-                            existingConfig.ScanAutomatic = folderConfig.ScanAutomatic;
-                        if (folderConfig.ScanNetNew.HasValue)
-                            existingConfig.ScanNetNew = folderConfig.ScanNetNew;
-                        if (folderConfig.SeverityFilterCritical.HasValue)
-                            existingConfig.SeverityFilterCritical = folderConfig.SeverityFilterCritical;
-                        if (folderConfig.SeverityFilterHigh.HasValue)
-                            existingConfig.SeverityFilterHigh = folderConfig.SeverityFilterHigh;
-                        if (folderConfig.SeverityFilterMedium.HasValue)
-                            existingConfig.SeverityFilterMedium = folderConfig.SeverityFilterMedium;
-                        if (folderConfig.SeverityFilterLow.HasValue)
-                            existingConfig.SeverityFilterLow = folderConfig.SeverityFilterLow;
-                        if (folderConfig.IssueViewOpenIssues.HasValue)
-                            existingConfig.IssueViewOpenIssues = folderConfig.IssueViewOpenIssues;
-                        if (folderConfig.IssueViewIgnoredIssues.HasValue)
-                            existingConfig.IssueViewIgnoredIssues = folderConfig.IssueViewIgnoredIssues;
-                        if (folderConfig.RiskScoreThreshold.HasValue)
-                            existingConfig.RiskScoreThreshold = folderConfig.RiskScoreThreshold;
-
-                        Logger.Information("Mirrored folder config: {FolderPath}", existingConfig.FolderPath);
-                    }
-                }
+                root = JObject.Parse(rawJson);
             }
-            catch (Exception ex)
+            catch (JsonException ex)
             {
-                Logger.Error(ex, "Error saving folder configs");
-                throw;
+                Logger.Warning(ex, "Could not parse JSON for folder configs");
+                return Task.CompletedTask;
+            }
+
+            if (!(root["folderConfigs"] is JArray folderConfigsJson) || folderConfigsJson.Count == 0)
+                return Task.CompletedTask;
+
+            var optionsConfigs = Options.FolderConfigs;
+            if (optionsConfigs == null || optionsConfigs.Count == 0)
+            {
+                Logger.Warning("Cannot save folder configs - no folder config available for the current workspace");
+                return Task.CompletedTask;
+            }
+
+            foreach (var token in folderConfigsJson)
+            {
+                if (!(token is JObject folderObject))
+                    continue;
+
+                var folderPath = folderObject["folderPath"]?.Value<string>();
+
+                // Match each posted folder to its stored config BY PATH so multi-folder workspaces
+                // don't collapse every folder's edits onto a single entry. Both paths originate from
+                // the LS (form is LS-rendered, stored config from the LS push), so exact
+                // case-insensitive equality is reliable. Fall back to the sole entry only when the
+                // payload omits the path (fallback form).
+                var existingConfig = !string.IsNullOrEmpty(folderPath)
+                    ? optionsConfigs.FirstOrDefault(fc => fc != null &&
+                        string.Equals(fc.FolderPath, folderPath, StringComparison.OrdinalIgnoreCase))
+                    : (optionsConfigs.Count == 1 ? optionsConfigs[0] : null);
+                if (existingConfig == null) continue;
+
+                foreach (var property in folderObject.Properties())
+                {
+                    if (property.Name == "folderPath")
+                        continue;
+
+                    // Present null = reset (Set null → {value:null} on the wire); any other value =
+                    // edit. Pass the JToken straight through; the map round-trips it verbatim.
+                    existingConfig.Set(property.Name,
+                        property.Value.Type == JTokenType.Null ? null : (object)property.Value);
+                }
+
+                Logger.Information("Mirrored folder config: {FolderPath}", existingConfig.FolderPath);
             }
 
             return Task.CompletedTask;
         }
-
     }
 }

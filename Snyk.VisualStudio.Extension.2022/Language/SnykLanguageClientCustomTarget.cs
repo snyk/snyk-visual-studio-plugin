@@ -267,10 +267,9 @@ namespace Snyk.VisualStudio.Extension.Language
                 param.Settings?.Count ?? 0, param.FolderConfigs?.Count ?? 0);
 
             // Trigger first scan now that folder configs have arrived.
-            // AutoScan vs InternalAutoScan vs ScanningMode:
-            // - AutoScan: persisted user preference
-            // - InternalAutoScan: runtime gate; false until we are ready to scan (avoids scanning before LS is initialized)
-            // $/snyk.configuration may arrive multiple times; the InternalAutoScan gate ensures we scan exactly once.
+            // AutoScan: persisted user preference (also sent to the LS as scan_automatic).
+            // InternalAutoScan: IDE-side runtime gate only (NOT sent to the LS); $/snyk.configuration
+            // may arrive multiple times, so the gate ensures we trigger the IDE-side scan exactly once.
             if (options.AutoScan)
             {
                 var isFolderTrusted = await this.serviceProvider.TasksService.IsFolderTrustedAsync();
