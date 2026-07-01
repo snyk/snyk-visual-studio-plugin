@@ -130,24 +130,41 @@ namespace Snyk.VisualStudio.Extension.Service
         {
             get
             {
-                // Double-checked locking: UI-thread startup and background LS JSON-RPC callbacks
-                // can both resolve this concurrently.  Without synchronisation two threads could
-                // each observe null, both run migration, and both construct a manager — the second
-                // silently discarding the first.  Mirrors the authenticationFlowService pattern.
+                // Double-checked locking (DCL) with a volatile field, mirroring the
+                // authenticationFlowService pattern.
+                //
+                // FINDING-C: path computation, Directory.CreateDirectory (inside
+                // GetSettingsFilePath), and SettingsLocationMigrator.MigrateIfNeeded are all
+                // file I/O.  On slow or UNC-redirected %LocalAppData% this can block for
+                // seconds.  Performing them while holding snykOptionsManagerGate blocks any
+                // thread (including the VS UI thread at startup) for the full duration.
+                //
+                // Fix: compute paths and run migration OUTSIDE the lock so UI-thread startup
+                // latency is bounded by the I/O cost, not by lock contention.  Two threads can
+                // both pass the outer null check and both run migration concurrently — this is
+                // safe because MigrateIfNeeded is idempotent.  Construction of
+                // SnykOptionsManager (which calls LoadSettingsFromFile internally) is kept
+                // INSIDE the lock so exactly one instance is ever constructed and published,
+                // matching the authenticationFlowService pattern and avoiding spurious
+                // IOException error logs from concurrent fresh-install SaveSettingsToFile calls.
                 if (this.snykOptionsManager != null)
                     return this.snykOptionsManager;
 
+                // IDE-1483: settings are persisted to the stable per-user AppData location
+                // (%LocalAppData%\Snyk\settings.json) so they survive VS restarts and are
+                // shared across concurrent VS windows regardless of the VSIX install directory.
+                // Expensive file I/O (path resolution, directory creation, migration) stays
+                // outside the lock.
+                string newPath = SnykDirectory.GetSettingsFilePath();
+                string oldPath = Path.Combine(SnykExtension.GetExtensionDirectoryPath(), "settings.json");
+                SettingsLocationMigrator.MigrateIfNeeded(oldPath, newPath);
+
                 lock (this.snykOptionsManagerGate)
                 {
+                    // Re-check: another thread may have won the race while we were doing I/O.
+                    // If so, return the already-stored instance without constructing a second one.
                     if (this.snykOptionsManager != null)
                         return this.snykOptionsManager;
-
-                    // IDE-1483: settings are persisted to the stable per-user AppData location
-                    // (%LocalAppData%\Snyk\settings.json) so they survive VS restarts and are
-                    // shared across concurrent VS windows regardless of the VSIX install directory.
-                    string newPath = SnykDirectory.GetSettingsFilePath();
-                    string oldPath = Path.Combine(SnykExtension.GetExtensionDirectoryPath(), "settings.json");
-                    SettingsLocationMigrator.MigrateIfNeeded(oldPath, newPath);
 
                     this.snykOptionsManager = new SnykOptionsManager(newPath, this);
                     return this.snykOptionsManager;

@@ -355,6 +355,120 @@ namespace Snyk.VisualStudio.Extension.Tests.Settings
             }
         }
         // ----------------------------------------------------------------
+        // UNIT-011: FINDING-B — locked (unreadable) newPath must NOT be
+        //           overwritten even when oldPath has valid content
+        // ----------------------------------------------------------------
+
+        /// <summary>
+        /// UNIT-011: When newPath exists but is locked by an exclusive FileStream (IOException
+        /// from FileInfo.Length), TryGetFileLength must return -1 (unreadable) so that
+        /// MigrateIfNeeded does NOT overwrite it — the file may contain valid settings that
+        /// are simply inaccessible right now.
+        ///
+        /// This test covers the "genuinely-unreadable file → -1 → skip" contract from
+        /// FINDING-B: the -1 sentinel must be used ONLY for genuinely-unreadable files
+        /// (IOException, UnauthorizedAccessException), never for absent files (those must
+        /// return 0).  After FINDING-B is fixed, FileNotFoundException/DirectoryNotFoundException
+        /// return 0 (absent) while IOException continues to return -1 (unreadable).
+        ///
+        /// This test is GREEN with both old and new code — it is a contract-coverage test that
+        /// proves the "unreadable newPath is not overwritten" guard holds regardless of the fix.
+        /// </summary>
+        [Fact]
+        public void LockedNewPath_NotOverwritten_WhenOldPathHasContent()
+        {
+            var tempDir = Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString("N"));
+            Directory.CreateDirectory(tempDir);
+            try
+            {
+                var oldPath = Path.Combine(tempDir, "old.json");
+                var newPath = Path.Combine(tempDir, "new.json");
+
+                const string oldContent = "{\"Token\":\"old-secret\"}";
+                const string lockedMarker = "{\"Token\":\"locked-valid-content\"}";
+
+                File.WriteAllText(oldPath, oldContent);
+                File.WriteAllText(newPath, lockedMarker);
+
+                // Hold newPath open exclusively so FileInfo(newPath).Length throws IOException.
+                // MigrateIfNeeded must see -1 from TryGetFileLength and take the "could not
+                // assess" path — leaving newPath content completely untouched.
+                using (var lockStream = new FileStream(newPath, FileMode.Open, FileAccess.ReadWrite, FileShare.None))
+                {
+                    var ex = Record.Exception(() => SettingsLocationMigrator.MigrateIfNeeded(oldPath, newPath));
+                    Assert.Null(ex);
+                }
+
+                // After the lock is released, newPath must still have the original locked content —
+                // it must NOT have been overwritten with oldPath's content.
+                Assert.Equal(lockedMarker, File.ReadAllText(newPath));
+            }
+            finally
+            {
+                Directory.Delete(tempDir, recursive: true);
+            }
+        }
+
+        // ----------------------------------------------------------------
+        // UNIT-012: FINDING-B — FileNotFoundException (absent file) must be
+        //           treated as 0 (absent), not -1 (unreadable), in
+        //           TryGetFileLength — no zero-byte newPath left on failure
+        // ----------------------------------------------------------------
+
+        /// <summary>
+        /// UNIT-012: When File.Copy fails because oldPath becomes unreadable (simulated
+        /// here by locking oldPath), newPath must NOT be left as a zero-byte file.
+        ///
+        /// Before the FINDING-B fix: if the outer catch block calls TryGetFileLength(newPath)
+        /// and newPath is absent, FileNotFoundException was caught by the broad
+        /// <c>catch (Exception)</c> and returned -1 (unreadable).  Since -1 is not > 0, the
+        /// catch block correctly took the "Warning: migration did not complete" branch.
+        /// After the fix: FileNotFoundException returns 0 (absent), which is also not > 0,
+        /// so the same branch is taken.  No behavioral difference in this specific path.
+        ///
+        /// The test's value is the assertion that newPath is never left zero-byte as the
+        /// observed outcome of a failed copy — regardless of whether the exception was
+        /// FileNotFoundException or IOException.  The no-throw and no-zero-byte-newPath
+        /// contracts are the observable invariants for this failure mode.
+        ///
+        /// A genuine TOCTOU (File.Exists(newPath)=true then FileInfo.Length throws
+        /// FileNotFoundException) cannot be deterministically reproduced in a single-threaded
+        /// unit test; the fix's correctness in that path is verified by code inspection of
+        /// TryGetFileLength's differentiated catch clauses.
+        /// </summary>
+        [Fact]
+        public void CopyFailure_NewPathNotLeftZeroByte_NoThrow()
+        {
+            var tempDir = Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString("N"));
+            Directory.CreateDirectory(tempDir);
+            try
+            {
+                var oldPath = Path.Combine(tempDir, "old.json");
+                var newPath = Path.Combine(tempDir, "new.json");
+
+                File.WriteAllText(oldPath, "{\"Token\":\"secret\"}");
+                // newPath does NOT exist before the call.
+
+                // Lock oldPath so File.Copy throws IOException, driving execution into
+                // the outer catch block.  newPath was never written so it remains absent.
+                using (var lockStream = new FileStream(oldPath, FileMode.Open, FileAccess.Read, FileShare.None))
+                {
+                    var ex = Record.Exception(() => SettingsLocationMigrator.MigrateIfNeeded(oldPath, newPath));
+                    Assert.Null(ex);
+                }
+
+                // newPath must NOT have been created as a zero-byte file — the user's settings
+                // must not be silently replaced with an empty file on the next launch.
+                Assert.False(File.Exists(newPath),
+                    "newPath must not exist after a failed copy — a zero-byte newPath would cause the user's settings to be wiped on the next launch.");
+            }
+            finally
+            {
+                Directory.Delete(tempDir, recursive: true);
+            }
+        }
+
+        // ----------------------------------------------------------------
         // UNIT-010: catch block — newPath non-empty after copy failure →
         //           no rethrow, oldPath removed (concurrent-migration hygiene)
         // ----------------------------------------------------------------

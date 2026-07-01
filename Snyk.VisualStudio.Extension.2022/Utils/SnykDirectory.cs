@@ -1,13 +1,10 @@
 ﻿using System;
 using System.IO;
-using Serilog;
 
 namespace Snyk.VisualStudio.Extension
 {
     public class SnykDirectory
     {
-        private static readonly ILogger Logger = LogManager.ForContext(typeof(SnykDirectory));
-
         /// <summary>
         /// Directory name for store Snyk CLI.
         /// </summary>
@@ -56,7 +53,7 @@ namespace Snyk.VisualStudio.Extension
             }
             catch (Exception ex)
             {
-                Logger.Warning(
+                LogManager.ForContext(typeof(SnykDirectory)).Warning(
                     ex,
                     "Could not create settings directory '{DirectoryPath}' — settings writes may fail.",
                     appDataDir);
