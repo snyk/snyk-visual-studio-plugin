@@ -280,3 +280,4 @@ CLAUDE.md
 .snyk-code-output.json
 .snyk-code-output.err
 .verification-result.*
+.cache_ggshield

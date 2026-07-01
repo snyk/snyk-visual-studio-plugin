@@ -89,9 +89,10 @@ namespace Snyk.VisualStudio.Extension.Tests.Settings
             }
         }
 
-        // INT-002: Save applies the edit-delta to the tracker.
-        // Passing OssEnabled in editedKeys with a non-default value marks it;
-        // passing it again with the default value unmarks it and enqueues a reset.
+        // INT-002 (corrected semantics, PR #515): Save applies the edit-delta to the tracker.
+        // Any key present in editedKeys is an explicit user choice → marked, whether its value is
+        // non-default OR equal to the plugin default. Reset-to-default is no longer inferred from
+        // value==default (that inference caused "enabling Snyk Code doesn't persist").
         [Fact]
         public void Manager_Save_SyncsTrackerFromDeltas()
         {
@@ -108,13 +109,14 @@ namespace Snyk.VisualStudio.Extension.Tests.Settings
                 var afterFirstSave = manager.Load();
                 Assert.Contains(PflagKeys.SnykOssEnabled, afterFirstSave.ChangedConfigKeys);
 
-                // Second save: OssEnabled back to true (default), declared as edited key → unmarked.
+                // Second save: OssEnabled at true (its default), declared as edited key → still an
+                // explicit user choice → stays marked (no inferred reset from value==default).
                 optMock.Object.OssEnabled = true;
                 manager.Save(optMock.Object, triggerSettingsChangedEvent: false,
                     editedKeys: new List<string> { PflagKeys.SnykOssEnabled });
 
                 var afterSecondSave = manager.Load();
-                Assert.DoesNotContain(PflagKeys.SnykOssEnabled, afterSecondSave.ChangedConfigKeys);
+                Assert.Contains(PflagKeys.SnykOssEnabled, afterSecondSave.ChangedConfigKeys);
             }
             finally
             {
@@ -401,12 +403,12 @@ namespace Snyk.VisualStudio.Extension.Tests.Settings
             }
         }
 
-        // SACC-002: Customer-outcome acceptance test.
-        // A user override is reset to default (override set becomes empty, marker set, persisted).
-        // After a simulated IDE restart, the reset key (and every other current-non-default value
-        // present in the file) must NOT be marked as an override — the empty set is trusted verbatim.
+        // SACC-002 (corrected semantics, PR #515): A key the user edits through the form is an
+        // explicit override, even when the value they land on equals the plugin default. That
+        // explicit override must survive a restart (persisted verbatim, not dropped). Reset-to-default
+        // is no longer inferred from value==default inside the Save/ApplyUserEdits path.
         [Fact]
-        public void ResetSettingStaysResetAcrossRestart_NotReMarkedAsOverride()
+        public void EditedKeyAtDefaultValue_StaysMarkedAsOverrideAcrossRestart()
         {
             var (manager, optMock, path) = BuildManager();
             try
@@ -417,30 +419,26 @@ namespace Snyk.VisualStudio.Extension.Tests.Settings
                 manager.Save(optMock.Object, triggerSettingsChangedEvent: false,
                     editedKeys: new List<string> { PflagKeys.SnykIacEnabled });
 
-                // Confirm it is marked before the reset.
                 Assert.Contains(PflagKeys.SnykIacEnabled, manager.OverrideTracker.Snapshot());
 
-                // Step 2: User resets IacEnabled back to its default (true).
+                // Step 2: User edits IacEnabled through the form again, landing on the default (true).
+                // Under the corrected semantics this is still an explicit user choice → stays marked.
                 optMock.Object.IacEnabled = true;
                 manager.Save(optMock.Object, triggerSettingsChangedEvent: false,
                     editedKeys: new List<string> { PflagKeys.SnykIacEnabled });
 
-                // Confirm it is now unmarked (override set empty, marker still set on disk).
-                Assert.DoesNotContain(PflagKeys.SnykIacEnabled, manager.OverrideTracker.Snapshot());
+                Assert.Contains(PflagKeys.SnykIacEnabled, manager.OverrideTracker.Snapshot());
 
-                // Step 3: Simulate IDE restart — FRESH manager from the same file.
-                // The file now carries changedConfigKeysSeeded=true and an empty ChangedConfigKeys
-                // (written by step 2's save). The fresh manager must take Branch C and trust the
-                // empty set verbatim — the reset key must stay unmarked.
+                // Step 3: Simulate IDE restart — FRESH manager from the same file. The explicit
+                // override must survive verbatim (persisted-keys branch), not be dropped.
                 var (manager2, _, _) = BuildManager(path);
                 var loaded = manager2.Load();
 
-                // The reset key must remain unmarked across restart (trusted empty set).
                 Assert.NotNull(loaded.ChangedConfigKeys);
-                Assert.DoesNotContain(PflagKeys.SnykIacEnabled, loaded.ChangedConfigKeys);
+                Assert.Contains(PflagKeys.SnykIacEnabled, loaded.ChangedConfigKeys);
 
-                Assert.False(manager2.OverrideTracker.IsChanged(PflagKeys.SnykIacEnabled),
-                    "A key reset to default must stay unmarked after restart — seeded-marker must gate re-seed");
+                Assert.True(manager2.OverrideTracker.IsChanged(PflagKeys.SnykIacEnabled),
+                    "An explicitly edited key must remain an override after restart");
             }
             finally
             {

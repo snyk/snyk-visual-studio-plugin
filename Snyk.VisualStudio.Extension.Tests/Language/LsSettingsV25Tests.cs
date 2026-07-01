@@ -761,24 +761,24 @@ namespace Snyk.VisualStudio.Extension.Tests.Language
                 "OssEnabled was NOT in the edit delta (org-pushed, user didn't touch it) → must remain unmarked");
         }
 
-        // RACC-003 (Acceptance): User edits a key back to its default → that key emits a reset and
-        // is unmarked. Untouched keys that happen to be at their defaults do NOT emit resets.
+        // RACC-003 (corrected semantics, PR #515): A key the user edits to its default value via the
+        // form goes out as an explicit user-owned value ({value, changed:true}), NOT a reset — the
+        // edit is an explicit choice. Untouched keys at their defaults never emit a reset either.
+        // (Reset-to-default is no longer inferred inside ApplyUserEdits from value==default.)
         [Fact]
-        public void UserEditsKeyToDefault_EmitsResetAndUnmarks_ButUntouchedDefaultsNeverEmitReset()
+        public void UserEditsKeyToDefault_SendsExplicitValueChangedTrue_ButUntouchedDefaultsNeverEmitReset()
         {
             SetupDefaults();
-            // Start: OssEnabled was previously overridden (false). User edits it back to true (default).
+            // User edits OssEnabled through the form, landing on the default value true.
             // IacEnabled is at its default (true) and was NOT edited.
-            // Expected: OssEnabled reset emitted, IacEnabled not reset.
+            // Expected: OssEnabled sent {value:true, changed:true} (no reset); IacEnabled not reset.
 
             var realTracker = new UserOverrideTracker();
-            // Simulate previously-overridden OssEnabled.
-            realTracker.Mark(PflagKeys.SnykOssEnabled);
             realTracker.MarkSeeded(); // mark seeded so BuildSettingsMap's IsSeeded gate is active
 
-            // User's edit: OssEnabled→true (default). IacEnabled not touched (not in editedKeys).
+            // User's edit: OssEnabled→true (its default). IacEnabled not touched (not in editedKeys).
             var options = new Mock<ISnykOptions>();
-            options.SetupGet(x => x.OssEnabled).Returns(true); // back to default
+            options.SetupGet(x => x.OssEnabled).Returns(true); // user-applied value == default
             options.SetupGet(x => x.IacEnabled).Returns(true);
             options.SetupGet(x => x.SnykCodeSecurityEnabled).Returns(true);
             options.SetupGet(x => x.SecretsEnabled).Returns(false);
@@ -812,16 +812,56 @@ namespace Snyk.VisualStudio.Extension.Tests.Language
 
             var map = cut.BuildSettingsMap(optionsMock.Object);
 
-            // OssEnabled was in editedKeys and reset to default → reset signal emitted.
+            // OssEnabled was in editedKeys → sent as an explicit user-owned value, NOT a reset.
             Assert.True(map.ContainsKey(PflagKeys.SnykOssEnabled),
-                "OssEnabled must be in the map (as a reset entry)");
-            Assert.Null(map[PflagKeys.SnykOssEnabled].Value);    // reset must emit value:null
+                "OssEnabled must be in the map");
+            Assert.NotNull(map[PflagKeys.SnykOssEnabled].Value); // explicit value, NOT a reset (value:null)
             Assert.True(map[PflagKeys.SnykOssEnabled].Changed,
-                "OssEnabled reset must emit changed:true");
+                "An edited key must emit changed:true so the org default cannot override it");
 
             // IacEnabled was NOT in editedKeys → no reset emitted (its normal value entry is present).
-            // If IacEnabled emitted a reset spuriously, its Value would be null — assert it is not.
             Assert.NotNull(map[PflagKeys.SnykIacEnabled].Value); // not edited → must not emit a reset
+        }
+
+        // RACC-004 (Acceptance / PR #515 regression): Enabling the global Snyk Code toggle must
+        // persist as an explicit user-owned value, not be turned into a reset-to-default signal.
+        //
+        // Snyk Code's plugin default is `true` (ConfigDefaults). Under the OLD (buggy) semantics
+        // ApplyUserEdits classified an edited key by value==plugin-default, so a user *enabling*
+        // Code (posting true) hit the Unmark branch → BuildSettingsMap emitted a Reset
+        // ({value:null, changed:true}) → the org/server default won → the enable appeared not to
+        // persist. The fix: any key the form posted (present in editedKeys) is an explicit user
+        // choice and must be Mark'd (changed:true) carrying the user's value, never a reset.
+        [Fact]
+        public void EnablingSnykCode_SendsExplicitEnabledValueChangedTrue_NotReset()
+        {
+            SetupDefaults(); // SnykCodeSecurityEnabled == true (the plugin default the user just enabled)
+
+            var realTracker = new UserOverrideTracker();
+            realTracker.SeedFrom(BuildDefaultOptionsForSeed()); // clean seeded slate, Code unmarked
+
+            // The user enables Snyk Code in the settings form and applies. The form posts
+            // snyk_code_enabled=true and includes it in the edit delta. Even though true equals the
+            // plugin default, the user made an explicit choice — it must be recorded as an override.
+            var optionsAfterSave = new Mock<ISnykOptions>();
+            optionsAfterSave.SetupGet(x => x.SnykCodeSecurityEnabled).Returns(true); // user-enabled == plugin default
+
+            realTracker.ApplyUserEdits(
+                optionsAfterSave.Object,
+                new List<string> { PflagKeys.SnykCodeEnabled });
+
+            optionsManagerMock.Setup(m => m.OverrideTracker).Returns(realTracker);
+
+            var map = cut.BuildSettingsMap(optionsMock.Object);
+
+            // The user's explicit enable must go out as {value:true, changed:true} — NOT a reset.
+            Assert.True(map.ContainsKey(PflagKeys.SnykCodeEnabled),
+                "snyk_code_enabled must be present in the settings map");
+            Assert.NotNull(map[PflagKeys.SnykCodeEnabled].Value); // must NOT be a reset (value:null)
+            Assert.Equal(true, map[PflagKeys.SnykCodeEnabled].Value); // carries the user's enabled value
+            Assert.True(map[PflagKeys.SnykCodeEnabled].Changed,
+                "An explicitly enabled Snyk Code toggle must be marked changed so the org default " +
+                "cannot silently override the user's choice");
         }
 
         // UNIT-008: ConfigSetting.Of(value, changed) overload sets Changed correctly;

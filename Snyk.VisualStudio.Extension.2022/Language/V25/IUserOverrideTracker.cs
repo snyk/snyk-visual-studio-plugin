@@ -61,13 +61,19 @@ namespace Snyk.VisualStudio.Extension.Language
         void SeedFrom(IPersistableOptions options);
 
         /// <summary>
-        /// Called from <see cref="ISnykOptionsManager.Save"/> on the user-edit path: marks each
-        /// key in <paramref name="editedKeys"/> whose <paramref name="options"/> value deviates
-        /// from the plugin default, and unmarks + enqueues a reset for each edited key whose value
-        /// equals the default. Keys NOT in <paramref name="editedKeys"/> are left completely
-        /// untouched — so org-pushed values that merely persist in Options are never recorded as
-        /// user overrides. Pass an empty set to mark nothing (safe default for callers that cannot
-        /// enumerate their edited keys).
+        /// Called from <see cref="ISnykOptionsManager.Save"/> on the user-edit path: marks every
+        /// key in <paramref name="editedKeys"/> as an explicit user override, regardless of whether
+        /// its <paramref name="options"/> value equals the plugin default. Any key the settings form
+        /// posted is an explicit user choice, so setting a key to a value that happens to equal the
+        /// default (e.g. enabling Snyk Code, whose default is <c>true</c>) is still recorded as an
+        /// override — reset-to-default is never inferred here from value==default. Keys NOT in
+        /// <paramref name="editedKeys"/> are left completely untouched — so org-pushed values that
+        /// merely persist in Options are never recorded as user overrides. Pass an empty set to mark
+        /// nothing (safe default for callers that cannot enumerate their edited keys).
+        /// <para>
+        /// Reset-to-default is an explicit user action expressed via <see cref="Unmark"/>, not
+        /// derived by this method from the edited value equalling the plugin default.
+        /// </para>
         /// </summary>
         void ApplyUserEdits(IPersistableOptions options, System.Collections.Generic.IReadOnlyCollection<string> editedKeys);
 

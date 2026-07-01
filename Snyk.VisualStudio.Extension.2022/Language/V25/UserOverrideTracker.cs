@@ -85,24 +85,20 @@ namespace Snyk.VisualStudio.Extension.Language
         /// <inheritdoc/>
         public void ApplyUserEdits(IPersistableOptions options, IReadOnlyCollection<string> editedKeys)
         {
-            if (options == null || editedKeys == null || editedKeys.Count == 0) return;
+            if (editedKeys == null || editedKeys.Count == 0) return;
 
-            // Build a lookup of the current key→value pairs for the global keys so we can check
-            // each edited key without iterating the full set repeatedly.
-            var currentValues = new Dictionary<string, object>();
-            foreach (var kv in GetGlobalKeyValues(options))
-                currentValues[kv.Key] = kv.Value;
-
+            // Every key the settings form posted (present in editedKeys) is an explicit user choice
+            // and is recorded as an override — regardless of whether its value happens to equal the
+            // plugin default. This fixes the "enabling Snyk Code doesn't persist" bug (PR #515):
+            // Snyk Code's default is `true`, so a user *enabling* it posts a value == the default;
+            // inferring a reset from value==default here turned the enable into a
+            // reset-to-org-default signal and let the org value silently win.
+            //
+            // Reset-to-default is henceforth an explicit user action only (via Unmark), never
+            // inferred from the value equalling the default. Mark() already no-ops on null/empty
+            // keys and on IsAlwaysChanged keys, and cancels any pending reset for the key.
             foreach (var key in editedKeys)
-            {
-                if (!currentValues.TryGetValue(key, out var value))
-                    continue; // key not in global map — ignore (safe: unknown key has no tracker state)
-
-                if (ConfigDefaults.IsDefault(key, value))
-                    Unmark(key);  // user reset this key to default → unmark + enqueue reset
-                else
-                    Mark(key);    // user set this key to a non-default value → mark as override
-            }
+                Mark(key);
         }
 
         /// <inheritdoc/>
@@ -181,8 +177,10 @@ namespace Snyk.VisualStudio.Extension.Language
                 string.Join(" ", options.AdditionalParameters ?? new List<string>()));
 
             // RiskScoreThreshold: always yield (null == default == not set).
-            // When HasValue is false we yield null so ApplyUserEdits can detect the transition
-            // back to default and enqueue the pending reset signal.
+            // When HasValue is false we yield null so SeedFrom compares "unset" against the
+            // default and does not mark the key as an override. GetGlobalKeyValues is consumed
+            // only by SeedFrom; ApplyUserEdits no longer reads it (it marks every edited key
+            // verbatim — reset-to-default is an explicit user action, never inferred here).
             yield return Pair(PflagKeys.RiskScoreThreshold,
                 options.RiskScoreThreshold.HasValue ? (object)options.RiskScoreThreshold.Value : null);
         }

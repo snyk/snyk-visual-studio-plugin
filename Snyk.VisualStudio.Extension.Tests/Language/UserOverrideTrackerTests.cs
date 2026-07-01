@@ -134,24 +134,27 @@ namespace Snyk.VisualStudio.Extension.Tests.Language
             Assert.False(sut.IsChanged(PflagKeys.SnykCodeEnabled), "Default SnykCodeEnabled should NOT be marked");
         }
 
-        // UNIT-006: ApplyUserEdits unmarks a key when the user resets it to its default,
-        // and enqueues a pending reset for it so BuildSettingsMap can emit {value:null, changed:true}.
+        // UNIT-006 (corrected semantics, PR #515): ApplyUserEdits marks every edited key — even one
+        // whose value equals the plugin default — and never infers a reset from value==default.
+        // Setting a key to its default value via the form is still an explicit user choice.
         [Fact]
-        public void ApplyUserEdits_ReturnToDefault_UnmarksAndEnqueuesReset()
+        public void ApplyUserEdits_EditedKeyAtDefaultValue_StaysMarked_NoInferredReset()
         {
             // Prime the tracker: OssEnabled was previously overridden.
             sut.Mark(PflagKeys.SnykOssEnabled);
             Assert.True(sut.IsChanged(PflagKeys.SnykOssEnabled));
 
-            // User resets OssEnabled to the default (true). Provide it as an edited key.
+            // User re-applies OssEnabled at the default (true) through the form; it is in the delta.
             var options = DefaultOptions();
-            options.SetupGet(o => o.OssEnabled).Returns(true); // back to default
+            options.SetupGet(o => o.OssEnabled).Returns(true); // equals default
 
             sut.ApplyUserEdits(options.Object, new List<string> { PflagKeys.SnykOssEnabled });
 
-            Assert.False(sut.IsChanged(PflagKeys.SnykOssEnabled), "Key returned to default should be unmarked");
+            // Edited key is an explicit user choice → remains marked; no reset inferred from default.
+            Assert.True(sut.IsChanged(PflagKeys.SnykOssEnabled),
+                "An edited key at the default value must remain marked — reset is not inferred here");
             var pending = sut.ConsumePendingResets();
-            Assert.Contains(PflagKeys.SnykOssEnabled, pending);
+            Assert.DoesNotContain(PflagKeys.SnykOssEnabled, pending);
         }
 
         // UNIT-009 (finding 1): SeedFrom marks Token when ApiToken is non-empty,
@@ -186,25 +189,22 @@ namespace Snyk.VisualStudio.Extension.Tests.Language
                 "Default auth method (OAuth) should NOT be marked as changed");
         }
 
-        // UNIT-010 (finding 3): ApplyUserEdits with null RiskScoreThreshold after it was marked
-        // should unmark it AND enqueue a pending reset so the LS can clear the value.
+        // UNIT-010 (corrected semantics, PR #515): ApplyUserEdits with the RiskScoreThreshold key in
+        // the edit delta marks it as an explicit user choice and does NOT infer a reset from
+        // value==default (null). Reset-to-default is no longer derived inside ApplyUserEdits.
         [Fact]
-        public void ApplyUserEdits_RiskScoreThresholdClearedToNull_UnmarksAndEnqueuesReset()
+        public void ApplyUserEdits_RiskScoreThresholdEdited_MarksChanged_NoInferredReset()
         {
-            // Seed: threshold was set to 70 (non-default).
-            sut.Mark(PflagKeys.RiskScoreThreshold);
-            Assert.True(sut.IsChanged(PflagKeys.RiskScoreThreshold));
-
-            // User cleared the threshold (returned to default null).
+            // User submits the risk-score field; it is in the edit delta with the default (null) value.
             var options = DefaultOptions();
             options.SetupGet(x => x.RiskScoreThreshold).Returns((int?)null);
 
             sut.ApplyUserEdits(options.Object, new List<string> { PflagKeys.RiskScoreThreshold });
 
-            Assert.False(sut.IsChanged(PflagKeys.RiskScoreThreshold),
-                "Cleared RiskScoreThreshold should be unmarked");
+            Assert.True(sut.IsChanged(PflagKeys.RiskScoreThreshold),
+                "An edited RiskScoreThreshold key is an explicit user choice and must be marked");
             var pending = sut.ConsumePendingResets();
-            Assert.Contains(PflagKeys.RiskScoreThreshold, pending);
+            Assert.DoesNotContain(PflagKeys.RiskScoreThreshold, pending); // no inferred reset from value==default
         }
 
         // UNIT-011 (finding 4): Calling Clear() then re-seeding reflects only new data.
@@ -503,31 +503,33 @@ namespace Snyk.VisualStudio.Extension.Tests.Language
                 "A key NOT in editedKeys and not previously marked must remain unmarked");
         }
 
-        // RUNIT-002: ApplyUserEdits with an edited key whose new value equals the plugin default
-        // must unmark it and enqueue a pending reset — not mark it.
+        // RUNIT-002 (corrected semantics, PR #515): ApplyUserEdits with an edited key whose new
+        // value equals the plugin default must MARK it (changed:true) and must NOT enqueue a reset.
+        //
+        // This is the core of the "enabling Snyk Code doesn't persist" fix: any key the form posted
+        // (present in editedKeys) is an explicit user choice. Snyk Code's default is `true`, so a
+        // user *enabling* it posts a value equal to the default — the OLD code inferred a reset from
+        // value==default and let the org default win. Reset-to-default is no longer inferred here.
         [Fact]
-        public void ApplyUserEdits_EditedKeyEqualToDefault_UnmarksAndEnqueuesReset()
+        public void ApplyUserEdits_EditedKeyEqualToDefault_MarksChanged_NoReset()
         {
-            // Pre-condition: OssEnabled is marked (user previously set it to non-default).
-            sut.Mark(PflagKeys.SnykOssEnabled);
-            Assert.True(sut.IsChanged(PflagKeys.SnykOssEnabled));
-
-            // Options: OssEnabled=true (its plugin default), meaning the user just reset it.
+            // The user enables Snyk Code (posts true, which equals the plugin default true).
             var options = DefaultOptions();
-            options.SetupGet(x => x.OssEnabled).Returns(true); // at default
+            options.SetupGet(x => x.SnykCodeSecurityEnabled).Returns(true); // at default
 
-            // The user's save included OssEnabled in the edit delta.
-            var editedKeys = new List<string> { PflagKeys.SnykOssEnabled };
+            // The user's save included snyk_code_enabled in the edit delta.
+            var editedKeys = new List<string> { PflagKeys.SnykCodeEnabled };
 
             sut.ApplyUserEdits(options.Object, editedKeys);
 
-            // Must be unmarked.
-            Assert.False(sut.IsChanged(PflagKeys.SnykOssEnabled),
-                "An edited key whose new value equals the default must be unmarked");
+            // An edited key is an explicit user choice → must be marked, even at the default value.
+            Assert.True(sut.IsChanged(PflagKeys.SnykCodeEnabled),
+                "An edited key whose value equals the default is still an explicit user choice " +
+                "and must be marked changed — reset is never inferred from value==default");
 
-            // Must have a pending reset so BuildSettingsMap can emit {value:null, changed:true}.
+            // No reset must be enqueued via this path — value==default no longer implies a reset.
             var resets = sut.ConsumePendingResets();
-            Assert.Contains(PflagKeys.SnykOssEnabled, resets); // edited key reset to default must produce pending reset
+            Assert.DoesNotContain(PflagKeys.SnykCodeEnabled, resets); // no inferred reset from value==default
         }
 
         // PR-REV-001: Re-typing the same org-pushed value the user genuinely owns must still be
