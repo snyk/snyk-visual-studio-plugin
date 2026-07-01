@@ -189,6 +189,7 @@
     <Compile Include="Settings\SnykOptionsManager.cs" />
     <Compile Include="Settings\SnykSettings.cs" />
     <Compile Include="Settings\SnykSettingsChangedEventArgs.cs" />
+    <Compile Include="Settings\SettingsLocationMigrator.cs" />
     <Compile Include="Settings\SnykSettingsLoader.cs" />
     <Compile Include="SnykGuids.cs" />
     <Compile Include="SnykIcons.Designer.cs">

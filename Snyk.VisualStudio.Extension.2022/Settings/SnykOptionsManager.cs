@@ -6,12 +6,15 @@ using Snyk.VisualStudio.Extension.Service;
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
-using Serilog;
 namespace Snyk.VisualStudio.Extension.Settings
 {
     public class SnykOptionsManager : ISnykOptionsManager
     {
-        private static readonly ILogger Logger = LogManager.ForContext<SnykOptionsManager>();
+        // No static Logger field: LogManager.ForContext() depends on SnykDirectory (via the
+        // Lazy<Logger> in LogManager). A static readonly field initialised at class-load time
+        // risks re-entrancy if this class is loaded during that Lazy's construction.
+        // Acquire the logger inline at each call site — identical to SnykDirectory and
+        // SettingsLocationMigrator.
 
         private readonly ISnykServiceProvider serviceProvider;
         private readonly SnykSettingsLoader settingsLoader;
@@ -54,12 +57,19 @@ namespace Snyk.VisualStudio.Extension.Settings
 
         public void LoadSettingsFromFile()
         {
-            this.snykSettings = this.settingsLoader.Load();
+            // Single-read discrimination (IDE-1483 FIX-D1): Load(out bool) performs ONE
+            // File.ReadAllText and sets fileWasAbsent from the exception type, eliminating
+            // the TOCTOU window that existed when a separate FileExists() probe was used.
+            //   fileWasAbsent = true  => file genuinely not on disk (fresh install) — safe to write defaults.
+            //   fileWasAbsent = false, result null => file exists but unreadable/corrupt
+            //                                        — must NOT overwrite (token may be recoverable).
+            this.snykSettings = this.settingsLoader.Load(out bool fileWasAbsent);
 
             if (this.snykSettings != null) return;
 
             this.snykSettings = new SnykSettings();
-            SaveSettingsToFile();
+            if (fileWasAbsent)
+                SaveSettingsToFile();
         }
 
         public void SaveSettingsToFile()
@@ -115,14 +125,14 @@ namespace Snyk.VisualStudio.Extension.Settings
                 // calling ApplyUserEdits over migrated values would create phantom overrides.
                 Save(options, triggerSettingsChangedEvent: false, updateOverrideTracker: false);
 
-                Logger.Information(
+                LogManager.ForContext(typeof(SnykOptionsManager)).Information(
                     "Migrated legacy per-solution settings for '{Folder}' into a folder config.",
                     solutionFolderPath);
                 return true;
             }
             catch (Exception e)
             {
-                Logger.Warning(e, "Failed to migrate legacy per-solution settings for '{Folder}'.", solutionFolderPath);
+                LogManager.ForContext(typeof(SnykOptionsManager)).Warning(e, "Failed to migrate legacy per-solution settings for '{Folder}'.", solutionFolderPath);
                 return false;
             }
         }
