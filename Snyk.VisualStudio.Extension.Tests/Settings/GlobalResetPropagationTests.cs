@@ -67,9 +67,9 @@ namespace Snyk.VisualStudio.Extension.Tests.Settings
             optMock.Object.DeviceId = "test-device";
             optMock.Object.Organization = "acme-user-org"; // a user override to be reset
             optMock.Object.IntegrationEnvironment = "Visual Studio 2022";
-            optMock.Object.IntegrationName = "VISUAL_STUDIO";
+            optMock.Setup(x => x.IntegrationName).Returns("VISUAL_STUDIO");
             optMock.Object.IntegrationEnvironmentVersion = "2022";
-            optMock.Object.IntegrationVersion = "1.0.0";
+            optMock.Setup(x => x.IntegrationVersion).Returns("1.0.0");
             optMock.Object.ApiToken = new AuthenticationToken(AuthenticationType.OAuth, string.Empty);
             optMock.Object.AuthenticationMethod = AuthenticationType.OAuth;
             optMock.Object.FolderConfigs = new List<FolderConfig>();
