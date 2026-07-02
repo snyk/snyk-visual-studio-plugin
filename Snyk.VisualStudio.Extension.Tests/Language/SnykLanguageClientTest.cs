@@ -218,6 +218,13 @@ namespace Snyk.VisualStudio.Extension.Tests.Language
         [Fact]
         public async Task DidChangeConfigurationAsync_SuccessfulSend_CommitsOnMainThread()
         {
+            // xUnit runs async [Fact] bodies on a thread-pool thread, not the JTF main thread. Under
+            // MockedVS the framework pumps a mocked main thread, so this is the supported way to bring the
+            // test body onto it (VSSDKTestFx docs). It must run before the guard below. It also keeps the
+            // main thread pumping while we await DidChangeConfigurationAsync, so the production
+            // SwitchToMainThreadAsync marshal can resolve re-entrantly.
+            await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
+
             // Sanity: the test body runs on the JTF main thread under MockedVS. If this ever changes,
             // the off-thread reasoning below (and the marshal it guards) no longer holds.
             Assert.True(ThreadHelper.CheckAccess(), "Test must start on the JTF main thread under MockedVS.");
