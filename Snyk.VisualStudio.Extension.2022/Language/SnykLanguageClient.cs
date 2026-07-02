@@ -619,6 +619,22 @@ namespace Snyk.VisualStudio.Extension.Language
                     optionsManager?.CommitPendingResets(pendingResets);
                     return result;
                 }
+                catch (OperationCanceledException)
+                {
+                    // Benign shutdown: the cancellationToken fired (IDE/LS shutting down) either DURING
+                    // the RPC send above — which also takes this token, so the LS may NOT have received
+                    // the notification — or AFTER a confirmed send, during the post-send main-thread
+                    // marshal. In BOTH sub-cases skipping the commit is safe: the reset stays pending and
+                    // re-delivers idempotently on the next configuration update (re-sending an already-
+                    // delivered reset is a harmless no-op). Do NOT log at Error — this is expected, not a
+                    // fault.
+                    //
+                    // Precondition: this benign treatment assumes callers pass a shutdown/DisposalToken
+                    // (all current callers do). A future per-operation or timeout token that could cancel
+                    // AFTER a confirmed send would cause the reset to re-deliver once more on the next
+                    // update; if such a token is introduced, revisit whether it belongs in this benign path.
+                    return default;
+                }
                 catch (Exception ex)
                 {
                     // Transient failure: leave pendingResets in the queue (and in persistence) so the

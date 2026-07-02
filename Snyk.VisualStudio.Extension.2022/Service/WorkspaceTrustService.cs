@@ -33,7 +33,7 @@ namespace Snyk.VisualStudio.Extension.Service
                 var trustedFolders = this.serviceProvider.Options.TrustedFolders;
                 trustedFolders.Add(absoluteFolderPath);
                 this.serviceProvider.Options.TrustedFolders = trustedFolders;
-                this.serviceProvider.SnykOptionsManager.Save(this.serviceProvider.Options, false);
+                this.serviceProvider.SnykOptionsManager.Save(this.serviceProvider.Options, triggerSettingsChangedEvent: false, updateOverrideTracker: false);
             }
             catch (Exception e)
             {
