@@ -240,6 +240,26 @@ namespace Snyk.VisualStudio.Extension.Settings
 
         public ISnykOptions Load()
         {
+            // Hold persistGate across the ENTIRE read-and-seed region below (PR #515 review, IDE-2152).
+            // The concurrent persisting writers that mutate the very fields this read consumes take
+            // persistGate around their mutate+serialize+write region: Save (including the LS-push
+            // Save(updateOverrideTracker:false) calls from SnykLanguageClientCustomTarget on StreamJsonRpc
+            // background dispatch threads), CommitPendingResets, SaveOrganizationAsync, and SaveSettingsToFile.
+            // If such a writer mutated these fields while the `new SnykOptions { ... }` initializer read
+            // them, Load() could return an options object mixing pre- and post-Save values (a torn read).
+            // Taking the same gate once over the whole read region makes the read atomic w.r.t. those
+            // writers. (MigrateLegacySolutionSettings mutates SolutionSettingsDict outside the gate before
+            // its own Save(), but Load() does not read SolutionSettingsDict, so it is not part of this
+            // invariant.) The lock is reentrant and there is no `await` inside Load(), so the seeding
+            // branches below re-enter safely and this cannot deadlock a continuation. Taken once (rather
+            // than per-branch) to avoid nested-lock churn.
+            lock (persistGate)
+            {
+            // Testable-interleave seam: fires at the very top of the guarded read region so a
+            // concurrent-Save thread-safety test can prove the writer is blocked here. No-op in
+            // production (mirrors the CopyFile seam).
+            OnLoadReadRegionEntered();
+
             // Copy the persisted override set into options, or null when not present on disk.
             var persistedKeys = snykSettings.ChangedConfigKeys;
 
@@ -328,8 +348,9 @@ namespace Snyk.VisualStudio.Extension.Settings
                 // Set the marker/keys ON snykSettings IN MEMORY only (no SaveSettingsToFile — see
                 // DEFERRED-PERSIST above). A same-manager second Load() then observes the in-memory
                 // marker and takes Branch C (no re-seed, no stale-mark unioning). Persistence is
-                // deferred to the next real Save. Mutate under persistGate so a concurrent
-                // Save/CommitPendingResets never reads a half-updated snykSettings.
+                // deferred to the next real Save. This mutation runs under the method-level
+                // persistGate (taken at the top of Load()) so a concurrent Save/CommitPendingResets
+                // never reads a half-updated snykSettings.
                 //
                 // settingsFileWasUnreadable guard: after a present-but-corrupt read, snykSettings is a
                 // fresh blank-defaults object that only LOOKS like a fresh install. Do NOT stamp the
@@ -337,13 +358,12 @@ namespace Snyk.VisualStudio.Extension.Settings
                 // from ever being mistaken for an authoritative seeded snapshot, so the recoverable
                 // file is re-read and re-seeded fresh on the next process start. The tracker is still
                 // seeded in memory (above) so this session behaves correctly.
+                // (Already inside the method-level lock (persistGate) taken at the top of Load(), so this
+                // mutation of snykSettings is serialized against every concurrent Save.)
                 if (!settingsFileWasUnreadable)
                 {
-                    lock (persistGate)
-                    {
-                        snykSettings.ChangedConfigKeys = seeded.Count > 0 ? seeded : null;
-                        snykSettings.ChangedConfigKeysSeeded = true;
-                    }
+                    snykSettings.ChangedConfigKeys = seeded.Count > 0 ? seeded : null;
+                    snykSettings.ChangedConfigKeysSeeded = true;
                 }
             }
             else if (!snykSettings.ChangedConfigKeysSeeded)
@@ -355,10 +375,8 @@ namespace Snyk.VisualStudio.Extension.Settings
                 foreach (var key in persistedKeys)
                     overrideTracker.Mark(key);
                 overrideTracker.MarkSeeded();
-                lock (persistGate)
-                {
-                    snykSettings.ChangedConfigKeysSeeded = true;
-                }
+                // Already inside the method-level lock (persistGate) taken at the top of Load().
+                snykSettings.ChangedConfigKeysSeeded = true;
             }
             else
             {
@@ -381,6 +399,25 @@ namespace Snyk.VisualStudio.Extension.Settings
             // Write the seeded set back so it is available on the returned options object.
             options.ChangedConfigKeys = overrideTracker.Snapshot();
             return options;
+            } // release persistGate (returning from inside the lock releases it)
+        }
+
+        // Testable seam over the top of Load()'s guarded read region (mirrors the CopyFile seam). A
+        // no-op in production; a test subclass overrides it to drive a concurrent Save() and prove that
+        // Load() holds persistGate across its read (so the writer is blocked mid-read). Called while
+        // holding persistGate.
+        protected virtual void OnLoadReadRegionEntered()
+        {
+        }
+
+        // Testable seam over the TOP of Save()'s persistGate critical section (mirrors the CopyFile /
+        // OnLoadReadRegionEntered seams). A no-op in production; a test subclass overrides it to signal
+        // that a concurrent Save() has acquired persistGate and entered its critical section — the
+        // deterministic positive handshake used to prove Load() holds the gate across its read (the
+        // writer must NOT reach this point while Load()'s read region is executing). Called while
+        // holding persistGate.
+        protected virtual void OnSaveCriticalSectionEntered()
+        {
         }
 
         public void Save(IPersistableOptions options, bool triggerSettingsChangedEvent = true,
@@ -396,6 +433,13 @@ namespace Snyk.VisualStudio.Extension.Settings
             // safe to hold. The settings-changed event is fired AFTER the lock is released (below).
             lock (persistGate)
             {
+            // Testable-interleave seam: fires once the writer has acquired persistGate and entered
+            // Save's critical section. A no-op in production (mirrors the CopyFile /
+            // OnLoadReadRegionEntered seams); a thread-safety test overrides it to signal that a
+            // concurrent Save() got into the gate, so the Load()-holds-the-gate invariant can be
+            // asserted deterministically rather than inferred from a wall-clock poll.
+            OnSaveCriticalSectionEntered();
+
             snykSettings.DeviceId = options.DeviceId;
             snykSettings.TrustedFolders = options.TrustedFolders;
             snykSettings.AnalyticsPluginInstalledSent = options.AnalyticsPluginInstalledSent;
