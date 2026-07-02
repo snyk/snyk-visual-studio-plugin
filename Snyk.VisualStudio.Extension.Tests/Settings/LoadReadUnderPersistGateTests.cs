@@ -145,7 +145,7 @@ namespace Snyk.VisualStudio.Extension.Tests.Settings
                         return;
                     }
 
-                    if ((this.writerThread.ThreadState & ThreadState.WaitSleepJoin) != 0)
+                    if ((this.writerThread.ThreadState & System.Threading.ThreadState.WaitSleepJoin) != 0)
                     {
                         // Writer is blocked on lock(persistGate) (see thread-state note above): the fix
                         // is holding and the writer cannot enter Save's critical section mid-read.
