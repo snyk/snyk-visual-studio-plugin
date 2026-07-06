@@ -43,8 +43,9 @@ namespace Snyk.VisualStudio.Extension.Language
 
         // Trust
         public const string TrustedFolders = "trusted_folders";
-        // Keys for always-changed set per AC M4 (defined in LS spec; not currently in VS BuildSettingsMap
-        // but included so the AlwaysChanged set is complete for when they are added).
+        // trust_enabled is sent as true so the LS owns trust enforcement (scan gating and the HTML
+        // tree-view trust prompt). automatic_authentication belongs to the LS spec and stays in the
+        // AlwaysChanged set; VS does not send it.
         public const string TrustEnabled = "trust_enabled";
         public const string AutomaticAuthentication = "automatic_authentication";
 

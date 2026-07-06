@@ -28,50 +28,6 @@ namespace Snyk.VisualStudio.Extension.Tests.Service
         }
 
         [Fact]
-        public void WorkspaceTrustServiceTest_IsFolderTrusted_NotTrusted()
-        {
-            var folderPath = "C:\\Users\\Project";
-            Assert.False(cut.IsFolderTrusted(folderPath));
-        }
-
-        [Fact]
-        public void WorkspaceTrustServiceTest_IsFolderTrusted_Trusted()
-        {
-            var trustedFolders = new HashSet<string>();
-            trustedFolders.Add("C:\\Users\\Project");
-            optionsMock.Setup(s => s.TrustedFolders).Returns(trustedFolders);
-
-            var folderPath = "C:\\Users\\Project";
-
-            Assert.True(cut.IsFolderTrusted(folderPath));
-        }
-
-        [Fact]
-        public void WorkspaceTrustServiceTest_IsFolderTrusted_SubfolderTrusted()
-        {
-            var trustedFolders = new HashSet<string> { "C:\\Users\\Project" };
-
-            optionsMock.Setup(s => s.TrustedFolders).Returns(trustedFolders);
-
-            var folderPath = "C:\\Users\\Project\\subfolder";
-
-            Assert.True(cut.IsFolderTrusted(folderPath));
-        }
-
-        [Fact]
-        public void WorkspaceTrustServiceTest_IsFolderTrusted_ParentFolderNotTrusted()
-        {
-            var trustedFolders = new HashSet<string>();
-            trustedFolders.Add("C:\\Users\\Project\\subfolder");
-
-            optionsMock.Setup(s => s.TrustedFolders).Returns(trustedFolders);
-
-            var folderPath = "C:\\Users\\Project";
-
-            Assert.False(cut.IsFolderTrusted(folderPath));
-        }
-
-        [Fact]
         public void WorkspaceTrustServiceTest_AddFolderToTrusted_NonExistingFolder()
         {
             var folderPath = "C:\\Users\\Project";

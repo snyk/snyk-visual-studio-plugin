@@ -398,11 +398,12 @@ namespace Snyk.VisualStudio.Extension.Tests.Language
         }
 
         [Fact]
-        public async Task InvokeWorkspaceScanAsync_ShouldInvoke_IfReady_FolderTrusted()
+        public async Task InvokeWorkspaceScanAsync_ShouldInvoke_IfReady()
         {
             // Arrange
+            // The LS enforces trust (trust_enabled=true), so a ready client forwards the scan command
+            // regardless of folder trust.
             cut.IsReady = true;
-            TasksServiceMock.Setup(x => x.IsFolderTrustedAsync()).Returns(Task.FromResult(true));
 
             // Act
             var result = await cut.InvokeWorkspaceScanAsync(CancellationToken.None);
@@ -413,24 +414,6 @@ namespace Snyk.VisualStudio.Extension.Tests.Language
                 It.Is<LSP.ExecuteCommandParams>(param => param.Command == LsConstants.SnykWorkspaceScan),
                 It.IsAny<CancellationToken>()),
                 Times.Once);
-        }
-
-        [Fact]
-        public async Task InvokeWorkspaceScanAsync_ShouldNotInvoke_IfReady_FolderNotTrusted()
-        {
-            // Arrange
-            cut.IsReady = true;
-            TasksServiceMock.Setup(x => x.IsFolderTrustedAsync()).Returns(Task.FromResult(false));
-
-            // Act
-            var result = await cut.InvokeWorkspaceScanAsync(CancellationToken.None);
-
-            // Assert
-            Assert.Null(result);
-            jsonRpcMock.Verify(x => x.InvokeWithParameterObjectAsync<object>(LsConstants.WorkspaceExecuteCommand,
-                It.Is<LSP.ExecuteCommandParams>(param => param.Command == LsConstants.SnykWorkspaceScan),
-                It.IsAny<CancellationToken>()),
-                Times.Never);
         }
 
         [Fact]

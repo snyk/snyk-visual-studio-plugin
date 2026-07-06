@@ -237,13 +237,6 @@ namespace Snyk.VisualStudio.Extension.Service
             {
                 var selectedFeatures = await this.GetFeaturesSettingsAsync();
 
-                var isFolderTrusted = await this.IsFolderTrustedAsync();
-                if (!isFolderTrusted)
-                {
-                    Logger.Information("Workspace folder was not trusted for scanning.");
-                    return;
-                }
-
                 if (!selectedFeatures.OssEnabled)
                 {
                     FireOssScanningDisabledEvent();
@@ -279,46 +272,6 @@ namespace Snyk.VisualStudio.Extension.Service
             catch (Exception ex)
             {
                 Logger.Error(ex, "Error on scan");
-            }
-        }
-
-        /// <summary>
-        /// Checks if opened solution folder is trusted. If not, prompts a user with trust permission.
-        /// </summary>
-        /// <returns>Folder is trusted or not.</returns>
-        public async Task<bool> IsFolderTrustedAsync()
-        {
-            var solutionFolderPath = await this.serviceProvider.SolutionService.GetSolutionFolderAsync();
-            var isFolderTrusted = this.serviceProvider.WorkspaceTrustService.IsFolderTrusted(solutionFolderPath);
-
-            if (string.IsNullOrEmpty(solutionFolderPath) || isFolderTrusted)
-            {
-                return true;
-            }
-            await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
-            var trustDialog = new TrustDialogWindow(solutionFolderPath);
-            var trusted = trustDialog.ShowModal();
-
-            if (trusted != true)
-            {
-                return false;
-            }
-
-            try
-            {
-                ThreadHelper.JoinableTaskFactory.RunAsync(async () =>
-                {
-                    this.serviceProvider.WorkspaceTrustService.AddFolderToTrusted(solutionFolderPath);
-                    Logger.Information("Workspace folder was trusted: {SolutionFolderPath}", solutionFolderPath);
-                    await this.serviceProvider.LanguageClientManager.DidChangeConfigurationAsync(SnykVSPackage
-                        .Instance.DisposalToken);
-                }).FireAndForget();
-                return true;
-            }
-            catch (ArgumentException e)
-            {
-                Logger.Error(e, "Failed to add folder to trusted list.");
-                throw;
             }
         }
 
