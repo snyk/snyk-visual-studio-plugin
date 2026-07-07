@@ -44,10 +44,8 @@ namespace Snyk.VisualStudio.Extension.Language
         // Trust
         public const string TrustedFolders = "trusted_folders";
         // trust_enabled is sent as true so the LS owns trust enforcement (scan gating and the HTML
-        // tree-view trust prompt). automatic_authentication belongs to the LS spec and stays in the
-        // AlwaysChanged set; VS does not send it.
+        // tree-view trust prompt).
         public const string TrustEnabled = "trust_enabled";
-        public const string AutomaticAuthentication = "automatic_authentication";
 
         // Folder-level
         public const string AdditionalParameters = "additional_parameters";
@@ -72,7 +70,6 @@ namespace Snyk.VisualStudio.Extension.Language
         {
             TrustedFolders,
             TrustEnabled,
-            AutomaticAuthentication,
         };
 
         /// <summary>

@@ -309,6 +309,28 @@ namespace Snyk.VisualStudio.Extension.Tests.Language
                 "because PflagKeys.IsAlwaysChanged must return true for it");
         }
 
+        // trust_enabled=true delegates folder-trust enforcement to the LS (scan gating + the HTML
+        // tree-view trust prompt). Asserted with a REAL seeded tracker (empty changed set) so the
+        // test exercises the real PflagKeys.IsAlwaysChanged path: it fails if the key is dropped from
+        // the map, if its value flips to false, or if it is removed from the AlwaysChanged set.
+        [Fact]
+        public void BuildSettingsMap_TrustEnabled_AlwaysSentTrue()
+        {
+            SetupDefaults();
+            var realTracker = new UserOverrideTracker();
+            realTracker.SeedFrom(BuildDefaultOptionsForSeed());
+            optionsManagerMock.Setup(m => m.OverrideTracker).Returns(realTracker);
+
+            var map = cut.BuildSettingsMap(optionsMock.Object);
+
+            Assert.True(map.ContainsKey(PflagKeys.TrustEnabled),
+                "trust_enabled must be present in the settings map so the LS owns trust enforcement");
+            Assert.Equal(true, map[PflagKeys.TrustEnabled].Value);
+            Assert.True(map[PflagKeys.TrustEnabled].Changed,
+                "trust_enabled must always be sent with changed:true even when the tracker has no marks, " +
+                "because PflagKeys.IsAlwaysChanged must return true for it");
+        }
+
         // ACC-004: A peeked pending reset is folded into the map as {value:null, changed:true}.
         // BuildSettingsMap peeks non-destructively (IDE-2152 CP 2.2); the caller commits on send success.
         [Fact]
