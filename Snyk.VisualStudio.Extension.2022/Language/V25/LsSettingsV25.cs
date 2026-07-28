@@ -117,9 +117,6 @@ namespace Snyk.VisualStudio.Extension.Language
                 // folders and renders the untrusted-folder trust prompt in the HTML tree view.
                 // Always-changed so the LS never inherits an org default.
                 [PflagKeys.TrustEnabled]            = Cs(PflagKeys.TrustEnabled,           true),
-                // automatic_authentication=false: the IDE owns the auth flow, so the LS must not
-                // auto-authenticate (e.g. open a browser) on startup. Matches Eclipse and VS Code.
-                [PflagKeys.AutomaticAuthentication] = Cs(PflagKeys.AutomaticAuthentication, false),
                 [PflagKeys.AdditionalEnvironment]   = Cs(PflagKeys.AdditionalEnvironment,  options.AdditionalEnv ?? string.Empty),
                 // LS applyCliConfig reads additional_parameters via settingStr (string type-assert),
                 // so send as a space-joined string — same wire format LS uses on its outbound echo.

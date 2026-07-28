@@ -331,28 +331,6 @@ namespace Snyk.VisualStudio.Extension.Tests.Language
                 "because PflagKeys.IsAlwaysChanged must return true for it");
         }
 
-        // automatic_authentication=false stops the LS auto-triggering authentication on startup — the
-        // IDE owns the auth flow (matches Eclipse and VS Code). Asserted with a REAL seeded tracker so
-        // the test fails if the key is dropped from the map, if its value flips to true, or if it is
-        // removed from the AlwaysChanged set.
-        [Fact]
-        public void BuildSettingsMap_AutomaticAuthentication_AlwaysSentFalse()
-        {
-            SetupDefaults();
-            var realTracker = new UserOverrideTracker();
-            realTracker.SeedFrom(BuildDefaultOptionsForSeed());
-            optionsManagerMock.Setup(m => m.OverrideTracker).Returns(realTracker);
-
-            var map = cut.BuildSettingsMap(optionsMock.Object);
-
-            Assert.True(map.ContainsKey(PflagKeys.AutomaticAuthentication),
-                "automatic_authentication must be present so the LS does not auto-authenticate on startup");
-            Assert.Equal(false, map[PflagKeys.AutomaticAuthentication].Value);
-            Assert.True(map[PflagKeys.AutomaticAuthentication].Changed,
-                "automatic_authentication must always be sent with changed:true even when the tracker has no marks, " +
-                "because PflagKeys.IsAlwaysChanged must return true for it");
-        }
-
         // ACC-004: A peeked pending reset is folded into the map as {value:null, changed:true}.
         // BuildSettingsMap peeks non-destructively (IDE-2152 CP 2.2); the caller commits on send success.
         [Fact]

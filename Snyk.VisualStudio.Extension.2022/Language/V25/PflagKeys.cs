@@ -46,8 +46,6 @@ namespace Snyk.VisualStudio.Extension.Language
         // trust_enabled is sent as true so the LS owns trust enforcement (scan gating and the HTML
         // tree-view trust prompt).
         public const string TrustEnabled = "trust_enabled";
-        // automatic_authentication is sent as false so the LS never auto-triggers authentication
-        // (e.g. opening a browser) on startup — the IDE owns the auth flow. Matches Eclipse and VS Code.
         public const string AutomaticAuthentication = "automatic_authentication";
 
         // Folder-level
@@ -73,7 +71,6 @@ namespace Snyk.VisualStudio.Extension.Language
         {
             TrustedFolders,
             TrustEnabled,
-            AutomaticAuthentication,
         };
 
         /// <summary>

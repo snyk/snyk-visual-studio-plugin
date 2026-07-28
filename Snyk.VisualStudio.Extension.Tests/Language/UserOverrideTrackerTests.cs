@@ -283,7 +283,6 @@ namespace Snyk.VisualStudio.Extension.Tests.Language
                 PflagKeys.CliReleaseChannel,
                 PflagKeys.TrustedFolders,
                 PflagKeys.TrustEnabled,
-                PflagKeys.AutomaticAuthentication,
                 PflagKeys.AdditionalEnvironment,
                 PflagKeys.AdditionalParameters,
                 PflagKeys.RiskScoreThreshold,
