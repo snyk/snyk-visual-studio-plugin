@@ -309,6 +309,37 @@ namespace Snyk.VisualStudio.Extension.Tests.Language
                 "because PflagKeys.IsAlwaysChanged must return true for it");
         }
 
+        // automatic_authentication=false stops the LS auto-authenticating on startup — the IDE owns
+        // the auth flow (matches VS Code, JetBrains and Eclipse). It must carry changed:true: the LS
+        // ignores changed:false and applies its own default of true, which on a fresh install aborts
+        // its scanner init and leaves the issue tree empty for the whole session.
+        //
+        // The tracker is real and seeded with no marks, and this key is deliberately NOT in
+        // PflagKeys._alwaysChanged — so the changed:true assertion below genuinely fails if the
+        // emission is switched to the tracker-gated Cs() helper.
+        [Fact]
+        public void BuildSettingsMap_AutomaticAuthentication_AlwaysSentFalse()
+        {
+            SetupDefaults();
+            var realTracker = new UserOverrideTracker();
+            realTracker.SeedFrom(BuildDefaultOptionsForSeed());
+            optionsManagerMock.Setup(m => m.OverrideTracker).Returns(realTracker);
+
+            var map = cut.BuildSettingsMap(optionsMock.Object);
+
+            Assert.True(map.ContainsKey(PflagKeys.AutomaticAuthentication),
+                "automatic_authentication must be present so the LS does not auto-authenticate on startup");
+            Assert.Equal(false, map[PflagKeys.AutomaticAuthentication].Value);
+            Assert.True(map[PflagKeys.AutomaticAuthentication].Changed,
+                "automatic_authentication must be sent with changed:true, " +
+                "because the LS ignores entries with changed:false and applies its default of true");
+
+            // The handshake is the path that actually matters: the LS reads this key during
+            // initialize, before the auth initializer runs.
+            Assert.True(cut.GetInitializationOptions().Settings.ContainsKey(PflagKeys.AutomaticAuthentication),
+                "the key must reach the LS in the initialize handshake, not just in BuildSettingsMap");
+        }
+
         // ACC-004: A peeked pending reset is folded into the map as {value:null, changed:true}.
         // BuildSettingsMap peeks non-destructively (IDE-2152 CP 2.2); the caller commits on send success.
         [Fact]
