@@ -260,10 +260,12 @@ namespace Snyk.VisualStudio.Extension.Language
             // CliPath: tracker compares the raw options.CliCustomPath (user-configured path).
             // BuildSettingsMap sends the RESOLVED SnykCli.GetCliFilePath(...) — intentional.
             yield return Pair(PflagKeys.CliPath, options.CliCustomPath ?? string.Empty);
+            // Resolve unset/cleared values to the canonical defaults so they compare equal to
+            // ConfigDefaults and are not recorded as phantom user overrides.
             yield return Pair(PflagKeys.CliReleaseChannel,
-                options.CliReleaseChannel ?? SnykCliDownloader.DefaultReleaseChannel);
+                SnykCliDownloader.ResolveReleaseChannel(options.CliReleaseChannel));
             yield return Pair(PflagKeys.BinaryBaseUrl,
-                options.CliBaseDownloadURL ?? SnykCliDownloader.DefaultBaseDownloadUrl);
+                SnykCliDownloader.ResolveBaseDownloadUrl(options.CliBaseDownloadURL));
 
             yield return Pair(PflagKeys.AdditionalEnvironment, options.AdditionalEnv ?? string.Empty);
             yield return Pair(PflagKeys.AdditionalParameters,

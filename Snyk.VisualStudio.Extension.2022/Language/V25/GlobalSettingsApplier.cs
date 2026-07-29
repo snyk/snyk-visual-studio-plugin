@@ -9,7 +9,9 @@ using Snyk.VisualStudio.Extension.Settings;
 namespace Snyk.VisualStudio.Extension.Language
 {
     // Applies a pflag-keyed settings map (from $/snyk.configuration) to ISnykOptions.
-    // PATCH semantics: absent or null-value entries are skipped (existing values preserved).
+    // PATCH semantics: absent or null-value entries are skipped (existing values preserved). Keys whose
+    // LS-side default is an empty string and which the IDE owns a real default for (binary_base_url,
+    // cli_release_channel) additionally skip empty values — see the cases below.
     internal static class GlobalSettingsApplier
     {
         private static readonly ILogger Logger = LogManager.ForContext(typeof(GlobalSettingsApplier));
@@ -53,9 +55,25 @@ namespace Snyk.VisualStudio.Extension.Language
                     case PflagKeys.ProxyInsecure:        options.IgnoreUnknownCA = val.Value<bool>(); break;
 
                     case PflagKeys.AutomaticDownload:    options.BinariesAutoUpdate = val.Value<bool>(); break;
+                    // CliPath is deliberately not empty-guarded: an empty path is a meaningful cleared
+                    // state that resolves to the default CLI location (SnykCli.GetCliFilePath).
                     case PflagKeys.CliPath:              options.CliCustomPath      = val.Value<string>(); break;
-                    case PflagKeys.BinaryBaseUrl:        options.CliBaseDownloadURL = val.Value<string>(); break;
-                    case PflagKeys.CliReleaseChannel:    options.CliReleaseChannel  = val.Value<string>(); break;
+
+                    // binary_base_url and cli_release_channel are registered in snyk-ls with EMPTY
+                    // defaults (register_configurations.go) and buildGlobalSettingsMap echoes every
+                    // machine-scope setting, so an empty inbound value means "the LS has no opinion",
+                    // not "the user cleared it". Applying it wiped the IDE's canonical defaults — and
+                    // OnSnykConfiguration persists the result, so the empties survived restarts and the
+                    // download URL stayed relative ("/cli//ls-protocol-version-25"). Treat empty as
+                    // absent, extending the PATCH semantics documented above for these two keys.
+                    case PflagKeys.BinaryBaseUrl:
+                        var baseUrl = val.Value<string>();
+                        if (!string.IsNullOrWhiteSpace(baseUrl)) options.CliBaseDownloadURL = baseUrl;
+                        break;
+                    case PflagKeys.CliReleaseChannel:
+                        var releaseChannel = val.Value<string>();
+                        if (!string.IsNullOrWhiteSpace(releaseChannel)) options.CliReleaseChannel = releaseChannel;
+                        break;
 
                     case PflagKeys.AdditionalEnvironment:  options.AdditionalEnv        = val.Value<string>(); break;
                     case PflagKeys.AdditionalParameters:

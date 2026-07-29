@@ -39,6 +39,39 @@ namespace Snyk.VisualStudio.Extension.Download
         /// </summary>
         public delegate void CliDownloadFinishedCallback();
 
+        /// <summary>
+        /// Resolve the CLI download base URL, treating an unset or cleared value as the default.
+        /// Empty is not a usable value: it reaches the options both from the settings form (the user
+        /// clearing the field means "use the default") and from the Language Server, which registers
+        /// binary_base_url with an empty default and echoes every machine-scope setting back in
+        /// $/snyk.configuration. Interpolating it produced a relative download URL that WebClient
+        /// resolved into a nonexistent local file path.
+        /// </summary>
+        public static string ResolveBaseDownloadUrl(string configuredBaseDownloadUrl) =>
+            string.IsNullOrWhiteSpace(configuredBaseDownloadUrl)
+                ? DefaultBaseDownloadUrl
+                : configuredBaseDownloadUrl;
+
+        /// <summary>
+        /// Resolve the CLI release channel, treating an unset or cleared value as the default.
+        /// Same reasoning as <see cref="ResolveBaseDownloadUrl"/>.
+        /// </summary>
+        public static string ResolveReleaseChannel(string configuredReleaseChannel) =>
+            string.IsNullOrWhiteSpace(configuredReleaseChannel)
+                ? DefaultReleaseChannel
+                : configuredReleaseChannel;
+
+        // internal for testability (InternalsVisibleTo test project): lets the URL-construction tests
+        // pin the resolved URLs without hitting the network.
+        internal string BuildLatestReleaseVersionUrl() => string.Format(
+            LatestReleaseVersionUrlScheme,
+            ResolveBaseDownloadUrl(SnykOptions.CliBaseDownloadURL),
+            ResolveReleaseChannel(SnykOptions.CliReleaseChannel));
+
+        internal string BuildCliDownloadUrl(string version) => string.Format(
+            LatestReleaseDownloadUrlScheme,
+            ResolveBaseDownloadUrl(SnykOptions.CliBaseDownloadURL),
+            version);
 
         /// <summary>
         /// Request last cli information.
@@ -52,15 +85,12 @@ namespace Snyk.VisualStudio.Extension.Download
             {
                 Logger.Information("Get latest CLI release info");
 
-                var latestReleaseVersionUrl = string.Format(LatestReleaseVersionUrlScheme, SnykOptions.CliBaseDownloadURL, SnykOptions.CliReleaseChannel);
-                var latestVersion = webClient.DownloadString(latestReleaseVersionUrl).Replace("\n", string.Empty);
-
-                var latestReleaseDownloadUrl = string.Format(LatestReleaseDownloadUrlScheme, SnykOptions.CliBaseDownloadURL, "v"+latestVersion);
+                var latestVersion = webClient.DownloadString(this.BuildLatestReleaseVersionUrl()).Replace("\n", string.Empty);
 
                 return new LatestReleaseInfo
                 {
                     Version = "v" + latestVersion,
-                    Url = latestReleaseDownloadUrl,
+                    Url = this.BuildCliDownloadUrl("v" + latestVersion),
                     Name = "v" + latestVersion,
                 };
             }

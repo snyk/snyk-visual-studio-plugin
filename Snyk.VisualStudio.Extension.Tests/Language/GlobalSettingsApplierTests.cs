@@ -2,6 +2,8 @@ using System.Collections.Generic;
 using Moq;
 using Newtonsoft.Json.Linq;
 using Snyk.VisualStudio.Extension.Authentication;
+using Snyk.VisualStudio.Extension.CLI;
+using Snyk.VisualStudio.Extension.Download;
 using Snyk.VisualStudio.Extension.Language;
 using Snyk.VisualStudio.Extension.Settings;
 using Xunit;
@@ -216,6 +218,83 @@ namespace Snyk.VisualStudio.Extension.Tests.Language
             };
             GlobalSettingsApplier.Apply(settings, options);
             Assert.Equal(new List<string> { "--debug", "--verbose" }, options.AdditionalParameters);
+        }
+
+        [Theory]
+        [InlineData("")]
+        [InlineData("   ")]
+        public void Apply_ShouldPreserveCliBaseDownloadUrl_WhenLsEchoesEmptyValue(string inbound)
+        {
+            // The LS registers binary_base_url with an empty default (register_configurations.go) and
+            // buildGlobalSettingsMap echoes every machine-scope setting, so an empty inbound value means
+            // "the LS has no opinion" — not "the user cleared it". Applying it wiped the IDE's canonical
+            // default and left the download URL relative (/cli//ls-protocol-version-25), which resolved
+            // to a nonexistent local file path.
+            var options = MakeOptions();
+            options.CliBaseDownloadURL = SnykCliDownloader.DefaultBaseDownloadUrl;
+            var settings = new Dictionary<string, ConfigSetting>
+            {
+                [PflagKeys.BinaryBaseUrl] = ConfigSetting.Of(inbound)
+            };
+
+            GlobalSettingsApplier.Apply(settings, options);
+
+            Assert.Equal(SnykCliDownloader.DefaultBaseDownloadUrl, options.CliBaseDownloadURL);
+        }
+
+        [Theory]
+        [InlineData("")]
+        [InlineData("   ")]
+        public void Apply_ShouldPreserveCliReleaseChannel_WhenLsEchoesEmptyValue(string inbound)
+        {
+            var options = MakeOptions();
+            options.CliReleaseChannel = SnykCliDownloader.DefaultReleaseChannel;
+            var settings = new Dictionary<string, ConfigSetting>
+            {
+                [PflagKeys.CliReleaseChannel] = ConfigSetting.Of(inbound)
+            };
+
+            GlobalSettingsApplier.Apply(settings, options);
+
+            Assert.Equal(SnykCliDownloader.DefaultReleaseChannel, options.CliReleaseChannel);
+        }
+
+        [Fact]
+        public void Apply_ShouldSetCliBaseDownloadUrlAndReleaseChannel_WhenLsSendsRealValues()
+        {
+            // The empty-value guard must not block genuine LS/LDX-Sync-pushed values.
+            var options = MakeOptions();
+            options.CliBaseDownloadURL = SnykCliDownloader.DefaultBaseDownloadUrl;
+            options.CliReleaseChannel = SnykCliDownloader.DefaultReleaseChannel;
+            var settings = new Dictionary<string, ConfigSetting>
+            {
+                [PflagKeys.BinaryBaseUrl] = ConfigSetting.Of("https://downloads.snyk.io/fips"),
+                [PflagKeys.CliReleaseChannel] = ConfigSetting.Of("rc"),
+            };
+
+            GlobalSettingsApplier.Apply(settings, options);
+
+            Assert.Equal("https://downloads.snyk.io/fips", options.CliBaseDownloadURL);
+            Assert.Equal("rc", options.CliReleaseChannel);
+        }
+
+        [Fact]
+        public void Apply_ShouldClearCliPath_WhenInboundValueIsEmpty()
+        {
+            // cli_path is deliberately NOT covered by the empty-value guard: unlike the base URL and
+            // release channel it has a meaningful cleared state, and an empty path resolves to the
+            // default CLI location (SnykCli.GetCliFilePath).
+            var options = MakeOptions();
+            options.CliCustomPath = @"C:\custom\snyk.exe";
+            var settings = new Dictionary<string, ConfigSetting>
+            {
+                [PflagKeys.CliPath] = ConfigSetting.Of(string.Empty)
+            };
+
+            GlobalSettingsApplier.Apply(settings, options);
+
+            Assert.Equal(string.Empty, options.CliCustomPath);
+            Assert.Equal(SnykCli.GetSnykCliDefaultPath(), SnykCli.GetCliFilePath(options.CliCustomPath));
         }
     }
 }

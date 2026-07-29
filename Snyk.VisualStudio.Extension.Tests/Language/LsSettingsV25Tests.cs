@@ -253,6 +253,37 @@ namespace Snyk.VisualStudio.Extension.Tests.Language
             Assert.Equal(false, map[PflagKeys.SeverityFilterLow].Value);
         }
 
+        // Cleared CLI settings must go out resolved to their defaults, never as empty strings: the LS
+        // downloads the CLI itself from binary_base_url / cli_release_channel, so an empty value would
+        // break the download on both sides of the wire.
+        [Theory]
+        [InlineData("")]
+        [InlineData("   ")]
+        public void BuildSettingsMap_ClearedCliUrlAndChannel_SendResolvedDefaults(string cleared)
+        {
+            SetupDefaults();
+            optionsMock.SetupGet(o => o.CliBaseDownloadURL).Returns(cleared);
+            optionsMock.SetupGet(o => o.CliReleaseChannel).Returns(cleared);
+
+            var map = cut.BuildSettingsMap(optionsMock.Object);
+
+            Assert.Equal(SnykCliDownloader.DefaultBaseDownloadUrl, map[PflagKeys.BinaryBaseUrl].Value);
+            Assert.Equal(SnykCliDownloader.DefaultReleaseChannel, map[PflagKeys.CliReleaseChannel].Value);
+        }
+
+        // Clearing the custom CLI path is a supported reset: the LS must receive the default CLI
+        // location, not an empty path.
+        [Fact]
+        public void BuildSettingsMap_ClearedCliPath_SendsDefaultCliLocation()
+        {
+            SetupDefaults();
+            optionsMock.SetupGet(o => o.CliCustomPath).Returns(string.Empty);
+
+            var map = cut.BuildSettingsMap(optionsMock.Object);
+
+            Assert.Equal(Extension.CLI.SnykCli.GetSnykCliDefaultPath(), map[PflagKeys.CliPath].Value);
+        }
+
         // ACC-001: A key the user has NOT overridden is sent with changed:false.
         [Fact]
         public void BuildSettingsMap_UntouchedKey_NotMarkedChanged()

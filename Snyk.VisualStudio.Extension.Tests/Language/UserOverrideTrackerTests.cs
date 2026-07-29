@@ -250,6 +250,26 @@ namespace Snyk.VisualStudio.Extension.Tests.Language
                 "null CliReleaseChannel must fall back to canonical default, not be marked changed");
         }
 
+        // Same as S1 for the EMPTY (rather than null) case: the settings form lets the user clear both
+        // fields, and a $/snyk.configuration echo used to land "" in options. Empty means "use the
+        // default", so it must not be recorded as a user override either.
+        [Theory]
+        [InlineData("")]
+        [InlineData("   ")]
+        public void SeedFrom_EmptyCliUrlAndChannel_NotMarkedChanged(string cleared)
+        {
+            var options = DefaultOptions();
+            options.SetupGet(x => x.CliBaseDownloadURL).Returns(cleared);
+            options.SetupGet(x => x.CliReleaseChannel).Returns(cleared);
+
+            sut.SeedFrom(options.Object);
+
+            Assert.False(sut.IsChanged(PflagKeys.BinaryBaseUrl),
+                "cleared CliBaseDownloadURL must fall back to canonical default, not be marked changed");
+            Assert.False(sut.IsChanged(PflagKeys.CliReleaseChannel),
+                "cleared CliReleaseChannel must fall back to canonical default, not be marked changed");
+        }
+
         // S3: GetGlobalKeyValues must cover exactly the same Cs()-wrapped keys as BuildSettingsMap,
         // excluding the always-Of() keys (DeviceId, ClientProtocolVersion) which are never tracked.
         // This test fails if a key is added to one site but forgotten at the other.

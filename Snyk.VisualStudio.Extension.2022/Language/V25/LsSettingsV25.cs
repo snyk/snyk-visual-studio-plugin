@@ -106,10 +106,12 @@ namespace Snyk.VisualStudio.Extension.Language
 
                 [PflagKeys.AutomaticDownload]       = Cs(PflagKeys.AutomaticDownload,      options.BinariesAutoUpdate),
                 [PflagKeys.CliPath]                 = Cs(PflagKeys.CliPath,                SnykCli.GetCliFilePath(options.CliCustomPath)),
+                // Resolve rather than send verbatim: a cleared value means "use the default", and the LS
+                // does its own CLI download from these, so forwarding an empty string would break it too.
                 [PflagKeys.BinaryBaseUrl]           = Cs(PflagKeys.BinaryBaseUrl,
-                                                         options.CliBaseDownloadURL ?? SnykCliDownloader.DefaultBaseDownloadUrl),
+                                                         SnykCliDownloader.ResolveBaseDownloadUrl(options.CliBaseDownloadURL)),
                 [PflagKeys.CliReleaseChannel]       = Cs(PflagKeys.CliReleaseChannel,
-                                                         options.CliReleaseChannel ?? SnykCliDownloader.DefaultReleaseChannel),
+                                                         SnykCliDownloader.ResolveReleaseChannel(options.CliReleaseChannel)),
 
                 // TrustedFolders is in AlwaysChanged so IsChanged returns true regardless.
                 [PflagKeys.TrustedFolders]          = Cs(PflagKeys.TrustedFolders,         options.TrustedFolders?.ToList() ?? new List<string>()),
