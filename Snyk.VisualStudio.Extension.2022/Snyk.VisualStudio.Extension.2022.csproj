@@ -209,9 +209,6 @@
     <Compile Include="BranchSelectorDialogWindow.xaml.cs">
       <DependentUpon>BranchSelectorDialogWindow.xaml</DependentUpon>
     </Compile>
-    <Compile Include="TrustDialogWindow.xaml.cs">
-      <DependentUpon>TrustDialogWindow.xaml</DependentUpon>
-    </Compile>
     <Compile Include="UI\Controls\TextField.xaml.cs">
       <DependentUpon>TextField.xaml</DependentUpon>
     </Compile>
@@ -357,10 +354,6 @@
   </ItemGroup>
   <ItemGroup>
     <Page Include="AuthDialogWindow.xaml">
-      <Generator>MSBuild:Compile</Generator>
-      <SubType>Designer</SubType>
-    </Page>
-    <Page Include="TrustDialogWindow.xaml">
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
     </Page>

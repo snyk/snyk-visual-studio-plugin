@@ -403,13 +403,7 @@ namespace Snyk.VisualStudio.Extension.Language
         }
         
         public async Task<object> InvokeWorkspaceScanAsync(CancellationToken cancellationToken)
-        { 
-            var isFolderTrusted = await SnykVSPackage.ServiceProvider.TasksService.IsFolderTrustedAsync();
-            if (!isFolderTrusted)
-            {
-                return null;
-            }
-
+        {
             var param = new LSP.ExecuteCommandParams {
                 Command = LsConstants.SnykWorkspaceScan
             };

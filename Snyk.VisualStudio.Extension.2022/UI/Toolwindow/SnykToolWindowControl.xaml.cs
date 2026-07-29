@@ -655,14 +655,10 @@ namespace Snyk.VisualStudio.Extension.UI.Toolwindow
                 return;
             }
 
-            var isFolderTrusted = ThreadHelper.JoinableTaskFactory.Run(async () =>
-            {
-                var solutionFolderPath = await this.serviceProvider.SolutionService.GetSolutionFolderAsync();
-                var isFolderTrusted = this.serviceProvider.WorkspaceTrustService.IsFolderTrusted(solutionFolderPath);
-                return isFolderTrusted;
-            });
-
-            if (options.ApiToken.IsValid() && isFolderTrusted)
+            // Gate the screen on authentication only. The LS enforces trust (trust_enabled=true) and
+            // renders the untrusted-folder prompt in the HTML tree view, so an authenticated user with
+            // an untrusted folder open lands on the tree view where that prompt is shown.
+            if (options.ApiToken.IsValid())
             {
                 this.context.TransitionTo(RunScanState.Instance);
                 return;
