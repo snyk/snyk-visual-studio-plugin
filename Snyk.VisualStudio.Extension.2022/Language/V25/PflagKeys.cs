@@ -43,9 +43,11 @@ namespace Snyk.VisualStudio.Extension.Language
 
         // Trust
         public const string TrustedFolders = "trusted_folders";
-        // trust_enabled is sent as true so the LS owns trust enforcement (scan gating and the HTML
-        // tree-view trust prompt).
+        // trust_enabled is defined in the LS spec and belongs to the always-changed set, but is not
+        // yet emitted by BuildSettingsMap — trust enforcement still lives on the IDE side.
         public const string TrustEnabled = "trust_enabled";
+        // Emitted as an unconditional false by BuildSettingsMap via ConfigSetting.Of, so it is
+        // deliberately NOT in the always-changed set below — that set is for tracker-gated keys.
         public const string AutomaticAuthentication = "automatic_authentication";
 
         // Folder-level
