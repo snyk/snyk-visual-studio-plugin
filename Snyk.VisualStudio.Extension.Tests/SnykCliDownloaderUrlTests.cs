@@ -100,9 +100,35 @@ namespace Snyk.VisualStudio.Extension.Tests
         [InlineData(null)]
         [InlineData("")]
         [InlineData(" ")]
+        // Not absolute http/https → composes into a relative URL, the same failure mode as empty:
+        // WebClient turns it into a local file path instead of a request.
+        [InlineData("downloads.snyk.io")]
+        [InlineData("/downloads.snyk.io")]
+        [InlineData(@"C:\downloads")]
+        [InlineData("file:///c:/downloads")]
+        [InlineData("not a url")]
         public void ResolveBaseDownloadUrl_FallsBackToDefault(string configured)
         {
             Assert.Equal(SnykCliDownloader.DefaultBaseDownloadUrl, SnykCliDownloader.ResolveBaseDownloadUrl(configured));
+        }
+
+        [Theory]
+        [InlineData("https://downloads.snyk.io")]
+        [InlineData("https://downloads.snyk.io/fips")]
+        [InlineData("http://artifacts.internal/snyk")]
+        public void ResolveBaseDownloadUrl_KeepsAbsoluteWebUrls(string configured)
+        {
+            Assert.Equal(configured, SnykCliDownloader.ResolveBaseDownloadUrl(configured));
+        }
+
+        [Theory]
+        [InlineData("downloads.snyk.io")]
+        [InlineData(@"C:\downloads")]
+        public void BuildLatestReleaseVersionUrl_IsAbsoluteHttps_WhenBaseUrlIsNotAWebUrl(string configured)
+        {
+            var url = Downloader(configured, "stable").BuildLatestReleaseVersionUrl();
+
+            Assert.Equal(ExpectedDefaultVersionUrl, url);
         }
 
         [Theory]
@@ -119,6 +145,30 @@ namespace Snyk.VisualStudio.Extension.Tests
         {
             Assert.Equal("https://example.internal", SnykCliDownloader.ResolveBaseDownloadUrl("https://example.internal"));
             Assert.Equal("rc", SnykCliDownloader.ResolveReleaseChannel("rc"));
+        }
+
+        [Fact]
+        public void EveryBuiltUrl_IsAnAbsoluteWebUrl_ForAnyConfiguredValue()
+        {
+            // Blanket invariant: whatever lands in the options, the downloader must never hand
+            // WebClient something it will resolve as a local file path.
+            var pathologicalBaseUrls = new[] { null, "", "   ", "downloads.snyk.io", "/cli", @"C:\downloads", "file:///c:/x", "not a url" };
+            var channels = new[] { null, "", "   ", "stable", "v1.1292.0" };
+
+            foreach (var baseUrl in pathologicalBaseUrls)
+            {
+                foreach (var channel in channels)
+                {
+                    var downloader = Downloader(baseUrl, channel);
+
+                    foreach (var url in new[] { downloader.BuildLatestReleaseVersionUrl(), downloader.BuildCliDownloadUrl("v1.1292.0") })
+                    {
+                        Assert.True(
+                            Uri.TryCreate(url, UriKind.Absolute, out var uri) && uri.Scheme == Uri.UriSchemeHttps,
+                            $"base '{baseUrl}' + channel '{channel}' produced non-https URL '{url}'");
+                    }
+                }
+            }
         }
     }
 }

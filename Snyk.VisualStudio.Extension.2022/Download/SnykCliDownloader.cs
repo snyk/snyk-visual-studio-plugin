@@ -5,6 +5,7 @@ using System.Net.Http;
 using System.Threading.Tasks;
 using Serilog;
 using Snyk.VisualStudio.Extension.CLI;
+using Snyk.VisualStudio.Extension.Extension;
 using Snyk.VisualStudio.Extension.Language;
 using Snyk.VisualStudio.Extension.Service;
 using Snyk.VisualStudio.Extension.Settings;
@@ -40,17 +41,17 @@ namespace Snyk.VisualStudio.Extension.Download
         public delegate void CliDownloadFinishedCallback();
 
         /// <summary>
-        /// Resolve the CLI download base URL, treating an unset or cleared value as the default.
-        /// Empty is not a usable value: it reaches the options both from the settings form (the user
-        /// clearing the field means "use the default") and from the Language Server, which registers
-        /// binary_base_url with an empty default and echoes every machine-scope setting back in
-        /// $/snyk.configuration. Interpolating it produced a relative download URL that WebClient
-        /// resolved into a nonexistent local file path.
+        /// Resolve the CLI download base URL, falling back to the default unless the configured value
+        /// is an absolute http/https URL. Anything else — empty (the user clearing the field, or the
+        /// Language Server echoing back binary_base_url, which it registers with an empty default) or a
+        /// scheme-less host like "downloads.snyk.io" — composes into a RELATIVE url, which
+        /// <see cref="System.Net.WebClient"/> resolves through Path.GetFullPath into a nonexistent
+        /// local file path and reports as a DirectoryNotFoundException.
         /// </summary>
         public static string ResolveBaseDownloadUrl(string configuredBaseDownloadUrl) =>
-            string.IsNullOrWhiteSpace(configuredBaseDownloadUrl)
-                ? DefaultBaseDownloadUrl
-                : configuredBaseDownloadUrl;
+            UriExtensions.IsValidWebUrl(configuredBaseDownloadUrl)
+                ? configuredBaseDownloadUrl
+                : DefaultBaseDownloadUrl;
 
         /// <summary>
         /// Resolve the CLI release channel, treating an unset or cleared value as the default.
@@ -83,9 +84,18 @@ namespace Snyk.VisualStudio.Extension.Download
 
             using (var webClient = new SnykWebClient())
             {
-                Logger.Information("Get latest CLI release info");
+                var latestReleaseVersionUrl = this.BuildLatestReleaseVersionUrl();
 
-                var latestVersion = webClient.DownloadString(this.BuildLatestReleaseVersionUrl()).Replace("\n", string.Empty);
+                // Log the composed URL and the raw options it came from: without this the only symptom
+                // of an unusable base url / release channel is a DirectoryNotFoundException from deep
+                // inside WebClient, naming a local path that appears nowhere in the settings.
+                Logger.Information(
+                    "Get latest CLI release info from {Url} (configured base url: '{BaseDownloadUrl}', release channel: '{ReleaseChannel}')",
+                    latestReleaseVersionUrl,
+                    this.SnykOptions.CliBaseDownloadURL,
+                    this.SnykOptions.CliReleaseChannel);
+
+                var latestVersion = webClient.DownloadString(latestReleaseVersionUrl).Replace("\n", string.Empty);
 
                 return new LatestReleaseInfo
                 {

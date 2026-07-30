@@ -1,6 +1,7 @@
 ﻿// ABOUTME: This file manages loading and saving Snyk settings from persistent storage
 // ABOUTME: It handles serialization/deserialization of settings to file and provides solution-specific configuration management
 using Snyk.VisualStudio.Extension.Authentication;
+using Snyk.VisualStudio.Extension.Download;
 using Snyk.VisualStudio.Extension.Language;
 using Snyk.VisualStudio.Extension.Service;
 using System;
@@ -273,8 +274,14 @@ namespace Snyk.VisualStudio.Extension.Settings
 
                 BinariesAutoUpdate = snykSettings.BinariesAutoUpdateEnabled,
                 CliCustomPath = snykSettings.CustomCliPath,
-                CliBaseDownloadURL = snykSettings.CliBaseDownloadURL,
-                CliReleaseChannel = snykSettings.CliReleaseChannel,
+                // Repair-on-load: installs whose settings.json was written while options held an empty
+                // base url / release channel (a $/snyk.configuration echo of the LS's empty defaults,
+                // persisted by OnSnykConfiguration) would otherwise stay broken forever, because an
+                // explicit "" on disk overrides the SnykSettings field initialisers. Resolving here
+                // makes the in-memory state coherent everywhere (settings UI, LS payload, downloader)
+                // and the repaired values are written back on the next Save.
+                CliBaseDownloadURL = SnykCliDownloader.ResolveBaseDownloadUrl(snykSettings.CliBaseDownloadURL),
+                CliReleaseChannel = SnykCliDownloader.ResolveReleaseChannel(snykSettings.CliReleaseChannel),
                 CurrentCliVersion = snykSettings.CurrentCliVersion,
 
                 AuthenticationMethod = snykSettings.AuthenticationMethod,
