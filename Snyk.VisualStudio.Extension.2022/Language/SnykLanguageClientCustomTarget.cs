@@ -282,11 +282,6 @@ namespace Snyk.VisualStudio.Extension.Language
             // may arrive multiple times, so the gate ensures we trigger the IDE-side scan exactly once.
             if (options.AutoScan)
             {
-                var isFolderTrusted = await this.serviceProvider.TasksService.IsFolderTrustedAsync();
-                await TaskScheduler.Default;
-                if (!isFolderTrusted)
-                    return;
-
                 if (!options.InternalAutoScan)
                 {
                     options.InternalAutoScan = true;

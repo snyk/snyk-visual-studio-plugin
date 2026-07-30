@@ -102,6 +102,15 @@ namespace Snyk.VisualStudio.Extension.Language
                 [PflagKeys.Token]                   = Cs(PflagKeys.Token,                  options.ApiToken?.ToString() ?? string.Empty),
                 [PflagKeys.Organization]            = Cs(PflagKeys.Organization,           options.Organization ?? string.Empty),
                 [PflagKeys.AuthenticationMethod]    = Cs(PflagKeys.AuthenticationMethod,   options.AuthenticationMethod.ToString().ToLowerInvariant()),
+                // automatic_authentication=false: the IDE owns the auth flow, so the LS must not
+                // auto-authenticate on startup. Matches VS Code, JetBrains and Eclipse.
+                //
+                // Of(), not Cs(): the LS ignores a setting sent with changed:false and applies its
+                // own default of true. Auto-authenticating fails on a fresh install, and that error
+                // aborts the LS's scanner init before it initialises the scan-state aggregator —
+                // which is what pushes the issue tree, so the tree never populates for the rest of
+                // the session. See snyk-ls infrastructure/authentication/initializer.go.
+                [PflagKeys.AutomaticAuthentication] = ConfigSetting.Of(false),
                 [PflagKeys.ProxyInsecure]           = Cs(PflagKeys.ProxyInsecure,          options.IgnoreUnknownCA),
 
                 [PflagKeys.AutomaticDownload]       = Cs(PflagKeys.AutomaticDownload,      options.BinariesAutoUpdate),
@@ -115,6 +124,10 @@ namespace Snyk.VisualStudio.Extension.Language
 
                 // TrustedFolders is in AlwaysChanged so IsChanged returns true regardless.
                 [PflagKeys.TrustedFolders]          = Cs(PflagKeys.TrustedFolders,         options.TrustedFolders?.ToList() ?? new List<string>()),
+                // trust_enabled=true delegates trust enforcement to the LS: it skips scanning untrusted
+                // folders and renders the untrusted-folder trust prompt in the HTML tree view.
+                // Always-changed so the LS never inherits an org default.
+                [PflagKeys.TrustEnabled]            = Cs(PflagKeys.TrustEnabled,           true),
                 [PflagKeys.AdditionalEnvironment]   = Cs(PflagKeys.AdditionalEnvironment,  options.AdditionalEnv ?? string.Empty),
                 // LS applyCliConfig reads additional_parameters via settingStr (string type-assert),
                 // so send as a space-joined string — same wire format LS uses on its outbound echo.

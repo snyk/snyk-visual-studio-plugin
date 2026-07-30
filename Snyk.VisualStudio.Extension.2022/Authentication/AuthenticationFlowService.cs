@@ -91,6 +91,12 @@ namespace Snyk.VisualStudio.Extension.Authentication
                     {
                         try
                         {
+                            // The logout is load-bearing, not just hygiene: InvokeLogin sends
+                            // snyk.login with no arguments, which skips the LS's own provider
+                            // configuration. The LS configures its auth provider unconditionally on
+                            // logout, so this ordering is what leaves a provider in place for the
+                            // login that follows. Reversing or dropping it fails a fresh-install
+                            // login with "authentication provider is not configured".
                             await serviceProvider.LanguageClientManager.InvokeLogout(serviceProvider.DisposalToken);
                             Logger.Information("Invoking InvokeLogin for auth");
                             await serviceProvider.LanguageClientManager.InvokeLogin(serviceProvider.DisposalToken);
