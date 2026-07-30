@@ -5,6 +5,7 @@ using System;
 using System.IO;
 using System.Reflection;
 using System.Text.RegularExpressions;
+using Snyk.VisualStudio.Extension.Download;
 using Snyk.VisualStudio.Extension.Settings;
 
 namespace Snyk.VisualStudio.Extension.UI.Html
@@ -36,7 +37,11 @@ namespace Snyk.VisualStudio.Extension.UI.Html
                         // The CLI release channel can be one of the well-known values
                         // (stable / rc / preview) or any other string, in which case the
                         // form treats it as a "custom version" (e.g. "v1.1292.0").
-                        var channel = options.CliReleaseChannel ?? string.Empty;
+                        // Render what is actually in effect. Options can still hold an empty
+                        // value (an LS echo lands before the next save normalises it), and rendering
+                        // that as a blank field while every other consumer uses the default tells the
+                        // user something untrue about their own configuration.
+                        var channel = SnykCliDownloader.ResolveReleaseChannel(options.CliReleaseChannel);
                         var isCustomChannel = channel.Length > 0
                             && channel != "stable" && channel != "rc" && channel != "preview";
 
@@ -44,7 +49,7 @@ namespace Snyk.VisualStudio.Extension.UI.Html
                             .Replace("{{MANAGE_BINARIES_CHECKED}}", options.BinariesAutoUpdate ? "checked" : "")
                             .Replace("{{INSECURE_CHECKED}}", options.IgnoreUnknownCA ? "checked" : "")
                             .Replace("{{CLI_PATH}}", options.CliCustomPath ?? "")
-                            .Replace("{{CLI_BASE_DOWNLOAD_URL}}", options.CliBaseDownloadURL ?? "")
+                            .Replace("{{CLI_BASE_DOWNLOAD_URL}}", SnykCliDownloader.ResolveBaseDownloadUrl(options.CliBaseDownloadURL))
                             .Replace("{{CHANNEL_STABLE_SELECTED}}", channel == "stable" ? "selected" : "")
                             .Replace("{{CHANNEL_RC_SELECTED}}", channel == "rc" ? "selected" : "")
                             .Replace("{{CHANNEL_PREVIEW_SELECTED}}", channel == "preview" ? "selected" : "")

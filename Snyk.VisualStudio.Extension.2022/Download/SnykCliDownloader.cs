@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Net.Http;
 using System.Threading.Tasks;
 using Serilog;
@@ -41,17 +42,99 @@ namespace Snyk.VisualStudio.Extension.Download
         public delegate void CliDownloadFinishedCallback();
 
         /// <summary>
-        /// Resolve the CLI download base URL, falling back to the default unless the configured value
-        /// is an absolute http/https URL. Anything else — empty (the user clearing the field, or the
-        /// Language Server echoing back binary_base_url, which it registers with an empty default) or a
-        /// scheme-less host like "downloads.snyk.io" — composes into a RELATIVE url, which
-        /// <see cref="System.Net.WebClient"/> resolves through Path.GetFullPath into a nonexistent
-        /// local file path and reports as a DirectoryNotFoundException.
+        /// Resolve the CLI download base URL to something that composes into an absolute URL.
+        /// <para>
+        /// A relative value composes into a relative download URL, which <see cref="System.Net.WebClient"/>
+        /// resolves through Path.GetFullPath into a nonexistent local file path and reports as a
+        /// DirectoryNotFoundException — the original defect. Three cases:
+        /// </para>
+        /// <list type="bullet">
+        /// <item>Absolute http/https — used as configured, including an internal mirror on plain http.</item>
+        /// <item>Scheme-less host ("downloads.snyk.io", "artifacts.internal:8081/snyk") — the user typed it
+        /// like a browser address bar, so https is assumed rather than discarding what they configured.</item>
+        /// <item>Empty, or not a host at all (a Windows path, a file:// URL, free text) — the default.
+        /// Empty is the ordinary "unset" case (a cleared field, or the Language Server echoing back
+        /// binary_base_url, which it registers with an empty default); anything else is a misconfiguration
+        /// and is logged, because silently redirecting a mis-typed internal mirror to the public download
+        /// host is not something an egress-restricted customer should have to discover from a packet trace.
+        /// </item>
+        /// </list>
         /// </summary>
-        public static string ResolveBaseDownloadUrl(string configuredBaseDownloadUrl) =>
-            UriExtensions.IsValidWebUrl(configuredBaseDownloadUrl)
-                ? configuredBaseDownloadUrl
-                : DefaultBaseDownloadUrl;
+        public static string ResolveBaseDownloadUrl(string configuredBaseDownloadUrl)
+        {
+            if (string.IsNullOrWhiteSpace(configuredBaseDownloadUrl))
+            {
+                return DefaultBaseDownloadUrl;
+            }
+
+            var configured = configuredBaseDownloadUrl.Trim();
+
+            if (UriExtensions.IsValidWebUrl(configured))
+            {
+                return configured;
+            }
+
+            if (TryResolveSchemelessHost(configured, out var withScheme))
+            {
+                return withScheme;
+            }
+
+            Logger.Warning(
+                "Configured CLI download base URL '{ConfiguredBaseDownloadUrl}' is not a usable host; falling back to {DefaultBaseDownloadUrl}",
+                Redact(configured),
+                DefaultBaseDownloadUrl);
+
+            return DefaultBaseDownloadUrl;
+        }
+
+        // "downloads.snyk.io", "downloads.snyk.io/fips" and "artifacts.internal:8081/snyk" are what users
+        // type when they treat the field like an address bar; assume https for them. Rejects anything that
+        // is not a bare host: a rooted or Windows path, a non-http scheme (file:, ftp:) or a drive letter
+        // (both look like "x:" but the part after the colon is not a port), and free text.
+        private static bool TryResolveSchemelessHost(string configured, out string withScheme)
+        {
+            withScheme = null;
+
+            if (configured.IndexOf('\\') >= 0 || configured.StartsWith("/"))
+            {
+                return false;
+            }
+
+            var authority = configured.Split('/')[0];
+            var colonIndex = authority.IndexOf(':');
+
+            if (colonIndex >= 0)
+            {
+                var port = authority.Substring(colonIndex + 1);
+
+                if (port.Length == 0 || !port.All(char.IsDigit))
+                {
+                    return false;
+                }
+            }
+
+            var candidate = Uri.UriSchemeHttps + "://" + configured;
+
+            if (!UriExtensions.IsValidWebUrl(candidate)
+                || !Uri.TryCreate(candidate, UriKind.Absolute, out var uri)
+                || string.IsNullOrEmpty(uri.Host))
+            {
+                return false;
+            }
+
+            withScheme = candidate;
+
+            return true;
+        }
+
+        // Strips credentials before a configured URL reaches the log. A mirror configured as
+        // https://user:token@host would otherwise be written to snyk-extension.log verbatim.
+        private static string Redact(string value)
+        {
+            var atIndex = value.LastIndexOf('@');
+
+            return atIndex < 0 ? value : "<credentials>@" + value.Substring(atIndex + 1);
+        }
 
         /// <summary>
         /// Resolve the CLI release channel, treating an unset or cleared value as the default.
@@ -78,7 +161,9 @@ namespace Snyk.VisualStudio.Extension.Download
         /// Request last cli information.
         /// </summary>
         /// <returns>Latest CLI relaese information.</returns>
-        public LatestReleaseInfo GetLatestReleaseInfo()
+        // virtual for testability (InternalsVisibleTo test project): a test double stands in for the
+        // release-info request so the download-decision paths can be exercised without network access.
+        public virtual LatestReleaseInfo GetLatestReleaseInfo()
         {
             Logger.Information("Enter GetLatestReleaseInfo method");
 
@@ -92,7 +177,7 @@ namespace Snyk.VisualStudio.Extension.Download
                 Logger.Information(
                     "Get latest CLI release info from {Url} (configured base url: '{BaseDownloadUrl}', release channel: '{ReleaseChannel}')",
                     latestReleaseVersionUrl,
-                    this.SnykOptions.CliBaseDownloadURL,
+                    Redact(this.SnykOptions.CliBaseDownloadURL ?? string.Empty),
                     this.SnykOptions.CliReleaseChannel);
 
                 var latestVersion = webClient.DownloadString(latestReleaseVersionUrl).Replace("\n", string.Empty);
@@ -122,7 +207,9 @@ namespace Snyk.VisualStudio.Extension.Download
         /// Request last cli sha.
         /// </summary>
         /// <returns>CLI sha string.</returns>
-        public string GetLatestCliSha(string cliDownloadUrl)
+        // virtual for testability (InternalsVisibleTo test project): a test double returns a known sha so
+        // the up-to-date short-circuit in DownloadAsync can be exercised without network access.
+        public virtual string GetLatestCliSha(string cliDownloadUrl)
         {
             Logger.Information("Enter GetLatestCliSha method");
 
@@ -157,8 +244,18 @@ namespace Snyk.VisualStudio.Extension.Download
             }
             catch (Exception ex)
             {
-                Logger.Error("Could not fetch latest CLI release info for provided version {Ex}", ex);
-                return false;
+                // Do NOT report "up to date" when the check itself failed: with no CLI on disk that
+                // silently skips the download and starts the language server with nothing to run.
+                // Fall back to the one thing still knowable locally — whether a CLI exists at all.
+                var cliFileExists = this.IsCliFileExists(cliFileDestinationPath);
+
+                Logger.Error(ex,
+                    "Could not fetch latest CLI release info. CLI present at {Path}: {CliFileExists}; download needed: {DownloadNeeded}",
+                    cliFileDestinationPath,
+                    cliFileExists,
+                    !cliFileExists);
+
+                return !cliFileExists;
             }
             return false;
         }
@@ -228,8 +325,6 @@ namespace Snyk.VisualStudio.Extension.Download
 
             progressWorker.CancelIfCancellationRequested();
 
-            PrepareCliDirectory(cliFileDestinationPath);
-
             await this.DownloadAsync(
                 progressWorker,
                 cliFileDestinationPath,
@@ -285,6 +380,25 @@ namespace Snyk.VisualStudio.Extension.Download
         }
 
         /// <summary>
+        /// Put the downloaded binary at its destination, creating the destination folder if needed.
+        /// Throws on failure — the caller reports it and rethrows.
+        /// </summary>
+        // internal static for testability (InternalsVisibleTo test project): lets the install step be
+        // exercised without downloading a CLI first.
+        internal static void InstallCliFile(string sourceFilePath, string cliFileDestinationPath)
+        {
+            // The destination folder is the configured one, which may not exist yet (snyk-ls reports its
+            // own CLI location as cli_path). Create it before copying, or the copy fails with
+            // DirectoryNotFoundException and reads as a file-in-use error.
+            PrepareCliDirectory(cliFileDestinationPath);
+
+            // Overwrite in place rather than Delete-then-Copy: a failed copy (e.g. the language server is
+            // running the binary) then leaves the existing, working CLI intact instead of having already
+            // deleted it.
+            File.Copy(sourceFilePath, cliFileDestinationPath, overwrite: true);
+        }
+
+        /// <summary>
         /// True when the binary already at <paramref name="cliFileDestinationPath"/> is the one we are
         /// about to install. snyk-ls downloads the same CLI to the same path and runs it, so overwriting
         /// an identical binary achieves nothing and can fail with a sharing violation.
@@ -301,10 +415,13 @@ namespace Snyk.VisualStudio.Extension.Download
             {
                 return string.Equals(Sha256.Checksum(cliFileDestinationPath), expectedSha, StringComparison.OrdinalIgnoreCase);
             }
-            catch (IOException e)
+            catch (Exception e)
             {
-                // Locked by the LS mid-scan: treat as "not verifiable" and let the normal download path
-                // run, which reports a proper error if it also cannot get at the file.
+                // Every failure here means the same thing — "not verifiable" — so the answer is always
+                // false and the normal download path runs, reporting a proper error if it also cannot
+                // get at the file. Catching only IOException would let UnauthorizedAccessException (an
+                // ACL-denied destination) and InvalidOperationException (SHA256Managed under a
+                // FIPS-enforcing policy) escape and abort the download before it is even attempted.
                 Logger.Warning(e, "Could not checksum the CLI at {Path}", cliFileDestinationPath);
                 return false;
             }
@@ -322,11 +439,20 @@ namespace Snyk.VisualStudio.Extension.Download
             {
                 this.SaveLatestCliSha(cliDownloadUrl);
 
-                if (IsCliUpToDate(cliFileDestinationPath, this.expectedSha))
+                // Off the UI thread: Download() is wired to the tool window's Loaded event and this whole
+                // prologue runs synchronously up to the first await inside DownloadFileAsync, so hashing
+                // a ~150 MB binary here would block the UI for seconds.
+                var isUpToDate = await Task.Run(() => IsCliUpToDate(cliFileDestinationPath, this.expectedSha));
+
+                if (isUpToDate)
                 {
                     Logger.Information(
                         "CLI at {Path} already matches the expected checksum — skipping download",
                         cliFileDestinationPath);
+
+                    // The skip is the common path once the language server has already fetched the
+                    // binary; without this the progress bar jumps from 0 straight to finished.
+                    progressWorker.UpdateProgress(100);
 
                     this.FinishDownload(progressWorker, downloadFinishedCallbacks);
 
@@ -404,26 +530,24 @@ namespace Snyk.VisualStudio.Extension.Download
 
                 try
                 {
-                    // The destination folder is the configured one, which may not exist yet (snyk-ls
-                    // reports its own CLI location as cli_path). Create it before copying, or the copy
-                    // fails with DirectoryNotFoundException and reads as a file-in-use error.
-                    PrepareCliDirectory(cliFileDestinationPath);
-
-                    // Overwrite in place rather than Delete-then-Copy: a failed copy (e.g. the LS is
-                    // running the binary) then leaves the existing, working CLI intact instead of
-                    // having already deleted it.
-                    File.Copy(tempCliFile, cliFileDestinationPath, overwrite: true);
+                    InstallCliFile(tempCliFile, cliFileDestinationPath);
 
                     this.FinishDownload(progressWorker, downloadFinishedCallbacks);
                 }
                 catch (Exception e)
                 {
+                    // Message the two outcomes differently. SnykToolWindowControl.OnDownloadFailed
+                    // restarts the language server when a CLI is already present at the destination, so
+                    // telling the user to close their scans while we start one would contradict itself.
+                    var existingCliRemains = File.Exists(cliFileDestinationPath);
+                    var message = existingCliRemains
+                        ? $"Snyk CLI could not be updated at {cliFileDestinationPath}: {e.Message} The existing CLI will continue to be used."
+                        : $"Snyk CLI could not be installed at {cliFileDestinationPath}: {e.Message}";
+
                     // Null-conditional: the download runs early in startup and NotificationService is
                     // initialised by the package, so a null here would throw an NRE from inside this
                     // catch and mask the real failure.
-                    NotificationService.Instance?.ShowErrorInfoBar(
-                        $"CLI could not be updated at {cliFileDestinationPath}: {e.Message} " +
-                        "If the file is in use, close any running Snyk scans and try again.");
+                    NotificationService.Instance?.ShowErrorInfoBar(message);
                     Logger.Error(e, "Error on CLI copy from temp file to {Path}", cliFileDestinationPath);
 
                     // Rethrow: swallowing this left the extension in a dead state. FinishDownload never

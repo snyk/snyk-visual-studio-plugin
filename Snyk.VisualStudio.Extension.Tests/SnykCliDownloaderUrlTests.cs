@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using Moq;
 using Snyk.VisualStudio.Extension.CLI;
 using Snyk.VisualStudio.Extension.Download;
@@ -97,19 +98,44 @@ namespace Snyk.VisualStudio.Extension.Tests
         }
 
         [Theory]
+        // Unset — the ordinary case: a cleared field, or the LS echoing its own empty default.
         [InlineData(null)]
         [InlineData("")]
         [InlineData(" ")]
-        // Not absolute http/https → composes into a relative URL, the same failure mode as empty:
-        // WebClient turns it into a local file path instead of a request.
-        [InlineData("downloads.snyk.io")]
+        // Not a host at all. These cannot be repaired by assuming a scheme, so the default is the only
+        // safe answer (each is logged as a misconfiguration rather than silently swapped).
         [InlineData("/downloads.snyk.io")]
         [InlineData(@"C:\downloads")]
         [InlineData("file:///c:/downloads")]
+        [InlineData("ftp://downloads.snyk.io")]
         [InlineData("not a url")]
         public void ResolveBaseDownloadUrl_FallsBackToDefault(string configured)
         {
             Assert.Equal(SnykCliDownloader.DefaultBaseDownloadUrl, SnykCliDownloader.ResolveBaseDownloadUrl(configured));
+        }
+
+        [Theory]
+        // Typed like a browser address bar. The configured host must be honoured — silently sending an
+        // egress-restricted customer to the public download host instead is worse than either using
+        // what they meant or failing loudly.
+        [InlineData("downloads.snyk.io", "https://downloads.snyk.io")]
+        [InlineData("downloads.snyk.io/fips", "https://downloads.snyk.io/fips")]
+        [InlineData("artifacts.internal:8081/snyk", "https://artifacts.internal:8081/snyk")]
+        [InlineData("localhost:3000", "https://localhost:3000")]
+        [InlineData("  downloads.snyk.io  ", "https://downloads.snyk.io")]
+        public void ResolveBaseDownloadUrl_AssumesHttps_ForASchemelessHost(string configured, string expected)
+        {
+            Assert.Equal(expected, SnykCliDownloader.ResolveBaseDownloadUrl(configured));
+        }
+
+        [Fact]
+        public void BuildLatestReleaseVersionUrl_UsesTheSchemelessHostTheUserTyped()
+        {
+            var url = Downloader("downloads.snyk.io/fips", "preview").BuildLatestReleaseVersionUrl();
+
+            Assert.Equal(
+                "https://downloads.snyk.io/fips/cli/preview/ls-protocol-version-" + LsConstants.ProtocolVersion,
+                url);
         }
 
         [Theory]
@@ -122,9 +148,10 @@ namespace Snyk.VisualStudio.Extension.Tests
         }
 
         [Theory]
-        [InlineData("downloads.snyk.io")]
         [InlineData(@"C:\downloads")]
-        public void BuildLatestReleaseVersionUrl_IsAbsoluteHttps_WhenBaseUrlIsNotAWebUrl(string configured)
+        [InlineData("file:///c:/downloads")]
+        [InlineData("not a url")]
+        public void BuildLatestReleaseVersionUrl_IsAbsoluteHttps_WhenBaseUrlIsNotAHost(string configured)
         {
             var url = Downloader(configured, "stable").BuildLatestReleaseVersionUrl();
 
@@ -147,27 +174,34 @@ namespace Snyk.VisualStudio.Extension.Tests
             Assert.Equal("rc", SnykCliDownloader.ResolveReleaseChannel("rc"));
         }
 
-        [Fact]
-        public void EveryBuiltUrl_IsAnAbsoluteWebUrl_ForAnyConfiguredValue()
+        public static IEnumerable<object[]> PathologicalConfigurations()
         {
-            // Blanket invariant: whatever lands in the options, the downloader must never hand
-            // WebClient something it will resolve as a local file path.
-            var pathologicalBaseUrls = new[] { null, "", "   ", "downloads.snyk.io", "/cli", @"C:\downloads", "file:///c:/x", "not a url" };
+            var baseUrls = new[] { null, "", "   ", "downloads.snyk.io", "/cli", @"C:\downloads", "file:///c:/x", "not a url" };
             var channels = new[] { null, "", "   ", "stable", "v1.1292.0" };
 
-            foreach (var baseUrl in pathologicalBaseUrls)
+            foreach (var baseUrl in baseUrls)
             {
                 foreach (var channel in channels)
                 {
-                    var downloader = Downloader(baseUrl, channel);
-
-                    foreach (var url in new[] { downloader.BuildLatestReleaseVersionUrl(), downloader.BuildCliDownloadUrl("v1.1292.0") })
-                    {
-                        Assert.True(
-                            Uri.TryCreate(url, UriKind.Absolute, out var uri) && uri.Scheme == Uri.UriSchemeHttps,
-                            $"base '{baseUrl}' + channel '{channel}' produced non-https URL '{url}'");
-                    }
+                    yield return new object[] { baseUrl, channel };
                 }
+            }
+        }
+
+        [Theory]
+        [MemberData(nameof(PathologicalConfigurations))]
+        public void EveryBuiltUrl_IsAnAbsoluteWebUrl_ForAnyConfiguredValue(string baseUrl, string channel)
+        {
+            // Blanket invariant: whatever lands in the options, the downloader must never hand
+            // WebClient something it will resolve as a local file path. A Theory rather than one Fact
+            // so a regression reports every failing combination, not just the first.
+            var downloader = Downloader(baseUrl, channel);
+
+            foreach (var url in new[] { downloader.BuildLatestReleaseVersionUrl(), downloader.BuildCliDownloadUrl("v1.1292.0") })
+            {
+                Assert.True(
+                    Uri.TryCreate(url, UriKind.Absolute, out var uri) && uri.Scheme == Uri.UriSchemeHttps,
+                    $"base '{baseUrl}' + channel '{channel}' produced non-https URL '{url}'");
             }
         }
     }

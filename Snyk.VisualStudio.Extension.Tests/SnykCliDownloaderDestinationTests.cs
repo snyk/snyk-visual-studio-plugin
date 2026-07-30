@@ -55,14 +55,19 @@ namespace Snyk.VisualStudio.Extension.Tests
         }
 
         [Fact]
-        public void PrepareCliDirectory_IsANoOp_WhenTheDirectoryAlreadyExists()
+        public void PrepareCliDirectory_LeavesAnExistingDirectoryAndItsContentsAlone()
         {
+            // Guards against a "recreate the directory" implementation: the destination folder is
+            // shared with snyk-ls, which keeps its own files there.
             var destination = Path.Combine(this.workDir, "snyk-win.exe");
+            var neighbouringFile = Path.Combine(this.workDir, "snyk-ls-owned.txt");
+            File.WriteAllText(neighbouringFile, "do not delete me");
 
             SnykCliDownloader.PrepareCliDirectory(destination);
             SnykCliDownloader.PrepareCliDirectory(destination); // idempotent
 
             Assert.True(Directory.Exists(this.workDir));
+            Assert.Equal("do not delete me", File.ReadAllText(neighbouringFile));
         }
 
         [Theory]
@@ -103,6 +108,28 @@ namespace Snyk.VisualStudio.Extension.Tests
             var destination = Path.Combine(this.workDir, "does-not-exist.exe");
 
             Assert.False(SnykCliDownloader.IsCliUpToDate(destination, Sha256.ComputeHash("anything")));
+        }
+
+        [Fact]
+        public void IsCliUpToDate_DoesNotThrow_WhenTheFileCannotBeRead()
+        {
+            // "Not verifiable" must never escape: every failure has to resolve to false so the normal
+            // download path runs. Catching only IOException let UnauthorizedAccessException (an
+            // ACL-denied destination) and InvalidOperationException (SHA256Managed under a FIPS policy)
+            // abort the download before it was attempted.
+            // The assertion is "does not throw" rather than a specific result because whether an
+            // exclusive lock actually blocks a read is platform-dependent; the contract under test is
+            // that the caller never sees the exception.
+            var destination = Path.Combine(this.workDir, "snyk-win.exe");
+            File.WriteAllText(destination, "cli-binary-contents");
+            var sha = Sha256.Checksum(destination);
+
+            using (File.Open(destination, FileMode.Open, FileAccess.Read, FileShare.None))
+            {
+                var exception = Record.Exception(() => SnykCliDownloader.IsCliUpToDate(destination, sha));
+
+                Assert.Null(exception);
+            }
         }
 
         [Theory]

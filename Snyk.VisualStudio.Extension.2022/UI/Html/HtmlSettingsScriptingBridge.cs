@@ -11,6 +11,7 @@ using Newtonsoft.Json.Linq;
 using Serilog;
 using Snyk.VisualStudio.Extension;
 using Snyk.VisualStudio.Extension.Authentication;
+using Snyk.VisualStudio.Extension.Download;
 using Snyk.VisualStudio.Extension.Extension;
 using Snyk.VisualStudio.Extension.Language;
 using Snyk.VisualStudio.Extension.Service;
@@ -681,15 +682,22 @@ namespace Snyk.VisualStudio.Extension.UI.Html
                 editedKeys.Add(PflagKeys.AutomaticDownload);
             }
 
+            // Resolve at the entry point rather than storing the posted value verbatim. This is where a
+            // user's empty string actually enters the system (the LS-served form posts binary_base_url
+            // as "" when unset), and an empty value composes into a relative download URL. Storing the
+            // resolved value keeps Options, settings.json, the settings form and the LS payload showing
+            // the same thing, so the read-side resolvers are defence in depth rather than the mechanism.
+            // A cleared field means "use the default", and per RACC-003 setting a key to its default
+            // through the form is still an explicit user choice, so it stays in editedKeys.
             if (config.CliBaseDownloadURL != null)
             {
-                Options.CliBaseDownloadURL = config.CliBaseDownloadURL;
+                Options.CliBaseDownloadURL = SnykCliDownloader.ResolveBaseDownloadUrl(config.CliBaseDownloadURL);
                 editedKeys.Add(PflagKeys.BinaryBaseUrl);
             }
 
             if (config.CliReleaseChannel != null)
             {
-                Options.CliReleaseChannel = config.CliReleaseChannel;
+                Options.CliReleaseChannel = SnykCliDownloader.ResolveReleaseChannel(config.CliReleaseChannel);
                 editedKeys.Add(PflagKeys.CliReleaseChannel);
             }
         }
