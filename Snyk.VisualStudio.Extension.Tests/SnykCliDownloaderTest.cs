@@ -54,6 +54,29 @@ namespace Snyk.VisualStudio.Extension.Tests
         }
 
         [Fact]
+        public async Task SnykCliDownloader_DestinationNotWritable_PropagatesTheFailureAsync()
+        {
+            // A failed install must not be swallowed. FinishDownload never runs, so SnykTasksService
+            // fires neither DownloadFinished (which starts the language server) nor DownloadFailed,
+            // and the extension sits in its initializing state forever.
+            var destinationIsAnExistingDirectory = Path.Combine(
+                Path.GetTempPath(), "snyk-cli-blocked-" + Guid.NewGuid().ToString("N"));
+            Directory.CreateDirectory(destinationIsAnExistingDirectory);
+
+            var cliDownloader = new SnykCliDownloader(optionsMock.Object);
+
+            try
+            {
+                await Assert.ThrowsAnyAsync<Exception>(async ()
+                    => await cliDownloader.DownloadAsync(this.progressWorkerMock.Object, destinationIsAnExistingDirectory));
+            }
+            finally
+            {
+                Directory.Delete(destinationIsAnExistingDirectory, recursive: true);
+            }
+        }
+
+        [Fact]
         public void SnykCliDownloader_VerifyCliFile_Failed()
         {
             var cliDownloader = new SnykCliDownloader(optionsMock.Object);
