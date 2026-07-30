@@ -228,7 +228,7 @@ namespace Snyk.VisualStudio.Extension.Download
 
             progressWorker.CancelIfCancellationRequested();
 
-            this.PrepareSnykCliDirectory();
+            PrepareCliDirectory(cliFileDestinationPath);
 
             await this.DownloadAsync(
                 progressWorker,
@@ -262,13 +262,51 @@ namespace Snyk.VisualStudio.Extension.Download
         /// </summary>
         public void SaveLatestCliSha(string cliDownloadUrl) => this.expectedSha = this.GetLatestCliSha(cliDownloadUrl);
 
-        private void PrepareSnykCliDirectory()
+        /// <summary>
+        /// Create the folder the CLI is about to be written into. This is the folder of the CONFIGURED
+        /// destination, not the plugin's own AppData folder: snyk-ls reports its own CLI location
+        /// (<c>%LocalAppData%\snyk-ls\snyk-win.exe</c>) as <c>cli_path</c>, which lands in CliCustomPath,
+        /// so the destination folder may not exist yet.
+        /// </summary>
+        // internal static for testability (InternalsVisibleTo test project).
+        internal static void PrepareCliDirectory(string cliFileDestinationPath)
         {
-            var snykDirectoryPath = SnykDirectory.GetSnykAppDataDirectoryPath();
-
-            if (!Directory.Exists(snykDirectoryPath))
+            if (string.IsNullOrEmpty(cliFileDestinationPath))
             {
-                Directory.CreateDirectory(snykDirectoryPath);
+                return;
+            }
+
+            var directoryPath = Path.GetDirectoryName(cliFileDestinationPath);
+
+            if (!string.IsNullOrEmpty(directoryPath) && !Directory.Exists(directoryPath))
+            {
+                Directory.CreateDirectory(directoryPath);
+            }
+        }
+
+        /// <summary>
+        /// True when the binary already at <paramref name="cliFileDestinationPath"/> is the one we are
+        /// about to install. snyk-ls downloads the same CLI to the same path and runs it, so overwriting
+        /// an identical binary achieves nothing and can fail with a sharing violation.
+        /// </summary>
+        // internal static for testability (InternalsVisibleTo test project).
+        internal static bool IsCliUpToDate(string cliFileDestinationPath, string expectedSha)
+        {
+            if (string.IsNullOrEmpty(expectedSha) || !File.Exists(cliFileDestinationPath))
+            {
+                return false;
+            }
+
+            try
+            {
+                return string.Equals(Sha256.Checksum(cliFileDestinationPath), expectedSha, StringComparison.OrdinalIgnoreCase);
+            }
+            catch (IOException e)
+            {
+                // Locked by the LS mid-scan: treat as "not verifiable" and let the normal download path
+                // run, which reports a proper error if it also cannot get at the file.
+                Logger.Warning(e, "Could not checksum the CLI at {Path}", cliFileDestinationPath);
+                return false;
             }
         }
 
@@ -283,6 +321,17 @@ namespace Snyk.VisualStudio.Extension.Download
             try
             {
                 this.SaveLatestCliSha(cliDownloadUrl);
+
+                if (IsCliUpToDate(cliFileDestinationPath, this.expectedSha))
+                {
+                    Logger.Information(
+                        "CLI at {Path} already matches the expected checksum — skipping download",
+                        cliFileDestinationPath);
+
+                    this.FinishDownload(progressWorker, downloadFinishedCallbacks);
+
+                    return;
+                }
 
                 await this.DownloadFileAsync(progressWorker, cliDownloadUrl, cliFileDestinationPath, downloadFinishedCallbacks);
             }
@@ -355,19 +404,36 @@ namespace Snyk.VisualStudio.Extension.Download
 
                 try
                 {
-                    if (File.Exists(cliFileDestinationPath))
-                    {
-                        File.Delete(cliFileDestinationPath);
-                    }
+                    // The destination folder is the configured one, which may not exist yet (snyk-ls
+                    // reports its own CLI location as cli_path). Create it before copying, or the copy
+                    // fails with DirectoryNotFoundException and reads as a file-in-use error.
+                    PrepareCliDirectory(cliFileDestinationPath);
 
-                    File.Copy(tempCliFile, cliFileDestinationPath);
+                    // Overwrite in place rather than Delete-then-Copy: a failed copy (e.g. the LS is
+                    // running the binary) then leaves the existing, working CLI intact instead of
+                    // having already deleted it.
+                    File.Copy(tempCliFile, cliFileDestinationPath, overwrite: true);
 
                     this.FinishDownload(progressWorker, downloadFinishedCallbacks);
                 }
                 catch (Exception e)
                 {
-                    NotificationService.Instance.ShowErrorInfoBar($"CLI could not be updated. Please check if another process is using the CLI binary at {cliFileDestinationPath}");
-                    Logger.Error(e, "Error on CLI copy from temp file");
+                    // Null-conditional: the download runs early in startup and NotificationService is
+                    // initialised by the package, so a null here would throw an NRE from inside this
+                    // catch and mask the real failure.
+                    NotificationService.Instance?.ShowErrorInfoBar(
+                        $"CLI could not be updated at {cliFileDestinationPath}: {e.Message} " +
+                        "If the file is in use, close any running Snyk scans and try again.");
+                    Logger.Error(e, "Error on CLI copy from temp file to {Path}", cliFileDestinationPath);
+
+                    // Rethrow: swallowing this left the extension in a dead state. FinishDownload never
+                    // runs, so SnykTasksService fires neither DownloadFinished (which is what starts the
+                    // language server) nor DownloadFailed — the tool window stays in its initializing
+                    // state forever. Propagating reaches SnykTasksService.DownloadAsync's handler, which
+                    // raises DownloadFailed; that handler starts the server anyway when a usable CLI is
+                    // already present at the configured path, and otherwise tells the user the download
+                    // failed and they can set a CLI path in settings.
+                    throw;
                 }
                 finally
                 {
