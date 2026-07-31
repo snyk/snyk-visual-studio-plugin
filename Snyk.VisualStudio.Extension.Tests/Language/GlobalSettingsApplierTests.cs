@@ -224,11 +224,7 @@ namespace Snyk.VisualStudio.Extension.Tests.Language
         [InlineData("   ")]
         public void Apply_ShouldPreserveCliBaseDownloadUrl_WhenLsEchoesEmptyValue(string inbound)
         {
-            // The LS registers binary_base_url with an empty default (register_configurations.go) and
-            // buildGlobalSettingsMap echoes every machine-scope setting, so an empty inbound value means
-            // "the LS has no opinion" — not "the user cleared it". Applying it wiped the IDE's canonical
-            // default and left the download URL relative (/cli//ls-protocol-version-25), which resolved
-            // to a nonexistent local file path.
+            // An empty inbound value means "no opinion", not "cleared".
             var options = MakeOptions();
             options.CliBaseDownloadURL = SnykCliDownloader.DefaultBaseDownloadUrl;
             var settings = new Dictionary<string, ConfigSetting>
@@ -280,9 +276,8 @@ namespace Snyk.VisualStudio.Extension.Tests.Language
         [Fact]
         public void Apply_ShouldApplyANonEmptyEcho_EvenWhenItMatchesWhatWeSent()
         {
-            // LsSettingsV25 sends the resolved value, so the LS echoes it straight back. Applying it is
-            // a no-op in the common case, and in the padded case it normalises what we hold — which is
-            // why there is no special-casing of "our own value coming home".
+            // The echo of our own resolved value is applied like any other: a no-op, or a normalisation
+            // when what we hold is padded.
             var options = MakeOptions();
             options.CliBaseDownloadURL = "  https://mirror.corp  ";
             var settings = new Dictionary<string, ConfigSetting>
@@ -298,9 +293,7 @@ namespace Snyk.VisualStudio.Extension.Tests.Language
         [Fact]
         public void Apply_ShouldClearCliPath_WhenInboundValueIsEmpty()
         {
-            // cli_path is deliberately NOT covered by the empty-value guard: unlike the base URL and
-            // release channel it has a meaningful cleared state, and an empty path resolves to the
-            // default CLI location (SnykCli.GetCliFilePath).
+            // Unlike the base URL, an empty cli_path is a meaningful cleared state.
             var options = MakeOptions();
             options.CliCustomPath = @"C:\custom\snyk.exe";
             var settings = new Dictionary<string, ConfigSetting>

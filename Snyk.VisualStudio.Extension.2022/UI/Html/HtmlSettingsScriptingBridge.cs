@@ -684,12 +684,8 @@ namespace Snyk.VisualStudio.Extension.UI.Html
 
             if (config.CliBaseDownloadURL != null)
             {
-                // Stored as posted, trimmed — the same handling as snyk-ls (applyCliBaseDownloadURL),
-                // VS Code and IntelliJ. An unusable value is kept so the user can see and correct it.
-                // The two settings forms differ on a cleared field: the bundled fallback
-                // (settings-fallback.html) posts "value || placeholder", i.e. the default literal, while
-                // the primary LS-served config.html posts a genuine empty string. Both are handled — the
-                // literal is stored as typed, and empty resolves to the default at the point of use.
+                // Stored as posted. A cleared field arrives as "" from the LS-served form and as the
+                // default literal from the bundled fallback form; both resolve to the default in use.
                 Options.CliBaseDownloadURL = config.CliBaseDownloadURL.Trim();
                 editedKeys.Add(PflagKeys.BinaryBaseUrl);
             }

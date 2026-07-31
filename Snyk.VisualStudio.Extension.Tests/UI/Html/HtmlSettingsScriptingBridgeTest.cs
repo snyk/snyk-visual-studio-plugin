@@ -204,8 +204,7 @@ namespace Snyk.VisualStudio.Extension.Tests.UI.Html
         [Fact]
         public void SaveIdeConfig_AllowsEmptyCliPath_ToResetToDefaultCliLocation()
         {
-            // Clearing the CLI path field is a supported reset: the empty value must land in Options
-            // (so the override is cleared) and resolve to the default CLI location.
+            // Clearing the CLI path resolves to the default CLI location.
             var localOptions = new Mock<ISnykOptions>();
             localOptions.SetupAllProperties();
             localOptions.Object.CliCustomPath = @"C:\custom\snyk.exe";
@@ -226,9 +225,7 @@ namespace Snyk.VisualStudio.Extension.Tests.UI.Html
         [Fact]
         public void SaveIdeConfig_StoresAPostedDefaultAsTyped()
         {
-            // The LS-served form posts "value || placeholder", so a cleared field arrives as the
-            // canonical default and is indistinguishable from the user choosing it deliberately. The
-            // posted value is stored either way — see the note in ApplyCliSettings.
+            // A cleared field can arrive as the default literal; it is stored as posted either way.
             var localOptions = new Mock<ISnykOptions>();
             localOptions.SetupAllProperties();
             localOptions.Object.CliBaseDownloadURL = "https://downloads.snyk.io/fips";
@@ -249,9 +246,7 @@ namespace Snyk.VisualStudio.Extension.Tests.UI.Html
         [Fact]
         public void SaveIdeConfig_KeepsAnUnusableBaseUrlAsTyped()
         {
-            // The configured value is stored unchanged, matching snyk-ls, Eclipse, VS Code and
-            // IntelliJ — none of which rewrite it. Substituting the default would also hide the mistake
-            // from the only person who can correct it.
+            // Stored unchanged so the user can see and correct it.
             var localOptions = new Mock<ISnykOptions>();
             localOptions.SetupAllProperties();
 

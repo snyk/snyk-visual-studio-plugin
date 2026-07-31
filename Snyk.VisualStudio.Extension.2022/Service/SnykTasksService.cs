@@ -708,22 +708,13 @@ namespace Snyk.VisualStudio.Extension.Service
                 return;
             }
 
-            // Claim the guard BEFORE yielding. isCliDownloading is what IsTaskRunning() reports, and
-            // Download() is wired to the tool window's Loaded event, which WPF raises more than once
-            // (re-docking, theme change). Setting it after the switch let Download() return with the
-            // guard still clear, so two Loaded events could run concurrent downloads writing the same
-            // destination file.
+            // Claim the guard before yielding: Download() is wired to the Loaded event, which WPF raises
+            // more than once, and IsTaskRunning() must be true by the time it returns.
             this.isCliDownloading = true;
 
-            // Get off the UI thread before any of the download work. Download() is wired to the tool
-            // window's Loaded event, and JoinableTaskFactory.RunAsync executes its delegate inline on the
-            // calling thread up to the first yielding await — which is deep inside the HTTP read. Without
-            // this switch the version lookup and the checksum fetch (both synchronous
-            // WebClient.DownloadString), the SHA-256 of a ~150 MB binary, and the settings write in the
-            // finished callback all block the VS UI, for the full socket timeout against a mirror that
-            // does not answer. The download events are safe from a background thread: every handler in
-            // SnykToolWindowControl re-enters through JoinableTaskFactory, and SnykOptionsManager.Save is
-            // lock-guarded and already called from StreamJsonRpc dispatch threads.
+            // Off the UI thread: RunAsync runs inline until the first yielding await, so the synchronous
+            // HTTP calls and the checksum below would otherwise block it. The download event handlers
+            // marshal themselves, and SnykOptionsManager.Save is lock-guarded.
             await TaskScheduler.Default;
 
             try

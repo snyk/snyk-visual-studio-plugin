@@ -254,9 +254,8 @@ namespace Snyk.VisualStudio.Extension.Tests.Language
             Assert.Equal(false, map[PflagKeys.SeverityFilterLow].Value);
         }
 
-        // Cleared CLI settings must go out resolved to their defaults, never as empty strings: the LS
-        // downloads the CLI itself from binary_base_url / cli_release_channel, so an empty value would
-        // break the download on both sides of the wire.
+        // Cleared settings go out resolved, so the value the tracker compares against ConfigDefaults
+        // matches what was sent.
         [Theory]
         [InlineData("")]
         [InlineData("   ")]
@@ -272,8 +271,7 @@ namespace Snyk.VisualStudio.Extension.Tests.Language
             Assert.Equal(SnykCliDownloader.DefaultReleaseChannel, map[PflagKeys.CliReleaseChannel].Value);
         }
 
-        // Clearing the custom CLI path is a supported reset: the LS must receive the default CLI
-        // location, not an empty path.
+        // A cleared custom path sends the default CLI location, not an empty path.
         [Fact]
         public void BuildSettingsMap_ClearedCliPath_SendsDefaultCliLocation()
         {

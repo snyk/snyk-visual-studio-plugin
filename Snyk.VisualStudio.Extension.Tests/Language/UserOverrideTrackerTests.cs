@@ -250,9 +250,7 @@ namespace Snyk.VisualStudio.Extension.Tests.Language
                 "null CliReleaseChannel must fall back to canonical default, not be marked changed");
         }
 
-        // Same as S1 for the EMPTY (rather than null) case: the settings form lets the user clear both
-        // fields, and a $/snyk.configuration echo used to land "" in options. Empty means "use the
-        // default", so it must not be recorded as a user override either.
+        // Empty means "use the default", so it is not a user override.
         [Theory]
         [InlineData("")]
         [InlineData("   ")]

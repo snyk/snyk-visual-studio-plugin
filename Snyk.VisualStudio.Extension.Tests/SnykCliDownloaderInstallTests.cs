@@ -11,8 +11,7 @@ using Xunit;
 namespace Snyk.VisualStudio.Extension.Tests
 {
     /// <summary>
-    /// Install and download-decision behaviour, network-free. A test double stands in for the two
-    /// release-info requests so the decision paths can be exercised without downloading a CLI.
+    /// Install and download-decision behaviour. A test double replaces the two network calls.
     /// </summary>
     public class SnykCliDownloaderInstallTests : IDisposable
     {
@@ -40,7 +39,6 @@ namespace Snyk.VisualStudio.Extension.Tests
             }
         }
 
-        // Stands in for the two network calls. Throwing variants let the failure paths be exercised.
         private class FakeDownloader : SnykCliDownloader
         {
             private readonly string sha;
@@ -79,7 +77,7 @@ namespace Snyk.VisualStudio.Extension.Tests
         [Fact]
         public void InstallCliFile_CopiesIntoADestinationDirectoryThatDoesNotExistYet()
         {
-            // snyk-ls reports its own CLI location as cli_path, so the destination folder may not exist.
+            // The configured destination folder may not exist.
             var source = Path.Combine(this.workDir, "downloaded.exe");
             File.WriteAllText(source, "cli-binary");
             var destination = Path.Combine(this.workDir, "snyk-ls", "snyk-win.exe");
@@ -116,11 +114,8 @@ namespace Snyk.VisualStudio.Extension.Tests
         [Fact]
         public void InstallAndFinish_PropagatesTheFailureAndDoesNotReportSuccess()
         {
-            // The regression this guards: the copy failure used to be swallowed, so FinishDownload never
-            // ran and SnykTasksService fired neither DownloadFinished (which starts the language server)
-            // nor DownloadFailed — the extension sat in its initializing state with no error and no
-            // recovery. Both halves matter: the exception must escape AND the finished callbacks must
-            // not run, or the caller is told a failed install succeeded.
+            // Both halves matter: the exception must escape, and the finished callbacks — which start
+            // the language server — must not run.
             var source = Path.Combine(this.workDir, "downloaded.exe");
             File.WriteAllText(source, "cli-binary");
             var destinationIsAnExistingDirectory = Path.Combine(this.workDir, "occupied");
@@ -163,9 +158,8 @@ namespace Snyk.VisualStudio.Extension.Tests
         [Fact]
         public async Task DownloadAsync_SkipsTheDownload_WhenTheBinaryOnDiskAlreadyMatchesAsync()
         {
-            // The load-bearing half of the install fix: snyk-ls downloads the same binary to the same
-            // path, so when it already matches there is nothing to install — and nothing to fight over.
-            // FinishDownload must still run, or the language server is never started.
+            // Nothing to install when the binary already matches, but the finished callbacks must still
+            // run or the language server is never started.
             var destination = Path.Combine(this.workDir, "snyk-win.exe");
             File.WriteAllText(destination, "already-the-latest-cli");
             var expectedSha = Sha256.Checksum(destination);
@@ -189,8 +183,6 @@ namespace Snyk.VisualStudio.Extension.Tests
         [Fact]
         public void IsCliDownloadNeeded_ReturnsTrue_WhenTheCheckFailsAndNoCliIsInstalled()
         {
-            // Reporting "up to date" because the version lookup failed left the extension starting the
-            // language server with no CLI at all, and no user-visible signal.
             var missingCli = Path.Combine(this.workDir, "not-installed.exe");
             var cut = new FakeDownloader(Options(), releaseInfoFailure: new InvalidOperationException("network down"));
 
@@ -200,8 +192,7 @@ namespace Snyk.VisualStudio.Extension.Tests
         [Fact]
         public void IsCliDownloadNeeded_ReturnsFalse_WhenTheCheckFailsButACliIsInstalled()
         {
-            // Offline with a usable CLI already on disk: keep using it rather than forcing a doomed
-            // download that would surface as an error banner on every startup.
+            // Offline with a usable CLI: keep using it rather than failing on every startup.
             var installedCli = Path.Combine(this.workDir, "snyk-win.exe");
             File.WriteAllText(installedCli, "an-existing-cli");
             var cut = new FakeDownloader(Options(), releaseInfoFailure: new InvalidOperationException("network down"));

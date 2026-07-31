@@ -8,9 +8,8 @@ using Xunit;
 namespace Snyk.VisualStudio.Extension.Tests.UI.Html
 {
     /// <summary>
-    /// Rendering of the CLI settings into the fallback settings form. Assertions read the rendered
-    /// values out of the markup rather than matching it literally: settings-fallback.html is synced
-    /// verbatim from snyk-ls, so an upstream attribute reorder must not fail these tests.
+    /// Rendering of the CLI settings into the fallback form. Values are read out of the markup rather
+    /// than matched literally, because that file is synced verbatim from snyk-ls.
     /// </summary>
     public class HtmlResourceLoaderTest
     {
@@ -39,9 +38,8 @@ namespace Snyk.VisualStudio.Extension.Tests.UI.Html
         [InlineData("")]
         public void LoadFallbackHtml_RendersAnEmptyBaseUrl_WhenUnset(string unset)
         {
-            // Unset must render blank so the field falls back to its placeholder, which already states
-            // the default. Substituting the default here would be indistinguishable from the user
-            // having configured it.
+            // Blank so the field shows its placeholder; the default rendered here would be
+            // indistinguishable from a configured value.
             var html = HtmlResourceLoader.LoadFallbackHtml(Options(unset, unset), forceLight: true);
 
             Assert.Equal(string.Empty, RenderedBaseDownloadUrl(html));
@@ -51,9 +49,7 @@ namespace Snyk.VisualStudio.Extension.Tests.UI.Html
         [Fact]
         public void LoadFallbackHtml_RendersTheConfiguredValue_EvenWhenItIsNotUsable()
         {
-            // The user has to be able to see and correct a mis-typed mirror. Showing them
-            // https://downloads.snyk.io instead would hide the mistake from the only person who can fix
-            // it, while the download quietly used the public host.
+            // A mis-typed mirror must stay visible so it can be corrected.
             var html = HtmlResourceLoader.LoadFallbackHtml(Options("downlods.snyk.io", "stable"), forceLight: true);
 
             Assert.Equal("downlods.snyk.io", RenderedBaseDownloadUrl(html));

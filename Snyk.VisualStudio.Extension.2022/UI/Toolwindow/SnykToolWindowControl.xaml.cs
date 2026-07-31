@@ -430,11 +430,8 @@ namespace Snyk.VisualStudio.Extension.UI.Toolwindow
         /// <param name="eventArgs">Event args.</param>
         public void OnDownloadFinished(object sender, SnykCliDownloadEventArgs eventArgs)
         {
-            // Marshal to the main thread: the download runs on the thread pool
-            // (SnykTasksService switches before any work), so DownloadFinished is raised from there.
-            // DetermineInitScreen reaches messagePanel.ShowScanningMessage() — a WPF Visibility write —
-            // whenever a task is still running, which it is at this point because isCliDownloading is
-            // cleared later in the caller's finally.
+            // The download runs on the thread pool, so this is raised from there; DetermineInitScreen
+            // writes WPF state.
             ThreadHelper.JoinableTaskFactory.Run(async () =>
             {
                 await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
@@ -457,11 +454,7 @@ namespace Snyk.VisualStudio.Extension.UI.Toolwindow
         /// <param name="eventArgs">Event args.</param>
         public void OnDownloadCancelled(object sender, SnykCliDownloadEventArgs eventArgs)
         {
-            // Marshalled as a whole, like OnDownloadFinished and OnDownloadFailed. Only the first branch
-            // used to switch, leaving the messagePanel.Text write below on whatever thread raised the
-            // event — and since the download work moved to the thread pool, the cancel handler can be
-            // raised from there (SnykTasksService.DownloadAsync's OperationCanceledException handler).
-            // A cross-thread write throws, so the user would get silence instead of the message.
+            // Raised from the thread pool; both branches write WPF state.
             ThreadHelper.JoinableTaskFactory.Run(async () =>
             {
                 await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
@@ -482,10 +475,7 @@ namespace Snyk.VisualStudio.Extension.UI.Toolwindow
 
         private void OnDownloadFailed(object sender, Exception e)
         {
-            // Marshalled for the same reason as OnDownloadFinished. This handler is the one a user with
-            // an unreachable mirror depends on: both branches touch WPF (DetermineInitScreen, and the
-            // messagePanel.Text write below), and a cross-thread access here would replace the error
-            // message with silence.
+            // Raised from the thread pool; both branches write WPF state.
             ThreadHelper.JoinableTaskFactory.Run(async () =>
             {
                 await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();

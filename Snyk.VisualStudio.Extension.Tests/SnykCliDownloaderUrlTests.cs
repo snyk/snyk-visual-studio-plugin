@@ -9,8 +9,7 @@ using Xunit;
 namespace Snyk.VisualStudio.Extension.Tests
 {
     /// <summary>
-    /// Download-URL construction. Network-free (unlike <see cref="SnykCliDownloaderTest"/>): these pin
-    /// the shape of the URLs the downloader builds from the CLI options.
+    /// Download-URL construction from the CLI options. Network-free.
     /// </summary>
     public class SnykCliDownloaderUrlTests
     {
@@ -34,12 +33,8 @@ namespace Snyk.VisualStudio.Extension.Tests
         [InlineData("https://downloads.snyk.io", "")]
         public void BuildLatestReleaseVersionUrl_UsesDefaults_WhenOptionsAreNotSet(string baseDownloadUrl, string releaseChannel)
         {
-            // The defect: snyk-ls registers binary_base_url and cli_release_channel with empty defaults
-            // and echoes every machine-scope setting in $/snyk.configuration, so empty reached the
-            // options and was interpolated verbatim. The empty pair produced the relative
-            // "/cli//ls-protocol-version-25", which WebClient resolved through Path.GetFullPath into a
-            // local file path (C:\cli\ls-protocol-version-25) and reported as DirectoryNotFoundException
-            // instead of downloading anything.
+            // An empty pair composes to "/cli//ls-protocol-version-25", which WebClient resolves to a
+            // local file path rather than requesting anything.
             var url = Downloader(baseDownloadUrl, releaseChannel).BuildLatestReleaseVersionUrl();
 
             Assert.Equal(ExpectedDefaultVersionUrl, url);
@@ -50,7 +45,7 @@ namespace Snyk.VisualStudio.Extension.Tests
         [InlineData("", "")]
         public void BuildLatestReleaseVersionUrl_IsAbsolute_WhenOptionsAreNotSet(string baseDownloadUrl, string releaseChannel)
         {
-            // Guards the failure mode directly: a relative URL is what WebClient turns into a file path.
+            // A relative URL is what WebClient turns into a file path.
             var url = Downloader(baseDownloadUrl, releaseChannel).BuildLatestReleaseVersionUrl();
 
             Assert.True(Uri.TryCreate(url, UriKind.Absolute, out var uri), $"'{url}' is not an absolute URI");
@@ -70,7 +65,7 @@ namespace Snyk.VisualStudio.Extension.Tests
         [Fact]
         public void BuildLatestReleaseVersionUrl_UsesCustomVersionChannel()
         {
-            // "Specify version…" in the settings form stores the version as the release channel.
+            // The settings form stores a pinned version as the release channel.
             var url = Downloader("https://downloads.snyk.io", "v1.1292.0").BuildLatestReleaseVersionUrl();
 
             Assert.Equal(
@@ -108,7 +103,6 @@ namespace Snyk.VisualStudio.Extension.Tests
         [Theory]
         [InlineData("https://downloads.snyk.io")]
         [InlineData("https://downloads.snyk.io/fips")]
-        // An internal mirror on plain http, and one requiring credentials, are both supported.
         [InlineData("http://artifacts.internal/snyk")]
         [InlineData("https://user:token@artifacts.internal/snyk")]
         public void ResolveBaseDownloadUrl_UsesAConfiguredValueVerbatim(string configured)
@@ -119,20 +113,12 @@ namespace Snyk.VisualStudio.Extension.Tests
         [Fact]
         public void ResolveBaseDownloadUrl_TrimsSurroundingWhitespace()
         {
-            // Matches snyk-ls (applyCliBaseDownloadURL) and VS Code (getCliBaseDownloadUrl).
             Assert.Equal("https://downloads.snyk.io", SnykCliDownloader.ResolveBaseDownloadUrl("  https://downloads.snyk.io  "));
         }
 
         [Theory]
-        // A value that is not a usable URL is NOT rewritten. Every other Snyk IDE passes the configured
-        // value through unchanged — Eclipse's LsBinaries.resolveBaseUrl, VS Code's
-        // getCliBaseDownloadUrl and snyk-ls's applyCliBaseDownloadURL all default only on empty — so a
-        // scheme-less host fails here exactly as it does there, rather than working in one IDE only.
-        //
-        // The trade this pins: the EMPTY case is guaranteed to compose into an absolute URL (the defect
-        // this branch fixes, covered above), while a non-empty configured value is the user's and fails
-        // as it does in every other IDE. In Visual Studio that failure is a local-path read rather than
-        // a network error, which is why only the empty case is defended in depth.
+        // Only the empty case is defaulted; a configured value is passed through as the user typed it,
+        // as in every other Snyk IDE.
         [InlineData("downloads.snyk.io")]
         [InlineData(@"C:\downloads")]
         [InlineData("not a url")]
@@ -144,14 +130,13 @@ namespace Snyk.VisualStudio.Extension.Tests
         [Theory]
         [InlineData("https://user:token@artifacts.internal/snyk", "https://<credentials>@artifacts.internal/snyk")]
         [InlineData("http://user:token@artifacts.internal:8081/a", "http://<credentials>@artifacts.internal:8081/a")]
-        // Scheme-less credentials are the easiest case to miss: "user:pass@host" parses as an absolute
-        // URI with scheme "user" and an EMPTY UserInfo, so relying on Uri.UserInfo alone would log the
-        // secret verbatim. A configured value is written to the log on every download.
+        // "user:pass@host" parses with scheme "user" and an empty UserInfo, so Uri.UserInfo alone
+        // would let it through.
         [InlineData("user:pass@artifacts.internal", "<credentials>@artifacts.internal")]
         [InlineData("user@artifacts.internal", "<credentials>@artifacts.internal")]
         [InlineData("https://downloads.snyk.io/fips", "https://downloads.snyk.io/fips")]
         [InlineData("downloads.snyk.io", "downloads.snyk.io")]
-        // A path segment containing '@' is not userinfo and must not be mistaken for it.
+        // An '@' in the path is not userinfo.
         [InlineData("https://downloads.snyk.io/path@v2", "https://downloads.snyk.io/path@v2")]
         public void Redact_BlanksCredentialsAndLeavesEverythingElse(string value, string expected)
         {

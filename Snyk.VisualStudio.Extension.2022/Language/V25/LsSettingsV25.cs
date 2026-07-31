@@ -115,11 +115,8 @@ namespace Snyk.VisualStudio.Extension.Language
 
                 [PflagKeys.AutomaticDownload]       = Cs(PflagKeys.AutomaticDownload,      options.BinariesAutoUpdate),
                 [PflagKeys.CliPath]                 = Cs(PflagKeys.CliPath,                SnykCli.GetCliFilePath(options.CliCustomPath)),
-                // Resolve rather than send verbatim: a cleared value means "use the default", and this
-                // is the value that round-trips back through $/snyk.configuration and that the override
-                // tracker compares against ConfigDefaults — sending "" would read as a user override of
-                // the default. (Note snyk-ls does NOT download the CLI from this setting:
-                // infrastructure/cli/install/releases.go uses a hardcoded DefaultBaseURL.)
+                // Resolved, not verbatim: this value round-trips back through $/snyk.configuration and
+                // is what the override tracker compares against ConfigDefaults.
                 [PflagKeys.BinaryBaseUrl]           = Cs(PflagKeys.BinaryBaseUrl,
                                                          SnykCliDownloader.ResolveBaseDownloadUrl(options.CliBaseDownloadURL)),
                 [PflagKeys.CliReleaseChannel]       = Cs(PflagKeys.CliReleaseChannel,
