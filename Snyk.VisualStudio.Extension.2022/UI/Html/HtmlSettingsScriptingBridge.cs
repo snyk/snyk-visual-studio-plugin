@@ -682,17 +682,14 @@ namespace Snyk.VisualStudio.Extension.UI.Html
                 editedKeys.Add(PflagKeys.AutomaticDownload);
             }
 
-            // Store what the user submitted. The one exception is a scheme-less host, which is repaired
-            // to https here so the value they see afterwards is the one that will be used — that is a
-            // completed intent, not a substitution. An unusable value is deliberately kept as typed:
-            // replacing it with the default would hide the mistake from the only person who can correct
-            // it. Resolution to the default happens at the point of use, where it is logged.
-            // Empty is a legitimate cleared state meaning "use the default".
             if (config.CliBaseDownloadURL != null)
             {
                 // Stored as posted, trimmed — the same handling as snyk-ls (applyCliBaseDownloadURL),
-                // VS Code and IntelliJ. An unusable value is kept so the user can see and correct it;
-                // an empty one resolves to the default at the point of use.
+                // VS Code and IntelliJ. An unusable value is kept so the user can see and correct it.
+                // The two settings forms differ on a cleared field: the bundled fallback
+                // (settings-fallback.html) posts "value || placeholder", i.e. the default literal, while
+                // the primary LS-served config.html posts a genuine empty string. Both are handled — the
+                // literal is stored as typed, and empty resolves to the default at the point of use.
                 Options.CliBaseDownloadURL = config.CliBaseDownloadURL.Trim();
                 editedKeys.Add(PflagKeys.BinaryBaseUrl);
             }

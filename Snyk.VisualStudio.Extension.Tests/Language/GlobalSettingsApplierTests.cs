@@ -278,6 +278,24 @@ namespace Snyk.VisualStudio.Extension.Tests.Language
         }
 
         [Fact]
+        public void Apply_ShouldApplyANonEmptyEcho_EvenWhenItMatchesWhatWeSent()
+        {
+            // LsSettingsV25 sends the resolved value, so the LS echoes it straight back. Applying it is
+            // a no-op in the common case, and in the padded case it normalises what we hold — which is
+            // why there is no special-casing of "our own value coming home".
+            var options = MakeOptions();
+            options.CliBaseDownloadURL = "  https://mirror.corp  ";
+            var settings = new Dictionary<string, ConfigSetting>
+            {
+                [PflagKeys.BinaryBaseUrl] = ConfigSetting.Of("https://mirror.corp")
+            };
+
+            GlobalSettingsApplier.Apply(settings, options);
+
+            Assert.Equal("https://mirror.corp", options.CliBaseDownloadURL);
+        }
+
+        [Fact]
         public void Apply_ShouldClearCliPath_WhenInboundValueIsEmpty()
         {
             // cli_path is deliberately NOT covered by the empty-value guard: unlike the base URL and

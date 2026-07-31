@@ -128,6 +128,11 @@ namespace Snyk.VisualStudio.Extension.Tests
         // value through unchanged — Eclipse's LsBinaries.resolveBaseUrl, VS Code's
         // getCliBaseDownloadUrl and snyk-ls's applyCliBaseDownloadURL all default only on empty — so a
         // scheme-less host fails here exactly as it does there, rather than working in one IDE only.
+        //
+        // The trade this pins: the EMPTY case is guaranteed to compose into an absolute URL (the defect
+        // this branch fixes, covered above), while a non-empty configured value is the user's and fails
+        // as it does in every other IDE. In Visual Studio that failure is a local-path read rather than
+        // a network error, which is why only the empty case is defended in depth.
         [InlineData("downloads.snyk.io")]
         [InlineData(@"C:\downloads")]
         [InlineData("not a url")]

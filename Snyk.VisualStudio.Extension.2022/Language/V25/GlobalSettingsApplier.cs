@@ -4,7 +4,6 @@ using System.Linq;
 using Newtonsoft.Json.Linq;
 using Serilog;
 using Snyk.VisualStudio.Extension.Authentication;
-using Snyk.VisualStudio.Extension.Download;
 using Snyk.VisualStudio.Extension.Settings;
 
 namespace Snyk.VisualStudio.Extension.Language
@@ -69,14 +68,7 @@ namespace Snyk.VisualStudio.Extension.Language
                     // absent, extending the PATCH semantics documented above for these two keys.
                     case PflagKeys.BinaryBaseUrl:
                         var baseUrl = val.Value<string>();
-                        // Skip empty (see above) and skip our own resolution coming back: LsSettingsV25
-                        // sends the RESOLVED url, so an echo equal to it carries no new information and
-                        // applying it would overwrite the raw value the user typed with the substitute.
-                        if (!string.IsNullOrWhiteSpace(baseUrl)
-                            && !string.Equals(baseUrl, SnykCliDownloader.ResolveBaseDownloadUrl(options.CliBaseDownloadURL), StringComparison.Ordinal))
-                        {
-                            options.CliBaseDownloadURL = baseUrl;
-                        }
+                        if (!string.IsNullOrWhiteSpace(baseUrl)) options.CliBaseDownloadURL = baseUrl;
                         break;
                     case PflagKeys.CliReleaseChannel:
                         var releaseChannel = val.Value<string>();

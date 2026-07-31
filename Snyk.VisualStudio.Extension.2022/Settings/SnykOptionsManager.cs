@@ -280,14 +280,10 @@ namespace Snyk.VisualStudio.Extension.Settings
                 // explicit "" on disk overrides the SnykSettings field initialisers. Resolving here
                 // makes the in-memory state coherent everywhere (settings UI, LS payload, downloader)
                 // and the repaired values are written back on the next Save.
-                // Repair ONLY the empty case — the values a $/snyk.configuration echo persisted before
-                // that echo was guarded. Applying the full resolver here would replace any value it
-                // rejects (an intranet mirror, a typo) with the public download host, which the next
-                // system-driven save then writes to disk: the user's configuration would be gone from
-                // options, from the settings form and from settings.json, with no way to recover it.
-                CliBaseDownloadURL = string.IsNullOrWhiteSpace(snykSettings.CliBaseDownloadURL)
-                    ? SnykCliDownloader.DefaultBaseDownloadUrl
-                    : snykSettings.CliBaseDownloadURL,
+                // Materialise the default for the empty values a $/snyk.configuration echo persisted
+                // before that echo was guarded. The resolver keeps any non-empty value as configured, so
+                // an intranet mirror survives the round trip.
+                CliBaseDownloadURL = SnykCliDownloader.ResolveBaseDownloadUrl(snykSettings.CliBaseDownloadURL),
                 CliReleaseChannel = SnykCliDownloader.ResolveReleaseChannel(snykSettings.CliReleaseChannel),
                 CurrentCliVersion = snykSettings.CurrentCliVersion,
 
@@ -462,12 +458,8 @@ namespace Snyk.VisualStudio.Extension.Settings
 
             snykSettings.BinariesAutoUpdateEnabled = options.BinariesAutoUpdate;
             snykSettings.CustomCliPath = options.CliCustomPath;
-            // Persist what the user configured, NOT the resolved value. Saves are system-driven (a CLI
-            // version bump fires one with no user action), so resolving here would overwrite a value the
-            // user typed — an unusable mirror would be replaced by the public host in settings.json, with
-            // no way for them to see or recover what they had entered. Resolution belongs at the point of
-            // use; repair-on-load stays limited to the empty values a $/snyk.configuration echo persisted
-            // before that echo was guarded.
+            // Persist what the user configured. Saves are system-driven (a CLI version bump fires one
+            // with no user action), so this must not rewrite the value they entered.
             snykSettings.CliBaseDownloadURL = options.CliBaseDownloadURL;
             snykSettings.CliReleaseChannel = options.CliReleaseChannel;
             snykSettings.CurrentCliVersion = options.CurrentCliVersion;

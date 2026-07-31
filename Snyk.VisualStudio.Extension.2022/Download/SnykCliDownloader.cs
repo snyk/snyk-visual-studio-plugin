@@ -1,13 +1,11 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.IO;
-using System.Linq;
 using System.Net.Http;
 using System.Threading.Tasks;
 using Microsoft.VisualStudio.Threading;
 using Serilog;
 using Snyk.VisualStudio.Extension.CLI;
-using Snyk.VisualStudio.Extension.Extension;
 using Snyk.VisualStudio.Extension.Language;
 using Snyk.VisualStudio.Extension.Service;
 using Snyk.VisualStudio.Extension.Settings;
@@ -58,6 +56,24 @@ namespace Snyk.VisualStudio.Extension.Download
         /// family — the settings field's placeholder shows a full URL — so it is not accepted here
         /// either; doing so would make the same input behave differently depending on the IDE.
         /// </para>
+        /// <para>
+        /// Two rough edges are deliberately NOT handled here, because they are shared with every other
+        /// IDE and fixing them in one of them only would recreate that divergence:
+        /// </para>
+        /// <list type="bullet">
+        /// <item>A trailing slash composes into "host//cli/...", which CDN-backed origins serve as a
+        /// different key. This has a non-user trigger: snyk-ls ships "https://downloads.snyk.io/" as the
+        /// section default in its settings form's reset handler.</item>
+        /// <item>A query or fragment swallows the composed path, leaving the request pointed at the host
+        /// root.</item>
+        /// </list>
+        /// <para>
+        /// Both belong upstream in snyk-ls. Note also that Visual Studio is the only family member whose
+        /// failure mode here is a filesystem read — WebClient resolves a relative URL through
+        /// Path.GetFullPath, whereas Go, VS Code and Eclipse all fail loudly on a missing scheme. That
+        /// asymmetry is why the empty case is additionally guarded on the inbound, outbound and load
+        /// paths rather than at the point of use alone.
+        /// </para>
         /// </summary>
         public static string ResolveBaseDownloadUrl(string configuredBaseDownloadUrl) =>
             string.IsNullOrWhiteSpace(configuredBaseDownloadUrl)
@@ -102,7 +118,7 @@ namespace Snyk.VisualStudio.Extension.Download
         public static string ResolveReleaseChannel(string configuredReleaseChannel) =>
             string.IsNullOrWhiteSpace(configuredReleaseChannel)
                 ? DefaultReleaseChannel
-                : configuredReleaseChannel;
+                : configuredReleaseChannel.Trim();
 
         // internal for testability (InternalsVisibleTo test project): lets the URL-construction tests
         // pin the resolved URLs without hitting the network.
