@@ -5,6 +5,7 @@ using System.Threading.Tasks;
 using Microsoft;
 using Microsoft.VisualStudio.ComponentModelHost;
 using Microsoft.VisualStudio.Shell;
+using Microsoft.VisualStudio.Threading;
 using Serilog;
 using Snyk.VisualStudio.Extension.CLI;
 using Snyk.VisualStudio.Extension.Download;
@@ -706,6 +707,17 @@ namespace Snyk.VisualStudio.Extension.Service
                 this.DownloadCancelled?.Invoke(this, new SnykCliDownloadEventArgs());
                 return;
             }
+
+            // Get off the UI thread before any of the download work. Download() is wired to the tool
+            // window's Loaded event, and JoinableTaskFactory.RunAsync executes its delegate inline on the
+            // calling thread up to the first yielding await — which is deep inside the HTTP read. Without
+            // this switch the version lookup and the checksum fetch (both synchronous
+            // WebClient.DownloadString), the SHA-256 of a ~150 MB binary, and the settings write in the
+            // finished callback all block the VS UI, for the full socket timeout against a mirror that
+            // does not answer. The download events are safe from a background thread: every handler in
+            // SnykToolWindowControl re-enters through JoinableTaskFactory, and SnykOptionsManager.Save is
+            // lock-guarded and already called from StreamJsonRpc dispatch threads.
+            await TaskScheduler.Default;
 
             this.isCliDownloading = true;
             try

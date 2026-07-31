@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.IO;
 using Snyk.VisualStudio.Extension.Download;
 using Xunit;
@@ -110,26 +111,30 @@ namespace Snyk.VisualStudio.Extension.Tests
             Assert.False(SnykCliDownloader.IsCliUpToDate(destination, Sha256.ComputeHash("anything")));
         }
 
-        [Fact]
-        public void IsCliUpToDate_DoesNotThrow_WhenTheFileCannotBeRead()
+        public static IEnumerable<object[]> ChecksumFailures() => new[]
         {
-            // "Not verifiable" must never escape: every failure has to resolve to false so the normal
-            // download path runs. Catching only IOException let UnauthorizedAccessException (an
-            // ACL-denied destination) and InvalidOperationException (SHA256Managed under a FIPS policy)
-            // abort the download before it was attempted.
-            // The assertion is "does not throw" rather than a specific result because whether an
-            // exclusive lock actually blocks a read is platform-dependent; the contract under test is
-            // that the caller never sees the exception.
+            // An ACL-denied destination.
+            new object[] { new UnauthorizedAccessException("access denied") },
+            // SHA256Managed under a FIPS-enforcing Windows policy.
+            new object[] { new InvalidOperationException("FIPS validated algorithms required") },
+            // The destination locked by the language server mid-scan.
+            new object[] { new IOException("file in use") },
+        };
+
+        [Theory]
+        [MemberData(nameof(ChecksumFailures))]
+        public void IsCliUpToDate_ReturnsFalse_WhenTheChecksumCannotBeComputed(Exception failure)
+        {
+            // "Not verifiable" must never escape — every failure has to resolve to false so the normal
+            // download path runs and reports a real error. Catching only IOException let the first two
+            // of these abort the download before it was attempted.
             var destination = Path.Combine(this.workDir, "snyk-win.exe");
             File.WriteAllText(destination, "cli-binary-contents");
             var sha = Sha256.Checksum(destination);
 
-            using (File.Open(destination, FileMode.Open, FileAccess.Read, FileShare.None))
-            {
-                var exception = Record.Exception(() => SnykCliDownloader.IsCliUpToDate(destination, sha));
+            var result = SnykCliDownloader.IsCliUpToDate(destination, sha, _ => throw failure);
 
-                Assert.Null(exception);
-            }
+            Assert.False(result);
         }
 
         [Theory]

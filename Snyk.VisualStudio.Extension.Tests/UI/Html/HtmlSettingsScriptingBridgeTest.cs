@@ -7,7 +7,6 @@ using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using Snyk.VisualStudio.Extension.Authentication;
 using Snyk.VisualStudio.Extension.CLI;
-using Snyk.VisualStudio.Extension.Download;
 using Snyk.VisualStudio.Extension.Language;
 using Snyk.VisualStudio.Extension.Service;
 using Snyk.VisualStudio.Extension.Settings;
@@ -224,12 +223,11 @@ namespace Snyk.VisualStudio.Extension.Tests.UI.Html
         }
 
         [Fact]
-        public void SaveIdeConfig_ResolvesClearedCliDownloadSettings_AtTheEntryPoint()
+        public void SaveIdeConfig_KeepsClearedCliDownloadSettingsCleared()
         {
-            // The LS-served form posts binary_base_url as "" when the field is unset, and an empty value
-            // composes into a relative download URL. Resolving here — where the value actually enters the
-            // system — keeps Options, settings.json, the form and the LS payload all showing the same
-            // thing, instead of storing a value every reader then has to compensate for.
+            // Empty is a legitimate cleared state meaning "use the default"; the download path resolves
+            // it. Writing the default into Options here would be indistinguishable from the user having
+            // typed it, and would then be persisted as their configuration.
             var localOptions = new Mock<ISnykOptions>();
             localOptions.SetupAllProperties();
             localOptions.Object.CliBaseDownloadURL = "https://downloads.snyk.io/fips";
@@ -246,14 +244,15 @@ namespace Snyk.VisualStudio.Extension.Tests.UI.Html
                 cli_release_channel = "",
             }));
 
-            Assert.Equal(SnykCliDownloader.DefaultBaseDownloadUrl, localOptions.Object.CliBaseDownloadURL);
-            Assert.Equal(SnykCliDownloader.DefaultReleaseChannel, localOptions.Object.CliReleaseChannel);
+            Assert.Equal(string.Empty, localOptions.Object.CliBaseDownloadURL);
+            Assert.Equal(string.Empty, localOptions.Object.CliReleaseChannel);
         }
 
         [Fact]
-        public void SaveIdeConfig_KeepsASchemelessHost_TypedIntoTheBaseUrlField()
+        public void SaveIdeConfig_CompletesASchemelessHost_TypedIntoTheBaseUrlField()
         {
-            // Users treat the field like a browser address bar. Their host must survive the save.
+            // Users treat the field like a browser address bar. Completing it to https is their intent
+            // finished, and what they see afterwards is what will be used.
             var localOptions = new Mock<ISnykOptions>();
             localOptions.SetupAllProperties();
 
@@ -265,6 +264,23 @@ namespace Snyk.VisualStudio.Extension.Tests.UI.Html
             localBridge.__saveIdeConfig__(JsonConvert.SerializeObject(new { binary_base_url = "artifacts.internal/snyk" }));
 
             Assert.Equal("https://artifacts.internal/snyk", localOptions.Object.CliBaseDownloadURL);
+        }
+
+        [Fact]
+        public void SaveIdeConfig_KeepsAnUnusableBaseUrlAsTyped()
+        {
+            // Substituting the default would hide the mistake from the only person who can correct it.
+            var localOptions = new Mock<ISnykOptions>();
+            localOptions.SetupAllProperties();
+
+            var sp = new Mock<ISnykServiceProvider>();
+            sp.SetupGet(x => x.Options).Returns(localOptions.Object);
+            sp.SetupGet(x => x.SnykOptionsManager).Returns(new Mock<ISnykOptionsManager>().Object);
+            var localBridge = new HtmlSettingsScriptingBridge(sp.Object, onModified: () => { });
+
+            localBridge.__saveIdeConfig__(JsonConvert.SerializeObject(new { binary_base_url = "downlods.snyk.io.local\\bad" }));
+
+            Assert.Equal("downlods.snyk.io.local\\bad", localOptions.Object.CliBaseDownloadURL);
         }
 
         [Fact]

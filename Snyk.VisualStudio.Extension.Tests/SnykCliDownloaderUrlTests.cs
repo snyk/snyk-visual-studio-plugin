@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using Moq;
 using Snyk.VisualStudio.Extension.CLI;
 using Snyk.VisualStudio.Extension.Download;
+using Snyk.VisualStudio.Extension.Extension;
 using Snyk.VisualStudio.Extension.Language;
 using Snyk.VisualStudio.Extension.Settings;
 using Xunit;
@@ -102,13 +103,31 @@ namespace Snyk.VisualStudio.Extension.Tests
         [InlineData(null)]
         [InlineData("")]
         [InlineData(" ")]
-        // Not a host at all. These cannot be repaired by assuming a scheme, so the default is the only
-        // safe answer (each is logged as a misconfiguration rather than silently swapped).
+        // Not a host. Each is logged as a misconfiguration rather than silently swapped.
         [InlineData("/downloads.snyk.io")]
+        [InlineData("//downloads.snyk.io")]
         [InlineData(@"C:\downloads")]
+        [InlineData("C:/downloads")]
         [InlineData("file:///c:/downloads")]
         [InlineData("ftp://downloads.snyk.io")]
+        [InlineData("javascript:alert(1)")]
         [InlineData("not a url")]
+        // "http//host" — a scheme typed without its colon parses with "http" as the host.
+        [InlineData("http//downloads.snyk.io")]
+        // .NET rewrites these bare tokens into addresses: 12345 -> 0.0.48.57, 0x7f000001 -> 127.0.0.1.
+        [InlineData("12345")]
+        [InlineData("0x7f000001")]
+        // A drive letter followed by digits looks exactly like host:port.
+        [InlineData(@"D:8081")]
+        // A bare token is indistinguishable from a hostname but is never what was meant.
+        [InlineData("notaurl")]
+        [InlineData("none")]
+        // Credentials need an explicit scheme, or the userinfo is mistaken for a port.
+        [InlineData("user@artifacts.internal")]
+        [InlineData("user:pass@artifacts.internal")]
+        // A query or fragment cannot survive composition — the path would land inside it.
+        [InlineData("downloads.snyk.io?token=x")]
+        [InlineData("downloads.snyk.io#frag")]
         public void ResolveBaseDownloadUrl_FallsBackToDefault(string configured)
         {
             Assert.Equal(SnykCliDownloader.DefaultBaseDownloadUrl, SnykCliDownloader.ResolveBaseDownloadUrl(configured));
@@ -122,8 +141,24 @@ namespace Snyk.VisualStudio.Extension.Tests
         [InlineData("downloads.snyk.io/fips", "https://downloads.snyk.io/fips")]
         [InlineData("artifacts.internal:8081/snyk", "https://artifacts.internal:8081/snyk")]
         [InlineData("localhost:3000", "https://localhost:3000")]
+        [InlineData("1.2.3.4:8081", "https://1.2.3.4:8081")]
+        // IPv6 literals: the colon inside the brackets is not a port separator.
+        [InlineData("[fd00::1]", "https://[fd00::1]")]
+        [InlineData("[fd00::1]:8081", "https://[fd00::1]:8081")]
+        [InlineData("[fd00::1]:8081/snyk", "https://[fd00::1]:8081/snyk")]
         [InlineData("  downloads.snyk.io  ", "https://downloads.snyk.io")]
         public void ResolveBaseDownloadUrl_AssumesHttps_ForASchemelessHost(string configured, string expected)
+        {
+            Assert.Equal(expected, SnykCliDownloader.ResolveBaseDownloadUrl(configured));
+        }
+
+        [Theory]
+        // A trailing slash is exactly what an address bar produces, and composing on top of it yields
+        // "host//cli/...", which CDN-backed origins serve as a different key.
+        [InlineData("https://downloads.snyk.io/", "https://downloads.snyk.io")]
+        [InlineData("downloads.snyk.io/", "https://downloads.snyk.io")]
+        [InlineData("https://downloads.snyk.io/fips/", "https://downloads.snyk.io/fips")]
+        public void ResolveBaseDownloadUrl_TrimsATrailingSlash(string configured, string expected)
         {
             Assert.Equal(expected, SnykCliDownloader.ResolveBaseDownloadUrl(configured));
         }
@@ -142,6 +177,8 @@ namespace Snyk.VisualStudio.Extension.Tests
         [InlineData("https://downloads.snyk.io")]
         [InlineData("https://downloads.snyk.io/fips")]
         [InlineData("http://artifacts.internal/snyk")]
+        // Credentials are preserved when the scheme is explicit — a private mirror may require them.
+        [InlineData("https://user:token@artifacts.internal/snyk")]
         public void ResolveBaseDownloadUrl_KeepsAbsoluteWebUrls(string configured)
         {
             Assert.Equal(configured, SnykCliDownloader.ResolveBaseDownloadUrl(configured));
@@ -156,6 +193,40 @@ namespace Snyk.VisualStudio.Extension.Tests
             var url = Downloader(configured, "stable").BuildLatestReleaseVersionUrl();
 
             Assert.Equal(ExpectedDefaultVersionUrl, url);
+        }
+
+        [Theory]
+        // The settings form completes a scheme-less host but never substitutes the default for an
+        // unusable value: the user has to be able to see and correct what they typed.
+        [InlineData("downloads.snyk.io", "https://downloads.snyk.io")]
+        [InlineData("artifacts.internal:8081/snyk", "https://artifacts.internal:8081/snyk")]
+        [InlineData("https://downloads.snyk.io/fips", "https://downloads.snyk.io/fips")]
+        [InlineData(@"C:\downloads", @"C:\downloads")]
+        [InlineData("notaurl", "notaurl")]
+        [InlineData("", "")]
+        [InlineData("   ", "")]
+        public void CompleteBaseDownloadUrl_RepairsIntentWithoutReplacingTheValue(string configured, string expected)
+        {
+            Assert.Equal(expected, SnykCliDownloader.CompleteBaseDownloadUrl(configured));
+        }
+
+        [Theory]
+        [InlineData("https://user:token@artifacts.internal/snyk", "https://<credentials>@artifacts.internal/snyk")]
+        [InlineData("http://user:token@artifacts.internal:8081/a", "http://<credentials>@artifacts.internal:8081/a")]
+        // Scheme-less credentials are the case that matters most and the easiest to miss:
+        // "user:pass@host" parses as an absolute URI with scheme "user" and an EMPTY UserInfo, so
+        // relying on Uri.UserInfo alone logs the secret verbatim. It reaches the log because
+        // ResolveBaseDownloadUrl rejects it and warns with the configured value.
+        [InlineData("user:pass@artifacts.internal", "<credentials>@artifacts.internal")]
+        [InlineData("user@artifacts.internal", "<credentials>@artifacts.internal")]
+        [InlineData("user:pass@artifacts.internal:8081/snyk", "<credentials>@artifacts.internal:8081/snyk")]
+        [InlineData("https://downloads.snyk.io/fips", "https://downloads.snyk.io/fips")]
+        [InlineData("downloads.snyk.io", "downloads.snyk.io")]
+        // A path segment containing '@' is not userinfo and must not be mistaken for it.
+        [InlineData("https://downloads.snyk.io/path@v2", "https://downloads.snyk.io/path@v2")]
+        public void Redact_BlanksCredentialsAndLeavesEverythingElse(string value, string expected)
+        {
+            Assert.Equal(expected, SnykCliDownloader.Redact(value));
         }
 
         [Theory]
@@ -176,7 +247,7 @@ namespace Snyk.VisualStudio.Extension.Tests
 
         public static IEnumerable<object[]> PathologicalConfigurations()
         {
-            var baseUrls = new[] { null, "", "   ", "downloads.snyk.io", "/cli", @"C:\downloads", "file:///c:/x", "not a url" };
+            var baseUrls = new[] { null, "", "   ", "downloads.snyk.io", "downloads.snyk.io/", "https://downloads.snyk.io/", "http://artifacts.internal/snyk", "[fd00::1]:8081", "/cli", @"C:\downloads", "file:///c:/x", "not a url", "12345" };
             var channels = new[] { null, "", "   ", "stable", "v1.1292.0" };
 
             foreach (var baseUrl in baseUrls)
@@ -193,15 +264,15 @@ namespace Snyk.VisualStudio.Extension.Tests
         public void EveryBuiltUrl_IsAnAbsoluteWebUrl_ForAnyConfiguredValue(string baseUrl, string channel)
         {
             // Blanket invariant: whatever lands in the options, the downloader must never hand
-            // WebClient something it will resolve as a local file path. A Theory rather than one Fact
-            // so a regression reports every failing combination, not just the first.
+            // WebClient something it will resolve as a local file path, and the composed path must not
+            // pick up a double slash from a trailing slash in the base. Asserts http-or-https because
+            // an internal mirror on plain http is explicitly supported.
             var downloader = Downloader(baseUrl, channel);
 
             foreach (var url in new[] { downloader.BuildLatestReleaseVersionUrl(), downloader.BuildCliDownloadUrl("v1.1292.0") })
             {
-                Assert.True(
-                    Uri.TryCreate(url, UriKind.Absolute, out var uri) && uri.Scheme == Uri.UriSchemeHttps,
-                    $"base '{baseUrl}' + channel '{channel}' produced non-https URL '{url}'");
+                Assert.True(UriExtensions.IsValidWebUrl(url), $"base '{baseUrl}' + channel '{channel}' produced '{url}'");
+                Assert.DoesNotContain("//", new Uri(url).AbsolutePath);
             }
         }
     }

@@ -105,15 +105,59 @@ namespace Snyk.VisualStudio.Extension.Tests
         [Fact]
         public void InstallCliFile_ThrowsWhenTheDestinationCannotBeWritten()
         {
-            // The regression this guards: the copy failure used to be swallowed, so FinishDownload never
-            // ran, SnykTasksService fired neither DownloadFinished (which starts the language server) nor
-            // DownloadFailed, and the extension sat in its initializing state. Install must fail loudly.
             var source = Path.Combine(this.workDir, "downloaded.exe");
             File.WriteAllText(source, "cli-binary");
             var destinationIsAnExistingDirectory = Path.Combine(this.workDir, "occupied");
             Directory.CreateDirectory(destinationIsAnExistingDirectory);
 
             Assert.ThrowsAny<Exception>(() => SnykCliDownloader.InstallCliFile(source, destinationIsAnExistingDirectory));
+        }
+
+        [Fact]
+        public void InstallAndFinish_PropagatesTheFailureAndDoesNotReportSuccess()
+        {
+            // The regression this guards: the copy failure used to be swallowed, so FinishDownload never
+            // ran and SnykTasksService fired neither DownloadFinished (which starts the language server)
+            // nor DownloadFailed — the extension sat in its initializing state with no error and no
+            // recovery. Both halves matter: the exception must escape AND the finished callbacks must
+            // not run, or the caller is told a failed install succeeded.
+            var source = Path.Combine(this.workDir, "downloaded.exe");
+            File.WriteAllText(source, "cli-binary");
+            var destinationIsAnExistingDirectory = Path.Combine(this.workDir, "occupied");
+            Directory.CreateDirectory(destinationIsAnExistingDirectory);
+
+            var finishedCallbackRan = false;
+            var cut = new FakeDownloader(Options());
+
+            Assert.ThrowsAny<Exception>(() => cut.InstallAndFinish(
+                this.progressWorkerMock.Object,
+                source,
+                destinationIsAnExistingDirectory,
+                new List<SnykCliDownloader.CliDownloadFinishedCallback> { () => finishedCallbackRan = true }));
+
+            Assert.False(finishedCallbackRan, "a failed install must not fire the download-finished callbacks");
+            this.progressWorkerMock.Verify(w => w.DownloadFinished(), Times.Never);
+        }
+
+        [Fact]
+        public void InstallAndFinish_InstallsAndReportsSuccess()
+        {
+            var source = Path.Combine(this.workDir, "downloaded.exe");
+            File.WriteAllText(source, "cli-binary");
+            var destination = Path.Combine(this.workDir, "snyk-ls", "snyk-win.exe");
+
+            var finishedCallbackRan = false;
+            var cut = new FakeDownloader(Options());
+
+            cut.InstallAndFinish(
+                this.progressWorkerMock.Object,
+                source,
+                destination,
+                new List<SnykCliDownloader.CliDownloadFinishedCallback> { () => finishedCallbackRan = true });
+
+            Assert.Equal("cli-binary", File.ReadAllText(destination));
+            Assert.True(finishedCallbackRan);
+            this.progressWorkerMock.Verify(w => w.DownloadFinished(), Times.Once);
         }
 
         [Fact]

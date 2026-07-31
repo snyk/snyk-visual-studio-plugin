@@ -682,22 +682,21 @@ namespace Snyk.VisualStudio.Extension.UI.Html
                 editedKeys.Add(PflagKeys.AutomaticDownload);
             }
 
-            // Resolve at the entry point rather than storing the posted value verbatim. This is where a
-            // user's empty string actually enters the system (the LS-served form posts binary_base_url
-            // as "" when unset), and an empty value composes into a relative download URL. Storing the
-            // resolved value keeps Options, settings.json, the settings form and the LS payload showing
-            // the same thing, so the read-side resolvers are defence in depth rather than the mechanism.
-            // A cleared field means "use the default", and per RACC-003 setting a key to its default
-            // through the form is still an explicit user choice, so it stays in editedKeys.
+            // Store what the user submitted. The one exception is a scheme-less host, which is repaired
+            // to https here so the value they see afterwards is the one that will be used — that is a
+            // completed intent, not a substitution. An unusable value is deliberately kept as typed:
+            // replacing it with the default would hide the mistake from the only person who can correct
+            // it. Resolution to the default happens at the point of use, where it is logged.
+            // Empty is a legitimate cleared state meaning "use the default".
             if (config.CliBaseDownloadURL != null)
             {
-                Options.CliBaseDownloadURL = SnykCliDownloader.ResolveBaseDownloadUrl(config.CliBaseDownloadURL);
+                Options.CliBaseDownloadURL = SnykCliDownloader.CompleteBaseDownloadUrl(config.CliBaseDownloadURL);
                 editedKeys.Add(PflagKeys.BinaryBaseUrl);
             }
 
             if (config.CliReleaseChannel != null)
             {
-                Options.CliReleaseChannel = SnykCliDownloader.ResolveReleaseChannel(config.CliReleaseChannel);
+                Options.CliReleaseChannel = config.CliReleaseChannel;
                 editedKeys.Add(PflagKeys.CliReleaseChannel);
             }
         }

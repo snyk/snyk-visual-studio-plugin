@@ -455,12 +455,14 @@ namespace Snyk.VisualStudio.Extension.Settings
 
             snykSettings.BinariesAutoUpdateEnabled = options.BinariesAutoUpdate;
             snykSettings.CustomCliPath = options.CliCustomPath;
-            // Resolve on the way out too, so an unusable value that reached Options (an LS echo of
-            // the empty defaults) is never written to settings.json. Together with the entry-point
-            // resolution in HtmlSettingsScriptingBridge this makes repair-on-load a one-time migration
-            // for already-poisoned files rather than a permanent crutch.
-            snykSettings.CliBaseDownloadURL = SnykCliDownloader.ResolveBaseDownloadUrl(options.CliBaseDownloadURL);
-            snykSettings.CliReleaseChannel = SnykCliDownloader.ResolveReleaseChannel(options.CliReleaseChannel);
+            // Persist what the user configured, NOT the resolved value. Saves are system-driven (a CLI
+            // version bump fires one with no user action), so resolving here would overwrite a value the
+            // user typed — an unusable mirror would be replaced by the public host in settings.json, with
+            // no way for them to see or recover what they had entered. Resolution belongs at the point of
+            // use; repair-on-load stays limited to the empty values a $/snyk.configuration echo persisted
+            // before that echo was guarded.
+            snykSettings.CliBaseDownloadURL = options.CliBaseDownloadURL;
+            snykSettings.CliReleaseChannel = options.CliReleaseChannel;
             snykSettings.CurrentCliVersion = options.CurrentCliVersion;
 
             snykSettings.AuthenticationMethod = options.AuthenticationMethod;

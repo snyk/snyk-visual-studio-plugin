@@ -46,18 +46,19 @@ namespace Snyk.VisualStudio.Extension.Download
         /// <para>
         /// A relative value composes into a relative download URL, which <see cref="System.Net.WebClient"/>
         /// resolves through Path.GetFullPath into a nonexistent local file path and reports as a
-        /// DirectoryNotFoundException — the original defect. Three cases:
+        /// DirectoryNotFoundException — the original defect. Three outcomes:
         /// </para>
         /// <list type="bullet">
-        /// <item>Absolute http/https — used as configured, including an internal mirror on plain http.</item>
-        /// <item>Scheme-less host ("downloads.snyk.io", "artifacts.internal:8081/snyk") — the user typed it
-        /// like a browser address bar, so https is assumed rather than discarding what they configured.</item>
-        /// <item>Empty, or not a host at all (a Windows path, a file:// URL, free text) — the default.
-        /// Empty is the ordinary "unset" case (a cleared field, or the Language Server echoing back
-        /// binary_base_url, which it registers with an empty default); anything else is a misconfiguration
-        /// and is logged, because silently redirecting a mis-typed internal mirror to the public download
-        /// host is not something an egress-restricted customer should have to discover from a packet trace.
-        /// </item>
+        /// <item>Absolute http/https — used as configured, including an internal mirror on plain http and
+        /// one carrying credentials. Any trailing slash is trimmed so composition cannot produce
+        /// <c>host//cli/...</c>, which CDN-backed origins serve as a different key.</item>
+        /// <item>Scheme-less host ("downloads.snyk.io", "artifacts.internal:8081/snyk", "[fd00::1]:8081")
+        /// — typed like a browser address bar, so https is assumed rather than discarding it.</item>
+        /// <item>Anything else — the default. Empty is the ordinary "unset" case (a cleared field, or the
+        /// Language Server echoing back binary_base_url, which it registers with an empty default) and is
+        /// silent; a value that is not a usable host is logged, because silently redirecting a mis-typed
+        /// internal mirror to the public download host is not something an egress-restricted customer
+        /// should have to discover from a packet trace.</item>
         /// </list>
         /// </summary>
         public static string ResolveBaseDownloadUrl(string configuredBaseDownloadUrl)
@@ -69,55 +70,60 @@ namespace Snyk.VisualStudio.Extension.Download
 
             var configured = configuredBaseDownloadUrl.Trim();
 
+            // A query or fragment cannot survive composition — "{base}/cli/{channel}/..." would land
+            // inside it, leaving the request pointed at the host root.
+            if (configured.IndexOf('?') >= 0 || configured.IndexOf('#') >= 0)
+            {
+                WarnUnusableBaseDownloadUrl(configured, "it carries a query or fragment");
+                return DefaultBaseDownloadUrl;
+            }
+
             if (UriExtensions.IsValidWebUrl(configured))
             {
-                return configured;
+                return configured.TrimEnd('/');
             }
 
             if (TryResolveSchemelessHost(configured, out var withScheme))
             {
-                return withScheme;
+                return withScheme.TrimEnd('/');
             }
 
-            Logger.Warning(
-                "Configured CLI download base URL '{ConfiguredBaseDownloadUrl}' is not a usable host; falling back to {DefaultBaseDownloadUrl}",
-                Redact(configured),
-                DefaultBaseDownloadUrl);
+            WarnUnusableBaseDownloadUrl(configured, "it is not a usable host");
 
             return DefaultBaseDownloadUrl;
         }
 
-        // "downloads.snyk.io", "downloads.snyk.io/fips" and "artifacts.internal:8081/snyk" are what users
-        // type when they treat the field like an address bar; assume https for them. Rejects anything that
-        // is not a bare host: a rooted or Windows path, a non-http scheme (file:, ftp:) or a drive letter
-        // (both look like "x:" but the part after the colon is not a port), and free text.
+        // "downloads.snyk.io", "downloads.snyk.io/fips", "artifacts.internal:8081/snyk" and
+        // "[fd00::1]:8081" are what users type when they treat the field like an address bar; assume
+        // https for them.
         private static bool TryResolveSchemelessHost(string configured, out string withScheme)
         {
             withScheme = null;
 
-            if (configured.IndexOf('\\') >= 0 || configured.StartsWith("/"))
+            // Not a host: a rooted or Windows path, a UNC path, or a scheme typed without its colon
+            // ("http//downloads.snyk.io" — the common typo, which would otherwise parse with "http" as
+            // the host). Credentials need an explicit scheme so they cannot be mistaken for a port.
+            if (configured.StartsWith("/", StringComparison.Ordinal)
+                || configured.IndexOf('\\') >= 0
+                || configured.IndexOf("//", StringComparison.Ordinal) >= 0
+                || configured.IndexOf('@') >= 0)
             {
                 return false;
             }
 
-            var authority = configured.Split('/')[0];
-            var colonIndex = authority.IndexOf(':');
-
-            if (colonIndex >= 0)
-            {
-                var port = authority.Substring(colonIndex + 1);
-
-                if (port.Length == 0 || !port.All(char.IsDigit))
-                {
-                    return false;
-                }
-            }
-
             var candidate = Uri.UriSchemeHttps + "://" + configured;
 
-            if (!UriExtensions.IsValidWebUrl(candidate)
-                || !Uri.TryCreate(candidate, UriKind.Absolute, out var uri)
-                || string.IsNullOrEmpty(uri.Host))
+            if (!Uri.TryCreate(candidate, UriKind.Absolute, out var uri) || uri.Scheme != Uri.UriSchemeHttps)
+            {
+                return false;
+            }
+
+            // .NET rewrites some bare tokens into addresses — "12345" parses as host 0.0.48.57 and
+            // "0x7f000001" as 127.0.0.1. Require the parsed host to be the text that was typed, so a
+            // value silently reinterpreted as a different host is rejected rather than requested.
+            var hostPart = HostPartOf(configured);
+
+            if (!string.Equals(uri.Host, hostPart, StringComparison.OrdinalIgnoreCase) || !LooksLikeHost(hostPart))
             {
                 return false;
             }
@@ -127,13 +133,92 @@ namespace Snyk.VisualStudio.Extension.Download
             return true;
         }
 
-        // Strips credentials before a configured URL reaches the log. A mirror configured as
-        // https://user:token@host would otherwise be written to snyk-extension.log verbatim.
-        private static string Redact(string value)
+        // The authority with any port removed, keeping the brackets of an IPv6 literal.
+        private static string HostPartOf(string configured)
         {
-            var atIndex = value.LastIndexOf('@');
+            var authority = configured.Split('/')[0];
 
-            return atIndex < 0 ? value : "<credentials>@" + value.Substring(atIndex + 1);
+            if (authority.StartsWith("[", StringComparison.Ordinal))
+            {
+                var closingBracket = authority.IndexOf(']');
+
+                return closingBracket < 0 ? authority : authority.Substring(0, closingBracket + 1);
+            }
+
+            var colonIndex = authority.IndexOf(':');
+
+            return colonIndex < 0 ? authority : authority.Substring(0, colonIndex);
+        }
+
+        // A dotted name, an IPv6 literal, or localhost. This deliberately rejects a bare single token:
+        // "none", a typo'd "downlodssnyk", and a drive letter such as the "D" of "D:8081" are all
+        // indistinguishable from a hostname to Uri, and none of them is what the user meant. A
+        // single-label intranet host is rejected too — typing the scheme explicitly always works.
+        private static bool LooksLikeHost(string hostPart) =>
+            hostPart.StartsWith("[", StringComparison.Ordinal)
+            || hostPart.Equals("localhost", StringComparison.OrdinalIgnoreCase)
+            || hostPart.IndexOf('.') > 0;
+
+        private static void WarnUnusableBaseDownloadUrl(string configured, string reason) =>
+            Logger.Warning(
+                "Configured CLI download base URL '{ConfiguredBaseDownloadUrl}' is being ignored because {Reason}; falling back to {DefaultBaseDownloadUrl}",
+                Redact(configured),
+                reason,
+                DefaultBaseDownloadUrl);
+
+        // Blanks the credentials in a URL before it reaches the log. A mirror configured as
+        // https://user:token@host would otherwise write the token to snyk-extension.log. Applied to
+        // every logged URL, not just the configured value: the composed download URL carries the same
+        // credentials.
+        internal static string Redact(string value)
+        {
+            if (string.IsNullOrEmpty(value) || value.IndexOf('@') < 0)
+            {
+                return value;
+            }
+
+            var parsed = Uri.TryCreate(value, UriKind.Absolute, out var uri);
+
+            if (parsed && !string.IsNullOrEmpty(uri.UserInfo))
+            {
+                return value.Replace(uri.UserInfo + "@", "<credentials>@");
+            }
+
+            // An '@' inside a well-formed web URL that has no userinfo belongs to the path or query
+            // ("https://host/path@v2"), so there is nothing to blank.
+            if (parsed && (uri.Scheme == Uri.UriSchemeHttp || uri.Scheme == Uri.UriSchemeHttps))
+            {
+                return value;
+            }
+
+            // Everything else carrying '@' is treated as credentials. Uri.UserInfo cannot be relied on
+            // here: "user:pass@host" parses as an absolute URI with scheme "user" and NO userinfo, so a
+            // check for a populated UserInfo silently passes the secret straight through to the log.
+            return "<credentials>@" + value.Substring(value.LastIndexOf('@') + 1);
+        }
+
+        /// <summary>
+        /// Complete what the user typed, without replacing it. A scheme-less host gains https — that is
+        /// their intent finished, and the value they see afterwards is the one that will be used.
+        /// Everything else is returned as typed, including a value that is not usable: substituting the
+        /// default at the settings boundary would hide the mistake from the only person who can correct
+        /// it. Falling back to the default happens at the point of use, where it is logged.
+        /// </summary>
+        public static string CompleteBaseDownloadUrl(string configuredBaseDownloadUrl)
+        {
+            if (string.IsNullOrWhiteSpace(configuredBaseDownloadUrl))
+            {
+                return string.Empty;
+            }
+
+            var configured = configuredBaseDownloadUrl.Trim();
+
+            if (UriExtensions.IsValidWebUrl(configured))
+            {
+                return configured;
+            }
+
+            return TryResolveSchemelessHost(configured, out var withScheme) ? withScheme : configured;
         }
 
         /// <summary>
@@ -176,7 +261,7 @@ namespace Snyk.VisualStudio.Extension.Download
                 // inside WebClient, naming a local path that appears nowhere in the settings.
                 Logger.Information(
                     "Get latest CLI release info from {Url} (configured base url: '{BaseDownloadUrl}', release channel: '{ReleaseChannel}')",
-                    latestReleaseVersionUrl,
+                    Redact(latestReleaseVersionUrl),
                     Redact(this.SnykOptions.CliBaseDownloadURL ?? string.Empty),
                     this.SnykOptions.CliReleaseChannel);
 
@@ -321,7 +406,7 @@ namespace Snyk.VisualStudio.Extension.Download
 
             LatestReleaseInfo latestReleaseInfo = this.GetLatestReleaseInfo();
 
-            Logger.Information("Latest relase information: version {Version} and url {Url}", latestReleaseInfo.Version, latestReleaseInfo.Url);
+            Logger.Information("Latest relase information: version {Version} and url {Url}", latestReleaseInfo.Version, Redact(latestReleaseInfo.Url));
 
             progressWorker.CancelIfCancellationRequested();
 
@@ -399,12 +484,62 @@ namespace Snyk.VisualStudio.Extension.Download
         }
 
         /// <summary>
+        /// Install the downloaded binary and fire the finished callbacks, reporting and rethrowing on
+        /// failure. Rethrow is the contract that matters: swallowing it left the extension dead, because
+        /// FinishDownload never ran and SnykTasksService then fired neither DownloadFinished (which is
+        /// what starts the language server) nor DownloadFailed, so the tool window stayed in its
+        /// initializing state with no error and no recovery. Propagating reaches
+        /// SnykTasksService.DownloadAsync's handler, which raises DownloadFailed; that handler starts the
+        /// server anyway when a usable CLI is already present, and otherwise tells the user the download
+        /// failed and they can set a CLI path in settings.
+        /// </summary>
+        // internal for testability (InternalsVisibleTo test project): lets the rethrow contract be
+        // exercised without first downloading a CLI.
+        internal void InstallAndFinish(
+            ISnykProgressWorker progressWorker,
+            string sourceFilePath,
+            string cliFileDestinationPath,
+            List<CliDownloadFinishedCallback> downloadFinishedCallbacks)
+        {
+            try
+            {
+                InstallCliFile(sourceFilePath, cliFileDestinationPath);
+
+                this.FinishDownload(progressWorker, downloadFinishedCallbacks);
+            }
+            catch (Exception e)
+            {
+                // Message the two outcomes differently. SnykToolWindowControl.OnDownloadFailed restarts
+                // the language server when a CLI is already present at the destination, so telling the
+                // user to close their scans while we start one would contradict itself.
+                var existingCliRemains = File.Exists(cliFileDestinationPath);
+                var message = existingCliRemains
+                    ? $"Snyk CLI could not be updated at {cliFileDestinationPath}: {e.Message} The existing CLI will continue to be used."
+                    : $"Snyk CLI could not be installed at {cliFileDestinationPath}: {e.Message}";
+
+                // Null-conditional: the download runs early in startup and NotificationService is
+                // initialised by the package, so a null here would throw an NRE from inside this catch
+                // and mask the real failure.
+                NotificationService.Instance?.ShowErrorInfoBar(message);
+                Logger.Error(e, "Error on CLI copy from temp file to {Path}", cliFileDestinationPath);
+
+                throw;
+            }
+        }
+
+        /// <summary>
         /// True when the binary already at <paramref name="cliFileDestinationPath"/> is the one we are
         /// about to install. snyk-ls downloads the same CLI to the same path and runs it, so overwriting
         /// an identical binary achieves nothing and can fail with a sharing violation.
         /// </summary>
         // internal static for testability (InternalsVisibleTo test project).
-        internal static bool IsCliUpToDate(string cliFileDestinationPath, string expectedSha)
+        internal static bool IsCliUpToDate(string cliFileDestinationPath, string expectedSha) =>
+            IsCliUpToDate(cliFileDestinationPath, expectedSha, Sha256.Checksum);
+
+        // computeChecksum is injected so a test can reach the catch below deterministically: the
+        // failures it exists for (an ACL-denied destination, SHA256Managed under a FIPS policy) cannot
+        // be provoked portably from a test that only has a file path.
+        internal static bool IsCliUpToDate(string cliFileDestinationPath, string expectedSha, Func<string, string> computeChecksum)
         {
             if (string.IsNullOrEmpty(expectedSha) || !File.Exists(cliFileDestinationPath))
             {
@@ -413,7 +548,7 @@ namespace Snyk.VisualStudio.Extension.Download
 
             try
             {
-                return string.Equals(Sha256.Checksum(cliFileDestinationPath), expectedSha, StringComparison.OrdinalIgnoreCase);
+                return string.Equals(computeChecksum(cliFileDestinationPath), expectedSha, StringComparison.OrdinalIgnoreCase);
             }
             catch (Exception e)
             {
@@ -439,12 +574,10 @@ namespace Snyk.VisualStudio.Extension.Download
             {
                 this.SaveLatestCliSha(cliDownloadUrl);
 
-                // Off the UI thread: Download() is wired to the tool window's Loaded event and this whole
-                // prologue runs synchronously up to the first await inside DownloadFileAsync, so hashing
-                // a ~150 MB binary here would block the UI for seconds.
-                var isUpToDate = await Task.Run(() => IsCliUpToDate(cliFileDestinationPath, this.expectedSha));
-
-                if (isUpToDate)
+                // SnykTasksService.DownloadAsync switches to the thread pool before any of this runs, so
+                // the hash, the two synchronous release-info requests before it, and the settings write
+                // in the finished callback are all off the UI thread.
+                if (IsCliUpToDate(cliFileDestinationPath, this.expectedSha))
                 {
                     Logger.Information(
                         "CLI at {Path} already matches the expected checksum — skipping download",
@@ -530,34 +663,7 @@ namespace Snyk.VisualStudio.Extension.Download
 
                 try
                 {
-                    InstallCliFile(tempCliFile, cliFileDestinationPath);
-
-                    this.FinishDownload(progressWorker, downloadFinishedCallbacks);
-                }
-                catch (Exception e)
-                {
-                    // Message the two outcomes differently. SnykToolWindowControl.OnDownloadFailed
-                    // restarts the language server when a CLI is already present at the destination, so
-                    // telling the user to close their scans while we start one would contradict itself.
-                    var existingCliRemains = File.Exists(cliFileDestinationPath);
-                    var message = existingCliRemains
-                        ? $"Snyk CLI could not be updated at {cliFileDestinationPath}: {e.Message} The existing CLI will continue to be used."
-                        : $"Snyk CLI could not be installed at {cliFileDestinationPath}: {e.Message}";
-
-                    // Null-conditional: the download runs early in startup and NotificationService is
-                    // initialised by the package, so a null here would throw an NRE from inside this
-                    // catch and mask the real failure.
-                    NotificationService.Instance?.ShowErrorInfoBar(message);
-                    Logger.Error(e, "Error on CLI copy from temp file to {Path}", cliFileDestinationPath);
-
-                    // Rethrow: swallowing this left the extension in a dead state. FinishDownload never
-                    // runs, so SnykTasksService fires neither DownloadFinished (which is what starts the
-                    // language server) nor DownloadFailed — the tool window stays in its initializing
-                    // state forever. Propagating reaches SnykTasksService.DownloadAsync's handler, which
-                    // raises DownloadFailed; that handler starts the server anyway when a usable CLI is
-                    // already present at the configured path, and otherwise tells the user the download
-                    // failed and they can set a CLI path in settings.
-                    throw;
+                    this.InstallAndFinish(progressWorker, tempCliFile, cliFileDestinationPath, downloadFinishedCallbacks);
                 }
                 finally
                 {

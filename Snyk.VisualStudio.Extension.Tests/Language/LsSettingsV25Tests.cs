@@ -6,6 +6,7 @@ using Moq;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using Snyk.VisualStudio.Extension.Authentication;
+using Snyk.VisualStudio.Extension.CLI;
 using Snyk.VisualStudio.Extension.Download;
 using Snyk.VisualStudio.Extension.Language;
 using Snyk.VisualStudio.Extension.Service;
@@ -281,7 +282,7 @@ namespace Snyk.VisualStudio.Extension.Tests.Language
 
             var map = cut.BuildSettingsMap(optionsMock.Object);
 
-            Assert.Equal(Extension.CLI.SnykCli.GetSnykCliDefaultPath(), map[PflagKeys.CliPath].Value);
+            Assert.Equal(SnykCli.GetSnykCliDefaultPath(), map[PflagKeys.CliPath].Value);
         }
 
         // ACC-001: A key the user has NOT overridden is sent with changed:false.
