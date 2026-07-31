@@ -4,6 +4,7 @@ using System.IO;
 using System.Linq;
 using System.Net.Http;
 using System.Threading.Tasks;
+using Microsoft.VisualStudio.Threading;
 using Serilog;
 using Snyk.VisualStudio.Extension.CLI;
 using Snyk.VisualStudio.Extension.Extension;
@@ -42,30 +43,27 @@ namespace Snyk.VisualStudio.Extension.Download
         public delegate void CliDownloadFinishedCallback();
 
         /// <summary>
-        /// Resolve the CLI download base URL to something that composes into an absolute URL.
+        /// Resolve the CLI download base URL to something that composes into an absolute URL. Returns
+        /// false when the configured value could not be used, with <paramref name="reason"/> explaining
+        /// why; <paramref name="resolved"/> is always usable.
         /// <para>
         /// A relative value composes into a relative download URL, which <see cref="System.Net.WebClient"/>
         /// resolves through Path.GetFullPath into a nonexistent local file path and reports as a
-        /// DirectoryNotFoundException — the original defect. Three outcomes:
+        /// DirectoryNotFoundException — the original defect.
         /// </para>
-        /// <list type="bullet">
-        /// <item>Absolute http/https — used as configured, including an internal mirror on plain http and
-        /// one carrying credentials. Any trailing slash is trimmed so composition cannot produce
-        /// <c>host//cli/...</c>, which CDN-backed origins serve as a different key.</item>
-        /// <item>Scheme-less host ("downloads.snyk.io", "artifacts.internal:8081/snyk", "[fd00::1]:8081")
-        /// — typed like a browser address bar, so https is assumed rather than discarding it.</item>
-        /// <item>Anything else — the default. Empty is the ordinary "unset" case (a cleared field, or the
-        /// Language Server echoing back binary_base_url, which it registers with an empty default) and is
-        /// silent; a value that is not a usable host is logged, because silently redirecting a mis-typed
-        /// internal mirror to the public download host is not something an egress-restricted customer
-        /// should have to discover from a packet trace.</item>
-        /// </list>
+        /// <para>
+        /// Deliberately silent: this runs on hot paths (every didChangeConfiguration, every tracker
+        /// compare, load). The download path reports the fallback once, where the user can act on it.
+        /// </para>
         /// </summary>
-        public static string ResolveBaseDownloadUrl(string configuredBaseDownloadUrl)
+        internal static bool TryResolveBaseDownloadUrl(string configuredBaseDownloadUrl, out string resolved, out string reason)
         {
+            resolved = DefaultBaseDownloadUrl;
+            reason = null;
+
             if (string.IsNullOrWhiteSpace(configuredBaseDownloadUrl))
             {
-                return DefaultBaseDownloadUrl;
+                return true;
             }
 
             var configured = configuredBaseDownloadUrl.Trim();
@@ -74,23 +72,56 @@ namespace Snyk.VisualStudio.Extension.Download
             // inside it, leaving the request pointed at the host root.
             if (configured.IndexOf('?') >= 0 || configured.IndexOf('#') >= 0)
             {
-                WarnUnusableBaseDownloadUrl(configured, "it carries a query or fragment");
-                return DefaultBaseDownloadUrl;
+                reason = "it carries a query or fragment";
+                return false;
             }
 
+            // The trailing slash is trimmed so composition cannot produce "host//cli/...", which
+            // CDN-backed origins serve as a different key.
             if (UriExtensions.IsValidWebUrl(configured))
             {
-                return configured.TrimEnd('/');
+                resolved = configured.TrimEnd('/');
+                return true;
             }
 
             if (TryResolveSchemelessHost(configured, out var withScheme))
             {
-                return withScheme.TrimEnd('/');
+                resolved = withScheme.TrimEnd('/');
+                return true;
             }
 
-            WarnUnusableBaseDownloadUrl(configured, "it is not a usable host");
+            reason = "it is not a usable host";
+            return false;
+        }
 
-            return DefaultBaseDownloadUrl;
+        /// <summary>
+        /// The base download URL to actually request from: the configured value when it is usable, the
+        /// default otherwise. See <see cref="TryResolveBaseDownloadUrl"/>.
+        /// </summary>
+        public static string ResolveBaseDownloadUrl(string configuredBaseDownloadUrl)
+        {
+            TryResolveBaseDownloadUrl(configuredBaseDownloadUrl, out var resolved, out _);
+
+            return resolved;
+        }
+
+        /// <summary>
+        /// Complete what the user typed, without replacing it. A usable value is normalised exactly as
+        /// <see cref="TryResolveBaseDownloadUrl"/> would (scheme completed, trailing slash trimmed) so
+        /// what is stored, shown, sent and requested are the same string. An unusable value is returned
+        /// as typed: substituting the default at the settings boundary would hide the mistake from the
+        /// only person who can correct it.
+        /// </summary>
+        public static string CompleteBaseDownloadUrl(string configuredBaseDownloadUrl)
+        {
+            if (string.IsNullOrWhiteSpace(configuredBaseDownloadUrl))
+            {
+                return string.Empty;
+            }
+
+            var configured = configuredBaseDownloadUrl.Trim();
+
+            return TryResolveBaseDownloadUrl(configured, out var resolved, out _) ? resolved : configured;
         }
 
         // "downloads.snyk.io", "downloads.snyk.io/fips", "artifacts.internal:8081/snyk" and
@@ -123,7 +154,8 @@ namespace Snyk.VisualStudio.Extension.Download
             // value silently reinterpreted as a different host is rejected rather than requested.
             var hostPart = HostPartOf(configured);
 
-            if (!string.Equals(uri.Host, hostPart, StringComparison.OrdinalIgnoreCase) || !LooksLikeHost(hostPart))
+            if (!string.Equals(uri.Host, hostPart, StringComparison.OrdinalIgnoreCase)
+                || !LooksLikeHost(configured, hostPart))
             {
                 return false;
             }
@@ -150,21 +182,26 @@ namespace Snyk.VisualStudio.Extension.Download
             return colonIndex < 0 ? authority : authority.Substring(0, colonIndex);
         }
 
-        // A dotted name, an IPv6 literal, or localhost. This deliberately rejects a bare single token:
-        // "none", a typo'd "downlodssnyk", and a drive letter such as the "D" of "D:8081" are all
-        // indistinguishable from a hostname to Uri, and none of them is what the user meant. A
-        // single-label intranet host is rejected too — typing the scheme explicitly always works.
-        private static bool LooksLikeHost(string hostPart) =>
-            hostPart.StartsWith("[", StringComparison.Ordinal)
-            || hostPart.Equals("localhost", StringComparison.OrdinalIgnoreCase)
-            || hostPart.IndexOf('.') > 0;
+        // A dotted name, an IPv6 literal, or localhost. A single label is accepted only when qualified
+        // by a port or a path — "nexus:8081" and "nexus/snyk" are ordinary intranet mirrors, while a
+        // bare "none" or a typo'd "downlodssnyk" is not a host anyone meant. One-character labels stay
+        // rejected because that is a drive letter: "D:8081" is otherwise indistinguishable from
+        // host:port.
+        private static bool LooksLikeHost(string configured, string hostPart)
+        {
+            if (hostPart.StartsWith("[", StringComparison.Ordinal)
+                || hostPart.Equals("localhost", StringComparison.OrdinalIgnoreCase)
+                || hostPart.IndexOf('.') > 0)
+            {
+                return true;
+            }
 
-        private static void WarnUnusableBaseDownloadUrl(string configured, string reason) =>
-            Logger.Warning(
-                "Configured CLI download base URL '{ConfiguredBaseDownloadUrl}' is being ignored because {Reason}; falling back to {DefaultBaseDownloadUrl}",
-                Redact(configured),
-                reason,
-                DefaultBaseDownloadUrl);
+            var authority = configured.Split('/')[0];
+            var hasPort = authority.Length > hostPart.Length && authority[hostPart.Length] == ':';
+            var hasPath = configured.IndexOf('/') > 0;
+
+            return hostPart.Length > 1 && (hasPort || hasPath);
+        }
 
         // Blanks the credentials in a URL before it reaches the log. A mirror configured as
         // https://user:token@host would otherwise write the token to snyk-extension.log. Applied to
@@ -195,30 +232,6 @@ namespace Snyk.VisualStudio.Extension.Download
             // here: "user:pass@host" parses as an absolute URI with scheme "user" and NO userinfo, so a
             // check for a populated UserInfo silently passes the secret straight through to the log.
             return "<credentials>@" + value.Substring(value.LastIndexOf('@') + 1);
-        }
-
-        /// <summary>
-        /// Complete what the user typed, without replacing it. A scheme-less host gains https — that is
-        /// their intent finished, and the value they see afterwards is the one that will be used.
-        /// Everything else is returned as typed, including a value that is not usable: substituting the
-        /// default at the settings boundary would hide the mistake from the only person who can correct
-        /// it. Falling back to the default happens at the point of use, where it is logged.
-        /// </summary>
-        public static string CompleteBaseDownloadUrl(string configuredBaseDownloadUrl)
-        {
-            if (string.IsNullOrWhiteSpace(configuredBaseDownloadUrl))
-            {
-                return string.Empty;
-            }
-
-            var configured = configuredBaseDownloadUrl.Trim();
-
-            if (UriExtensions.IsValidWebUrl(configured))
-            {
-                return configured;
-            }
-
-            return TryResolveSchemelessHost(configured, out var withScheme) ? withScheme : configured;
         }
 
         /// <summary>
@@ -255,6 +268,19 @@ namespace Snyk.VisualStudio.Extension.Download
             using (var webClient = new SnykWebClient())
             {
                 var latestReleaseVersionUrl = this.BuildLatestReleaseVersionUrl();
+
+                // Report an unusable configured value here rather than inside the resolver: this is the
+                // one place per download cycle, so the warning is not repeated on every settings round
+                // trip, and it is the moment the substitution actually affects the user. Silently
+                // sending an egress-restricted customer to the public download host is the failure this
+                // exists to prevent.
+                if (!TryResolveBaseDownloadUrl(this.SnykOptions.CliBaseDownloadURL, out _, out var reason))
+                {
+                    var warning = $"The configured Snyk CLI download URL '{Redact(this.SnykOptions.CliBaseDownloadURL)}' is being ignored because {reason}. Downloading from {DefaultBaseDownloadUrl} instead.";
+
+                    Logger.Warning(warning);
+                    NotificationService.Instance?.ShowErrorInfoBar(warning);
+                }
 
                 // Log the composed URL and the raw options it came from: without this the only symptom
                 // of an unusable base url / release channel is a DirectoryNotFoundException from deep
@@ -569,6 +595,11 @@ namespace Snyk.VisualStudio.Extension.Download
             List<CliDownloadFinishedCallback> downloadFinishedCallbacks = null)
         {
             Logger.Information("Enter AsynchronousDownload method");
+
+            // Own the thread guarantee rather than relying on the caller: this method is public, and the
+            // work below (two synchronous release-info requests, a SHA-256 of a ~150 MB binary) must
+            // never run on the UI thread. Idempotent when the caller has already switched.
+            await TaskScheduler.Default;
 
             try
             {

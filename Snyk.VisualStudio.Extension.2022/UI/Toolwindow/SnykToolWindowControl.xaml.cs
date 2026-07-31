@@ -428,7 +428,19 @@ namespace Snyk.VisualStudio.Extension.UI.Toolwindow
         /// </summary>
         /// <param name="sender">Source object.</param>
         /// <param name="eventArgs">Event args.</param>
-        public void OnDownloadFinished(object sender, SnykCliDownloadEventArgs eventArgs) => this.DetermineInitScreen();
+        public void OnDownloadFinished(object sender, SnykCliDownloadEventArgs eventArgs)
+        {
+            // Marshal like OnDownloadCancelled below: the download runs on the thread pool
+            // (SnykTasksService switches before any work), so DownloadFinished is raised from there.
+            // DetermineInitScreen reaches messagePanel.ShowScanningMessage() — a WPF Visibility write —
+            // whenever a task is still running, which it is at this point because isCliDownloading is
+            // cleared later in the caller's finally.
+            ThreadHelper.JoinableTaskFactory.Run(async () =>
+            {
+                await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
+                this.DetermineInitScreen();
+            });
+        }
 
         /// <summary>
         /// DownloadUpdate event handler. Call UpdateDonwloadProgress() method.
@@ -464,17 +476,26 @@ namespace Snyk.VisualStudio.Extension.UI.Toolwindow
 
         private void OnDownloadFailed(object sender, Exception e)
         {
-            if (SnykCli.IsCliFileFound(serviceProvider.Options.CliCustomPath))
+            // Marshalled for the same reason as OnDownloadFinished. This handler is the one a user with
+            // an unreachable mirror depends on: both branches touch WPF (DetermineInitScreen, and the
+            // messagePanel.Text write below), and a cross-thread access here would replace the error
+            // message with silence.
+            ThreadHelper.JoinableTaskFactory.Run(async () =>
             {
-                if (LanguageClientHelper.LanguageClientManager() != null)
-                    ThreadHelper.JoinableTaskFactory.RunAsync(async () => await LanguageClientHelper.LanguageClientManager().RestartServerAsync()).FireAndForget();
-                this.DetermineInitScreen();
-            }
-            else
-            {
-                this.messagePanel.Text =
-                "Failed to download Snyk CLI. You can specify a path to a Snyk CLI executable from the settings.";
-            }
+                await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
+
+                if (SnykCli.IsCliFileFound(serviceProvider.Options.CliCustomPath))
+                {
+                    if (LanguageClientHelper.LanguageClientManager() != null)
+                        ThreadHelper.JoinableTaskFactory.RunAsync(async () => await LanguageClientHelper.LanguageClientManager().RestartServerAsync()).FireAndForget();
+                    this.DetermineInitScreen();
+                }
+                else
+                {
+                    this.messagePanel.Text =
+                    "Failed to download Snyk CLI. You can specify a path to a Snyk CLI executable from the settings.";
+                }
+            });
         }
 
         /// <summary>

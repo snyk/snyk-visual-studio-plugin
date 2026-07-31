@@ -122,6 +122,10 @@ namespace Snyk.VisualStudio.Extension.Tests
         // A bare token is indistinguishable from a hostname but is never what was meant.
         [InlineData("notaurl")]
         [InlineData("none")]
+        // Unqualified single labels stay rejected...
+        [InlineData("artifactory")]
+        // ...and a one-character label is a drive letter, never a host, even with a port.
+        [InlineData("C:/downloads")]
         // Credentials need an explicit scheme, or the userinfo is mistaken for a port.
         [InlineData("user@artifacts.internal")]
         [InlineData("user:pass@artifacts.internal")]
@@ -147,6 +151,11 @@ namespace Snyk.VisualStudio.Extension.Tests
         [InlineData("[fd00::1]:8081", "https://[fd00::1]:8081")]
         [InlineData("[fd00::1]:8081/snyk", "https://[fd00::1]:8081/snyk")]
         [InlineData("  downloads.snyk.io  ", "https://downloads.snyk.io")]
+        // Single-label intranet hosts are ordinary in corporate networks, but only count as a host when
+        // a port or path qualifies them — a bare token is a typo, not a mirror.
+        [InlineData("artifactory:8081", "https://artifactory:8081")]
+        [InlineData("artifactory:8081/repo", "https://artifactory:8081/repo")]
+        [InlineData("nexus/snyk", "https://nexus/snyk")]
         public void ResolveBaseDownloadUrl_AssumesHttps_ForASchemelessHost(string configured, string expected)
         {
             Assert.Equal(expected, SnykCliDownloader.ResolveBaseDownloadUrl(configured));
@@ -203,11 +212,31 @@ namespace Snyk.VisualStudio.Extension.Tests
         [InlineData("https://downloads.snyk.io/fips", "https://downloads.snyk.io/fips")]
         [InlineData(@"C:\downloads", @"C:\downloads")]
         [InlineData("notaurl", "notaurl")]
+        // Normalisation is shared with the resolver, so what is stored is what will be requested.
+        [InlineData("downloads.snyk.io/", "https://downloads.snyk.io")]
+        [InlineData("https://downloads.snyk.io/fips/", "https://downloads.snyk.io/fips")]
         [InlineData("", "")]
         [InlineData("   ", "")]
         public void CompleteBaseDownloadUrl_RepairsIntentWithoutReplacingTheValue(string configured, string expected)
         {
             Assert.Equal(expected, SnykCliDownloader.CompleteBaseDownloadUrl(configured));
+        }
+
+        [Theory]
+        [InlineData("", true, null)]
+        [InlineData("https://downloads.snyk.io/fips", true, null)]
+        [InlineData("artifactory:8081", true, null)]
+        [InlineData("downloads.snyk.io?token=x", false, "it carries a query or fragment")]
+        [InlineData(@"C:\downloads", false, "it is not a usable host")]
+        public void TryResolveBaseDownloadUrl_ReportsWhyAValueWasRejected(string configured, bool expectedUsable, string expectedReason)
+        {
+            // The reason travels to the user via the download path; the resolver itself stays silent
+            // because it runs on every settings round trip.
+            var usable = SnykCliDownloader.TryResolveBaseDownloadUrl(configured, out var resolved, out var reason);
+
+            Assert.Equal(expectedUsable, usable);
+            Assert.Equal(expectedReason, reason);
+            Assert.True(UriExtensions.IsValidWebUrl(resolved), "the resolved value is always usable");
         }
 
         [Theory]

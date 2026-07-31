@@ -7,6 +7,7 @@ using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using Snyk.VisualStudio.Extension.Authentication;
 using Snyk.VisualStudio.Extension.CLI;
+using Snyk.VisualStudio.Extension.Download;
 using Snyk.VisualStudio.Extension.Language;
 using Snyk.VisualStudio.Extension.Service;
 using Snyk.VisualStudio.Extension.Settings;
@@ -223,11 +224,11 @@ namespace Snyk.VisualStudio.Extension.Tests.UI.Html
         }
 
         [Fact]
-        public void SaveIdeConfig_KeepsClearedCliDownloadSettingsCleared()
+        public void SaveIdeConfig_TreatsAPostedDefaultAsCleared()
         {
-            // Empty is a legitimate cleared state meaning "use the default"; the download path resolves
-            // it. Writing the default into Options here would be indistinguishable from the user having
-            // typed it, and would then be persisted as their configuration.
+            // settings-fallback.html posts "value || placeholder", so clearing the field submits the
+            // canonical default rather than "". Storing that literal would record the public download
+            // host as an explicit user override against any org- or LDX-pushed mirror.
             var localOptions = new Mock<ISnykOptions>();
             localOptions.SetupAllProperties();
             localOptions.Object.CliBaseDownloadURL = "https://downloads.snyk.io/fips";
@@ -238,9 +239,10 @@ namespace Snyk.VisualStudio.Extension.Tests.UI.Html
             sp.SetupGet(x => x.SnykOptionsManager).Returns(new Mock<ISnykOptionsManager>().Object);
             var localBridge = new HtmlSettingsScriptingBridge(sp.Object, onModified: () => { });
 
+            // Exactly what the form sends when the user clears the field.
             localBridge.__saveIdeConfig__(JsonConvert.SerializeObject(new
             {
-                binary_base_url = "",
+                binary_base_url = SnykCliDownloader.DefaultBaseDownloadUrl,
                 cli_release_channel = "",
             }));
 

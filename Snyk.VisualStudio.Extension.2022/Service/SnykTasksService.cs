@@ -708,6 +708,13 @@ namespace Snyk.VisualStudio.Extension.Service
                 return;
             }
 
+            // Claim the guard BEFORE yielding. isCliDownloading is what IsTaskRunning() reports, and
+            // Download() is wired to the tool window's Loaded event, which WPF raises more than once
+            // (re-docking, theme change). Setting it after the switch let Download() return with the
+            // guard still clear, so two Loaded events could run concurrent downloads writing the same
+            // destination file.
+            this.isCliDownloading = true;
+
             // Get off the UI thread before any of the download work. Download() is wired to the tool
             // window's Loaded event, and JoinableTaskFactory.RunAsync executes its delegate inline on the
             // calling thread up to the first yielding await — which is deep inside the HTTP read. Without
@@ -719,7 +726,6 @@ namespace Snyk.VisualStudio.Extension.Service
             // lock-guarded and already called from StreamJsonRpc dispatch threads.
             await TaskScheduler.Default;
 
-            this.isCliDownloading = true;
             try
             {
                 var cliDownloader = new SnykCliDownloader(this.serviceProvider.Options);

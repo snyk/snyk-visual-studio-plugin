@@ -690,7 +690,18 @@ namespace Snyk.VisualStudio.Extension.UI.Html
             // Empty is a legitimate cleared state meaning "use the default".
             if (config.CliBaseDownloadURL != null)
             {
-                Options.CliBaseDownloadURL = SnykCliDownloader.CompleteBaseDownloadUrl(config.CliBaseDownloadURL);
+                var completed = SnykCliDownloader.CompleteBaseDownloadUrl(config.CliBaseDownloadURL);
+
+                // The form cannot post an empty base url: settings-fallback.html sends
+                // "value || placeholder", so clearing the field submits the placeholder — the canonical
+                // default — and storing that literal would record the public host as an explicit user
+                // override against any org- or LDX-pushed mirror. A posted value equal to the default IS
+                // the cleared state, so store it as such.
+                Options.CliBaseDownloadURL =
+                    string.Equals(completed, SnykCliDownloader.DefaultBaseDownloadUrl, StringComparison.Ordinal)
+                        ? string.Empty
+                        : completed;
+
                 editedKeys.Add(PflagKeys.BinaryBaseUrl);
             }
 
