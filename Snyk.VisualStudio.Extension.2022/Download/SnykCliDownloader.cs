@@ -49,32 +49,6 @@ namespace Snyk.VisualStudio.Extension.Download
                 ? DefaultBaseDownloadUrl
                 : configuredBaseDownloadUrl.Trim();
 
-        // Blanks credentials in a URL before it is logged.
-        internal static string Redact(string value)
-        {
-            if (string.IsNullOrEmpty(value) || value.IndexOf('@') < 0)
-            {
-                return value;
-            }
-
-            var parsed = Uri.TryCreate(value, UriKind.Absolute, out var uri);
-
-            if (parsed && !string.IsNullOrEmpty(uri.UserInfo))
-            {
-                return value.Replace(uri.UserInfo + "@", "<credentials>@");
-            }
-
-            // An '@' in a web URL without userinfo is part of the path or query.
-            if (parsed && (uri.Scheme == Uri.UriSchemeHttp || uri.Scheme == Uri.UriSchemeHttps))
-            {
-                return value;
-            }
-
-            // Gotcha: "user:pass@host" parses as an absolute URI with scheme "user" and an EMPTY
-            // UserInfo, so Uri.UserInfo alone would let the secret through.
-            return "<credentials>@" + value.Substring(value.LastIndexOf('@') + 1);
-        }
-
         /// <summary>
         /// The configured release channel, or the default when unset.
         /// </summary>
@@ -111,8 +85,8 @@ namespace Snyk.VisualStudio.Extension.Download
                 // exception naming a path that appears nowhere in the settings.
                 Logger.Information(
                     "Get latest CLI release info from {Url} (configured base url: '{BaseDownloadUrl}', release channel: '{ReleaseChannel}')",
-                    Redact(latestReleaseVersionUrl),
-                    Redact(this.SnykOptions.CliBaseDownloadURL ?? string.Empty),
+                    latestReleaseVersionUrl,
+                    this.SnykOptions.CliBaseDownloadURL,
                     this.SnykOptions.CliReleaseChannel);
 
                 var latestVersion = webClient.DownloadString(latestReleaseVersionUrl).Replace("\n", string.Empty);
@@ -254,7 +228,7 @@ namespace Snyk.VisualStudio.Extension.Download
 
             LatestReleaseInfo latestReleaseInfo = this.GetLatestReleaseInfo();
 
-            Logger.Information("Latest relase information: version {Version} and url {Url}", latestReleaseInfo.Version, Redact(latestReleaseInfo.Url));
+            Logger.Information("Latest relase information: version {Version} and url {Url}", latestReleaseInfo.Version, latestReleaseInfo.Url);
 
             progressWorker.CancelIfCancellationRequested();
 

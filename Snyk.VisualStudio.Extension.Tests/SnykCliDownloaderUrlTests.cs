@@ -128,22 +128,6 @@ namespace Snyk.VisualStudio.Extension.Tests
         }
 
         [Theory]
-        [InlineData("https://user:token@artifacts.internal/snyk", "https://<credentials>@artifacts.internal/snyk")]
-        [InlineData("http://user:token@artifacts.internal:8081/a", "http://<credentials>@artifacts.internal:8081/a")]
-        // "user:pass@host" parses with scheme "user" and an empty UserInfo, so Uri.UserInfo alone
-        // would let it through.
-        [InlineData("user:pass@artifacts.internal", "<credentials>@artifacts.internal")]
-        [InlineData("user@artifacts.internal", "<credentials>@artifacts.internal")]
-        [InlineData("https://downloads.snyk.io/fips", "https://downloads.snyk.io/fips")]
-        [InlineData("downloads.snyk.io", "downloads.snyk.io")]
-        // An '@' in the path is not userinfo.
-        [InlineData("https://downloads.snyk.io/path@v2", "https://downloads.snyk.io/path@v2")]
-        public void Redact_BlanksCredentialsAndLeavesEverythingElse(string value, string expected)
-        {
-            Assert.Equal(expected, SnykCliDownloader.Redact(value));
-        }
-
-        [Theory]
         [InlineData(null)]
         [InlineData("")]
         [InlineData(" ")]
