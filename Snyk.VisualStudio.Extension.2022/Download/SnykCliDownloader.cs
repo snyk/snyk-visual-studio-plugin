@@ -43,165 +43,26 @@ namespace Snyk.VisualStudio.Extension.Download
         public delegate void CliDownloadFinishedCallback();
 
         /// <summary>
-        /// Resolve the CLI download base URL to something that composes into an absolute URL. Returns
-        /// false when the configured value could not be used, with <paramref name="reason"/> explaining
-        /// why; <paramref name="resolved"/> is always usable.
+        /// The base URL to download the CLI from: the configured value, or the default when it is unset.
         /// <para>
-        /// A relative value composes into a relative download URL, which <see cref="System.Net.WebClient"/>
-        /// resolves through Path.GetFullPath into a nonexistent local file path and reports as a
-        /// DirectoryNotFoundException — the original defect.
+        /// An empty value composed into a RELATIVE url, which <see cref="System.Net.WebClient"/> resolves
+        /// through Path.GetFullPath into a nonexistent local file path and reports as a
+        /// DirectoryNotFoundException — the defect this fixes. The Language Server registers
+        /// binary_base_url with an empty default and echoes every machine-scope setting back in
+        /// $/snyk.configuration, so empty reaches the options routinely.
         /// </para>
         /// <para>
-        /// Deliberately silent: this runs on hot paths (every didChangeConfiguration, every tracker
-        /// compare, load). The download path reports the fallback once, where the user can act on it.
+        /// Trim-then-default-if-empty, and otherwise use the value verbatim, is what every other Snyk
+        /// IDE does: snyk-ls (applyCliBaseDownloadURL), Eclipse (LsBinaries.resolveBaseUrl) and VS Code
+        /// (Configuration.getCliBaseDownloadUrl). A scheme-less host is not supported anywhere in the
+        /// family — the settings field's placeholder shows a full URL — so it is not accepted here
+        /// either; doing so would make the same input behave differently depending on the IDE.
         /// </para>
         /// </summary>
-        internal static bool TryResolveBaseDownloadUrl(string configuredBaseDownloadUrl, out string resolved, out string reason)
-        {
-            resolved = DefaultBaseDownloadUrl;
-            reason = null;
-
-            if (string.IsNullOrWhiteSpace(configuredBaseDownloadUrl))
-            {
-                return true;
-            }
-
-            var configured = configuredBaseDownloadUrl.Trim();
-
-            // A query or fragment cannot survive composition — "{base}/cli/{channel}/..." would land
-            // inside it, leaving the request pointed at the host root.
-            if (configured.IndexOf('?') >= 0 || configured.IndexOf('#') >= 0)
-            {
-                reason = "it carries a query or fragment";
-                return false;
-            }
-
-            // The trailing slash is trimmed so composition cannot produce "host//cli/...", which
-            // CDN-backed origins serve as a different key.
-            if (UriExtensions.IsValidWebUrl(configured))
-            {
-                resolved = configured.TrimEnd('/');
-                return true;
-            }
-
-            if (TryResolveSchemelessHost(configured, out var withScheme))
-            {
-                resolved = withScheme.TrimEnd('/');
-                return true;
-            }
-
-            reason = "it is not a usable host";
-            return false;
-        }
-
-        /// <summary>
-        /// The base download URL to actually request from: the configured value when it is usable, the
-        /// default otherwise. See <see cref="TryResolveBaseDownloadUrl"/>.
-        /// </summary>
-        public static string ResolveBaseDownloadUrl(string configuredBaseDownloadUrl)
-        {
-            TryResolveBaseDownloadUrl(configuredBaseDownloadUrl, out var resolved, out _);
-
-            return resolved;
-        }
-
-        /// <summary>
-        /// Complete what the user typed, without replacing it. A usable value is normalised exactly as
-        /// <see cref="TryResolveBaseDownloadUrl"/> would (scheme completed, trailing slash trimmed) so
-        /// what is stored, shown, sent and requested are the same string. An unusable value is returned
-        /// as typed: substituting the default at the settings boundary would hide the mistake from the
-        /// only person who can correct it.
-        /// </summary>
-        public static string CompleteBaseDownloadUrl(string configuredBaseDownloadUrl)
-        {
-            if (string.IsNullOrWhiteSpace(configuredBaseDownloadUrl))
-            {
-                return string.Empty;
-            }
-
-            var configured = configuredBaseDownloadUrl.Trim();
-
-            return TryResolveBaseDownloadUrl(configured, out var resolved, out _) ? resolved : configured;
-        }
-
-        // "downloads.snyk.io", "downloads.snyk.io/fips", "artifacts.internal:8081/snyk" and
-        // "[fd00::1]:8081" are what users type when they treat the field like an address bar; assume
-        // https for them.
-        private static bool TryResolveSchemelessHost(string configured, out string withScheme)
-        {
-            withScheme = null;
-
-            // Not a host: a rooted or Windows path, a UNC path, or a scheme typed without its colon
-            // ("http//downloads.snyk.io" — the common typo, which would otherwise parse with "http" as
-            // the host). Credentials need an explicit scheme so they cannot be mistaken for a port.
-            if (configured.StartsWith("/", StringComparison.Ordinal)
-                || configured.IndexOf('\\') >= 0
-                || configured.IndexOf("//", StringComparison.Ordinal) >= 0
-                || configured.IndexOf('@') >= 0)
-            {
-                return false;
-            }
-
-            var candidate = Uri.UriSchemeHttps + "://" + configured;
-
-            if (!Uri.TryCreate(candidate, UriKind.Absolute, out var uri) || uri.Scheme != Uri.UriSchemeHttps)
-            {
-                return false;
-            }
-
-            // .NET rewrites some bare tokens into addresses — "12345" parses as host 0.0.48.57 and
-            // "0x7f000001" as 127.0.0.1. Require the parsed host to be the text that was typed, so a
-            // value silently reinterpreted as a different host is rejected rather than requested.
-            var hostPart = HostPartOf(configured);
-
-            if (!string.Equals(uri.Host, hostPart, StringComparison.OrdinalIgnoreCase)
-                || !LooksLikeHost(configured, hostPart))
-            {
-                return false;
-            }
-
-            withScheme = candidate;
-
-            return true;
-        }
-
-        // The authority with any port removed, keeping the brackets of an IPv6 literal.
-        private static string HostPartOf(string configured)
-        {
-            var authority = configured.Split('/')[0];
-
-            if (authority.StartsWith("[", StringComparison.Ordinal))
-            {
-                var closingBracket = authority.IndexOf(']');
-
-                return closingBracket < 0 ? authority : authority.Substring(0, closingBracket + 1);
-            }
-
-            var colonIndex = authority.IndexOf(':');
-
-            return colonIndex < 0 ? authority : authority.Substring(0, colonIndex);
-        }
-
-        // A dotted name, an IPv6 literal, or localhost. A single label is accepted only when qualified
-        // by a port or a path — "nexus:8081" and "nexus/snyk" are ordinary intranet mirrors, while a
-        // bare "none" or a typo'd "downlodssnyk" is not a host anyone meant. One-character labels stay
-        // rejected because that is a drive letter: "D:8081" is otherwise indistinguishable from
-        // host:port.
-        private static bool LooksLikeHost(string configured, string hostPart)
-        {
-            if (hostPart.StartsWith("[", StringComparison.Ordinal)
-                || hostPart.Equals("localhost", StringComparison.OrdinalIgnoreCase)
-                || hostPart.IndexOf('.') > 0)
-            {
-                return true;
-            }
-
-            var authority = configured.Split('/')[0];
-            var hasPort = authority.Length > hostPart.Length && authority[hostPart.Length] == ':';
-            var hasPath = configured.IndexOf('/') > 0;
-
-            return hostPart.Length > 1 && (hasPort || hasPath);
-        }
+        public static string ResolveBaseDownloadUrl(string configuredBaseDownloadUrl) =>
+            string.IsNullOrWhiteSpace(configuredBaseDownloadUrl)
+                ? DefaultBaseDownloadUrl
+                : configuredBaseDownloadUrl.Trim();
 
         // Blanks the credentials in a URL before it reaches the log. A mirror configured as
         // https://user:token@host would otherwise write the token to snyk-extension.log. Applied to
@@ -268,19 +129,6 @@ namespace Snyk.VisualStudio.Extension.Download
             using (var webClient = new SnykWebClient())
             {
                 var latestReleaseVersionUrl = this.BuildLatestReleaseVersionUrl();
-
-                // Report an unusable configured value here rather than inside the resolver: this is the
-                // one place per download cycle, so the warning is not repeated on every settings round
-                // trip, and it is the moment the substitution actually affects the user. Silently
-                // sending an egress-restricted customer to the public download host is the failure this
-                // exists to prevent.
-                if (!TryResolveBaseDownloadUrl(this.SnykOptions.CliBaseDownloadURL, out _, out var reason))
-                {
-                    var warning = $"The configured Snyk CLI download URL '{Redact(this.SnykOptions.CliBaseDownloadURL)}' is being ignored because {reason}. Downloading from {DefaultBaseDownloadUrl} instead.";
-
-                    Logger.Warning(warning);
-                    NotificationService.Instance?.ShowErrorInfoBar(warning);
-                }
 
                 // Log the composed URL and the raw options it came from: without this the only symptom
                 // of an unusable base url / release channel is a DirectoryNotFoundException from deep
