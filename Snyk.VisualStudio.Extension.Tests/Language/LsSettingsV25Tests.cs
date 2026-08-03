@@ -339,6 +339,34 @@ namespace Snyk.VisualStudio.Extension.Tests.Language
                 "because PflagKeys.IsAlwaysChanged must return true for it");
         }
 
+        // cli_path must carry changed:true even for a user who never set a custom path: the LS
+        // discards unchanged entries, installs its own CLI under $XDG_DATA_HOME/snyk-ls instead, and
+        // echoes that path back — which lands in CliCustomPath and points the IDE at a binary that
+        // does not exist yet ("Snyk CLI not found" on a fresh install).
+        //
+        // Real seeded tracker with no marks, so this fails if cli_path leaves _alwaysChanged.
+        [Fact]
+        public void BuildSettingsMap_CliPath_AlwaysMarkedChanged()
+        {
+            SetupDefaults();
+            optionsMock.SetupGet(o => o.CliCustomPath).Returns(string.Empty);
+            var realTracker = new UserOverrideTracker();
+            realTracker.SeedFrom(BuildDefaultOptionsForSeed());
+            optionsManagerMock.Setup(m => m.OverrideTracker).Returns(realTracker);
+
+            var map = cut.BuildSettingsMap(optionsMock.Object);
+
+            Assert.Equal(SnykCli.GetSnykCliDefaultPath(), map[PflagKeys.CliPath].Value);
+            Assert.True(map[PflagKeys.CliPath].Changed,
+                "cli_path must be sent with changed:true so the LS runs the CLI the IDE installed " +
+                "instead of downloading a second copy to its own location");
+
+            // The handshake is the path that matters: the LS resolves its CLI location during
+            // initialize, before the CLI initializer runs.
+            Assert.True(cut.GetInitializationOptions().Settings[PflagKeys.CliPath].Changed,
+                "the changed flag must survive into the initialize handshake, not just BuildSettingsMap");
+        }
+
         // automatic_authentication=false stops the LS auto-authenticating on startup — the IDE owns
         // the auth flow (matches VS Code, JetBrains and Eclipse). It must carry changed:true: the LS
         // ignores changed:false and applies its own default of true, which on a fresh install aborts

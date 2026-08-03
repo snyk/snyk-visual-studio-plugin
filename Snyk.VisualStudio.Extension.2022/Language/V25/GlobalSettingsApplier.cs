@@ -1,9 +1,11 @@
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using Newtonsoft.Json.Linq;
 using Serilog;
 using Snyk.VisualStudio.Extension.Authentication;
+using Snyk.VisualStudio.Extension.CLI;
 using Snyk.VisualStudio.Extension.Settings;
 
 namespace Snyk.VisualStudio.Extension.Language
@@ -54,7 +56,7 @@ namespace Snyk.VisualStudio.Extension.Language
 
                     case PflagKeys.AutomaticDownload:    options.BinariesAutoUpdate = val.Value<bool>(); break;
                     // Not empty-guarded: an empty path means "use the default CLI location".
-                    case PflagKeys.CliPath:              options.CliCustomPath      = val.Value<string>(); break;
+                    case PflagKeys.CliPath:              options.CliCustomPath      = NormaliseCliPath(val.Value<string>()); break;
 
                     // The language server registers these two with empty defaults and echoes every
                     // machine-scope setting, so an empty value means "no opinion", not "cleared".
@@ -119,6 +121,36 @@ namespace Snyk.VisualStudio.Extension.Language
             catch (Exception ex)
             {
                 Logger.Warning(ex, "GlobalSettingsApplier: failed to apply key '{Key}', skipping", key);
+            }
+        }
+
+        /// <summary>
+        /// Collapses an inbound path that is already the IDE's own default CLI location back to
+        /// empty. We send the resolved path outbound, so the LS echoes it straight back; storing it
+        /// verbatim would turn "no custom path" into an explicit one in settings.json and in the
+        /// settings UI, and pin the location even if the app-data directory later moves.
+        /// </summary>
+        private static string NormaliseCliPath(string cliPath)
+        {
+            if (string.IsNullOrWhiteSpace(cliPath))
+            {
+                return cliPath;
+            }
+
+            try
+            {
+                var defaultPath = SnykCli.GetSnykCliDefaultPath();
+
+                return string.Equals(Path.GetFullPath(cliPath.Trim()), Path.GetFullPath(defaultPath), StringComparison.OrdinalIgnoreCase)
+                    ? string.Empty
+                    : cliPath;
+            }
+            catch (Exception ex)
+            {
+                // An unusable path (invalid characters, too long) cannot be the default, so keep it
+                // as sent and let the CLI-not-found handling surface it.
+                Logger.Warning(ex, "GlobalSettingsApplier: could not compare inbound cli_path against the default location");
+                return cliPath;
             }
         }
 

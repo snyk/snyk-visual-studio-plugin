@@ -73,6 +73,13 @@ namespace Snyk.VisualStudio.Extension.Language
         {
             TrustedFolders,
             TrustEnabled,
+            // cli_path: the IDE downloads and owns the CLI binary, so the LS must run the one we
+            // installed. Sent with changed:false the LS discards it (settingStr ignores unchanged
+            // entries), falls back to its own $XDG_DATA_HOME/snyk-ls location, downloads a second
+            // copy there, and echoes that path back through $/snyk.configuration — which lands in
+            // CliCustomPath and points the IDE at a binary that does not exist yet.
+            // Matches VS Code, which materialises the resolved path as a tracked override.
+            CliPath,
         };
 
         /// <summary>

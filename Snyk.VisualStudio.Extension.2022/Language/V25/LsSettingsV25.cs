@@ -114,6 +114,9 @@ namespace Snyk.VisualStudio.Extension.Language
                 [PflagKeys.ProxyInsecure]           = Cs(PflagKeys.ProxyInsecure,          options.IgnoreUnknownCA),
 
                 [PflagKeys.AutomaticDownload]       = Cs(PflagKeys.AutomaticDownload,      options.BinariesAutoUpdate),
+                // Resolved, and always-changed (see PflagKeys._alwaysChanged): the IDE owns the CLI
+                // binary, so the LS must adopt this path rather than install a second copy in its own
+                // location and report that one back.
                 [PflagKeys.CliPath]                 = Cs(PflagKeys.CliPath,                SnykCli.GetCliFilePath(options.CliCustomPath)),
                 // Resolved, not verbatim: this value round-trips back through $/snyk.configuration and
                 // is what the override tracker compares against ConfigDefaults.

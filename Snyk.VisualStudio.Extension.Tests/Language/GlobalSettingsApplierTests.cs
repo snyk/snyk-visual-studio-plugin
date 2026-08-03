@@ -2,6 +2,7 @@ using System.Collections.Generic;
 using Moq;
 using Newtonsoft.Json.Linq;
 using Snyk.VisualStudio.Extension.Authentication;
+using Snyk.VisualStudio.Extension.CLI;
 using Snyk.VisualStudio.Extension.Download;
 using Snyk.VisualStudio.Extension.Language;
 using Snyk.VisualStudio.Extension.Settings;
@@ -304,6 +305,37 @@ namespace Snyk.VisualStudio.Extension.Tests.Language
             GlobalSettingsApplier.Apply(settings, options);
 
             Assert.Equal(string.Empty, options.CliCustomPath);
+        }
+
+        [Fact]
+        public void Apply_ShouldKeepCliPathEmpty_WhenInboundValueIsTheDefaultLocation()
+        {
+            // We send the resolved default outbound, so the LS echoes it straight back. Storing it
+            // verbatim would turn "no custom path" into an explicit one in the settings UI.
+            var options = MakeOptions();
+            options.CliCustomPath = string.Empty;
+            var settings = new Dictionary<string, ConfigSetting>
+            {
+                [PflagKeys.CliPath] = ConfigSetting.Of(SnykCli.GetSnykCliDefaultPath())
+            };
+
+            GlobalSettingsApplier.Apply(settings, options);
+
+            Assert.Equal(string.Empty, options.CliCustomPath);
+        }
+
+        [Fact]
+        public void Apply_ShouldSetCliPath_WhenInboundValueIsACustomLocation()
+        {
+            var options = MakeOptions();
+            var settings = new Dictionary<string, ConfigSetting>
+            {
+                [PflagKeys.CliPath] = ConfigSetting.Of(@"C:\custom\snyk.exe")
+            };
+
+            GlobalSettingsApplier.Apply(settings, options);
+
+            Assert.Equal(@"C:\custom\snyk.exe", options.CliCustomPath);
         }
     }
 }
