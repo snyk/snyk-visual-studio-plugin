@@ -78,8 +78,9 @@ namespace Snyk.VisualStudio.Extension.Language
             // entries) and resolves its registered default of $XDG_DATA_HOME/snyk-ls instead — a
             // different binary from the one we manage, for its own CLI invocations.
             // The inbound direction is handled separately: GlobalSettingsApplier ignores cli_path,
-            // so that default can never come back and repoint us at an empty location.
-            // Matches VS Code, which materialises the resolved path as a tracked override.
+            // so that default can never come back and repoint us at an empty location. The other
+            // plugins do not guard that direction yet.
+            // Matches VS Code on this outbound resolution, which materialises the resolved path.
             CliPath,
         };
 

@@ -336,8 +336,8 @@ namespace Snyk.VisualStudio.Extension.Download
         public void SaveLatestCliSha(string cliDownloadUrl) => this.expectedSha = this.GetLatestCliSha(cliDownloadUrl);
 
         /// <summary>
-        /// Create the folder of the configured destination, which may not exist: the language server
-        /// reports its own CLI location as cli_path, and that lands in CliCustomPath.
+        /// Create the folder of the configured destination, which may not exist: a first install has
+        /// no app-data directory yet, and a user-typed custom path may name a folder that is not there.
         /// </summary>
         // internal for testability.
         internal static void PrepareCliDirectory(string cliFileDestinationPath)
@@ -384,23 +384,31 @@ namespace Snyk.VisualStudio.Extension.Download
             }
             catch (Exception e)
             {
-                // An update failure leaves a working CLI behind; an install failure does not.
-                var existingCliRemains = File.Exists(cliFileDestinationPath);
-                var message = existingCliRemains
-                    ? $"Snyk CLI could not be updated at {cliFileDestinationPath}: {e.Message} The existing CLI will continue to be used."
-                    : $"Snyk CLI could not be installed at {cliFileDestinationPath}: {e.Message}";
-
-                // Null-conditional: the download can run before the package initialises this.
-                NotificationService.Instance?.ShowErrorInfoBar(message);
-                Logger.Error(e, "Error on CLI copy from temp file to {Path}", cliFileDestinationPath);
+                this.ReportInstallFailure(e, cliFileDestinationPath);
 
                 throw;
             }
 
             // Outside the catch above: it diagnoses the file copy, and the callbacks are what start
             // the language server. A callback failing is not the CLI failing to install, and must not
-            // be reported as one. It still propagates, so the caller reports DownloadFailed.
+            // be reported as one. It still propagates; the caller has a single failure channel, so it
+            // surfaces DownloadFailed either way — but the install-specific diagnosis stays accurate.
             this.FinishDownload(progressWorker, downloadFinishedCallbacks);
+        }
+
+        // virtual for testability: the notification sink is a static singleton, so a test cannot
+        // otherwise observe whether a failure was diagnosed as an install failure.
+        internal virtual void ReportInstallFailure(Exception e, string cliFileDestinationPath)
+        {
+            // An update failure leaves a working CLI behind; an install failure does not.
+            var existingCliRemains = File.Exists(cliFileDestinationPath);
+            var message = existingCliRemains
+                ? $"Snyk CLI could not be updated at {cliFileDestinationPath}: {e.Message} The existing CLI will continue to be used."
+                : $"Snyk CLI could not be installed at {cliFileDestinationPath}: {e.Message}";
+
+            // Null-conditional: the download can run before the package initialises this.
+            NotificationService.Instance?.ShowErrorInfoBar(message);
+            Logger.Error(e, "Error on CLI copy from temp file to {Path}", cliFileDestinationPath);
         }
 
         /// <summary>

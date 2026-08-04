@@ -4,7 +4,6 @@ using System.IO;
 using Moq;
 using Newtonsoft.Json.Linq;
 using Snyk.VisualStudio.Extension.Authentication;
-using Snyk.VisualStudio.Extension.CLI;
 using Snyk.VisualStudio.Extension.Download;
 using Snyk.VisualStudio.Extension.Language;
 using Snyk.VisualStudio.Extension.Settings;
@@ -321,34 +320,25 @@ namespace Snyk.VisualStudio.Extension.Tests.Language
             Assert.Equal(string.Empty, options.CliCustomPath);
         }
 
-        [Fact]
-        public void Apply_ShouldNotClearAUserConfiguredCliPath_WhenInboundValueIsEmpty()
+        [Theory]
+        // Whatever CliCustomPath held, and whatever arrives, the value is left alone: empty must not
+        // be taken as "cleared", and a non-empty one must not be taken as a user override.
+        [InlineData("", @"C:\somewhere\else\snyk.exe")]
+        [InlineData(@"C:\custom\snyk.exe", "")]
+        [InlineData(@"C:\custom\snyk.exe", @"C:\somewhere\else\snyk.exe")]
+        [InlineData(@"C:\custom\snyk.exe", null)]
+        public void Apply_ShouldNeverChangeCliCustomPath(string priorPath, string inboundPath)
         {
             var options = MakeOptions();
-            options.CliCustomPath = @"C:\custom\snyk.exe";
+            options.CliCustomPath = priorPath;
             var settings = new Dictionary<string, ConfigSetting>
             {
-                [PflagKeys.CliPath] = ConfigSetting.Of(string.Empty)
+                [PflagKeys.CliPath] = ConfigSetting.Of(inboundPath)
             };
 
             GlobalSettingsApplier.Apply(settings, options);
 
-            Assert.Equal(@"C:\custom\snyk.exe", options.CliCustomPath);
-        }
-
-        [Fact]
-        public void Apply_ShouldNotOverwriteAUserConfiguredCliPath_WhenInboundValueDiffers()
-        {
-            var options = MakeOptions();
-            options.CliCustomPath = @"C:\custom\snyk.exe";
-            var settings = new Dictionary<string, ConfigSetting>
-            {
-                [PflagKeys.CliPath] = ConfigSetting.Of(@"C:\somewhere\else\snyk.exe")
-            };
-
-            GlobalSettingsApplier.Apply(settings, options);
-
-            Assert.Equal(@"C:\custom\snyk.exe", options.CliCustomPath);
+            Assert.Equal(priorPath, options.CliCustomPath);
         }
 
         [Fact]

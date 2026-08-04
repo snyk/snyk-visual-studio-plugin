@@ -339,10 +339,9 @@ namespace Snyk.VisualStudio.Extension.Tests.Language
                 "because PflagKeys.IsAlwaysChanged must return true for it");
         }
 
-        // cli_path must carry changed:true even for a user who never set a custom path: the LS
-        // discards unchanged entries, installs its own CLI under $XDG_DATA_HOME/snyk-ls instead, and
-        // echoes that path back — which lands in CliCustomPath and points the IDE at a binary that
-        // does not exist yet ("Snyk CLI not found" on a fresh install).
+        // cli_path must carry changed:true even for a user who never set a custom path: the LS discards
+        // unchanged entries and resolves its registered default of $XDG_DATA_HOME/snyk-ls instead, so
+        // its own CLI invocations would run a different binary from the one the IDE manages.
         //
         // Real seeded tracker with no marks, so this fails if cli_path leaves _alwaysChanged.
         [Fact]
@@ -359,7 +358,7 @@ namespace Snyk.VisualStudio.Extension.Tests.Language
             Assert.Equal(SnykCli.GetSnykCliDefaultPath(), map[PflagKeys.CliPath].Value);
             Assert.True(map[PflagKeys.CliPath].Changed,
                 "cli_path must be sent with changed:true so the LS runs the CLI the IDE installed " +
-                "instead of downloading a second copy to its own location");
+                "instead of resolving its own default location");
 
             // The handshake is the path that matters: the LS resolves its CLI location during
             // initialize, before the CLI initializer runs.

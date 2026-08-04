@@ -62,6 +62,14 @@ namespace Snyk.VisualStudio.Extension.Tests
             }
 
             public override string GetLatestCliSha(string cliDownloadUrl) => this.sha;
+
+            // Records whether the failure was diagnosed as a CLI install failure. The real
+            // implementation reports through NotificationService.Instance, a static singleton that is
+            // null under test, so overriding is the only way to observe it.
+            public int InstallFailuresReported { get; private set; }
+
+            internal override void ReportInstallFailure(Exception e, string cliFileDestinationPath) =>
+                this.InstallFailuresReported++;
         }
 
         private static ISnykOptions Options(string currentCliVersion = null)
@@ -156,11 +164,11 @@ namespace Snyk.VisualStudio.Extension.Tests
         }
 
         [Fact]
-        public void InstallAndFinish_PropagatesACallbackFailureUnwrapped_WithTheBinaryInstalled()
+        public void InstallAndFinish_DoesNotReportAnInstallFailure_WhenACallbackThrows()
         {
             // A callback throwing is the language server failing to start, not the CLI failing to
-            // install — the copy has already succeeded by then. The exception must reach the caller
-            // as-is so it reports DownloadFailed, and must not be re-diagnosed as a copy error.
+            // install — the copy has already succeeded by then, so it must not be diagnosed as a copy
+            // error. The exception still reaches the caller as-is.
             var source = Path.Combine(this.workDir, "downloaded.exe");
             File.WriteAllText(source, "cli-binary");
             var destination = Path.Combine(this.workDir, "snyk-ls", "snyk-win.exe");
@@ -176,9 +184,30 @@ namespace Snyk.VisualStudio.Extension.Tests
                     () => { throw new InvalidOperationException("language server failed to start"); },
                 }));
 
+            Assert.Equal(0, cut.InstallFailuresReported);
             Assert.Equal("language server failed to start", thrown.Message);
             Assert.Equal("cli-binary", File.ReadAllText(destination));
             this.progressWorkerMock.Verify(w => w.DownloadFinished(), Times.Never);
+        }
+
+        [Fact]
+        public void InstallAndFinish_ReportsAnInstallFailure_WhenTheCopyFails()
+        {
+            // The other half of the pair above: a genuine copy failure must still be diagnosed.
+            var source = Path.Combine(this.workDir, "downloaded.exe");
+            File.WriteAllText(source, "cli-binary");
+            var destinationIsAnExistingDirectory = Path.Combine(this.workDir, "occupied");
+            Directory.CreateDirectory(destinationIsAnExistingDirectory);
+
+            var cut = new FakeDownloader(Options());
+
+            Assert.ThrowsAny<Exception>(() => cut.InstallAndFinish(
+                this.progressWorkerMock.Object,
+                source,
+                destinationIsAnExistingDirectory,
+                new List<SnykCliDownloader.CliDownloadFinishedCallback>()));
+
+            Assert.Equal(1, cut.InstallFailuresReported);
         }
 
         [Fact]
