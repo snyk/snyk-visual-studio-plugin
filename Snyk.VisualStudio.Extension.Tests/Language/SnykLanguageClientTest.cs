@@ -34,6 +34,10 @@ namespace Snyk.VisualStudio.Extension.Tests.Language
             {
                 Rpc = jsonRpcMock.Object
             };
+
+            // Default to "compatible" so tests that aren't about the IDE-2404 protocol gate itself
+            // don't need a real CLI binary on disk. The gate test below overrides this back to false.
+            cut.CliProtocolCompatibilityCheck = (_, __) => true;
         }
 
         [Fact]
@@ -49,6 +53,34 @@ namespace Snyk.VisualStudio.Extension.Tests.Language
             // Assert
             Assert.NotNull(failureContext);
             Assert.Contains("Initialization failed", failureContext.FailureMessage);
+        }
+
+        // IDE-2404: the gate must sit BEFORE StartAsync fires, not inside ActivateAsync. Once StartAsync
+        // fires, VS's LSP framework commits to calling ActivateAsync and expects a valid Connection back;
+        // returning null there throws an unhandled InvalidOperationException from inside VS's own
+        // RemoteLanguageClientInstance (seen manually testing this fix: a second, alarming top-shell
+        // banner on top of our actionable one). CliProtocolVersionVerifier's own parsing/matching logic
+        // is covered separately (CliProtocolVersionVerifierTest); this only asserts the wiring, via the
+        // CliProtocolCompatibilityCheck seam - no real CLI binary needed.
+        [Fact]
+        public async Task StartServerAsync_ShouldNotInvokeStartAsync_WhenCliProtocolVersionIncompatible()
+        {
+            // Arrange
+            cut.CliProtocolCompatibilityCheck = (_, __) => false;
+            TasksServiceMock.Setup(ts => ts.ShouldDownloadCli()).Returns(false);
+
+            var eventInvoked = false;
+            cut.StartAsync += (sender, args) =>
+            {
+                eventInvoked = true;
+                return Task.CompletedTask;
+            };
+
+            // Act
+            await cut.StartServerAsync(true);
+
+            // Assert
+            Assert.False(eventInvoked);
         }
 
         [Fact]

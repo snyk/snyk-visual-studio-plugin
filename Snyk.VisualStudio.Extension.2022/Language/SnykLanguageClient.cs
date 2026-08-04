@@ -12,6 +12,7 @@ using Serilog;
 using Snyk.VisualStudio.Extension.Analytics;
 using Snyk.VisualStudio.Extension.CLI;
 using Snyk.VisualStudio.Extension.Settings;
+using Snyk.VisualStudio.Extension.UI.Notifications;
 using Snyk.VisualStudio.Extension.Utils;
 using StreamJsonRpc;
 using Task = System.Threading.Tasks.Task;
@@ -96,6 +97,15 @@ namespace Snyk.VisualStudio.Extension.Language
         public event AsyncEventHandler<SnykLanguageServerEventArgs> OnLanguageServerReadyAsync;
         public event AsyncEventHandler<SnykLanguageServerEventArgs> OnLanguageClientNotInitializedAsync;
 
+        // Seam for tests (IDE-2404): tests exercising unrelated StartServerAsync/OnLoadedAsync/
+        // RestartServerAsync behavior don't have a real CLI binary on disk, so they override this to
+        // (_, _) => true. Defaults to the real check; StartServerAsync never calls
+        // CliProtocolVersionVerifier.IsCompatible directly so there is exactly one seam to override.
+        internal Func<string, string, bool> CliProtocolCompatibilityCheck { get; set; } = DefaultCliProtocolCompatibilityCheck;
+
+        private static bool DefaultCliProtocolCompatibilityCheck(string cliPath, string requiredProtocolVersion) =>
+            CliProtocolVersionVerifier.IsCompatible(cliPath, requiredProtocolVersion);
+
         public async Task<Connection> ActivateAsync(CancellationToken token)
         {
             await Task.Yield();
@@ -157,6 +167,25 @@ namespace Snyk.VisualStudio.Extension.Language
 
                 if (StartAsync != null && SnykVSPackage.Instance?.Options != null && shouldStart)
                 {
+                    // IDE-2404: gate BEFORE firing StartAsync. Once StartAsync fires, VS's LSP framework
+                    // commits to calling ActivateAsync and expects back a valid Connection; returning
+                    // null there throws an unhandled InvalidOperationException from inside VS's own
+                    // RemoteLanguageClientInstance (a second, alarming top-shell banner on top of our
+                    // actionable one). Refusing here instead means that call never happens. Applies
+                    // regardless of whether the binary is managed or a custom path, and re-runs on every
+                    // (re)start, so a binary-path change while running is re-checked (IDE-2112) without
+                    // extra wiring.
+                    var cliPath = SnykCli.GetCliFilePath(SnykVSPackage.Instance.Options.CliCustomPath);
+                    if (!CliProtocolCompatibilityCheck(cliPath, LsConstants.ProtocolVersion))
+                    {
+                        var message = $"Snyk CLI at '{cliPath}' does not support the required Language Server " +
+                            $"protocol version {LsConstants.ProtocolVersion} and cannot be started. Update the CLI, " +
+                            "or clear the custom CLI path in Tools > Options > Snyk to let Snyk manage it automatically.";
+                        Logger.Error(message);
+                        NotificationService.Instance?.ShowErrorInfoBar(message);
+                        return;
+                    }
+
                     if (CustomMessageTarget == null)
                     {
                         CustomMessageTarget = new SnykLanguageClientCustomTarget(SnykVSPackage.ServiceProvider);
