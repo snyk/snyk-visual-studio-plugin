@@ -96,6 +96,9 @@
     <Compile Include="Language\LsConstants.cs" />
     <Compile Include="Language\V25\PflagKeys.cs" />
     <Compile Include="Language\V25\ConfigSetting.cs" />
+    <Compile Include="Language\V25\ConfigDefaults.cs" />
+    <Compile Include="Language\V25\IUserOverrideTracker.cs" />
+    <Compile Include="Language\V25\UserOverrideTracker.cs" />
     <Compile Include="Language\V25\LspFolderConfig.cs" />
     <Compile Include="Language\V25\LspConfigurationParam.cs" />
     <Compile Include="Language\V25\InitializationOptionsV25.cs" />
@@ -186,6 +189,7 @@
     <Compile Include="Settings\SnykOptionsManager.cs" />
     <Compile Include="Settings\SnykSettings.cs" />
     <Compile Include="Settings\SnykSettingsChangedEventArgs.cs" />
+    <Compile Include="Settings\SettingsLocationMigrator.cs" />
     <Compile Include="Settings\SnykSettingsLoader.cs" />
     <Compile Include="SnykGuids.cs" />
     <Compile Include="SnykIcons.Designer.cs">
@@ -204,9 +208,6 @@
     </Compile>
     <Compile Include="BranchSelectorDialogWindow.xaml.cs">
       <DependentUpon>BranchSelectorDialogWindow.xaml</DependentUpon>
-    </Compile>
-    <Compile Include="TrustDialogWindow.xaml.cs">
-      <DependentUpon>TrustDialogWindow.xaml</DependentUpon>
     </Compile>
     <Compile Include="UI\Controls\TextField.xaml.cs">
       <DependentUpon>TextField.xaml</DependentUpon>
@@ -353,10 +354,6 @@
   </ItemGroup>
   <ItemGroup>
     <Page Include="AuthDialogWindow.xaml">
-      <Generator>MSBuild:Compile</Generator>
-      <SubType>Designer</SubType>
-    </Page>
-    <Page Include="TrustDialogWindow.xaml">
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
     </Page>

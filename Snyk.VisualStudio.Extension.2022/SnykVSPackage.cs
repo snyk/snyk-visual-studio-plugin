@@ -25,6 +25,19 @@ using Task = System.Threading.Tasks.Task;
 namespace Snyk.VisualStudio.Extension
 {
     /// <summary>
+    /// Describes what the not-initialized handler should do when the language server is not yet ready.
+    /// Used by the testable seam <see cref="SnykVSPackage.DecideNotInitializedActivation"/>.
+    /// </summary>
+    internal enum ActivationDecision
+    {
+        /// <summary>Open the temp init file to activate the ILanguageClient.</summary>
+        Activate,
+
+        /// <summary>Language server is already ready — nothing to do.</summary>
+        NoOp,
+    }
+
+    /// <summary>
     /// This is the class that implements the package exposed by this assembly.
     /// </summary>
     /// <remarks>
@@ -292,6 +305,53 @@ namespace Snyk.VisualStudio.Extension
         }
 
         private Window tempOpenedFileWindow;
+
+        /// <summary>
+        /// Pure decision: given the current LS-ready state, decide whether to activate the
+        /// ILanguageClient by opening the temp init file, or do nothing.
+        ///
+        /// Internal for testability — <c>InternalsVisibleTo("Snyk.VisualStudio.Extension.Tests")</c>
+        /// is already declared in AssemblyInfo.cs.
+        ///
+        /// IDE-1752: solution state no longer gates activation. Activation is performed whenever
+        /// the language server is not yet ready, regardless of whether a solution or folder is open.
+        /// </summary>
+        internal ActivationDecision DecideNotInitializedActivation(bool isLanguageServerReady)
+        {
+            if (isLanguageServerReady)
+                return ActivationDecision.NoOp;
+
+            return ActivationDecision.Activate;
+        }
+
+        /// <summary>
+        /// Performs the activation side-effect (open the temp init file) using the provided action.
+        /// The action defaults to the real DTE call; tests inject a spy.
+        ///
+        /// Internal for testability (IDE-1752 seam).
+        /// Handles exceptions from the action: logs a single diagnostic and returns — no loop.
+        /// </summary>
+        internal async Task InvokeNotInitializedActivationAsync(Func<Task> openTempFileAction)
+        {
+            try
+            {
+                await openTempFileAction();
+            }
+            catch (OperationCanceledException)
+            {
+                // VS / LS client shutting down — not an error.
+            }
+            catch (Exception ex)
+            {
+                // S1: log a single clear diagnostic so a stuck state leaves a trail in the logs.
+                // (Logger assertion in unit tests is intentionally absent — LogManager.ForContext<T>()
+                // writes to a Lazy<Logger> file sink, not Serilog.Log.Logger; see brain note
+                // log-manager-not-mockable.)
+                Logger.Error(ex, "IDE-1752: Failed to open temp init file to activate the Snyk language client. " +
+                    "The language server may not start. Check that the extension Resources/SnykLsInit.cs is present.");
+            }
+        }
+
         private async Task LanguageClientManagerOnLanguageClientNotInitializedAsync(object sender, SnykLanguageServerEventArgs args)
         {
             await languageClientInitSemaphore.WaitAsync(DisposalToken);
@@ -301,28 +361,41 @@ namespace Snyk.VisualStudio.Extension
                 try
                 {
                     await JoinableTaskFactory.SwitchToMainThreadAsync();
-                    while (!LanguageClientHelper.IsLanguageServerReady())
+
+                    var decision = DecideNotInitializedActivation(
+                        isLanguageServerReady: LanguageClientHelper.IsLanguageServerReady());
+
+                    if (decision == ActivationDecision.NoOp)
+                        return;
+
+                    // Activate: open the bundled temp file to trigger VS ILanguageClient activation.
+                    // IDE-1752 fix: this activation now runs for both the solution-open and the
+                    // no-solution cases, removing the unbounded Task.Delay loop that caused the hang.
+                    await InvokeNotInitializedActivationAsync(async () =>
                     {
-                        var isSolutionOrFolderOpen = SnykSolutionService.Instance.IsSolutionOpen();
-                        if (isSolutionOrFolderOpen)
+                        await JoinableTaskFactory.SwitchToMainThreadAsync();
+                        var dte = (DTE)await GetServiceAsync(typeof(DTE));
+                        if (dte == null)
                         {
-                            var dte = (DTE)await GetServiceAsync(typeof(DTE));
-                            if (dte == null) return;
-
-                            // Get the path to the file within the installed extension directory
-                            var assemblyLocation = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location);
-                            if (assemblyLocation == null) return;
-
-                            var filePath = Path.Combine(assemblyLocation, "Resources", "SnykLsInit.cs");
-
-                            // Open the file
-                            tempOpenedFileWindow =
-                                dte.ItemOperations.OpenFile(filePath, EnvDTE.Constants.vsViewKindTextView);
+                            Logger.Error("IDE-1752: DTE service unavailable; cannot open temp init file to activate the Snyk language client.");
                             return;
                         }
 
-                        await Task.Delay(3000, DisposalToken);
-                    }
+                        var assemblyLocation = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location);
+                        if (assemblyLocation == null)
+                        {
+                            Logger.Error("IDE-1752: Assembly location unavailable; cannot locate Resources/SnykLsInit.cs.");
+                            return;
+                        }
+
+                        var filePath = Path.Combine(assemblyLocation, "Resources", "SnykLsInit.cs");
+
+                        // Open the file — this activates the registered ILanguageClient (SnykLanguageClient
+                        // is registered for the CSharp content type). OnLanguageServerReadyAsync will close
+                        // this temp window once the LS is ready (S2).
+                        tempOpenedFileWindow =
+                            dte.ItemOperations.OpenFile(filePath, EnvDTE.Constants.vsViewKindTextView);
+                    });
                 }
                 catch (Exception ex)
                 {

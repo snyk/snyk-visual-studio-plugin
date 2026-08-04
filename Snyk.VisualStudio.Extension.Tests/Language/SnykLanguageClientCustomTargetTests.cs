@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.VisualStudio.Sdk.TestFramework;
@@ -343,9 +344,10 @@ namespace Snyk.VisualStudio.Extension.Tests.Language
             await cut.OnHasAuthenticated(arg);
 
             // Assert — token and endpoint stored, saved without triggering didChangeConfiguration loop
+            // and without updating the override tracker (LS-delivered auth result, not a user settings-edit).
             optionsMock.VerifySet(o => o.CustomEndpoint = "https://api.snyk.io");
             optionsMock.VerifySet(o => o.ApiToken = It.Is<AuthenticationToken>(t => t.Type == AuthenticationType.OAuth && t.ToString() == "test-token"));
-            snykOptionsManagerMock.Verify(s => s.Save(It.IsAny<IPersistableOptions>(), false), Times.Once);
+            snykOptionsManagerMock.Verify(s => s.Save(It.IsAny<IPersistableOptions>(), false, false, null, null), Times.Once);
             authenticationFlowServiceMock.Verify(o => o.HandleAuthenticationSuccessAsync("test-token", "https://api.snyk.io"), Times.Once);
         }
 
@@ -361,8 +363,9 @@ namespace Snyk.VisualStudio.Extension.Tests.Language
             // Act
             await cut.OnHasAuthenticated(arg);
 
-            // Assert — Save must be called with triggerSettingsChangedEvent=false to avoid the loop
-            snykOptionsManagerMock.Verify(s => s.Save(It.IsAny<IPersistableOptions>(), false), Times.Once);
+            // Assert — Save must be called with triggerSettingsChangedEvent=false (avoid loop) and
+            // updateOverrideTracker=false (LS-delivered auth, not a user settings-edit).
+            snykOptionsManagerMock.Verify(s => s.Save(It.IsAny<IPersistableOptions>(), false, false, null, null), Times.Once);
             // HandleAuthenticationSuccessAsync must NOT be called — not a new login
             authenticationFlowServiceMock.Verify(o => o.HandleAuthenticationSuccessAsync(It.IsAny<string>(), It.IsAny<string>()), Times.Never);
             // No scan on refresh — old token was non-blank
@@ -400,7 +403,8 @@ namespace Snyk.VisualStudio.Extension.Tests.Language
             Assert.Equal(2, optionsMock.Object.TrustedFolders.Count);
             Assert.Contains("/folder1", optionsMock.Object.TrustedFolders);
             Assert.Contains("/folder2", optionsMock.Object.TrustedFolders);
-            snykOptionsManagerMock.Verify(s => s.Save(It.IsAny<IPersistableOptions>(), false), Times.Once);
+            // updateOverrideTracker:false — LS is pushing trusted-folder set back; must not record as user override.
+            snykOptionsManagerMock.Verify(s => s.Save(It.IsAny<IPersistableOptions>(), false, false, It.IsAny<System.Collections.Generic.IReadOnlyCollection<string>>(), It.IsAny<System.Collections.Generic.IReadOnlyCollection<string>>()), Times.Once);
             // Note: DidChangeConfigurationAsync is intentionally not called to avoid infinite loop
             languageClientManagerMock.Verify(s => s.DidChangeConfigurationAsync(It.IsAny<CancellationToken>()), Times.Never);
         }
@@ -425,9 +429,9 @@ namespace Snyk.VisualStudio.Extension.Tests.Language
             Assert.NotNull(optionsMock.Object.FolderConfigs);
             Assert.Equal(2, optionsMock.Object.FolderConfigs.Count);
             Assert.Equal("/path/to/folder1", optionsMock.Object.FolderConfigs[0].FolderPath);
-            Assert.Equal("main", optionsMock.Object.FolderConfigs[0].BaseBranch);
+            Assert.Equal("main", optionsMock.Object.FolderConfigs[0].GetString(PflagKeys.BaseBranch));
             Assert.Equal("/path/to/folder2", optionsMock.Object.FolderConfigs[1].FolderPath);
-            Assert.Equal("master", optionsMock.Object.FolderConfigs[1].BaseBranch);
+            Assert.Equal("master", optionsMock.Object.FolderConfigs[1].GetString(PflagKeys.BaseBranch));
         }
 
         [Fact]
@@ -472,9 +476,9 @@ namespace Snyk.VisualStudio.Extension.Tests.Language
 
             // Assert — org fields stored in-memory; no disk Save*Async calls
             var fc = optionsMock.Object.FolderConfigs[0];
-            Assert.Equal("auto-determined-org", fc.AutoDeterminedOrg);
-            Assert.Equal("", fc.PreferredOrg);
-            Assert.False(fc.OrgSetByUser);
+            Assert.Equal("auto-determined-org", fc.GetString(PflagKeys.AutoDeterminedOrg));
+            Assert.Equal("", fc.GetString(PflagKeys.PreferredOrg));
+            Assert.False(Convert.ToBoolean(fc.Settings[PflagKeys.OrgSetByUser].Value));
         }
 
         [Fact]
@@ -537,9 +541,9 @@ namespace Snyk.VisualStudio.Extension.Tests.Language
             // Assert — both configs stored; no disk calls
             Assert.Equal(2, optionsMock.Object.FolderConfigs.Count);
             var fc1 = optionsMock.Object.FolderConfigs[0];
-            Assert.Equal("auto-determined-org", fc1.AutoDeterminedOrg);
-            Assert.Equal("user-specified-org", fc1.PreferredOrg);
-            Assert.True(fc1.OrgSetByUser);
+            Assert.Equal("auto-determined-org", fc1.GetString(PflagKeys.AutoDeterminedOrg));
+            Assert.Equal("user-specified-org", fc1.GetString(PflagKeys.PreferredOrg));
+            Assert.True(Convert.ToBoolean(fc1.Settings[PflagKeys.OrgSetByUser].Value));
         }
 
         [Fact]
@@ -566,9 +570,9 @@ namespace Snyk.VisualStudio.Extension.Tests.Language
 
             // Assert
             var fc = optionsMock.Object.FolderConfigs[0];
-            Assert.Equal("auto-detected-org", fc.AutoDeterminedOrg);
-            Assert.Equal("user-preferred-org", fc.PreferredOrg);
-            Assert.True(fc.OrgSetByUser);
+            Assert.Equal("auto-detected-org", fc.GetString(PflagKeys.AutoDeterminedOrg));
+            Assert.Equal("user-preferred-org", fc.GetString(PflagKeys.PreferredOrg));
+            Assert.True(Convert.ToBoolean(fc.Settings[PflagKeys.OrgSetByUser].Value));
         }
 
         [Fact]
@@ -595,9 +599,9 @@ namespace Snyk.VisualStudio.Extension.Tests.Language
 
             // Assert
             var fc = optionsMock.Object.FolderConfigs[0];
-            Assert.Equal("auto-detected-org", fc.AutoDeterminedOrg);
-            Assert.Equal("", fc.PreferredOrg);
-            Assert.False(fc.OrgSetByUser);
+            Assert.Equal("auto-detected-org", fc.GetString(PflagKeys.AutoDeterminedOrg));
+            Assert.Equal("", fc.GetString(PflagKeys.PreferredOrg));
+            Assert.False(Convert.ToBoolean(fc.Settings[PflagKeys.OrgSetByUser].Value));
         }
 
         [Fact]
@@ -625,7 +629,7 @@ namespace Snyk.VisualStudio.Extension.Tests.Language
             // Assert — the second push replaces the first by path: one entry, latest value wins.
             Assert.Single(optionsMock.Object.FolderConfigs);
             Assert.Equal("/path/to/folder1", optionsMock.Object.FolderConfigs[0].FolderPath);
-            Assert.Equal("new-org", optionsMock.Object.FolderConfigs[0].PreferredOrg);
+            Assert.Equal("new-org", optionsMock.Object.FolderConfigs[0].GetString(PflagKeys.PreferredOrg));
         }
 
         [Fact]
@@ -701,7 +705,8 @@ namespace Snyk.VisualStudio.Extension.Tests.Language
             // Assert — the setting was applied to Options...
             Assert.True(optionsMock.Object.OssEnabled);
             // ...and persisted without re-triggering DidChangeConfigurationAsync (triggerSettingsChangedEvent=false)
-            snykOptionsManagerMock.Verify(m => m.Save(It.IsAny<IPersistableOptions>(), false), Times.Once());
+            // updateOverrideTracker:false — LS-pushed values must never be recorded as user overrides (IDE-2152).
+            snykOptionsManagerMock.Verify(m => m.Save(It.IsAny<IPersistableOptions>(), false, false, It.IsAny<System.Collections.Generic.IReadOnlyCollection<string>>(), It.IsAny<System.Collections.Generic.IReadOnlyCollection<string>>()), Times.Once());
         }
 
         [Fact]

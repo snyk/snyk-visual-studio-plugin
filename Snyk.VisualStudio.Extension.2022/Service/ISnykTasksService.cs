@@ -150,12 +150,6 @@ public interface ISnykTasksService
     Task ScanAsync();
 
     /// <summary>
-    /// Checks if opened solution folder is trusted. If not, prompts a user with trust permission.
-    /// </summary>
-    /// <returns>Folder is trusted or not.</returns>
-    Task<bool> IsFolderTrustedAsync();
-
-    /// <summary>
     /// Start a CLI download task in background thread. Will only download the CLI if it's missing or outdated.
     /// </summary>
     /// <param name="downloadFinishedCallback"><see cref="CliDownloadFinishedCallback"/> callback object.</param>

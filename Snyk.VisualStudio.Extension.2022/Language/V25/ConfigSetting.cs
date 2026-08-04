@@ -23,6 +23,19 @@ namespace Snyk.VisualStudio.Extension.Language
         [JsonProperty(DefaultValueHandling = DefaultValueHandling.Ignore)]
         public bool IsLocked { get; set; }
 
+        /// <summary>Creates a ConfigSetting that always sends <c>changed:true</c> (legacy behaviour).</summary>
         public static ConfigSetting Of(object value) => new ConfigSetting { Value = value, Changed = true };
+
+        /// <summary>
+        /// Creates a ConfigSetting with an explicit <paramref name="changed"/> flag.
+        /// Use this when the changed flag is driven by <see cref="IUserOverrideTracker"/> (IDE-2152).
+        /// </summary>
+        public static ConfigSetting Of(object value, bool changed) => new ConfigSetting { Value = value, Changed = changed };
+
+        /// <summary>
+        /// Creates a reset signal: <c>{value:null, changed:true}</c>. Sent when the user returns a
+        /// setting to its plugin default so the LS clears any org-level override (IDE-2152).
+        /// </summary>
+        public static ConfigSetting Reset() => new ConfigSetting { Value = null, Changed = true };
     }
 }

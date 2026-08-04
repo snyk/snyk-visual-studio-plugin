@@ -2,8 +2,6 @@
 {
     public interface IWorkspaceTrustService
     {
-        bool IsFolderTrusted(string absoluteFolderPath);
-
         void AddFolderToTrusted(string absoluteFolderPath);
     }
 }

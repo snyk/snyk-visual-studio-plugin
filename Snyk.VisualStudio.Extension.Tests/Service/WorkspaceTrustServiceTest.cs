@@ -12,60 +12,19 @@ namespace Snyk.VisualStudio.Extension.Tests.Service
     {
         private readonly Mock<ISnykOptions> optionsMock;
         private readonly Mock<ISnykServiceProvider> serviceProviderMock;
+        private readonly Mock<ISnykOptionsManager> optionsManagerMock;
         private readonly WorkspaceTrustService cut;
 
         public WorkspaceTrustServiceTest()
         {
             optionsMock = new Mock<ISnykOptions>();
             optionsMock.Setup(x => x.TrustedFolders).Returns(new HashSet<string>());
+            optionsManagerMock = new Mock<ISnykOptionsManager>();
             serviceProviderMock = new Mock<ISnykServiceProvider>();
             serviceProviderMock.Setup(x => x.Options).Returns(optionsMock.Object);
+            serviceProviderMock.Setup(x => x.SnykOptionsManager).Returns(optionsManagerMock.Object);
 
             cut = new WorkspaceTrustService(serviceProviderMock.Object);
-        }
-
-        [Fact]
-        public void WorkspaceTrustServiceTest_IsFolderTrusted_NotTrusted()
-        {
-            var folderPath = "C:\\Users\\Project";
-            Assert.False(cut.IsFolderTrusted(folderPath));
-        }
-
-        [Fact]
-        public void WorkspaceTrustServiceTest_IsFolderTrusted_Trusted()
-        {
-            var trustedFolders = new HashSet<string>();
-            trustedFolders.Add("C:\\Users\\Project");
-            optionsMock.Setup(s => s.TrustedFolders).Returns(trustedFolders);
-
-            var folderPath = "C:\\Users\\Project";
-
-            Assert.True(cut.IsFolderTrusted(folderPath));
-        }
-
-        [Fact]
-        public void WorkspaceTrustServiceTest_IsFolderTrusted_SubfolderTrusted()
-        {
-            var trustedFolders = new HashSet<string> { "C:\\Users\\Project" };
-
-            optionsMock.Setup(s => s.TrustedFolders).Returns(trustedFolders);
-
-            var folderPath = "C:\\Users\\Project\\subfolder";
-
-            Assert.True(cut.IsFolderTrusted(folderPath));
-        }
-
-        [Fact]
-        public void WorkspaceTrustServiceTest_IsFolderTrusted_ParentFolderNotTrusted()
-        {
-            var trustedFolders = new HashSet<string>();
-            trustedFolders.Add("C:\\Users\\Project\\subfolder");
-
-            optionsMock.Setup(s => s.TrustedFolders).Returns(trustedFolders);
-
-            var folderPath = "C:\\Users\\Project";
-
-            Assert.False(cut.IsFolderTrusted(folderPath));
         }
 
         [Fact]
@@ -125,6 +84,28 @@ namespace Snyk.VisualStudio.Extension.Tests.Service
 
             // Must not append new entry to collection
             optionsMock.VerifySet(s => s.TrustedFolders = new HashSet<string> { folderPath1 }, Times.Exactly(2));
+        }
+
+        [Fact]
+        public void WorkspaceTrustServiceTest_AddFolderToTrusted_DoesNotUpdateOverrideTracker()
+        {
+            optionsMock.Setup(s => s.TrustedFolders).Returns(new HashSet<string>());
+
+            var folderPath = this.CreateTempDirectory();
+
+            cut.AddFolderToTrusted(folderPath);
+
+            // Adding a trusted folder is a system-driven action, not a user override edit, so the
+            // save must NOT run the override-tracker path (updateOverrideTracker == false). Every
+            // other system/LS-driven save already passes updateOverrideTracker:false (IDE-2152).
+            optionsManagerMock.Verify(
+                m => m.Save(
+                    It.IsAny<IPersistableOptions>(),
+                    false,
+                    false,
+                    It.IsAny<IReadOnlyCollection<string>>(),
+                    It.IsAny<IReadOnlyCollection<string>>()),
+                Times.Once);
         }
 
         private string CreateTempDirectory()

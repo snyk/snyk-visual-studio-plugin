@@ -29,9 +29,9 @@ namespace Snyk.VisualStudio.Extension
                 return;
             LblFolderPathForBranch.Text = FolderConfig.FolderPath;
             LblFolderPathForReferenceFolder.Text = FolderConfig.FolderPath;
-            CbBranchList.ItemsSource = FolderConfig.LocalBranches;
-            CbBranchList.SelectedItem = FolderConfig.BaseBranch;
-            SelectedFolderPath.Text = FolderConfig.ReferenceFolderPath;
+            CbBranchList.ItemsSource = FolderConfig.GetStringList(PflagKeys.LocalBranches);
+            CbBranchList.SelectedItem = FolderConfig.GetString(PflagKeys.BaseBranch);
+            SelectedFolderPath.Text = FolderConfig.GetString(PflagKeys.ReferenceFolder);
             IsOpen = true;
         }
 
@@ -49,8 +49,8 @@ namespace Snyk.VisualStudio.Extension
             {
                 return;
             }
-            FolderConfig.BaseBranch = CbBranchList.SelectedItem.ToString();
-            FolderConfig.ReferenceFolderPath = SelectedFolderPath.Text;
+            FolderConfig.SetString(PflagKeys.BaseBranch, CbBranchList.SelectedItem?.ToString());
+            FolderConfig.SetString(PflagKeys.ReferenceFolder, SelectedFolderPath.Text);
 
             var folderConfigList = this.serviceProvider.Options.FolderConfigs;
             var currentList = folderConfigList.Where(x => x.FolderPath != FolderConfig.FolderPath).ToList();
@@ -58,7 +58,11 @@ namespace Snyk.VisualStudio.Extension
 
             var options = SnykVSPackage.ServiceProvider.Options;
             options.FolderConfigs = currentList;
-            SnykVSPackage.ServiceProvider.SnykOptionsManager.Save(options);
+            // editedKeys: empty — only folder config (per-folder) keys changed here; no global
+            // pflag keys were edited by the user, so the tracker should mark nothing.
+            SnykVSPackage.ServiceProvider.SnykOptionsManager.Save(
+                options,
+                editedKeys: new System.Collections.Generic.List<string>());
             if (SnykVSPackage.Instance.Options.AutoScan)
             {
                 ThreadHelper.JoinableTaskFactory.RunAsync(serviceProvider.TasksService.ScanAsync).FireAndForget();
