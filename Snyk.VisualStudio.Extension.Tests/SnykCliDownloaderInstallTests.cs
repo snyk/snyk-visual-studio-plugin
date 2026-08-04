@@ -156,6 +156,32 @@ namespace Snyk.VisualStudio.Extension.Tests
         }
 
         [Fact]
+        public void InstallAndFinish_PropagatesACallbackFailureUnwrapped_WithTheBinaryInstalled()
+        {
+            // A callback throwing is the language server failing to start, not the CLI failing to
+            // install — the copy has already succeeded by then. The exception must reach the caller
+            // as-is so it reports DownloadFailed, and must not be re-diagnosed as a copy error.
+            var source = Path.Combine(this.workDir, "downloaded.exe");
+            File.WriteAllText(source, "cli-binary");
+            var destination = Path.Combine(this.workDir, "snyk-ls", "snyk-win.exe");
+
+            var cut = new FakeDownloader(Options());
+
+            var thrown = Assert.Throws<InvalidOperationException>(() => cut.InstallAndFinish(
+                this.progressWorkerMock.Object,
+                source,
+                destination,
+                new List<SnykCliDownloader.CliDownloadFinishedCallback>
+                {
+                    () => { throw new InvalidOperationException("language server failed to start"); },
+                }));
+
+            Assert.Equal("language server failed to start", thrown.Message);
+            Assert.Equal("cli-binary", File.ReadAllText(destination));
+            this.progressWorkerMock.Verify(w => w.DownloadFinished(), Times.Never);
+        }
+
+        [Fact]
         public async Task DownloadAsync_SkipsTheDownload_WhenTheBinaryOnDiskAlreadyMatchesAsync()
         {
             // Nothing to install when the binary already matches, but the finished callbacks must still

@@ -229,10 +229,9 @@ namespace Snyk.VisualStudio.Extension.Download
                 var cliFileExists = this.IsCliFileExists(cliFileDestinationPath);
 
                 Logger.Error(ex,
-                    "Could not fetch latest CLI release info. CLI present at {Path}: {CliFileExists}; download needed: {DownloadNeeded}",
+                    "Could not fetch latest CLI release info, so whether a newer version exists is unknown. Falling back to whether a CLI is present at {Path}: {CliFileExists}",
                     cliFileDestinationPath,
-                    cliFileExists,
-                    !cliFileExists);
+                    cliFileExists);
 
                 return !cliFileExists;
             }
@@ -382,8 +381,6 @@ namespace Snyk.VisualStudio.Extension.Download
             try
             {
                 InstallCliFile(sourceFilePath, cliFileDestinationPath);
-
-                this.FinishDownload(progressWorker, downloadFinishedCallbacks);
             }
             catch (Exception e)
             {
@@ -399,6 +396,11 @@ namespace Snyk.VisualStudio.Extension.Download
 
                 throw;
             }
+
+            // Outside the catch above: it diagnoses the file copy, and the callbacks are what start
+            // the language server. A callback failing is not the CLI failing to install, and must not
+            // be reported as one. It still propagates, so the caller reports DownloadFailed.
+            this.FinishDownload(progressWorker, downloadFinishedCallbacks);
         }
 
         /// <summary>

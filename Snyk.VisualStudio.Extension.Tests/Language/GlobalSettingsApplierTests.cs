@@ -1,4 +1,6 @@
+using System;
 using System.Collections.Generic;
+using System.IO;
 using Moq;
 using Newtonsoft.Json.Linq;
 using Snyk.VisualStudio.Extension.Authentication;
@@ -291,10 +293,37 @@ namespace Snyk.VisualStudio.Extension.Tests.Language
             Assert.Equal("https://mirror.corp", options.CliBaseDownloadURL);
         }
 
+        // cli_path is IDE-owned: the IDE downloads the binary and tells the LS where it is, never the
+        // other way round. Nothing can legitimately push one to us — snyk-ls keeps cli_path out of its
+        // LDX-Sync key map and out of GlobalResettableSettings — so an inbound value is only ever our
+        // own echoed back, or the LS's registered default. Adopting the latter repoints us at an empty
+        // location and costs the user a second full CLI download.
+
         [Fact]
-        public void Apply_ShouldClearCliPath_WhenInboundValueIsEmpty()
+        public void Apply_ShouldIgnoreInboundCliPath_WhenItIsTheLanguageServerDefault()
         {
-            // Unlike the base URL, an empty cli_path is a meaningful cleared state.
+            // The regression: the LS's default is $XDG_DATA_HOME/snyk-ls/<exe>, which on Windows is
+            // under %LOCALAPPDATA% but NOT our directory — non-empty, so an empty-guard misses it, and
+            // it looks exactly like a user-chosen custom path.
+            var options = MakeOptions();
+            options.CliCustomPath = string.Empty;
+            var lsDefault = Path.Combine(
+                Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
+                "snyk-ls",
+                "snyk-win.exe");
+            var settings = new Dictionary<string, ConfigSetting>
+            {
+                [PflagKeys.CliPath] = ConfigSetting.Of(lsDefault)
+            };
+
+            GlobalSettingsApplier.Apply(settings, options);
+
+            Assert.Equal(string.Empty, options.CliCustomPath);
+        }
+
+        [Fact]
+        public void Apply_ShouldNotClearAUserConfiguredCliPath_WhenInboundValueIsEmpty()
+        {
             var options = MakeOptions();
             options.CliCustomPath = @"C:\custom\snyk.exe";
             var settings = new Dictionary<string, ConfigSetting>
@@ -304,38 +333,40 @@ namespace Snyk.VisualStudio.Extension.Tests.Language
 
             GlobalSettingsApplier.Apply(settings, options);
 
-            Assert.Equal(string.Empty, options.CliCustomPath);
+            Assert.Equal(@"C:\custom\snyk.exe", options.CliCustomPath);
         }
 
         [Fact]
-        public void Apply_ShouldKeepCliPathEmpty_WhenInboundValueIsTheDefaultLocation()
-        {
-            // We send the resolved default outbound, so the LS echoes it straight back. Storing it
-            // verbatim would turn "no custom path" into an explicit one in the settings UI.
-            var options = MakeOptions();
-            options.CliCustomPath = string.Empty;
-            var settings = new Dictionary<string, ConfigSetting>
-            {
-                [PflagKeys.CliPath] = ConfigSetting.Of(SnykCli.GetSnykCliDefaultPath())
-            };
-
-            GlobalSettingsApplier.Apply(settings, options);
-
-            Assert.Equal(string.Empty, options.CliCustomPath);
-        }
-
-        [Fact]
-        public void Apply_ShouldSetCliPath_WhenInboundValueIsACustomLocation()
+        public void Apply_ShouldNotOverwriteAUserConfiguredCliPath_WhenInboundValueDiffers()
         {
             var options = MakeOptions();
+            options.CliCustomPath = @"C:\custom\snyk.exe";
             var settings = new Dictionary<string, ConfigSetting>
             {
-                [PflagKeys.CliPath] = ConfigSetting.Of(@"C:\custom\snyk.exe")
+                [PflagKeys.CliPath] = ConfigSetting.Of(@"C:\somewhere\else\snyk.exe")
             };
 
             GlobalSettingsApplier.Apply(settings, options);
 
             Assert.Equal(@"C:\custom\snyk.exe", options.CliCustomPath);
+        }
+
+        [Fact]
+        public void Apply_ShouldStillApplyOtherKeys_WhenCliPathIsPresent()
+        {
+            // Ignoring cli_path must not short-circuit the rest of the payload.
+            var options = MakeOptions();
+            options.CliCustomPath = string.Empty;
+            var settings = new Dictionary<string, ConfigSetting>
+            {
+                [PflagKeys.CliPath] = ConfigSetting.Of(@"C:\somewhere\else\snyk.exe"),
+                [PflagKeys.Organization] = ConfigSetting.Of("acme-org")
+            };
+
+            GlobalSettingsApplier.Apply(settings, options);
+
+            Assert.Equal(string.Empty, options.CliCustomPath);
+            Assert.Equal("acme-org", options.Organization);
         }
     }
 }
