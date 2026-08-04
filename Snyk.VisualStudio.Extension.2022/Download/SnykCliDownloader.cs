@@ -231,9 +231,14 @@ namespace Snyk.VisualStudio.Extension.Download
         /// <returns>True if CLI file not exists or new release exists.</returns>
         public bool IsCliDownloadNeeded(string cliFileDestinationPath = null)
         {
+            // Asked once and reused below. Asking again inside the catch let the two answers disagree
+            // if the binary vanished in between, and made the fallback read as though it handled a
+            // case it cannot reach.
+            var cliFileExists = this.IsCliFileExists(cliFileDestinationPath);
+
             try
             {
-                if (!this.IsCliFileExists(cliFileDestinationPath) || this.IsNewVersionAvailable(this.SnykOptions.CurrentCliVersion, this.GetLatestReleaseInfoOnce().Name))
+                if (!cliFileExists || this.IsNewVersionAvailable(this.SnykOptions.CurrentCliVersion, this.GetLatestReleaseInfoOnce().Name))
                 {
                     return true;
                 }
@@ -241,9 +246,9 @@ namespace Snyk.VisualStudio.Extension.Download
             catch (Exception ex)
             {
                 // A failed check is not "up to date": with no CLI on disk the language server would be
-                // started with nothing to run. Fall back to whether one exists at all.
-                var cliFileExists = this.IsCliFileExists(cliFileDestinationPath);
-
+                // started with nothing to run. With the condition above, a missing file has already
+                // returned true, so this reduces to false today — written against cliFileExists rather
+                // than hardcoded so it stays correct if that ordering ever changes.
                 Logger.Error(ex,
                     "Could not fetch latest CLI release info, so whether a newer version exists is unknown. Falling back to whether a CLI is present at {Path}: {CliFileExists}",
                     cliFileDestinationPath,
@@ -251,6 +256,7 @@ namespace Snyk.VisualStudio.Extension.Download
 
                 return !cliFileExists;
             }
+
             return false;
         }
 
@@ -465,10 +471,13 @@ namespace Snyk.VisualStudio.Extension.Download
         // otherwise observe whether a failure was diagnosed as an install failure.
         internal virtual void ReportInstallFailure(Exception e, string cliFileDestinationPath)
         {
-            // An update failure leaves a working CLI behind; an install failure does not.
+            // An update failure leaves the previous CLI behind; an install failure leaves nothing.
+            // States that it is present rather than that it will work: File.Exists cannot tell an
+            // untouched binary from a partial write, and the fallback in InstallCliFile still
+            // overwrites in place on volumes that cannot do an atomic replace.
             var existingCliRemains = File.Exists(cliFileDestinationPath);
             var message = existingCliRemains
-                ? $"Snyk CLI could not be updated at {cliFileDestinationPath}: {e.Message} The existing CLI will continue to be used."
+                ? $"Snyk CLI could not be updated at {cliFileDestinationPath}: {e.Message} The previously installed CLI is still in place."
                 : $"Snyk CLI could not be installed at {cliFileDestinationPath}: {e.Message}";
 
             // Null-conditional: the download can run before the package initialises this.
