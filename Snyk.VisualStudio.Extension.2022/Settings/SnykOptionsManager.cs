@@ -427,10 +427,10 @@ namespace Snyk.VisualStudio.Extension.Settings
         }
 
         // One-shot recovery of Snyk Code enablement for installs created before this migration
-        // existed. Snyk Code is the only product the Language Server does not default-enable — it
-        // requires an explicit changed:true to turn on, whereas OSS and IaC come up enabled from the
-        // LS's own defaults. An upgrading user whose stored preference was "Code on" therefore loses
-        // Code scanning outright unless that preference is carried across as an explicit override.
+        // existed. The Language Server default-enables OSS and IaC but not Code, so Code only turns
+        // on when it receives an explicit changed:true. An upgrading user whose stored preference was
+        // "Code on" therefore loses Code scanning outright unless that preference is carried across
+        // as an explicit override — a value sent changed:false reads to the LS as "no preference".
         //
         // Called from Load() only, already inside persistGate, and AFTER the seed branches — see the
         // ordering note at the call site. Sets the marker in memory only, because Load() must never

@@ -26,13 +26,31 @@ namespace Snyk.VisualStudio.Extension.Settings
         public string CurrentCliVersion { get; set; }
 
         /// <summary>
-        /// Plugin default for <see cref="SnykCodeSecurityEnabled"/>. False to match the Language
-        /// Server, which does not default-enable Snyk Code — enablement otherwise resolves from org
-        /// governance / LDX-Sync. <see cref="Language.ConfigDefaults"/> references this const rather
-        /// than repeating the literal, so the persistence default and the override-comparison
-        /// default cannot drift apart. Matches Eclipse, which derives both from one value.
+        /// Plugin defaults for the four product-enablement settings, each the single owner of its
+        /// default: the properties below initialise from them and
+        /// <see cref="Language.ConfigDefaults"/> references them instead of repeating the literal,
+        /// so the persistence default and the override-comparison default cannot drift apart. This
+        /// mirrors Eclipse and IntelliJ, which each declare a product default exactly once.
+        /// <para>
+        /// Each value must equal the Language Server's registered default (snyk-ls
+        /// <c>internal/types/register_configurations.go</c>). The LS owns the authoritative default;
+        /// the IDE holds a copy because the override seed runs before the first LSP handshake and
+        /// must still work when the language server never starts. A copy that disagrees with the LS
+        /// makes the seed classify overrides against the wrong baseline — for Snyk Code, whose
+        /// product the LS does not default-enable, that silently stops Code scanning on upgrade.
+        /// The agreement is pinned by ConfigDefaultsTests, not enforced at build time.
+        /// </para>
         /// </summary>
         public const bool DefaultSnykCodeSecurityEnabled = false;
+
+        /// <inheritdoc cref="DefaultSnykCodeSecurityEnabled"/>
+        public const bool DefaultOssEnabled = true;
+
+        /// <inheritdoc cref="DefaultSnykCodeSecurityEnabled"/>
+        public const bool DefaultIacEnabled = true;
+
+        /// <inheritdoc cref="DefaultSnykCodeSecurityEnabled"/>
+        public const bool DefaultSecretsEnabled = false;
 
         /// <summary>
         /// Gets or sets a value indicating whether snyk code security enabled.
@@ -42,12 +60,12 @@ namespace Snyk.VisualStudio.Extension.Settings
         /// <summary>
         /// Gets or sets a value indicating whether Secrets scanning is enabled.
         /// </summary>
-        public bool SecretsEnabled { get; set; } = false;
-        
+        public bool SecretsEnabled { get; set; } = DefaultSecretsEnabled;
+
         /// <summary>
         /// Gets or sets a value indicating whether oss enabled.
         /// </summary>
-        public bool OssEnabled { get; set; } = true;
+        public bool OssEnabled { get; set; } = DefaultOssEnabled;
 
         /// <summary>
         /// Gets or sets a value indicating whether binaries auto update is enabled.
@@ -71,7 +89,7 @@ namespace Snyk.VisualStudio.Extension.Settings
 
         public bool AutoScan { get; set; } = true;
         public string Token { get; set; } = string.Empty;
-        public bool IacEnabled { get; set; } = true;
+        public bool IacEnabled { get; set; } = DefaultIacEnabled;
         public string CliReleaseChannel { get; set; } = SnykCliDownloader.DefaultReleaseChannel;
         public string CliBaseDownloadURL { get; set; } = SnykCliDownloader.DefaultBaseDownloadUrl;
         public bool IgnoreUnknownCa { get; set; }

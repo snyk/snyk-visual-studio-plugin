@@ -10,24 +10,25 @@ namespace Snyk.VisualStudio.Extension.Language
     // Keys absent from this map are treated as "no default known" — IsDefault returns false.
     internal static class ConfigDefaults
     {
-        // Mirrors SnykSettings field initializers exactly so seed comparison is accurate.
-        // CLI string defaults reference SnykCliDownloader constants (same source as SnykSettings
-        // initializers) so they cannot silently drift. Boolean product/scan/severity/view defaults
-        // are set to the same literal values as SnykSettings field initializers (except
-        // snyk_code_enabled, which references SnykSettings.DefaultSnykCodeSecurityEnabled); the test
-        // ConfigDefaults_BooleanValues_MatchSnykSettingsFieldInitializers (ConfigDefaultsTests.cs)
-        // acts as a drift guard by constructing new SnykSettings() and comparing via GetDefaultForTest.
+        // This map holds the default of each key's PROJECTED value — the form produced by
+        // UserOverrideTracker.GetGlobalKeyValues and which BuildSettingsMap sends.
+        //
+        // These might not match the  default of the backing SnykSettings field. For instance:
+        //
+        //   api_endpoint          "" here, but SnykSettings.CustomEndpoint defaults to null
+        //   organization          "" here, but SnykSettings.Organization defaults to null
+        //   additional_parameters "" here (space-joined), but the field is a List<string>
+        //   authentication_method lowercase string here, but the field is an enum
         private static readonly Dictionary<string, object> Defaults = new Dictionary<string, object>
         {
-            // Products
-            [PflagKeys.SnykOssEnabled]           = true,
-            // References the SnykSettings const rather than repeating the literal: Snyk Code is the
-            // one product whose default must track the Language Server (which does not
-            // default-enable it), and a drift between the two defaults silently downgrades an
-            // enabled-Code user to changed:false on upgrade.
+            // Products — reference the SnykSettings consts rather than duplicating them.
+            // Each must also equal the Language Server's registered default
+            // (snyk-ls internal/types/register_configurations.go), because a user override is
+            // classified by "value != default". 
+            [PflagKeys.SnykOssEnabled]            = Settings.SnykSettings.DefaultOssEnabled,
             [PflagKeys.SnykCodeEnabled]           = Settings.SnykSettings.DefaultSnykCodeSecurityEnabled,
-            [PflagKeys.SnykIacEnabled]            = true,
-            [PflagKeys.SnykSecretsEnabled]        = false,
+            [PflagKeys.SnykIacEnabled]            = Settings.SnykSettings.DefaultIacEnabled,
+            [PflagKeys.SnykSecretsEnabled]        = Settings.SnykSettings.DefaultSecretsEnabled,
 
             // Scan
             [PflagKeys.ScanAutomatic]             = true,

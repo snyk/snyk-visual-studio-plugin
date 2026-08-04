@@ -1,11 +1,10 @@
 // ABOUTME: Tests for the one-shot Snyk Code enablement upgrade recovery in SnykOptionsManager.
 // ABOUTME: Covers the upgrade/fresh-install/one-shot/reset/corrupt paths and the seed-then-migrate ordering.
 //
-// Snyk Code is the only product the Language Server does not default-enable: it needs an explicit
-// changed:true to turn on, whereas OSS and IaC come up enabled from the LS's own defaults. So an
-// upgrading user whose stored preference was "Code on" loses Code scanning entirely unless that
-// preference reaches the LS as an explicit override. Two mechanisms produce that outcome and these
-// tests pin both:
+// The Language Server default-enables OSS and IaC but not Code, so Code only turns on when it
+// receives an explicit changed:true. An upgrading user whose stored preference was "Code on"
+// therefore loses Code scanning entirely unless that preference reaches the LS as an explicit
+// override. Two mechanisms produce that outcome and these tests pin both:
 //   1. The plugin default for Code is false (matching the LS), so SeedFrom recognises a stored
 //      true as a genuine override on any install that has never been seeded.
 //   2. MigrateCodeEnablement covers installs whose override set was ALREADY seeded without
