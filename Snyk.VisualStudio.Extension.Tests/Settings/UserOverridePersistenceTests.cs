@@ -460,6 +460,9 @@ namespace Snyk.VisualStudio.Extension.Tests.Settings
         {
             // Write a settings.json with the seeded marker present but ChangedConfigKeys absent.
             // This models the steady state after a fresh install: user has zero overrides, marker is set.
+            // codeEnablementMigrated is set too — a fresh install stamps it when settings.json is
+            // created, and leaving it out would make this an upgrade file, so MigrateCodeEnablement
+            // would mark snyk_code_enabled and mask the re-seed behaviour under test.
             var path = Path.GetTempFileName();
             try
             {
@@ -477,7 +480,8 @@ namespace Snyk.VisualStudio.Extension.Tests.Settings
   ""autoScan"": true,
   ""deviceId"": ""sint001-device"",
   ""token"": """",
-  ""changedConfigKeysSeeded"": true
+  ""changedConfigKeysSeeded"": true,
+  ""codeEnablementMigrated"": true
 }";
                 File.WriteAllText(path, rawJson);
 
