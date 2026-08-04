@@ -32,8 +32,6 @@ For visual changes the PR template asks for screenshots, so this is a good oppor
 Any user-facing changes will require [documentation](https://docs.snyk.io/) changes, which you will need to prepare.
 If you do not have access to our content management system (you are not a Snyk employee), please add the documentation changes required (including new wording and screenshots) to the PR description.
 
-We can instruct you on what to add to the CHANGELOG.md, so please ask.
-
 ---
 
 # Making changes
