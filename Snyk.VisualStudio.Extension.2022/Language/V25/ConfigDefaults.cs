@@ -13,14 +13,19 @@ namespace Snyk.VisualStudio.Extension.Language
         // Mirrors SnykSettings field initializers exactly so seed comparison is accurate.
         // CLI string defaults reference SnykCliDownloader constants (same source as SnykSettings
         // initializers) so they cannot silently drift. Boolean product/scan/severity/view defaults
-        // are set to the same literal values as SnykSettings field initializers; the test
+        // are set to the same literal values as SnykSettings field initializers (except
+        // snyk_code_enabled, which references SnykSettings.DefaultSnykCodeSecurityEnabled); the test
         // ConfigDefaults_BooleanValues_MatchSnykSettingsFieldInitializers (ConfigDefaultsTests.cs)
         // acts as a drift guard by constructing new SnykSettings() and comparing via GetDefaultForTest.
         private static readonly Dictionary<string, object> Defaults = new Dictionary<string, object>
         {
             // Products
             [PflagKeys.SnykOssEnabled]           = true,
-            [PflagKeys.SnykCodeEnabled]           = true,
+            // References the SnykSettings const rather than repeating the literal: Snyk Code is the
+            // one product whose default must track the Language Server (which does not
+            // default-enable it), and a drift between the two defaults silently downgrades an
+            // enabled-Code user to changed:false on upgrade.
+            [PflagKeys.SnykCodeEnabled]           = Settings.SnykSettings.DefaultSnykCodeSecurityEnabled,
             [PflagKeys.SnykIacEnabled]            = true,
             [PflagKeys.SnykSecretsEnabled]        = false,
 

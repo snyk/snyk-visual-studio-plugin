@@ -26,9 +26,18 @@ namespace Snyk.VisualStudio.Extension.Settings
         public string CurrentCliVersion { get; set; }
 
         /// <summary>
+        /// Plugin default for <see cref="SnykCodeSecurityEnabled"/>. False to match the Language
+        /// Server, which does not default-enable Snyk Code — enablement otherwise resolves from org
+        /// governance / LDX-Sync. <see cref="Language.ConfigDefaults"/> references this const rather
+        /// than repeating the literal, so the persistence default and the override-comparison
+        /// default cannot drift apart. Matches Eclipse, which derives both from one value.
+        /// </summary>
+        public const bool DefaultSnykCodeSecurityEnabled = false;
+
+        /// <summary>
         /// Gets or sets a value indicating whether snyk code security enabled.
         /// </summary>
-        public bool SnykCodeSecurityEnabled { get; set; } = true;
+        public bool SnykCodeSecurityEnabled { get; set; } = DefaultSnykCodeSecurityEnabled;
 
         /// <summary>
         /// Gets or sets a value indicating whether Secrets scanning is enabled.
@@ -136,5 +145,21 @@ namespace Snyk.VisualStudio.Extension.Settings
         /// </summary>
         [JsonProperty(DefaultValueHandling = DefaultValueHandling.Ignore)]
         public bool ChangedConfigKeysSeeded { get; set; }
+
+        /// <summary>
+        /// One-shot marker for the Snyk Code enablement upgrade recovery
+        /// (<see cref="SnykOptionsManager.MigrateCodeEnablement"/>).
+        /// <para>
+        /// Stamped true the moment a fresh install's settings.json is created
+        /// (<see cref="SnykOptionsManager.LoadSettingsFromFile"/>), so its absence is a reliable
+        /// "this file was written by a version that predates the recovery" signal — a fresh install
+        /// can never be mistaken for an upgrade, even if the Language Server never starts.
+        /// </para>
+        /// <see cref="DefaultValueHandling.Ignore"/> keeps the key out of settings.json when false,
+        /// matching <see cref="ChangedConfigKeysSeeded"/>. IDE-only: never added to
+        /// <see cref="ChangedConfigKeys"/> and never sent over the language-server wire.
+        /// </summary>
+        [JsonProperty(DefaultValueHandling = DefaultValueHandling.Ignore)]
+        public bool CodeEnablementMigrated { get; set; }
     }
 }

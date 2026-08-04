@@ -16,8 +16,10 @@ namespace Snyk.VisualStudio.Extension.Tests.Language
             Assert.True(ConfigDefaults.IsDefault(PflagKeys.SnykOssEnabled, true));
             Assert.False(ConfigDefaults.IsDefault(PflagKeys.SnykOssEnabled, false));
 
-            Assert.True(ConfigDefaults.IsDefault(PflagKeys.SnykCodeEnabled, true));
-            Assert.False(ConfigDefaults.IsDefault(PflagKeys.SnykCodeEnabled, false));
+            // Snyk Code defaults to false to match the Language Server, which does not
+            // default-enable it. An enabled-Code value is therefore a genuine override.
+            Assert.True(ConfigDefaults.IsDefault(PflagKeys.SnykCodeEnabled, false));
+            Assert.False(ConfigDefaults.IsDefault(PflagKeys.SnykCodeEnabled, true));
 
             Assert.True(ConfigDefaults.IsDefault(PflagKeys.SnykIacEnabled, true));
             Assert.False(ConfigDefaults.IsDefault(PflagKeys.SnykIacEnabled, false));
