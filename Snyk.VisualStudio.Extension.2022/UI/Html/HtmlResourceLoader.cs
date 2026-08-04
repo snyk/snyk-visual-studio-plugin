@@ -38,8 +38,10 @@ namespace Snyk.VisualStudio.Extension.UI.Html
                         // form treats it as a "custom version" (e.g. "v1.1292.0").
                         // Render the CONFIGURED value, not the resolved one. Substituting the default
                         // would hide a mis-typed mirror from the person who typed it — the field would
-                        // read "https://downloads.snyk.io" while their value sat unused. An empty field
-                        // shows the placeholder, which already states the default.
+                        // read "https://downloads.snyk.io" while their value sat unused. In practice
+                        // the field is rarely empty: SnykOptionsManager.Load materialises the default
+                        // for a value persisted empty by an earlier LS echo, so an empty field only
+                        // shows up mid-session, after the user has just cleared it.
                         var channel = options.CliReleaseChannel ?? string.Empty;
                         var isCustomChannel = channel.Length > 0
                             && channel != "stable" && channel != "rc" && channel != "preview";

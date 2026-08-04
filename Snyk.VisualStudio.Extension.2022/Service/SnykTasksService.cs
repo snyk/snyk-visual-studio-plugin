@@ -730,7 +730,10 @@ namespace Snyk.VisualStudio.Extension.Service
 
                 downloadFinishedCallbacks.Add(() =>
                 {
-                    this.serviceProvider.Options.CurrentCliVersion = cliDownloader.GetLatestReleaseInfo().Name;
+                    // Once, not again: this must record the version actually installed. Re-fetching
+                    // here recorded a release published mid-update, after which the version check
+                    // reports "current" and the install never moves off the older binary.
+                    this.serviceProvider.Options.CurrentCliVersion = cliDownloader.GetLatestReleaseInfoOnce().Name;
                     // System-driven update: suppress both the SettingsChanged event (would re-send
                     // DidChangeConfigurationAsync for a CLI-version bump) and tracker mutation (recording
                     // the new CurrentCliVersion as a user override would create a phantom ChangedConfigKeys entry).

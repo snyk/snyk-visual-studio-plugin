@@ -669,10 +669,12 @@ namespace Snyk.VisualStudio.Extension.UI.Html
 
         private void ApplyCliSettings(IdeConfigData config, ICollection<string> editedKeys)
         {
-            // Allow empty values to reset settings
+            // Allow empty values to reset settings. Trimmed like the two below: the stored value is
+            // compared verbatim elsewhere (the override tracker, the settings UI), so surrounding
+            // whitespace turns an untouched default into an apparent custom value.
             if (config.CliPath != null)
             {
-                Options.CliCustomPath = config.CliPath;
+                Options.CliCustomPath = config.CliPath.Trim();
                 editedKeys.Add(PflagKeys.CliPath);
             }
 
@@ -686,13 +688,23 @@ namespace Snyk.VisualStudio.Extension.UI.Html
             {
                 // Stored as posted. A cleared field arrives as "" from the LS-served form and as the
                 // default literal from the bundled fallback form; both resolve to the default in use.
+                //
+                // Deliberately NOT held to the IsValidWebUrl guard applied to the API endpoint above.
+                // That guard protects the host the token is sent to; here, silently discarding a
+                // mis-typed mirror would leave the field reading like the default while downloads kept
+                // failing, and the user with nothing to correct. It also matches the other Snyk IDEs,
+                // none of which validate this field. Note the guard would not buy much anyway — a
+                // hostile-but-well-formed mirror passes it, and the .sha256 comes from that same
+                // mirror, so the checksum proves transfer integrity rather than provenance.
                 Options.CliBaseDownloadURL = config.CliBaseDownloadURL.Trim();
                 editedKeys.Add(PflagKeys.BinaryBaseUrl);
             }
 
             if (config.CliReleaseChannel != null)
             {
-                Options.CliReleaseChannel = config.CliReleaseChannel;
+                // HtmlResourceLoader compares this against "stable"/"rc"/"preview" exactly, so
+                // "stable " would render as a custom channel even though the download resolves it.
+                Options.CliReleaseChannel = config.CliReleaseChannel.Trim();
                 editedKeys.Add(PflagKeys.CliReleaseChannel);
             }
         }

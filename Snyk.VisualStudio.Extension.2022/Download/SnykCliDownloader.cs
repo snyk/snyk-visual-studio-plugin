@@ -32,6 +32,7 @@ namespace Snyk.VisualStudio.Extension.Download
 
         private readonly ISnykOptions SnykOptions;
         private string expectedSha;
+        private LatestReleaseInfo cachedLatestReleaseInfo;
 
         public SnykCliDownloader(ISnykOptions snykOptions)
         {
@@ -141,10 +142,22 @@ namespace Snyk.VisualStudio.Extension.Download
             version);
 
         /// <summary>
+        /// The latest release, fetched once per downloader instance. A single update otherwise asks
+        /// three times — the version probe, the log line in DownloadAsync, and the finished callback
+        /// that persists CurrentCliVersion — and those answers need not agree: a release published
+        /// mid-update meant installing one version and recording the next, after which the version
+        /// comparison reports "current" and the install never moves off the older binary.
+        /// </summary>
+        // internal for testability (the tests assert the fetch happens once).
+        internal LatestReleaseInfo GetLatestReleaseInfoOnce() =>
+            this.cachedLatestReleaseInfo ?? (this.cachedLatestReleaseInfo = this.GetLatestReleaseInfo());
+
+        /// <summary>
         /// Request last cli information.
         /// </summary>
         /// <returns>Latest CLI relaese information.</returns>
-        // virtual for testability: a test double replaces the network call.
+        // virtual for testability: a test double replaces the network call. Prefer
+        // GetLatestReleaseInfoOnce internally — this always issues a request.
         public virtual LatestReleaseInfo GetLatestReleaseInfo()
         {
             Logger.Information("Enter GetLatestReleaseInfo method");
@@ -159,7 +172,10 @@ namespace Snyk.VisualStudio.Extension.Download
                     "Get latest CLI release info from {Url} (configured base url: '{BaseDownloadUrl}', release channel: '{ReleaseChannel}')",
                     Redact(latestReleaseVersionUrl),
                     Redact(this.SnykOptions.CliBaseDownloadURL),
-                    this.SnykOptions.CliReleaseChannel);
+                    // A no-op for every legitimate channel ("stable", "rc", "v1.1292.0" hold no '@'),
+                    // but it is free text that composes into the URL above, so treat it like its
+                    // siblings rather than making this the one argument that can carry a secret.
+                    Redact(this.SnykOptions.CliReleaseChannel));
 
                 var latestVersion = webClient.DownloadString(latestReleaseVersionUrl).Replace("\n", string.Empty);
 
@@ -217,7 +233,7 @@ namespace Snyk.VisualStudio.Extension.Download
         {
             try
             {
-                if (!this.IsCliFileExists(cliFileDestinationPath) || this.IsNewVersionAvailable(this.SnykOptions.CurrentCliVersion, this.GetLatestReleaseInfo().Name))
+                if (!this.IsCliFileExists(cliFileDestinationPath) || this.IsNewVersionAvailable(this.SnykOptions.CurrentCliVersion, this.GetLatestReleaseInfoOnce().Name))
                 {
                     return true;
                 }
@@ -297,7 +313,7 @@ namespace Snyk.VisualStudio.Extension.Download
 
             Logger.Information("Got latest relase information");
 
-            LatestReleaseInfo latestReleaseInfo = this.GetLatestReleaseInfo();
+            LatestReleaseInfo latestReleaseInfo = this.GetLatestReleaseInfoOnce();
 
             Logger.Information("Latest relase information: version {Version} and url {Url}", latestReleaseInfo.Version, Redact(latestReleaseInfo.Url));
 
@@ -356,15 +372,64 @@ namespace Snyk.VisualStudio.Extension.Download
         }
 
         /// <summary>
-        /// Put the downloaded binary at its destination, creating the folder if needed.
+        /// Put the downloaded binary at its destination, creating the folder if needed. Replaces an
+        /// existing CLI in one step, so an interrupted install cannot leave a truncated binary behind.
         /// </summary>
         // internal for testability.
         internal static void InstallCliFile(string sourceFilePath, string cliFileDestinationPath)
         {
             PrepareCliDirectory(cliFileDestinationPath);
 
-            // Overwrite rather than delete-then-copy, so a failed copy leaves the existing CLI intact.
-            File.Copy(sourceFilePath, cliFileDestinationPath, overwrite: true);
+            if (!File.Exists(cliFileDestinationPath))
+            {
+                // Nothing to preserve, and File.Replace requires the destination to exist.
+                File.Copy(sourceFilePath, cliFileDestinationPath, overwrite: true);
+                return;
+            }
+
+            // Stage beside the destination so the swap stays on one volume, then replace. File.Copy
+            // straight onto the destination truncates it and streams in place, so a crash, a full
+            // disk or an AV lock mid-write leaves neither the old nor the new binary — and callers
+            // only check File.Exists, so a corrupt file reads as a usable CLI.
+            var stagingPath = cliFileDestinationPath + "." + Guid.NewGuid().ToString("N").Substring(0, 8) + ".new";
+
+            try
+            {
+                File.Copy(sourceFilePath, stagingPath, overwrite: true);
+
+                try
+                {
+                    File.Replace(stagingPath, cliFileDestinationPath, destinationBackupFileName: null);
+                }
+                catch (Exception e) when (e is IOException || e is PlatformNotSupportedException || e is UnauthorizedAccessException)
+                {
+                    // File.Replace needs a volume that supports it; a custom CLI path can name an SMB
+                    // share or a FAT volume. Failing the install outright would be worse than a
+                    // non-atomic overwrite, so fall back — but say so, because the guarantee is gone.
+                    Logger.Warning(e, "Atomic replace unavailable at {Path}; overwriting in place", cliFileDestinationPath);
+                    File.Copy(sourceFilePath, cliFileDestinationPath, overwrite: true);
+                }
+            }
+            finally
+            {
+                TryDeleteFile(stagingPath);
+            }
+        }
+
+        // Cleanup must never mask the failure that triggered it, so this swallows and logs.
+        private static void TryDeleteFile(string path)
+        {
+            try
+            {
+                if (File.Exists(path))
+                {
+                    File.Delete(path);
+                }
+            }
+            catch (Exception e) when (e is IOException || e is UnauthorizedAccessException)
+            {
+                Logger.Warning(e, "Could not remove the temporary file {Path}", path);
+            }
         }
 
         /// <summary>
@@ -499,54 +564,58 @@ namespace Snyk.VisualStudio.Extension.Download
 
                 var tempCliFile = Path.GetTempFileName();
 
-                using (var fileStream = new FileStream(tempCliFile, FileMode.Create, FileAccess.Write, FileShare.ReadWrite, bufferSize, true))
-                {
-                    using (var contentStream = await response.Content.ReadAsStreamAsync())
-                    {
-                        var totalBytes = response.Content.Headers.ContentLength ?? long.MaxValue; // Avoid dividing by null when calculating progress
-                        var totalRead = 0L;
-                        var buffer = new byte[bufferSize];
-                        var isMoreToRead = true;
-                        var lastProgressPercentage = 0;
-
-                        do
-                        {
-                            var read = await contentStream.ReadAsync(buffer, 0, buffer.Length);
-
-                            if (read == 0)
-                            {
-                                isMoreToRead = false;
-                            }
-                            else
-                            {
-                                await fileStream.WriteAsync(buffer, 0, read);
-
-                                totalRead += read;
-
-                                int percentage = (int)(totalRead * 100 / totalBytes);
-
-                                if (percentage > lastProgressPercentage)
-                                {
-                                    progressWorker.UpdateProgress(percentage);
-                                    lastProgressPercentage = percentage;
-                                }
-
-                                progressWorker.CancelIfCancellationRequested();
-                            }
-                        }
-                        while (isMoreToRead);
-                    }
-                }
-
-                this.VerifyCliFile(tempCliFile);
-
+                // Covers the download and the checksum as well as the install. VerifyCliFile throwing
+                // is an expected path — DownloadAsync catches ChecksumVerificationException and
+                // retries — so leaving it outside stranded a ~175MB temp file on every attempt, as did
+                // a cancelled or failed download.
                 try
                 {
+                    using (var fileStream = new FileStream(tempCliFile, FileMode.Create, FileAccess.Write, FileShare.ReadWrite, bufferSize, true))
+                    {
+                        using (var contentStream = await response.Content.ReadAsStreamAsync())
+                        {
+                            var totalBytes = response.Content.Headers.ContentLength ?? long.MaxValue; // Avoid dividing by null when calculating progress
+                            var totalRead = 0L;
+                            var buffer = new byte[bufferSize];
+                            var isMoreToRead = true;
+                            var lastProgressPercentage = 0;
+
+                            do
+                            {
+                                var read = await contentStream.ReadAsync(buffer, 0, buffer.Length);
+
+                                if (read == 0)
+                                {
+                                    isMoreToRead = false;
+                                }
+                                else
+                                {
+                                    await fileStream.WriteAsync(buffer, 0, read);
+
+                                    totalRead += read;
+
+                                    int percentage = (int)(totalRead * 100 / totalBytes);
+
+                                    if (percentage > lastProgressPercentage)
+                                    {
+                                        progressWorker.UpdateProgress(percentage);
+                                        lastProgressPercentage = percentage;
+                                    }
+
+                                    progressWorker.CancelIfCancellationRequested();
+                                }
+                            }
+                            while (isMoreToRead);
+                        }
+                    }
+
+                    this.VerifyCliFile(tempCliFile);
+
                     this.InstallAndFinish(progressWorker, tempCliFile, cliFileDestinationPath, downloadFinishedCallbacks);
                 }
                 finally
                 {
-                    File.Delete(tempCliFile);
+                    TryDeleteFile(tempCliFile);
                 }
             }
         }
