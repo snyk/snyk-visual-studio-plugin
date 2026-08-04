@@ -27,6 +27,9 @@ namespace Snyk.VisualStudio.Extension.Download
 
         private static readonly ILogger Logger = LogManager.ForContext<SnykCliDownloader>();
 
+        // Where a URL's authority ends: the start of the path, query or fragment.
+        private static readonly char[] AuthorityDelimiters = { '/', '\\', '?', '#' };
+
         private readonly ISnykOptions SnykOptions;
         private string expectedSha;
 
@@ -48,6 +51,75 @@ namespace Snyk.VisualStudio.Extension.Download
             string.IsNullOrWhiteSpace(configuredBaseDownloadUrl)
                 ? DefaultBaseDownloadUrl
                 : configuredBaseDownloadUrl.Trim();
+
+        // Blanks credentials in a URL before it is logged.
+        //
+        // Scans the raw string rather than going through Uri: Uri.UserInfo returns the value
+        // *unescaped*, so searching the original for it misses "us%65r:token@host" and returns
+        // the URL untouched — a silent leak. Uri also parses a Windows path as scheme "file",
+        // so anything keyed off the scheme mangles "C:\tools\snyk@2\cli.exe".
+        internal static string Redact(string value)
+        {
+            if (string.IsNullOrEmpty(value))
+            {
+                return value;
+            }
+
+            // The authority follows the scheme separator, then any number of slashes. Backslashes
+            // and a scheme-less "//host" count: this is a value typed into a settings box, and a
+            // credential must not survive on the strength of a typo.
+            var authorityStart = 0;
+            var schemeEnd = value.IndexOf(':');
+
+            if (schemeEnd >= 0 && schemeEnd + 1 < value.Length && IsSlash(value[schemeEnd + 1]))
+            {
+                // A one-character scheme is a Windows drive letter, and "C:\" introduces a path,
+                // not an authority: otherwise the first path segment is read as the authority and
+                // "C:\snyk@2\cli.exe" comes out as "C:\<credentials>@2\cli.exe". A second slash
+                // means it really is a scheme, since no local path starts "C://".
+                var isDriveLetter = schemeEnd < 2
+                    && !(schemeEnd + 2 < value.Length && IsSlash(value[schemeEnd + 2]));
+
+                if (!isDriveLetter)
+                {
+                    authorityStart = schemeEnd + 1;
+                }
+            }
+
+            while (authorityStart < value.Length && IsSlash(value[authorityStart]))
+            {
+                authorityStart++;
+            }
+
+            if (authorityStart >= value.Length)
+            {
+                return value;
+            }
+
+            // Only the authority can hold credentials. An '@' past its end belongs to the path
+            // or query ("host/path@v2"), or to a local path ("C:\tools\snyk@2").
+            var authorityEnd = value.IndexOfAny(AuthorityDelimiters, authorityStart);
+
+            if (authorityEnd < 0)
+            {
+                authorityEnd = value.Length;
+            }
+
+            if (authorityEnd <= authorityStart)
+            {
+                return value;
+            }
+
+            // Last '@', so a credential that itself contains one is covered. A scheme-less
+            // "user:pass@host" is caught too: authorityStart is 0 and the whole value is authority.
+            var credentialsEnd = value.LastIndexOf('@', authorityEnd - 1, authorityEnd - authorityStart);
+
+            return credentialsEnd < 0
+                ? value
+                : value.Substring(0, authorityStart) + "<credentials>" + value.Substring(credentialsEnd);
+        }
+
+        private static bool IsSlash(char c) => c == '/' || c == '\\';
 
         /// <summary>
         /// The configured release channel, or the default when unset.
@@ -85,8 +157,8 @@ namespace Snyk.VisualStudio.Extension.Download
                 // exception naming a path that appears nowhere in the settings.
                 Logger.Information(
                     "Get latest CLI release info from {Url} (configured base url: '{BaseDownloadUrl}', release channel: '{ReleaseChannel}')",
-                    latestReleaseVersionUrl,
-                    this.SnykOptions.CliBaseDownloadURL,
+                    Redact(latestReleaseVersionUrl),
+                    Redact(this.SnykOptions.CliBaseDownloadURL),
                     this.SnykOptions.CliReleaseChannel);
 
                 var latestVersion = webClient.DownloadString(latestReleaseVersionUrl).Replace("\n", string.Empty);
@@ -228,7 +300,7 @@ namespace Snyk.VisualStudio.Extension.Download
 
             LatestReleaseInfo latestReleaseInfo = this.GetLatestReleaseInfo();
 
-            Logger.Information("Latest relase information: version {Version} and url {Url}", latestReleaseInfo.Version, latestReleaseInfo.Url);
+            Logger.Information("Latest relase information: version {Version} and url {Url}", latestReleaseInfo.Version, Redact(latestReleaseInfo.Url));
 
             progressWorker.CancelIfCancellationRequested();
 
