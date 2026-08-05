@@ -572,11 +572,25 @@ namespace Snyk.VisualStudio.Extension.Tests.Language
             };
             typeof(SnykVSPackage).GetProperty("IsInitialized").SetValue(VsPackage, false, null);
 
-            // Act
-            await cut.OnLoadedAsync();
+            // OnLoadedAsync now WAITS for package initialisation rather than sampling the flag, because
+            // sampling it was a race whose loss left the language server permanently unstarted. The
+            // static completion source is never completed under test, so shorten the bound or this test
+            // sits for the full 30s and looks like a hung suite.
+            var realTimeout = SnykLanguageClient.PackageInitializationTimeout;
+            SnykLanguageClient.PackageInitializationTimeout = TimeSpan.FromMilliseconds(50);
 
-            // Assert
-            Assert.False(startInvoked);
+            try
+            {
+                // Act
+                await cut.OnLoadedAsync();
+
+                // Assert — an uninitialised package must not start the server even after waiting.
+                Assert.False(startInvoked);
+            }
+            finally
+            {
+                SnykLanguageClient.PackageInitializationTimeout = realTimeout;
+            }
         }
 
         [Fact]

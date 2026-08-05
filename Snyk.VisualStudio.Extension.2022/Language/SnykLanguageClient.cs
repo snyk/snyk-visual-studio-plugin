@@ -168,6 +168,53 @@ namespace Snyk.VisualStudio.Extension.Language
             }
         }
 
+        // Generous: only ever paid in full when package initialisation has actually faulted, since
+        // the TaskCompletionSource below is completed only on the success path. Observed init takes
+        // roughly four seconds.
+        //
+        // internal and settable for testability: the completion source is static and is never completed
+        // under test, so a test that deliberately leaves the package uninitialised would otherwise wait
+        // the full timeout and read as a hung suite.
+        internal static TimeSpan PackageInitializationTimeout = TimeSpan.FromSeconds(30);
+
+        /// <summary>
+        /// Blocks this load callback until the package has finished initialising.
+        ///
+        /// Sampling <c>SnykVSPackage.Instance.IsInitialized</c> here was a race, and losing it was
+        /// fatal. VS calls <see cref="OnLoadedAsync"/> in response to the activation request that
+        /// <c>InitializeLanguageClient</c> triggers — and that method is fire-and-forget, so the package
+        /// is still running its command initialisers and WebView2 check when this callback can arrive.
+        /// A <c>false</c> read makes <c>shouldStart</c> false, which spends the ONE in-contract chance
+        /// to start the server: a later raise of <c>StartAsync</c> is silently discarded by VS, so the
+        /// language server stays down for the whole session.
+        ///
+        /// Bounded, because <c>initializationTaskCompletionSource</c> is only completed on the success
+        /// path — a faulted initialisation must not hang a VS load callback forever.
+        /// </summary>
+        private static async Task<bool> WaitForPackageInitializationAsync()
+        {
+            if (SnykVSPackage.Instance?.IsInitialized ?? false)
+            {
+                return true;
+            }
+
+            Logger.Information("[init-race] OnLoadedAsync: package not initialised yet — waiting instead of sampling");
+
+            var initialized = SnykVSPackage.PackageInitializedAwaiter;
+            var finished = await Task.WhenAny(initialized, Task.Delay(PackageInitializationTimeout));
+
+            if (finished != initialized)
+            {
+                Logger.Warning(
+                    "Package initialisation did not complete within {Seconds}s, so this language client load will not start the server",
+                    PackageInitializationTimeout.TotalSeconds);
+
+                return false;
+            }
+
+            return SnykVSPackage.Instance?.IsInitialized ?? false;
+        }
+
         public async Task OnLoadedAsync()
         {
             //await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
@@ -187,10 +234,12 @@ namespace Snyk.VisualStudio.Extension.Language
             // [init-race] The two operands logged SEPARATELY and BEFORE the AND. The combined value
             // hid which one failed, and `&&` short-circuits, so a false isPackageInitialized means
             // ShouldDownloadCli is never even called — the absence of its log line was the only clue.
-            var isPackageInitialized = SnykVSPackage.Instance?.IsInitialized ?? false;
+            // Wait for package initialisation rather than sampling it — see
+            // WaitForPackageInitializationAsync for why this must not be a bool read.
+            var isPackageInitialized = await WaitForPackageInitializationAsync();
 
             Logger.Information(
-                "[init-race] OnLoadedAsync: VS called us. isPackageInitialized={IsPackageInitialized}. This is the ONLY in-contract chance to start the server.",
+                "[init-race] OnLoadedAsync: VS called us. isPackageInitialized={IsPackageInitialized} (after waiting). This is the ONLY in-contract chance to start the server.",
                 isPackageInitialized);
 
             var downloadNeeded = isPackageInitialized && SnykVSPackage.ServiceProvider.TasksService.ShouldDownloadCli();
