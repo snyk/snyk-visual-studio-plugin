@@ -35,8 +35,10 @@ namespace Snyk.VisualStudio.Extension.Tests.Language
                 Rpc = jsonRpcMock.Object
             };
 
-            // Default to "compatible" so tests that aren't about the IDE-2404 protocol gate itself
-            // don't need a real CLI binary on disk. The gate test below overrides this back to false.
+            // Default to "exists and compatible" so tests that aren't about the IDE-2404 protocol gate
+            // itself don't need a real CLI binary on disk. The gate tests below override these back to
+            // false individually.
+            cut.CliExistsCheck = _ => true;
             cut.CliProtocolCompatibilityCheck = (_, __) => true;
         }
 
@@ -81,6 +83,39 @@ namespace Snyk.VisualStudio.Extension.Tests.Language
 
             // Assert
             Assert.False(eventInvoked);
+        }
+
+        // IDE-2404 follow-up: a missing CLI binary (e.g. custom path set, auto-update off, file deleted)
+        // was showing the protocol-mismatch banner ("does not support the required Language Server
+        // protocol version 25") instead of the existing, correct "CLI not found" messaging - because the
+        // old single check conflated "missing" with "wrong version". Asserts the protocol check isn't
+        // even reached for a missing binary, so it can't misattribute the failure.
+        [Fact]
+        public async Task StartServerAsync_ShouldNotInvokeStartAsyncOrProtocolCheck_WhenCliDoesNotExist()
+        {
+            // Arrange
+            cut.CliExistsCheck = _ => false;
+            var protocolCheckInvoked = false;
+            cut.CliProtocolCompatibilityCheck = (_, __) =>
+            {
+                protocolCheckInvoked = true;
+                return true;
+            };
+            TasksServiceMock.Setup(ts => ts.ShouldDownloadCli()).Returns(false);
+
+            var eventInvoked = false;
+            cut.StartAsync += (sender, args) =>
+            {
+                eventInvoked = true;
+                return Task.CompletedTask;
+            };
+
+            // Act
+            await cut.StartServerAsync(true);
+
+            // Assert
+            Assert.False(eventInvoked);
+            Assert.False(protocolCheckInvoked);
         }
 
         [Fact]

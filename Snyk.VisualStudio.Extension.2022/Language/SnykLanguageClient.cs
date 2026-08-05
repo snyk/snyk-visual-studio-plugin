@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.ComponentModel.Composition;
 using System.Diagnostics;
@@ -97,10 +98,14 @@ namespace Snyk.VisualStudio.Extension.Language
         public event AsyncEventHandler<SnykLanguageServerEventArgs> OnLanguageServerReadyAsync;
         public event AsyncEventHandler<SnykLanguageServerEventArgs> OnLanguageClientNotInitializedAsync;
 
-        // Seam for tests (IDE-2404): tests exercising unrelated StartServerAsync/OnLoadedAsync/
-        // RestartServerAsync behavior don't have a real CLI binary on disk, so they override this to
-        // (_, _) => true. Defaults to the real check; StartServerAsync never calls
-        // CliProtocolVersionVerifier.IsCompatible directly so there is exactly one seam to override.
+        // Seams for tests (IDE-2404): tests exercising unrelated StartServerAsync/OnLoadedAsync/
+        // RestartServerAsync behavior don't have a real CLI binary on disk, so they override these to
+        // (_) => true / (_, _) => true. Split in two so StartServerAsync can tell "binary missing" (an
+        // existing, separately-handled failure mode - see SnykToolWindowControl's "CLI not found"
+        // messagePanel text) apart from "binary present but wrong protocol version" - conflating them
+        // showed the protocol-mismatch banner for a merely-missing binary, which is simply wrong.
+        internal Func<string, bool> CliExistsCheck { get; set; } = File.Exists;
+
         internal Func<string, string, bool> CliProtocolCompatibilityCheck { get; set; } = DefaultCliProtocolCompatibilityCheck;
 
         private static bool DefaultCliProtocolCompatibilityCheck(string cliPath, string requiredProtocolVersion) =>
@@ -176,11 +181,22 @@ namespace Snyk.VisualStudio.Extension.Language
                     // (re)start, so a binary-path change while running is re-checked (IDE-2112) without
                     // extra wiring.
                     var cliPath = SnykCli.GetCliFilePath(SnykVSPackage.Instance.Options.CliCustomPath);
+
+                    // A missing binary is a distinct, already-handled failure mode (see the "CLI not
+                    // found" messagePanel text in SnykToolWindowControl) - don't run the protocol check
+                    // at all here, or its banner would misattribute a missing binary as an incompatible
+                    // one.
+                    if (!CliExistsCheck(cliPath))
+                    {
+                        Logger.Information("Cannot start Language Server: CLI not found at {CliPath}.", cliPath);
+                        return;
+                    }
+
                     if (!CliProtocolCompatibilityCheck(cliPath, LsConstants.ProtocolVersion))
                     {
                         var message = $"Snyk CLI at '{cliPath}' does not support the required Language Server " +
                             $"protocol version {LsConstants.ProtocolVersion} and cannot be started. Update the CLI, " +
-                            "or clear the custom CLI path in Tools > Options > Snyk to let Snyk manage it automatically.";
+                            "or enable \"Manage Binaries Automatically\" in Tools > Options > Snyk to let Snyk manage it automatically.";
                         Logger.Error(message);
                         NotificationService.Instance?.ShowErrorInfoBar(message);
                         return;
