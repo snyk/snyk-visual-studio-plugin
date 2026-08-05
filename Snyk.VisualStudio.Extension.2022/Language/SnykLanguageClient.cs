@@ -121,8 +121,33 @@ namespace Snyk.VisualStudio.Extension.Language
             {
                 StartInfo = info
             };
-            var isStarted = process.Start();
-            return isStarted ? new Connection(process.StandardOutput.BaseStream, process.StandardInput.BaseStream) : null;
+
+            // [startup-diag] Temporary. This method had no logging at all, so a start that produced no
+            // snyk-win process was indistinguishable from VS never calling ActivateAsync in the first
+            // place. Logs the path it will launch and whether the launch took.
+            Logger.Information(
+                "[startup-diag] ActivateAsync: launching {FileName} {Arguments}",
+                info.FileName,
+                info.Arguments);
+
+            try
+            {
+                var isStarted = process.Start();
+
+                Logger.Information(
+                    "[startup-diag] ActivateAsync: process.Start returned {IsStarted}, pid {Pid}",
+                    isStarted,
+                    isStarted ? process.Id.ToString() : "(none)");
+
+                return isStarted ? new Connection(process.StandardOutput.BaseStream, process.StandardInput.BaseStream) : null;
+            }
+            catch (Exception e)
+            {
+                // Rethrown: VS owns the failure path. Logged because it was previously invisible.
+                Logger.Error(e, "[startup-diag] ActivateAsync: process.Start threw for {FileName}", info.FileName);
+
+                throw;
+            }
         }
 
         public async Task OnLoadedAsync()
@@ -137,6 +162,11 @@ namespace Snyk.VisualStudio.Extension.Language
             //    Guid packageGuid = typeof(SnykVSPackage).GUID;
             //    shell.LoadPackage(ref packageGuid, out package);
             //}
+            // [startup-diag] Temporary, and on ENTRY: the line below is emitted only after
+            // ShouldDownloadCli has run, so its absence could not tell "VS never called OnLoadedAsync"
+            // from "still inside the download check". That ambiguity cost a whole diagnostic round.
+            Logger.Information("[startup-diag] OnLoadedAsync: entered (VS has loaded the language client)");
+
             var isPackageInitialized = SnykVSPackage.Instance?.IsInitialized ?? false;
             var shouldStart =  isPackageInitialized && !SnykVSPackage.ServiceProvider.TasksService.ShouldDownloadCli();
             Logger.Information("OnLoadedAsync Called and shouldStart is: {ShouldStart}", shouldStart);
@@ -151,6 +181,10 @@ namespace Snyk.VisualStudio.Extension.Language
             {
                 if (StartAsync == null && shouldStart)
                 {
+                    // [startup-diag] Temporary. This path logs nothing today, so a start request that
+                    // arrived before VS had loaded the client left no trace whatsoever.
+                    Logger.Information("[startup-diag] StartServerAsync: StartAsync is null — VS has not loaded the client yet, so this start request does nothing");
+
                     FireOnLanguageClientNotInitializedAsync();
                     return;
                 }
@@ -165,7 +199,15 @@ namespace Snyk.VisualStudio.Extension.Language
                     await MigrateLegacySolutionSettingsAsync();
 
                     Logger.Information("Starting Language Server");
+
+                    // [startup-diag] Temporary. Raising StartAsync is a request to VS to call
+                    // ActivateAsync; nothing guarantees it does. Bracketing the invoke separates
+                    // "VS never activated us" from "the invoke never returned".
+                    Logger.Information("[startup-diag] StartServerAsync: raising StartAsync to VS");
+
                     await StartAsync.InvokeAsync(this, EventArgs.Empty);
+
+                    Logger.Information("[startup-diag] StartServerAsync: StartAsync invoke returned");
                 }
                 else
                 {
