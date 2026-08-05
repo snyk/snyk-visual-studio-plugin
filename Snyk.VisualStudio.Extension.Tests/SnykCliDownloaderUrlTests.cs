@@ -117,6 +117,27 @@ namespace Snyk.VisualStudio.Extension.Tests
         }
 
         [Theory]
+        // The URL schemes add their own separator and Uri does not collapse "//" inside a path, so a
+        // trailing slash would fetch ".../cli//stable/...". The LS-served settings page resets this
+        // field to a value with a trailing slash, so it arrives in practice.
+        [InlineData("https://downloads.snyk.io/", "https://downloads.snyk.io")]
+        [InlineData("https://downloads.snyk.io///", "https://downloads.snyk.io")]
+        [InlineData("  https://artifacts.internal/snyk/  ", "https://artifacts.internal/snyk")]
+        public void ResolveBaseDownloadUrl_DropsTrailingSlashes(string configured, string expected)
+        {
+            Assert.Equal(expected, SnykCliDownloader.ResolveBaseDownloadUrl(configured));
+        }
+
+        [Fact]
+        public void BuildLatestReleaseVersionUrl_DoesNotDoubleTheSeparator_ForATrailingSlashBaseUrl()
+        {
+            var url = Downloader("https://downloads.snyk.io/", "stable").BuildLatestReleaseVersionUrl();
+
+            Assert.Contains(".io/cli/", url);
+            Assert.DoesNotContain(".io//cli/", url);
+        }
+
+        [Theory]
         // Only the empty case is defaulted; a configured value is passed through as the user typed it,
         // as in every other Snyk IDE.
         [InlineData("downloads.snyk.io")]

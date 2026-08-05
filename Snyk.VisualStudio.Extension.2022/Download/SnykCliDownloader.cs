@@ -55,11 +55,14 @@ namespace Snyk.VisualStudio.Extension.Download
         /// <summary>
         /// The configured base URL, or the default when unset. Empty must not pass through: it composes
         /// into a relative URL, which WebClient resolves to a local file path instead of a request.
+        /// Trailing slashes are dropped because the URL schemes below add their own, and Uri does not
+        /// collapse "//" inside a path — the LS-served settings page resets this field to a value with
+        /// a trailing slash, which otherwise fetches ".../cli//stable/...".
         /// </summary>
         public static string ResolveBaseDownloadUrl(string configuredBaseDownloadUrl) =>
             string.IsNullOrWhiteSpace(configuredBaseDownloadUrl)
                 ? DefaultBaseDownloadUrl
-                : configuredBaseDownloadUrl.Trim();
+                : configuredBaseDownloadUrl.Trim().TrimEnd('/');
 
         // Blanks credentials in a URL before it is logged.
         //
@@ -267,24 +270,10 @@ namespace Snyk.VisualStudio.Extension.Download
                     return true;
                 }
 
-                // The recorded version matching says nothing about whether the binary on disk works —
-                // it is a string in settings.json, not a property of the file. Ask the binary.
-                if (!this.IsCliProtocolSupported(cliFileDestinationPath))
-                {
-                    Logger.Information(
-                        "CLI download needed: {Path} is recorded as {CurrentVersion} but does not report protocol version {ProtocolVersion}",
-                        cliFileDestinationPath,
-                        currentVersion,
-                        LsConstants.ProtocolVersion);
-
-                    return true;
-                }
-
                 Logger.Information(
-                    "No CLI download needed: {Path} is {CurrentVersion} and reports protocol version {ProtocolVersion}",
+                    "No CLI download needed: {Path} is {CurrentVersion}, matching the latest release",
                     cliFileDestinationPath,
-                    currentVersion,
-                    LsConstants.ProtocolVersion);
+                    currentVersion);
 
                 return false;
             }
@@ -396,19 +385,13 @@ namespace Snyk.VisualStudio.Extension.Download
         /// <param name="filePath">CLI file destination path or null.</param>
         /// <param name="downloadFinishedCallbacks">List of callback for download finished event.</param>
         /// <returns>A <see cref="Task"/> representing the asynchronous operation.</returns>
-        /// <param name="downloadNeeded">
-        /// The already-computed decision, when the caller has one. Answering the question costs a request
-        /// to the release endpoint plus a launch of the CLI, and the caller has usually just asked it —
-        /// passing it through is what keeps startup to a single round trip.
-        /// </param>
         public async Task AutoUpdateCliAsync(ISnykProgressWorker progressWorker,
             string filePath = null,
-            List<CliDownloadFinishedCallback> downloadFinishedCallbacks = null,
-            bool? downloadNeeded = null)
+            List<CliDownloadFinishedCallback> downloadFinishedCallbacks = null)
         {
             var fileDestinationPath = SnykCli.GetCliFilePath(filePath);
 
-            var isCliDownloadNeeded = downloadNeeded ?? this.IsCliDownloadNeeded(fileDestinationPath);
+            var isCliDownloadNeeded = this.IsCliDownloadNeeded(fileDestinationPath);
 
             if (isCliDownloadNeeded)
             {
@@ -420,15 +403,13 @@ namespace Snyk.VisualStudio.Extension.Download
                 return;
             }
 
-            // Nothing to install, but the finished callbacks still have to run: they are what starts the
-            // language server, records the installed version, and raises DownloadFinished so the tool
-            // window leaves "Snyk Security is loading...". Skipping them left the UI waiting forever.
-            // This branch used to be unreachable in practice — IsCliDownloadNeeded compared a recorded
-            // version string that drifted empty, so it always reported an update was due and the work
-            // went through DownloadAsync, whose checksum fast path does call FinishDownload.
             progressWorker.IsWorkFinished = true;
 
-            this.FinishDownload(progressWorker, downloadFinishedCallbacks);
+            // Raises DownloadFinished so the tool window leaves "Snyk Security is loading..."; without
+            // it the UI waited forever. Deliberately NOT the finished-callback list: those callbacks mean
+            // "record what was installed", and running them here re-fetches the release name over the
+            // network (breaking offline startup) and writes a version for an install that never happened.
+            progressWorker.DownloadFinished();
         }
 
         /// <summary>

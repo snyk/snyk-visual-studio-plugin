@@ -41,8 +41,6 @@ namespace Snyk.VisualStudio.Extension.Service
 
         private readonly object cancelTasksLock = new object();
 
-        // Shared by every ShouldDownloadCli caller, so the startup burst asks the network once.
-        private readonly CliDownloadDecisionCache cliDownloadDecisionCache = new CliDownloadDecisionCache();
 
         /// <summary>
         /// Initializes a new instance of the <see cref="SnykTasksService"/> class.
@@ -689,24 +687,6 @@ namespace Snyk.VisualStudio.Extension.Service
 
             var options = this.serviceProvider.Options;
             var fileDestinationPath = SnykCli.GetCliFilePath(options.CliCustomPath);
-            var cacheKey = CliDownloadDecisionCache.BuildKey(
-                fileDestinationPath,
-                options.CliBaseDownloadURL,
-                options.CliReleaseChannel,
-                options.CurrentCliVersion);
-
-            // Startup asks this several times within a few seconds — the package gate, OnLoadedAsync
-            // (raised more than once by Visual Studio) and the download task. Answering each one cost a
-            // request to the release endpoint plus a launch of the CLI to read its protocol version.
-            if (this.cliDownloadDecisionCache.TryGet(cacheKey, out var cachedDecision))
-            {
-                Logger.Debug(
-                    "Reusing the recent CLI download decision for {Path}: download needed={DownloadNeeded}",
-                    fileDestinationPath,
-                    cachedDecision);
-
-                return cachedDecision;
-            }
 
             try
             {
@@ -720,17 +700,11 @@ namespace Snyk.VisualStudio.Extension.Service
                     options.CliCustomPath,
                     fileDestinationPath);
 
-                var downloadNeeded = cliDownloader.IsCliDownloadNeeded(fileDestinationPath);
-
-                this.cliDownloadDecisionCache.Set(cacheKey, downloadNeeded);
-
-                return downloadNeeded;
+                return cliDownloader.IsCliDownloadNeeded(fileDestinationPath);
             }
             catch (Exception e)
             {
                 // Was silent, so a failure here was indistinguishable from a genuine "needs download".
-                // Deliberately not cached: a transient failure must not pin "download needed" for the
-                // whole TTL.
                 Logger.Error(e, "Could not determine whether a CLI download is needed; assuming it is");
 
                 return true;
@@ -787,21 +761,14 @@ namespace Snyk.VisualStudio.Extension.Service
 
                 var downloadPath = this.serviceProvider.Options.CliCustomPath;
 
-                // Reuses the cached decision rather than asking a fourth time. ShouldDownloadCli has
-                // already run during startup, so this is normally free.
                 await cliDownloader.AutoUpdateCliAsync(
                     progressWorker,
                     downloadPath,
-                    downloadFinishedCallbacks: downloadFinishedCallbacks,
-                    downloadNeeded: this.ShouldDownloadCli());
+                    downloadFinishedCallbacks: downloadFinishedCallbacks);
             }
             finally
             {
                 this.isCliDownloading = false;
-
-                // The install replaced the binary the protocol probe ran against, and the recorded
-                // version has moved on, so the remembered decision no longer describes reality.
-                this.cliDownloadDecisionCache.Invalidate();
             }
         }
     }

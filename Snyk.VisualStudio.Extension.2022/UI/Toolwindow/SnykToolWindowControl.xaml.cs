@@ -152,7 +152,11 @@ namespace Snyk.VisualStudio.Extension.UI.Toolwindow
             };
             this.downloadFinishedHandler = (sender, args) =>
             {
-                ThreadHelper.JoinableTaskFactory.RunAsync(async ()=> await serviceProvider.LanguageClientManager.StartServerAsync(true)).FireAndForget();
+                // Guarded like downloadStartedHandler above: this fires on the nothing-to-download path
+                // too, where the package init gate has usually started the server already, and
+                // StartServerAsync does not check for that itself.
+                if (!LanguageClientHelper.IsLanguageServerReady())
+                    ThreadHelper.JoinableTaskFactory.RunAsync(async ()=> await serviceProvider.LanguageClientManager.StartServerAsync(true)).FireAndForget();
                 this.OnDownloadFinished(sender, args);
             };
             this.downloadUpdateHandler = (sender, args) => ThreadHelper.JoinableTaskFactory.RunAsync(() => this.OnDownloadUpdateAsync(sender, args));
