@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using Moq;
 using Snyk.VisualStudio.Extension.CLI;
 using Snyk.VisualStudio.Extension.Download;
@@ -181,58 +181,46 @@ namespace Snyk.VisualStudio.Extension.Tests
         }
 
         [Theory]
-        [InlineData("https://user:token@artifacts.internal/snyk", "https://<credentials>@artifacts.internal/snyk")]
-        [InlineData("http://user:token@artifacts.internal:8081/a", "http://<credentials>@artifacts.internal:8081/a")]
-        // No scheme, so the whole value is authority.
-        [InlineData("user:pass@artifacts.internal", "<credentials>@artifacts.internal")]
-        [InlineData("user@artifacts.internal", "<credentials>@artifacts.internal")]
-        // Percent-escaped userinfo: Uri.UserInfo unescapes this to "user:token", which does not
-        // occur in the original, so anything matching on the parsed value leaks the token.
-        [InlineData("https://us%65r:token@artifacts.internal/snyk", "https://<credentials>@artifacts.internal/snyk")]
-        [InlineData("https://user:tok%2Den@artifacts.internal/snyk", "https://<credentials>@artifacts.internal/snyk")]
-        // An '@' inside the credentials is covered; the scheme survives.
-        [InlineData("https://user:tok@en@host/snyk", "https://<credentials>@host/snyk")]
-        // A delimiter INSIDE the credential. Keying the authority's end off the first '/' hid the '@'
-        // entirely and logged these verbatim — base64 tokens contain '/' routinely.
-        [InlineData("https://user:pa/ss@host/p", "https://<credentials>@host/p")]
-        [InlineData(@"https://user:pa\ss@host/p", "https://<credentials>@host/p")]
-        [InlineData("https://user:pa?ss@host/p", "https://<credentials>@host/p")]
-        [InlineData("https://user:pa#ss@host/p", "https://<credentials>@host/p")]
-        [InlineData("https://user:aGVsbG8/d29ybGQ=@artifacts.internal/snyk", "https://<credentials>@artifacts.internal/snyk")]
-        // A separator in the *username*, before the colon.
-        [InlineData("https://u/s/e/r:pw@host/p", "https://<credentials>@host/p")]
-        // An '@' in a query is not userinfo, so this must survive.
-        [InlineData("https://host/p?q=a@b", "https://host/p?q=a@b")]
-        // Accepted over-redaction: a port makes the ':' test fire. Losing a path beats leaking a secret.
-        [InlineData("http://host:8081/path@v2", "http://<credentials>@v2")]
-        [InlineData("https://downloads.snyk.io/fips", "https://downloads.snyk.io/fips")]
-        [InlineData("downloads.snyk.io", "downloads.snyk.io")]
-        // An '@' past the authority is not userinfo, whatever the scheme.
-        [InlineData("https://downloads.snyk.io/path@v2", "https://downloads.snyk.io/path@v2")]
-        [InlineData("ftp://artifacts.internal/path@v2", "ftp://artifacts.internal/path@v2")]
-        // A malformed scheme separator must not be a way through.
-        [InlineData("//user:pass@host/p", "//<credentials>@host/p")]
-        [InlineData(@"https:\\user:pass@host\p", @"https:\\<credentials>@host\p")]
-        // A short scheme is still a scheme when "//" follows, so it must not be taken for a drive.
-        [InlineData("x://user:pass@host", "x://<credentials>@host")]
-        [InlineData("://user:pass@host", "://<credentials>@host")]
-        // Local paths must survive intact: ResolveBaseDownloadUrl passes an unusable value through
-        // verbatim, and this log line exists to show what the user actually configured.
-        [InlineData(@"C:\tools\snyk@2\cli.exe", @"C:\tools\snyk@2\cli.exe")]
-        [InlineData(@"\\fileserver\share@2\snyk", @"\\fileserver\share@2\snyk")]
-        [InlineData(@"C:/tools/snyk@2", @"C:/tools/snyk@2")]
-        [InlineData("/opt/snyk@2/cli", "/opt/snyk@2/cli")]
-        // The '@' in the first segment, so the drive letter must not be read as a scheme.
-        [InlineData(@"C:\snyk@2\cli.exe", @"C:\snyk@2\cli.exe")]
-        [InlineData(@"D:\cli@latest\snyk-win.exe", @"D:\cli@latest\snyk-win.exe")]
-        // A doubled separator reads as a scheme, so this over-redacts. Accepted: a drive path and a
-        // one-character scheme are indistinguishable here, and losing a path beats leaking a secret.
-        [InlineData(@"C:\\snyk@2\cli.exe", @"C:\\<credentials>@2\cli.exe")]
-        [InlineData(null, null)]
-        [InlineData("", "")]
-        public void Redact_BlanksCredentialsInTheAuthorityAndLeavesEverythingElse(string value, string expected)
+        // On our own host there is nothing user-supplied to protect, and logging the URL is what makes
+        // a misconfiguration diagnosable, so it goes to the log in full.
+        [InlineData("https://downloads.snyk.io/cli/stable/ls-protocol-version-25")]
+        [InlineData("https://downloads.snyk.io/cli/v1.1292.0/snyk-win.exe")]
+        [InlineData("https://downloads.snyk.io")]
+        public void DescribeUrlForLog_LogsTheUrl_WhenItIsOnTheDefaultHost(string url)
         {
-            Assert.Equal(expected, SnykCliDownloader.Redact(value));
+            Assert.Equal(url, SnykCliDownloader.DescribeUrlForLog(url));
+        }
+
+        [Theory]
+        // Anything else was typed by the user and is never logged — no attempt is made to find and blank
+        // the secret, because that is the approach this replaced and it leaked twice under review.
+        // A credential in the userinfo:
+        [InlineData("https://user:token@artifacts.internal/snyk")]
+        [InlineData("https://us%65r:token@artifacts.internal/snyk")]
+        // ...with a path separator inside it, which defeated the previous redactor:
+        [InlineData("https://user:pa/ss@host/p")]
+        [InlineData("https://user:aGVsbG8/d29ybGQ=@artifacts.internal/snyk")]
+        // ...in a query string, which the previous redactor never looked at:
+        [InlineData("https://artifacts.internal/snyk?token=SECRET")]
+        [InlineData("https://artifacts.internal/snyk?X-Amz-Signature=SECRET")]
+        // A custom mirror with no credential at all is still not logged: the host itself can identify
+        // a customer, and the rule is deliberately simple rather than case-by-case.
+        [InlineData("https://artifacts.internal/snyk")]
+        [InlineData("http://localhost:8081/snyk")]
+        // A host that merely looks like ours must not pass on a prefix match of the wrong shape.
+        [InlineData("https://downloads.snyk.io.attacker.test/cli")]
+        // Unusable values reach here too, via ResolveBaseDownloadUrl passing them through.
+        [InlineData(@"C:\tools\snyk@2\cli.exe")]
+        [InlineData(@"\\fileserver\share@2\snyk")]
+        [InlineData("not a url")]
+        [InlineData("")]
+        [InlineData(null)]
+        public void DescribeUrlForLog_WithholdsTheUrl_WhenItIsNotOnTheDefaultHost(string url)
+        {
+            // Exact equality is the whole assertion: the output is a constant, so no fragment of the
+            // input can reach the log by construction. That is the property the previous redactor could
+            // only approximate.
+            Assert.Equal("<custom URL, not logged>", SnykCliDownloader.DescribeUrlForLog(url));
         }
 
         [Theory]
