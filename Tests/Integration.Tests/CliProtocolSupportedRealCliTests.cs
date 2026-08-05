@@ -120,7 +120,9 @@ namespace Integration.Tests
         }
 
         // Deliberately independent of SnykCliDownloader.IsCliProtocolSupported: if this test called into
-        // the same method it would just be checking the code against itself.
+        // the same method it would just be checking the code against itself. Mirrors that method's own
+        // 20s timeout (ProtocolProbeTimeoutMs) so a corrupted download or a hung process fails this test
+        // with a clear diagnosis instead of blocking the CI runner indefinitely.
         private static string RunProtocolVersionProbe(string cliPath)
         {
             var info = new ProcessStartInfo
@@ -134,8 +136,21 @@ namespace Integration.Tests
 
             using (var process = Process.Start(info))
             {
+                if (!process.WaitForExit(20000))
+                {
+                    try
+                    {
+                        process.Kill();
+                    }
+                    catch (Exception)
+                    {
+                        // Already gone, or not ours to kill.
+                    }
+
+                    throw new TimeoutException($"CLI at {cliPath} did not respond to --protocolVersion in time.");
+                }
+
                 var output = process.StandardOutput.ReadToEnd();
-                process.WaitForExit();
                 return output.Trim();
             }
         }

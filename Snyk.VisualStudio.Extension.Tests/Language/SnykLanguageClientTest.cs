@@ -69,7 +69,6 @@ namespace Snyk.VisualStudio.Extension.Tests.Language
         {
             // Arrange
             cut.CliProtocolCompatibilityCheck = _ => false;
-            TasksServiceMock.Setup(ts => ts.ShouldDownloadCli()).Returns(false);
 
             var eventInvoked = false;
             cut.StartAsync += (sender, args) =>
@@ -101,7 +100,6 @@ namespace Snyk.VisualStudio.Extension.Tests.Language
                 protocolCheckInvoked = true;
                 return true;
             };
-            TasksServiceMock.Setup(ts => ts.ShouldDownloadCli()).Returns(false);
 
             var eventInvoked = false;
             cut.StartAsync += (sender, args) =>
