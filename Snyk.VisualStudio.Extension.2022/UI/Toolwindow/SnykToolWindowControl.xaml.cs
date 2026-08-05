@@ -152,11 +152,11 @@ namespace Snyk.VisualStudio.Extension.UI.Toolwindow
             };
             this.downloadFinishedHandler = (sender, args) =>
             {
-                // Guarded like downloadStartedHandler above: this fires on the nothing-to-download path
-                // too, where the package init gate has usually started the server already, and
-                // StartServerAsync does not check for that itself.
-                if (!LanguageClientHelper.IsLanguageServerReady())
-                    ThreadHelper.JoinableTaskFactory.RunAsync(async ()=> await serviceProvider.LanguageClientManager.StartServerAsync(true)).FireAndForget();
+                // Unconditional, and load-bearing: the package-init gate starts the server before the
+                // solution has loaded, so that first instance gets an empty workspace folder. This start
+                // is what brings it up again once the solution path is known. Guarding it on
+                // IsLanguageServerReady() left the server running against no folder and then dead.
+                ThreadHelper.JoinableTaskFactory.RunAsync(async ()=> await serviceProvider.LanguageClientManager.StartServerAsync(true)).FireAndForget();
                 this.OnDownloadFinished(sender, args);
             };
             this.downloadUpdateHandler = (sender, args) => ThreadHelper.JoinableTaskFactory.RunAsync(() => this.OnDownloadUpdateAsync(sender, args));
