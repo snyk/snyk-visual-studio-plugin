@@ -184,8 +184,25 @@ namespace Snyk.VisualStudio.Extension.Language
             // that window is now allowed to proceed rather than being silently discarded by VS.
             this.vsHasLoadedClient = true;
 
+            // [init-race] The two operands logged SEPARATELY and BEFORE the AND. The combined value
+            // hid which one failed, and `&&` short-circuits, so a false isPackageInitialized means
+            // ShouldDownloadCli is never even called — the absence of its log line was the only clue.
             var isPackageInitialized = SnykVSPackage.Instance?.IsInitialized ?? false;
-            var shouldStart =  isPackageInitialized && !SnykVSPackage.ServiceProvider.TasksService.ShouldDownloadCli();
+
+            Logger.Information(
+                "[init-race] OnLoadedAsync: VS called us. isPackageInitialized={IsPackageInitialized}. This is the ONLY in-contract chance to start the server.",
+                isPackageInitialized);
+
+            var downloadNeeded = isPackageInitialized && SnykVSPackage.ServiceProvider.TasksService.ShouldDownloadCli();
+            var shouldStart = isPackageInitialized && !downloadNeeded;
+
+            Logger.Information(
+                "[init-race] OnLoadedAsync: isPackageInitialized={IsPackageInitialized}, downloadNeeded={DownloadNeeded} => shouldStart={ShouldStart}{Verdict}",
+                isPackageInitialized,
+                downloadNeeded,
+                shouldStart,
+                shouldStart ? string.Empty : "  <<< START OPPORTUNITY WASTED — nothing will start the server after this");
+
             Logger.Information("OnLoadedAsync Called and shouldStart is: {ShouldStart}", shouldStart);
 
             await StartServerAsync(shouldStart);
@@ -231,10 +248,20 @@ namespace Snyk.VisualStudio.Extension.Language
                     // guard above is what keeps this in contract — see its comment.
                     Logger.Information("Starting Language Server");
 
+                    Logger.Information("[init-race] StartServerAsync: raising StartAsync (vsHasLoadedClient={Loaded}) — VS should call ActivateAsync next", this.vsHasLoadedClient);
+
                     await StartAsync.InvokeAsync(this, EventArgs.Empty);
+
+                    Logger.Information("[init-race] StartServerAsync: StartAsync returned. If no 'ActivateAsync: launching' line follows, VS DISCARDED the raise.");
                 }
                 else
                 {
+                    Logger.Information(
+                        "[init-race] StartServerAsync: NOT starting — shouldStart={ShouldStart}, StartAsync subscribed={Subscribed}, Options set={HasOptions}",
+                        shouldStart,
+                        StartAsync != null,
+                        SnykVSPackage.Instance?.Options != null);
+
                     Logger.Information("Couldn't Start Language Server");
                 }
             }
