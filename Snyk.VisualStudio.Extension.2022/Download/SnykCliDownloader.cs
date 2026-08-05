@@ -49,17 +49,14 @@ namespace Snyk.VisualStudio.Extension.Download
         // that would silently drift if this value is ever tuned.
         internal const int ProtocolProbeTimeoutMs = 20000;
 
+        // Stands in for any user-supplied download URL. See DescribeUrlForLog.
+        private const string CustomUrlNotLogged = "<custom URL, not logged>";
+
         private const string LatestReleaseVersionUrlScheme = "{0}/cli/{1}/ls-protocol-version-" + LsConstants.ProtocolVersion;
         private const string LatestReleaseDownloadUrlScheme = "{0}/cli/{1}/" + SnykCli.CliFileName;
         private const string Sha256DownloadUrl = "{0}.sha256";
 
         private static readonly ILogger Logger = LogManager.ForContext<SnykCliDownloader>();
-
-        // Path separators. Not "where the authority ends": a credential may contain one unescaped.
-        private static readonly char[] AuthorityDelimiters = { '/', '\\' };
-
-        // A query or fragment cannot contain credentials, so an '@' past one is not a separator.
-        private static readonly char[] QueryDelimiters = { '?', '#' };
 
         private readonly ISnykOptions SnykOptions;
 
@@ -106,7 +103,7 @@ namespace Snyk.VisualStudio.Extension.Download
         {
             // Normalise BEFORE the blank check, not after: trimming can itself produce a blank ("/"),
             // and guarding first let that through to compose the relative URL this method exists to
-            // prevent. Backslashes too, matching Redact's view of what a separator is.
+            // prevent. Backslashes too, since a user may type either separator.
             var normalised = configuredBaseDownloadUrl?.Trim().TrimEnd('/', '\\');
 
             // A scheme with no authority ("https://" -> "https:") is unusable for the same reason.
@@ -123,9 +120,10 @@ namespace Snyk.VisualStudio.Extension.Download
             // check belongs at the point of use where every consumer passes through it.
             if (!UriExtensions.IsValidWebUrl(normalised))
             {
+                // The value itself is deliberately absent: it is user-supplied and failed validation,
+                // so it is exactly the case where it must not reach the log.
                 Logger.Warning(
-                    "Ignoring the configured CLI base download URL {Url}: only http and https origins are used. Falling back to {Default}",
-                    Redact(normalised),
+                    "Ignoring the configured CLI base download URL: only http and https origins are used. Falling back to {Default}",
                     DefaultBaseDownloadUrl);
 
                 return DefaultBaseDownloadUrl;
@@ -134,132 +132,31 @@ namespace Snyk.VisualStudio.Extension.Download
             return normalised;
         }
 
-        // Blanks credentials in a URL before it is logged.
-        //
-        // Scans the raw string rather than going through Uri: Uri.UserInfo returns the value
-        // *unescaped*, so searching the original for it misses "us%65r:token@host" and returns
-        // the URL untouched — a silent leak. Uri also parses a Windows path as scheme "file",
-        // so anything keyed off the scheme mangles "C:\tools\snyk@2\cli.exe".
-        internal static string Redact(string value)
+        /// <summary>
+        /// A download URL in a form that is safe to log.
+        ///
+        /// The default base URL is Snyk's own host and contains nothing the user supplied, so it is
+        /// logged in full — which is what makes a misconfiguration diagnosable at all. Any other value
+        /// was typed by the user and may carry credentials: userinfo, a query-string token, a signed
+        /// SAS parameter, or some shape nobody has thought of yet. Rather than trying to find and blank
+        /// those, the URL is simply not written to the log; only the fact that a custom one is in use.
+        ///
+        /// This replaced a ~130-line redactor. That code had already leaked twice during review — once
+        /// on percent-escaped userinfo, once on credentials containing a path separator — and each fix
+        /// widened the input space it had to be correct over. Not logging the value cannot leak it.
+        /// </summary>
+        internal static string DescribeUrlForLog(string url)
         {
-            if (string.IsNullOrEmpty(value))
-            {
-                return value;
-            }
+            var trimmed = url?.TrimStart();
 
-            // The authority follows the scheme separator, then any number of slashes. Backslashes
-            // and a scheme-less "//host" count: this is a value typed into a settings box, and a
-            // credential must not survive on the strength of a typo.
-            var authorityStart = 0;
-            var driveLetterEnd = -1;
-            var schemeEnd = value.IndexOf(':');
+            // Equal to the default, or the default followed by a path separator. A bare StartsWith is
+            // not enough: "https://downloads.snyk.io.attacker.test/cli" starts with our host string but
+            // is somebody else's host, and would have been logged in full.
+            var onDefaultHost = !string.IsNullOrWhiteSpace(trimmed)
+                && (string.Equals(trimmed, DefaultBaseDownloadUrl, StringComparison.OrdinalIgnoreCase)
+                    || trimmed.StartsWith(DefaultBaseDownloadUrl + "/", StringComparison.OrdinalIgnoreCase));
 
-            if (schemeEnd >= 0 && schemeEnd + 1 < value.Length && IsSlash(value[schemeEnd + 1]))
-            {
-                // A one-character scheme is a Windows drive letter, and "C:\" introduces a path,
-                // not an authority: otherwise the first path segment is read as the authority and
-                // "C:\snyk@2\cli.exe" comes out as "C:\<credentials>@2\cli.exe". A second slash
-                // means it really is a scheme, since no local path starts "C://".
-                var isDriveLetter = schemeEnd < 2
-                    && !(schemeEnd + 2 < value.Length && IsSlash(value[schemeEnd + 2]));
-
-                if (isDriveLetter)
-                {
-                    // Remembered so the drive colon is not later mistaken for a userinfo separator.
-                    driveLetterEnd = schemeEnd;
-                }
-                else
-                {
-                    authorityStart = schemeEnd + 1;
-                }
-            }
-
-            while (authorityStart < value.Length && IsSlash(value[authorityStart]))
-            {
-                authorityStart++;
-            }
-
-            if (authorityStart >= value.Length)
-            {
-                return value;
-            }
-
-            // A query or fragment cannot hold credentials, so an '@' past one belongs to it
-            // ("host/p?q=a@b") and must not be treated as a userinfo separator.
-            var searchEnd = value.IndexOfAny(QueryDelimiters, authorityStart);
-
-            if (searchEnd < 0)
-            {
-                searchEnd = value.Length;
-            }
-            else if (LooksLikeCredentialPrefix(value, authorityStart, driveLetterEnd, searchEnd))
-            {
-                // The '?' or '#' is inside the credential, not starting a query: everything before it
-                // holds a ':' and no path separator, which a real "host/path?query" never does. Extend
-                // to the path so the '@' after it is still found. A genuine query is unaffected —
-                // "host:8081?q=1" extends too, but has no '@' to find.
-                var pathStart = value.IndexOfAny(AuthorityDelimiters, searchEnd);
-
-                searchEnd = pathStart < 0 ? value.Length : pathStart;
-            }
-
-            if (searchEnd <= authorityStart)
-            {
-                return value;
-            }
-
-            // Last '@', so a credential containing one is covered ("user:tok@en@host").
-            var credentialsEnd = value.LastIndexOf('@', searchEnd - 1, searchEnd - authorityStart);
-
-            if (credentialsEnd < 0)
-            {
-                return value;
-            }
-
-            // Is that '@' a userinfo separator, or just an '@' inside a path ("host/path@v2")?
-            // Deliberately NOT keyed on the first '/' being the end of the authority: a credential
-            // may contain an unescaped '/' — base64 tokens routinely do — and keying off it hid the
-            // '@' entirely, so "https://user:aGVsbG8/d29ybGQ=@host" was logged verbatim.
-            var firstSlash = value.IndexOfAny(AuthorityDelimiters, authorityStart);
-
-            if (firstSlash >= 0 && firstSlash < credentialsEnd)
-            {
-                // There is a separator before the '@'. Only a credential if a ':' appears anywhere
-                // before that '@' — which distinguishes "user:pa/ss@host" and "u/s/e/r:pw@host" from
-                // "host/path@v2". Searching only up to the separator missed a slash in the *username*.
-                // "host:8081/path@v2" is over-redacted as a result — losing a path in a log line
-                // beats leaking a secret, the same trade this file makes for "C:\\snyk@2".
-                var colonStart = driveLetterEnd >= 0 ? driveLetterEnd + 1 : authorityStart;
-                var colonAt = colonStart < credentialsEnd
-                    ? value.IndexOf(':', colonStart, credentialsEnd - colonStart)
-                    : -1;
-
-                if (colonAt < 0)
-                {
-                    return value;
-                }
-            }
-
-            return value.Substring(0, authorityStart) + "<credentials>" + value.Substring(credentialsEnd);
-        }
-
-        private static bool IsSlash(char c) => c == '/' || c == '\\';
-
-        // True when the text up to a '?' or '#' looks like userinfo rather than a host and path:
-        // it contains a ':' and no path separator. Used to tell "user:pa?ss@host" from "host/p?q=a@b".
-        private static bool LooksLikeCredentialPrefix(string value, int authorityStart, int driveLetterEnd, int delimiterAt)
-        {
-            var colonStart = driveLetterEnd >= 0 ? driveLetterEnd + 1 : authorityStart;
-
-            if (colonStart >= delimiterAt)
-            {
-                return false;
-            }
-
-            var length = delimiterAt - colonStart;
-
-            return value.IndexOf(':', colonStart, length) >= 0
-                && value.IndexOfAny(AuthorityDelimiters, colonStart, length) < 0;
+            return onDefaultHost ? url : CustomUrlNotLogged;
         }
 
         /// <summary>
@@ -312,16 +209,14 @@ namespace Snyk.VisualStudio.Extension.Download
             {
                 var latestReleaseVersionUrl = this.BuildLatestReleaseVersionUrl();
 
-                // The composed URL and its inputs: a misconfigured value otherwise surfaces only as an
-                // exception naming a path that appears nowhere in the settings.
+                // Enough to diagnose a misconfiguration without echoing a user-supplied URL: the
+                // composed URL when it is on our own host, whether a custom base is configured at all,
+                // and the release channel (a channel/version selector, not a credential-bearing field).
                 Logger.Information(
-                    "Get latest CLI release info from {Url} (configured base url: '{BaseDownloadUrl}', release channel: '{ReleaseChannel}')",
-                    Redact(latestReleaseVersionUrl),
-                    Redact(this.SnykOptions.CliBaseDownloadURL),
-                    // A no-op for every legitimate channel ("stable", "rc", "v1.1292.0" hold no '@'),
-                    // but it is free text that composes into the URL above, so treat it like its
-                    // siblings rather than making this the one argument that can carry a secret.
-                    Redact(this.SnykOptions.CliReleaseChannel));
+                    "Get latest CLI release info from {Url} (custom base url configured: {IsCustomBaseUrl}, release channel: '{ReleaseChannel}')",
+                    DescribeUrlForLog(latestReleaseVersionUrl),
+                    ResolveBaseDownloadUrl(this.SnykOptions.CliBaseDownloadURL) != DefaultBaseDownloadUrl,
+                    this.SnykOptions.CliReleaseChannel);
 
                 var latestVersion = webClient.DownloadString(latestReleaseVersionUrl).Replace("\n", string.Empty);
 
@@ -736,7 +631,7 @@ namespace Snyk.VisualStudio.Extension.Download
 
             LatestReleaseInfo latestReleaseInfo = this.GetLatestReleaseInfoOnce();
 
-            Logger.Information("Latest relase information: version {Version} and url {Url}", latestReleaseInfo.Version, Redact(latestReleaseInfo.Url));
+            Logger.Information("Latest relase information: version {Version} and url {Url}", latestReleaseInfo.Version, DescribeUrlForLog(latestReleaseInfo.Url));
 
             progressWorker.CancelIfCancellationRequested();
 
