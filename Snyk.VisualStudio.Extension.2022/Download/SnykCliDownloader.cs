@@ -8,14 +8,13 @@ using Snyk.VisualStudio.Extension.CLI;
 using Snyk.VisualStudio.Extension.Language;
 using Snyk.VisualStudio.Extension.Service;
 using Snyk.VisualStudio.Extension.Settings;
-using Snyk.VisualStudio.Extension.UI.Notifications;
 
 namespace Snyk.VisualStudio.Extension.Download
 {
     /// <summary>
     /// Donwnload last Snyk CLI version.
     /// </summary>
-    public class SnykCliDownloader
+    public partial class SnykCliDownloader
     {
         public const string DefaultBaseDownloadUrl = "https://downloads.snyk.io";
         public const string DefaultReleaseChannel = "stable";
@@ -326,7 +325,7 @@ namespace Snyk.VisualStudio.Extension.Download
                 }
                 catch (Exception e)
                 {
-                    NotificationService.Instance.ShowErrorInfoBar($"CLI could not be updated. Please check if another process is using the CLI binary at {cliFileDestinationPath}");
+                    ShowCliUpdateErrorInfoBar($"CLI could not be updated. Please check if another process is using the CLI binary at {cliFileDestinationPath}");
                     Logger.Error(e, "Error on CLI copy from temp file");
                 }
                 finally
@@ -335,6 +334,13 @@ namespace Snyk.VisualStudio.Extension.Download
                 }
             }
         }
+
+        /// <summary>
+        /// Surfaces a CLI update failure to the user. Implemented by the VSIX in
+        /// SnykCliDownloader.Vs.cs, which raises a Visual Studio info bar. There is nothing to
+        /// notify outside the IDE, so the call is compiled away in the cross-platform build.
+        /// </summary>
+        static partial void ShowCliUpdateErrorInfoBar(string message);
 
         private void FinishDownload(ISnykProgressWorker progressWorker, List<CliDownloadFinishedCallback> downloadFinishedCallbacks)
         {

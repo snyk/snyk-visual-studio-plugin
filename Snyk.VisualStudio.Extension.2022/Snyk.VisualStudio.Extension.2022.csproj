@@ -116,6 +116,7 @@
     <Compile Include="Download\ChecksumVerificationException.cs" />
     <Compile Include="Download\LatestReleaseInfo.cs" />
     <Compile Include="Download\SnykCliDownloader.cs" />
+    <Compile Include="Download\SnykCliDownloader.Vs.cs" />
     <Compile Include="CLI\ICli.cs" />
     <Compile Include="CLI\InvalidTokenException.cs" />
     <Compile Include="CLI\SnykCli.cs" />
@@ -128,6 +129,7 @@
     <Compile Include="Language\SnykLanguageServerEventArgs.cs" />
     <Compile Include="LocalCodeEngine.cs" />
     <Compile Include="LogManager.cs" />
+    <Compile Include="LogManager.Vs.cs" />
     <Compile Include="ManualAssemblyResolver.cs" />
     <Compile Include="Model\Severity.cs" />
     <Compile Include="Product.cs" />
@@ -157,8 +159,10 @@
     <Compile Include="Service\ISnykProgressWorker.cs" />
     <Compile Include="Service\ISnykService.cs" />
     <Compile Include="Service\ISnykServiceProvider.cs" />
+    <Compile Include="Service\ISnykServiceProvider.Vs.cs" />
     <Compile Include="Service\ISnykTasksService.cs" />
     <Compile Include="Service\ISolutionService.cs" />
+    <Compile Include="Service\ISolutionService.Vs.cs" />
     <Compile Include="Service\IWorkspaceTrustService.cs" />
     <Compile Include="Service\OssScanException.cs" />
     <Compile Include="Service\SnykCliDownloadEventArgs.cs" />

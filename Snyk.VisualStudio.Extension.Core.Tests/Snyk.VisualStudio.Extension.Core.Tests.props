@@ -1,0 +1,52 @@
+<Project>
+
+  <!--
+    Snyk.VisualStudio.Extension.Core.Tests.props
+    ===========================================
+    The platform-neutral subset of Snyk.VisualStudio.Extension.Tests. These test files
+    are compiled twice: once by the Windows-only net48 test project (against the VSIX
+    assembly) and once by Snyk.VisualStudio.Extension.Core.Tests (against the Core
+    source subset) so they also run on Linux and macOS.
+
+    Tests are shared rather than moved deliberately: coverage on Windows is unchanged
+    and there is exactly one copy of every test.
+
+    Import it and set $(SnykExtensionTestSourceRoot) to the net48 test project directory.
+
+    See docs/cross-platform-testing.md.
+  -->
+
+  <ItemGroup>
+    <Compile Include="$(SnykExtensionTestSourceRoot)AuthDialogStateTests.cs" Link="Tests\AuthDialogStateTests.cs" />
+    <Compile Include="$(SnykExtensionTestSourceRoot)Extension\UriExtensionsTest.cs" Link="Tests\Extension\UriExtensionsTest.cs" />
+    <Compile Include="$(SnykExtensionTestSourceRoot)Language\ConfigDefaultsTests.cs" Link="Tests\Language\ConfigDefaultsTests.cs" />
+    <Compile Include="$(SnykExtensionTestSourceRoot)Language\FolderConfigApplierTests.cs" Link="Tests\Language\FolderConfigApplierTests.cs" />
+    <Compile Include="$(SnykExtensionTestSourceRoot)Language\GlobalSettingsApplierTests.cs" Link="Tests\Language\GlobalSettingsApplierTests.cs" />
+    <Compile Include="$(SnykExtensionTestSourceRoot)Language\LsConstantsTest.cs" Link="Tests\Language\LsConstantsTest.cs" />
+    <Compile Include="$(SnykExtensionTestSourceRoot)Language\UserOverrideTrackerTests.cs" Link="Tests\Language\UserOverrideTrackerTests.cs" />
+    <Compile Include="$(SnykExtensionTestSourceRoot)LogManagerGracefulDegradationTests.cs" Link="Tests\LogManagerGracefulDegradationTests.cs" />
+    <Compile Include="$(SnykExtensionTestSourceRoot)Service\FeatureFlagServiceTest.cs" Link="Tests\Service\FeatureFlagServiceTest.cs" />
+    <Compile Include="$(SnykExtensionTestSourceRoot)Service\WorkspaceTrustServiceTest.cs" Link="Tests\Service\WorkspaceTrustServiceTest.cs" />
+    <Compile Include="$(SnykExtensionTestSourceRoot)Settings\LegacySolutionSettingsMigratorTests.cs" Link="Tests\Settings\LegacySolutionSettingsMigratorTests.cs" />
+    <Compile Include="$(SnykExtensionTestSourceRoot)Settings\LoadReadUnderPersistGateTests.cs" Link="Tests\Settings\LoadReadUnderPersistGateTests.cs" />
+    <Compile Include="$(SnykExtensionTestSourceRoot)Settings\PendingAuthTokenSlotTests.cs" Link="Tests\Settings\PendingAuthTokenSlotTests.cs" />
+    <Compile Include="$(SnykExtensionTestSourceRoot)Settings\SettingsLocationMigratorTests.cs" Link="Tests\Settings\SettingsLocationMigratorTests.cs" />
+    <Compile Include="$(SnykExtensionTestSourceRoot)Settings\SettingsPersistenceConcurrencyTests.cs" Link="Tests\Settings\SettingsPersistenceConcurrencyTests.cs" />
+    <Compile Include="$(SnykExtensionTestSourceRoot)Settings\SnykOptionsManagerAutoOrgTests.cs" Link="Tests\Settings\SnykOptionsManagerAutoOrgTests.cs" />
+    <Compile Include="$(SnykExtensionTestSourceRoot)Settings\SnykOptionsManagerCorruptFileTests.cs" Link="Tests\Settings\SnykOptionsManagerCorruptFileTests.cs" />
+    <Compile Include="$(SnykExtensionTestSourceRoot)Settings\SnykOptionsManagerLegacyMigrationTests.cs" Link="Tests\Settings\SnykOptionsManagerLegacyMigrationTests.cs" />
+    <Compile Include="$(SnykExtensionTestSourceRoot)Settings\SnykOptionsManagerSecretsTests.cs" Link="Tests\Settings\SnykOptionsManagerSecretsTests.cs" />
+    <Compile Include="$(SnykExtensionTestSourceRoot)Settings\UserOverridePersistenceTests.cs" Link="Tests\Settings\UserOverridePersistenceTests.cs" />
+    <Compile Include="$(SnykExtensionTestSourceRoot)SnykCliDownloaderTest.cs" Link="Tests\SnykCliDownloaderTest.cs" />
+    <Compile Include="$(SnykExtensionTestSourceRoot)SnykUserStorageSettingsServiceTest.cs" Link="Tests\SnykUserStorageSettingsServiceTest.cs" />
+    <Compile Include="$(SnykExtensionTestSourceRoot)TestUtils.cs" Link="Tests\TestUtils.cs" />
+    <Compile Include="$(SnykExtensionTestSourceRoot)UI\Html\ExecuteCommandBridgeTest.cs" Link="Tests\UI\Html\ExecuteCommandBridgeTest.cs" />
+    <Compile Include="$(SnykExtensionTestSourceRoot)UI\Html\IdeConfigContractTests.cs" Link="Tests\UI\Html\IdeConfigContractTests.cs" />
+    <Compile Include="$(SnykExtensionTestSourceRoot)UI\Html\WebView2BridgeBindingsTest.cs" Link="Tests\UI\Html\WebView2BridgeBindingsTest.cs" />
+    <Compile Include="$(SnykExtensionTestSourceRoot)UI\Html\WebView2EnvironmentCacheTests.cs" Link="Tests\UI\Html\WebView2EnvironmentCacheTests.cs" />
+    <Compile Include="$(SnykExtensionTestSourceRoot)UI\Html\WebView2MessageDispatcherTest.cs" Link="Tests\UI\Html\WebView2MessageDispatcherTest.cs" />
+    <Compile Include="$(SnykExtensionTestSourceRoot)UI\Html\WebView2NavigationPreparerTest.cs" Link="Tests\UI\Html\WebView2NavigationPreparerTest.cs" />
+    <Compile Include="$(SnykExtensionTestSourceRoot)Utils\SnykDirectoryTests.cs" Link="Tests\Utils\SnykDirectoryTests.cs" />
+  </ItemGroup>
+
+</Project>

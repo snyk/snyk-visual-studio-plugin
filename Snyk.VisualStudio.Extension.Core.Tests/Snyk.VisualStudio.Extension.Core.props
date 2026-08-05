@@ -1,0 +1,115 @@
+<Project>
+
+  <!--
+    Snyk.VisualStudio.Extension.Core.props
+    =====================================
+    The platform-neutral ("Core") subset of the Visual Studio extension's production
+    source. Every file listed here compiles without Visual Studio, WPF or WebView2 and
+    is therefore reusable outside the net48 VSIX - most importantly by the
+    Snyk.VisualStudio.Extension.Core.Tests project, which runs on Linux and macOS.
+
+    This file is the single source of truth for that subset. It is intentionally an
+    explicit list rather than a glob: adding a file here is a deliberate statement that
+    the file is platform-neutral, and the cross-platform build fails loudly if it is not.
+
+    Import it and set $(SnykExtensionSourceRoot) to the extension project directory.
+
+    See docs/cross-platform-testing.md.
+  -->
+
+  <ItemGroup>
+    <Compile Include="$(SnykExtensionSourceRoot)Analytics\AbstractAnalyticsEvent.cs" Link="Core\Analytics\AbstractAnalyticsEvent.cs" />
+    <Compile Include="$(SnykExtensionSourceRoot)Analytics\AnalyticsEvent.cs" Link="Core\Analytics\AnalyticsEvent.cs" />
+    <Compile Include="$(SnykExtensionSourceRoot)AuthDialogState.cs" Link="Core\AuthDialogState.cs" />
+    <Compile Include="$(SnykExtensionSourceRoot)Authentication\AuthenticationToken.cs" Link="Core\Authentication\AuthenticationToken.cs" />
+    <Compile Include="$(SnykExtensionSourceRoot)Authentication\AuthenticationType.cs" Link="Core\Authentication\AuthenticationType.cs" />
+    <Compile Include="$(SnykExtensionSourceRoot)Authentication\IAuthDialog.cs" Link="Core\Authentication\IAuthDialog.cs" />
+    <Compile Include="$(SnykExtensionSourceRoot)Authentication\IAuthenticationFlowService.cs" Link="Core\Authentication\IAuthenticationFlowService.cs" />
+    <Compile Include="$(SnykExtensionSourceRoot)Authentication\OAuthToken.cs" Link="Core\Authentication\OAuthToken.cs" />
+    <Compile Include="$(SnykExtensionSourceRoot)CLI\ICli.cs" Link="Core\CLI\ICli.cs" />
+    <Compile Include="$(SnykExtensionSourceRoot)CLI\InvalidTokenException.cs" Link="Core\CLI\InvalidTokenException.cs" />
+    <Compile Include="$(SnykExtensionSourceRoot)CLI\OssError.cs" Link="Core\CLI\OssError.cs" />
+    <Compile Include="$(SnykExtensionSourceRoot)CLI\SnykCli.cs" Link="Core\CLI\SnykCli.cs" />
+    <Compile Include="$(SnykExtensionSourceRoot)Download\ChecksumVerificationException.cs" Link="Core\Download\ChecksumVerificationException.cs" />
+    <Compile Include="$(SnykExtensionSourceRoot)Download\LatestReleaseInfo.cs" Link="Core\Download\LatestReleaseInfo.cs" />
+    <Compile Include="$(SnykExtensionSourceRoot)Download\Sha256.cs" Link="Core\Download\Sha256.cs" />
+    <Compile Include="$(SnykExtensionSourceRoot)Download\SnykCliDownloader.cs" Link="Core\Download\SnykCliDownloader.cs" />
+    <Compile Include="$(SnykExtensionSourceRoot)Extension\CollectionExtensions.cs" Link="Core\Extension\CollectionExtensions.cs" />
+    <Compile Include="$(SnykExtensionSourceRoot)Extension\JTokenExtension.cs" Link="Core\Extension\JTokenExtension.cs" />
+    <Compile Include="$(SnykExtensionSourceRoot)Extension\StringExtensions.cs" Link="Core\Extension\StringExtensions.cs" />
+    <Compile Include="$(SnykExtensionSourceRoot)Extension\UriExtensions.cs" Link="Core\Extension\UriExtensions.cs" />
+    <Compile Include="$(SnykExtensionSourceRoot)Language\CustomInitializationOptions.cs" Link="Core\Language\CustomInitializationOptions.cs" />
+    <Compile Include="$(SnykExtensionSourceRoot)Language\FeatureFlagResponse.cs" Link="Core\Language\FeatureFlagResponse.cs" />
+    <Compile Include="$(SnykExtensionSourceRoot)Language\IJsonRpc.cs" Link="Core\Language\IJsonRpc.cs" />
+    <Compile Include="$(SnykExtensionSourceRoot)Language\ILanguageClientManager.cs" Link="Core\Language\ILanguageClientManager.cs" />
+    <Compile Include="$(SnykExtensionSourceRoot)Language\InvalidProductTypeException.cs" Link="Core\Language\InvalidProductTypeException.cs" />
+    <Compile Include="$(SnykExtensionSourceRoot)Language\JsonRpcWrapper.cs" Link="Core\Language\JsonRpcWrapper.cs" />
+    <Compile Include="$(SnykExtensionSourceRoot)Language\LsAnalysisResult.cs" Link="Core\Language\LsAnalysisResult.cs" />
+    <Compile Include="$(SnykExtensionSourceRoot)Language\LsConstants.cs" Link="Core\Language\LsConstants.cs" />
+    <Compile Include="$(SnykExtensionSourceRoot)Language\SnykLanguageServerEventArgs.cs" Link="Core\Language\SnykLanguageServerEventArgs.cs" />
+    <Compile Include="$(SnykExtensionSourceRoot)Language\V25\ConfigDefaults.cs" Link="Core\Language\V25\ConfigDefaults.cs" />
+    <Compile Include="$(SnykExtensionSourceRoot)Language\V25\ConfigSetting.cs" Link="Core\Language\V25\ConfigSetting.cs" />
+    <Compile Include="$(SnykExtensionSourceRoot)Language\V25\FolderConfigApplier.cs" Link="Core\Language\V25\FolderConfigApplier.cs" />
+    <Compile Include="$(SnykExtensionSourceRoot)Language\V25\GlobalSettingsApplier.cs" Link="Core\Language\V25\GlobalSettingsApplier.cs" />
+    <Compile Include="$(SnykExtensionSourceRoot)Language\V25\InitializationOptionsV25.cs" Link="Core\Language\V25\InitializationOptionsV25.cs" />
+    <Compile Include="$(SnykExtensionSourceRoot)Language\V25\IUserOverrideTracker.cs" Link="Core\Language\V25\IUserOverrideTracker.cs" />
+    <Compile Include="$(SnykExtensionSourceRoot)Language\V25\LspConfigurationParam.cs" Link="Core\Language\V25\LspConfigurationParam.cs" />
+    <Compile Include="$(SnykExtensionSourceRoot)Language\V25\LspFolderConfig.cs" Link="Core\Language\V25\LspFolderConfig.cs" />
+    <Compile Include="$(SnykExtensionSourceRoot)Language\V25\LsSettingsV25.cs" Link="Core\Language\V25\LsSettingsV25.cs" />
+    <Compile Include="$(SnykExtensionSourceRoot)Language\V25\PflagKeys.cs" Link="Core\Language\V25\PflagKeys.cs" />
+    <Compile Include="$(SnykExtensionSourceRoot)Language\V25\UserOverrideTracker.cs" Link="Core\Language\V25\UserOverrideTracker.cs" />
+    <Compile Include="$(SnykExtensionSourceRoot)LocalCodeEngine.cs" Link="Core\LocalCodeEngine.cs" />
+    <Compile Include="$(SnykExtensionSourceRoot)LogManager.cs" Link="Core\LogManager.cs" />
+    <Compile Include="$(SnykExtensionSourceRoot)ManualAssemblyResolver.cs" Link="Core\ManualAssemblyResolver.cs" />
+    <Compile Include="$(SnykExtensionSourceRoot)Model\Severity.cs" Link="Core\Model\Severity.cs" />
+    <Compile Include="$(SnykExtensionSourceRoot)Product.cs" Link="Core\Product.cs" />
+    <Compile Include="$(SnykExtensionSourceRoot)Resources\SnykLsInit.cs" Link="Core\Resources\SnykLsInit.cs" />
+    <Compile Include="$(SnykExtensionSourceRoot)SastSettings.cs" Link="Core\SastSettings.cs" />
+    <Compile Include="$(SnykExtensionSourceRoot)Service\ApiEndpointResolver.cs" Link="Core\Service\ApiEndpointResolver.cs" />
+    <Compile Include="$(SnykExtensionSourceRoot)Service\Domain\FeaturesSettings.cs" Link="Core\Service\Domain\FeaturesSettings.cs" />
+    <Compile Include="$(SnykExtensionSourceRoot)Service\IFeatureFlagService.cs" Link="Core\Service\IFeatureFlagService.cs" />
+    <Compile Include="$(SnykExtensionSourceRoot)Service\ISnykProgressWorker.cs" Link="Core\Service\ISnykProgressWorker.cs" />
+    <Compile Include="$(SnykExtensionSourceRoot)Service\ISnykService.cs" Link="Core\Service\ISnykService.cs" />
+    <Compile Include="$(SnykExtensionSourceRoot)Service\ISnykServiceProvider.cs" Link="Core\Service\ISnykServiceProvider.cs" />
+    <Compile Include="$(SnykExtensionSourceRoot)Service\ISnykTasksService.cs" Link="Core\Service\ISnykTasksService.cs" />
+    <Compile Include="$(SnykExtensionSourceRoot)Service\ISolutionService.cs" Link="Core\Service\ISolutionService.cs" />
+    <Compile Include="$(SnykExtensionSourceRoot)Service\IWorkspaceTrustService.cs" Link="Core\Service\IWorkspaceTrustService.cs" />
+    <Compile Include="$(SnykExtensionSourceRoot)Service\OssScanException.cs" Link="Core\Service\OssScanException.cs" />
+    <Compile Include="$(SnykExtensionSourceRoot)Service\SnykCliDownloadEventArgs.cs" Link="Core\Service\SnykCliDownloadEventArgs.cs" />
+    <Compile Include="$(SnykExtensionSourceRoot)Service\SnykCodeScanEventArgs.cs" Link="Core\Service\SnykCodeScanEventArgs.cs" />
+    <Compile Include="$(SnykExtensionSourceRoot)Service\SnykFeatureFlagService.cs" Link="Core\Service\SnykFeatureFlagService.cs" />
+    <Compile Include="$(SnykExtensionSourceRoot)Service\SnykOssScanEventArgs.cs" Link="Core\Service\SnykOssScanEventArgs.cs" />
+    <Compile Include="$(SnykExtensionSourceRoot)Service\SolutionType.cs" Link="Core\Service\SolutionType.cs" />
+    <Compile Include="$(SnykExtensionSourceRoot)Service\WorkspaceTrustService.cs" Link="Core\Service\WorkspaceTrustService.cs" />
+    <Compile Include="$(SnykExtensionSourceRoot)Settings\IPersistableOption.cs" Link="Core\Settings\IPersistableOption.cs" />
+    <Compile Include="$(SnykExtensionSourceRoot)Settings\ISnykOptions.cs" Link="Core\Settings\ISnykOptions.cs" />
+    <Compile Include="$(SnykExtensionSourceRoot)Settings\ISnykOptionsManager.cs" Link="Core\Settings\ISnykOptionsManager.cs" />
+    <Compile Include="$(SnykExtensionSourceRoot)Settings\LegacySolutionSettings.cs" Link="Core\Settings\LegacySolutionSettings.cs" />
+    <Compile Include="$(SnykExtensionSourceRoot)Settings\LegacySolutionSettingsMigrator.cs" Link="Core\Settings\LegacySolutionSettingsMigrator.cs" />
+    <Compile Include="$(SnykExtensionSourceRoot)Settings\PendingAuthTokenSlot.cs" Link="Core\Settings\PendingAuthTokenSlot.cs" />
+    <Compile Include="$(SnykExtensionSourceRoot)Settings\SettingsLocationMigrator.cs" Link="Core\Settings\SettingsLocationMigrator.cs" />
+    <Compile Include="$(SnykExtensionSourceRoot)Settings\SnykOptions.cs" Link="Core\Settings\SnykOptions.cs" />
+    <Compile Include="$(SnykExtensionSourceRoot)Settings\SnykOptionsManager.cs" Link="Core\Settings\SnykOptionsManager.cs" />
+    <Compile Include="$(SnykExtensionSourceRoot)Settings\SnykSettingsChangedEventArgs.cs" Link="Core\Settings\SnykSettingsChangedEventArgs.cs" />
+    <Compile Include="$(SnykExtensionSourceRoot)Settings\SnykSettings.cs" Link="Core\Settings\SnykSettings.cs" />
+    <Compile Include="$(SnykExtensionSourceRoot)Settings\SnykSettingsLoader.cs" Link="Core\Settings\SnykSettingsLoader.cs" />
+    <Compile Include="$(SnykExtensionSourceRoot)SnykIcons.Designer.cs" Link="Core\SnykIcons.Designer.cs" />
+    <Compile Include="$(SnykExtensionSourceRoot)SnykWebClient.cs" Link="Core\SnykWebClient.cs" />
+    <Compile Include="$(SnykExtensionSourceRoot)UI\Html\ExecuteCommandBridge.cs" Link="Core\UI\Html\ExecuteCommandBridge.cs" />
+    <Compile Include="$(SnykExtensionSourceRoot)UI\Html\IdeConfigContract.cs" Link="Core\UI\Html\IdeConfigContract.cs" />
+    <Compile Include="$(SnykExtensionSourceRoot)UI\Html\IdeConfigData.cs" Link="Core\UI\Html\IdeConfigData.cs" />
+    <Compile Include="$(SnykExtensionSourceRoot)UI\Html\IHtmlProvider.cs" Link="Core\UI\Html\IHtmlProvider.cs" />
+    <Compile Include="$(SnykExtensionSourceRoot)UI\Html\IWebView2Host.cs" Link="Core\UI\Html\IWebView2Host.cs" />
+    <Compile Include="$(SnykExtensionSourceRoot)UI\Html\WebView2BridgeBindings.cs" Link="Core\UI\Html\WebView2BridgeBindings.cs" />
+    <Compile Include="$(SnykExtensionSourceRoot)UI\Html\WebView2EnvironmentCache.cs" Link="Core\UI\Html\WebView2EnvironmentCache.cs" />
+    <Compile Include="$(SnykExtensionSourceRoot)UI\Html\WebView2MessageDispatcher.cs" Link="Core\UI\Html\WebView2MessageDispatcher.cs" />
+    <Compile Include="$(SnykExtensionSourceRoot)UI\Html\WebView2NavigationPreparer.cs" Link="Core\UI\Html\WebView2NavigationPreparer.cs" />
+    <Compile Include="$(SnykExtensionSourceRoot)UI\Toolwindow\IHtmlPanel.cs" Link="Core\UI\Toolwindow\IHtmlPanel.cs" />
+    <Compile Include="$(SnykExtensionSourceRoot)UI\Toolwindow\ISnykToolWindow.cs" Link="Core\UI\Toolwindow\ISnykToolWindow.cs" />
+    <Compile Include="$(SnykExtensionSourceRoot)UI\Toolwindow\ITreeHtmlPanel.cs" Link="Core\UI\Toolwindow\ITreeHtmlPanel.cs" />
+    <Compile Include="$(SnykExtensionSourceRoot)Utils\Json.cs" Link="Core\Utils\Json.cs" />
+    <Compile Include="$(SnykExtensionSourceRoot)Utils\SnykDirectory.cs" Link="Core\Utils\SnykDirectory.cs" />
+    <Compile Include="$(SnykExtensionSourceRoot)Utils\SnykExtension.cs" Link="Core\Utils\SnykExtension.cs" />
+  </ItemGroup>
+
+</Project>

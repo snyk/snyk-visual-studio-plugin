@@ -4,17 +4,11 @@ using System.Threading.Tasks;
 namespace Snyk.VisualStudio.Extension.Service
 {
     /// <summary>
-    /// Service for solution related functionality.
+    /// Service for solution related functionality. The Visual Studio specific members live in
+    /// ISolutionService.Vs.cs.
     /// </summary>
-    public interface ISolutionService
+    public partial interface ISolutionService
     {
-        /// <summary>
-        /// Gets the VS solution-load event source (null until the service is initialized).
-        /// Exposed on the interface so that LanguageClient and other consumers can subscribe to
-        /// solution-lifecycle events without downcasting to the concrete SnykSolutionService.
-        /// </summary>
-        SnykVsSolutionLoadEvents SolutionEvents { get; }
-
         /// <summary>
         /// Get solution folder path.
         /// </summary>

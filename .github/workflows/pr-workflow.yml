@@ -44,6 +44,19 @@ jobs:
             command: code test
             args:
               --severity-threshold=high
+  cross-platform-unit-tests:
+    name: Run Cross-Platform Unit-Tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 8.0.x
+      # No Visual Studio, MSBuild or VSIX tooling involved: this project compiles the
+      # platform-neutral subset of the extension. See docs/cross-platform-testing.md.
+      - name: Cross-platform unit tests
+        run: dotnet test Snyk.VisualStudio.Extension.Core.Tests --configuration Release
   build-project:
     uses: snyk/snyk-visual-studio-plugin/.github/workflows/build-project.yml@main
     with:

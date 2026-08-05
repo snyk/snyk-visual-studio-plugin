@@ -72,6 +72,13 @@ jobs:
       with:
         vs-version: '[17.0, )'
 
+    # Snyk.VisualStudio.Extension.Core.Tests targets net8.0, so the solution build needs a
+    # .NET 8 SDK for MSBuild's SDK resolver. Pinned rather than relying on the runner image.
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: 8.0.x
+
     - name: Restore NuGet packages
       run: nuget restore ${{ inputs.solution-file-path }}
 

@@ -1,43 +1,22 @@
-﻿using System;
-using System.Threading;
-using System.Threading.Tasks;
-using EnvDTE80;
-using Microsoft.VisualStudio.Settings;
-using Microsoft.VisualStudio.Shell;
+﻿using System.Threading;
 using Snyk.VisualStudio.Extension.Authentication;
 using Snyk.VisualStudio.Extension.Language;
 using Snyk.VisualStudio.Extension.Settings;
-using Snyk.VisualStudio.Extension.Theme;
-using Snyk.VisualStudio.Extension.UI.Toolwindow;
 
 namespace Snyk.VisualStudio.Extension.Service
 {
     /// <summary>
     /// ServiceProvider interface for Snyk extension. Provide all needed services for this extension.
+    /// The Visual Studio specific members live in ISnykServiceProvider.Vs.cs.
     /// </summary>
-    public interface ISnykServiceProvider
+    public partial interface ISnykServiceProvider
     {
         /// <summary>
-        /// Gets VisualStudio DTE object instance.
-        /// </summary>
-        DTE2 DTE { get; }
-
-        /// <summary>
-        /// Gets Snyk package instance.
-        /// </summary>
-        SnykVSPackage Package { get; }
-
-        /// <summary>
         /// Gets the package disposal token, cancelled when the extension shuts down. Exposed here
-        /// (rather than reaching through <see cref="SnykVSPackage"/>.Instance) so consumers stay
+        /// (rather than reaching through <c>SnykVSPackage.Instance</c>) so consumers stay
         /// constructor-injectable and testable.
         /// </summary>
         CancellationToken DisposalToken { get; }
-
-        /// <summary>
-        /// Gets IAsyncServiceProvider implementation.
-        /// </summary>
-        IAsyncServiceProvider AsyncServiceProvider { get; }
 
         /// <summary>
         /// Gets Solution service instance.
@@ -61,28 +40,7 @@ namespace Snyk.VisualStudio.Extension.Service
         /// Orchestrates IDE-side auth flow (login/logout, modal auth dialog).
         /// </summary>
         IAuthenticationFlowService AuthenticationFlowService { get; }
-        /// <summary>
-        /// Gets Visual Studio Settiings Manager instance.
-        /// </summary>
-        SettingsManager SettingsManager { get; }
 
-        /// <summary>
-        /// Gets Theme service instance.
-        /// </summary>
-        SnykVsThemeService VsThemeService { get; }
-
-        /// <summary>
-        /// Gets the tool window seam (implemented by <see cref="SnykToolWindowControl"/>).
-        /// </summary>
-        ISnykToolWindow ToolWindow { get; }
-
-        /// <summary>
-        /// Get Visual Studio service (async).
-        /// </summary>
-        /// <param name="serviceType">Service type.</param>
-        /// <returns>VS service instance.</returns>
-        Task<object> GetServiceAsync(Type serviceType);
-        
         /// <summary>
         /// Get Feature Flag Service
         /// </summary>

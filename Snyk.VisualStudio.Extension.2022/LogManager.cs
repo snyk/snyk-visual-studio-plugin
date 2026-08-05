@@ -1,6 +1,5 @@
 ﻿using System;
 using System.IO;
-using Microsoft.VisualStudio.Shell;
 using Serilog;
 using Serilog.Core;
 using Serilog.Events;
@@ -86,13 +85,22 @@ namespace Snyk.VisualStudio.Extension
     /// <summary>
     /// Custom thread context enricher to dynamically determine if the thread is a UI thread or a background thread.
     /// </summary>
-    public class ThreadContextEnricher : ILogEventEnricher
+    public partial class ThreadContextEnricher : ILogEventEnricher
     {
         public void Enrich(LogEvent logEvent, ILogEventPropertyFactory propertyFactory)
         {
-            var threadContext = ThreadHelper.CheckAccess() ? "UI Thread" : "Background Thread";
+            var threadContext = "Background Thread";
+            ResolveIdeThreadContext(ref threadContext);
+
             var threadContextProperty = propertyFactory.CreateProperty("ThreadContext", threadContext);
             logEvent.AddPropertyIfAbsent(threadContextProperty);
         }
+
+        /// <summary>
+        /// Asks the IDE whether the calling thread is the UI thread. Implemented by the VSIX in
+        /// LogManager.Vs.cs; outside Visual Studio there is no UI thread to report, so the call is
+        /// compiled away and every event is attributed to a background thread.
+        /// </summary>
+        static partial void ResolveIdeThreadContext(ref string threadContext);
     }
 }
