@@ -4,6 +4,7 @@ using System.Linq;
 using Newtonsoft.Json.Linq;
 using Serilog;
 using Snyk.VisualStudio.Extension.Authentication;
+using Snyk.VisualStudio.Extension.Download;
 using Snyk.VisualStudio.Extension.Settings;
 
 namespace Snyk.VisualStudio.Extension.Language
@@ -67,13 +68,30 @@ namespace Snyk.VisualStudio.Extension.Language
 
                     // The language server registers these two with empty defaults and echoes every
                     // machine-scope setting, so an empty value means "no opinion", not "cleared".
+                    //
+                    // The equality test drops our own echo. LsSettingsV25 sends these resolved (the
+                    // override tracker compares the resolved form against ConfigDefaults), so a user
+                    // who left the field blank gets the literal default echoed straight back; writing
+                    // it would silently convert "blank, use the default" into a pinned override and
+                    // replace the settings-page placeholder with a value they never typed. A value
+                    // that differs from our own resolved one is a real push and still applies.
                     case PflagKeys.BinaryBaseUrl:
                         var baseUrl = val.Value<string>();
-                        if (!string.IsNullOrWhiteSpace(baseUrl)) options.CliBaseDownloadURL = baseUrl;
+                        if (!string.IsNullOrWhiteSpace(baseUrl)
+                            && baseUrl != SnykCliDownloader.ResolveBaseDownloadUrl(options.CliBaseDownloadURL))
+                        {
+                            options.CliBaseDownloadURL = baseUrl;
+                        }
+
                         break;
                     case PflagKeys.CliReleaseChannel:
                         var releaseChannel = val.Value<string>();
-                        if (!string.IsNullOrWhiteSpace(releaseChannel)) options.CliReleaseChannel = releaseChannel;
+                        if (!string.IsNullOrWhiteSpace(releaseChannel)
+                            && releaseChannel != SnykCliDownloader.ResolveReleaseChannel(options.CliReleaseChannel))
+                        {
+                            options.CliReleaseChannel = releaseChannel;
+                        }
+
                         break;
 
                     case PflagKeys.AdditionalEnvironment:  options.AdditionalEnv        = val.Value<string>(); break;

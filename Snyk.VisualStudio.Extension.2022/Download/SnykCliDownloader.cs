@@ -501,18 +501,22 @@ namespace Snyk.VisualStudio.Extension.Download
 
             try
             {
-                File.Copy(sourceFilePath, stagingPath, overwrite: true);
-
+                // The staging copy is inside the fallback, not above it. Staging adds a longer path and
+                // a second file to create, so it can fail where a plain overwrite would have worked
+                // (MAX_PATH, a directory that permits writes but not creates, a share at quota). Those
+                // are installs that succeeded before staging existed, so they must not fail now.
                 try
                 {
+                    File.Copy(sourceFilePath, stagingPath, overwrite: true);
                     File.Replace(stagingPath, cliFileDestinationPath, destinationBackupFileName: null);
                 }
+                // PathTooLongException derives from IOException, so MAX_PATH overflow is covered here.
                 catch (Exception e) when (e is IOException || e is PlatformNotSupportedException || e is UnauthorizedAccessException)
                 {
-                    // File.Replace needs a volume that supports it; a custom CLI path can name an SMB
-                    // share or a FAT volume. Failing the install outright would be worse than a
+                    // File.Replace also needs a volume that supports it; a custom CLI path can name an
+                    // SMB share or a FAT volume. Failing the install outright would be worse than a
                     // non-atomic overwrite, so fall back — but say so, because the guarantee is gone.
-                    Logger.Warning(e, "Atomic replace unavailable at {Path}; overwriting in place", cliFileDestinationPath);
+                    Logger.Warning(e, "Could not stage and replace at {Path}; overwriting in place", cliFileDestinationPath);
                     File.Copy(sourceFilePath, cliFileDestinationPath, overwrite: true);
                 }
             }
@@ -549,13 +553,18 @@ namespace Snyk.VisualStudio.Extension.Download
             string cliFileDestinationPath,
             List<CliDownloadFinishedCallback> downloadFinishedCallbacks)
         {
+            // Captured before the attempt: afterwards a partial write is indistinguishable from a
+            // binary that was already there, which is what made the failure message misreport a
+            // first install as an update.
+            var priorCliExisted = File.Exists(cliFileDestinationPath);
+
             try
             {
                 InstallCliFile(sourceFilePath, cliFileDestinationPath);
             }
             catch (Exception e)
             {
-                this.ReportInstallFailure(e, cliFileDestinationPath);
+                this.ReportInstallFailure(e, cliFileDestinationPath, priorCliExisted);
 
                 throw;
             }
@@ -564,25 +573,37 @@ namespace Snyk.VisualStudio.Extension.Download
             // the language server. A callback failing is not the CLI failing to install, and must not
             // be reported as one. It still propagates; the caller has a single failure channel, so it
             // surfaces DownloadFailed either way — but the install-specific diagnosis stays accurate.
-            this.FinishDownload(progressWorker, downloadFinishedCallbacks);
+            this.FinishDownload(progressWorker, downloadFinishedCallbacks, binaryWasDownloaded: true);
         }
 
         // virtual for testability: the notification sink is a static singleton, so a test cannot
         // otherwise observe whether a failure was diagnosed as an install failure.
-        internal virtual void ReportInstallFailure(Exception e, string cliFileDestinationPath)
+        internal virtual void ReportInstallFailure(Exception e, string cliFileDestinationPath, bool priorCliExisted)
         {
-            // An update failure leaves the previous CLI behind; an install failure leaves nothing.
-            // States that it is present rather than that it will work: File.Exists cannot tell an
-            // untouched binary from a partial write, and the fallback in InstallCliFile still
-            // overwrites in place on volumes that cannot do an atomic replace.
-            var existingCliRemains = File.Exists(cliFileDestinationPath);
-            var message = existingCliRemains
-                ? $"Snyk CLI could not be updated at {cliFileDestinationPath}: {e.Message} The previously installed CLI is still in place."
-                : $"Snyk CLI could not be installed at {cliFileDestinationPath}: {e.Message}";
+            var message = BuildInstallFailureMessage(e, cliFileDestinationPath, priorCliExisted);
 
             // Null-conditional: the download can run before the package initialises this.
             NotificationService.Instance?.ShowErrorInfoBar(message);
             Logger.Error(e, "Error on CLI copy from temp file to {Path}", cliFileDestinationPath);
+        }
+
+        /// <summary>
+        /// The user-facing text for a failed install. Separated from the notification because the sink
+        /// is a static singleton, so this is the only way to assert what the user is actually told.
+        /// </summary>
+        // internal for testability.
+        internal static string BuildInstallFailureMessage(Exception e, string cliFileDestinationPath, bool priorCliExisted)
+        {
+            // Keyed on whether a binary was there BEFORE the attempt, not on File.Exists afterwards.
+            // A failed first install can leave a partial file, which made the after-the-fact probe
+            // report a "previously installed" CLI that had never existed.
+            //
+            // States that the prior binary is present rather than that it will work: the fallback in
+            // InstallCliFile overwrites in place on volumes that cannot do an atomic replace, so on
+            // that path the file that survives may itself be a partial write.
+            return priorCliExisted
+                ? $"Snyk CLI could not be updated at {cliFileDestinationPath}: {e.Message} The previously installed CLI is still in place."
+                : $"Snyk CLI could not be installed at {cliFileDestinationPath}: {e.Message}";
         }
 
         /// <summary>
@@ -640,7 +661,9 @@ namespace Snyk.VisualStudio.Extension.Download
                     // Without this the progress bar jumps from 0 straight to finished.
                     progressWorker.UpdateProgress(100);
 
-                    this.FinishDownload(progressWorker, downloadFinishedCallbacks);
+                    // The binary on disk already matched, so nothing was fetched. Announcing a
+                    // download here told the user the CLI had been updated when it had not.
+                    this.FinishDownload(progressWorker, downloadFinishedCallbacks, binaryWasDownloaded: false);
 
                     return;
                 }
@@ -729,7 +752,12 @@ namespace Snyk.VisualStudio.Extension.Download
             }
         }
 
-        private void FinishDownload(ISnykProgressWorker progressWorker, List<CliDownloadFinishedCallback> downloadFinishedCallbacks)
+        // binaryWasDownloaded has no default: both call sites reach here for opposite reasons, and a
+        // default silently gave the checksum-match path a "downloaded successfully" it had not earned.
+        private void FinishDownload(
+            ISnykProgressWorker progressWorker,
+            List<CliDownloadFinishedCallback> downloadFinishedCallbacks,
+            bool binaryWasDownloaded)
         {
             Logger.Information("Fire DownloadFinished event");
 
@@ -743,7 +771,7 @@ namespace Snyk.VisualStudio.Extension.Download
             // the token undisposed and never refreshed the toolbar state.
             progressWorker.IsWorkFinished = true;
 
-            progressWorker.DownloadFinished();
+            progressWorker.DownloadFinished(binaryWasDownloaded);
         }
     }
 }

@@ -75,8 +75,14 @@ namespace Snyk.VisualStudio.Extension.Tests
             // null under test, so overriding is the only way to observe it.
             public int InstallFailuresReported { get; private set; }
 
-            internal override void ReportInstallFailure(Exception e, string cliFileDestinationPath) =>
+            // What the failure was told about the destination's prior state. Null until reported.
+            public bool? ReportedPriorCliExisted { get; private set; }
+
+            internal override void ReportInstallFailure(Exception e, string cliFileDestinationPath, bool priorCliExisted)
+            {
                 this.InstallFailuresReported++;
+                this.ReportedPriorCliExisted = priorCliExisted;
+            }
         }
 
         private static ISnykOptions Options(string currentCliVersion = null)
@@ -276,6 +282,74 @@ namespace Snyk.VisualStudio.Extension.Tests
         }
 
         [Fact]
+        public void InstallAndFinish_ReportsAFailedFirstInstallAsAnInstall_NotAnUpdate()
+        {
+            // A destination that is an existing directory fails the copy while making File.Exists
+            // return true — the shape that made the after-the-fact probe call a first install an
+            // update. What matters is the state BEFORE the attempt: there was no CLI there.
+            var source = Path.Combine(this.workDir, "downloaded.exe");
+            File.WriteAllText(source, "cli-binary");
+            var destinationIsAnExistingDirectory = Path.Combine(this.workDir, "occupied-fresh");
+            Directory.CreateDirectory(destinationIsAnExistingDirectory);
+
+            var cut = new FakeDownloader(Options());
+
+            Assert.ThrowsAny<Exception>(() => cut.InstallAndFinish(
+                this.progressWorkerMock.Object,
+                source,
+                destinationIsAnExistingDirectory,
+                new List<SnykCliDownloader.CliDownloadFinishedCallback>()));
+
+            Assert.False(cut.ReportedPriorCliExisted);
+        }
+
+        [Fact]
+        public void InstallAndFinish_ReportsAFailedUpdateAsAnUpdate()
+        {
+            // A real prior binary, and a source that cannot be read, so the install fails after the
+            // destination genuinely existed.
+            var missingSource = Path.Combine(this.workDir, "never-downloaded.exe");
+            var destination = Path.Combine(this.workDir, "snyk-win.exe");
+            File.WriteAllText(destination, "the-previous-cli");
+
+            var cut = new FakeDownloader(Options());
+
+            Assert.ThrowsAny<Exception>(() => cut.InstallAndFinish(
+                this.progressWorkerMock.Object,
+                missingSource,
+                destination,
+                new List<SnykCliDownloader.CliDownloadFinishedCallback>()));
+
+            Assert.True(cut.ReportedPriorCliExisted);
+        }
+
+        [Fact]
+        public void BuildInstallFailureMessage_SaysInstalled_WhenNoCliWasThereBefore()
+        {
+            // Asserted on the real message, not through the FakeDownloader override: every other test
+            // here replaces ReportInstallFailure, so without this the text the user actually reads was
+            // never exercised. "Previously installed" for a first install is the falsehood being ruled
+            // out — a partial write left by the failure makes File.Exists say otherwise.
+            var message = SnykCliDownloader.BuildInstallFailureMessage(
+                new IOException("disk full"), @"C:\cli\snyk-win.exe", priorCliExisted: false);
+
+            Assert.Equal(@"Snyk CLI could not be installed at C:\cli\snyk-win.exe: disk full", message);
+            Assert.DoesNotContain("previously installed", message);
+            Assert.DoesNotContain("updated", message);
+        }
+
+        [Fact]
+        public void BuildInstallFailureMessage_SaysUpdated_WhenACliWasThereBefore()
+        {
+            var message = SnykCliDownloader.BuildInstallFailureMessage(
+                new IOException("locked"), @"C:\cli\snyk-win.exe", priorCliExisted: true);
+
+            Assert.Equal(
+                @"Snyk CLI could not be updated at C:\cli\snyk-win.exe: locked The previously installed CLI is still in place.",
+                message);
+        }
+
+        [Fact]
         public async Task DownloadAsync_SkipsTheDownload_WhenTheBinaryOnDiskAlreadyMatchesAsync()
         {
             // Nothing to install when the binary already matches, but the finished callbacks must still
@@ -298,6 +372,12 @@ namespace Snyk.VisualStudio.Extension.Tests
             Assert.Equal("already-the-latest-cli", File.ReadAllText(destination));
             Assert.Equal(lastWriteBefore, File.GetLastWriteTimeUtc(destination));
             this.progressWorkerMock.Verify(w => w.UpdateProgress(100), Times.Once);
+
+            // Nothing was fetched, so the status bar must not claim a successful download. Asserting
+            // the flag and not just the call: it defaulted to true, which is how this path came to
+            // report "Snyk CLI downloaded successfully" for a download that never happened.
+            this.progressWorkerMock.Verify(w => w.DownloadFinished(false), Times.Once);
+            this.progressWorkerMock.Verify(w => w.DownloadFinished(true), Times.Never);
         }
 
         [Fact]
