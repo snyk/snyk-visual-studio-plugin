@@ -31,6 +31,15 @@ namespace Snyk.VisualStudio.Extension.Language
     {
         private static readonly ILogger Logger = LogManager.ForContext<SnykLanguageClient>();
         private readonly SemaphoreSlim semaphore = new SemaphoreSlim(1,1);
+
+        // Set when VS calls OnLoadedAsync. Raising StartAsync before that point is out of contract:
+        // VS has already subscribed (so StartAsync is non-null and the guard below passes) but it is
+        // not yet willing to activate, so the invoke returns immediately, ActivateAsync is never
+        // called, no snyk-win process appears — and nothing retries, because OnLoadedAsync is the
+        // only other thing that starts the server. Verified from a failing startup: "raising
+        // StartAsync to VS" returned in 0ms with no "ActivateAsync: launching", against 2.7s and a
+        // successful launch on a start raised after OnLoadedAsync.
+        private volatile bool vsHasLoadedClient;
         private LsSettingsV25 settingsV25;
         // Holds the delegate subscribed to SolutionEvents.AfterBackgroundSolutionLoadComplete so we
         // can unsubscribe before re-subscribing on server restarts (idempotent wiring).
@@ -198,6 +207,10 @@ namespace Snyk.VisualStudio.Extension.Language
             // from "still inside the download check". That ambiguity cost a whole diagnostic round.
             Logger.Information("[startup-diag] OnLoadedAsync: entered (VS has loaded the language client)");
 
+            // Before the download check below, which can take seconds: a start request arriving in
+            // that window is now allowed to proceed rather than being silently discarded by VS.
+            this.vsHasLoadedClient = true;
+
             var isPackageInitialized = SnykVSPackage.Instance?.IsInitialized ?? false;
             var shouldStart =  isPackageInitialized && !SnykVSPackage.ServiceProvider.TasksService.ShouldDownloadCli();
             Logger.Information("OnLoadedAsync Called and shouldStart is: {ShouldStart}", shouldStart);
@@ -214,6 +227,16 @@ namespace Snyk.VisualStudio.Extension.Language
             await semaphore.WaitAsync();
             try
             {
+                if (StartAsync != null && !this.vsHasLoadedClient && shouldStart)
+                {
+                    // Deferred, not dropped: OnLoadedAsync calls StartServerAsync itself once VS is
+                    // ready, so returning here loses nothing. Raising StartAsync now would be
+                    // discarded by VS and would leave the server permanently unstarted.
+                    Logger.Information("Deferring language server start: VS has subscribed but has not loaded the client yet, so OnLoadedAsync will start it");
+
+                    return;
+                }
+
                 if (StartAsync == null && shouldStart)
                 {
                     // [startup-diag] Temporary. This path logs nothing today, so a start request that
