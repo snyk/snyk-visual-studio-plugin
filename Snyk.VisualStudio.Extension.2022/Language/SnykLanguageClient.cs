@@ -12,6 +12,7 @@ using Microsoft.VisualStudio.Threading;
 using Serilog;
 using Snyk.VisualStudio.Extension.Analytics;
 using Snyk.VisualStudio.Extension.CLI;
+using Snyk.VisualStudio.Extension.Download;
 using Snyk.VisualStudio.Extension.Settings;
 using Snyk.VisualStudio.Extension.UI.Notifications;
 using Snyk.VisualStudio.Extension.Utils;
@@ -100,16 +101,21 @@ namespace Snyk.VisualStudio.Extension.Language
 
         // Seams for tests (IDE-2404): tests exercising unrelated StartServerAsync/OnLoadedAsync/
         // RestartServerAsync behavior don't have a real CLI binary on disk, so they override these to
-        // (_) => true / (_, _) => true. Split in two so StartServerAsync can tell "binary missing" (an
-        // existing, separately-handled failure mode - see SnykToolWindowControl's "CLI not found"
-        // messagePanel text) apart from "binary present but wrong protocol version" - conflating them
-        // showed the protocol-mismatch banner for a merely-missing binary, which is simply wrong.
+        // (_) => true. Split in two so StartServerAsync can tell "binary missing" (an existing,
+        // separately-handled failure mode - see SnykToolWindowControl's "CLI not found" messagePanel
+        // text) apart from "binary present but wrong protocol version" - conflating them showed the
+        // protocol-mismatch banner for a merely-missing binary, which is simply wrong.
         internal Func<string, bool> CliExistsCheck { get; set; } = File.Exists;
 
-        internal Func<string, string, bool> CliProtocolCompatibilityCheck { get; set; } = DefaultCliProtocolCompatibilityCheck;
-
-        private static bool DefaultCliProtocolCompatibilityCheck(string cliPath, string requiredProtocolVersion) =>
-            CliProtocolVersionVerifier.IsCompatible(cliPath, requiredProtocolVersion);
+        // Reuses SnykCliDownloader.IsCliProtocolSupported (added independently alongside this ticket,
+        // in Download/SnykCliDownloader.cs) rather than a second, near-duplicate implementation - it
+        // already handles this correctly (waits for exit before reading stdout, doesn't redirect
+        // stderr) and is what IsCliDownloadNeeded uses to decide whether to auto-redownload. This gate
+        // is still needed independently: ShouldDownloadCli() (and so IsCliDownloadNeeded) returns false
+        // whenever BinariesAutoUpdate is off, regardless of whether the binary works, so a
+        // custom/unmanaged path never goes through that self-healing path at all.
+        internal Func<string, bool> CliProtocolCompatibilityCheck { get; set; } =
+            cliPath => new SnykCliDownloader(SnykVSPackage.Instance.Options).IsCliProtocolSupported(cliPath);
 
         public async Task<Connection> ActivateAsync(CancellationToken token)
         {
@@ -161,6 +167,10 @@ namespace Snyk.VisualStudio.Extension.Language
 
         public async Task StartServerAsync(bool shouldStart = false)
         {
+            // Set inside the semaphore below, but the InfoBar itself is shown only after it's released
+            // - see the comment at the bottom of this method.
+            string protocolMismatchMessage = null;
+
             await semaphore.WaitAsync();
             try
             {
@@ -189,28 +199,26 @@ namespace Snyk.VisualStudio.Extension.Language
                     if (!CliExistsCheck(cliPath))
                     {
                         Logger.Information("Cannot start Language Server: CLI not found at {CliPath}.", cliPath);
-                        return;
                     }
-
-                    if (!CliProtocolCompatibilityCheck(cliPath, LsConstants.ProtocolVersion))
+                    else if (!CliProtocolCompatibilityCheck(cliPath))
                     {
-                        var message = $"Snyk CLI at '{cliPath}' does not support the required Language Server " +
+                        protocolMismatchMessage = $"Snyk CLI at '{cliPath}' does not support the required Language Server " +
                             $"protocol version {LsConstants.ProtocolVersion} and cannot be started. Update the CLI, " +
                             "or enable \"Manage Binaries Automatically\" in Tools > Options > Snyk to let Snyk manage it automatically.";
-                        Logger.Error(message);
-                        NotificationService.Instance?.ShowErrorInfoBar(message);
-                        return;
+                        Logger.Error(protocolMismatchMessage);
                     }
-
-                    if (CustomMessageTarget == null)
+                    else
                     {
-                        CustomMessageTarget = new SnykLanguageClientCustomTarget(SnykVSPackage.ServiceProvider);
+                        if (CustomMessageTarget == null)
+                        {
+                            CustomMessageTarget = new SnykLanguageClientCustomTarget(SnykVSPackage.ServiceProvider);
+                        }
+
+                        await MigrateLegacySolutionSettingsAsync();
+
+                        Logger.Information("Starting Language Server");
+                        await StartAsync.InvokeAsync(this, EventArgs.Empty);
                     }
-
-                    await MigrateLegacySolutionSettingsAsync();
-
-                    Logger.Information("Starting Language Server");
-                    await StartAsync.InvokeAsync(this, EventArgs.Empty);
                 }
                 else
                 {
@@ -220,6 +228,15 @@ namespace Snyk.VisualStudio.Extension.Language
             finally
             {
                 semaphore.Release();
+            }
+
+            // Shown only after releasing the semaphore (PR review finding): ShowErrorInfoBar ultimately
+            // calls ThreadHelper.JoinableTaskFactory.Run with a SwitchToMainThreadAsync - a synchronous
+            // block on main-thread work. Doing that while still holding `semaphore` risked deadlocking
+            // any main-thread path that re-enters StartServerAsync/StopServerAsync while it blocks.
+            if (protocolMismatchMessage != null)
+            {
+                NotificationService.Instance?.ShowErrorInfoBar(protocolMismatchMessage);
             }
         }
 

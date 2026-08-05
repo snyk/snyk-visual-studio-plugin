@@ -39,7 +39,7 @@ namespace Snyk.VisualStudio.Extension.Tests.Language
             // itself don't need a real CLI binary on disk. The gate tests below override these back to
             // false individually.
             cut.CliExistsCheck = _ => true;
-            cut.CliProtocolCompatibilityCheck = (_, __) => true;
+            cut.CliProtocolCompatibilityCheck = _ => true;
         }
 
         [Fact]
@@ -61,14 +61,14 @@ namespace Snyk.VisualStudio.Extension.Tests.Language
         // fires, VS's LSP framework commits to calling ActivateAsync and expects a valid Connection back;
         // returning null there throws an unhandled InvalidOperationException from inside VS's own
         // RemoteLanguageClientInstance (seen manually testing this fix: a second, alarming top-shell
-        // banner on top of our actionable one). CliProtocolVersionVerifier's own parsing/matching logic
-        // is covered separately (CliProtocolVersionVerifierTest); this only asserts the wiring, via the
-        // CliProtocolCompatibilityCheck seam - no real CLI binary needed.
+        // banner on top of our actionable one). SnykCliDownloader.IsCliProtocolSupported's own parsing
+        // logic is covered separately (SnykCliDownloaderInstallTests, Integration.Tests); this only
+        // asserts the wiring, via the CliProtocolCompatibilityCheck seam - no real CLI binary needed.
         [Fact]
         public async Task StartServerAsync_ShouldNotInvokeStartAsync_WhenCliProtocolVersionIncompatible()
         {
             // Arrange
-            cut.CliProtocolCompatibilityCheck = (_, __) => false;
+            cut.CliProtocolCompatibilityCheck = _ => false;
             TasksServiceMock.Setup(ts => ts.ShouldDownloadCli()).Returns(false);
 
             var eventInvoked = false;
@@ -96,7 +96,7 @@ namespace Snyk.VisualStudio.Extension.Tests.Language
             // Arrange
             cut.CliExistsCheck = _ => false;
             var protocolCheckInvoked = false;
-            cut.CliProtocolCompatibilityCheck = (_, __) =>
+            cut.CliProtocolCompatibilityCheck = _ =>
             {
                 protocolCheckInvoked = true;
                 return true;

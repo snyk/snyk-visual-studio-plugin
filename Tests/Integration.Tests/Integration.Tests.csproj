@@ -41,7 +41,7 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="CliProtocolVersionVerifierRealCliTests.cs" />
+    <Compile Include="CliProtocolSupportedRealCliTests.cs" />
     <Compile Include="ExtensionStartupTests.cs" />
     <Compile Include="GlobalSuppressions.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />

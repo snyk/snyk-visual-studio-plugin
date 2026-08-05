@@ -117,7 +117,6 @@
     <Compile Include="Download\LatestReleaseInfo.cs" />
     <Compile Include="Download\CliDownloadDecisionCache.cs" />
     <Compile Include="Download\SnykCliDownloader.cs" />
-    <Compile Include="CLI\CliProtocolVersionVerifier.cs" />
     <Compile Include="CLI\ICli.cs" />
     <Compile Include="CLI\InvalidTokenException.cs" />
     <Compile Include="CLI\SnykCli.cs" />

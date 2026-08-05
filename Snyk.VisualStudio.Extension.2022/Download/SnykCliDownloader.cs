@@ -353,11 +353,7 @@ namespace Snyk.VisualStudio.Extension.Download
                     }
 
                     var reported = process.StandardOutput.ReadToEnd().Trim();
-
-                    // "development" is what a locally-built language server reports; treat it as
-                    // compatible so a dev CLI is usable, matching snyk-ls' own handling.
-                    var supported = string.Equals(reported, LsConstants.ProtocolVersion, StringComparison.Ordinal)
-                        || string.Equals(reported, DevelopmentProtocolVersion, StringComparison.Ordinal);
+                    var supported = IsSupportedProtocolVersion(reported);
 
                     if (!supported)
                     {
@@ -378,6 +374,13 @@ namespace Snyk.VisualStudio.Extension.Download
                 return false;
             }
         }
+
+        // internal for testability: pure comparison, no process involved. "development" is what a
+        // locally-built language server reports; treat it as compatible so a dev CLI is usable,
+        // matching snyk-ls' own handling.
+        internal static bool IsSupportedProtocolVersion(string reportedVersion) =>
+            string.Equals(reportedVersion, LsConstants.ProtocolVersion, StringComparison.Ordinal)
+            || string.Equals(reportedVersion, DevelopmentProtocolVersion, StringComparison.Ordinal);
 
         /// <summary>
         /// Check is CLI file not exists by provided location.
