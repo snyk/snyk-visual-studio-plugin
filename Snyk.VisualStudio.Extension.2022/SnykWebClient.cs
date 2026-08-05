@@ -37,7 +37,13 @@ namespace Snyk.VisualStudio.Extension
             if (request != null && this.Timeout > 0)
             {
                 request.Timeout = this.Timeout;
-                request.ReadWriteTimeout = this.Timeout;
+
+                // ReadWriteTimeout is not on the WebRequest base, only on HttpWebRequest. It bounds a
+                // stalled read after the connection is established, which Timeout does not cover.
+                if (request is HttpWebRequest httpWebRequest)
+                {
+                    httpWebRequest.ReadWriteTimeout = this.Timeout;
+                }
             }
 
             return request;
