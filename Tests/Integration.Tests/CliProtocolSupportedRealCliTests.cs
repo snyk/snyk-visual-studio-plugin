@@ -175,6 +175,10 @@ namespace Integration.Tests
                     throw new TimeoutException($"CLI at {cliPath} did not respond to --protocolVersion in time.");
                 }
 
+                // Mirrors the production fix in SnykCliDownloader.CheckCliProtocol: WaitForExit(int)
+                // returning true doesn't guarantee OutputDataReceived has finished delivering output.
+                process.WaitForExit();
+
                 return output.ToString().Trim();
             }
         }

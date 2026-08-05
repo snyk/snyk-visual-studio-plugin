@@ -432,6 +432,11 @@ namespace Snyk.VisualStudio.Extension.Download
                         return CliProtocolCheckResult.TimedOut;
                     }
 
+                    // WaitForExit(int) returning true doesn't guarantee the async OutputDataReceived
+                    // pump has finished delivering output (documented WaitForExit(Int32) behavior) - the
+                    // parameterless overload blocks until it has, so output below isn't read mid-flush.
+                    process.WaitForExit();
+
                     var reported = output.ToString().Trim();
                     var supported = IsSupportedProtocolVersion(reported);
 

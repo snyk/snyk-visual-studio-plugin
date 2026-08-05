@@ -80,6 +80,7 @@ namespace Snyk.VisualStudio.Extension.Tests.Language
         {
             // Arrange
             cut.CliProtocolCompatibilityCheck = _ => CliProtocolCheckResult.Unsupported;
+            cut.VsHasLoadedClient = true;
 
             var eventInvoked = false;
             cut.StartAsync += (sender, args) =>
@@ -116,6 +117,7 @@ namespace Snyk.VisualStudio.Extension.Tests.Language
         {
             // Arrange
             cut.CliProtocolCompatibilityCheck = _ => result;
+            cut.VsHasLoadedClient = true;
 
             string shownMessage = null;
             cut.ShowInfoBar = message => shownMessage = message;
@@ -151,10 +153,11 @@ namespace Snyk.VisualStudio.Extension.Tests.Language
             cut.CliProtocolCompatibilityCheck = _ => CliProtocolCheckResult.Unsupported;
             var semaphore = GetStartStopSemaphore(cut);
 
-            // Without a StartAsync subscriber, StartAsync == null && shouldStart short-circuits at the
-            // very top of StartServerAsync (FireOnLanguageClientNotInitializedAsync then return) - the
-            // gate logic below is never reached at all.
+            // Without a subscriber AND VsHasLoadedClient set, the guard at the top of StartServerAsync
+            // short-circuits (FireOnLanguageClientNotInitializedAsync then return) - the gate logic below
+            // is never reached at all.
             cut.StartAsync += (sender, args) => Task.CompletedTask;
+            cut.VsHasLoadedClient = true;
 
             string shownMessage = null;
             int? semaphoreCountWhenShown = null;
@@ -189,6 +192,7 @@ namespace Snyk.VisualStudio.Extension.Tests.Language
         {
             // Arrange
             cut.CliExistsCheck = _ => false;
+            cut.VsHasLoadedClient = true;
             var protocolCheckInvoked = false;
             cut.CliProtocolCompatibilityCheck = _ =>
             {

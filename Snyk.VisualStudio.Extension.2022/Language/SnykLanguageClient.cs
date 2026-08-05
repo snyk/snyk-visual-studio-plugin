@@ -127,11 +127,11 @@ namespace Snyk.VisualStudio.Extension.Language
 
         // Reuses SnykCliDownloader.CheckCliProtocol (added independently alongside this ticket, in
         // Download/SnykCliDownloader.cs) rather than a second, near-duplicate implementation - it
-        // already handles this correctly (waits for exit before reading stdout, doesn't redirect
-        // stderr). ShouldDownloadCli() (and so IsCliDownloadNeeded) only compares file-existence and
-        // version strings - it never runs this protocol probe - and returns false whenever
-        // BinariesAutoUpdate is off regardless of whether the binary works, so a custom/unmanaged path
-        // never gets a protocol check at all without this gate.
+        // already handles this correctly (drains stdout concurrently via BeginOutputReadLine before
+        // WaitForExit, doesn't redirect stderr). ShouldDownloadCli() (and so IsCliDownloadNeeded) only
+        // compares file-existence and version strings - it never runs this protocol probe - and
+        // returns false whenever BinariesAutoUpdate is off regardless of whether the binary works, so a
+        // custom/unmanaged path never gets a protocol check at all without this gate.
         //
         // Returns the richer CliProtocolCheckResult rather than a bool so a timeout or a failed probe
         // (e.g. an AV scanner still holding a just-downloaded binary) can be told apart from a genuinely
@@ -317,12 +317,10 @@ namespace Snyk.VisualStudio.Extension.Language
                                 // setting does nothing for an AV-scan timeout specifically - the only
                                 // actionable thing here is the AV/security software itself.
                                 infoBarMessage = "Snyk could not confirm the CLI's Language Server protocol " +
-                                    "version within the time limit; this is not a confirmed incompatibility. " +
-                                    "This can happen if the binary was just downloaded and is still being " +
-                                    "scanned by antivirus software, and should succeed on a later attempt. If " +
-                                    "this keeps happening, check whether antivirus or security software is " +
-                                    "scanning or blocking the CLI, and consider adding an exclusion for it. " +
-                                    $"(CLI path: '{cliPath}')";
+                                    "version within the time limit; not a confirmed incompatibility. Often " +
+                                    "happens right after a fresh download while antivirus software is " +
+                                    "still scanning the binary. If it keeps happening, check for " +
+                                    $"antivirus/security software blocking the CLI. (CLI path: '{cliPath}')";
                                 Logger.Error("Timed out checking Language Server protocol compatibility for CLI at {CliPath}", cliPath);
                             }
                             else if (protocolCheckResult == CliProtocolCheckResult.CheckFailed)
@@ -331,10 +329,10 @@ namespace Snyk.VisualStudio.Extension.Language
                                 // no "try restarting" action to suggest - the CLI itself (path, permissions,
                                 // whether it's a valid executable) is the only thing the user can check.
                                 infoBarMessage = "Snyk could not check the CLI's Language Server protocol " +
-                                    "version due to an error; this is not a confirmed incompatibility. Check " +
-                                    "that the CLI path is correct and points to a valid, accessible Snyk CLI " +
+                                    "version due to an error; not a confirmed incompatibility. Check that " +
+                                    "the CLI path is correct and points to a valid, accessible Snyk CLI " +
                                     "executable, or enable \"Manage Binaries Automatically\" in Tools > " +
-                                    $"Options > Snyk to let Snyk manage it automatically. (CLI path: '{cliPath}')";
+                                    $"Options > Snyk. (CLI path: '{cliPath}')";
                                 Logger.Error("Could not check Language Server protocol compatibility for CLI at {CliPath}", cliPath);
                             }
                             else
