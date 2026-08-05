@@ -1,9 +1,8 @@
-﻿using Microsoft.VisualStudio.PlatformUI;
-using System;
+﻿using System;
 
 namespace Snyk.VisualStudio.Extension.UI.Html
 {
-    public class OssHtmlProvider : BaseHtmlProvider
+    public partial class OssHtmlProvider : BaseHtmlProvider
     {
         private static OssHtmlProvider _instance;
 
@@ -19,6 +18,12 @@ namespace Snyk.VisualStudio.Extension.UI.Html
             }
         }
 
+        /// <summary>
+        /// Substitutes the Open Source panel's themed container colour. Implemented in
+        /// OssHtmlProvider.Vs.cs; the variable is left in place where there is no IDE theme.
+        /// </summary>
+        static partial void ApplyIdeThemeColors(ref string html);
+
         public override string ReplaceCssVariables(string html)
         {
             var css = "<style nonce=\"${nonce}\">";
@@ -26,7 +31,7 @@ namespace Snyk.VisualStudio.Extension.UI.Html
             css += "</style>"; 
             html = html.Replace("${ideStyle}", css);
             html =  base.ReplaceCssVariables(html);
-            html = html.Replace("var(--container-background-color)", VSColorTheme.GetThemedColor(EnvironmentColors.EditorExpansionFillBrushKey).ToHex());
+            ApplyIdeThemeColors(ref html);
 
             return html;
         }

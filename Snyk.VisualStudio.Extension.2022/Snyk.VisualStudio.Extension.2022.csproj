@@ -217,6 +217,7 @@
       <DependentUpon>TextField.xaml</DependentUpon>
     </Compile>
     <Compile Include="UI\Html\BaseHtmlProvider.cs" />
+    <Compile Include="UI\Html\BaseHtmlProvider.Vs.cs" />
     <Compile Include="UI\Html\ColorExtension.cs" />
     <Compile Include="UI\Html\ExecuteCommandBridge.cs" />
     <Compile Include="UI\Html\HtmlSettingsScriptingBridge.cs" />
@@ -225,12 +226,17 @@
     <Compile Include="UI\Html\HtmlResourceLoader.cs" />
     <Compile Include="UI\Html\IacHtmlProvider.cs" />
     <Compile Include="UI\Html\IHtmlProvider.cs" />
+    <Compile Include="UI\Html\HtmlThemePalette.cs" />
     <Compile Include="UI\Html\IWebView2Host.cs" />
     <Compile Include="UI\Html\StaticHtmlProvider.cs" />
+    <Compile Include="UI\Html\StaticHtmlProvider.Vs.cs" />
     <Compile Include="UI\Html\SummaryHtmlProvider.cs" />
     <Compile Include="UI\Html\OssHtmlProvider.cs" />
+    <Compile Include="UI\Html\OssHtmlProvider.Vs.cs" />
     <Compile Include="UI\Html\CodeHtmlProvider.cs" />
+    <Compile Include="UI\Html\CodeHtmlProvider.Vs.cs" />
     <Compile Include="UI\Html\SecretsHtmlProvider.cs" />
+    <Compile Include="UI\Html\SecretsHtmlProvider.Vs.cs" />
     <Compile Include="UI\Html\HtmlProviderFactory.cs" />
     <Compile Include="UI\Html\WebView2BridgeBindings.cs" />
     <Compile Include="UI\Html\WebView2EnvironmentCache.cs" />

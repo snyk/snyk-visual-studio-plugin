@@ -67,6 +67,9 @@ Current examples:
 | `ISolutionService` | `SolutionEvents` (`SnykVsSolutionLoadEvents`) |
 | `ThreadContextEnricher` | resolving the IDE UI thread via `ThreadHelper.CheckAccess()` |
 | `SnykCliDownloader` | raising the VS info bar when a CLI update fails |
+| `BaseHtmlProvider` | reading the active VS colour theme into an `HtmlThemePalette` |
+| `CodeHtmlProvider`, `OssHtmlProvider`, `SecretsHtmlProvider` | their product-specific themed colour substitutions, and dark / high-contrast detection |
+| `StaticHtmlProvider` | `GetInitHtmlAsync`, which marshals through the IDE joinable task factory |
 
 Where the VS half is an implementation detail rather than API, it is expressed as a
 [classic partial method](https://learn.microsoft.com/dotnet/csharp/language-reference/keywords/partial-method)

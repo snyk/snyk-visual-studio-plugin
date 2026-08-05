@@ -1,10 +1,6 @@
-﻿using Microsoft.VisualStudio.Shell;
-using System.IO;
-using System.Threading.Tasks;
-
-namespace Snyk.VisualStudio.Extension.UI.Html
+﻿namespace Snyk.VisualStudio.Extension.UI.Html
 {
-    public class StaticHtmlProvider : BaseHtmlProvider
+    public partial class StaticHtmlProvider : BaseHtmlProvider
     {
         private static StaticHtmlProvider _instance;
 
@@ -40,21 +36,6 @@ namespace Snyk.VisualStudio.Extension.UI.Html
                 "<style nonce=\"ideNonce\">:root { --main-font-size: 10px; }" + GetScrollbarCss() + "</style>";
             html = html.Replace("${ideStyle}", ideStyleOverride);
             return base.ReplaceCssVariables(html);
-        }
-
-        public async Task<string> GetInitHtmlAsync()
-        {
-            return await ThreadHelper.JoinableTaskFactory.RunAsync(async () =>
-            {
-                var assemblyLocation = Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location);
-                if (assemblyLocation == null) return string.Empty;
-                var path = Path.Combine(assemblyLocation, "Resources", "ScanSummaryInit.html");
-                using (var stream = new StreamReader(path))
-                {
-                    var html = await stream.ReadToEndAsync();
-                    return html;
-                }
-            });
         }
     }
 }
