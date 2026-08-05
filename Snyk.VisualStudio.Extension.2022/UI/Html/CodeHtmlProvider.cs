@@ -1,10 +1,8 @@
 ﻿using System;
-using Microsoft.VisualStudio.PlatformUI;
-using Snyk.VisualStudio.Extension.Theme;
 
 namespace Snyk.VisualStudio.Extension.UI.Html
 {
-    public class CodeHtmlProvider : BaseHtmlProvider
+    public partial class CodeHtmlProvider : BaseHtmlProvider
     {
         private static CodeHtmlProvider _instance;
 
@@ -61,13 +59,26 @@ namespace Snyk.VisualStudio.Extension.UI.Html
 
         private string GetThemeScript()
         {
-            var isDarkTheme = ThemeInfo.IsDarkTheme();
-            var isHighContrast = ThemeInfo.IsHighContrast();
+            var isDarkTheme = false;
+            var isHighContrast = false;
+            ResolveIdeThemeFlags(ref isDarkTheme, ref isHighContrast);
+
             var themeScript = $"var isDarkTheme = {isDarkTheme.ToString().ToLowerInvariant()};\n" +
                               $"var isHighContrast = {isHighContrast.ToString().ToLowerInvariant()};\n" +
                               "document.body.classList.add(isHighContrast ? 'high-contrast' : (isDarkTheme ? 'dark' : 'light'));";
             return themeScript;
         }
+
+        /// <summary>
+        /// Reports the IDE's dark / high-contrast state. Implemented in CodeHtmlProvider.Vs.cs.
+        /// </summary>
+        static partial void ResolveIdeThemeFlags(ref bool isDarkTheme, ref bool isHighContrast);
+
+        /// <summary>
+        /// Substitutes the Code panel's themed colour variables. Implemented in
+        /// CodeHtmlProvider.Vs.cs; the variables are left in place where there is no IDE theme.
+        /// </summary>
+        static partial void ApplyIdeThemeColors(ref string html);
 
         public override string ReplaceCssVariables(string html)
         {
@@ -76,13 +87,7 @@ namespace Snyk.VisualStudio.Extension.UI.Html
 
             html = base.ReplaceCssVariables(html);
 
-            html = html.Replace("var(--example-line-removed-color)", VSColorTheme.GetThemedColor(EnvironmentColors.VizSurfaceRedDarkBrushKey).ToHex());
-            html = html.Replace("var(--example-line-added-color)", VSColorTheme.GetThemedColor(EnvironmentColors.VizSurfaceGreenDarkBrushKey).ToHex());
-            html = html.Replace("var(--button-background-color)", VSColorTheme.GetThemedColor(EnvironmentColors.StartPageButtonPinHoverColorKey).ToHex());
-            html = html.Replace("var(--button-text-color)", VSColorTheme.GetThemedColor(EnvironmentColors.BrandedUITextBrushKey).ToHex());
-            html = html.Replace("var(--circle-color)", VSColorTheme.GetThemedColor(EnvironmentColors.StartPageButtonPinHoverColorKey).ToHex());
-            html = html.Replace("var(--warning-background)", VSColorTheme.GetThemedColor(EnvironmentColors.SmartTagHoverFillBrushKey).ToHex());
-            html = html.Replace("var(--warning-text)", VSColorTheme.GetThemedColor(EnvironmentColors.SmartTagHoverTextBrushKey).ToHex());
+            ApplyIdeThemeColors(ref html);
 
             html = html.Replace("${ideGenerateAIFix}", "window.GenerateFixes(issueId)");
             html = html.Replace("${ideApplyAIFix}", "window.ApplyFixDiff(fixId)");

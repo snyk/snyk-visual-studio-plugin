@@ -1,6 +1,5 @@
 ﻿using System;
 using System.IO;
-using Microsoft.VisualStudio.Sdk.TestFramework;
 using Moq;
 using Snyk.VisualStudio.Extension.Service;
 using Snyk.VisualStudio.Extension.Settings;
@@ -8,18 +7,20 @@ using Xunit;
 
 namespace Snyk.VisualStudio.Extension.Tests
 {
-    [Collection(MockedVS.Collection)]
-    public class SnykOptionsTest : IDisposable
+    // The [Collection(MockedVS.Collection)] attribute lives in SnykOptionsTest.Vs.cs: these tests
+    // only exercise endpoint derivation on SnykOptions and touch no Visual Studio service, so the
+    // fixture only needs to keep them in the same serialized collection on Windows.
+    public partial class SnykOptionsTest : IDisposable
     {
         private readonly SnykOptions cut;
         private readonly string settingsFilePath;
 
-        public SnykOptionsTest(GlobalServiceProvider sp)
+        public SnykOptionsTest()
         {
-            sp.Reset();
             var serviceProviderMock = new Mock<ISnykServiceProvider>();
-            var snykSolutionService = new SnykSolutionService();
-            serviceProviderMock.Setup(x => x.SolutionService).Returns(snykSolutionService);
+            // A mock rather than SnykSolutionService: nothing under test reads the solution, and
+            // the concrete service needs Visual Studio's DTE.
+            serviceProviderMock.Setup(x => x.SolutionService).Returns(new Mock<ISolutionService>().Object);
             var serviceProvider = serviceProviderMock.Object;
             // IDE-1483: use a non-pre-created unique path so the file does not exist at
             // construction time (avoids the JSON-parse error that Path.GetTempFileName()'s

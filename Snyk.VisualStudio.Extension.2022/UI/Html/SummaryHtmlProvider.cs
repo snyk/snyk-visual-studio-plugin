@@ -1,5 +1,4 @@
-﻿using Microsoft.VisualStudio.PlatformUI;
-using System;
+﻿using System;
 
 namespace Snyk.VisualStudio.Extension.UI.Html
 {

@@ -1,12 +1,10 @@
 using System.Linq;
 using System;
 using System.Text.RegularExpressions;
-using Microsoft.VisualStudio.PlatformUI;
-using Snyk.VisualStudio.Extension.Theme;
 
 namespace Snyk.VisualStudio.Extension.UI.Html
 {
-    public class BaseHtmlProvider : IHtmlProvider
+    public partial class BaseHtmlProvider : IHtmlProvider
     {
         private readonly bool forceLight;
 
@@ -114,77 +112,36 @@ namespace Snyk.VisualStudio.Extension.UI.Html
             return new string(chars);
         }
 
+        /// <summary>
+        /// Replaces <paramref name="palette"/> with the active Visual Studio colour theme.
+        /// Implemented in BaseHtmlProvider.Vs.cs; where there is no IDE theme to read the call is
+        /// compiled away and the light palette stands (see docs/cross-platform-testing.md).
+        /// </summary>
+        static partial void ResolveIdeThemePalette(ref HtmlThemePalette palette);
+
         public virtual string ReplaceCssVariables(string html)
         {
-            string backgroundColor;
-            string textColor;
-            string borderColor;
-            string linkColor;
-            string inputBackground;
-            string inputBorder;
-            string buttonBackground;
-            string buttonHoverBackground;
-            string disabledForeground;
-            string errorForeground;
-            string inactiveSelectionBackground;
-            string listHoverBackground;
-            string scrollbarBackground;
-            string scrollbarThumb;
-            string scrollbarThumbHover;
-
-            if (forceLight)
+            var palette = HtmlThemePalette.Light;
+            if (!forceLight)
             {
-                // Hardcoded light palette — approximates VS's Light theme so the settings
-                // dialog reads cleanly regardless of the user's active VS theme.
-                backgroundColor = "#FFFFFF";
-                textColor = "#1F1F1F";
-                borderColor = "#D4D4D4";
-                linkColor = "#0066CC";
-                inputBackground = "#FFFFFF";
-                inputBorder = "#CECECE";
-                buttonBackground = "#E1E1E1";
-                buttonHoverBackground = "#CECECE";
-                disabledForeground = "#A0A0A0";
-                errorForeground = "#A1260D";
-                inactiveSelectionBackground = "#E5EBF1";
-                listHoverBackground = "#F0F0F0";
-                scrollbarBackground = "#F0F0F0";
-                scrollbarThumb = "#C1C1C1";
-                scrollbarThumbHover = "#A8A8A8";
+                ResolveIdeThemePalette(ref palette);
             }
-            else
-            {
-                // Use proper tool window colors for consistent theming
-                backgroundColor = VSColorTheme.GetThemedColor(EnvironmentColors.ToolWindowBackgroundColorKey).ToHex();
-                textColor = VSColorTheme.GetThemedColor(EnvironmentColors.ToolWindowTextColorKey).ToHex();
-                borderColor = VSColorTheme.GetThemedColor(EnvironmentColors.ToolWindowBorderColorKey).ToHex();
 
-                // Links should use the standard hyperlink color
-                linkColor = VSColorTheme.GetThemedColor(EnvironmentColors.PanelHyperlinkBrushKey).ToHex();
-
-                // Input fields - use ComboBox colors as they're designed for input controls
-                inputBackground = VSColorTheme.GetThemedColor(EnvironmentColors.ComboBoxBackgroundColorKey).ToHex();
-                inputBorder = VSColorTheme.GetThemedColor(EnvironmentColors.ComboBoxBorderColorKey).ToHex();
-
-                // Legacy vscode- prefixed button variables (kept for compatibility)
-                buttonBackground = VSColorTheme.GetThemedColor(EnvironmentColors.CommandBarMenuBackgroundGradientBeginColorKey).ToHex();
-                buttonHoverBackground = VSColorTheme.GetThemedColor(EnvironmentColors.CommandBarMouseOverBackgroundBeginColorKey).ToHex();
-
-                // Disabled and error states
-                disabledForeground = VSColorTheme.GetThemedColor(EnvironmentColors.SystemGrayTextColorKey).ToHex();
-                errorForeground = VSColorTheme.GetThemedColor(EnvironmentColors.VizSurfaceRedMediumBrushKey).ToHex();
-
-                // Section backgrounds - use grid colors which are designed for content separation
-                inactiveSelectionBackground = VSColorTheme.GetThemedColor(EnvironmentColors.GridHeadingBackgroundColorKey).ToHex();
-
-                // Hover and interaction states
-                listHoverBackground = VSColorTheme.GetThemedColor(EnvironmentColors.ComboBoxMouseOverBackgroundBeginColorKey).ToHex();
-
-                // Scrollbar colors
-                scrollbarBackground = VSColorTheme.GetThemedColor(EnvironmentColors.ScrollBarBackgroundColorKey).ToHex();
-                scrollbarThumb = VSColorTheme.GetThemedColor(EnvironmentColors.ScrollBarThumbBackgroundColorKey).ToHex();
-                scrollbarThumbHover = VSColorTheme.GetThemedColor(EnvironmentColors.ScrollBarThumbMouseOverBackgroundColorKey).ToHex();
-            }
+            var backgroundColor = palette.BackgroundColor;
+            var textColor = palette.TextColor;
+            var borderColor = palette.BorderColor;
+            var linkColor = palette.LinkColor;
+            var inputBackground = palette.InputBackground;
+            var inputBorder = palette.InputBorder;
+            var buttonBackground = palette.ButtonBackground;
+            var buttonHoverBackground = palette.ButtonHoverBackground;
+            var disabledForeground = palette.DisabledForeground;
+            var errorForeground = palette.ErrorForeground;
+            var inactiveSelectionBackground = palette.InactiveSelectionBackground;
+            var listHoverBackground = palette.ListHoverBackground;
+            var scrollbarBackground = palette.ScrollbarBackground;
+            var scrollbarThumb = palette.ScrollbarThumb;
+            var scrollbarThumbHover = palette.ScrollbarThumbHover;
 
             // Editor/main content area
             var editorBackground = backgroundColor;

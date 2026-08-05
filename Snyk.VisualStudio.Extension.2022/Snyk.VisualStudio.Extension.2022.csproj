@@ -116,6 +116,7 @@
     <Compile Include="Download\ChecksumVerificationException.cs" />
     <Compile Include="Download\LatestReleaseInfo.cs" />
     <Compile Include="Download\SnykCliDownloader.cs" />
+    <Compile Include="Download\SnykCliDownloader.Vs.cs" />
     <Compile Include="CLI\ICli.cs" />
     <Compile Include="CLI\InvalidTokenException.cs" />
     <Compile Include="CLI\SnykCli.cs" />
@@ -128,6 +129,7 @@
     <Compile Include="Language\SnykLanguageServerEventArgs.cs" />
     <Compile Include="LocalCodeEngine.cs" />
     <Compile Include="LogManager.cs" />
+    <Compile Include="LogManager.Vs.cs" />
     <Compile Include="ManualAssemblyResolver.cs" />
     <Compile Include="Model\Severity.cs" />
     <Compile Include="Product.cs" />
@@ -157,8 +159,10 @@
     <Compile Include="Service\ISnykProgressWorker.cs" />
     <Compile Include="Service\ISnykService.cs" />
     <Compile Include="Service\ISnykServiceProvider.cs" />
+    <Compile Include="Service\ISnykServiceProvider.Vs.cs" />
     <Compile Include="Service\ISnykTasksService.cs" />
     <Compile Include="Service\ISolutionService.cs" />
+    <Compile Include="Service\ISolutionService.Vs.cs" />
     <Compile Include="Service\IWorkspaceTrustService.cs" />
     <Compile Include="Service\OssScanException.cs" />
     <Compile Include="Service\SnykCliDownloadEventArgs.cs" />
@@ -213,6 +217,7 @@
       <DependentUpon>TextField.xaml</DependentUpon>
     </Compile>
     <Compile Include="UI\Html\BaseHtmlProvider.cs" />
+    <Compile Include="UI\Html\BaseHtmlProvider.Vs.cs" />
     <Compile Include="UI\Html\ColorExtension.cs" />
     <Compile Include="UI\Html\ExecuteCommandBridge.cs" />
     <Compile Include="UI\Html\HtmlSettingsScriptingBridge.cs" />
@@ -221,16 +226,22 @@
     <Compile Include="UI\Html\HtmlResourceLoader.cs" />
     <Compile Include="UI\Html\IacHtmlProvider.cs" />
     <Compile Include="UI\Html\IHtmlProvider.cs" />
+    <Compile Include="UI\Html\HtmlThemePalette.cs" />
     <Compile Include="UI\Html\IWebView2Host.cs" />
     <Compile Include="UI\Html\StaticHtmlProvider.cs" />
+    <Compile Include="UI\Html\StaticHtmlProvider.Vs.cs" />
     <Compile Include="UI\Html\SummaryHtmlProvider.cs" />
     <Compile Include="UI\Html\OssHtmlProvider.cs" />
+    <Compile Include="UI\Html\OssHtmlProvider.Vs.cs" />
     <Compile Include="UI\Html\CodeHtmlProvider.cs" />
+    <Compile Include="UI\Html\CodeHtmlProvider.Vs.cs" />
     <Compile Include="UI\Html\SecretsHtmlProvider.cs" />
+    <Compile Include="UI\Html\SecretsHtmlProvider.Vs.cs" />
     <Compile Include="UI\Html\HtmlProviderFactory.cs" />
     <Compile Include="UI\Html\WebView2BridgeBindings.cs" />
     <Compile Include="UI\Html\WebView2EnvironmentCache.cs" />
     <Compile Include="UI\Html\WebView2Host.cs" />
+    <Compile Include="UI\Html\WebView2Host.Paths.cs" />
     <Compile Include="UI\Html\WebView2MessageDispatcher.cs" />
     <Compile Include="UI\Html\WebView2NavigationPreparer.cs" />
     <Compile Include="UI\Notifications\NotificationService.cs" />

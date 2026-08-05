@@ -1,7 +1,6 @@
 using System;
 using System.Collections.Generic;
 using System.Runtime.InteropServices;
-using Microsoft.VisualStudio.Sdk.TestFramework;
 using Moq;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
@@ -14,16 +13,17 @@ using Xunit;
 
 namespace Snyk.VisualStudio.Extension.Tests.Language
 {
-    [Collection(MockedVS.Collection)]
-    public class LsSettingsV25Tests
+    // The [Collection(MockedVS.Collection)] attribute lives in LsSettingsV25Tests.Vs.cs: none of
+    // these tests touch Visual Studio services, so the fixture only needs to keep them in the same
+    // serialized collection on Windows.
+    public partial class LsSettingsV25Tests
     {
         private LsSettingsV25 cut;
         private readonly Mock<ISnykOptions> optionsMock;
         private readonly Mock<ISnykOptionsManager> optionsManagerMock;
 
-        public LsSettingsV25Tests(GlobalServiceProvider sp)
+        public LsSettingsV25Tests()
         {
-            sp.Reset();
             optionsMock = new Mock<ISnykOptions>();
             optionsManagerMock = new Mock<ISnykOptionsManager>();
             var serviceProviderMock = new Mock<ISnykServiceProvider>();
