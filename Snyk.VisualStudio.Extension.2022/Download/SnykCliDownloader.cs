@@ -648,10 +648,6 @@ namespace Snyk.VisualStudio.Extension.Download
 
             progressWorker.IsWorkFinished = true;
 
-            // [startup-diag] Temporary. The last log line in the failing run was the decision itself, so
-            // this establishes whether the no-download branch is even reached before DownloadFinished.
-            Logger.Information("[startup-diag] AutoUpdateCliAsync: no download needed, about to raise DownloadFinished(false)");
-
             // Raises DownloadFinished because that is what starts the language server against the loaded
             // solution and clears the tool window's loading state. Deliberately NOT the finished-callback
             // list: those callbacks mean "record what was installed", and running them here re-fetches

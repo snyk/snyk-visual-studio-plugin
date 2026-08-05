@@ -68,36 +68,19 @@ namespace Snyk.VisualStudio.Extension.Service
         {
             get
             {
-                // [startup-diag] Temporary. Paired around the lock so a thread stuck holding it is
-                // visible: "waiting" with no matching "held" on the same thread means contention here.
-                Logger.Information("[startup-diag] CliDownloader: waiting for the episode lock");
-
                 lock (this.cliDownloaderLock)
                 {
-                    Logger.Information(
-                        "[startup-diag] CliDownloader: lock held, {Action}",
-                        this.cliDownloader == null ? "constructing a downloader" : "reusing the existing downloader");
-
-                    var downloader = this.cliDownloader ??
-                                     (this.cliDownloader = new SnykCliDownloader(this.serviceProvider.Options));
-
-                    Logger.Information("[startup-diag] CliDownloader: releasing the episode lock");
-
-                    return downloader;
+                    return this.cliDownloader ??
+                           (this.cliDownloader = new SnykCliDownloader(this.serviceProvider.Options));
                 }
             }
         }
 
         private void EndCliDownloadEpisode()
         {
-            // [startup-diag] Temporary. If "waiting" appears with no "cleared", this lock is the block.
-            Logger.Information("[startup-diag] EndCliDownloadEpisode: waiting for the episode lock");
-
             lock (this.cliDownloaderLock)
             {
                 this.cliDownloader = null;
-
-                Logger.Information("[startup-diag] EndCliDownloadEpisode: cleared");
             }
         }
 
@@ -532,16 +515,7 @@ namespace Snyk.VisualStudio.Extension.Service
         /// </summary>
         protected internal void OnDownloadFinished(bool binaryWasDownloaded = true)
         {
-            // [startup-diag] Temporary. These four lines bracket the whole no-download completion path:
-            // reaching "entered" but not "episode ended" implicates the lock; reaching "raising" but not
-            // "raised" implicates a subscriber blocking (the tool window waits for the UI thread).
-            Logger.Information("[startup-diag] OnDownloadFinished: entered, binaryWasDownloaded={Flag}", binaryWasDownloaded);
-
-            Logger.Information("[startup-diag] OnDownloadFinished: raising DownloadFinished to {SubscriberCount} subscriber(s)", this.DownloadFinished?.GetInvocationList().Length ?? 0);
-
             this.DownloadFinished?.Invoke(this, new SnykCliDownloadEventArgs { BinaryWasDownloaded = binaryWasDownloaded });
-
-            Logger.Information("[startup-diag] OnDownloadFinished: DownloadFinished raised and returned");
         }
 
         /// <summary>
@@ -765,11 +739,6 @@ namespace Snyk.VisualStudio.Extension.Service
 
             try
             {
-                // [startup-diag] Temporary, and the line whose absence made the last log unreadable:
-                // the "Checking whether..." line below is emitted only AFTER the downloader is acquired,
-                // so a caller blocked on the lock left no trace of having been here at all.
-                Logger.Information("[startup-diag] ShouldDownloadCli: entered, about to acquire the shared downloader");
-
                 var cliDownloader = this.CliDownloader;
 
                 // The configured path and the resolved one, because they differ whenever a custom path
