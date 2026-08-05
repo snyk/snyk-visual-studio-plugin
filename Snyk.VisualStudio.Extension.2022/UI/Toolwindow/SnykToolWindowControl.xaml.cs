@@ -153,22 +153,13 @@ namespace Snyk.VisualStudio.Extension.UI.Toolwindow
             };
             this.downloadFinishedHandler = (sender, args) =>
             {
-                // [startup-diag] Temporary. StartServerAsync has a silent early-return path (StartAsync
-                // null), so its own logging cannot tell "handler never ran" from "handler ran and the
-                // server start was a no-op". These three lines can.
-                Logger.Information("[startup-diag] downloadFinishedHandler: entered");
-
                 // Unconditional, and load-bearing: the package-init gate starts the server before the
                 // solution has loaded, so that first instance gets an empty workspace folder. This start
                 // is what brings it up again once the solution path is known. Guarding it on
                 // IsLanguageServerReady() left the server running against no folder and then dead.
                 ThreadHelper.JoinableTaskFactory.RunAsync(async ()=> await serviceProvider.LanguageClientManager.StartServerAsync(true)).FireAndForget();
 
-                Logger.Information("[startup-diag] downloadFinishedHandler: server start scheduled, about to wait for the UI thread");
-
                 this.OnDownloadFinished(sender, args);
-
-                Logger.Information("[startup-diag] downloadFinishedHandler: UI-thread work completed");
             };
             this.downloadUpdateHandler = (sender, args) => ThreadHelper.JoinableTaskFactory.RunAsync(() => this.OnDownloadUpdateAsync(sender, args));
 
@@ -455,21 +446,14 @@ namespace Snyk.VisualStudio.Extension.UI.Toolwindow
             // The download runs on the thread pool, so this is raised from there; DetermineInitScreen
             // writes WPF state.
             //
-            // [startup-diag] Temporary. JoinableTaskFactory.Run BLOCKS the calling thread until the UI
-            // thread is available. If "requesting" appears without "acquired", this wait is the hang.
-            Logger.Information("[startup-diag] OnDownloadFinished(view): requesting the UI thread");
-
-            // RunAsync, not Run — see OnDownloadStarted. This is the wait that hung startup.
+            // RunAsync, not Run — see OnDownloadStarted. Blocking here parked a pool thread on the UI
+            // thread during startup, which is a hazard even when it eventually completes.
             ThreadHelper.JoinableTaskFactory.RunAsync(async () =>
             {
                 await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
 
-                Logger.Information("[startup-diag] OnDownloadFinished(view): UI thread acquired");
-
                 this.DetermineInitScreen();
             }).FireAndForget();
-
-            Logger.Information("[startup-diag] OnDownloadFinished(view): returned");
         }
 
         /// <summary>
