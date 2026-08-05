@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 using Moq;
 using Snyk.VisualStudio.Extension.Download;
@@ -485,6 +486,47 @@ namespace Snyk.VisualStudio.Extension.Tests
             Assert.Equal(1, cut.ReleaseInfoFetches);
             Assert.Equal(1, cut.ShaFetches);
             Assert.Equal(0, cut.ProtocolProbes);
+        }
+
+        [Fact]
+        public void IsCliDownloadNeeded_AsksTheNetworkOnce_WhenConcurrentCallersShareADownloader()
+        {
+            // One downloader is shared by a startup's three concurrent callers. Without a lock around
+            // the memos, two of them both see null and both fetch — observed in a real startup as three
+            // release-version requests, three checksum requests and two full hashes from one instance.
+            var installedCli = Path.Combine(this.workDir, "snyk-win.exe");
+            File.WriteAllText(installedCli, "the-current-cli");
+
+            var checksumReads = 0;
+            var cut = new FakeDownloader(
+                Options(),
+                sha: Sha256.Checksum(installedCli),
+                computeChecksum: path =>
+                {
+                    Interlocked.Increment(ref checksumReads);
+
+                    return Sha256.Checksum(path);
+                });
+
+            // Released together so they contend, rather than starting in sequence.
+            using (var start = new ManualResetEventSlim(false))
+            {
+                var callers = Enumerable.Range(0, 8).Select(_ => Task.Run(() =>
+                {
+                    start.Wait();
+
+                    return cut.IsCliDownloadNeeded(installedCli);
+                })).ToArray();
+
+                start.Set();
+                Task.WaitAll(callers);
+
+                Assert.All(callers, t => Assert.False(t.Result));
+            }
+
+            Assert.Equal(1, cut.ReleaseInfoFetches);
+            Assert.Equal(1, cut.ShaFetches);
+            Assert.Equal(1, checksumReads);
         }
 
         [Fact]

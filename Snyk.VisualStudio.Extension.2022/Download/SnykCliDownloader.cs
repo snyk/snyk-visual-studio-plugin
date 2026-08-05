@@ -62,6 +62,18 @@ namespace Snyk.VisualStudio.Extension.Download
         private static readonly char[] QueryDelimiters = { '?', '#' };
 
         private readonly ISnykOptions SnykOptions;
+
+        // Guards the three memos below. One downloader is shared across a startup's concurrent callers
+        // (package init, the language client's load, the update itself), and an unguarded
+        // "field ?? (field = Fetch())" lets two threads both see null and both fetch. Observed: three
+        // release-version requests, three checksum requests and two full hashes of the binary in a
+        // single startup, from one shared instance.
+        //
+        // Held across the fetch deliberately: the second caller waits and then reads the memo, which is
+        // the point. Every caller is already off the UI thread, and the requests are bounded by
+        // SnykWebClient's timeout.
+        private readonly object memoLock = new object();
+
         private string expectedSha;
         private LatestReleaseInfo cachedLatestReleaseInfo;
         private string upToDateMemoKey;
@@ -271,8 +283,14 @@ namespace Snyk.VisualStudio.Extension.Download
         /// comparison reports "current" and the install never moves off the older binary.
         /// </summary>
         // internal for testability (the tests assert the fetch happens once).
-        internal LatestReleaseInfo GetLatestReleaseInfoOnce() =>
-            this.cachedLatestReleaseInfo ?? (this.cachedLatestReleaseInfo = this.GetLatestReleaseInfo());
+        internal LatestReleaseInfo GetLatestReleaseInfoOnce()
+        {
+            lock (this.memoLock)
+            {
+                return this.cachedLatestReleaseInfo ??
+                       (this.cachedLatestReleaseInfo = this.GetLatestReleaseInfo());
+            }
+        }
 
         /// <summary>
         /// Request last cli information.
@@ -318,8 +336,13 @@ namespace Snyk.VisualStudio.Extension.Download
         /// them. Also sets expectedSha, which VerifyCliFile compares against.
         /// </summary>
         // internal for testability (the tests assert the fetch happens once).
-        internal string GetLatestCliShaOnce(string cliDownloadUrl) =>
-            this.expectedSha ?? (this.expectedSha = this.GetLatestCliSha(cliDownloadUrl));
+        internal string GetLatestCliShaOnce(string cliDownloadUrl)
+        {
+            lock (this.memoLock)
+            {
+                return this.expectedSha ?? (this.expectedSha = this.GetLatestCliSha(cliDownloadUrl));
+            }
+        }
 
         /// <summary>
         /// Whether the binary at <paramref name="cliFilePath"/> speaks the LS protocol version this
@@ -561,21 +584,24 @@ namespace Snyk.VisualStudio.Extension.Download
         {
             var key = BuildUpToDateMemoKey(cliFileDestinationPath, expectedSha);
 
-            if (key != null && string.Equals(key, this.upToDateMemoKey, StringComparison.Ordinal))
+            lock (this.memoLock)
             {
-                return this.upToDateMemoVerdict;
+                if (key != null && string.Equals(key, this.upToDateMemoKey, StringComparison.Ordinal))
+                {
+                    return this.upToDateMemoVerdict;
+                }
+
+                var verdict = IsCliUpToDate(cliFileDestinationPath, expectedSha, this.ComputeChecksum);
+
+                // Only memoise when the file could actually be measured; otherwise re-ask every time.
+                if (key != null)
+                {
+                    this.upToDateMemoKey = key;
+                    this.upToDateMemoVerdict = verdict;
+                }
+
+                return verdict;
             }
-
-            var verdict = IsCliUpToDate(cliFileDestinationPath, expectedSha, this.ComputeChecksum);
-
-            // Only memoise when the file could actually be measured; otherwise re-ask every time.
-            if (key != null)
-            {
-                this.upToDateMemoKey = key;
-                this.upToDateMemoVerdict = verdict;
-            }
-
-            return verdict;
         }
 
         // virtual for testability: hashing the binary is the expensive part of the decision, and the
