@@ -120,7 +120,17 @@ namespace Snyk.VisualStudio.Extension.UI.Notifications
             => this.statusBar.ShowFinishedSearchMessage("Snyk scan cancelled");
 
         private void OnDownloadFinished(object sender, SnykCliDownloadEventArgs eventArgs)
-            => this.statusBar.ShowDownloadFinishedMessage("Snyk CLI downloaded successfully");
+        {
+            // Raised on the nothing-to-download path too, where no DownloadStarted preceded it — so
+            // announcing a successful download would be false and would stop an animation that never
+            // started.
+            if (!eventArgs.BinaryWasDownloaded)
+            {
+                return;
+            }
+
+            this.statusBar.ShowDownloadFinishedMessage("Snyk CLI downloaded successfully");
+        }
 
         private void OnDownloadStarted(object sender, SnykCliDownloadEventArgs eventArgs)
             => this.statusBar.ShowDownloadProgressMessage("Downloading latest Snyk CLI release...");

@@ -201,7 +201,7 @@ namespace Snyk.VisualStudio.Extension.Tests
                 new List<SnykCliDownloader.CliDownloadFinishedCallback> { () => finishedCallbackRan = true }));
 
             Assert.False(finishedCallbackRan, "a failed install must not fire the download-finished callbacks");
-            this.progressWorkerMock.Verify(w => w.DownloadFinished(), Times.Never);
+            this.progressWorkerMock.Verify(w => w.DownloadFinished(It.IsAny<bool>()), Times.Never);
         }
 
         [Fact]
@@ -222,7 +222,11 @@ namespace Snyk.VisualStudio.Extension.Tests
 
             Assert.Equal("cli-binary", File.ReadAllText(destination));
             Assert.True(finishedCallbackRan);
-            this.progressWorkerMock.Verify(w => w.DownloadFinished(), Times.Once);
+            this.progressWorkerMock.Verify(w => w.DownloadFinished(true), Times.Once);
+
+            // The caller's finally gates disposal of the cancellation token source and TaskFinished on
+            // this, so an actual install must set it too — not only the nothing-to-do path.
+            this.progressWorkerMock.VerifySet(w => w.IsWorkFinished = true, Times.Once());
         }
 
         [Fact]
@@ -249,7 +253,7 @@ namespace Snyk.VisualStudio.Extension.Tests
             Assert.Equal(0, cut.InstallFailuresReported);
             Assert.Equal("language server failed to start", thrown.Message);
             Assert.Equal("cli-binary", File.ReadAllText(destination));
-            this.progressWorkerMock.Verify(w => w.DownloadFinished(), Times.Never);
+            this.progressWorkerMock.Verify(w => w.DownloadFinished(It.IsAny<bool>()), Times.Never);
         }
 
         [Fact]
@@ -356,8 +360,12 @@ namespace Snyk.VisualStudio.Extension.Tests
                 new List<SnykCliDownloader.CliDownloadFinishedCallback> { () => finishedCallbackRan = true });
 
             Assert.False(finishedCallbackRan, "install callbacks must not run when nothing was installed");
-            this.progressWorkerMock.Verify(w => w.DownloadFinished(), Times.Once);
             this.progressWorkerMock.VerifySet(w => w.IsWorkFinished = true, Times.Once());
+
+            // binaryWasDownloaded:false — subscribers that report progress must not announce a download
+            // that did not happen, and no DownloadStarted preceded this.
+            this.progressWorkerMock.Verify(w => w.DownloadFinished(false), Times.Once);
+            this.progressWorkerMock.Verify(w => w.DownloadFinished(true), Times.Never);
 
             // Nothing was fetched: the binary already on disk is the one we want.
             Assert.Equal("an-up-to-date-cli", File.ReadAllText(installedCli));

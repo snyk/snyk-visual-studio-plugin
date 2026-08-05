@@ -24,7 +24,7 @@
         /// <summary>
         /// Notify download finished.
         /// </summary>
-        void DownloadFinished();
+        void DownloadFinished(bool binaryWasDownloaded = true);
 
         /// <summary>
         /// Notify cancel if cancellation requested by user.

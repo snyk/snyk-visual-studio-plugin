@@ -283,3 +283,6 @@ CLAUDE.md
 .cache_ggshield
 IDE-1752_implementation_plan.md
 tests.json
+
+# JetBrains Rider / IntelliJ
+.idea/
