@@ -41,6 +41,7 @@
     <Compile Include="$(SnykExtensionTestSourceRoot)Settings\SnykOptionsManagerSecretsTests.cs" Link="Tests\Settings\SnykOptionsManagerSecretsTests.cs" />
     <Compile Include="$(SnykExtensionTestSourceRoot)Settings\UserOverridePersistenceTests.cs" Link="Tests\Settings\UserOverridePersistenceTests.cs" />
     <Compile Include="$(SnykExtensionTestSourceRoot)SnykCliDownloaderTest.cs" Link="Tests\SnykCliDownloaderTest.cs" />
+    <Compile Include="$(SnykExtensionTestSourceRoot)SnykOptionsTest.cs" Link="Tests\SnykOptionsTest.cs" />
     <Compile Include="$(SnykExtensionTestSourceRoot)SnykUserStorageSettingsServiceTest.cs" Link="Tests\SnykUserStorageSettingsServiceTest.cs" />
     <Compile Include="$(SnykExtensionTestSourceRoot)TestUtils.cs" Link="Tests\TestUtils.cs" />
     <Compile Include="$(SnykExtensionTestSourceRoot)UI\Html\BaseHtmlProviderTest.cs" Link="Tests\UI\Html\BaseHtmlProviderTest.cs" />
@@ -50,6 +51,7 @@
     <Compile Include="$(SnykExtensionTestSourceRoot)UI\Html\TreeHtmlProviderTest.cs" Link="Tests\UI\Html\TreeHtmlProviderTest.cs" />
     <Compile Include="$(SnykExtensionTestSourceRoot)UI\Html\WebView2BridgeBindingsTest.cs" Link="Tests\UI\Html\WebView2BridgeBindingsTest.cs" />
     <Compile Include="$(SnykExtensionTestSourceRoot)UI\Html\WebView2EnvironmentCacheTests.cs" Link="Tests\UI\Html\WebView2EnvironmentCacheTests.cs" />
+    <Compile Include="$(SnykExtensionTestSourceRoot)UI\Html\WebView2HostTest.cs" Link="Tests\UI\Html\WebView2HostTest.cs" />
     <Compile Include="$(SnykExtensionTestSourceRoot)UI\Html\WebView2MessageDispatcherTest.cs" Link="Tests\UI\Html\WebView2MessageDispatcherTest.cs" />
     <Compile Include="$(SnykExtensionTestSourceRoot)UI\Html\WebView2NavigationPreparerTest.cs" Link="Tests\UI\Html\WebView2NavigationPreparerTest.cs" />
     <Compile Include="$(SnykExtensionTestSourceRoot)Utils\SnykDirectoryTests.cs" Link="Tests\Utils\SnykDirectoryTests.cs" />

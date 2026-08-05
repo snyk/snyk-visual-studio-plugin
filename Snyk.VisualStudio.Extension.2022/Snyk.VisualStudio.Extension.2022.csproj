@@ -241,6 +241,7 @@
     <Compile Include="UI\Html\WebView2BridgeBindings.cs" />
     <Compile Include="UI\Html\WebView2EnvironmentCache.cs" />
     <Compile Include="UI\Html\WebView2Host.cs" />
+    <Compile Include="UI\Html\WebView2Host.Paths.cs" />
     <Compile Include="UI\Html\WebView2MessageDispatcher.cs" />
     <Compile Include="UI\Html\WebView2NavigationPreparer.cs" />
     <Compile Include="UI\Notifications\NotificationService.cs" />
