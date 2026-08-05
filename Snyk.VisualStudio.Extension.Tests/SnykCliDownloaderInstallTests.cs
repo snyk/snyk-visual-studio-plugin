@@ -366,6 +366,31 @@ namespace Snyk.VisualStudio.Extension.Tests
         }
 
         [Fact]
+        public async Task AutoUpdateCliAsync_FiresTheFinishedCallbacks_WhenNoDownloadIsNeededAsync()
+        {
+            // The callbacks start the language server, record the installed version and raise
+            // DownloadFinished, which is what moves the tool window off "Snyk Security is loading...".
+            // Taking the nothing-to-do path must not skip them.
+            var installedCli = Path.Combine(this.workDir, "snyk-win.exe");
+            File.WriteAllText(installedCli, "an-up-to-date-cli");
+
+            var finishedCallbackRan = false;
+            var cut = new FakeDownloader(Options(currentCliVersion: "v1.1292.0"));
+
+            await cut.AutoUpdateCliAsync(
+                this.progressWorkerMock.Object,
+                installedCli,
+                new List<SnykCliDownloader.CliDownloadFinishedCallback> { () => finishedCallbackRan = true });
+
+            Assert.True(finishedCallbackRan, "the finished callbacks must run even when no download was needed");
+            this.progressWorkerMock.Verify(w => w.DownloadFinished(), Times.Once);
+            this.progressWorkerMock.VerifySet(w => w.IsWorkFinished = true, Times.Once());
+
+            // Nothing was fetched: the binary already on disk is the one we want.
+            Assert.Equal("an-up-to-date-cli", File.ReadAllText(installedCli));
+        }
+
+        [Fact]
         public void IsCliDownloadNeeded_DoesNotProbe_WhenANewerVersionIsAlreadyKnown()
         {
             // Downloading anyway, so spending ~a second launching the old binary buys nothing.

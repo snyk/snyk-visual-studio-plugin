@@ -407,11 +407,19 @@ namespace Snyk.VisualStudio.Extension.Download
                     progressWorker,
                     fileDestinationPath,
                     downloadFinishedCallbacks);
+
+                return;
             }
-            else
-            {
-                progressWorker.IsWorkFinished = true;
-            }
+
+            // Nothing to install, but the finished callbacks still have to run: they are what starts the
+            // language server, records the installed version, and raises DownloadFinished so the tool
+            // window leaves "Snyk Security is loading...". Skipping them left the UI waiting forever.
+            // This branch used to be unreachable in practice — IsCliDownloadNeeded compared a recorded
+            // version string that drifted empty, so it always reported an update was due and the work
+            // went through DownloadAsync, whose checksum fast path does call FinishDownload.
+            progressWorker.IsWorkFinished = true;
+
+            this.FinishDownload(progressWorker, downloadFinishedCallbacks);
         }
 
         /// <summary>
