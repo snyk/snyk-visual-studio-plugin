@@ -52,8 +52,14 @@ namespace Snyk.VisualStudio.Extension.Download
         // single startup, from one shared instance.
         //
         // Held across the fetch deliberately: the second caller waits and then reads the memo, which is
-        // the point. Every caller is already off the UI thread, and the requests are bounded by
-        // SnykWebClient's timeout.
+        // the point.
+        //
+        // The wait is NOT fully bounded, and callers are expected — but not required — to be off the UI
+        // thread. SnykWebClient's timeout bounds the two requests; nothing bounds the checksum of a
+        // ~175MB binary, which is the longer leg and worse on a network CliCustomPath. SnykVSPackage
+        // hops to the pool before asking (see its comment on ShouldDownloadCli), but
+        // SnykLanguageClient.OnLoadedAsync does not, so a future VS version calling it on the main
+        // thread would hold this lock there. Worth an explicit hop at that call site.
         private readonly object memoLock = new object();
 
         private string expectedSha;
@@ -529,10 +535,14 @@ namespace Snyk.VisualStudio.Extension.Download
         /// </summary>
         private bool IsCliUpToDateOnce(string cliFileDestinationPath, string expectedSha)
         {
-            var key = BuildUpToDateMemoKey(cliFileDestinationPath, expectedSha);
-
             lock (this.memoLock)
             {
+                // Stat inside the lock, not before it: a key snapshotted outside could be taken for the
+                // pre-install file, block here while another caller completes an install and writes the
+                // memo, then wake and match the stored key for a file that has since been replaced —
+                // which is exactly what the doc above promises cannot happen. The stat is the cheap part.
+                var key = BuildUpToDateMemoKey(cliFileDestinationPath, expectedSha);
+
                 if (key != null && string.Equals(key, this.upToDateMemoKey, StringComparison.Ordinal))
                 {
                     return this.upToDateMemoVerdict;
@@ -909,9 +919,13 @@ namespace Snyk.VisualStudio.Extension.Download
                 // Memoised: IsCliDownloadNeeded has normally already fetched this, so reaching here
                 // costs no request. Still checked rather than assumed — DownloadAsync is public and
                 // callable without having gone through the decision above.
-                this.GetLatestCliShaOnce(cliDownloadUrl);
+                //
+                // Use the returned value, not a re-read of expectedSha: reading the guarded field from
+                // outside the lock is safe here only by accident of ordering, and it is exactly the
+                // pattern the lock exists to remove.
+                var latestSha = this.GetLatestCliShaOnce(cliDownloadUrl);
 
-                if (this.IsCliUpToDateOnce(cliFileDestinationPath, this.expectedSha))
+                if (this.IsCliUpToDateOnce(cliFileDestinationPath, latestSha))
                 {
                     Logger.Information(
                         "CLI at {Path} already matches the expected checksum — skipping download",
