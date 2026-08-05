@@ -679,6 +679,8 @@ namespace Snyk.VisualStudio.Extension.Service
         {
             if (!this.serviceProvider.Options.BinariesAutoUpdate)
             {
+                Logger.Information("CLI auto-update is disabled; not downloading");
+
                 return false;
             }
             try
@@ -687,11 +689,21 @@ namespace Snyk.VisualStudio.Extension.Service
                 var cliDownloader = new SnykCliDownloader(options);
                 var fileDestinationPath = SnykCli.GetCliFilePath(options.CliCustomPath);
 
-                return cliDownloader.IsCliDownloadNeeded(fileDestinationPath);
+                // The configured path and the resolved one, because they differ whenever a custom path
+                // is set — and a decision made against the wrong path is the hardest kind to diagnose
+                // from a log that never printed either.
+                Logger.Information(
+                    "Checking whether a CLI download is needed. Configured custom path: '{CliCustomPath}', resolved to {Path}",
+                    options.CliCustomPath,
+                    fileDestinationPath);
 
+                return cliDownloader.IsCliDownloadNeeded(fileDestinationPath);
             }
-            catch (Exception)
+            catch (Exception e)
             {
+                // Was silent, so a failure here was indistinguishable from a genuine "needs download".
+                Logger.Error(e, "Could not determine whether a CLI download is needed; assuming it is");
+
                 return true;
             }
         }

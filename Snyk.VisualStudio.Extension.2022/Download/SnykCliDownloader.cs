@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.Net.Http;
 using System.Threading.Tasks;
@@ -20,6 +21,13 @@ namespace Snyk.VisualStudio.Extension.Download
     {
         public const string DefaultBaseDownloadUrl = "https://downloads.snyk.io";
         public const string DefaultReleaseChannel = "stable";
+
+        // What a locally-built language server reports instead of a protocol number.
+        private const string DevelopmentProtocolVersion = "development";
+
+        // Generous: a cold first run can be slow while the on-access scanner reads ~175MB. Still
+        // bounded, because an unbounded wait here would freeze the CLI-download decision.
+        private const int ProtocolProbeTimeoutMs = 20000;
 
         private const string LatestReleaseVersionUrlScheme = "{0}/cli/{1}/ls-protocol-version-" + LsConstants.ProtocolVersion;
         private const string LatestReleaseDownloadUrlScheme = "{0}/cli/{1}/" + SnykCli.CliFileName;
@@ -231,33 +239,144 @@ namespace Snyk.VisualStudio.Extension.Download
         /// <returns>True if CLI file not exists or new release exists.</returns>
         public bool IsCliDownloadNeeded(string cliFileDestinationPath = null)
         {
-            // Asked once and reused below. Asking again inside the catch let the two answers disagree
-            // if the binary vanished in between, and made the fallback read as though it handled a
-            // case it cannot reach.
+            // Every branch below logs the path it decided on. Without that, a wrong decision is
+            // indistinguishable from a broken download: the log showed neither where we looked nor
+            // why we concluded an update was needed.
             var cliFileExists = this.IsCliFileExists(cliFileDestinationPath);
+
+            if (!cliFileExists)
+            {
+                Logger.Information("CLI download needed: no file at {Path}", cliFileDestinationPath);
+
+                return true;
+            }
 
             try
             {
-                if (!cliFileExists || this.IsNewVersionAvailable(this.SnykOptions.CurrentCliVersion, this.GetLatestReleaseInfoOnce().Name))
+                var currentVersion = this.SnykOptions.CurrentCliVersion;
+                var latestVersion = this.GetLatestReleaseInfoOnce().Name;
+
+                if (this.IsNewVersionAvailable(currentVersion, latestVersion))
                 {
+                    Logger.Information(
+                        "CLI download needed: {Path} is recorded as {CurrentVersion}, latest is {LatestVersion}",
+                        cliFileDestinationPath,
+                        string.IsNullOrEmpty(currentVersion) ? "(unrecorded)" : currentVersion,
+                        latestVersion);
+
                     return true;
                 }
+
+                // The recorded version matching says nothing about whether the binary on disk works —
+                // it is a string in settings.json, not a property of the file. Ask the binary.
+                if (!this.IsCliProtocolSupported(cliFileDestinationPath))
+                {
+                    Logger.Information(
+                        "CLI download needed: {Path} is recorded as {CurrentVersion} but does not report protocol version {ProtocolVersion}",
+                        cliFileDestinationPath,
+                        currentVersion,
+                        LsConstants.ProtocolVersion);
+
+                    return true;
+                }
+
+                Logger.Information(
+                    "No CLI download needed: {Path} is {CurrentVersion} and reports protocol version {ProtocolVersion}",
+                    cliFileDestinationPath,
+                    currentVersion,
+                    LsConstants.ProtocolVersion);
+
+                return false;
             }
             catch (Exception ex)
             {
-                // A failed check is not "up to date": with no CLI on disk the language server would be
-                // started with nothing to run. With the condition above, a missing file has already
-                // returned true, so this reduces to false today — written against cliFileExists rather
-                // than hardcoded so it stays correct if that ordering ever changes.
+                // A failed check is not "up to date", but a CLI is present here (the missing-file case
+                // returned above), so keep using it rather than failing startup on every launch.
                 Logger.Error(ex,
-                    "Could not fetch latest CLI release info, so whether a newer version exists is unknown. Falling back to whether a CLI is present at {Path}: {CliFileExists}",
-                    cliFileDestinationPath,
-                    cliFileExists);
+                    "Could not fetch latest CLI release info, so whether a newer version exists is unknown. Keeping the CLI present at {Path}",
+                    cliFileDestinationPath);
 
-                return !cliFileExists;
+                return false;
             }
+        }
 
-            return false;
+        /// <summary>
+        /// Whether the binary at <paramref name="cliFilePath"/> can actually serve the language server
+        /// protocol we speak. File.Exists cannot tell a working CLI from a truncated, stale or
+        /// wrong-architecture one, and a binary that cannot answer this cannot serve initialize either
+        /// — it activates, fails, and the language server shuts down with no useful diagnosis.
+        /// Mirrors what vscode-extension does before activating its client.
+        /// </summary>
+        // internal virtual for testability: a unit test cannot execute a real CLI.
+        internal virtual bool IsCliProtocolSupported(string cliFilePath)
+        {
+            try
+            {
+                var startInfo = new ProcessStartInfo
+                {
+                    FileName = cliFilePath,
+                    Arguments = "language-server --protocolVersion",
+                    RedirectStandardOutput = true,
+                    UseShellExecute = false,
+                    CreateNoWindow = true,
+                };
+
+                using (var process = Process.Start(startInfo))
+                {
+                    if (process == null)
+                    {
+                        Logger.Warning("Could not start the CLI at {Path} to read its protocol version", cliFilePath);
+
+                        return false;
+                    }
+
+                    // WaitForExit before reading: ReadToEnd on a process that never writes would block
+                    // with no timeout, which is the hang this check exists to prevent. The output is a
+                    // few bytes, so it cannot fill the pipe buffer while we wait.
+                    if (!process.WaitForExit(ProtocolProbeTimeoutMs))
+                    {
+                        Logger.Warning(
+                            "CLI at {Path} did not report a protocol version within {TimeoutMs}ms",
+                            cliFilePath,
+                            ProtocolProbeTimeoutMs);
+
+                        try
+                        {
+                            process.Kill();
+                        }
+                        catch (Exception e) when (e is InvalidOperationException || e is System.ComponentModel.Win32Exception)
+                        {
+                            // Already gone, or not ours to kill.
+                        }
+
+                        return false;
+                    }
+
+                    var reported = process.StandardOutput.ReadToEnd().Trim();
+
+                    // "development" is what a locally-built language server reports; treat it as
+                    // compatible so a dev CLI is usable, matching snyk-ls' own handling.
+                    var supported = string.Equals(reported, LsConstants.ProtocolVersion, StringComparison.Ordinal)
+                        || string.Equals(reported, DevelopmentProtocolVersion, StringComparison.Ordinal);
+
+                    if (!supported)
+                    {
+                        Logger.Warning(
+                            "CLI at {Path} reports protocol version '{Reported}', expected '{Expected}'",
+                            cliFilePath,
+                            reported,
+                            LsConstants.ProtocolVersion);
+                    }
+
+                    return supported;
+                }
+            }
+            catch (Exception e)
+            {
+                Logger.Warning(e, "Could not read the protocol version from the CLI at {Path}", cliFilePath);
+
+                return false;
+            }
         }
 
         /// <summary>

@@ -44,12 +44,24 @@ namespace Snyk.VisualStudio.Extension.Tests
         {
             private readonly string sha;
             private readonly Exception releaseInfoFailure;
+            private readonly bool protocolSupported;
 
-            public FakeDownloader(ISnykOptions options, string sha = null, Exception releaseInfoFailure = null)
+            public FakeDownloader(ISnykOptions options, string sha = null, Exception releaseInfoFailure = null, bool protocolSupported = true)
                 : base(options)
             {
                 this.sha = sha;
                 this.releaseInfoFailure = releaseInfoFailure;
+                this.protocolSupported = protocolSupported;
+            }
+
+            // The fixtures are text files, so the real probe would try to execute them.
+            public int ProtocolProbes { get; private set; }
+
+            internal override bool IsCliProtocolSupported(string cliFilePath)
+            {
+                this.ProtocolProbes++;
+
+                return this.protocolSupported;
             }
 
             // Counts attempted round-trips — incremented before any injected failure, so a test can
@@ -307,6 +319,9 @@ namespace Snyk.VisualStudio.Extension.Tests
 
             Assert.True(cut.IsCliDownloadNeeded(missingCli));
             Assert.Equal(0, cut.ReleaseInfoFetches);
+
+            // Nor is there any point launching a binary that is not there.
+            Assert.Equal(0, cut.ProtocolProbes);
         }
 
         [Fact]
@@ -332,6 +347,34 @@ namespace Snyk.VisualStudio.Extension.Tests
             var cut = new FakeDownloader(Options(currentCliVersion: "v1.1292.0"));
 
             Assert.False(cut.IsCliDownloadNeeded(installedCli));
+
+            // A matching version string is not evidence the binary works, so it is also probed.
+            Assert.Equal(1, cut.ProtocolProbes);
+        }
+
+        [Fact]
+        public void IsCliDownloadNeeded_ReturnsTrue_WhenThePresentCliCannotReportTheProtocolVersion()
+        {
+            // The case File.Exists plus a version string cannot see: right path, right recorded
+            // version, unusable binary. Previously this started a language server that could only fail.
+            var installedCli = Path.Combine(this.workDir, "snyk-win.exe");
+            File.WriteAllText(installedCli, "a-truncated-or-stale-cli");
+            var cut = new FakeDownloader(Options(currentCliVersion: "v1.1292.0"), protocolSupported: false);
+
+            Assert.True(cut.IsCliDownloadNeeded(installedCli));
+            Assert.Equal(1, cut.ProtocolProbes);
+        }
+
+        [Fact]
+        public void IsCliDownloadNeeded_DoesNotProbe_WhenANewerVersionIsAlreadyKnown()
+        {
+            // Downloading anyway, so spending ~a second launching the old binary buys nothing.
+            var installedCli = Path.Combine(this.workDir, "snyk-win.exe");
+            File.WriteAllText(installedCli, "an-existing-cli");
+            var cut = new FakeDownloader(Options(currentCliVersion: "v1.1000.0"));
+
+            Assert.True(cut.IsCliDownloadNeeded(installedCli));
+            Assert.Equal(0, cut.ProtocolProbes);
         }
 
         [Fact]
