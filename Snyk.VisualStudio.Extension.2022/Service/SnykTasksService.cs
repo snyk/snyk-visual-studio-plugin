@@ -466,8 +466,8 @@ namespace Snyk.VisualStudio.Extension.Service
         /// <summary>
         /// Fire download finished event.
         /// </summary>
-        protected internal void OnDownloadFinished() =>
-            this.DownloadFinished?.Invoke(this, new SnykCliDownloadEventArgs());
+        protected internal void OnDownloadFinished(bool binaryWasDownloaded = true) =>
+            this.DownloadFinished?.Invoke(this, new SnykCliDownloadEventArgs { BinaryWasDownloaded = binaryWasDownloaded });
 
         /// <summary>
         /// Fire download cancelled event.

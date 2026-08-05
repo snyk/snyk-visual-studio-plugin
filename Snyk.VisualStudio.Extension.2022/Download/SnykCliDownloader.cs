@@ -27,8 +27,11 @@ namespace Snyk.VisualStudio.Extension.Download
 
         private static readonly ILogger Logger = LogManager.ForContext<SnykCliDownloader>();
 
-        // Where a URL's authority ends: the start of the path, query or fragment.
-        private static readonly char[] AuthorityDelimiters = { '/', '\\', '?', '#' };
+        // Path separators. Not "where the authority ends": a credential may contain one unescaped.
+        private static readonly char[] AuthorityDelimiters = { '/', '\\' };
+
+        // A query or fragment cannot contain credentials, so an '@' past one is not a separator.
+        private static readonly char[] QueryDelimiters = { '?', '#' };
 
         private readonly ISnykOptions SnykOptions;
         private string expectedSha;
@@ -51,10 +54,18 @@ namespace Snyk.VisualStudio.Extension.Download
         /// collapse "//" inside a path — the LS-served settings page resets this field to a value with
         /// a trailing slash, which otherwise fetches ".../cli//stable/...".
         /// </summary>
-        public static string ResolveBaseDownloadUrl(string configuredBaseDownloadUrl) =>
-            string.IsNullOrWhiteSpace(configuredBaseDownloadUrl)
+        public static string ResolveBaseDownloadUrl(string configuredBaseDownloadUrl)
+        {
+            // Normalise BEFORE the blank check, not after: trimming can itself produce a blank ("/"),
+            // and guarding first let that through to compose the relative URL this method exists to
+            // prevent. Backslashes too, matching Redact's view of what a separator is.
+            var normalised = configuredBaseDownloadUrl?.Trim().TrimEnd('/', '\\');
+
+            // A scheme with no authority ("https://" -> "https:") is unusable for the same reason.
+            return string.IsNullOrWhiteSpace(normalised) || normalised.EndsWith(":", StringComparison.Ordinal)
                 ? DefaultBaseDownloadUrl
-                : configuredBaseDownloadUrl.Trim().TrimEnd('/');
+                : normalised;
+        }
 
         // Blanks credentials in a URL before it is logged.
         //
@@ -73,6 +84,7 @@ namespace Snyk.VisualStudio.Extension.Download
             // and a scheme-less "//host" count: this is a value typed into a settings box, and a
             // credential must not survive on the strength of a typo.
             var authorityStart = 0;
+            var driveLetterEnd = -1;
             var schemeEnd = value.IndexOf(':');
 
             if (schemeEnd >= 0 && schemeEnd + 1 < value.Length && IsSlash(value[schemeEnd + 1]))
@@ -84,7 +96,12 @@ namespace Snyk.VisualStudio.Extension.Download
                 var isDriveLetter = schemeEnd < 2
                     && !(schemeEnd + 2 < value.Length && IsSlash(value[schemeEnd + 2]));
 
-                if (!isDriveLetter)
+                if (isDriveLetter)
+                {
+                    // Remembered so the drive colon is not later mistaken for a userinfo separator.
+                    driveLetterEnd = schemeEnd;
+                }
+                else
                 {
                     authorityStart = schemeEnd + 1;
                 }
@@ -100,30 +117,83 @@ namespace Snyk.VisualStudio.Extension.Download
                 return value;
             }
 
-            // Only the authority can hold credentials. An '@' past its end belongs to the path
-            // or query ("host/path@v2"), or to a local path ("C:\tools\snyk@2").
-            var authorityEnd = value.IndexOfAny(AuthorityDelimiters, authorityStart);
+            // A query or fragment cannot hold credentials, so an '@' past one belongs to it
+            // ("host/p?q=a@b") and must not be treated as a userinfo separator.
+            var searchEnd = value.IndexOfAny(QueryDelimiters, authorityStart);
 
-            if (authorityEnd < 0)
+            if (searchEnd < 0)
             {
-                authorityEnd = value.Length;
+                searchEnd = value.Length;
+            }
+            else if (LooksLikeCredentialPrefix(value, authorityStart, driveLetterEnd, searchEnd))
+            {
+                // The '?' or '#' is inside the credential, not starting a query: everything before it
+                // holds a ':' and no path separator, which a real "host/path?query" never does. Extend
+                // to the path so the '@' after it is still found. A genuine query is unaffected —
+                // "host:8081?q=1" extends too, but has no '@' to find.
+                var pathStart = value.IndexOfAny(AuthorityDelimiters, searchEnd);
+
+                searchEnd = pathStart < 0 ? value.Length : pathStart;
             }
 
-            if (authorityEnd <= authorityStart)
+            if (searchEnd <= authorityStart)
             {
                 return value;
             }
 
-            // Last '@', so a credential that itself contains one is covered. A scheme-less
-            // "user:pass@host" is caught too: authorityStart is 0 and the whole value is authority.
-            var credentialsEnd = value.LastIndexOf('@', authorityEnd - 1, authorityEnd - authorityStart);
+            // Last '@', so a credential containing one is covered ("user:tok@en@host").
+            var credentialsEnd = value.LastIndexOf('@', searchEnd - 1, searchEnd - authorityStart);
 
-            return credentialsEnd < 0
-                ? value
-                : value.Substring(0, authorityStart) + "<credentials>" + value.Substring(credentialsEnd);
+            if (credentialsEnd < 0)
+            {
+                return value;
+            }
+
+            // Is that '@' a userinfo separator, or just an '@' inside a path ("host/path@v2")?
+            // Deliberately NOT keyed on the first '/' being the end of the authority: a credential
+            // may contain an unescaped '/' — base64 tokens routinely do — and keying off it hid the
+            // '@' entirely, so "https://user:aGVsbG8/d29ybGQ=@host" was logged verbatim.
+            var firstSlash = value.IndexOfAny(AuthorityDelimiters, authorityStart);
+
+            if (firstSlash >= 0 && firstSlash < credentialsEnd)
+            {
+                // There is a separator before the '@'. Only a credential if a ':' appears anywhere
+                // before that '@' — which distinguishes "user:pa/ss@host" and "u/s/e/r:pw@host" from
+                // "host/path@v2". Searching only up to the separator missed a slash in the *username*.
+                // "host:8081/path@v2" is over-redacted as a result — losing a path in a log line
+                // beats leaking a secret, the same trade this file makes for "C:\\snyk@2".
+                var colonStart = driveLetterEnd >= 0 ? driveLetterEnd + 1 : authorityStart;
+                var colonAt = colonStart < credentialsEnd
+                    ? value.IndexOf(':', colonStart, credentialsEnd - colonStart)
+                    : -1;
+
+                if (colonAt < 0)
+                {
+                    return value;
+                }
+            }
+
+            return value.Substring(0, authorityStart) + "<credentials>" + value.Substring(credentialsEnd);
         }
 
         private static bool IsSlash(char c) => c == '/' || c == '\\';
+
+        // True when the text up to a '?' or '#' looks like userinfo rather than a host and path:
+        // it contains a ':' and no path separator. Used to tell "user:pa?ss@host" from "host/p?q=a@b".
+        private static bool LooksLikeCredentialPrefix(string value, int authorityStart, int driveLetterEnd, int delimiterAt)
+        {
+            var colonStart = driveLetterEnd >= 0 ? driveLetterEnd + 1 : authorityStart;
+
+            if (colonStart >= delimiterAt)
+            {
+                return false;
+            }
+
+            var length = delimiterAt - colonStart;
+
+            return value.IndexOf(':', colonStart, length) >= 0
+                && value.IndexOfAny(AuthorityDelimiters, colonStart, length) < 0;
+        }
 
         /// <summary>
         /// The configured release channel, or the default when unset.
@@ -316,11 +386,13 @@ namespace Snyk.VisualStudio.Extension.Download
 
             progressWorker.IsWorkFinished = true;
 
-            // Raises DownloadFinished so the tool window leaves "Snyk Security is loading..."; without
-            // it the UI waited forever. Deliberately NOT the finished-callback list: those callbacks mean
-            // "record what was installed", and running them here re-fetches the release name over the
-            // network (breaking offline startup) and writes a version for an install that never happened.
-            progressWorker.DownloadFinished();
+            // Raises DownloadFinished because that is what starts the language server against the loaded
+            // solution and clears the tool window's loading state. Deliberately NOT the finished-callback
+            // list: those callbacks mean "record what was installed", and running them here re-fetches
+            // the release name over the network (breaking offline startup) and writes a version for an
+            // install that never happened. binaryWasDownloaded:false so subscribers that report progress
+            // do not announce a download that did not occur.
+            progressWorker.DownloadFinished(binaryWasDownloaded: false);
         }
 
         /// <summary>
@@ -665,6 +737,11 @@ namespace Snyk.VisualStudio.Extension.Download
             {
                 downloadFinishedCallbacks.ForEach(downloadFinishedCallback => downloadFinishedCallback());
             }
+
+            // Set here as well as on the nothing-to-do path: the caller's finally gates disposal of the
+            // cancellation token source and TaskFinished on it, so without this an actual install left
+            // the token undisposed and never refreshed the toolbar state.
+            progressWorker.IsWorkFinished = true;
 
             progressWorker.DownloadFinished();
         }

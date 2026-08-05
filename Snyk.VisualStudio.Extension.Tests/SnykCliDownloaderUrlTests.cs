@@ -43,6 +43,9 @@ namespace Snyk.VisualStudio.Extension.Tests
         [Theory]
         [InlineData(null, null)]
         [InlineData("", "")]
+        [InlineData("/", "stable")]
+        [InlineData("///", "")]
+        [InlineData("https://", "stable")]
         public void BuildLatestReleaseVersionUrl_IsAbsolute_WhenOptionsAreNotSet(string baseDownloadUrl, string releaseChannel)
         {
             // A relative URL is what WebClient turns into a file path.
@@ -95,6 +98,16 @@ namespace Snyk.VisualStudio.Extension.Tests
         [InlineData(null)]
         [InlineData("")]
         [InlineData("   ")]
+        // Values that BECOME unusable once normalised. Guarding before trimming let these through to
+        // compose a relative URL — the exact failure this method exists to prevent.
+        [InlineData("/")]
+        [InlineData("//")]
+        [InlineData("///")]
+        [InlineData("  /  ")]
+        [InlineData(@"\")]
+        // A scheme with no authority is unusable for the same reason.
+        [InlineData("https://")]
+        [InlineData("https:")]
         public void ResolveBaseDownloadUrl_UsesTheDefault_WhenUnset(string configured)
         {
             Assert.Equal(SnykCliDownloader.DefaultBaseDownloadUrl, SnykCliDownloader.ResolveBaseDownloadUrl(configured));
@@ -160,6 +173,19 @@ namespace Snyk.VisualStudio.Extension.Tests
         [InlineData("https://user:tok%2Den@artifacts.internal/snyk", "https://<credentials>@artifacts.internal/snyk")]
         // An '@' inside the credentials is covered; the scheme survives.
         [InlineData("https://user:tok@en@host/snyk", "https://<credentials>@host/snyk")]
+        // A delimiter INSIDE the credential. Keying the authority's end off the first '/' hid the '@'
+        // entirely and logged these verbatim — base64 tokens contain '/' routinely.
+        [InlineData("https://user:pa/ss@host/p", "https://<credentials>@host/p")]
+        [InlineData(@"https://user:pa\ss@host/p", "https://<credentials>@host/p")]
+        [InlineData("https://user:pa?ss@host/p", "https://<credentials>@host/p")]
+        [InlineData("https://user:pa#ss@host/p", "https://<credentials>@host/p")]
+        [InlineData("https://user:aGVsbG8/d29ybGQ=@artifacts.internal/snyk", "https://<credentials>@artifacts.internal/snyk")]
+        // A separator in the *username*, before the colon.
+        [InlineData("https://u/s/e/r:pw@host/p", "https://<credentials>@host/p")]
+        // An '@' in a query is not userinfo, so this must survive.
+        [InlineData("https://host/p?q=a@b", "https://host/p?q=a@b")]
+        // Accepted over-redaction: a port makes the ':' test fire. Losing a path beats leaking a secret.
+        [InlineData("http://host:8081/path@v2", "http://<credentials>@v2")]
         [InlineData("https://downloads.snyk.io/fips", "https://downloads.snyk.io/fips")]
         [InlineData("downloads.snyk.io", "downloads.snyk.io")]
         // An '@' past the authority is not userinfo, whatever the scheme.

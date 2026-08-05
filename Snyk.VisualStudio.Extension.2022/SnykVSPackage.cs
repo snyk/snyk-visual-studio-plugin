@@ -12,6 +12,7 @@ using Microsoft.VisualStudio.ComponentModelHost;
 using Microsoft.VisualStudio.PlatformUI;
 using Microsoft.VisualStudio.Shell;
 using Microsoft.VisualStudio.Shell.Interop;
+using Microsoft.VisualStudio.Threading;
 using Serilog;
 using Snyk.VisualStudio.Extension.Commands;
 using Snyk.VisualStudio.Extension.Language;
@@ -280,11 +281,20 @@ namespace Snyk.VisualStudio.Extension
                     this.serviceProvider.LanguageClientManager.OnLanguageServerReadyAsync += LanguageClientManagerOnLanguageServerReadyAsync;
                     if (!LanguageClientHelper.IsLanguageServerReady())
                     {
+                        // ShouldDownloadCli issues a synchronous WebClient request with no timeout, and
+                        // this delegate runs inline on the caller's thread — the UI thread — until the
+                        // first yielding await. Without this hop a blackholed mirror freezes Visual
+                        // Studio for WebClient's 100s default. Nothing between here and the switch back
+                        // touches UI state.
+                        await TaskScheduler.Default;
+
                         // If CLI download is necessary, Skip initializing.
                         if (this.serviceProvider.TasksService.ShouldDownloadCli())
                         {
                             return;
                         }
+
+                        await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
                         await this.serviceProvider.LanguageClientManager.StartServerAsync(true);
                     }
                 }

@@ -458,12 +458,16 @@ namespace Snyk.VisualStudio.Extension.UI.Toolwindow
         /// <param name="eventArgs">Event args.</param>
         public void OnDownloadCancelled(object sender, SnykCliDownloadEventArgs eventArgs)
         {
+            // Probed before the switch: a custom CLI path can be a UNC share, where File.Exists
+            // against an unreachable server blocks for tens of seconds — not on the UI thread.
+            var cliFound = SnykCli.IsCliFileFound(serviceProvider.Options.CliCustomPath);
+
             // Raised from the thread pool; both branches write WPF state.
             ThreadHelper.JoinableTaskFactory.Run(async () =>
             {
                 await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
 
-                if (SnykCli.IsCliFileFound(serviceProvider.Options.CliCustomPath))
+                if (cliFound)
                 {
                     if (LanguageClientHelper.LanguageClientManager() != null)
                         ThreadHelper.JoinableTaskFactory.RunAsync(async () => await LanguageClientHelper.LanguageClientManager().RestartServerAsync()).FireAndForget();
@@ -479,12 +483,16 @@ namespace Snyk.VisualStudio.Extension.UI.Toolwindow
 
         private void OnDownloadFailed(object sender, Exception e)
         {
+            // Probed before the switch: a custom CLI path can be a UNC share, where File.Exists
+            // against an unreachable server blocks for tens of seconds — not on the UI thread.
+            var cliFound = SnykCli.IsCliFileFound(serviceProvider.Options.CliCustomPath);
+
             // Raised from the thread pool; both branches write WPF state.
             ThreadHelper.JoinableTaskFactory.Run(async () =>
             {
                 await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
 
-                if (SnykCli.IsCliFileFound(serviceProvider.Options.CliCustomPath))
+                if (cliFound)
                 {
                     if (LanguageClientHelper.LanguageClientManager() != null)
                         ThreadHelper.JoinableTaskFactory.RunAsync(async () => await LanguageClientHelper.LanguageClientManager().RestartServerAsync()).FireAndForget();
