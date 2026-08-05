@@ -40,6 +40,15 @@ namespace Snyk.VisualStudio.Extension.Language
         // StartAsync to VS" returned in 0ms with no "ActivateAsync: launching", against 2.7s and a
         // successful launch on a start raised after OnLoadedAsync.
         private volatile bool vsHasLoadedClient;
+
+        // internal setter for testability: in production only OnLoadedAsync sets this, and only VS
+        // calls OnLoadedAsync — so a test exercising StartServerAsync or RestartServerAsync directly
+        // has no other way to establish the precondition those paths now require.
+        internal bool VsHasLoadedClient
+        {
+            get => this.vsHasLoadedClient;
+            set => this.vsHasLoadedClient = value;
+        }
         private LsSettingsV25 settingsV25;
         // Holds the delegate subscribed to SolutionEvents.AfterBackgroundSolutionLoadComplete so we
         // can unsubscribe before re-subscribing on server restarts (idempotent wiring).
@@ -227,23 +236,25 @@ namespace Snyk.VisualStudio.Extension.Language
             await semaphore.WaitAsync();
             try
             {
-                if (StartAsync != null && !this.vsHasLoadedClient && shouldStart)
+                // A start request that arrives before VS has loaded the client cannot be honoured
+                // directly. Two shapes, one outcome: if VS has not subscribed there is nothing to
+                // raise, and if it has subscribed but not yet called OnLoadedAsync it discards the
+                // raise (the invoke returns immediately, ActivateAsync is never called, no CLI process
+                // appears). Either way, ask for activation instead — firing this event is what opens
+                // the bundled init file, which is what makes VS load the client and call OnLoadedAsync,
+                // which starts the server for real.
+                //
+                // Both shapes must fire it. Returning without firing simply loses the start: nothing
+                // else triggers activation, so OnLoadedAsync never arrives and the server stays down
+                // for the session.
+                if (shouldStart && (StartAsync == null || !this.vsHasLoadedClient))
                 {
-                    // Deferred, not dropped: OnLoadedAsync calls StartServerAsync itself once VS is
-                    // ready, so returning here loses nothing. Raising StartAsync now would be
-                    // discarded by VS and would leave the server permanently unstarted.
-                    Logger.Information("Deferring language server start: VS has subscribed but has not loaded the client yet, so OnLoadedAsync will start it");
-
-                    return;
-                }
-
-                if (StartAsync == null && shouldStart)
-                {
-                    // [startup-diag] Temporary. This path logs nothing today, so a start request that
-                    // arrived before VS had loaded the client left no trace whatsoever.
-                    Logger.Information("[startup-diag] StartServerAsync: StartAsync is null — VS has not loaded the client yet, so this start request does nothing");
+                    Logger.Information(
+                        "Language server start requested before VS loaded the client; requesting activation instead (VS subscribed: {Subscribed})",
+                        StartAsync != null);
 
                     FireOnLanguageClientNotInitializedAsync();
+
                     return;
                 }
 
