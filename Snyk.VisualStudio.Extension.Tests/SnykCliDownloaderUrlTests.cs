@@ -151,12 +151,31 @@ namespace Snyk.VisualStudio.Extension.Tests
         }
 
         [Theory]
-        // Only the empty case is defaulted; a configured value is passed through as the user typed it,
-        // as in every other Snyk IDE.
-        [InlineData("downloads.snyk.io")]
+        // Not an http(s) origin, so the default is used instead of the configured value. A UNC target
+        // is the reason this is enforced rather than passed through: WebClient accepts it and the
+        // version/checksum fetches then perform an implicit SMB authentication against whatever host
+        // was configured, handing it the Windows user's NTLM credentials.
+        [InlineData(@"\\attacker\share")]
+        [InlineData(@"\\10.0.0.1\snyk")]
+        [InlineData("file:///C:/downloads")]
         [InlineData(@"C:\downloads")]
+        // A scheme-less value is what WebClient resolves to a local path — the original bug.
+        [InlineData("downloads.snyk.io")]
         [InlineData("not a url")]
-        public void ResolveBaseDownloadUrl_DoesNotRewriteAnUnusableValue(string configured)
+        [InlineData("ftp://artifacts.internal/snyk")]
+        public void ResolveBaseDownloadUrl_UsesTheDefault_WhenTheValueIsNotAnHttpOrigin(string configured)
+        {
+            Assert.Equal(SnykCliDownloader.DefaultBaseDownloadUrl, SnykCliDownloader.ResolveBaseDownloadUrl(configured));
+        }
+
+        [Theory]
+        // Plain http stays allowed: an internal mirror on http is a legitimate setup, and the checksum
+        // is fetched from the same origin either way, so refusing it would break users without adding
+        // the integrity guarantee that refusal implies.
+        [InlineData("http://artifacts.internal/snyk")]
+        [InlineData("https://artifacts.internal/snyk")]
+        [InlineData("http://localhost:8081/snyk")]
+        public void ResolveBaseDownloadUrl_AllowsBothHttpAndHttps(string configured)
         {
             Assert.Equal(configured, SnykCliDownloader.ResolveBaseDownloadUrl(configured));
         }

@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 using Microsoft.VisualStudio.Threading;
 using Serilog;
 using Snyk.VisualStudio.Extension.CLI;
+using Snyk.VisualStudio.Extension.Extension;
 using Snyk.VisualStudio.Extension.Language;
 using Snyk.VisualStudio.Extension.Service;
 using Snyk.VisualStudio.Extension.Settings;
@@ -48,11 +49,11 @@ namespace Snyk.VisualStudio.Extension.Download
         public delegate void CliDownloadFinishedCallback();
 
         /// <summary>
-        /// The configured base URL, or the default when unset. Empty must not pass through: it composes
-        /// into a relative URL, which WebClient resolves to a local file path instead of a request.
-        /// Trailing slashes are dropped because the URL schemes below add their own, and Uri does not
-        /// collapse "//" inside a path — the LS-served settings page resets this field to a value with
-        /// a trailing slash, which otherwise fetches ".../cli//stable/...".
+        /// The configured base URL, or the default when unset or not an http(s) origin. Empty must not
+        /// pass through: it composes into a relative URL, which WebClient resolves to a local file path
+        /// instead of a request. Trailing slashes are dropped because the URL schemes below add their
+        /// own, and Uri does not collapse "//" inside a path — the LS-served settings page resets this
+        /// field to a value with a trailing slash, which otherwise fetches ".../cli//stable/...".
         /// </summary>
         public static string ResolveBaseDownloadUrl(string configuredBaseDownloadUrl)
         {
@@ -62,9 +63,28 @@ namespace Snyk.VisualStudio.Extension.Download
             var normalised = configuredBaseDownloadUrl?.Trim().TrimEnd('/', '\\');
 
             // A scheme with no authority ("https://" -> "https:") is unusable for the same reason.
-            return string.IsNullOrWhiteSpace(normalised) || normalised.EndsWith(":", StringComparison.Ordinal)
-                ? DefaultBaseDownloadUrl
-                : normalised;
+            if (string.IsNullOrWhiteSpace(normalised) || normalised.EndsWith(":", StringComparison.Ordinal))
+            {
+                return DefaultBaseDownloadUrl;
+            }
+
+            // http(s) only, as CustomEndpoint already is. WebClient will happily take a UNC path or a
+            // file: URL, and a UNC target makes the version and checksum fetches perform an implicit
+            // SMB authentication against a host of the setter's choosing — which hands that host the
+            // Windows user's NTLM credentials. Nothing needs a non-web origin here, and both writers
+            // of this field (the settings page and an LS config push) apply only a blank guard, so the
+            // check belongs at the point of use where every consumer passes through it.
+            if (!UriExtensions.IsValidWebUrl(normalised))
+            {
+                Logger.Warning(
+                    "Ignoring the configured CLI base download URL {Url}: only http and https origins are used. Falling back to {Default}",
+                    Redact(normalised),
+                    DefaultBaseDownloadUrl);
+
+                return DefaultBaseDownloadUrl;
+            }
+
+            return normalised;
         }
 
         // Blanks credentials in a URL before it is logged.
