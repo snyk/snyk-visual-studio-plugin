@@ -281,11 +281,12 @@ namespace Snyk.VisualStudio.Extension
                     this.serviceProvider.LanguageClientManager.OnLanguageServerReadyAsync += LanguageClientManagerOnLanguageServerReadyAsync;
                     if (!LanguageClientHelper.IsLanguageServerReady())
                     {
-                        // ShouldDownloadCli issues a synchronous WebClient request with no timeout, and
-                        // this delegate runs inline on the caller's thread — the UI thread — until the
-                        // first yielding await. Without this hop a blackholed mirror freezes Visual
-                        // Studio for WebClient's 100s default. Nothing between here and the switch back
-                        // touches UI state.
+                        // ShouldDownloadCli issues a synchronous WebClient request, and this delegate
+                        // runs inline on the caller's thread — the UI thread — until the first
+                        // yielding await. Without this hop a blackholed mirror freezes Visual Studio
+                        // for however long that request takes: bounded to 15s by SnykWebClient's
+                        // Timeout, which is still far too long to hold the UI. Nothing between here
+                        // and the switch back touches UI state.
                         await TaskScheduler.Default;
 
                         // If CLI download is necessary, Skip initializing.

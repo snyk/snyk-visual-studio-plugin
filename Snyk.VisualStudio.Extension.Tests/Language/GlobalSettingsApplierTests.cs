@@ -276,12 +276,53 @@ namespace Snyk.VisualStudio.Extension.Tests.Language
         }
 
         [Fact]
-        public void Apply_ShouldApplyANonEmptyEcho_EvenWhenItMatchesWhatWeSent()
+        public void Apply_ShouldNotPinTheDefault_WhenTheLsEchoesBackTheValueWeResolvedFromABlankField()
         {
-            // The echo of our own resolved value is applied like any other: a no-op, or a normalisation
-            // when what we hold is padded.
+            // The clobbering case. LsSettingsV25 sends these resolved, so a user who left the field
+            // blank has the literal default echoed straight back at them. Writing it would turn "blank,
+            // use the default" into a pinned override and replace the settings-page placeholder with a
+            // value they never typed — and it would survive every later change of default.
+            var options = MakeOptions();
+            options.CliBaseDownloadURL = string.Empty;
+            options.CliReleaseChannel = string.Empty;
+            var settings = new Dictionary<string, ConfigSetting>
+            {
+                [PflagKeys.BinaryBaseUrl] = ConfigSetting.Of(SnykCliDownloader.DefaultBaseDownloadUrl),
+                [PflagKeys.CliReleaseChannel] = ConfigSetting.Of(SnykCliDownloader.DefaultReleaseChannel),
+            };
+
+            GlobalSettingsApplier.Apply(settings, options);
+
+            Assert.Equal(string.Empty, options.CliBaseDownloadURL);
+            Assert.Equal(string.Empty, options.CliReleaseChannel);
+        }
+
+        [Fact]
+        public void Apply_ShouldIgnoreTheEchoOfOurOwnValue_AndLeaveTheStoredFormAlone()
+        {
+            // Equality is against the RESOLVED form of what we hold, so a padded stored value matches
+            // its own trimmed echo and is left untouched. The padding is deliberately not normalised
+            // here: every consumer goes through ResolveBaseDownloadUrl, which trims at the point of
+            // use, and repairing persisted values on the inbound path is what hid the empty-URL bug
+            // this PR exists to fix.
             var options = MakeOptions();
             options.CliBaseDownloadURL = "  https://mirror.corp  ";
+            var settings = new Dictionary<string, ConfigSetting>
+            {
+                [PflagKeys.BinaryBaseUrl] = ConfigSetting.Of("https://mirror.corp")
+            };
+
+            GlobalSettingsApplier.Apply(settings, options);
+
+            Assert.Equal("  https://mirror.corp  ", options.CliBaseDownloadURL);
+        }
+
+        [Fact]
+        public void Apply_ShouldApplyAnEchoThatDiffersFromOurResolvedValue()
+        {
+            // A genuine push (org policy pointing at a different mirror) is not our echo, so it applies.
+            var options = MakeOptions();
+            options.CliBaseDownloadURL = string.Empty;
             var settings = new Dictionary<string, ConfigSetting>
             {
                 [PflagKeys.BinaryBaseUrl] = ConfigSetting.Of("https://mirror.corp")
