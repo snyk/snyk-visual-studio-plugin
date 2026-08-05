@@ -422,7 +422,14 @@ namespace Snyk.VisualStudio.Extension.UI.Toolwindow
         /// <param name="eventArgs">Event args.</param>
         public void OnDownloadStarted(object sender, SnykCliDownloadEventArgs eventArgs)
         {
-            ThreadHelper.JoinableTaskFactory.Run(async () =>
+            // RunAsync, not Run: these four download handlers are raised from the thread pool, and a
+            // blocking Run parks that pool thread until the UI thread is free. During startup the UI
+            // thread is still loading the tool window, so the wait is real (87ms observed) and can
+            // close a cycle with anything the UI thread is itself waiting on. Nothing here needs to
+            // complete before the handler returns: the binary is already downloaded, checksum-verified
+            // and installed before the event is raised, and the language server start is separately
+            // fire-and-forget.
+            ThreadHelper.JoinableTaskFactory.RunAsync(async () =>
             {
                 await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
                 if (eventArgs.IsUpdateDownload)
@@ -435,7 +442,7 @@ namespace Snyk.VisualStudio.Extension.UI.Toolwindow
                 }
 
                 this.Show();
-            });
+            }).FireAndForget();
         }
 
         /// <summary>
@@ -452,14 +459,15 @@ namespace Snyk.VisualStudio.Extension.UI.Toolwindow
             // thread is available. If "requesting" appears without "acquired", this wait is the hang.
             Logger.Information("[startup-diag] OnDownloadFinished(view): requesting the UI thread");
 
-            ThreadHelper.JoinableTaskFactory.Run(async () =>
+            // RunAsync, not Run — see OnDownloadStarted. This is the wait that hung startup.
+            ThreadHelper.JoinableTaskFactory.RunAsync(async () =>
             {
                 await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
 
                 Logger.Information("[startup-diag] OnDownloadFinished(view): UI thread acquired");
 
                 this.DetermineInitScreen();
-            });
+            }).FireAndForget();
 
             Logger.Information("[startup-diag] OnDownloadFinished(view): returned");
         }
@@ -483,8 +491,10 @@ namespace Snyk.VisualStudio.Extension.UI.Toolwindow
             // share blocks for tens of seconds, and the protocol probe launches the CLI.
             var fallbackUsable = this.IsExistingCliUsableForFallback();
 
-            // Raised from the thread pool; both branches write WPF state.
-            ThreadHelper.JoinableTaskFactory.Run(async () =>
+            // Raised from the thread pool; both branches write WPF state. RunAsync, not Run —
+            // see OnDownloadStarted. Worse here than elsewhere: fallbackUsable above launches the
+            // CLI with a 20s timeout, so blocking afterwards held a pool thread far longer.
+            ThreadHelper.JoinableTaskFactory.RunAsync(async () =>
             {
                 await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
 
@@ -499,15 +509,17 @@ namespace Snyk.VisualStudio.Extension.UI.Toolwindow
                 {
                     this.messagePanel.Text = "Snyk CLI not found, or the one installed is not usable by this version of the extension. You can specify a path to a Snyk CLI executable from the settings.";
                 }
-            });
+            }).FireAndForget();
         }
 
         private void OnDownloadFailed(object sender, Exception e)
         {
             var fallbackUsable = this.IsExistingCliUsableForFallback();
 
-            // Raised from the thread pool; both branches write WPF state.
-            ThreadHelper.JoinableTaskFactory.Run(async () =>
+            // Raised from the thread pool; both branches write WPF state. RunAsync, not Run —
+            // see OnDownloadStarted. Worse here than elsewhere: fallbackUsable above launches the
+            // CLI with a 20s timeout, so blocking afterwards held a pool thread far longer.
+            ThreadHelper.JoinableTaskFactory.RunAsync(async () =>
             {
                 await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
 
@@ -522,7 +534,7 @@ namespace Snyk.VisualStudio.Extension.UI.Toolwindow
                     this.messagePanel.Text =
                     "Failed to download the Snyk CLI, and the CLI already installed is either missing or not usable by this version of the extension. You can specify a path to a Snyk CLI executable from the settings.";
                 }
-            });
+            }).FireAndForget();
         }
 
         /// <summary>
