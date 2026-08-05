@@ -15,6 +15,7 @@ using Microsoft.VisualStudio.Shell.Interop;
 using Serilog;
 using Snyk.VisualStudio.Extension.CLI;
 using Snyk.VisualStudio.Extension.Commands;
+using Snyk.VisualStudio.Extension.Download;
 using Snyk.VisualStudio.Extension.Language;
 using Snyk.VisualStudio.Extension.Service;
 using Snyk.VisualStudio.Extension.Settings;
@@ -458,16 +459,16 @@ namespace Snyk.VisualStudio.Extension.UI.Toolwindow
         /// <param name="eventArgs">Event args.</param>
         public void OnDownloadCancelled(object sender, SnykCliDownloadEventArgs eventArgs)
         {
-            // Probed before the switch: a custom CLI path can be a UNC share, where File.Exists
-            // against an unreachable server blocks for tens of seconds — not on the UI thread.
-            var cliFound = SnykCli.IsCliFileFound(serviceProvider.Options.CliCustomPath);
+            // Probed before the switch, and off the UI thread: File.Exists against an unreachable UNC
+            // share blocks for tens of seconds, and the protocol probe launches the CLI.
+            var fallbackUsable = this.IsExistingCliUsableForFallback();
 
             // Raised from the thread pool; both branches write WPF state.
             ThreadHelper.JoinableTaskFactory.Run(async () =>
             {
                 await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
 
-                if (cliFound)
+                if (fallbackUsable)
                 {
                     if (LanguageClientHelper.LanguageClientManager() != null)
                         ThreadHelper.JoinableTaskFactory.RunAsync(async () => await LanguageClientHelper.LanguageClientManager().RestartServerAsync()).FireAndForget();
@@ -476,23 +477,21 @@ namespace Snyk.VisualStudio.Extension.UI.Toolwindow
                 }
                 else
                 {
-                    this.messagePanel.Text = "Snyk CLI not found. You can specify a path to a Snyk CLI executable from the settings.";
+                    this.messagePanel.Text = "Snyk CLI not found, or the one installed is not usable by this version of the extension. You can specify a path to a Snyk CLI executable from the settings.";
                 }
             });
         }
 
         private void OnDownloadFailed(object sender, Exception e)
         {
-            // Probed before the switch: a custom CLI path can be a UNC share, where File.Exists
-            // against an unreachable server blocks for tens of seconds — not on the UI thread.
-            var cliFound = SnykCli.IsCliFileFound(serviceProvider.Options.CliCustomPath);
+            var fallbackUsable = this.IsExistingCliUsableForFallback();
 
             // Raised from the thread pool; both branches write WPF state.
             ThreadHelper.JoinableTaskFactory.Run(async () =>
             {
                 await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
 
-                if (cliFound)
+                if (fallbackUsable)
                 {
                     if (LanguageClientHelper.LanguageClientManager() != null)
                         ThreadHelper.JoinableTaskFactory.RunAsync(async () => await LanguageClientHelper.LanguageClientManager().RestartServerAsync()).FireAndForget();
@@ -501,10 +500,20 @@ namespace Snyk.VisualStudio.Extension.UI.Toolwindow
                 else
                 {
                     this.messagePanel.Text =
-                    "Failed to download Snyk CLI. You can specify a path to a Snyk CLI executable from the settings.";
+                    "Failed to download the Snyk CLI, and the CLI already installed is either missing or not usable by this version of the extension. You can specify a path to a Snyk CLI executable from the settings.";
                 }
             });
         }
+
+        /// <summary>
+        /// Whether the download that just failed or was cancelled left a CLI behind that can actually
+        /// run. Presence alone used to be the test, so the language server was restarted against a
+        /// truncated or protocol-incompatible binary and never came up — leaving the tool window on
+        /// its loading state with nothing to act on.
+        /// </summary>
+        private bool IsExistingCliUsableForFallback() =>
+            new SnykCliDownloader(serviceProvider.Options)
+                .IsExistingCliUsable(SnykCli.GetCliFilePath(serviceProvider.Options.CliCustomPath));
 
         /// <summary>
         /// Show tool window.

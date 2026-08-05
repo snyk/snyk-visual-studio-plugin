@@ -309,21 +309,40 @@ namespace Snyk.VisualStudio.Extension.Download
 
 
         /// <summary>
-        /// Compare CLI versions and if new version string is more new to current version method will return true.
+        /// The published checksum for a download URL, fetched once per downloader instance. Memoised for
+        /// the same reason as the release info: it is now consulted by the download decision as well as
+        /// by verification, and a second fetch could disagree with the first if a release lands between
+        /// them. Also sets expectedSha, which VerifyCliFile compares against.
         /// </summary>
-        /// <param name="currentVersionStr">Current CLI version.</param>
-        /// <param name="newVersionStr">New CLI version.</param>
-        /// <returns>True if there is more new version.</returns>
-        public bool IsNewVersionAvailable(string currentVersionStr, string newVersionStr)
-        {
-            return currentVersionStr != newVersionStr;
-        }
+        // internal for testability (the tests assert the fetch happens once).
+        internal string GetLatestCliShaOnce(string cliDownloadUrl) =>
+            this.expectedSha ?? (this.expectedSha = this.GetLatestCliSha(cliDownloadUrl));
+
+        /// <summary>
+        /// Whether the binary at <paramref name="cliFilePath"/> speaks the LS protocol version this
+        /// extension implements. The only way to establish that for a binary we did not just download:
+        /// a build fetched from the protocol-keyed release URL satisfies it by construction, but one
+        /// already on disk carries no such guarantee, and neither its file name nor its checksum says
+        /// anything about it.
+        ///
+        /// Costs a process launch, so this is deliberately reached only where the answer is not already
+        /// known — the download-failure fallback and a failed release lookup — never on the path where
+        /// the checksum has already proven the binary is the current release.
+        ///
+        /// Thin wrapper over <see cref="CheckCliProtocol"/> (below): that method already does this launch
+        /// correctly (async stdout draining, no pipe-buffer deadlock risk) and distinguishes a confirmed
+        /// mismatch from a timeout or a failed probe — callers here only need a plain yes/no.
+        /// </summary>
+        // internal virtual for testability: a test double avoids launching a real process.
+        internal virtual bool IsCliProtocolSupported(string cliFilePath) =>
+            this.CheckCliProtocol(cliFilePath) == CliProtocolCheckResult.Supported;
 
         /// <summary>
         /// Request last cli sha.
         /// </summary>
         /// <returns>CLI sha string.</returns>
-        // virtual for testability: a test double replaces the network call.
+        // virtual for testability: a test double replaces the network call. Prefer GetLatestCliShaOnce
+        // internally — this always issues a request.
         public virtual string GetLatestCliSha(string cliDownloadUrl)
         {
             Logger.Information("Enter GetLatestCliSha method");
@@ -342,20 +361,26 @@ namespace Snyk.VisualStudio.Extension.Download
         }
 
         /// <summary>
-        /// Check is CLI download needed.
-        /// 1. If CLI file not exists.
-        /// 2. If new CLI release exists.
+        /// Whether the binary we want is not the binary we have.
+        ///
+        /// Decided on the bytes, not on a recorded version string. CurrentCliVersion says what the last
+        /// install believed it wrote; it cannot see a truncated file, a binary swapped out from under us
+        /// by another tool sharing the path, or settings copied from another machine. In every one of
+        /// those the recorded version matched the latest release and the update was skipped, leaving the
+        /// language server to launch a binary that could not work — with no way out, because the next
+        /// startup repeated the same comparison.
+        ///
+        /// Two requests, both memoised for the life of this instance: the protocol-keyed release version
+        /// and its checksum.
         /// </summary>
         /// <param name="cliFileDestinationPath">Path to CLI file.</param>
-        /// <returns>True if CLI file not exists or new release exists.</returns>
+        /// <returns>True when the current release should be downloaded.</returns>
         public bool IsCliDownloadNeeded(string cliFileDestinationPath = null)
         {
             // Every branch below logs the path it decided on. Without that, a wrong decision is
             // indistinguishable from a broken download: the log showed neither where we looked nor
             // why we concluded an update was needed.
-            var cliFileExists = this.IsCliFileExists(cliFileDestinationPath);
-
-            if (!cliFileExists)
+            if (!this.IsCliFileExists(cliFileDestinationPath))
             {
                 Logger.Information("CLI download needed: no file at {Path}", cliFileDestinationPath);
 
@@ -364,36 +389,47 @@ namespace Snyk.VisualStudio.Extension.Download
 
             try
             {
-                var currentVersion = this.SnykOptions.CurrentCliVersion;
-                var latestVersion = this.GetLatestReleaseInfoOnce().Name;
+                var latestReleaseInfo = this.GetLatestReleaseInfoOnce();
+                var expectedSha = this.GetLatestCliShaOnce(latestReleaseInfo.Url);
 
-                if (this.IsNewVersionAvailable(currentVersion, latestVersion))
+                if (IsCliUpToDate(cliFileDestinationPath, expectedSha))
                 {
+                    // Nothing further to check: this URL is keyed on the protocol version, so a binary
+                    // whose bytes match what it serves satisfies that protocol by construction. That is
+                    // why the happy path never launches the CLI to ask.
                     Logger.Information(
-                        "CLI download needed: {Path} is recorded as {CurrentVersion}, latest is {LatestVersion}",
+                        "No CLI download needed: {Path} matches the checksum of {LatestVersion}, the latest release for protocol version {ProtocolVersion}",
                         cliFileDestinationPath,
-                        string.IsNullOrEmpty(currentVersion) ? "(unrecorded)" : currentVersion,
-                        latestVersion);
+                        latestReleaseInfo.Name,
+                        LsConstants.ProtocolVersion);
 
-                    return true;
+                    return false;
                 }
 
                 Logger.Information(
-                    "No CLI download needed: {Path} is {CurrentVersion}, matching the latest release",
+                    "CLI download needed: {Path} does not match the checksum of {LatestVersion} (recorded locally as {CurrentVersion})",
                     cliFileDestinationPath,
-                    currentVersion);
+                    latestReleaseInfo.Name,
+                    string.IsNullOrEmpty(this.SnykOptions.CurrentCliVersion) ? "(unrecorded)" : this.SnykOptions.CurrentCliVersion);
 
-                return false;
+                return true;
             }
             catch (Exception ex)
             {
-                // A failed check is not "up to date", but a CLI is present here (the missing-file case
-                // returned above), so keep using it rather than failing startup on every launch.
-                Logger.Error(ex,
-                    "Could not fetch latest CLI release info, so whether a newer version exists is unknown. Keeping the CLI present at {Path}",
-                    cliFileDestinationPath);
+                // The lookup failed, so which release is current is unknown and the checksum comparison
+                // above could not run. Fall back to the one question that needs no network: does the
+                // binary we already have speak our protocol version? If it does, use it. If it does not,
+                // ask for the download — it will probably fail too, and failing visibly is the point,
+                // because silently keeping an unusable CLI is what left the language server dead.
+                var protocolSupported = this.IsCliProtocolSupported(cliFileDestinationPath);
 
-                return false;
+                Logger.Error(ex,
+                    "Could not fetch the latest CLI release info, so whether {Path} is current is unknown. It {Verdict} protocol version {ProtocolVersion}",
+                    cliFileDestinationPath,
+                    protocolSupported ? "reports the expected" : "does NOT report the expected",
+                    LsConstants.ProtocolVersion);
+
+                return !protocolSupported;
             }
         }
 
@@ -505,6 +541,30 @@ namespace Snyk.VisualStudio.Extension.Download
         /// <param name="cliFileDestinationPath">CLI location path.</param>
         /// <returns>True if CLI file not exists.</returns>
         public bool IsCliFileExists(string cliFileDestinationPath = null) => File.Exists(cliFileDestinationPath);
+
+        /// <summary>
+        /// Whether a CLI already on disk is worth falling back to after a download did not happen.
+        ///
+        /// Presence is not enough, which is what made a failed download look survivable: the language
+        /// server was restarted against whatever file was there, so a truncated or protocol-incompatible
+        /// binary produced a server that never came up and an IDE that sat on "loading" indefinitely.
+        /// An older release that still speaks our protocol is genuinely usable; anything else is not,
+        /// and saying so is more useful than starting a server that cannot work.
+        ///
+        /// This is one of the two places the protocol probe runs, and it is only reached after a
+        /// download has already failed or been cancelled — never on a normal startup.
+        /// </summary>
+        public bool IsExistingCliUsable(string cliFileDestinationPath)
+        {
+            if (!this.IsCliFileExists(cliFileDestinationPath))
+            {
+                Logger.Information("No CLI to fall back to at {Path}", cliFileDestinationPath);
+
+                return false;
+            }
+
+            return this.IsCliProtocolSupported(cliFileDestinationPath);
+        }
 
         /// <summary>
         /// Check is there a new version on the server and if there is, download it.
@@ -797,7 +857,10 @@ namespace Snyk.VisualStudio.Extension.Download
 
             try
             {
-                this.SaveLatestCliSha(cliDownloadUrl);
+                // Memoised: IsCliDownloadNeeded has normally already fetched this, so reaching here
+                // costs no request. Still checked rather than assumed — DownloadAsync is public and
+                // callable without having gone through the decision above.
+                this.GetLatestCliShaOnce(cliDownloadUrl);
 
                 if (IsCliUpToDate(cliFileDestinationPath, this.expectedSha))
                 {

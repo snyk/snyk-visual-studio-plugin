@@ -45,13 +45,27 @@ namespace Snyk.VisualStudio.Extension.Tests
         {
             private readonly string sha;
             private readonly Exception releaseInfoFailure;
+            private readonly bool protocolSupported;
 
-            public FakeDownloader(ISnykOptions options, string sha = null, Exception releaseInfoFailure = null)
+            public FakeDownloader(
+                ISnykOptions options,
+                string sha = null,
+                Exception releaseInfoFailure = null,
+                bool protocolSupported = false)
                 : base(options)
             {
                 this.sha = sha;
                 this.releaseInfoFailure = releaseInfoFailure;
+                this.protocolSupported = protocolSupported;
             }
+
+            // Round-trips for the checksum, counted separately from the version lookup: the download
+            // decision now consults both, and each must be memoised independently.
+            public int ShaFetches { get; private set; }
+
+            // Launches of the CLI. Asserted at zero on the happy path — the checksum already proves the
+            // binary is the current protocol-keyed release, so paying for a process launch is a defect.
+            public int ProtocolProbes { get; private set; }
 
             // Counts attempted round-trips — incremented before any injected failure, so a test can
             // tell "never asked" from "asked and it blew up".
@@ -69,7 +83,19 @@ namespace Snyk.VisualStudio.Extension.Tests
                 return new LatestReleaseInfo { Version = "v1.1292.0", Name = "v1.1292.0", Url = this.BuildCliDownloadUrl("v1.1292.0") };
             }
 
-            public override string GetLatestCliSha(string cliDownloadUrl) => this.sha;
+            public override string GetLatestCliSha(string cliDownloadUrl)
+            {
+                this.ShaFetches++;
+
+                return this.sha;
+            }
+
+            internal override bool IsCliProtocolSupported(string cliFilePath)
+            {
+                this.ProtocolProbes++;
+
+                return this.protocolSupported;
+            }
 
             // Records whether the failure was diagnosed as a CLI install failure. The real
             // implementation reports through NotificationService.Instance, a static singleton that is
@@ -396,29 +422,79 @@ namespace Snyk.VisualStudio.Extension.Tests
         }
 
         [Fact]
-        public void IsCliDownloadNeeded_ReturnsFalse_WhenTheCheckFailsButACliIsInstalled()
+        public void IsCliDownloadNeeded_ReturnsFalse_WhenTheCheckFailsButTheInstalledCliSpeaksOurProtocol()
         {
-            // Offline with a usable CLI: keep using it rather than failing on every startup. This is
-            // the test that reaches the catch — the file exists, so the version check runs and throws.
+            // Offline with a usable CLI: keep using it rather than failing on every startup. Which
+            // release is current is unknowable here, so the only question left is the one that needs no
+            // network — does what we have speak our protocol version?
             var installedCli = Path.Combine(this.workDir, "snyk-win.exe");
             File.WriteAllText(installedCli, "an-existing-cli");
-            var cut = new FakeDownloader(Options(), releaseInfoFailure: new InvalidOperationException("network down"));
+            var cut = new FakeDownloader(
+                Options(),
+                releaseInfoFailure: new InvalidOperationException("network down"),
+                protocolSupported: true);
 
             Assert.False(cut.IsCliDownloadNeeded(installedCli));
 
-            // Proves the fallback was exercised rather than short-circuited past.
+            // Proves the catch was reached rather than short-circuited past, and that the probe is what
+            // decided it.
             Assert.Equal(1, cut.ReleaseInfoFetches);
+            Assert.Equal(1, cut.ProtocolProbes);
         }
 
         [Fact]
-        public void IsCliDownloadNeeded_ReturnsFalse_WhenTheInstalledVersionIsCurrent()
+        public void IsCliDownloadNeeded_ReturnsTrue_WhenTheCheckFailsAndTheInstalledCliDoesNotSpeakOurProtocol()
         {
+            // The case that used to be silently survivable: offline AND holding a CLI that cannot work.
+            // Returning false here kept a dead language server for the rest of the session, and every
+            // later startup repeated the decision. Asking for the download will very likely fail too —
+            // that is the point, because it surfaces instead of hanging.
             var installedCli = Path.Combine(this.workDir, "snyk-win.exe");
-            File.WriteAllText(installedCli, "an-existing-cli");
-            var cut = new FakeDownloader(Options(currentCliVersion: "v1.1292.0"));
+            File.WriteAllText(installedCli, "a-cli-from-an-older-protocol");
+            var cut = new FakeDownloader(
+                Options(),
+                releaseInfoFailure: new InvalidOperationException("network down"),
+                protocolSupported: false);
+
+            Assert.True(cut.IsCliDownloadNeeded(installedCli));
+            Assert.Equal(1, cut.ProtocolProbes);
+        }
+
+        [Fact]
+        public void IsCliDownloadNeeded_ReturnsFalse_WhenTheBytesOnDiskMatchTheLatestRelease()
+        {
+            // The happy path, and the whole point of the change: decided on the bytes, not on the
+            // recorded version. CurrentCliVersion is deliberately stale here to prove it is no longer
+            // consulted for the decision.
+            var installedCli = Path.Combine(this.workDir, "snyk-win.exe");
+            File.WriteAllText(installedCli, "the-current-cli");
+            var cut = new FakeDownloader(
+                Options(currentCliVersion: "v1.1000.0"),
+                sha: Sha256.Checksum(installedCli));
 
             Assert.False(cut.IsCliDownloadNeeded(installedCli));
 
+            // One version lookup, one checksum lookup, and no process launch: matching bytes already
+            // prove the protocol, because the release URL is keyed on it.
+            Assert.Equal(1, cut.ReleaseInfoFetches);
+            Assert.Equal(1, cut.ShaFetches);
+            Assert.Equal(0, cut.ProtocolProbes);
+        }
+
+        [Fact]
+        public void IsCliDownloadNeeded_ReturnsTrue_WhenTheBytesOnDiskAreNotTheLatestRelease()
+        {
+            // Covers the corrupt-binary case too: a truncated file has the wrong checksum, so it is
+            // replaced. Under the old version-string comparison a recorded version that happened to
+            // match the latest release meant a corrupt CLI was never re-downloaded.
+            var installedCli = Path.Combine(this.workDir, "snyk-win.exe");
+            File.WriteAllText(installedCli, "a-truncated-or-stale-cli");
+            var cut = new FakeDownloader(
+                Options(currentCliVersion: "v1.1292.0"),
+                sha: "0000000000000000000000000000000000000000000000000000000000000000");
+
+            Assert.True(cut.IsCliDownloadNeeded(installedCli));
+            Assert.Equal(0, cut.ProtocolProbes);
         }
 
         [Fact]
@@ -432,7 +508,12 @@ namespace Snyk.VisualStudio.Extension.Tests
             File.WriteAllText(installedCli, "an-up-to-date-cli");
 
             var finishedCallbackRan = false;
-            var cut = new FakeDownloader(Options(currentCliVersion: "v1.1292.0"));
+
+            // The checksum is what makes this the no-download path now; the recorded version is not
+            // consulted. Deliberately stale to prove that.
+            var cut = new FakeDownloader(
+                Options(currentCliVersion: "v1.1000.0"),
+                sha: Sha256.Checksum(installedCli));
 
             await cut.AutoUpdateCliAsync(
                 this.progressWorkerMock.Object,
@@ -451,14 +532,29 @@ namespace Snyk.VisualStudio.Extension.Tests
             Assert.Equal("an-up-to-date-cli", File.ReadAllText(installedCli));
         }
 
-        [Fact]
-        public void IsCliDownloadNeeded_ReturnsTrue_WhenANewerVersionIsAvailable()
+        [Theory]
+        [InlineData(true)]
+        [InlineData(false)]
+        public void IsExistingCliUsable_RequiresTheProtocolProbe_NotJustPresence(bool protocolSupported)
         {
+            // The fallback after a failed or cancelled download. Presence alone was the old test, which
+            // is how the language server came to be restarted against a binary that could not run.
             var installedCli = Path.Combine(this.workDir, "snyk-win.exe");
             File.WriteAllText(installedCli, "an-existing-cli");
-            var cut = new FakeDownloader(Options(currentCliVersion: "v1.1000.0"));
+            var cut = new FakeDownloader(Options(), protocolSupported: protocolSupported);
 
-            Assert.True(cut.IsCliDownloadNeeded(installedCli));
+            Assert.Equal(protocolSupported, cut.IsExistingCliUsable(installedCli));
+            Assert.Equal(1, cut.ProtocolProbes);
+        }
+
+        [Fact]
+        public void IsExistingCliUsable_ReturnsFalse_WithoutProbing_WhenThereIsNoCli()
+        {
+            var missingCli = Path.Combine(this.workDir, "not-installed.exe");
+            var cut = new FakeDownloader(Options(), protocolSupported: true);
+
+            Assert.False(cut.IsExistingCliUsable(missingCli));
+            Assert.Equal(0, cut.ProtocolProbes);
         }
 
         // IsSupportedProtocolVersion/CheckCliProtocol below: ported from the now-removed
@@ -528,14 +624,40 @@ namespace Snyk.VisualStudio.Extension.Tests
         {
             var destination = Path.Combine(this.workDir, "snyk-win.exe");
             File.WriteAllText(destination, "an-existing-cli");
-            var cut = new FakeDownloader(Options(currentCliVersion: "v1.1000.0"));
+            var cut = new FakeDownloader(Options(currentCliVersion: "v1.1000.0"), sha: "a-sha-that-does-not-match");
 
             Assert.True(cut.IsCliDownloadNeeded(destination));
             Assert.Equal(1, cut.ReleaseInfoFetches);
+            Assert.Equal(1, cut.ShaFetches);
 
             // The second consumer of the same information must not re-ask.
             Assert.Equal("v1.1292.0", cut.GetLatestReleaseInfoOnce().Name);
             Assert.Equal(1, cut.ReleaseInfoFetches);
+        }
+
+        [Fact]
+        public async Task IsCliDownloadNeededThenDownloadAsync_ShareOneChecksumFetchAsync()
+        {
+            // Two round trips for a startup that installs nothing: the release version and its checksum.
+            // The checksum is now consulted by the decision as well as by verification, so without the
+            // memo the pair of them would ask twice — and a release landing between the two answers
+            // would have them disagree.
+            var destination = Path.Combine(this.workDir, "snyk-win.exe");
+            File.WriteAllText(destination, "the-current-cli");
+            var cut = new FakeDownloader(Options(), sha: Sha256.Checksum(destination));
+
+            Assert.False(cut.IsCliDownloadNeeded(destination));
+            Assert.Equal(1, cut.ShaFetches);
+
+            await cut.DownloadAsync(
+                this.progressWorkerMock.Object,
+                destination,
+                "https://downloads.snyk.io/cli/v1.1292.0/snyk-win.exe",
+                new List<SnykCliDownloader.CliDownloadFinishedCallback>());
+
+            Assert.Equal(1, cut.ReleaseInfoFetches);
+            Assert.Equal(1, cut.ShaFetches);
+            Assert.Equal(0, cut.ProtocolProbes);
         }
     }
 }
