@@ -27,10 +27,10 @@
         SYSLIB0012/0014/0021 - Assembly.CodeBase, WebClient and SHA256Managed are the correct
                                net48 APIs; changing them belongs in the extension, not here.
         VSTHRD002/VSTHRD110  - vs-threading analyzer findings that pre-date this project.
-        xUnit1031            - blocking waits in existing concurrency tests.
+        xUnit1031/xUnit2004  - blocking waits and Assert.Equal-on-bool in existing tests.
     -->
     <TreatWarningsAsErrors>false</TreatWarningsAsErrors>
-    <NoWarn>$(NoWarn);CS1591;SYSLIB0012;SYSLIB0014;SYSLIB0021;NU1701;VSTHRD002;VSTHRD110;xUnit1031</NoWarn>
+    <NoWarn>$(NoWarn);CS1591;SYSLIB0012;SYSLIB0014;SYSLIB0021;NU1701;VSTHRD002;VSTHRD110;xUnit1031;xUnit2004</NoWarn>
   </PropertyGroup>
 
   <PropertyGroup>
@@ -67,12 +67,12 @@
     <PackageReference Include="Serilog.Enrichers.Process" Version="2.0.2" />
     <PackageReference Include="Serilog.Enrichers.Thread" Version="3.1.0" />
     <PackageReference Include="Serilog.Exceptions" Version="8.4.0" />
-    <PackageReference Include="Serilog.Extensions.Logging" Version="7.0.0" />
     <PackageReference Include="Serilog.Sinks.File" Version="5.0.0" />
+    <!-- Despite the names, both of these ship as plain netstandard2.0 libraries and need
+         no Visual Studio: AsyncEventHandler on ILanguageClientManager, and StreamJsonRpc's
+         RemoteInvocationException in the settings persistence code. -->
     <PackageReference Include="Microsoft.VisualStudio.Threading" Version="17.6.40" />
-    <PackageReference Include="Microsoft.VisualStudio.LanguageServer.Protocol" Version="17.2.8" />
     <PackageReference Include="StreamJsonRpc" Version="2.14.24" />
-    <PackageReference Include="System.Runtime.Serialization.Primitives" Version="4.3.0" />
   </ItemGroup>
 
   <ItemGroup>

@@ -24,7 +24,7 @@ jobs:
           command: monitor
           args: 
             --all-projects
-            --exclude=Snyk.VisualStudio.Extension.Tests,Snyk.Common.Tests,Snyk.Code.Library.Tests,Tests
+            --exclude=Snyk.VisualStudio.Extension.Tests,Snyk.VisualStudio.Extension.Core.Tests,Snyk.Common.Tests,Snyk.Code.Library.Tests,Tests
   security-code-monitor:
     runs-on: ubuntu-latest
     environment: snyk-msbuild-envs

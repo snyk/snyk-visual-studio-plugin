@@ -1,7 +1,7 @@
 # Cross-platform unit testing
 
-Most of this extension's unit tests now run on Linux, macOS and Windows with nothing but the
-.NET SDK:
+Most of this extension's unit tests — 412 of them at the time of writing — run on Linux, macOS and
+Windows with nothing but the .NET SDK:
 
 ```bash
 dotnet test Snyk.VisualStudio.Extension.Core.Tests
@@ -71,6 +71,10 @@ Current examples:
 | `CodeHtmlProvider`, `OssHtmlProvider`, `SecretsHtmlProvider` | their product-specific themed colour substitutions, and dark / high-contrast detection |
 | `StaticHtmlProvider` | `GetInitHtmlAsync`, which marshals through the IDE joinable task factory |
 
+`WebView2Host` uses a plain partial split rather than the `.Vs.cs` convention, because the shared
+half is the smaller one: `WebView2Host.Paths.cs` holds the user-data folder layout and the
+navigation allowlist, while `WebView2Host.cs` remains the WPF/WebView2 control host.
+
 Where the VS half is an implementation detail rather than API, it is expressed as a
 [classic partial method](https://learn.microsoft.com/dotnet/csharp/language-reference/keywords/partial-method)
 (`static partial void Xxx(...)`): if no implementing declaration is compiled, the call is removed
@@ -98,14 +102,34 @@ If the build fails on a Visual Studio type, you have three options, in order of 
 | | Why |
 | --- | --- |
 | Building the VSIX (`Snyk.VisualStudio.Extension.2022`) | needs MSBuild plus the Visual Studio SDK |
-| `Snyk.VisualStudio.Extension.Tests` (net48) | references the VSIX and `Microsoft.VisualStudio.Sdk.TestFramework` / MockedVS |
 | `Tests/Integration.Tests` | launches a real Visual Studio instance |
 
-Tests that stay in the Windows-only project are the ones using `[Collection(MockedVS.Collection)]`,
-deriving from `PackageBaseTest`, or touching WPF, WebView2 or the VS language client directly.
+Do not try to `msbuild` the solution on Linux: the VSSDK targets are Windows-only, and the VS SDK
+NuGet feeds are Azure DevOps hosted. Build the cross-platform project directly, by path, as shown at
+the top of this document.
 
-Do not try to `msbuild` the solution on Linux — the VSSDK targets are Windows-only. Build the
-cross-platform project directly, by path, as shown at the top of this document.
+These test classes are genuinely IDE-bound and only run on Windows:
+
+| Test class | Why |
+| --- | --- |
+| `PackageBaseTest` and its subclasses (`SnykVSPackageNotInitializedHandlerTests`, `SnykLanguageClientTest`, `SnykLanguageClientCustomTargetTests`, `HtmlSettingsScriptingBridgeTest`) | construct `SnykVSPackage` against MockedVS |
+| `UI/ResourceLoaderTest` | resolves `pack://application:` WPF resource URIs |
+| `UI/Toolwindow/PanelDisposalContractTest` | `ToolWindowPane` and the WPF panels |
+| `UI/Html/WebView2PackageSmokeTest` | loads WebView2 runtime types |
+| `Settings/GlobalResetPropagationTests` | `HtmlSettingsScriptingBridge` schedules work on the IDE joinable task factory |
+| `Authentication/AuthenticationFlowServiceTests` | `AuthenticationFlowService` is built around `ThreadHelper` and the modal auth dialog |
+| `SnykSolutionServiceTest` | `SnykSolutionService` is DTE / `IVsSolution` based throughout |
+
+## Network access
+
+`SnykCliDownloaderTest` downloads real CLI release metadata and binaries from
+`downloads.snyk.io`, exactly as it does in the Windows run. The cross-platform suite therefore needs
+outbound HTTPS; behind a restrictive proxy, filter it out:
+
+```bash
+dotnet test Snyk.VisualStudio.Extension.Core.Tests \
+  --filter 'FullyQualifiedName!~SnykCliDownloaderTest'
+```
 
 ## Guard rails
 

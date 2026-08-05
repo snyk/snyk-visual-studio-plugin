@@ -1,5 +1,4 @@
 using Microsoft.VisualStudio.PlatformUI;
-using Snyk.VisualStudio.Extension.Theme;
 
 namespace Snyk.VisualStudio.Extension.UI.Html
 {

@@ -38,6 +38,19 @@ If you do not have access to our content management system (you are not a Snyk e
 
 ## Setup development environment
 
+Most unit tests do not need Visual Studio, or even Windows. If your change is to the extension's
+logic rather than its IDE surface, you can develop and verify it with just the .NET SDK on Linux,
+macOS or Windows:
+
+```bash
+dotnet test Snyk.VisualStudio.Extension.Core.Tests
+```
+
+See [docs/cross-platform-testing.md](docs/cross-platform-testing.md) for what that covers, how to
+bring more tests into it, and what still needs a Windows machine.
+
+Building the VSIX and running the IDE-bound tests does need the full setup below.
+
 Download and install Visual Studio 2022 from [official website](https://visualstudio.microsoft.com/vs/).
 
 Install the Visual Studio SDK as part of a Visual Studio installation. For details, please, see [this page](https://docs.microsoft.com/en-us/visualstudio/extensibility/installing-the-visual-studio-sdk?view=vs-2022).

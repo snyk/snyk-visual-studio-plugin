@@ -29,7 +29,7 @@ jobs:
             command: test
             args: 
               --all-projects
-              --exclude=Snyk.VisualStudio.Extension.Tests,Snyk.Common.Tests,Snyk.Code.Library.Tests,Tests
+              --exclude=Snyk.VisualStudio.Extension.Tests,Snyk.VisualStudio.Extension.Core.Tests,Snyk.Common.Tests,Snyk.Code.Library.Tests,Tests
               --severity-threshold=high
   security-code-scan:
       runs-on: ubuntu-latest
