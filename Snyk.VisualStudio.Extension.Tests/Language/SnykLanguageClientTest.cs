@@ -429,11 +429,51 @@ namespace Snyk.VisualStudio.Extension.Tests.Language
 
             TasksServiceMock.Setup(ts => ts.ShouldDownloadCli()).Returns(false);
 
+            // VS sets this by calling OnLoadedAsync. Raising StartAsync before that point is out of
+            // contract — VS discards it — so StartServerAsync deliberately defers, and this test would
+            // otherwise be asserting behaviour that cannot happen in production.
+            cut.VsHasLoadedClient = true;
+
             // Act
             await cut.StartServerAsync(true);
 
             // Assert
             Assert.True(eventInvoked);
+        }
+
+        [Fact]
+        public async Task StartServerAsync_ShouldNotInvokeStartAsync_BeforeVsHasLoadedTheClient()
+        {
+            // The regression this guards. VS subscribes to StartAsync when it instantiates the client,
+            // but will not activate it until it has called OnLoadedAsync. A start raised in that window
+            // is silently discarded: the invoke returns immediately, ActivateAsync is never called, no
+            // CLI process appears, and nothing retries — so the language server stays down for the whole
+            // session. The download-finished handler wins that race whenever no download is needed.
+            var eventInvoked = false;
+            cut.StartAsync += (sender, args) =>
+            {
+                eventInvoked = true;
+                return Task.CompletedTask;
+            };
+
+            TasksServiceMock.Setup(ts => ts.ShouldDownloadCli()).Returns(false);
+
+            // The other half of the contract, and the reason this test exists twice over: returning
+            // early must still REQUEST activation. Opening the bundled init file is what makes VS load
+            // the client and call OnLoadedAsync; a return without this event loses the start entirely,
+            // because nothing else triggers activation.
+            var activationRequested = false;
+            cut.OnLanguageClientNotInitializedAsync += (sender, args) =>
+            {
+                activationRequested = true;
+                return Task.CompletedTask;
+            };
+
+            // Deliberately NOT setting VsHasLoadedClient: this is the pre-OnLoadedAsync window.
+            await cut.StartServerAsync(true);
+
+            Assert.False(eventInvoked);
+            Assert.True(activationRequested);
         }
 
         [Fact]
@@ -489,6 +529,9 @@ namespace Snyk.VisualStudio.Extension.Tests.Language
                 stopInvoked = true;
                 return Task.CompletedTask;
             };
+
+            // A restart only happens after the server has been up, so VS has loaded the client by then.
+            cut.VsHasLoadedClient = true;
 
             // Act
             await cut.RestartServerAsync();
