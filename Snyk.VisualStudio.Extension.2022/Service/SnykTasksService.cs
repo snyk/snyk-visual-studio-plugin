@@ -41,6 +41,45 @@ namespace Snyk.VisualStudio.Extension.Service
 
         private readonly object cancelTasksLock = new object();
 
+        private readonly object cliDownloaderLock = new object();
+
+        private SnykCliDownloader cliDownloader;
+
+        /// <summary>
+        /// One downloader for the whole check-and-download episode, so its release-info and checksum
+        /// memos are shared by everyone who asks.
+        ///
+        /// Startup asks "is a download needed?" from three places — package init, the language client's
+        /// load, and the update itself. A fresh instance at each meant a release lookup each time, and
+        /// now that the decision compares checksums rather than a recorded version string, each instance
+        /// costs two requests rather than one. Sharing keeps a startup that installs nothing to a single
+        /// pair: the release version and its checksum.
+        ///
+        /// Deliberately not process-lifetime. <see cref="EndCliDownloadEpisode"/> clears it when the
+        /// episode ends, so a later check — a user pressing download, or a settings change — is answered
+        /// by the network rather than by a memo from hours earlier, and a CLI published in the meantime
+        /// is still found.
+        /// </summary>
+        private SnykCliDownloader CliDownloader
+        {
+            get
+            {
+                lock (this.cliDownloaderLock)
+                {
+                    return this.cliDownloader ??
+                           (this.cliDownloader = new SnykCliDownloader(this.serviceProvider.Options));
+                }
+            }
+        }
+
+        private void EndCliDownloadEpisode()
+        {
+            lock (this.cliDownloaderLock)
+            {
+                this.cliDownloader = null;
+            }
+        }
+
 
         /// <summary>
         /// Initializes a new instance of the <see cref="SnykTasksService"/> class.
@@ -466,21 +505,31 @@ namespace Snyk.VisualStudio.Extension.Service
         /// <summary>
         /// Fire download finished event.
         /// </summary>
-        protected internal void OnDownloadFinished(bool binaryWasDownloaded = true) =>
+        protected internal void OnDownloadFinished(bool binaryWasDownloaded = true)
+        {
+            this.EndCliDownloadEpisode();
             this.DownloadFinished?.Invoke(this, new SnykCliDownloadEventArgs { BinaryWasDownloaded = binaryWasDownloaded });
+        }
 
         /// <summary>
         /// Fire download cancelled event.
         /// </summary>
         /// <param name="message">Cancel message.</param>
-        protected internal void OnDownloadCancelled(string message) =>
+        protected internal void OnDownloadCancelled(string message)
+        {
+            this.EndCliDownloadEpisode();
             this.DownloadCancelled?.Invoke(this, new SnykCliDownloadEventArgs(message));
+        }
 
         /// <summary>
         /// Fire download cancelled event.
         /// </summary>
         /// <param name="exception">The exception that caused the download to fail.</param>
-        protected internal void OnDownloadFailed(Exception exception) => this.DownloadFailed?.Invoke(this, exception);
+        protected internal void OnDownloadFailed(Exception exception)
+        {
+            this.EndCliDownloadEpisode();
+            this.DownloadFailed?.Invoke(this, exception);
+        }
 
         /// <summary>
         /// Fire download update (on download progress update) event.
@@ -690,7 +739,7 @@ namespace Snyk.VisualStudio.Extension.Service
 
             try
             {
-                var cliDownloader = new SnykCliDownloader(options);
+                var cliDownloader = this.CliDownloader;
 
                 // The configured path and the resolved one, because they differ whenever a custom path
                 // is set — and a decision made against the wrong path is the hardest kind to diagnose
@@ -734,7 +783,7 @@ namespace Snyk.VisualStudio.Extension.Service
 
             try
             {
-                var cliDownloader = new SnykCliDownloader(this.serviceProvider.Options);
+                var cliDownloader = this.CliDownloader;
 
                 var downloadFinishedCallbacks = new List<CliDownloadFinishedCallback>();
 
