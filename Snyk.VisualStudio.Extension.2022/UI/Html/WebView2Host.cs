@@ -39,10 +39,10 @@ namespace Snyk.VisualStudio.Extension.UI.Html
     /// context. See <a href="https://github.com/MicrosoftEdge/WebView2Feedback/issues/2323">
     /// WebView2Feedback#2323</a>.
     /// </para>
-    /// </remarks>
-    /// <remarks>
+    /// <para>
     /// The user-data folder layout and the navigation allowlist live in
     /// WebView2Host.Paths.cs, which needs neither WebView2 nor WPF.
+    /// </para>
     /// </remarks>
     public sealed partial class WebView2Host : IWebView2Host
     {
