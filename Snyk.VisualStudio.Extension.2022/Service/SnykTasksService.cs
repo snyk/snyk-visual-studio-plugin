@@ -41,6 +41,9 @@ namespace Snyk.VisualStudio.Extension.Service
 
         private readonly object cancelTasksLock = new object();
 
+        // Shared by every ShouldDownloadCli caller, so the startup burst asks the network once.
+        private readonly CliDownloadDecisionCache cliDownloadDecisionCache = new CliDownloadDecisionCache();
+
         /// <summary>
         /// Initializes a new instance of the <see cref="SnykTasksService"/> class.
         /// </summary>
@@ -679,19 +682,57 @@ namespace Snyk.VisualStudio.Extension.Service
         {
             if (!this.serviceProvider.Options.BinariesAutoUpdate)
             {
+                Logger.Information("CLI auto-update is disabled; not downloading");
+
                 return false;
             }
+
+            var options = this.serviceProvider.Options;
+            var fileDestinationPath = SnykCli.GetCliFilePath(options.CliCustomPath);
+            var cacheKey = CliDownloadDecisionCache.BuildKey(
+                fileDestinationPath,
+                options.CliBaseDownloadURL,
+                options.CliReleaseChannel,
+                options.CurrentCliVersion);
+
+            // Startup asks this several times within a few seconds — the package gate, OnLoadedAsync
+            // (raised more than once by Visual Studio) and the download task. Answering each one cost a
+            // request to the release endpoint plus a launch of the CLI to read its protocol version.
+            if (this.cliDownloadDecisionCache.TryGet(cacheKey, out var cachedDecision))
+            {
+                Logger.Debug(
+                    "Reusing the recent CLI download decision for {Path}: download needed={DownloadNeeded}",
+                    fileDestinationPath,
+                    cachedDecision);
+
+                return cachedDecision;
+            }
+
             try
             {
-                var options = this.serviceProvider.Options;
                 var cliDownloader = new SnykCliDownloader(options);
-                var fileDestinationPath = SnykCli.GetCliFilePath(options.CliCustomPath);
 
-                return cliDownloader.IsCliDownloadNeeded(fileDestinationPath);
+                // The configured path and the resolved one, because they differ whenever a custom path
+                // is set — and a decision made against the wrong path is the hardest kind to diagnose
+                // from a log that never printed either.
+                Logger.Information(
+                    "Checking whether a CLI download is needed. Configured custom path: '{CliCustomPath}', resolved to {Path}",
+                    options.CliCustomPath,
+                    fileDestinationPath);
 
+                var downloadNeeded = cliDownloader.IsCliDownloadNeeded(fileDestinationPath);
+
+                this.cliDownloadDecisionCache.Set(cacheKey, downloadNeeded);
+
+                return downloadNeeded;
             }
-            catch (Exception)
+            catch (Exception e)
             {
+                // Was silent, so a failure here was indistinguishable from a genuine "needs download".
+                // Deliberately not cached: a transient failure must not pin "download needed" for the
+                // whole TTL.
+                Logger.Error(e, "Could not determine whether a CLI download is needed; assuming it is");
+
                 return true;
             }
         }
@@ -730,7 +771,10 @@ namespace Snyk.VisualStudio.Extension.Service
 
                 downloadFinishedCallbacks.Add(() =>
                 {
-                    this.serviceProvider.Options.CurrentCliVersion = cliDownloader.GetLatestReleaseInfo().Name;
+                    // Once, not again: this must record the version actually installed. Re-fetching
+                    // here recorded a release published mid-update, after which the version check
+                    // reports "current" and the install never moves off the older binary.
+                    this.serviceProvider.Options.CurrentCliVersion = cliDownloader.GetLatestReleaseInfoOnce().Name;
                     // System-driven update: suppress both the SettingsChanged event (would re-send
                     // DidChangeConfigurationAsync for a CLI-version bump) and tracker mutation (recording
                     // the new CurrentCliVersion as a user override would create a phantom ChangedConfigKeys entry).
@@ -742,14 +786,22 @@ namespace Snyk.VisualStudio.Extension.Service
                 });
 
                 var downloadPath = this.serviceProvider.Options.CliCustomPath;
+
+                // Reuses the cached decision rather than asking a fourth time. ShouldDownloadCli has
+                // already run during startup, so this is normally free.
                 await cliDownloader.AutoUpdateCliAsync(
                     progressWorker,
                     downloadPath,
-                    downloadFinishedCallbacks: downloadFinishedCallbacks);
+                    downloadFinishedCallbacks: downloadFinishedCallbacks,
+                    downloadNeeded: this.ShouldDownloadCli());
             }
             finally
             {
                 this.isCliDownloading = false;
+
+                // The install replaced the binary the protocol probe ran against, and the recorded
+                // version has moved on, so the remembered decision no longer describes reality.
+                this.cliDownloadDecisionCache.Invalidate();
             }
         }
     }

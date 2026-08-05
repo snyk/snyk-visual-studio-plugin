@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Threading.Tasks;
 using Moq;
 using Snyk.VisualStudio.Extension.Download;
@@ -43,16 +44,34 @@ namespace Snyk.VisualStudio.Extension.Tests
         {
             private readonly string sha;
             private readonly Exception releaseInfoFailure;
+            private readonly bool protocolSupported;
 
-            public FakeDownloader(ISnykOptions options, string sha = null, Exception releaseInfoFailure = null)
+            public FakeDownloader(ISnykOptions options, string sha = null, Exception releaseInfoFailure = null, bool protocolSupported = true)
                 : base(options)
             {
                 this.sha = sha;
                 this.releaseInfoFailure = releaseInfoFailure;
+                this.protocolSupported = protocolSupported;
             }
+
+            // The fixtures are text files, so the real probe would try to execute them.
+            public int ProtocolProbes { get; private set; }
+
+            internal override bool IsCliProtocolSupported(string cliFilePath)
+            {
+                this.ProtocolProbes++;
+
+                return this.protocolSupported;
+            }
+
+            // Counts attempted round-trips — incremented before any injected failure, so a test can
+            // tell "never asked" from "asked and it blew up".
+            public int ReleaseInfoFetches { get; private set; }
 
             public override LatestReleaseInfo GetLatestReleaseInfo()
             {
+                this.ReleaseInfoFetches++;
+
                 if (this.releaseInfoFailure != null)
                 {
                     throw this.releaseInfoFailure;
@@ -106,6 +125,60 @@ namespace Snyk.VisualStudio.Extension.Tests
             SnykCliDownloader.InstallCliFile(source, destination);
 
             Assert.Equal("new-cli", File.ReadAllText(destination));
+        }
+
+        // The atomicity of the replace itself is not reachable from a unit test — it needs the process
+        // to die mid-write. It comes from File.Replace being a single filesystem operation rather than
+        // a streamed overwrite. What the three tests below pin is the staging mechanics around it:
+        // cleanup on both paths, and that a first install does not go through File.Replace (which
+        // throws without an existing destination).
+
+        [Fact]
+        public void InstallCliFile_LeavesNoStagingFileBehind_WhenReplacingAnExistingBinary()
+        {
+            var source = Path.Combine(this.workDir, "downloaded.exe");
+            File.WriteAllText(source, "new-cli");
+            var destination = Path.Combine(this.workDir, "snyk-win.exe");
+            File.WriteAllText(destination, "old-cli");
+
+            SnykCliDownloader.InstallCliFile(source, destination);
+
+            Assert.Equal("new-cli", File.ReadAllText(destination));
+            Assert.Empty(Directory.GetFiles(this.workDir, "*.new"));
+            Assert.Equal(
+                new[] { "downloaded.exe", "snyk-win.exe" },
+                Directory.GetFiles(this.workDir).Select(Path.GetFileName).OrderBy(n => n).ToArray());
+        }
+
+        [Fact]
+        public void InstallCliFile_DoesNotTouchTheExistingBinary_WhenTheSourceIsMissing()
+        {
+            // Also passes on a plain File.Copy, which throws before opening the destination. Kept
+            // because the staging path has more ways to go wrong: it must not leave the destination
+            // half-replaced, and must not leave the staging file behind either.
+            var missingSource = Path.Combine(this.workDir, "never-downloaded.exe");
+            var destination = Path.Combine(this.workDir, "snyk-win.exe");
+            File.WriteAllText(destination, "old-cli");
+
+            Assert.ThrowsAny<Exception>(() => SnykCliDownloader.InstallCliFile(missingSource, destination));
+
+            Assert.Equal("old-cli", File.ReadAllText(destination));
+            Assert.Empty(Directory.GetFiles(this.workDir, "*.new"));
+        }
+
+        [Fact]
+        public void InstallCliFile_InstallsWhenNoBinaryIsPresentYet()
+        {
+            // First install: File.Replace throws FileNotFoundException without an existing
+            // destination, so this path must not go through it.
+            var source = Path.Combine(this.workDir, "downloaded.exe");
+            File.WriteAllText(source, "new-cli");
+            var destination = Path.Combine(this.workDir, "fresh", "snyk-win.exe");
+
+            SnykCliDownloader.InstallCliFile(source, destination);
+
+            Assert.Equal("new-cli", File.ReadAllText(destination));
+            Assert.Empty(Directory.GetFiles(Path.GetDirectoryName(destination), "*.new"));
         }
 
         [Fact]
@@ -236,23 +309,34 @@ namespace Snyk.VisualStudio.Extension.Tests
         }
 
         [Fact]
-        public void IsCliDownloadNeeded_ReturnsTrue_WhenTheCheckFailsAndNoCliIsInstalled()
+        public void IsCliDownloadNeeded_ReturnsTrue_WithoutAskingTheNetwork_WhenNoCliIsInstalled()
         {
+            // Short-circuits on the missing file, so the version check never runs — worth pinning,
+            // because it means a first install does not depend on the network being up. The injected
+            // failure would fire if the order ever changed.
             var missingCli = Path.Combine(this.workDir, "not-installed.exe");
             var cut = new FakeDownloader(Options(), releaseInfoFailure: new InvalidOperationException("network down"));
 
             Assert.True(cut.IsCliDownloadNeeded(missingCli));
+            Assert.Equal(0, cut.ReleaseInfoFetches);
+
+            // Nor is there any point launching a binary that is not there.
+            Assert.Equal(0, cut.ProtocolProbes);
         }
 
         [Fact]
         public void IsCliDownloadNeeded_ReturnsFalse_WhenTheCheckFailsButACliIsInstalled()
         {
-            // Offline with a usable CLI: keep using it rather than failing on every startup.
+            // Offline with a usable CLI: keep using it rather than failing on every startup. This is
+            // the test that reaches the catch — the file exists, so the version check runs and throws.
             var installedCli = Path.Combine(this.workDir, "snyk-win.exe");
             File.WriteAllText(installedCli, "an-existing-cli");
             var cut = new FakeDownloader(Options(), releaseInfoFailure: new InvalidOperationException("network down"));
 
             Assert.False(cut.IsCliDownloadNeeded(installedCli));
+
+            // Proves the fallback was exercised rather than short-circuited past.
+            Assert.Equal(1, cut.ReleaseInfoFetches);
         }
 
         [Fact]
@@ -263,6 +347,59 @@ namespace Snyk.VisualStudio.Extension.Tests
             var cut = new FakeDownloader(Options(currentCliVersion: "v1.1292.0"));
 
             Assert.False(cut.IsCliDownloadNeeded(installedCli));
+
+            // A matching version string is not evidence the binary works, so it is also probed.
+            Assert.Equal(1, cut.ProtocolProbes);
+        }
+
+        [Fact]
+        public void IsCliDownloadNeeded_ReturnsTrue_WhenThePresentCliCannotReportTheProtocolVersion()
+        {
+            // The case File.Exists plus a version string cannot see: right path, right recorded
+            // version, unusable binary. Previously this started a language server that could only fail.
+            var installedCli = Path.Combine(this.workDir, "snyk-win.exe");
+            File.WriteAllText(installedCli, "a-truncated-or-stale-cli");
+            var cut = new FakeDownloader(Options(currentCliVersion: "v1.1292.0"), protocolSupported: false);
+
+            Assert.True(cut.IsCliDownloadNeeded(installedCli));
+            Assert.Equal(1, cut.ProtocolProbes);
+        }
+
+        [Fact]
+        public async Task AutoUpdateCliAsync_FiresTheFinishedCallbacks_WhenNoDownloadIsNeededAsync()
+        {
+            // The callbacks start the language server, record the installed version and raise
+            // DownloadFinished, which is what moves the tool window off "Snyk Security is loading...".
+            // Taking the nothing-to-do path must not skip them.
+            var installedCli = Path.Combine(this.workDir, "snyk-win.exe");
+            File.WriteAllText(installedCli, "an-up-to-date-cli");
+
+            var finishedCallbackRan = false;
+            var cut = new FakeDownloader(Options(currentCliVersion: "v1.1292.0"));
+
+            await cut.AutoUpdateCliAsync(
+                this.progressWorkerMock.Object,
+                installedCli,
+                new List<SnykCliDownloader.CliDownloadFinishedCallback> { () => finishedCallbackRan = true });
+
+            Assert.True(finishedCallbackRan, "the finished callbacks must run even when no download was needed");
+            this.progressWorkerMock.Verify(w => w.DownloadFinished(), Times.Once);
+            this.progressWorkerMock.VerifySet(w => w.IsWorkFinished = true, Times.Once());
+
+            // Nothing was fetched: the binary already on disk is the one we want.
+            Assert.Equal("an-up-to-date-cli", File.ReadAllText(installedCli));
+        }
+
+        [Fact]
+        public void IsCliDownloadNeeded_DoesNotProbe_WhenANewerVersionIsAlreadyKnown()
+        {
+            // Downloading anyway, so spending ~a second launching the old binary buys nothing.
+            var installedCli = Path.Combine(this.workDir, "snyk-win.exe");
+            File.WriteAllText(installedCli, "an-existing-cli");
+            var cut = new FakeDownloader(Options(currentCliVersion: "v1.1000.0"));
+
+            Assert.True(cut.IsCliDownloadNeeded(installedCli));
+            Assert.Equal(0, cut.ProtocolProbes);
         }
 
         [Fact]
@@ -273,6 +410,37 @@ namespace Snyk.VisualStudio.Extension.Tests
             var cut = new FakeDownloader(Options(currentCliVersion: "v1.1000.0"));
 
             Assert.True(cut.IsCliDownloadNeeded(installedCli));
+        }
+
+        [Fact]
+        public void GetLatestReleaseInfoOnce_FetchesOncePerDownloader()
+        {
+            // One update asked three times: the version probe, the log line in DownloadAsync, and the
+            // callback that persists CurrentCliVersion. Those answers need not agree — a release
+            // published mid-update meant installing one version and recording the next, after which
+            // the version check reports "current" and the install never moves off the older binary.
+            var cut = new FakeDownloader(Options());
+
+            var first = cut.GetLatestReleaseInfoOnce();
+            var second = cut.GetLatestReleaseInfoOnce();
+
+            Assert.Equal(1, cut.ReleaseInfoFetches);
+            Assert.Same(first, second);
+        }
+
+        [Fact]
+        public void IsCliDownloadNeeded_ThenDownloadAsync_ShareOneReleaseInfoFetch()
+        {
+            var destination = Path.Combine(this.workDir, "snyk-win.exe");
+            File.WriteAllText(destination, "an-existing-cli");
+            var cut = new FakeDownloader(Options(currentCliVersion: "v1.1000.0"));
+
+            Assert.True(cut.IsCliDownloadNeeded(destination));
+            Assert.Equal(1, cut.ReleaseInfoFetches);
+
+            // The second consumer of the same information must not re-ask.
+            Assert.Equal("v1.1292.0", cut.GetLatestReleaseInfoOnce().Name);
+            Assert.Equal(1, cut.ReleaseInfoFetches);
         }
     }
 }

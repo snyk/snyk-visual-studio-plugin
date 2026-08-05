@@ -274,16 +274,14 @@ namespace Snyk.VisualStudio.Extension.Settings
 
                 BinariesAutoUpdate = snykSettings.BinariesAutoUpdateEnabled,
                 CliCustomPath = snykSettings.CustomCliPath,
-                // Repair-on-load: installs whose settings.json was written while options held an empty
-                // base url / release channel (a $/snyk.configuration echo of the LS's empty defaults,
-                // persisted by OnSnykConfiguration) would otherwise stay broken forever, because an
-                // explicit "" on disk overrides the SnykSettings field initialisers. Resolving here
-                // makes the in-memory state coherent everywhere (settings UI, LS payload, downloader)
-                // and the repaired values are written back on the next Save.
-                // Materialise the default for empty values persisted by an earlier $/snyk.configuration
-                // echo; any configured value is kept as-is.
-                CliBaseDownloadURL = SnykCliDownloader.ResolveBaseDownloadUrl(snykSettings.CliBaseDownloadURL),
-                CliReleaseChannel = SnykCliDownloader.ResolveReleaseChannel(snykSettings.CliReleaseChannel),
+                // Loaded raw, empty included. Resolving here would make "unset" indistinguishable from
+                // "the user typed the default": the settings field would render the literal instead of
+                // its placeholder, and the literal would be written back on the next Save. Every
+                // consumer that needs a usable value already resolves at the point of use — the
+                // downloader's URL builders, LsSettingsV25, and UserOverrideTracker (which resolves
+                // before comparing against ConfigDefaults, so an empty value records no override).
+                CliBaseDownloadURL = snykSettings.CliBaseDownloadURL,
+                CliReleaseChannel = snykSettings.CliReleaseChannel,
                 CurrentCliVersion = snykSettings.CurrentCliVersion,
 
                 AuthenticationMethod = snykSettings.AuthenticationMethod,

@@ -39,7 +39,8 @@ namespace Snyk.VisualStudio.Extension.UI.Html
                         // Render the CONFIGURED value, not the resolved one. Substituting the default
                         // would hide a mis-typed mirror from the person who typed it — the field would
                         // read "https://downloads.snyk.io" while their value sat unused. An empty field
-                        // shows the placeholder, which already states the default.
+                        // shows the placeholder, which already states the default; that is why Load
+                        // keeps the raw value rather than materialising the default into it.
                         var channel = options.CliReleaseChannel ?? string.Empty;
                         var isCustomChannel = channel.Length > 0
                             && channel != "stable" && channel != "rc" && channel != "preview";

@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using Snyk.VisualStudio.Extension.CLI;
 using Snyk.VisualStudio.Extension.Download;
 using Xunit;
 
@@ -128,6 +129,28 @@ namespace Snyk.VisualStudio.Extension.Tests
             File.WriteAllText(destination, "cli-binary-contents");
 
             Assert.False(SnykCliDownloader.IsCliUpToDate(destination, expectedSha));
+        }
+
+        [Theory]
+        [InlineData(null)]
+        [InlineData("")]
+        // Blank, not just empty: the settings page stores whatever was typed, and a whitespace-only
+        // custom path would otherwise resolve to itself — File.Exists("   ") is always false, so the
+        // CLI reads as missing and the download lands somewhere unusable.
+        [InlineData("   ")]
+        [InlineData("\t")]
+        public void GetCliFilePath_FallsBackToTheDefault_WhenNoCustomPathIsConfigured(string customCliPath)
+        {
+            Assert.Equal(SnykCli.GetSnykCliDefaultPath(), SnykCli.GetCliFilePath(customCliPath));
+        }
+
+        [Theory]
+        [InlineData(@"C:\custom\snyk.exe", @"C:\custom\snyk.exe")]
+        // Surrounding whitespace is not part of the path, and a trailing space makes it unopenable.
+        [InlineData(@"  C:\custom\snyk.exe  ", @"C:\custom\snyk.exe")]
+        public void GetCliFilePath_UsesAConfiguredPath(string customCliPath, string expected)
+        {
+            Assert.Equal(expected, SnykCli.GetCliFilePath(customCliPath));
         }
     }
 }

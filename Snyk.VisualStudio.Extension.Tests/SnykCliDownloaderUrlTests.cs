@@ -53,7 +53,7 @@ namespace Snyk.VisualStudio.Extension.Tests
         }
 
         [Fact]
-        public void BuildLatestReleaseVersionUrl_UsesConfiguredValues()
+        public void BuildLatestReleaseVersionUrl_UsesTheConfiguredBaseUrlAndChannelVerbatim()
         {
             var url = Downloader("https://downloads.snyk.io/fips", "preview").BuildLatestReleaseVersionUrl();
 

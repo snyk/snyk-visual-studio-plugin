@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.Net.Http;
 using System.Threading.Tasks;
@@ -21,6 +22,13 @@ namespace Snyk.VisualStudio.Extension.Download
         public const string DefaultBaseDownloadUrl = "https://downloads.snyk.io";
         public const string DefaultReleaseChannel = "stable";
 
+        // What a locally-built language server reports instead of a protocol number.
+        private const string DevelopmentProtocolVersion = "development";
+
+        // Generous: a cold first run can be slow while the on-access scanner reads ~175MB. Still
+        // bounded, because an unbounded wait here would freeze the CLI-download decision.
+        private const int ProtocolProbeTimeoutMs = 20000;
+
         private const string LatestReleaseVersionUrlScheme = "{0}/cli/{1}/ls-protocol-version-" + LsConstants.ProtocolVersion;
         private const string LatestReleaseDownloadUrlScheme = "{0}/cli/{1}/" + SnykCli.CliFileName;
         private const string Sha256DownloadUrl = "{0}.sha256";
@@ -32,6 +40,7 @@ namespace Snyk.VisualStudio.Extension.Download
 
         private readonly ISnykOptions SnykOptions;
         private string expectedSha;
+        private LatestReleaseInfo cachedLatestReleaseInfo;
 
         public SnykCliDownloader(ISnykOptions snykOptions)
         {
@@ -141,10 +150,22 @@ namespace Snyk.VisualStudio.Extension.Download
             version);
 
         /// <summary>
+        /// The latest release, fetched once per downloader instance. A single update otherwise asks
+        /// three times — the version probe, the log line in DownloadAsync, and the finished callback
+        /// that persists CurrentCliVersion — and those answers need not agree: a release published
+        /// mid-update meant installing one version and recording the next, after which the version
+        /// comparison reports "current" and the install never moves off the older binary.
+        /// </summary>
+        // internal for testability (the tests assert the fetch happens once).
+        internal LatestReleaseInfo GetLatestReleaseInfoOnce() =>
+            this.cachedLatestReleaseInfo ?? (this.cachedLatestReleaseInfo = this.GetLatestReleaseInfo());
+
+        /// <summary>
         /// Request last cli information.
         /// </summary>
         /// <returns>Latest CLI relaese information.</returns>
-        // virtual for testability: a test double replaces the network call.
+        // virtual for testability: a test double replaces the network call. Prefer
+        // GetLatestReleaseInfoOnce internally — this always issues a request.
         public virtual LatestReleaseInfo GetLatestReleaseInfo()
         {
             Logger.Information("Enter GetLatestReleaseInfo method");
@@ -159,7 +180,10 @@ namespace Snyk.VisualStudio.Extension.Download
                     "Get latest CLI release info from {Url} (configured base url: '{BaseDownloadUrl}', release channel: '{ReleaseChannel}')",
                     Redact(latestReleaseVersionUrl),
                     Redact(this.SnykOptions.CliBaseDownloadURL),
-                    this.SnykOptions.CliReleaseChannel);
+                    // A no-op for every legitimate channel ("stable", "rc", "v1.1292.0" hold no '@'),
+                    // but it is free text that composes into the URL above, so treat it like its
+                    // siblings rather than making this the one argument that can carry a secret.
+                    Redact(this.SnykOptions.CliReleaseChannel));
 
                 var latestVersion = webClient.DownloadString(latestReleaseVersionUrl).Replace("\n", string.Empty);
 
@@ -215,27 +239,144 @@ namespace Snyk.VisualStudio.Extension.Download
         /// <returns>True if CLI file not exists or new release exists.</returns>
         public bool IsCliDownloadNeeded(string cliFileDestinationPath = null)
         {
+            // Every branch below logs the path it decided on. Without that, a wrong decision is
+            // indistinguishable from a broken download: the log showed neither where we looked nor
+            // why we concluded an update was needed.
+            var cliFileExists = this.IsCliFileExists(cliFileDestinationPath);
+
+            if (!cliFileExists)
+            {
+                Logger.Information("CLI download needed: no file at {Path}", cliFileDestinationPath);
+
+                return true;
+            }
+
             try
             {
-                if (!this.IsCliFileExists(cliFileDestinationPath) || this.IsNewVersionAvailable(this.SnykOptions.CurrentCliVersion, this.GetLatestReleaseInfo().Name))
+                var currentVersion = this.SnykOptions.CurrentCliVersion;
+                var latestVersion = this.GetLatestReleaseInfoOnce().Name;
+
+                if (this.IsNewVersionAvailable(currentVersion, latestVersion))
                 {
+                    Logger.Information(
+                        "CLI download needed: {Path} is recorded as {CurrentVersion}, latest is {LatestVersion}",
+                        cliFileDestinationPath,
+                        string.IsNullOrEmpty(currentVersion) ? "(unrecorded)" : currentVersion,
+                        latestVersion);
+
                     return true;
                 }
+
+                // The recorded version matching says nothing about whether the binary on disk works —
+                // it is a string in settings.json, not a property of the file. Ask the binary.
+                if (!this.IsCliProtocolSupported(cliFileDestinationPath))
+                {
+                    Logger.Information(
+                        "CLI download needed: {Path} is recorded as {CurrentVersion} but does not report protocol version {ProtocolVersion}",
+                        cliFileDestinationPath,
+                        currentVersion,
+                        LsConstants.ProtocolVersion);
+
+                    return true;
+                }
+
+                Logger.Information(
+                    "No CLI download needed: {Path} is {CurrentVersion} and reports protocol version {ProtocolVersion}",
+                    cliFileDestinationPath,
+                    currentVersion,
+                    LsConstants.ProtocolVersion);
+
+                return false;
             }
             catch (Exception ex)
             {
-                // A failed check is not "up to date": with no CLI on disk the language server would be
-                // started with nothing to run. Fall back to whether one exists at all.
-                var cliFileExists = this.IsCliFileExists(cliFileDestinationPath);
-
+                // A failed check is not "up to date", but a CLI is present here (the missing-file case
+                // returned above), so keep using it rather than failing startup on every launch.
                 Logger.Error(ex,
-                    "Could not fetch latest CLI release info, so whether a newer version exists is unknown. Falling back to whether a CLI is present at {Path}: {CliFileExists}",
-                    cliFileDestinationPath,
-                    cliFileExists);
+                    "Could not fetch latest CLI release info, so whether a newer version exists is unknown. Keeping the CLI present at {Path}",
+                    cliFileDestinationPath);
 
-                return !cliFileExists;
+                return false;
             }
-            return false;
+        }
+
+        /// <summary>
+        /// Whether the binary at <paramref name="cliFilePath"/> can actually serve the language server
+        /// protocol we speak. File.Exists cannot tell a working CLI from a truncated, stale or
+        /// wrong-architecture one, and a binary that cannot answer this cannot serve initialize either
+        /// — it activates, fails, and the language server shuts down with no useful diagnosis.
+        /// Mirrors what vscode-extension does before activating its client.
+        /// </summary>
+        // internal virtual for testability: a unit test cannot execute a real CLI.
+        internal virtual bool IsCliProtocolSupported(string cliFilePath)
+        {
+            try
+            {
+                var startInfo = new ProcessStartInfo
+                {
+                    FileName = cliFilePath,
+                    Arguments = "language-server --protocolVersion",
+                    RedirectStandardOutput = true,
+                    UseShellExecute = false,
+                    CreateNoWindow = true,
+                };
+
+                using (var process = Process.Start(startInfo))
+                {
+                    if (process == null)
+                    {
+                        Logger.Warning("Could not start the CLI at {Path} to read its protocol version", cliFilePath);
+
+                        return false;
+                    }
+
+                    // WaitForExit before reading: ReadToEnd on a process that never writes would block
+                    // with no timeout, which is the hang this check exists to prevent. The output is a
+                    // few bytes, so it cannot fill the pipe buffer while we wait.
+                    if (!process.WaitForExit(ProtocolProbeTimeoutMs))
+                    {
+                        Logger.Warning(
+                            "CLI at {Path} did not report a protocol version within {TimeoutMs}ms",
+                            cliFilePath,
+                            ProtocolProbeTimeoutMs);
+
+                        try
+                        {
+                            process.Kill();
+                        }
+                        catch (Exception e) when (e is InvalidOperationException || e is System.ComponentModel.Win32Exception)
+                        {
+                            // Already gone, or not ours to kill.
+                        }
+
+                        return false;
+                    }
+
+                    var reported = process.StandardOutput.ReadToEnd().Trim();
+
+                    // "development" is what a locally-built language server reports; treat it as
+                    // compatible so a dev CLI is usable, matching snyk-ls' own handling.
+                    var supported = string.Equals(reported, LsConstants.ProtocolVersion, StringComparison.Ordinal)
+                        || string.Equals(reported, DevelopmentProtocolVersion, StringComparison.Ordinal);
+
+                    if (!supported)
+                    {
+                        Logger.Warning(
+                            "CLI at {Path} reports protocol version '{Reported}', expected '{Expected}'",
+                            cliFilePath,
+                            reported,
+                            LsConstants.ProtocolVersion);
+                    }
+
+                    return supported;
+                }
+            }
+            catch (Exception e)
+            {
+                Logger.Warning(e, "Could not read the protocol version from the CLI at {Path}", cliFilePath);
+
+                return false;
+            }
         }
 
         /// <summary>
@@ -252,13 +393,19 @@ namespace Snyk.VisualStudio.Extension.Download
         /// <param name="filePath">CLI file destination path or null.</param>
         /// <param name="downloadFinishedCallbacks">List of callback for download finished event.</param>
         /// <returns>A <see cref="Task"/> representing the asynchronous operation.</returns>
+        /// <param name="downloadNeeded">
+        /// The already-computed decision, when the caller has one. Answering the question costs a request
+        /// to the release endpoint plus a launch of the CLI, and the caller has usually just asked it —
+        /// passing it through is what keeps startup to a single round trip.
+        /// </param>
         public async Task AutoUpdateCliAsync(ISnykProgressWorker progressWorker,
             string filePath = null,
-            List<CliDownloadFinishedCallback> downloadFinishedCallbacks = null)
+            List<CliDownloadFinishedCallback> downloadFinishedCallbacks = null,
+            bool? downloadNeeded = null)
         {
             var fileDestinationPath = SnykCli.GetCliFilePath(filePath);
 
-            var isCliDownloadNeeded = this.IsCliDownloadNeeded(fileDestinationPath);
+            var isCliDownloadNeeded = downloadNeeded ?? this.IsCliDownloadNeeded(fileDestinationPath);
 
             if (isCliDownloadNeeded)
             {
@@ -266,11 +413,19 @@ namespace Snyk.VisualStudio.Extension.Download
                     progressWorker,
                     fileDestinationPath,
                     downloadFinishedCallbacks);
+
+                return;
             }
-            else
-            {
-                progressWorker.IsWorkFinished = true;
-            }
+
+            // Nothing to install, but the finished callbacks still have to run: they are what starts the
+            // language server, records the installed version, and raises DownloadFinished so the tool
+            // window leaves "Snyk Security is loading...". Skipping them left the UI waiting forever.
+            // This branch used to be unreachable in practice — IsCliDownloadNeeded compared a recorded
+            // version string that drifted empty, so it always reported an update was due and the work
+            // went through DownloadAsync, whose checksum fast path does call FinishDownload.
+            progressWorker.IsWorkFinished = true;
+
+            this.FinishDownload(progressWorker, downloadFinishedCallbacks);
         }
 
         /// <summary>
@@ -297,7 +452,7 @@ namespace Snyk.VisualStudio.Extension.Download
 
             Logger.Information("Got latest relase information");
 
-            LatestReleaseInfo latestReleaseInfo = this.GetLatestReleaseInfo();
+            LatestReleaseInfo latestReleaseInfo = this.GetLatestReleaseInfoOnce();
 
             Logger.Information("Latest relase information: version {Version} and url {Url}", latestReleaseInfo.Version, Redact(latestReleaseInfo.Url));
 
@@ -356,15 +511,64 @@ namespace Snyk.VisualStudio.Extension.Download
         }
 
         /// <summary>
-        /// Put the downloaded binary at its destination, creating the folder if needed.
+        /// Put the downloaded binary at its destination, creating the folder if needed. Replaces an
+        /// existing CLI in one step, so an interrupted install cannot leave a truncated binary behind.
         /// </summary>
         // internal for testability.
         internal static void InstallCliFile(string sourceFilePath, string cliFileDestinationPath)
         {
             PrepareCliDirectory(cliFileDestinationPath);
 
-            // Overwrite rather than delete-then-copy, so a failed copy leaves the existing CLI intact.
-            File.Copy(sourceFilePath, cliFileDestinationPath, overwrite: true);
+            if (!File.Exists(cliFileDestinationPath))
+            {
+                // Nothing to preserve, and File.Replace requires the destination to exist.
+                File.Copy(sourceFilePath, cliFileDestinationPath, overwrite: true);
+                return;
+            }
+
+            // Stage beside the destination so the swap stays on one volume, then replace. File.Copy
+            // straight onto the destination truncates it and streams in place, so a crash, a full
+            // disk or an AV lock mid-write leaves neither the old nor the new binary — and callers
+            // only check File.Exists, so a corrupt file reads as a usable CLI.
+            var stagingPath = cliFileDestinationPath + "." + Guid.NewGuid().ToString("N").Substring(0, 8) + ".new";
+
+            try
+            {
+                File.Copy(sourceFilePath, stagingPath, overwrite: true);
+
+                try
+                {
+                    File.Replace(stagingPath, cliFileDestinationPath, destinationBackupFileName: null);
+                }
+                catch (Exception e) when (e is IOException || e is PlatformNotSupportedException || e is UnauthorizedAccessException)
+                {
+                    // File.Replace needs a volume that supports it; a custom CLI path can name an SMB
+                    // share or a FAT volume. Failing the install outright would be worse than a
+                    // non-atomic overwrite, so fall back — but say so, because the guarantee is gone.
+                    Logger.Warning(e, "Atomic replace unavailable at {Path}; overwriting in place", cliFileDestinationPath);
+                    File.Copy(sourceFilePath, cliFileDestinationPath, overwrite: true);
+                }
+            }
+            finally
+            {
+                TryDeleteFile(stagingPath);
+            }
+        }
+
+        // Cleanup must never mask the failure that triggered it, so this swallows and logs.
+        private static void TryDeleteFile(string path)
+        {
+            try
+            {
+                if (File.Exists(path))
+                {
+                    File.Delete(path);
+                }
+            }
+            catch (Exception e) when (e is IOException || e is UnauthorizedAccessException)
+            {
+                Logger.Warning(e, "Could not remove the temporary file {Path}", path);
+            }
         }
 
         /// <summary>
@@ -400,10 +604,13 @@ namespace Snyk.VisualStudio.Extension.Download
         // otherwise observe whether a failure was diagnosed as an install failure.
         internal virtual void ReportInstallFailure(Exception e, string cliFileDestinationPath)
         {
-            // An update failure leaves a working CLI behind; an install failure does not.
+            // An update failure leaves the previous CLI behind; an install failure leaves nothing.
+            // States that it is present rather than that it will work: File.Exists cannot tell an
+            // untouched binary from a partial write, and the fallback in InstallCliFile still
+            // overwrites in place on volumes that cannot do an atomic replace.
             var existingCliRemains = File.Exists(cliFileDestinationPath);
             var message = existingCliRemains
-                ? $"Snyk CLI could not be updated at {cliFileDestinationPath}: {e.Message} The existing CLI will continue to be used."
+                ? $"Snyk CLI could not be updated at {cliFileDestinationPath}: {e.Message} The previously installed CLI is still in place."
                 : $"Snyk CLI could not be installed at {cliFileDestinationPath}: {e.Message}";
 
             // Null-conditional: the download can run before the package initialises this.
@@ -499,54 +706,58 @@ namespace Snyk.VisualStudio.Extension.Download
 
                 var tempCliFile = Path.GetTempFileName();
 
-                using (var fileStream = new FileStream(tempCliFile, FileMode.Create, FileAccess.Write, FileShare.ReadWrite, bufferSize, true))
-                {
-                    using (var contentStream = await response.Content.ReadAsStreamAsync())
-                    {
-                        var totalBytes = response.Content.Headers.ContentLength ?? long.MaxValue; // Avoid dividing by null when calculating progress
-                        var totalRead = 0L;
-                        var buffer = new byte[bufferSize];
-                        var isMoreToRead = true;
-                        var lastProgressPercentage = 0;
-
-                        do
-                        {
-                            var read = await contentStream.ReadAsync(buffer, 0, buffer.Length);
-
-                            if (read == 0)
-                            {
-                                isMoreToRead = false;
-                            }
-                            else
-                            {
-                                await fileStream.WriteAsync(buffer, 0, read);
-
-                                totalRead += read;
-
-                                int percentage = (int)(totalRead * 100 / totalBytes);
-
-                                if (percentage > lastProgressPercentage)
-                                {
-                                    progressWorker.UpdateProgress(percentage);
-                                    lastProgressPercentage = percentage;
-                                }
-
-                                progressWorker.CancelIfCancellationRequested();
-                            }
-                        }
-                        while (isMoreToRead);
-                    }
-                }
-
-                this.VerifyCliFile(tempCliFile);
-
+                // Covers the download and the checksum as well as the install. VerifyCliFile throwing
+                // is an expected path — DownloadAsync catches ChecksumVerificationException and
+                // retries — so leaving it outside stranded a ~175MB temp file on every attempt, as did
+                // a cancelled or failed download.
                 try
                 {
+                    using (var fileStream = new FileStream(tempCliFile, FileMode.Create, FileAccess.Write, FileShare.ReadWrite, bufferSize, true))
+                    {
+                        using (var contentStream = await response.Content.ReadAsStreamAsync())
+                        {
+                            var totalBytes = response.Content.Headers.ContentLength ?? long.MaxValue; // Avoid dividing by null when calculating progress
+                            var totalRead = 0L;
+                            var buffer = new byte[bufferSize];
+                            var isMoreToRead = true;
+                            var lastProgressPercentage = 0;
+
+                            do
+                            {
+                                var read = await contentStream.ReadAsync(buffer, 0, buffer.Length);
+
+                                if (read == 0)
+                                {
+                                    isMoreToRead = false;
+                                }
+                                else
+                                {
+                                    await fileStream.WriteAsync(buffer, 0, read);
+
+                                    totalRead += read;
+
+                                    int percentage = (int)(totalRead * 100 / totalBytes);
+
+                                    if (percentage > lastProgressPercentage)
+                                    {
+                                        progressWorker.UpdateProgress(percentage);
+                                        lastProgressPercentage = percentage;
+                                    }
+
+                                    progressWorker.CancelIfCancellationRequested();
+                                }
+                            }
+                            while (isMoreToRead);
+                        }
+                    }
+
+                    this.VerifyCliFile(tempCliFile);
+
                     this.InstallAndFinish(progressWorker, tempCliFile, cliFileDestinationPath, downloadFinishedCallbacks);
                 }
                 finally
                 {
-                    File.Delete(tempCliFile);
+                    TryDeleteFile(tempCliFile);
                 }
             }
         }
