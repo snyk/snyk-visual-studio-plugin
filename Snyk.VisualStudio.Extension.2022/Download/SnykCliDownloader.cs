@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Globalization;
 using System.IO;
 using System.Net.Http;
 using System.Threading.Tasks;
@@ -45,6 +46,8 @@ namespace Snyk.VisualStudio.Extension.Download
         private readonly ISnykOptions SnykOptions;
         private string expectedSha;
         private LatestReleaseInfo cachedLatestReleaseInfo;
+        private string upToDateMemoKey;
+        private bool upToDateMemoVerdict;
 
         public SnykCliDownloader(ISnykOptions snykOptions)
         {
@@ -440,7 +443,7 @@ namespace Snyk.VisualStudio.Extension.Download
                 var latestReleaseInfo = this.GetLatestReleaseInfoOnce();
                 var expectedSha = this.GetLatestCliShaOnce(latestReleaseInfo.Url);
 
-                if (IsCliUpToDate(cliFileDestinationPath, expectedSha))
+                if (this.IsCliUpToDateOnce(cliFileDestinationPath, expectedSha))
                 {
                     // Nothing further to check: this URL is keyed on the protocol version, so a binary
                     // whose bytes match what it serves satisfies that protocol by construction. That is
@@ -488,6 +491,75 @@ namespace Snyk.VisualStudio.Extension.Download
         /// <param name="cliFileDestinationPath">CLI location path.</param>
         /// <returns>True if CLI file not exists.</returns>
         public bool IsCliFileExists(string cliFileDestinationPath = null) => File.Exists(cliFileDestinationPath);
+
+        /// <summary>
+        /// <see cref="IsCliUpToDate(string, string)"/>, hashed at most once per binary per instance.
+        ///
+        /// The comparison reads the whole ~175 MB file, and a startup asks the question three times, so
+        /// without this the binary was hashed three times per launch — about a second of it cold, and far
+        /// worse when CliCustomPath names a network share, where every hash pulls the file over the wire.
+        ///
+        /// Keyed on length and last-write-time as well as path, so the memo answers only for the exact
+        /// file it measured: if the binary is replaced — including by our own install — the key changes
+        /// and the next caller hashes again rather than trusting a stale verdict. That is also why this
+        /// needs nothing persisted between sessions.
+        /// </summary>
+        private bool IsCliUpToDateOnce(string cliFileDestinationPath, string expectedSha)
+        {
+            var key = BuildUpToDateMemoKey(cliFileDestinationPath, expectedSha);
+
+            if (key != null && string.Equals(key, this.upToDateMemoKey, StringComparison.Ordinal))
+            {
+                return this.upToDateMemoVerdict;
+            }
+
+            var verdict = IsCliUpToDate(cliFileDestinationPath, expectedSha, this.ComputeChecksum);
+
+            // Only memoise when the file could actually be measured; otherwise re-ask every time.
+            if (key != null)
+            {
+                this.upToDateMemoKey = key;
+                this.upToDateMemoVerdict = verdict;
+            }
+
+            return verdict;
+        }
+
+        // virtual for testability: hashing the binary is the expensive part of the decision, and the
+        // tests count how often it happens — a cost that is invisible from the verdict alone.
+        internal virtual string ComputeChecksum(string filePath) => Sha256.Checksum(filePath);
+
+        // Null when the file cannot be stat'd, which makes the result unmemoisable rather than wrong.
+        private static string BuildUpToDateMemoKey(string cliFileDestinationPath, string expectedSha)
+        {
+            if (string.IsNullOrEmpty(cliFileDestinationPath))
+            {
+                return null;
+            }
+
+            try
+            {
+                var info = new FileInfo(cliFileDestinationPath);
+
+                if (!info.Exists)
+                {
+                    return null;
+                }
+
+                // Unit separator: cannot occur in a path, a length or a checksum, so the parts cannot
+                // run together into a colliding key.
+                return string.Join(
+                    "\u001f",
+                    cliFileDestinationPath,
+                    info.Length.ToString(CultureInfo.InvariantCulture),
+                    info.LastWriteTimeUtc.Ticks.ToString(CultureInfo.InvariantCulture),
+                    expectedSha ?? string.Empty);
+            }
+            catch (Exception e) when (e is IOException || e is UnauthorizedAccessException || e is ArgumentException)
+            {
+                return null;
+            }
+        }
 
         /// <summary>
         /// Whether a CLI already on disk is worth falling back to after a download did not happen.
@@ -809,7 +881,7 @@ namespace Snyk.VisualStudio.Extension.Download
                 // callable without having gone through the decision above.
                 this.GetLatestCliShaOnce(cliDownloadUrl);
 
-                if (IsCliUpToDate(cliFileDestinationPath, this.expectedSha))
+                if (this.IsCliUpToDateOnce(cliFileDestinationPath, this.expectedSha))
                 {
                     Logger.Information(
                         "CLI at {Path} already matches the expected checksum — skipping download",
