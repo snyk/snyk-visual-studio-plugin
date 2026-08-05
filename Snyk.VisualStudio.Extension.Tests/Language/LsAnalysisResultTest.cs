@@ -2,6 +2,10 @@ using System;
 using Snyk.VisualStudio.Extension.Language;
 using Xunit;
 
+// System.Range exists on .NET Core but not on net48, so an unqualified `Range` is ambiguous
+// only in the cross-platform build. Alias it so the file compiles the same on both.
+using Range = Snyk.VisualStudio.Extension.Language.Range;
+
 namespace Snyk.VisualStudio.Extension.Tests.Language
 {
     public class LsAnalysisResultTest

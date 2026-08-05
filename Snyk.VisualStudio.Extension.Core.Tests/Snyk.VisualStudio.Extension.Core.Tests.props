@@ -22,7 +22,9 @@
     <Compile Include="$(SnykExtensionTestSourceRoot)Language\ConfigDefaultsTests.cs" Link="Tests\Language\ConfigDefaultsTests.cs" />
     <Compile Include="$(SnykExtensionTestSourceRoot)Language\FolderConfigApplierTests.cs" Link="Tests\Language\FolderConfigApplierTests.cs" />
     <Compile Include="$(SnykExtensionTestSourceRoot)Language\GlobalSettingsApplierTests.cs" Link="Tests\Language\GlobalSettingsApplierTests.cs" />
+    <Compile Include="$(SnykExtensionTestSourceRoot)Language\LsAnalysisResultTest.cs" Link="Tests\Language\LsAnalysisResultTest.cs" />
     <Compile Include="$(SnykExtensionTestSourceRoot)Language\LsConstantsTest.cs" Link="Tests\Language\LsConstantsTest.cs" />
+    <Compile Include="$(SnykExtensionTestSourceRoot)Language\LsSettingsV25Tests.cs" Link="Tests\Language\LsSettingsV25Tests.cs" />
     <Compile Include="$(SnykExtensionTestSourceRoot)Language\UserOverrideTrackerTests.cs" Link="Tests\Language\UserOverrideTrackerTests.cs" />
     <Compile Include="$(SnykExtensionTestSourceRoot)LogManagerGracefulDegradationTests.cs" Link="Tests\LogManagerGracefulDegradationTests.cs" />
     <Compile Include="$(SnykExtensionTestSourceRoot)Service\FeatureFlagServiceTest.cs" Link="Tests\Service\FeatureFlagServiceTest.cs" />
@@ -31,6 +33,7 @@
     <Compile Include="$(SnykExtensionTestSourceRoot)Settings\LoadReadUnderPersistGateTests.cs" Link="Tests\Settings\LoadReadUnderPersistGateTests.cs" />
     <Compile Include="$(SnykExtensionTestSourceRoot)Settings\PendingAuthTokenSlotTests.cs" Link="Tests\Settings\PendingAuthTokenSlotTests.cs" />
     <Compile Include="$(SnykExtensionTestSourceRoot)Settings\SettingsLocationMigratorTests.cs" Link="Tests\Settings\SettingsLocationMigratorTests.cs" />
+    <Compile Include="$(SnykExtensionTestSourceRoot)Settings\SettingsPersistenceAcceptanceTests.cs" Link="Tests\Settings\SettingsPersistenceAcceptanceTests.cs" />
     <Compile Include="$(SnykExtensionTestSourceRoot)Settings\SettingsPersistenceConcurrencyTests.cs" Link="Tests\Settings\SettingsPersistenceConcurrencyTests.cs" />
     <Compile Include="$(SnykExtensionTestSourceRoot)Settings\SnykOptionsManagerAutoOrgTests.cs" Link="Tests\Settings\SnykOptionsManagerAutoOrgTests.cs" />
     <Compile Include="$(SnykExtensionTestSourceRoot)Settings\SnykOptionsManagerCorruptFileTests.cs" Link="Tests\Settings\SnykOptionsManagerCorruptFileTests.cs" />
