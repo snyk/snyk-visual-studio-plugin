@@ -108,6 +108,11 @@ namespace Snyk.VisualStudio.Extension.Tests.Language
             cut.CliProtocolCompatibilityCheck = _ => false;
             var semaphore = GetStartStopSemaphore(cut);
 
+            // Without a StartAsync subscriber, StartAsync == null && shouldStart short-circuits at the
+            // very top of StartServerAsync (FireOnLanguageClientNotInitializedAsync then return) - the
+            // gate logic below is never reached at all.
+            cut.StartAsync += (sender, args) => Task.CompletedTask;
+
             string shownMessage = null;
             int? semaphoreCountWhenShown = null;
             cut.ShowInfoBar = message =>
