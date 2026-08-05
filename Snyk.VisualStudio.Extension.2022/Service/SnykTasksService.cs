@@ -55,28 +55,49 @@ namespace Snyk.VisualStudio.Extension.Service
         /// costs two requests rather than one. Sharing keeps a startup that installs nothing to a single
         /// pair: the release version and its checksum.
         ///
-        /// Deliberately not process-lifetime. <see cref="EndCliDownloadEpisode"/> clears it when the
-        /// episode ends, so a later check — a user pressing download, or a settings change — is answered
-        /// by the network rather than by a memo from hours earlier, and a CLI published in the meantime
-        /// is still found.
+        /// Deliberately not process-lifetime. <see cref="EndCliDownloadEpisode"/> clears it at the START
+        /// of each download entry point, so every new episode asks the network again and a CLI published
+        /// since the last one is still found.
+        ///
+        /// Cleared on entry rather than on completion because the last consumer of an episode's answer
+        /// runs after it: the language client's load calls ShouldDownloadCli once the server is being
+        /// started, which is after DownloadFinished has fired. Clearing on completion meant that caller
+        /// built a fresh downloader and paid for both requests and another checksum of the binary.
         /// </summary>
         private SnykCliDownloader CliDownloader
         {
             get
             {
+                // [startup-diag] Temporary. Paired around the lock so a thread stuck holding it is
+                // visible: "waiting" with no matching "held" on the same thread means contention here.
+                Logger.Information("[startup-diag] CliDownloader: waiting for the episode lock");
+
                 lock (this.cliDownloaderLock)
                 {
-                    return this.cliDownloader ??
-                           (this.cliDownloader = new SnykCliDownloader(this.serviceProvider.Options));
+                    Logger.Information(
+                        "[startup-diag] CliDownloader: lock held, {Action}",
+                        this.cliDownloader == null ? "constructing a downloader" : "reusing the existing downloader");
+
+                    var downloader = this.cliDownloader ??
+                                     (this.cliDownloader = new SnykCliDownloader(this.serviceProvider.Options));
+
+                    Logger.Information("[startup-diag] CliDownloader: releasing the episode lock");
+
+                    return downloader;
                 }
             }
         }
 
         private void EndCliDownloadEpisode()
         {
+            // [startup-diag] Temporary. If "waiting" appears with no "cleared", this lock is the block.
+            Logger.Information("[startup-diag] EndCliDownloadEpisode: waiting for the episode lock");
+
             lock (this.cliDownloaderLock)
             {
                 this.cliDownloader = null;
+
+                Logger.Information("[startup-diag] EndCliDownloadEpisode: cleared");
             }
         }
 
@@ -324,6 +345,8 @@ namespace Snyk.VisualStudio.Extension.Service
         {
             Logger.Information("Enter Download method");
 
+            this.EndCliDownloadEpisode();
+
             try
             {
                 if (this.IsTaskRunning())
@@ -391,6 +414,8 @@ namespace Snyk.VisualStudio.Extension.Service
 
         public async Task DownloadAsync(CliDownloadFinishedCallback downloadFinishedCallback = null)
         {
+            this.EndCliDownloadEpisode();
+
             if (this.IsTaskRunning())
             {
                 Logger.Information("There is already a task in progress");
@@ -507,29 +532,30 @@ namespace Snyk.VisualStudio.Extension.Service
         /// </summary>
         protected internal void OnDownloadFinished(bool binaryWasDownloaded = true)
         {
-            this.EndCliDownloadEpisode();
+            // [startup-diag] Temporary. These four lines bracket the whole no-download completion path:
+            // reaching "entered" but not "episode ended" implicates the lock; reaching "raising" but not
+            // "raised" implicates a subscriber blocking (the tool window waits for the UI thread).
+            Logger.Information("[startup-diag] OnDownloadFinished: entered, binaryWasDownloaded={Flag}", binaryWasDownloaded);
+
+            Logger.Information("[startup-diag] OnDownloadFinished: raising DownloadFinished to {SubscriberCount} subscriber(s)", this.DownloadFinished?.GetInvocationList().Length ?? 0);
+
             this.DownloadFinished?.Invoke(this, new SnykCliDownloadEventArgs { BinaryWasDownloaded = binaryWasDownloaded });
+
+            Logger.Information("[startup-diag] OnDownloadFinished: DownloadFinished raised and returned");
         }
 
         /// <summary>
         /// Fire download cancelled event.
         /// </summary>
         /// <param name="message">Cancel message.</param>
-        protected internal void OnDownloadCancelled(string message)
-        {
-            this.EndCliDownloadEpisode();
+        protected internal void OnDownloadCancelled(string message) =>
             this.DownloadCancelled?.Invoke(this, new SnykCliDownloadEventArgs(message));
-        }
 
         /// <summary>
         /// Fire download cancelled event.
         /// </summary>
         /// <param name="exception">The exception that caused the download to fail.</param>
-        protected internal void OnDownloadFailed(Exception exception)
-        {
-            this.EndCliDownloadEpisode();
-            this.DownloadFailed?.Invoke(this, exception);
-        }
+        protected internal void OnDownloadFailed(Exception exception) => this.DownloadFailed?.Invoke(this, exception);
 
         /// <summary>
         /// Fire download update (on download progress update) event.
@@ -739,6 +765,11 @@ namespace Snyk.VisualStudio.Extension.Service
 
             try
             {
+                // [startup-diag] Temporary, and the line whose absence made the last log unreadable:
+                // the "Checking whether..." line below is emitted only AFTER the downloader is acquired,
+                // so a caller blocked on the lock left no trace of having been here at all.
+                Logger.Information("[startup-diag] ShouldDownloadCli: entered, about to acquire the shared downloader");
+
                 var cliDownloader = this.CliDownloader;
 
                 // The configured path and the resolved one, because they differ whenever a custom path

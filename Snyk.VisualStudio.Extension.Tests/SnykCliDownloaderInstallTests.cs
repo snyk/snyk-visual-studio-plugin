@@ -46,18 +46,24 @@ namespace Snyk.VisualStudio.Extension.Tests
             private readonly string sha;
             private readonly Exception releaseInfoFailure;
             private readonly bool protocolSupported;
+            private readonly Func<string, string> computeChecksum;
 
             public FakeDownloader(
                 ISnykOptions options,
                 string sha = null,
                 Exception releaseInfoFailure = null,
-                bool protocolSupported = false)
+                bool protocolSupported = false,
+                Func<string, string> computeChecksum = null)
                 : base(options)
             {
                 this.sha = sha;
                 this.releaseInfoFailure = releaseInfoFailure;
                 this.protocolSupported = protocolSupported;
+                this.computeChecksum = computeChecksum;
             }
+
+            internal override string ComputeChecksum(string filePath) =>
+                this.computeChecksum != null ? this.computeChecksum(filePath) : base.ComputeChecksum(filePath);
 
             // Round-trips for the checksum, counted separately from the version lookup: the download
             // decision now consults both, and each must be memoised independently.
@@ -479,6 +485,60 @@ namespace Snyk.VisualStudio.Extension.Tests
             Assert.Equal(1, cut.ReleaseInfoFetches);
             Assert.Equal(1, cut.ShaFetches);
             Assert.Equal(0, cut.ProtocolProbes);
+        }
+
+        [Fact]
+        public void IsCliDownloadNeeded_HashesTheBinaryOnce_HoweverManyTimesItIsAsked()
+        {
+            // Startup asks three times: package init, the language client's load, and the update. The
+            // comparison reads the whole binary, so on a real ~175MB CLI three passes cost about a
+            // second and a half — and far more when the path is a network share. Counting the reads
+            // through an injected checksum function, because the cost is invisible from the verdict.
+            var installedCli = Path.Combine(this.workDir, "snyk-win.exe");
+            File.WriteAllText(installedCli, "the-current-cli");
+            var realSha = Sha256.Checksum(installedCli);
+
+            var checksumReads = 0;
+            var cut = new FakeDownloader(Options(), sha: realSha, computeChecksum: path =>
+            {
+                checksumReads++;
+
+                return Sha256.Checksum(path);
+            });
+
+            Assert.False(cut.IsCliDownloadNeeded(installedCli));
+            Assert.False(cut.IsCliDownloadNeeded(installedCli));
+            Assert.False(cut.IsCliDownloadNeeded(installedCli));
+
+            Assert.Equal(1, checksumReads);
+        }
+
+        [Fact]
+        public void IsCliDownloadNeeded_HashesAgain_WhenTheBinaryOnDiskChanges()
+        {
+            // The memo is keyed on length and last-write-time, so replacing the binary must invalidate
+            // it. Without that, an install during the same episode would be answered from a verdict
+            // measured against the file it replaced.
+            var installedCli = Path.Combine(this.workDir, "snyk-win.exe");
+            File.WriteAllText(installedCli, "a-stale-cli");
+
+            var checksumReads = 0;
+            var cut = new FakeDownloader(Options(), sha: "not-the-sha-of-either-file", computeChecksum: path =>
+            {
+                checksumReads++;
+
+                return Sha256.Checksum(path);
+            });
+
+            Assert.True(cut.IsCliDownloadNeeded(installedCli));
+            Assert.Equal(1, checksumReads);
+
+            // A different length, so the key changes even if the clock resolution hides the write time.
+            File.WriteAllText(installedCli, "a-replacement-cli-of-a-different-length");
+            File.SetLastWriteTimeUtc(installedCli, DateTime.UtcNow.AddSeconds(5));
+
+            Assert.True(cut.IsCliDownloadNeeded(installedCli));
+            Assert.Equal(2, checksumReads);
         }
 
         [Fact]
