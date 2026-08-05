@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Net.Http;
+using System.Text;
 using System.Threading.Tasks;
 using Microsoft.VisualStudio.Threading;
 using Serilog;
@@ -15,6 +16,20 @@ using Snyk.VisualStudio.Extension.UI.Notifications;
 
 namespace Snyk.VisualStudio.Extension.Download
 {
+    /// <summary>
+    /// Outcome of <see cref="SnykCliDownloader.CheckCliProtocol"/>. Kept distinct from a plain bool so a
+    /// caller can tell "confirmed incompatible" apart from "couldn't be checked at all" (IDE-2404) -
+    /// collapsing those into one "not supported" answer misattributes a timeout or a transient error
+    /// (e.g. an AV scanner still holding a just-downloaded binary) as a genuine version mismatch.
+    /// </summary>
+    internal enum CliProtocolCheckResult
+    {
+        Supported,
+        Unsupported,
+        TimedOut,
+        CheckFailed,
+    }
+
     /// <summary>
     /// Donwnload last Snyk CLI version.
     /// </summary>
@@ -384,13 +399,16 @@ namespace Snyk.VisualStudio.Extension.Download
 
         /// <summary>
         /// Whether the binary at <paramref name="cliFilePath"/> can actually serve the language server
-        /// protocol we speak. File.Exists cannot tell a working CLI from a truncated, stale or
-        /// wrong-architecture one, and a binary that cannot answer this cannot serve initialize either
-        /// — it activates, fails, and the language server shuts down with no useful diagnosis.
-        /// Mirrors what vscode-extension does before activating its client.
+        /// protocol we speak, and if not, why. File.Exists cannot tell a working CLI from a truncated,
+        /// stale or wrong-architecture one, and a binary that cannot answer this cannot serve initialize
+        /// either — it activates, fails, and the language server shuts down with no useful diagnosis.
+        /// Mirrors what vscode-extension does before activating its client. Distinguishes why an
+        /// incompatible answer was reached - a timeout or a failure to even read the version is not the
+        /// same as the CLI actually reporting a mismatched one, and callers that surface a user-facing
+        /// message should not claim "wrong version" for either of the former.
         /// </summary>
         // internal virtual for testability: a unit test cannot execute a real CLI.
-        internal virtual bool IsCliProtocolSupported(string cliFilePath)
+        internal virtual CliProtocolCheckResult CheckCliProtocol(string cliFilePath)
         {
             try
             {
@@ -403,18 +421,35 @@ namespace Snyk.VisualStudio.Extension.Download
                     CreateNoWindow = true,
                 };
 
-                using (var process = Process.Start(startInfo))
+                using (var process = new Process { StartInfo = startInfo })
                 {
-                    if (process == null)
+                    // Drain stdout concurrently via BeginOutputReadLine (started before WaitForExit)
+                    // rather than WaitForExit-then-ReadToEnd (PR review finding): the latter assumed "the
+                    // output is a few bytes, so it cannot fill the pipe buffer while we wait" - false for
+                    // exactly the CLI this check exists to catch, an old binary that doesn't recognize
+                    // --protocolVersion and dumps its full --help text instead, which is easily enough to
+                    // fill the redirected-stdout pipe buffer. That deadlocks the child on its next write
+                    // with nobody draining, so WaitForExit never observes the exit and this stalls the
+                    // full ProtocolProbeTimeoutMs on every launch against that CLI - undermining the
+                    // whole point of a fast, actionable rejection.
+                    var output = new StringBuilder();
+                    process.OutputDataReceived += (_, e) =>
+                    {
+                        if (e.Data != null)
+                        {
+                            output.AppendLine(e.Data);
+                        }
+                    };
+
+                    if (!process.Start())
                     {
                         Logger.Warning("Could not start the CLI at {Path} to read its protocol version", cliFilePath);
 
-                        return false;
+                        return CliProtocolCheckResult.CheckFailed;
                     }
 
-                    // WaitForExit before reading: ReadToEnd on a process that never writes would block
-                    // with no timeout, which is the hang this check exists to prevent. The output is a
-                    // few bytes, so it cannot fill the pipe buffer while we wait.
+                    process.BeginOutputReadLine();
+
                     if (!process.WaitForExit(ProtocolProbeTimeoutMs))
                     {
                         Logger.Warning(
@@ -431,10 +466,10 @@ namespace Snyk.VisualStudio.Extension.Download
                             // Already gone, or not ours to kill.
                         }
 
-                        return false;
+                        return CliProtocolCheckResult.TimedOut;
                     }
 
-                    var reported = process.StandardOutput.ReadToEnd().Trim();
+                    var reported = output.ToString().Trim();
                     var supported = IsSupportedProtocolVersion(reported);
 
                     if (!supported)
@@ -446,14 +481,14 @@ namespace Snyk.VisualStudio.Extension.Download
                             LsConstants.ProtocolVersion);
                     }
 
-                    return supported;
+                    return supported ? CliProtocolCheckResult.Supported : CliProtocolCheckResult.Unsupported;
                 }
             }
             catch (Exception e)
             {
                 Logger.Warning(e, "Could not read the protocol version from the CLI at {Path}", cliFilePath);
 
-                return false;
+                return CliProtocolCheckResult.CheckFailed;
             }
         }
 

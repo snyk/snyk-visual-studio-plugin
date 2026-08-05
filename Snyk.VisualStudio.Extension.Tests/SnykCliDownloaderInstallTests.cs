@@ -461,8 +461,8 @@ namespace Snyk.VisualStudio.Extension.Tests
             Assert.True(cut.IsCliDownloadNeeded(installedCli));
         }
 
-        // IsSupportedProtocolVersion/IsCliProtocolSupported below: ported from the now-removed
-        // CliProtocolVersionVerifier (IDE-2404). IsCliProtocolSupported was not exercised by any prior
+        // IsSupportedProtocolVersion/CheckCliProtocol below: ported from the now-removed
+        // CliProtocolVersionVerifier (IDE-2404). CheckCliProtocol was not exercised by any prior
         // test - IsCliDownloadNeeded never calls it, so it had neither a real nor a faked code path
         // here. These are the first coverage of its comparison logic and its real missing-file error path.
 
@@ -494,14 +494,17 @@ namespace Snyk.VisualStudio.Extension.Tests
             Assert.False(SnykCliDownloader.IsSupportedProtocolVersion(reported));
         }
 
+        // CheckCliProtocol distinguishes "confirmed incompatible" from "couldn't be checked at all" - a
+        // missing binary is the latter (CheckFailed), not a resolved comparison: Process.Start throws
+        // for a missing exe, which the catch block must turn into CheckFailed, not an escaping exception.
         [Fact]
-        public void IsCliProtocolSupported_ReturnsFalse_WhenCliPathDoesNotExist()
+        public void CheckCliProtocol_ReturnsCheckFailed_WhenCliPathDoesNotExist()
         {
-            // Process.Start throws for a missing exe, which the catch block must turn into a plain
-            // "false", not an escaping exception.
             var cut = new SnykCliDownloader(Options());
 
-            Assert.False(cut.IsCliProtocolSupported(Path.Combine(this.workDir, "does-not-exist.exe")));
+            Assert.Equal(
+                CliProtocolCheckResult.CheckFailed,
+                cut.CheckCliProtocol(Path.Combine(this.workDir, "does-not-exist.exe")));
         }
 
         [Fact]

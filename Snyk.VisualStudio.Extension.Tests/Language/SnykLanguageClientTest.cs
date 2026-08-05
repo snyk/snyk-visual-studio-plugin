@@ -8,6 +8,7 @@ using Microsoft.VisualStudio.LanguageServer.Client;
 using Microsoft.VisualStudio.Sdk.TestFramework;
 using Microsoft.VisualStudio.Shell;
 using Moq;
+using Snyk.VisualStudio.Extension.Download;
 using Snyk.VisualStudio.Extension.Language;
 using Snyk.VisualStudio.Extension.Service;
 using Snyk.VisualStudio.Extension.Settings;
@@ -39,7 +40,7 @@ namespace Snyk.VisualStudio.Extension.Tests.Language
             // itself don't need a real CLI binary on disk. The gate tests below override these back to
             // false individually.
             cut.CliExistsCheck = _ => true;
-            cut.CliProtocolCompatibilityCheck = _ => true;
+            cut.CliProtocolCompatibilityCheck = _ => CliProtocolCheckResult.Supported;
 
             // Default no-op so unrelated tests don't touch the real NotificationService.Instance
             // singleton (null under test anyway, but this keeps intent explicit and consistent with
@@ -71,14 +72,14 @@ namespace Snyk.VisualStudio.Extension.Tests.Language
         // fires, VS's LSP framework commits to calling ActivateAsync and expects a valid Connection back;
         // returning null there throws an unhandled InvalidOperationException from inside VS's own
         // RemoteLanguageClientInstance (seen manually testing this fix: a second, alarming top-shell
-        // banner on top of our actionable one). SnykCliDownloader.IsCliProtocolSupported's own parsing
+        // banner on top of our actionable one). SnykCliDownloader.CheckCliProtocol's own parsing
         // logic is covered separately (SnykCliDownloaderInstallTests, Integration.Tests); this only
         // asserts the wiring, via the CliProtocolCompatibilityCheck seam - no real CLI binary needed.
         [Fact]
         public async Task StartServerAsync_ShouldNotInvokeStartAsync_WhenCliProtocolVersionIncompatible()
         {
             // Arrange
-            cut.CliProtocolCompatibilityCheck = _ => false;
+            cut.CliProtocolCompatibilityCheck = _ => CliProtocolCheckResult.Unsupported;
 
             var eventInvoked = false;
             cut.StartAsync += (sender, args) =>
@@ -94,6 +95,48 @@ namespace Snyk.VisualStudio.Extension.Tests.Language
             Assert.False(eventInvoked);
         }
 
+        // IDE-2404 follow-up (review finding): a timeout or a failed probe is not a confirmed protocol
+        // mismatch - collapsing them into the same "does not support the required protocol version"
+        // message misleads the user about the actual cause (e.g. an AV scanner still holding a
+        // just-downloaded binary, not a genuinely incompatible CLI) and points them at the wrong fix.
+        //
+        // Two plain [Fact]s rather than a [Theory]: CliProtocolCheckResult is internal (matching this
+        // file's own precedent for ActivationDecision in SnykVSPackageNotInitializedHandlerTests), and a
+        // [Theory] method must be public for xUnit to discover it - a public method can't have an
+        // internal type in its signature ("inconsistent accessibility").
+        [Fact]
+        public async Task StartServerAsync_ShowsADistinctMessage_WhenProtocolCheckTimesOut() =>
+            await AssertShowsADistinctMessage(CliProtocolCheckResult.TimedOut, "not confirm");
+
+        [Fact]
+        public async Task StartServerAsync_ShowsADistinctMessage_WhenProtocolCheckFails() =>
+            await AssertShowsADistinctMessage(CliProtocolCheckResult.CheckFailed, "could not check");
+
+        private async Task AssertShowsADistinctMessage(CliProtocolCheckResult result, string expectedMessageFragment)
+        {
+            // Arrange
+            cut.CliProtocolCompatibilityCheck = _ => result;
+
+            string shownMessage = null;
+            cut.ShowInfoBar = message => shownMessage = message;
+
+            var eventInvoked = false;
+            cut.StartAsync += (sender, args) =>
+            {
+                eventInvoked = true;
+                return Task.CompletedTask;
+            };
+
+            // Act
+            await cut.StartServerAsync(true);
+
+            // Assert
+            Assert.False(eventInvoked);
+            Assert.NotNull(shownMessage);
+            Assert.Contains(expectedMessageFragment, shownMessage, StringComparison.OrdinalIgnoreCase);
+            Assert.DoesNotContain("does not support the required Language Server protocol version", shownMessage);
+        }
+
         // IDE-2404: pins the ordering fix from a prior review round - ShowErrorInfoBar blocks
         // synchronously on the main-thread queue, so it must run only AFTER semaphore.Release(), not
         // while still held, or a main-thread caller re-entering StartServerAsync/StopServerAsync while
@@ -105,7 +148,7 @@ namespace Snyk.VisualStudio.Extension.Tests.Language
         public async Task StartServerAsync_ShowsInfoBar_OnlyAfterSemaphoreIsReleased_WhenCliProtocolVersionIncompatible()
         {
             // Arrange
-            cut.CliProtocolCompatibilityCheck = _ => false;
+            cut.CliProtocolCompatibilityCheck = _ => CliProtocolCheckResult.Unsupported;
             var semaphore = GetStartStopSemaphore(cut);
 
             // Without a StartAsync subscriber, StartAsync == null && shouldStart short-circuits at the
@@ -150,7 +193,7 @@ namespace Snyk.VisualStudio.Extension.Tests.Language
             cut.CliProtocolCompatibilityCheck = _ =>
             {
                 protocolCheckInvoked = true;
-                return true;
+                return CliProtocolCheckResult.Supported;
             };
 
             string shownMessage = null;
@@ -170,7 +213,7 @@ namespace Snyk.VisualStudio.Extension.Tests.Language
             Assert.False(eventInvoked);
             Assert.False(protocolCheckInvoked);
             Assert.NotNull(shownMessage);
-            Assert.Contains("was not found at", shownMessage);
+            Assert.Contains("was not found", shownMessage);
         }
 
         [Fact]
