@@ -393,13 +393,19 @@ namespace Snyk.VisualStudio.Extension.Download
         /// <param name="filePath">CLI file destination path or null.</param>
         /// <param name="downloadFinishedCallbacks">List of callback for download finished event.</param>
         /// <returns>A <see cref="Task"/> representing the asynchronous operation.</returns>
+        /// <param name="downloadNeeded">
+        /// The already-computed decision, when the caller has one. Answering the question costs a request
+        /// to the release endpoint plus a launch of the CLI, and the caller has usually just asked it —
+        /// passing it through is what keeps startup to a single round trip.
+        /// </param>
         public async Task AutoUpdateCliAsync(ISnykProgressWorker progressWorker,
             string filePath = null,
-            List<CliDownloadFinishedCallback> downloadFinishedCallbacks = null)
+            List<CliDownloadFinishedCallback> downloadFinishedCallbacks = null,
+            bool? downloadNeeded = null)
         {
             var fileDestinationPath = SnykCli.GetCliFilePath(filePath);
 
-            var isCliDownloadNeeded = this.IsCliDownloadNeeded(fileDestinationPath);
+            var isCliDownloadNeeded = downloadNeeded ?? this.IsCliDownloadNeeded(fileDestinationPath);
 
             if (isCliDownloadNeeded)
             {
