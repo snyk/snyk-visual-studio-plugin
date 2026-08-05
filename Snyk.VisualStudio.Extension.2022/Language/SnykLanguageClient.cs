@@ -110,12 +110,17 @@ namespace Snyk.VisualStudio.Extension.Language
         // Reuses SnykCliDownloader.IsCliProtocolSupported (added independently alongside this ticket,
         // in Download/SnykCliDownloader.cs) rather than a second, near-duplicate implementation - it
         // already handles this correctly (waits for exit before reading stdout, doesn't redirect
-        // stderr) and is what IsCliDownloadNeeded uses to decide whether to auto-redownload. This gate
-        // is still needed independently: ShouldDownloadCli() (and so IsCliDownloadNeeded) returns false
-        // whenever BinariesAutoUpdate is off, regardless of whether the binary works, so a
-        // custom/unmanaged path never goes through that self-healing path at all.
+        // stderr). ShouldDownloadCli() (and so IsCliDownloadNeeded) only compares file-existence and
+        // version strings - it never runs this protocol probe - and returns false whenever
+        // BinariesAutoUpdate is off regardless of whether the binary works, so a custom/unmanaged path
+        // never gets a protocol check at all without this gate.
         internal Func<string, bool> CliProtocolCompatibilityCheck { get; set; } =
             cliPath => new SnykCliDownloader(SnykVSPackage.Instance.Options).IsCliProtocolSupported(cliPath);
+
+        // Seam for tests: pins the "shown only after semaphore.Release()" ordering fixed above (a prior
+        // review round flagged ShowErrorInfoBar's synchronous main-thread block as a deadlock risk while
+        // held) so a future refactor moving this call back inside the try/finally has something to fail.
+        internal Action<string> ShowInfoBar { get; set; } = message => NotificationService.Instance?.ShowErrorInfoBar(message);
 
         public async Task<Connection> ActivateAsync(CancellationToken token)
         {
@@ -169,7 +174,7 @@ namespace Snyk.VisualStudio.Extension.Language
         {
             // Set inside the semaphore below, but the InfoBar itself is shown only after it's released
             // - see the comment at the bottom of this method.
-            string protocolMismatchMessage = null;
+            string infoBarMessage = null;
 
             await semaphore.WaitAsync();
             try
@@ -201,12 +206,18 @@ namespace Snyk.VisualStudio.Extension.Language
                     // slow/corrupted CLI freezes the entire VS UI for the duration.
                     var cliExists = await Task.Run(() => CliExistsCheck(cliPath));
 
-                    // A missing binary is a distinct, already-handled failure mode (see the "CLI not
-                    // found" messagePanel text in SnykToolWindowControl) - don't run the protocol check
-                    // at all here, or its banner would misattribute a missing binary as an incompatible
-                    // one.
+                    // Don't run the protocol check at all when the binary is missing, or its banner
+                    // would misattribute a missing binary as an incompatible one.
                     if (!cliExists)
                     {
+                        // SnykToolWindowControl's "CLI not found" messagePanel text only fires from an
+                        // active download attempt (OnDownloadCancelled/OnDownloadFailed) or the login
+                        // flow - neither of which runs here when BinariesAutoUpdate is off (the exact
+                        // scenario this gate exists for on a custom path), and neither is reachable at
+                        // all if the tool window has never been opened. Show our own InfoBar too so a
+                        // missing custom-path CLI isn't silently logged-only.
+                        infoBarMessage = $"Snyk CLI was not found at '{cliPath}' and cannot be started. Specify a " +
+                            "valid CLI path, or enable \"Manage Binaries Automatically\" in Tools > Options > Snyk.";
                         Logger.Information("Cannot start Language Server: CLI not found at {CliPath}.", cliPath);
                     }
                     else if (!await Task.Run(() => CliProtocolCompatibilityCheck(cliPath)))
@@ -215,11 +226,14 @@ namespace Snyk.VisualStudio.Extension.Language
                         // truncates at 300 chars, and a long custom path (UNC share, nested corporate
                         // profile) must not push the actionable fix past that cap - losing the path detail
                         // to truncation is fine, losing the fix instructions is not.
-                        protocolMismatchMessage = $"Snyk CLI does not support the required Language Server protocol " +
+                        infoBarMessage = $"Snyk CLI does not support the required Language Server protocol " +
                             $"version {LsConstants.ProtocolVersion} and cannot be started. Update the CLI, or enable " +
                             "\"Manage Binaries Automatically\" in Tools > Options > Snyk to let Snyk manage it " +
                             $"automatically. (CLI path: '{cliPath}')";
-                        Logger.Error(protocolMismatchMessage);
+                        Logger.Error(
+                            "Snyk CLI at {CliPath} does not support the required Language Server protocol version {Expected}",
+                            cliPath,
+                            LsConstants.ProtocolVersion);
                     }
                     else
                     {
@@ -248,9 +262,9 @@ namespace Snyk.VisualStudio.Extension.Language
             // calls ThreadHelper.JoinableTaskFactory.Run with a SwitchToMainThreadAsync - a synchronous
             // block on main-thread work. Doing that while still holding `semaphore` risked deadlocking
             // any main-thread path that re-enters StartServerAsync/StopServerAsync while it blocks.
-            if (protocolMismatchMessage != null)
+            if (infoBarMessage != null)
             {
-                NotificationService.Instance?.ShowErrorInfoBar(protocolMismatchMessage);
+                ShowInfoBar(infoBarMessage);
             }
         }
 

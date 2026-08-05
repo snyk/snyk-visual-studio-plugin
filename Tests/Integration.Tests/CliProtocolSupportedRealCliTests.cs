@@ -1,6 +1,7 @@
 using System;
 using System.Diagnostics;
 using System.IO;
+using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using Moq;
@@ -121,8 +122,15 @@ namespace Integration.Tests
 
         // Deliberately independent of SnykCliDownloader.IsCliProtocolSupported: if this test called into
         // the same method it would just be checking the code against itself. Mirrors that method's own
-        // 20s timeout (ProtocolProbeTimeoutMs) so a corrupted download or a hung process fails this test
-        // with a clear diagnosis instead of blocking the CI runner indefinitely.
+        // ProtocolProbeTimeoutMs so a corrupted download or a hung process fails this test with a clear
+        // diagnosis instead of blocking the CI runner indefinitely.
+        //
+        // Reads stdout asynchronously (started BEFORE WaitForExit) rather than WaitForExit-then-ReadToEnd:
+        // this probe exists specifically to independently verify the reported value for a CLI that, per
+        // the class-level comment, "dumps CLI help text instead" when it doesn't recognize
+        // --protocolVersion - a full --help dump is easily large enough to fill the redirected-stdout
+        // pipe buffer, which would deadlock WaitForExit-then-read (the child blocks writing while nobody
+        // is draining stdout). Draining concurrently avoids that regardless of output size.
         private static string RunProtocolVersionProbe(string cliPath)
         {
             var info = new ProcessStartInfo
@@ -134,9 +142,22 @@ namespace Integration.Tests
                 CreateNoWindow = true,
             };
 
-            using (var process = Process.Start(info))
+            var output = new StringBuilder();
+
+            using (var process = new Process { StartInfo = info, EnableRaisingEvents = true })
             {
-                if (!process.WaitForExit(20000))
+                process.OutputDataReceived += (_, e) =>
+                {
+                    if (e.Data != null)
+                    {
+                        output.AppendLine(e.Data);
+                    }
+                };
+
+                process.Start();
+                process.BeginOutputReadLine();
+
+                if (!process.WaitForExit(SnykCliDownloader.ProtocolProbeTimeoutMs))
                 {
                     try
                     {
@@ -150,8 +171,7 @@ namespace Integration.Tests
                     throw new TimeoutException($"CLI at {cliPath} did not respond to --protocolVersion in time.");
                 }
 
-                var output = process.StandardOutput.ReadToEnd();
-                return output.Trim();
+                return output.ToString().Trim();
             }
         }
 

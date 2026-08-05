@@ -382,9 +382,9 @@ namespace Snyk.VisualStudio.Extension.Tests
         }
 
         // IsSupportedProtocolVersion/IsCliProtocolSupported below: ported from the now-removed
-        // CliProtocolVersionVerifier (IDE-2404). Every test above exercises IsCliProtocolSupported only
-        // via FakeDownloader's canned-bool override, so none of them ever ran its actual comparison logic
-        // or its real missing-file error path. These do.
+        // CliProtocolVersionVerifier (IDE-2404). IsCliProtocolSupported was not exercised by any prior
+        // test - IsCliDownloadNeeded never calls it, so it had neither a real nor a faked code path
+        // here. These are the first coverage of its comparison logic and its real missing-file error path.
 
         [Fact]
         public void IsSupportedProtocolVersion_ReturnsTrue_WhenReportedVersionMatchesRequired()
@@ -417,8 +417,8 @@ namespace Snyk.VisualStudio.Extension.Tests
         [Fact]
         public void IsCliProtocolSupported_ReturnsFalse_WhenCliPathDoesNotExist()
         {
-            // The real method (not FakeDownloader's override): Process.Start throws for a missing exe,
-            // which the catch block must turn into a plain "false", not an escaping exception.
+            // Process.Start throws for a missing exe, which the catch block must turn into a plain
+            // "false", not an escaping exception.
             var cut = new SnykCliDownloader(Options());
 
             Assert.False(cut.IsCliProtocolSupported(Path.Combine(this.workDir, "does-not-exist.exe")));

@@ -40,7 +40,17 @@ namespace Snyk.VisualStudio.Extension.Tests.Language
             // false individually.
             cut.CliExistsCheck = _ => true;
             cut.CliProtocolCompatibilityCheck = _ => true;
+
+            // Default no-op so unrelated tests don't touch the real NotificationService.Instance
+            // singleton (null under test anyway, but this keeps intent explicit and consistent with
+            // the other seams above).
+            cut.ShowInfoBar = _ => { };
         }
+
+        private static SemaphoreSlim GetStartStopSemaphore(SnykLanguageClient client) =>
+            (SemaphoreSlim)typeof(SnykLanguageClient)
+                .GetField("semaphore", BindingFlags.NonPublic | BindingFlags.Instance)
+                .GetValue(client);
 
         [Fact]
         public async Task OnServerInitializeFailedAsync_ShouldReturnFailureContext_WithErrorMessage()
@@ -84,13 +94,50 @@ namespace Snyk.VisualStudio.Extension.Tests.Language
             Assert.False(eventInvoked);
         }
 
+        // IDE-2404: pins the ordering fix from a prior review round - ShowErrorInfoBar blocks
+        // synchronously on the main-thread queue, so it must run only AFTER semaphore.Release(), not
+        // while still held, or a main-thread caller re-entering StartServerAsync/StopServerAsync while
+        // it blocks would deadlock. Without this test, a future refactor moving the call back inside the
+        // try/finally has nothing in the suite to catch it. Checks the semaphore's own CurrentCount
+        // (reflection, since it's private) at the moment ShowInfoBar is invoked, rather than just
+        // asserting invocation happened at all.
+        [Fact]
+        public async Task StartServerAsync_ShowsInfoBar_OnlyAfterSemaphoreIsReleased_WhenCliProtocolVersionIncompatible()
+        {
+            // Arrange
+            cut.CliProtocolCompatibilityCheck = _ => false;
+            var semaphore = GetStartStopSemaphore(cut);
+
+            string shownMessage = null;
+            int? semaphoreCountWhenShown = null;
+            cut.ShowInfoBar = message =>
+            {
+                shownMessage = message;
+                semaphoreCountWhenShown = semaphore.CurrentCount;
+            };
+
+            // Act
+            await cut.StartServerAsync(true);
+
+            // Assert
+            Assert.NotNull(shownMessage);
+            Assert.Contains("does not support the required Language Server protocol version", shownMessage);
+            Assert.Equal(1, semaphoreCountWhenShown); // released (capacity 1), not held (would be 0)
+        }
+
         // IDE-2404 follow-up: a missing CLI binary (e.g. custom path set, auto-update off, file deleted)
         // was showing the protocol-mismatch banner ("does not support the required Language Server
         // protocol version 25") instead of the existing, correct "CLI not found" messaging - because the
         // old single check conflated "missing" with "wrong version". Asserts the protocol check isn't
         // even reached for a missing binary, so it can't misattribute the failure.
+        //
+        // Also asserts an InfoBar is shown here too (a later review round caught that this branch was
+        // logged-only): SnykToolWindowControl's "CLI not found" messagePanel text only fires from an
+        // active download attempt or the login flow, neither of which runs when BinariesAutoUpdate is
+        // off (the scenario this gate exists for), and neither is reachable if the tool window was never
+        // opened - so without this, a missing custom-path CLI could get zero user-facing feedback at all.
         [Fact]
-        public async Task StartServerAsync_ShouldNotInvokeStartAsyncOrProtocolCheck_WhenCliDoesNotExist()
+        public async Task StartServerAsync_ShowsInfoBarAndDoesNotInvokeStartAsyncOrProtocolCheck_WhenCliDoesNotExist()
         {
             // Arrange
             cut.CliExistsCheck = _ => false;
@@ -100,6 +147,9 @@ namespace Snyk.VisualStudio.Extension.Tests.Language
                 protocolCheckInvoked = true;
                 return true;
             };
+
+            string shownMessage = null;
+            cut.ShowInfoBar = message => shownMessage = message;
 
             var eventInvoked = false;
             cut.StartAsync += (sender, args) =>
@@ -114,6 +164,8 @@ namespace Snyk.VisualStudio.Extension.Tests.Language
             // Assert
             Assert.False(eventInvoked);
             Assert.False(protocolCheckInvoked);
+            Assert.NotNull(shownMessage);
+            Assert.Contains("was not found at", shownMessage);
         }
 
         [Fact]

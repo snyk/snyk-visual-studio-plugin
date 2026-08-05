@@ -27,7 +27,10 @@ namespace Snyk.VisualStudio.Extension.Download
 
         // Generous: a cold first run can be slow while the on-access scanner reads ~175MB. Still
         // bounded, because an unbounded wait here would freeze the CLI-download decision.
-        private const int ProtocolProbeTimeoutMs = 20000;
+        // internal (not private) so tests exercising the real process-spawn path (InternalsVisibleTo:
+        // Snyk.VisualStudio.Extension.Tests, Integration.Tests) can mirror this instead of a literal
+        // that would silently drift if this value is ever tuned.
+        internal const int ProtocolProbeTimeoutMs = 20000;
 
         private const string LatestReleaseVersionUrlScheme = "{0}/cli/{1}/ls-protocol-version-" + LsConstants.ProtocolVersion;
         private const string LatestReleaseDownloadUrlScheme = "{0}/cli/{1}/" + SnykCli.CliFileName;
