@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.IO;
 using System.Net.Http;
 using System.Threading.Tasks;
@@ -21,13 +20,6 @@ namespace Snyk.VisualStudio.Extension.Download
     {
         public const string DefaultBaseDownloadUrl = "https://downloads.snyk.io";
         public const string DefaultReleaseChannel = "stable";
-
-        // What a locally-built language server reports instead of a protocol number.
-        private const string DevelopmentProtocolVersion = "development";
-
-        // Generous: a cold first run can be slow while the on-access scanner reads ~175MB. Still
-        // bounded, because an unbounded wait here would freeze the CLI-download decision.
-        private const int ProtocolProbeTimeoutMs = 20000;
 
         private const string LatestReleaseVersionUrlScheme = "{0}/cli/{1}/ls-protocol-version-" + LsConstants.ProtocolVersion;
         private const string LatestReleaseDownloadUrlScheme = "{0}/cli/{1}/" + SnykCli.CliFileName;
@@ -55,11 +47,14 @@ namespace Snyk.VisualStudio.Extension.Download
         /// <summary>
         /// The configured base URL, or the default when unset. Empty must not pass through: it composes
         /// into a relative URL, which WebClient resolves to a local file path instead of a request.
+        /// Trailing slashes are dropped because the URL schemes below add their own, and Uri does not
+        /// collapse "//" inside a path — the LS-served settings page resets this field to a value with
+        /// a trailing slash, which otherwise fetches ".../cli//stable/...".
         /// </summary>
         public static string ResolveBaseDownloadUrl(string configuredBaseDownloadUrl) =>
             string.IsNullOrWhiteSpace(configuredBaseDownloadUrl)
                 ? DefaultBaseDownloadUrl
-                : configuredBaseDownloadUrl.Trim();
+                : configuredBaseDownloadUrl.Trim().TrimEnd('/');
 
         // Blanks credentials in a URL before it is logged.
         //
@@ -267,24 +262,10 @@ namespace Snyk.VisualStudio.Extension.Download
                     return true;
                 }
 
-                // The recorded version matching says nothing about whether the binary on disk works —
-                // it is a string in settings.json, not a property of the file. Ask the binary.
-                if (!this.IsCliProtocolSupported(cliFileDestinationPath))
-                {
-                    Logger.Information(
-                        "CLI download needed: {Path} is recorded as {CurrentVersion} but does not report protocol version {ProtocolVersion}",
-                        cliFileDestinationPath,
-                        currentVersion,
-                        LsConstants.ProtocolVersion);
-
-                    return true;
-                }
-
                 Logger.Information(
-                    "No CLI download needed: {Path} is {CurrentVersion} and reports protocol version {ProtocolVersion}",
+                    "No CLI download needed: {Path} is {CurrentVersion}, matching the latest release",
                     cliFileDestinationPath,
-                    currentVersion,
-                    LsConstants.ProtocolVersion);
+                    currentVersion);
 
                 return false;
             }
@@ -300,84 +281,6 @@ namespace Snyk.VisualStudio.Extension.Download
             }
         }
 
-        /// <summary>
-        /// Whether the binary at <paramref name="cliFilePath"/> can actually serve the language server
-        /// protocol we speak. File.Exists cannot tell a working CLI from a truncated, stale or
-        /// wrong-architecture one, and a binary that cannot answer this cannot serve initialize either
-        /// — it activates, fails, and the language server shuts down with no useful diagnosis.
-        /// Mirrors what vscode-extension does before activating its client.
-        /// </summary>
-        // internal virtual for testability: a unit test cannot execute a real CLI.
-        internal virtual bool IsCliProtocolSupported(string cliFilePath)
-        {
-            try
-            {
-                var startInfo = new ProcessStartInfo
-                {
-                    FileName = cliFilePath,
-                    Arguments = "language-server --protocolVersion",
-                    RedirectStandardOutput = true,
-                    UseShellExecute = false,
-                    CreateNoWindow = true,
-                };
-
-                using (var process = Process.Start(startInfo))
-                {
-                    if (process == null)
-                    {
-                        Logger.Warning("Could not start the CLI at {Path} to read its protocol version", cliFilePath);
-
-                        return false;
-                    }
-
-                    // WaitForExit before reading: ReadToEnd on a process that never writes would block
-                    // with no timeout, which is the hang this check exists to prevent. The output is a
-                    // few bytes, so it cannot fill the pipe buffer while we wait.
-                    if (!process.WaitForExit(ProtocolProbeTimeoutMs))
-                    {
-                        Logger.Warning(
-                            "CLI at {Path} did not report a protocol version within {TimeoutMs}ms",
-                            cliFilePath,
-                            ProtocolProbeTimeoutMs);
-
-                        try
-                        {
-                            process.Kill();
-                        }
-                        catch (Exception e) when (e is InvalidOperationException || e is System.ComponentModel.Win32Exception)
-                        {
-                            // Already gone, or not ours to kill.
-                        }
-
-                        return false;
-                    }
-
-                    var reported = process.StandardOutput.ReadToEnd().Trim();
-
-                    // "development" is what a locally-built language server reports; treat it as
-                    // compatible so a dev CLI is usable, matching snyk-ls' own handling.
-                    var supported = string.Equals(reported, LsConstants.ProtocolVersion, StringComparison.Ordinal)
-                        || string.Equals(reported, DevelopmentProtocolVersion, StringComparison.Ordinal);
-
-                    if (!supported)
-                    {
-                        Logger.Warning(
-                            "CLI at {Path} reports protocol version '{Reported}', expected '{Expected}'",
-                            cliFilePath,
-                            reported,
-                            LsConstants.ProtocolVersion);
-                    }
-
-                    return supported;
-                }
-            }
-            catch (Exception e)
-            {
-                Logger.Warning(e, "Could not read the protocol version from the CLI at {Path}", cliFilePath);
-
-                return false;
-            }
-        }
 
         /// <summary>
         /// Check is CLI file not exists by provided location.
@@ -393,19 +296,13 @@ namespace Snyk.VisualStudio.Extension.Download
         /// <param name="filePath">CLI file destination path or null.</param>
         /// <param name="downloadFinishedCallbacks">List of callback for download finished event.</param>
         /// <returns>A <see cref="Task"/> representing the asynchronous operation.</returns>
-        /// <param name="downloadNeeded">
-        /// The already-computed decision, when the caller has one. Answering the question costs a request
-        /// to the release endpoint plus a launch of the CLI, and the caller has usually just asked it —
-        /// passing it through is what keeps startup to a single round trip.
-        /// </param>
         public async Task AutoUpdateCliAsync(ISnykProgressWorker progressWorker,
             string filePath = null,
-            List<CliDownloadFinishedCallback> downloadFinishedCallbacks = null,
-            bool? downloadNeeded = null)
+            List<CliDownloadFinishedCallback> downloadFinishedCallbacks = null)
         {
             var fileDestinationPath = SnykCli.GetCliFilePath(filePath);
 
-            var isCliDownloadNeeded = downloadNeeded ?? this.IsCliDownloadNeeded(fileDestinationPath);
+            var isCliDownloadNeeded = this.IsCliDownloadNeeded(fileDestinationPath);
 
             if (isCliDownloadNeeded)
             {
@@ -417,15 +314,13 @@ namespace Snyk.VisualStudio.Extension.Download
                 return;
             }
 
-            // Nothing to install, but the finished callbacks still have to run: they are what starts the
-            // language server, records the installed version, and raises DownloadFinished so the tool
-            // window leaves "Snyk Security is loading...". Skipping them left the UI waiting forever.
-            // This branch used to be unreachable in practice — IsCliDownloadNeeded compared a recorded
-            // version string that drifted empty, so it always reported an update was due and the work
-            // went through DownloadAsync, whose checksum fast path does call FinishDownload.
             progressWorker.IsWorkFinished = true;
 
-            this.FinishDownload(progressWorker, downloadFinishedCallbacks);
+            // Raises DownloadFinished so the tool window leaves "Snyk Security is loading..."; without
+            // it the UI waited forever. Deliberately NOT the finished-callback list: those callbacks mean
+            // "record what was installed", and running them here re-fetches the release name over the
+            // network (breaking offline startup) and writes a version for an install that never happened.
+            progressWorker.DownloadFinished();
         }
 
         /// <summary>

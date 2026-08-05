@@ -44,24 +44,12 @@ namespace Snyk.VisualStudio.Extension.Tests
         {
             private readonly string sha;
             private readonly Exception releaseInfoFailure;
-            private readonly bool protocolSupported;
 
-            public FakeDownloader(ISnykOptions options, string sha = null, Exception releaseInfoFailure = null, bool protocolSupported = true)
+            public FakeDownloader(ISnykOptions options, string sha = null, Exception releaseInfoFailure = null)
                 : base(options)
             {
                 this.sha = sha;
                 this.releaseInfoFailure = releaseInfoFailure;
-                this.protocolSupported = protocolSupported;
-            }
-
-            // The fixtures are text files, so the real probe would try to execute them.
-            public int ProtocolProbes { get; private set; }
-
-            internal override bool IsCliProtocolSupported(string cliFilePath)
-            {
-                this.ProtocolProbes++;
-
-                return this.protocolSupported;
             }
 
             // Counts attempted round-trips — incremented before any injected failure, so a test can
@@ -320,8 +308,6 @@ namespace Snyk.VisualStudio.Extension.Tests
             Assert.True(cut.IsCliDownloadNeeded(missingCli));
             Assert.Equal(0, cut.ReleaseInfoFetches);
 
-            // Nor is there any point launching a binary that is not there.
-            Assert.Equal(0, cut.ProtocolProbes);
         }
 
         [Fact]
@@ -348,29 +334,15 @@ namespace Snyk.VisualStudio.Extension.Tests
 
             Assert.False(cut.IsCliDownloadNeeded(installedCli));
 
-            // A matching version string is not evidence the binary works, so it is also probed.
-            Assert.Equal(1, cut.ProtocolProbes);
         }
 
         [Fact]
-        public void IsCliDownloadNeeded_ReturnsTrue_WhenThePresentCliCannotReportTheProtocolVersion()
+        public async Task AutoUpdateCliAsync_RaisesDownloadFinishedWithoutRunningInstallCallbacks_WhenNoDownloadIsNeededAsync()
         {
-            // The case File.Exists plus a version string cannot see: right path, right recorded
-            // version, unusable binary. Previously this started a language server that could only fail.
-            var installedCli = Path.Combine(this.workDir, "snyk-win.exe");
-            File.WriteAllText(installedCli, "a-truncated-or-stale-cli");
-            var cut = new FakeDownloader(Options(currentCliVersion: "v1.1292.0"), protocolSupported: false);
-
-            Assert.True(cut.IsCliDownloadNeeded(installedCli));
-            Assert.Equal(1, cut.ProtocolProbes);
-        }
-
-        [Fact]
-        public async Task AutoUpdateCliAsync_FiresTheFinishedCallbacks_WhenNoDownloadIsNeededAsync()
-        {
-            // The callbacks start the language server, record the installed version and raise
-            // DownloadFinished, which is what moves the tool window off "Snyk Security is loading...".
-            // Taking the nothing-to-do path must not skip them.
+            // DownloadFinished is what moves the tool window off "Snyk Security is loading...", so the
+            // nothing-to-do path must still raise it. It must NOT run the finished-callback list: those
+            // callbacks mean "record what was installed", and one of them re-fetches the release name
+            // over the network — which broke offline startup and wrote a version for a non-install.
             var installedCli = Path.Combine(this.workDir, "snyk-win.exe");
             File.WriteAllText(installedCli, "an-up-to-date-cli");
 
@@ -382,24 +354,12 @@ namespace Snyk.VisualStudio.Extension.Tests
                 installedCli,
                 new List<SnykCliDownloader.CliDownloadFinishedCallback> { () => finishedCallbackRan = true });
 
-            Assert.True(finishedCallbackRan, "the finished callbacks must run even when no download was needed");
+            Assert.False(finishedCallbackRan, "install callbacks must not run when nothing was installed");
             this.progressWorkerMock.Verify(w => w.DownloadFinished(), Times.Once);
             this.progressWorkerMock.VerifySet(w => w.IsWorkFinished = true, Times.Once());
 
             // Nothing was fetched: the binary already on disk is the one we want.
             Assert.Equal("an-up-to-date-cli", File.ReadAllText(installedCli));
-        }
-
-        [Fact]
-        public void IsCliDownloadNeeded_DoesNotProbe_WhenANewerVersionIsAlreadyKnown()
-        {
-            // Downloading anyway, so spending ~a second launching the old binary buys nothing.
-            var installedCli = Path.Combine(this.workDir, "snyk-win.exe");
-            File.WriteAllText(installedCli, "an-existing-cli");
-            var cut = new FakeDownloader(Options(currentCliVersion: "v1.1000.0"));
-
-            Assert.True(cut.IsCliDownloadNeeded(installedCli));
-            Assert.Equal(0, cut.ProtocolProbes);
         }
 
         [Fact]
@@ -429,7 +389,7 @@ namespace Snyk.VisualStudio.Extension.Tests
         }
 
         [Fact]
-        public void IsCliDownloadNeeded_ThenDownloadAsync_ShareOneReleaseInfoFetch()
+        public void IsCliDownloadNeeded_ThenASecondConsumer_ShareOneReleaseInfoFetch()
         {
             var destination = Path.Combine(this.workDir, "snyk-win.exe");
             File.WriteAllText(destination, "an-existing-cli");

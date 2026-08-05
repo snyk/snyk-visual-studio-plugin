@@ -1,7 +1,6 @@
 ﻿// ABOUTME: This file manages loading and saving Snyk settings from persistent storage
 // ABOUTME: It handles serialization/deserialization of settings to file and provides solution-specific configuration management
 using Snyk.VisualStudio.Extension.Authentication;
-using Snyk.VisualStudio.Extension.Download;
 using Snyk.VisualStudio.Extension.Language;
 using Snyk.VisualStudio.Extension.Service;
 using System;
