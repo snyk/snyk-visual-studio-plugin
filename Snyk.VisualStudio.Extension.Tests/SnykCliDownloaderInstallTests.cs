@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -66,21 +66,30 @@ namespace Snyk.VisualStudio.Extension.Tests
             internal override string ComputeChecksum(string filePath) =>
                 this.computeChecksum != null ? this.computeChecksum(filePath) : base.ComputeChecksum(filePath);
 
+            // Interlocked, not x++: these count concurrent callers, and with a plain increment two
+            // genuine fetches can lose an update and still read 1 — so a test asserting "asked once"
+            // would go GREEN against the very race it guards. They are only safe under the current lock
+            // because the increments happen inside it, i.e. the measuring device is protected by the
+            // thing being measured.
+            private int shaFetches;
+            private int protocolProbes;
+            private int releaseInfoFetches;
+
             // Round-trips for the checksum, counted separately from the version lookup: the download
             // decision now consults both, and each must be memoised independently.
-            public int ShaFetches { get; private set; }
+            public int ShaFetches => Volatile.Read(ref this.shaFetches);
 
             // Launches of the CLI. Asserted at zero on the happy path — the checksum already proves the
             // binary is the current protocol-keyed release, so paying for a process launch is a defect.
-            public int ProtocolProbes { get; private set; }
+            public int ProtocolProbes => Volatile.Read(ref this.protocolProbes);
 
             // Counts attempted round-trips — incremented before any injected failure, so a test can
             // tell "never asked" from "asked and it blew up".
-            public int ReleaseInfoFetches { get; private set; }
+            public int ReleaseInfoFetches => Volatile.Read(ref this.releaseInfoFetches);
 
             public override LatestReleaseInfo GetLatestReleaseInfo()
             {
-                this.ReleaseInfoFetches++;
+                Interlocked.Increment(ref this.releaseInfoFetches);
 
                 if (this.releaseInfoFailure != null)
                 {
@@ -92,14 +101,14 @@ namespace Snyk.VisualStudio.Extension.Tests
 
             public override string GetLatestCliSha(string cliDownloadUrl)
             {
-                this.ShaFetches++;
+                Interlocked.Increment(ref this.shaFetches);
 
                 return this.sha;
             }
 
             internal override bool IsCliProtocolSupported(string cliFilePath)
             {
-                this.ProtocolProbes++;
+                Interlocked.Increment(ref this.protocolProbes);
 
                 return this.protocolSupported;
             }
@@ -508,18 +517,29 @@ namespace Snyk.VisualStudio.Extension.Tests
                     return Sha256.Checksum(path);
                 });
 
-            // Released together so they contend, rather than starting in sequence.
+            // LongRunning, not Task.Run: pool threads are contended and injection is slow, so on a
+            // low-core CI agent queued callers would run after the memos are already warm and the test
+            // would report 1/1/1 even with the lock removed. A dedicated thread each makes them overlap.
+            // arrived counts them in rather than assuming they got there.
             using (var start = new ManualResetEventSlim(false))
+            using (var arrived = new CountdownEvent(8))
             {
-                var callers = Enumerable.Range(0, 8).Select(_ => Task.Run(() =>
-                {
-                    start.Wait();
+                var callers = Enumerable.Range(0, 8).Select(_ => Task.Factory.StartNew(
+                    () =>
+                    {
+                        arrived.Signal();
+                        start.Wait();
 
-                    return cut.IsCliDownloadNeeded(installedCli);
-                })).ToArray();
+                        return cut.IsCliDownloadNeeded(installedCli);
+                    },
+                    TaskCreationOptions.LongRunning)).ToArray();
 
+                Assert.True(arrived.Wait(TimeSpan.FromSeconds(30)), "callers never all reached the gate");
                 start.Set();
-                Task.WaitAll(callers);
+
+                // Bounded: the regression nearest this test is a deadlock, and an unbounded wait would
+                // hang the CI job instead of failing with a diagnosis.
+                Assert.True(Task.WaitAll(callers, TimeSpan.FromSeconds(30)), "concurrent callers did not finish — possible deadlock");
 
                 Assert.All(callers, t => Assert.False(t.Result));
             }
