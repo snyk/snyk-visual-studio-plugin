@@ -26,13 +26,20 @@ namespace Snyk.VisualStudio.Extension.Download
     /// Public rather than internal: ISnykTasksService.CheckCliProtocol (a public interface member,
     /// needed so SnykLanguageClient and SnykToolWindowControl can share one memoized downloader
     /// instance instead of each spawning their own probe) must return this type.
+    ///
+    /// CheckFailed is deliberately the zero value (PR review finding): this type gates whether the
+    /// language server is allowed to start, so default(CliProtocolCheckResult) - an uninitialised
+    /// field, a struct default, anything that skips the constructor - should fail closed rather than
+    /// silently reading as Supported. CheckFailed specifically, not just any non-Supported value,
+    /// because a default is "never actually probed" - closer to "couldn't check" than to a probe that
+    /// ran and confirmed a mismatch (Unsupported).
     /// </summary>
     public enum CliProtocolCheckResult
     {
-        Supported,
-        Unsupported,
-        TimedOut,
         CheckFailed,
+        TimedOut,
+        Unsupported,
+        Supported,
     }
 
     /// <summary>
@@ -59,6 +66,15 @@ namespace Snyk.VisualStudio.Extension.Download
         // Snyk.VisualStudio.Extension.Tests, Integration.Tests) can mirror this instead of a literal
         // that would silently drift if this value is ever tuned.
         internal const int ProtocolProbeTimeoutMs = 20000;
+
+        // Bounds the post-exit output flush below (PR review finding), not the process itself - by
+        // the time that wait runs, the bounded WaitForExit(ProtocolProbeTimeoutMs) above has already
+        // confirmed the process exited. This one only guards against the CLI's stdout handle somehow
+        // outliving it (e.g. an inherited handle in a grandchild process), which would otherwise leave
+        // the redirected stream's EOF - and so this wait - unbounded, hanging the thread that holds
+        // the start/stop semaphore forever. Short because a live process has already exited; only a
+        // few buffered bytes are left to flush.
+        internal const int ProtocolProbeFlushTimeoutMs = 2000;
 
         private static readonly ILogger Logger = LogManager.ForContext<SnykCliDownloader>();
 
@@ -402,27 +418,35 @@ namespace Snyk.VisualStudio.Extension.Download
         {
             var key = BuildProtocolCheckMemoKey(cliFilePath);
 
+            // Held across the probe (PR review finding), matching the sibling memos below: a second
+            // concurrent caller should wait and then read the memo, not also spawn the CLI. Releasing
+            // the lock between the read and the write (as an earlier version of this method did) let
+            // two concurrent callers both probe and the later writer win.
             lock (this.memoLock)
             {
                 if (key != null && string.Equals(key, this.protocolCheckMemoKey, StringComparison.Ordinal))
                 {
                     return this.protocolCheckMemoVerdict;
                 }
-            }
 
-            var verdict = this.ProbeCliProtocol(cliFilePath);
+                var verdict = this.ProbeCliProtocol(cliFilePath);
 
-            // Only memoise when the file could actually be stat'd; otherwise re-probe every time.
-            if (key != null)
-            {
-                lock (this.memoLock)
+                // Only memoise a confirmed verdict (PR review finding). TimedOut/CheckFailed are
+                // explicitly "not a verdict" (see this method's own doc comment, and the caller-facing
+                // wording in SnykLanguageClient) - they are exactly the transient conditions (e.g. an AV
+                // scanner still holding a just-downloaded binary) this type exists to distinguish from a
+                // genuine mismatch. The file's stat doesn't change while that condition clears, so
+                // caching either would make a one-off probe failure refuse to start the language server
+                // for the rest of the download episode, even after the CLI becomes usable again.
+                if (key != null
+                    && (verdict == CliProtocolCheckResult.Supported || verdict == CliProtocolCheckResult.Unsupported))
                 {
                     this.protocolCheckMemoKey = key;
                     this.protocolCheckMemoVerdict = verdict;
                 }
-            }
 
-            return verdict;
+                return verdict;
+            }
         }
 
         // Null when the file cannot be stat'd, which makes the result unmemoisable rather than wrong -
@@ -447,7 +471,7 @@ namespace Snyk.VisualStudio.Extension.Download
                 }
 
                 return string.Join(
-                    "",
+                    "\u001f",
                     cliFilePath,
                     info.Length.ToString(CultureInfo.InvariantCulture),
                     info.LastWriteTimeUtc.Ticks.ToString(CultureInfo.InvariantCulture));
@@ -523,9 +547,19 @@ namespace Snyk.VisualStudio.Extension.Download
                     }
 
                     // WaitForExit(int) returning true doesn't guarantee the async OutputDataReceived
-                    // pump has finished delivering output (documented WaitForExit(Int32) behavior) - the
-                    // parameterless overload blocks until it has, so output below isn't read mid-flush.
-                    process.WaitForExit();
+                    // pump has finished delivering output (documented WaitForExit(Int32) behavior) -
+                    // waiting again blocks until it has, so output below isn't read mid-flush. Bounded
+                    // (PR review finding), not the parameterless overload: the process has already
+                    // exited by this point, so this is only guarding against its stdout handle somehow
+                    // outliving it, which would otherwise hang this thread - and the semaphore it holds
+                    // - forever. Best-effort past the bound: a few buffered bytes aren't worth it.
+                    if (!process.WaitForExit(ProtocolProbeFlushTimeoutMs))
+                    {
+                        Logger.Warning(
+                            "CLI at {Path} exited but its stdout stream did not finish flushing within {TimeoutMs}ms",
+                            cliFilePath,
+                            ProtocolProbeFlushTimeoutMs);
+                    }
 
                     var reported = output.ToString().Trim();
                     var supported = IsSupportedProtocolVersion(reported);
