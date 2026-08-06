@@ -291,6 +291,52 @@ namespace Snyk.VisualStudio.Extension.Tests.Language
             }
         }
 
+        // IDE-2404 follow-up (review finding): CliProtocolCompatibilityCheck was offloaded but had no
+        // outer bound of its own, relying solely on the default implementation's internal timeout - a
+        // caller-overridden seam (as here) has no internal bound at all, and even the default could be
+        // blocked behind a concurrent probe holding SnykCliDownloader.protocolCheckMemoLock.
+        // CliProtocolCheckTimeoutMs is shrunk here instead of waiting out the real ~44s worst case.
+        [Fact]
+        public async Task StartServerAsync_ShowsADistinctMessage_WhenCliProtocolCheckTimesOut()
+        {
+            // Arrange
+            cut.CliProtocolCheckTimeoutMs = 20;
+            cut.VsHasLoadedClient = true;
+
+            using (var neverSignaled = new ManualResetEventSlim(false))
+            {
+                cut.CliProtocolCompatibilityCheck = _ =>
+                {
+                    // Blocks well past CliProtocolCheckTimeoutMs; released at test end so the background
+                    // Task.Run doesn't leak past this test.
+                    neverSignaled.Wait(TimeSpan.FromSeconds(5));
+
+                    return CliProtocolCheckResult.Supported;
+                };
+
+                string shownMessage = null;
+                cut.ShowInfoBar = message => shownMessage = message;
+
+                var eventInvoked = false;
+                cut.StartAsync += (sender, args) =>
+                {
+                    eventInvoked = true;
+
+                    return Task.CompletedTask;
+                };
+
+                // Act
+                await cut.StartServerAsync(true);
+                neverSignaled.Set();
+
+                // Assert
+                Assert.False(eventInvoked);
+                Assert.NotNull(shownMessage);
+                Assert.Contains("not confirm", shownMessage, StringComparison.OrdinalIgnoreCase);
+                AssertActionablePrefixFitsBeforeTruncation(shownMessage);
+            }
+        }
+
         [Fact]
         public async Task DidChangeConfigurationAsync_ShouldReturnNull_WhenNotReady()
         {

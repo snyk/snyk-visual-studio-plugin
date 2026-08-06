@@ -35,6 +35,14 @@ namespace Snyk.VisualStudio.Extension.Language
         // Set when VS calls OnLoadedAsync. Raising StartAsync before that point is out of contract: VS
         // has already subscribed, so the raise looks valid, but it is discarded — ActivateAsync is never
         // called and nothing retries.
+        //
+        // This is also why the pre-launch gate in StartServerAsync fully covers ActivateAsync (a
+        // recurring review question): per the ILanguageClient contract, VS calls ActivateAsync only in
+        // response to this class raising StartAsync, and StartAsync is only ever raised from inside
+        // StartServerAsync, after the gate has already run. There is no path from OnLoadedAsync (or the
+        // FireOnLanguageClientNotInitializedAsync retry path, which re-enters via OnLoadedAsync too) to
+        // ActivateAsync that skips StartServerAsync - VS's own framework code, not this class, is what
+        // would have to violate that contract for the gate to be bypassable.
         private volatile bool vsHasLoadedClient;
 
         // internal setter for testability: in production only OnLoadedAsync sets this, and only VS
@@ -150,6 +158,18 @@ namespace Snyk.VisualStudio.Extension.Language
         // caller of StartServerAsync/RestartServerAsync. Internal so a test can shrink this instead of
         // waiting out a real 20s timeout to exercise the branch.
         internal int CliExistsCheckTimeoutMs { get; set; } = SnykCliDownloader.ProtocolProbeTimeoutMs;
+
+        // Bounds CliProtocolCompatibilityCheck the same way CliExistsCheckTimeoutMs bounds the check
+        // above (PR review finding: the earlier comment claimed both were "bounded the same way", but
+        // only CliExistsCheck had an outer Task.WhenAny - this one relied solely on the default
+        // implementation's internal bound). That is no longer enough on its own: CheckCliProtocol now
+        // takes SnykCliDownloader.protocolCheckMemoLock (added for a different review finding), which a
+        // concurrent caller - e.g. SnykToolWindowControl's own fallback probe - can hold for a full
+        // probe before this call even starts its own, and a caller-overridden seam has no internal bound
+        // at all. Sized for the worst realistic case: one full probe spent waiting for the lock, plus
+        // this call's own full probe.
+        internal int CliProtocolCheckTimeoutMs { get; set; } =
+            (SnykCliDownloader.ProtocolProbeTimeoutMs + SnykCliDownloader.ProtocolProbeFlushTimeoutMs) * 2;
 
         // Reuses SnykCliDownloader.CheckCliProtocol (added independently alongside this ticket, in
         // Download/SnykCliDownloader.cs) rather than a second, near-duplicate implementation - it
@@ -432,7 +452,44 @@ namespace Snyk.VisualStudio.Extension.Language
                         }
                         else
                         {
-                            var protocolCheckResult = await Task.Run(() => CliProtocolCompatibilityCheck(cliPath));
+                            // Outer-bounded like CliExistsCheck above (PR review finding) - see
+                            // CliProtocolCheckTimeoutMs' doc comment for why the default implementation's
+                            // own internal bound is no longer sufficient on its own.
+                            var protocolCheckTask = Task.Run(() => CliProtocolCompatibilityCheck(cliPath));
+                            var protocolCheckWon = await Task.WhenAny(
+                                protocolCheckTask,
+                                Task.Delay(CliProtocolCheckTimeoutMs)) == protocolCheckTask;
+
+                            CliProtocolCheckResult protocolCheckResult;
+
+                            if (!protocolCheckWon)
+                            {
+                                // Same reasoning as CliExistsCheck's own abandoned-task handling above: the
+                                // losing task is left to finish on its own, not cancelled (no cancellation
+                                // point reachable through an arbitrary Func<string, CliProtocolCheckResult>
+                                // seam), and the ContinueWith only prevents an unobserved-exception crash if
+                                // it ever faults - it cannot stop the task or free the thread it occupies.
+                                protocolCheckTask.ContinueWith(
+                                    t =>
+                                    {
+                                        try
+                                        {
+                                            Logger.Warning(t.Exception, "CliProtocolCompatibilityCheck failed after the gate had already timed out on it");
+                                        }
+                                        catch
+                                        {
+                                        }
+                                    },
+                                    TaskContinuationOptions.OnlyOnFaulted);
+
+                                // Logged below by the shared TimedOut branch (protocolCheckResult ==
+                                // CliProtocolCheckResult.TimedOut), not here - avoids logging this twice.
+                                protocolCheckResult = CliProtocolCheckResult.TimedOut;
+                            }
+                            else
+                            {
+                                protocolCheckResult = await protocolCheckTask;
+                            }
 
                             if (protocolCheckResult != CliProtocolCheckResult.Supported)
                             {

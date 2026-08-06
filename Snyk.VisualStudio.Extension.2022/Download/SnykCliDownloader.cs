@@ -543,9 +543,15 @@ namespace Snyk.VisualStudio.Extension.Download
         /// already on disk carries no such guarantee, and neither its file name nor its checksum says
         /// anything about it.
         ///
-        /// Costs a process launch, so this is deliberately reached only where the answer is not already
-        /// known — the download-failure fallback and a failed release lookup — never on the path where
-        /// the checksum has already proven the binary is the current release.
+        /// Costs a process launch, so THIS WRAPPER is deliberately reached only where the answer is not
+        /// already known — the download-failure fallback and a failed release lookup — never on the
+        /// path where the checksum has already proven the binary is the current release.
+        ///
+        /// That narrow-usage framing is specific to this wrapper's own callers (PR review finding: do
+        /// not read it as describing the process-probe in general) — <see cref="CheckCliProtocol"/>
+        /// (above) is also called directly, unconditionally, on every language server (re)start by
+        /// SnykLanguageClient's pre-launch gate, a separate and much more frequent caller than this
+        /// wrapper's fallback paths.
         ///
         /// Thin wrapper over <see cref="CheckCliProtocol"/> (above): that method already does this launch
         /// correctly (async stdout draining, no pipe-buffer deadlock risk) and distinguishes a confirmed
