@@ -5,6 +5,7 @@ using System.Threading.Tasks;
 using Microsoft;
 using Microsoft.VisualStudio.ComponentModelHost;
 using Microsoft.VisualStudio.Shell;
+using Microsoft.VisualStudio.Threading;
 using Serilog;
 using Snyk.VisualStudio.Extension.CLI;
 using Snyk.VisualStudio.Extension.Download;
@@ -39,6 +40,44 @@ namespace Snyk.VisualStudio.Extension.Service
         private ISnykServiceProvider serviceProvider;
 
         private readonly object cancelTasksLock = new object();
+
+        private readonly object cliDownloaderLock = new object();
+
+        private SnykCliDownloader cliDownloader;
+
+        /// <summary>
+        /// One downloader for the whole check-and-download episode, so its release-info and checksum
+        /// memos are shared by everyone who asks. Startup asks "is a download needed?" from three places
+        /// — package init, the language client's load, and the update itself — and each instance costs a
+        /// release lookup and a checksum request, so sharing keeps a startup that installs nothing to one
+        /// pair.
+        ///
+        /// Not process-lifetime: <see cref="EndCliDownloadEpisode"/> clears it at the START of each
+        /// download entry point, so a new episode asks the network again and finds a CLI published since
+        /// the last one. Cleared on entry rather than on completion because the last consumer of an
+        /// episode's answer runs after it — the language client's load calls ShouldDownloadCli after
+        /// DownloadFinished has fired.
+        /// </summary>
+        private SnykCliDownloader CliDownloader
+        {
+            get
+            {
+                lock (this.cliDownloaderLock)
+                {
+                    return this.cliDownloader ??
+                           (this.cliDownloader = new SnykCliDownloader(this.serviceProvider.Options));
+                }
+            }
+        }
+
+        private void EndCliDownloadEpisode()
+        {
+            lock (this.cliDownloaderLock)
+            {
+                this.cliDownloader = null;
+            }
+        }
+
 
         /// <summary>
         /// Initializes a new instance of the <see cref="SnykTasksService"/> class.
@@ -292,6 +331,9 @@ namespace Snyk.VisualStudio.Extension.Service
                     return;
                 }
 
+                // EndCliDownloadEpisode must be called after the reentrancy guard
+                this.EndCliDownloadEpisode();
+
                 this.downloadCliTokenSource = new CancellationTokenSource();
 
                 var progressWorker = new SnykProgressWorker
@@ -356,6 +398,13 @@ namespace Snyk.VisualStudio.Extension.Service
 
                 return;
             }
+
+            // AFTER the re-entrancy guard, not before it. WPF raises Loaded more than once, which
+            // is why that guard exists — and clearing the episode ahead of it meant the second,
+            // short-circuiting call discarded the memo belonging to the download still in flight.
+            // The in-flight episode then re-fetched the release version and checksum, and hashed
+            // the binary again, on its next question.
+            this.EndCliDownloadEpisode();
 
             this.downloadCliTokenSource = new CancellationTokenSource();
 
@@ -464,8 +513,10 @@ namespace Snyk.VisualStudio.Extension.Service
         /// <summary>
         /// Fire download finished event.
         /// </summary>
-        protected internal void OnDownloadFinished() =>
-            this.DownloadFinished?.Invoke(this, new SnykCliDownloadEventArgs());
+        protected internal void OnDownloadFinished(bool binaryWasDownloaded = true)
+        {
+            this.DownloadFinished?.Invoke(this, new SnykCliDownloadEventArgs { BinaryWasDownloaded = binaryWasDownloaded });
+        }
 
         /// <summary>
         /// Fire download cancelled event.
@@ -678,19 +729,34 @@ namespace Snyk.VisualStudio.Extension.Service
         {
             if (!this.serviceProvider.Options.BinariesAutoUpdate)
             {
+                Logger.Information("CLI auto-update is disabled; not downloading");
+
                 return false;
             }
+
+            var options = this.serviceProvider.Options;
+            var fileDestinationPath = SnykCli.GetCliFilePath(options.CliCustomPath);
+
             try
             {
-                var options = this.serviceProvider.Options;
-                var cliDownloader = new SnykCliDownloader(options);
-                var fileDestinationPath = SnykCli.GetCliFilePath(options.CliCustomPath);
+                var cliDownloader = this.CliDownloader;
+
+                // The configured path and the resolved one, because they differ whenever a custom path
+                // is set — and a decision made against the wrong path is the hardest kind to diagnose
+                // from a log that never printed either.
+                Logger.Information(
+                    "Checking whether a CLI download is needed. Configured custom path: '{CliCustomPath}', resolved to {Path}",
+                    options.CliCustomPath,
+                    fileDestinationPath);
 
                 return cliDownloader.IsCliDownloadNeeded(fileDestinationPath);
-
             }
-            catch (Exception)
+            catch (Exception e)
             {
+                // Logged, because a failure here is otherwise indistinguishable from a genuine
+                // "needs download".
+                Logger.Error(e, "Could not determine whether a CLI download is needed; assuming it is");
+
                 return true;
             }
         }
@@ -707,10 +773,18 @@ namespace Snyk.VisualStudio.Extension.Service
                 return;
             }
 
+            // Claim the guard before yielding: Download() is wired to the Loaded event, which WPF raises
+            // more than once, and IsTaskRunning() must be true by the time it returns.
             this.isCliDownloading = true;
+
+            // Off the UI thread: RunAsync runs inline until the first yielding await, so the synchronous
+            // HTTP calls and the checksum below would otherwise block it. The download event handlers
+            // marshal themselves, and SnykOptionsManager.Save is lock-guarded.
+            await TaskScheduler.Default;
+
             try
             {
-                var cliDownloader = new SnykCliDownloader(this.serviceProvider.Options);
+                var cliDownloader = this.CliDownloader;
 
                 var downloadFinishedCallbacks = new List<CliDownloadFinishedCallback>();
 
@@ -721,7 +795,10 @@ namespace Snyk.VisualStudio.Extension.Service
 
                 downloadFinishedCallbacks.Add(() =>
                 {
-                    this.serviceProvider.Options.CurrentCliVersion = cliDownloader.GetLatestReleaseInfo().Name;
+                    // Once, not again: this must record the version actually installed. Re-fetching
+                    // here recorded a release published mid-update, after which the version check
+                    // reports "current" and the install never moves off the older binary.
+                    this.serviceProvider.Options.CurrentCliVersion = cliDownloader.GetLatestReleaseInfoOnce().Name;
                     // System-driven update: suppress both the SettingsChanged event (would re-send
                     // DidChangeConfigurationAsync for a CLI-version bump) and tracker mutation (recording
                     // the new CurrentCliVersion as a user override would create a phantom ChangedConfigKeys entry).
@@ -733,6 +810,7 @@ namespace Snyk.VisualStudio.Extension.Service
                 });
 
                 var downloadPath = this.serviceProvider.Options.CliCustomPath;
+
                 await cliDownloader.AutoUpdateCliAsync(
                     progressWorker,
                     downloadPath,

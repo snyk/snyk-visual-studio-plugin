@@ -58,7 +58,9 @@ namespace Snyk.VisualStudio.Extension.Tests
         {
             var cliDownloader = new SnykCliDownloader(optionsMock.Object);
             const string url = "https://static.snyk.io/cli/latest/snyk-win.exe";
-            cliDownloader.SaveLatestCliSha(url);
+
+            // GetLatestCliShaOnce is the only writer of expectedSha, so it is also how a test seeds it.
+            cliDownloader.GetLatestCliShaOnce(url);
 
             var tempCliPath = Path.Combine(Path.GetTempPath(), SnykCli.CliFileName);
 

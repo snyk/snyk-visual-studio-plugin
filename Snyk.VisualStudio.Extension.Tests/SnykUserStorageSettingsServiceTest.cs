@@ -1,6 +1,8 @@
 using System.IO;
 using Moq;
 using Snyk.VisualStudio.Extension.Authentication;
+using Snyk.VisualStudio.Extension.Download;
+using Snyk.VisualStudio.Extension.Language;
 using Snyk.VisualStudio.Extension.Service;
 using Snyk.VisualStudio.Extension.Settings;
 using Xunit;
@@ -66,6 +68,43 @@ namespace Snyk.VisualStudio.Extension.Tests
             Assert.True(reloadedOptions.IacEnabled);
             Assert.True(reloadedOptions.SnykCodeSecurityEnabled);
             Assert.True(reloadedOptions.OssEnabled);
+        }
+
+        [Fact]
+        public void Load_KeepsEmptyCliDownloadSettingsRaw_AndStillComposesAWorkingUrl()
+        {
+            // Reproduces a settings.json written after a $/snyk.configuration echo landed the LS's
+            // empty binary_base_url / cli_release_channel defaults in options. The empties are loaded
+            // as-is, so the settings field still shows its placeholder rather than the literal default
+            // and Save does not persist the literal. What must never happen is a broken composed URL
+            // ("/cli//ls-protocol-version-NN"); resolution at the point of use is what prevents that,
+            // which is why the raw empties are safe to keep.
+            File.WriteAllText(this.settingsFilePath,
+                @"{""cliReleaseChannel"":"""",""cliBaseDownloadURL"":"""",""binariesAutoUpdateEnabled"":true}");
+            var manager = new SnykOptionsManager(this.settingsFilePath, this.serviceProviderMock.Object);
+
+            var options = manager.Load();
+
+            Assert.Equal(string.Empty, options.CliBaseDownloadURL);
+            Assert.Equal(string.Empty, options.CliReleaseChannel);
+
+            Assert.Equal(
+                SnykCliDownloader.DefaultBaseDownloadUrl + "/cli/" + SnykCliDownloader.DefaultReleaseChannel
+                    + "/ls-protocol-version-" + LsConstants.ProtocolVersion,
+                new SnykCliDownloader(options).BuildLatestReleaseVersionUrl());
+        }
+
+        [Fact]
+        public void Load_KeepsConfiguredCliDownloadSettings()
+        {
+            File.WriteAllText(this.settingsFilePath,
+                @"{""cliReleaseChannel"":""preview"",""cliBaseDownloadURL"":""https://downloads.snyk.io/fips""}");
+            var manager = new SnykOptionsManager(this.settingsFilePath, this.serviceProviderMock.Object);
+
+            var options = manager.Load();
+
+            Assert.Equal("https://downloads.snyk.io/fips", options.CliBaseDownloadURL);
+            Assert.Equal("preview", options.CliReleaseChannel);
         }
     }
 }

@@ -6,6 +6,8 @@ using Moq;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using Snyk.VisualStudio.Extension.Authentication;
+using Snyk.VisualStudio.Extension.CLI;
+using Snyk.VisualStudio.Extension.Download;
 using Snyk.VisualStudio.Extension.Language;
 using Snyk.VisualStudio.Extension.Service;
 using Snyk.VisualStudio.Extension.Settings;
@@ -197,6 +199,97 @@ namespace Snyk.VisualStudio.Extension.Tests.UI.Html
             Assert.Equal("https://downloads.snyk.io", o.CliBaseDownloadURL);
             Assert.Equal("preview", o.CliReleaseChannel);
             Assert.Equal(500, o.RiskScoreThreshold);
+        }
+
+        [Fact]
+        public void SaveIdeConfig_TrimsThePathAndChannel_LikeTheBaseUrl()
+        {
+            // Each of these is compared verbatim somewhere: HtmlResourceLoader matches the channel
+            // against "stable"/"rc"/"preview" exactly, and the override tracker compares the raw
+            // stored path — so a padded well-known value reads as a custom one.
+            var localOptions = new Mock<ISnykOptions>();
+            localOptions.SetupAllProperties();
+
+            var sp = new Mock<ISnykServiceProvider>();
+            sp.SetupGet(x => x.Options).Returns(localOptions.Object);
+            sp.SetupGet(x => x.SnykOptionsManager).Returns(new Mock<ISnykOptionsManager>().Object);
+            var localBridge = new HtmlSettingsScriptingBridge(sp.Object, onModified: () => { });
+
+            localBridge.__saveIdeConfig__(JsonConvert.SerializeObject(new
+            {
+                cli_path = @"  C:\cli\snyk.exe  ",
+                cli_release_channel = " stable ",
+                binary_base_url = "  https://downloads.snyk.io  ",
+            }));
+
+            Assert.Equal(@"C:\cli\snyk.exe", localOptions.Object.CliCustomPath);
+            Assert.Equal("stable", localOptions.Object.CliReleaseChannel);
+            Assert.Equal("https://downloads.snyk.io", localOptions.Object.CliBaseDownloadURL);
+        }
+
+        [Fact]
+        public void SaveIdeConfig_AllowsEmptyCliPath_ToResetToDefaultCliLocation()
+        {
+            // Clearing the CLI path resolves to the default CLI location.
+            var localOptions = new Mock<ISnykOptions>();
+            localOptions.SetupAllProperties();
+            localOptions.Object.CliCustomPath = @"C:\custom\snyk.exe";
+
+            var sp = new Mock<ISnykServiceProvider>();
+            sp.SetupGet(x => x.Options).Returns(localOptions.Object);
+            sp.SetupGet(x => x.SnykOptionsManager).Returns(new Mock<ISnykOptionsManager>().Object);
+            var localBridge = new HtmlSettingsScriptingBridge(sp.Object, onModified: () => { });
+
+            localBridge.__saveIdeConfig__(JsonConvert.SerializeObject(new { cli_path = "" }));
+
+            Assert.Equal(string.Empty, localOptions.Object.CliCustomPath);
+            Assert.Equal(
+                SnykCli.GetSnykCliDefaultPath(),
+                SnykCli.GetCliFilePath(localOptions.Object.CliCustomPath));
+        }
+
+        [Fact]
+        public void SaveIdeConfig_StoresAPostedDefault_RatherThanCollapsingItToEmpty()
+        {
+            // A cleared field can arrive as the default literal rather than "". It must be kept, not
+            // normalised back to empty — the two are equivalent once resolved, but only a stored value
+            // survives a later change to what the default is.
+            var localOptions = new Mock<ISnykOptions>();
+            localOptions.SetupAllProperties();
+            localOptions.Object.CliBaseDownloadURL = "https://downloads.snyk.io/fips";
+
+            var sp = new Mock<ISnykServiceProvider>();
+            sp.SetupGet(x => x.Options).Returns(localOptions.Object);
+            sp.SetupGet(x => x.SnykOptionsManager).Returns(new Mock<ISnykOptionsManager>().Object);
+            var localBridge = new HtmlSettingsScriptingBridge(sp.Object, onModified: () => { });
+
+            localBridge.__saveIdeConfig__(JsonConvert.SerializeObject(new
+            {
+                binary_base_url = SnykCliDownloader.DefaultBaseDownloadUrl,
+            }));
+
+            Assert.Equal(SnykCliDownloader.DefaultBaseDownloadUrl, localOptions.Object.CliBaseDownloadURL);
+        }
+
+        [Fact]
+        public void SaveIdeConfig_KeepsAnUnusableBaseUrlAsTyped()
+        {
+            // Stored unchanged so the user can see and correct it. This is the deliberate asymmetry
+            // with the API endpoint, which IS rejected when malformed: that guard protects the host the
+            // token goes to, whereas discarding a mis-typed mirror here would leave the field looking
+            // like the default while downloads failed. Matches the other Snyk IDEs, none of which
+            // validate this field. See ApplyCliSettings for the full rationale.
+            var localOptions = new Mock<ISnykOptions>();
+            localOptions.SetupAllProperties();
+
+            var sp = new Mock<ISnykServiceProvider>();
+            sp.SetupGet(x => x.Options).Returns(localOptions.Object);
+            sp.SetupGet(x => x.SnykOptionsManager).Returns(new Mock<ISnykOptionsManager>().Object);
+            var localBridge = new HtmlSettingsScriptingBridge(sp.Object, onModified: () => { });
+
+            localBridge.__saveIdeConfig__(JsonConvert.SerializeObject(new { binary_base_url = "downlods.snyk.io.local\\bad" }));
+
+            Assert.Equal("downlods.snyk.io.local\\bad", localOptions.Object.CliBaseDownloadURL);
         }
 
         [Fact]

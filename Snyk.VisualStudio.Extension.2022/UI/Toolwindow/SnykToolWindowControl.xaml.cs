@@ -5,6 +5,7 @@ using System.IO;
 using System.Linq;
 using System.Net;
 using System.Threading;
+using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Media;
@@ -12,9 +13,11 @@ using Microsoft.VisualStudio;
 using Microsoft.VisualStudio.PlatformUI;
 using Microsoft.VisualStudio.Shell;
 using Microsoft.VisualStudio.Shell.Interop;
+using Microsoft.VisualStudio.Threading;
 using Serilog;
 using Snyk.VisualStudio.Extension.CLI;
 using Snyk.VisualStudio.Extension.Commands;
+using Snyk.VisualStudio.Extension.Download;
 using Snyk.VisualStudio.Extension.Language;
 using Snyk.VisualStudio.Extension.Service;
 using Snyk.VisualStudio.Extension.Settings;
@@ -146,13 +149,30 @@ namespace Snyk.VisualStudio.Extension.UI.Toolwindow
             this.taskFinishedHandler = (sender, args) => ThreadHelper.JoinableTaskFactory.RunAsync(this.OnTaskFinishedAsync);
             this.downloadStartedHandler = (sender, args) =>
             {
-                if (LanguageClientHelper.IsLanguageServerReady())
+                // Paired with the unconditional start in downloadFinishedHandler below: this stop is the
+                // only reason that start is not a duplicate. Logged because the pairing is invisible in a
+                // log otherwise — neither the event nor the stop decision writes a line of its own.
+                var stopping = LanguageClientHelper.IsLanguageServerReady();
+
+                Logger.Debug("DownloadStarted: languageServerReady={Ready}; the stop is issued only when ready", stopping);
+
+                if (stopping)
                     ThreadHelper.JoinableTaskFactory.RunAsync(serviceProvider.LanguageClientManager.StopServerAsync).FireAndForget();
                 this.OnDownloadStarted(sender, args);
             };
             this.downloadFinishedHandler = (sender, args) =>
             {
+                Logger.Debug(
+                    "DownloadFinished: binaryWasDownloaded={Downloaded}, languageServerReady={Ready}; requesting start",
+                    args?.BinaryWasDownloaded,
+                    LanguageClientHelper.IsLanguageServerReady());
+
+                // Unconditional: when the download has just replaced a CLI the server could not run, this
+                // is what starts it. When the server is already running VS ignores the request, so no
+                // readiness check is needed — and a readiness guard would skip the start in exactly the
+                // case that needs it.
                 ThreadHelper.JoinableTaskFactory.RunAsync(async ()=> await serviceProvider.LanguageClientManager.StartServerAsync(true)).FireAndForget();
+
                 this.OnDownloadFinished(sender, args);
             };
             this.downloadUpdateHandler = (sender, args) => ThreadHelper.JoinableTaskFactory.RunAsync(() => this.OnDownloadUpdateAsync(sender, args));
@@ -407,7 +427,14 @@ namespace Snyk.VisualStudio.Extension.UI.Toolwindow
         /// <param name="eventArgs">Event args.</param>
         public void OnDownloadStarted(object sender, SnykCliDownloadEventArgs eventArgs)
         {
-            ThreadHelper.JoinableTaskFactory.Run(async () =>
+            // RunAsync, not Run: these four download handlers are raised from the thread pool, and a
+            // blocking Run parks that pool thread until the UI thread is free. During startup the UI
+            // thread is still loading the tool window, so that wait is measurable and can close a cycle
+            // with anything the UI thread is itself waiting on. Nothing here needs to
+            // complete before the handler returns: the binary is already downloaded, checksum-verified
+            // and installed before the event is raised, and the language server start is separately
+            // fire-and-forget.
+            ThreadHelper.JoinableTaskFactory.RunAsync(async () =>
             {
                 await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
                 if (eventArgs.IsUpdateDownload)
@@ -420,7 +447,7 @@ namespace Snyk.VisualStudio.Extension.UI.Toolwindow
                 }
 
                 this.Show();
-            });
+            }).FireAndForget();
         }
 
         /// <summary>
@@ -428,7 +455,20 @@ namespace Snyk.VisualStudio.Extension.UI.Toolwindow
         /// </summary>
         /// <param name="sender">Source object.</param>
         /// <param name="eventArgs">Event args.</param>
-        public void OnDownloadFinished(object sender, SnykCliDownloadEventArgs eventArgs) => this.DetermineInitScreen();
+        public void OnDownloadFinished(object sender, SnykCliDownloadEventArgs eventArgs)
+        {
+            // The download runs on the thread pool, so this is raised from there; DetermineInitScreen
+            // writes WPF state.
+            //
+            // RunAsync, not Run — see OnDownloadStarted. Blocking here parked a pool thread on the UI
+            // thread during startup, which is a hazard even when it eventually completes.
+            ThreadHelper.JoinableTaskFactory.RunAsync(async () =>
+            {
+                await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
+
+                this.DetermineInitScreen();
+            }).FireAndForget();
+        }
 
         /// <summary>
         /// DownloadUpdate event handler. Call UpdateDonwloadProgress() method.
@@ -445,37 +485,74 @@ namespace Snyk.VisualStudio.Extension.UI.Toolwindow
         /// <param name="eventArgs">Event args.</param>
         public void OnDownloadCancelled(object sender, SnykCliDownloadEventArgs eventArgs)
         {
-            if (SnykCli.IsCliFileFound(serviceProvider.Options.CliCustomPath))
+            // RunAsync, not Run — see OnDownloadStarted. Both branches write WPF state.
+            //
+            // TaskScheduler.Default before the probe, because this handler is NOT always raised from
+            // the thread pool: SnykTasksService.DownloadAsync fires DownloadCancelled before its own
+            // hop when BinariesAutoUpdate is off, and Download() is wired to this control's Loaded
+            // event, so RunAsync starts out on the UI thread. IsExistingCliUsableForFallback launches
+            // the CLI and waits up to ProtocolProbeTimeoutMs for it, which froze VS for the whole
+            // timeout for anyone with auto-update disabled and a CLI already on disk. File.Exists
+            // against an unreachable UNC share is the same hazard for tens of seconds.
+            ThreadHelper.JoinableTaskFactory.RunAsync(async () =>
             {
-                if (LanguageClientHelper.LanguageClientManager() != null)
-                    ThreadHelper.JoinableTaskFactory.RunAsync(async () => await LanguageClientHelper.LanguageClientManager().RestartServerAsync()).FireAndForget();
-                
-                ThreadHelper.JoinableTaskFactory.Run(async () =>
+                await TaskScheduler.Default;
+
+                var fallbackUsable = this.IsExistingCliUsableForFallback();
+
+                await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
+
+                if (fallbackUsable)
                 {
-                    await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
+                    if (LanguageClientHelper.LanguageClientManager() != null)
+                        ThreadHelper.JoinableTaskFactory.RunAsync(async () => await LanguageClientHelper.LanguageClientManager().RestartServerAsync()).FireAndForget();
+
                     this.DetermineInitScreen();
-                });
-            }
-            else
-            {
-                this.messagePanel.Text = "Snyk CLI not found. You can specify a path to a Snyk CLI executable from the settings.";
-            }
+                }
+                else
+                {
+                    this.messagePanel.Text = "Snyk CLI not found, or the one installed is not usable by this version of the extension. You can specify a path to a Snyk CLI executable from the settings.";
+                }
+            }).FireAndForget();
         }
 
         private void OnDownloadFailed(object sender, Exception e)
         {
-            if (SnykCli.IsCliFileFound(serviceProvider.Options.CliCustomPath))
+            // The hop and the probe are placed as in OnDownloadCancelled. DownloadFailed is only ever
+            // raised after DownloadAsync's own hop, so the UI thread cannot be the caller here today;
+            // the hop is kept so the two handlers cannot drift, and so the probe stays off whichever
+            // thread does raise it.
+            ThreadHelper.JoinableTaskFactory.RunAsync(async () =>
             {
-                if (LanguageClientHelper.LanguageClientManager() != null)
-                    ThreadHelper.JoinableTaskFactory.RunAsync(async () => await LanguageClientHelper.LanguageClientManager().RestartServerAsync()).FireAndForget();
-                this.DetermineInitScreen();
-            }
-            else
-            {
-                this.messagePanel.Text =
-                "Failed to download Snyk CLI. You can specify a path to a Snyk CLI executable from the settings.";
-            }
+                await TaskScheduler.Default;
+
+                var fallbackUsable = this.IsExistingCliUsableForFallback();
+
+                await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
+
+                if (fallbackUsable)
+                {
+                    if (LanguageClientHelper.LanguageClientManager() != null)
+                        ThreadHelper.JoinableTaskFactory.RunAsync(async () => await LanguageClientHelper.LanguageClientManager().RestartServerAsync()).FireAndForget();
+                    this.DetermineInitScreen();
+                }
+                else
+                {
+                    this.messagePanel.Text =
+                    "Failed to download the Snyk CLI, and the CLI already installed is either missing or not usable by this version of the extension. You can specify a path to a Snyk CLI executable from the settings.";
+                }
+            }).FireAndForget();
         }
+
+        /// <summary>
+        /// Whether the download that just failed or was cancelled left a CLI behind that can actually
+        /// run. Presence alone is not enough: restarting the language server against a truncated or
+        /// protocol-incompatible binary leaves the tool window on its loading state with nothing to
+        /// act on.
+        /// </summary>
+        private bool IsExistingCliUsableForFallback() =>
+            new SnykCliDownloader(serviceProvider.Options)
+                .IsExistingCliUsable(SnykCli.GetCliFilePath(serviceProvider.Options.CliCustomPath));
 
         /// <summary>
         /// Show tool window.

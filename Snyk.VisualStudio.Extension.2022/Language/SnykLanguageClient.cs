@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.ComponentModel.Composition;
 using System.Diagnostics;
+using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.VisualStudio.LanguageServer.Client;
@@ -28,10 +29,31 @@ namespace Snyk.VisualStudio.Extension.Language
     {
         private static readonly ILogger Logger = LogManager.ForContext<SnykLanguageClient>();
         private readonly SemaphoreSlim semaphore = new SemaphoreSlim(1,1);
+
+        // Set when VS calls OnLoadedAsync. Raising StartAsync before that point is out of contract: VS
+        // has already subscribed, so the raise looks valid, but it is discarded — ActivateAsync is never
+        // called and nothing retries.
+        private volatile bool vsHasLoadedClient;
+
+        // internal setter for testability: in production only OnLoadedAsync sets this, and only VS
+        // calls OnLoadedAsync — so a test exercising StartServerAsync or RestartServerAsync directly
+        // has no other way to establish the precondition those paths now require.
+        internal bool VsHasLoadedClient
+        {
+            get => this.vsHasLoadedClient;
+            set => this.vsHasLoadedClient = value;
+        }
         private LsSettingsV25 settingsV25;
         // Holds the delegate subscribed to SolutionEvents.AfterBackgroundSolutionLoadComplete so we
         // can unsubscribe before re-subscribing on server restarts (idempotent wiring).
         private EventHandler<EventArgs> solutionOpenedMigrationHandler;
+
+        // The folder last handed to the server via didChangeWorkspaceFolders. Empty means the server has
+        // no workspace folder. volatile because it is written and read from different threads: the sync
+        // is driven from the scan path, the ready callback and solution events.
+        private volatile string sentFolderPath = string.Empty;
+
+        private EventHandler<EventArgs> workspaceFolderSyncHandler;
 
         [ImportingConstructor]
         public SnykLanguageClient()
@@ -77,7 +99,23 @@ namespace Snyk.VisualStudio.Extension.Language
             // so double-delivery across the init→first-update boundary cannot corrupt anything. It also
             // means a crash between a successful init and the first config-update loses nothing — the
             // persisted queue re-delivers on the next session.
-            return settingsV25.GetInitializationOptions();
+            var initializationOptions = settingsV25.GetInitializationOptions();
+
+            // Taken as the baseline for the folder sync, because a non-blank folder here is one VS is
+            // about to pass in the initialize request itself — sending it again as an addition would make
+            // the server rebuild a folder it already has. Blank means the client was activated before the
+            // solution finished loading, and SyncWorkspaceFoldersAsync supplies it later.
+            var folderAtInitialize =
+                SnykVSPackage.ServiceProvider?.SolutionService?.SolutionFolderCache ?? string.Empty;
+
+            if (!string.IsNullOrEmpty(folderAtInitialize))
+            {
+                this.sentFolderPath = folderAtInitialize;
+            }
+
+            Logger.Debug("InitializationOptions requested; solution folder is '{Folder}'", folderAtInitialize);
+
+            return initializationOptions;
         }
 
         public IEnumerable<string> FilesToWatch => null;
@@ -121,8 +159,70 @@ namespace Snyk.VisualStudio.Extension.Language
             {
                 StartInfo = info
             };
-            var isStarted = process.Start();
-            return isStarted ? new Connection(process.StandardOutput.BaseStream, process.StandardInput.BaseStream) : null;
+
+            Logger.Information(
+                "ActivateAsync: launching {FileName} {Arguments}",
+                info.FileName,
+                info.Arguments);
+
+            try
+            {
+                var isStarted = process.Start();
+
+                Logger.Information(
+                    "ActivateAsync: process.Start returned {IsStarted}, pid {Pid}",
+                    isStarted,
+                    isStarted ? process.Id.ToString() : "(none)");
+
+                return isStarted ? new Connection(process.StandardOutput.BaseStream, process.StandardInput.BaseStream) : null;
+            }
+            catch (Exception e)
+            {
+                // Rethrown: VS owns the failure path. Logged so a failed launch is distinguishable
+                // from VS never activating the client at all.
+                Logger.Error(e, "ActivateAsync: process.Start threw for {FileName}", info.FileName);
+
+                throw;
+            }
+        }
+
+        // Only reached when package initialization has faulted, so it is set well above a normal init.
+        //
+        // internal and settable for testability: the completion source is static and is never completed
+        // under test, so a test that deliberately leaves the package uninitialised would time out.
+        internal static TimeSpan PackageInitializationTimeout = TimeSpan.FromSeconds(30);
+
+        /// <summary>
+        /// Blocks this load callback until the package has finished initializing.
+        ///
+        /// Bounded, because <c>initializationTaskCompletionSource</c> is only completed on the success
+        /// path — a faulted initialization must not hang a VS load callback forever.
+        /// </summary>
+        private static async Task<bool> WaitForPackageInitializationAsync()
+        {
+            if (SnykVSPackage.Instance?.IsInitialized ?? false)
+            {
+                return true;
+            }
+
+            // Paired with the completion log below.
+            Logger.Information("Waiting for package initialisation before deciding whether to start the language server");
+
+            var initialized = SnykVSPackage.PackageInitializedAwaiter;
+            var finished = await Task.WhenAny(initialized, Task.Delay(PackageInitializationTimeout));
+
+            if (finished != initialized)
+            {
+                Logger.Warning(
+                    "Package initialisation did not complete within {Seconds}s, so this language client load will not start the server",
+                    PackageInitializationTimeout.TotalSeconds);
+
+                return false;
+            }
+
+            Logger.Information("Package initialisation complete; this language client load can start the language server");
+
+            return SnykVSPackage.Instance?.IsInitialized ?? false;
         }
 
         public async Task OnLoadedAsync()
@@ -137,21 +237,62 @@ namespace Snyk.VisualStudio.Extension.Language
             //    Guid packageGuid = typeof(SnykVSPackage).GUID;
             //    shell.LoadPackage(ref packageGuid, out package);
             //}
-            var isPackageInitialized = SnykVSPackage.Instance?.IsInitialized ?? false;
-            var shouldStart =  isPackageInitialized && !SnykVSPackage.ServiceProvider.TasksService.ShouldDownloadCli();
+            // Set before the download check below, which can take seconds: a start request arriving in
+            // that window is now allowed to proceed rather than being silently discarded by VS.
+            this.vsHasLoadedClient = true;
+
+            // Wait for package initialisation rather than sampling it — see
+            // WaitForPackageInitializationAsync for why this must not be a bool read. This is the only
+            // in-contract chance to start the server: a raise of StartAsync outside VS's own load flow
+            // is discarded.
+            var isPackageInitialized = await WaitForPackageInitializationAsync();
+
+            // Off the UI thread before asking. ShouldDownloadCli issues a synchronous release lookup and
+            // hashes the ~175MB binary while holding SnykCliDownloader.memoLock; VS does not document
+            // which thread it calls OnLoadedAsync on, and SnykVSPackage.InitializeLanguageClient already
+            // hops for the same reason at the sibling call site.
+            await TaskScheduler.Default;
+
+            var shouldStart = isPackageInitialized && !SnykVSPackage.ServiceProvider.TasksService.ShouldDownloadCli();
             Logger.Information("OnLoadedAsync Called and shouldStart is: {ShouldStart}", shouldStart);
 
+            // StartServerAsync marshals to the UI thread itself; no switch needed here.
             await StartServerAsync(shouldStart);
         }
 
         public async Task StartServerAsync(bool shouldStart = false)
         {
+            // The raise is pinned to the UI thread rather than left to whichever thread the caller is on:
+            // there are three call sites and they arrive on different threads, and VS only honours the
+            // raise from the thread it drives its own load flow from.
+            //
+            // Before the gate, not inside it: switching while holding the semaphore is a deadlock shape.
+            // JoinableTaskFactory can inline work to avoid deadlocking on itself but cannot see through a
+            // SemaphoreSlim, and the UI thread does block in JoinableTaskFactory.Run elsewhere here.
+            // Awaiting the semaphore from the main thread yields it, so nothing is blocked meanwhile.
+            await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
+
+            Logger.Debug(
+                "StartServerAsync entered: shouldStart={ShouldStart}, vsHasLoadedClient={Loaded}, vsSubscribed={Subscribed}, isReady={IsReady}, onUiThread={OnUiThread}",
+                shouldStart,
+                this.vsHasLoadedClient,
+                StartAsync != null,
+                IsReady,
+                ThreadHelper.CheckAccess());
+
             await semaphore.WaitAsync();
             try
             {
-                if (StartAsync == null && shouldStart)
+                // Handle start request that arrive before VS has loaded the client. These ask for
+                // activation instead.
+                if (shouldStart && (StartAsync == null || !this.vsHasLoadedClient))
                 {
+                    Logger.Information(
+                        "Language server start requested before VS loaded the client; requesting activation instead (VS subscribed: {Subscribed})",
+                        StartAsync != null);
+
                     FireOnLanguageClientNotInitializedAsync();
+
                     return;
                 }
 
@@ -164,12 +305,28 @@ namespace Snyk.VisualStudio.Extension.Language
 
                     await MigrateLegacySolutionSettingsAsync();
 
+                    // Raising StartAsync asks VS to call ActivateAsync; it is not a guarantee. The
+                    // guard above is what keeps this in contract — see its comment. VS also ignores the
+                    // request outright when it considers the server already started, so the pair of
+                    // lines below plus ActivateAsync's own logging are what distinguish "VS declined"
+                    // from "the launch failed".
                     Logger.Information("Starting Language Server");
+                    Logger.Debug(
+                        "Raising StartAsync on the {ThreadKind} thread; expect an ActivateAsync line next if VS accepts it",
+                        ThreadHelper.CheckAccess() ? "UI" : "background");
+
                     await StartAsync.InvokeAsync(this, EventArgs.Empty);
+
+                    Logger.Debug("StartAsync raise returned");
                 }
                 else
                 {
                     Logger.Information("Couldn't Start Language Server");
+                    Logger.Debug(
+                        "Not started because: vsSubscribed={Subscribed}, optionsPresent={Options}, shouldStart={ShouldStart}",
+                        StartAsync != null,
+                        SnykVSPackage.Instance?.Options != null,
+                        shouldStart);
                 }
             }
             finally
@@ -201,9 +358,29 @@ namespace Snyk.VisualStudio.Extension.Language
 
         public async Task StopServerAsync()
         {
+            // The caller is the useful part: a shutdown in the server's log with no line from here was
+            // Visual Studio's decision rather than the extension's.
+            //
+            // Guarded, unlike the other Debug calls: Serilog evaluates arguments eagerly, so an
+            // unguarded StackTrace would be captured on every stop even with Debug suppressed.
+            if (LogManager.IsDebugEnabled)
+            {
+                Logger.Debug(
+                    "StopServerAsync called: vsSubscribed={Subscribed}, isReady={IsReady}, isReloading={IsReloading}, calledFrom={Caller}",
+                    StopAsync != null,
+                    IsReady,
+                    IsReloading,
+                    new StackTrace(1, false).ToString());
+            }
+
             // Detach the solution-opened migration handler as part of stop teardown so a permanent
             // stop (extension disable / VS shutdown) doesn't leave it running against a dead LS.
             UnsubscribeFromSolutionOpenedForMigration();
+            UnsubscribeFromSolutionEventsForWorkspaceFolders();
+
+            // Forgotten on teardown: a restarted server is a new process with no folders,
+            // so the next sync must send the addition again rather than see a match and skip it.
+            this.sentFolderPath = string.Empty;
 
             if (StopAsync != null)
             {
@@ -244,6 +421,10 @@ namespace Snyk.VisualStudio.Extension.Language
 
         public Task OnServerInitializedAsync()
         {
+            // The only positive confirmation that a start actually produced a usable server. "Starting
+            // Language Server" followed by ActivateAsync only proves a process was launched.
+            Logger.Debug("OnServerInitializedAsync: server is ready");
+
             IsReady = true;
 
             // Note: pending resets are NOT committed here (IDE-2152 fix #3). The init options already
@@ -255,6 +436,13 @@ namespace Snyk.VisualStudio.Extension.Language
             SendPluginInstalledEvent();
             Rpc.Disconnected += Rpc_Disconnected;
             SubscribeToSolutionOpenedForMigration();
+            SubscribeToSolutionEventsForWorkspaceFolders();
+
+            // A first attempt now, in case the solution was already loaded when VS activated us. When it
+            // was not, this is a no-op and the sync happens later — on the solution event, or at the
+            // latest before the next scan.
+            ThreadHelper.JoinableTaskFactory.RunAsync(SyncWorkspaceFoldersAsync).FireAndForget();
+
             return Task.CompletedTask;
         }
 
@@ -309,6 +497,62 @@ namespace Snyk.VisualStudio.Extension.Language
             }
         }
 
+        /// <summary>
+        /// Keeps the server's folder set in step with solutions opened and closed after it started.
+        ///
+        /// Not sufficient on its own, and deliberately not relied upon: AfterBackgroundSolutionLoadComplete
+        /// does not fire for a solution Visual Studio restored from the previous session, which is exactly
+        /// the case that exposed the empty-workspace bug. The scan path syncs too, so this event is the
+        /// fast path rather than the guarantee.
+        /// </summary>
+        private void SubscribeToSolutionEventsForWorkspaceFolders()
+        {
+            try
+            {
+                UnsubscribeFromSolutionEventsForWorkspaceFolders();
+
+                var solutionEvents = SnykVSPackage.ServiceProvider?.SolutionService?.SolutionEvents;
+                if (solutionEvents == null)
+                {
+                    return;
+                }
+
+                workspaceFolderSyncHandler = (_, __) =>
+                    ThreadHelper.JoinableTaskFactory.RunAsync(SyncWorkspaceFoldersAsync).FireAndForget();
+
+                solutionEvents.AfterBackgroundSolutionLoadComplete += workspaceFolderSyncHandler;
+                solutionEvents.AfterCloseSolution += workspaceFolderSyncHandler;
+            }
+            catch (Exception ex)
+            {
+                Logger.Warning(ex, "Could not subscribe to solution events for workspace-folder sync.");
+            }
+        }
+
+        private void UnsubscribeFromSolutionEventsForWorkspaceFolders()
+        {
+            try
+            {
+                if (workspaceFolderSyncHandler == null)
+                {
+                    return;
+                }
+
+                var solutionEvents = SnykVSPackage.ServiceProvider?.SolutionService?.SolutionEvents;
+                if (solutionEvents != null)
+                {
+                    solutionEvents.AfterBackgroundSolutionLoadComplete -= workspaceFolderSyncHandler;
+                    solutionEvents.AfterCloseSolution -= workspaceFolderSyncHandler;
+                }
+
+                workspaceFolderSyncHandler = null;
+            }
+            catch (Exception ex)
+            {
+                Logger.Warning(ex, "Could not unsubscribe from solution events for workspace-folder sync.");
+            }
+        }
+
         private Task<string> GetLsDebugLevelAsync()
         {
             var serviceProvider = SnykVSPackage.ServiceProvider;
@@ -316,17 +560,8 @@ namespace Snyk.VisualStudio.Extension.Language
             if (options == null)
                 return Task.FromResult("info");
 
-            // Enable debug logging for the whole LS process if -d/--debug is set in global
-            // additional parameters OR in ANY folder's additional parameters.
-            var globalParams = options.AdditionalParameters ?? Enumerable.Empty<string>();
-            var folderParams = (options.FolderConfigs ?? Enumerable.Empty<FolderConfig>())
-                .Select(fc => fc?.GetStringList(PflagKeys.AdditionalParameters))
-                .Where(p => p != null)
-                .SelectMany(p => p);
-
-            var anyDebug = globalParams.Concat(folderParams).Any(p => p == "-d" || p == "--debug");
-
-            return Task.FromResult(anyDebug ? "debug" : "info");
+            // Same signal as the extension's own log level — see LanguageClientHelper.IsDebugModeRequested.
+            return Task.FromResult(LanguageClientHelper.IsDebugModeRequested(options) ? "debug" : "info");
         }
 
         // One-time, best-effort migration of legacy per-solution settings (IDE-1651) into the folder
@@ -358,8 +593,20 @@ namespace Snyk.VisualStudio.Extension.Language
 
         private void Rpc_Disconnected(object sender, JsonRpcDisconnectedEventArgs e)
         {
+            // The reason and description say whether the server exited, was killed, or the pipe broke —
+            // which is otherwise indistinguishable from "VS never activated us" in a log.
+            Logger.Debug(
+                "Rpc disconnected: reason={Reason}, description={Description}",
+                e?.Reason,
+                e?.Description);
+
             IsReady = false;
             UnsubscribeFromSolutionOpenedForMigration();
+            UnsubscribeFromSolutionEventsForWorkspaceFolders();
+
+            // Forgotten on teardown: a restarted server is a new process with no folders,
+            // so the next sync must send the addition again rather than see a match and skip it.
+            this.sentFolderPath = string.Empty;
         }
 
         public async Task AttachForCustomMessageAsync(JsonRpc rpc)
@@ -378,6 +625,11 @@ namespace Snyk.VisualStudio.Extension.Language
 
         private async Task RestartAsync(bool isReload)
         {
+            // A restart is a stop and a start, and the start half is the fragile one: VS ignores a start
+            // request for a server it still considers running, so the two halves are logged separately
+            // to tell "the stop did not finish first" from "the start was declined".
+            Logger.Debug("RestartAsync entered: isReload={IsReload}, isReady={IsReady}", isReload, IsReady);
+
             try
             {
                 if (isReload)
@@ -387,6 +639,9 @@ namespace Snyk.VisualStudio.Extension.Language
                 OnStopping();
                 await StopServerAsync();
                 OnStopped();
+
+                Logger.Debug("RestartAsync: stop half complete, starting");
+
                 await StartServerAsync(true);
             }
             catch (Exception ex)
@@ -402,8 +657,122 @@ namespace Snyk.VisualStudio.Extension.Language
             }
         }
         
+        /// <summary>
+        /// Brings the server's workspace folders in line with the solution that is currently open.
+        ///
+        /// Visual Studio fixes the folder set at initialize time and the extension has no say in it —
+        /// nothing here sends <c>workspaceFolders</c> or <c>rootUri</c>. A client activated before the
+        /// solution has loaded therefore gets an empty workspace and keeps it for the life of the
+        /// process, and re-raising StartAsync cannot fix that because VS ignores a start request for a
+        /// server it considers already running. This notification is the way out: snyk-ls builds a real
+        /// folder from it, configures it, and scans it if auto-scan is on.
+        ///
+        /// Idempotent against what was last sent, so repeat calls are free and a switch between
+        /// solutions sends the removal alongside the addition.
+        /// </summary>
+        private async Task SyncWorkspaceFoldersAsync()
+        {
+            if (!IsReady || Rpc == null)
+            {
+                return;
+            }
+
+            var solutionService = SnykVSPackage.ServiceProvider?.SolutionService;
+            if (solutionService == null)
+            {
+                return;
+            }
+
+            string folder;
+            try
+            {
+                folder = await solutionService.GetSolutionFolderAsync() ?? string.Empty;
+            }
+            catch (Exception e)
+            {
+                Logger.Debug(e, "Could not resolve the solution folder; leaving the server's folders as they are");
+
+                return;
+            }
+
+            var previous = this.sentFolderPath ?? string.Empty;
+            if (string.Equals(folder, previous, StringComparison.OrdinalIgnoreCase))
+            {
+                return;
+            }
+
+            var change = new WorkspaceFoldersChangeEvent();
+
+            if (!string.IsNullOrEmpty(previous) && TryBuildWorkspaceFolder(previous, out var removed))
+            {
+                change.Removed = new List<LspWorkspaceFolder> { removed };
+            }
+
+            if (!string.IsNullOrEmpty(folder) && TryBuildWorkspaceFolder(folder, out var added))
+            {
+                change.Added = new List<LspWorkspaceFolder> { added };
+            }
+
+            if (change.Added == null && change.Removed == null)
+            {
+                return;
+            }
+
+            try
+            {
+                await Rpc.NotifyWithParameterObjectAsync(
+                    LsConstants.WorkspaceChangeWorkspaceFolders,
+                    new DidChangeWorkspaceFoldersParams { Event = change });
+
+                this.sentFolderPath = folder;
+
+                Logger.Information(
+                    "Sent workspace folder change to the language server: added '{Added}', removed '{Removed}'",
+                    folder,
+                    previous);
+            }
+            catch (Exception e)
+            {
+                // Left unrecorded in sentFolderPath so the next caller retries.
+                Logger.Warning(e, "Could not send the workspace folder change to the language server");
+            }
+        }
+
+        /// <summary>
+        /// A folder path as the file URI snyk-ls expects. False when the path cannot be expressed as one.
+        /// </summary>
+        private static bool TryBuildWorkspaceFolder(string path, out LspWorkspaceFolder folder)
+        {
+            folder = null;
+
+            try
+            {
+                folder = new LspWorkspaceFolder
+                {
+                    // AbsoluteUri, not the raw path: snyk-ls parses this with uri.PathFromUri, which wants
+                    // a file: scheme. Wrapped because a path containing something that looks like a bad
+                    // percent escape makes the Uri constructor throw — see SnykLanguageClientCustomTarget.
+                    Uri = new Uri(path).AbsoluteUri,
+                    Name = new DirectoryInfo(path).Name,
+                };
+
+                return true;
+            }
+            catch (Exception e)
+            {
+                Logger.Warning(e, "Could not build a workspace folder URI for {Path}", path);
+
+                return false;
+            }
+        }
+
         public async Task<object> InvokeWorkspaceScanAsync(CancellationToken cancellationToken)
         {
+            // Before the scan, because this is the point at which the folder set must be right and the
+            // one place guaranteed to be reached: the solution-loaded event does not fire for a solution
+            // VS restored from the previous session, so a sync driven only by events can miss it.
+            await SyncWorkspaceFoldersAsync();
+
             var param = new LSP.ExecuteCommandParams {
                 Command = LsConstants.SnykWorkspaceScan
             };

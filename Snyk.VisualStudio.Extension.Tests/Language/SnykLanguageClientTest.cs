@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.Reflection;
 using System.Threading;
@@ -417,8 +418,93 @@ namespace Snyk.VisualStudio.Extension.Tests.Language
         }
 
         [Fact]
+        public async Task InvokeWorkspaceScanAsync_SendsTheWorkspaceFolder_BeforeScanning()
+        {
+            // The scan is the point at which the folder set has to be right, and the only place guaranteed
+            // to be reached: Visual Studio fixes the folders at activation, and for a solution it restored
+            // from the previous session no solution-load event fires at all. Without this the server scans
+            // an empty workspace and reports nothing, which looks like a clean run.
+            const string folder = @"C:\repos\snyk-goof";
+            cut.IsReady = true;
+
+            var solutionServiceMock = new Mock<ISolutionService>();
+            solutionServiceMock.Setup(s => s.GetSolutionFolderAsync()).ReturnsAsync(folder);
+            ServiceProviderMock.Setup(x => x.SolutionService).Returns(solutionServiceMock.Object);
+
+            await cut.InvokeWorkspaceScanAsync(CancellationToken.None);
+
+            // Exact wire shape asserted, because snyk-ls tags the envelope PascalCase (Event/Added/Removed)
+            // and the folder fields lowercase (uri/name) — a casing slip here is silently ignored by the
+            // server, which would look exactly like the bug this fixes.
+            jsonRpcMock.Verify(
+                x => x.NotifyWithParameterObjectAsync(
+                    LsConstants.WorkspaceChangeWorkspaceFolders,
+                    It.Is<DidChangeWorkspaceFoldersParams>(p =>
+                        p.Event.Added.Count == 1
+                        && p.Event.Added[0].Uri == new Uri(folder).AbsoluteUri
+                        && p.Event.Added[0].Name == "snyk-goof"
+                        && p.Event.Removed == null)),
+                Times.Once);
+        }
+
+        [Fact]
+        public async Task InvokeWorkspaceScanAsync_DoesNotSendAFolderVisualStudioAlreadyPassedAtInitialize()
+        {
+            // When the solution is loaded at activation, VS puts the folder in the initialize request
+            // itself (rootUri), so re-sending it as an addition makes the server rebuild a folder it
+            // already has. GetInitializationOptions records that folder as the baseline.
+            const string folder = @"C:\repos\snyk-goof";
+            cut.IsReady = true;
+
+            var solutionServiceMock = new Mock<ISolutionService>();
+            solutionServiceMock.Setup(s => s.SolutionFolderCache).Returns(folder);
+            solutionServiceMock.Setup(s => s.GetSolutionFolderAsync()).ReturnsAsync(folder);
+            ServiceProviderMock.Setup(x => x.SolutionService).Returns(solutionServiceMock.Object);
+            TestUtils.SetupOptionsMock(OptionsMock);
+
+            // What VS does when it builds the initialize request.
+            cut.GetInitializationOptions();
+
+            await cut.InvokeWorkspaceScanAsync(CancellationToken.None);
+
+            jsonRpcMock.Verify(
+                x => x.NotifyWithParameterObjectAsync(
+                    LsConstants.WorkspaceChangeWorkspaceFolders,
+                    It.IsAny<DidChangeWorkspaceFoldersParams>()),
+                Times.Never);
+        }
+
+        [Fact]
+        public async Task InvokeWorkspaceScanAsync_DoesNotResendTheSameWorkspaceFolder()
+        {
+            // Sent once per change, not once per scan: the notification makes snyk-ls construct a folder
+            // and kick off a scan, so repeating it on every scan would duplicate both.
+            const string folder = @"C:\repos\snyk-goof";
+            cut.IsReady = true;
+
+            var solutionServiceMock = new Mock<ISolutionService>();
+            solutionServiceMock.Setup(s => s.GetSolutionFolderAsync()).ReturnsAsync(folder);
+            ServiceProviderMock.Setup(x => x.SolutionService).Returns(solutionServiceMock.Object);
+
+            await cut.InvokeWorkspaceScanAsync(CancellationToken.None);
+            await cut.InvokeWorkspaceScanAsync(CancellationToken.None);
+
+            jsonRpcMock.Verify(
+                x => x.NotifyWithParameterObjectAsync(
+                    LsConstants.WorkspaceChangeWorkspaceFolders,
+                    It.IsAny<DidChangeWorkspaceFoldersParams>()),
+                Times.Once);
+        }
+
+        [Fact]
         public async Task StartServerAsync_ShouldInvokeStartAsync_WhenShouldStartIsTrue()
         {
+            // StartServerAsync marshals to the JTF main thread before raising StartAsync, so the test
+            // body must already be on the pumped main thread — xUnit starts async facts on the pool, and
+            // an unpumped marshal would hang here. Same pattern as
+            // DidChangeConfigurationAsync_SuccessfulSend_CommitsOnMainThread above.
+            await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
+
             // Arrange
             bool eventInvoked = false;
             cut.StartAsync += (sender, args) =>
@@ -429,6 +515,11 @@ namespace Snyk.VisualStudio.Extension.Tests.Language
 
             TasksServiceMock.Setup(ts => ts.ShouldDownloadCli()).Returns(false);
 
+            // VS sets this by calling OnLoadedAsync. Raising StartAsync before that point is out of
+            // contract — VS discards it — so StartServerAsync deliberately defers, and this test would
+            // otherwise be asserting behaviour that cannot happen in production.
+            cut.VsHasLoadedClient = true;
+
             // Act
             await cut.StartServerAsync(true);
 
@@ -437,8 +528,55 @@ namespace Snyk.VisualStudio.Extension.Tests.Language
         }
 
         [Fact]
+        public async Task StartServerAsync_ShouldNotInvokeStartAsync_BeforeVsHasLoadedTheClient()
+        {
+            // StartServerAsync marshals to the JTF main thread before raising StartAsync, so the test
+            // body must already be on the pumped main thread — xUnit starts async facts on the pool, and
+            // an unpumped marshal would hang here. Same pattern as
+            // DidChangeConfigurationAsync_SuccessfulSend_CommitsOnMainThread above.
+            await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
+
+            // The regression this guards. VS subscribes to StartAsync when it instantiates the client,
+            // but will not activate it until it has called OnLoadedAsync. A start raised in that window
+            // is silently discarded: the invoke returns immediately, ActivateAsync is never called, no
+            // CLI process appears, and nothing retries — so the language server stays down for the whole
+            // session. The download-finished handler wins that race whenever no download is needed.
+            var eventInvoked = false;
+            cut.StartAsync += (sender, args) =>
+            {
+                eventInvoked = true;
+                return Task.CompletedTask;
+            };
+
+            TasksServiceMock.Setup(ts => ts.ShouldDownloadCli()).Returns(false);
+
+            // The other half of the contract, and the reason this test exists twice over: returning
+            // early must still REQUEST activation. Opening the bundled init file is what makes VS load
+            // the client and call OnLoadedAsync; a return without this event loses the start entirely,
+            // because nothing else triggers activation.
+            var activationRequested = false;
+            cut.OnLanguageClientNotInitializedAsync += (sender, args) =>
+            {
+                activationRequested = true;
+                return Task.CompletedTask;
+            };
+
+            // Deliberately NOT setting VsHasLoadedClient: this is the pre-OnLoadedAsync window.
+            await cut.StartServerAsync(true);
+
+            Assert.False(eventInvoked);
+            Assert.True(activationRequested);
+        }
+
+        [Fact]
         public async Task StartServerAsync_ShouldNotInvokeStartAsync_WhenShouldStartIsFalse()
         {
+            // StartServerAsync marshals to the JTF main thread before raising StartAsync, so the test
+            // body must already be on the pumped main thread — xUnit starts async facts on the pool, and
+            // an unpumped marshal would hang here. Same pattern as
+            // DidChangeConfigurationAsync_SuccessfulSend_CommitsOnMainThread above.
+            await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
+
             // Arrange
             var eventInvoked = false;
             cut.StartAsync += (sender, args) =>
@@ -457,6 +595,12 @@ namespace Snyk.VisualStudio.Extension.Tests.Language
         [Fact]
         public async Task StopServerAsync_ShouldInvokeStopAsync()
         {
+            // StartServerAsync marshals to the JTF main thread before raising StartAsync, so the test
+            // body must already be on the pumped main thread — xUnit starts async facts on the pool, and
+            // an unpumped marshal would hang here. Same pattern as
+            // DidChangeConfigurationAsync_SuccessfulSend_CommitsOnMainThread above.
+            await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
+
             // Arrange
             var eventInvoked = false;
             cut.StopAsync += (sender, args) =>
@@ -475,6 +619,12 @@ namespace Snyk.VisualStudio.Extension.Tests.Language
         [Fact]
         public async Task RestartAsync_ShouldRestartServer()
         {
+            // StartServerAsync marshals to the JTF main thread before raising StartAsync, so the test
+            // body must already be on the pumped main thread — xUnit starts async facts on the pool, and
+            // an unpumped marshal would hang here. Same pattern as
+            // DidChangeConfigurationAsync_SuccessfulSend_CommitsOnMainThread above.
+            await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
+
             // Arrange
             var startInvoked = false;
             var stopInvoked = false;
@@ -490,6 +640,9 @@ namespace Snyk.VisualStudio.Extension.Tests.Language
                 return Task.CompletedTask;
             };
 
+            // A restart only happens after the server has been up, so VS has loaded the client by then.
+            cut.VsHasLoadedClient = true;
+
             // Act
             await cut.RestartServerAsync();
 
@@ -501,6 +654,12 @@ namespace Snyk.VisualStudio.Extension.Tests.Language
         [Fact]
         public async Task OnLoadedAsync_ShouldStartServer_WhenPackageIsInitialized()
         {
+            // StartServerAsync marshals to the JTF main thread before raising StartAsync, so the test
+            // body must already be on the pumped main thread — xUnit starts async facts on the pool, and
+            // an unpumped marshal would hang here. Same pattern as
+            // DidChangeConfigurationAsync_SuccessfulSend_CommitsOnMainThread above.
+            await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
+
             // Arrange
             var startInvoked = false;
             cut.StartAsync += (sender, args) =>
@@ -510,6 +669,7 @@ namespace Snyk.VisualStudio.Extension.Tests.Language
             };
 
             TasksServiceMock.Setup(ts => ts.ShouldDownloadCli()).Returns(false);
+
             // Act
             await cut.OnLoadedAsync();
 
@@ -518,8 +678,51 @@ namespace Snyk.VisualStudio.Extension.Tests.Language
         }
 
         [Fact]
+        public async Task OnLoadedAsync_ShouldStartServer_WithoutWaitingOnSolutionState()
+        {
+            // The start is deliberately NOT gated on the solution any more. Visual Studio decides the
+            // workspace folders it passes at activation, so gating only changed which bug you got: wait,
+            // and a session with no solution never gets a server (and the settings page never leaves its
+            // fallback HTML); do not wait, and the server may start with no folder. The folder is handed
+            // over afterwards by SyncWorkspaceFoldersAsync instead, so starting promptly is correct.
+            await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
+
+            var startInvoked = false;
+            cut.StartAsync += (sender, args) =>
+            {
+                startInvoked = true;
+                return Task.CompletedTask;
+            };
+
+            TasksServiceMock.Setup(ts => ts.ShouldDownloadCli()).Returns(false);
+
+            // No solution, and the folder never resolves.
+            var solutionServiceMock = new Mock<ISolutionService>();
+            solutionServiceMock.Setup(s => s.IsSolutionOpen()).Returns(false);
+            solutionServiceMock.Setup(s => s.GetSolutionFolderAsync()).ReturnsAsync(string.Empty);
+            ServiceProviderMock.Setup(x => x.SolutionService).Returns(solutionServiceMock.Object);
+
+            var stopwatch = Stopwatch.StartNew();
+
+            await cut.OnLoadedAsync();
+
+            stopwatch.Stop();
+
+            Assert.True(startInvoked);
+            Assert.True(
+                stopwatch.Elapsed < TimeSpan.FromSeconds(5),
+                $"the start must not wait on solution state, but took {stopwatch.Elapsed}");
+        }
+
+        [Fact]
         public async Task OnLoadedAsync_ShouldNotStartServer_WhenPackageIsNotInitialized()
         {
+            // StartServerAsync marshals to the JTF main thread before raising StartAsync, so the test
+            // body must already be on the pumped main thread — xUnit starts async facts on the pool, and
+            // an unpumped marshal would hang here. Same pattern as
+            // DidChangeConfigurationAsync_SuccessfulSend_CommitsOnMainThread above.
+            await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
+
             // Arrange
             bool startInvoked = false;
             cut.StartAsync += (sender, args) =>
@@ -529,11 +732,25 @@ namespace Snyk.VisualStudio.Extension.Tests.Language
             };
             typeof(SnykVSPackage).GetProperty("IsInitialized").SetValue(VsPackage, false, null);
 
-            // Act
-            await cut.OnLoadedAsync();
+            // OnLoadedAsync now WAITS for package initialisation rather than sampling the flag, because
+            // sampling it was a race whose loss left the language server permanently unstarted. The
+            // static completion source is never completed under test, so shorten the bound or this test
+            // sits for the full 30s and looks like a hung suite.
+            var realTimeout = SnykLanguageClient.PackageInitializationTimeout;
+            SnykLanguageClient.PackageInitializationTimeout = TimeSpan.FromMilliseconds(50);
 
-            // Assert
-            Assert.False(startInvoked);
+            try
+            {
+                // Act
+                await cut.OnLoadedAsync();
+
+                // Assert — an uninitialised package must not start the server even after waiting.
+                Assert.False(startInvoked);
+            }
+            finally
+            {
+                SnykLanguageClient.PackageInitializationTimeout = realTimeout;
+            }
         }
 
         [Fact]

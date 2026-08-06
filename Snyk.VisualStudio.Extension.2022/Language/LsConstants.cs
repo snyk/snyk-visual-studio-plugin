@@ -20,6 +20,7 @@
         
         // Commands
         public const string WorkspaceChangeConfiguration = "workspace/didChangeConfiguration";
+        public const string WorkspaceChangeWorkspaceFolders = "workspace/didChangeWorkspaceFolders";
         public const string WorkspaceExecuteCommand = "workspace/executeCommand";
 
         public const string SnykWorkspaceScan = "snyk.workspace.scan";

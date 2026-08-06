@@ -46,5 +46,13 @@
         /// Gets or sets a value indicating whether is update download.
         /// </summary>
         public bool IsUpdateDownload { get; set; }
+
+        /// <summary>
+        /// Whether a binary was actually fetched. False when the CLI on disk was already current:
+        /// DownloadFinished is raised on that path too, because it is what starts the language server
+        /// and clears the tool window's loading state, but nothing was downloaded and subscribers that
+        /// report progress to the user must not claim otherwise.
+        /// </summary>
+        public bool BinaryWasDownloaded { get; set; } = true;
     }
 }

@@ -114,11 +114,16 @@ namespace Snyk.VisualStudio.Extension.Language
                 [PflagKeys.ProxyInsecure]           = Cs(PflagKeys.ProxyInsecure,          options.IgnoreUnknownCA),
 
                 [PflagKeys.AutomaticDownload]       = Cs(PflagKeys.AutomaticDownload,      options.BinariesAutoUpdate),
+                // Resolved, and always-changed (see PflagKeys._alwaysChanged): the IDE downloads the
+                // CLI, and the CLI is what the LS runs from, so the LS needs the absolute path to the
+                // binary the IDE manages.
                 [PflagKeys.CliPath]                 = Cs(PflagKeys.CliPath,                SnykCli.GetCliFilePath(options.CliCustomPath)),
+                // Resolved, not verbatim: this value round-trips back through $/snyk.configuration and
+                // is what the override tracker compares against ConfigDefaults.
                 [PflagKeys.BinaryBaseUrl]           = Cs(PflagKeys.BinaryBaseUrl,
-                                                         options.CliBaseDownloadURL ?? SnykCliDownloader.DefaultBaseDownloadUrl),
+                                                         SnykCliDownloader.ResolveBaseDownloadUrl(options.CliBaseDownloadURL)),
                 [PflagKeys.CliReleaseChannel]       = Cs(PflagKeys.CliReleaseChannel,
-                                                         options.CliReleaseChannel ?? SnykCliDownloader.DefaultReleaseChannel),
+                                                         SnykCliDownloader.ResolveReleaseChannel(options.CliReleaseChannel)),
 
                 // TrustedFolders is in AlwaysChanged so IsChanged returns true regardless.
                 [PflagKeys.TrustedFolders]          = Cs(PflagKeys.TrustedFolders,         options.TrustedFolders?.ToList() ?? new List<string>()),

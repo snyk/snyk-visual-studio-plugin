@@ -12,6 +12,7 @@ using Microsoft.VisualStudio.ComponentModelHost;
 using Microsoft.VisualStudio.PlatformUI;
 using Microsoft.VisualStudio.Shell;
 using Microsoft.VisualStudio.Shell.Interop;
+using Microsoft.VisualStudio.Threading;
 using Serilog;
 using Snyk.VisualStudio.Extension.Commands;
 using Snyk.VisualStudio.Extension.Language;
@@ -202,6 +203,11 @@ namespace Snyk.VisualStudio.Extension
 
                 // Initialize LS
                 Logger.Information("Initializing Language Server");
+
+                // Fire-and-forget: this starts a chain that ends in VS calling OnLoadedAsync, which
+                // needs IsInitialized — set only at the end of this method. OnLoadedAsync therefore
+                // waits for initialisation rather than sampling the flag; see
+                // SnykLanguageClient.WaitForPackageInitializationAsync.
                 InitializeLanguageClient();
 
                 // Initialize commands
@@ -219,11 +225,20 @@ namespace Snyk.VisualStudio.Extension
 
                 // Notify package has been initialized
                 IsInitialized = true;
-                initializationTaskCompletionSource.SetResult(true);
             }
             catch (Exception ex)
             {
                 Logger.Error(ex, "Error on intialize Snyk VS package");
+            }
+            finally
+            {
+                // Completed on EVERY path, including the catch above. This is what
+                // SnykLanguageClient.WaitForPackageInitializationAsync waits on, and that wait gates the
+                // one in-contract chance to start the language server — so leaving it uncompleted after a
+                // failed initialisation cost a 30-second stall and then a dead server for the whole
+                // session, which is strictly worse than failing fast. The task carries no verdict: the
+                // waiter re-reads IsInitialized, which stays false here if anything above threw.
+                initializationTaskCompletionSource.TrySetResult(true);
             }
         }
 
@@ -280,11 +295,21 @@ namespace Snyk.VisualStudio.Extension
                     this.serviceProvider.LanguageClientManager.OnLanguageServerReadyAsync += LanguageClientManagerOnLanguageServerReadyAsync;
                     if (!LanguageClientHelper.IsLanguageServerReady())
                     {
+                        // ShouldDownloadCli issues a synchronous WebClient request, and this delegate
+                        // runs inline on the caller's thread — the UI thread — until the first
+                        // yielding await. Without this hop a blackholed mirror freezes Visual Studio
+                        // for however long that request takes: bounded to 15s by SnykWebClient's
+                        // Timeout, which is still far too long to hold the UI. Nothing between here
+                        // and the switch back touches UI state.
+                        await TaskScheduler.Default;
+
                         // If CLI download is necessary, Skip initializing.
                         if (this.serviceProvider.TasksService.ShouldDownloadCli())
                         {
                             return;
                         }
+
+                        await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
                         await this.serviceProvider.LanguageClientManager.StartServerAsync(true);
                     }
                 }
@@ -428,6 +453,11 @@ namespace Snyk.VisualStudio.Extension
                 // the handler is never wired twice if Options is ever reloaded/reassigned.
                 Options.SettingsChanged -= OnOptionsSettingsChanged;
                 Options.SettingsChanged += OnOptionsSettingsChanged;
+
+                // As early as options are readable: the language-server lifecycle logging below is at
+                // Debug, and the startup window it describes is over before any later opportunity to
+                // raise the level would arrive.
+                LogManager.SetDebugLogging(LanguageClientHelper.IsDebugModeRequested(Options));
             }
 
             if (HtmlSettingsDialogPage == null)
@@ -442,6 +472,9 @@ namespace Snyk.VisualStudio.Extension
 
         private void OnOptionsSettingsChanged(object sender, SnykSettingsChangedEventArgs e)
         {
+            // Re-evaluated on every settings change so -d/--debug takes effect without restarting VS.
+            LogManager.SetDebugLogging(LanguageClientHelper.IsDebugModeRequested(Options));
+
             JoinableTaskFactory.RunAsync(async () =>
             {
                 if (!LanguageClientHelper.IsLanguageServerReady())

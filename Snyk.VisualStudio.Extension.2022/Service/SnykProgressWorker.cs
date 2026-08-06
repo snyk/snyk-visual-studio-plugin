@@ -36,7 +36,7 @@
         /// <summary>
         /// Notify download finished.
         /// </summary>
-        public void DownloadFinished() => this.TasksService.OnDownloadFinished();
+        public void DownloadFinished(bool binaryWasDownloaded = true) => this.TasksService.OnDownloadFinished(binaryWasDownloaded);
 
         /// <summary>
         /// Notify cancel if cancellation requested by user.

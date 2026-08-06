@@ -18,6 +18,45 @@ namespace Snyk.VisualStudio.Extension.Language
     }
 
     /// <summary>
+    /// Payload for <c>workspace/didChangeWorkspaceFolders</c>.
+    ///
+    /// Visual Studio decides the workspace folders it passes at initialize time, so a server activated
+    /// before the solution has loaded gets none and would otherwise run against an empty workspace for
+    /// its whole life — the folder set is not re-read. This notification is how a folder is handed over
+    /// afterwards; snyk-ls builds a real folder from it, configures it, and scans it.
+    ///
+    /// Property names are explicit because the casing is asymmetric on the server side: snyk-ls tags the
+    /// envelope fields <c>Event</c>/<c>Added</c>/<c>Removed</c> but the folder fields <c>uri</c>/
+    /// <c>name</c> (internal/types/lsp.go). Relying on a naming strategy here would silently send fields
+    /// the server ignores.
+    /// </summary>
+    public class DidChangeWorkspaceFoldersParams
+    {
+        [JsonProperty("Event")]
+        public WorkspaceFoldersChangeEvent Event { get; set; }
+    }
+
+    /// <summary>The added and removed folders for <see cref="DidChangeWorkspaceFoldersParams"/>.</summary>
+    public class WorkspaceFoldersChangeEvent
+    {
+        [JsonProperty("Added", NullValueHandling = NullValueHandling.Ignore)]
+        public List<LspWorkspaceFolder> Added { get; set; }
+
+        [JsonProperty("Removed", NullValueHandling = NullValueHandling.Ignore)]
+        public List<LspWorkspaceFolder> Removed { get; set; }
+    }
+
+    /// <summary>A single workspace folder, as snyk-ls expects it on the wire.</summary>
+    public class LspWorkspaceFolder
+    {
+        [JsonProperty("uri")]
+        public string Uri { get; set; }
+
+        [JsonProperty("name")]
+        public string Name { get; set; }
+    }
+
+    /// <summary>
     /// Per-folder configuration. snyk-ls is authoritative over folder-scoped settings, so this is an
     /// opaque pflag-keyed settings map round-tripped verbatim (matching vscode/eclipse) rather than a
     /// set of typed fields the IDE cherry-picks. The IDE is "dumb": any folder key the LS sends is

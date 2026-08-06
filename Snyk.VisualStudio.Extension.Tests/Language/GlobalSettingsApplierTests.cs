@@ -1,7 +1,10 @@
+using System;
 using System.Collections.Generic;
+using System.IO;
 using Moq;
 using Newtonsoft.Json.Linq;
 using Snyk.VisualStudio.Extension.Authentication;
+using Snyk.VisualStudio.Extension.Download;
 using Snyk.VisualStudio.Extension.Language;
 using Snyk.VisualStudio.Extension.Settings;
 using Xunit;
@@ -216,6 +219,242 @@ namespace Snyk.VisualStudio.Extension.Tests.Language
             };
             GlobalSettingsApplier.Apply(settings, options);
             Assert.Equal(new List<string> { "--debug", "--verbose" }, options.AdditionalParameters);
+        }
+
+        [Theory]
+        [InlineData("")]
+        [InlineData("   ")]
+        public void Apply_ShouldPreserveCliBaseDownloadUrl_WhenLsEchoesEmptyValue(string inbound)
+        {
+            // An empty inbound value means "no opinion", not "cleared".
+            var options = MakeOptions();
+            options.CliBaseDownloadURL = SnykCliDownloader.DefaultBaseDownloadUrl;
+            var settings = new Dictionary<string, ConfigSetting>
+            {
+                [PflagKeys.BinaryBaseUrl] = ConfigSetting.Of(inbound)
+            };
+
+            GlobalSettingsApplier.Apply(settings, options);
+
+            Assert.Equal(SnykCliDownloader.DefaultBaseDownloadUrl, options.CliBaseDownloadURL);
+        }
+
+        [Theory]
+        [InlineData("")]
+        [InlineData("   ")]
+        public void Apply_ShouldPreserveCliReleaseChannel_WhenLsEchoesEmptyValue(string inbound)
+        {
+            var options = MakeOptions();
+            options.CliReleaseChannel = SnykCliDownloader.DefaultReleaseChannel;
+            var settings = new Dictionary<string, ConfigSetting>
+            {
+                [PflagKeys.CliReleaseChannel] = ConfigSetting.Of(inbound)
+            };
+
+            GlobalSettingsApplier.Apply(settings, options);
+
+            Assert.Equal(SnykCliDownloader.DefaultReleaseChannel, options.CliReleaseChannel);
+        }
+
+        [Fact]
+        public void Apply_ShouldSetCliBaseDownloadUrlAndReleaseChannel_WhenLsSendsRealValues()
+        {
+            // The empty-value guard must not block genuine LS/LDX-Sync-pushed values.
+            var options = MakeOptions();
+            options.CliBaseDownloadURL = SnykCliDownloader.DefaultBaseDownloadUrl;
+            options.CliReleaseChannel = SnykCliDownloader.DefaultReleaseChannel;
+            var settings = new Dictionary<string, ConfigSetting>
+            {
+                [PflagKeys.BinaryBaseUrl] = ConfigSetting.Of("https://downloads.snyk.io/fips"),
+                [PflagKeys.CliReleaseChannel] = ConfigSetting.Of("rc"),
+            };
+
+            GlobalSettingsApplier.Apply(settings, options);
+
+            Assert.Equal("https://downloads.snyk.io/fips", options.CliBaseDownloadURL);
+            Assert.Equal("rc", options.CliReleaseChannel);
+        }
+
+        [Fact]
+        public void Apply_ShouldNotPinTheDefault_WhenTheLsEchoesBackTheValueWeResolvedFromABlankField()
+        {
+            // The clobbering case. LsSettingsV25 sends these resolved, so a user who left the field
+            // blank has the literal default echoed straight back at them. Writing it would turn "blank,
+            // use the default" into a pinned override and replace the settings-page placeholder with a
+            // value they never typed — and it would survive every later change of default.
+            var options = MakeOptions();
+            options.CliBaseDownloadURL = string.Empty;
+            options.CliReleaseChannel = string.Empty;
+            var settings = new Dictionary<string, ConfigSetting>
+            {
+                [PflagKeys.BinaryBaseUrl] = ConfigSetting.Of(SnykCliDownloader.DefaultBaseDownloadUrl),
+                [PflagKeys.CliReleaseChannel] = ConfigSetting.Of(SnykCliDownloader.DefaultReleaseChannel),
+            };
+
+            GlobalSettingsApplier.Apply(settings, options);
+
+            Assert.Equal(string.Empty, options.CliBaseDownloadURL);
+            Assert.Equal(string.Empty, options.CliReleaseChannel);
+        }
+
+        [Fact]
+        public void Apply_ShouldIgnoreTheEchoOfOurOwnValue_AndLeaveTheStoredFormAlone()
+        {
+            // Equality is against the RESOLVED form of what we hold, so a padded stored value matches
+            // its own trimmed echo and is left untouched. The padding is deliberately not normalised
+            // here: every consumer goes through ResolveBaseDownloadUrl, which trims at the point of
+            // use, and repairing persisted values on the inbound path hides a malformed stored value
+            // instead of surfacing it.
+            var options = MakeOptions();
+            options.CliBaseDownloadURL = "  https://mirror.corp  ";
+            var settings = new Dictionary<string, ConfigSetting>
+            {
+                [PflagKeys.BinaryBaseUrl] = ConfigSetting.Of("https://mirror.corp")
+            };
+
+            GlobalSettingsApplier.Apply(settings, options);
+
+            Assert.Equal("  https://mirror.corp  ", options.CliBaseDownloadURL);
+        }
+
+        [Fact]
+        public void Apply_ShouldApplyAnEchoThatDiffersFromOurResolvedValue()
+        {
+            // A genuine push (org policy pointing at a different mirror) is not our echo, so it applies.
+            var options = MakeOptions();
+            options.CliBaseDownloadURL = string.Empty;
+            var settings = new Dictionary<string, ConfigSetting>
+            {
+                [PflagKeys.BinaryBaseUrl] = ConfigSetting.Of("https://mirror.corp")
+            };
+
+            GlobalSettingsApplier.Apply(settings, options);
+
+            Assert.Equal("https://mirror.corp", options.CliBaseDownloadURL);
+        }
+
+        [Theory]
+        [InlineData("https://downloads.snyk.io/")]
+        [InlineData("https://downloads.snyk.io///")]
+        [InlineData(" https://downloads.snyk.io ")]
+        public void Apply_ShouldIgnoreTheEchoOfOurOwnValue_WhenTheLanguageServerAltersItsForm(string inbound)
+        {
+            // Both sides are resolved before comparing. Comparing the raw inbound value against our
+            // resolved one let a trailing slash read as a genuine push, so an echo of the default was
+            // written back as a pinned override — on every sync cycle, and it is the settings page the
+            // LS serves that resets this field to the slash-suffixed form.
+            var options = MakeOptions();
+            options.CliBaseDownloadURL = SnykCliDownloader.DefaultBaseDownloadUrl;
+            var settings = new Dictionary<string, ConfigSetting>
+            {
+                [PflagKeys.BinaryBaseUrl] = ConfigSetting.Of(inbound)
+            };
+
+            GlobalSettingsApplier.Apply(settings, options);
+
+            Assert.Equal(SnykCliDownloader.DefaultBaseDownloadUrl, options.CliBaseDownloadURL);
+        }
+
+        [Fact]
+        public void Apply_ShouldStoreTheResolvedChannel_WhenAGenuinePushIsPadded()
+        {
+            // Stored resolved, not verbatim: HtmlResourceLoader tests the channel with exact string
+            // equality against "stable"/"rc"/"preview", so a stray space would render a well-known
+            // channel as a custom one in the settings UI.
+            var options = MakeOptions();
+            options.CliReleaseChannel = SnykCliDownloader.DefaultReleaseChannel;
+            var settings = new Dictionary<string, ConfigSetting>
+            {
+                [PflagKeys.CliReleaseChannel] = ConfigSetting.Of("preview ")
+            };
+
+            GlobalSettingsApplier.Apply(settings, options);
+
+            Assert.Equal("preview", options.CliReleaseChannel);
+        }
+
+        [Fact]
+        public void Apply_ShouldNotOverwriteACustomMirror_WhenTheInboundValueIsBlank()
+        {
+            // The blank test is on the raw inbound value. Resolving first would turn "no opinion" into
+            // a push of the default and silently drop the user's mirror.
+            var options = MakeOptions();
+            options.CliBaseDownloadURL = "https://mirror.corp";
+            var settings = new Dictionary<string, ConfigSetting>
+            {
+                [PflagKeys.BinaryBaseUrl] = ConfigSetting.Of("   ")
+            };
+
+            GlobalSettingsApplier.Apply(settings, options);
+
+            Assert.Equal("https://mirror.corp", options.CliBaseDownloadURL);
+        }
+
+        // cli_path is IDE-owned: the IDE downloads the binary and tells the LS where it is, never the
+        // other way round. Nothing can legitimately push one to us — snyk-ls keeps cli_path out of its
+        // LDX-Sync key map and out of GlobalResettableSettings — so an inbound value is only ever our
+        // own echoed back, or the LS's registered default. Adopting the latter repoints us at an empty
+        // location and costs the user a second full CLI download.
+
+        [Fact]
+        public void Apply_ShouldIgnoreInboundCliPath_WhenItIsTheLanguageServerDefault()
+        {
+            // The regression: the LS's default is $XDG_DATA_HOME/snyk-ls/<exe>, which on Windows is
+            // under %LOCALAPPDATA% but NOT our directory — non-empty, so an empty-guard misses it, and
+            // it looks exactly like a user-chosen custom path.
+            var options = MakeOptions();
+            options.CliCustomPath = string.Empty;
+            var lsDefault = Path.Combine(
+                Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
+                "snyk-ls",
+                "snyk-win.exe");
+            var settings = new Dictionary<string, ConfigSetting>
+            {
+                [PflagKeys.CliPath] = ConfigSetting.Of(lsDefault)
+            };
+
+            GlobalSettingsApplier.Apply(settings, options);
+
+            Assert.Equal(string.Empty, options.CliCustomPath);
+        }
+
+        [Theory]
+        // Whatever CliCustomPath held, and whatever arrives, the value is left alone: empty must not
+        // be taken as "cleared", and a non-empty one must not be taken as a user override.
+        [InlineData("", @"C:\somewhere\else\snyk.exe")]
+        [InlineData(@"C:\custom\snyk.exe", "")]
+        [InlineData(@"C:\custom\snyk.exe", @"C:\somewhere\else\snyk.exe")]
+        [InlineData(@"C:\custom\snyk.exe", null)]
+        public void Apply_ShouldNeverChangeCliCustomPath(string priorPath, string inboundPath)
+        {
+            var options = MakeOptions();
+            options.CliCustomPath = priorPath;
+            var settings = new Dictionary<string, ConfigSetting>
+            {
+                [PflagKeys.CliPath] = ConfigSetting.Of(inboundPath)
+            };
+
+            GlobalSettingsApplier.Apply(settings, options);
+
+            Assert.Equal(priorPath, options.CliCustomPath);
+        }
+
+        [Fact]
+        public void Apply_ShouldStillApplyOtherKeys_WhenCliPathIsPresent()
+        {
+            // Ignoring cli_path must not short-circuit the rest of the payload.
+            var options = MakeOptions();
+            options.CliCustomPath = string.Empty;
+            var settings = new Dictionary<string, ConfigSetting>
+            {
+                [PflagKeys.CliPath] = ConfigSetting.Of(@"C:\somewhere\else\snyk.exe"),
+                [PflagKeys.Organization] = ConfigSetting.Of("acme-org")
+            };
+
+            GlobalSettingsApplier.Apply(settings, options);
+
+            Assert.Equal(string.Empty, options.CliCustomPath);
+            Assert.Equal("acme-org", options.Organization);
         }
     }
 }

@@ -120,7 +120,18 @@ namespace Snyk.VisualStudio.Extension.UI.Notifications
             => this.statusBar.ShowFinishedSearchMessage("Snyk scan cancelled");
 
         private void OnDownloadFinished(object sender, SnykCliDownloadEventArgs eventArgs)
-            => this.statusBar.ShowDownloadFinishedMessage("Snyk CLI downloaded successfully");
+        {
+            // Raised on the nothing-to-download path too, so the message has to distinguish the two —
+            // but both must still be reported. Returning early here left the "Downloading latest Snyk
+            // CLI release..." text and its spinning icon up for the rest of the session whenever
+            // DownloadStarted had already fired and the checksum check then found the binary current,
+            // which is the common case on every startup after the first. ShowDownloadFinishedMessage is
+            // what clears the animation, and calling it where nothing was animating is a no-op.
+            this.statusBar.ShowDownloadFinishedMessage(
+                eventArgs.BinaryWasDownloaded
+                    ? "Snyk CLI downloaded successfully"
+                    : "Snyk CLI is up to date");
+        }
 
         private void OnDownloadStarted(object sender, SnykCliDownloadEventArgs eventArgs)
             => this.statusBar.ShowDownloadProgressMessage("Downloading latest Snyk CLI release...");

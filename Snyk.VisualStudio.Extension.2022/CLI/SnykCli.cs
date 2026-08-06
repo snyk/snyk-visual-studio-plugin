@@ -45,29 +45,23 @@ namespace Snyk.VisualStudio.Extension.CLI
         }
 
         /// <inheritdoc />
-        public bool IsCliFileFound()
-        {
-            var customPath = this.Options.CliCustomPath;
-            var path = string.IsNullOrEmpty(customPath) ? GetSnykCliDefaultPath() : customPath;
-            return File.Exists(path);
-        }
+        public bool IsCliFileFound() => File.Exists(GetCliFilePath(this.Options.CliCustomPath));
 
-        public string GetCliPath()
-        {
-            var snykCliCustomPath = this.options?.CliCustomPath;
-            var cliPath = string.IsNullOrEmpty(snykCliCustomPath) ? GetSnykCliDefaultPath() : snykCliCustomPath;
-            return cliPath;
-        }
+        public string GetCliPath() => GetCliFilePath(this.options?.CliCustomPath);
 
         /// <summary>
         /// Gets the valid CLI path. When a custom CLI path is specified, it returns the custom path.
-        /// When the Custom CLI path is null or empty, it returns the default CLI path.
+        /// When the custom CLI path is blank, it returns the default CLI path.
         /// </summary>
         /// <param name="customCliPath">The custom CLI path from the settings.</param>
-        /// <returns>If <paramref name="customCliPath"/> is null or empty, the default path would be returned.</returns>
-        public static string GetCliFilePath(string customCliPath) => string.IsNullOrEmpty(customCliPath)
+        /// <returns>If <paramref name="customCliPath"/> is blank, the default path would be returned.</returns>
+        // Blank, not just empty: the settings page stores whatever was typed, and a whitespace-only
+        // value would otherwise count as a real custom path — File.Exists("   ") is always false, so
+        // the CLI reads as missing and we install into an unusable location. Matches
+        // ResolveBaseDownloadUrl and ResolveReleaseChannel, which guard the same way.
+        public static string GetCliFilePath(string customCliPath) => string.IsNullOrWhiteSpace(customCliPath)
             ? SnykCli.GetSnykCliDefaultPath()
-            : customCliPath;
+            : customCliPath.Trim();
 
         public static bool IsCliFileFound(string cliCustomPath)
         {

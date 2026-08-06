@@ -6,6 +6,7 @@ using Moq;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using Snyk.VisualStudio.Extension.Authentication;
+using Snyk.VisualStudio.Extension.CLI;
 using Snyk.VisualStudio.Extension.Download;
 using Snyk.VisualStudio.Extension.Language;
 using Snyk.VisualStudio.Extension.Service;
@@ -253,6 +254,35 @@ namespace Snyk.VisualStudio.Extension.Tests.Language
             Assert.Equal(false, map[PflagKeys.SeverityFilterLow].Value);
         }
 
+        // Cleared settings go out resolved, so the value the tracker compares against ConfigDefaults
+        // matches what was sent.
+        [Theory]
+        [InlineData("")]
+        [InlineData("   ")]
+        public void BuildSettingsMap_ClearedCliUrlAndChannel_SendResolvedDefaults(string cleared)
+        {
+            SetupDefaults();
+            optionsMock.SetupGet(o => o.CliBaseDownloadURL).Returns(cleared);
+            optionsMock.SetupGet(o => o.CliReleaseChannel).Returns(cleared);
+
+            var map = cut.BuildSettingsMap(optionsMock.Object);
+
+            Assert.Equal(SnykCliDownloader.DefaultBaseDownloadUrl, map[PflagKeys.BinaryBaseUrl].Value);
+            Assert.Equal(SnykCliDownloader.DefaultReleaseChannel, map[PflagKeys.CliReleaseChannel].Value);
+        }
+
+        // A cleared custom path sends the default CLI location, not an empty path.
+        [Fact]
+        public void BuildSettingsMap_ClearedCliPath_SendsDefaultCliLocation()
+        {
+            SetupDefaults();
+            optionsMock.SetupGet(o => o.CliCustomPath).Returns(string.Empty);
+
+            var map = cut.BuildSettingsMap(optionsMock.Object);
+
+            Assert.Equal(SnykCli.GetSnykCliDefaultPath(), map[PflagKeys.CliPath].Value);
+        }
+
         // ACC-001: A key the user has NOT overridden is sent with changed:false.
         [Fact]
         public void BuildSettingsMap_UntouchedKey_NotMarkedChanged()
@@ -307,6 +337,33 @@ namespace Snyk.VisualStudio.Extension.Tests.Language
             Assert.True(map[PflagKeys.TrustedFolders].Changed,
                 "trusted_folders must always be sent with changed:true even when the tracker has no marks, " +
                 "because PflagKeys.IsAlwaysChanged must return true for it");
+        }
+
+        // cli_path must carry changed:true even for a user who never set a custom path: the LS discards
+        // unchanged entries and resolves its registered default of $XDG_DATA_HOME/snyk-ls instead, so
+        // its own CLI invocations would run a different binary from the one the IDE manages.
+        //
+        // Real seeded tracker with no marks, so this fails if cli_path leaves _alwaysChanged.
+        [Fact]
+        public void BuildSettingsMap_CliPath_AlwaysMarkedChanged()
+        {
+            SetupDefaults();
+            optionsMock.SetupGet(o => o.CliCustomPath).Returns(string.Empty);
+            var realTracker = new UserOverrideTracker();
+            realTracker.SeedFrom(BuildDefaultOptionsForSeed());
+            optionsManagerMock.Setup(m => m.OverrideTracker).Returns(realTracker);
+
+            var map = cut.BuildSettingsMap(optionsMock.Object);
+
+            Assert.Equal(SnykCli.GetSnykCliDefaultPath(), map[PflagKeys.CliPath].Value);
+            Assert.True(map[PflagKeys.CliPath].Changed,
+                "cli_path must be sent with changed:true so the LS runs the CLI the IDE installed " +
+                "instead of resolving its own default location");
+
+            // The handshake is the path that matters: the LS resolves its CLI location during
+            // initialize, before the CLI initializer runs.
+            Assert.True(cut.GetInitializationOptions().Settings[PflagKeys.CliPath].Changed,
+                "the changed flag must survive into the initialize handshake, not just BuildSettingsMap");
         }
 
         // automatic_authentication=false stops the LS auto-authenticating on startup — the IDE owns

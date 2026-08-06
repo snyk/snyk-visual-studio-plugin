@@ -273,6 +273,12 @@ namespace Snyk.VisualStudio.Extension.Settings
 
                 BinariesAutoUpdate = snykSettings.BinariesAutoUpdateEnabled,
                 CliCustomPath = snykSettings.CustomCliPath,
+                // Loaded raw, empty included. Resolving here would make "unset" indistinguishable from
+                // "the user typed the default": the settings field would render the literal instead of
+                // its placeholder, and the literal would be written back on the next Save. Every
+                // consumer that needs a usable value already resolves at the point of use — the
+                // downloader's URL builders, LsSettingsV25, and UserOverrideTracker (which resolves
+                // before comparing against ConfigDefaults, so an empty value records no override).
                 CliBaseDownloadURL = snykSettings.CliBaseDownloadURL,
                 CliReleaseChannel = snykSettings.CliReleaseChannel,
                 CurrentCliVersion = snykSettings.CurrentCliVersion,
@@ -448,6 +454,8 @@ namespace Snyk.VisualStudio.Extension.Settings
 
             snykSettings.BinariesAutoUpdateEnabled = options.BinariesAutoUpdate;
             snykSettings.CustomCliPath = options.CliCustomPath;
+            // Saves are system-driven (a CLI version bump fires one), so never rewrite what the user
+            // configured.
             snykSettings.CliBaseDownloadURL = options.CliBaseDownloadURL;
             snykSettings.CliReleaseChannel = options.CliReleaseChannel;
             snykSettings.CurrentCliVersion = options.CurrentCliVersion;

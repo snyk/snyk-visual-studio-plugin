@@ -4,12 +4,13 @@ using System.Linq;
 using Newtonsoft.Json.Linq;
 using Serilog;
 using Snyk.VisualStudio.Extension.Authentication;
+using Snyk.VisualStudio.Extension.Download;
 using Snyk.VisualStudio.Extension.Settings;
 
 namespace Snyk.VisualStudio.Extension.Language
 {
     // Applies a pflag-keyed settings map (from $/snyk.configuration) to ISnykOptions.
-    // PATCH semantics: absent or null-value entries are skipped (existing values preserved).
+    // PATCH semantics: absent, null, and (for the two keys noted below) empty entries are skipped.
     internal static class GlobalSettingsApplier
     {
         private static readonly ILogger Logger = LogManager.ForContext(typeof(GlobalSettingsApplier));
@@ -53,9 +54,51 @@ namespace Snyk.VisualStudio.Extension.Language
                     case PflagKeys.ProxyInsecure:        options.IgnoreUnknownCA = val.Value<bool>(); break;
 
                     case PflagKeys.AutomaticDownload:    options.BinariesAutoUpdate = val.Value<bool>(); break;
-                    case PflagKeys.CliPath:              options.CliCustomPath      = val.Value<string>(); break;
-                    case PflagKeys.BinaryBaseUrl:        options.CliBaseDownloadURL = val.Value<string>(); break;
-                    case PflagKeys.CliReleaseChannel:    options.CliReleaseChannel  = val.Value<string>(); break;
+
+                    // cli_path is IDE-owned and deliberately NOT applied. The IDE downloads the binary
+                    // and tells the LS where it is, so an inbound value is only ever our own echo or the
+                    // LS's registered default of $XDG_DATA_HOME/snyk-ls/<exe>; adopting that points the
+                    // extension at an empty location and costs a second full download. An empty-guard
+                    // would miss it, because that default is non-empty. A user-chosen path arrives
+                    // through the settings page instead.
+                    case PflagKeys.CliPath:              break;
+
+                    // The language server registers these two with empty defaults and echoes every
+                    // machine-scope setting, so an empty value means "no opinion", not "cleared".
+                    //
+                    // Both sides go through the resolver before comparing, and the resolved form is what
+                    // gets stored. LsSettingsV25 sends these resolved, so a blank field comes back as the
+                    // literal default; writing that would turn "blank, use the default" into a pinned
+                    // override. Comparing a raw inbound value would also let a trailing slash read as a
+                    // real push, and storing resolved keeps the channel in the exact-match shape
+                    // HtmlResourceLoader compares against.
+                    //
+                    // The blank test stays on the RAW value: the resolvers return the default for a blank
+                    // input, so resolving first would turn "no opinion" into a push of the default.
+                    case PflagKeys.BinaryBaseUrl:
+                        var baseUrl = val.Value<string>();
+                        if (!string.IsNullOrWhiteSpace(baseUrl))
+                        {
+                            var resolvedBaseUrl = SnykCliDownloader.ResolveBaseDownloadUrl(baseUrl);
+                            if (resolvedBaseUrl != SnykCliDownloader.ResolveBaseDownloadUrl(options.CliBaseDownloadURL))
+                            {
+                                options.CliBaseDownloadURL = resolvedBaseUrl;
+                            }
+                        }
+
+                        break;
+                    case PflagKeys.CliReleaseChannel:
+                        var releaseChannel = val.Value<string>();
+                        if (!string.IsNullOrWhiteSpace(releaseChannel))
+                        {
+                            var resolvedChannel = SnykCliDownloader.ResolveReleaseChannel(releaseChannel);
+                            if (resolvedChannel != SnykCliDownloader.ResolveReleaseChannel(options.CliReleaseChannel))
+                            {
+                                options.CliReleaseChannel = resolvedChannel;
+                            }
+                        }
+
+                        break;
 
                     case PflagKeys.AdditionalEnvironment:  options.AdditionalEnv        = val.Value<string>(); break;
                     case PflagKeys.AdditionalParameters:
