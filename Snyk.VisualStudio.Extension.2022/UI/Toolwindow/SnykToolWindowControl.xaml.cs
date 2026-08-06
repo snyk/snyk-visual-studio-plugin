@@ -5,6 +5,7 @@ using System.IO;
 using System.Linq;
 using System.Net;
 using System.Threading;
+using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Media;
@@ -12,6 +13,7 @@ using Microsoft.VisualStudio;
 using Microsoft.VisualStudio.PlatformUI;
 using Microsoft.VisualStudio.Shell;
 using Microsoft.VisualStudio.Shell.Interop;
+using Microsoft.VisualStudio.Threading;
 using Serilog;
 using Snyk.VisualStudio.Extension.CLI;
 using Snyk.VisualStudio.Extension.Commands;
@@ -471,15 +473,21 @@ namespace Snyk.VisualStudio.Extension.UI.Toolwindow
         /// <param name="eventArgs">Event args.</param>
         public void OnDownloadCancelled(object sender, SnykCliDownloadEventArgs eventArgs)
         {
-            // Probed before the switch, and off the UI thread: File.Exists against an unreachable UNC
-            // share blocks for tens of seconds, and the protocol probe launches the CLI.
-            var fallbackUsable = this.IsExistingCliUsableForFallback();
-
-            // Raised from the thread pool; both branches write WPF state. RunAsync, not Run —
-            // see OnDownloadStarted. Worse here than elsewhere: fallbackUsable above launches the
-            // CLI with a 20s timeout, so blocking afterwards held a pool thread far longer.
+            // RunAsync, not Run — see OnDownloadStarted. Both branches write WPF state.
+            //
+            // TaskScheduler.Default before the probe, because this handler is NOT always raised from
+            // the thread pool: SnykTasksService.DownloadAsync fires DownloadCancelled before its own
+            // hop when BinariesAutoUpdate is off, and Download() is wired to this control's Loaded
+            // event, so RunAsync starts out on the UI thread. IsExistingCliUsableForFallback launches
+            // the CLI and waits up to ProtocolProbeTimeoutMs for it, which froze VS for the whole
+            // timeout for anyone with auto-update disabled and a CLI already on disk. File.Exists
+            // against an unreachable UNC share is the same hazard for tens of seconds.
             ThreadHelper.JoinableTaskFactory.RunAsync(async () =>
             {
+                await TaskScheduler.Default;
+
+                var fallbackUsable = this.IsExistingCliUsableForFallback();
+
                 await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
 
                 if (fallbackUsable)
@@ -498,13 +506,16 @@ namespace Snyk.VisualStudio.Extension.UI.Toolwindow
 
         private void OnDownloadFailed(object sender, Exception e)
         {
-            var fallbackUsable = this.IsExistingCliUsableForFallback();
-
-            // Raised from the thread pool; both branches write WPF state. RunAsync, not Run —
-            // see OnDownloadStarted. Worse here than elsewhere: fallbackUsable above launches the
-            // CLI with a 20s timeout, so blocking afterwards held a pool thread far longer.
+            // The hop and the probe are placed as in OnDownloadCancelled. DownloadFailed is only ever
+            // raised after DownloadAsync's own hop, so the UI thread cannot be the caller here today;
+            // the hop is kept so the two handlers cannot drift, and so the probe stays off whichever
+            // thread does raise it.
             ThreadHelper.JoinableTaskFactory.RunAsync(async () =>
             {
+                await TaskScheduler.Default;
+
+                var fallbackUsable = this.IsExistingCliUsableForFallback();
+
                 await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
 
                 if (fallbackUsable)

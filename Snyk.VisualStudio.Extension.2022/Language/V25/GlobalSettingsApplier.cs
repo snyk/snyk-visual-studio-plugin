@@ -75,21 +75,39 @@ namespace Snyk.VisualStudio.Extension.Language
                     // it would silently convert "blank, use the default" into a pinned override and
                     // replace the settings-page placeholder with a value they never typed. A value
                     // that differs from our own resolved one is a real push and still applies.
+                    //
+                    // BOTH sides go through the resolver, and the resolved form is what gets stored.
+                    // Comparing a raw inbound value against our resolved one let a trailing slash
+                    // through — the very form ResolveBaseDownloadUrl exists to normalise, and the form
+                    // the LS-served settings page produces — so the echo read as a real push and pinned
+                    // the value on every sync. Storing resolved also keeps the channel in the shape
+                    // HtmlResourceLoader compares against, which uses exact string equality and would
+                    // show a stray-space "stable " as a custom channel.
+                    //
+                    // The blank test stays on the RAW value: the resolvers return the default for a
+                    // blank input, so resolving first would turn "no opinion" into a push of the default
+                    // and overwrite whatever the user had set.
                     case PflagKeys.BinaryBaseUrl:
                         var baseUrl = val.Value<string>();
-                        if (!string.IsNullOrWhiteSpace(baseUrl)
-                            && baseUrl != SnykCliDownloader.ResolveBaseDownloadUrl(options.CliBaseDownloadURL))
+                        if (!string.IsNullOrWhiteSpace(baseUrl))
                         {
-                            options.CliBaseDownloadURL = baseUrl;
+                            var resolvedBaseUrl = SnykCliDownloader.ResolveBaseDownloadUrl(baseUrl);
+                            if (resolvedBaseUrl != SnykCliDownloader.ResolveBaseDownloadUrl(options.CliBaseDownloadURL))
+                            {
+                                options.CliBaseDownloadURL = resolvedBaseUrl;
+                            }
                         }
 
                         break;
                     case PflagKeys.CliReleaseChannel:
                         var releaseChannel = val.Value<string>();
-                        if (!string.IsNullOrWhiteSpace(releaseChannel)
-                            && releaseChannel != SnykCliDownloader.ResolveReleaseChannel(options.CliReleaseChannel))
+                        if (!string.IsNullOrWhiteSpace(releaseChannel))
                         {
-                            options.CliReleaseChannel = releaseChannel;
+                            var resolvedChannel = SnykCliDownloader.ResolveReleaseChannel(releaseChannel);
+                            if (resolvedChannel != SnykCliDownloader.ResolveReleaseChannel(options.CliReleaseChannel))
+                            {
+                                options.CliReleaseChannel = resolvedChannel;
+                            }
                         }
 
                         break;

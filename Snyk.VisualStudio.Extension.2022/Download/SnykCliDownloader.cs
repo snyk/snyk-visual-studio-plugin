@@ -69,15 +69,15 @@ namespace Snyk.VisualStudio.Extension.Download
         // Held across the fetch deliberately: the second caller waits and then reads the memo, which is
         // the point.
         //
-        // The wait is NOT fully bounded, and callers are expected — but not required — to be off the UI
-        // thread. SnykWebClient's timeout bounds the two requests; nothing bounds the checksum of a
-        // ~175MB binary, which is the longer leg and worse on a network CliCustomPath. SnykVSPackage
-        // hops to the pool before asking (see its comment on ShouldDownloadCli), but
-        // SnykLanguageClient.OnLoadedAsync does not, so a future VS version calling it on the main
-        // thread would hold this lock there. Worth an explicit hop at that call site.
+        // The wait is NOT fully bounded, so callers must be off the UI thread. SnykWebClient's timeout
+        // bounds the two requests; nothing bounds the checksum of a ~175MB binary, which is the longer
+        // leg and worse on a network CliCustomPath. Both callers of ShouldDownloadCli hop to the pool
+        // first — SnykVSPackage.InitializeLanguageClient and SnykLanguageClient.OnLoadedAsync — so a
+        // new call site needs the same hop rather than relying on the thread VS happens to supply.
         private readonly object memoLock = new object();
 
         private string expectedSha;
+        private string expectedShaUrl;
         private LatestReleaseInfo cachedLatestReleaseInfo;
         private string upToDateMemoKey;
         private bool upToDateMemoVerdict;
@@ -235,13 +235,27 @@ namespace Snyk.VisualStudio.Extension.Download
         /// the same reason as the release info: it is now consulted by the download decision as well as
         /// by verification, and a second fetch could disagree with the first if a release lands between
         /// them. Also sets expectedSha, which VerifyCliFile compares against.
+        ///
+        /// Keyed on the URL, not just on "have we fetched yet": every production caller passes the URL
+        /// from the single cached release info, but the public DownloadAsync overload takes an arbitrary
+        /// one, and returning the first URL's checksum for a second URL would fail verification against
+        /// a binary that was in fact intact.
         /// </summary>
         // internal for testability (the tests assert the fetch happens once).
         internal string GetLatestCliShaOnce(string cliDownloadUrl)
         {
             lock (this.memoLock)
             {
-                return this.expectedSha ?? (this.expectedSha = this.GetLatestCliSha(cliDownloadUrl));
+                if (this.expectedSha != null
+                    && string.Equals(this.expectedShaUrl, cliDownloadUrl, StringComparison.Ordinal))
+                {
+                    return this.expectedSha;
+                }
+
+                this.expectedSha = this.GetLatestCliSha(cliDownloadUrl);
+                this.expectedShaUrl = cliDownloadUrl;
+
+                return this.expectedSha;
             }
         }
 
@@ -668,11 +682,6 @@ namespace Snyk.VisualStudio.Extension.Download
         }
 
         /// <summary>
-        /// Initialize extectedSha property with latest value from server.
-        /// </summary>
-        public void SaveLatestCliSha(string cliDownloadUrl) => this.expectedSha = this.GetLatestCliSha(cliDownloadUrl);
-
-        /// <summary>
         /// Create the folder of the configured destination, which may not exist: a first install has
         /// no app-data directory yet, and a user-typed custom path may name a folder that is not there.
         /// </summary>
@@ -781,6 +790,12 @@ namespace Snyk.VisualStudio.Extension.Download
             {
                 this.ReportInstallFailure(e, cliFileDestinationPath, priorCliExisted);
 
+                // Set on the failure path as well as in FinishDownload: the caller's finally gates
+                // disposal of the cancellation token source and TaskFinished on this flag, so a failed
+                // install otherwise leaked the token and never refreshed the toolbar, leaving Scan and
+                // Clean disabled for the rest of the session even though the download had ended.
+                progressWorker.IsWorkFinished = true;
+
                 throw;
             }
 
@@ -822,8 +837,9 @@ namespace Snyk.VisualStudio.Extension.Download
         }
 
         /// <summary>
-        /// True when the binary already there is the one we would install. The language server downloads
-        /// the same CLI to the same path and runs it, so overwriting it risks a sharing violation.
+        /// True when the binary already there is the one we would install. The language server runs the
+        /// binary at this path while the extension may be re-downloading it, so overwriting a copy that
+        /// is already current buys nothing and risks a sharing violation.
         /// </summary>
         // internal for testability.
         internal static bool IsCliUpToDate(string cliFileDestinationPath, string expectedSha) =>
