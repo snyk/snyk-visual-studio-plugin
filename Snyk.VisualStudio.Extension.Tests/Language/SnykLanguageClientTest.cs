@@ -220,6 +220,60 @@ namespace Snyk.VisualStudio.Extension.Tests.Language
             Assert.Contains("was not found", shownMessage);
         }
 
+        // IDE-2404 follow-up (review finding): CliExistsCheck is offloaded but was unbounded, unlike
+        // the protocol probe next to it - a slow/unreachable custom path (UNC share) could block
+        // File.Exists far longer than either timeout while `semaphore` is held, stalling every other
+        // caller of StartServerAsync/RestartServerAsync. CliExistsCheckTimeoutMs is shrunk here instead
+        // of waiting out a real 20s timeout to exercise the branch.
+        [Fact]
+        public async Task StartServerAsync_ShowsADistinctMessage_WhenCliExistsCheckTimesOut()
+        {
+            // Arrange
+            cut.CliExistsCheckTimeoutMs = 20;
+            cut.VsHasLoadedClient = true;
+
+            using (var neverSignaled = new ManualResetEventSlim(false))
+            {
+                cut.CliExistsCheck = _ =>
+                {
+                    // Blocks well past CliExistsCheckTimeoutMs; released at test end so the background
+                    // Task.Run doesn't leak past this test.
+                    neverSignaled.Wait(TimeSpan.FromSeconds(5));
+
+                    return true;
+                };
+
+                var protocolCheckInvoked = false;
+                cut.CliProtocolCompatibilityCheck = _ =>
+                {
+                    protocolCheckInvoked = true;
+
+                    return CliProtocolCheckResult.Supported;
+                };
+
+                string shownMessage = null;
+                cut.ShowInfoBar = message => shownMessage = message;
+
+                var eventInvoked = false;
+                cut.StartAsync += (sender, args) =>
+                {
+                    eventInvoked = true;
+
+                    return Task.CompletedTask;
+                };
+
+                // Act
+                await cut.StartServerAsync(true);
+                neverSignaled.Set();
+
+                // Assert
+                Assert.False(eventInvoked);
+                Assert.False(protocolCheckInvoked);
+                Assert.NotNull(shownMessage);
+                Assert.Contains("not confirm the CLI exists", shownMessage, StringComparison.OrdinalIgnoreCase);
+            }
+        }
+
         [Fact]
         public async Task DidChangeConfigurationAsync_ShouldReturnNull_WhenNotReady()
         {
