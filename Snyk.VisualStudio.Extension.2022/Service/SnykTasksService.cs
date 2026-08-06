@@ -328,8 +328,6 @@ namespace Snyk.VisualStudio.Extension.Service
         {
             Logger.Information("Enter Download method");
 
-            this.EndCliDownloadEpisode();
-
             try
             {
                 if (this.IsTaskRunning())
@@ -338,6 +336,13 @@ namespace Snyk.VisualStudio.Extension.Service
 
                     return;
                 }
+
+                // AFTER the re-entrancy guard, not before it. WPF raises Loaded more than once, which
+                // is why that guard exists — and clearing the episode ahead of it meant the second,
+                // short-circuiting call discarded the memo belonging to the download still in flight.
+                // The in-flight episode then re-fetched the release version and checksum, and hashed
+                // the binary again, on its next question.
+                this.EndCliDownloadEpisode();
 
                 this.downloadCliTokenSource = new CancellationTokenSource();
 
@@ -397,14 +402,19 @@ namespace Snyk.VisualStudio.Extension.Service
 
         public async Task DownloadAsync(CliDownloadFinishedCallback downloadFinishedCallback = null)
         {
-            this.EndCliDownloadEpisode();
-
             if (this.IsTaskRunning())
             {
                 Logger.Information("There is already a task in progress");
 
                 return;
             }
+
+            // AFTER the re-entrancy guard, not before it. WPF raises Loaded more than once, which
+            // is why that guard exists — and clearing the episode ahead of it meant the second,
+            // short-circuiting call discarded the memo belonging to the download still in flight.
+            // The in-flight episode then re-fetched the release version and checksum, and hashed
+            // the binary again, on its next question.
+            this.EndCliDownloadEpisode();
 
             this.downloadCliTokenSource = new CancellationTokenSource();
 
