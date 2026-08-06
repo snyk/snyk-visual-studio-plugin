@@ -43,6 +43,13 @@ namespace Snyk.VisualStudio.Extension.Download
         public const string DefaultBaseDownloadUrl = "https://downloads.snyk.io";
         public const string DefaultReleaseChannel = "stable";
 
+        // Stands in for any user-supplied download URL. See DescribeUrlForLog.
+        private const string CustomUrlNotLogged = "<custom URL, not logged>";
+
+        private const string LatestReleaseVersionUrlScheme = "{0}/cli/{1}/ls-protocol-version-" + LsConstants.ProtocolVersion;
+        private const string LatestReleaseDownloadUrlScheme = "{0}/cli/{1}/" + SnykCli.CliFileName;
+        private const string Sha256DownloadUrl = "{0}.sha256";
+
         // What a locally-built language server reports instead of a protocol number.
         private const string DevelopmentProtocolVersion = "development";
 
@@ -52,13 +59,6 @@ namespace Snyk.VisualStudio.Extension.Download
         // Snyk.VisualStudio.Extension.Tests, Integration.Tests) can mirror this instead of a literal
         // that would silently drift if this value is ever tuned.
         internal const int ProtocolProbeTimeoutMs = 20000;
-
-        // Stands in for any user-supplied download URL. See DescribeUrlForLog.
-        private const string CustomUrlNotLogged = "<custom URL, not logged>";
-
-        private const string LatestReleaseVersionUrlScheme = "{0}/cli/{1}/ls-protocol-version-" + LsConstants.ProtocolVersion;
-        private const string LatestReleaseDownloadUrlScheme = "{0}/cli/{1}/" + SnykCli.CliFileName;
-        private const string Sha256DownloadUrl = "{0}.sha256";
 
         private static readonly ILogger Logger = LogManager.ForContext<SnykCliDownloader>();
 
