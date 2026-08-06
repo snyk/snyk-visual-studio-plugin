@@ -96,6 +96,12 @@ namespace Snyk.VisualStudio.Extension.Download
         // new call site needs the same hop rather than relying on the thread VS happens to supply.
         private readonly object memoLock = new object();
 
+        // Separate from memoLock (PR review finding): the protocol probe it guards can itself run for
+        // up to ProtocolProbeTimeoutMs + ProtocolProbeFlushTimeoutMs (~22s), and memoLock is documented
+        // above as guarding the release-info/checksum memos' HTTP-bound work - those callers have no
+        // logical dependency on a concurrent protocol probe and shouldn't be blocked behind it.
+        private readonly object protocolCheckMemoLock = new object();
+
         private string expectedSha;
         private string expectedShaUrl;
         private LatestReleaseInfo cachedLatestReleaseInfo;
@@ -292,14 +298,20 @@ namespace Snyk.VisualStudio.Extension.Download
         // spurious timeout contradicting the first check's "the CLI is fine" verdict.
         internal virtual CliProtocolCheckResult CheckCliProtocol(string cliFilePath)
         {
-            var key = BuildProtocolCheckMemoKey(cliFilePath);
-
-            // Held across the probe (PR review finding), matching the sibling memos below: a second
-            // concurrent caller should wait and then read the memo, not also spawn the CLI. Releasing
-            // the lock between the read and the write (as an earlier version of this method did) let
-            // two concurrent callers both probe and the later writer win.
-            lock (this.memoLock)
+            // Own lock, not the shared memoLock (PR review finding): this probe can run for up to
+            // ProtocolProbeTimeoutMs + ProtocolProbeFlushTimeoutMs (~22s), and memoLock also guards the
+            // release-info/sha/up-to-date memos' short HTTP-bound work - a concurrent caller of those on
+            // the same downloader instance has no logical dependency on this probe and shouldn't be
+            // blocked behind it.
+            lock (this.protocolCheckMemoLock)
             {
+                // Stat inside the lock, not before it (PR review finding, matching IsCliUpToDateOnce's
+                // own pattern below): a key snapshotted outside could be taken for the pre-replacement
+                // file, block here while another caller's probe of the replacement completes and writes
+                // the memo under the new key, then wake and store this stale key against that verdict -
+                // a later caller on the unchanged new file would then miss the cache and re-probe.
+                var key = BuildProtocolCheckMemoKey(cliFilePath);
+
                 if (key != null && string.Equals(key, this.protocolCheckMemoKey, StringComparison.Ordinal))
                 {
                     return this.protocolCheckMemoVerdict;
@@ -359,7 +371,12 @@ namespace Snyk.VisualStudio.Extension.Download
                     info.Length.ToString(CultureInfo.InvariantCulture),
                     info.LastWriteTimeUtc.Ticks.ToString(CultureInfo.InvariantCulture));
             }
-            catch (Exception e) when (e is IOException || e is UnauthorizedAccessException || e is ArgumentException)
+            // NotSupportedException too (PR review finding): FileInfo's constructor throws it for a path
+            // with a non-drive-letter colon (a stray colon, or a hidden bidi character shifting where one
+            // appears - a real copy-paste artifact from a custom CliCustomPath). Without it here, that
+            // becomes an unhandled exception during the language server's startup gate - the exact
+            // failure mode this PR exists to eliminate.
+            catch (Exception e) when (e is IOException || e is UnauthorizedAccessException || e is ArgumentException || e is NotSupportedException)
             {
                 return null;
             }
@@ -384,6 +401,7 @@ namespace Snyk.VisualStudio.Extension.Download
                     FileName = cliFilePath,
                     Arguments = "language-server --protocolVersion",
                     RedirectStandardOutput = true,
+                    RedirectStandardError = true,
                     UseShellExecute = false,
                     CreateNoWindow = true,
                 };
@@ -424,6 +442,13 @@ namespace Snyk.VisualStudio.Extension.Download
                         }
                     };
 
+                    // Discarded, but still drained (PR review finding): a legacy CLI that writes its
+                    // rejection to stderr instead of stdout would otherwise fill the redirected-stderr
+                    // pipe with nobody reading it, deadlocking the child exactly like the undrained-stdout
+                    // case above - reproducing the slow-rejection this probe exists to avoid, even though
+                    // we never need the content.
+                    process.ErrorDataReceived += (_, e) => { };
+
                     if (!process.Start())
                     {
                         Logger.Warning("Could not start the CLI at {Path} to read its protocol version", cliFilePath);
@@ -432,6 +457,7 @@ namespace Snyk.VisualStudio.Extension.Download
                     }
 
                     process.BeginOutputReadLine();
+                    process.BeginErrorReadLine();
 
                     if (!process.WaitForExit(ProtocolProbeTimeoutMs))
                     {

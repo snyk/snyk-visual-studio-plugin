@@ -119,17 +119,12 @@ namespace Snyk.VisualStudio.Extension.Tests.Language
         // message misleads the user about the actual cause (e.g. an AV scanner still holding a
         // just-downloaded binary, not a genuinely incompatible CLI) and points them at the wrong fix.
         //
-        // Two plain [Fact]s rather than a [Theory]: CliProtocolCheckResult is internal (matching this
-        // file's own precedent for ActivationDecision in SnykVSPackageNotInitializedHandlerTests), and a
-        // [Theory] method must be public for xUnit to discover it - a public method can't have an
-        // internal type in its signature ("inconsistent accessibility").
-        [Fact]
-        public async Task StartServerAsync_ShowsADistinctMessage_WhenProtocolCheckTimesOut() =>
-            await AssertShowsADistinctMessage(CliProtocolCheckResult.TimedOut, "not confirm");
-
-        [Fact]
-        public async Task StartServerAsync_ShowsADistinctMessage_WhenProtocolCheckFails() =>
-            await AssertShowsADistinctMessage(CliProtocolCheckResult.CheckFailed, "could not check");
+        [Theory]
+        [InlineData(CliProtocolCheckResult.TimedOut, "not confirm")]
+        [InlineData(CliProtocolCheckResult.CheckFailed, "could not check")]
+        public async Task StartServerAsync_ShowsADistinctMessage_WhenProtocolCheckInconclusive(
+            CliProtocolCheckResult result, string expectedMessageFragment) =>
+            await AssertShowsADistinctMessage(result, expectedMessageFragment);
 
         private async Task AssertShowsADistinctMessage(CliProtocolCheckResult result, string expectedMessageFragment)
         {
