@@ -70,14 +70,8 @@ namespace Snyk.VisualStudio.Extension.Service
             {
                 lock (this.cliDownloaderLock)
                 {
-                    var fresh = this.cliDownloader == null;
-
-                    var downloader = this.cliDownloader ??
-                                     (this.cliDownloader = new SnykCliDownloader(this.serviceProvider.Options));
-
-                    Logger.Information("[init-race] CliDownloader: {Action}", fresh ? "CONSTRUCTED (memo empty -> will re-fetch)" : "reused (memo warm)");
-
-                    return downloader;
+                    return this.cliDownloader ??
+                           (this.cliDownloader = new SnykCliDownloader(this.serviceProvider.Options));
                 }
             }
         }
@@ -86,10 +80,7 @@ namespace Snyk.VisualStudio.Extension.Service
         {
             lock (this.cliDownloaderLock)
             {
-                var had = this.cliDownloader != null;
                 this.cliDownloader = null;
-
-                Logger.Information("[init-race] EndCliDownloadEpisode: cleared (there {Was} a live downloader)", had ? "WAS" : "was not");
             }
         }
 
@@ -339,22 +330,14 @@ namespace Snyk.VisualStudio.Extension.Service
 
             try
             {
-                var running = this.IsTaskRunning();
-
-                Logger.Information("[init-race] Download: IsTaskRunning={Running} (isCliDownloading={Downloading})", running, this.isCliDownloading);
-
-                if (running)
+                if (this.IsTaskRunning())
                 {
                     Logger.Information("There is already a task in progress");
 
                     return;
                 }
 
-                // AFTER the re-entrancy guard, not before it. WPF raises Loaded more than once, which
-                // is why that guard exists — and clearing the episode ahead of it meant the second,
-                // short-circuiting call discarded the memo belonging to the download still in flight.
-                // The in-flight episode then re-fetched the release version and checksum, and hashed
-                // the binary again, on its next question.
+                // EndCliDownloadEpisode must be called after the reentrancy guard
                 this.EndCliDownloadEpisode();
 
                 this.downloadCliTokenSource = new CancellationTokenSource();

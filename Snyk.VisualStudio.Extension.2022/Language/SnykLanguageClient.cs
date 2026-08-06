@@ -140,9 +140,6 @@ namespace Snyk.VisualStudio.Extension.Language
                 StartInfo = info
             };
 
-            // Kept deliberately: this method had no logging at all, and its silence made a start that
-            // produced no snyk-win process indistinguishable from VS never calling ActivateAsync. That
-            // ambiguity cost several rounds of diagnosis, so the path and the outcome are both recorded.
             Logger.Information(
                 "ActivateAsync: launching {FileName} {Arguments}",
                 info.FileName,
@@ -168,28 +165,18 @@ namespace Snyk.VisualStudio.Extension.Language
             }
         }
 
-        // Generous: only ever paid in full when package initialisation has actually faulted, since
-        // the TaskCompletionSource below is completed only on the success path. Observed init takes
+        // Generous: only ever used when package initialization has faulted. Observed init takes
         // roughly four seconds.
         //
         // internal and settable for testability: the completion source is static and is never completed
-        // under test, so a test that deliberately leaves the package uninitialised would otherwise wait
-        // the full timeout and read as a hung suite.
+        // under test, so a test that deliberately leaves the package uninitialised would time out.
         internal static TimeSpan PackageInitializationTimeout = TimeSpan.FromSeconds(30);
 
         /// <summary>
-        /// Blocks this load callback until the package has finished initialising.
-        ///
-        /// Sampling <c>SnykVSPackage.Instance.IsInitialized</c> here was a race, and losing it was
-        /// fatal. VS calls <see cref="OnLoadedAsync"/> in response to the activation request that
-        /// <c>InitializeLanguageClient</c> triggers — and that method is fire-and-forget, so the package
-        /// is still running its command initialisers and WebView2 check when this callback can arrive.
-        /// A <c>false</c> read makes <c>shouldStart</c> false, which spends the ONE in-contract chance
-        /// to start the server: a later raise of <c>StartAsync</c> is silently discarded by VS, so the
-        /// language server stays down for the whole session.
+        /// Blocks this load callback until the package has finished initializing.
         ///
         /// Bounded, because <c>initializationTaskCompletionSource</c> is only completed on the success
-        /// path — a faulted initialisation must not hang a VS load callback forever.
+        /// path — a faulted initialization must not hang a VS load callback forever.
         /// </summary>
         private static async Task<bool> WaitForPackageInitializationAsync()
         {
@@ -198,7 +185,8 @@ namespace Snyk.VisualStudio.Extension.Language
                 return true;
             }
 
-            Logger.Information("[init-race] WAIT ENTERED: package NOT initialised yet — this is the window that used to lose the race and kill the language server");
+            // Paired with the completion log below.
+            Logger.Information("Waiting for package initialisation before deciding whether to start the language server");
 
             var initialized = SnykVSPackage.PackageInitializedAwaiter;
             var finished = await Task.WhenAny(initialized, Task.Delay(PackageInitializationTimeout));
@@ -212,7 +200,7 @@ namespace Snyk.VisualStudio.Extension.Language
                 return false;
             }
 
-            Logger.Information("[init-race] WAIT COMPLETED: package finished initialising, so this load CAN start the server");
+            Logger.Information("Package initialisation complete; this language client load can start the language server");
 
             return SnykVSPackage.Instance?.IsInitialized ?? false;
         }
@@ -233,27 +221,12 @@ namespace Snyk.VisualStudio.Extension.Language
             // that window is now allowed to proceed rather than being silently discarded by VS.
             this.vsHasLoadedClient = true;
 
-            // [init-race] The two operands logged SEPARATELY and BEFORE the AND. The combined value
-            // hid which one failed, and `&&` short-circuits, so a false isPackageInitialized means
-            // ShouldDownloadCli is never even called — the absence of its log line was the only clue.
             // Wait for package initialisation rather than sampling it — see
-            // WaitForPackageInitializationAsync for why this must not be a bool read.
+            // WaitForPackageInitializationAsync for why this must not be a bool read. This is the only
+            // in-contract chance to start the server: a raise of StartAsync outside VS's own load flow
+            // is discarded.
             var isPackageInitialized = await WaitForPackageInitializationAsync();
-
-            Logger.Information(
-                "[init-race] OnLoadedAsync: VS called us. isPackageInitialized={IsPackageInitialized}. This is the ONLY in-contract chance to start the server.",
-                isPackageInitialized);
-
-            var downloadNeeded = isPackageInitialized && SnykVSPackage.ServiceProvider.TasksService.ShouldDownloadCli();
-            var shouldStart = isPackageInitialized && !downloadNeeded;
-
-            Logger.Information(
-                "[init-race] OnLoadedAsync: isPackageInitialized={IsPackageInitialized}, downloadNeeded={DownloadNeeded} => shouldStart={ShouldStart}{Verdict}",
-                isPackageInitialized,
-                downloadNeeded,
-                shouldStart,
-                shouldStart ? string.Empty : "  <<< START OPPORTUNITY WASTED — nothing will start the server after this");
-
+            var shouldStart = isPackageInitialized && !SnykVSPackage.ServiceProvider.TasksService.ShouldDownloadCli();
             Logger.Information("OnLoadedAsync Called and shouldStart is: {ShouldStart}", shouldStart);
 
             await StartServerAsync(shouldStart);
@@ -264,17 +237,8 @@ namespace Snyk.VisualStudio.Extension.Language
             await semaphore.WaitAsync();
             try
             {
-                // A start request that arrives before VS has loaded the client cannot be honoured
-                // directly. Two shapes, one outcome: if VS has not subscribed there is nothing to
-                // raise, and if it has subscribed but not yet called OnLoadedAsync it discards the
-                // raise (the invoke returns immediately, ActivateAsync is never called, no CLI process
-                // appears). Either way, ask for activation instead — firing this event is what opens
-                // the bundled init file, which is what makes VS load the client and call OnLoadedAsync,
-                // which starts the server for real.
-                //
-                // Both shapes must fire it. Returning without firing simply loses the start: nothing
-                // else triggers activation, so OnLoadedAsync never arrives and the server stays down
-                // for the session.
+                // Handle start request that arrive before VS has loaded the client. These ask for
+                // activation instead.
                 if (shouldStart && (StartAsync == null || !this.vsHasLoadedClient))
                 {
                     Logger.Information(
@@ -299,20 +263,10 @@ namespace Snyk.VisualStudio.Extension.Language
                     // guard above is what keeps this in contract — see its comment.
                     Logger.Information("Starting Language Server");
 
-                    Logger.Information("[init-race] StartServerAsync: raising StartAsync (vsHasLoadedClient={Loaded}) — VS should call ActivateAsync next", this.vsHasLoadedClient);
-
                     await StartAsync.InvokeAsync(this, EventArgs.Empty);
-
-                    Logger.Information("[init-race] StartServerAsync: StartAsync returned. If no 'ActivateAsync: launching' line follows, VS DISCARDED the raise.");
                 }
                 else
                 {
-                    Logger.Information(
-                        "[init-race] StartServerAsync: NOT starting — shouldStart={ShouldStart}, StartAsync subscribed={Subscribed}, Options set={HasOptions}",
-                        shouldStart,
-                        StartAsync != null,
-                        SnykVSPackage.Instance?.Options != null);
-
                     Logger.Information("Couldn't Start Language Server");
                 }
             }

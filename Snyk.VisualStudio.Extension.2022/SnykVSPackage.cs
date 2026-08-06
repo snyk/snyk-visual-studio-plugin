@@ -204,15 +204,13 @@ namespace Snyk.VisualStudio.Extension
                 // Initialize LS
                 Logger.Information("Initializing Language Server");
 
-                // [init-race] InitializeLanguageClient is FIRE-AND-FORGET: it starts a chain that ends
-                // in VS calling OnLoadedAsync, which reads IsInitialized — set only at the end of this
-                // method. So OnLoadedAsync races the command inits below.
-                Logger.Information("[init-race] package: calling InitializeLanguageClient (fire-and-forget), IsInitialized={IsInitialized}", this.IsInitialized);
-
+                // Fire-and-forget: this starts a chain that ends in VS calling OnLoadedAsync, which
+                // needs IsInitialized — set only at the end of this method. OnLoadedAsync therefore
+                // waits for initialisation rather than sampling the flag; see
+                // SnykLanguageClient.WaitForPackageInitializationAsync.
                 InitializeLanguageClient();
 
                 // Initialize commands
-                Logger.Information("[init-race] package: InitializeLanguageClient returned, starting command inits");
                 Logger.Information("Initialize Commands()");
 
                 await SnykScanCommand.InitializeAsync(this);
@@ -223,27 +221,10 @@ namespace Snyk.VisualStudio.Extension
                 // The Edge WebView2 Runtime is a hard requirement now that the settings dialog and
                 // all tool-window panels are WebView2-hosted. Surface a clear, actionable error if
                 // it's missing rather than letting every panel fail opaquely on first navigation.
-                Logger.Information("[init-race] package: command inits done, checking WebView2 runtime");
-
                 await WarnIfWebView2RuntimeMissingAsync();
-
-                // ============================================================================
-                // [VERIFY-ONLY — DELETE BEFORE MERGE]
-                // Forces OnLoadedAsync to LOSE the initialisation race, so the wait added in
-                // SnykLanguageClient.WaitForPackageInitializationAsync is actually exercised.
-                // Without this the race is a coin flip and a passing run proves nothing: two
-                // clean runs on 2026-08-05 both won the race and never entered the wait.
-                // ============================================================================
-                Logger.Warning("[init-race] VERIFY-ONLY: delaying IsInitialized by 5s to force OnLoadedAsync to lose the race");
-
-                await Task.Delay(TimeSpan.FromSeconds(5));
 
                 // Notify package has been initialized
                 IsInitialized = true;
-
-                // [init-race] The moment that decides whether OnLoadedAsync can start the server.
-                Logger.Information("[init-race] package: IsInitialized = TRUE");
-
                 initializationTaskCompletionSource.SetResult(true);
             }
             catch (Exception ex)
@@ -389,11 +370,7 @@ namespace Snyk.VisualStudio.Extension
 
         private async Task LanguageClientManagerOnLanguageClientNotInitializedAsync(object sender, SnykLanguageServerEventArgs args)
         {
-            Logger.Information("[init-race] activation: request received, waiting for the init semaphore");
-
             await languageClientInitSemaphore.WaitAsync(DisposalToken);
-
-            Logger.Information("[init-race] activation: semaphore acquired");
 
             ThreadHelper.JoinableTaskFactory.RunAsync(async () =>
             {
@@ -403,8 +380,6 @@ namespace Snyk.VisualStudio.Extension
 
                     var decision = DecideNotInitializedActivation(
                         isLanguageServerReady: LanguageClientHelper.IsLanguageServerReady());
-
-                    Logger.Information("[init-race] activation: decision={Decision}, IsInitialized={IsInitialized}", decision, this.IsInitialized);
 
                     if (decision == ActivationDecision.NoOp)
                         return;
@@ -434,12 +409,8 @@ namespace Snyk.VisualStudio.Extension
                         // Open the file — this activates the registered ILanguageClient (SnykLanguageClient
                         // is registered for the CSharp content type). OnLanguageServerReadyAsync will close
                         // this temp window once the LS is ready (S2).
-                        Logger.Information("[init-race] activation: opening {Path} to make VS load the client", filePath);
-
                         tempOpenedFileWindow =
                             dte.ItemOperations.OpenFile(filePath, EnvDTE.Constants.vsViewKindTextView);
-
-                        Logger.Information("[init-race] activation: OpenFile returned, IsInitialized={IsInitialized}", this.IsInitialized);
                     });
                 }
                 catch (Exception ex)
