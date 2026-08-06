@@ -669,7 +669,7 @@ namespace Snyk.VisualStudio.Extension.Tests.Language
 
             TasksServiceMock.Setup(ts => ts.ShouldDownloadCli()).Returns(false);
 
-            // No solution, and the folder never resolves — the shape that previously burned a 30s timeout.
+            // No solution, and the folder never resolves.
             var solutionServiceMock = new Mock<ISolutionService>();
             solutionServiceMock.Setup(s => s.IsSolutionOpen()).Returns(false);
             solutionServiceMock.Setup(s => s.GetSolutionFolderAsync()).ReturnsAsync(string.Empty);

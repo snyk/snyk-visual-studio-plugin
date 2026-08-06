@@ -59,8 +59,7 @@ namespace Snyk.VisualStudio.Extension.Tests
             var cliDownloader = new SnykCliDownloader(optionsMock.Object);
             const string url = "https://static.snyk.io/cli/latest/snyk-win.exe";
 
-            // Was SaveLatestCliSha, which wrote expectedSha outside memoLock and so could disagree with
-            // the memoised value every other reader sees. GetLatestCliShaOnce is the only writer now.
+            // GetLatestCliShaOnce is the only writer of expectedSha, so it is also how a test seeds it.
             cliDownloader.GetLatestCliShaOnce(url);
 
             var tempCliPath = Path.Combine(Path.GetTempPath(), SnykCli.CliFileName);

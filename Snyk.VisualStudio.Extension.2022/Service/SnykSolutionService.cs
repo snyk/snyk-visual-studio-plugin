@@ -124,9 +124,9 @@ namespace Snyk.VisualStudio.Extension.Service
         /// If no success, try to get path for flat project (without solution) or web site (in case VS2015).
         /// </summary>
         /// <returns>Solution path string.</returns>
-        // The traces in here are at Debug, not Information: this is called routinely — the workspace-folder
-        // sync runs before every scan — and at Information the five lines per call buried everything else
-        // in the log (one startup produced over a hundred of them).
+        // The traces in here are at Debug, not Information: this is called routinely — the
+        // workspace-folder sync runs before every scan — so at Information the several lines per call
+        // bury the rest of the log.
         public async System.Threading.Tasks.Task<string> GetSolutionFolderAsync()
         {
             if (!string.IsNullOrEmpty(SolutionFolderCache))

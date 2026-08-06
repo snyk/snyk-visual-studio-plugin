@@ -44,9 +44,8 @@ namespace Snyk.VisualStudio.Extension.Download
 
         // Guards the three memos below. One downloader is shared across a startup's concurrent callers
         // (package init, the language client's load, the update itself), and an unguarded
-        // "field ?? (field = Fetch())" lets two threads both see null and both fetch. Observed: three
-        // release-version requests, three checksum requests and two full hashes of the binary in a
-        // single startup, from one shared instance.
+        // "field ?? (field = Fetch())" lets two threads both see null and both fetch — costing repeated
+        // release-version requests, repeated checksum requests and repeated hashes of the binary.
         //
         // Held across the fetch deliberately: the second caller waits and then reads the memo, which is
         // the point.
@@ -122,10 +121,8 @@ namespace Snyk.VisualStudio.Extension.Download
         /// was typed by the user and may carry credentials: userinfo, a query-string token, a signed
         /// SAS parameter, or some shape nobody has thought of yet. Rather than trying to find and blank
         /// those, the URL is simply not written to the log; only the fact that a custom one is in use.
-        ///
-        /// This replaced a ~130-line redactor. That code had already leaked twice during review — once
-        /// on percent-escaped userinfo, once on credentials containing a path separator — and each fix
-        /// widened the input space it had to be correct over. Not logging the value cannot leak it.
+        /// Withholding the value cannot leak it, whereas locating the secret has to be correct over an
+        /// open-ended set of URL shapes.
         /// </summary>
         internal static string DescribeUrlForLog(string url)
         {
@@ -772,9 +769,9 @@ namespace Snyk.VisualStudio.Extension.Download
         // internal for testability.
         internal static string BuildInstallFailureMessage(Exception e, string cliFileDestinationPath, bool priorCliExisted)
         {
-            // Keyed on whether a binary was there BEFORE the attempt, not on File.Exists afterwards.
-            // A failed first install can leave a partial file, which made the after-the-fact probe
-            // report a "previously installed" CLI that had never existed.
+            // Keyed on whether a binary was there BEFORE the attempt, not on File.Exists afterwards: a
+            // failed first install can leave a partial file, which an after-the-fact probe would report
+            // as an installed CLI.
             //
             // States that the prior binary is present rather than that it will work: the fallback in
             // InstallCliFile overwrites in place on volumes that cannot do an atomic replace, so on

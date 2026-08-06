@@ -192,15 +192,15 @@ namespace Snyk.VisualStudio.Extension.Tests
         }
 
         [Theory]
-        // Anything else was typed by the user and is never logged — no attempt is made to find and blank
-        // the secret, because that is the approach this replaced and it leaked twice under review.
+        // Anything else was typed by the user and is never logged. No attempt is made to locate and blank
+        // the secret: the shapes it can take are open-ended, as the rows below show.
         // A credential in the userinfo:
         [InlineData("https://user:token@artifacts.internal/snyk")]
         [InlineData("https://us%65r:token@artifacts.internal/snyk")]
-        // ...with a path separator inside it, which defeated the previous redactor:
+        // ...with a path separator inside it, so the credential is not confined to one URL segment:
         [InlineData("https://user:pa/ss@host/p")]
         [InlineData("https://user:aGVsbG8/d29ybGQ=@artifacts.internal/snyk")]
-        // ...in a query string, which the previous redactor never looked at:
+        // ...or in a query string rather than the authority:
         [InlineData("https://artifacts.internal/snyk?token=SECRET")]
         [InlineData("https://artifacts.internal/snyk?X-Amz-Signature=SECRET")]
         // A custom mirror with no credential at all is still not logged: the host itself can identify
@@ -218,8 +218,7 @@ namespace Snyk.VisualStudio.Extension.Tests
         public void DescribeUrlForLog_WithholdsTheUrl_WhenItIsNotOnTheDefaultHost(string url)
         {
             // Exact equality is the whole assertion: the output is a constant, so no fragment of the
-            // input can reach the log by construction. That is the property the previous redactor could
-            // only approximate.
+            // input can reach the log by construction.
             Assert.Equal("<custom URL, not logged>", SnykCliDownloader.DescribeUrlForLog(url));
         }
 

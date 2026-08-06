@@ -167,10 +167,10 @@ namespace Snyk.VisualStudio.Extension.UI.Toolwindow
                     args?.BinaryWasDownloaded,
                     LanguageClientHelper.IsLanguageServerReady());
 
-                // Unconditional, and load-bearing: the package-init gate starts the server before the
-                // solution has loaded, so that first instance gets an empty workspace folder. This start
-                // is what brings it up again once the solution path is known. Guarding it on
-                // IsLanguageServerReady() left the server running against no folder and then dead.
+                // Unconditional: when the download has just replaced a CLI the server could not run, this
+                // is what starts it. When the server is already running VS ignores the request, so no
+                // readiness check is needed — and a readiness guard would skip the start in exactly the
+                // case that needs it.
                 ThreadHelper.JoinableTaskFactory.RunAsync(async ()=> await serviceProvider.LanguageClientManager.StartServerAsync(true)).FireAndForget();
 
                 this.OnDownloadFinished(sender, args);
@@ -429,8 +429,8 @@ namespace Snyk.VisualStudio.Extension.UI.Toolwindow
         {
             // RunAsync, not Run: these four download handlers are raised from the thread pool, and a
             // blocking Run parks that pool thread until the UI thread is free. During startup the UI
-            // thread is still loading the tool window, so the wait is real (87ms observed) and can
-            // close a cycle with anything the UI thread is itself waiting on. Nothing here needs to
+            // thread is still loading the tool window, so that wait is measurable and can close a cycle
+            // with anything the UI thread is itself waiting on. Nothing here needs to
             // complete before the handler returns: the binary is already downloaded, checksum-verified
             // and installed before the event is raised, and the language server start is separately
             // fire-and-forget.
@@ -546,9 +546,9 @@ namespace Snyk.VisualStudio.Extension.UI.Toolwindow
 
         /// <summary>
         /// Whether the download that just failed or was cancelled left a CLI behind that can actually
-        /// run. Presence alone used to be the test, so the language server was restarted against a
-        /// truncated or protocol-incompatible binary and never came up — leaving the tool window on
-        /// its loading state with nothing to act on.
+        /// run. Presence alone is not enough: restarting the language server against a truncated or
+        /// protocol-incompatible binary leaves the tool window on its loading state with nothing to
+        /// act on.
         /// </summary>
         private bool IsExistingCliUsableForFallback() =>
             new SnykCliDownloader(serviceProvider.Options)
