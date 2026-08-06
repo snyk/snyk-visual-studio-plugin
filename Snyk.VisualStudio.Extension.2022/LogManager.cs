@@ -23,6 +23,39 @@ namespace Snyk.VisualStudio.Extension
 
         private static LoggingLevelSwitch loggingLevelSwitch = new LoggingLevelSwitch(LogEventLevel.Information);
 
+        /// <summary>
+        /// Turns the extension's own Debug level on or off at runtime.
+        ///
+        /// The switch existed before this but nothing ever moved it, so every <c>Logger.Debug</c> call
+        /// in the extension wrote to nowhere — including for us, which is why the language-server
+        /// lifecycle had to be diagnosed by adding and then deleting temporary Information lines. The
+        /// lifecycle logging is permanent now and this is what makes it readable on demand. Driven by
+        /// the same <c>-d</c>/<c>--debug</c> additional parameter that puts the language server itself
+        /// into debug, so one toggle produces both sides of the conversation and production stays at
+        /// Information.
+        /// </summary>
+        public static void SetDebugLogging(bool enabled)
+        {
+            var level = enabled ? LogEventLevel.Debug : LogEventLevel.Information;
+
+            if (loggingLevelSwitch.MinimumLevel == level)
+            {
+                return;
+            }
+
+            loggingLevelSwitch.MinimumLevel = level;
+
+            // At Information so the transition is visible in a log that was not already at Debug —
+            // otherwise turning it on leaves no record of when it took effect.
+            ForContext(typeof(LogManager)).Information("Extension log level set to {Level}", level);
+        }
+
+        /// <summary>
+        /// Whether Debug is currently being written. For guarding log arguments that are themselves
+        /// expensive to produce; a plain <c>Logger.Debug</c> call is already cheap when suppressed.
+        /// </summary>
+        public static bool IsDebugEnabled => loggingLevelSwitch.MinimumLevel <= LogEventLevel.Debug;
+
         // FIX-D2 (IDE-1483): Use the default Lazy<T> ExecutionAndPublication mode (single-init).
         // CreateLogger() is wrapped in try/catch and falls back to CreateFallbackLogger() on any
         // failure, so it can never throw — which means the Lazy will never cache an exception

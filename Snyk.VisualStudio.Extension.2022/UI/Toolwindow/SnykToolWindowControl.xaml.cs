@@ -149,12 +149,24 @@ namespace Snyk.VisualStudio.Extension.UI.Toolwindow
             this.taskFinishedHandler = (sender, args) => ThreadHelper.JoinableTaskFactory.RunAsync(this.OnTaskFinishedAsync);
             this.downloadStartedHandler = (sender, args) =>
             {
-                if (LanguageClientHelper.IsLanguageServerReady())
+                // Paired with the unconditional start in downloadFinishedHandler below: this stop is the
+                // only reason that start is not a duplicate. Logged because the pairing is invisible in a
+                // log otherwise — neither the event nor the stop decision writes a line of its own.
+                var stopping = LanguageClientHelper.IsLanguageServerReady();
+
+                Logger.Debug("DownloadStarted: languageServerReady={Ready}; the stop is issued only when ready", stopping);
+
+                if (stopping)
                     ThreadHelper.JoinableTaskFactory.RunAsync(serviceProvider.LanguageClientManager.StopServerAsync).FireAndForget();
                 this.OnDownloadStarted(sender, args);
             };
             this.downloadFinishedHandler = (sender, args) =>
             {
+                Logger.Debug(
+                    "DownloadFinished: binaryWasDownloaded={Downloaded}, languageServerReady={Ready}; requesting start",
+                    args?.BinaryWasDownloaded,
+                    LanguageClientHelper.IsLanguageServerReady());
+
                 // Unconditional, and load-bearing: the package-init gate starts the server before the
                 // solution has loaded, so that first instance gets an empty workspace folder. This start
                 // is what brings it up again once the solution path is known. Guarding it on

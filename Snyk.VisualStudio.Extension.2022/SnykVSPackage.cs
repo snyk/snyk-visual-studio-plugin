@@ -453,6 +453,11 @@ namespace Snyk.VisualStudio.Extension
                 // the handler is never wired twice if Options is ever reloaded/reassigned.
                 Options.SettingsChanged -= OnOptionsSettingsChanged;
                 Options.SettingsChanged += OnOptionsSettingsChanged;
+
+                // As early as options are readable: the language-server lifecycle logging below is at
+                // Debug, and the startup window it describes is over before any later opportunity to
+                // raise the level would arrive.
+                LogManager.SetDebugLogging(LanguageClientHelper.IsDebugModeRequested(Options));
             }
 
             if (HtmlSettingsDialogPage == null)
@@ -467,6 +472,9 @@ namespace Snyk.VisualStudio.Extension
 
         private void OnOptionsSettingsChanged(object sender, SnykSettingsChangedEventArgs e)
         {
+            // Re-evaluated on every settings change so -d/--debug takes effect without restarting VS.
+            LogManager.SetDebugLogging(LanguageClientHelper.IsDebugModeRequested(Options));
+
             JoinableTaskFactory.RunAsync(async () =>
             {
                 if (!LanguageClientHelper.IsLanguageServerReady())

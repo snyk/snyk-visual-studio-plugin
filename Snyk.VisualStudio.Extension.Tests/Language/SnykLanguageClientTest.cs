@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.Reflection;
 using System.Threading;
@@ -663,6 +664,12 @@ namespace Snyk.VisualStudio.Extension.Tests.Language
         [Fact]
         public async Task StartServerAsync_ShouldInvokeStartAsync_WhenShouldStartIsTrue()
         {
+            // StartServerAsync marshals to the JTF main thread before raising StartAsync, so the test
+            // body must already be on the pumped main thread — xUnit starts async facts on the pool, and
+            // an unpumped marshal would hang here. Same pattern as
+            // DidChangeConfigurationAsync_SuccessfulSend_CommitsOnMainThread above.
+            await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
+
             // Arrange
             bool eventInvoked = false;
             cut.StartAsync += (sender, args) =>
@@ -688,6 +695,12 @@ namespace Snyk.VisualStudio.Extension.Tests.Language
         [Fact]
         public async Task StartServerAsync_ShouldNotInvokeStartAsync_BeforeVsHasLoadedTheClient()
         {
+            // StartServerAsync marshals to the JTF main thread before raising StartAsync, so the test
+            // body must already be on the pumped main thread — xUnit starts async facts on the pool, and
+            // an unpumped marshal would hang here. Same pattern as
+            // DidChangeConfigurationAsync_SuccessfulSend_CommitsOnMainThread above.
+            await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
+
             // The regression this guards. VS subscribes to StartAsync when it instantiates the client,
             // but will not activate it until it has called OnLoadedAsync. A start raised in that window
             // is silently discarded: the invoke returns immediately, ActivateAsync is never called, no
@@ -723,6 +736,12 @@ namespace Snyk.VisualStudio.Extension.Tests.Language
         [Fact]
         public async Task StartServerAsync_ShouldNotInvokeStartAsync_WhenShouldStartIsFalse()
         {
+            // StartServerAsync marshals to the JTF main thread before raising StartAsync, so the test
+            // body must already be on the pumped main thread — xUnit starts async facts on the pool, and
+            // an unpumped marshal would hang here. Same pattern as
+            // DidChangeConfigurationAsync_SuccessfulSend_CommitsOnMainThread above.
+            await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
+
             // Arrange
             var eventInvoked = false;
             cut.StartAsync += (sender, args) =>
@@ -741,6 +760,12 @@ namespace Snyk.VisualStudio.Extension.Tests.Language
         [Fact]
         public async Task StopServerAsync_ShouldInvokeStopAsync()
         {
+            // StartServerAsync marshals to the JTF main thread before raising StartAsync, so the test
+            // body must already be on the pumped main thread — xUnit starts async facts on the pool, and
+            // an unpumped marshal would hang here. Same pattern as
+            // DidChangeConfigurationAsync_SuccessfulSend_CommitsOnMainThread above.
+            await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
+
             // Arrange
             var eventInvoked = false;
             cut.StopAsync += (sender, args) =>
@@ -759,6 +784,12 @@ namespace Snyk.VisualStudio.Extension.Tests.Language
         [Fact]
         public async Task RestartAsync_ShouldRestartServer()
         {
+            // StartServerAsync marshals to the JTF main thread before raising StartAsync, so the test
+            // body must already be on the pumped main thread — xUnit starts async facts on the pool, and
+            // an unpumped marshal would hang here. Same pattern as
+            // DidChangeConfigurationAsync_SuccessfulSend_CommitsOnMainThread above.
+            await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
+
             // Arrange
             var startInvoked = false;
             var stopInvoked = false;
@@ -788,6 +819,12 @@ namespace Snyk.VisualStudio.Extension.Tests.Language
         [Fact]
         public async Task OnLoadedAsync_ShouldStartServer_WhenPackageIsInitialized()
         {
+            // StartServerAsync marshals to the JTF main thread before raising StartAsync, so the test
+            // body must already be on the pumped main thread — xUnit starts async facts on the pool, and
+            // an unpumped marshal would hang here. Same pattern as
+            // DidChangeConfigurationAsync_SuccessfulSend_CommitsOnMainThread above.
+            await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
+
             // Arrange
             var startInvoked = false;
             cut.StartAsync += (sender, args) =>
@@ -797,16 +834,88 @@ namespace Snyk.VisualStudio.Extension.Tests.Language
             };
 
             TasksServiceMock.Setup(ts => ts.ShouldDownloadCli()).Returns(false);
-            // Act
-            await cut.OnLoadedAsync();
 
-            // Assert
-            Assert.True(startInvoked);
+            // OnLoadedAsync now waits for the solution before starting, because the folder set is fixed
+            // at initialize time and a server that beats the solution load runs against no folder for
+            // its whole life. No SVsSolution is registered here, so the wait resolves to "nothing open,
+            // nothing coming" on its first probe and returns — but the bound is shortened anyway so a
+            // change in that probe's outcome shows up as a failure rather than a stalled suite.
+            var realTimeout = SnykLanguageClient.SolutionLoadTimeout;
+            SnykLanguageClient.SolutionLoadTimeout = TimeSpan.FromMilliseconds(50);
+
+            try
+            {
+                // Act
+                await cut.OnLoadedAsync();
+
+                // Assert
+                Assert.True(startInvoked);
+            }
+            finally
+            {
+                SnykLanguageClient.SolutionLoadTimeout = realTimeout;
+            }
+        }
+
+        [Fact]
+        public async Task OnLoadedAsync_ShouldStartServer_WhenThereIsNoSolutionToWaitFor()
+        {
+            // The hole in a bare "wait for the solution to load" gate: Visual Studio opens perfectly well
+            // with no solution at all, and the settings page needs the server up in that state. Waiting
+            // unconditionally would leave it on its fallback HTML for the whole session. With no
+            // SVsSolution registered the probe reports nothing open and nothing opening, which must let
+            // the start through immediately rather than burn the timeout.
+            await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
+
+            var startInvoked = false;
+            cut.StartAsync += (sender, args) =>
+            {
+                startInvoked = true;
+                return Task.CompletedTask;
+            };
+
+            TasksServiceMock.Setup(ts => ts.ShouldDownloadCli()).Returns(false);
+
+            // A real solution service reporting "nothing open" — otherwise this test would pass through
+            // the service-unavailable guard instead and prove nothing about the branch it names.
+            var solutionServiceMock = new Mock<ISolutionService>();
+            solutionServiceMock.Setup(s => s.IsSolutionOpen()).Returns(false);
+            ServiceProviderMock.Setup(x => x.SolutionService).Returns(solutionServiceMock.Object);
+
+            var realTimeout = SnykLanguageClient.SolutionLoadTimeout;
+
+            // Long enough that waiting would be unmistakable: if the gate ever blocks the no-solution
+            // case, this test takes 30s instead of milliseconds.
+            SnykLanguageClient.SolutionLoadTimeout = TimeSpan.FromSeconds(30);
+
+            try
+            {
+                var stopwatch = Stopwatch.StartNew();
+
+                await cut.OnLoadedAsync();
+
+                stopwatch.Stop();
+
+                Assert.True(startInvoked);
+                Assert.True(
+                    stopwatch.Elapsed < TimeSpan.FromSeconds(5),
+                    $"the no-solution case must not wait for the timeout, but took {stopwatch.Elapsed}");
+            }
+            finally
+            {
+                SnykLanguageClient.SolutionLoadTimeout = realTimeout;
+            }
         }
 
         [Fact]
         public async Task OnLoadedAsync_ShouldNotStartServer_WhenPackageIsNotInitialized()
         {
+            // StartServerAsync marshals to the JTF main thread before raising StartAsync, so the test
+            // body must already be on the pumped main thread — xUnit starts async facts on the pool, and
+            // an unpumped marshal would hang here. Same pattern as
+            // DidChangeConfigurationAsync_SuccessfulSend_CommitsOnMainThread above.
+            await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
+
             // Arrange
             bool startInvoked = false;
             cut.StartAsync += (sender, args) =>

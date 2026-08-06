@@ -54,6 +54,13 @@ namespace Snyk.VisualStudio.Extension.Language
         // can unsubscribe before re-subscribing on server restarts (idempotent wiring).
         private EventHandler<EventArgs> solutionOpenedMigrationHandler;
 
+        private EventHandler<EventArgs> solutionLoadedFolderRepairHandler;
+
+        // The folder the server was last initialised with, as handed to it in InitializationOptions.
+        // Empty means the server is running against no workspace, which the solution-loaded handler
+        // repairs. volatile because it is written from the initialize path and read from a solution event.
+        private volatile string initializedWithFolder;
+
         [ImportingConstructor]
         public SnykLanguageClient()
         {
@@ -98,7 +105,20 @@ namespace Snyk.VisualStudio.Extension.Language
             // so double-delivery across the init→first-update boundary cannot corrupt anything. It also
             // means a crash between a successful init and the first config-update loses nothing — the
             // persisted queue re-delivers on the next session.
-            return settingsV25.GetInitializationOptions();
+            var initializationOptions = settingsV25.GetInitializationOptions();
+
+            // The folder set is fixed here for the life of the server — there is no
+            // didChangeWorkspaceFolders in this client — so this line is the record of what the server
+            // was given. A blank folder here is the signature of a start that beat the solution load,
+            // which previously looked like a healthy startup in every log we had.
+            this.initializedWithFolder =
+                SnykVSPackage.ServiceProvider?.SolutionService?.SolutionFolderCache ?? string.Empty;
+
+            Logger.Debug(
+                "InitializationOptions requested; solution folder is '{Folder}'",
+                this.initializedWithFolder);
+
+            return initializationOptions;
         }
 
         public IEnumerable<string> FilesToWatch => null;
@@ -217,6 +237,14 @@ namespace Snyk.VisualStudio.Extension.Language
         // under test, so a test that deliberately leaves the package uninitialised would time out.
         internal static TimeSpan PackageInitializationTimeout = TimeSpan.FromSeconds(30);
 
+        // Bounded so a solution that never finishes loading costs a server with no folder rather than no
+        // server at all. Generous because overshooting delays nothing in the common cases: a solution
+        // that is loading resolves in well under a second, and no-solution returns without waiting.
+        // internal and settable for the same reason as the timeout above — tests must not sit here.
+        internal static TimeSpan SolutionLoadTimeout = TimeSpan.FromSeconds(30);
+
+        internal static TimeSpan SolutionLoadPollInterval = TimeSpan.FromMilliseconds(250);
+
         /// <summary>
         /// Blocks this load callback until the package has finished initializing.
         ///
@@ -281,17 +309,202 @@ namespace Snyk.VisualStudio.Extension.Language
             var shouldStart = isPackageInitialized && !SnykVSPackage.ServiceProvider.TasksService.ShouldDownloadCli();
             Logger.Information("OnLoadedAsync Called and shouldStart is: {ShouldStart}", shouldStart);
 
-            // Back to the main thread before raising StartAsync, rather than raising it from the pool.
-            // The hop above is a change to the thread this method used to finish on, and this is the one
-            // in-contract chance to start the server, so it deliberately lands on the thread VS drives
-            // its own load flow from instead of leaving it to whatever the pool happened to give us.
+            // Wait for the solution before starting, because the folder set is fixed at initialize time.
+            // InitializationOptions is the only channel that carries workspace folders to the server —
+            // there is no didChangeWorkspaceFolders in this client — so a server started before the
+            // solution has loaded runs against no folder for the rest of its life, and the only remedy
+            // is a full restart. Previously the wait happened by accident: a CLI download took long
+            // enough for the solution to load, so the failure only showed on the no-download path.
+            if (shouldStart)
+            {
+                await WaitForSolutionLoadAsync();
+            }
+
+            // StartServerAsync marshals to the UI thread itself; no switch needed here.
+            await StartServerAsync(shouldStart);
+        }
+
+        /// <summary>
+        /// Waits until a solution has finished loading, or until it is clear that none is coming.
+        ///
+        /// Not a bare wait on the solution-loaded event: Visual Studio opens perfectly well with no
+        /// solution at all, and the settings page needs the server up in that state — waiting
+        /// unconditionally would leave it on its fallback HTML forever. So this returns as soon as
+        /// either a solution is available or VS reports that nothing is being opened, and it is bounded
+        /// regardless so a wait that never resolves costs a degraded start rather than no start.
+        /// </summary>
+        private static async Task WaitForSolutionLoadAsync()
+        {
+            // Instance first: the static ServiceProvider property dereferences it without a guard.
+            if (SnykVSPackage.Instance == null || SnykVSPackage.ServiceProvider == null)
+            {
+                Logger.Debug("Service provider unavailable; not waiting for a solution");
+
+                return;
+            }
+
+            // IsSolutionOpen reads DTE and asserts the UI thread.
             await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
 
-            await StartServerAsync(shouldStart);
+            var solutionService = SnykVSPackage.ServiceProvider.SolutionService;
+            if (solutionService == null)
+            {
+                Logger.Debug("Solution service unavailable; not waiting for a solution");
+
+                return;
+            }
+
+            bool solutionOpen;
+            try
+            {
+                solutionOpen = solutionService.IsSolutionOpen();
+            }
+            catch (Exception e)
+            {
+                // Treated as "not open" so a probe failure cannot hold the server back.
+                Logger.Debug(e, "Could not read solution state; starting without waiting");
+
+                return;
+            }
+
+            if (!solutionOpen)
+            {
+                // Nothing open. That is either "VS has no solution" or "VS has not started opening one
+                // yet", and the two are not distinguishable here without version-specific interop — so
+                // startup is NOT delayed on the guess. AfterBackgroundSolutionLoadComplete is what
+                // covers a solution arriving later; see SubscribeToSolutionLoadedForFolderRepair.
+                Logger.Debug("No solution open; starting without waiting for one");
+
+                return;
+            }
+
+            // A solution IS open but its folder may not be resolvable yet — the state the failing startup
+            // was in. GetSolutionFolderAsync logs at Information on every call, so this loop is reached
+            // only in that case and polls slowly; the healthy path costs a single extra line.
+            var deadline = DateTime.UtcNow + SolutionLoadTimeout;
+            var attempt = 0;
+
+            while (true)
+            {
+                attempt++;
+
+                var folder = await solutionService.GetSolutionFolderAsync();
+                if (!string.IsNullOrEmpty(folder))
+                {
+                    Logger.Debug("Solution folder resolved after {Attempts} check(s)", attempt);
+
+                    return;
+                }
+
+                if (DateTime.UtcNow >= deadline)
+                {
+                    Logger.Warning(
+                        "A solution is open but its folder did not resolve within {Seconds}s; starting the language server without one",
+                        SolutionLoadTimeout.TotalSeconds);
+
+                    return;
+                }
+
+                Logger.Debug("Solution open but folder not resolvable yet (check {Attempts}); waiting", attempt);
+
+                await Task.Delay(SolutionLoadPollInterval);
+            }
+        }
+
+        /// <summary>
+        /// Restarts the server if a solution finishes loading after it was started without a folder.
+        ///
+        /// The gate above cannot cover every case: when nothing is open yet, "no solution" and "a
+        /// solution is about to open" look identical, and delaying startup on that guess would leave the
+        /// settings page on its fallback HTML for every user who opens VS without a solution. This is the
+        /// other half — the folder set is fixed at initialize time, so if one arrives later the only way
+        /// to hand it over is a restart. Conditional on the server actually having no folder, so a normal
+        /// startup does not restart.
+        /// </summary>
+        private void SubscribeToSolutionLoadedForFolderRepair()
+        {
+            try
+            {
+                UnsubscribeFromSolutionLoadedForFolderRepair();
+
+                var solutionEvents = SnykVSPackage.ServiceProvider?.SolutionService?.SolutionEvents;
+                if (solutionEvents == null)
+                {
+                    return;
+                }
+
+                solutionLoadedFolderRepairHandler = (_, __) => ThreadHelper.JoinableTaskFactory.RunAsync(
+                    async () =>
+                    {
+                        if (!string.IsNullOrEmpty(this.initializedWithFolder))
+                        {
+                            Logger.Debug(
+                                "Solution finished loading; server already has folder '{Folder}', no repair needed",
+                                this.initializedWithFolder);
+
+                            return;
+                        }
+
+                        Logger.Information(
+                            "Solution finished loading and the language server was started without a folder; restarting it to hand the folder over");
+
+                        await RestartServerAsync();
+                    }).FireAndForget();
+
+                solutionEvents.AfterBackgroundSolutionLoadComplete += solutionLoadedFolderRepairHandler;
+            }
+            catch (Exception ex)
+            {
+                Logger.Warning(ex, "Could not subscribe to solution-opened event for workspace-folder repair.");
+            }
+        }
+
+        private void UnsubscribeFromSolutionLoadedForFolderRepair()
+        {
+            try
+            {
+                if (solutionLoadedFolderRepairHandler == null)
+                {
+                    return;
+                }
+
+                var solutionEvents = SnykVSPackage.ServiceProvider?.SolutionService?.SolutionEvents;
+                if (solutionEvents != null)
+                {
+                    solutionEvents.AfterBackgroundSolutionLoadComplete -= solutionLoadedFolderRepairHandler;
+                }
+
+                solutionLoadedFolderRepairHandler = null;
+            }
+            catch (Exception ex)
+            {
+                Logger.Warning(ex, "Could not unsubscribe from solution-opened event for workspace-folder repair.");
+            }
         }
 
         public async Task StartServerAsync(bool shouldStart = false)
         {
+            // Marshalled here, BEFORE the semaphore, rather than left to whichever thread the caller
+            // happened to be on — there are three call sites and they arrive on different threads.
+            // A raise from a pool thread was observed to produce no ActivateAsync at all, while a
+            // UI-thread raise four seconds earlier in the same session was honoured, so the raise is
+            // pinned to the thread VS drives its own load flow from.
+            //
+            // Before the gate and not inside it: switching while holding the semaphore is a deadlock
+            // shape. JoinableTaskFactory can inline work to avoid deadlocking on itself, but it cannot
+            // see through a SemaphoreSlim, and the UI thread does block in JoinableTaskFactory.Run
+            // elsewhere in this extension. Awaiting the semaphore from the main thread yields it, so
+            // nothing is blocked while we wait.
+            await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
+
+            Logger.Debug(
+                "StartServerAsync entered: shouldStart={ShouldStart}, vsHasLoadedClient={Loaded}, vsSubscribed={Subscribed}, isReady={IsReady}, onUiThread={OnUiThread}",
+                shouldStart,
+                this.vsHasLoadedClient,
+                StartAsync != null,
+                IsReady,
+                ThreadHelper.CheckAccess());
+
             // Set inside the semaphore below, but the InfoBar itself is shown only after it's released
             // - see the comment at the bottom of this method.
             string infoBarMessage = null;
@@ -438,10 +651,18 @@ namespace Snyk.VisualStudio.Extension.Language
                                 await MigrateLegacySolutionSettingsAsync();
 
                                 // Raising StartAsync asks VS to call ActivateAsync; it is not a guarantee. The
-                                // guard above is what keeps this in contract — see its comment.
+                                // guard above is what keeps this in contract — see its comment. VS also ignores
+                                // the request outright when it considers the server already started, so the
+                                // pair of Debug lines below plus ActivateAsync's own logging are what
+                                // distinguish "VS declined" from "the launch failed".
                                 Logger.Information("Starting Language Server");
+                                Logger.Debug(
+                                    "Raising StartAsync on the {ThreadKind} thread; expect an ActivateAsync line next if VS accepts it",
+                                    ThreadHelper.CheckAccess() ? "UI" : "background");
 
                                 await StartAsync.InvokeAsync(this, EventArgs.Empty);
+
+                                Logger.Debug("StartAsync raise returned");
                             }
                         }
                     }
@@ -449,6 +670,11 @@ namespace Snyk.VisualStudio.Extension.Language
                 else
                 {
                     Logger.Information("Couldn't Start Language Server");
+                    Logger.Debug(
+                        "Not started because: vsSubscribed={Subscribed}, optionsPresent={Options}, shouldStart={ShouldStart}",
+                        StartAsync != null,
+                        SnykVSPackage.Instance?.Options != null,
+                        shouldStart);
                 }
             }
             finally
@@ -490,9 +716,27 @@ namespace Snyk.VisualStudio.Extension.Language
 
         public async Task StopServerAsync()
         {
+            // The caller matters more than the fact here. A language-server shutdown was observed with
+            // no explanation in this codebase — every StopServerAsync path was ruled out by elimination,
+            // which is slow and inconclusive. If a shutdown appears in the server's log with no line
+            // from here, it was Visual Studio's decision, not ours.
+            //
+            // Guarded, unlike the other Debug calls: Serilog evaluates arguments eagerly, so an
+            // unguarded StackTrace would be captured on every stop even with Debug suppressed.
+            if (LogManager.IsDebugEnabled)
+            {
+                Logger.Debug(
+                    "StopServerAsync called: vsSubscribed={Subscribed}, isReady={IsReady}, isReloading={IsReloading}, calledFrom={Caller}",
+                    StopAsync != null,
+                    IsReady,
+                    IsReloading,
+                    new StackTrace(1, false).ToString());
+            }
+
             // Detach the solution-opened migration handler as part of stop teardown so a permanent
             // stop (extension disable / VS shutdown) doesn't leave it running against a dead LS.
             UnsubscribeFromSolutionOpenedForMigration();
+            UnsubscribeFromSolutionLoadedForFolderRepair();
 
             if (StopAsync != null)
             {
@@ -533,6 +777,10 @@ namespace Snyk.VisualStudio.Extension.Language
 
         public Task OnServerInitializedAsync()
         {
+            // The only positive confirmation that a start actually produced a usable server. "Starting
+            // Language Server" followed by ActivateAsync only proves a process was launched.
+            Logger.Debug("OnServerInitializedAsync: server is ready");
+
             IsReady = true;
 
             // Note: pending resets are NOT committed here (IDE-2152 fix #3). The init options already
@@ -544,6 +792,7 @@ namespace Snyk.VisualStudio.Extension.Language
             SendPluginInstalledEvent();
             Rpc.Disconnected += Rpc_Disconnected;
             SubscribeToSolutionOpenedForMigration();
+            SubscribeToSolutionLoadedForFolderRepair();
             return Task.CompletedTask;
         }
 
@@ -605,17 +854,8 @@ namespace Snyk.VisualStudio.Extension.Language
             if (options == null)
                 return Task.FromResult("info");
 
-            // Enable debug logging for the whole LS process if -d/--debug is set in global
-            // additional parameters OR in ANY folder's additional parameters.
-            var globalParams = options.AdditionalParameters ?? Enumerable.Empty<string>();
-            var folderParams = (options.FolderConfigs ?? Enumerable.Empty<FolderConfig>())
-                .Select(fc => fc?.GetStringList(PflagKeys.AdditionalParameters))
-                .Where(p => p != null)
-                .SelectMany(p => p);
-
-            var anyDebug = globalParams.Concat(folderParams).Any(p => p == "-d" || p == "--debug");
-
-            return Task.FromResult(anyDebug ? "debug" : "info");
+            // Same signal as the extension's own log level — see LanguageClientHelper.IsDebugModeRequested.
+            return Task.FromResult(LanguageClientHelper.IsDebugModeRequested(options) ? "debug" : "info");
         }
 
         // One-time, best-effort migration of legacy per-solution settings (IDE-1651) into the folder
@@ -647,8 +887,16 @@ namespace Snyk.VisualStudio.Extension.Language
 
         private void Rpc_Disconnected(object sender, JsonRpcDisconnectedEventArgs e)
         {
+            // The reason and description say whether the server exited, was killed, or the pipe broke —
+            // which is otherwise indistinguishable from "VS never activated us" in a log.
+            Logger.Debug(
+                "Rpc disconnected: reason={Reason}, description={Description}",
+                e?.Reason,
+                e?.Description);
+
             IsReady = false;
             UnsubscribeFromSolutionOpenedForMigration();
+            UnsubscribeFromSolutionLoadedForFolderRepair();
         }
 
         public async Task AttachForCustomMessageAsync(JsonRpc rpc)
@@ -667,6 +915,11 @@ namespace Snyk.VisualStudio.Extension.Language
 
         private async Task RestartAsync(bool isReload)
         {
+            // A restart is a stop and a start, and the start half is the fragile one: VS ignores a start
+            // request for a server it still considers running, so the two halves are logged separately
+            // to tell "the stop did not finish first" from "the start was declined".
+            Logger.Debug("RestartAsync entered: isReload={IsReload}, isReady={IsReady}", isReload, IsReady);
+
             try
             {
                 if (isReload)
@@ -676,6 +929,9 @@ namespace Snyk.VisualStudio.Extension.Language
                 OnStopping();
                 await StopServerAsync();
                 OnStopped();
+
+                Logger.Debug("RestartAsync: stop half complete, starting");
+
                 await StartServerAsync(true);
             }
             catch (Exception ex)
