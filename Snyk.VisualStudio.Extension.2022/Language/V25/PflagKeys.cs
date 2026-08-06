@@ -1,4 +1,4 @@
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 
 namespace Snyk.VisualStudio.Extension.Language
 {
@@ -73,14 +73,10 @@ namespace Snyk.VisualStudio.Extension.Language
         {
             TrustedFolders,
             TrustEnabled,
-            // cli_path: the IDE downloads and owns the CLI binary, so the LS must run the one we
-            // installed. Sent with changed:false the LS discards it (settingStr ignores unchanged
-            // entries) and resolves its registered default of $XDG_DATA_HOME/snyk-ls instead — a
-            // different binary from the one we manage, for its own CLI invocations.
-            // The inbound direction is handled separately: GlobalSettingsApplier ignores cli_path,
-            // so that default can never come back and repoint us at an empty location. The other
-            // plugins do not guard that direction yet.
-            // Matches VS Code on this outbound resolution, which materialises the resolved path.
+            // cli_path: the IDE downloads and owns the CLI binary, so the LS must run the one it
+            // installed. Sent with changed:false the LS discards it and resolves its own default of
+            // $XDG_DATA_HOME/snyk-ls instead, which is a different binary. GlobalSettingsApplier ignores
+            // the inbound direction for the same reason. Matches VS Code, which sends the resolved path.
             CliPath,
         };
 

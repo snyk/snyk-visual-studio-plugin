@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.IO;
 using Moq;
@@ -303,8 +303,8 @@ namespace Snyk.VisualStudio.Extension.Tests.Language
             // Equality is against the RESOLVED form of what we hold, so a padded stored value matches
             // its own trimmed echo and is left untouched. The padding is deliberately not normalised
             // here: every consumer goes through ResolveBaseDownloadUrl, which trims at the point of
-            // use, and repairing persisted values on the inbound path is what hid the empty-URL bug
-            // this PR exists to fix.
+            // use, and repairing persisted values on the inbound path hides a malformed stored value
+            // instead of surfacing it.
             var options = MakeOptions();
             options.CliBaseDownloadURL = "  https://mirror.corp  ";
             var settings = new Dictionary<string, ConfigSetting>

@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using Newtonsoft.Json.Linq;
@@ -56,37 +56,25 @@ namespace Snyk.VisualStudio.Extension.Language
                     case PflagKeys.AutomaticDownload:    options.BinariesAutoUpdate = val.Value<bool>(); break;
 
                     // cli_path is IDE-owned and deliberately NOT applied. The IDE downloads the binary
-                    // and tells the LS where it is; nothing can legitimately push one back (snyk-ls
-                    // keeps cli_path out of its LDX-Sync key map and out of GlobalResettableSettings),
-                    // so an inbound value is only ever our own echoed back or the LS's registered
-                    // default of $XDG_DATA_HOME/snyk-ls/<exe>. Adopting the latter repointed us at an
-                    // empty location and cost the user a second full CLI download. An empty-guard is
-                    // not enough here — unlike the two keys below, that default is non-empty.
-                    // A user-chosen path arrives through the settings page instead
-                    // (HtmlSettingsScriptingBridge), which is a separate, user-initiated route.
+                    // and tells the LS where it is, so an inbound value is only ever our own echo or the
+                    // LS's registered default of $XDG_DATA_HOME/snyk-ls/<exe>; adopting that points the
+                    // extension at an empty location and costs a second full download. An empty-guard
+                    // would miss it, because that default is non-empty. A user-chosen path arrives
+                    // through the settings page instead.
                     case PflagKeys.CliPath:              break;
 
                     // The language server registers these two with empty defaults and echoes every
                     // machine-scope setting, so an empty value means "no opinion", not "cleared".
                     //
-                    // The equality test drops our own echo. LsSettingsV25 sends these resolved (the
-                    // override tracker compares the resolved form against ConfigDefaults), so a user
-                    // who left the field blank gets the literal default echoed straight back; writing
-                    // it would silently convert "blank, use the default" into a pinned override and
-                    // replace the settings-page placeholder with a value they never typed. A value
-                    // that differs from our own resolved one is a real push and still applies.
+                    // Both sides go through the resolver before comparing, and the resolved form is what
+                    // gets stored. LsSettingsV25 sends these resolved, so a blank field comes back as the
+                    // literal default; writing that would turn "blank, use the default" into a pinned
+                    // override. Comparing a raw inbound value would also let a trailing slash read as a
+                    // real push, and storing resolved keeps the channel in the exact-match shape
+                    // HtmlResourceLoader compares against.
                     //
-                    // BOTH sides go through the resolver, and the resolved form is what gets stored.
-                    // Comparing a raw inbound value against our resolved one let a trailing slash
-                    // through — the very form ResolveBaseDownloadUrl exists to normalise, and the form
-                    // the LS-served settings page produces — so the echo read as a real push and pinned
-                    // the value on every sync. Storing resolved also keeps the channel in the shape
-                    // HtmlResourceLoader compares against, which uses exact string equality and would
-                    // show a stray-space "stable " as a custom channel.
-                    //
-                    // The blank test stays on the RAW value: the resolvers return the default for a
-                    // blank input, so resolving first would turn "no opinion" into a push of the default
-                    // and overwrite whatever the user had set.
+                    // The blank test stays on the RAW value: the resolvers return the default for a blank
+                    // input, so resolving first would turn "no opinion" into a push of the default.
                     case PflagKeys.BinaryBaseUrl:
                         var baseUrl = val.Value<string>();
                         if (!string.IsNullOrWhiteSpace(baseUrl))

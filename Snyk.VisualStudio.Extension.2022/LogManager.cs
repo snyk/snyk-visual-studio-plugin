@@ -26,13 +26,10 @@ namespace Snyk.VisualStudio.Extension
         /// <summary>
         /// Turns the extension's own Debug level on or off at runtime.
         ///
-        /// The switch existed before this but nothing ever moved it, so every <c>Logger.Debug</c> call
-        /// in the extension wrote to nowhere — including for us, which is why the language-server
-        /// lifecycle had to be diagnosed by adding and then deleting temporary Information lines. The
-        /// lifecycle logging is permanent now and this is what makes it readable on demand. Driven by
-        /// the same <c>-d</c>/<c>--debug</c> additional parameter that puts the language server itself
-        /// into debug, so one toggle produces both sides of the conversation and production stays at
-        /// Information.
+        /// Without this nothing moves the level switch, so every <c>Logger.Debug</c> call writes to
+        /// nowhere. Driven by the same <c>-d</c>/<c>--debug</c> additional parameter that puts the
+        /// language server itself into debug, so one toggle produces both sides of the conversation and
+        /// production stays at Information.
         /// </summary>
         public static void SetDebugLogging(bool enabled)
         {

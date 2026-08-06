@@ -376,8 +376,8 @@ namespace Snyk.VisualStudio.Extension.Tests
         {
             // Asserted on the real message, not through the FakeDownloader override: every other test
             // here replaces ReportInstallFailure, so without this the text the user actually reads was
-            // never exercised. "Previously installed" for a first install is the falsehood being ruled
-            // out — a partial write left by the failure makes File.Exists say otherwise.
+            // never exercised. What is ruled out is the message claiming a prior CLI is still in place
+            // for a first install — a partial write left by the failure makes File.Exists say otherwise.
             var message = SnykCliDownloader.BuildInstallFailureMessage(
                 new IOException("disk full"), @"C:\cli\snyk-win.exe", priorCliExisted: false);
 
@@ -466,9 +466,9 @@ namespace Snyk.VisualStudio.Extension.Tests
         [Fact]
         public void IsCliDownloadNeeded_ReturnsTrue_WhenTheCheckFailsAndTheInstalledCliDoesNotSpeakOurProtocol()
         {
-            // The case that used to be silently survivable: offline AND holding a CLI that cannot work.
-            // Returning false here kept a dead language server for the rest of the session, and every
-            // later startup repeated the decision. Asking for the download will very likely fail too —
+            // Offline AND holding a CLI that cannot work. Returning false here would keep a dead language
+            // server for the rest of the session, and every later startup would repeat the decision.
+            // Asking for the download will very likely fail too —
             // that is the point, because it surfaces instead of hanging.
             var installedCli = Path.Combine(this.workDir, "snyk-win.exe");
             File.WriteAllText(installedCli, "a-cli-from-an-older-protocol");
@@ -484,9 +484,8 @@ namespace Snyk.VisualStudio.Extension.Tests
         [Fact]
         public void IsCliDownloadNeeded_ReturnsFalse_WhenTheBytesOnDiskMatchTheLatestRelease()
         {
-            // The happy path, and the whole point of the change: decided on the bytes, not on the
-            // recorded version. CurrentCliVersion is deliberately stale here to prove it is no longer
-            // consulted for the decision.
+            // The happy path: decided on the bytes, not on the recorded version. CurrentCliVersion is
+            // deliberately stale here to prove it is not consulted for the decision.
             var installedCli = Path.Combine(this.workDir, "snyk-win.exe");
             File.WriteAllText(installedCli, "the-current-cli");
             var cut = new FakeDownloader(
@@ -506,8 +505,8 @@ namespace Snyk.VisualStudio.Extension.Tests
         public void IsCliDownloadNeeded_AsksTheNetworkOnce_WhenConcurrentCallersShareADownloader()
         {
             // One downloader is shared by a startup's three concurrent callers. Without a lock around
-            // the memos, two of them both see null and both fetch — observed in a real startup as three
-            // release-version requests, three checksum requests and two full hashes from one instance.
+            // the memos, two of them both see null and both fetch, costing repeated release-version
+            // requests, repeated checksum requests and repeated hashes from one instance.
             var installedCli = Path.Combine(this.workDir, "snyk-win.exe");
             File.WriteAllText(installedCli, "the-current-cli");
 
@@ -612,8 +611,8 @@ namespace Snyk.VisualStudio.Extension.Tests
         public void IsCliDownloadNeeded_ReturnsTrue_WhenTheBytesOnDiskAreNotTheLatestRelease()
         {
             // Covers the corrupt-binary case too: a truncated file has the wrong checksum, so it is
-            // replaced. Under the old version-string comparison a recorded version that happened to
-            // match the latest release meant a corrupt CLI was never re-downloaded.
+            // replaced. A comparison against the recorded version could not see this — the version can
+            // match the latest release while the bytes on disk are unusable.
             var installedCli = Path.Combine(this.workDir, "snyk-win.exe");
             File.WriteAllText(installedCli, "a-truncated-or-stale-cli");
             var cut = new FakeDownloader(
@@ -664,8 +663,8 @@ namespace Snyk.VisualStudio.Extension.Tests
         [InlineData(false)]
         public void IsExistingCliUsable_RequiresTheProtocolProbe_NotJustPresence(bool protocolSupported)
         {
-            // The fallback after a failed or cancelled download. Presence alone was the old test, which
-            // is how the language server came to be restarted against a binary that could not run.
+            // The fallback after a failed or cancelled download. Presence alone is not enough: it would
+            // restart the language server against a binary that cannot run.
             var installedCli = Path.Combine(this.workDir, "snyk-win.exe");
             File.WriteAllText(installedCli, "an-existing-cli");
             var cut = new FakeDownloader(Options(), protocolSupported: protocolSupported);
@@ -799,8 +798,8 @@ namespace Snyk.VisualStudio.Extension.Tests
 
             Assert.Equal(1, cut.ShaFetches);
 
-            // The memo used to be "have we fetched anything yet", so a second URL silently received the
-            // first URL's checksum — which fails verification against a binary that is in fact intact.
+            // A memo keyed only on "have we fetched yet" would hand a second URL the first URL's
+            // checksum, failing verification against a binary that is in fact intact.
             cut.GetLatestCliShaOnce(secondUrl);
 
             Assert.Equal(2, cut.ShaFetches);

@@ -47,22 +47,16 @@ namespace Snyk.VisualStudio.Extension.Service
 
         /// <summary>
         /// One downloader for the whole check-and-download episode, so its release-info and checksum
-        /// memos are shared by everyone who asks.
+        /// memos are shared by everyone who asks. Startup asks "is a download needed?" from three places
+        /// — package init, the language client's load, and the update itself — and each instance costs a
+        /// release lookup and a checksum request, so sharing keeps a startup that installs nothing to one
+        /// pair.
         ///
-        /// Startup asks "is a download needed?" from three places — package init, the language client's
-        /// load, and the update itself. A fresh instance at each meant a release lookup each time, and
-        /// now that the decision compares checksums rather than a recorded version string, each instance
-        /// costs two requests rather than one. Sharing keeps a startup that installs nothing to a single
-        /// pair: the release version and its checksum.
-        ///
-        /// Deliberately not process-lifetime. <see cref="EndCliDownloadEpisode"/> clears it at the START
-        /// of each download entry point, so every new episode asks the network again and a CLI published
-        /// since the last one is still found.
-        ///
-        /// Cleared on entry rather than on completion because the last consumer of an episode's answer
-        /// runs after it: the language client's load calls ShouldDownloadCli once the server is being
-        /// started, which is after DownloadFinished has fired. Clearing on completion meant that caller
-        /// built a fresh downloader and paid for both requests and another checksum of the binary.
+        /// Not process-lifetime: <see cref="EndCliDownloadEpisode"/> clears it at the START of each
+        /// download entry point, so a new episode asks the network again and finds a CLI published since
+        /// the last one. Cleared on entry rather than on completion because the last consumer of an
+        /// episode's answer runs after it — the language client's load calls ShouldDownloadCli after
+        /// DownloadFinished has fired.
         /// </summary>
         private SnykCliDownloader CliDownloader
         {
@@ -769,7 +763,8 @@ namespace Snyk.VisualStudio.Extension.Service
             }
             catch (Exception e)
             {
-                // Was silent, so a failure here was indistinguishable from a genuine "needs download".
+                // Logged, because a failure here is otherwise indistinguishable from a genuine
+                // "needs download".
                 Logger.Error(e, "Could not determine whether a CLI download is needed; assuming it is");
 
                 return true;
