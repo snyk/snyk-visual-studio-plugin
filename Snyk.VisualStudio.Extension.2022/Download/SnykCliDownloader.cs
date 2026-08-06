@@ -154,15 +154,10 @@ namespace Snyk.VisualStudio.Extension.Download
         }
 
         /// <summary>
-        /// A download URL in a form that is safe to log.
-        ///
-        /// The default base URL is Snyk's own host and contains nothing the user supplied, so it is
-        /// logged in full — which is what makes a misconfiguration diagnosable at all. Any other value
-        /// was typed by the user and may carry credentials: userinfo, a query-string token, a signed
-        /// SAS parameter, or some shape nobody has thought of yet. Rather than trying to find and blank
-        /// those, the URL is simply not written to the log; only the fact that a custom one is in use.
-        /// Withholding the value cannot leak it, whereas locating the secret has to be correct over an
-        /// open-ended set of URL shapes.
+        /// A download URL in a form that is safe to log: in full on Snyk's own host, otherwise replaced
+        /// by a constant. A user-supplied URL can carry a credential in the userinfo, a query string or
+        /// a signed parameter, and withholding the value cannot leak it whereas locating the secret has
+        /// to be correct over an open-ended set of shapes.
         /// </summary>
         internal static string DescribeUrlForLog(string url)
         {
@@ -228,13 +223,11 @@ namespace Snyk.VisualStudio.Extension.Download
             {
                 var latestReleaseVersionUrl = this.BuildLatestReleaseVersionUrl();
 
-                // Enough to diagnose a misconfiguration without echoing a user-supplied URL: the
-                // composed URL when it is on our own host, whether a custom base is configured at all,
-                // and the release channel (a channel/version selector, not a credential-bearing field).
+                // The channel is included because it selects a version rather than carrying a credential,
+                // and a wrong one is a common misconfiguration.
                 Logger.Information(
-                    "Get latest CLI release info from {Url} (custom base url configured: {IsCustomBaseUrl}, release channel: '{ReleaseChannel}')",
+                    "Get latest CLI release info from {Url} (release channel: '{ReleaseChannel}')",
                     DescribeUrlForLog(latestReleaseVersionUrl),
-                    ResolveBaseDownloadUrl(this.SnykOptions.CliBaseDownloadURL) != DefaultBaseDownloadUrl,
                     this.SnykOptions.CliReleaseChannel);
 
                 var latestVersion = webClient.DownloadString(latestReleaseVersionUrl).Replace("\n", string.Empty);
