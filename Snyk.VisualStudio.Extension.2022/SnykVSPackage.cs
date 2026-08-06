@@ -227,6 +227,17 @@ namespace Snyk.VisualStudio.Extension
 
                 await WarnIfWebView2RuntimeMissingAsync();
 
+                // ============================================================================
+                // [VERIFY-ONLY — DELETE BEFORE MERGE]
+                // Forces OnLoadedAsync to LOSE the initialisation race, so the wait added in
+                // SnykLanguageClient.WaitForPackageInitializationAsync is actually exercised.
+                // Without this the race is a coin flip and a passing run proves nothing: two
+                // clean runs on 2026-08-05 both won the race and never entered the wait.
+                // ============================================================================
+                Logger.Warning("[init-race] VERIFY-ONLY: delaying IsInitialized by 5s to force OnLoadedAsync to lose the race");
+
+                await Task.Delay(TimeSpan.FromSeconds(5));
+
                 // Notify package has been initialized
                 IsInitialized = true;
 

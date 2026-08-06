@@ -236,7 +236,7 @@ namespace Snyk.VisualStudio.Extension.Language
                 return true;
             }
 
-            Logger.Information("[init-race] OnLoadedAsync: package not initialised yet — waiting instead of sampling");
+            Logger.Information("[init-race] WAIT ENTERED: package NOT initialised yet — this is the window that used to lose the race and kill the language server");
 
             var initialized = SnykVSPackage.PackageInitializedAwaiter;
             var finished = await Task.WhenAny(initialized, Task.Delay(PackageInitializationTimeout));
@@ -249,6 +249,8 @@ namespace Snyk.VisualStudio.Extension.Language
 
                 return false;
             }
+
+            Logger.Information("[init-race] WAIT COMPLETED: package finished initialising, so this load CAN start the server");
 
             return SnykVSPackage.Instance?.IsInitialized ?? false;
         }
@@ -277,7 +279,7 @@ namespace Snyk.VisualStudio.Extension.Language
             var isPackageInitialized = await WaitForPackageInitializationAsync();
 
             Logger.Information(
-                "[init-race] OnLoadedAsync: VS called us. isPackageInitialized={IsPackageInitialized} (after waiting). This is the ONLY in-contract chance to start the server.",
+                "[init-race] OnLoadedAsync: VS called us. isPackageInitialized={IsPackageInitialized}. This is the ONLY in-contract chance to start the server.",
                 isPackageInitialized);
 
             var downloadNeeded = isPackageInitialized && SnykVSPackage.ServiceProvider.TasksService.ShouldDownloadCli();
