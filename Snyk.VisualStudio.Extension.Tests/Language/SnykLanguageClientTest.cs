@@ -448,6 +448,33 @@ namespace Snyk.VisualStudio.Extension.Tests.Language
         }
 
         [Fact]
+        public async Task InvokeWorkspaceScanAsync_DoesNotSendAFolderVisualStudioAlreadyPassedAtInitialize()
+        {
+            // When the solution is loaded at activation, VS puts the folder in the initialize request
+            // itself (rootUri), so re-sending it as an addition makes the server rebuild a folder it
+            // already has. GetInitializationOptions records that folder as the baseline.
+            const string folder = @"C:\repos\snyk-goof";
+            cut.IsReady = true;
+
+            var solutionServiceMock = new Mock<ISolutionService>();
+            solutionServiceMock.Setup(s => s.SolutionFolderCache).Returns(folder);
+            solutionServiceMock.Setup(s => s.GetSolutionFolderAsync()).ReturnsAsync(folder);
+            ServiceProviderMock.Setup(x => x.SolutionService).Returns(solutionServiceMock.Object);
+            TestUtils.SetupOptionsMock(OptionsMock);
+
+            // What VS does when it builds the initialize request.
+            cut.GetInitializationOptions();
+
+            await cut.InvokeWorkspaceScanAsync(CancellationToken.None);
+
+            jsonRpcMock.Verify(
+                x => x.NotifyWithParameterObjectAsync(
+                    LsConstants.WorkspaceChangeWorkspaceFolders,
+                    It.IsAny<DidChangeWorkspaceFoldersParams>()),
+                Times.Never);
+        }
+
+        [Fact]
         public async Task InvokeWorkspaceScanAsync_DoesNotResendTheSameWorkspaceFolder()
         {
             // Sent once per change, not once per scan: the notification makes snyk-ls construct a folder

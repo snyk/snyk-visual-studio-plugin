@@ -101,11 +101,19 @@ namespace Snyk.VisualStudio.Extension.Language
             // persisted queue re-delivers on the next session.
             var initializationOptions = settingsV25.GetInitializationOptions();
 
-            // What VS gave the server to start with. Blank means it was activated before the solution
-            // finished loading, which SyncWorkspaceFoldersAsync then corrects.
-            Logger.Debug(
-                "InitializationOptions requested; solution folder is '{Folder}'",
-                SnykVSPackage.ServiceProvider?.SolutionService?.SolutionFolderCache ?? string.Empty);
+            // Taken as the baseline for the folder sync, because a non-blank folder here is one VS is
+            // about to pass in the initialize request itself — sending it again as an addition would make
+            // the server rebuild a folder it already has. Blank means the client was activated before the
+            // solution finished loading, and SyncWorkspaceFoldersAsync supplies it later.
+            var folderAtInitialize =
+                SnykVSPackage.ServiceProvider?.SolutionService?.SolutionFolderCache ?? string.Empty;
+
+            if (!string.IsNullOrEmpty(folderAtInitialize))
+            {
+                this.sentFolderPath = folderAtInitialize;
+            }
+
+            Logger.Debug("InitializationOptions requested; solution folder is '{Folder}'", folderAtInitialize);
 
             return initializationOptions;
         }
