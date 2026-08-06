@@ -535,7 +535,9 @@ namespace Snyk.VisualStudio.Extension.Tests
 
                         return cut.IsCliDownloadNeeded(installedCli);
                     },
-                    TaskCreationOptions.LongRunning)).ToArray();
+                    CancellationToken.None,
+                    TaskCreationOptions.LongRunning,
+                    TaskScheduler.Default)).ToArray();
 
                 Assert.True(arrived.Wait(TimeSpan.FromSeconds(30)), "callers never all reached the gate");
                 start.Set();
