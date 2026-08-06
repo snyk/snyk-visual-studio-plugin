@@ -124,23 +124,26 @@ namespace Snyk.VisualStudio.Extension.Service
         /// If no success, try to get path for flat project (without solution) or web site (in case VS2015).
         /// </summary>
         /// <returns>Solution path string.</returns>
+        // The traces in here are at Debug, not Information: this is called routinely — the workspace-folder
+        // sync runs before every scan — and at Information the five lines per call buried everything else
+        // in the log (one startup produced over a hundred of them).
         public async System.Threading.Tasks.Task<string> GetSolutionFolderAsync()
         {
             if (!string.IsNullOrEmpty(SolutionFolderCache))
             {
-                Logger.Information("Using cached solution folder {SolutionFolder}", SolutionFolderCache);
+                Logger.Debug("Using cached solution folder {SolutionFolder}", SolutionFolderCache);
                 return SolutionFolderCache;
             }
             var solutionFolder = await this.FindRootDirectoryForSolutionAsync();
 
-            Logger.Information("Solution folder from is {SolutionFolder}", solutionFolder);
+            Logger.Debug("Solution folder from is {SolutionFolder}", solutionFolder);
 
             if (solutionFolder == null || solutionFolder.IsNullOrEmpty())
             {
                 solutionFolder = await this.FindRootDirectoryForSolutionFromDteAsync();
             }
 
-            Logger.Information("Result solution folder from is {SolutionFolder}", solutionFolder);
+            Logger.Debug("Result solution folder from is {SolutionFolder}", solutionFolder);
             SolutionFolderCache = solutionFolder;
             return solutionFolder;
         }
@@ -296,7 +299,7 @@ namespace Snyk.VisualStudio.Extension.Service
         {
             await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
 
-            Logger.Information("Enter GetSolutionPath method");
+            Logger.Debug("Enter GetSolutionPath method");
 
             var dte = this.ServiceProvider.DTE;
             var solution = dte.Solution;
@@ -308,7 +311,7 @@ namespace Snyk.VisualStudio.Extension.Service
             // 2 case: Solution is folder.
             if (await this.IsSolutionWithProjectsAsync(solution, projects) || await this.IsFolderAsync(solution, projects))
             {
-                Logger.Information("Path is solution with projects or folder.");
+                Logger.Debug("Path is solution with projects or folder.");
 
                 solutionPath = solution.FullName;
 
@@ -319,7 +322,7 @@ namespace Snyk.VisualStudio.Extension.Service
 
                 if (!File.GetAttributes(solutionPath).HasFlag(FileAttributes.Directory))
                 {
-                    Logger.Information("Remove solution file name from path.");
+                    Logger.Debug("Remove solution file name from path.");
 
                     solutionPath = Directory.GetParent(solutionPath).FullName;
                 }
@@ -344,16 +347,16 @@ namespace Snyk.VisualStudio.Extension.Service
             // 4 case: Web site (in 2015)
             if (await this.IsFlatProjectOrWebSiteAsync(solution, projects))
             {
-                Logger.Information("Solution is 'dirty'. Get solution path from first project full name");
+                Logger.Debug("Solution is 'dirty'. Get solution path from first project full name");
 
                 string projectPath = solution.Projects.Item(1).FullName;
 
-                Logger.Information("Project path {ProjectPath}. Get solution path as project directory.", projectPath);
+                Logger.Debug("Project path {ProjectPath}. Get solution path as project directory.", projectPath);
 
                 solutionPath = Directory.GetParent(projectPath).FullName;
             }
 
-            Logger.Information("Result solution path is {SolutionPath}.", solutionPath);
+            Logger.Debug("Result solution path is {SolutionPath}.", solutionPath);
 
             return solutionPath;
         }
