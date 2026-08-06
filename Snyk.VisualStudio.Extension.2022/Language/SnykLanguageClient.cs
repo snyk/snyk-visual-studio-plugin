@@ -386,7 +386,19 @@ namespace Snyk.VisualStudio.Extension.Language
                         // thread-pool thread until it eventually returns. The ContinueWith below only
                         // prevents an unobserved-exception crash if it ever faults; it cannot stop it.
                         cliExistsCheckTask.ContinueWith(
-                            t => Logger.Warning(t.Exception, "CliExistsCheck failed after the gate had already timed out on it"),
+                            t =>
+                            {
+                                // Swallow rather than let logging itself fault this continuation's own
+                                // Task and reproduce the exact unobserved-exception risk this exists to
+                                // close (PR review finding).
+                                try
+                                {
+                                    Logger.Warning(t.Exception, "CliExistsCheck failed after the gate had already timed out on it");
+                                }
+                                catch
+                                {
+                                }
+                            },
                             TaskContinuationOptions.OnlyOnFaulted);
 
                         infoBarMessage = "Snyk could not confirm the CLI exists within the time limit; " +
