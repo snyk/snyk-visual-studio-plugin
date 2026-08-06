@@ -489,6 +489,7 @@ namespace Snyk.VisualStudio.Extension.Download
                 };
 
                 using (var process = new Process { StartInfo = startInfo })
+                using (var outputFlushed = new ManualResetEventSlim(false))
                 {
                     // Drain stdout concurrently via BeginOutputReadLine (started before WaitForExit)
                     // rather than WaitForExit-then-ReadToEnd (PR review finding): the latter assumed "the
@@ -505,6 +506,14 @@ namespace Snyk.VisualStudio.Extension.Download
                         if (e.Data != null)
                         {
                             output.AppendLine(e.Data);
+                        }
+                        else
+                        {
+                            // Null Data is EOF on the redirected stream - the async pump's last callback,
+                            // never followed by another AppendLine above, so Set() here is a genuine
+                            // handoff point (PR review finding, see the Wait() below for why this
+                            // exists instead of a second WaitForExit).
+                            outputFlushed.Set();
                         }
                     };
 
@@ -536,17 +545,20 @@ namespace Snyk.VisualStudio.Extension.Download
                         return CliProtocolCheckResult.TimedOut;
                     }
 
-                    // WaitForExit(int) returning true doesn't guarantee the async OutputDataReceived
-                    // pump has finished delivering output (documented WaitForExit(Int32) behavior) -
-                    // waiting again blocks until it has, so output below isn't read mid-flush. Bounded
-                    // (PR review finding), not the parameterless overload: the process has already
-                    // exited by this point, so this is only guarding against its stdout handle somehow
-                    // outliving it, which would otherwise hang this thread - and the semaphore it holds
-                    // - forever. Best-effort past the bound: a few buffered bytes aren't worth it.
-                    if (!process.WaitForExit(ProtocolProbeFlushTimeoutMs))
+                    // WaitForExit(int) returning true doesn't guarantee the async OutputDataReceived pump
+                    // has finished delivering output - true on .NET Core, but NOT on .NET Framework 4.8
+                    // (this project's target): there, the documented "call WaitForExit() again" fix-up
+                    // only performs the stream-flush wait when THAT call is the infinite (-1) overload, so
+                    // a second *timed* WaitForExit here (an earlier version of this fix) returns
+                    // immediately without waiting for anything - a no-op that looked like a fix but wasn't
+                    // one (PR review finding). Waiting on the OutputDataReceived-signalled event instead
+                    // is a real bounded wait for the actual EOF, and it's what lets `output.ToString()`
+                    // below run only after the same event's Set() call, which is also what makes reading
+                    // the non-thread-safe StringBuilder here safe on the timeout-free path.
+                    if (!outputFlushed.Wait(ProtocolProbeFlushTimeoutMs))
                     {
                         Logger.Warning(
-                            "CLI at {Path} exited but its stdout stream did not finish flushing within {TimeoutMs}ms",
+                            "CLI at {Path} exited but its stdout stream did not signal EOF within {TimeoutMs}ms",
                             cliFilePath,
                             ProtocolProbeFlushTimeoutMs);
                     }
