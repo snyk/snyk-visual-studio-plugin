@@ -632,6 +632,12 @@ namespace Snyk.VisualStudio.Extension.Tests.Language
 
             TasksServiceMock.Setup(ts => ts.ShouldDownloadCli()).Returns(false);
 
+            // A real solution service reporting "nothing open" — otherwise this test would pass through
+            // the service-unavailable guard instead and prove nothing about the branch it names.
+            var solutionServiceMock = new Mock<ISolutionService>();
+            solutionServiceMock.Setup(s => s.IsSolutionOpen()).Returns(false);
+            ServiceProviderMock.Setup(x => x.SolutionService).Returns(solutionServiceMock.Object);
+
             var realTimeout = SnykLanguageClient.SolutionLoadTimeout;
 
             // Long enough that waiting would be unmistakable: if the gate ever blocks the no-solution

@@ -5,10 +5,8 @@ using System.ComponentModel.Composition;
 using System.Diagnostics;
 using System.Threading;
 using System.Threading.Tasks;
-using Microsoft.VisualStudio;
 using Microsoft.VisualStudio.LanguageServer.Client;
 using Microsoft.VisualStudio.Shell;
-using Microsoft.VisualStudio.Shell.Interop;
 using Microsoft.VisualStudio.Threading;
 using Serilog;
 using Snyk.VisualStudio.Extension.Analytics;
@@ -52,6 +50,13 @@ namespace Snyk.VisualStudio.Extension.Language
         // Holds the delegate subscribed to SolutionEvents.AfterBackgroundSolutionLoadComplete so we
         // can unsubscribe before re-subscribing on server restarts (idempotent wiring).
         private EventHandler<EventArgs> solutionOpenedMigrationHandler;
+
+        private EventHandler<EventArgs> solutionLoadedFolderRepairHandler;
+
+        // The folder the server was last initialised with, as handed to it in InitializationOptions.
+        // Empty means the server is running against no workspace, which the solution-loaded handler
+        // repairs. volatile because it is written from the initialize path and read from a solution event.
+        private volatile string initializedWithFolder;
 
         [ImportingConstructor]
         public SnykLanguageClient()
@@ -103,9 +108,12 @@ namespace Snyk.VisualStudio.Extension.Language
             // didChangeWorkspaceFolders in this client — so this line is the record of what the server
             // was given. A blank folder here is the signature of a start that beat the solution load,
             // which previously looked like a healthy startup in every log we had.
+            this.initializedWithFolder =
+                SnykVSPackage.ServiceProvider?.SolutionService?.SolutionFolderCache ?? string.Empty;
+
             Logger.Debug(
                 "InitializationOptions requested; solution folder is '{Folder}'",
-                SnykVSPackage.ServiceProvider?.SolutionService?.SolutionFolderCache ?? string.Empty);
+                this.initializedWithFolder);
 
             return initializationOptions;
         }
@@ -290,6 +298,44 @@ namespace Snyk.VisualStudio.Extension.Language
                 return;
             }
 
+            // IsSolutionOpen reads DTE and asserts the UI thread.
+            await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
+
+            var solutionService = SnykVSPackage.ServiceProvider.SolutionService;
+            if (solutionService == null)
+            {
+                Logger.Debug("Solution service unavailable; not waiting for a solution");
+
+                return;
+            }
+
+            bool solutionOpen;
+            try
+            {
+                solutionOpen = solutionService.IsSolutionOpen();
+            }
+            catch (Exception e)
+            {
+                // Treated as "not open" so a probe failure cannot hold the server back.
+                Logger.Debug(e, "Could not read solution state; starting without waiting");
+
+                return;
+            }
+
+            if (!solutionOpen)
+            {
+                // Nothing open. That is either "VS has no solution" or "VS has not started opening one
+                // yet", and the two are not distinguishable here without version-specific interop — so
+                // startup is NOT delayed on the guess. AfterBackgroundSolutionLoadComplete is what
+                // covers a solution arriving later; see SubscribeToSolutionLoadedForFolderRepair.
+                Logger.Debug("No solution open; starting without waiting for one");
+
+                return;
+            }
+
+            // A solution IS open but its folder may not be resolvable yet — the state the failing startup
+            // was in. GetSolutionFolderAsync logs at Information on every call, so this loop is reached
+            // only in that case and polls slowly; the healthy path costs a single extra line.
             var deadline = DateTime.UtcNow + SolutionLoadTimeout;
             var attempt = 0;
 
@@ -297,23 +343,10 @@ namespace Snyk.VisualStudio.Extension.Language
             {
                 attempt++;
 
-                var state = await GetSolutionStateAsync();
-
-                // Open and resolvable: the start path's own GetSolutionFolderAsync will find it. That
-                // call is deliberately NOT made here — it logs at Information on every invocation, so
-                // polling it would fill the log with one line per check.
-                if (state.IsOpen)
+                var folder = await solutionService.GetSolutionFolderAsync();
+                if (!string.IsNullOrEmpty(folder))
                 {
-                    Logger.Debug("Solution reported open after {Attempts} check(s)", attempt);
-
-                    return;
-                }
-
-                if (!state.IsOpening)
-                {
-                    Logger.Debug(
-                        "No solution open and none opening after {Attempts} check(s); starting without a folder",
-                        attempt);
+                    Logger.Debug("Solution folder resolved after {Attempts} check(s)", attempt);
 
                     return;
                 }
@@ -321,53 +354,86 @@ namespace Snyk.VisualStudio.Extension.Language
                 if (DateTime.UtcNow >= deadline)
                 {
                     Logger.Warning(
-                        "Solution was still opening after {Seconds}s; starting the language server without waiting further",
+                        "A solution is open but its folder did not resolve within {Seconds}s; starting the language server without one",
                         SolutionLoadTimeout.TotalSeconds);
 
                     return;
                 }
 
-                Logger.Debug("Solution still opening after {Attempts} check(s); waiting", attempt);
+                Logger.Debug("Solution open but folder not resolvable yet (check {Attempts}); waiting", attempt);
 
                 await Task.Delay(SolutionLoadPollInterval);
             }
         }
 
         /// <summary>
-        /// Cheap, non-logging snapshot of whether a solution is open or on its way. Both come from
-        /// IVsSolution rather than DTE so neither call writes to the log.
+        /// Restarts the server if a solution finishes loading after it was started without a folder.
+        ///
+        /// The gate above cannot cover every case: when nothing is open yet, "no solution" and "a
+        /// solution is about to open" look identical, and delaying startup on that guess would leave the
+        /// settings page on its fallback HTML for every user who opens VS without a solution. This is the
+        /// other half — the folder set is fixed at initialize time, so if one arrives later the only way
+        /// to hand it over is a restart. Conditional on the server actually having no folder, so a normal
+        /// startup does not restart.
         /// </summary>
-        private static async Task<(bool IsOpen, bool IsOpening)> GetSolutionStateAsync()
+        private void SubscribeToSolutionLoadedForFolderRepair()
         {
-            await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
-
             try
             {
-                // Via ISnykServiceProvider, not the package: AsyncPackage.GetServiceAsync is protected.
-                // Same route SnykSolutionService uses to obtain this service.
-                if (!(await SnykVSPackage.ServiceProvider.GetServiceAsync(typeof(SVsSolution)) is IVsSolution solution))
+                UnsubscribeFromSolutionLoadedForFolderRepair();
+
+                var solutionEvents = SnykVSPackage.ServiceProvider?.SolutionService?.SolutionEvents;
+                if (solutionEvents == null)
                 {
-                    return (false, false);
+                    return;
                 }
 
-                var isOpen = ErrorHandler.Succeeded(
-                                 solution.GetProperty((int)__VSPROPID.VSPROPID_IsSolutionOpen, out var openValue))
-                             && openValue is bool opened && opened;
+                solutionLoadedFolderRepairHandler = (_, __) => ThreadHelper.JoinableTaskFactory.RunAsync(
+                    async () =>
+                    {
+                        if (!string.IsNullOrEmpty(this.initializedWithFolder))
+                        {
+                            Logger.Debug(
+                                "Solution finished loading; server already has folder '{Folder}', no repair needed",
+                                this.initializedWithFolder);
 
-                // Covers the background-load window, which VSPROPID_IsSolutionOpen reports false for.
-                var isOpening = ErrorHandler.Succeeded(
-                                    solution.GetProperty((int)__VSPROPID4.VSPROPID_IsSolutionOpening, out var openingValue))
-                                && openingValue is bool opening && opening;
+                            return;
+                        }
 
-                return (isOpen, isOpening);
+                        Logger.Information(
+                            "Solution finished loading and the language server was started without a folder; restarting it to hand the folder over");
+
+                        await RestartServerAsync();
+                    }).FireAndForget();
+
+                solutionEvents.AfterBackgroundSolutionLoadComplete += solutionLoadedFolderRepairHandler;
             }
-            catch (Exception e)
+            catch (Exception ex)
             {
-                // Reported as "nothing open, nothing coming" so a probe failure starts the server rather
-                // than holding it back for the whole timeout.
-                Logger.Debug(e, "Could not read solution state; proceeding without waiting");
+                Logger.Warning(ex, "Could not subscribe to solution-opened event for workspace-folder repair.");
+            }
+        }
 
-                return (false, false);
+        private void UnsubscribeFromSolutionLoadedForFolderRepair()
+        {
+            try
+            {
+                if (solutionLoadedFolderRepairHandler == null)
+                {
+                    return;
+                }
+
+                var solutionEvents = SnykVSPackage.ServiceProvider?.SolutionService?.SolutionEvents;
+                if (solutionEvents != null)
+                {
+                    solutionEvents.AfterBackgroundSolutionLoadComplete -= solutionLoadedFolderRepairHandler;
+                }
+
+                solutionLoadedFolderRepairHandler = null;
+            }
+            catch (Exception ex)
+            {
+                Logger.Warning(ex, "Could not unsubscribe from solution-opened event for workspace-folder repair.");
             }
         }
 
@@ -492,6 +558,7 @@ namespace Snyk.VisualStudio.Extension.Language
             // Detach the solution-opened migration handler as part of stop teardown so a permanent
             // stop (extension disable / VS shutdown) doesn't leave it running against a dead LS.
             UnsubscribeFromSolutionOpenedForMigration();
+            UnsubscribeFromSolutionLoadedForFolderRepair();
 
             if (StopAsync != null)
             {
@@ -547,6 +614,7 @@ namespace Snyk.VisualStudio.Extension.Language
             SendPluginInstalledEvent();
             Rpc.Disconnected += Rpc_Disconnected;
             SubscribeToSolutionOpenedForMigration();
+            SubscribeToSolutionLoadedForFolderRepair();
             return Task.CompletedTask;
         }
 
@@ -650,6 +718,7 @@ namespace Snyk.VisualStudio.Extension.Language
 
             IsReady = false;
             UnsubscribeFromSolutionOpenedForMigration();
+            UnsubscribeFromSolutionLoadedForFolderRepair();
         }
 
         public async Task AttachForCustomMessageAsync(JsonRpc rpc)
