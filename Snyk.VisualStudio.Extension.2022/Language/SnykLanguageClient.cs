@@ -196,7 +196,34 @@ namespace Snyk.VisualStudio.Extension.Language
         // Seam for tests: pins the "shown only after semaphore.Release()" ordering fixed above (a prior
         // review round flagged ShowErrorInfoBar's synchronous main-thread block as a deadlock risk while
         // held) so a future refactor moving this call back inside the try/finally has something to fail.
-        internal Action<string> ShowInfoBar { get; set; } = message => NotificationService.Instance?.ShowErrorInfoBar(message);
+        //
+        // Ensures the tool window exists first (PR review finding): VsInfoBarService.ShowErrorInfoBar
+        // silently no-ops when SnykVSPackage.ToolWindow is null - which it is until the Snyk panel has
+        // been created at least once (opened by the user, or by a Snyk command) - so a fresh VS session
+        // where the panel was never opened would otherwise drop these messages with zero feedback,
+        // contradicting the "isn't silently logged-only" rationale below for showing them at all. This
+        // mirrors what AbstractSnykCommand already does before running any Snyk command; the caveat is
+        // the same one that code already lives with - EnsureInitializeToolWindowAsync throws
+        // NotSupportedException if VS's own FindToolWindow can't produce one (e.g. during shutdown),
+        // in which case ShowErrorInfoBar below still runs and no-ops exactly as it did before this fix.
+        internal Action<string> ShowInfoBar { get; set; } = message =>
+        {
+            if (SnykVSPackage.Instance != null)
+            {
+                ThreadHelper.JoinableTaskFactory.Run(async () =>
+                {
+                    try
+                    {
+                        await SnykVSPackage.Instance.EnsureInitializeToolWindowAsync();
+                    }
+                    catch (NotSupportedException)
+                    {
+                    }
+                });
+            }
+
+            NotificationService.Instance?.ShowErrorInfoBar(message);
+        };
 
         public async Task<Connection> ActivateAsync(CancellationToken token)
         {
