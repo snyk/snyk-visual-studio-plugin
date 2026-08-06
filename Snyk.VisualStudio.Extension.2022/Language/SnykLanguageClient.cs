@@ -377,6 +377,18 @@ namespace Snyk.VisualStudio.Extension.Language
                         // Same reasoning as the TimedOut/CheckFailed protocol-check messages below: not a
                         // confirmed missing binary, and there is no "try restarting" action to suggest. A
                         // slow or unreachable custom path (UNC share) is the only realistic cause.
+                        //
+                        // Known gap (PR review finding), accepted: the losing cliExistsCheckTask is
+                        // abandoned here, not cancelled - CliExistsCheck is an arbitrary synchronous
+                        // Func<string, bool> (File.Exists by default), and a blocked File.Exists call has
+                        // no cancellation point reachable from managed code, so there is no real fix
+                        // short of changing every implementation's signature. It still occupies a
+                        // thread-pool thread until it eventually returns. The ContinueWith below only
+                        // prevents an unobserved-exception crash if it ever faults; it cannot stop it.
+                        cliExistsCheckTask.ContinueWith(
+                            t => Logger.Warning(t.Exception, "CliExistsCheck failed after the gate had already timed out on it"),
+                            TaskContinuationOptions.OnlyOnFaulted);
+
                         infoBarMessage = "Snyk could not confirm the CLI exists within the time limit; " +
                             "not a confirmed missing binary. This can happen against a slow or " +
                             $"unreachable custom CLI path. Specify a reachable CLI path, " +

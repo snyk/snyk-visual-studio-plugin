@@ -5,6 +5,7 @@ using System.Globalization;
 using System.IO;
 using System.Net.Http;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.VisualStudio.Threading;
 using Serilog;
@@ -444,6 +445,13 @@ namespace Snyk.VisualStudio.Extension.Download
         // checksum-based memo answers "is this the release we expect"; this one answers "can this
         // specific file on disk speak our protocol", so the two must not collide or invalidate for the
         // same reasons).
+        //
+        // Known gap (PR review finding), accepted rather than fixed: unlike BuildUpToDateMemoKey, this
+        // key has no checksum, so an in-place binary swap that preserves both length and last-write-time
+        // (some installers/copy tools do) reuses the previous verdict. Not worth closing by hashing the
+        // ~175MB binary on every protocol check - that would defeat the memo's whole purpose - and the
+        // exposure window is one download episode, not the session: EndCliDownloadEpisode drops this
+        // downloader instance (and so this memo) at the start of every new episode.
         private static string BuildProtocolCheckMemoKey(string cliFilePath)
         {
             if (string.IsNullOrEmpty(cliFilePath))
@@ -475,6 +483,13 @@ namespace Snyk.VisualStudio.Extension.Download
         // Not virtual: CheckCliProtocol above is the seam tests substitute (FakeDownloader overrides
         // IsCliProtocolSupported, and unit tests exercising the memo drive it through CheckCliProtocol
         // directly) - this method exists only to separate the memo from the actual process spawn.
+        //
+        // Known coverage gap (PR review finding), accepted: no unit test exercises the real
+        // WaitForExit-timeout/Kill() branch below - CliProtocolCheckResult.TimedOut is only ever
+        // produced by a hand-set test double elsewhere. Covering it for real means spawning a process
+        // that outlives a shortened ProtocolProbeTimeoutMs, which the const's current form doesn't
+        // support without a settable seam, and either a real ~20s wait or that seam felt like more
+        // machinery than a timing edge case warranted.
         private CliProtocolCheckResult ProbeCliProtocol(string cliFilePath)
         {
             try
@@ -513,7 +528,21 @@ namespace Snyk.VisualStudio.Extension.Download
                             // never followed by another AppendLine above, so Set() here is a genuine
                             // handoff point (PR review finding, see the Wait() below for why this
                             // exists instead of a second WaitForExit).
-                            outputFlushed.Set();
+                            //
+                            // The callback can still fire after this method has returned via the
+                            // TimedOut path below, disposing outputFlushed as part of the using scope's
+                            // teardown - Set() on a disposed ManualResetEventSlim throws
+                            // ObjectDisposedException on this I/O-completion thread, outside the
+                            // try/catch below (PR review finding). Nobody is waiting on the event by
+                            // then, so there is nothing to signal; swallow it rather than let an
+                            // unhandled exception surface on a thread this method no longer owns.
+                            try
+                            {
+                                outputFlushed.Set();
+                            }
+                            catch (ObjectDisposedException)
+                            {
+                            }
                         }
                     };
 
@@ -557,10 +586,20 @@ namespace Snyk.VisualStudio.Extension.Download
                     // the non-thread-safe StringBuilder here safe on the timeout-free path.
                     if (!outputFlushed.Wait(ProtocolProbeFlushTimeoutMs))
                     {
+                        // Read below only after Wait() returns true (PR review finding): output is a
+                        // plain StringBuilder, not thread-safe, and the OutputDataReceived callback may
+                        // still be mid-AppendLine on another thread when the wait times out. Reading it
+                        // anyway risks a torn string that IsSupportedProtocolVersion could misclassify
+                        // as a confirmed Supported/Unsupported verdict - which CheckCliProtocol then
+                        // memoizes, defeating the whole point of the CliProtocolCheckResult distinction
+                        // this method exists to make. TimedOut here for the same reason as the process-
+                        // exit timeout above: not a verdict, don't cache it.
                         Logger.Warning(
                             "CLI at {Path} exited but its stdout stream did not signal EOF within {TimeoutMs}ms",
                             cliFilePath,
                             ProtocolProbeFlushTimeoutMs);
+
+                        return CliProtocolCheckResult.TimedOut;
                     }
 
                     var reported = output.ToString().Trim();
