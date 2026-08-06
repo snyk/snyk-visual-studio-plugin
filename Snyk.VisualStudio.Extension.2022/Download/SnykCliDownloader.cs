@@ -22,8 +22,12 @@ namespace Snyk.VisualStudio.Extension.Download
     /// caller can tell "confirmed incompatible" apart from "couldn't be checked at all" (IDE-2404) -
     /// collapsing those into one "not supported" answer misattributes a timeout or a transient error
     /// (e.g. an AV scanner still holding a just-downloaded binary) as a genuine version mismatch.
+    ///
+    /// Public rather than internal: ISnykTasksService.CheckCliProtocol (a public interface member,
+    /// needed so SnykLanguageClient and SnykToolWindowControl can share one memoized downloader
+    /// instance instead of each spawning their own probe) must return this type.
     /// </summary>
-    internal enum CliProtocolCheckResult
+    public enum CliProtocolCheckResult
     {
         Supported,
         Unsupported,
@@ -81,6 +85,8 @@ namespace Snyk.VisualStudio.Extension.Download
         private LatestReleaseInfo cachedLatestReleaseInfo;
         private string upToDateMemoKey;
         private bool upToDateMemoVerdict;
+        private string protocolCheckMemoKey;
+        private CliProtocolCheckResult protocolCheckMemoVerdict;
 
         public SnykCliDownloader(ISnykOptions snykOptions)
         {
@@ -385,7 +391,77 @@ namespace Snyk.VisualStudio.Extension.Download
         /// message should not claim "wrong version" for either of the former.
         /// </summary>
         // internal virtual for testability: a unit test cannot execute a real CLI.
+        //
+        // Memoized (PR review finding): two pre-existing call paths probe the same binary twice in
+        // immediate succession — SnykToolWindowControl's OnDownloadCancelled/OnDownloadFailed decide
+        // fallbackUsable via this check, then unconditionally call RestartServerAsync, whose gate
+        // re-runs the identical probe; IsCliDownloadNeeded's network-failure fallback does the same via
+        // the DownloadFinished handler. Re-probing cost up to ~40s combined and risked a second,
+        // spurious timeout contradicting the first check's "the CLI is fine" verdict.
         internal virtual CliProtocolCheckResult CheckCliProtocol(string cliFilePath)
+        {
+            var key = BuildProtocolCheckMemoKey(cliFilePath);
+
+            lock (this.memoLock)
+            {
+                if (key != null && string.Equals(key, this.protocolCheckMemoKey, StringComparison.Ordinal))
+                {
+                    return this.protocolCheckMemoVerdict;
+                }
+            }
+
+            var verdict = this.ProbeCliProtocol(cliFilePath);
+
+            // Only memoise when the file could actually be stat'd; otherwise re-probe every time.
+            if (key != null)
+            {
+                lock (this.memoLock)
+                {
+                    this.protocolCheckMemoKey = key;
+                    this.protocolCheckMemoVerdict = verdict;
+                }
+            }
+
+            return verdict;
+        }
+
+        // Null when the file cannot be stat'd, which makes the result unmemoisable rather than wrong -
+        // same reasoning as BuildUpToDateMemoKey below, and deliberately not sharing its key (a
+        // checksum-based memo answers "is this the release we expect"; this one answers "can this
+        // specific file on disk speak our protocol", so the two must not collide or invalidate for the
+        // same reasons).
+        private static string BuildProtocolCheckMemoKey(string cliFilePath)
+        {
+            if (string.IsNullOrEmpty(cliFilePath))
+            {
+                return null;
+            }
+
+            try
+            {
+                var info = new FileInfo(cliFilePath);
+
+                if (!info.Exists)
+                {
+                    return null;
+                }
+
+                return string.Join(
+                    "",
+                    cliFilePath,
+                    info.Length.ToString(CultureInfo.InvariantCulture),
+                    info.LastWriteTimeUtc.Ticks.ToString(CultureInfo.InvariantCulture));
+            }
+            catch (Exception e) when (e is IOException || e is UnauthorizedAccessException || e is ArgumentException)
+            {
+                return null;
+            }
+        }
+
+        // Not virtual: CheckCliProtocol above is the seam tests substitute (FakeDownloader overrides
+        // IsCliProtocolSupported, and unit tests exercising the memo drive it through CheckCliProtocol
+        // directly) - this method exists only to separate the memo from the actual process spawn.
+        private CliProtocolCheckResult ProbeCliProtocol(string cliFilePath)
         {
             try
             {

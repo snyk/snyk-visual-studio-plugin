@@ -537,10 +537,13 @@ namespace Snyk.VisualStudio.Extension.UI.Toolwindow
         /// run. Presence alone used to be the test, so the language server was restarted against a
         /// truncated or protocol-incompatible binary and never came up — leaving the tool window on
         /// its loading state with nothing to act on.
+        ///
+        /// Routed through tasksService (PR review finding) rather than a fresh SnykCliDownloader: this
+        /// check runs immediately before RestartServerAsync, whose own gate probes the same binary
+        /// again - a fresh instance here had no memo to catch that repeat.
         /// </summary>
         private bool IsExistingCliUsableForFallback() =>
-            new SnykCliDownloader(serviceProvider.Options)
-                .IsExistingCliUsable(SnykCli.GetCliFilePath(serviceProvider.Options.CliCustomPath));
+            tasksService.IsExistingCliUsable(SnykCli.GetCliFilePath(serviceProvider.Options.CliCustomPath));
 
         /// <summary>
         /// Show tool window.

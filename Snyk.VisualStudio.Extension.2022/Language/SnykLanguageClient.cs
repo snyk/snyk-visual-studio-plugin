@@ -144,8 +144,15 @@ namespace Snyk.VisualStudio.Extension.Language
         // (e.g. an AV scanner still holding a just-downloaded binary) can be told apart from a genuinely
         // incompatible CLI - collapsing all of those into one "wrong version" message misled the user
         // and gave them the wrong remediation for a transient condition.
+        //
+        // Routed through TasksService (PR review finding) rather than a fresh SnykCliDownloader: a
+        // fallback restart (SnykToolWindowControl.OnDownloadCancelled/OnDownloadFailed) already probes
+        // this exact binary right before calling RestartServerAsync, and a fresh instance here had no
+        // memo to catch the repeat - up to ~40s of redundant re-probing and a risk of a contradictory
+        // second verdict. TasksService.CliDownloader is one instance for the whole episode, so both
+        // callers now share its memo.
         internal Func<string, CliProtocolCheckResult> CliProtocolCompatibilityCheck { get; set; } =
-            cliPath => new SnykCliDownloader(SnykVSPackage.Instance.Options).CheckCliProtocol(cliPath);
+            cliPath => SnykVSPackage.ServiceProvider.TasksService.CheckCliProtocol(cliPath);
 
         // Seam for tests: pins the "shown only after semaphore.Release()" ordering fixed above (a prior
         // review round flagged ShowErrorInfoBar's synchronous main-thread block as a deadlock risk while
