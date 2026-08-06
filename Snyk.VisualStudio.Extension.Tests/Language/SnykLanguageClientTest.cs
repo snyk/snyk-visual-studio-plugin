@@ -12,6 +12,7 @@ using Snyk.VisualStudio.Extension.Download;
 using Snyk.VisualStudio.Extension.Language;
 using Snyk.VisualStudio.Extension.Service;
 using Snyk.VisualStudio.Extension.Settings;
+using Snyk.VisualStudio.Extension.UI.Notifications;
 using StreamJsonRpc;
 using Xunit;
 using LSP = Microsoft.VisualStudio.LanguageServer.Protocol;
@@ -52,6 +53,22 @@ namespace Snyk.VisualStudio.Extension.Tests.Language
             (SemaphoreSlim)typeof(SnykLanguageClient)
                 .GetField("semaphore", BindingFlags.NonPublic | BindingFlags.Instance)
                 .GetValue(client);
+
+        // IDE-2404 follow-up (review finding): NotificationService.ShowErrorInfoBar truncates at
+        // MaxMsgLength, and every gate message is deliberately ordered so the actionable text comes
+        // before the CLI path - losing the path to truncation is fine, losing the fix instructions is
+        // not. Nothing previously pinned that bound, so a future wording change could silently start
+        // truncating the remediation itself with no test catching it.
+        private static void AssertActionablePrefixFitsBeforeTruncation(string message)
+        {
+            var pathMarkerIndex = message.IndexOf(" (CLI path:", StringComparison.Ordinal);
+            var actionablePrefixLength = pathMarkerIndex >= 0 ? pathMarkerIndex : message.Length;
+
+            Assert.True(
+                actionablePrefixLength < NotificationService.MaxMsgLength,
+                $"Actionable prefix is {actionablePrefixLength} chars, at or over the " +
+                    $"{NotificationService.MaxMsgLength}-char truncation cap: \"{message}\"");
+        }
 
         [Fact]
         public async Task OnServerInitializeFailedAsync_ShouldReturnFailureContext_WithErrorMessage()
@@ -137,6 +154,7 @@ namespace Snyk.VisualStudio.Extension.Tests.Language
             Assert.NotNull(shownMessage);
             Assert.Contains(expectedMessageFragment, shownMessage, StringComparison.OrdinalIgnoreCase);
             Assert.DoesNotContain("does not support the required Language Server protocol version", shownMessage);
+            AssertActionablePrefixFitsBeforeTruncation(shownMessage);
         }
 
         // IDE-2404: pins the ordering fix from a prior review round - ShowErrorInfoBar blocks
@@ -174,6 +192,7 @@ namespace Snyk.VisualStudio.Extension.Tests.Language
             Assert.NotNull(shownMessage);
             Assert.Contains("does not support the required Language Server protocol version", shownMessage);
             Assert.Equal(1, semaphoreCountWhenShown); // released (capacity 1), not held (would be 0)
+            AssertActionablePrefixFitsBeforeTruncation(shownMessage);
         }
 
         // IDE-2404 follow-up: a missing CLI binary (e.g. custom path set, auto-update off, file deleted)
@@ -218,6 +237,7 @@ namespace Snyk.VisualStudio.Extension.Tests.Language
             Assert.False(protocolCheckInvoked);
             Assert.NotNull(shownMessage);
             Assert.Contains("was not found", shownMessage);
+            AssertActionablePrefixFitsBeforeTruncation(shownMessage);
         }
 
         // IDE-2404 follow-up (review finding): CliExistsCheck is offloaded but was unbounded, unlike
@@ -271,6 +291,7 @@ namespace Snyk.VisualStudio.Extension.Tests.Language
                 Assert.False(protocolCheckInvoked);
                 Assert.NotNull(shownMessage);
                 Assert.Contains("not confirm the CLI exists", shownMessage, StringComparison.OrdinalIgnoreCase);
+                AssertActionablePrefixFitsBeforeTruncation(shownMessage);
             }
         }
 
