@@ -321,6 +321,11 @@ namespace Snyk.VisualStudio.Extension.Tests
                 new List<SnykCliDownloader.CliDownloadFinishedCallback>()));
 
             Assert.Equal(1, cut.InstallFailuresReported);
+
+            // Set on the way out of the failure too. The caller's finally gates disposal of the
+            // cancellation token source and TaskFinished on this flag, so leaving it false after a
+            // failed install leaked the token and left Scan and Clean disabled for the session.
+            this.progressWorkerMock.VerifySet(w => w.IsWorkFinished = true, Times.Once());
         }
 
         [Fact]
@@ -733,6 +738,25 @@ namespace Snyk.VisualStudio.Extension.Tests
             Assert.Equal(1, cut.ReleaseInfoFetches);
             Assert.Equal(1, cut.ShaFetches);
             Assert.Equal(0, cut.ProtocolProbes);
+        }
+
+        [Fact]
+        public void GetLatestCliShaOnce_RefetchesForADifferentUrl()
+        {
+            const string firstUrl = "https://downloads.snyk.io/cli/v1.1292.0/snyk-win.exe";
+            const string secondUrl = "https://downloads.snyk.io/cli/v1.1300.0/snyk-win.exe";
+            var cut = new FakeDownloader(Options(), sha: "a-sha");
+
+            cut.GetLatestCliShaOnce(firstUrl);
+            cut.GetLatestCliShaOnce(firstUrl);
+
+            Assert.Equal(1, cut.ShaFetches);
+
+            // The memo used to be "have we fetched anything yet", so a second URL silently received the
+            // first URL's checksum — which fails verification against a binary that is in fact intact.
+            cut.GetLatestCliShaOnce(secondUrl);
+
+            Assert.Equal(2, cut.ShaFetches);
         }
     }
 }

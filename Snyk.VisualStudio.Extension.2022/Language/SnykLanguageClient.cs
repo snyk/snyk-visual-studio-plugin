@@ -226,8 +226,21 @@ namespace Snyk.VisualStudio.Extension.Language
             // in-contract chance to start the server: a raise of StartAsync outside VS's own load flow
             // is discarded.
             var isPackageInitialized = await WaitForPackageInitializationAsync();
+
+            // Off the UI thread before asking. ShouldDownloadCli issues a synchronous release lookup and
+            // hashes the ~175MB binary while holding SnykCliDownloader.memoLock; VS does not document
+            // which thread it calls OnLoadedAsync on, and SnykVSPackage.InitializeLanguageClient already
+            // hops for the same reason at the sibling call site.
+            await TaskScheduler.Default;
+
             var shouldStart = isPackageInitialized && !SnykVSPackage.ServiceProvider.TasksService.ShouldDownloadCli();
             Logger.Information("OnLoadedAsync Called and shouldStart is: {ShouldStart}", shouldStart);
+
+            // Back to the main thread before raising StartAsync, rather than raising it from the pool.
+            // The hop above is a change to the thread this method used to finish on, and this is the one
+            // in-contract chance to start the server, so it deliberately lands on the thread VS drives
+            // its own load flow from instead of leaving it to whatever the pool happened to give us.
+            await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
 
             await StartServerAsync(shouldStart);
         }

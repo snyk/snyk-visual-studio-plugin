@@ -225,11 +225,20 @@ namespace Snyk.VisualStudio.Extension
 
                 // Notify package has been initialized
                 IsInitialized = true;
-                initializationTaskCompletionSource.SetResult(true);
             }
             catch (Exception ex)
             {
                 Logger.Error(ex, "Error on intialize Snyk VS package");
+            }
+            finally
+            {
+                // Completed on EVERY path, including the catch above. This is what
+                // SnykLanguageClient.WaitForPackageInitializationAsync waits on, and that wait gates the
+                // one in-contract chance to start the language server — so leaving it uncompleted after a
+                // failed initialisation cost a 30-second stall and then a dead server for the whole
+                // session, which is strictly worse than failing fast. The task carries no verdict: the
+                // waiter re-reads IsInitialized, which stays false here if anything above threw.
+                initializationTaskCompletionSource.TrySetResult(true);
             }
         }
 
