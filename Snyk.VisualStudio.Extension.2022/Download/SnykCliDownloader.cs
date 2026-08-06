@@ -749,8 +749,11 @@ namespace Snyk.VisualStudio.Extension.Download
         /// An older release that still speaks our protocol is genuinely usable; anything else is not,
         /// and saying so is more useful than starting a server that cannot work.
         ///
-        /// This is one of the two places the protocol probe runs, and it is only reached after a
-        /// download has already failed or been cancelled — never on a normal startup.
+        /// This method itself is only reached after a download has already failed or been cancelled —
+        /// never on a normal startup. That does not describe the underlying protocol probe in general
+        /// (PR review finding, same caveat as <see cref="IsCliProtocolSupported"/>'s own doc comment
+        /// above): SnykLanguageClient's pre-launch gate calls <see cref="CheckCliProtocol"/> directly,
+        /// unconditionally, on every normal startup too.
         /// </summary>
         public bool IsExistingCliUsable(string cliFileDestinationPath)
         {
