@@ -4,6 +4,7 @@ using System.IO;
 using System.Linq;
 using System.ComponentModel.Composition;
 using System.Diagnostics;
+using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.VisualStudio.LanguageServer.Client;
@@ -54,12 +55,12 @@ namespace Snyk.VisualStudio.Extension.Language
         // can unsubscribe before re-subscribing on server restarts (idempotent wiring).
         private EventHandler<EventArgs> solutionOpenedMigrationHandler;
 
-        private EventHandler<EventArgs> solutionLoadedFolderRepairHandler;
+        // The folder last handed to the server via didChangeWorkspaceFolders. Empty means the server has
+        // no workspace folder. volatile because it is written and read from different threads: the sync
+        // is driven from the scan path, the ready callback and solution events.
+        private volatile string sentFolderPath = string.Empty;
 
-        // The folder the server was last initialised with, as handed to it in InitializationOptions.
-        // Empty means the server is running against no workspace, which the solution-loaded handler
-        // repairs. volatile because it is written from the initialize path and read from a solution event.
-        private volatile string initializedWithFolder;
+        private EventHandler<EventArgs> workspaceFolderSyncHandler;
 
         [ImportingConstructor]
         public SnykLanguageClient()
@@ -107,16 +108,12 @@ namespace Snyk.VisualStudio.Extension.Language
             // persisted queue re-delivers on the next session.
             var initializationOptions = settingsV25.GetInitializationOptions();
 
-            // The folder set is fixed here for the life of the server — there is no
-            // didChangeWorkspaceFolders in this client — so this line is the record of what the server
-            // was given. A blank folder here is the signature of a start that beat the solution load,
-            // which previously looked like a healthy startup in every log we had.
-            this.initializedWithFolder =
-                SnykVSPackage.ServiceProvider?.SolutionService?.SolutionFolderCache ?? string.Empty;
-
+            // What VS gave the server to start with. Blank is the signature of a client activated before
+            // the solution finished loading — no longer fatal, because SyncWorkspaceFoldersAsync hands the
+            // folder over afterwards, but still the line that tells the two cases apart in a log.
             Logger.Debug(
                 "InitializationOptions requested; solution folder is '{Folder}'",
-                this.initializedWithFolder);
+                SnykVSPackage.ServiceProvider?.SolutionService?.SolutionFolderCache ?? string.Empty);
 
             return initializationOptions;
         }
@@ -237,14 +234,6 @@ namespace Snyk.VisualStudio.Extension.Language
         // under test, so a test that deliberately leaves the package uninitialised would time out.
         internal static TimeSpan PackageInitializationTimeout = TimeSpan.FromSeconds(30);
 
-        // Bounded so a solution that never finishes loading costs a server with no folder rather than no
-        // server at all. Generous because overshooting delays nothing in the common cases: a solution
-        // that is loading resolves in well under a second, and no-solution returns without waiting.
-        // internal and settable for the same reason as the timeout above — tests must not sit here.
-        internal static TimeSpan SolutionLoadTimeout = TimeSpan.FromSeconds(30);
-
-        internal static TimeSpan SolutionLoadPollInterval = TimeSpan.FromMilliseconds(250);
-
         /// <summary>
         /// Blocks this load callback until the package has finished initializing.
         ///
@@ -309,177 +298,8 @@ namespace Snyk.VisualStudio.Extension.Language
             var shouldStart = isPackageInitialized && !SnykVSPackage.ServiceProvider.TasksService.ShouldDownloadCli();
             Logger.Information("OnLoadedAsync Called and shouldStart is: {ShouldStart}", shouldStart);
 
-            // Wait for the solution before starting, because the folder set is fixed at initialize time.
-            // InitializationOptions is the only channel that carries workspace folders to the server —
-            // there is no didChangeWorkspaceFolders in this client — so a server started before the
-            // solution has loaded runs against no folder for the rest of its life, and the only remedy
-            // is a full restart. Previously the wait happened by accident: a CLI download took long
-            // enough for the solution to load, so the failure only showed on the no-download path.
-            if (shouldStart)
-            {
-                await WaitForSolutionLoadAsync();
-            }
-
             // StartServerAsync marshals to the UI thread itself; no switch needed here.
             await StartServerAsync(shouldStart);
-        }
-
-        /// <summary>
-        /// Waits until a solution has finished loading, or until it is clear that none is coming.
-        ///
-        /// Not a bare wait on the solution-loaded event: Visual Studio opens perfectly well with no
-        /// solution at all, and the settings page needs the server up in that state — waiting
-        /// unconditionally would leave it on its fallback HTML forever. So this returns as soon as
-        /// either a solution is available or VS reports that nothing is being opened, and it is bounded
-        /// regardless so a wait that never resolves costs a degraded start rather than no start.
-        /// </summary>
-        private static async Task WaitForSolutionLoadAsync()
-        {
-            // Instance first: the static ServiceProvider property dereferences it without a guard.
-            if (SnykVSPackage.Instance == null || SnykVSPackage.ServiceProvider == null)
-            {
-                Logger.Debug("Service provider unavailable; not waiting for a solution");
-
-                return;
-            }
-
-            // IsSolutionOpen reads DTE and asserts the UI thread.
-            await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
-
-            var solutionService = SnykVSPackage.ServiceProvider.SolutionService;
-            if (solutionService == null)
-            {
-                Logger.Debug("Solution service unavailable; not waiting for a solution");
-
-                return;
-            }
-
-            bool solutionOpen;
-            try
-            {
-                solutionOpen = solutionService.IsSolutionOpen();
-            }
-            catch (Exception e)
-            {
-                // Treated as "not open" so a probe failure cannot hold the server back.
-                Logger.Debug(e, "Could not read solution state; starting without waiting");
-
-                return;
-            }
-
-            if (!solutionOpen)
-            {
-                // Nothing open. That is either "VS has no solution" or "VS has not started opening one
-                // yet", and the two are not distinguishable here without version-specific interop — so
-                // startup is NOT delayed on the guess. AfterBackgroundSolutionLoadComplete is what
-                // covers a solution arriving later; see SubscribeToSolutionLoadedForFolderRepair.
-                Logger.Debug("No solution open; starting without waiting for one");
-
-                return;
-            }
-
-            // A solution IS open but its folder may not be resolvable yet — the state the failing startup
-            // was in. GetSolutionFolderAsync logs at Information on every call, so this loop is reached
-            // only in that case and polls slowly; the healthy path costs a single extra line.
-            var deadline = DateTime.UtcNow + SolutionLoadTimeout;
-            var attempt = 0;
-
-            while (true)
-            {
-                attempt++;
-
-                var folder = await solutionService.GetSolutionFolderAsync();
-                if (!string.IsNullOrEmpty(folder))
-                {
-                    Logger.Debug("Solution folder resolved after {Attempts} check(s)", attempt);
-
-                    return;
-                }
-
-                if (DateTime.UtcNow >= deadline)
-                {
-                    Logger.Warning(
-                        "A solution is open but its folder did not resolve within {Seconds}s; starting the language server without one",
-                        SolutionLoadTimeout.TotalSeconds);
-
-                    return;
-                }
-
-                Logger.Debug("Solution open but folder not resolvable yet (check {Attempts}); waiting", attempt);
-
-                await Task.Delay(SolutionLoadPollInterval);
-            }
-        }
-
-        /// <summary>
-        /// Restarts the server if a solution finishes loading after it was started without a folder.
-        ///
-        /// The gate above cannot cover every case: when nothing is open yet, "no solution" and "a
-        /// solution is about to open" look identical, and delaying startup on that guess would leave the
-        /// settings page on its fallback HTML for every user who opens VS without a solution. This is the
-        /// other half — the folder set is fixed at initialize time, so if one arrives later the only way
-        /// to hand it over is a restart. Conditional on the server actually having no folder, so a normal
-        /// startup does not restart.
-        /// </summary>
-        private void SubscribeToSolutionLoadedForFolderRepair()
-        {
-            try
-            {
-                UnsubscribeFromSolutionLoadedForFolderRepair();
-
-                var solutionEvents = SnykVSPackage.ServiceProvider?.SolutionService?.SolutionEvents;
-                if (solutionEvents == null)
-                {
-                    return;
-                }
-
-                solutionLoadedFolderRepairHandler = (_, __) => ThreadHelper.JoinableTaskFactory.RunAsync(
-                    async () =>
-                    {
-                        if (!string.IsNullOrEmpty(this.initializedWithFolder))
-                        {
-                            Logger.Debug(
-                                "Solution finished loading; server already has folder '{Folder}', no repair needed",
-                                this.initializedWithFolder);
-
-                            return;
-                        }
-
-                        Logger.Information(
-                            "Solution finished loading and the language server was started without a folder; restarting it to hand the folder over");
-
-                        await RestartServerAsync();
-                    }).FireAndForget();
-
-                solutionEvents.AfterBackgroundSolutionLoadComplete += solutionLoadedFolderRepairHandler;
-            }
-            catch (Exception ex)
-            {
-                Logger.Warning(ex, "Could not subscribe to solution-opened event for workspace-folder repair.");
-            }
-        }
-
-        private void UnsubscribeFromSolutionLoadedForFolderRepair()
-        {
-            try
-            {
-                if (solutionLoadedFolderRepairHandler == null)
-                {
-                    return;
-                }
-
-                var solutionEvents = SnykVSPackage.ServiceProvider?.SolutionService?.SolutionEvents;
-                if (solutionEvents != null)
-                {
-                    solutionEvents.AfterBackgroundSolutionLoadComplete -= solutionLoadedFolderRepairHandler;
-                }
-
-                solutionLoadedFolderRepairHandler = null;
-            }
-            catch (Exception ex)
-            {
-                Logger.Warning(ex, "Could not unsubscribe from solution-opened event for workspace-folder repair.");
-            }
         }
 
         public async Task StartServerAsync(bool shouldStart = false)
@@ -736,7 +556,11 @@ namespace Snyk.VisualStudio.Extension.Language
             // Detach the solution-opened migration handler as part of stop teardown so a permanent
             // stop (extension disable / VS shutdown) doesn't leave it running against a dead LS.
             UnsubscribeFromSolutionOpenedForMigration();
-            UnsubscribeFromSolutionLoadedForFolderRepair();
+            UnsubscribeFromSolutionEventsForWorkspaceFolders();
+
+            // Forgotten on teardown: a restarted server is a new process with no folders,
+            // so the next sync must send the addition again rather than see a match and skip it.
+            this.sentFolderPath = string.Empty;
 
             if (StopAsync != null)
             {
@@ -792,7 +616,13 @@ namespace Snyk.VisualStudio.Extension.Language
             SendPluginInstalledEvent();
             Rpc.Disconnected += Rpc_Disconnected;
             SubscribeToSolutionOpenedForMigration();
-            SubscribeToSolutionLoadedForFolderRepair();
+            SubscribeToSolutionEventsForWorkspaceFolders();
+
+            // A first attempt now, in case the solution was already loaded when VS activated us. When it
+            // was not, this is a no-op and the sync happens later — on the solution event, or at the
+            // latest before the next scan.
+            ThreadHelper.JoinableTaskFactory.RunAsync(SyncWorkspaceFoldersAsync).FireAndForget();
+
             return Task.CompletedTask;
         }
 
@@ -847,6 +677,62 @@ namespace Snyk.VisualStudio.Extension.Language
             }
         }
 
+        /// <summary>
+        /// Keeps the server's folder set in step with solutions opened and closed after it started.
+        ///
+        /// Not sufficient on its own, and deliberately not relied upon: AfterBackgroundSolutionLoadComplete
+        /// does not fire for a solution Visual Studio restored from the previous session, which is exactly
+        /// the case that exposed the empty-workspace bug. The scan path syncs too, so this event is the
+        /// fast path rather than the guarantee.
+        /// </summary>
+        private void SubscribeToSolutionEventsForWorkspaceFolders()
+        {
+            try
+            {
+                UnsubscribeFromSolutionEventsForWorkspaceFolders();
+
+                var solutionEvents = SnykVSPackage.ServiceProvider?.SolutionService?.SolutionEvents;
+                if (solutionEvents == null)
+                {
+                    return;
+                }
+
+                workspaceFolderSyncHandler = (_, __) =>
+                    ThreadHelper.JoinableTaskFactory.RunAsync(SyncWorkspaceFoldersAsync).FireAndForget();
+
+                solutionEvents.AfterBackgroundSolutionLoadComplete += workspaceFolderSyncHandler;
+                solutionEvents.AfterCloseSolution += workspaceFolderSyncHandler;
+            }
+            catch (Exception ex)
+            {
+                Logger.Warning(ex, "Could not subscribe to solution events for workspace-folder sync.");
+            }
+        }
+
+        private void UnsubscribeFromSolutionEventsForWorkspaceFolders()
+        {
+            try
+            {
+                if (workspaceFolderSyncHandler == null)
+                {
+                    return;
+                }
+
+                var solutionEvents = SnykVSPackage.ServiceProvider?.SolutionService?.SolutionEvents;
+                if (solutionEvents != null)
+                {
+                    solutionEvents.AfterBackgroundSolutionLoadComplete -= workspaceFolderSyncHandler;
+                    solutionEvents.AfterCloseSolution -= workspaceFolderSyncHandler;
+                }
+
+                workspaceFolderSyncHandler = null;
+            }
+            catch (Exception ex)
+            {
+                Logger.Warning(ex, "Could not unsubscribe from solution events for workspace-folder sync.");
+            }
+        }
+
         private Task<string> GetLsDebugLevelAsync()
         {
             var serviceProvider = SnykVSPackage.ServiceProvider;
@@ -896,7 +782,11 @@ namespace Snyk.VisualStudio.Extension.Language
 
             IsReady = false;
             UnsubscribeFromSolutionOpenedForMigration();
-            UnsubscribeFromSolutionLoadedForFolderRepair();
+            UnsubscribeFromSolutionEventsForWorkspaceFolders();
+
+            // Forgotten on teardown: a restarted server is a new process with no folders,
+            // so the next sync must send the addition again rather than see a match and skip it.
+            this.sentFolderPath = string.Empty;
         }
 
         public async Task AttachForCustomMessageAsync(JsonRpc rpc)
@@ -947,8 +837,126 @@ namespace Snyk.VisualStudio.Extension.Language
             }
         }
         
+        /// <summary>
+        /// Brings the server's workspace folders in line with the solution that is currently open.
+        ///
+        /// Visual Studio decides which workspace folders it passes at initialize time, and the extension
+        /// has no say in it — nothing here sends <c>workspaceFolders</c> or <c>rootUri</c>. So a client
+        /// VS activates before the solution has loaded gets an empty workspace, and because the folder
+        /// set is never re-read, it stays empty for the life of the process: no scanning, and a re-raise
+        /// of StartAsync cannot fix it because VS ignores a start request for a server it considers
+        /// already running.
+        ///
+        /// This is the supported way out. snyk-ls builds a real folder from the notification, configures
+        /// it, and scans it if auto-scan is on, so the server can be started early and told the folder
+        /// whenever it becomes known.
+        ///
+        /// Idempotent: it tracks what was last sent, so repeat calls are free and a switch between
+        /// solutions sends the removal alongside the addition.
+        /// </summary>
+        private async Task SyncWorkspaceFoldersAsync()
+        {
+            if (!IsReady || Rpc == null)
+            {
+                return;
+            }
+
+            var solutionService = SnykVSPackage.ServiceProvider?.SolutionService;
+            if (solutionService == null)
+            {
+                return;
+            }
+
+            string folder;
+            try
+            {
+                folder = await solutionService.GetSolutionFolderAsync() ?? string.Empty;
+            }
+            catch (Exception e)
+            {
+                Logger.Debug(e, "Could not resolve the solution folder; leaving the server's folders as they are");
+
+                return;
+            }
+
+            var previous = this.sentFolderPath ?? string.Empty;
+            if (string.Equals(folder, previous, StringComparison.OrdinalIgnoreCase))
+            {
+                return;
+            }
+
+            var change = new WorkspaceFoldersChangeEvent();
+
+            if (!string.IsNullOrEmpty(previous) && TryBuildWorkspaceFolder(previous, out var removed))
+            {
+                change.Removed = new List<LspWorkspaceFolder> { removed };
+            }
+
+            if (!string.IsNullOrEmpty(folder) && TryBuildWorkspaceFolder(folder, out var added))
+            {
+                change.Added = new List<LspWorkspaceFolder> { added };
+            }
+
+            if (change.Added == null && change.Removed == null)
+            {
+                return;
+            }
+
+            try
+            {
+                await Rpc.NotifyWithParameterObjectAsync(
+                    LsConstants.WorkspaceChangeWorkspaceFolders,
+                    new DidChangeWorkspaceFoldersParams { Event = change });
+
+                this.sentFolderPath = folder;
+
+                Logger.Information(
+                    "Sent workspace folder change to the language server: added '{Added}', removed '{Removed}'",
+                    folder,
+                    previous);
+            }
+            catch (Exception e)
+            {
+                // Left unrecorded in sentFolderPath so the next caller retries.
+                Logger.Warning(e, "Could not send the workspace folder change to the language server");
+            }
+        }
+
+        /// <summary>
+        /// A folder path as the file URI snyk-ls expects. False when the path cannot be expressed as one.
+        /// </summary>
+        private static bool TryBuildWorkspaceFolder(string path, out LspWorkspaceFolder folder)
+        {
+            folder = null;
+
+            try
+            {
+                folder = new LspWorkspaceFolder
+                {
+                    // AbsoluteUri, not the raw path: snyk-ls parses this with uri.PathFromUri, which wants
+                    // a file: scheme. Wrapped because a path containing something that looks like a bad
+                    // percent escape makes the Uri constructor throw — see SnykLanguageClientCustomTarget.
+                    Uri = new Uri(path).AbsoluteUri,
+                    Name = new DirectoryInfo(path).Name,
+                };
+
+                return true;
+            }
+            catch (Exception e)
+            {
+                Logger.Warning(e, "Could not build a workspace folder URI for {Path}", path);
+
+                return false;
+            }
+        }
+
         public async Task<object> InvokeWorkspaceScanAsync(CancellationToken cancellationToken)
         {
+            // Before the scan, because this is the point at which the folder set must be right and the
+            // one place guaranteed to be reached: the solution-loaded event does not fire for a solution
+            // VS restored from the previous session, so a sync driven only by events can miss it.
+            await SyncWorkspaceFoldersAsync();
+
             var param = new LSP.ExecuteCommandParams {
                 Command = LsConstants.SnykWorkspaceScan
             };

@@ -662,6 +662,58 @@ namespace Snyk.VisualStudio.Extension.Tests.Language
         }
 
         [Fact]
+        public async Task InvokeWorkspaceScanAsync_SendsTheWorkspaceFolder_BeforeScanning()
+        {
+            // The scan is the point at which the folder set has to be right, and the only place guaranteed
+            // to be reached: Visual Studio fixes the folders at activation, and for a solution it restored
+            // from the previous session no solution-load event fires at all. Without this the server scans
+            // an empty workspace and reports nothing, which looks like a clean run.
+            const string folder = @"C:\repos\snyk-goof";
+            cut.IsReady = true;
+
+            var solutionServiceMock = new Mock<ISolutionService>();
+            solutionServiceMock.Setup(s => s.GetSolutionFolderAsync()).ReturnsAsync(folder);
+            ServiceProviderMock.Setup(x => x.SolutionService).Returns(solutionServiceMock.Object);
+
+            await cut.InvokeWorkspaceScanAsync(CancellationToken.None);
+
+            // Exact wire shape asserted, because snyk-ls tags the envelope PascalCase (Event/Added/Removed)
+            // and the folder fields lowercase (uri/name) — a casing slip here is silently ignored by the
+            // server, which would look exactly like the bug this fixes.
+            jsonRpcMock.Verify(
+                x => x.NotifyWithParameterObjectAsync(
+                    LsConstants.WorkspaceChangeWorkspaceFolders,
+                    It.Is<DidChangeWorkspaceFoldersParams>(p =>
+                        p.Event.Added.Count == 1
+                        && p.Event.Added[0].Uri == new Uri(folder).AbsoluteUri
+                        && p.Event.Added[0].Name == "snyk-goof"
+                        && p.Event.Removed == null)),
+                Times.Once);
+        }
+
+        [Fact]
+        public async Task InvokeWorkspaceScanAsync_DoesNotResendTheSameWorkspaceFolder()
+        {
+            // Sent once per change, not once per scan: the notification makes snyk-ls construct a folder
+            // and kick off a scan, so repeating it on every scan would duplicate both.
+            const string folder = @"C:\repos\snyk-goof";
+            cut.IsReady = true;
+
+            var solutionServiceMock = new Mock<ISolutionService>();
+            solutionServiceMock.Setup(s => s.GetSolutionFolderAsync()).ReturnsAsync(folder);
+            ServiceProviderMock.Setup(x => x.SolutionService).Returns(solutionServiceMock.Object);
+
+            await cut.InvokeWorkspaceScanAsync(CancellationToken.None);
+            await cut.InvokeWorkspaceScanAsync(CancellationToken.None);
+
+            jsonRpcMock.Verify(
+                x => x.NotifyWithParameterObjectAsync(
+                    LsConstants.WorkspaceChangeWorkspaceFolders,
+                    It.IsAny<DidChangeWorkspaceFoldersParams>()),
+                Times.Once);
+        }
+
+        [Fact]
         public async Task StartServerAsync_ShouldInvokeStartAsync_WhenShouldStartIsTrue()
         {
             // StartServerAsync marshals to the JTF main thread before raising StartAsync, so the test
@@ -835,36 +887,21 @@ namespace Snyk.VisualStudio.Extension.Tests.Language
 
             TasksServiceMock.Setup(ts => ts.ShouldDownloadCli()).Returns(false);
 
-            // OnLoadedAsync now waits for the solution before starting, because the folder set is fixed
-            // at initialize time and a server that beats the solution load runs against no folder for
-            // its whole life. No SVsSolution is registered here, so the wait resolves to "nothing open,
-            // nothing coming" on its first probe and returns — but the bound is shortened anyway so a
-            // change in that probe's outcome shows up as a failure rather than a stalled suite.
-            var realTimeout = SnykLanguageClient.SolutionLoadTimeout;
-            SnykLanguageClient.SolutionLoadTimeout = TimeSpan.FromMilliseconds(50);
+            // Act
+            await cut.OnLoadedAsync();
 
-            try
-            {
-                // Act
-                await cut.OnLoadedAsync();
-
-                // Assert
-                Assert.True(startInvoked);
-            }
-            finally
-            {
-                SnykLanguageClient.SolutionLoadTimeout = realTimeout;
-            }
+            // Assert
+            Assert.True(startInvoked);
         }
 
         [Fact]
-        public async Task OnLoadedAsync_ShouldStartServer_WhenThereIsNoSolutionToWaitFor()
+        public async Task OnLoadedAsync_ShouldStartServer_WithoutWaitingOnSolutionState()
         {
-            // The hole in a bare "wait for the solution to load" gate: Visual Studio opens perfectly well
-            // with no solution at all, and the settings page needs the server up in that state. Waiting
-            // unconditionally would leave it on its fallback HTML for the whole session. With no
-            // SVsSolution registered the probe reports nothing open and nothing opening, which must let
-            // the start through immediately rather than burn the timeout.
+            // The start is deliberately NOT gated on the solution any more. Visual Studio decides the
+            // workspace folders it passes at activation, so gating only changed which bug you got: wait,
+            // and a session with no solution never gets a server (and the settings page never leaves its
+            // fallback HTML); do not wait, and the server may start with no folder. The folder is handed
+            // over afterwards by SyncWorkspaceFoldersAsync instead, so starting promptly is correct.
             await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
 
             var startInvoked = false;
@@ -876,35 +913,22 @@ namespace Snyk.VisualStudio.Extension.Tests.Language
 
             TasksServiceMock.Setup(ts => ts.ShouldDownloadCli()).Returns(false);
 
-            // A real solution service reporting "nothing open" — otherwise this test would pass through
-            // the service-unavailable guard instead and prove nothing about the branch it names.
+            // No solution, and the folder never resolves — the shape that previously burned a 30s timeout.
             var solutionServiceMock = new Mock<ISolutionService>();
             solutionServiceMock.Setup(s => s.IsSolutionOpen()).Returns(false);
+            solutionServiceMock.Setup(s => s.GetSolutionFolderAsync()).ReturnsAsync(string.Empty);
             ServiceProviderMock.Setup(x => x.SolutionService).Returns(solutionServiceMock.Object);
 
-            var realTimeout = SnykLanguageClient.SolutionLoadTimeout;
+            var stopwatch = Stopwatch.StartNew();
 
-            // Long enough that waiting would be unmistakable: if the gate ever blocks the no-solution
-            // case, this test takes 30s instead of milliseconds.
-            SnykLanguageClient.SolutionLoadTimeout = TimeSpan.FromSeconds(30);
+            await cut.OnLoadedAsync();
 
-            try
-            {
-                var stopwatch = Stopwatch.StartNew();
+            stopwatch.Stop();
 
-                await cut.OnLoadedAsync();
-
-                stopwatch.Stop();
-
-                Assert.True(startInvoked);
-                Assert.True(
-                    stopwatch.Elapsed < TimeSpan.FromSeconds(5),
-                    $"the no-solution case must not wait for the timeout, but took {stopwatch.Elapsed}");
-            }
-            finally
-            {
-                SnykLanguageClient.SolutionLoadTimeout = realTimeout;
-            }
+            Assert.True(startInvoked);
+            Assert.True(
+                stopwatch.Elapsed < TimeSpan.FromSeconds(5),
+                $"the start must not wait on solution state, but took {stopwatch.Elapsed}");
         }
 
         [Fact]
