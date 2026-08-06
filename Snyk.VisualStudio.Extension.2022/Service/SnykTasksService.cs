@@ -70,8 +70,14 @@ namespace Snyk.VisualStudio.Extension.Service
             {
                 lock (this.cliDownloaderLock)
                 {
-                    return this.cliDownloader ??
-                           (this.cliDownloader = new SnykCliDownloader(this.serviceProvider.Options));
+                    var fresh = this.cliDownloader == null;
+
+                    var downloader = this.cliDownloader ??
+                                     (this.cliDownloader = new SnykCliDownloader(this.serviceProvider.Options));
+
+                    Logger.Information("[init-race] CliDownloader: {Action}", fresh ? "CONSTRUCTED (memo empty -> will re-fetch)" : "reused (memo warm)");
+
+                    return downloader;
                 }
             }
         }
@@ -80,7 +86,10 @@ namespace Snyk.VisualStudio.Extension.Service
         {
             lock (this.cliDownloaderLock)
             {
+                var had = this.cliDownloader != null;
                 this.cliDownloader = null;
+
+                Logger.Information("[init-race] EndCliDownloadEpisode: cleared (there {Was} a live downloader)", had ? "WAS" : "was not");
             }
         }
 
@@ -330,7 +339,11 @@ namespace Snyk.VisualStudio.Extension.Service
 
             try
             {
-                if (this.IsTaskRunning())
+                var running = this.IsTaskRunning();
+
+                Logger.Information("[init-race] Download: IsTaskRunning={Running} (isCliDownloading={Downloading})", running, this.isCliDownloading);
+
+                if (running)
                 {
                     Logger.Information("There is already a task in progress");
 

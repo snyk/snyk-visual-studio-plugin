@@ -204,7 +204,13 @@ namespace Snyk.VisualStudio.Extension.UI.Toolwindow
                 Logger.Warning("LanguageClientManager not available during InitializeEventListeners; skipping LS-ready subscription (tree will populate from $/snyk.treeView pushes).");
             }
 
-            this.loadedHandler = (sender, args) => this.tasksService.Download();
+            this.loadedHandler = (sender, args) =>
+            {
+                // [init-race] WPF raises Loaded more than once; each raise calls Download(). When this
+                // fires relative to the package's IsInitialized flag is what decides the outcome.
+                Logger.Information("[init-race] toolwindow: Loaded raised -> calling Download()");
+                this.tasksService.Download();
+            };
             this.Loaded += this.loadedHandler;
 
             // Stored in a field so Dispose can detach it: SnykScanCommand.Instance is a static
