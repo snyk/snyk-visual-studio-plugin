@@ -44,6 +44,10 @@ namespace Snyk.VisualStudio.Extension.UI.Toolwindow
 
         private bool disposed;
 
+        // Whether this control stopped the language server so a download could overwrite its binary.
+        // Set when the stop is issued and consumed by whichever download outcome follows.
+        private bool stoppedServerForDownload;
+
         // Subscription owners + the lambda handlers, retained so Dispose can detach symmetrically.
         // tasksService is a long-lived singleton, so a leaked subscription would keep firing
         // handlers against this control after the tool window is torn down.
@@ -149,39 +153,26 @@ namespace Snyk.VisualStudio.Extension.UI.Toolwindow
             this.taskFinishedHandler = (sender, args) => ThreadHelper.JoinableTaskFactory.RunAsync(this.OnTaskFinishedAsync);
             this.downloadStartedHandler = (sender, args) =>
             {
-                // Paired with the unconditional start in downloadFinishedHandler below: this stop is the
-                // only reason that start is not a duplicate. Logged because the pairing is invisible in a
-                // log otherwise — neither the event nor the stop decision writes a line of its own.
-                var stopping = LanguageClientHelper.IsLanguageServerReady();
+                // The binary is about to be overwritten, so a running server has to let go of it. Recorded
+                // rather than re-derived later: every handler below needs to know whether the server was
+                // taken down for this, and by the time they run the readiness flag no longer says.
+                this.stoppedServerForDownload = LanguageClientHelper.IsLanguageServerReady();
 
-                Logger.Debug("DownloadStarted: languageServerReady={Ready}; the stop is issued only when ready", stopping);
+                Logger.Debug("DownloadStarted: languageServerReady={Ready}; the stop is issued only when ready", this.stoppedServerForDownload);
 
-                if (stopping)
+                if (this.stoppedServerForDownload)
                     ThreadHelper.JoinableTaskFactory.RunAsync(serviceProvider.LanguageClientManager.StopServerAsync).FireAndForget();
                 this.OnDownloadStarted(sender, args);
             };
             this.downloadFinishedHandler = (sender, args) =>
             {
-                // A start is not enough when the user changed a CLI setting and the binary already on
-                // disk was current: nothing was fetched, so no download-started stop preceded this, and
-                // VS discards a start for a server it still considers running — leaving it on the
-                // executable it was launched with. That case needs the stop, so it needs a restart.
-                var needsRestart = args?.Forced == true && args.BinaryWasDownloaded == false;
-
-                Logger.Debug(
-                    "DownloadFinished: binaryWasDownloaded={Downloaded}, forced={Forced}, languageServerReady={Ready}; requesting {Action}",
-                    args?.BinaryWasDownloaded,
-                    args?.Forced,
-                    LanguageClientHelper.IsLanguageServerReady(),
-                    needsRestart ? "restart" : "start");
-
-                // Otherwise unconditional: when the download has just replaced a CLI the server could not
-                // run, this is what starts it. When the server is already running VS ignores the request,
-                // so no readiness check is needed — and a readiness guard would skip the start in exactly
-                // the case that needs it.
-                ThreadHelper.JoinableTaskFactory.RunAsync(async () => await (needsRestart
-                    ? serviceProvider.LanguageClientManager.RestartServerAsync()
-                    : serviceProvider.LanguageClientManager.StartServerAsync(true))).FireAndForget();
+                // cliUsable without probing: this outcome means the checksum matched, either because the
+                // download just verified it or because the binary on disk was already current. The
+                // protocol probe the failure paths run costs a CLI launch and would prove nothing here.
+                this.SettleLanguageServer(
+                    cliUsable: true,
+                    cliSettingsChanged: args?.CliSettingsChanged == true,
+                    source: "DownloadFinished");
 
                 this.OnDownloadFinished(sender, args);
             };
@@ -512,7 +503,10 @@ namespace Snyk.VisualStudio.Extension.UI.Toolwindow
 
                 await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
 
-                this.ReconcileLanguageServer(fallbackUsable, eventArgs?.Forced ?? false);
+                this.SettleLanguageServer(
+                    fallbackUsable,
+                    cliSettingsChanged: eventArgs?.CliSettingsChanged == true,
+                    source: "DownloadCancelled");
 
                 if (fallbackUsable)
                 {
@@ -539,12 +533,10 @@ namespace Snyk.VisualStudio.Extension.UI.Toolwindow
 
                 await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
 
-                // Always forced. A failure can only follow an attempted download, which raised
-                // DownloadStarted and issued a stop — but that stop is fire-and-forget, so readiness may
-                // not have flipped yet. Gating on readiness here would skip the restart and leave the
-                // in-flight stop to take the server down with nothing to bring it back. Usability of the
-                // CLI still gates it.
-                this.ReconcileLanguageServer(fallbackUsable, forced: true);
+                // A failure can only follow an attempted download, so DownloadStarted has already recorded
+                // whether it stopped the server. That recorded fact is why nothing here has to reason
+                // about whether the fire-and-forget stop has landed yet.
+                this.SettleLanguageServer(fallbackUsable, cliSettingsChanged: false, source: "DownloadFailed");
 
                 if (fallbackUsable)
                 {
@@ -558,29 +550,68 @@ namespace Snyk.VisualStudio.Extension.UI.Toolwindow
             }).FireAndForget();
         }
 
-        /// <summary>
-        /// Whether a cancelled or failed download should (re)start the language server.
-        ///
-        /// Nothing is downloaded when automatic CLI management is off, so no download-finished event
-        /// arrives and these handlers are the only thing that brings the server up. Which of two very
-        /// different situations that is depends on <paramref name="forced"/>:
-        /// <list type="bullet">
-        /// <item>startup — a server that is already serving is left alone, because stopping it discards
-        /// a working session and the replacement has to race a stop Visual Studio has not finished
-        /// processing;</item>
-        /// <item>the user changed a CLI setting — the running server was launched from the previous
-        /// executable and cannot switch, so it has to be restarted even though it is healthy.</item>
-        /// </list>
-        /// <paramref name="cliUsable"/> gates both: the configured CLI is launched only once it has been
-        /// shown to run and speak a compatible protocol version.
-        /// </summary>
-        internal static bool ShouldStartLanguageServer(bool cliUsable, bool languageServerReady, bool forced) =>
-            cliUsable && (forced || !languageServerReady);
-
-        // Shared by the cancelled and failed handlers so the two cannot drift.
-        private void ReconcileLanguageServer(bool cliUsable, bool forced)
+        /// <summary>What a download outcome has to do to leave the language server on the configured CLI.</summary>
+        internal enum ServerAction
         {
-            if (!ShouldStartLanguageServer(cliUsable, LanguageClientHelper.IsLanguageServerReady(), forced))
+            /// <summary>Already where it should be, or there is nothing runnable to put it on.</summary>
+            None,
+
+            /// <summary>Not running, so raising a start is enough.</summary>
+            Start,
+
+            /// <summary>Running the previous executable, so it has to be stopped first.</summary>
+            Restart,
+        }
+
+        /// <summary>
+        /// Decides what a finished, cancelled or failed CLI check has to do about the language server.
+        /// <list type="bullet">
+        /// <item><paramref name="stopIssued"/> — this control took the server down so the download could
+        /// overwrite the binary, so it is already off the old executable and only needs starting.</item>
+        /// <item><paramref name="cliSettingsChanged"/> — the user repointed the CLI, so a server still
+        /// serving is on the executable it was launched with and cannot switch without a restart.</item>
+        /// <item>Neither — this is startup. A server that is already serving is left alone; stopping it
+        /// would discard a working session for no gain.</item>
+        /// </list>
+        /// <paramref name="cliUsable"/> gates everything: never launch a binary not shown to run.
+        /// </summary>
+        internal static ServerAction DecideServerAction(
+            bool cliUsable, bool stopIssued, bool serverRunning, bool cliSettingsChanged)
+        {
+            if (!cliUsable)
+            {
+                return ServerAction.None;
+            }
+
+            if (stopIssued || !serverRunning)
+            {
+                return ServerAction.Start;
+            }
+
+            return cliSettingsChanged ? ServerAction.Restart : ServerAction.None;
+        }
+
+        // Shared by all three download outcomes so they cannot drift. Consumes stoppedServerForDownload:
+        // the stop belongs to the episode that just ended, and leaving it set would make the next
+        // settings change look like the server was already down.
+        private void SettleLanguageServer(bool cliUsable, bool cliSettingsChanged, string source)
+        {
+            var stopIssued = this.stoppedServerForDownload;
+            this.stoppedServerForDownload = false;
+
+            var serverRunning = LanguageClientHelper.IsLanguageServerReady();
+            var action = DecideServerAction(cliUsable, stopIssued, serverRunning, cliSettingsChanged);
+
+            Logger.Debug(
+                "{Source}: cliUsable={CliUsable}, stopIssued={StopIssued}, serverRunning={Running}, cliSettingsChanged={SettingsChanged}; action={Action}",
+                source,
+                cliUsable,
+                stopIssued,
+                serverRunning,
+                cliSettingsChanged,
+                action);
+
+            if (action == ServerAction.None)
             {
                 return;
             }
@@ -588,10 +619,13 @@ namespace Snyk.VisualStudio.Extension.UI.Toolwindow
             var languageClient = LanguageClientHelper.LanguageClientManager();
             if (languageClient == null)
             {
+                Logger.Debug("{Source}: no language client manager yet; nothing to act on", source);
                 return;
             }
 
-            ThreadHelper.JoinableTaskFactory.RunAsync(async () => await languageClient.RestartServerAsync()).FireAndForget();
+            ThreadHelper.JoinableTaskFactory.RunAsync(async () => await (action == ServerAction.Restart
+                ? languageClient.RestartServerAsync()
+                : languageClient.StartServerAsync(true))).FireAndForget();
         }
 
         /// <summary>

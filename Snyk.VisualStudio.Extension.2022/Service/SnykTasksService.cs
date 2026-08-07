@@ -37,9 +37,9 @@ namespace Snyk.VisualStudio.Extension.Service
 
         private bool isCliDownloading;
 
-        // Whether the download episode in flight was asked for because the user changed a CLI setting.
-        // Read when the download events are raised, which happens on a pool thread.
-        private volatile bool forcedCliReconcile;
+        // Whether the CLI check in flight was requested because the user changed a CLI setting. Read when
+        // the download events are raised, which happens on a pool thread.
+        private volatile bool cliSettingsChangedEpisode;
 
         private ISnykServiceProvider serviceProvider;
 
@@ -333,7 +333,7 @@ namespace Snyk.VisualStudio.Extension.Service
         /// the language server it must be restarted onto the newly configured executable even if one is
         /// already serving, which is otherwise indistinguishable from the startup call.
         /// </param>
-        public void Download(CliDownloadFinishedCallback downloadFinishedCallback = null, bool force = false)
+        public void Download(CliDownloadFinishedCallback downloadFinishedCallback = null, bool cliSettingsChanged = false)
         {
             Logger.Information("Enter Download method");
 
@@ -352,7 +352,7 @@ namespace Snyk.VisualStudio.Extension.Service
                 // Held for the episode rather than passed to the events directly: the outcome that needs
                 // it most is the one where nothing is downloaded at all, which is reported from deep
                 // inside the downloader via IsCliDownloadNeeded returning false.
-                this.forcedCliReconcile = force;
+                this.cliSettingsChangedEpisode = cliSettingsChanged;
 
                 this.downloadCliTokenSource = new CancellationTokenSource();
 
@@ -368,7 +368,7 @@ namespace Snyk.VisualStudio.Extension.Service
                     {
                         try
                         {
-                            await this.DownloadAsync(downloadFinishedCallback, progressWorker, force);
+                            await this.DownloadAsync(downloadFinishedCallback, progressWorker, cliSettingsChanged);
                         }
                         catch (ChecksumVerificationException e)
                         {
@@ -394,7 +394,7 @@ namespace Snyk.VisualStudio.Extension.Service
                         finally
                         {
                             this.isCliDownloading = false;
-                            this.forcedCliReconcile = false;
+                            this.cliSettingsChangedEpisode = false;
 
                             if (progressWorker.IsWorkFinished)
                             {
@@ -407,6 +407,11 @@ namespace Snyk.VisualStudio.Extension.Service
             }
             catch (Exception ex)
             {
+                // Cleared here as well as in the episode's own finally: if the throw happened before the
+                // episode was queued, that finally never runs, and a flag left set would make the next
+                // check — including an unrelated startup one — look like a settings change.
+                this.cliSettingsChangedEpisode = false;
+
                 Logger.Error(ex, "Error on CLI download");
             }
         }
@@ -536,16 +541,16 @@ namespace Snyk.VisualStudio.Extension.Service
         /// </summary>
         protected internal void OnDownloadFinished(bool binaryWasDownloaded = true)
         {
-            // Forced matters most when binaryWasDownloaded is false: nothing was fetched, so no
+            // The reason matters most when binaryWasDownloaded is false: nothing was fetched, so no
             // download-started stop preceded this, and the server is still running the executable it was
-            // launched with. Without the flag the subscriber can only ask VS to start a server that is
-            // already started, which VS discards.
+            // launched with. Without it the subscriber can only ask VS to start a server it already
+            // considers started, which VS discards.
             this.DownloadFinished?.Invoke(
                 this,
                 new SnykCliDownloadEventArgs
                 {
                     BinaryWasDownloaded = binaryWasDownloaded,
-                    Forced = this.forcedCliReconcile,
+                    CliSettingsChanged = this.cliSettingsChangedEpisode,
                 });
         }
 
@@ -554,7 +559,12 @@ namespace Snyk.VisualStudio.Extension.Service
         /// </summary>
         /// <param name="message">Cancel message.</param>
         protected internal void OnDownloadCancelled(string message) =>
-            this.DownloadCancelled?.Invoke(this, new SnykCliDownloadEventArgs(message));
+            // Carries the reason even though this is the aborted-by-the-user path: the settings change that
+            // requested the check still happened, and a subscriber that stopped the server for the download
+            // has to bring it back regardless of why the download ended.
+            this.DownloadCancelled?.Invoke(
+                this,
+                new SnykCliDownloadEventArgs(message) { CliSettingsChanged = this.cliSettingsChangedEpisode });
 
         /// <summary>
         /// Fire download cancelled event.
@@ -794,18 +804,18 @@ namespace Snyk.VisualStudio.Extension.Service
 
 
         private async Task DownloadAsync(CliDownloadFinishedCallback downloadFinishedCallback,
-            ISnykProgressWorker progressWorker, bool force = false)
+            ISnykProgressWorker progressWorker, bool cliSettingsChanged = false)
         {
             var options = this.serviceProvider.Options;
             if (!options.BinariesAutoUpdate)
             {
                 Logger.Information("CLI auto-update is disabled, CLI download is skipped.");
 
-                // Forced carries the reason no download happened: nothing was fetched either way, but a
-                // user who just repointed the CLI setting still needs the server moved onto that binary,
-                // whereas at startup it is already running the right one. The subscriber checks the
-                // configured CLI is usable before acting, so an unusable path is reported, not launched.
-                this.DownloadCancelled?.Invoke(this, new SnykCliDownloadEventArgs { Forced = force });
+                // Nothing was fetched either way, but a user who just repointed the CLI setting still
+                // needs the server moved onto that binary, whereas at startup it is already running the
+                // right one. The subscriber checks the configured CLI is usable before acting, so an
+                // unusable path is reported rather than launched.
+                this.DownloadCancelled?.Invoke(this, new SnykCliDownloadEventArgs { CliSettingsChanged = cliSettingsChanged });
                 return;
             }
 

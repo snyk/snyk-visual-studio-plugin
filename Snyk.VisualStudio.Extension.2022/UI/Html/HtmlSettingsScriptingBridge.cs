@@ -132,7 +132,7 @@ namespace Snyk.VisualStudio.Extension.UI.Html
                         // pre-checked here: the check and the call cannot be made atomic, so a pre-check
                         // only produces a log line that contradicts what actually happened.
                         Logger.Information("CLI settings changed; requesting the CLI check that moves the language server onto the configured binary");
-                        serviceProvider.TasksService?.Download(force: true);
+                        serviceProvider.TasksService?.Download(cliSettingsChanged: true);
                     }
 
                     tcs.TrySetResult(true);

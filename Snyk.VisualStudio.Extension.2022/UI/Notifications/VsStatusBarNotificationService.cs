@@ -136,11 +136,10 @@ namespace Snyk.VisualStudio.Extension.UI.Notifications
         private void OnDownloadStarted(object sender, SnykCliDownloadEventArgs eventArgs)
             => this.statusBar.ShowDownloadProgressMessage("Downloading latest Snyk CLI release...");
 
-        // The same event carries two meanings. Forced means the user changed a CLI setting while automatic
-        // management is off, so nothing was ever going to be downloaded and announcing a cancellation
-        // would be answering a question the user did not ask.
+        // Nothing is downloaded when automatic management is off, so a settings change reaches here having
+        // fetched nothing. Announcing a cancellation would answer a question the user did not ask.
         private void OnDownloadCancelled(object sender, SnykCliDownloadEventArgs eventArgs)
-            => this.statusBar.ShowDownloadFinishedMessage(eventArgs?.Forced == true
+            => this.statusBar.ShowDownloadFinishedMessage(eventArgs?.CliSettingsChanged == true
                 ? "Applying the Snyk CLI settings..."
                 : "Snyk CLI download cancelled");
 

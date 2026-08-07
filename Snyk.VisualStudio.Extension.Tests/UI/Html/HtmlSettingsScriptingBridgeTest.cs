@@ -54,7 +54,9 @@ namespace Snyk.VisualStudio.Extension.Tests.UI.Html
         {
             bridge.BeginSave();
             bridge.__saveIdeConfig__(JsonConvert.SerializeObject(config));
-            Assert.True(await bridge.SaveCompletion);
+            // AwaitWithTimeout, not a bare await: this class shares the MockedVS collection, so a stalled
+            // save would block every test in it rather than failing this one.
+            Assert.True(await AwaitWithTimeout(bridge.SaveCompletion));
         }
 
         [Fact]

@@ -56,14 +56,16 @@
         public bool BinaryWasDownloaded { get; set; } = true;
 
         /// <summary>
-        /// Whether the user changed a CLI setting, as opposed to this being part of startup. The running
-        /// server was launched from the executable in force at the time and cannot switch to another one,
-        /// so a forced request restarts a server that is already serving; an unforced one leaves it be.
+        /// Whether this CLI check was requested because the user changed a CLI setting, as opposed to
+        /// being part of startup. Deliberately the reason rather than a required action: the language
+        /// server subscriber uses it to decide whether a server that is already serving has to be moved
+        /// onto the newly configured executable, and the status bar uses it to describe what happened.
+        /// Naming it after either one of those would mislead the other.
         /// <para>
         /// Set as a property rather than through a constructor: the <c>bool</c> constructor overload
         /// already means <see cref="IsUpdateDownload"/>.
         /// </para>
         /// </summary>
-        public bool Forced { get; set; }
+        public bool CliSettingsChanged { get; set; }
     }
 }
