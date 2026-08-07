@@ -8,9 +8,7 @@ namespace Snyk.VisualStudio.Extension.UI.Notifications
     /// </summary>
     public class NotificationService
     {
-        // internal (not private) so tests asserting a message's actionable prefix stays under this
-        // cap (before truncation eats the fix instructions, not just the trailing CLI path) can
-        // reference the real constant instead of a copy that would silently drift if this is retuned.
+        // Shared with tests that verify actionable text is not truncated.
         internal const int MaxMsgLength = 300;
         private VsInfoBarService infoBarService;
 

@@ -35,14 +35,8 @@ namespace Snyk.VisualStudio.Extension.Language
         // Set when VS calls OnLoadedAsync. Raising StartAsync before that point is out of contract: VS
         // has already subscribed, so the raise looks valid, but it is discarded — ActivateAsync is never
         // called and nothing retries.
-        //
-        // This is also why the pre-launch gate in StartServerAsync fully covers ActivateAsync (a
-        // recurring review question): per the ILanguageClient contract, VS calls ActivateAsync only in
-        // response to this class raising StartAsync, and StartAsync is only ever raised from inside
-        // StartServerAsync, after the gate has already run. There is no path from OnLoadedAsync (or the
-        // FireOnLanguageClientNotInitializedAsync retry path, which re-enters via OnLoadedAsync too) to
-        // ActivateAsync that skips StartServerAsync - VS's own framework code, not this class, is what
-        // would have to violate that contract for the gate to be bypassable.
+        // VS calls ActivateAsync only in response to StartAsync, which is raised after the pre-launch
+        // checks in StartServerAsync.
         private volatile bool vsHasLoadedClient;
 
         // internal setter for testability: in production only OnLoadedAsync sets this, and only VS
@@ -144,68 +138,21 @@ namespace Snyk.VisualStudio.Extension.Language
         public event AsyncEventHandler<SnykLanguageServerEventArgs> OnLanguageServerReadyAsync;
         public event AsyncEventHandler<SnykLanguageServerEventArgs> OnLanguageClientNotInitializedAsync;
 
-        // Seams for tests (IDE-2404): tests exercising unrelated StartServerAsync/OnLoadedAsync/
-        // RestartServerAsync behavior don't have a real CLI binary on disk, so they override these to
-        // (_) => true. Split in two so StartServerAsync can tell "binary missing" (an existing,
-        // separately-handled failure mode - see SnykToolWindowControl's "CLI not found" messagePanel
-        // text) apart from "binary present but wrong protocol version" - conflating them showed the
-        // protocol-mismatch banner for a merely-missing binary, which is simply wrong.
+        // Test seams for the blocking pre-launch checks.
         internal Func<string, bool> CliExistsCheck { get; set; } = File.Exists;
 
-        // Bounds CliExistsCheck the same way the protocol probe below is bounded - both can block on a
-        // slow/unreachable custom path (a UNC share's File.Exists can take far longer than 20s), and
-        // either one stalling would hold the start/stop semaphore for the duration, freezing every other
-        // caller of StartServerAsync/RestartServerAsync. Internal so a test can shrink this instead of
-        // waiting out a real 20s timeout to exercise the branch.
+        // File.Exists can block on a slow or unreachable custom path.
         internal int CliExistsCheckTimeoutMs { get; set; } = SnykCliDownloader.ProtocolProbeTimeoutMs;
 
-        // Bounds CliProtocolCompatibilityCheck the same way CliExistsCheckTimeoutMs bounds the check
-        // above (PR review finding: the earlier comment claimed both were "bounded the same way", but
-        // only CliExistsCheck had an outer Task.WhenAny - this one relied solely on the default
-        // implementation's internal bound). That is no longer enough on its own: CheckCliProtocol now
-        // takes SnykCliDownloader.protocolCheckMemoLock (added for a different review finding), which a
-        // concurrent caller - e.g. SnykToolWindowControl's own fallback probe - can hold for a full
-        // probe before this call even starts its own, and a caller-overridden seam has no internal bound
-        // at all. Sized for the worst realistic case: one full probe spent waiting for the lock, plus
-        // this call's own full probe.
+        // Allows one full probe to wait behind another before running.
         internal int CliProtocolCheckTimeoutMs { get; set; } =
             (SnykCliDownloader.ProtocolProbeTimeoutMs + SnykCliDownloader.ProtocolProbeFlushTimeoutMs) * 2;
 
-        // Reuses SnykCliDownloader.CheckCliProtocol (added independently alongside this ticket, in
-        // Download/SnykCliDownloader.cs) rather than a second, near-duplicate implementation - it
-        // already handles this correctly (drains stdout concurrently via BeginOutputReadLine before
-        // WaitForExit, doesn't redirect stderr). ShouldDownloadCli() (and so IsCliDownloadNeeded) only
-        // compares file-existence and version strings - it never runs this protocol probe - and
-        // returns false whenever BinariesAutoUpdate is off regardless of whether the binary works, so a
-        // custom/unmanaged path never gets a protocol check at all without this gate.
-        //
-        // Returns the richer CliProtocolCheckResult rather than a bool so a timeout or a failed probe
-        // (e.g. an AV scanner still holding a just-downloaded binary) can be told apart from a genuinely
-        // incompatible CLI - collapsing all of those into one "wrong version" message misled the user
-        // and gave them the wrong remediation for a transient condition.
-        //
-        // Routed through TasksService (PR review finding) rather than a fresh SnykCliDownloader: a
-        // fallback restart (SnykToolWindowControl.OnDownloadCancelled/OnDownloadFailed) already probes
-        // this exact binary right before calling RestartServerAsync, and a fresh instance here had no
-        // memo to catch the repeat - up to ~40s of redundant re-probing and a risk of a contradictory
-        // second verdict. TasksService.CliDownloader is one instance for the whole episode, so both
-        // callers now share its memo.
+        // Use the shared downloader so a fallback followed by a restart can reuse a conclusive verdict.
         internal Func<string, CliProtocolCheckResult> CliProtocolCompatibilityCheck { get; set; } =
             cliPath => SnykVSPackage.ServiceProvider.TasksService.CheckCliProtocol(cliPath);
 
-        // Seam for tests: pins the "shown only after semaphore.Release()" ordering fixed above (a prior
-        // review round flagged ShowErrorInfoBar's synchronous main-thread block as a deadlock risk while
-        // held) so a future refactor moving this call back inside the try/finally has something to fail.
-        //
-        // Ensures the tool window exists first (PR review finding): VsInfoBarService.ShowErrorInfoBar
-        // silently no-ops when SnykVSPackage.ToolWindow is null - which it is until the Snyk panel has
-        // been created at least once (opened by the user, or by a Snyk command) - so a fresh VS session
-        // where the panel was never opened would otherwise drop these messages with zero feedback,
-        // contradicting the "isn't silently logged-only" rationale below for showing them at all. This
-        // mirrors what AbstractSnykCommand already does before running any Snyk command; the caveat is
-        // the same one that code already lives with - EnsureInitializeToolWindowAsync throws
-        // NotSupportedException if VS's own FindToolWindow can't produce one (e.g. during shutdown),
-        // in which case ShowErrorInfoBar below still runs and no-ops exactly as it did before this fix.
+        // InfoBars require an initialized tool window.
         internal Action<string> ShowInfoBar { get; set; } = message =>
         {
             if (SnykVSPackage.Instance != null)
@@ -218,12 +165,7 @@ namespace Snyk.VisualStudio.Extension.Language
                     }
                     catch (Exception e)
                     {
-                        // Catch-all, not just NotSupportedException (PR review finding): this runs from
-                        // OnLoadedAsync, a VS-invoked callback with no surrounding try/catch of its own
-                        // (unlike the sibling RestartAsync) - anything else FindToolWindow/the Content
-                        // cast can throw (e.g. during shutdown, before the package is fully sited) would
-                        // otherwise propagate out of OnLoadedAsync uncaught. ShowErrorInfoBar below still
-                        // runs and no-ops exactly as it did before this fix either way.
+                        // Display is best-effort and must not fail language-client startup.
                         Logger.Warning(e, "Could not ensure the Snyk tool window exists before showing an InfoBar");
                     }
                 });
@@ -378,8 +320,7 @@ namespace Snyk.VisualStudio.Extension.Language
                 IsReady,
                 ThreadHelper.CheckAccess());
 
-            // Set inside the semaphore below, but the InfoBar itself is shown only after it's released
-            // - see the comment at the bottom of this method.
+            // Defer display until after releasing the start/stop semaphore.
             string infoBarMessage = null;
 
             await semaphore.WaitAsync();
@@ -400,27 +341,11 @@ namespace Snyk.VisualStudio.Extension.Language
 
                 if (StartAsync != null && SnykVSPackage.Instance?.Options != null && shouldStart)
                 {
-                    // IDE-2404: gate BEFORE firing StartAsync. Once StartAsync fires, VS's LSP framework
-                    // commits to calling ActivateAsync and expects back a valid Connection; returning
-                    // null there throws an unhandled InvalidOperationException from inside VS's own
-                    // RemoteLanguageClientInstance (a second, alarming top-shell banner on top of our
-                    // actionable one). Refusing here instead means that call never happens. Applies
-                    // regardless of whether the binary is managed or a custom path, and re-runs on every
-                    // (re)start, so a binary-path change while running is re-checked (IDE-2112) without
-                    // extra wiring.
+                    // Gate before StartAsync: after it is raised, VS expects ActivateAsync to return a
+                    // valid Connection and treats a rejected launch as an unhandled client failure.
                     var cliPath = SnykCli.GetCliFilePath(SnykVSPackage.Instance.Options.CliCustomPath);
 
-                    // Both checks are synchronous, blocking I/O (File.Exists can block for tens of
-                    // seconds against an unreachable UNC path; the protocol probe spawns a process and
-                    // waits up to 20s). StartServerAsync is reachable from the UI thread with the
-                    // semaphore already held synchronously (e.g. SnykToolWindowControl's download-event
-                    // handlers switch to the main thread, then fire-and-forget into RestartServerAsync,
-                    // whose awaits complete synchronously when uncontended) - without offloading, a
-                    // slow/corrupted CLI freezes the entire VS UI for the duration. Bounded the same way
-                    // as the protocol probe below (CliExistsCheckTimeoutMs) - both can block far longer
-                    // than either timeout against a slow/unreachable custom path, and either one
-                    // stalling would hold `semaphore` for the duration, freezing every other caller of
-                    // StartServerAsync/RestartServerAsync.
+                    // Both checks perform blocking I/O and must run off the UI thread.
                     var cliExistsCheckTask = Task.Run(() => CliExistsCheck(cliPath));
                     var cliExistsCheckWon = await Task.WhenAny(
                         cliExistsCheckTask,
@@ -428,23 +353,11 @@ namespace Snyk.VisualStudio.Extension.Language
 
                     if (!cliExistsCheckWon)
                     {
-                        // Same reasoning as the TimedOut/CheckFailed protocol-check messages below: not a
-                        // confirmed missing binary, and there is no "try restarting" action to suggest. A
-                        // slow or unreachable custom path (UNC share) is the only realistic cause.
-                        //
-                        // Known gap (PR review finding), accepted: the losing cliExistsCheckTask is
-                        // abandoned here, not cancelled - CliExistsCheck is an arbitrary synchronous
-                        // Func<string, bool> (File.Exists by default), and a blocked File.Exists call has
-                        // no cancellation point reachable from managed code, so there is no real fix
-                        // short of changing every implementation's signature. It still occupies a
-                        // thread-pool thread until it eventually returns. The ContinueWith below only
-                        // prevents an unobserved-exception crash if it ever faults; it cannot stop it.
+                        // The synchronous check cannot be cancelled. Observe a later fault while allowing
+                        // startup to return after the timeout.
                         cliExistsCheckTask.ContinueWith(
                             t =>
                             {
-                                // Swallow rather than let logging itself fault this continuation's own
-                                // Task and reproduce the exact unobserved-exception risk this exists to
-                                // close (PR review finding).
                                 try
                                 {
                                     Logger.Warning(t.Exception, "CliExistsCheck failed after the gate had already timed out on it");
@@ -465,20 +378,9 @@ namespace Snyk.VisualStudio.Extension.Language
                     {
                         var cliExists = await cliExistsCheckTask;
 
-                        // Don't run the protocol check at all when the binary is missing, or its banner
-                        // would misattribute a missing binary as an incompatible one.
+                        // Do not report a missing binary as protocol-incompatible.
                         if (!cliExists)
                         {
-                            // SnykToolWindowControl's "CLI not found" messagePanel text only fires from an
-                            // active download attempt (OnDownloadCancelled/OnDownloadFailed) or the login
-                            // flow - neither of which runs here when BinariesAutoUpdate is off (the exact
-                            // scenario this gate exists for on a custom path), and neither is reachable at
-                            // all if the tool window has never been opened. Show our own InfoBar too so a
-                            // missing custom-path CLI isn't silently logged-only.
-                            //
-                            // Remediation instructions come before the path, as in the other messages below:
-                            // NotificationService.ShowErrorInfoBar truncates at 300 chars, and a long custom
-                            // path (UNC share, nested corporate profile) must not push the fix past that cap.
                             infoBarMessage = "Snyk CLI was not found and cannot be started. Specify a valid CLI " +
                                 "path, or enable \"Manage Binaries Automatically\" in Tools > Options > Snyk. " +
                                 $"(CLI path: '{cliPath}')";
@@ -486,9 +388,7 @@ namespace Snyk.VisualStudio.Extension.Language
                         }
                         else
                         {
-                            // Outer-bounded like CliExistsCheck above (PR review finding) - see
-                            // CliProtocolCheckTimeoutMs' doc comment for why the default implementation's
-                            // own internal bound is no longer sufficient on its own.
+                            // Bound lock contention as well as the probe itself.
                             var protocolCheckTask = Task.Run(() => CliProtocolCompatibilityCheck(cliPath));
                             var protocolCheckWon = await Task.WhenAny(
                                 protocolCheckTask,
@@ -498,11 +398,8 @@ namespace Snyk.VisualStudio.Extension.Language
 
                             if (!protocolCheckWon)
                             {
-                                // Same reasoning as CliExistsCheck's own abandoned-task handling above: the
-                                // losing task is left to finish on its own, not cancelled (no cancellation
-                                // point reachable through an arbitrary Func<string, CliProtocolCheckResult>
-                                // seam), and the ContinueWith only prevents an unobserved-exception crash if
-                                // it ever faults - it cannot stop the task or free the thread it occupies.
+                                // The synchronous check cannot be cancelled. Observe a later fault while
+                                // allowing startup to return after the timeout.
                                 protocolCheckTask.ContinueWith(
                                     t =>
                                     {
@@ -516,8 +413,6 @@ namespace Snyk.VisualStudio.Extension.Language
                                     },
                                     TaskContinuationOptions.OnlyOnFaulted);
 
-                                // Logged below by the shared TimedOut branch (protocolCheckResult ==
-                                // CliProtocolCheckResult.TimedOut), not here - avoids logging this twice.
                                 protocolCheckResult = CliProtocolCheckResult.TimedOut;
                             }
                             else
@@ -527,23 +422,9 @@ namespace Snyk.VisualStudio.Extension.Language
 
                             if (protocolCheckResult != CliProtocolCheckResult.Supported)
                             {
-                                // Remediation instructions come before the path in every message below:
-                                // NotificationService.ShowErrorInfoBar truncates at 300 chars, and a long
-                                // custom path (UNC share, nested corporate profile) must not push the
-                                // actionable fix past that cap - losing the path detail to truncation is
-                                // fine, losing the fix instructions is not.
+                                // Keep remediation before the path so truncation removes diagnostics first.
                                 if (protocolCheckResult == CliProtocolCheckResult.TimedOut)
                                 {
-                                    // Distinct from "confirmed incompatible" (IDE-2404 review finding): a
-                                    // timeout is not a verdict. This fires right after a fresh managed
-                                    // download completes too (SnykToolWindowControl restarts the LS on
-                                    // DownloadFinished), which is exactly when an AV scanner is most likely
-                                    // to still be holding the binary - telling the user their CLI is the
-                                    // wrong version in that case is simply wrong. No "try restarting" (no such
-                                    // user-facing action exists) and no "enable Manage Binaries Automatically"
-                                    // either: a managed binary is downloaded and scanned the same way, so that
-                                    // setting does nothing for an AV-scan timeout specifically - the only
-                                    // actionable thing here is the AV/security software itself.
                                     infoBarMessage = "Snyk could not confirm the CLI's Language Server protocol " +
                                         "version within the time limit; not a confirmed incompatibility. Often " +
                                         "happens right after a fresh download while antivirus software is " +
@@ -553,9 +434,6 @@ namespace Snyk.VisualStudio.Extension.Language
                                 }
                                 else if (protocolCheckResult == CliProtocolCheckResult.CheckFailed)
                                 {
-                                    // Same reasoning as TimedOut above: not a confirmed mismatch, and there is
-                                    // no "try restarting" action to suggest - the CLI itself (path, permissions,
-                                    // whether it's a valid executable) is the only thing the user can check.
                                     infoBarMessage = "Snyk could not check the CLI's Language Server protocol " +
                                         "version due to an error; not a confirmed incompatibility. Check that " +
                                         "the CLI path is correct and points to a valid, accessible Snyk CLI " +
@@ -616,11 +494,8 @@ namespace Snyk.VisualStudio.Extension.Language
                 semaphore.Release();
             }
 
-            // Shown only after releasing the semaphore (PR review finding): ShowErrorInfoBar ultimately
-            // calls ThreadHelper.JoinableTaskFactory.Run with a SwitchToMainThreadAsync - a synchronous
-            // block on main-thread work. Doing that while still holding `semaphore` risked deadlocking
-            // any main-thread path that re-enters StartServerAsync while it blocks (StopServerAsync
-            // itself never touches this semaphore, so it isn't a reentrancy concern here).
+            // ShowInfoBar can synchronously wait for the UI thread, so never call it while holding the
+            // start/stop semaphore.
             if (infoBarMessage != null)
             {
                 ShowInfoBar(infoBarMessage);

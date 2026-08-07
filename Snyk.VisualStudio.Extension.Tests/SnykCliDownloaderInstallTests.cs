@@ -685,11 +685,6 @@ namespace Snyk.VisualStudio.Extension.Tests
             Assert.Equal(0, cut.ProtocolProbes);
         }
 
-        // IsSupportedProtocolVersion/CheckCliProtocol below: ported from the now-removed
-        // CliProtocolVersionVerifier (IDE-2404). CheckCliProtocol was not exercised by any prior
-        // test - IsCliDownloadNeeded never calls it, so it had neither a real nor a faked code path
-        // here. These are the first coverage of its comparison logic and its real missing-file error path.
-
         [Fact]
         public void IsSupportedProtocolVersion_ReturnsTrue_WhenReportedVersionMatchesRequired()
         {
@@ -705,8 +700,7 @@ namespace Snyk.VisualStudio.Extension.Tests
         [Fact]
         public void IsSupportedProtocolVersion_ReturnsTrue_WhenReportedVersionIsDevelopmentSentinel()
         {
-            // "development" is what a locally-built language server reports; always compatible so
-            // engineers building the LS from source aren't blocked by this check.
+            // Locally built language servers report this sentinel.
             Assert.True(SnykCliDownloader.IsSupportedProtocolVersion("development"));
         }
 
@@ -718,9 +712,6 @@ namespace Snyk.VisualStudio.Extension.Tests
             Assert.False(SnykCliDownloader.IsSupportedProtocolVersion(reported));
         }
 
-        // CheckCliProtocol distinguishes "confirmed incompatible" from "couldn't be checked at all" - a
-        // missing binary is the latter (CheckFailed), not a resolved comparison: Process.Start throws
-        // for a missing exe, which the catch block must turn into CheckFailed, not an escaping exception.
         [Fact]
         public void CheckCliProtocol_ReturnsCheckFailed_WhenCliPathDoesNotExist()
         {

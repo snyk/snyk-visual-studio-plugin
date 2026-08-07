@@ -70,11 +70,7 @@ namespace Snyk.VisualStudio.Extension.Service
             }
         }
 
-        /// <summary>
-        /// Routed through <see cref="CliDownloader"/> so a caller sharing this episode with another
-        /// (e.g. a fallback check right before a restart) gets the memoized verdict instead of a fresh
-        /// process spawn - see CheckCliProtocol's own doc comment for the two call paths this fixes.
-        /// </summary>
+        /// <inheritdoc cref="ISnykTasksService.CheckCliProtocol"/>
         public CliProtocolCheckResult CheckCliProtocol(string cliFilePath) => this.CliDownloader.CheckCliProtocol(cliFilePath);
 
         /// <inheritdoc cref="ISnykTasksService.IsExistingCliUsable"/>

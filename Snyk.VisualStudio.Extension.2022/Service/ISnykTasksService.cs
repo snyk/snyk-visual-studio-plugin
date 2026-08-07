@@ -226,16 +226,13 @@ public interface ISnykTasksService
     bool ShouldDownloadCli();
 
     /// <summary>
-    /// Whether the CLI at <paramref name="cliFilePath"/> speaks the Language Server protocol version
-    /// this IDE expects. Routed through the shared episode downloader (see the doc comment on
-    /// <see cref="SnykTasksService.CliDownloader"/>) so repeat callers on the same startup/restart
-    /// episode get the memoized verdict instead of re-spawning the CLI.
+    /// Checks whether the CLI at <paramref name="cliFilePath"/> supports the required Language Server
+    /// protocol.
     /// </summary>
     CliProtocolCheckResult CheckCliProtocol(string cliFilePath);
 
     /// <summary>
-    /// Whether a CLI already on disk at <paramref name="cliFilePath"/> is worth falling back to.
-    /// Routed through the shared episode downloader for the same reason as <see cref="CheckCliProtocol"/>.
+    /// Whether the CLI at <paramref name="cliFilePath"/> is a valid fallback.
     /// </summary>
     bool IsExistingCliUsable(string cliFilePath);
 }

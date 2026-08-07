@@ -38,15 +38,9 @@ namespace Snyk.VisualStudio.Extension.Tests.Language
                 Rpc = jsonRpcMock.Object
             };
 
-            // Default to "exists and compatible" so tests that aren't about the IDE-2404 protocol gate
-            // itself don't need a real CLI binary on disk. The gate tests below override these back to
-            // false individually.
+            // Keep unrelated tests independent of a real CLI and notification service.
             cut.CliExistsCheck = _ => true;
             cut.CliProtocolCompatibilityCheck = _ => CliProtocolCheckResult.Supported;
-
-            // Default no-op so unrelated tests don't touch the real NotificationService.Instance
-            // singleton (null under test anyway, but this keeps intent explicit and consistent with
-            // the other seams above).
             cut.ShowInfoBar = _ => { };
         }
 
@@ -55,11 +49,7 @@ namespace Snyk.VisualStudio.Extension.Tests.Language
                 .GetField("semaphore", BindingFlags.NonPublic | BindingFlags.Instance)
                 .GetValue(client);
 
-        // IDE-2404 follow-up (review finding): NotificationService.ShowErrorInfoBar truncates at
-        // MaxMsgLength, and every gate message is deliberately ordered so the actionable text comes
-        // before the CLI path - losing the path to truncation is fine, losing the fix instructions is
-        // not. Nothing previously pinned that bound, so a future wording change could silently start
-        // truncating the remediation itself with no test catching it.
+        // Remediation must fit before the optional CLI path is truncated.
         private static void AssertActionablePrefixFitsBeforeTruncation(string message)
         {
             var pathMarkerIndex = message.IndexOf(" (CLI path:", StringComparison.Ordinal);
@@ -86,17 +76,10 @@ namespace Snyk.VisualStudio.Extension.Tests.Language
             Assert.Contains("Initialization failed", failureContext.FailureMessage);
         }
 
-        // IDE-2404: the gate must sit BEFORE StartAsync fires, not inside ActivateAsync. Once StartAsync
-        // fires, VS's LSP framework commits to calling ActivateAsync and expects a valid Connection back;
-        // returning null there throws an unhandled InvalidOperationException from inside VS's own
-        // RemoteLanguageClientInstance (seen manually testing this fix: a second, alarming top-shell
-        // banner on top of our actionable one). SnykCliDownloader.CheckCliProtocol's own parsing
-        // logic is covered separately (SnykCliDownloaderInstallTests, Integration.Tests); this only
-        // asserts the wiring, via the CliProtocolCompatibilityCheck seam - no real CLI binary needed.
+        // A failed pre-launch gate must not commit VS to activating a client.
         [Fact]
         public async Task StartServerAsync_ShouldNotInvokeStartAsync_WhenCliProtocolVersionIncompatible()
         {
-            // Arrange
             cut.CliProtocolCompatibilityCheck = _ => CliProtocolCheckResult.Unsupported;
             cut.VsHasLoadedClient = true;
 
@@ -107,18 +90,11 @@ namespace Snyk.VisualStudio.Extension.Tests.Language
                 return Task.CompletedTask;
             };
 
-            // Act
             await cut.StartServerAsync(true);
 
-            // Assert
             Assert.False(eventInvoked);
         }
 
-        // IDE-2404 follow-up (review finding): a timeout or a failed probe is not a confirmed protocol
-        // mismatch - collapsing them into the same "does not support the required protocol version"
-        // message misleads the user about the actual cause (e.g. an AV scanner still holding a
-        // just-downloaded binary, not a genuinely incompatible CLI) and points them at the wrong fix.
-        //
         [Theory]
         [InlineData(CliProtocolCheckResult.TimedOut, "not confirm")]
         [InlineData(CliProtocolCheckResult.CheckFailed, "could not check")]
@@ -128,7 +104,6 @@ namespace Snyk.VisualStudio.Extension.Tests.Language
 
         private async Task AssertShowsADistinctMessage(CliProtocolCheckResult result, string expectedMessageFragment)
         {
-            // Arrange
             cut.CliProtocolCompatibilityCheck = _ => result;
             cut.VsHasLoadedClient = true;
 
@@ -142,10 +117,8 @@ namespace Snyk.VisualStudio.Extension.Tests.Language
                 return Task.CompletedTask;
             };
 
-            // Act
             await cut.StartServerAsync(true);
 
-            // Assert
             Assert.False(eventInvoked);
             Assert.NotNull(shownMessage);
             Assert.Contains(expectedMessageFragment, shownMessage, StringComparison.OrdinalIgnoreCase);
@@ -153,23 +126,13 @@ namespace Snyk.VisualStudio.Extension.Tests.Language
             AssertActionablePrefixFitsBeforeTruncation(shownMessage);
         }
 
-        // IDE-2404: pins the ordering fix from a prior review round - ShowErrorInfoBar blocks
-        // synchronously on the main-thread queue, so it must run only AFTER semaphore.Release(), not
-        // while still held, or a main-thread caller re-entering StartServerAsync/StopServerAsync while
-        // it blocks would deadlock. Without this test, a future refactor moving the call back inside the
-        // try/finally has nothing in the suite to catch it. Checks the semaphore's own CurrentCount
-        // (reflection, since it's private) at the moment ShowInfoBar is invoked, rather than just
-        // asserting invocation happened at all.
+        // Showing an InfoBar while holding the semaphore can deadlock on the UI thread.
         [Fact]
         public async Task StartServerAsync_ShowsInfoBar_OnlyAfterSemaphoreIsReleased_WhenCliProtocolVersionIncompatible()
         {
-            // Arrange
             cut.CliProtocolCompatibilityCheck = _ => CliProtocolCheckResult.Unsupported;
             var semaphore = GetStartStopSemaphore(cut);
 
-            // Without a subscriber AND VsHasLoadedClient set, the guard at the top of StartServerAsync
-            // short-circuits (FireOnLanguageClientNotInitializedAsync then return) - the gate logic below
-            // is never reached at all.
             cut.StartAsync += (sender, args) => Task.CompletedTask;
             cut.VsHasLoadedClient = true;
 
@@ -181,31 +144,18 @@ namespace Snyk.VisualStudio.Extension.Tests.Language
                 semaphoreCountWhenShown = semaphore.CurrentCount;
             };
 
-            // Act
             await cut.StartServerAsync(true);
 
-            // Assert
             Assert.NotNull(shownMessage);
             Assert.Contains("does not support the required Language Server protocol version", shownMessage);
-            Assert.Equal(1, semaphoreCountWhenShown); // released (capacity 1), not held (would be 0)
+            Assert.Equal(1, semaphoreCountWhenShown);
             AssertActionablePrefixFitsBeforeTruncation(shownMessage);
         }
 
-        // IDE-2404 follow-up: a missing CLI binary (e.g. custom path set, auto-update off, file deleted)
-        // was showing the protocol-mismatch banner ("does not support the required Language Server
-        // protocol version 25") instead of the existing, correct "CLI not found" messaging - because the
-        // old single check conflated "missing" with "wrong version". Asserts the protocol check isn't
-        // even reached for a missing binary, so it can't misattribute the failure.
-        //
-        // Also asserts an InfoBar is shown here too (a later review round caught that this branch was
-        // logged-only): SnykToolWindowControl's "CLI not found" messagePanel text only fires from an
-        // active download attempt or the login flow, neither of which runs when BinariesAutoUpdate is
-        // off (the scenario this gate exists for), and neither is reachable if the tool window was never
-        // opened - so without this, a missing custom-path CLI could get zero user-facing feedback at all.
+        // Absence must not be reported as protocol incompatibility.
         [Fact]
         public async Task StartServerAsync_ShowsInfoBarAndDoesNotInvokeStartAsyncOrProtocolCheck_WhenCliDoesNotExist()
         {
-            // Arrange
             cut.CliExistsCheck = _ => false;
             cut.VsHasLoadedClient = true;
             var protocolCheckInvoked = false;
@@ -225,10 +175,8 @@ namespace Snyk.VisualStudio.Extension.Tests.Language
                 return Task.CompletedTask;
             };
 
-            // Act
             await cut.StartServerAsync(true);
 
-            // Assert
             Assert.False(eventInvoked);
             Assert.False(protocolCheckInvoked);
             Assert.NotNull(shownMessage);
@@ -236,15 +184,10 @@ namespace Snyk.VisualStudio.Extension.Tests.Language
             AssertActionablePrefixFitsBeforeTruncation(shownMessage);
         }
 
-        // IDE-2404 follow-up (review finding): CliExistsCheck is offloaded but was unbounded, unlike
-        // the protocol probe next to it - a slow/unreachable custom path (UNC share) could block
-        // File.Exists far longer than either timeout while `semaphore` is held, stalling every other
-        // caller of StartServerAsync/RestartServerAsync. CliExistsCheckTimeoutMs is shrunk here instead
-        // of waiting out a real 20s timeout to exercise the branch.
+        // Use a short timeout while still releasing the blocked worker before the test ends.
         [Fact]
         public async Task StartServerAsync_ShowsADistinctMessage_WhenCliExistsCheckTimesOut()
         {
-            // Arrange
             cut.CliExistsCheckTimeoutMs = 20;
             cut.VsHasLoadedClient = true;
 
@@ -252,8 +195,6 @@ namespace Snyk.VisualStudio.Extension.Tests.Language
             {
                 cut.CliExistsCheck = _ =>
                 {
-                    // Blocks well past CliExistsCheckTimeoutMs; released at test end so the background
-                    // Task.Run doesn't leak past this test.
                     neverSignaled.Wait(TimeSpan.FromSeconds(5));
 
                     return true;
@@ -278,11 +219,9 @@ namespace Snyk.VisualStudio.Extension.Tests.Language
                     return Task.CompletedTask;
                 };
 
-                // Act
                 await cut.StartServerAsync(true);
                 neverSignaled.Set();
 
-                // Assert
                 Assert.False(eventInvoked);
                 Assert.False(protocolCheckInvoked);
                 Assert.NotNull(shownMessage);
@@ -291,15 +230,10 @@ namespace Snyk.VisualStudio.Extension.Tests.Language
             }
         }
 
-        // IDE-2404 follow-up (review finding): CliProtocolCompatibilityCheck was offloaded but had no
-        // outer bound of its own, relying solely on the default implementation's internal timeout - a
-        // caller-overridden seam (as here) has no internal bound at all, and even the default could be
-        // blocked behind a concurrent probe holding SnykCliDownloader.protocolCheckMemoLock.
-        // CliProtocolCheckTimeoutMs is shrunk here instead of waiting out the real ~44s worst case.
+        // Use a short timeout while still releasing the blocked worker before the test ends.
         [Fact]
         public async Task StartServerAsync_ShowsADistinctMessage_WhenCliProtocolCheckTimesOut()
         {
-            // Arrange
             cut.CliProtocolCheckTimeoutMs = 20;
             cut.VsHasLoadedClient = true;
 
@@ -307,8 +241,6 @@ namespace Snyk.VisualStudio.Extension.Tests.Language
             {
                 cut.CliProtocolCompatibilityCheck = _ =>
                 {
-                    // Blocks well past CliProtocolCheckTimeoutMs; released at test end so the background
-                    // Task.Run doesn't leak past this test.
                     neverSignaled.Wait(TimeSpan.FromSeconds(5));
 
                     return CliProtocolCheckResult.Supported;
@@ -325,11 +257,9 @@ namespace Snyk.VisualStudio.Extension.Tests.Language
                     return Task.CompletedTask;
                 };
 
-                // Act
                 await cut.StartServerAsync(true);
                 neverSignaled.Set();
 
-                // Assert
                 Assert.False(eventInvoked);
                 Assert.NotNull(shownMessage);
                 Assert.Contains("not confirm", shownMessage, StringComparison.OrdinalIgnoreCase);

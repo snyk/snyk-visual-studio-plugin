@@ -19,21 +19,8 @@ using Snyk.VisualStudio.Extension.UI.Notifications;
 namespace Snyk.VisualStudio.Extension.Download
 {
     /// <summary>
-    /// Outcome of <see cref="SnykCliDownloader.CheckCliProtocol"/>. Kept distinct from a plain bool so a
-    /// caller can tell "confirmed incompatible" apart from "couldn't be checked at all" (IDE-2404) -
-    /// collapsing those into one "not supported" answer misattributes a timeout or a transient error
-    /// (e.g. an AV scanner still holding a just-downloaded binary) as a genuine version mismatch.
-    ///
-    /// Public rather than internal: ISnykTasksService.CheckCliProtocol (a public interface member,
-    /// needed so SnykLanguageClient and SnykToolWindowControl can share one memoized downloader
-    /// instance instead of each spawning their own probe) must return this type.
-    ///
-    /// CheckFailed is deliberately the zero value (PR review finding): this type gates whether the
-    /// language server is allowed to start, so default(CliProtocolCheckResult) - an uninitialised
-    /// field, a struct default, anything that skips the constructor - should fail closed rather than
-    /// silently reading as Supported. CheckFailed specifically, not just any non-Supported value,
-    /// because a default is "never actually probed" - closer to "couldn't check" than to a probe that
-    /// ran and confirmed a mismatch (Unsupported).
+    /// Outcome of a CLI protocol probe. Inconclusive checks are distinct from confirmed incompatibility
+    /// so callers can report the correct failure. The zero value fails closed.
     /// </summary>
     public enum CliProtocolCheckResult
     {
@@ -61,20 +48,10 @@ namespace Snyk.VisualStudio.Extension.Download
         // What a locally-built language server reports instead of a protocol number.
         private const string DevelopmentProtocolVersion = "development";
 
-        // Generous: a cold first run can be slow while the on-access scanner reads ~175MB. Still
-        // bounded, because an unbounded wait here would freeze the CLI-download decision.
-        // internal (not private) so tests exercising the real process-spawn path (InternalsVisibleTo:
-        // Snyk.VisualStudio.Extension.Tests, Integration.Tests) can mirror this instead of a literal
-        // that would silently drift if this value is ever tuned.
+        // Allows for a slow cold start while still bounding the CLI-download decision.
         internal const int ProtocolProbeTimeoutMs = 20000;
 
-        // Bounds the post-exit output flush below (PR review finding), not the process itself - by
-        // the time that wait runs, the bounded WaitForExit(ProtocolProbeTimeoutMs) above has already
-        // confirmed the process exited. This one only guards against the CLI's stdout handle somehow
-        // outliving it (e.g. an inherited handle in a grandchild process), which would otherwise leave
-        // the redirected stream's EOF - and so this wait - unbounded, hanging the thread that holds
-        // the start/stop semaphore forever. Short because a live process has already exited; only a
-        // few buffered bytes are left to flush.
+        // Bounds delivery of redirected output after the process exits.
         internal const int ProtocolProbeFlushTimeoutMs = 2000;
 
         private static readonly ILogger Logger = LogManager.ForContext<SnykCliDownloader>();
@@ -96,10 +73,7 @@ namespace Snyk.VisualStudio.Extension.Download
         // new call site needs the same hop rather than relying on the thread VS happens to supply.
         private readonly object memoLock = new object();
 
-        // Separate from memoLock (PR review finding): the protocol probe it guards can itself run for
-        // up to ProtocolProbeTimeoutMs + ProtocolProbeFlushTimeoutMs (~22s), and memoLock is documented
-        // above as guarding the release-info/checksum memos' HTTP-bound work - those callers have no
-        // logical dependency on a concurrent protocol probe and shouldn't be blocked behind it.
+        // Protocol probes must not block unrelated release-info and checksum memoization.
         private readonly object protocolCheckMemoLock = new object();
 
         private string expectedSha;
@@ -279,37 +253,14 @@ namespace Snyk.VisualStudio.Extension.Download
         }
 
         /// <summary>
-        /// Whether the binary at <paramref name="cliFilePath"/> can actually serve the language server
-        /// protocol we speak, and if not, why. File.Exists cannot tell a working CLI from a truncated,
-        /// stale or wrong-architecture one, and a binary that cannot answer this cannot serve initialize
-        /// either — it activates, fails, and the language server shuts down with no useful diagnosis.
-        /// Mirrors what vscode-extension does before activating its client. Distinguishes why an
-        /// incompatible answer was reached - a timeout or a failure to even read the version is not the
-        /// same as the CLI actually reporting a mismatched one, and callers that surface a user-facing
-        /// message should not claim "wrong version" for either of the former.
+        /// Checks whether the binary at <paramref name="cliFilePath"/> supports the required Language
+        /// Server protocol. Only confirmed supported or unsupported results are memoized.
         /// </summary>
-        // internal virtual for testability: a unit test cannot execute a real CLI.
-        //
-        // Memoized (PR review finding): two pre-existing call paths probe the same binary twice in
-        // immediate succession — SnykToolWindowControl's OnDownloadCancelled/OnDownloadFailed decide
-        // fallbackUsable via this check, then unconditionally call RestartServerAsync, whose gate
-        // re-runs the identical probe; IsCliDownloadNeeded's network-failure fallback does the same via
-        // the DownloadFinished handler. Re-probing cost up to ~40s combined and risked a second,
-        // spurious timeout contradicting the first check's "the CLI is fine" verdict.
         internal virtual CliProtocolCheckResult CheckCliProtocol(string cliFilePath)
         {
-            // Own lock, not the shared memoLock (PR review finding): this probe can run for up to
-            // ProtocolProbeTimeoutMs + ProtocolProbeFlushTimeoutMs (~22s), and memoLock also guards the
-            // release-info/sha/up-to-date memos' short HTTP-bound work - a concurrent caller of those on
-            // the same downloader instance has no logical dependency on this probe and shouldn't be
-            // blocked behind it.
             lock (this.protocolCheckMemoLock)
             {
-                // Stat inside the lock, not before it (PR review finding, matching IsCliUpToDateOnce's
-                // own pattern below): a key snapshotted outside could be taken for the pre-replacement
-                // file, block here while another caller's probe of the replacement completes and writes
-                // the memo under the new key, then wake and store this stale key against that verdict -
-                // a later caller on the unchanged new file would then miss the cache and re-probe.
+                // Snapshot file identity under the same lock that protects the corresponding verdict.
                 var key = BuildProtocolCheckMemoKey(cliFilePath);
 
                 if (key != null && string.Equals(key, this.protocolCheckMemoKey, StringComparison.Ordinal))
@@ -319,13 +270,7 @@ namespace Snyk.VisualStudio.Extension.Download
 
                 var verdict = this.ProbeCliProtocol(cliFilePath);
 
-                // Only memoise a confirmed verdict (PR review finding). TimedOut/CheckFailed are
-                // explicitly "not a verdict" (see this method's own doc comment, and the caller-facing
-                // wording in SnykLanguageClient) - they are exactly the transient conditions (e.g. an AV
-                // scanner still holding a just-downloaded binary) this type exists to distinguish from a
-                // genuine mismatch. The file's stat doesn't change while that condition clears, so
-                // caching either would make a one-off probe failure refuse to start the language server
-                // for the rest of the download episode, even after the CLI becomes usable again.
+                // Transient failures must be retried even when the file metadata is unchanged.
                 if (key != null
                     && (verdict == CliProtocolCheckResult.Supported || verdict == CliProtocolCheckResult.Unsupported))
                 {
@@ -337,26 +282,8 @@ namespace Snyk.VisualStudio.Extension.Download
             }
         }
 
-        // Null when the file cannot be stat'd, which makes the result unmemoisable rather than wrong -
-        // same reasoning as BuildUpToDateMemoKey below, and deliberately not sharing its key (a
-        // checksum-based memo answers "is this the release we expect"; this one answers "can this
-        // specific file on disk speak our protocol", so the two must not collide or invalidate for the
-        // same reasons).
-        //
-        // Known gap (PR review finding), accepted rather than fixed: unlike BuildUpToDateMemoKey, this
-        // key has no checksum, so an in-place binary swap that preserves both length and last-write-time
-        // (some installers/copy tools do) reuses the previous verdict. Not worth closing by hashing the
-        // ~175MB binary on every protocol check - that would defeat the memo's whole purpose.
-        //
-        // Exposure window (PR review finding, corrected): NOT bounded to "one download episode" as an
-        // earlier version of this comment claimed - EndCliDownloadEpisode only runs at the start of
-        // Download()/DownloadAsync, not on an ordinary language-server restart, so this downloader (and
-        // so this memo) can now survive across many restarts within one episode, and an episode can span
-        // the whole VS session if the user never re-triggers a download. That is wider than before this
-        // PR, when SnykToolWindowControl/SnykLanguageClient each constructed a fresh SnykCliDownloader
-        // per restart - the tradeoff accepted above (no checksum in the key) is therefore live for
-        // longer than it used to be, though still only as exposed as the in-place-swap scenario it
-        // requires in the first place.
+        // Length and modification time avoid hashing the CLI on every check. An in-place replacement
+        // that preserves both values can therefore retain a stale verdict.
         private static string BuildProtocolCheckMemoKey(string cliFilePath)
         {
             if (string.IsNullOrEmpty(cliFilePath))
@@ -379,27 +306,13 @@ namespace Snyk.VisualStudio.Extension.Download
                     info.Length.ToString(CultureInfo.InvariantCulture),
                     info.LastWriteTimeUtc.Ticks.ToString(CultureInfo.InvariantCulture));
             }
-            // NotSupportedException too (PR review finding): FileInfo's constructor throws it for a path
-            // with a non-drive-letter colon (a stray colon, or a hidden bidi character shifting where one
-            // appears - a real copy-paste artifact from a custom CliCustomPath). Without it here, that
-            // becomes an unhandled exception during the language server's startup gate - the exact
-            // failure mode this PR exists to eliminate.
+            // Invalid or inaccessible paths make the result non-cacheable; they must not escape startup.
             catch (Exception e) when (e is IOException || e is UnauthorizedAccessException || e is ArgumentException || e is NotSupportedException)
             {
                 return null;
             }
         }
 
-        // Not virtual: CheckCliProtocol above is the seam tests substitute (FakeDownloader overrides
-        // IsCliProtocolSupported, and unit tests exercising the memo drive it through CheckCliProtocol
-        // directly) - this method exists only to separate the memo from the actual process spawn.
-        //
-        // Known coverage gap (PR review finding), accepted: no unit test exercises the real
-        // WaitForExit-timeout/Kill() branch below - CliProtocolCheckResult.TimedOut is only ever
-        // produced by a hand-set test double elsewhere. Covering it for real means spawning a process
-        // that outlives a shortened ProtocolProbeTimeoutMs, which the const's current form doesn't
-        // support without a settable seam, and either a real ~20s wait or that seam felt like more
-        // machinery than a timing edge case warranted.
         private CliProtocolCheckResult ProbeCliProtocol(string cliFilePath)
         {
             try
@@ -417,24 +330,12 @@ namespace Snyk.VisualStudio.Extension.Download
                 using (var process = new Process { StartInfo = startInfo })
                 using (var outputFlushed = new ManualResetEventSlim(false))
                 {
-                    // Drain stdout concurrently via BeginOutputReadLine (started before WaitForExit)
-                    // rather than WaitForExit-then-ReadToEnd (PR review finding): the latter assumed "the
-                    // output is a few bytes, so it cannot fill the pipe buffer while we wait" - false for
-                    // exactly the CLI this check exists to catch, an old binary that doesn't recognize
-                    // --protocolVersion and dumps its full --help text instead, which is easily enough to
-                    // fill the redirected-stdout pipe buffer. That deadlocks the child on its next write
-                    // with nobody draining, so WaitForExit never observes the exit and this stalls the
-                    // full ProtocolProbeTimeoutMs on every launch against that CLI - undermining the
-                    // whole point of a fast, actionable rejection.
+                    // Drain output before waiting; older CLIs can emit enough help text to fill the pipe
+                    // and deadlock if the parent waits before reading.
                     var output = new StringBuilder();
                     process.OutputDataReceived += (_, e) =>
                     {
-                        // Runs on a raw ThreadPool I/O-completion thread with no synchronization context
-                        // and no caller to propagate to (PR review finding) - an unhandled exception here
-                        // (e.g. AppendLine faulting) crashes the whole VS process by default .NET
-                        // unhandled-exception behavior, not just this probe. Nothing in this callback is
-                        // worth that; log and treat as CheckFailed via the memoless path (the enclosing
-                        // ProbeCliProtocol has already returned by the time this could fire on that path).
+                        // Event-handler failures cannot propagate back through the probe caller.
                         try
                         {
                             if (e.Data != null)
@@ -443,18 +344,7 @@ namespace Snyk.VisualStudio.Extension.Download
                             }
                             else
                             {
-                                // Null Data is EOF on the redirected stream - the async pump's last
-                                // callback, never followed by another AppendLine above, so Set() here is a
-                                // genuine handoff point (PR review finding, see the Wait() below for why
-                                // this exists instead of a second WaitForExit).
-                                //
-                                // Safe even if this callback fires after this method has returned via the
-                                // TimedOut path below and disposed outputFlushed as part of the using
-                                // scope's teardown: ManualResetEventSlim.Set() never throws
-                                // ObjectDisposedException - unlike Wait()/Reset(), it double-checks the
-                                // (here never-allocated, since we only call Wait(int), not .WaitHandle)
-                                // lazy wait handle under the same lock Dispose() uses, and no-ops if
-                                // already disposed - see dotnet/runtime#89692.
+                                // Null marks EOF and publishes the completed StringBuilder contents.
                                 outputFlushed.Set();
                             }
                         }
@@ -464,11 +354,7 @@ namespace Snyk.VisualStudio.Extension.Download
                         }
                     };
 
-                    // Discarded, but still drained (PR review finding): a legacy CLI that writes its
-                    // rejection to stderr instead of stdout would otherwise fill the redirected-stderr
-                    // pipe with nobody reading it, deadlocking the child exactly like the undrained-stdout
-                    // case above - reproducing the slow-rejection this probe exists to avoid, even though
-                    // we never need the content.
+                    // Drain discarded stderr so a full error pipe cannot block the child.
                     process.ErrorDataReceived += (_, e) => { };
 
                     if (!process.Start())
@@ -500,26 +386,11 @@ namespace Snyk.VisualStudio.Extension.Download
                         return CliProtocolCheckResult.TimedOut;
                     }
 
-                    // WaitForExit(int) returning true doesn't guarantee the async OutputDataReceived pump
-                    // has finished delivering output - true on .NET Core, but NOT on .NET Framework 4.8
-                    // (this project's target): there, the documented "call WaitForExit() again" fix-up
-                    // only performs the stream-flush wait when THAT call is the infinite (-1) overload, so
-                    // a second *timed* WaitForExit here (an earlier version of this fix) returns
-                    // immediately without waiting for anything - a no-op that looked like a fix but wasn't
-                    // one (PR review finding). Waiting on the OutputDataReceived-signalled event instead
-                    // is a real bounded wait for the actual EOF, and it's what lets `output.ToString()`
-                    // below run only after the same event's Set() call, which is also what makes reading
-                    // the non-thread-safe StringBuilder here safe on the timeout-free path.
+                    // On .NET Framework, WaitForExit(int) can return before async output callbacks finish.
+                    // Wait for EOF before reading the non-thread-safe StringBuilder.
                     if (!outputFlushed.Wait(ProtocolProbeFlushTimeoutMs))
                     {
-                        // Read below only after Wait() returns true (PR review finding): output is a
-                        // plain StringBuilder, not thread-safe, and the OutputDataReceived callback may
-                        // still be mid-AppendLine on another thread when the wait times out. Reading it
-                        // anyway risks a torn string that IsSupportedProtocolVersion could misclassify
-                        // as a confirmed Supported/Unsupported verdict - which CheckCliProtocol then
-                        // memoizes, defeating the whole point of the CliProtocolCheckResult distinction
-                        // this method exists to make. TimedOut here for the same reason as the process-
-                        // exit timeout above: not a verdict, don't cache it.
+                        // Partial output is not a protocol verdict and must not be cached.
                         Logger.Warning(
                             "CLI at {Path} exited but its stdout stream did not signal EOF within {TimeoutMs}ms",
                             cliFilePath,
@@ -551,35 +422,15 @@ namespace Snyk.VisualStudio.Extension.Download
             }
         }
 
-        // internal for testability: pure comparison, no process involved. "development" is what a
-        // locally-built language server reports; treat it as compatible so a dev CLI is usable,
-        // matching snyk-ls' own handling.
+        // Locally built language servers report "development" and are compatible by convention.
         internal static bool IsSupportedProtocolVersion(string reportedVersion) =>
             string.Equals(reportedVersion, LsConstants.ProtocolVersion, StringComparison.Ordinal)
             || string.Equals(reportedVersion, DevelopmentProtocolVersion, StringComparison.Ordinal);
 
         /// <summary>
-        /// Whether the binary at <paramref name="cliFilePath"/> speaks the LS protocol version this
-        /// extension implements. The only way to establish that for a binary we did not just download:
-        /// a build fetched from the protocol-keyed release URL satisfies it by construction, but one
-        /// already on disk carries no such guarantee, and neither its file name nor its checksum says
-        /// anything about it.
-        ///
-        /// Costs a process launch, so THIS WRAPPER is deliberately reached only where the answer is not
-        /// already known — the download-failure fallback and a failed release lookup — never on the
-        /// path where the checksum has already proven the binary is the current release.
-        ///
-        /// That narrow-usage framing is specific to this wrapper's own callers (PR review finding: do
-        /// not read it as describing the process-probe in general) — <see cref="CheckCliProtocol"/>
-        /// (above) is also called directly, unconditionally, on every language server (re)start by
-        /// SnykLanguageClient's pre-launch gate, a separate and much more frequent caller than this
-        /// wrapper's fallback paths.
-        ///
-        /// Thin wrapper over <see cref="CheckCliProtocol"/> (above): that method already does this launch
-        /// correctly (async stdout draining, no pipe-buffer deadlock risk) and distinguishes a confirmed
-        /// mismatch from a timeout or a failed probe — callers here only need a plain yes/no.
+        /// Whether the binary at <paramref name="cliFilePath"/> is confirmed to support the required
+        /// Language Server protocol. Inconclusive checks return <see langword="false"/>.
         /// </summary>
-        // internal virtual for testability: a test double avoids launching a real process.
         internal virtual bool IsCliProtocolSupported(string cliFilePath) =>
             this.CheckCliProtocol(cliFilePath) == CliProtocolCheckResult.Supported;
 
@@ -763,19 +614,8 @@ namespace Snyk.VisualStudio.Extension.Download
         }
 
         /// <summary>
-        /// Whether a CLI already on disk is worth falling back to after a download did not happen.
-        ///
-        /// Presence is not enough, which is what made a failed download look survivable: the language
-        /// server was restarted against whatever file was there, so a truncated or protocol-incompatible
-        /// binary produced a server that never came up and an IDE that sat on "loading" indefinitely.
-        /// An older release that still speaks our protocol is genuinely usable; anything else is not,
-        /// and saying so is more useful than starting a server that cannot work.
-        ///
-        /// This method itself is only reached after a download has already failed or been cancelled —
-        /// never on a normal startup. That does not describe the underlying protocol probe in general
-        /// (PR review finding, same caveat as <see cref="IsCliProtocolSupported"/>'s own doc comment
-        /// above): SnykLanguageClient's pre-launch gate calls <see cref="CheckCliProtocol"/> directly,
-        /// unconditionally, on every normal startup too.
+        /// Whether an existing CLI is a valid fallback after a failed or cancelled download. The binary
+        /// must exist and support the required Language Server protocol.
         /// </summary>
         public bool IsExistingCliUsable(string cliFileDestinationPath)
         {
