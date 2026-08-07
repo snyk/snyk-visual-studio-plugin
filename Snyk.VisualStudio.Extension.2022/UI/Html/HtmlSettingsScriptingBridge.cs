@@ -127,12 +127,12 @@ namespace Snyk.VisualStudio.Extension.UI.Html
                     // restart without fetching anything when it is off.
                     if (applyResult.CliSettingsChanged)
                     {
-                        // Download declines while any scan or download is in flight — it cannot replace
-                        // the binary underneath a running scan — and logs that itself. Deliberately not
+                        // EnsureCliReady declines while any scan or download is in flight — it cannot
+                        // replace the binary underneath a running scan — and logs that itself. Not
                         // pre-checked here: the check and the call cannot be made atomic, so a pre-check
                         // only produces a log line that contradicts what actually happened.
                         Logger.Information("CLI settings changed; requesting the CLI check that moves the language server onto the configured binary");
-                        serviceProvider.TasksService?.Download(cliSettingsChanged: true);
+                        serviceProvider.TasksService?.EnsureCliReady(cliSettingsChanged: true);
                     }
 
                     tcs.TrySetResult(true);

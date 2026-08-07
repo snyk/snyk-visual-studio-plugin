@@ -159,17 +159,24 @@ public interface ISnykTasksService
     Task ScanAsync();
 
     /// <summary>
-    /// Start a CLI download task in background thread. Will only download the CLI if it's missing or outdated.
+    /// Brings the CLI into line with the settings, in the background, and reports the outcome on the
+    /// download events. Fetches only when the checksum says the binary is missing or outdated.
+    /// <para>
+    /// Does as much as the settings permit rather than guaranteeing a usable CLI: with automatic
+    /// management off nothing is fetched at all, so the CLI can still be absent when this returns. The
+    /// events are how a caller learns which outcome it got.
+    /// </para>
     /// </summary>
     /// <param name="downloadFinishedCallback"><see cref="CliDownloadFinishedCallback"/> callback object.</param>
     /// <param name="cliSettingsChanged">
-    /// True when this check was requested because the user changed a CLI setting. Does not affect whether
-    /// anything is downloaded — that decision stays with the checksum — but is carried on the download
-    /// events so subscribers know a server already serving may be on the wrong executable.
+    /// True when this was requested because the user changed a CLI setting. Does not affect whether
+    /// anything is downloaded — that decision stays with the checksum — but is carried on the events so
+    /// subscribers know a server already serving may be on the wrong executable.
     /// </param>
-    void Download(SnykCliDownloader.CliDownloadFinishedCallback downloadFinishedCallback = null, bool cliSettingsChanged = false);
+    void EnsureCliReady(SnykCliDownloader.CliDownloadFinishedCallback downloadFinishedCallback = null, bool cliSettingsChanged = false);
 
-    Task DownloadAsync(SnykCliDownloader.CliDownloadFinishedCallback downloadFinishedCallback = null);
+    /// <inheritdoc cref="EnsureCliReady"/>
+    Task EnsureCliReadyAsync(SnykCliDownloader.CliDownloadFinishedCallback downloadFinishedCallback = null);
 
     /// <summary>
     /// Fire on task finished (oss scan or snykcode scan or cli download).

@@ -169,7 +169,7 @@ namespace Snyk.VisualStudio.Extension.UI.Toolwindow
                 // cliUsable without probing: this outcome means the checksum matched, either because the
                 // download just verified it or because the binary on disk was already current. The
                 // protocol probe the failure paths run costs a CLI launch and would prove nothing here.
-                this.SettleLanguageServer(
+                this.EnsureServerOnConfiguredCli(
                     cliUsable: true,
                     cliSettingsChanged: args?.CliSettingsChanged == true,
                     source: "DownloadFinished");
@@ -222,7 +222,7 @@ namespace Snyk.VisualStudio.Extension.UI.Toolwindow
                 Logger.Warning("LanguageClientManager not available during InitializeEventListeners; skipping LS-ready subscription (tree will populate from $/snyk.treeView pushes).");
             }
 
-            this.loadedHandler = (sender, args) => this.tasksService.Download();
+            this.loadedHandler = (sender, args) => this.tasksService.EnsureCliReady();
             this.Loaded += this.loadedHandler;
 
             // Stored in a field so Dispose can detach it: SnykScanCommand.Instance is a static
@@ -493,7 +493,7 @@ namespace Snyk.VisualStudio.Extension.UI.Toolwindow
             // RunAsync, not Run — see OnDownloadStarted. Both branches write WPF state.
             //
             // TaskScheduler.Default before the probe, because this handler is NOT always raised from
-            // the thread pool: SnykTasksService.DownloadAsync fires CliDownloadDeclined before its own
+            // the thread pool: SnykTasksService.EnsureCliReady fires CliDownloadDeclined before its own
             // hop when BinariesAutoUpdate is off, and Download() is wired to this control's Loaded
             // event, so RunAsync starts out on the UI thread. IsExistingCliUsableForFallback launches
             // the CLI and waits up to ProtocolProbeTimeoutMs for it, which froze VS for the whole
@@ -507,7 +507,7 @@ namespace Snyk.VisualStudio.Extension.UI.Toolwindow
 
                 await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
 
-                this.SettleLanguageServer(
+                this.EnsureServerOnConfiguredCli(
                     fallbackUsable,
                     cliSettingsChanged: eventArgs?.CliSettingsChanged == true,
                     source: "CliDownloadDidNotComplete");
@@ -540,7 +540,7 @@ namespace Snyk.VisualStudio.Extension.UI.Toolwindow
                 // A failure can only follow an attempted download, so DownloadStarted has already recorded
                 // whether it stopped the server. That recorded fact is why nothing here has to reason
                 // about whether the fire-and-forget stop has landed yet.
-                this.SettleLanguageServer(fallbackUsable, cliSettingsChanged: false, source: "DownloadFailed");
+                this.EnsureServerOnConfiguredCli(fallbackUsable, cliSettingsChanged: false, source: "DownloadFailed");
 
                 if (fallbackUsable)
                 {
@@ -598,7 +598,7 @@ namespace Snyk.VisualStudio.Extension.UI.Toolwindow
         // Shared by all three download outcomes so they cannot drift. Consumes stoppedServerForDownload:
         // the stop belongs to the episode that just ended, and leaving it set would make the next
         // settings change look like the server was already down.
-        private void SettleLanguageServer(bool cliUsable, bool cliSettingsChanged, string source)
+        private void EnsureServerOnConfiguredCli(bool cliUsable, bool cliSettingsChanged, string source)
         {
             var stopIssued = this.stoppedServerForDownload;
             this.stoppedServerForDownload = false;

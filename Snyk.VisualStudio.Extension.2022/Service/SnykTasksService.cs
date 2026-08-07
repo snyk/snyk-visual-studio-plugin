@@ -325,18 +325,15 @@ namespace Snyk.VisualStudio.Extension.Service
             }
         }
 
-        /// <summary>
-        /// Start a CLI download task in background thread. Will only download the CLI if it's missing or outdated.
-        /// </summary>
-        /// <param name="downloadFinishedCallback"><see cref="CliDownloadFinishedCallback"/> callback object.</param>
-        /// <param name="force">
-        /// True when the user changed a CLI setting. The download itself is unaffected — this only tells
-        /// the language server it must be restarted onto the newly configured executable even if one is
-        /// already serving, which is otherwise indistinguishable from the startup call.
-        /// </param>
-        public void Download(CliDownloadFinishedCallback downloadFinishedCallback = null, bool cliSettingsChanged = false)
+        /// <inheritdoc cref="ISnykTasksService.EnsureCliReady"/>
+        /// <remarks>
+        /// Named for the goal rather than the mechanism: the download is one of three outcomes, alongside
+        /// "already current" and "not permitted". <see cref="SnykCliDownloader"/> is where something is
+        /// actually downloaded.
+        /// </remarks>
+        public void EnsureCliReady(CliDownloadFinishedCallback downloadFinishedCallback = null, bool cliSettingsChanged = false)
         {
-            Logger.Information("Enter Download method");
+            Logger.Information("Enter EnsureCliReady method");
 
             try
             {
@@ -369,7 +366,7 @@ namespace Snyk.VisualStudio.Extension.Service
                     {
                         try
                         {
-                            await this.DownloadAsync(downloadFinishedCallback, progressWorker, cliSettingsChanged);
+                            await this.EnsureCliReadyCoreAsync(downloadFinishedCallback, progressWorker, cliSettingsChanged);
                         }
                         catch (ChecksumVerificationException e)
                         {
@@ -417,7 +414,7 @@ namespace Snyk.VisualStudio.Extension.Service
             }
         }
 
-        public async Task DownloadAsync(CliDownloadFinishedCallback downloadFinishedCallback = null)
+        public async Task EnsureCliReadyAsync(CliDownloadFinishedCallback downloadFinishedCallback = null)
         {
             if (this.IsTaskRunning())
             {
@@ -443,7 +440,7 @@ namespace Snyk.VisualStudio.Extension.Service
 
             try
             {
-                await this.DownloadAsync(downloadFinishedCallback, progressWorker);
+                await this.EnsureCliReadyCoreAsync(downloadFinishedCallback, progressWorker);
             }
             catch (ChecksumVerificationException e)
             {
@@ -771,7 +768,7 @@ namespace Snyk.VisualStudio.Extension.Service
         {
             if (!this.serviceProvider.Options.BinariesAutoUpdate)
             {
-                Logger.Information("CLI auto-update is disabled; not downloading");
+                Logger.Information("CLI auto-update is disabled; not holding the language server for a download");
 
                 return false;
             }
@@ -804,13 +801,13 @@ namespace Snyk.VisualStudio.Extension.Service
         }
 
 
-        private async Task DownloadAsync(CliDownloadFinishedCallback downloadFinishedCallback,
+        private async Task EnsureCliReadyCoreAsync(CliDownloadFinishedCallback downloadFinishedCallback,
             ISnykProgressWorker progressWorker, bool cliSettingsChanged = false)
         {
             var options = this.serviceProvider.Options;
             if (!options.BinariesAutoUpdate)
             {
-                Logger.Information("CLI auto-update is disabled, CLI download is skipped.");
+                Logger.Information("CLI auto-update is disabled; declining the CLI check without fetching anything");
 
                 // Declined, not cancelled: nothing had started, so there is nothing to undo. A user who
                 // just repointed the CLI setting still needs the server moved onto that binary, whereas at
@@ -820,7 +817,7 @@ namespace Snyk.VisualStudio.Extension.Service
                 return;
             }
 
-            // Claim the guard before yielding: Download() is wired to the Loaded event, which WPF raises
+            // Claim the guard before yielding: EnsureCliReady is wired to the Loaded event, which WPF raises
             // more than once, and IsTaskRunning() must be true by the time it returns.
             this.isCliDownloading = true;
 

@@ -67,7 +67,7 @@ namespace Snyk.VisualStudio.Extension.Tests.UI.Html
                 ["cli_path"] = @"C:\Users\dev\Code\test_binaries\snyk-win.exe",
             });
 
-            tasksServiceMock.Verify(t => t.Download(It.IsAny<SnykCliDownloader.CliDownloadFinishedCallback>(), true), Times.Once);
+            tasksServiceMock.Verify(t => t.EnsureCliReady(It.IsAny<SnykCliDownloader.CliDownloadFinishedCallback>(), true), Times.Once);
         }
 
         [Fact]
@@ -75,7 +75,7 @@ namespace Snyk.VisualStudio.Extension.Tests.UI.Html
         {
             await SaveAsync(new Dictionary<string, object> { ["automatic_download"] = false });
 
-            tasksServiceMock.Verify(t => t.Download(It.IsAny<SnykCliDownloader.CliDownloadFinishedCallback>(), true), Times.Once);
+            tasksServiceMock.Verify(t => t.EnsureCliReady(It.IsAny<SnykCliDownloader.CliDownloadFinishedCallback>(), true), Times.Once);
         }
 
         [Fact]
@@ -84,7 +84,7 @@ namespace Snyk.VisualStudio.Extension.Tests.UI.Html
             // A save that only touches an unrelated setting must not restart the language server.
             await SaveAsync(new Dictionary<string, object> { ["organization"] = "my-org" });
 
-            tasksServiceMock.Verify(t => t.Download(It.IsAny<SnykCliDownloader.CliDownloadFinishedCallback>(), It.IsAny<bool>()), Times.Never);
+            tasksServiceMock.Verify(t => t.EnsureCliReady(It.IsAny<SnykCliDownloader.CliDownloadFinishedCallback>(), It.IsAny<bool>()), Times.Never);
         }
 
         [Fact]
@@ -94,7 +94,7 @@ namespace Snyk.VisualStudio.Extension.Tests.UI.Html
             // unchanged on the first save. Same executable, so no restart.
             await SaveAsync(new Dictionary<string, object> { ["cli_path"] = SnykCli.GetSnykCliDefaultPath() });
 
-            tasksServiceMock.Verify(t => t.Download(It.IsAny<SnykCliDownloader.CliDownloadFinishedCallback>(), It.IsAny<bool>()), Times.Never);
+            tasksServiceMock.Verify(t => t.EnsureCliReady(It.IsAny<SnykCliDownloader.CliDownloadFinishedCallback>(), It.IsAny<bool>()), Times.Never);
         }
 
         [Fact]
