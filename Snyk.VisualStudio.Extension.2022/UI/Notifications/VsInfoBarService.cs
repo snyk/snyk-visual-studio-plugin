@@ -28,6 +28,13 @@
         // specific element it was called on, not a global ID - a single field gets overwritten by
         // every call, so closing the first of two concurrently displayed InfoBars unadvises with
         // whatever cookie was written last, silently corrupting the other's advise connection.
+        //
+        // Only ever pruned in OnClosed, same as messagesCache below. If the tool window is torn down
+        // (solution close, VS shutdown) without the InfoBar raising OnClosed first, both entries
+        // outlive it for the rest of the session, and the same message text can never be shown again -
+        // closing that would need a teardown hook (e.g. AfterCloseSolution) clearing both dictionaries.
+        // Accepted as-is: the failure mode is a missed message, not a crash or a leak beyond the
+        // session.
         private readonly IDictionary<IVsInfoBarUIElement, uint> cookiesByElement =
             new Dictionary<IVsInfoBarUIElement, uint>();
 
@@ -115,10 +122,11 @@
             }
             catch (Exception e)
             {
-                // Best-effort: the ToolWindow == null check below still applies and no-ops exactly as it
-                // did before this fix if this failed (e.g. during shutdown, before the package is fully
-                // sited - FindToolWindow/the Content cast inside EnsureInitializeToolWindowAsync can
-                // throw various exceptions in those cases, not just NotSupportedException).
+                // Best-effort: the ToolWindow?.Frame == null check below still applies and no-ops
+                // exactly as it did before this fix if this failed (e.g. during shutdown, before the
+                // package is fully sited - FindToolWindow/the Content cast inside
+                // EnsureInitializeToolWindowAsync can throw various exceptions in those cases, not just
+                // NotSupportedException).
                 Logger.Warning(e, "Could not ensure the Snyk tool window exists before showing an InfoBar");
             }
         }

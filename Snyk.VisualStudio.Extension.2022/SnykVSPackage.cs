@@ -169,6 +169,12 @@ namespace Snyk.VisualStudio.Extension
             {
                 Logger.Error("Exception: Cannot find Snyk tool window.");
 
+                // Reset before throwing: ToolWindow was just assigned a frameless pane above, and every
+                // caller of this method (including retries) early-returns on ToolWindow != null - leaving
+                // it set here would make this failure permanent for the rest of the session, with
+                // ToolWindowControl staying null forever since the assignment below would never run again.
+                ToolWindow = null;
+
                 throw new NotSupportedException("Cannot find Snyk tool window.");
             }
 
