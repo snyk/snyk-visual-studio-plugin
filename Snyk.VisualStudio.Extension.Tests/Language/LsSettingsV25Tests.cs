@@ -35,11 +35,15 @@ namespace Snyk.VisualStudio.Extension.Tests.Language
 
         // Builds a minimal IPersistableOptions at all-plugin-defaults for use with SeedFrom.
         // Used by tests that need a seeded real UserOverrideTracker with no keys marked changed.
-        private static ISnykOptions BuildDefaultOptionsForSeed()
+        // Pass codeEnabled:true to model an upgrading install whose stored preference was "Code on",
+        // which SeedFrom must recognise as an override.
+        private static ISnykOptions BuildDefaultOptionsForSeed(
+            bool codeEnabled = SnykSettings.DefaultSnykCodeSecurityEnabled)
         {
             var o = new Mock<ISnykOptions>();
             o.SetupGet(x => x.OssEnabled).Returns(true);
-            o.SetupGet(x => x.SnykCodeSecurityEnabled).Returns(true);
+            // Code's plugin default is false — it matches the LS, which does not default-enable Code.
+            o.SetupGet(x => x.SnykCodeSecurityEnabled).Returns(codeEnabled);
             o.SetupGet(x => x.IacEnabled).Returns(true);
             o.SetupGet(x => x.SecretsEnabled).Returns(false);
             o.SetupGet(x => x.AutoScan).Returns(true);
@@ -916,25 +920,30 @@ namespace Snyk.VisualStudio.Extension.Tests.Language
         // RACC-004 (Acceptance / PR #515 regression): Enabling the global Snyk Code toggle must
         // persist as an explicit user-owned value, not be turned into a reset-to-default signal.
         //
-        // Snyk Code's plugin default is `true` (ConfigDefaults). Under the OLD (buggy) semantics
-        // ApplyUserEdits classified an edited key by value==plugin-default, so a user *enabling*
-        // Code (posting true) hit the Unmark branch → BuildSettingsMap emitted a Reset
-        // ({value:null, changed:true}) → the org/server default won → the enable appeared not to
-        // persist. The fix: any key the form posted (present in editedKeys) is an explicit user
-        // choice and must be Mark'd (changed:true) carrying the user's value, never a reset.
+        // Under the OLD (buggy) semantics ApplyUserEdits classified an edited key by
+        // value==plugin-default, so an edit that happened to land on the default hit the Unmark
+        // branch → BuildSettingsMap emitted a Reset ({value:null, changed:true}) → the org/server
+        // default won → the choice appeared not to persist. The fix: any key the form posted
+        // (present in editedKeys) is an explicit user choice and must be Mark'd (changed:true)
+        // carrying the user's value, never a reset.
+        //
+        // Enabling Code matters doubly because the LS does not default-enable the product: only an
+        // explicit changed:true turns the Code scanner on. See
+        // ApplyUserEdits_EditedKeyEqualToDefault_MarksChanged_NoReset (UserOverrideTrackerTests) for
+        // the value==default half of the invariant.
         [Fact]
         public void EnablingSnykCode_SendsExplicitEnabledValueChangedTrue_NotReset()
         {
-            SetupDefaults(); // SnykCodeSecurityEnabled == true (the plugin default the user just enabled)
+            SetupDefaults(); // SnykCodeSecurityEnabled == true (what the user just enabled)
 
             var realTracker = new UserOverrideTracker();
             realTracker.SeedFrom(BuildDefaultOptionsForSeed()); // clean seeded slate, Code unmarked
 
             // The user enables Snyk Code in the settings form and applies. The form posts
-            // snyk_code_enabled=true and includes it in the edit delta. Even though true equals the
-            // plugin default, the user made an explicit choice — it must be recorded as an override.
+            // snyk_code_enabled=true and includes it in the edit delta, so it must be recorded as an
+            // override rather than inferred to be anything else.
             var optionsAfterSave = new Mock<ISnykOptions>();
-            optionsAfterSave.SetupGet(x => x.SnykCodeSecurityEnabled).Returns(true); // user-enabled == plugin default
+            optionsAfterSave.SetupGet(x => x.SnykCodeSecurityEnabled).Returns(true);
 
             realTracker.ApplyUserEdits(
                 optionsAfterSave.Object,
@@ -952,6 +961,29 @@ namespace Snyk.VisualStudio.Extension.Tests.Language
             Assert.True(map[PflagKeys.SnykCodeEnabled].Changed,
                 "An explicitly enabled Snyk Code toggle must be marked changed so the org default " +
                 "cannot silently override the user's choice");
+        }
+
+        // RACC-005 (wire-level acceptance): an upgrading install whose stored preference was "Code on"
+        // must put snyk_code_enabled on the wire as {value:true, changed:true}. Sent changed:false the
+        // LS reads it as "no user preference" and — unlike OSS and IaC, which it default-enables —
+        // leaves the Code scanner off, so no Code scan runs at all even when the org enables SAST.
+        [Fact]
+        public void UpgradedInstallWithCodeEnabled_SendsCodeAsAnExplicitEnabledOverride()
+        {
+            SetupDefaults(); // the loaded options carry the stored value: Code enabled
+
+            // The tracker state Load() produces for a pre-upgrade settings.json: seeded from
+            // value-vs-default, where a stored Code=true differs from the plugin default (false).
+            var realTracker = new UserOverrideTracker();
+            realTracker.SeedFrom(BuildDefaultOptionsForSeed(codeEnabled: true));
+            optionsManagerMock.Setup(m => m.OverrideTracker).Returns(realTracker);
+
+            var map = cut.BuildSettingsMap(optionsMock.Object);
+
+            Assert.Equal(true, map[PflagKeys.SnykCodeEnabled].Value);
+            Assert.True(map[PflagKeys.SnykCodeEnabled].Changed,
+                "snyk_code_enabled must be sent changed:true, or the Language Server treats the " +
+                "enabled state as absent and skips the Code scanner");
         }
 
         // UNIT-008: ConfigSetting.Of(value, changed) overload sets Changed correctly;

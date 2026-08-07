@@ -94,7 +94,14 @@ namespace Snyk.VisualStudio.Extension.Settings
 
             this.snykSettings = new SnykSettings();
             if (fileWasAbsent)
+            {
+                // Fresh install: stamp the marker before the write so the first settings.json records
+                // "nothing to migrate", making a missing marker an unambiguous upgrade signal. Not
+                // set on the present-but-unreadable path — that would burn the one-shot migration for
+                // a user whose real settings are still on disk.
+                this.snykSettings.CodeEnablementMigrated = true;
                 SaveSettingsToFile();
+            }
         }
 
         public void SaveSettingsToFile()
@@ -394,6 +401,10 @@ namespace Snyk.VisualStudio.Extension.Settings
                 overrideTracker.MarkSeeded();
             }
 
+            // MUST run after the branch chain above: Branch A calls SeedFrom, which Clear()s the
+            // changed set, so a mark applied before it would be silently discarded.
+            MigrateCodeEnablement();
+
             // Rehydrate persisted-but-unconfirmed pending resets (IDE-2152 fix #2) AFTER the changed
             // set has been hydrated by the branch above, so RehydratePendingResets can skip any key
             // that is now a live override mark (a persisted override means the user re-applied the key
@@ -406,6 +417,48 @@ namespace Snyk.VisualStudio.Extension.Settings
             options.ChangedConfigKeys = overrideTracker.Snapshot();
             return options;
             } // release persistGate (returning from inside the lock releases it)
+        }
+
+        // One-shot recovery of Snyk Code enablement for installs predating this migration. The LS
+        // default-enables OSS and IaC but not Code, so Code only turns on for an explicit
+        // changed:true — an upgrading user whose stored preference was "Code on" otherwise loses
+        // Code scanning, because changed:false reads to the LS as "no preference".
+        //
+        // Marks in memory only; Load() must never write (DEFERRED-PERSIST), so the next real Save
+        // persists it, as it does for ChangedConfigKeysSeeded.
+        //
+        // internal for testability (InternalsVisibleTo).
+        internal void MigrateCodeEnablement()
+        {
+            if (snykSettings.CodeEnablementMigrated)
+                return;
+
+            // Blank defaults over a recoverable file say nothing about the user's real preference.
+            // Leave the marker unset so the migration re-runs against the real file (IDE-1483 guard).
+            if (settingsFileWasUnreadable)
+                return;
+
+            // Only "Code was on" needs rescuing; a stored false already resolves correctly. The two
+            // negative guards avoid fighting the user — an existing mark means the state is already
+            // carried, and a queued reset means they deliberately returned Code to the org default.
+            if (snykSettings.SnykCodeSecurityEnabled &&
+                !overrideTracker.IsChanged(PflagKeys.SnykCodeEnabled) &&
+                !(snykSettings.PendingResetConfigKeys?.Contains(PflagKeys.SnykCodeEnabled) ?? false))
+            {
+                overrideTracker.Mark(PflagKeys.SnykCodeEnabled);
+
+                // Load-bearing, not tidiness: Save(updateOverrideTracker:false) — the LS-originated
+                // $/snyk.configuration echo, often the only Save in a session — serialises
+                // snykSettings verbatim without re-reading the tracker. A mark living only in the
+                // tracker would be lost on restart while CodeEnablementMigrated survived, so the
+                // migration would not re-run and Code would silently switch off again.
+                var migrated = overrideTracker.Snapshot();
+                snykSettings.ChangedConfigKeys = migrated.Count > 0 ? migrated : null;
+            }
+
+            // Record the evaluation whatever the outcome: it is only meaningful against the
+            // pre-upgrade file, and re-running later would undo a subsequent user reset.
+            snykSettings.CodeEnablementMigrated = true;
         }
 
         // Testable seam over the top of Load()'s guarded read region (mirrors the CopyFile seam). A
