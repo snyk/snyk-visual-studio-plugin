@@ -13,7 +13,9 @@ using Microsoft.VisualStudio.Threading;
 using Serilog;
 using Snyk.VisualStudio.Extension.Analytics;
 using Snyk.VisualStudio.Extension.CLI;
+using Snyk.VisualStudio.Extension.Download;
 using Snyk.VisualStudio.Extension.Settings;
+using Snyk.VisualStudio.Extension.UI.Notifications;
 using Snyk.VisualStudio.Extension.Utils;
 using StreamJsonRpc;
 using Task = System.Threading.Tasks.Task;
@@ -34,6 +36,8 @@ namespace Snyk.VisualStudio.Extension.Language
         // Set when VS calls OnLoadedAsync. Raising StartAsync before that point is out of contract: VS
         // has already subscribed, so the raise looks valid, but it is discarded — ActivateAsync is never
         // called and nothing retries.
+        // VS calls ActivateAsync only in response to StartAsync, which is raised after the pre-launch
+        // checks in StartServerAsync.
         private volatile bool vsHasLoadedClient;
 
         // internal setter for testability: in production only OnLoadedAsync sets this, and only VS
@@ -150,6 +154,42 @@ namespace Snyk.VisualStudio.Extension.Language
         /// <see cref="object.GetHashCode"/> cannot make separate instances look like one.
         /// </summary>
         private int InstanceId => RuntimeHelpers.GetHashCode(this);
+
+        // Test seams for the blocking pre-launch checks.
+        internal Func<string, bool> CliExistsCheck { get; set; } = File.Exists;
+
+        // File.Exists can block on a slow or unreachable custom path.
+        internal int CliExistsCheckTimeoutMs { get; set; } = SnykCliDownloader.ProtocolProbeTimeoutMs;
+
+        // Allows one full probe to wait behind another before running.
+        internal int CliProtocolCheckTimeoutMs { get; set; } =
+            (SnykCliDownloader.ProtocolProbeTimeoutMs + SnykCliDownloader.ProtocolProbeFlushTimeoutMs) * 2;
+
+        // Use the shared downloader so a fallback followed by a restart can reuse a conclusive verdict.
+        internal Func<string, CliProtocolCheckResult> CliProtocolCompatibilityCheck { get; set; } =
+            cliPath => SnykVSPackage.ServiceProvider.TasksService.CheckCliProtocol(cliPath);
+
+        // InfoBars require an initialized tool window.
+        internal Action<string> ShowInfoBar { get; set; } = message =>
+        {
+            if (SnykVSPackage.Instance != null)
+            {
+                ThreadHelper.JoinableTaskFactory.Run(async () =>
+                {
+                    try
+                    {
+                        await SnykVSPackage.Instance.EnsureInitializeToolWindowAsync();
+                    }
+                    catch (Exception e)
+                    {
+                        // Display is best-effort and must not fail language-client startup.
+                        Logger.Warning(e, "Could not ensure the Snyk tool window exists before showing an InfoBar");
+                    }
+                });
+            }
+
+            NotificationService.Instance?.ShowErrorInfoBar(message);
+        };
 
         public async Task<Connection> ActivateAsync(CancellationToken token)
         {
@@ -298,6 +338,9 @@ namespace Snyk.VisualStudio.Extension.Language
                 IsReady,
                 ThreadHelper.CheckAccess());
 
+            // Defer display until after releasing the start/stop semaphore.
+            string infoBarMessage = null;
+
             await semaphore.WaitAsync();
             try
             {
@@ -317,26 +360,146 @@ namespace Snyk.VisualStudio.Extension.Language
 
                 if (StartAsync != null && SnykVSPackage.Instance?.Options != null && shouldStart)
                 {
-                    if (CustomMessageTarget == null)
+                    // Gate before StartAsync: after it is raised, VS expects ActivateAsync to return a
+                    // valid Connection and treats a rejected launch as an unhandled client failure.
+                    var cliPath = SnykCli.GetCliFilePath(SnykVSPackage.Instance.Options.CliCustomPath);
+
+                    // Both checks perform blocking I/O and must run off the UI thread.
+                    var cliExistsCheckTask = Task.Run(() => CliExistsCheck(cliPath));
+                    var cliExistsCheckWon = await Task.WhenAny(
+                        cliExistsCheckTask,
+                        Task.Delay(CliExistsCheckTimeoutMs)) == cliExistsCheckTask;
+
+                    if (!cliExistsCheckWon)
                     {
-                        CustomMessageTarget = new SnykLanguageClientCustomTarget(SnykVSPackage.ServiceProvider);
+                        // The synchronous check cannot be cancelled. Observe a later fault while allowing
+                        // startup to return after the timeout.
+                        cliExistsCheckTask.ContinueWith(
+                            t =>
+                            {
+                                // This continuation is not awaited, so a logging failure here would
+                                // replace the observed fault with another unobserved exception.
+                                try
+                                {
+                                    Logger.Warning(t.Exception, "CliExistsCheck failed after the gate had already timed out on it");
+                                }
+                                catch
+                                {
+                                }
+                            },
+                            TaskContinuationOptions.OnlyOnFaulted);
+
+                        infoBarMessage = "Snyk could not confirm the CLI exists within the time limit; " +
+                            "not a confirmed missing binary. This can happen against a slow or " +
+                            "unreachable custom CLI path. Specify a reachable CLI path, " +
+                            $"and consider enabling \"Manage Binaries Automatically\" in Tools > Options > Snyk. (CLI path: '{cliPath}')";
+                        Logger.Error("Timed out checking whether the CLI exists at {CliPath}", cliPath);
                     }
+                    else
+                    {
+                        var cliExists = await cliExistsCheckTask;
 
-                    await MigrateLegacySolutionSettingsAsync();
+                        // Do not report a missing binary as protocol-incompatible.
+                        if (!cliExists)
+                        {
+                            infoBarMessage = "Snyk CLI was not found and cannot be started. Specify a valid CLI " +
+                                "path, or enable \"Manage Binaries Automatically\" in Tools > Options > Snyk. " +
+                                $"(CLI path: '{cliPath}')";
+                            Logger.Information("Cannot start Language Server: CLI not found at {CliPath}.", cliPath);
+                        }
+                        else
+                        {
+                            // Bound lock contention as well as the probe itself.
+                            var protocolCheckTask = Task.Run(() => CliProtocolCompatibilityCheck(cliPath));
+                            var protocolCheckWon = await Task.WhenAny(
+                                protocolCheckTask,
+                                Task.Delay(CliProtocolCheckTimeoutMs)) == protocolCheckTask;
 
-                    // Raising StartAsync asks VS to call ActivateAsync; it is not a guarantee. The
-                    // guard above is what keeps this in contract — see its comment. VS also ignores the
-                    // request outright when it considers the server already started, so the pair of
-                    // lines below plus ActivateAsync's own logging are what distinguish "VS declined"
-                    // from "the launch failed".
-                    Logger.Information("Starting Language Server");
-                    Logger.Debug(
-                        "Raising StartAsync on the {ThreadKind} thread; expect an ActivateAsync line next if VS accepts it",
-                        ThreadHelper.CheckAccess() ? "UI" : "background");
+                            CliProtocolCheckResult protocolCheckResult;
 
-                    await StartAsync.InvokeAsync(this, EventArgs.Empty);
+                            if (!protocolCheckWon)
+                            {
+                                // The synchronous check cannot be cancelled. Observe a later fault while
+                                // allowing startup to return after the timeout.
+                                protocolCheckTask.ContinueWith(
+                                    t =>
+                                    {
+                                        // This continuation is not awaited, so a logging failure here would
+                                        // replace the observed fault with another unobserved exception.
+                                        try
+                                        {
+                                            Logger.Warning(t.Exception, "CliProtocolCompatibilityCheck failed after the gate had already timed out on it");
+                                        }
+                                        catch
+                                        {
+                                        }
+                                    },
+                                    TaskContinuationOptions.OnlyOnFaulted);
 
-                    Logger.Debug("StartAsync raise returned");
+                                protocolCheckResult = CliProtocolCheckResult.TimedOut;
+                            }
+                            else
+                            {
+                                protocolCheckResult = await protocolCheckTask;
+                            }
+
+                            if (protocolCheckResult != CliProtocolCheckResult.Supported)
+                            {
+                                // Keep remediation before the path so truncation removes diagnostics first.
+                                if (protocolCheckResult == CliProtocolCheckResult.TimedOut)
+                                {
+                                    infoBarMessage = "Snyk could not confirm the CLI's Language Server protocol " +
+                                        "version within the time limit. This might be due to another process locking " +
+                                        "the CLI binary. Check for antivirus/security software restricting access " +
+                                        $"to the CLI. (CLI path: '{cliPath}')";
+                                    Logger.Error("Timed out checking Language Server protocol compatibility for CLI at {CliPath}", cliPath);
+                                }
+                                else if (protocolCheckResult == CliProtocolCheckResult.CheckFailed)
+                                {
+                                    infoBarMessage = "Snyk could not check the CLI's Language Server protocol " +
+                                        "version due to an error; not a confirmed incompatibility. Check that " +
+                                        "the CLI path is correct and points to a valid, accessible Snyk CLI " +
+                                        "executable, or enable \"Manage Binaries Automatically\" in Tools > " +
+                                        $"Options > Snyk. (CLI path: '{cliPath}')";
+                                    Logger.Error("Could not check Language Server protocol compatibility for CLI at {CliPath}", cliPath);
+                                }
+                                else
+                                {
+                                    infoBarMessage = $"Snyk CLI does not support the required Language Server " +
+                                        $"protocol version {LsConstants.ProtocolVersion} and cannot be started. Update " +
+                                        "the CLI, or enable \"Manage Binaries Automatically\" in Tools > Options > " +
+                                        $"Snyk to let Snyk manage it automatically. (CLI path: '{cliPath}')";
+                                    Logger.Error(
+                                        "Snyk CLI at {CliPath} does not support the required Language Server protocol version {Expected}",
+                                        cliPath,
+                                        LsConstants.ProtocolVersion);
+                                }
+                            }
+                            else
+                            {
+                                if (CustomMessageTarget == null)
+                                {
+                                    CustomMessageTarget = new SnykLanguageClientCustomTarget(SnykVSPackage.ServiceProvider);
+                                }
+
+                                await MigrateLegacySolutionSettingsAsync();
+
+                                // Raising StartAsync asks VS to call ActivateAsync; it is not a guarantee. The
+                                // guard above is what keeps this in contract — see its comment. VS also ignores
+                                // the request outright when it considers the server already started, so the
+                                // pair of Debug lines below plus ActivateAsync's own logging are what
+                                // distinguish "VS declined" from "the launch failed".
+                                Logger.Information("Starting Language Server");
+                                Logger.Debug(
+                                    "Raising StartAsync on the {ThreadKind} thread; expect an ActivateAsync line next if VS accepts it",
+                                    ThreadHelper.CheckAccess() ? "UI" : "background");
+
+                                await StartAsync.InvokeAsync(this, EventArgs.Empty);
+
+                                Logger.Debug("StartAsync raise returned");
+                            }
+                        }
+                    }
                 }
                 else
                 {
@@ -351,6 +514,13 @@ namespace Snyk.VisualStudio.Extension.Language
             finally
             {
                 semaphore.Release();
+            }
+
+            // ShowInfoBar can synchronously wait for the UI thread, so never call it while holding the
+            // start/stop semaphore.
+            if (infoBarMessage != null)
+            {
+                ShowInfoBar(infoBarMessage);
             }
         }
 

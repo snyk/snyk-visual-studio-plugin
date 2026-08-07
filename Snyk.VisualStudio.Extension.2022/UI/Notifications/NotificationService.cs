@@ -8,7 +8,8 @@ namespace Snyk.VisualStudio.Extension.UI.Notifications
     /// </summary>
     public class NotificationService
     {
-        private const int MaxMsgLength = 300;
+        // Shared with tests that verify actionable text is not truncated.
+        internal const int MaxMsgLength = 300;
         private VsInfoBarService infoBarService;
 
         private NotificationService(ISnykServiceProvider serviceProvider) => this.infoBarService = new VsInfoBarService(serviceProvider);

@@ -228,4 +228,15 @@ public interface ISnykTasksService
     Task<FeaturesSettings> GetFeaturesSettingsAsync();
     void CancelDownloadTask();
     bool ShouldDownloadCli();
+
+    /// <summary>
+    /// Checks whether the CLI at <paramref name="cliFilePath"/> supports the required Language Server
+    /// protocol.
+    /// </summary>
+    CliProtocolCheckResult CheckCliProtocol(string cliFilePath);
+
+    /// <summary>
+    /// Whether the CLI at <paramref name="cliFilePath"/> is a valid fallback.
+    /// </summary>
+    bool IsExistingCliUsable(string cliFilePath);
 }

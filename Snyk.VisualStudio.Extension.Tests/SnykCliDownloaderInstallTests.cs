@@ -6,6 +6,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Moq;
 using Snyk.VisualStudio.Extension.Download;
+using Snyk.VisualStudio.Extension.Language;
 using Snyk.VisualStudio.Extension.Service;
 using Snyk.VisualStudio.Extension.Settings;
 using Xunit;
@@ -682,6 +683,43 @@ namespace Snyk.VisualStudio.Extension.Tests
 
             Assert.False(cut.IsExistingCliUsable(missingCli));
             Assert.Equal(0, cut.ProtocolProbes);
+        }
+
+        [Fact]
+        public void IsSupportedProtocolVersion_ReturnsTrue_WhenReportedVersionMatchesRequired()
+        {
+            Assert.True(SnykCliDownloader.IsSupportedProtocolVersion(LsConstants.ProtocolVersion));
+        }
+
+        [Fact]
+        public void IsSupportedProtocolVersion_ReturnsFalse_WhenReportedVersionDoesNotMatch()
+        {
+            Assert.False(SnykCliDownloader.IsSupportedProtocolVersion("24"));
+        }
+
+        [Fact]
+        public void IsSupportedProtocolVersion_ReturnsTrue_WhenReportedVersionIsDevelopmentSentinel()
+        {
+            // Locally built language servers report this sentinel.
+            Assert.True(SnykCliDownloader.IsSupportedProtocolVersion("development"));
+        }
+
+        [Theory]
+        [InlineData(null)]
+        [InlineData("")]
+        public void IsSupportedProtocolVersion_ReturnsFalse_WhenReportedVersionIsNullOrEmpty(string reported)
+        {
+            Assert.False(SnykCliDownloader.IsSupportedProtocolVersion(reported));
+        }
+
+        [Fact]
+        public void CheckCliProtocol_ReturnsCheckFailed_WhenCliPathDoesNotExist()
+        {
+            var cut = new SnykCliDownloader(Options());
+
+            Assert.Equal(
+                CliProtocolCheckResult.CheckFailed,
+                cut.CheckCliProtocol(Path.Combine(this.workDir, "does-not-exist.exe")));
         }
 
         [Fact]
