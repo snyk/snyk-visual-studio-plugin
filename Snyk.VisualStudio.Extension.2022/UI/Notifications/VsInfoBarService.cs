@@ -23,29 +23,17 @@
         private const string SupportLink = "https://support.snyk.io/hc/en-us/requests/new";
         private const string KnownCaveatsLink = "https://docs.snyk.io/ide-tools/visual-studio-extension/troubleshooting-and-known-issues-with-visual-studio-extension";
 
-        // Bounds the wait in EnsureToolWindowExistsAsync below. Must be bounded, not awaited
-        // unconditionally: SnykVSPackage.WarnIfWebView2RuntimeMissingAsync calls ShowErrorInfoBar
-        // synchronously from inside InitializeAsync itself, before PackageInitializedAwaiter's task is
-        // completed - an unconditional wait there deadlocks (InitializeAsync can't finish while blocked
-        // on this call, and this call can't finish waiting on InitializeAsync). A few seconds is far
-        // more than the narrow, no-network span this is really guarding (the gap between
-        // InitializeLanguageClient's fire-and-forget start and SnykScanCommand.InitializeAsync a few
-        // lines later), so this should never actually bind that legitimate wait.
+        // Bounds the wait in EnsureToolWindowExistsAsync below - must not be an unconditional await, or
+        // a caller that itself blocks package init from completing would deadlock waiting on it.
         private const int PackageInitWaitTimeoutMs = 5000;
 
         private readonly ISnykServiceProvider serviceProvider;
 
-        // Keyed per element, not a single shared field: Advise() returns a cookie scoped to the
-        // specific element it was called on, not a global ID - a single field gets overwritten by
-        // every call, so closing the first of two concurrently displayed InfoBars unadvises with
-        // whatever cookie was written last, silently corrupting the other's advise connection.
-        //
-        // Only ever pruned in OnClosed, same as messagesCache below. If the tool window is torn down
-        // (solution close, VS shutdown) without the InfoBar raising OnClosed first, both entries
-        // outlive it for the rest of the session, and the same message text can never be shown again -
-        // closing that would need a teardown hook (e.g. AfterCloseSolution) clearing both dictionaries.
-        // Accepted as-is: the failure mode is a missed message, not a crash or a leak beyond the
-        // session.
+        // Keyed per element, not a single shared field: Advise() returns a cookie scoped to the specific
+        // element it was called on, not a global ID - a shared field would get overwritten by every
+        // call, unadvising the wrong element on close. Only pruned in OnClosed, same as messagesCache
+        // below; if the tool window is torn down without OnClosed firing, both outlive it for the
+        // session (a missed message, not a crash or an unbounded leak).
         private readonly IDictionary<IVsInfoBarUIElement, uint> cookiesByElement =
             new Dictionary<IVsInfoBarUIElement, uint>();
 
@@ -114,11 +102,8 @@
 
         /// <summary>
         /// Ensures the Snyk tool window pane exists (without necessarily showing/focusing it) before an
-        /// InfoBar is attached to it (IDE-2454). ToolWindow stays null until the panel has been created
-        /// at least once - opened by the user, or by a Snyk command running EnsureInitializeToolWindowAsync
-        /// - so without this, any InfoBar shown before that point (e.g. a startup warning or a
-        /// pre-launch gate failure, before the user has ever opened the panel) was silently dropped: the
-        /// early-return check below never became true, and no message reached the user at all.
+        /// InfoBar is attached to it. ToolWindow stays null until the panel has been created at least
+        /// once, so without this, an InfoBar shown before that point was silently dropped.
         /// </summary>
         private async Task EnsureToolWindowExistsAsync()
         {
@@ -127,21 +112,13 @@
                 return;
             }
 
-            // Wait for package init to finish before creating the pane, not just for the tool window's
-            // own sake: SnykToolWindow.OnToolWindowCreated wires the pane's event listeners as part of
-            // creation, including SnykScanCommand.Instance.UpdateControlsStateCallback with no null
-            // check. SnykScanCommand.Instance is only set once SnykVSPackage.InitializeAsync reaches
-            // SnykScanCommand.InitializeAsync - which runs after the fire-and-forget language-client
-            // chain that can itself raise an InfoBar (e.g. SnykCliDownloader.ReportInstallFailure) and
-            // land here first. Racing that chain would create the pane with only some of its listeners
-            // wired, and ToolWindow's own null check above means it would stay half-wired for the rest
-            // of the session.
-            //
-            // Bounded (see PackageInitWaitTimeoutMs above for why this must not be an unconditional
-            // await): if the wait times out, package init hasn't reached the point where creating the
-            // pane is safe, so this call skips creating it, same as if ToolWindow had simply stayed
-            // null. A later, successful call (e.g. once the user opens the panel) still creates the
-            // pane normally.
+            // Wait for package init to finish before creating the pane: SnykToolWindow.OnToolWindowCreated
+            // wires up SnykScanCommand.Instance with no null check, and that instance only exists once
+            // SnykVSPackage.InitializeAsync reaches SnykScanCommand.InitializeAsync - which an InfoBar
+            // raised earlier in that same init sequence (e.g. SnykCliDownloader.ReportInstallFailure)
+            // could otherwise race, half-wiring the pane for the rest of the session. Bounded (see
+            // PackageInitWaitTimeoutMs above) so a caller that itself blocks init can't deadlock here -
+            // on timeout this call just skips creating the pane, same as if it had stayed uncreated.
             var packageInitialized = await Task.WhenAny(
                 SnykVSPackage.PackageInitializedAwaiter,
                 Task.Delay(PackageInitWaitTimeoutMs)) == SnykVSPackage.PackageInitializedAwaiter;
@@ -176,16 +153,11 @@
             await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
             await this.EnsureToolWindowExistsAsync();
 
-            // Captured once and reused below, not re-read from the field: ToolWindow can now be reset to
-            // null by a concurrent failing EnsureInitializeToolWindowAsync (e.g. from another call to
-            // this method), and the awaits between here and AddInfoBar below give that a window to run.
-            // A stale local reference held across those awaits can't be nulled out from under us.
+            // Captured once, not re-read from the field: a concurrent failing
+            // EnsureInitializeToolWindowAsync could otherwise null the field out between this check and
+            // AddInfoBar below. Frame is checked too, not just null-ness: a pane can exist without one.
             var toolWindow = this.serviceProvider.Package.ToolWindow;
 
-            // Also check Frame, not just ToolWindow: EnsureInitializeToolWindowAsync assigns ToolWindow
-            // before validating its Frame, and throws (caught above, best-effort) rather than leaving
-            // ToolWindow null when the pane exists but its window frame does not - so ToolWindow alone
-            // being non-null does not mean AddInfoBar below has anywhere to attach to.
             if (toolWindow?.Frame == null || this.messagesCache.ContainsKey(message))
                 return;
 

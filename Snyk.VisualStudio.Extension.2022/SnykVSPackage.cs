@@ -169,32 +169,17 @@ namespace Snyk.VisualStudio.Extension
             {
                 Logger.Error("Exception: Cannot find Snyk tool window.");
 
-                // Reset before throwing: ToolWindow was just assigned a frameless pane above, and every
-                // caller of this method (including retries) early-returns on ToolWindow != null - leaving
-                // it set here would make this failure permanent for the rest of the session, with
-                // ToolWindowControl staying null forever since the assignment below would never run again.
+                // Reset before throwing, not left set: every caller (including retries) early-returns on
+                // ToolWindow != null, so leaving a frameless pane here would make this failure permanent
+                // for the session - ToolWindowControl would never get assigned below either. Retrying is
+                // cheap: MPF caches pane creation per (GUID, id), so a repeated failure re-throws rather
+                // than reconstructing - just noisier logs during a persistent failure, not repeated work.
                 //
-                // Retrying is cheap, not just a trade-off: MPF's own ToolWindowCollection caches one
-                // AsyncLazy<ToolWindowPane> per (tool GUID, id) for the package's lifetime, and
-                // AsyncLazy never re-invokes its factory once its task is set, faulted or not - so every
-                // retry after a genuine frame-creation failure just re-throws that same cached exception
-                // instead of re-running Activator.CreateInstance or constructing a new
-                // SnykToolWindowControl/WebView2 host. Resetting ToolWindow here only clears this
-                // package's own field, not that cache.
-                //
-                // Accepted cost: during a persistent failure, every InfoBar call in that window repeats
-                // this FindToolWindow-and-throw-and-log rather than failing once and staying latched.
-                // Still harmless (each retry is cheap, per the MPF caching above) - just noisier logs.
-                // Not worth a second piece of state to suppress.
-                //
-                // ToolWindowControl deliberately NOT reset alongside it: SnykToolWindow.OnToolWindowCreated
-                // can assign ToolWindowControl (via SnykService.ToolWindow, which several callers -
-                // AuthenticationFlowService among them - dereference with no null check) even when this
-                // Frame check still fails. Nulling it here would turn "maybe still usable despite a
-                // frameless pane" into a guaranteed NullReferenceException for those callers, for no
-                // benefit to this method: SnykCleanPanelCommand, the one caller that reads ToolWindow
-                // before touching ToolWindowControl, already stops at the ToolWindow == null check below
-                // regardless of what ToolWindowControl holds.
+                // ToolWindowControl deliberately left alone: OnToolWindowCreated can set it independently
+                // of this Frame check, and callers like AuthenticationFlowService dereference it with no
+                // null check - nulling it here would turn a possibly-still-usable control into a
+                // guaranteed crash for them, for no benefit (SnykCleanPanelCommand, the one caller that
+                // checks ToolWindow first, is unaffected either way).
                 ToolWindow = null;
 
                 throw new NotSupportedException("Cannot find Snyk tool window.");
@@ -250,14 +235,8 @@ namespace Snyk.VisualStudio.Extension
                 // all tool-window panels are WebView2-hosted. Surface a clear, actionable error if
                 // it's missing rather than letting every panel fail opaquely on first navigation.
                 //
-                // Fire-and-forget, like InitializeLanguageClient above - not just for consistency.
-                // ShowErrorInfoBar (reached via NotificationService.Instance? below) now waits for
-                // PackageInitializedAwaiter before creating the tool window, bounded so it can't hang
-                // forever - but awaiting this call inline would guarantee that wait times out on every
-                // single call, every launch: InitializeAsync cannot reach the finally that completes
-                // PackageInitializedAwaiter while blocked here awaiting the very thing that call is
-                // waiting on. Firing it instead lets InitializeAsync finish normally, so the wait this
-                // triggers can actually succeed.
+                // Fire-and-forget, like InitializeLanguageClient above: the InfoBar this shows waits on
+                // this method's own completion, so awaiting it inline here would deadlock.
                 ThreadHelper.JoinableTaskFactory.RunAsync(async () =>
                 {
                     try
