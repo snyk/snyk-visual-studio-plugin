@@ -173,6 +173,14 @@ namespace Snyk.VisualStudio.Extension
                 // caller of this method (including retries) early-returns on ToolWindow != null - leaving
                 // it set here would make this failure permanent for the rest of the session, with
                 // ToolWindowControl staying null forever since the assignment below would never run again.
+                //
+                // Retrying is cheap, not just a trade-off: MPF's own ToolWindowCollection caches one
+                // AsyncLazy<ToolWindowPane> per (tool GUID, id) for the package's lifetime, and
+                // AsyncLazy never re-invokes its factory once its task is set, faulted or not - so every
+                // retry after a genuine frame-creation failure just re-throws that same cached exception
+                // instead of re-running Activator.CreateInstance or constructing a new
+                // SnykToolWindowControl/WebView2 host. Resetting ToolWindow here only clears this
+                // package's own field, not that cache.
                 ToolWindow = null;
 
                 throw new NotSupportedException("Cannot find Snyk tool window.");
