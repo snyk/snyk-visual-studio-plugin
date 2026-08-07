@@ -182,6 +182,11 @@ namespace Snyk.VisualStudio.Extension
                 // SnykToolWindowControl/WebView2 host. Resetting ToolWindow here only clears this
                 // package's own field, not that cache.
                 //
+                // Accepted cost: during a persistent failure, every InfoBar call in that window repeats
+                // this FindToolWindow-and-throw-and-log rather than failing once and staying latched.
+                // Still harmless (each retry is cheap, per the MPF caching above) - just noisier logs.
+                // Not worth a second piece of state to suppress.
+                //
                 // Reset ToolWindowControl alongside it: SnykToolWindow.OnToolWindowCreated can assign
                 // both ToolWindow and ToolWindowControl as part of the same tool-window creation the
                 // Frame check above is validating. Resetting only ToolWindow would leave ToolWindowControl

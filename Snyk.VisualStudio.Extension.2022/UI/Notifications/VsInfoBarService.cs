@@ -22,6 +22,17 @@
         private const string KnownCaveats = "knownCaveats";
         private const string SupportLink = "https://support.snyk.io/hc/en-us/requests/new";
         private const string KnownCaveatsLink = "https://docs.snyk.io/ide-tools/visual-studio-extension/troubleshooting-and-known-issues-with-visual-studio-extension";
+
+        // Bounds the wait in EnsureToolWindowExistsAsync below. Must be bounded, not awaited
+        // unconditionally: SnykVSPackage.WarnIfWebView2RuntimeMissingAsync calls ShowErrorInfoBar
+        // synchronously from inside InitializeAsync itself, before PackageInitializedAwaiter's task is
+        // completed - an unconditional wait there deadlocks (InitializeAsync can't finish while blocked
+        // on this call, and this call can't finish waiting on InitializeAsync). A few seconds is far
+        // more than the narrow, no-network span this is really guarding (the gap between
+        // InitializeLanguageClient's fire-and-forget start and SnykScanCommand.InitializeAsync a few
+        // lines later), so this should never actually bind that legitimate wait.
+        private const int PackageInitWaitTimeoutMs = 5000;
+
         private readonly ISnykServiceProvider serviceProvider;
 
         // Keyed per element, not a single shared field: Advise() returns a cookie scoped to the
@@ -124,9 +135,23 @@
             // chain that can itself raise an InfoBar (e.g. SnykCliDownloader.ReportInstallFailure) and
             // land here first. Racing that chain would create the pane with only some of its listeners
             // wired, and ToolWindow's own null check above means it would stay half-wired for the rest
-            // of the session. SnykVSPackage.PackageInitializedAwaiter completes on every path through
-            // InitializeAsync, including its catch block, so this can't hang if init itself fails.
-            await SnykVSPackage.PackageInitializedAwaiter;
+            // of the session.
+            //
+            // Bounded (see PackageInitWaitTimeoutMs above for why this must not be an unconditional
+            // await): if the wait times out, package init hasn't reached the point where creating the
+            // pane is safe, so this call skips creating it, same as if ToolWindow had simply stayed
+            // null. A later, successful call (e.g. once the user opens the panel) still creates the
+            // pane normally.
+            var packageInitialized = await Task.WhenAny(
+                SnykVSPackage.PackageInitializedAwaiter,
+                Task.Delay(PackageInitWaitTimeoutMs)) == SnykVSPackage.PackageInitializedAwaiter;
+
+            if (!packageInitialized)
+            {
+                Logger.Warning("Timed out waiting for package initialization before showing an InfoBar; not creating the Snyk tool window this time");
+
+                return;
+            }
 
             try
             {
