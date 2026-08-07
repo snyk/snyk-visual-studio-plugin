@@ -70,6 +70,12 @@ namespace Snyk.VisualStudio.Extension.Service
             }
         }
 
+        /// <inheritdoc cref="ISnykTasksService.CheckCliProtocol"/>
+        public CliProtocolCheckResult CheckCliProtocol(string cliFilePath) => this.CliDownloader.CheckCliProtocol(cliFilePath);
+
+        /// <inheritdoc cref="ISnykTasksService.IsExistingCliUsable"/>
+        public bool IsExistingCliUsable(string cliFilePath) => this.CliDownloader.IsExistingCliUsable(cliFilePath);
+
         private void EndCliDownloadEpisode()
         {
             lock (this.cliDownloaderLock)

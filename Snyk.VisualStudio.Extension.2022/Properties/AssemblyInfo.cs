@@ -33,5 +33,6 @@ using System.Runtime.InteropServices;
 [assembly: AssemblyVersion("1.0.0.0")]
 [assembly: AssemblyFileVersion("1.0.0.0")]
 
-// Allow unit tests to access internal methods
+// Allow tests to access internal methods
 [assembly: InternalsVisibleTo("Snyk.VisualStudio.Extension.Tests")]
+[assembly: InternalsVisibleTo("Integration.Tests")]

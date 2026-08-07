@@ -9,9 +9,11 @@ using Microsoft.VisualStudio.LanguageServer.Client;
 using Microsoft.VisualStudio.Sdk.TestFramework;
 using Microsoft.VisualStudio.Shell;
 using Moq;
+using Snyk.VisualStudio.Extension.Download;
 using Snyk.VisualStudio.Extension.Language;
 using Snyk.VisualStudio.Extension.Service;
 using Snyk.VisualStudio.Extension.Settings;
+using Snyk.VisualStudio.Extension.UI.Notifications;
 using StreamJsonRpc;
 using Xunit;
 using LSP = Microsoft.VisualStudio.LanguageServer.Protocol;
@@ -35,6 +37,28 @@ namespace Snyk.VisualStudio.Extension.Tests.Language
             {
                 Rpc = jsonRpcMock.Object
             };
+
+            // Keep unrelated tests independent of a real CLI and notification service.
+            cut.CliExistsCheck = _ => true;
+            cut.CliProtocolCompatibilityCheck = _ => CliProtocolCheckResult.Supported;
+            cut.ShowInfoBar = _ => { };
+        }
+
+        private static SemaphoreSlim GetStartStopSemaphore(SnykLanguageClient client) =>
+            (SemaphoreSlim)typeof(SnykLanguageClient)
+                .GetField("semaphore", BindingFlags.NonPublic | BindingFlags.Instance)
+                .GetValue(client);
+
+        // Remediation must fit before the optional CLI path is truncated.
+        private static void AssertActionablePrefixFitsBeforeTruncation(string message)
+        {
+            var pathMarkerIndex = message.IndexOf(" (CLI path:", StringComparison.Ordinal);
+            var actionablePrefixLength = pathMarkerIndex >= 0 ? pathMarkerIndex : message.Length;
+
+            Assert.True(
+                actionablePrefixLength < NotificationService.MaxMsgLength,
+                $"Actionable prefix is {actionablePrefixLength} chars, at or over the " +
+                    $"{NotificationService.MaxMsgLength}-char truncation cap: \"{message}\"");
         }
 
         [Fact]
@@ -50,6 +74,197 @@ namespace Snyk.VisualStudio.Extension.Tests.Language
             // Assert
             Assert.NotNull(failureContext);
             Assert.Contains("Initialization failed", failureContext.FailureMessage);
+        }
+
+        // A failed pre-launch gate must not commit VS to activating a client.
+        [Fact]
+        public async Task StartServerAsync_ShouldNotInvokeStartAsync_WhenCliProtocolVersionIncompatible()
+        {
+            cut.CliProtocolCompatibilityCheck = _ => CliProtocolCheckResult.Unsupported;
+            cut.VsHasLoadedClient = true;
+
+            var eventInvoked = false;
+            cut.StartAsync += (sender, args) =>
+            {
+                eventInvoked = true;
+                return Task.CompletedTask;
+            };
+
+            await cut.StartServerAsync(true);
+
+            Assert.False(eventInvoked);
+        }
+
+        [Theory]
+        [InlineData(CliProtocolCheckResult.TimedOut, "not confirm")]
+        [InlineData(CliProtocolCheckResult.CheckFailed, "could not check")]
+        public async Task StartServerAsync_ShowsADistinctMessage_WhenProtocolCheckInconclusive(
+            CliProtocolCheckResult result, string expectedMessageFragment) =>
+            await AssertShowsADistinctMessage(result, expectedMessageFragment);
+
+        private async Task AssertShowsADistinctMessage(CliProtocolCheckResult result, string expectedMessageFragment)
+        {
+            cut.CliProtocolCompatibilityCheck = _ => result;
+            cut.VsHasLoadedClient = true;
+
+            string shownMessage = null;
+            cut.ShowInfoBar = message => shownMessage = message;
+
+            var eventInvoked = false;
+            cut.StartAsync += (sender, args) =>
+            {
+                eventInvoked = true;
+                return Task.CompletedTask;
+            };
+
+            await cut.StartServerAsync(true);
+
+            Assert.False(eventInvoked);
+            Assert.NotNull(shownMessage);
+            Assert.Contains(expectedMessageFragment, shownMessage, StringComparison.OrdinalIgnoreCase);
+            Assert.DoesNotContain("does not support the required Language Server protocol version", shownMessage);
+            AssertActionablePrefixFitsBeforeTruncation(shownMessage);
+        }
+
+        // Showing an InfoBar while holding the semaphore can deadlock on the UI thread.
+        [Fact]
+        public async Task StartServerAsync_ShowsInfoBar_OnlyAfterSemaphoreIsReleased_WhenCliProtocolVersionIncompatible()
+        {
+            cut.CliProtocolCompatibilityCheck = _ => CliProtocolCheckResult.Unsupported;
+            var semaphore = GetStartStopSemaphore(cut);
+
+            cut.StartAsync += (sender, args) => Task.CompletedTask;
+            cut.VsHasLoadedClient = true;
+
+            string shownMessage = null;
+            int? semaphoreCountWhenShown = null;
+            cut.ShowInfoBar = message =>
+            {
+                shownMessage = message;
+                semaphoreCountWhenShown = semaphore.CurrentCount;
+            };
+
+            await cut.StartServerAsync(true);
+
+            Assert.NotNull(shownMessage);
+            Assert.Contains("does not support the required Language Server protocol version", shownMessage);
+            Assert.Equal(1, semaphoreCountWhenShown);
+            AssertActionablePrefixFitsBeforeTruncation(shownMessage);
+        }
+
+        // Absence must not be reported as protocol incompatibility.
+        [Fact]
+        public async Task StartServerAsync_ShowsInfoBarAndDoesNotInvokeStartAsyncOrProtocolCheck_WhenCliDoesNotExist()
+        {
+            cut.CliExistsCheck = _ => false;
+            cut.VsHasLoadedClient = true;
+            var protocolCheckInvoked = false;
+            cut.CliProtocolCompatibilityCheck = _ =>
+            {
+                protocolCheckInvoked = true;
+                return CliProtocolCheckResult.Supported;
+            };
+
+            string shownMessage = null;
+            cut.ShowInfoBar = message => shownMessage = message;
+
+            var eventInvoked = false;
+            cut.StartAsync += (sender, args) =>
+            {
+                eventInvoked = true;
+                return Task.CompletedTask;
+            };
+
+            await cut.StartServerAsync(true);
+
+            Assert.False(eventInvoked);
+            Assert.False(protocolCheckInvoked);
+            Assert.NotNull(shownMessage);
+            Assert.Contains("was not found", shownMessage);
+            AssertActionablePrefixFitsBeforeTruncation(shownMessage);
+        }
+
+        // Use a short timeout while still releasing the blocked worker before the test ends.
+        [Fact]
+        public async Task StartServerAsync_ShowsADistinctMessage_WhenCliExistsCheckTimesOut()
+        {
+            cut.CliExistsCheckTimeoutMs = 20;
+            cut.VsHasLoadedClient = true;
+
+            using (var neverSignaled = new ManualResetEventSlim(false))
+            {
+                cut.CliExistsCheck = _ =>
+                {
+                    neverSignaled.Wait(TimeSpan.FromSeconds(5));
+
+                    return true;
+                };
+
+                var protocolCheckInvoked = false;
+                cut.CliProtocolCompatibilityCheck = _ =>
+                {
+                    protocolCheckInvoked = true;
+
+                    return CliProtocolCheckResult.Supported;
+                };
+
+                string shownMessage = null;
+                cut.ShowInfoBar = message => shownMessage = message;
+
+                var eventInvoked = false;
+                cut.StartAsync += (sender, args) =>
+                {
+                    eventInvoked = true;
+
+                    return Task.CompletedTask;
+                };
+
+                await cut.StartServerAsync(true);
+                neverSignaled.Set();
+
+                Assert.False(eventInvoked);
+                Assert.False(protocolCheckInvoked);
+                Assert.NotNull(shownMessage);
+                Assert.Contains("not confirm the CLI exists", shownMessage, StringComparison.OrdinalIgnoreCase);
+                AssertActionablePrefixFitsBeforeTruncation(shownMessage);
+            }
+        }
+
+        // Use a short timeout while still releasing the blocked worker before the test ends.
+        [Fact]
+        public async Task StartServerAsync_ShowsADistinctMessage_WhenCliProtocolCheckTimesOut()
+        {
+            cut.CliProtocolCheckTimeoutMs = 20;
+            cut.VsHasLoadedClient = true;
+
+            using (var neverSignaled = new ManualResetEventSlim(false))
+            {
+                cut.CliProtocolCompatibilityCheck = _ =>
+                {
+                    neverSignaled.Wait(TimeSpan.FromSeconds(5));
+
+                    return CliProtocolCheckResult.Supported;
+                };
+
+                string shownMessage = null;
+                cut.ShowInfoBar = message => shownMessage = message;
+
+                var eventInvoked = false;
+                cut.StartAsync += (sender, args) =>
+                {
+                    eventInvoked = true;
+
+                    return Task.CompletedTask;
+                };
+
+                await cut.StartServerAsync(true);
+                neverSignaled.Set();
+
+                Assert.False(eventInvoked);
+                Assert.NotNull(shownMessage);
+                Assert.Contains("not confirm", shownMessage, StringComparison.OrdinalIgnoreCase);
+                AssertActionablePrefixFitsBeforeTruncation(shownMessage);
+            }
         }
 
         [Fact]
