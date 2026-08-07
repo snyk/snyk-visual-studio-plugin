@@ -7,6 +7,7 @@
     using Microsoft.VisualStudio.Imaging;
     using Microsoft.VisualStudio.Shell;
     using Microsoft.VisualStudio.Shell.Interop;
+    using Microsoft.VisualStudio.Threading;
     using Serilog;
     using Snyk.VisualStudio.Extension.Service;
     using Task = System.Threading.Tasks.Task;
@@ -148,7 +149,10 @@
         /// Show message in infobar.
         /// </summary>
         /// <param name="message">Message.</param>
-        public void ShowErrorInfoBar(string message) => ThreadHelper.JoinableTaskFactory.Run(async () =>
+        // RunAsync + FireAndForget, not the blocking Run: this is a void method nothing awaits, and
+        // EnsureToolWindowExistsAsync below can now wait up to PackageInitWaitTimeoutMs - a blocking
+        // Run would tie up the caller's thread (often the UI thread) for that whole wait.
+        public void ShowErrorInfoBar(string message) => ThreadHelper.JoinableTaskFactory.RunAsync(async () =>
         {
             await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
             await this.EnsureToolWindowExistsAsync();
@@ -176,21 +180,22 @@
             element.Advise(this, out var cookie);
             this.cookiesByElement[element] = cookie;
 
-            // Indexer, not Add: the ContainsKey check above and this line both run on the UI thread
-            // inside this same JoinableTaskFactory.Run, but the awaits in between can pump other
-            // messages - a second call for the same text can pass its own ContainsKey check and reach
-            // this line first, in which case Add would throw on the duplicate key. The indexer just
-            // overwrites, so the later call's element replaces the earlier one instead of crashing.
+            // Indexer, not Add: the ContainsKey check above and this line both run on the UI thread, but
+            // the awaits in between can pump other messages - a second call for the same text can pass
+            // its own ContainsKey check and reach this line first, in which case Add would throw on the
+            // duplicate key. The indexer just overwrites, so the later call's element replaces the
+            // earlier one instead of crashing.
             this.messagesCache[message] = element;
 
             toolWindow.AddInfoBar(element);
-        });
+        }).FireAndForget();
 
         /// <summary>
         /// Show message in infobar.
         /// </summary>
         /// <param name="message">Message.</param>
-        public void ShowInformationInfoBar(string message) => ThreadHelper.JoinableTaskFactory.Run(async () =>
+        // See ShowErrorInfoBar's identical comment above for why this is RunAsync + FireAndForget.
+        public void ShowInformationInfoBar(string message) => ThreadHelper.JoinableTaskFactory.RunAsync(async () =>
         {
             await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
             await this.EnsureToolWindowExistsAsync();
@@ -218,6 +223,6 @@
             this.messagesCache[message] = element;
 
             toolWindow.AddInfoBar(element);
-        });
+        }).FireAndForget();
     }
 }
