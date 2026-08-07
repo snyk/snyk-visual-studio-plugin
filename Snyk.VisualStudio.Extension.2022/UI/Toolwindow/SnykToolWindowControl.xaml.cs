@@ -502,11 +502,10 @@ namespace Snyk.VisualStudio.Extension.UI.Toolwindow
 
                 await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
 
+                this.StartLanguageServerIfStopped(fallbackUsable);
+
                 if (fallbackUsable)
                 {
-                    if (LanguageClientHelper.LanguageClientManager() != null)
-                        ThreadHelper.JoinableTaskFactory.RunAsync(async () => await LanguageClientHelper.LanguageClientManager().RestartServerAsync()).FireAndForget();
-
                     this.DetermineInitScreen();
                 }
                 else
@@ -530,10 +529,10 @@ namespace Snyk.VisualStudio.Extension.UI.Toolwindow
 
                 await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
 
+                this.StartLanguageServerIfStopped(fallbackUsable);
+
                 if (fallbackUsable)
                 {
-                    if (LanguageClientHelper.LanguageClientManager() != null)
-                        ThreadHelper.JoinableTaskFactory.RunAsync(async () => await LanguageClientHelper.LanguageClientManager().RestartServerAsync()).FireAndForget();
                     this.DetermineInitScreen();
                 }
                 else
@@ -542,6 +541,34 @@ namespace Snyk.VisualStudio.Extension.UI.Toolwindow
                     "Failed to download the Snyk CLI, and the CLI already installed is either missing or not usable by this version of the extension. You can specify a path to a Snyk CLI executable from the settings.";
                 }
             }).FireAndForget();
+        }
+
+        /// <summary>
+        /// Whether a cancelled or failed download should bring the language server up.
+        ///
+        /// The start is a last resort rather than a routine step: with automatic CLI management off
+        /// nothing is downloaded, so no download-finished event arrives and nothing else starts the
+        /// server. A server that is already serving is left alone — stopping it discards a working
+        /// session, and the replacement has to race a stop Visual Studio has not finished processing.
+        /// </summary>
+        internal static bool ShouldStartLanguageServer(bool cliUsable, bool languageServerReady) =>
+            cliUsable && !languageServerReady;
+
+        // Shared by the cancelled and failed handlers so the two cannot drift.
+        private void StartLanguageServerIfStopped(bool cliUsable)
+        {
+            if (!ShouldStartLanguageServer(cliUsable, LanguageClientHelper.IsLanguageServerReady()))
+            {
+                return;
+            }
+
+            var languageClient = LanguageClientHelper.LanguageClientManager();
+            if (languageClient == null)
+            {
+                return;
+            }
+
+            ThreadHelper.JoinableTaskFactory.RunAsync(async () => await languageClient.RestartServerAsync()).FireAndForget();
         }
 
         /// <summary>
