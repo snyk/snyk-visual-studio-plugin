@@ -372,7 +372,7 @@ namespace Snyk.VisualStudio.Extension.Language
 
                         infoBarMessage = "Snyk could not confirm the CLI exists within the time limit; " +
                             "not a confirmed missing binary. This can happen against a slow or " +
-                            $"unreachable custom CLI path. Specify a reachable CLI path, " +
+                            "unreachable custom CLI path. Specify a reachable CLI path, " +
                             $"and consider enabling \"Manage Binaries Automatically\" in Tools > Options > Snyk. (CLI path: '{cliPath}')";
                         Logger.Error("Timed out checking whether the CLI exists at {CliPath}", cliPath);
                     }
@@ -430,10 +430,9 @@ namespace Snyk.VisualStudio.Extension.Language
                                 if (protocolCheckResult == CliProtocolCheckResult.TimedOut)
                                 {
                                     infoBarMessage = "Snyk could not confirm the CLI's Language Server protocol " +
-                                        "version within the time limit; not a confirmed incompatibility. Often " +
-                                        "happens right after a fresh download while antivirus software is " +
-                                        "still scanning the binary. If it keeps happening, check for " +
-                                        $"antivirus/security software blocking the CLI. (CLI path: '{cliPath}')";
+                                        "version within the time limit. This might be due to another process locking " +
+                                        "the CLI binary. Check for antivirus/security software restricting access " +
+                                        $"to the CLI. (CLI path: '{cliPath}')";
                                     Logger.Error("Timed out checking Language Server protocol compatibility for CLI at {CliPath}", cliPath);
                                 }
                                 else if (protocolCheckResult == CliProtocolCheckResult.CheckFailed)

@@ -20,7 +20,8 @@ namespace Snyk.VisualStudio.Extension.Download
 {
     /// <summary>
     /// Outcome of a CLI protocol probe. Inconclusive checks are distinct from confirmed incompatibility
-    /// so callers can report the correct failure. The zero value fails closed.
+    /// so callers can report the correct failure. <see cref="CheckFailed"/> is first so the default enum
+    /// value prevents startup rather than treating an uninitialized result as supported.
     /// </summary>
     public enum CliProtocolCheckResult
     {
