@@ -358,6 +358,8 @@ namespace Snyk.VisualStudio.Extension.Language
                         cliExistsCheckTask.ContinueWith(
                             t =>
                             {
+                                // This continuation is not awaited, so a logging failure here would
+                                // replace the observed fault with another unobserved exception.
                                 try
                                 {
                                     Logger.Warning(t.Exception, "CliExistsCheck failed after the gate had already timed out on it");
@@ -403,6 +405,8 @@ namespace Snyk.VisualStudio.Extension.Language
                                 protocolCheckTask.ContinueWith(
                                     t =>
                                     {
+                                        // This continuation is not awaited, so a logging failure here would
+                                        // replace the observed fault with another unobserved exception.
                                         try
                                         {
                                             Logger.Warning(t.Exception, "CliProtocolCompatibilityCheck failed after the gate had already timed out on it");
