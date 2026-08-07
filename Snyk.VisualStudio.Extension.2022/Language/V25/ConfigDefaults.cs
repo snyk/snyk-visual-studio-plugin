@@ -3,6 +3,7 @@
 using System.Collections.Generic;
 using Snyk.VisualStudio.Extension.Authentication;
 using Snyk.VisualStudio.Extension.Download;
+using Snyk.VisualStudio.Extension.Settings;
 
 namespace Snyk.VisualStudio.Extension.Language
 {
@@ -18,10 +19,10 @@ namespace Snyk.VisualStudio.Extension.Language
         private static readonly Dictionary<string, object> Defaults = new Dictionary<string, object>
         {
             // Products — reference the SnykSettings consts rather than duplicating them.
-            [PflagKeys.SnykOssEnabled]            = Settings.SnykSettings.DefaultOssEnabled,
-            [PflagKeys.SnykCodeEnabled]           = Settings.SnykSettings.DefaultSnykCodeSecurityEnabled,
-            [PflagKeys.SnykIacEnabled]            = Settings.SnykSettings.DefaultIacEnabled,
-            [PflagKeys.SnykSecretsEnabled]        = Settings.SnykSettings.DefaultSecretsEnabled,
+            [PflagKeys.SnykOssEnabled]            = SnykSettings.DefaultOssEnabled,
+            [PflagKeys.SnykCodeEnabled]           = SnykSettings.DefaultSnykCodeSecurityEnabled,
+            [PflagKeys.SnykIacEnabled]            = SnykSettings.DefaultIacEnabled,
+            [PflagKeys.SnykSecretsEnabled]        = SnykSettings.DefaultSecretsEnabled,
 
             // Scan
             [PflagKeys.ScanAutomatic]             = true,

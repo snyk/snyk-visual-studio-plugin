@@ -171,6 +171,25 @@ namespace Snyk.VisualStudio.Extension.Tests.Settings
             Assert.Contains(PflagKeys.SnykOssEnabled, loaded.ChangedConfigKeys);
         }
 
+        // Branch B: the marker is absent but changedConfigKeys is non-empty — the shape of a file
+        // written by a version that recorded overrides before ChangedConfigKeysSeeded existed. Load
+        // hydrates those keys verbatim rather than re-seeding, so the migration is again the only
+        // thing that can recover Code.
+        [Fact]
+        public void Upgrade_UnseededSetWithOtherOverrides_IsRecoveredByTheMigration()
+        {
+            var path = WriteLegacySettings(codeEnabled: true, seeded: false,
+                changedConfigKeys: "[\"snyk_oss_enabled\"]");
+
+            var manager = BuildManager(path);
+            var loaded = manager.Load();
+
+            Assert.True(manager.OverrideTracker.IsChanged(PflagKeys.SnykCodeEnabled),
+                "an unseeded override set that predates the migration must still recover Code");
+            // The verbatim-hydrated override must survive alongside it.
+            Assert.Contains(PflagKeys.SnykOssEnabled, loaded.ChangedConfigKeys);
+        }
+
         // ── Fresh installs must never be seeded ───────────────────────────────────────────────
 
         // A fresh install defers to org governance / LDX-Sync. The marker is stamped when the file is
