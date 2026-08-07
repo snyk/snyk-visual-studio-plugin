@@ -26,7 +26,8 @@ namespace Snyk.VisualStudio.Extension.Tests.Settings
 
             // Seed reasonable defaults so Save() doesn't null-ref on Token or TrustedFolders.
             optMock.Object.OssEnabled = true;
-            optMock.Object.SnykCodeSecurityEnabled = true;
+            // false is Code's plugin default (it matches the LS, which does not default-enable Code).
+            optMock.Object.SnykCodeSecurityEnabled = false;
             optMock.Object.IacEnabled = true;
             optMock.Object.SecretsEnabled = false;
             optMock.Object.AutoScan = true;
@@ -348,8 +349,12 @@ namespace Snyk.VisualStudio.Extension.Tests.Settings
 
                 // OssEnabled = false is non-default, so it must be in ChangedConfigKeys.
                 Assert.Contains(PflagKeys.SnykOssEnabled, loaded.ChangedConfigKeys);
-                // SnykCodeEnabled = true is the default, so it must NOT be in ChangedConfigKeys.
-                Assert.DoesNotContain(PflagKeys.SnykCodeEnabled, loaded.ChangedConfigKeys);
+                // SnykCodeEnabled = true is non-default (Code's plugin default is false, matching the
+                // LS), so an upgrading user's enabled Code must be recognised as an override. Sending
+                // it as changed:false is what silently disabled Code for migrating users.
+                Assert.Contains(PflagKeys.SnykCodeEnabled, loaded.ChangedConfigKeys);
+                // IacEnabled = true IS the default, so it must NOT be in ChangedConfigKeys.
+                Assert.DoesNotContain(PflagKeys.SnykIacEnabled, loaded.ChangedConfigKeys);
             }
             finally
             {
@@ -455,6 +460,9 @@ namespace Snyk.VisualStudio.Extension.Tests.Settings
         {
             // Write a settings.json with the seeded marker present but ChangedConfigKeys absent.
             // This models the steady state after a fresh install: user has zero overrides, marker is set.
+            // codeEnablementMigrated is set too — a fresh install stamps it when settings.json is
+            // created, and leaving it out would make this an upgrade file, so MigrateCodeEnablement
+            // would mark snyk_code_enabled and mask the re-seed behaviour under test.
             var path = Path.GetTempFileName();
             try
             {
@@ -472,7 +480,8 @@ namespace Snyk.VisualStudio.Extension.Tests.Settings
   ""autoScan"": true,
   ""deviceId"": ""sint001-device"",
   ""token"": """",
-  ""changedConfigKeysSeeded"": true
+  ""changedConfigKeysSeeded"": true,
+  ""codeEnablementMigrated"": true
 }";
                 File.WriteAllText(path, rawJson);
 

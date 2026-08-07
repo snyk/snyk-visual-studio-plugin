@@ -16,8 +16,10 @@ namespace Snyk.VisualStudio.Extension.Tests.Language
             Assert.True(ConfigDefaults.IsDefault(PflagKeys.SnykOssEnabled, true));
             Assert.False(ConfigDefaults.IsDefault(PflagKeys.SnykOssEnabled, false));
 
-            Assert.True(ConfigDefaults.IsDefault(PflagKeys.SnykCodeEnabled, true));
-            Assert.False(ConfigDefaults.IsDefault(PflagKeys.SnykCodeEnabled, false));
+            // Snyk Code defaults to false to match the Language Server, which does not
+            // default-enable it. An enabled-Code value is therefore a genuine override.
+            Assert.True(ConfigDefaults.IsDefault(PflagKeys.SnykCodeEnabled, false));
+            Assert.False(ConfigDefaults.IsDefault(PflagKeys.SnykCodeEnabled, true));
 
             Assert.True(ConfigDefaults.IsDefault(PflagKeys.SnykIacEnabled, true));
             Assert.False(ConfigDefaults.IsDefault(PflagKeys.SnykIacEnabled, false));
@@ -134,54 +136,70 @@ namespace Snyk.VisualStudio.Extension.Tests.Language
                 "A non-empty AdditionalParameters string must NOT be the default");
         }
 
-        // PR-REV-3-1: ConfigDefaults boolean values for product-enablement must match
-        // the canonical SnykSettings field initializers. This acts as a drift guard:
-        // if SnykSettings changes a default, the test (which reads the SnykSettings field
-        // via new SnykSettings()) will catch the mismatch.
-        // Note: SnykSettings uses inline field initializers (not named constants), so we compare
-        // by constructing a default instance and reading each field.
+        // PR-REV-3-1: every tracked boolean default, PINNED to a literal expected value and checked
+        // against the SnykSettings field that must agree with it.
+        //
+        // Pinned rather than derived, deliberately. The four product keys now reference
+        // SnykSettings.Default* consts from ConfigDefaults, which is what stops those two sites
+        // drifting apart — but it also makes a bare "map == SnykSettings" comparison tautological for
+        // them: it compares a value to itself and can never fail. The literal below is therefore the
+        // only thing that fails when a default changes, which keeps such a change a deliberate,
+        // reviewable edit instead of a silent one.
+        //
+        // These values must also equal the Language Server's registered defaults (snyk-ls
+        // internal/types/register_configurations.go). The LS owns the authoritative default; the IDE
+        // holds a hard-coded copy because the override seed runs before the first LSP handshake and
+        // must still work when the language server never starts, so no build-time check can enforce
+        // the agreement — it is enforced by this test plus review. A copy that disagrees is exactly
+        // how Snyk Code came to be silently disabled on upgrade: both VS sites agreed on `true` while
+        // the LS said `false`, so the old derived-comparison guard passed while the value was wrong.
         [Fact]
-        public void ConfigDefaults_BooleanValues_MatchSnykSettingsFieldInitializers()
+        public void ConfigDefaults_BooleanValues_ArePinnedAndMatchSnykSettings()
         {
             var defaults = new Snyk.VisualStudio.Extension.Settings.SnykSettings();
 
-            // Product enablement
-            Assert.True((bool)ConfigDefaults.GetDefaultForTest(PflagKeys.SnykOssEnabled) == defaults.OssEnabled,
-                "SnykOssEnabled default must match SnykSettings.OssEnabled initializer");
-            Assert.True((bool)ConfigDefaults.GetDefaultForTest(PflagKeys.SnykCodeEnabled) == defaults.SnykCodeSecurityEnabled,
-                "SnykCodeEnabled default must match SnykSettings.SnykCodeSecurityEnabled initializer");
-            Assert.True((bool)ConfigDefaults.GetDefaultForTest(PflagKeys.SnykIacEnabled) == defaults.IacEnabled,
-                "SnykIacEnabled default must match SnykSettings.IacEnabled initializer");
-            Assert.True((bool)ConfigDefaults.GetDefaultForTest(PflagKeys.SnykSecretsEnabled) == defaults.SecretsEnabled,
-                "SnykSecretsEnabled default must match SnykSettings.SecretsEnabled initializer");
+            // (pflag key, pinned expected default, the SnykSettings value that must agree, its name)
+            var cases = new (string Key, bool Expected, bool FromSettings, string Field)[]
+            {
+                // Product enablement. Code is false to match the LS, which does not default-enable
+                // it; Secrets likewise. OSS and IaC the LS does default-enable.
+                (PflagKeys.SnykOssEnabled,     true,  defaults.OssEnabled,              nameof(defaults.OssEnabled)),
+                (PflagKeys.SnykCodeEnabled,    false, defaults.SnykCodeSecurityEnabled, nameof(defaults.SnykCodeSecurityEnabled)),
+                (PflagKeys.SnykIacEnabled,     true,  defaults.IacEnabled,              nameof(defaults.IacEnabled)),
+                (PflagKeys.SnykSecretsEnabled, false, defaults.SecretsEnabled,          nameof(defaults.SecretsEnabled)),
 
-            // Scan
-            Assert.True((bool)ConfigDefaults.GetDefaultForTest(PflagKeys.ScanAutomatic) == defaults.AutoScan,
-                "ScanAutomatic default must match SnykSettings.AutoScan initializer");
-            Assert.True((bool)ConfigDefaults.GetDefaultForTest(PflagKeys.ScanNetNew) == defaults.EnableDeltaFindings,
-                "ScanNetNew default must match SnykSettings.EnableDeltaFindings initializer");
+                // Scan
+                (PflagKeys.ScanAutomatic, true,  defaults.AutoScan,             nameof(defaults.AutoScan)),
+                (PflagKeys.ScanNetNew,    false, defaults.EnableDeltaFindings,  nameof(defaults.EnableDeltaFindings)),
 
-            // Severity filters
-            Assert.True((bool)ConfigDefaults.GetDefaultForTest(PflagKeys.SeverityFilterCritical) == defaults.FilterCritical,
-                "SeverityFilterCritical default must match SnykSettings.FilterCritical initializer");
-            Assert.True((bool)ConfigDefaults.GetDefaultForTest(PflagKeys.SeverityFilterHigh) == defaults.FilterHigh,
-                "SeverityFilterHigh default must match SnykSettings.FilterHigh initializer");
-            Assert.True((bool)ConfigDefaults.GetDefaultForTest(PflagKeys.SeverityFilterMedium) == defaults.FilterMedium,
-                "SeverityFilterMedium default must match SnykSettings.FilterMedium initializer");
-            Assert.True((bool)ConfigDefaults.GetDefaultForTest(PflagKeys.SeverityFilterLow) == defaults.FilterLow,
-                "SeverityFilterLow default must match SnykSettings.FilterLow initializer");
+                // Severity filters
+                (PflagKeys.SeverityFilterCritical, true, defaults.FilterCritical, nameof(defaults.FilterCritical)),
+                (PflagKeys.SeverityFilterHigh,     true, defaults.FilterHigh,     nameof(defaults.FilterHigh)),
+                (PflagKeys.SeverityFilterMedium,   true, defaults.FilterMedium,   nameof(defaults.FilterMedium)),
+                (PflagKeys.SeverityFilterLow,      true, defaults.FilterLow,      nameof(defaults.FilterLow)),
 
-            // Issue view
-            Assert.True((bool)ConfigDefaults.GetDefaultForTest(PflagKeys.IssueViewOpenIssues) == defaults.OpenIssuesEnabled,
-                "IssueViewOpenIssues default must match SnykSettings.OpenIssuesEnabled initializer");
-            Assert.True((bool)ConfigDefaults.GetDefaultForTest(PflagKeys.IssueViewIgnoredIssues) == defaults.IgnoredIssuesEnabled,
-                "IssueViewIgnoredIssues default must match SnykSettings.IgnoredIssuesEnabled initializer");
+                // Issue view
+                (PflagKeys.IssueViewOpenIssues,    true,  defaults.OpenIssuesEnabled,    nameof(defaults.OpenIssuesEnabled)),
+                (PflagKeys.IssueViewIgnoredIssues, false, defaults.IgnoredIssuesEnabled, nameof(defaults.IgnoredIssuesEnabled)),
 
-            // CLI / binary booleans
-            Assert.True((bool)ConfigDefaults.GetDefaultForTest(PflagKeys.AutomaticDownload) == defaults.BinariesAutoUpdateEnabled,
-                "AutomaticDownload default must match SnykSettings.BinariesAutoUpdateEnabled initializer");
-            Assert.True((bool)ConfigDefaults.GetDefaultForTest(PflagKeys.ProxyInsecure) == defaults.IgnoreUnknownCa,
-                "ProxyInsecure default must match SnykSettings.IgnoreUnknownCa initializer");
+                // CLI / binary booleans
+                (PflagKeys.AutomaticDownload, true,  defaults.BinariesAutoUpdateEnabled, nameof(defaults.BinariesAutoUpdateEnabled)),
+                (PflagKeys.ProxyInsecure,     false, defaults.IgnoreUnknownCa,           nameof(defaults.IgnoreUnknownCa)),
+            };
+
+            foreach (var c in cases)
+            {
+                Assert.True((bool)ConfigDefaults.GetDefaultForTest(c.Key) == c.Expected,
+                    $"ConfigDefaults[{c.Key}] must be {c.Expected}. If this default is changing " +
+                    "deliberately, update the pinned value here and confirm it still equals the " +
+                    "Language Server's registered default in snyk-ls register_configurations.go — " +
+                    "a default that disagrees with the LS makes the override seed classify user " +
+                    "preferences against the wrong baseline.");
+
+                Assert.True(c.FromSettings == c.Expected,
+                    $"SnykSettings.{c.Field} must be {c.Expected} so the persistence default and " +
+                    $"ConfigDefaults[{c.Key}] agree.");
+            }
         }
     }
 }

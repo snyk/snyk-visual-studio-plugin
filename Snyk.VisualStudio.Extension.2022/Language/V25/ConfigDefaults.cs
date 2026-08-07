@@ -3,6 +3,7 @@
 using System.Collections.Generic;
 using Snyk.VisualStudio.Extension.Authentication;
 using Snyk.VisualStudio.Extension.Download;
+using Snyk.VisualStudio.Extension.Settings;
 
 namespace Snyk.VisualStudio.Extension.Language
 {
@@ -10,19 +11,18 @@ namespace Snyk.VisualStudio.Extension.Language
     // Keys absent from this map are treated as "no default known" — IsDefault returns false.
     internal static class ConfigDefaults
     {
-        // Mirrors SnykSettings field initializers exactly so seed comparison is accurate.
-        // CLI string defaults reference SnykCliDownloader constants (same source as SnykSettings
-        // initializers) so they cannot silently drift. Boolean product/scan/severity/view defaults
-        // are set to the same literal values as SnykSettings field initializers; the test
-        // ConfigDefaults_BooleanValues_MatchSnykSettingsFieldInitializers (ConfigDefaultsTests.cs)
-        // acts as a drift guard by constructing new SnykSettings() and comparing via GetDefaultForTest.
+        // Defaults of each key's PROJECTED value — the form UserOverrideTracker.GetGlobalKeyValues
+        // produces and BuildSettingsMap sends. These need not match the backing SnykSettings field's
+        // default: api_endpoint and organization are "" here but null on the field,
+        // additional_parameters is space-joined from a List<string>, authentication_method is a
+        // lowercase string from an enum.
         private static readonly Dictionary<string, object> Defaults = new Dictionary<string, object>
         {
-            // Products
-            [PflagKeys.SnykOssEnabled]           = true,
-            [PflagKeys.SnykCodeEnabled]           = true,
-            [PflagKeys.SnykIacEnabled]            = true,
-            [PflagKeys.SnykSecretsEnabled]        = false,
+            // Products — reference the SnykSettings consts rather than duplicating them.
+            [PflagKeys.SnykOssEnabled]            = SnykSettings.DefaultOssEnabled,
+            [PflagKeys.SnykCodeEnabled]           = SnykSettings.DefaultSnykCodeSecurityEnabled,
+            [PflagKeys.SnykIacEnabled]            = SnykSettings.DefaultIacEnabled,
+            [PflagKeys.SnykSecretsEnabled]        = SnykSettings.DefaultSecretsEnabled,
 
             // Scan
             [PflagKeys.ScanAutomatic]             = true,

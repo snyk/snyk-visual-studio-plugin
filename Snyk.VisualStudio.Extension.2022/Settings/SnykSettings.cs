@@ -25,20 +25,39 @@ namespace Snyk.VisualStudio.Extension.Settings
         /// </summary>
         public string CurrentCliVersion { get; set; }
 
+        // Single owner of each product-enablement default: the properties below initialise from
+        // these and ConfigDefaults references them, so the persistence default and the
+        // override-comparison default cannot drift. Each must equal the Language Server's registered
+        // default (snyk-ls internal/types/register_configurations.go) — ConfigDefaultsTests pins the
+        // agreement. A copy that disagrees makes the override seed classify against the wrong
+        // baseline, which for Snyk Code silently stops Code scanning on upgrade.
+
+        /// <summary>Plugin default for <see cref="SnykCodeSecurityEnabled"/>.</summary>
+        public const bool DefaultSnykCodeSecurityEnabled = false;
+
+        /// <summary>Plugin default for <see cref="OssEnabled"/>.</summary>
+        public const bool DefaultOssEnabled = true;
+
+        /// <summary>Plugin default for <see cref="IacEnabled"/>.</summary>
+        public const bool DefaultIacEnabled = true;
+
+        /// <summary>Plugin default for <see cref="SecretsEnabled"/>.</summary>
+        public const bool DefaultSecretsEnabled = false;
+
         /// <summary>
         /// Gets or sets a value indicating whether snyk code security enabled.
         /// </summary>
-        public bool SnykCodeSecurityEnabled { get; set; } = true;
+        public bool SnykCodeSecurityEnabled { get; set; } = DefaultSnykCodeSecurityEnabled;
 
         /// <summary>
         /// Gets or sets a value indicating whether Secrets scanning is enabled.
         /// </summary>
-        public bool SecretsEnabled { get; set; } = false;
-        
+        public bool SecretsEnabled { get; set; } = DefaultSecretsEnabled;
+
         /// <summary>
         /// Gets or sets a value indicating whether oss enabled.
         /// </summary>
-        public bool OssEnabled { get; set; } = true;
+        public bool OssEnabled { get; set; } = DefaultOssEnabled;
 
         /// <summary>
         /// Gets or sets a value indicating whether binaries auto update is enabled.
@@ -62,7 +81,7 @@ namespace Snyk.VisualStudio.Extension.Settings
 
         public bool AutoScan { get; set; } = true;
         public string Token { get; set; } = string.Empty;
-        public bool IacEnabled { get; set; } = true;
+        public bool IacEnabled { get; set; } = DefaultIacEnabled;
         public string CliReleaseChannel { get; set; } = SnykCliDownloader.DefaultReleaseChannel;
         public string CliBaseDownloadURL { get; set; } = SnykCliDownloader.DefaultBaseDownloadUrl;
         public bool IgnoreUnknownCa { get; set; }
@@ -136,5 +155,14 @@ namespace Snyk.VisualStudio.Extension.Settings
         /// </summary>
         [JsonProperty(DefaultValueHandling = DefaultValueHandling.Ignore)]
         public bool ChangedConfigKeysSeeded { get; set; }
+
+        /// <summary>
+        /// One-shot marker for <see cref="SnykOptionsManager.MigrateCodeEnablement"/>. Stamped when a
+        /// fresh install's settings.json is created, so its absence reliably means "written by a
+        /// version predating the recovery" and a fresh install is never mistaken for an upgrade.
+        /// IDE-only: never added to <see cref="ChangedConfigKeys"/>, never sent over the wire.
+        /// </summary>
+        [JsonProperty(DefaultValueHandling = DefaultValueHandling.Ignore)]
+        public bool CodeEnablementMigrated { get; set; }
     }
 }
