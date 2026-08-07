@@ -4,6 +4,7 @@ using System.Linq;
 using System.ComponentModel.Composition;
 using System.Diagnostics;
 using System.IO;
+using System.Runtime.CompilerServices;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.VisualStudio.LanguageServer.Client;
@@ -135,16 +136,20 @@ namespace Snyk.VisualStudio.Extension.Language
         public event AsyncEventHandler<SnykLanguageServerEventArgs> OnLanguageClientNotInitializedAsync;
 
         /// <summary>
-        /// How many handlers Visual Studio has attached to a lifecycle event. Zero means it has not
-        /// subscribed and the raise will go nowhere.
-        /// <para>
-        /// More than one is the interesting case, and the reason this is a count rather than the
-        /// null-check it replaced: raising the event invokes every handler, so a second subscription
-        /// turns one stop request into two teardown sequences. The second can then land after a restart
-        /// has already brought a new server up, and take it down.
-        /// </para>
+        /// How many handlers are attached to a lifecycle event. Zero means Visual Studio has not
+        /// subscribed and a raise goes nowhere; above one means a raise fans out, so one stop request
+        /// becomes several teardown sequences.
         /// </summary>
-        private static int HandlerCount(Delegate handler) => handler?.GetInvocationList()?.Length ?? 0;
+        private static int HandlerCount(Delegate handler) => handler?.GetInvocationList().Length ?? 0;
+
+        /// <summary>
+        /// Identifies this client in the log. Reported alongside <see cref="HandlerCount"/> because the
+        /// two explanations for a duplicated teardown are indistinguishable without it: one client with
+        /// two subscriptions counts two on one instance, whereas two clients each with one subscription
+        /// count one on two instances. Reference identity, so an overridden
+        /// <see cref="object.GetHashCode"/> cannot make separate instances look like one.
+        /// </summary>
+        private int InstanceId => RuntimeHelpers.GetHashCode(this);
 
         public async Task<Connection> ActivateAsync(CancellationToken token)
         {
@@ -285,7 +290,8 @@ namespace Snyk.VisualStudio.Extension.Language
             await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
 
             Logger.Debug(
-                "StartServerAsync entered: shouldStart={ShouldStart}, vsHasLoadedClient={Loaded}, vsStartHandlers={StartHandlers}, isReady={IsReady}, onUiThread={OnUiThread}",
+                "StartServerAsync entered: instance={Instance}, shouldStart={ShouldStart}, vsHasLoadedClient={Loaded}, vsStartHandlers={StartHandlers}, isReady={IsReady}, onUiThread={OnUiThread}",
+                InstanceId,
                 shouldStart,
                 this.vsHasLoadedClient,
                 HandlerCount(StartAsync),
@@ -300,8 +306,9 @@ namespace Snyk.VisualStudio.Extension.Language
                 if (shouldStart && (StartAsync == null || !this.vsHasLoadedClient))
                 {
                     Logger.Information(
-                        "Language server start requested before VS loaded the client; requesting activation instead (VS subscribed: {Subscribed})",
-                        StartAsync != null);
+                        "Language server start requested before VS loaded the client; requesting activation instead (instance: {Instance}, VS start handlers: {StartHandlers})",
+                        InstanceId,
+                        HandlerCount(StartAsync));
 
                     FireOnLanguageClientNotInitializedAsync();
 
@@ -335,8 +342,8 @@ namespace Snyk.VisualStudio.Extension.Language
                 {
                     Logger.Information("Couldn't Start Language Server");
                     Logger.Debug(
-                        "Not started because: vsSubscribed={Subscribed}, optionsPresent={Options}, shouldStart={ShouldStart}",
-                        StartAsync != null,
+                        "Not started because: vsStartHandlers={StartHandlers}, optionsPresent={Options}, shouldStart={ShouldStart}",
+                        HandlerCount(StartAsync),
                         SnykVSPackage.Instance?.Options != null,
                         shouldStart);
                 }
@@ -378,7 +385,8 @@ namespace Snyk.VisualStudio.Extension.Language
             if (LogManager.IsDebugEnabled)
             {
                 Logger.Debug(
-                    "StopServerAsync called: vsStopHandlers={StopHandlers}, isReady={IsReady}, isReloading={IsReloading}, calledFrom={Caller}",
+                    "StopServerAsync called: instance={Instance}, vsStopHandlers={StopHandlers}, isReady={IsReady}, isReloading={IsReloading}, calledFrom={Caller}",
+                    InstanceId,
                     HandlerCount(StopAsync),
                     IsReady,
                     IsReloading,
