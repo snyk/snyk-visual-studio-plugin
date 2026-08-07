@@ -21,7 +21,9 @@ namespace Snyk.VisualStudio.Extension.Tests.Language
         {
             var o = new Mock<ISnykOptions>();
             o.SetupGet(x => x.OssEnabled).Returns(true);
-            o.SetupGet(x => x.SnykCodeSecurityEnabled).Returns(true);
+            // Snyk Code's plugin default is false (it matches the Language Server, which does not
+            // default-enable Code) — unlike OSS and IaC, which default to true.
+            o.SetupGet(x => x.SnykCodeSecurityEnabled).Returns(false);
             o.SetupGet(x => x.IacEnabled).Returns(true);
             o.SetupGet(x => x.SecretsEnabled).Returns(false);
             o.SetupGet(x => x.AutoScan).Returns(true);
@@ -317,7 +319,8 @@ namespace Snyk.VisualStudio.Extension.Tests.Language
             // Build options where every value is non-default so every key gets marked.
             var allNonDefault = new Mock<ISnykOptions>();
             allNonDefault.SetupGet(x => x.OssEnabled).Returns(false); // non-default
-            allNonDefault.SetupGet(x => x.SnykCodeSecurityEnabled).Returns(false);
+            // Code's default is false, so true is the non-default here (inverse of OSS/IaC).
+            allNonDefault.SetupGet(x => x.SnykCodeSecurityEnabled).Returns(true);
             allNonDefault.SetupGet(x => x.IacEnabled).Returns(false);
             allNonDefault.SetupGet(x => x.SecretsEnabled).Returns(true);
             allNonDefault.SetupGet(x => x.AutoScan).Returns(false);
@@ -531,16 +534,20 @@ namespace Snyk.VisualStudio.Extension.Tests.Language
         // RUNIT-002 (corrected semantics, PR #515): ApplyUserEdits with an edited key whose new
         // value equals the plugin default must MARK it (changed:true) and must NOT enqueue a reset.
         //
-        // This is the core of the "enabling Snyk Code doesn't persist" fix: any key the form posted
-        // (present in editedKeys) is an explicit user choice. Snyk Code's default is `true`, so a
-        // user *enabling* it posts a value equal to the default — the OLD code inferred a reset from
-        // value==default and let the org default win. Reset-to-default is no longer inferred here.
+        // Any key the form posted (present in editedKeys) is an explicit user choice. The OLD code
+        // inferred a reset from value==default and let the org value win, which is how an explicit
+        // choice could silently fail to persist. Reset-to-default is no longer inferred here — it is
+        // an explicit user action only (ApplyUserResets / Unmark).
+        //
+        // Exercised through snyk_code_enabled, whose plugin default is false: a user who explicitly
+        // *disables* Code posts a value equal to the default, and that choice must still reach the LS
+        // as changed:true or an org/LDX-Sync value could re-enable the product behind their back.
         [Fact]
         public void ApplyUserEdits_EditedKeyEqualToDefault_MarksChanged_NoReset()
         {
-            // The user enables Snyk Code (posts true, which equals the plugin default true).
+            // The user disables Snyk Code (posts false, which equals the plugin default false).
             var options = DefaultOptions();
-            options.SetupGet(x => x.SnykCodeSecurityEnabled).Returns(true); // at default
+            options.SetupGet(x => x.SnykCodeSecurityEnabled).Returns(false); // at default
 
             // The user's save included snyk_code_enabled in the edit delta.
             var editedKeys = new List<string> { PflagKeys.SnykCodeEnabled };
