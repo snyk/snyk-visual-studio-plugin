@@ -134,6 +134,18 @@ namespace Snyk.VisualStudio.Extension.Language
         public event AsyncEventHandler<SnykLanguageServerEventArgs> OnLanguageServerReadyAsync;
         public event AsyncEventHandler<SnykLanguageServerEventArgs> OnLanguageClientNotInitializedAsync;
 
+        /// <summary>
+        /// How many handlers Visual Studio has attached to a lifecycle event. Zero means it has not
+        /// subscribed and the raise will go nowhere.
+        /// <para>
+        /// More than one is the interesting case, and the reason this is a count rather than the
+        /// null-check it replaced: raising the event invokes every handler, so a second subscription
+        /// turns one stop request into two teardown sequences. The second can then land after a restart
+        /// has already brought a new server up, and take it down.
+        /// </para>
+        /// </summary>
+        private static int HandlerCount(Delegate handler) => handler?.GetInvocationList()?.Length ?? 0;
+
         public async Task<Connection> ActivateAsync(CancellationToken token)
         {
             await Task.Yield();
@@ -273,10 +285,10 @@ namespace Snyk.VisualStudio.Extension.Language
             await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
 
             Logger.Debug(
-                "StartServerAsync entered: shouldStart={ShouldStart}, vsHasLoadedClient={Loaded}, vsSubscribed={Subscribed}, isReady={IsReady}, onUiThread={OnUiThread}",
+                "StartServerAsync entered: shouldStart={ShouldStart}, vsHasLoadedClient={Loaded}, vsStartHandlers={StartHandlers}, isReady={IsReady}, onUiThread={OnUiThread}",
                 shouldStart,
                 this.vsHasLoadedClient,
-                StartAsync != null,
+                HandlerCount(StartAsync),
                 IsReady,
                 ThreadHelper.CheckAccess());
 
@@ -366,8 +378,8 @@ namespace Snyk.VisualStudio.Extension.Language
             if (LogManager.IsDebugEnabled)
             {
                 Logger.Debug(
-                    "StopServerAsync called: vsSubscribed={Subscribed}, isReady={IsReady}, isReloading={IsReloading}, calledFrom={Caller}",
-                    StopAsync != null,
+                    "StopServerAsync called: vsStopHandlers={StopHandlers}, isReady={IsReady}, isReloading={IsReloading}, calledFrom={Caller}",
+                    HandlerCount(StopAsync),
                     IsReady,
                     IsReloading,
                     new StackTrace(1, false).ToString());
