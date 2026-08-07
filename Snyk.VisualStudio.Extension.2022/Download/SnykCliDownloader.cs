@@ -346,9 +346,17 @@ namespace Snyk.VisualStudio.Extension.Download
         // Known gap (PR review finding), accepted rather than fixed: unlike BuildUpToDateMemoKey, this
         // key has no checksum, so an in-place binary swap that preserves both length and last-write-time
         // (some installers/copy tools do) reuses the previous verdict. Not worth closing by hashing the
-        // ~175MB binary on every protocol check - that would defeat the memo's whole purpose - and the
-        // exposure window is one download episode, not the session: EndCliDownloadEpisode drops this
-        // downloader instance (and so this memo) at the start of every new episode.
+        // ~175MB binary on every protocol check - that would defeat the memo's whole purpose.
+        //
+        // Exposure window (PR review finding, corrected): NOT bounded to "one download episode" as an
+        // earlier version of this comment claimed - EndCliDownloadEpisode only runs at the start of
+        // Download()/DownloadAsync, not on an ordinary language-server restart, so this downloader (and
+        // so this memo) can now survive across many restarts within one episode, and an episode can span
+        // the whole VS session if the user never re-triggers a download. That is wider than before this
+        // PR, when SnykToolWindowControl/SnykLanguageClient each constructed a fresh SnykCliDownloader
+        // per restart - the tradeoff accepted above (no checksum in the key) is therefore live for
+        // longer than it used to be, though still only as exposed as the in-place-swap scenario it
+        // requires in the first place.
         private static string BuildProtocolCheckMemoKey(string cliFilePath)
         {
             if (string.IsNullOrEmpty(cliFilePath))
@@ -421,24 +429,38 @@ namespace Snyk.VisualStudio.Extension.Download
                     var output = new StringBuilder();
                     process.OutputDataReceived += (_, e) =>
                     {
-                        if (e.Data != null)
+                        // Runs on a raw ThreadPool I/O-completion thread with no synchronization context
+                        // and no caller to propagate to (PR review finding) - an unhandled exception here
+                        // (e.g. AppendLine faulting) crashes the whole VS process by default .NET
+                        // unhandled-exception behavior, not just this probe. Nothing in this callback is
+                        // worth that; log and treat as CheckFailed via the memoless path (the enclosing
+                        // ProbeCliProtocol has already returned by the time this could fire on that path).
+                        try
                         {
-                            output.AppendLine(e.Data);
+                            if (e.Data != null)
+                            {
+                                output.AppendLine(e.Data);
+                            }
+                            else
+                            {
+                                // Null Data is EOF on the redirected stream - the async pump's last
+                                // callback, never followed by another AppendLine above, so Set() here is a
+                                // genuine handoff point (PR review finding, see the Wait() below for why
+                                // this exists instead of a second WaitForExit).
+                                //
+                                // Safe even if this callback fires after this method has returned via the
+                                // TimedOut path below and disposed outputFlushed as part of the using
+                                // scope's teardown: ManualResetEventSlim.Set() never throws
+                                // ObjectDisposedException - unlike Wait()/Reset(), it double-checks the
+                                // (here never-allocated, since we only call Wait(int), not .WaitHandle)
+                                // lazy wait handle under the same lock Dispose() uses, and no-ops if
+                                // already disposed - see dotnet/runtime#89692.
+                                outputFlushed.Set();
+                            }
                         }
-                        else
+                        catch (Exception e2)
                         {
-                            // Null Data is EOF on the redirected stream - the async pump's last callback,
-                            // never followed by another AppendLine above, so Set() here is a genuine
-                            // handoff point (PR review finding, see the Wait() below for why this
-                            // exists instead of a second WaitForExit).
-                            //
-                            // Safe even if this callback fires after this method has returned via the
-                            // TimedOut path below and disposed outputFlushed as part of the using scope's
-                            // teardown: ManualResetEventSlim.Set() never throws ObjectDisposedException -
-                            // unlike Wait()/Reset(), it double-checks the (here never-allocated, since we
-                            // only call Wait(int), not .WaitHandle) lazy wait handle under the same lock
-                            // Dispose() uses, and no-ops if already disposed - see dotnet/runtime#89692.
-                            outputFlushed.Set();
+                            Logger.Warning(e2, "Unexpected failure draining the protocol probe's stdout for {Path}", cliFilePath);
                         }
                     };
 

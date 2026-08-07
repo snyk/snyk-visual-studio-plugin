@@ -216,8 +216,15 @@ namespace Snyk.VisualStudio.Extension.Language
                     {
                         await SnykVSPackage.Instance.EnsureInitializeToolWindowAsync();
                     }
-                    catch (NotSupportedException)
+                    catch (Exception e)
                     {
+                        // Catch-all, not just NotSupportedException (PR review finding): this runs from
+                        // OnLoadedAsync, a VS-invoked callback with no surrounding try/catch of its own
+                        // (unlike the sibling RestartAsync) - anything else FindToolWindow/the Content
+                        // cast can throw (e.g. during shutdown, before the package is fully sited) would
+                        // otherwise propagate out of OnLoadedAsync uncaught. ShowErrorInfoBar below still
+                        // runs and no-ops exactly as it did before this fix either way.
+                        Logger.Warning(e, "Could not ensure the Snyk tool window exists before showing an InfoBar");
                     }
                 });
             }
