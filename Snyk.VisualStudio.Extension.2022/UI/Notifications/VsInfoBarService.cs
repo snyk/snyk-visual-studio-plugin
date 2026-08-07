@@ -24,7 +24,12 @@
         private const string KnownCaveatsLink = "https://docs.snyk.io/ide-tools/visual-studio-extension/troubleshooting-and-known-issues-with-visual-studio-extension";
         private readonly ISnykServiceProvider serviceProvider;
 
-        private uint cookie;
+        // Keyed per element, not a single shared field: Advise() returns a cookie scoped to the
+        // specific element it was called on, not a global ID - a single field gets overwritten by
+        // every call, so closing the first of two concurrently displayed InfoBars unadvises with
+        // whatever cookie was written last, silently corrupting the other's advise connection.
+        private readonly IDictionary<IVsInfoBarUIElement, uint> cookiesByElement =
+            new Dictionary<IVsInfoBarUIElement, uint>();
 
         /// <summary>
         /// Cache/save all displayed messages for prevent display same message multiple times.
@@ -50,9 +55,20 @@
         {
             await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
 
-            infoBarUIElement.Unadvise(this.cookie);
+            if (this.cookiesByElement.TryGetValue(infoBarUIElement, out var elementCookie))
+            {
+                infoBarUIElement.Unadvise(elementCookie);
+                this.cookiesByElement.Remove(infoBarUIElement);
+            }
 
-            this.messagesCache.Remove(this.messagesCache.FirstOrDefault(x => x.Value == infoBarUIElement).Key);
+            // FirstOrDefault returns a default KeyValuePair (Key == null) when no match is found, and
+            // Dictionary<string, _>.Remove(null) throws - guard against that instead of assuming a match.
+            var entry = this.messagesCache.FirstOrDefault(x => x.Value == infoBarUIElement);
+
+            if (entry.Key != null)
+            {
+                this.messagesCache.Remove(entry.Key);
+            }
         });
 
         /// <summary>
@@ -116,7 +132,11 @@
             await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
             await this.EnsureToolWindowExistsAsync();
 
-            if (this.serviceProvider.Package.ToolWindow == null || this.messagesCache.ContainsKey(message))
+            // Also check Frame, not just ToolWindow: EnsureInitializeToolWindowAsync assigns ToolWindow
+            // before validating its Frame, and throws (caught above, best-effort) rather than leaving
+            // ToolWindow null when the pane exists but its window frame does not - so ToolWindow alone
+            // being non-null does not mean AddInfoBar below has anywhere to attach to.
+            if (this.serviceProvider.Package.ToolWindow?.Frame == null || this.messagesCache.ContainsKey(message))
                 return;
 
             var text = new InfoBarTextSpan(message);
@@ -131,10 +151,11 @@
 
             var element = factory.CreateInfoBar(infoBarModel);
 
-            element.Advise(this, out this.cookie);
+            element.Advise(this, out var cookie);
+            this.cookiesByElement[element] = cookie;
 
             this.messagesCache.Add(message, element);
-            
+
             this.serviceProvider.Package.ToolWindow.AddInfoBar(element);
         });
 
@@ -147,7 +168,8 @@
             await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
             await this.EnsureToolWindowExistsAsync();
 
-            if (this.serviceProvider.Package.ToolWindow == null || this.messagesCache.ContainsKey(message))
+            // See ShowErrorInfoBar's identical guard above for why Frame != null is checked too.
+            if (this.serviceProvider.Package.ToolWindow?.Frame == null || this.messagesCache.ContainsKey(message))
                 return;
 
             var text = new InfoBarTextSpan(message);
@@ -160,7 +182,8 @@
 
             var element = factory.CreateInfoBar(infoBarModel);
 
-            element.Advise(this, out this.cookie);
+            element.Advise(this, out var cookie);
+            this.cookiesByElement[element] = cookie;
 
             this.messagesCache.Add(message, element);
 
