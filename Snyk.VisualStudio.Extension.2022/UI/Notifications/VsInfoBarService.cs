@@ -116,6 +116,18 @@
                 return;
             }
 
+            // Wait for package init to finish before creating the pane, not just for the tool window's
+            // own sake: SnykToolWindow.OnToolWindowCreated wires the pane's event listeners as part of
+            // creation, including SnykScanCommand.Instance.UpdateControlsStateCallback with no null
+            // check. SnykScanCommand.Instance is only set once SnykVSPackage.InitializeAsync reaches
+            // SnykScanCommand.InitializeAsync - which runs after the fire-and-forget language-client
+            // chain that can itself raise an InfoBar (e.g. SnykCliDownloader.ReportInstallFailure) and
+            // land here first. Racing that chain would create the pane with only some of its listeners
+            // wired, and ToolWindow's own null check above means it would stay half-wired for the rest
+            // of the session. SnykVSPackage.PackageInitializedAwaiter completes on every path through
+            // InitializeAsync, including its catch block, so this can't hang if init itself fails.
+            await SnykVSPackage.PackageInitializedAwaiter;
+
             try
             {
                 await this.serviceProvider.Package.EnsureInitializeToolWindowAsync();
@@ -139,11 +151,17 @@
             await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
             await this.EnsureToolWindowExistsAsync();
 
+            // Captured once and reused below, not re-read from the field: ToolWindow can now be reset to
+            // null by a concurrent failing EnsureInitializeToolWindowAsync (e.g. from another call to
+            // this method), and the awaits between here and AddInfoBar below give that a window to run.
+            // A stale local reference held across those awaits can't be nulled out from under us.
+            var toolWindow = this.serviceProvider.Package.ToolWindow;
+
             // Also check Frame, not just ToolWindow: EnsureInitializeToolWindowAsync assigns ToolWindow
             // before validating its Frame, and throws (caught above, best-effort) rather than leaving
             // ToolWindow null when the pane exists but its window frame does not - so ToolWindow alone
             // being non-null does not mean AddInfoBar below has anywhere to attach to.
-            if (this.serviceProvider.Package.ToolWindow?.Frame == null || this.messagesCache.ContainsKey(message))
+            if (toolWindow?.Frame == null || this.messagesCache.ContainsKey(message))
                 return;
 
             var text = new InfoBarTextSpan(message);
@@ -168,7 +186,7 @@
             // overwrites, so the later call's element replaces the earlier one instead of crashing.
             this.messagesCache[message] = element;
 
-            this.serviceProvider.Package.ToolWindow.AddInfoBar(element);
+            toolWindow.AddInfoBar(element);
         });
 
         /// <summary>
@@ -180,8 +198,10 @@
             await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
             await this.EnsureToolWindowExistsAsync();
 
-            // See ShowErrorInfoBar's identical guard above for why Frame != null is checked too.
-            if (this.serviceProvider.Package.ToolWindow?.Frame == null || this.messagesCache.ContainsKey(message))
+            // See ShowErrorInfoBar's identical comments above for why this is captured once and reused.
+            var toolWindow = this.serviceProvider.Package.ToolWindow;
+
+            if (toolWindow?.Frame == null || this.messagesCache.ContainsKey(message))
                 return;
 
             var text = new InfoBarTextSpan(message);
@@ -200,7 +220,7 @@
             // See ShowErrorInfoBar's identical comment above for why this is an indexer, not Add.
             this.messagesCache[message] = element;
 
-            this.serviceProvider.Package.ToolWindow.AddInfoBar(element);
+            toolWindow.AddInfoBar(element);
         });
     }
 }
