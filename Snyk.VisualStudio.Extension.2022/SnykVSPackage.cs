@@ -187,14 +187,15 @@ namespace Snyk.VisualStudio.Extension
                 // Still harmless (each retry is cheap, per the MPF caching above) - just noisier logs.
                 // Not worth a second piece of state to suppress.
                 //
-                // Reset ToolWindowControl alongside it: SnykToolWindow.OnToolWindowCreated can assign
-                // both ToolWindow and ToolWindowControl as part of the same tool-window creation the
-                // Frame check above is validating. Resetting only ToolWindow would leave ToolWindowControl
-                // pointing at that pane's control while ToolWindow reads null - and SnykService.ToolWindow
-                // reaches through ToolWindowControl specifically, so the LS message handlers and the auth
-                // flow would keep driving a pane this method has just declared unusable.
+                // ToolWindowControl deliberately NOT reset alongside it: SnykToolWindow.OnToolWindowCreated
+                // can assign ToolWindowControl (via SnykService.ToolWindow, which several callers -
+                // AuthenticationFlowService among them - dereference with no null check) even when this
+                // Frame check still fails. Nulling it here would turn "maybe still usable despite a
+                // frameless pane" into a guaranteed NullReferenceException for those callers, for no
+                // benefit to this method: SnykCleanPanelCommand, the one caller that reads ToolWindow
+                // before touching ToolWindowControl, already stops at the ToolWindow == null check below
+                // regardless of what ToolWindowControl holds.
                 ToolWindow = null;
-                ToolWindowControl = null;
 
                 throw new NotSupportedException("Cannot find Snyk tool window.");
             }
@@ -248,7 +249,26 @@ namespace Snyk.VisualStudio.Extension
                 // The Edge WebView2 Runtime is a hard requirement now that the settings dialog and
                 // all tool-window panels are WebView2-hosted. Surface a clear, actionable error if
                 // it's missing rather than letting every panel fail opaquely on first navigation.
-                await WarnIfWebView2RuntimeMissingAsync();
+                //
+                // Fire-and-forget, like InitializeLanguageClient above - not just for consistency.
+                // ShowErrorInfoBar (reached via NotificationService.Instance? below) now waits for
+                // PackageInitializedAwaiter before creating the tool window, bounded so it can't hang
+                // forever - but awaiting this call inline would guarantee that wait times out on every
+                // single call, every launch: InitializeAsync cannot reach the finally that completes
+                // PackageInitializedAwaiter while blocked here awaiting the very thing that call is
+                // waiting on. Firing it instead lets InitializeAsync finish normally, so the wait this
+                // triggers can actually succeed.
+                ThreadHelper.JoinableTaskFactory.RunAsync(async () =>
+                {
+                    try
+                    {
+                        await WarnIfWebView2RuntimeMissingAsync();
+                    }
+                    catch (Exception e)
+                    {
+                        Logger.Error(e, "Error checking for the WebView2 runtime");
+                    }
+                }).FireAndForget();
 
                 // Notify package has been initialized
                 IsInitialized = true;
