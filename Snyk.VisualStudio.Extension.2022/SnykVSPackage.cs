@@ -181,7 +181,15 @@ namespace Snyk.VisualStudio.Extension
                 // instead of re-running Activator.CreateInstance or constructing a new
                 // SnykToolWindowControl/WebView2 host. Resetting ToolWindow here only clears this
                 // package's own field, not that cache.
+                //
+                // Reset ToolWindowControl alongside it: SnykToolWindow.OnToolWindowCreated can assign
+                // both ToolWindow and ToolWindowControl as part of the same tool-window creation the
+                // Frame check above is validating. Resetting only ToolWindow would leave ToolWindowControl
+                // pointing at that pane's control while ToolWindow reads null - and SnykService.ToolWindow
+                // reaches through ToolWindowControl specifically, so the LS message handlers and the auth
+                // flow would keep driving a pane this method has just declared unusable.
                 ToolWindow = null;
+                ToolWindowControl = null;
 
                 throw new NotSupportedException("Cannot find Snyk tool window.");
             }

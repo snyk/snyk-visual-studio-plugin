@@ -161,7 +161,12 @@
             element.Advise(this, out var cookie);
             this.cookiesByElement[element] = cookie;
 
-            this.messagesCache.Add(message, element);
+            // Indexer, not Add: the ContainsKey check above and this line both run on the UI thread
+            // inside this same JoinableTaskFactory.Run, but the awaits in between can pump other
+            // messages - a second call for the same text can pass its own ContainsKey check and reach
+            // this line first, in which case Add would throw on the duplicate key. The indexer just
+            // overwrites, so the later call's element replaces the earlier one instead of crashing.
+            this.messagesCache[message] = element;
 
             this.serviceProvider.Package.ToolWindow.AddInfoBar(element);
         });
@@ -192,7 +197,8 @@
             element.Advise(this, out var cookie);
             this.cookiesByElement[element] = cookie;
 
-            this.messagesCache.Add(message, element);
+            // See ShowErrorInfoBar's identical comment above for why this is an indexer, not Add.
+            this.messagesCache[message] = element;
 
             this.serviceProvider.Package.ToolWindow.AddInfoBar(element);
         });
