@@ -35,6 +35,6 @@
         /// Notify download cancelled.
         /// </summary>
         /// <param name="message">Cancelled message.</param>
-        void DownloadCancelled(string message);
+        void CliDownloadAborted(string message);
     }
 }

@@ -47,7 +47,8 @@ namespace Snyk.VisualStudio.Extension.UI.Notifications
 
             tasksService.DownloadStarted += this.OnDownloadStarted;
             tasksService.DownloadFinished += this.OnDownloadFinished;
-            tasksService.DownloadCancelled += this.OnDownloadCancelled;
+            tasksService.CliDownloadDeclined += this.OnCliDownloadDeclined;
+            tasksService.CliDownloadAborted += this.OnCliDownloadAborted;
             tasksService.DownloadFailed += this.OnDownloadFailed;
 
             tasksService.ScanningCancelled += this.OnScanningCancelled;
@@ -136,12 +137,20 @@ namespace Snyk.VisualStudio.Extension.UI.Notifications
         private void OnDownloadStarted(object sender, SnykCliDownloadEventArgs eventArgs)
             => this.statusBar.ShowDownloadProgressMessage("Downloading latest Snyk CLI release...");
 
-        // Nothing is downloaded when automatic management is off, so a settings change reaches here having
-        // fetched nothing. Announcing a cancellation would answer a question the user did not ask.
-        private void OnDownloadCancelled(object sender, SnykCliDownloadEventArgs eventArgs)
-            => this.statusBar.ShowDownloadFinishedMessage(eventArgs?.CliSettingsChanged == true
-                ? "Applying the Snyk CLI settings..."
-                : "Snyk CLI download cancelled");
+        // Declined means automatic management is off, so nothing was ever going to be fetched. At startup
+        // that is the steady state and needs no announcement — and there is no download animation to clear,
+        // because none was started. Only a settings change the user just made is worth confirming.
+        private void OnCliDownloadDeclined(object sender, SnykCliDownloadEventArgs eventArgs)
+        {
+            if (eventArgs?.CliSettingsChanged == true)
+            {
+                this.statusBar.ShowDownloadFinishedMessage("Snyk CLI settings applied");
+            }
+        }
+
+        // A download really was in progress and really was cancelled, so say so — whatever prompted it.
+        private void OnCliDownloadAborted(object sender, SnykCliDownloadEventArgs eventArgs)
+            => this.statusBar.ShowDownloadFinishedMessage("Snyk CLI download cancelled");
 
         private void OnDownloadFailed(object sender, Exception exception)
             => this.statusBar.ShowDownloadFinishedMessage("Snyk CLI download failed");

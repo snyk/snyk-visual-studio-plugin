@@ -199,7 +199,10 @@ namespace Snyk.VisualStudio.Extension.UI.Toolwindow
             this.tasksService.DownloadStarted += this.downloadStartedHandler;
             this.tasksService.DownloadFinished += this.downloadFinishedHandler;
             this.tasksService.DownloadUpdate += this.downloadUpdateHandler;
-            this.tasksService.DownloadCancelled += this.OnDownloadCancelled;
+            // Both outcomes, one handler: what this control has to do depends on whether it stopped the
+            // server for a download, which it recorded itself — not on which of the two ended the check.
+            this.tasksService.CliDownloadDeclined += this.OnCliDownloadDidNotComplete;
+            this.tasksService.CliDownloadAborted += this.OnCliDownloadDidNotComplete;
             this.tasksService.DownloadFailed += this.OnDownloadFailed;
 
             // The LanguageClientManager is created during package init (SetLanguageClientManagerAsync)
@@ -480,16 +483,17 @@ namespace Snyk.VisualStudio.Extension.UI.Toolwindow
         public async Task OnDownloadUpdateAsync(object sender, SnykCliDownloadEventArgs eventArgs) => await this.UpdateDownloadProgressAsync(eventArgs.Progress);
 
         /// <summary>
-        /// DownloadCancelled event handler. Call SetInitialState() method.
+        /// Handles both ways a CLI check can end without a usable download: declined because automatic
+        /// management is off, and aborted after one had started.
         /// </summary>
         /// <param name="sender">Source object.</param>
         /// <param name="eventArgs">Event args.</param>
-        public void OnDownloadCancelled(object sender, SnykCliDownloadEventArgs eventArgs)
+        public void OnCliDownloadDidNotComplete(object sender, SnykCliDownloadEventArgs eventArgs)
         {
             // RunAsync, not Run — see OnDownloadStarted. Both branches write WPF state.
             //
             // TaskScheduler.Default before the probe, because this handler is NOT always raised from
-            // the thread pool: SnykTasksService.DownloadAsync fires DownloadCancelled before its own
+            // the thread pool: SnykTasksService.DownloadAsync fires CliDownloadDeclined before its own
             // hop when BinariesAutoUpdate is off, and Download() is wired to this control's Loaded
             // event, so RunAsync starts out on the UI thread. IsExistingCliUsableForFallback launches
             // the CLI and waits up to ProtocolProbeTimeoutMs for it, which froze VS for the whole
@@ -506,7 +510,7 @@ namespace Snyk.VisualStudio.Extension.UI.Toolwindow
                 this.SettleLanguageServer(
                     fallbackUsable,
                     cliSettingsChanged: eventArgs?.CliSettingsChanged == true,
-                    source: "DownloadCancelled");
+                    source: "CliDownloadDidNotComplete");
 
                 if (fallbackUsable)
                 {
@@ -521,7 +525,7 @@ namespace Snyk.VisualStudio.Extension.UI.Toolwindow
 
         private void OnDownloadFailed(object sender, Exception e)
         {
-            // The hop and the probe are placed as in OnDownloadCancelled. DownloadFailed is only ever
+            // The hop and the probe are placed as in OnCliDownloadDidNotComplete. DownloadFailed is only ever
             // raised after DownloadAsync's own hop, so the UI thread cannot be the caller here today;
             // the hop is kept so the two handlers cannot drift, and so the probe stays off whichever
             // thread does raise it.
@@ -852,7 +856,8 @@ namespace Snyk.VisualStudio.Extension.UI.Toolwindow
                 this.tasksService.IacScanningStarted -= this.OnIacScanningStarted;
                 this.tasksService.IacScanError -= this.OnIacScanError;
                 this.tasksService.ScanningCancelled -= this.OnScanningCancelled;
-                this.tasksService.DownloadCancelled -= this.OnDownloadCancelled;
+                this.tasksService.CliDownloadDeclined -= this.OnCliDownloadDidNotComplete;
+                this.tasksService.CliDownloadAborted -= this.OnCliDownloadDidNotComplete;
                 this.tasksService.DownloadFailed -= this.OnDownloadFailed;
 
                 if (this.codeScanningFinishedHandler != null) this.tasksService.SnykCodeScanningFinished -= this.codeScanningFinishedHandler;

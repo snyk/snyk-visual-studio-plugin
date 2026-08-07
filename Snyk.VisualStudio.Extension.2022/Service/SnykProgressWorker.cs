@@ -58,6 +58,6 @@
         /// Notify donwload cancelled.
         /// </summary>
         /// <param name="message">Cancelled message.</param>
-        public void DownloadCancelled(string message) => this.TasksService.OnDownloadCancelled(message);
+        public void CliDownloadAborted(string message) => this.TasksService.OnCliDownloadAborted(message);
     }
 }

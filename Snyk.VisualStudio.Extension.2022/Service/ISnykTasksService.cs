@@ -118,9 +118,18 @@ public interface ISnykTasksService
     event EventHandler<SnykCliDownloadEventArgs> DownloadUpdate;
 
     /// <summary>
-    /// Download cancelled event handler. Raised when the user cancels the download intentionally.
+    /// Raised when automatic CLI management is off, so no download was ever going to be attempted.
+    /// Nothing was cancelled and nothing failed — this is the normal outcome of a CLI check in that mode,
+    /// and it is how a subscriber learns the check is over.
     /// </summary>
-    event EventHandler<SnykCliDownloadEventArgs> DownloadCancelled;
+    event EventHandler<SnykCliDownloadEventArgs> CliDownloadDeclined;
+
+    /// <summary>
+    /// Raised when a download that had already started was cancelled. Distinct from
+    /// <see cref="CliDownloadDeclined"/> because a subscriber that reacted to
+    /// <see cref="DownloadStarted"/> has cleanup to undo here and none there.
+    /// </summary>
+    event EventHandler<SnykCliDownloadEventArgs> CliDownloadAborted;
 
     /// <summary>
     /// Download failed event handler. Raised when the download fails due to an error.

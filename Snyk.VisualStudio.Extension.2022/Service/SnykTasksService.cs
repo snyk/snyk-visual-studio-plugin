@@ -197,10 +197,11 @@ namespace Snyk.VisualStudio.Extension.Service
         /// </summary>
         public event EventHandler<SnykCliDownloadEventArgs> DownloadUpdate;
 
-        /// <summary>
-        /// Download cancelled event handler. Raised when the user cancels the download intentionally.
-        /// </summary>
-        public event EventHandler<SnykCliDownloadEventArgs> DownloadCancelled;
+        /// <inheritdoc cref="ISnykTasksService.CliDownloadDeclined"/>
+        public event EventHandler<SnykCliDownloadEventArgs> CliDownloadDeclined;
+
+        /// <inheritdoc cref="ISnykTasksService.CliDownloadAborted"/>
+        public event EventHandler<SnykCliDownloadEventArgs> CliDownloadAborted;
 
         /// <summary>
         /// Download failed event handler. Raised when the download fails due to an error.
@@ -383,7 +384,7 @@ namespace Snyk.VisualStudio.Extension.Service
                         catch (OperationCanceledException e)
                         {
                             Logger.Information("CLI Download cancelled");
-                            this.OnDownloadCancelled(e.Message);
+                            this.OnCliDownloadAborted(e.Message);
                         }
                         catch (Exception e)
                         {
@@ -457,7 +458,7 @@ namespace Snyk.VisualStudio.Extension.Service
             catch (OperationCanceledException e)
             {
                 Logger.Information("CLI Download cancelled");
-                this.OnDownloadCancelled(e.Message);
+                this.OnCliDownloadAborted(e.Message);
             }
             catch (Exception e)
             {
@@ -555,14 +556,14 @@ namespace Snyk.VisualStudio.Extension.Service
         }
 
         /// <summary>
-        /// Fire download cancelled event.
+        /// Fire the event for a download that had started and was then cancelled.
         /// </summary>
         /// <param name="message">Cancel message.</param>
-        protected internal void OnDownloadCancelled(string message) =>
-            // Carries the reason even though this is the aborted-by-the-user path: the settings change that
-            // requested the check still happened, and a subscriber that stopped the server for the download
-            // has to bring it back regardless of why the download ended.
-            this.DownloadCancelled?.Invoke(
+        protected internal void OnCliDownloadAborted(string message) =>
+            // Carries the reason as well as the outcome: the settings change that requested this check still
+            // happened, so a subscriber that has to move the language server onto the configured binary
+            // still has to do it, whether or not the download reached the end.
+            this.CliDownloadAborted?.Invoke(
                 this,
                 new SnykCliDownloadEventArgs(message) { CliSettingsChanged = this.cliSettingsChangedEpisode });
 
@@ -811,11 +812,11 @@ namespace Snyk.VisualStudio.Extension.Service
             {
                 Logger.Information("CLI auto-update is disabled, CLI download is skipped.");
 
-                // Nothing was fetched either way, but a user who just repointed the CLI setting still
-                // needs the server moved onto that binary, whereas at startup it is already running the
-                // right one. The subscriber checks the configured CLI is usable before acting, so an
-                // unusable path is reported rather than launched.
-                this.DownloadCancelled?.Invoke(this, new SnykCliDownloadEventArgs { CliSettingsChanged = cliSettingsChanged });
+                // Declined, not cancelled: nothing had started, so there is nothing to undo. A user who
+                // just repointed the CLI setting still needs the server moved onto that binary, whereas at
+                // startup it is already running the right one. The subscriber checks the configured CLI is
+                // usable before acting, so an unusable path is reported rather than launched.
+                this.CliDownloadDeclined?.Invoke(this, new SnykCliDownloadEventArgs { CliSettingsChanged = cliSettingsChanged });
                 return;
             }
 
