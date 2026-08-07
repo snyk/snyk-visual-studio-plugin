@@ -122,11 +122,10 @@
             }
             catch (Exception e)
             {
-                // Best-effort: the ToolWindow?.Frame == null check below still applies and no-ops
-                // exactly as it did before this fix if this failed (e.g. during shutdown, before the
-                // package is fully sited - FindToolWindow/the Content cast inside
-                // EnsureInitializeToolWindowAsync can throw various exceptions in those cases, not just
-                // NotSupportedException).
+                // Best-effort: FindToolWindow/the Content cast inside EnsureInitializeToolWindowAsync
+                // can throw various exceptions (e.g. during shutdown, before the package is fully sited),
+                // not just NotSupportedException. The ToolWindow?.Frame == null check below still
+                // catches the failure and no-ops the InfoBar rather than throwing out of this method.
                 Logger.Warning(e, "Could not ensure the Snyk tool window exists before showing an InfoBar");
             }
         }
