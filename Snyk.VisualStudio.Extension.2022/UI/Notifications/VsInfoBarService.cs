@@ -1,11 +1,13 @@
 ﻿namespace Snyk.VisualStudio.Extension.UI
 {
+    using System;
     using System.Collections.Generic;
     using System.Diagnostics;
     using System.Linq;
     using Microsoft.VisualStudio.Imaging;
     using Microsoft.VisualStudio.Shell;
     using Microsoft.VisualStudio.Shell.Interop;
+    using Serilog;
     using Snyk.VisualStudio.Extension.Service;
     using Task = System.Threading.Tasks.Task;
 
@@ -14,6 +16,8 @@
     /// </summary>
     public class VsInfoBarService : IVsInfoBarUIEvents
     {
+        private static readonly ILogger Logger = LogManager.ForContext<VsInfoBarService>();
+
         private const string ContactSupport = "contactSupport";
         private const string KnownCaveats = "knownCaveats";
         private const string SupportLink = "https://support.snyk.io/hc/en-us/requests/new";
@@ -75,13 +79,43 @@
             });
 
         /// <summary>
+        /// Ensures the Snyk tool window pane exists (without necessarily showing/focusing it) before an
+        /// InfoBar is attached to it (IDE-2454). ToolWindow stays null until the panel has been created
+        /// at least once - opened by the user, or by a Snyk command running EnsureInitializeToolWindowAsync
+        /// - so without this, any InfoBar shown before that point (e.g. a startup warning or a
+        /// pre-launch gate failure, before the user has ever opened the panel) was silently dropped: the
+        /// early-return check below never became true, and no message reached the user at all.
+        /// </summary>
+        private async Task EnsureToolWindowExistsAsync()
+        {
+            if (this.serviceProvider.Package.ToolWindow != null)
+            {
+                return;
+            }
+
+            try
+            {
+                await this.serviceProvider.Package.EnsureInitializeToolWindowAsync();
+            }
+            catch (Exception e)
+            {
+                // Best-effort: the ToolWindow == null check below still applies and no-ops exactly as it
+                // did before this fix if this failed (e.g. during shutdown, before the package is fully
+                // sited - FindToolWindow/the Content cast inside EnsureInitializeToolWindowAsync can
+                // throw various exceptions in those cases, not just NotSupportedException).
+                Logger.Warning(e, "Could not ensure the Snyk tool window exists before showing an InfoBar");
+            }
+        }
+
+        /// <summary>
         /// Show message in infobar.
         /// </summary>
         /// <param name="message">Message.</param>
         public void ShowErrorInfoBar(string message) => ThreadHelper.JoinableTaskFactory.Run(async () =>
         {
             await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
-            
+            await this.EnsureToolWindowExistsAsync();
+
             if (this.serviceProvider.Package.ToolWindow == null || this.messagesCache.ContainsKey(message))
                 return;
 
@@ -111,6 +145,7 @@
         public void ShowInformationInfoBar(string message) => ThreadHelper.JoinableTaskFactory.Run(async () =>
         {
             await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
+            await this.EnsureToolWindowExistsAsync();
 
             if (this.serviceProvider.Package.ToolWindow == null || this.messagesCache.ContainsKey(message))
                 return;
