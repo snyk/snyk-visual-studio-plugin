@@ -502,7 +502,7 @@ namespace Snyk.VisualStudio.Extension.UI.Toolwindow
 
                 await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
 
-                this.StartLanguageServerIfStopped(fallbackUsable);
+                this.ReconcileLanguageServer(fallbackUsable, eventArgs?.Forced ?? false);
 
                 if (fallbackUsable)
                 {
@@ -529,7 +529,10 @@ namespace Snyk.VisualStudio.Extension.UI.Toolwindow
 
                 await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
 
-                this.StartLanguageServerIfStopped(fallbackUsable);
+                // Never forced: a failure can only come from the branch that attempted a download, and
+                // DownloadStarted has already stopped the server so the binary could be replaced. The
+                // server is therefore not running by this point and needs no forcing to be restarted.
+                this.ReconcileLanguageServer(fallbackUsable, forced: false);
 
                 if (fallbackUsable)
                 {
@@ -544,20 +547,28 @@ namespace Snyk.VisualStudio.Extension.UI.Toolwindow
         }
 
         /// <summary>
-        /// Whether a cancelled or failed download should bring the language server up.
+        /// Whether a cancelled or failed download should (re)start the language server.
         ///
-        /// The start is a last resort rather than a routine step: with automatic CLI management off
-        /// nothing is downloaded, so no download-finished event arrives and nothing else starts the
-        /// server. A server that is already serving is left alone — stopping it discards a working
-        /// session, and the replacement has to race a stop Visual Studio has not finished processing.
+        /// Nothing is downloaded when automatic CLI management is off, so no download-finished event
+        /// arrives and these handlers are the only thing that brings the server up. Which of two very
+        /// different situations that is depends on <paramref name="forced"/>:
+        /// <list type="bullet">
+        /// <item>startup — a server that is already serving is left alone, because stopping it discards
+        /// a working session and the replacement has to race a stop Visual Studio has not finished
+        /// processing;</item>
+        /// <item>the user changed a CLI setting — the running server was launched from the previous
+        /// executable and cannot switch, so it has to be restarted even though it is healthy.</item>
+        /// </list>
+        /// <paramref name="cliUsable"/> gates both: the configured CLI is launched only once it has been
+        /// shown to run and speak a compatible protocol version.
         /// </summary>
-        internal static bool ShouldStartLanguageServer(bool cliUsable, bool languageServerReady) =>
-            cliUsable && !languageServerReady;
+        internal static bool ShouldStartLanguageServer(bool cliUsable, bool languageServerReady, bool forced) =>
+            cliUsable && (forced || !languageServerReady);
 
         // Shared by the cancelled and failed handlers so the two cannot drift.
-        private void StartLanguageServerIfStopped(bool cliUsable)
+        private void ReconcileLanguageServer(bool cliUsable, bool forced)
         {
-            if (!ShouldStartLanguageServer(cliUsable, LanguageClientHelper.IsLanguageServerReady()))
+            if (!ShouldStartLanguageServer(cliUsable, LanguageClientHelper.IsLanguageServerReady(), forced))
             {
                 return;
             }

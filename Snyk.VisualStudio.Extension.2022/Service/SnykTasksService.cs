@@ -318,7 +318,12 @@ namespace Snyk.VisualStudio.Extension.Service
         /// Start a CLI download task in background thread. Will only download the CLI if it's missing or outdated.
         /// </summary>
         /// <param name="downloadFinishedCallback"><see cref="CliDownloadFinishedCallback"/> callback object.</param>
-        public void Download(CliDownloadFinishedCallback downloadFinishedCallback = null)
+        /// <param name="force">
+        /// True when the user changed a CLI setting. The download itself is unaffected — this only tells
+        /// the language server it must be restarted onto the newly configured executable even if one is
+        /// already serving, which is otherwise indistinguishable from the startup call.
+        /// </param>
+        public void Download(CliDownloadFinishedCallback downloadFinishedCallback = null, bool force = false)
         {
             Logger.Information("Enter Download method");
 
@@ -348,7 +353,7 @@ namespace Snyk.VisualStudio.Extension.Service
                     {
                         try
                         {
-                            await this.DownloadAsync(downloadFinishedCallback, progressWorker);
+                            await this.DownloadAsync(downloadFinishedCallback, progressWorker, force);
                         }
                         catch (ChecksumVerificationException e)
                         {
@@ -763,13 +768,18 @@ namespace Snyk.VisualStudio.Extension.Service
 
 
         private async Task DownloadAsync(CliDownloadFinishedCallback downloadFinishedCallback,
-            ISnykProgressWorker progressWorker)
+            ISnykProgressWorker progressWorker, bool force = false)
         {
             var options = this.serviceProvider.Options;
             if (!options.BinariesAutoUpdate)
             {
                 Logger.Information("CLI auto-update is disabled, CLI download is skipped.");
-                this.DownloadCancelled?.Invoke(this, new SnykCliDownloadEventArgs());
+
+                // Forced carries the reason no download happened: nothing was fetched either way, but a
+                // user who just repointed the CLI setting still needs the server moved onto that binary,
+                // whereas at startup it is already running the right one. The subscriber checks the
+                // configured CLI is usable before acting, so an unusable path is reported, not launched.
+                this.DownloadCancelled?.Invoke(this, new SnykCliDownloadEventArgs { Forced = force });
                 return;
             }
 

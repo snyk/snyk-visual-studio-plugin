@@ -153,7 +153,11 @@ public interface ISnykTasksService
     /// Start a CLI download task in background thread. Will only download the CLI if it's missing or outdated.
     /// </summary>
     /// <param name="downloadFinishedCallback"><see cref="CliDownloadFinishedCallback"/> callback object.</param>
-    void Download(SnykCliDownloader.CliDownloadFinishedCallback downloadFinishedCallback = null);
+    /// <param name="force">
+    /// True when the user changed a CLI setting, so the language server must be moved onto the newly
+    /// configured executable even if one is already serving.
+    /// </param>
+    void Download(SnykCliDownloader.CliDownloadFinishedCallback downloadFinishedCallback = null, bool force = false);
 
     Task DownloadAsync(SnykCliDownloader.CliDownloadFinishedCallback downloadFinishedCallback = null);
 

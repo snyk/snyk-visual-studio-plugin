@@ -54,5 +54,16 @@
         /// report progress to the user must not claim otherwise.
         /// </summary>
         public bool BinaryWasDownloaded { get; set; } = true;
+
+        /// <summary>
+        /// Whether the user changed a CLI setting, as opposed to this being part of startup. The running
+        /// server was launched from the executable in force at the time and cannot switch to another one,
+        /// so a forced request restarts a server that is already serving; an unforced one leaves it be.
+        /// <para>
+        /// Set as a property rather than through a constructor: the <c>bool</c> constructor overload
+        /// already means <see cref="IsUpdateDownload"/>.
+        /// </para>
+        /// </summary>
+        public bool Forced { get; set; }
     }
 }
