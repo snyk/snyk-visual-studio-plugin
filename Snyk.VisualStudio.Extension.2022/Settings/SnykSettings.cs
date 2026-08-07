@@ -25,31 +25,23 @@ namespace Snyk.VisualStudio.Extension.Settings
         /// </summary>
         public string CurrentCliVersion { get; set; }
 
-        /// <summary>
-        /// Plugin defaults for the four product-enablement settings, each the single owner of its
-        /// default: the properties below initialise from them and
-        /// <see cref="Language.ConfigDefaults"/> references them instead of repeating the literal,
-        /// so the persistence default and the override-comparison default cannot drift apart. This
-        /// mirrors Eclipse and IntelliJ, which each declare a product default exactly once.
-        /// <para>
-        /// Each value must equal the Language Server's registered default (snyk-ls
-        /// <c>internal/types/register_configurations.go</c>). The LS owns the authoritative default;
-        /// the IDE holds a copy because the override seed runs before the first LSP handshake and
-        /// must still work when the language server never starts. A copy that disagrees with the LS
-        /// makes the seed classify overrides against the wrong baseline — for Snyk Code, whose
-        /// product the LS does not default-enable, that silently stops Code scanning on upgrade.
-        /// The agreement is pinned by ConfigDefaultsTests, not enforced at build time.
-        /// </para>
-        /// </summary>
+        // Single owner of each product-enablement default: the properties below initialise from
+        // these and ConfigDefaults references them, so the persistence default and the
+        // override-comparison default cannot drift. Each must equal the Language Server's registered
+        // default (snyk-ls internal/types/register_configurations.go) — ConfigDefaultsTests pins the
+        // agreement. A copy that disagrees makes the override seed classify against the wrong
+        // baseline, which for Snyk Code silently stops Code scanning on upgrade.
+
+        /// <summary>Plugin default for <see cref="SnykCodeSecurityEnabled"/>.</summary>
         public const bool DefaultSnykCodeSecurityEnabled = false;
 
-        /// <inheritdoc cref="DefaultSnykCodeSecurityEnabled"/>
+        /// <summary>Plugin default for <see cref="OssEnabled"/>.</summary>
         public const bool DefaultOssEnabled = true;
 
-        /// <inheritdoc cref="DefaultSnykCodeSecurityEnabled"/>
+        /// <summary>Plugin default for <see cref="IacEnabled"/>.</summary>
         public const bool DefaultIacEnabled = true;
 
-        /// <inheritdoc cref="DefaultSnykCodeSecurityEnabled"/>
+        /// <summary>Plugin default for <see cref="SecretsEnabled"/>.</summary>
         public const bool DefaultSecretsEnabled = false;
 
         /// <summary>
@@ -165,17 +157,10 @@ namespace Snyk.VisualStudio.Extension.Settings
         public bool ChangedConfigKeysSeeded { get; set; }
 
         /// <summary>
-        /// One-shot marker for the Snyk Code enablement upgrade recovery
-        /// (<see cref="SnykOptionsManager.MigrateCodeEnablement"/>).
-        /// <para>
-        /// Stamped true the moment a fresh install's settings.json is created
-        /// (<see cref="SnykOptionsManager.LoadSettingsFromFile"/>), so its absence is a reliable
-        /// "this file was written by a version that predates the recovery" signal — a fresh install
-        /// can never be mistaken for an upgrade, even if the Language Server never starts.
-        /// </para>
-        /// <see cref="DefaultValueHandling.Ignore"/> keeps the key out of settings.json when false,
-        /// matching <see cref="ChangedConfigKeysSeeded"/>. IDE-only: never added to
-        /// <see cref="ChangedConfigKeys"/> and never sent over the language-server wire.
+        /// One-shot marker for <see cref="SnykOptionsManager.MigrateCodeEnablement"/>. Stamped when a
+        /// fresh install's settings.json is created, so its absence reliably means "written by a
+        /// version predating the recovery" and a fresh install is never mistaken for an upgrade.
+        /// IDE-only: never added to <see cref="ChangedConfigKeys"/>, never sent over the wire.
         /// </summary>
         [JsonProperty(DefaultValueHandling = DefaultValueHandling.Ignore)]
         public bool CodeEnablementMigrated { get; set; }

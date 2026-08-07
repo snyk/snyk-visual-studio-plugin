@@ -10,21 +10,14 @@ namespace Snyk.VisualStudio.Extension.Language
     // Keys absent from this map are treated as "no default known" — IsDefault returns false.
     internal static class ConfigDefaults
     {
-        // This map holds the default of each key's PROJECTED value — the form produced by
-        // UserOverrideTracker.GetGlobalKeyValues and which BuildSettingsMap sends.
-        //
-        // These might not match the  default of the backing SnykSettings field. For instance:
-        //
-        //   api_endpoint          "" here, but SnykSettings.CustomEndpoint defaults to null
-        //   organization          "" here, but SnykSettings.Organization defaults to null
-        //   additional_parameters "" here (space-joined), but the field is a List<string>
-        //   authentication_method lowercase string here, but the field is an enum
+        // Defaults of each key's PROJECTED value — the form UserOverrideTracker.GetGlobalKeyValues
+        // produces and BuildSettingsMap sends. These need not match the backing SnykSettings field's
+        // default: api_endpoint and organization are "" here but null on the field,
+        // additional_parameters is space-joined from a List<string>, authentication_method is a
+        // lowercase string from an enum.
         private static readonly Dictionary<string, object> Defaults = new Dictionary<string, object>
         {
             // Products — reference the SnykSettings consts rather than duplicating them.
-            // Each must also equal the Language Server's registered default
-            // (snyk-ls internal/types/register_configurations.go), because a user override is
-            // classified by "value != default". 
             [PflagKeys.SnykOssEnabled]            = Settings.SnykSettings.DefaultOssEnabled,
             [PflagKeys.SnykCodeEnabled]           = Settings.SnykSettings.DefaultSnykCodeSecurityEnabled,
             [PflagKeys.SnykIacEnabled]            = Settings.SnykSettings.DefaultIacEnabled,
