@@ -1,3 +1,4 @@
+using Snyk.VisualStudio.Extension.CLI;
 using Snyk.VisualStudio.Extension.UI.Html;
 using Xunit;
 
@@ -5,13 +6,14 @@ namespace Snyk.VisualStudio.Extension.Tests.UI.Html
 {
     /// <summary>
     /// Pins which saved settings mean the language server has to be moved onto a different CLI. A false
-    /// positive restarts the server on every settings save; a false negative leaves it serving the old
-    /// binary until Visual Studio is restarted.
+    /// positive restarts the server on every settings save, dropping a working session; a false negative
+    /// leaves it serving the old binary until Visual Studio is restarted.
     /// </summary>
     public class CliSettingsChangedTest
     {
-        private const string AppDataCli = @"C:\Users\dev\AppData\Local\Snyk\snyk-win.exe";
+        private static readonly string DefaultCli = SnykCli.GetSnykCliDefaultPath();
         private const string CustomCli = @"C:\Users\dev\Code\test_binaries\snyk-win.exe";
+        private const string OtherCli = @"C:\Users\dev\Code\other_binaries\snyk-win.exe";
 
         private static bool Changed(
             string previousCliPath = "", bool previousAutoUpdate = true, string previousReleaseChannel = "stable",
@@ -28,6 +30,22 @@ namespace Snyk.VisualStudio.Extension.Tests.UI.Html
         }
 
         [Fact]
+        public void NotChanged_WhenABlankPathIsPostedBackAsTheResolvedDefault()
+        {
+            // The settings page is populated from the resolved values sent to the language server, so a
+            // user with no custom path sees the default location in the box and posts it back verbatim on
+            // the first save. Same executable, so no restart.
+            Assert.False(Changed(previousCliPath: "", cliPath: DefaultCli));
+        }
+
+        [Fact]
+        public void NotChanged_WhenABlankChannelIsPostedBackAsStable()
+        {
+            // Blank resolves to stable, so this is the same release channel.
+            Assert.False(Changed(previousReleaseChannel: "", releaseChannel: "stable"));
+        }
+
+        [Fact]
         public void Changed_WhenAutomaticManagementIsTurnedOffAgainstACustomPath()
         {
             Assert.True(Changed(
@@ -39,7 +57,7 @@ namespace Snyk.VisualStudio.Extension.Tests.UI.Html
         public void Changed_WhenTheCustomPathIsRepointed()
         {
             Assert.True(Changed(
-                previousCliPath: AppDataCli, previousAutoUpdate: false,
+                previousCliPath: OtherCli, previousAutoUpdate: false,
                 cliPath: CustomCli, autoUpdate: false));
         }
 
@@ -72,12 +90,21 @@ namespace Snyk.VisualStudio.Extension.Tests.UI.Html
         }
 
         [Fact]
-        public void NotChanged_WhenAnUnsetPathArrivesAsNull()
+        public void NotChanged_WhenOnlySurroundingWhitespaceDiffers()
         {
-            // The typed model yields null for an absent field and "" for a cleared one; neither is a
-            // change from the other, and treating them as one would restart on an unrelated save.
+            // Both resolvers trim, so a stray space is not a new binary.
+            Assert.False(Changed(previousCliPath: CustomCli, cliPath: "  " + CustomCli + "  "));
+            Assert.False(Changed(previousReleaseChannel: "stable", releaseChannel: " stable "));
+        }
+
+        [Fact]
+        public void NotChanged_WhenAnUnsetValueArrivesAsNull()
+        {
+            // The typed model yields null for an absent field and "" for a cleared one; both resolve to
+            // the same default, so neither is a change from the other.
             Assert.False(Changed(previousCliPath: null, cliPath: ""));
             Assert.False(Changed(previousCliPath: "", cliPath: null));
+            Assert.False(Changed(previousReleaseChannel: null, releaseChannel: "stable"));
         }
     }
 }

@@ -37,6 +37,10 @@ namespace Snyk.VisualStudio.Extension.Service
 
         private bool isCliDownloading;
 
+        // Whether the download episode in flight was asked for because the user changed a CLI setting.
+        // Read when the download events are raised, which happens on a pool thread.
+        private volatile bool forcedCliReconcile;
+
         private ISnykServiceProvider serviceProvider;
 
         private readonly object cancelTasksLock = new object();
@@ -339,6 +343,11 @@ namespace Snyk.VisualStudio.Extension.Service
                 // EndCliDownloadEpisode must be called after the reentrancy guard
                 this.EndCliDownloadEpisode();
 
+                // Held for the episode rather than passed to the events directly: the outcome that needs
+                // it most is the one where nothing is downloaded at all, which is reported from deep
+                // inside the downloader via IsCliDownloadNeeded returning false.
+                this.forcedCliReconcile = force;
+
                 this.downloadCliTokenSource = new CancellationTokenSource();
 
                 var progressWorker = new SnykProgressWorker
@@ -379,6 +388,7 @@ namespace Snyk.VisualStudio.Extension.Service
                         finally
                         {
                             this.isCliDownloading = false;
+                            this.forcedCliReconcile = false;
 
                             if (progressWorker.IsWorkFinished)
                             {
@@ -520,7 +530,17 @@ namespace Snyk.VisualStudio.Extension.Service
         /// </summary>
         protected internal void OnDownloadFinished(bool binaryWasDownloaded = true)
         {
-            this.DownloadFinished?.Invoke(this, new SnykCliDownloadEventArgs { BinaryWasDownloaded = binaryWasDownloaded });
+            // Forced matters most when binaryWasDownloaded is false: nothing was fetched, so no
+            // download-started stop preceded this, and the server is still running the executable it was
+            // launched with. Without the flag the subscriber can only ask VS to start a server that is
+            // already started, which VS discards.
+            this.DownloadFinished?.Invoke(
+                this,
+                new SnykCliDownloadEventArgs
+                {
+                    BinaryWasDownloaded = binaryWasDownloaded,
+                    Forced = this.forcedCliReconcile,
+                });
         }
 
         /// <summary>

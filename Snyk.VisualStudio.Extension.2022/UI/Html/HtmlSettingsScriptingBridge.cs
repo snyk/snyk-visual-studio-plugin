@@ -11,6 +11,7 @@ using Newtonsoft.Json.Linq;
 using Serilog;
 using Snyk.VisualStudio.Extension;
 using Snyk.VisualStudio.Extension.Authentication;
+using Snyk.VisualStudio.Extension.CLI;
 using Snyk.VisualStudio.Extension.Download;
 using Snyk.VisualStudio.Extension.Extension;
 using Snyk.VisualStudio.Extension.Language;
@@ -116,32 +117,25 @@ namespace Snyk.VisualStudio.Extension.UI.Html
                                         editedKeys: applyResult.EditedKeys,
                                         resetKeys: applyResult.ResetKeys);
 
-                    tcs.TrySetResult(true);
-
-                    // After the save, and after the caller has been released: a settings push cannot move
-                    // the running server onto a different executable, because the one it was launched
-                    // with was resolved at activation. Download() re-runs the whole start-of-day check —
-                    // fetching a newer binary when automatic management is on, and doing nothing but
-                    // requesting the restart when it is off. Placed here rather than in the apply block
-                    // so a rolled-back save cannot trigger it.
+                    // After the save, so a rolled-back apply cannot trigger it, and before the caller is
+                    // released, so the request is ordered rather than racing the dialog closing. Download
+                    // only queues work, so this costs the caller nothing.
+                    //
+                    // A settings push cannot move the running server onto a different executable — the one
+                    // it was launched with was resolved at activation — so the whole start-of-day check is
+                    // re-run: it fetches a newer binary when automatic management is on, and requests the
+                    // restart without fetching anything when it is off.
                     if (applyResult.CliSettingsChanged)
                     {
-                        // Download() declines while any scan or download is in flight, and it cannot
-                        // reasonably replace the binary underneath a running scan. Reported rather than
-                        // dropped quietly: the saved settings are on disk but the server is still on the
-                        // previous CLI, which looks from the outside like the setting did nothing.
-                        if (serviceProvider.TasksService?.IsTaskRunning() == true)
-                        {
-                            Logger.Warning(
-                                "CLI settings changed, but a scan or download is in progress; the language server stays on its current CLI until it is next started");
-                        }
-                        else
-                        {
-                            Logger.Information("CLI settings changed; re-running the CLI check to move the language server onto the configured binary");
-                        }
-
+                        // Download declines while any scan or download is in flight — it cannot replace
+                        // the binary underneath a running scan — and logs that itself. Deliberately not
+                        // pre-checked here: the check and the call cannot be made atomic, so a pre-check
+                        // only produces a log line that contradicts what actually happened.
+                        Logger.Information("CLI settings changed; requesting the CLI check that moves the language server onto the configured binary");
                         serviceProvider.TasksService?.Download(force: true);
                     }
+
+                    tcs.TrySetResult(true);
                 }
                 catch (Exception ex)
                 {
@@ -767,15 +761,28 @@ namespace Snyk.VisualStudio.Extension.UI.Html
 
         /// <summary>
         /// Whether a save changed which CLI the language server should be running, or how it is obtained.
-        /// Paths compare case-insensitively; the release channel does not, because it is stored verbatim
-        /// and matched exactly elsewhere.
+        /// <para>
+        /// Both sides are resolved before comparing, because that is the form everything downstream uses:
+        /// the client launches <c>GetCliFilePath(...)</c> and the download URL is built from
+        /// <c>ResolveReleaseChannel(...)</c>. Comparing the raw fields instead scores a blank path against
+        /// the default location, and a blank channel against "stable", as changes — and the settings page
+        /// is populated from the resolved values the language server was sent, so a user with no custom
+        /// path posts the default path back on the first save and would be charged a restart for it.
+        /// Paths compare case-insensitively, being Windows paths; the resolved channel does not.
+        /// </para>
         /// </summary>
         internal static bool DidCliSettingsChange(
             string previousCliPath, bool previousAutoUpdate, string previousReleaseChannel,
             string cliPath, bool autoUpdate, string releaseChannel) =>
-            !string.Equals(previousCliPath ?? string.Empty, cliPath ?? string.Empty, StringComparison.OrdinalIgnoreCase)
+            !string.Equals(
+                SnykCli.GetCliFilePath(previousCliPath),
+                SnykCli.GetCliFilePath(cliPath),
+                StringComparison.OrdinalIgnoreCase)
             || previousAutoUpdate != autoUpdate
-            || !string.Equals(previousReleaseChannel ?? string.Empty, releaseChannel ?? string.Empty, StringComparison.Ordinal);
+            || !string.Equals(
+                SnykCliDownloader.ResolveReleaseChannel(previousReleaseChannel),
+                SnykCliDownloader.ResolveReleaseChannel(releaseChannel),
+                StringComparison.Ordinal);
 
         private void ApplyFilterSettings(IdeConfigData config, ICollection<string> editedKeys)
         {

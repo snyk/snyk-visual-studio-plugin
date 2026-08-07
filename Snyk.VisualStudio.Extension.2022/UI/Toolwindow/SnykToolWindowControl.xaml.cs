@@ -162,16 +162,26 @@ namespace Snyk.VisualStudio.Extension.UI.Toolwindow
             };
             this.downloadFinishedHandler = (sender, args) =>
             {
-                Logger.Debug(
-                    "DownloadFinished: binaryWasDownloaded={Downloaded}, languageServerReady={Ready}; requesting start",
-                    args?.BinaryWasDownloaded,
-                    LanguageClientHelper.IsLanguageServerReady());
+                // A start is not enough when the user changed a CLI setting and the binary already on
+                // disk was current: nothing was fetched, so no download-started stop preceded this, and
+                // VS discards a start for a server it still considers running — leaving it on the
+                // executable it was launched with. That case needs the stop, so it needs a restart.
+                var needsRestart = args?.Forced == true && args.BinaryWasDownloaded == false;
 
-                // Unconditional: when the download has just replaced a CLI the server could not run, this
-                // is what starts it. When the server is already running VS ignores the request, so no
-                // readiness check is needed — and a readiness guard would skip the start in exactly the
-                // case that needs it.
-                ThreadHelper.JoinableTaskFactory.RunAsync(async ()=> await serviceProvider.LanguageClientManager.StartServerAsync(true)).FireAndForget();
+                Logger.Debug(
+                    "DownloadFinished: binaryWasDownloaded={Downloaded}, forced={Forced}, languageServerReady={Ready}; requesting {Action}",
+                    args?.BinaryWasDownloaded,
+                    args?.Forced,
+                    LanguageClientHelper.IsLanguageServerReady(),
+                    needsRestart ? "restart" : "start");
+
+                // Otherwise unconditional: when the download has just replaced a CLI the server could not
+                // run, this is what starts it. When the server is already running VS ignores the request,
+                // so no readiness check is needed — and a readiness guard would skip the start in exactly
+                // the case that needs it.
+                ThreadHelper.JoinableTaskFactory.RunAsync(async () => await (needsRestart
+                    ? serviceProvider.LanguageClientManager.RestartServerAsync()
+                    : serviceProvider.LanguageClientManager.StartServerAsync(true))).FireAndForget();
 
                 this.OnDownloadFinished(sender, args);
             };
@@ -529,10 +539,12 @@ namespace Snyk.VisualStudio.Extension.UI.Toolwindow
 
                 await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
 
-                // Never forced: a failure can only come from the branch that attempted a download, and
-                // DownloadStarted has already stopped the server so the binary could be replaced. The
-                // server is therefore not running by this point and needs no forcing to be restarted.
-                this.ReconcileLanguageServer(fallbackUsable, forced: false);
+                // Always forced. A failure can only follow an attempted download, which raised
+                // DownloadStarted and issued a stop — but that stop is fire-and-forget, so readiness may
+                // not have flipped yet. Gating on readiness here would skip the restart and leave the
+                // in-flight stop to take the server down with nothing to bring it back. Usability of the
+                // CLI still gates it.
+                this.ReconcileLanguageServer(fallbackUsable, forced: true);
 
                 if (fallbackUsable)
                 {
