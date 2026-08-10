@@ -175,7 +175,11 @@ public interface ISnykTasksService
     /// </param>
     void EnsureCliReady(SnykCliDownloader.CliDownloadFinishedCallback downloadFinishedCallback = null, bool cliSettingsChanged = false);
 
-    /// <inheritdoc cref="EnsureCliReady"/>
+    /// <summary>
+    /// Awaitable form of <see cref="EnsureCliReady"/>, with the same semantics and outcome events. Cannot
+    /// be told about a settings change, so it always behaves as the startup check does.
+    /// </summary>
+    /// <param name="downloadFinishedCallback"><see cref="CliDownloadFinishedCallback"/> callback object.</param>
     Task EnsureCliReadyAsync(SnykCliDownloader.CliDownloadFinishedCallback downloadFinishedCallback = null);
 
     /// <summary>

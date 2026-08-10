@@ -44,9 +44,10 @@ namespace Snyk.VisualStudio.Extension.UI.Toolwindow
 
         private bool disposed;
 
-        // Whether this control stopped the language server so a download could overwrite its binary.
-        // Set when the stop is issued and consumed by whichever download outcome follows.
-        private bool stoppedServerForDownload;
+        // 1 when this control stopped the language server so a download could overwrite its binary.
+        // An int rather than a bool so it can be read-and-cleared in one atomic step: it is written on
+        // whichever thread raised DownloadStarted and consumed on whichever thread raised the outcome.
+        private int stoppedServerForDownload;
 
         // Subscription owners + the lambda handlers, retained so Dispose can detach symmetrically.
         // tasksService is a long-lived singleton, so a leaked subscription would keep firing
@@ -156,11 +157,12 @@ namespace Snyk.VisualStudio.Extension.UI.Toolwindow
                 // The binary is about to be overwritten, so a running server has to let go of it. Recorded
                 // rather than re-derived later: every handler below needs to know whether the server was
                 // taken down for this, and by the time they run the readiness flag no longer says.
-                this.stoppedServerForDownload = LanguageClientHelper.IsLanguageServerReady();
+                var stopping = LanguageClientHelper.IsLanguageServerReady();
+                Interlocked.Exchange(ref this.stoppedServerForDownload, stopping ? 1 : 0);
 
-                Logger.Debug("DownloadStarted: languageServerReady={Ready}; the stop is issued only when ready", this.stoppedServerForDownload);
+                Logger.Debug("DownloadStarted: languageServerReady={Ready}; the stop is issued only when ready", stopping);
 
-                if (this.stoppedServerForDownload)
+                if (stopping)
                     ThreadHelper.JoinableTaskFactory.RunAsync(serviceProvider.LanguageClientManager.StopServerAsync).FireAndForget();
                 this.OnDownloadStarted(sender, args);
             };
@@ -171,6 +173,7 @@ namespace Snyk.VisualStudio.Extension.UI.Toolwindow
                 // protocol probe the failure paths run costs a CLI launch and would prove nothing here.
                 this.EnsureServerOnConfiguredCli(
                     cliUsable: true,
+                    stopIssued: this.ConsumeStoppedServerForDownload(),
                     cliSettingsChanged: args?.CliSettingsChanged == true,
                     source: "DownloadFinished");
 
@@ -490,11 +493,15 @@ namespace Snyk.VisualStudio.Extension.UI.Toolwindow
         /// <param name="eventArgs">Event args.</param>
         public void OnCliDownloadDidNotComplete(object sender, SnykCliDownloadEventArgs eventArgs)
         {
+            // Consumed here, synchronously, rather than inside the lambda below: the probe in there can in
+            // principle throw, and a flag left set would tell the next check the server was already down.
+            var stopIssued = this.ConsumeStoppedServerForDownload();
+
             // RunAsync, not Run — see OnDownloadStarted. Both branches write WPF state.
             //
             // TaskScheduler.Default before the probe, because this handler is NOT always raised from
             // the thread pool: SnykTasksService.EnsureCliReady fires CliDownloadDeclined before its own
-            // hop when BinariesAutoUpdate is off, and Download() is wired to this control's Loaded
+            // hop when BinariesAutoUpdate is off, and EnsureCliReady is wired to this control's Loaded
             // event, so RunAsync starts out on the UI thread. IsExistingCliUsableForFallback launches
             // the CLI and waits up to ProtocolProbeTimeoutMs for it, which froze VS for the whole
             // timeout for anyone with auto-update disabled and a CLI already on disk. File.Exists
@@ -509,6 +516,7 @@ namespace Snyk.VisualStudio.Extension.UI.Toolwindow
 
                 this.EnsureServerOnConfiguredCli(
                     fallbackUsable,
+                    stopIssued,
                     cliSettingsChanged: eventArgs?.CliSettingsChanged == true,
                     source: "CliDownloadDidNotComplete");
 
@@ -525,8 +533,11 @@ namespace Snyk.VisualStudio.Extension.UI.Toolwindow
 
         private void OnDownloadFailed(object sender, Exception e)
         {
+            // Consumed synchronously, as in OnCliDownloadDidNotComplete.
+            var stopIssued = this.ConsumeStoppedServerForDownload();
+
             // The hop and the probe are placed as in OnCliDownloadDidNotComplete. DownloadFailed is only ever
-            // raised after DownloadAsync's own hop, so the UI thread cannot be the caller here today;
+            // raised after the tasks service's own hop, so the UI thread cannot be the caller here today;
             // the hop is kept so the two handlers cannot drift, and so the probe stays off whichever
             // thread does raise it.
             ThreadHelper.JoinableTaskFactory.RunAsync(async () =>
@@ -538,9 +549,8 @@ namespace Snyk.VisualStudio.Extension.UI.Toolwindow
                 await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
 
                 // A failure can only follow an attempted download, so DownloadStarted has already recorded
-                // whether it stopped the server. That recorded fact is why nothing here has to reason
-                // about whether the fire-and-forget stop has landed yet.
-                this.EnsureServerOnConfiguredCli(fallbackUsable, cliSettingsChanged: false, source: "DownloadFailed");
+                // whether it stopped the server — no reasoning here about whether that stop has landed.
+                this.EnsureServerOnConfiguredCli(fallbackUsable, stopIssued, cliSettingsChanged: false, source: "DownloadFailed");
 
                 if (fallbackUsable)
                 {
@@ -571,7 +581,9 @@ namespace Snyk.VisualStudio.Extension.UI.Toolwindow
         /// Decides what a finished, cancelled or failed CLI check has to do about the language server.
         /// <list type="bullet">
         /// <item><paramref name="stopIssued"/> — this control took the server down so the download could
-        /// overwrite the binary, so it is already off the old executable and only needs starting.</item>
+        /// overwrite the binary. That stop is fire-and-forget, so it may not have landed: if the server
+        /// still reads as running, restart rather than start, because Visual Studio discards a start for a
+        /// server it considers started and the pending stop would then take it down for good.</item>
         /// <item><paramref name="cliSettingsChanged"/> — the user repointed the CLI, so a server still
         /// serving is on the executable it was launched with and cannot switch without a restart.</item>
         /// <item>Neither — this is startup. A server that is already serving is left alone; stopping it
@@ -587,7 +599,12 @@ namespace Snyk.VisualStudio.Extension.UI.Toolwindow
                 return ServerAction.None;
             }
 
-            if (stopIssued || !serverRunning)
+            if (stopIssued)
+            {
+                return serverRunning ? ServerAction.Restart : ServerAction.Start;
+            }
+
+            if (!serverRunning)
             {
                 return ServerAction.Start;
             }
@@ -595,14 +612,14 @@ namespace Snyk.VisualStudio.Extension.UI.Toolwindow
             return cliSettingsChanged ? ServerAction.Restart : ServerAction.None;
         }
 
-        // Shared by all three download outcomes so they cannot drift. Consumes stoppedServerForDownload:
-        // the stop belongs to the episode that just ended, and leaving it set would make the next
-        // settings change look like the server was already down.
-        private void EnsureServerOnConfiguredCli(bool cliUsable, bool cliSettingsChanged, string source)
-        {
-            var stopIssued = this.stoppedServerForDownload;
-            this.stoppedServerForDownload = false;
+        // Read-and-clear in one step. The stop belongs to the episode that just ended, so leaving it set
+        // would tell the next check the server was already down.
+        private bool ConsumeStoppedServerForDownload() =>
+            Interlocked.Exchange(ref this.stoppedServerForDownload, 0) == 1;
 
+        // Shared by all three download outcomes so they cannot drift.
+        private void EnsureServerOnConfiguredCli(bool cliUsable, bool stopIssued, bool cliSettingsChanged, string source)
+        {
             var serverRunning = LanguageClientHelper.IsLanguageServerReady();
             var action = DecideServerAction(cliUsable, stopIssued, serverRunning, cliSettingsChanged);
 

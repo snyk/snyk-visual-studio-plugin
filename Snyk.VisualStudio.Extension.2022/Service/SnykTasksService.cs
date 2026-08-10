@@ -565,7 +565,7 @@ namespace Snyk.VisualStudio.Extension.Service
                 new SnykCliDownloadEventArgs(message) { CliSettingsChanged = this.cliSettingsChangedEpisode });
 
         /// <summary>
-        /// Fire download cancelled event.
+        /// Fire the download failed event.
         /// </summary>
         /// <param name="exception">The exception that caused the download to fail.</param>
         protected internal void OnDownloadFailed(Exception exception) => this.DownloadFailed?.Invoke(this, exception);

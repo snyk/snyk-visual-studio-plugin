@@ -32,12 +32,19 @@ namespace Snyk.VisualStudio.Extension.Tests.UI.Toolwindow
         }
 
         [Fact]
-        public void Starts_WhenWeStoppedItForTheDownload()
+        public void Starts_WhenWeStoppedItForTheDownloadAndItIsDown()
         {
-            // Already off the old binary, so a start is enough — and this holds whether or not the
-            // readiness flag has caught up with the stop we issued.
-            Assert.Equal(ServerAction.Start, Decide(stopIssued: true, serverRunning: true));
             Assert.Equal(ServerAction.Start, Decide(stopIssued: true, serverRunning: false));
+        }
+
+        [Fact]
+        public void Restarts_WhenOurStopHasNotLandedYet()
+        {
+            // The stop issued for the download is fire-and-forget, so an outcome arriving quickly can
+            // still see a running server. Raising a start there is discarded by Visual Studio for a server
+            // it considers started, and the in-flight stop then takes it down with nothing to bring it
+            // back. Restart awaits the stop first, so it is correct either way.
+            Assert.Equal(ServerAction.Restart, Decide(stopIssued: true, serverRunning: true));
         }
 
         [Theory]

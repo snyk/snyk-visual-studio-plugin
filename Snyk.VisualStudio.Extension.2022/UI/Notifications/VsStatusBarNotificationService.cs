@@ -144,7 +144,7 @@ namespace Snyk.VisualStudio.Extension.UI.Notifications
         {
             if (eventArgs?.CliSettingsChanged == true)
             {
-                this.statusBar.ShowDownloadFinishedMessage("Snyk CLI settings applied");
+                this.statusBar.ShowDownloadFinishedMessage("Applying the Snyk CLI settings...");
             }
         }
 
