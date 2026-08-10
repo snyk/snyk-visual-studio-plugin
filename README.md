@@ -1,9 +1,6 @@
 # Visual Studio extension
 
 
-Visual Studio 2026 not supported.
-
-
 ## Scan early, fix as you develop: elevate your security posture
 
 Integrating security checks early in your development lifecycle helps you pass security reviews seamlessly and avoid expensive fixes down the line.
@@ -19,6 +16,8 @@ The Snyk Visual Studio extension allows you to analyze your code, infrastructure
 * **Broad language and framework support**: Snyk Open Source and Snyk Code cover a wide array of package managers, programming languages, and frameworks, with ongoing updates to support the latest technologies. For the most up-to-date information on supported languages, package managers, and frameworks, see the [supported language technologies pages](https://docs.snyk.io/supported-languages-package-managers-and-frameworks).
 
 ## How to install and set up the extension
+
+Supported versions of Visual Studio: 2022 and 2026.
 
 **Note**: For information about the versions of Visual Studio supported by the Visual Studio extension, see [Snyk IDE plugins and extensions](https://docs.snyk.io/scm-ide-and-ci-cd-integrations/snyk-ide-plugins-and-extensions). Snyk recommends always using the latest version of the Visual Studio extension.
 

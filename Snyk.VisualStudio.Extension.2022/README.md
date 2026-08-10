@@ -9,7 +9,7 @@ Snyk Security extension helps you find and fix security vulnerabilities in your 
 #### 1. Software requirements
 
 - Operating system - Windows.
-- Supported versions of Visual Studio: 2015, 2017, 2019. Compatible with Community, Professional and Enterprise.
+- Supported versions of Visual Studio: 2022 and 2026. Compatible with Community, Professional and Enterprise.
 
 #### 2. How to install the extension?
 
