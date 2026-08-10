@@ -56,12 +56,15 @@ namespace Snyk.VisualStudio.Extension.UI.Html
         // command is rejected and logged in DispatchAsync.
         private static readonly HashSet<string> AllowedCommands = new HashSet<string>(StringComparer.Ordinal)
         {
+            "snyk.dismissFeedbackBanner",
+            "snyk.feedbackBannerInteracted",
             "snyk.login",
             "snyk.logout",
             "snyk.navigateToRange",
             "snyk.setNodeExpanded",
             "snyk.showScanErrorDetails",
             "snyk.toggleTreeFilter",
+            "snyk.trustWorkspaceFolders",
             "snyk.updateFolderConfig",
         };
 

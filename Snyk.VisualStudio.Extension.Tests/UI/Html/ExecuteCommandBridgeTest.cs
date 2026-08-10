@@ -78,6 +78,11 @@ namespace Snyk.VisualStudio.Extension.Tests.UI.Html
         [InlineData("snyk.showScanErrorDetails", true)]
         [InlineData("snyk.toggleTreeFilter", true)]
         [InlineData("snyk.updateFolderConfig", true)]
+        // Dispatched by the HTML issue tree view; an omission here makes the corresponding control
+        // silently inert, since DispatchAsync drops a disallowed command with only a warning.
+        [InlineData("snyk.trustWorkspaceFolders", true)]
+        [InlineData("snyk.feedbackBannerInteracted", true)]
+        [InlineData("snyk.dismissFeedbackBanner", true)]
         // Not on the allowlist — a snyk.* prefix is no longer sufficient.
         [InlineData("snyk.anyCommand", false)]
         [InlineData("snyk.clearCache", false)]
