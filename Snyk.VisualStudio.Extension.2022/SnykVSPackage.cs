@@ -74,6 +74,8 @@ namespace Snyk.VisualStudio.Extension
         /// </summary>
         public const string PackageGuidString = "5ddf9abb-42ec-49b9-b201-b3e2fc2f8f89";
 
+        private const string UnknownVsVersion = "Unknown Visual Studio version";
+
         private static readonly ILogger Logger = LogManager.ForContext<SnykVSPackage>();
 
         private static readonly TaskCompletionSource<bool> initializationTaskCompletionSource =
@@ -543,21 +545,34 @@ namespace Snyk.VisualStudio.Extension
             try
             {
                 var vsVersionString = await GetVsVersionAsync();
-                var major = vsVersionString.Split('.').FirstOrDefault();
 
-                return major switch
-                {
-                    "17" => "Visual Studio 2022",
-                    "16" => "Visual Studio 2019",
-                    "15" => "Visual Studio 2017",
-                    "14" => "Visual Studio 2015",
-                    _ => "Unknown Visual Studio version"
-                };
+                return ToReadableVsVersion(vsVersionString.Split('.').FirstOrDefault());
             }
             catch
             {
-                return "Unknown Visual Studio version";
+                return UnknownVsVersion;
             }
+        }
+
+        // The name this returns is not cosmetic: it is sent as the IDE name, and the Language Server
+        // derives its config storage filename from it. A major that maps to a different string than it
+        // did previously therefore reads an orphaned config file — no trusted folders and no auth
+        // token. Every shipping major needs an explicit entry: anything unmapped shares the single
+        // unknown bucket, so a new Visual Studio release must be added here rather than left to fall
+        // through to it.
+        //
+        // internal static for testability (InternalsVisibleTo): pure mapping, no VS shell access.
+        internal static string ToReadableVsVersion(string major)
+        {
+            return major switch
+            {
+                "18" => "Visual Studio 2026",
+                "17" => "Visual Studio 2022",
+                "16" => "Visual Studio 2019",
+                "15" => "Visual Studio 2017",
+                "14" => "Visual Studio 2015",
+                _ => UnknownVsVersion
+            };
         }
     }
 }
