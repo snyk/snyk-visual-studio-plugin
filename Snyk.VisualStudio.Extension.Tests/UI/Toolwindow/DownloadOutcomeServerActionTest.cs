@@ -40,10 +40,11 @@ namespace Snyk.VisualStudio.Extension.Tests.UI.Toolwindow
         [Fact]
         public void Restarts_WhenOurStopHasNotLandedYet()
         {
-            // The stop issued for the download is fire-and-forget, so an outcome arriving quickly can
-            // still see a running server. Raising a start there is discarded by Visual Studio for a server
-            // it considers started, and the in-flight stop then takes it down with nothing to bring it
-            // back. Restart awaits the stop first, so it is correct either way.
+            // The stop issued for the download is fire-and-forget, so an outcome arriving quickly can still
+            // see a running server. Raising a start there is discarded by Visual Studio for a server it
+            // considers started, and the in-flight stop then takes it down with nothing to bring it back.
+            // Restart also tolerates the reading having gone stale the other way: stopping an
+            // already-stopped server is a no-op, where a discarded start is not recoverable.
             Assert.Equal(ServerAction.Restart, Decide(stopIssued: true, serverRunning: true));
         }
 

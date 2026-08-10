@@ -494,7 +494,8 @@ namespace Snyk.VisualStudio.Extension.UI.Toolwindow
         public void OnCliDownloadDidNotComplete(object sender, SnykCliDownloadEventArgs eventArgs)
         {
             // Consumed here, synchronously, rather than inside the lambda below: the probe in there can in
-            // principle throw, and a flag left set would tell the next check the server was already down.
+            // principle throw, and a flag left set would make the next check restart a working session it
+            // had no reason to touch.
             var stopIssued = this.ConsumeStoppedServerForDownload();
 
             // RunAsync, not Run — see OnDownloadStarted. Both branches write WPF state.
@@ -612,8 +613,9 @@ namespace Snyk.VisualStudio.Extension.UI.Toolwindow
             return cliSettingsChanged ? ServerAction.Restart : ServerAction.None;
         }
 
-        // Read-and-clear in one step. The stop belongs to the episode that just ended, so leaving it set
-        // would tell the next check the server was already down.
+        // Read-and-clear in one step, so two outcomes arriving together cannot both act on one stop. The
+        // stop belongs to the episode that just ended, so leaving it set would make the next check restart
+        // a working session it had no reason to touch.
         private bool ConsumeStoppedServerForDownload() =>
             Interlocked.Exchange(ref this.stoppedServerForDownload, 0) == 1;
 
