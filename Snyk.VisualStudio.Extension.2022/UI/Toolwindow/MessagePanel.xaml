@@ -58,7 +58,7 @@
                         3. Improve your code and upgrade dependencies
                     </TextBlock>
                     <TextBlock Margin="0,10,0,0" TextWrapping="Wrap" Width="550">
-                        When scanning project files, Snyk may automatically execute code, such as invoking the package manager to get dependency information, and will honor any Snyk configuration checked into the project (for example, additional CLI parameters). A malicious project could use this configuration to run arbitrary code. You should only scan projects you trust.
+                        When scanning project files, Snyk may automatically execute code, such as invoking the package manager to get dependency information, and honors any Snyk configuration checked into the project, such as additional CLI parameters passed to the Snyk CLI as-is. A malicious project could use this configuration to run arbitrary code. You should only scan projects you trust.
                         <Hyperlink NavigateUri="https://docs.snyk.io/ide-tools/visual-studio-extension/workspace-trust" RequestNavigate="Hyperlink_RequestNavigate">
                             More info
                         </Hyperlink>
