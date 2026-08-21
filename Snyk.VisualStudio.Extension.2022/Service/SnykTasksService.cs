@@ -37,6 +37,10 @@ namespace Snyk.VisualStudio.Extension.Service
 
         private bool isCliDownloading;
 
+        // Whether the CLI check in flight was requested because the user changed a CLI setting. Read when
+        // the download events are raised, which happens on a pool thread.
+        private volatile bool cliSettingsChangedEpisode;
+
         private ISnykServiceProvider serviceProvider;
 
         private readonly object cancelTasksLock = new object();
@@ -193,10 +197,11 @@ namespace Snyk.VisualStudio.Extension.Service
         /// </summary>
         public event EventHandler<SnykCliDownloadEventArgs> DownloadUpdate;
 
-        /// <summary>
-        /// Download cancelled event handler. Raised when the user cancels the download intentionally.
-        /// </summary>
-        public event EventHandler<SnykCliDownloadEventArgs> DownloadCancelled;
+        /// <inheritdoc cref="ISnykTasksService.CliDownloadDeclined"/>
+        public event EventHandler<SnykCliDownloadEventArgs> CliDownloadDeclined;
+
+        /// <inheritdoc cref="ISnykTasksService.CliDownloadAborted"/>
+        public event EventHandler<SnykCliDownloadEventArgs> CliDownloadAborted;
 
         /// <summary>
         /// Download failed event handler. Raised when the download fails due to an error.
@@ -320,13 +325,15 @@ namespace Snyk.VisualStudio.Extension.Service
             }
         }
 
-        /// <summary>
-        /// Start a CLI download task in background thread. Will only download the CLI if it's missing or outdated.
-        /// </summary>
-        /// <param name="downloadFinishedCallback"><see cref="CliDownloadFinishedCallback"/> callback object.</param>
-        public void Download(CliDownloadFinishedCallback downloadFinishedCallback = null)
+        /// <inheritdoc cref="ISnykTasksService.EnsureCliReady"/>
+        /// <remarks>
+        /// Named for the goal rather than the mechanism: the download is one of three outcomes, alongside
+        /// "already current" and "not permitted". <see cref="SnykCliDownloader"/> is where something is
+        /// actually downloaded.
+        /// </remarks>
+        public void EnsureCliReady(CliDownloadFinishedCallback downloadFinishedCallback = null, bool cliSettingsChanged = false)
         {
-            Logger.Information("Enter Download method");
+            Logger.Information("Enter EnsureCliReady method");
 
             try
             {
@@ -339,6 +346,11 @@ namespace Snyk.VisualStudio.Extension.Service
 
                 // EndCliDownloadEpisode must be called after the reentrancy guard
                 this.EndCliDownloadEpisode();
+
+                // Held for the episode rather than passed to the events directly: the outcome that needs
+                // it most is the one where nothing is downloaded at all, which is reported from deep
+                // inside the downloader via IsCliDownloadNeeded returning false.
+                this.cliSettingsChangedEpisode = cliSettingsChanged;
 
                 this.downloadCliTokenSource = new CancellationTokenSource();
 
@@ -354,7 +366,7 @@ namespace Snyk.VisualStudio.Extension.Service
                     {
                         try
                         {
-                            await this.DownloadAsync(downloadFinishedCallback, progressWorker);
+                            await this.EnsureCliReadyCoreAsync(downloadFinishedCallback, progressWorker, cliSettingsChanged);
                         }
                         catch (ChecksumVerificationException e)
                         {
@@ -369,7 +381,7 @@ namespace Snyk.VisualStudio.Extension.Service
                         catch (OperationCanceledException e)
                         {
                             Logger.Information("CLI Download cancelled");
-                            this.OnDownloadCancelled(e.Message);
+                            this.OnCliDownloadAborted(e.Message);
                         }
                         catch (Exception e)
                         {
@@ -380,6 +392,7 @@ namespace Snyk.VisualStudio.Extension.Service
                         finally
                         {
                             this.isCliDownloading = false;
+                            this.cliSettingsChangedEpisode = false;
 
                             if (progressWorker.IsWorkFinished)
                             {
@@ -392,11 +405,16 @@ namespace Snyk.VisualStudio.Extension.Service
             }
             catch (Exception ex)
             {
+                // Cleared here as well as in the episode's own finally: if the throw happened before the
+                // episode was queued, that finally never runs, and a flag left set would make the next
+                // check — including an unrelated startup one — look like a settings change.
+                this.cliSettingsChangedEpisode = false;
+
                 Logger.Error(ex, "Error on CLI download");
             }
         }
 
-        public async Task DownloadAsync(CliDownloadFinishedCallback downloadFinishedCallback = null)
+        public async Task EnsureCliReadyAsync(CliDownloadFinishedCallback downloadFinishedCallback = null)
         {
             if (this.IsTaskRunning())
             {
@@ -422,7 +440,7 @@ namespace Snyk.VisualStudio.Extension.Service
 
             try
             {
-                await this.DownloadAsync(downloadFinishedCallback, progressWorker);
+                await this.EnsureCliReadyCoreAsync(downloadFinishedCallback, progressWorker);
             }
             catch (ChecksumVerificationException e)
             {
@@ -437,7 +455,7 @@ namespace Snyk.VisualStudio.Extension.Service
             catch (OperationCanceledException e)
             {
                 Logger.Information("CLI Download cancelled");
-                this.OnDownloadCancelled(e.Message);
+                this.OnCliDownloadAborted(e.Message);
             }
             catch (Exception e)
             {
@@ -521,18 +539,33 @@ namespace Snyk.VisualStudio.Extension.Service
         /// </summary>
         protected internal void OnDownloadFinished(bool binaryWasDownloaded = true)
         {
-            this.DownloadFinished?.Invoke(this, new SnykCliDownloadEventArgs { BinaryWasDownloaded = binaryWasDownloaded });
+            // The reason matters most when binaryWasDownloaded is false: nothing was fetched, so no
+            // download-started stop preceded this, and the server is still running the executable it was
+            // launched with. Without it the subscriber can only ask VS to start a server it already
+            // considers started, which VS discards.
+            this.DownloadFinished?.Invoke(
+                this,
+                new SnykCliDownloadEventArgs
+                {
+                    BinaryWasDownloaded = binaryWasDownloaded,
+                    CliSettingsChanged = this.cliSettingsChangedEpisode,
+                });
         }
 
         /// <summary>
-        /// Fire download cancelled event.
+        /// Fire the event for a download that had started and was then cancelled.
         /// </summary>
         /// <param name="message">Cancel message.</param>
-        protected internal void OnDownloadCancelled(string message) =>
-            this.DownloadCancelled?.Invoke(this, new SnykCliDownloadEventArgs(message));
+        protected internal void OnCliDownloadAborted(string message) =>
+            // Carries the reason as well as the outcome: the settings change that requested this check still
+            // happened, so a subscriber that has to move the language server onto the configured binary
+            // still has to do it, whether or not the download reached the end.
+            this.CliDownloadAborted?.Invoke(
+                this,
+                new SnykCliDownloadEventArgs(message) { CliSettingsChanged = this.cliSettingsChangedEpisode });
 
         /// <summary>
-        /// Fire download cancelled event.
+        /// Fire the download failed event.
         /// </summary>
         /// <param name="exception">The exception that caused the download to fail.</param>
         protected internal void OnDownloadFailed(Exception exception) => this.DownloadFailed?.Invoke(this, exception);
@@ -735,7 +768,7 @@ namespace Snyk.VisualStudio.Extension.Service
         {
             if (!this.serviceProvider.Options.BinariesAutoUpdate)
             {
-                Logger.Information("CLI auto-update is disabled; not downloading");
+                Logger.Information("CLI auto-update is disabled; not holding the language server for a download");
 
                 return false;
             }
@@ -768,18 +801,23 @@ namespace Snyk.VisualStudio.Extension.Service
         }
 
 
-        private async Task DownloadAsync(CliDownloadFinishedCallback downloadFinishedCallback,
-            ISnykProgressWorker progressWorker)
+        private async Task EnsureCliReadyCoreAsync(CliDownloadFinishedCallback downloadFinishedCallback,
+            ISnykProgressWorker progressWorker, bool cliSettingsChanged = false)
         {
             var options = this.serviceProvider.Options;
             if (!options.BinariesAutoUpdate)
             {
-                Logger.Information("CLI auto-update is disabled, CLI download is skipped.");
-                this.DownloadCancelled?.Invoke(this, new SnykCliDownloadEventArgs());
+                Logger.Information("CLI auto-update is disabled; declining the CLI check without fetching anything");
+
+                // Declined, not cancelled: nothing had started, so there is nothing to undo. A user who
+                // just repointed the CLI setting still needs the server moved onto that binary, whereas at
+                // startup it is already running the right one. The subscriber checks the configured CLI is
+                // usable before acting, so an unusable path is reported rather than launched.
+                this.CliDownloadDeclined?.Invoke(this, new SnykCliDownloadEventArgs { CliSettingsChanged = cliSettingsChanged });
                 return;
             }
 
-            // Claim the guard before yielding: Download() is wired to the Loaded event, which WPF raises
+            // Claim the guard before yielding: EnsureCliReady is wired to the Loaded event, which WPF raises
             // more than once, and IsTaskRunning() must be true by the time it returns.
             this.isCliDownloading = true;
 
