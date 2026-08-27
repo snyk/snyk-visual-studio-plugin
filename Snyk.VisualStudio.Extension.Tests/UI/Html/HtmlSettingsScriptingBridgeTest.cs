@@ -21,6 +21,7 @@ namespace Snyk.VisualStudio.Extension.Tests.UI.Html
     {
         private readonly Mock<ISnykOptions> optionsMock;
         private readonly Mock<ISnykOptionsManager> snykOptionsManagerMock;
+        private readonly Mock<ISnykTasksService> tasksServiceMock;
         private readonly HtmlSettingsScriptingBridge bridge;
 
         public HtmlSettingsScriptingBridgeTest(GlobalServiceProvider gsp) : base(gsp)
@@ -28,14 +29,72 @@ namespace Snyk.VisualStudio.Extension.Tests.UI.Html
             var serviceProviderMock = new Mock<ISnykServiceProvider>();
             optionsMock = new Mock<ISnykOptions>();
             snykOptionsManagerMock = new Mock<ISnykOptionsManager>();
+            tasksServiceMock = new Mock<ISnykTasksService>();
 
             serviceProviderMock.SetupGet(sp => sp.Options).Returns(optionsMock.Object);
             serviceProviderMock.SetupGet(sp => sp.SnykOptionsManager).Returns(snykOptionsManagerMock.Object);
             serviceProviderMock.SetupGet(sp => sp.LanguageClientManager).Returns((ILanguageClientManager)null);
 
+            // Wired, not left null: the CLI reconcile the save path requests goes through here, and a null
+            // TasksService is silently swallowed by the null-conditional call — so the assertions below
+            // would pass whether or not the call existed.
+            serviceProviderMock.SetupGet(sp => sp.TasksService).Returns(tasksServiceMock.Object);
+
+            // Real get/set behaviour so the save path's old-versus-new comparison sees what it wrote.
+            optionsMock.SetupProperty(o => o.CliCustomPath, string.Empty);
+            optionsMock.SetupProperty(o => o.BinariesAutoUpdate, true);
+            optionsMock.SetupProperty(o => o.CliReleaseChannel, "stable");
+
             bridge = new HtmlSettingsScriptingBridge(
                 serviceProviderMock.Object,
                 onModified: () => { });
+        }
+
+        private async Task SaveAsync(object config)
+        {
+            bridge.BeginSave();
+            bridge.__saveIdeConfig__(JsonConvert.SerializeObject(config));
+            // AwaitWithTimeout, not a bare await: this class shares the MockedVS collection, so a stalled
+            // save would block every test in it rather than failing this one.
+            Assert.True(await AwaitWithTimeout(bridge.SaveCompletion));
+        }
+
+        [Fact]
+        public async Task SaveIdeConfig_RequestsTheCliCheck_WhenTheCliPathChanged()
+        {
+            await SaveAsync(new Dictionary<string, object>
+            {
+                ["cli_path"] = @"C:\Users\dev\Code\test_binaries\snyk-win.exe",
+            });
+
+            tasksServiceMock.Verify(t => t.EnsureCliReady(It.IsAny<SnykCliDownloader.CliDownloadFinishedCallback>(), true), Times.Once);
+        }
+
+        [Fact]
+        public async Task SaveIdeConfig_RequestsTheCliCheck_WhenAutomaticManagementIsToggled()
+        {
+            await SaveAsync(new Dictionary<string, object> { ["automatic_download"] = false });
+
+            tasksServiceMock.Verify(t => t.EnsureCliReady(It.IsAny<SnykCliDownloader.CliDownloadFinishedCallback>(), true), Times.Once);
+        }
+
+        [Fact]
+        public async Task SaveIdeConfig_DoesNotRequestTheCliCheck_WhenNoCliSettingChanged()
+        {
+            // A save that only touches an unrelated setting must not restart the language server.
+            await SaveAsync(new Dictionary<string, object> { ["organization"] = "my-org" });
+
+            tasksServiceMock.Verify(t => t.EnsureCliReady(It.IsAny<SnykCliDownloader.CliDownloadFinishedCallback>(), It.IsAny<bool>()), Times.Never);
+        }
+
+        [Fact]
+        public async Task SaveIdeConfig_DoesNotRequestTheCliCheck_WhenABlankPathIsPostedBackResolved()
+        {
+            // The settings page shows the resolved path for a user with no custom path, and posts it back
+            // unchanged on the first save. Same executable, so no restart.
+            await SaveAsync(new Dictionary<string, object> { ["cli_path"] = SnykCli.GetSnykCliDefaultPath() });
+
+            tasksServiceMock.Verify(t => t.EnsureCliReady(It.IsAny<SnykCliDownloader.CliDownloadFinishedCallback>(), It.IsAny<bool>()), Times.Never);
         }
 
         [Fact]

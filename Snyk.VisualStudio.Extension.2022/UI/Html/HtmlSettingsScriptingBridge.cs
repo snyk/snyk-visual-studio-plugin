@@ -11,6 +11,7 @@ using Newtonsoft.Json.Linq;
 using Serilog;
 using Snyk.VisualStudio.Extension;
 using Snyk.VisualStudio.Extension.Authentication;
+using Snyk.VisualStudio.Extension.CLI;
 using Snyk.VisualStudio.Extension.Download;
 using Snyk.VisualStudio.Extension.Extension;
 using Snyk.VisualStudio.Extension.Language;
@@ -115,6 +116,24 @@ namespace Snyk.VisualStudio.Extension.UI.Html
                                         updateOverrideTracker: true,
                                         editedKeys: applyResult.EditedKeys,
                                         resetKeys: applyResult.ResetKeys);
+
+                    // After the save, so a rolled-back apply cannot trigger it, and before the caller is
+                    // released, so the request is ordered rather than racing the dialog closing. Download
+                    // only queues work, so this costs the caller nothing.
+                    //
+                    // A settings push cannot move the running server onto a different executable — the one
+                    // it was launched with was resolved at activation — so the whole start-of-day check is
+                    // re-run: it fetches a newer binary when automatic management is on, and requests the
+                    // restart without fetching anything when it is off.
+                    if (applyResult.CliSettingsChanged)
+                    {
+                        // EnsureCliReady declines while any scan or download is in flight — it cannot
+                        // replace the binary underneath a running scan — and logs that itself. Not
+                        // pre-checked here: the check and the call cannot be made atomic, so a pre-check
+                        // only produces a log line that contradicts what actually happened.
+                        Logger.Information("CLI settings changed; requesting the CLI check that moves the language server onto the configured binary");
+                        serviceProvider.TasksService?.EnsureCliReady(cliSettingsChanged: true);
+                    }
 
                     tcs.TrySetResult(true);
                 }
@@ -254,14 +273,23 @@ namespace Snyk.VisualStudio.Extension.UI.Html
         // null by "Reset overrides"). The two channels never overlap for a single save.
         private readonly struct ApplyResult
         {
-            public ApplyResult(IReadOnlyCollection<string> editedKeys, IReadOnlyCollection<string> resetKeys)
+            public ApplyResult(
+                IReadOnlyCollection<string> editedKeys,
+                IReadOnlyCollection<string> resetKeys,
+                bool cliSettingsChanged)
             {
                 EditedKeys = editedKeys;
                 ResetKeys = resetKeys;
+                CliSettingsChanged = cliSettingsChanged;
             }
 
             public IReadOnlyCollection<string> EditedKeys { get; }
             public IReadOnlyCollection<string> ResetKeys { get; }
+
+            // Whether this save changed which CLI should be running. Carried out to the caller rather
+            // than acted on during apply, because apply can still be rolled back and nothing is on disk
+            // until Save returns.
+            public bool CliSettingsChanged { get; }
         }
 
         // Returns the form-driven edit-delta: the global pflag keys that each Apply* method
@@ -342,10 +370,11 @@ namespace Snyk.VisualStudio.Extension.UI.Html
             // method returns — so a mid-apply failure would otherwise leave Options half-applied in
             // memory, diverging from disk until restart. On failure we restore and rethrow.
             var rollback = SnapshotOptionsForRollback();
+            bool cliSettingsChanged;
             try
             {
                 // Always apply CLI settings and Insecure setting
-                ApplyCliSettings(config, editedKeys);
+                cliSettingsChanged = ApplyCliSettings(config, editedKeys);
                 ApplyInsecureSetting(config, editedKeys);
 
                 // Only apply full settings when not in CLI-only mode
@@ -381,7 +410,7 @@ namespace Snyk.VisualStudio.Extension.UI.Html
             // key is never a value-apply, so this channel is disjoint from editedKeys by construction.
             var resetKeys = DetectGlobalResetKeys(root);
 
-            return new ApplyResult(editedKeys, resetKeys);
+            return new ApplyResult(editedKeys, resetKeys, cliSettingsChanged);
         }
 
         // Parses the raw settings-save JSON to a JObject a SINGLE time (IDE-2152 cleanup #5). The
@@ -667,8 +696,22 @@ namespace Snyk.VisualStudio.Extension.UI.Html
             editedKeys.Add(PflagKeys.TrustedFolders);
         }
 
-        private void ApplyCliSettings(IdeConfigData config, ICollection<string> editedKeys)
+        /// <summary>
+        /// Applies the CLI settings and reports whether any of them changed the binary the language
+        /// server should be running.
+        /// <para>
+        /// The comparison is old-versus-new here, at the point of the write, because this is the one
+        /// place both values exist and the one place the change is known to be the user's: the language
+        /// server echoes these same settings back through <c>GlobalSettingsApplier</c>, and reacting to
+        /// that echo would restart the server on its own configuration.
+        /// </para>
+        /// </summary>
+        private bool ApplyCliSettings(IdeConfigData config, ICollection<string> editedKeys)
         {
+            var previousCliPath = Options.CliCustomPath;
+            var previousAutoUpdate = Options.BinariesAutoUpdate;
+            var previousReleaseChannel = Options.CliReleaseChannel;
+
             // Allow empty values to reset settings. Trimmed like the two below: the stored value is
             // compared verbatim elsewhere (the override tracker, the settings UI), so surrounding
             // whitespace turns an untouched default into an apparent custom value.
@@ -707,7 +750,39 @@ namespace Snyk.VisualStudio.Extension.UI.Html
                 Options.CliReleaseChannel = config.CliReleaseChannel.Trim();
                 editedKeys.Add(PflagKeys.CliReleaseChannel);
             }
+
+            // The download mirror is deliberately absent: it changes where the next fetch comes from, not
+            // which executable should be running, and a CLI already matching the latest checksum is not
+            // re-fetched from the new host anyway.
+            return DidCliSettingsChange(
+                previousCliPath, previousAutoUpdate, previousReleaseChannel,
+                Options.CliCustomPath, Options.BinariesAutoUpdate, Options.CliReleaseChannel);
         }
+
+        /// <summary>
+        /// Whether a save changed which CLI the language server should be running, or how it is obtained.
+        /// <para>
+        /// Both sides are resolved before comparing, because that is the form everything downstream uses:
+        /// the client launches <c>GetCliFilePath(...)</c> and the download URL is built from
+        /// <c>ResolveReleaseChannel(...)</c>. Comparing the raw fields instead scores a blank path against
+        /// the default location, and a blank channel against "stable", as changes — and the settings page
+        /// is populated from the resolved values the language server was sent, so a user with no custom
+        /// path posts the default path back on the first save and would be charged a restart for it.
+        /// Paths compare case-insensitively, being Windows paths; the resolved channel does not.
+        /// </para>
+        /// </summary>
+        internal static bool DidCliSettingsChange(
+            string previousCliPath, bool previousAutoUpdate, string previousReleaseChannel,
+            string cliPath, bool autoUpdate, string releaseChannel) =>
+            !string.Equals(
+                SnykCli.GetCliFilePath(previousCliPath),
+                SnykCli.GetCliFilePath(cliPath),
+                StringComparison.OrdinalIgnoreCase)
+            || previousAutoUpdate != autoUpdate
+            || !string.Equals(
+                SnykCliDownloader.ResolveReleaseChannel(previousReleaseChannel),
+                SnykCliDownloader.ResolveReleaseChannel(releaseChannel),
+                StringComparison.Ordinal);
 
         private void ApplyFilterSettings(IdeConfigData config, ICollection<string> editedKeys)
         {

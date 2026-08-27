@@ -32,9 +32,9 @@
         void CancelIfCancellationRequested();
 
         /// <summary>
-        /// Notify download cancelled.
+        /// Notify that a download which had started was cancelled.
         /// </summary>
-        /// <param name="message">Cancelled message.</param>
-        void DownloadCancelled(string message);
+        /// <param name="message">Cancellation message.</param>
+        void CliDownloadAborted(string message);
     }
 }

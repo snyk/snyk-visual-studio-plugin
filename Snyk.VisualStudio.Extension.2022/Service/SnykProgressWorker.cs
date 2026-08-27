@@ -55,9 +55,9 @@
         public void DownloadStarted() => this.TasksService.OnDownloadStarted();
 
         /// <summary>
-        /// Notify donwload cancelled.
+        /// Notify that a download which had started was cancelled.
         /// </summary>
-        /// <param name="message">Cancelled message.</param>
-        public void DownloadCancelled(string message) => this.TasksService.OnDownloadCancelled(message);
+        /// <param name="message">Cancellation message.</param>
+        public void CliDownloadAborted(string message) => this.TasksService.OnCliDownloadAborted(message);
     }
 }
