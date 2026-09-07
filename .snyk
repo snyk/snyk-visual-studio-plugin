@@ -5,4 +5,14 @@ exclude:
     - Snyk.Code.Library.Tests
     - Snyk.Common.Tests
     - Snyk.VisualStudio.Extension.Tests
+# ignores vulnerabilities until expiry date; change duration by modifying expiry date
+ignore:
+  SNYK-DOTNET-SYSTEMTEXTJSON-8168848:
+    - '*':
+        reason: >-
+          Not relevant for extension development context. We need to support VS 17.4.
+          Runtime vulnerability see -
+          https://docs.snyk.io/scan-applications/supported-languages-and-frameworks/.net#tackling-vulnerabilities-from-runtime-dependencies
+        expires: 2027-09-07T00:00:00.000Z
+        created: 2024-10-23T13:14:00.384Z
 patch: {}
