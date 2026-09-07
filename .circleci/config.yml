@@ -5,17 +5,23 @@ orbs:
 
 
 jobs:
-  # Security scans have been implemented fully as GitHub actions in .github/workflows
   security-scans:
-    resource_class: small
+    resource_class: medium
     docker:
-      - image: cimg/go:1.21
+      - image: mcr.microsoft.com/dotnet/sdk:8.0
     steps:
       - checkout
+      - run:
+          name: Restore dependencies
+          command: dotnet restore
       - prodsec/security_scans:
           mode: auto
-          code-scan: disabled
-          open-source-scan: disabled
+          sudo-install: false
+          # --remote-repo-url pins both scans to the Snyk target GitHub Actions' snyk monitor
+          # already reports to. Without it, CircleCI's SSH checkout URL resolves to a different
+          # remoteUrl and Snyk creates a separate target instead of continuing the existing one.
+          open-source-additional-arguments: --exclude=Snyk.VisualStudio.Extension.Tests,Snyk.Common.Tests,Snyk.Code.Library.Tests,Tests --remote-repo-url=http://github.com/snyk/snyk-visual-studio-plugin
+          code-additional-arguments: --remote-repo-url=http://github.com/snyk/snyk-visual-studio-plugin
           iac-scan: disabled
 
 workflows:
