@@ -3,6 +3,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using Microsoft.VisualStudio.Shell;
 using Microsoft.VisualStudio.Threading;
@@ -96,14 +97,17 @@ namespace Snyk.VisualStudio.Extension.Language
             // unescapes each query value once, and pre-unescaping double-decodes any value with a
             // percent sequence and can produce a string that makes new Uri(...) throw. Guard the
             // parse so a malformed URI can't escape this JSON-RPC handler.
+            Logger.Debug("OnShowDocument received uri: {Uri}", showDocumentParams.Uri);
+            var rawUri = RepairSnykSchemeAuthority(showDocumentParams.Uri);
+
             Uri uri;
             try
             {
-                uri = new Uri(showDocumentParams.Uri);
+                uri = new Uri(rawUri);
             }
             catch (UriFormatException ex)
             {
-                Logger.Warning(ex, "Ignoring showDocument request with malformed URI");
+                Logger.Warning(ex, "Ignoring showDocument request with malformed URI: {Uri}", showDocumentParams.Uri);
                 return;
             }
 
@@ -136,6 +140,21 @@ namespace Snyk.VisualStudio.Extension.Language
                 selection.Start.Character,
                 selection.End.Line,
                 selection.End.Character);
+        }
+
+        // LS at protocol 25 could emit "snyk://C:%5CMac..." which was parsed as host:port.
+        // Rebuild as "snyk:///C:/Mac...". Same shape as the file:// URI schema for Windows paths (RFC 8089), which .NET parses cleanly.
+        internal static string RepairSnykSchemeAuthority(string rawUri)
+        {
+            if (!Regex.IsMatch(rawUri, "^snyk://[A-Za-z]:%5C")) return rawUri;
+
+            var queryIndex = rawUri.IndexOf('?');
+            var head = queryIndex >= 0 ? rawUri.Substring(0, queryIndex) : rawUri;
+            var query = queryIndex >= 0 ? rawUri.Substring(queryIndex) : "";
+            var drivePath = head.Substring("snyk://".Length).Replace("%5C", "/");
+            var repairedUri = "snyk:///" + drivePath + query;
+            Logger.Debug("RepairSnykSchemeAuthority transformed uri: {Uri}", repairedUri);
+            return repairedUri;
         }
 
         // The tree emits product codenames ("code"/"oss"/"iac") in the detail-panel URI, while
