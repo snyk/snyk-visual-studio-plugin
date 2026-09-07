@@ -19,6 +19,17 @@ vstest.console.exe **\bin\**\*Integration.Tests.dll
 
 The documented local workflow is opening `snyk-visual-studio-plugin.sln` in Visual Studio 2022 and using Build/Test Explorer directly. Tests use xUnit with Moq for mocking.
 
+### macOS development
+
+If working from macOS, commands can be run directly inside the Windows dev VM via `prlctl exec "<VM name>" <args...>`.
+N.b.:
+- Pass args separately, not as one quoted string.
+- Find your VM's exact name via `prlctl list -a` (`Windows 11` is Parallels' default).
+- By default this runs as `NT AUTHORITY\SYSTEM`; add `--current-user` right after the VM name to run as the logged-in user instead (needed for anything user-context-sensitive, e.g. registry reads).
+- Keep the console window hidden by default, unless it makes sense to show it for the task. Run via `powershell.exe -WindowStyle Hidden -Command '...'` (single-quoted in Bash). `-WindowStyle Hidden` hides the window shortly *after* it spawns, not before, so a brief flash on each call is normal.
+- The Mac's home directory is *usually* reachable from inside the VM as one of `Z:\`, `\\psf\Home`, `\\Mac\Home`, or `C:\Mac\Home`. Not every VM has all of these mapped, so verify with `net use` / `Test-Path` before relying on one. `C:\Users\<user>\Documents` is a separate, local, usually-empty folder, even though Windows' Documents *shell folder* may be redirected there for interactive use.
+- For anything beyond a trivial one-liner, write the PowerShell to a `.ps1` file (e.g. under one of the shared-folder paths above, so both host and guest can read/write it) and run it with `powershell.exe -WindowStyle Hidden -ExecutionPolicy Bypass -File "..."` instead. Complex inline `-Command` strings (nested quotes, `$_`, operators) commonly come out mangled through the exec layer.
+
 ## Architecture
 
 Main project: `Snyk.VisualStudio.Extension.2022/` (root namespace `Snyk.VisualStudio.Extension`), organized by feature folder:
