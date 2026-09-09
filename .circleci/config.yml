@@ -17,6 +17,8 @@ jobs:
       - prodsec/security_scans:
           mode: auto
           sudo-install: false
+          open-source-agentic-fix-enabled: true
+          open-source-agentic-fix-base-branch: main
           # --remote-repo-url pins both scans to the Snyk target GitHub Actions' snyk monitor
           # already reports to. Without it, CircleCI's SSH checkout URL resolves to a different
           # remoteUrl and Snyk creates a separate target instead of continuing the existing one.
