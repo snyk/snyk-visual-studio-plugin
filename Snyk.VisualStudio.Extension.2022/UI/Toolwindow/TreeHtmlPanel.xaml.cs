@@ -19,7 +19,7 @@ namespace Snyk.VisualStudio.Extension.UI.Toolwindow
     /// </summary>
     public partial class TreeHtmlPanel : UserControl, ITreeHtmlPanel, IDisposable
     {
-        private static readonly ILogger Logger = LogManager.ForContext<TreeHtmlPanel>();
+        private static ILogger Logger => LogManager.ForContext<TreeHtmlPanel>();
 
         private readonly IWebView2Host host;
         private readonly IHtmlProvider htmlProvider = TreeHtmlProvider.Instance;
