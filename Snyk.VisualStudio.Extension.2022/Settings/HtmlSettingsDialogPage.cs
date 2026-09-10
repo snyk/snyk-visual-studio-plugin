@@ -33,7 +33,7 @@ namespace Snyk.VisualStudio.Extension.Settings
     [ComVisible(true)]
     public class HtmlSettingsDialogPage : UIElementDialogPage
     {
-        private static readonly ILogger Logger = LogManager.ForContext<HtmlSettingsDialogPage>();
+        private static ILogger Logger => LogManager.ForContext<HtmlSettingsDialogPage>();
 
         private ISnykServiceProvider serviceProvider;
         private readonly Border hostBorder = new Border();
