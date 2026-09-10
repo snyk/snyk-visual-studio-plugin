@@ -5,6 +5,7 @@
 // docs/plans/IDE-2558-serilog-assembly-resolution.md.
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Reflection;
 using Snyk.VisualStudio.Extension;
@@ -27,14 +28,50 @@ namespace Snyk.VisualStudio.Extension.Tests
         [Fact]
         public void ExtensionAssembly_DeclaresNoStaticFieldTypedInSerilogAssembly()
         {
-            var offending = GetLoadableTypes(typeof(SnykVSPackage).Assembly)
-                .Where(t => !AllowedTypes.Contains(t.FullName))
-                .SelectMany(t => t.GetFields(BindingFlags.Static | BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.DeclaredOnly)
-                    .Where(FieldTouchesSerilogAssembly)
-                    .Select(f => $"{t.FullName}.{f.Name}"))
-                .ToList();
+            var offending = new List<string>();
+            var unresolvable = new List<string>();
 
-            Assert.Empty(offending);
+            foreach (var type in GetLoadableTypes(typeof(SnykVSPackage).Assembly))
+            {
+                if (AllowedTypes.Contains(type.FullName))
+                {
+                    continue;
+                }
+
+                var fields = type.GetFields(BindingFlags.Static | BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.DeclaredOnly);
+                foreach (var field in fields)
+                {
+                    bool touchesSerilog;
+                    try
+                    {
+                        touchesSerilog = FieldTouchesSerilogAssembly(field);
+                    }
+                    catch (Exception ex) when (ex is TypeLoadException || ex is FileNotFoundException || ex is FileLoadException || ex is BadImageFormatException)
+                    {
+                        // The field's declared type couldn't be resolved (e.g. its assembly isn't
+                        // present in the test host). That is exactly the unknown state this pin
+                        // must not wave through, so it goes in a separate, always-reported bucket
+                        // instead of being counted as clean.
+                        unresolvable.Add($"{type.FullName}.{field.Name} ({ex.GetType().Name})");
+                        continue;
+                    }
+
+                    if (touchesSerilog)
+                    {
+                        offending.Add($"{type.FullName}.{field.Name}");
+                    }
+                }
+            }
+
+            var message = "Serilog-typed static fields: " + Describe(offending) +
+                          ". Fields that could not be inspected (declared type failed to load; verify manually): " + Describe(unresolvable);
+
+            Assert.True(offending.Count == 0 && unresolvable.Count == 0, message);
+        }
+
+        private static string Describe(List<string> names)
+        {
+            return names.Count == 0 ? "(none)" : string.Join(", ", names);
         }
 
         private static IEnumerable<Type> GetLoadableTypes(Assembly assembly)
