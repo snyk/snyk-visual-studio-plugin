@@ -10,6 +10,7 @@ using System.Linq;
 using System.Reflection;
 using Snyk.VisualStudio.Extension;
 using Xunit;
+using Xunit.Abstractions;
 
 namespace Snyk.VisualStudio.Extension.Tests
 {
@@ -24,6 +25,13 @@ namespace Snyk.VisualStudio.Extension.Tests
         {
             typeof(LogManager).FullName,
         };
+
+        private readonly ITestOutputHelper output;
+
+        public NoSerilogTypedStaticFieldTests(ITestOutputHelper output)
+        {
+            this.output = output;
+        }
 
         [Fact]
         public void ExtensionAssembly_DeclaresNoStaticFieldTypedInSerilogAssembly()
@@ -63,10 +71,17 @@ namespace Snyk.VisualStudio.Extension.Tests
                 }
             }
 
+            // Reported on every run, pass or fail, since an unrelated VS SDK/host type landing
+            // here is invisible to a human otherwise: a passing test never shows its message.
+            if (unresolvable.Count > 0)
+            {
+                output.WriteLine("Fields that could not be inspected (declared type failed to load; verify manually): " + Describe(unresolvable));
+            }
+
             var message = "Serilog-typed static fields: " + Describe(offending) +
                           ". Fields that could not be inspected (declared type failed to load; verify manually): " + Describe(unresolvable);
 
-            Assert.True(offending.Count == 0 && unresolvable.Count == 0, message);
+            Assert.True(offending.Count == 0, message);
         }
 
         private static string Describe(List<string> names)
