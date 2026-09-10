@@ -15,7 +15,7 @@ namespace Snyk.VisualStudio.Extension.UI.Html
     /// </summary>
     public class WebView2MessageDispatcher
     {
-        private static readonly ILogger Logger = LogManager.ForContext<WebView2MessageDispatcher>();
+        private static ILogger Logger => LogManager.ForContext<WebView2MessageDispatcher>();
 
         private readonly Dictionary<string, Registration> _handlers =
             new Dictionary<string, Registration>(StringComparer.Ordinal);
