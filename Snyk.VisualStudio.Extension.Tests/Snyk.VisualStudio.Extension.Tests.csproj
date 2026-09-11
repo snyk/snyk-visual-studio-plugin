@@ -55,9 +55,6 @@
     <PackageReference Include="Microsoft.VisualStudio.LanguageServer.Protocol" Version="17.2.8" />
     <PackageReference Include="Microsoft.VisualStudio.Threading" Version="17.6.40" />
     <PackageReference Include="Community.VisualStudio.Toolkit.17" Version="17.0.394" />
-    <!-- VS-MEF part discovery for the binding-redirect acceptance test; matches the version
-         Microsoft.VisualStudio.Sdk.TestFramework 17.6.16 already pulls in transitively. -->
-    <PackageReference Include="Microsoft.VisualStudio.Composition" Version="17.6.17" />
   </ItemGroup>
 
   <ItemGroup>

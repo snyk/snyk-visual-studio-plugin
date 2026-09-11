@@ -1,20 +1,24 @@
-// With another extension's process-wide Serilog binding redirect in effect, VS-MEF must still be
-// able to discover this extension's MEF parts.
+// With another extension's process-wide Serilog binding redirect in effect, the extension assembly
+// must still survive the type enumeration Visual Studio's MEF catalog discovery runs over it.
 //
 // Targets the main extension assembly because source.extension.vsixmanifest declares that assembly
-// itself as the Microsoft.VisualStudio.MefComponent asset, so it is what a real VS instance runs
-// AttributedPartDiscovery over.
+// itself as the Microsoft.VisualStudio.MefComponent asset, so it is what a real VS instance
+// enumerates.
+//
+// The probe reproduces what VS-MEF does to trip this bug — Assembly.GetTypes() plus resolving the
+// declared types of each type's fields and properties — using nothing but reflection. Running the
+// real VS-MEF engine inside the probe domain was tried first and could not load its own dependency
+// closure there, which failed the test for a reason that had nothing to do with the bug.
 //
 // Covers the identity alignment only: our Serilog reference is 4.4.0.0, above the ceiling of the
 // GitLab redirect below, so that redirect never applies to it. [ProvideBindingPath] on
 // SnykVSPackage is NOT covered, because it takes effect through VS's own probing path when the
 // shell loads the package, and a bare AppDomain has no equivalent.
 using System;
+using System.Collections.Generic;
 using System.IO;
-using System.Linq;
 using System.Reflection;
 using System.Xml;
-using Microsoft.VisualStudio.Composition;
 using Xunit;
 
 namespace Snyk.VisualStudio.Extension.Tests
@@ -25,35 +29,33 @@ namespace Snyk.VisualStudio.Extension.Tests
         private const string SerilogPublicKeyToken = "24c2f752a8e58a10";
 
         [Fact]
-        public void MefDiscovery_UnderGitLabsSerilogRedirect_DiscoversExtensionParts()
+        public void TypeEnumeration_UnderGitLabsSerilogRedirect_Succeeds()
         {
             // GitLab for Visual Studio 0.80.0's exact redirect, as VS merges it into the
             // process-wide devenv.exe.config from that extension's shipped pkgdef. Our old Serilog
             // reference (2.12.0, AssemblyVersion 2.0.0.0) fell inside this range and was rewritten
             // to demand 4.3.0.0, a version nobody shipped.
-            var failure = DiscoverPartsUnderSerilogRedirect("0.0.0.0-4.3.0.0", "4.3.0.0");
+            var failure = EnumerateExtensionTypesUnderSerilogRedirect("0.0.0.0-4.3.0.0", "4.3.0.0");
 
-            Assert.True(failure == null, "MEF discovery failed under GitLab's Serilog redirect: " + failure);
+            Assert.True(failure == null, "Type enumeration failed under GitLab's Serilog redirect: " + failure);
         }
 
         // Negative control for the test above. Without it, that test passing proves nothing: it
-        // would also pass if this harness were incapable of reproducing the failure at all. Here
-        // the redirect targets a Serilog nobody ships, so discovery MUST fail — if it does not,
-        // the harness is not exercising the bind the bug lives in and the positive test is
-        // worthless.
+        // would also pass if this harness never reached the assembly bind the bug lives in. Here
+        // the redirect targets a Serilog nobody ships, so enumeration MUST fail.
         [Fact]
-        public void MefDiscovery_UnderRedirectToAnUnshippedSerilog_Fails()
+        public void TypeEnumeration_UnderRedirectToAnUnshippedSerilog_Fails()
         {
-            var failure = DiscoverPartsUnderSerilogRedirect("0.0.0.0-9.9.0.0", "9.9.0.0");
+            var failure = EnumerateExtensionTypesUnderSerilogRedirect("0.0.0.0-9.9.0.0", "9.9.0.0");
 
             Assert.False(
                 failure == null,
-                "MEF discovery succeeded under a redirect to Serilog 9.9.0.0, which nothing ships. " +
-                "This harness is not reaching the assembly bind that IDE-2558 turns on, so the " +
-                "companion test proves nothing.");
+                "Type enumeration succeeded under a redirect to Serilog 9.9.0.0, which nothing ships. " +
+                "This harness is not reaching the assembly bind the fix targets, so the companion " +
+                "test proves nothing.");
         }
 
-        private static string DiscoverPartsUnderSerilogRedirect(string oldVersionRange, string newVersion)
+        private static string EnumerateExtensionTypesUnderSerilogRedirect(string oldVersionRange, string newVersion)
         {
             var extensionAssemblyPath = typeof(SnykVSPackage).Assembly.Location;
             var appBase = Path.GetDirectoryName(typeof(MefDiscoveryTests).Assembly.Location);
@@ -74,7 +76,7 @@ namespace Snyk.VisualStudio.Extension.Tests
                     typeof(RedirectProbe).Assembly.Location,
                     typeof(RedirectProbe).FullName);
 
-                return probe.DiscoverPartsAndReturnFailureOrNull(extensionAssemblyPath);
+                return probe.EnumerateTypesAndReturnFailureOrNull(extensionAssemblyPath);
             }
             finally
             {
@@ -87,36 +89,14 @@ namespace Snyk.VisualStudio.Extension.Tests
             }
         }
 
-        /// <summary>
-        /// Starts from the test assembly's own generated config rather than an empty document. That
-        /// config carries the binding redirects the SDK generates for this project, and
-        /// Microsoft.VisualStudio.Composition's dependency closure does not bind without them — a
-        /// hand-rolled minimal config makes the probe domain fail to load the discovery engine,
-        /// which looks exactly like the failure under test but is not it.
-        /// </summary>
         private static string WriteConfigWithSerilogRedirect(string oldVersionRange, string newVersion)
         {
             var document = new XmlDocument();
-            var hostConfig = typeof(MefDiscoveryTests).Assembly.Location + ".config";
+            document.LoadXml("<configuration />");
 
-            if (File.Exists(hostConfig))
-            {
-                document.Load(hostConfig);
-            }
-            else
-            {
-                document.LoadXml("<configuration />");
-            }
-
-            var configuration = document.DocumentElement
-                ?? (XmlElement)document.AppendChild(document.CreateElement("configuration"));
-
-            var runtime = configuration["runtime"]
-                ?? (XmlElement)configuration.AppendChild(document.CreateElement("runtime"));
-
-            var assemblyBinding = runtime["assemblyBinding", AsmBindingNamespace]
-                ?? (XmlElement)runtime.AppendChild(document.CreateElement("assemblyBinding", AsmBindingNamespace));
-
+            var runtime = (XmlElement)document.DocumentElement.AppendChild(document.CreateElement("runtime"));
+            var assemblyBinding = (XmlElement)runtime.AppendChild(
+                document.CreateElement("assemblyBinding", AsmBindingNamespace));
             var dependentAssembly = (XmlElement)assemblyBinding.AppendChild(
                 document.CreateElement("dependentAssembly", AsmBindingNamespace));
 
@@ -136,43 +116,68 @@ namespace Snyk.VisualStudio.Extension.Tests
             return configPath;
         }
 
-        // Runs inside the child AppDomain under the foreign redirect. Takes the target assembly's
-        // path rather than a static reference to it, so this class stays loadable and callable even
-        // before the target assembly has bound cleanly.
+        // Runs inside the child AppDomain under the foreign redirect. Deliberately depends on
+        // nothing beyond mscorlib: anything else would have to bind inside that domain too, and a
+        // failure to do so is indistinguishable from the failure under test. It takes the target
+        // assembly's path rather than a static reference for the same reason.
         public class RedirectProbe : MarshalByRefObject
         {
-            public string DiscoverPartsAndReturnFailureOrNull(string assemblyPath)
+            public string EnumerateTypesAndReturnFailureOrNull(string assemblyPath)
             {
+                var failures = new List<string>();
+                Type[] types;
+
                 try
                 {
                     var assembly = Assembly.LoadFrom(assemblyPath);
-
-                    // MEF1 attributes (System.ComponentModel.Composition) are what this codebase's
-                    // [Export]/[ImportingConstructor] attributes actually are; MEF2 discovery is
-                    // combined in because VsMefHostServices.DefaultAssemblies / VS's real
-                    // component-model host does the same combination.
-                    var discovery = PartDiscovery.Combine(
-                        new AttributedPartDiscoveryV1(Resolver.DefaultInstance),
-                        new AttributedPartDiscovery(Resolver.DefaultInstance, isNonPublicSupported: true));
-
-                    var discovered = discovery.CreatePartsAsync(assembly).GetAwaiter().GetResult();
-
-                    if (discovered.DiscoveryErrors.Count > 0)
+                    types = assembly.GetTypes();
+                }
+                catch (ReflectionTypeLoadException ex)
+                {
+                    foreach (var loaderException in ex.LoaderExceptions)
                     {
-                        return string.Join("; ", discovered.DiscoveryErrors.Select(e => e.ToString()));
+                        failures.Add(loaderException.Message);
                     }
 
-                    if (discovered.Parts.Count == 0)
-                    {
-                        return "MEF discovered zero parts in " + assemblyPath;
-                    }
-
-                    return null;
+                    return string.Join("; ", failures.ToArray());
                 }
                 catch (Exception ex)
                 {
                     return ex.ToString();
                 }
+
+                if (types.Length == 0)
+                {
+                    return "No types found in " + assemblyPath;
+                }
+
+                // GetTypes() alone does not force every member signature to resolve. VS-MEF reads
+                // the declared type of each field and property while building part metadata, and
+                // that read is what binds Serilog.
+                foreach (var type in types)
+                {
+                    const BindingFlags All = BindingFlags.Public | BindingFlags.NonPublic
+                        | BindingFlags.Instance | BindingFlags.Static | BindingFlags.DeclaredOnly;
+
+                    try
+                    {
+                        foreach (var field in type.GetFields(All))
+                        {
+                            GC.KeepAlive(field.FieldType);
+                        }
+
+                        foreach (var property in type.GetProperties(All))
+                        {
+                            GC.KeepAlive(property.PropertyType);
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        failures.Add(type.FullName + ": " + ex.Message);
+                    }
+                }
+
+                return failures.Count == 0 ? null : string.Join("; ", failures.ToArray());
             }
         }
     }
