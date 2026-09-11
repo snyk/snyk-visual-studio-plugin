@@ -1,8 +1,8 @@
-// Unit tests for IDE-2558's ExtensionAssemblyResolver.ResolveCandidatePath, the pure decision
+// Unit tests for ExtensionAssemblyResolver.ResolveCandidatePath, the pure decision
 // seam behind the extension-scoped AppDomain.AssemblyResolve fallback.
 //
 // These exercise only the injectable, side-effect-free decision logic — no real AppDomain,
-// no real file system, no Serilog. See docs/plans/IDE-2558-serilog-assembly-resolution.md.
+// no real file system, no Serilog.
 using System.IO;
 using Snyk.VisualStudio.Extension;
 using Xunit;

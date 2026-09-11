@@ -24,8 +24,7 @@ namespace Snyk.VisualStudio.Extension
     /// <summary>
     /// A narrow, extension-scoped <see cref="AppDomain.AssemblyResolve"/> fallback: given a failed
     /// default resolution, looks for <c>&lt;simple name&gt;.dll</c> next to the Snyk extension
-    /// assembly and loads it if found. See
-    /// docs/plans/IDE-2558-serilog-assembly-resolution.md for the full design rationale.
+    /// assembly and loads it if found.
     ///
     /// Every catch here is silent by necessity: this handler may itself be in the middle of
     /// resolving Serilog, so it must never call into Serilog/LogManager or throw. It traces via
