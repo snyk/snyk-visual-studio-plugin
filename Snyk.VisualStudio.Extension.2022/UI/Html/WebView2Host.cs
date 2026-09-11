@@ -43,7 +43,7 @@ namespace Snyk.VisualStudio.Extension.UI.Html
     /// </remarks>
     public sealed class WebView2Host : IWebView2Host
     {
-        private static readonly ILogger Logger = LogManager.ForContext<WebView2Host>();
+        private static ILogger Logger => LogManager.ForContext<WebView2Host>();
 
         private readonly WebView2 _webView;
         private readonly WebView2MessageDispatcher _dispatcher;

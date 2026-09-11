@@ -2,130 +2,199 @@
 # IDE-2558 — SnykVSPackage fails to load ("not loaded correctly", FileNotFoundException: Serilog)
 
 ## Problem (customer outcome)
-On some machines Visual Studio shows "The SnykVSPackage package was not loaded correctly" at
-startup when it reconstructs a persisted Snyk tool window. The ActivityLog records a
-`FileNotFoundException` for `Serilog` thrown from `SnykVSPackage`'s static constructor (`.cctor`).
-The reporter had **GitLab for Visual Studio 0.80.0** installed alongside Snyk; a second, related
-report (ZED Technologies) saw the same failure mode for `System.Diagnostics.DiagnosticSource`.
+With the Snyk extension and GitLab for Visual Studio both installed, Visual Studio shows "The
+SnykVSPackage package was not loaded correctly" at startup when it restores a persisted Snyk tool
+window. Snyk is then unusable for that session. Nothing lands in `snyk-extension.log`, because
+Serilog is the thing that failed to load, so `ActivityLog.xml` is the only record.
 
-## Root cause (verified by inspection)
-1. `SnykVSPackage` has a `private static readonly ILogger Logger = LogManager.ForContext<SnykVSPackage>();`
-   field initializer. Static field initializers run as part of the type's `.cctor`, which the CLR
-   guarantees runs to completion (or never runs again — it's poisoned) before the type is first
-   used. `LogManager.ForContext<T>()` touches `Serilog`, `Serilog.Core`, `Serilog.Exceptions`, so the
-   very first reference to `SnykVSPackage` (VS reconstructing a persisted tool window calls into the
-   package machinery before `InitializeAsync`) forces a `Serilog` assembly load right there in the
-   `.cctor`.
-2. Historically, `ManualAssemblyResolver.Initialize(extensionInstallDir)` was called early enough
-   (from the VSIX host bootstrap) to backstop exactly this kind of load — VS extensions are not
-   guaranteed to be loaded from a probing path that includes every extension's private dependency
-   folder side by side, and when a second extension's `AssemblyResolve` handler (or a shared
-   probing path collision) intercepts the request first, or answers first with an incompatible
-   version, the default binder can fail with `FileNotFoundException` even though a copy of
-   `Serilog.dll` sits right next to `Snyk.VisualStudio.Extension.dll`. `ManualAssemblyResolver`'s
-   call site was dropped in `aa422b1` (PR #74) — well before PR #287, which only renamed/relocated
-   files — leaving the class itself behind, dead, never called from anywhere.
-3. With no backstop and the eager static dependency, any hiccup in resolving `Serilog` (or its
-   transitive `Serilog.Exceptions`) during `SnykVSPackage..cctor` crashes package construction, and
-   VS reports the generic "package was not loaded correctly" dialog instead of surfacing Snyk
-   functionality at all — including the tool window itself, since MEF/`ProvideToolWindow`
-   reconstruction is what triggers the first touch.
+A second customer (ZED Technologies) hit the same failure shape for
+`System.Diagnostics.DiagnosticSource` instead of Serilog.
 
-## Fix
-Two independent, complementary changes — either alone reduces the blast radius, together they
-close the class of bug:
+## Root cause (verified 2026-09-10)
+Three separate facts have to line up, and all three are now confirmed rather than inferred.
 
-1. **Remove the eager Serilog dependency from `SnykVSPackage`'s type initializer.** `Logger` is a
-   property that calls `LogManager.ForContext<SnykVSPackage>()` on every access — there is no
-   static field at all, so `SnykVSPackage..cctor` executes no Serilog code. `LogManager.ForContext`
-   already does the expensive work once behind its own `Lazy<Logger>`, so the per-call cost here is
-   a wrapper allocation. The first `Serilog` touch is deferred to the first actual log call, which
-   happens deep inside `InitializeAsync` (already wrapped in try/catch) rather than at bare type
-   construction.
-2. **Reinstate a narrow, defensive `AppDomain.AssemblyResolve` fallback**, scoped to the Snyk
-   extension only, registered as early as physically possible (a C# **module initializer**, which
-   the CLR runs before any other code in the module — including any type's `.cctor` — the first
-   time any type in the module is touched). Unlike the old `ManualAssemblyResolver`:
-   - It resolves **lazily**, one requested assembly at a time, via `Assembly.LoadFrom` against
-     `<simple name>.dll` in the extension's own install directory
-     (`Path.GetDirectoryName(typeof(SnykVSPackage).Assembly.Location)`) — it never walks the
-     directory or preloads anything, so it can't choke on native DLLs (`WebView2Loader.dll`,
-     `runtimes/**/*.dll`) the way the old recursive `Directory.GetFileSystemEntries(...,
-     AllSearchOption.AllDirectories)` + eager `Assembly.LoadFrom` did.
-   - It only answers requests that are unambiguously "ours": `args.RequestingAssembly == null`, or
-     a `RequestingAssembly` whose `Location` is inside the Snyk install directory. A
-     `RequestingAssembly` that exists but whose location can't be determined (an in-memory or
-     dynamic assembly, or an empty `Location`) is explicitly declined rather than treated as ours —
-     `Assembly.Load(byte[])` and dynamic assemblies both make "no requesting assembly" and "unknown
-     requesting assembly" look the same unless they're tracked separately. Matching is on simple
-     name only, with no version/PublicKeyToken check (binding redirects mean the requested version
-     routinely differs from the on-disk one, so a strict check would decline valid resolutions and
-     reinstate this ticket's own bug). This means the handler still cannot rule out handing a
-     foreign extension in the Snyk directory's own scope a same-named assembly at the wrong
-     version — that residual risk is accepted, not eliminated.
-   - It declines (`null`, no probing) satellite-resource requests (`*.resources`) — those are
-     expected to fail per-culture and are not ours to answer.
-   - It never throws and never touches `LogManager`/`Serilog`/anything outside `mscorlib`/`System`
-     — it may be being asked to resolve Serilog itself, so calling into Serilog from inside the
-     handler would be use-before-ready at best and unbounded recursion at worst.
-   - Registration is idempotent and thread-safe (`Interlocked.CompareExchange` guard) — a module
-     initializer runs once per AppDomain per module load, but the guard makes the safety
-     independently verifiable and defends against any future direct call.
+**1. GitLab for Visual Studio rewrites everyone's Serilog version.** Its shipped
+`GitLab.Extension.pkgdef` (extracted from the 0.80.0 VSIX on the marketplace) contains:
 
-## Why a module initializer
-`[ModuleInitializer]` methods run before any other code in the containing module, including
-static field initializers of any type in that module — earlier than putting the resolver as the
-very first static field of `SnykVSPackage` would be, since a module initializer isn't gated on
-`SnykVSPackage` being the first type touched. `net48`'s C# compiler (LangVersion `latest`) accepts
-`[ModuleInitializer]` given a local polyfill for `System.Runtime.CompilerServices.ModuleInitializerAttribute`
-(the BCL attribute only ships from `netstandard2.1`/`net5.0`; on `net48` the compiler only needs
-the type to exist with the right name/namespace, not to ship from a particular assembly).
+```
+[$RootKey$\RuntimeConfiguration\dependentAssembly\bindingRedirection\{FC7FB13E-EEDB-17DC-259B-05B3A4B57B01}]
+"name"="Serilog"
+"publicKeyToken"="24c2f752a8e58a10"
+"culture"="neutral"
+"oldVersion"="0.0.0.0-4.3.0.0"
+"newVersion"="4.3.0.0"
+```
 
-## Explicitly not done
-- No `ProvideBindingRedirection`/`ProvideCodeBase` for Serilog — that registers a **global,
-  machine-wide** VS runtime-config entry and risks exactly this ticket's class of bug for some
-  other extension.
-- No Serilog/Serilog.Sinks.File/Serilog.Exceptions version changes.
-- No special-casing of `System.Diagnostics.DiagnosticSource` (the ZED Technologies variant) — the
-  generic same-directory-by-simple-name resolver already covers it; it is not itself in scope to
-  chase down further.
-- `ManualAssemblyResolver.cs` is deleted outright (dead code, unused since its call site was
-  dropped in PR #74) rather than kept around deprecated, per repo convention.
+It comes from `[assembly: ProvideBindingRedirection(... GenerateCodeBase = false ...)]` in their
+`GitLab.Extension/Properties/AssemblyInfo.cs`, identical at tag `v0.80.0` and on current `main`.
+They register the same kind of redirect for `System.Diagnostics.DiagnosticSource` up to `9.0.0.0`,
+which is the other customer's variant.
 
-## Manual verification (required — this class of bug is load-order/multi-extension dependent and
-cannot be deterministically reproduced by a VS test host)
-1. Build and install the VSIX locally (or via the Experimental instance).
-2. Install **GitLab for Visual Studio 0.80.0** (or the latest available) into the same VS
-   instance/hive.
-3. Open a solution, open the Snyk tool window, dock/pin it so VS persists its layout, then fully
-   close Visual Studio.
-4. Reopen Visual Studio (same solution or `devenv` with no solution) with both extensions enabled.
-5. **Expected**: no "The SnykVSPackage package was not loaded correctly" dialog; the Snyk tool
-   window renders normally on the restored layout; `%LocalAppData%\Snyk\snyk-extension.log` shows
-   normal startup log lines (proving `Serilog` did resolve, just later and more robustly than
-   before).
+Visual Studio merges every installed extension's `$RootKey$\RuntimeConfiguration` entries into one
+generated `devenv.exe.config`. One process, one AppDomain, one flat list. These keys are not
+scoped to the extension that declares them, so the redirect applies to every Serilog bind in
+`devenv.exe`, ours included. We reference Serilog 2.12.0, whose AssemblyVersion is `2.0.0.0`, and
+that falls inside their `0.0.0.0-4.3.0.0` range. `GenerateCodeBase = false` means they registered
+no codeBase either, so the redirect says "you must use 4.3.0.0" without saying where it lives.
 
-## Files
-- `Snyk.VisualStudio.Extension.2022/SnykVSPackage.cs` (`Logger` is a property with no backing
-  field — see Fix, point 1)
-- `Snyk.VisualStudio.Extension.2022/ExtensionAssemblyResolver.cs` (new)
-- `Snyk.VisualStudio.Extension.2022/ManualAssemblyResolver.cs` (deleted, dead code)
-- `Snyk.VisualStudio.Extension.2022/Snyk.VisualStudio.Extension.2022.csproj` (compile item swap)
-- `Snyk.VisualStudio.Extension.Tests/ExtensionAssemblyResolverTests.cs` (unit — pure
-  `ResolveCandidatePath` decision logic)
-- `Snyk.VisualStudio.Extension.Tests/ExtensionAssemblyResolverWiringTests.cs` (unit — `Initialize()`
-  idempotency and `OnAssemblyResolve` in-process, no VS host)
-- `Snyk.VisualStudio.Extension.Tests/SnykVSPackageNoSerilogTypedStaticFieldTests.cs` (unit —
-  reflection pin that `SnykVSPackage` has no static field typed in the Serilog assembly; see that
-  file's header for exactly what this does and does not cover)
+Serilog computes `<AssemblyVersion>$(VersionPrefix.Substring(0,3)).0.0</AssemblyVersion>`, so its
+binding identity is `major.minor.0.0`. Every Serilog minor release is a new identity, and the
+redirect ceiling moves with each GitLab dependency bump.
 
-## Follow-up hardening (post-review)
-- `SafeGetRequestingAssemblyLocation` and the scoping check now distinguish "no requesting
-  assembly" from "requesting assembly present but its location is unknown" — only the former is
-  treated as ours; see the Fix section's `RequestingAssembly` bullet above.
-- The simple name derived from the requested assembly name is validated before it reaches
-  `Path.Combine` (no path separators, no rooted path, no invalid file-name characters), closing a
-  path-traversal route from a crafted assembly name.
-- Every catch block, and the resolve/decline decision itself, leaves a `Trace.WriteLine`
-  breadcrumb — still silent with respect to Serilog/LogManager, but no longer silent to a
-  `DebugView`/trace listener.
+**2. Our install folder is not on the binder's probe list.** VS-MEF loads a MefComponent assembly
+with `Assembly.Load` plus a codebase hint, which puts it in the default load context. Probing there
+covers the GAC, `Common7\IDE`, and PrivateBinPath. It does not cover our extension directory.
+Shipping `Serilog.dll` next to `Snyk.VisualStudio.Extension.dll` buys nothing on its own. We
+declare no `ProvideBindingPath` and no `ProvideCodeBase`, and the generated pkgdef carries exactly
+one codeBase entry, for `Community.VisualStudio.Toolkit`, which the toolkit's own build targets
+inject.
+
+**3. Our resolver cannot run in time, by construction.** `source.extension.vsixmanifest` declares
+`Snyk.VisualStudio.Extension.dll` as both a `VsPackage` asset and a `Microsoft.VisualStudio.MefComponent`
+asset. VS-MEF discovery therefore calls `assembly.GetTypes()` on it. ECMA-335 says a module
+initializer runs "at, or sometime before, first access to any static field or first invocation of
+any method defined in the module". Reflecting over an assembly is neither, so `[ModuleInitializer]`
+does not fire during discovery. The binder asks for `Serilog 4.3.0.0`, fails, and the failed bind
+is cached for the life of the process.
+
+Put together: MEF discovery scans our DLL before any of our code has run, the redirect turns our
+Serilog 2.0.0.0 reference into a demand for 4.3.0.0, nothing on the probe path has that identity,
+and `VsShellComponentModelHost` logs
+
+```
+Still unable to load MEF component DLL: Could not load file or assembly 'Serilog, Version=4.3.0.0,
+Culture=neutral, PublicKeyToken=24c2f752a8e58a10' or one of its dependencies.
+path: ...\Snyk.VisualStudio.Extension.dll
+```
+
+followed by `SetSite failed for package [SnykVSPackage] hr: 0x80070002`.
+
+This is documented prior art, not a novel failure. SLaks described the same `GetTypes()` trap in
+2014 and recommended a module initializer as the fix, which C# 9 later provided. It does not
+actually help, because the ordering guarantee he assumed does not exist.
+
+## What already shipped, and why it was not enough
+PRs #559 and #560 removed eager static Serilog fields and added `ExtensionAssemblyResolver`, an
+`AppDomain.AssemblyResolve` fallback registered from a module initializer.
+
+That work is correct and stays. It fixes the package-activation path, where our own code does run
+first, and the resolver matches on simple name only, so it hands back our Serilog whatever version
+the caller asked for. An `AssemblyResolve` handler may return a mismatched identity and the CLR
+accepts it, which is exactly what defeats a foreign redirect.
+
+It cannot fix the discovery path, because no code of ours has run at that point. Ben's manual
+Windows repro on 2026-09-10 confirmed this: the failure signature moved from a `.cctor`
+`TypeInitializationException` to a `VsShellComponentModelHost` MEF load error, and the demanded
+version moved from 2.0.0.0 to 4.3.0.0.
+
+## Decision: a stopgap, chosen deliberately
+Line our Serilog identity up with GitLab's redirect target, and put our install folder on the
+binder's probe list.
+
+1. Take a direct `PackageReference` on Serilog 4.4.0, the current stable. Serilog's AssemblyVersion
+   is `major.minor.0.0`, so this gives us 4.4.0.0, which sits *above* GitLab's `0.0.0.0-4.3.0.0`
+   range. Their redirect therefore does not apply to our binds at all.
+2. Bump the Serilog packages that have to move with it (`Serilog.Sinks.File`, the two enrichers).
+3. Add `ProvideBindingPath` so the binder actually probes our directory. Without it the identity
+   could line up and the file still would not be found. This is also a defect on its own, and the
+   most likely cause of the customer's original `Serilog 2.0.0.0` not-found.
+
+Pinning above the ceiling beats pinning *at* it. At 4.3.0.0 we would be inside their range and
+would break the moment they bump. At 4.4.0.0 we are outside it today, and when they do move to
+4.4.0 the redirect retargets to exactly the version we ship, so that bump costs us nothing.
+
+`ExtensionAssemblyResolver` from #559 keeps earning its place here: it matches on simple name only,
+so it bridges any Serilog package still referencing 2.0.0.0 once our own code is running.
+
+**This will still break eventually.** Once GitLab goes past 4.4.0, our reference falls back inside
+their range and gets rewritten to a version we do not ship. The team accepted that trade knowingly
+on 2026-09-10 in exchange for a small diff now. It is a stopgap, not a fix, and this document
+should not be read later as claiming otherwise.
+
+### The fix this replaces
+The robust option was to take the main DLL off the MEF discovery path. A small satellite assembly,
+`Snyk.VisualStudio.Extension.Mef.dll`, becomes the only `Microsoft.VisualStudio.MefComponent`
+asset, holds the MEF exports, and installs `ExtensionAssemblyResolver` from a `[ModuleInitializer]`.
+VS-MEF enumerates only assemblies declared as MefComponent assets, so it would never call
+`GetTypes()` on the main DLL. When MEF instantiates a part, a method in the satellite runs, which
+is a documented module initializer trigger, so the resolver is registered before the main assembly
+loads. Because the resolver ignores the requested version, that defeats any foreign redirect for
+anything we ship, not just GitLab's current one.
+
+A working implementation is parked at `.parked/` in the working tree (git-excluded): the patch, the
+satellite project, and the acceptance test. Pick it up when the stopgap breaks. Two findings from
+building it are worth keeping. The satellite cannot be literally third-party-free, because
+`ILanguageClientCustomMessage2.AttachForCustomMessageAsync` takes a `StreamJsonRpc.JsonRpc`. And
+`LanguageClientHelper` is not a usable replacement for the dropped `ILanguageClientManager` export,
+because it reads back the same property the caller is trying to populate; the satellite exports a
+Snyk-only `ISnykLanguageClientHost` instead, since `ILanguageClient` is exported by every installed
+LSP extension and would be ambiguous through `IComponentModel.GetService`.
+
+### Other options rejected
+- **Our own `ProvideBindingRedirection`.** Process-wide rewrite of a library we do not own,
+  resolved by undocumented merge order between extensions. It is the move that broke us, and doing
+  it back makes us the extension that breaks someone else. Microsoft's guidance for the equivalent
+  Newtonsoft.Json case is to author no redirects.
+- **`ProvideCodeBase` alone.** Right layer, wrong coverage. It runs inside the binder before our
+  code, but it is keyed on exact identity, so after the redirect rewrites the request to 4.3.0.0
+  our entry for 2.0.0.0 no longer applies.
+- **ILRepack Serilog under a private identity.** The only option immune even to a redirect we never
+  anticipated, since no `Serilog` identity would remain to redirect. Disproportionate: strong
+  naming, sink and enricher resolution, PDBs, and Apache-2.0 attribution all become our problem,
+  and it does nothing for shared identities we do not ship, such as `DiagnosticSource`.
+
+## Scope
+- Direct `PackageReference` on Serilog 4.4.0 in `Snyk.VisualStudio.Extension.2022.csproj`, plus the
+  Serilog satellite packages that have to move with it.
+- `[ProvideBindingPath]` on `SnykVSPackage`.
+- Acceptance test reproducing GitLab's redirect in a child AppDomain.
+- `ExtensionAssemblyResolver`, the vsixmanifest, and the eager-field pin from #559/#560 all stay
+  as they are.
+
+## Acceptance criteria (customer-visible)
+1. With both the Snyk extension and GitLab for Visual Studio 0.80.0 installed, closing Visual
+   Studio with the Snyk tool window docked and reopening it shows no "package was not loaded
+   correctly" dialog, and the Snyk tool window renders on the restored layout.
+2. Snyk logging works in that session, proving Serilog resolved rather than being skipped.
+3. Snyk still works with no other extension installed.
+4. The failure does not come back when GitLab ships a new Serilog. Partly bought. Pinning above
+   their ceiling survives their move to 4.4.0. Anything past that reopens the bug, and no test can
+   pin it.
+
+Criteria 1 to 3 are covered. Criterion 4 is bought for one GitLab release, which is the whole cost
+of the stopgap.
+
+### The AppDomain reproduction was tried and abandoned
+
+The plan was a child AppDomain carrying GitLab's exact redirect, loading the built extension
+assembly and running discovery over it. Three CI runs, three different environmental failures, none
+of them the bug:
+
+1. VS-MEF's own dependency closure would not bind inside the probe domain, so the test failed on
+   `Microsoft.VisualStudio.Composition` before reaching any Serilog bind.
+2. Rebuilding the probe config from the test assembly's generated config did not fix that.
+3. Replacing VS-MEF with plain reflection got further and exposed the real problem: the probe domain
+   cannot resolve **any** of the extension's dependencies. `Microsoft.VisualStudio.Threading`,
+   `Newtonsoft.Json`, `Microsoft.VisualStudio.Shell.15.0`, `WebView2.Core` and Serilog all fail to
+   bind, because a synthetic config strips the binding redirects the test host supplies.
+
+The negative control added in step 3 is what settled it. It asserts discovery must fail under a
+redirect to a Serilog nobody ships, and it passed — but so would it with no redirect at all, since
+everything fails in that domain regardless. The control was not discriminating, which means the
+positive test could never have proved anything. A green run there would have been worse than a red
+one.
+
+What replaced it pins the decision rather than simulating the binder: the Serilog identity we ship
+must sit above GitLab's redirect ceiling, and the extension must be compiled against the same
+Serilog it ships. That is cheap, deterministic, and fails if anyone drops the direct Serilog
+reference (the transitive floor resolves 2.12.0, identity 2.0.0.0, back inside the range).
+
+It does not prove Visual Studio then loads the package. Nothing runnable here does. **Manual
+verification on Windows with the real GitLab extension installed is required**, and it carries more
+weight under this approach than it would have under the satellite one, because far less of the
+mechanism is covered by tests.
+
+## Follow-up
+Draft an upstream issue for `gitlab-org/editor-extensions/gitlab-visual-studio-extension`. Their
+two `GenerateCodeBase = false` process-wide redirects break co-installed extensions, and the
+Serilog one has already produced two Snyk support tickets. Draft for review before anyone posts it.
