@@ -67,6 +67,7 @@ namespace Snyk.VisualStudio.Extension
     [ProvideMenuResource("Menus.ctmenu", 1)]
     [ProvideToolWindow(typeof(SnykToolWindow), Style = VsDockStyle.Tabbed)]
     [ProvideOptionPage(typeof(HtmlSettingsDialogPage), "Snyk", "General", 1000, 1001, true)]
+    [ProvideBindingPath]
     public sealed class SnykVSPackage : AsyncPackage
     {
         /// <summary>
