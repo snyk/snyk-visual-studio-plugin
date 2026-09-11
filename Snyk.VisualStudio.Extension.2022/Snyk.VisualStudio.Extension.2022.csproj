@@ -332,7 +332,7 @@
     </PackageReference>
     <!-- Direct reference pins our Serilog identity to AssemblyVersion 4.4.0.0, above the ceiling
          of GitLab for Visual Studio's current redirect (oldVersion 0.0.0.0-4.3.0.0 -> 4.3.0.0), so
-         that redirect does not apply to us. See docs/plans/IDE-2558-serilog-assembly-resolution.md. -->
+         that redirect does not apply to us. -->
     <PackageReference Include="Serilog" Version="4.4.0" />
     <PackageReference Include="Serilog.Enrichers.Process">
       <Version>3.0.0</Version>

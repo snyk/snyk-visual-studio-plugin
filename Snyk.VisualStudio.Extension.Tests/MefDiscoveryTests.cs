@@ -1,18 +1,14 @@
-// Acceptance test for IDE-2558: with a foreign extension's process-wide Serilog binding redirect
-// in effect, VS-MEF must still be able to discover this extension's MEF parts. See
-// docs/plans/IDE-2558-serilog-assembly-resolution.md for the full root-cause analysis; this test
-// is the "criterion 4" reproduction called out there.
+// With another extension's process-wide Serilog binding redirect in effect, VS-MEF must still be
+// able to discover this extension's MEF parts.
 //
-// Targets the main extension assembly (Snyk.VisualStudio.Extension.2022.dll): per
-// source.extension.vsixmanifest, that assembly is itself the Microsoft.VisualStudio.MefComponent
-// asset VS discovers, so it is the assembly a real VS instance runs AttributedPartDiscovery over.
+// Targets the main extension assembly because source.extension.vsixmanifest declares that assembly
+// itself as the Microsoft.VisualStudio.MefComponent asset, so it is what a real VS instance runs
+// AttributedPartDiscovery over.
 //
-// This proves the identity-alignment half of the fix: our Serilog reference is now 4.4.0.0,
-// above the ceiling of GitLab's current redirect (oldVersion 0.0.0.0-4.3.0.0 -> 4.3.0.0), so that
-// redirect simply does not apply to a bind for our Serilog identity, and MEF discovery does not
-// throw. It does NOT exercise [ProvideBindingPath] on SnykVSPackage: that attribute only takes
-// effect through VS's own probing path when the package is loaded by the shell, which a bare
-// AppDomain has no equivalent of.
+// Covers the identity alignment only: our Serilog reference is 4.4.0.0, above the ceiling of the
+// redirect below, so the redirect never applies to it. [ProvideBindingPath] on SnykVSPackage is
+// NOT covered, because it takes effect through VS's own probing path when the shell loads the
+// package, and a bare AppDomain has no equivalent.
 using System;
 using System.IO;
 using System.Linq;
@@ -22,10 +18,10 @@ using Xunit;
 
 namespace Snyk.VisualStudio.Extension.Tests
 {
-    public class Ide2558SerilogRedirectAcceptanceTests
+    public class MefDiscoveryTests
     {
         // GitLab for Visual Studio 0.80.0's exact redirect, as VS merges it into the process-wide
-        // devenv.exe.config from GitLab's shipped GitLab.Extension.pkgdef. Our old Serilog reference
+        // devenv.exe.config from that extension's shipped pkgdef. Our old Serilog reference
         // (2.12.0, AssemblyVersion 2.0.0.0) fell inside this range, so any bind for "Serilog" in
         // that AppDomain was rewritten to demand 4.3.0.0, a version nobody shipped. Our current
         // reference (4.4.0.0) sits above this redirect's ceiling, so no rewrite happens at all.
@@ -45,7 +41,7 @@ namespace Snyk.VisualStudio.Extension.Tests
         public void MefDiscovery_UnderForeignSerilogRedirect_FindsExtensionPartsWithoutError()
         {
             var extensionAssemblyPath = typeof(SnykVSPackage).Assembly.Location;
-            var appBase = Path.GetDirectoryName(typeof(Ide2558SerilogRedirectAcceptanceTests).Assembly.Location);
+            var appBase = Path.GetDirectoryName(typeof(MefDiscoveryTests).Assembly.Location);
             var configPath = Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString("N") + ".config");
             File.WriteAllText(configPath, GitLabSerilogRedirectConfig);
 
@@ -58,7 +54,7 @@ namespace Snyk.VisualStudio.Extension.Tests
                     ConfigurationFile = configPath,
                 };
 
-                probeDomain = AppDomain.CreateDomain("IDE-2558-redirect-probe", null, setup);
+                probeDomain = AppDomain.CreateDomain("serilog-redirect-probe", null, setup);
 
                 var probe = (RedirectProbe)probeDomain.CreateInstanceFromAndUnwrap(
                     typeof(RedirectProbe).Assembly.Location,

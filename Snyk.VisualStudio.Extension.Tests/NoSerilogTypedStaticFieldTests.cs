@@ -1,8 +1,7 @@
 // Regression pin: no type in the extension assembly may declare a static field whose declared
 // FieldType — or, for a generic field, whose generic type argument — is a Serilog type. This only
 // catches a field declared AS a Serilog type; it cannot catch a field of some other type (e.g.
-// object) whose initializer still calls into Serilog at runtime. See
-// docs/plans/IDE-2558-serilog-assembly-resolution.md.
+// object) whose initializer still calls into Serilog at runtime.
 using System;
 using System.Collections.Generic;
 using System.IO;
