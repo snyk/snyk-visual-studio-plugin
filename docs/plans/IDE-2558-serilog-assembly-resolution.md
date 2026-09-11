@@ -164,15 +164,35 @@ LSP extension and would be ambiguous through `IComponentModel.GetService`.
 Criteria 1 to 3 are covered. Criterion 4 is bought for one GitLab release, which is the whole cost
 of the stopgap.
 
-The acceptance test is a child AppDomain carrying GitLab's exact redirect, loading the built
-extension assembly and running VS-MEF part discovery over it. It fails today with this precise
-exception, so it must be red before any production change. It proves the identity alignment only.
-It does not exercise `ProvideBindingPath`, which is a VS-level mechanism with no equivalent in a
-bare AppDomain, and its child domain has a more forgiving probe path than a real `devenv.exe`.
+### The AppDomain reproduction was tried and abandoned
 
-Manual verification on Windows with the real GitLab extension is therefore still required, and
-carries more weight here than it would under the satellite approach, because the test covers less
-of the mechanism.
+The plan was a child AppDomain carrying GitLab's exact redirect, loading the built extension
+assembly and running discovery over it. Three CI runs, three different environmental failures, none
+of them the bug:
+
+1. VS-MEF's own dependency closure would not bind inside the probe domain, so the test failed on
+   `Microsoft.VisualStudio.Composition` before reaching any Serilog bind.
+2. Rebuilding the probe config from the test assembly's generated config did not fix that.
+3. Replacing VS-MEF with plain reflection got further and exposed the real problem: the probe domain
+   cannot resolve **any** of the extension's dependencies. `Microsoft.VisualStudio.Threading`,
+   `Newtonsoft.Json`, `Microsoft.VisualStudio.Shell.15.0`, `WebView2.Core` and Serilog all fail to
+   bind, because a synthetic config strips the binding redirects the test host supplies.
+
+The negative control added in step 3 is what settled it. It asserts discovery must fail under a
+redirect to a Serilog nobody ships, and it passed — but so would it with no redirect at all, since
+everything fails in that domain regardless. The control was not discriminating, which means the
+positive test could never have proved anything. A green run there would have been worse than a red
+one.
+
+What replaced it pins the decision rather than simulating the binder: the Serilog identity we ship
+must sit above GitLab's redirect ceiling, and the extension must be compiled against the same
+Serilog it ships. That is cheap, deterministic, and fails if anyone drops the direct Serilog
+reference (the transitive floor resolves 2.12.0, identity 2.0.0.0, back inside the range).
+
+It does not prove Visual Studio then loads the package. Nothing runnable here does. **Manual
+verification on Windows with the real GitLab extension installed is required**, and it carries more
+weight under this approach than it would have under the satellite one, because far less of the
+mechanism is covered by tests.
 
 ## Follow-up
 Draft an upstream issue for `gitlab-org/editor-extensions/gitlab-visual-studio-extension`. Their
