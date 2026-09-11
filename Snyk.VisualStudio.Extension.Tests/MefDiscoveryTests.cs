@@ -6,13 +6,14 @@
 // AttributedPartDiscovery over.
 //
 // Covers the identity alignment only: our Serilog reference is 4.4.0.0, above the ceiling of the
-// redirect below, so the redirect never applies to it. [ProvideBindingPath] on SnykVSPackage is
-// NOT covered, because it takes effect through VS's own probing path when the shell loads the
-// package, and a bare AppDomain has no equivalent.
+// GitLab redirect below, so that redirect never applies to it. [ProvideBindingPath] on
+// SnykVSPackage is NOT covered, because it takes effect through VS's own probing path when the
+// shell loads the package, and a bare AppDomain has no equivalent.
 using System;
 using System.IO;
 using System.Linq;
 using System.Reflection;
+using System.Xml;
 using Microsoft.VisualStudio.Composition;
 using Xunit;
 
@@ -20,30 +21,43 @@ namespace Snyk.VisualStudio.Extension.Tests
 {
     public class MefDiscoveryTests
     {
-        // GitLab for Visual Studio 0.80.0's exact redirect, as VS merges it into the process-wide
-        // devenv.exe.config from that extension's shipped pkgdef. Our old Serilog reference
-        // (2.12.0, AssemblyVersion 2.0.0.0) fell inside this range, so any bind for "Serilog" in
-        // that AppDomain was rewritten to demand 4.3.0.0, a version nobody shipped. Our current
-        // reference (4.4.0.0) sits above this redirect's ceiling, so no rewrite happens at all.
-        private const string GitLabSerilogRedirectConfig = @"<?xml version=""1.0"" encoding=""utf-8""?>
-<configuration>
-  <runtime>
-    <assemblyBinding xmlns=""urn:schemas-microsoft-com:asm.v1"">
-      <dependentAssembly>
-        <assemblyIdentity name=""Serilog"" publicKeyToken=""24c2f752a8e58a10"" culture=""neutral"" />
-        <bindingRedirect oldVersion=""0.0.0.0-4.3.0.0"" newVersion=""4.3.0.0"" />
-      </dependentAssembly>
-    </assemblyBinding>
-  </runtime>
-</configuration>";
+        private const string AsmBindingNamespace = "urn:schemas-microsoft-com:asm.v1";
+        private const string SerilogPublicKeyToken = "24c2f752a8e58a10";
 
         [Fact]
-        public void MefDiscovery_UnderForeignSerilogRedirect_FindsExtensionPartsWithoutError()
+        public void MefDiscovery_UnderGitLabsSerilogRedirect_DiscoversExtensionParts()
+        {
+            // GitLab for Visual Studio 0.80.0's exact redirect, as VS merges it into the
+            // process-wide devenv.exe.config from that extension's shipped pkgdef. Our old Serilog
+            // reference (2.12.0, AssemblyVersion 2.0.0.0) fell inside this range and was rewritten
+            // to demand 4.3.0.0, a version nobody shipped.
+            var failure = DiscoverPartsUnderSerilogRedirect("0.0.0.0-4.3.0.0", "4.3.0.0");
+
+            Assert.True(failure == null, "MEF discovery failed under GitLab's Serilog redirect: " + failure);
+        }
+
+        // Negative control for the test above. Without it, that test passing proves nothing: it
+        // would also pass if this harness were incapable of reproducing the failure at all. Here
+        // the redirect targets a Serilog nobody ships, so discovery MUST fail — if it does not,
+        // the harness is not exercising the bind the bug lives in and the positive test is
+        // worthless.
+        [Fact]
+        public void MefDiscovery_UnderRedirectToAnUnshippedSerilog_Fails()
+        {
+            var failure = DiscoverPartsUnderSerilogRedirect("0.0.0.0-9.9.0.0", "9.9.0.0");
+
+            Assert.False(
+                failure == null,
+                "MEF discovery succeeded under a redirect to Serilog 9.9.0.0, which nothing ships. " +
+                "This harness is not reaching the assembly bind that IDE-2558 turns on, so the " +
+                "companion test proves nothing.");
+        }
+
+        private static string DiscoverPartsUnderSerilogRedirect(string oldVersionRange, string newVersion)
         {
             var extensionAssemblyPath = typeof(SnykVSPackage).Assembly.Location;
             var appBase = Path.GetDirectoryName(typeof(MefDiscoveryTests).Assembly.Location);
-            var configPath = Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString("N") + ".config");
-            File.WriteAllText(configPath, GitLabSerilogRedirectConfig);
+            var configPath = WriteConfigWithSerilogRedirect(oldVersionRange, newVersion);
 
             AppDomain probeDomain = null;
             try
@@ -60,18 +74,66 @@ namespace Snyk.VisualStudio.Extension.Tests
                     typeof(RedirectProbe).Assembly.Location,
                     typeof(RedirectProbe).FullName);
 
-                var failure = probe.DiscoverPartsAndReturnFailureOrNull(extensionAssemblyPath);
-
-                Assert.True(failure == null, "MEF discovery of the extension assembly failed under a foreign Serilog redirect: " + failure);
+                return probe.DiscoverPartsAndReturnFailureOrNull(extensionAssemblyPath);
             }
             finally
             {
-                File.Delete(configPath);
                 if (probeDomain != null)
                 {
                     AppDomain.Unload(probeDomain);
                 }
+
+                File.Delete(configPath);
             }
+        }
+
+        /// <summary>
+        /// Starts from the test assembly's own generated config rather than an empty document. That
+        /// config carries the binding redirects the SDK generates for this project, and
+        /// Microsoft.VisualStudio.Composition's dependency closure does not bind without them — a
+        /// hand-rolled minimal config makes the probe domain fail to load the discovery engine,
+        /// which looks exactly like the failure under test but is not it.
+        /// </summary>
+        private static string WriteConfigWithSerilogRedirect(string oldVersionRange, string newVersion)
+        {
+            var document = new XmlDocument();
+            var hostConfig = typeof(MefDiscoveryTests).Assembly.Location + ".config";
+
+            if (File.Exists(hostConfig))
+            {
+                document.Load(hostConfig);
+            }
+            else
+            {
+                document.LoadXml("<configuration />");
+            }
+
+            var configuration = document.DocumentElement
+                ?? (XmlElement)document.AppendChild(document.CreateElement("configuration"));
+
+            var runtime = configuration["runtime"]
+                ?? (XmlElement)configuration.AppendChild(document.CreateElement("runtime"));
+
+            var assemblyBinding = runtime["assemblyBinding", AsmBindingNamespace]
+                ?? (XmlElement)runtime.AppendChild(document.CreateElement("assemblyBinding", AsmBindingNamespace));
+
+            var dependentAssembly = (XmlElement)assemblyBinding.AppendChild(
+                document.CreateElement("dependentAssembly", AsmBindingNamespace));
+
+            var identity = (XmlElement)dependentAssembly.AppendChild(
+                document.CreateElement("assemblyIdentity", AsmBindingNamespace));
+            identity.SetAttribute("name", "Serilog");
+            identity.SetAttribute("publicKeyToken", SerilogPublicKeyToken);
+            identity.SetAttribute("culture", "neutral");
+
+            var redirect = (XmlElement)dependentAssembly.AppendChild(
+                document.CreateElement("bindingRedirect", AsmBindingNamespace));
+            redirect.SetAttribute("oldVersion", oldVersionRange);
+            redirect.SetAttribute("newVersion", newVersion);
+
+            var configPath = Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString("N") + ".config");
+            document.Save(configPath);
+            return configPath;
         }
 
         // Runs inside the child AppDomain under the foreign redirect. Takes the target assembly's
