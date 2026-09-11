@@ -28,7 +28,7 @@ namespace Snyk.VisualStudio.Extension.Tests
         // devenv.exe.config from GitLab's shipped GitLab.Extension.pkgdef. Our old Serilog reference
         // (2.12.0, AssemblyVersion 2.0.0.0) fell inside this range, so any bind for "Serilog" in
         // that AppDomain was rewritten to demand 4.3.0.0, a version nobody shipped. Our current
-        // reference (4.4.0.0) sits above this redirect's ceiling, so the rewrite is a no-op for us.
+        // reference (4.4.0.0) sits above this redirect's ceiling, so no rewrite happens at all.
         private const string GitLabSerilogRedirectConfig = @"<?xml version=""1.0"" encoding=""utf-8""?>
 <configuration>
   <runtime>
