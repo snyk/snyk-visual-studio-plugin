@@ -1,5 +1,5 @@
-// The extension's Serilog fix rests on one property: the Serilog identity we ship sits ABOVE the
-// ceiling of the binding redirect GitLab for Visual Studio registers process-wide, so that
+// The extension's Serilog fix rests on one property: the Serilog identity we bind to sits ABOVE
+// the ceiling of the binding redirect GitLab for Visual Studio registers process-wide, so that
 // redirect never rewrites our binds. Drop back inside the range and Visual Studio demands a
 // Serilog nobody ships, and the package fails to load.
 //
@@ -24,39 +24,59 @@ namespace Snyk.VisualStudio.Extension.Tests
         private static readonly Version ForeignRedirectCeiling = new Version("4.3.0.0");
 
         [Fact]
-        public void ShippedSerilog_HasAnIdentityAboveTheForeignRedirectCeiling()
+        public void ExtensionBindsToASerilogAboveTheForeignRedirectCeiling()
         {
-            var extensionDirectory = Path.GetDirectoryName(typeof(SnykVSPackage).Assembly.Location);
-            var serilogPath = Path.Combine(extensionDirectory, "Serilog.dll");
-
-            Assert.True(File.Exists(serilogPath), "Serilog.dll does not ship next to the extension assembly: " + serilogPath);
-
-            var shipped = AssemblyName.GetAssemblyName(serilogPath).Version;
+            var referenced = ReferencedSerilogName();
 
             Assert.True(
-                shipped > ForeignRedirectCeiling,
-                $"Shipped Serilog identity is {shipped}, which is inside the {ForeignRedirectCeiling} " +
+                referenced.Version > ForeignRedirectCeiling,
+                $"The extension binds to Serilog {referenced.Version}, inside the {ForeignRedirectCeiling} " +
                 "redirect range GitLab for Visual Studio registers process-wide. Visual Studio will " +
-                "rewrite our binds to a Serilog we do not ship and SnykVSPackage will fail to load.");
+                "rewrite that bind to a Serilog we do not ship and SnykVSPackage will fail to load.");
         }
 
         [Fact]
-        public void ExtensionAssembly_ReferencesTheSerilogItShips()
+        public void ExtensionShipsTheSerilogItBindsTo()
         {
-            var extensionAssembly = typeof(SnykVSPackage).Assembly;
-            var referenced = Array.Find(
-                extensionAssembly.GetReferencedAssemblies(),
-                name => string.Equals(name.Name, "Serilog", StringComparison.OrdinalIgnoreCase));
+            var referenced = ReferencedSerilogName();
+            var serilogPath = Path.Combine(ExtensionOutputDirectory(), "Serilog.dll");
 
-            Assert.NotNull(referenced);
+            Assert.True(File.Exists(serilogPath), "Serilog.dll does not sit next to the extension assembly: " + serilogPath);
 
-            var serilogPath = Path.Combine(Path.GetDirectoryName(extensionAssembly.Location), "Serilog.dll");
             var shipped = AssemblyName.GetAssemblyName(serilogPath).Version;
 
             Assert.True(
                 referenced.Version == shipped,
                 $"The extension is compiled against Serilog {referenced.Version} but ships {shipped}. " +
                 "The bind then depends on a redirect being present, which is the failure mode this fix exists to avoid.");
+        }
+
+        private static AssemblyName ReferencedSerilogName()
+        {
+            var referenced = Array.Find(
+                typeof(SnykVSPackage).Assembly.GetReferencedAssemblies(),
+                name => string.Equals(name.Name, "Serilog", StringComparison.OrdinalIgnoreCase));
+
+            Assert.True(referenced != null, "The extension assembly has no reference to Serilog at all.");
+            return referenced;
+        }
+
+        /// <summary>
+        /// CodeBase, not Location: the test host shadow-copies assemblies, so Location points into a
+        /// temp folder that holds the extension assembly alone, without the dependencies shipped
+        /// beside it. CodeBase keeps naming the original build output.
+        /// </summary>
+        private static string ExtensionOutputDirectory()
+        {
+            var assembly = typeof(SnykVSPackage).Assembly;
+            var codeBase = assembly.CodeBase;
+
+            if (string.IsNullOrEmpty(codeBase))
+            {
+                return Path.GetDirectoryName(assembly.Location);
+            }
+
+            return Path.GetDirectoryName(new Uri(codeBase).LocalPath);
         }
     }
 }
