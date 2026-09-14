@@ -308,6 +308,54 @@ namespace Snyk.VisualStudio.Extension.Tests.Language
             await cut.OnShowDocument(arg);
         }
 
+        [Fact]
+        public async Task OnShowDocument_ShouldSelectIssue_WhenUriIsMalformedWindowsPathFromLs()
+        {
+            // LS at protocol 25 can emit exactly this for a Windows path (no host, backslashes as %5C),
+            // which `new Uri` reads as host:port and throws without this leniency.
+            var toolWindowMock = SetupToolWindow();
+            var arg = ShowDocument("snyk://C:%5CMac%5CHome%5CDocuments%5CCode%5CJavaScript%5Csnyk-goof%5Cdb.js?product=code&issueId=ISSUE1&action=showInDetailPanel");
+
+            await cut.OnShowDocument(arg);
+
+            toolWindowMock.Verify(t => t.SelectedItemInTree("ISSUE1", "code"), Times.Once);
+        }
+
+        [Theory]
+        [InlineData("snyk://C:%5CMac%5CHome%5Cdb.js?a=1", "snyk:///C:/Mac/Home/db.js?a=1")]
+        [InlineData("snyk://C:%5CMac%5CHome%5Cdb.js", "snyk:///C:/Mac/Home/db.js")]
+        public void RepairSnykSchemeAuthority_ShouldRebuildWithForwardSlashes_WhenPathIsBackslashEncoded(string input, string expected)
+        {
+            Assert.Equal(expected, SnykLanguageClientCustomTarget.RepairSnykSchemeAuthority(input));
+        }
+
+        [Theory]
+        [InlineData("snyk://a:8080/foo")] // real host:port, single-letter host — must not be treated as a drive letter
+        [InlineData("snyk://x?action=showInDetailPanel")]
+        [InlineData("snyk://C:/Mac/Home/db.js?a=1")] // already forward-slash — .NET parses this fine unrepaired
+        public void RepairSnykSchemeAuthority_ShouldNotChange_WhenNotABackslashEncodedDriveLetterShape(string input)
+        {
+            Assert.Equal(input, SnykLanguageClientCustomTarget.RepairSnykSchemeAuthority(input));
+        }
+
+        [Fact]
+        public void RepairSnykSchemeAuthority_ShouldProduceCleanLocalPath_ThroughRealUriParsing()
+        {
+            var repaired = SnykLanguageClientCustomTarget.RepairSnykSchemeAuthority(
+                "snyk://C:%5CMac%5CHome%5CDocuments%5CCode%5CJavaScript%5Csnyk-goof%5Cdb.js");
+
+            Assert.Equal(@"C:\Mac\Home\Documents\Code\JavaScript\snyk-goof\db.js", new Uri(repaired).LocalPath);
+        }
+
+        [Fact]
+        public void RepairSnykSchemeAuthority_ShouldLeaveForwardSlashShapeCleanThroughRealUriParsing_WhenUnrepaired()
+        {
+            var unrepaired = SnykLanguageClientCustomTarget.RepairSnykSchemeAuthority(
+                "snyk://C:/Mac/Home/Documents/Code/JavaScript/snyk-goof/db.js");
+
+            Assert.Equal(@"C:\Mac\Home\Documents\Code\JavaScript\snyk-goof\db.js", new Uri(unrepaired).LocalPath);
+        }
+
         private Mock<ISnykToolWindow> SetupToolWindow()
         {
             var toolWindowMock = new Mock<ISnykToolWindow>();
