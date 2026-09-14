@@ -23,7 +23,7 @@ namespace Snyk.VisualStudio.Extension.Service
     /// </summary>
     public class SnykService : ISnykServiceProvider, ISnykService
     {
-        private static readonly ILogger Logger = LogManager.ForContext<SnykService>();
+        private static ILogger Logger => LogManager.ForContext<SnykService>();
 
         private readonly IAsyncServiceProvider serviceProvider;
         private readonly string vsVersion;

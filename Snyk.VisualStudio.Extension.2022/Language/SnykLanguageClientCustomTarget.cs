@@ -19,7 +19,7 @@ namespace Snyk.VisualStudio.Extension.Language
 {
     public class SnykLanguageClientCustomTarget
     {
-        private static readonly ILogger Logger = LogManager.ForContext<SnykLanguageClientCustomTarget>();
+        private static ILogger Logger => LogManager.ForContext<SnykLanguageClientCustomTarget>();
         private readonly ISnykServiceProvider serviceProvider;
         public SnykLanguageClientCustomTarget(ISnykServiceProvider serviceProvider)
         {
