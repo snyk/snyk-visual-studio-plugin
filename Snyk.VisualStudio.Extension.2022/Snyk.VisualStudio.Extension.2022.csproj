@@ -127,8 +127,8 @@
     <Compile Include="Commands\SnykStopCurrentTaskCommand.cs" />
     <Compile Include="Language\SnykLanguageServerEventArgs.cs" />
     <Compile Include="LocalCodeEngine.cs" />
+    <Compile Include="ExtensionAssemblyResolver.cs" />
     <Compile Include="LogManager.cs" />
-    <Compile Include="ManualAssemblyResolver.cs" />
     <Compile Include="Model\Severity.cs" />
     <Compile Include="Product.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
