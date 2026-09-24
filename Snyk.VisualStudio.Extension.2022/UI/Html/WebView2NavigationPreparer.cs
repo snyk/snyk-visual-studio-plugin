@@ -38,7 +38,7 @@ namespace Snyk.VisualStudio.Extension.UI.Html
     {
         public const int DefaultInlineSizeLimitBytes = 2_000_000;
 
-        private static readonly ILogger Logger = LogManager.ForContext<WebView2NavigationPreparer>();
+        private static ILogger Logger => LogManager.ForContext<WebView2NavigationPreparer>();
 
         private readonly string _scratchDirectory;
         private readonly int _inlineSizeLimitBytes;

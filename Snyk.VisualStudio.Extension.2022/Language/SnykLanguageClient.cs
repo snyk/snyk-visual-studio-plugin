@@ -30,7 +30,7 @@ namespace Snyk.VisualStudio.Extension.Language
     [RunOnContext(RunningContext.RunOnHost)]
     public partial class SnykLanguageClient : ILanguageClient, ILanguageClientCustomMessage2, ILanguageClientManager
     {
-        private static readonly ILogger Logger = LogManager.ForContext<SnykLanguageClient>();
+        private static ILogger Logger => LogManager.ForContext<SnykLanguageClient>();
         private readonly SemaphoreSlim semaphore = new SemaphoreSlim(1,1);
 
         // Set when VS calls OnLoadedAsync. Raising StartAsync before that point is out of contract: VS

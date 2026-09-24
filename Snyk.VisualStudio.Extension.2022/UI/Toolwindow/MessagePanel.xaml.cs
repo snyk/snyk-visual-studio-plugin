@@ -18,7 +18,7 @@ namespace Snyk.VisualStudio.Extension.UI.Toolwindow
     /// </summary>
     public partial class MessagePanel : UserControl
     {
-        private static readonly ILogger Logger = LogManager.ForContext<MessagePanel>();
+        private static ILogger Logger => LogManager.ForContext<MessagePanel>();
         private readonly IList<StackPanel> panels;
 
         /// <summary>

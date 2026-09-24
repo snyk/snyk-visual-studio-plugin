@@ -11,7 +11,7 @@ namespace Snyk.VisualStudio.Extension.UI.Toolwindow
 {
     public class SnykScriptManager
     {
-        private static readonly ILogger Logger = LogManager.ForContext<SnykScriptManager>();
+        private static ILogger Logger => LogManager.ForContext<SnykScriptManager>();
         private readonly ISnykServiceProvider serviceProvider;
 
         public SnykScriptManager(ISnykServiceProvider serviceProvider)

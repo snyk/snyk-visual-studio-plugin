@@ -55,7 +55,7 @@ namespace Snyk.VisualStudio.Extension.Download
         // Bounds delivery of redirected output after the process exits.
         internal const int ProtocolProbeFlushTimeoutMs = 2000;
 
-        private static readonly ILogger Logger = LogManager.ForContext<SnykCliDownloader>();
+        private static ILogger Logger => LogManager.ForContext<SnykCliDownloader>();
 
         private readonly ISnykOptions SnykOptions;
 

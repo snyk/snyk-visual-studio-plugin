@@ -13,7 +13,7 @@ namespace Snyk.VisualStudio.Extension.Language
     // PATCH semantics: absent, null, and (for the two keys noted below) empty entries are skipped.
     internal static class GlobalSettingsApplier
     {
-        private static readonly ILogger Logger = LogManager.ForContext(typeof(GlobalSettingsApplier));
+        private static ILogger Logger => LogManager.ForContext(typeof(GlobalSettingsApplier));
 
         public static void Apply(Dictionary<string, ConfigSetting> settings, ISnykOptions options)
         {
