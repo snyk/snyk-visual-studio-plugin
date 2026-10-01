@@ -66,3 +66,11 @@ Test projects:
 - Never push without asking first, and never force-push. Regularly fetch `main` and offer to merge it into the working branch.
 - After pushing, offer to open a draft PR using `.github/pull_request_template.md` (or update the existing PR description). Per `CONTRIBUTING.md`, a change applicable to the other Snyk IDE plugins (vscode-extension, snyk-intellij-plugin, snyk-eclipse-plugin) should get matching PRs opened there too, since releases are usually coordinated.
 - User-facing changes need documentation updates. Prepare them yourself, or add the wording/screenshots to the PR description if you don't have doc-site access.
+
+## Public Repository
+
+This repo is public. Everything committed or posted on GitHub (code comments, commit messages, PR titles and descriptions) is visible to anyone.
+
+- Describe a security fix by the change only, such as which dependency moved to which version. Leave out how the vulnerability is triggered and whether we are exposed. Vaguer is better.
+- Name only public repos. The only private repos you may name are the ones already listed in `cliv2-private/go.mod` in `snyk/cli`.
+- Write comments and PR descriptions that stand on their own. State the fact itself, with no reference to the agent's report, a task, or a conversation the reader can't see.
