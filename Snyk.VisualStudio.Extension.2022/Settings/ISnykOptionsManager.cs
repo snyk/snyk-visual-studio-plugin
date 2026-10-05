@@ -8,6 +8,9 @@ namespace Snyk.VisualStudio.Extension.Settings
     void LoadSettingsFromFile();
     void SaveSettingsToFile();
     ISnykOptions Load();
+
+    /// <summary>Token currently saved in settings.json (possibly by another VS window), or null if unreadable.</summary>
+    Authentication.AuthenticationToken ReadTokenFromFile();
     /// <param name="updateOverrideTracker">
     /// When true (default, user-initiated saves): calls ApplyUserEdits and persists ChangedConfigKeys.
     /// When false (LS-originated / system saves): skips tracker mutation so LS-pushed values are

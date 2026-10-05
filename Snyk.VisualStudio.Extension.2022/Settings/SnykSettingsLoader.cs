@@ -67,6 +67,20 @@ namespace Snyk.VisualStudio.Extension.Settings
             if (snykSettings != null)
                 return snykSettings;
 
+            snykSettings = ReadFromDisk(out fileWasAbsent);
+            return snykSettings;
+        }
+
+        /// <summary>
+        /// Reads the file as it is on disk right now, bypassing and not touching the cached instance.
+        /// Other VS windows share the same file, so this is how to see what they saved.
+        /// </summary>
+        public SnykSettings ReadFromDisk() => ReadFromDisk(out _);
+
+        private SnykSettings ReadFromDisk(out bool fileWasAbsent)
+        {
+            fileWasAbsent = false;
+
             string rawJson;
             try
             {
@@ -112,8 +126,7 @@ namespace Snyk.VisualStudio.Extension.Settings
                 // still carries a non-empty legacy section so support can correlate.
                 WarnIfLegacySolutionSettingsPresent(rawJson);
 
-                snykSettings = Json.Deserialize<SnykSettings>(rawJson);
-                return snykSettings;
+                return Json.Deserialize<SnykSettings>(rawJson);
             }
             catch (Exception e)
             {

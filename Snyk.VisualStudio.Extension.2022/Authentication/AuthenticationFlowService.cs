@@ -10,6 +10,7 @@ using Serilog;
 using Snyk.VisualStudio.Extension.CLI;
 using Snyk.VisualStudio.Extension.Language;
 using Snyk.VisualStudio.Extension.Service;
+using Snyk.VisualStudio.Extension.Settings;
 
 namespace Snyk.VisualStudio.Extension.Authentication
 {
@@ -74,6 +75,19 @@ namespace Snyk.VisualStudio.Extension.Authentication
                                 .RunAsync(serviceProvider.TasksService.ScanAsync)
                                 .FireAndForget();
                         }
+                        return;
+                    }
+
+                    if (TryAdoptTokenFromFile(options))
+                    {
+                        Logger.Information("Using the valid token saved by another window instead of logging out");
+                        ThreadHelper.JoinableTaskFactory.RunAsync(async () =>
+                        {
+                            await serviceProvider.LanguageClientManager.DidChangeConfigurationAsync(serviceProvider.DisposalToken);
+                            await serviceProvider.ToolWindow.UpdateScreenStateAsync();
+                            if (options.AutoScan)
+                                await serviceProvider.TasksService.ScanAsync();
+                        }).FireAndForget();
                         return;
                     }
 
@@ -143,6 +157,17 @@ namespace Snyk.VisualStudio.Extension.Authentication
                 // promptly. Either way a stuck guard can't permanently block future auth attempts.
                 Interlocked.Exchange(ref this.authInProgress, 0);
             }
+        }
+
+        internal bool TryAdoptTokenFromFile(ISnykOptions options)
+        {
+            var onDisk = serviceProvider.SnykOptionsManager?.ReadTokenFromFile();
+            if (onDisk == null || !onDisk.IsValid() || onDisk.ToString() == options.ApiToken?.ToString())
+                return false;
+
+            options.AuthenticationMethod = onDisk.Type;
+            options.ApiToken = onDisk;
+            return true;
         }
 
         public async Task HandleAuthenticationSuccessAsync(string token, string apiUrl)

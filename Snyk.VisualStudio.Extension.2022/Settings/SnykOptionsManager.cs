@@ -104,6 +104,12 @@ namespace Snyk.VisualStudio.Extension.Settings
             }
         }
 
+        public AuthenticationToken ReadTokenFromFile()
+        {
+            var onDisk = this.settingsLoader.ReadFromDisk();
+            return onDisk == null ? null : new AuthenticationToken(onDisk.AuthenticationMethod, onDisk.Token);
+        }
+
         public void SaveSettingsToFile()
         {
             // Serialize + write under persistGate so two persisting threads never write the file
