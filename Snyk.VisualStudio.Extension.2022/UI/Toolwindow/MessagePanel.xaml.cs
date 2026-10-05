@@ -8,6 +8,7 @@ using System.Windows.Controls;
 using Microsoft.VisualStudio.Shell;
 using Microsoft.VisualStudio.Threading;
 using Serilog;
+using Snyk.VisualStudio.Extension.Authentication;
 using Snyk.VisualStudio.Extension.Language;
 using Snyk.VisualStudio.Extension.Service;
 
@@ -93,12 +94,19 @@ namespace Snyk.VisualStudio.Extension.UI.Toolwindow
         /// <summary>
         /// Show overview screen message.
         /// </summary>
-        public void ShowOverviewScreenMessage()
+        public void ShowOverviewScreenMessage(bool signInCancelled = false)
         {
             if (!LanguageClientHelper.IsLanguageServerReady())
             {
                 testCodeNowButton.IsEnabled = false;
             }
+
+            // The overview is only shown while the token is not valid, so a non-empty token means it expired.
+            var sessionExpired = !string.IsNullOrEmpty(this.ServiceProvider?.Options?.ApiToken?.ToString());
+            this.welcomePanel.Visibility = sessionExpired ? Visibility.Collapsed : Visibility.Visible;
+            this.sessionExpiredPanel.Visibility = sessionExpired ? Visibility.Visible : Visibility.Collapsed;
+            this.signInCancelledPanel.Visibility = signInCancelled ? Visibility.Visible : Visibility.Collapsed;
+            this.testCodeNowButton.Content = sessionExpired ? "Sign in again" : "Trust project and sign in";
 
             this.ShowPanel(this.overviewPanel);
         }
@@ -127,9 +135,9 @@ namespace Snyk.VisualStudio.Extension.UI.Toolwindow
         }
         private async Task RunTestCodeNowAsync()
         {
-            // Add folder to trusted
             Logger.Information("Enter RunTestCodeNowAsync");
-            var solutionFolderPath = await this.ServiceProvider.SolutionService.GetSolutionFolderAsync();
+            var firstSignIn = string.IsNullOrEmpty(this.ServiceProvider.Options.ApiToken?.ToString());
+            var solutionFolderPath = firstSignIn ? await this.ServiceProvider.SolutionService.GetSolutionFolderAsync() : null;
             if (!string.IsNullOrEmpty(solutionFolderPath))
             {
                 Logger.Information("Solution Folder Is {SolutionFolder}", solutionFolderPath);
@@ -169,8 +177,14 @@ namespace Snyk.VisualStudio.Extension.UI.Toolwindow
             await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
             this.testCodeNowButton.IsEnabled = true;
 
-
-            this.Context.TransitionTo(RunScanState.Instance);
+            if (this.ServiceProvider.Options.ApiToken.IsValid())
+            {
+                this.Context.TransitionTo(RunScanState.Instance);
+            }
+            else if (this.ServiceProvider.Options.AuthenticationMethod != AuthenticationType.Pat)
+            {
+                this.ShowOverviewScreenMessage(signInCancelled: true);
+            }
         }
 
 
