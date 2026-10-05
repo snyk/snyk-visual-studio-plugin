@@ -22,7 +22,7 @@ namespace Snyk.VisualStudio.Extension.UI.Toolwindow
 
             this.ToolWindowControl.messagePanel.Visibility = Visibility.Visible;
 
-            await this.ToolWindowControl.messagePanel.ShowOverviewScreenMessageAsync();
+            this.ToolWindowControl.messagePanel.ShowOverviewScreenMessage();
 
             await this.ToolWindowControl.UpdateActionsStateAsync();
         });

@@ -95,8 +95,13 @@ namespace Snyk.VisualStudio.Extension.UI.Toolwindow
         /// <summary>
         /// Show overview screen message.
         /// </summary>
-        public async Task ShowOverviewScreenMessageAsync(bool signInCancelled = false)
+        public void ShowOverviewScreenMessage(bool signInCancelled = false)
         {
+            if (!LanguageClientHelper.IsLanguageServerReady())
+            {
+                testCodeNowButton.IsEnabled = false;
+            }
+
             // The overview is only shown while the token is not valid, so a non-empty token means it expired.
             // A cancelled sign-in has already logged out, so keep the heading from before the click.
             if (!signInCancelled)
@@ -104,32 +109,11 @@ namespace Snyk.VisualStudio.Extension.UI.Toolwindow
                 this.sessionExpired = !string.IsNullOrEmpty(this.ServiceProvider?.Options?.ApiToken?.ToString());
             }
 
-            var needsTrust = await this.CurrentFolderNeedsTrustAsync();
-
-            await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
-            if (!LanguageClientHelper.IsLanguageServerReady())
-            {
-                testCodeNowButton.IsEnabled = false;
-            }
-
             this.welcomePanel.Visibility = this.sessionExpired ? Visibility.Collapsed : Visibility.Visible;
             this.sessionExpiredPanel.Visibility = this.sessionExpired ? Visibility.Visible : Visibility.Collapsed;
-            this.trustPanel.Visibility = needsTrust ? Visibility.Visible : Visibility.Collapsed;
             this.signInCancelledPanel.Visibility = signInCancelled ? Visibility.Visible : Visibility.Collapsed;
-            this.testCodeNowButton.Content = needsTrust ? "Trust project and sign in" : "Sign in";
 
             this.ShowPanel(this.overviewPanel);
-        }
-
-        private async Task<bool> CurrentFolderNeedsTrustAsync()
-        {
-            if (this.ServiceProvider == null)
-            {
-                return false;
-            }
-
-            var folder = await this.ServiceProvider.SolutionService.GetSolutionFolderAsync();
-            return !string.IsNullOrEmpty(folder) && !this.ServiceProvider.WorkspaceTrustService.IsFolderTrusted(folder);
         }
 
         public void ShowInitializingScreenMessage()
@@ -149,39 +133,15 @@ namespace Snyk.VisualStudio.Extension.UI.Toolwindow
             panel.Visibility = Visibility.Visible;
         }
 
-        private void TestCodeNow_Click(object sender, RoutedEventArgs e)
+        private void SignIn_Click(object sender, RoutedEventArgs e)
         {
             this.testCodeNowButton.IsEnabled = false;
-            ThreadHelper.JoinableTaskFactory.RunAsync(RunTestCodeNowAsync).FireAndForget();
+            ThreadHelper.JoinableTaskFactory.RunAsync(SignInAsync).FireAndForget();
         }
-        private async Task RunTestCodeNowAsync()
+
+        // Folder trust is not touched here: the language server asks for it in the tree view before the first scan.
+        private async Task SignInAsync()
         {
-            Logger.Information("Enter RunTestCodeNowAsync");
-            var solutionFolderPath = await this.ServiceProvider.SolutionService.GetSolutionFolderAsync();
-            if (!string.IsNullOrEmpty(solutionFolderPath) && !this.ServiceProvider.WorkspaceTrustService.IsFolderTrusted(solutionFolderPath))
-            {
-                Logger.Information("Solution Folder Is {SolutionFolder}", solutionFolderPath);
-
-                try
-                {
-                    ThreadHelper.JoinableTaskFactory.RunAsync(async () =>
-                    {
-                        Logger.Information("Adding Folder {SolutionFolder} to trusted folders", solutionFolderPath);
-
-                        this.ServiceProvider.WorkspaceTrustService.AddFolderToTrusted(solutionFolderPath);
-                        Logger.Information("Workspace folder was trusted: {SolutionFolderPath}", solutionFolderPath);
-                        await this.ServiceProvider.LanguageClientManager.DidChangeConfigurationAsync(SnykVSPackage
-                            .Instance.DisposalToken);
-                    }).FireAndForget();
-                    
-                }
-                catch (ArgumentException ex)
-                {
-                    Logger.Error(ex, "Failed to add folder to trusted list.");
-                    throw;
-                }
-            }
-
             try
             {
                 Logger.Information("Attempting to Auth");
@@ -203,7 +163,7 @@ namespace Snyk.VisualStudio.Extension.UI.Toolwindow
             }
             else if (this.ServiceProvider.Options.AuthenticationMethod != AuthenticationType.Pat)
             {
-                await this.ShowOverviewScreenMessageAsync(signInCancelled: true);
+                this.ShowOverviewScreenMessage(signInCancelled: true);
             }
         }
 
