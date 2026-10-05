@@ -744,6 +744,17 @@ namespace Snyk.VisualStudio.Extension.UI.Toolwindow
             this.DetermineInitScreen();
         }
 
+        public async Task LeaveOverviewIfAuthenticatedAsync()
+        {
+            await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
+            if (!this.context.IsOverviewState())
+            {
+                return;
+            }
+
+            this.DetermineInitScreen();
+        }
+
         // On scan completion, surface the "select an issue" prompt in the right pane; the issue
         // tree itself is rendered by the LS via the $/snyk.treeView notification.
         private async Task OnOssScanningFinishedAsync()

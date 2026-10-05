@@ -22,5 +22,8 @@ namespace Snyk.VisualStudio.Extension.UI.Toolwindow
         void Show();
 
         Task UpdateScreenStateAsync();
+
+        /// <summary>Re-evaluates the screen only while the welcome (overview) screen is shown.</summary>
+        Task LeaveOverviewIfAuthenticatedAsync();
     }
 }

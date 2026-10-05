@@ -227,6 +227,7 @@ namespace Snyk.VisualStudio.Extension.Language
             var apiUrl = arg["apiUrl"]?.ToString();
 
             var oldToken = serviceProvider.Options.ApiToken?.ToString() ?? string.Empty;
+            var oldTokenWasValid = serviceProvider.Options.ApiToken?.IsValid() == true;
 
             // Queue the token for the HTML settings page so the token field updates after an OAuth
             // round-trip. Queuing (rather than a direct push to a live instance) guarantees delivery
@@ -264,7 +265,13 @@ namespace Snyk.VisualStudio.Extension.Language
             // Token refresh also has old token non-blank, so no scan.
             var isNewLogin = string.IsNullOrEmpty(oldToken) && !string.IsNullOrEmpty(token);
             if (!isNewLogin)
+            {
+                // The welcome screen was chosen while the stored token was expired; re-evaluate once a refresh revives it.
+                var toolWindow = serviceProvider.ToolWindow;
+                if (!oldTokenWasValid && serviceProvider.Options.ApiToken.IsValid() && toolWindow != null)
+                    await toolWindow.LeaveOverviewIfAuthenticatedAsync();
                 return;
+            }
 
             await serviceProvider.AuthenticationFlowService.HandleAuthenticationSuccessAsync(token, apiUrl);
 

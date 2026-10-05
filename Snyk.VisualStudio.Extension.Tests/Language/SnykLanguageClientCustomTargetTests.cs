@@ -421,6 +421,37 @@ namespace Snyk.VisualStudio.Extension.Tests.Language
         }
 
         [Fact]
+        public async Task OnHasAuthenticated_RefreshOfExpiredToken_LeavesOverviewScreen()
+        {
+            var expired = "{\"access_token\":\"a\",\"token_type\":\"Bearer\",\"refresh_token\":\"r\",\"expiry\":\"2000-01-01T00:00:00Z\"}";
+            var refreshed = "{\"access_token\":\"b\",\"token_type\":\"Bearer\",\"refresh_token\":\"r2\",\"expiry\":\"2099-01-01T00:00:00Z\"}";
+            var toolWindowMock = SetupToolWindow();
+            toolWindowMock.Setup(t => t.LeaveOverviewIfAuthenticatedAsync()).Returns(Task.CompletedTask);
+            optionsMock.SetupGet(o => o.AuthenticationMethod).Returns(AuthenticationType.OAuth);
+            optionsMock.Object.ApiToken = new AuthenticationToken(AuthenticationType.OAuth, expired);
+
+            await cut.OnHasAuthenticated(new JObject { ["token"] = refreshed });
+
+            toolWindowMock.Verify(t => t.LeaveOverviewIfAuthenticatedAsync(), Times.Once);
+            authenticationFlowServiceMock.Verify(o => o.HandleAuthenticationSuccessAsync(It.IsAny<string>(), It.IsAny<string>()), Times.Never);
+            tasksServiceMock.Verify(t => t.ScanAsync(), Times.Never);
+        }
+
+        [Fact]
+        public async Task OnHasAuthenticated_RefreshOfValidToken_DoesNotTouchScreen()
+        {
+            var valid = "{\"access_token\":\"a\",\"token_type\":\"Bearer\",\"refresh_token\":\"r\",\"expiry\":\"2099-01-01T00:00:00Z\"}";
+            var refreshed = "{\"access_token\":\"b\",\"token_type\":\"Bearer\",\"refresh_token\":\"r2\",\"expiry\":\"2099-06-01T00:00:00Z\"}";
+            var toolWindowMock = SetupToolWindow();
+            optionsMock.SetupGet(o => o.AuthenticationMethod).Returns(AuthenticationType.OAuth);
+            optionsMock.Object.ApiToken = new AuthenticationToken(AuthenticationType.OAuth, valid);
+
+            await cut.OnHasAuthenticated(new JObject { ["token"] = refreshed });
+
+            toolWindowMock.Verify(t => t.LeaveOverviewIfAuthenticatedAsync(), Times.Never);
+        }
+
+        [Fact]
         public async Task OnHasAuthenticated_AlwaysUpdatesTokenAndEndpoint()
         {
             // Arrange — always stores token and endpoint regardless of whether it is a new login or refresh.
