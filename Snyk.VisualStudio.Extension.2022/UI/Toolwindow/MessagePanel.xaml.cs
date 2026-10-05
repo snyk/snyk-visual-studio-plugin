@@ -21,6 +21,7 @@ namespace Snyk.VisualStudio.Extension.UI.Toolwindow
     {
         private static readonly ILogger Logger = LogManager.ForContext<MessagePanel>();
         private readonly IList<StackPanel> panels;
+        private bool sessionExpired;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="MessagePanel"/> class.
@@ -94,21 +95,41 @@ namespace Snyk.VisualStudio.Extension.UI.Toolwindow
         /// <summary>
         /// Show overview screen message.
         /// </summary>
-        public void ShowOverviewScreenMessage(bool signInCancelled = false)
+        public async Task ShowOverviewScreenMessageAsync(bool signInCancelled = false)
         {
+            // The overview is only shown while the token is not valid, so a non-empty token means it expired.
+            // A cancelled sign-in has already logged out, so keep the heading from before the click.
+            if (!signInCancelled)
+            {
+                this.sessionExpired = !string.IsNullOrEmpty(this.ServiceProvider?.Options?.ApiToken?.ToString());
+            }
+
+            var needsTrust = await this.CurrentFolderNeedsTrustAsync();
+
+            await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
             if (!LanguageClientHelper.IsLanguageServerReady())
             {
                 testCodeNowButton.IsEnabled = false;
             }
 
-            // The overview is only shown while the token is not valid, so a non-empty token means it expired.
-            var sessionExpired = !string.IsNullOrEmpty(this.ServiceProvider?.Options?.ApiToken?.ToString());
-            this.welcomePanel.Visibility = sessionExpired ? Visibility.Collapsed : Visibility.Visible;
-            this.sessionExpiredPanel.Visibility = sessionExpired ? Visibility.Visible : Visibility.Collapsed;
+            this.welcomePanel.Visibility = this.sessionExpired ? Visibility.Collapsed : Visibility.Visible;
+            this.sessionExpiredPanel.Visibility = this.sessionExpired ? Visibility.Visible : Visibility.Collapsed;
+            this.trustPanel.Visibility = needsTrust ? Visibility.Visible : Visibility.Collapsed;
             this.signInCancelledPanel.Visibility = signInCancelled ? Visibility.Visible : Visibility.Collapsed;
-            this.testCodeNowButton.Content = sessionExpired ? "Sign in again" : "Trust project and sign in";
+            this.testCodeNowButton.Content = needsTrust ? "Trust project and sign in" : "Sign in";
 
             this.ShowPanel(this.overviewPanel);
+        }
+
+        private async Task<bool> CurrentFolderNeedsTrustAsync()
+        {
+            if (this.ServiceProvider == null)
+            {
+                return false;
+            }
+
+            var folder = await this.ServiceProvider.SolutionService.GetSolutionFolderAsync();
+            return !string.IsNullOrEmpty(folder) && !this.ServiceProvider.WorkspaceTrustService.IsFolderTrusted(folder);
         }
 
         public void ShowInitializingScreenMessage()
@@ -136,9 +157,8 @@ namespace Snyk.VisualStudio.Extension.UI.Toolwindow
         private async Task RunTestCodeNowAsync()
         {
             Logger.Information("Enter RunTestCodeNowAsync");
-            var firstSignIn = string.IsNullOrEmpty(this.ServiceProvider.Options.ApiToken?.ToString());
-            var solutionFolderPath = firstSignIn ? await this.ServiceProvider.SolutionService.GetSolutionFolderAsync() : null;
-            if (!string.IsNullOrEmpty(solutionFolderPath))
+            var solutionFolderPath = await this.ServiceProvider.SolutionService.GetSolutionFolderAsync();
+            if (!string.IsNullOrEmpty(solutionFolderPath) && !this.ServiceProvider.WorkspaceTrustService.IsFolderTrusted(solutionFolderPath))
             {
                 Logger.Information("Solution Folder Is {SolutionFolder}", solutionFolderPath);
 
@@ -183,7 +203,7 @@ namespace Snyk.VisualStudio.Extension.UI.Toolwindow
             }
             else if (this.ServiceProvider.Options.AuthenticationMethod != AuthenticationType.Pat)
             {
-                this.ShowOverviewScreenMessage(signInCancelled: true);
+                await this.ShowOverviewScreenMessageAsync(signInCancelled: true);
             }
         }
 

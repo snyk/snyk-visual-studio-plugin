@@ -108,6 +108,27 @@ namespace Snyk.VisualStudio.Extension.Tests.Service
                 Times.Once);
         }
 
+        [Theory]
+        [InlineData("C:\\Users\\Project", true)]
+        [InlineData("C:\\Users\\Project\\", true)]
+        [InlineData("c:\\users\\project", true)]
+        [InlineData("C:\\Users\\Project\\src\\app", true)]
+        [InlineData("C:\\Users\\ProjectOther", false)]
+        [InlineData("C:\\Users", false)]
+        [InlineData("", false)]
+        public void IsFolderTrusted_MatchesTrustedFolderOrSubfolder(string folder, bool expected)
+        {
+            optionsMock.Setup(s => s.TrustedFolders).Returns(new HashSet<string> { "C:\\Users\\Project" });
+
+            Assert.Equal(expected, cut.IsFolderTrusted(folder));
+        }
+
+        [Fact]
+        public void IsFolderTrusted_NothingTrusted_ReturnsFalse()
+        {
+            Assert.False(cut.IsFolderTrusted("C:\\Users\\Project"));
+        }
+
         private string CreateTempDirectory()
         {
             var tempDirectory = Path.Combine(Path.GetTempPath(), Path.GetRandomFileName());
