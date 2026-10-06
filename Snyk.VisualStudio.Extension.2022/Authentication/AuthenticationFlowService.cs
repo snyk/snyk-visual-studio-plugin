@@ -24,6 +24,7 @@ namespace Snyk.VisualStudio.Extension.Authentication
         // Re-entrancy guard for Authenticate(): 0 = idle, 1 = in flight. Interlocked because the
         // method can be invoked off the UI thread, so a plain check-then-set bool would race.
         private int authInProgress;
+        private int explicitLogout;
 
         // Resolve the dialog lazily: production passes null and falls back to the WPF singleton at
         // first use (unchanged timing — constructing it eagerly here could run off the UI thread),
@@ -169,6 +170,10 @@ namespace Snyk.VisualStudio.Extension.Authentication
             options.ApiToken = onDisk;
             return true;
         }
+
+        public void MarkExplicitLogout() => Interlocked.Exchange(ref this.explicitLogout, 1);
+
+        public bool ConsumeExplicitLogout() => Interlocked.Exchange(ref this.explicitLogout, 0) == 1;
 
         public async Task HandleAuthenticationSuccessAsync(string token, string apiUrl)
         {

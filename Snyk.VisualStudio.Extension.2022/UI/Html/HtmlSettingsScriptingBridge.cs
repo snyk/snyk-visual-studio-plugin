@@ -166,6 +166,9 @@ namespace Snyk.VisualStudio.Extension.UI.Html
         /// </summary>
         public void __ideExecuteCommand__(string command, string argsJson, string callbackId)
         {
+            if (command == "snyk.logout")
+                serviceProvider.AuthenticationFlowService?.MarkExplicitLogout();
+
             if (command == "snyk.login")
             {
                 try
@@ -383,6 +386,7 @@ namespace Snyk.VisualStudio.Extension.UI.Html
                     ApplyScanSettings(config, editedKeys);
                     ApplyIssueViewSettings(config, editedKeys);
                     var previousAuthMethod = Options.AuthenticationMethod;
+                    var previousEndpoint = Options.CustomEndpoint;
                     ApplyAuthenticationSettings(config, editedKeys);
                     // Clear stored token when auth method changes: a token from one method is not valid for another.
                     if (config.AuthenticationMethod != null && Options.AuthenticationMethod != previousAuthMethod)
@@ -391,6 +395,13 @@ namespace Snyk.VisualStudio.Extension.UI.Html
                     }
 
                     ApplyConnectionSettings(config, editedKeys);
+
+                    // Switching account method or endpoint is the user leaving their session, not the session expiring.
+                    if (Options.AuthenticationMethod != previousAuthMethod || Options.CustomEndpoint != previousEndpoint)
+                    {
+                        Options.HadSession = false;
+                        serviceProvider.AuthenticationFlowService?.MarkExplicitLogout();
+                    }
                     ApplyTrustedFolders(config, editedKeys);
                     ApplyFilterSettings(config, editedKeys);
                     ApplyMiscellaneousSettings(config, editedKeys);

@@ -21,8 +21,6 @@ namespace Snyk.VisualStudio.Extension.UI.Toolwindow
     {
         private static readonly ILogger Logger = LogManager.ForContext<MessagePanel>();
         private readonly IList<StackPanel> panels;
-        private bool sessionExpired;
-
         /// <summary>
         /// Initializes a new instance of the <see cref="MessagePanel"/> class.
         /// </summary>
@@ -102,15 +100,12 @@ namespace Snyk.VisualStudio.Extension.UI.Toolwindow
                 testCodeNowButton.IsEnabled = false;
             }
 
-            // The overview is only shown while the token is not valid, so a non-empty token means it expired.
-            // A cancelled sign-in has already logged out, so keep the heading from before the click.
-            if (!signInCancelled)
-            {
-                this.sessionExpired = !string.IsNullOrEmpty(this.ServiceProvider?.Options?.ApiToken?.ToString());
-            }
+            // The overview is only shown while the token is not valid, so a user who had a session is seeing an expired one.
+            var options = this.ServiceProvider?.Options;
+            var sessionExpired = options?.HadSession == true || !string.IsNullOrEmpty(options?.ApiToken?.ToString());
 
-            this.welcomePanel.Visibility = this.sessionExpired ? Visibility.Collapsed : Visibility.Visible;
-            this.sessionExpiredPanel.Visibility = this.sessionExpired ? Visibility.Visible : Visibility.Collapsed;
+            this.welcomePanel.Visibility = sessionExpired ? Visibility.Collapsed : Visibility.Visible;
+            this.sessionExpiredPanel.Visibility = sessionExpired ? Visibility.Visible : Visibility.Collapsed;
             this.signInCancelledPanel.Visibility = signInCancelled ? Visibility.Visible : Visibility.Collapsed;
 
             this.ShowPanel(this.overviewPanel);

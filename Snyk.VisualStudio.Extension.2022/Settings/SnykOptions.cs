@@ -28,6 +28,7 @@ namespace Snyk.VisualStudio.Extension.Settings
         public bool OpenIssuesEnabled { get; set; }
         public bool IgnoredIssuesEnabled { get; set; }
         public AuthenticationToken ApiToken { get; set; }
+        public bool HadSession { get; set; }
         public AuthenticationType AuthenticationMethod { get; set; }
         public string CustomEndpoint { get; set; }
         public string Organization { get; set; }

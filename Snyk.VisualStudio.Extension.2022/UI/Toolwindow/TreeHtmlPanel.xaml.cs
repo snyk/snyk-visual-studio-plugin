@@ -265,6 +265,9 @@ namespace Snyk.VisualStudio.Extension.UI.Toolwindow
                 return;
             }
 
+            if (command == LsConstants.SnykLogout)
+                SnykVSPackage.ServiceProvider.AuthenticationFlowService?.MarkExplicitLogout();
+
             ThreadHelper.JoinableTaskFactory.RunAsync(async () =>
             {
                 await ExecuteCommandBridge.DispatchAsync(

@@ -438,6 +438,91 @@ namespace Snyk.VisualStudio.Extension.Tests.Language
         }
 
         [Fact]
+        public async Task OnHasAuthenticated_EmptyToken_KeepsValidTokenSavedByAnotherWindow()
+        {
+            var expired = "{\"access_token\":\"a\",\"token_type\":\"Bearer\",\"refresh_token\":\"r\",\"expiry\":\"2000-01-01T00:00:00Z\"}";
+            var valid = "{\"access_token\":\"b\",\"token_type\":\"Bearer\",\"refresh_token\":\"r2\",\"expiry\":\"2099-01-01T00:00:00Z\"}";
+            var toolWindow = SetupToolWindow();
+            toolWindow.Setup(t => t.LeaveOverviewIfAuthenticatedAsync()).Returns(Task.CompletedTask);
+            optionsMock.SetupGet(o => o.AuthenticationMethod).Returns(AuthenticationType.OAuth);
+            optionsMock.Object.ApiToken = new AuthenticationToken(AuthenticationType.OAuth, expired);
+            snykOptionsManagerMock.Setup(m => m.ReadTokenFromFile())
+                .Returns(new AuthenticationToken(AuthenticationType.OAuth, valid));
+
+            await cut.OnHasAuthenticated(new JObject { ["token"] = "" });
+
+            Assert.Equal(valid, optionsMock.Object.ApiToken.ToString());
+            Assert.True(optionsMock.Object.HadSession);
+            toolWindow.Verify(t => t.UpdateScreenStateAsync(), Times.Never);
+            toolWindow.Verify(t => t.LeaveOverviewIfAuthenticatedAsync(), Times.Once);
+        }
+
+        [Fact]
+        public async Task OnHasAuthenticated_EmptyToken_KeepsSessionMarkerForExpiredSession()
+        {
+            var expired = "{\"access_token\":\"a\",\"token_type\":\"Bearer\",\"refresh_token\":\"r\",\"expiry\":\"2000-01-01T00:00:00Z\"}";
+            var toolWindow = SetupToolWindow();
+            toolWindow.Setup(t => t.UpdateScreenStateAsync()).Returns(Task.CompletedTask);
+            optionsMock.SetupGet(o => o.AuthenticationMethod).Returns(AuthenticationType.OAuth);
+            optionsMock.Object.ApiToken = new AuthenticationToken(AuthenticationType.OAuth, expired);
+            optionsMock.Object.HadSession = true;
+
+            await cut.OnHasAuthenticated(new JObject { ["token"] = "" });
+
+            Assert.Equal(string.Empty, optionsMock.Object.ApiToken.ToString());
+            Assert.True(optionsMock.Object.HadSession);
+            toolWindow.Verify(t => t.UpdateScreenStateAsync(), Times.Once);
+        }
+
+        [Fact]
+        public async Task OnHasAuthenticated_EmptyToken_ExplicitLogoutClearsSessionMarker()
+        {
+            var expired = "{\"access_token\":\"a\",\"token_type\":\"Bearer\",\"refresh_token\":\"r\",\"expiry\":\"2000-01-01T00:00:00Z\"}";
+            var toolWindow = SetupToolWindow();
+            toolWindow.Setup(t => t.UpdateScreenStateAsync()).Returns(Task.CompletedTask);
+            optionsMock.SetupGet(o => o.AuthenticationMethod).Returns(AuthenticationType.OAuth);
+            optionsMock.Object.ApiToken = new AuthenticationToken(AuthenticationType.OAuth, expired);
+            optionsMock.Object.HadSession = true;
+            authenticationFlowServiceMock.Setup(s => s.ConsumeExplicitLogout()).Returns(true);
+
+            await cut.OnHasAuthenticated(new JObject { ["token"] = "" });
+
+            Assert.False(optionsMock.Object.HadSession);
+            toolWindow.Verify(t => t.UpdateScreenStateAsync(), Times.Once);
+        }
+
+        [Fact]
+        public async Task OnHasAuthenticated_EmptyToken_ExplicitLogoutDoesNotReadTokenFromDisk()
+        {
+            var valid = "{\"access_token\":\"b\",\"token_type\":\"Bearer\",\"refresh_token\":\"r2\",\"expiry\":\"2099-01-01T00:00:00Z\"}";
+            var toolWindow = SetupToolWindow();
+            toolWindow.Setup(t => t.UpdateScreenStateAsync()).Returns(Task.CompletedTask);
+            optionsMock.SetupGet(o => o.AuthenticationMethod).Returns(AuthenticationType.OAuth);
+            optionsMock.Object.ApiToken = new AuthenticationToken(AuthenticationType.OAuth, valid);
+            snykOptionsManagerMock.Setup(m => m.ReadTokenFromFile())
+                .Returns(new AuthenticationToken(AuthenticationType.OAuth, valid));
+            authenticationFlowServiceMock.Setup(s => s.ConsumeExplicitLogout()).Returns(true);
+
+            await cut.OnHasAuthenticated(new JObject { ["token"] = "" });
+
+            Assert.Equal(string.Empty, optionsMock.Object.ApiToken.ToString());
+            snykOptionsManagerMock.Verify(m => m.ReadTokenFromFile(), Times.Never);
+        }
+
+        [Fact]
+        public async Task OnHasAuthenticated_NewToken_SetsSessionMarker()
+        {
+            var valid = "{\"access_token\":\"b\",\"token_type\":\"Bearer\",\"refresh_token\":\"r2\",\"expiry\":\"2099-01-01T00:00:00Z\"}";
+            SetupToolWindow();
+            optionsMock.SetupGet(o => o.AuthenticationMethod).Returns(AuthenticationType.OAuth);
+            optionsMock.Object.ApiToken = new AuthenticationToken(AuthenticationType.OAuth, string.Empty);
+
+            await cut.OnHasAuthenticated(new JObject { ["token"] = valid });
+
+            Assert.True(optionsMock.Object.HadSession);
+        }
+
+        [Fact]
         public async Task OnHasAuthenticated_RefreshOfValidToken_DoesNotTouchScreen()
         {
             var valid = "{\"access_token\":\"a\",\"token_type\":\"Bearer\",\"refresh_token\":\"r\",\"expiry\":\"2099-01-01T00:00:00Z\"}";

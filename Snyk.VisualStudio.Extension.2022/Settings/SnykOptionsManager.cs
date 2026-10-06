@@ -298,6 +298,7 @@ namespace Snyk.VisualStudio.Extension.Settings
 
                 AuthenticationMethod = snykSettings.AuthenticationMethod,
                 ApiToken = new AuthenticationToken(snykSettings.AuthenticationMethod, snykSettings.Token),
+                HadSession = snykSettings.HadSession || !string.IsNullOrEmpty(snykSettings.Token),
                 CustomEndpoint = snykSettings.CustomEndpoint,
                 Organization = snykSettings.Organization,
 
@@ -521,6 +522,7 @@ namespace Snyk.VisualStudio.Extension.Settings
 
             snykSettings.AuthenticationMethod = options.AuthenticationMethod;
             snykSettings.Token = options.ApiToken.ToString();
+            snykSettings.HadSession = options.HadSession;
 
             snykSettings.CustomEndpoint = options.CustomEndpoint;
             snykSettings.Organization = options.Organization;

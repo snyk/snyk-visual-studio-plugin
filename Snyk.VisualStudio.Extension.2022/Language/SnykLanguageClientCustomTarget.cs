@@ -229,6 +229,30 @@ namespace Snyk.VisualStudio.Extension.Language
             var oldToken = serviceProvider.Options.ApiToken?.ToString() ?? string.Empty;
             var oldTokenWasValid = serviceProvider.Options.ApiToken?.IsValid() == true;
 
+            if (string.IsNullOrEmpty(token))
+            {
+                var explicitLogout = serviceProvider.AuthenticationFlowService.ConsumeExplicitLogout();
+                if (explicitLogout)
+                {
+                    serviceProvider.Options.HadSession = false;
+                }
+                else
+                {
+                    // Another VS window may have signed in since; its token is on disk and must not be dropped.
+                    var onDisk = serviceProvider.SnykOptionsManager?.ReadTokenFromFile();
+                    if (onDisk != null && onDisk.IsValid())
+                    {
+                        serviceProvider.Options.AuthenticationMethod = onDisk.Type;
+                        token = onDisk.ToString();
+                    }
+                }
+            }
+
+            if (!string.IsNullOrEmpty(token))
+            {
+                serviceProvider.Options.HadSession = true;
+            }
+
             // Queue the token for the HTML settings page so the token field updates after an OAuth
             // round-trip. Queuing (rather than a direct push to a live instance) guarantees delivery
             // even when no settings page is open yet or its HTML hasn't finished loading — the next
@@ -260,6 +284,14 @@ namespace Snyk.VisualStudio.Extension.Language
                 serviceProvider.Options,
                 triggerSettingsChangedEvent: false,
                 updateOverrideTracker: false);
+
+            if (string.IsNullOrEmpty(token))
+            {
+                var toolWindow = serviceProvider.ToolWindow;
+                if (toolWindow != null)
+                    await toolWindow.UpdateScreenStateAsync();
+                return;
+            }
 
             // Scan only when this is a new login (old token was blank).
             // Token refresh also has old token non-blank, so no scan.
