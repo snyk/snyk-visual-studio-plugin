@@ -361,6 +361,8 @@ namespace Snyk.VisualStudio.Extension.Language
             this.serviceProvider.SnykOptionsManager.Save(serviceProvider.Options, triggerSettingsChangedEvent: false, updateOverrideTracker: false);
             // Don't call DidChangeConfigurationAsync here as it creates an infinite loop
             // The Language Server already knows about the trusted folders changes
+
+            serviceProvider.ToolWindow?.TreeHtmlPanel?.RequestInitialTree();
         }
 
         private async Task ProcessCodeScanAsync(LsAnalysisResult lsAnalysisResult)
@@ -377,6 +379,7 @@ namespace Snyk.VisualStudio.Extension.Language
                 serviceProvider.TasksService.FireTaskFinished();
                 return;
             }
+            if (!serviceProvider.TasksService.IsSnykCodeScanning) return;
 
             serviceProvider.TasksService.FireSnykCodeScanningFinishedEvent();
             serviceProvider.TasksService.FireTaskFinished();
@@ -395,6 +398,7 @@ namespace Snyk.VisualStudio.Extension.Language
                 serviceProvider.TasksService.FireTaskFinished();
                 return;
             }
+            if (!serviceProvider.TasksService.IsOssScanning) return;
 
             serviceProvider.TasksService.FireOssScanningFinishedEvent();
             serviceProvider.TasksService.FireTaskFinished();
@@ -414,6 +418,7 @@ namespace Snyk.VisualStudio.Extension.Language
                 serviceProvider.TasksService.FireTaskFinished();
                 return;
             }
+            if (!serviceProvider.TasksService.IsIacScanning) return;
 
             serviceProvider.TasksService.FireIacScanningFinishedEvent();
             serviceProvider.TasksService.FireTaskFinished();
@@ -432,6 +437,7 @@ namespace Snyk.VisualStudio.Extension.Language
                 serviceProvider.TasksService.FireTaskFinished();
                 return;
             }
+            if (!serviceProvider.TasksService.IsSecretsScanning) return;
 
             serviceProvider.TasksService.FireSecretsScanningFinishedEvent();
             serviceProvider.TasksService.FireTaskFinished();

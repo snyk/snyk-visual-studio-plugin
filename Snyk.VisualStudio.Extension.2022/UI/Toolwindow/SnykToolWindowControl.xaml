@@ -25,9 +25,6 @@
                 <ColumnDefinition x:Name="splitterColumn" Width="6"/>
                 <ColumnDefinition Width="6*"/>
             </Grid.ColumnDefinitions>
-            <!-- Summary + tree come from the LS and are hidden while signed out (see
-                 SetResultsPaneVisible), so the untrusted-folder banner and filters only appear
-                 once there is a session. -->
             <Grid Grid.Column="0" x:Name="resultsPane">
                 <!-- Both panel rows are star-sized so the GridSplitter only redistributes a fixed
                      total between them. A fixed-pixel + star mix lets WPF's GridSplitter grow the

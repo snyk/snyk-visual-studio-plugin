@@ -574,6 +574,45 @@ namespace Snyk.VisualStudio.Extension.Tests.Language
         }
 
         [Fact]
+        public async Task OnAddTrustedFolders_PullsTheTreeSoTheTrustBannerIsRefreshed()
+        {
+            var arg = JObject.Parse("{'trustedFolders':['/folder1']}");
+            optionsMock.SetupProperty(o => o.TrustedFolders);
+            var treePanelMock = new Mock<ITreeHtmlPanel>();
+            SetupToolWindow().SetupGet(t => t.TreeHtmlPanel).Returns(treePanelMock.Object);
+
+            await cut.OnAddTrustedFolders(arg);
+
+            treePanelMock.Verify(t => t.RequestInitialTree(), Times.Once);
+        }
+
+        [Fact]
+        public async Task OnSnykScan_SuccessWithoutInProgress_IsNotAFinishedScan()
+        {
+            var arg = JObject.Parse(@"{'status':'success','product':'oss','folderPath':'/repo'}");
+            tasksServiceMock.Setup(t => t.SnykScanTokenSource).Returns(new CancellationTokenSource());
+            tasksServiceMock.SetupGet(t => t.IsOssScanning).Returns(false);
+
+            await cut.OnSnykScan(arg);
+
+            tasksServiceMock.Verify(t => t.FireOssScanningFinishedEvent(), Times.Never);
+            tasksServiceMock.Verify(t => t.FireTaskFinished(), Times.Never);
+        }
+
+        [Fact]
+        public async Task OnSnykScan_SuccessAfterInProgress_FiresFinished()
+        {
+            var arg = JObject.Parse(@"{'status':'success','product':'oss','folderPath':'/repo'}");
+            tasksServiceMock.Setup(t => t.SnykScanTokenSource).Returns(new CancellationTokenSource());
+            tasksServiceMock.SetupGet(t => t.IsOssScanning).Returns(true);
+
+            await cut.OnSnykScan(arg);
+
+            tasksServiceMock.Verify(t => t.FireOssScanningFinishedEvent(), Times.Once);
+            tasksServiceMock.Verify(t => t.FireTaskFinished(), Times.Once);
+        }
+
+        [Fact]
         public async Task OnSnykConfiguration_ShouldUpdateFolderConfigs_WhenValidFolderConfigsProvided()
         {
             // Arrange
@@ -1001,6 +1040,7 @@ namespace Snyk.VisualStudio.Extension.Tests.Language
             // Arrange
             var arg = JObject.Parse(@"{'status':'success','product':'secrets','folderPath':'/repo'}");
             tasksServiceMock.Setup(t => t.SnykScanTokenSource).Returns(new CancellationTokenSource());
+            tasksServiceMock.SetupGet(t => t.IsSecretsScanning).Returns(true);
 
             // Act
             await cut.OnSnykScan(arg);

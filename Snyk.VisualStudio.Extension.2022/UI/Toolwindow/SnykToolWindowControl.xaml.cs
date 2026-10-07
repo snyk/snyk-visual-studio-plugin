@@ -765,10 +765,6 @@ namespace Snyk.VisualStudio.Extension.UI.Toolwindow
             this.DetermineInitScreen();
         }
 
-        /// <summary>
-        /// Shows or hides the LS summary and tree column. Hidden while signed out so the
-        /// untrusted-folder banner and the filters are only offered once there is a session.
-        /// </summary>
         public void SetResultsPaneVisible(bool visible)
         {
             ThreadHelper.ThrowIfNotOnUIThread();
@@ -799,8 +795,6 @@ namespace Snyk.VisualStudio.Extension.UI.Toolwindow
 
         // On scan completion, surface the "select an issue" prompt in the right pane; the issue
         // tree itself is rendered by the LS via the $/snyk.treeView notification.
-        // The LS also reports "success" when it republishes cached results after a settings change,
-        // without a scan; that must not move a signed-out user off the Overview screen.
         private async Task OnOssScanningFinishedAsync() => await this.ShowScanResultsAsync();
 
         private async Task OnSnykCodeScanningFinishedAsync() => await this.ShowScanResultsAsync();
