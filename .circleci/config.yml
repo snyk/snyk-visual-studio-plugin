@@ -41,6 +41,6 @@ workflows:
               ignore: main
       - security-scans:
           context:
-            - devex_ide
+            - endpoint-experience
             - prodsec-orb-runtime
 
