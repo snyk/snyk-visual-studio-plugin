@@ -25,5 +25,8 @@ namespace Snyk.VisualStudio.Extension.UI.Toolwindow
 
         /// <summary>Re-evaluates the screen only while the welcome (overview) screen is shown.</summary>
         Task LeaveOverviewIfAuthenticatedAsync();
+
+        /// <summary>Redraws the current screen, e.g. after the trusted folders changed.</summary>
+        Task RefreshScreenAsync();
     }
 }

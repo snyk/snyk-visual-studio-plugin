@@ -33,6 +33,7 @@ namespace Snyk.VisualStudio.Extension.UI.Toolwindow
                 this.selectIssueMessagePanel,
                 this.noIssuesMessagePanel,
                 this.runScanMessagePanel,
+                this.trustFolderMessagePanel,
                 this.messagePanel,
                 this.overviewPanel,
                 this.scanningProjectMessagePanel,
@@ -81,6 +82,41 @@ namespace Snyk.VisualStudio.Extension.UI.Toolwindow
         public void ShowRunScanMessage() => this.ShowPanel(this.runScanMessagePanel);
 
         /// <summary>
+        /// Show the run scan message, or the trust prompt when the open folder is not trusted yet.
+        /// </summary>
+        public async Task ShowRunScanOrTrustFolderMessageAsync()
+        {
+            var untrustedFolder = await this.GetUntrustedSolutionFolderAsync();
+
+            await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
+            if (untrustedFolder == null)
+            {
+                this.ShowRunScanMessage();
+                return;
+            }
+
+            this.untrustedFolderPath.Text = untrustedFolder;
+            this.trustFolderButton.IsEnabled = true;
+            this.ShowPanel(this.trustFolderMessagePanel);
+        }
+
+        private async Task<string> GetUntrustedSolutionFolderAsync()
+        {
+            if (this.ServiceProvider?.SolutionService == null || this.ServiceProvider.WorkspaceTrustService == null)
+            {
+                return null;
+            }
+
+            var folder = await this.ServiceProvider.SolutionService.GetSolutionFolderAsync();
+            if (string.IsNullOrEmpty(folder) || this.ServiceProvider.WorkspaceTrustService.IsFolderTrusted(folder))
+            {
+                return null;
+            }
+
+            return folder;
+        }
+
+        /// <summary>
         /// Show select issue message.
         /// </summary>
         public void ShowSelectIssueMessage() => this.ShowPanel(this.selectIssueMessagePanel);
@@ -117,6 +153,31 @@ namespace Snyk.VisualStudio.Extension.UI.Toolwindow
         }
 
         private void RunButton_Click(object sender, RoutedEventArgs e) => ThreadHelper.JoinableTaskFactory.RunAsync(SnykTasksService.Instance.ScanAsync).FireAndForget();
+
+        private void TrustFolder_Click(object sender, RoutedEventArgs e)
+        {
+            var folder = this.untrustedFolderPath.Text;
+            if (string.IsNullOrEmpty(folder))
+            {
+                return;
+            }
+
+            this.trustFolderButton.IsEnabled = false;
+            ThreadHelper.JoinableTaskFactory.RunAsync(async () =>
+            {
+                try
+                {
+                    await this.ServiceProvider.LanguageClientManager.InvokeExecuteCommandAsync(
+                        LsConstants.SnykTrustWorkspaceFolders, new object[] { folder }, SnykVSPackage.Instance.DisposalToken);
+                }
+                catch (Exception ex)
+                {
+                    Logger.Error(ex, "Failed to trust folder {Folder}", folder);
+                    await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
+                    this.trustFolderButton.IsEnabled = true;
+                }
+            }).FireAndForget();
+        }
 
         private void ShowPanel(StackPanel panel)
         {

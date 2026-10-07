@@ -362,7 +362,11 @@ namespace Snyk.VisualStudio.Extension.Language
             // Don't call DidChangeConfigurationAsync here as it creates an infinite loop
             // The Language Server already knows about the trusted folders changes
 
-            serviceProvider.ToolWindow?.TreeHtmlPanel?.RequestInitialTree();
+            var toolWindow = serviceProvider.ToolWindow;
+            if (toolWindow == null) return;
+
+            toolWindow.TreeHtmlPanel?.RequestInitialTree();
+            await toolWindow.RefreshScreenAsync();
         }
 
         private async Task ProcessCodeScanAsync(LsAnalysisResult lsAnalysisResult)

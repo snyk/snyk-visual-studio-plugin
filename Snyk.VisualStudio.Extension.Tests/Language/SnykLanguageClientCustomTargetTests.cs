@@ -574,16 +574,19 @@ namespace Snyk.VisualStudio.Extension.Tests.Language
         }
 
         [Fact]
-        public async Task OnAddTrustedFolders_PullsTheTreeSoTheTrustBannerIsRefreshed()
+        public async Task OnAddTrustedFolders_RefreshesTheTreeAndTheScreen()
         {
             var arg = JObject.Parse("{'trustedFolders':['/folder1']}");
             optionsMock.SetupProperty(o => o.TrustedFolders);
             var treePanelMock = new Mock<ITreeHtmlPanel>();
-            SetupToolWindow().SetupGet(t => t.TreeHtmlPanel).Returns(treePanelMock.Object);
+            var toolWindowMock = SetupToolWindow();
+            toolWindowMock.SetupGet(t => t.TreeHtmlPanel).Returns(treePanelMock.Object);
+            toolWindowMock.Setup(t => t.RefreshScreenAsync()).Returns(Task.CompletedTask);
 
             await cut.OnAddTrustedFolders(arg);
 
             treePanelMock.Verify(t => t.RequestInitialTree(), Times.Once);
+            toolWindowMock.Verify(t => t.RefreshScreenAsync(), Times.Once);
         }
 
         [Fact]

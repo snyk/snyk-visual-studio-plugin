@@ -765,6 +765,17 @@ namespace Snyk.VisualStudio.Extension.UI.Toolwindow
             this.DetermineInitScreen();
         }
 
+        public async Task RefreshScreenAsync()
+        {
+            await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
+            if (SnykTasksService.Instance.IsTaskRunning())
+            {
+                return;
+            }
+
+            this.context.RequestUpdateUI();
+        }
+
         public void SetResultsPaneVisible(bool visible)
         {
             ThreadHelper.ThrowIfNotOnUIThread();

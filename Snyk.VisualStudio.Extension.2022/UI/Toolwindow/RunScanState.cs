@@ -39,7 +39,7 @@ namespace Snyk.VisualStudio.Extension.UI.Toolwindow
 
                 this.ToolWindowControl.messagePanel.Visibility = Visibility.Visible;
 
-                this.ToolWindowControl.messagePanel.ShowRunScanMessage();
+                await this.ToolWindowControl.messagePanel.ShowRunScanOrTrustFolderMessageAsync();
 
                 await this.ToolWindowControl.UpdateActionsStateAsync();
             });
