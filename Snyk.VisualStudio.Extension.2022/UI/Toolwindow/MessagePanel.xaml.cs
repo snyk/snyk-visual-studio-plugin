@@ -84,7 +84,8 @@ namespace Snyk.VisualStudio.Extension.UI.Toolwindow
         /// <summary>
         /// Show the run scan message, or the trust prompt when the open folder is not trusted yet.
         /// </summary>
-        public async Task ShowRunScanOrTrustFolderMessageAsync()
+        /// <returns>True when the trust prompt is shown.</returns>
+        public async Task<bool> ShowRunScanOrTrustFolderMessageAsync()
         {
             var untrustedFolder = await this.GetUntrustedSolutionFolderAsync();
 
@@ -92,12 +93,13 @@ namespace Snyk.VisualStudio.Extension.UI.Toolwindow
             if (untrustedFolder == null)
             {
                 this.ShowRunScanMessage();
-                return;
+                return false;
             }
 
             this.untrustedFolderPath.Text = untrustedFolder;
             this.trustFolderButton.IsEnabled = true;
             this.ShowPanel(this.trustFolderMessagePanel);
+            return true;
         }
 
         private async Task<string> GetUntrustedSolutionFolderAsync()

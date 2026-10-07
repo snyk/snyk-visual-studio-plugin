@@ -23,6 +23,7 @@ namespace Snyk.VisualStudio.Extension.UI.Toolwindow
                 await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
 
                 this.ToolWindowControl.messagePanel.Visibility = Visibility.Collapsed;
+                this.ToolWindowControl.SetResultsPaneVisible(true);
 
                 await this.ToolWindowControl.UpdateActionsStateAsync();
             });
@@ -39,7 +40,8 @@ namespace Snyk.VisualStudio.Extension.UI.Toolwindow
 
                 this.ToolWindowControl.messagePanel.Visibility = Visibility.Visible;
 
-                await this.ToolWindowControl.messagePanel.ShowRunScanOrTrustFolderMessageAsync();
+                var trustPromptShown = await this.ToolWindowControl.messagePanel.ShowRunScanOrTrustFolderMessageAsync();
+                this.ToolWindowControl.SetResultsPaneVisible(!trustPromptShown);
 
                 await this.ToolWindowControl.UpdateActionsStateAsync();
             });
