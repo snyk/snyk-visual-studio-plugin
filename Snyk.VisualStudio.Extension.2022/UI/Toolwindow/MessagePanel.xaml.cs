@@ -140,7 +140,18 @@ namespace Snyk.VisualStudio.Extension.UI.Toolwindow
             try
             {
                 Logger.Information("Attempting to Auth");
-                this.ServiceProvider.AuthenticationFlowService.Authenticate();
+
+                // TODO: REMOVE BEFORE MERGING - fakes a successful OAuth sign-in instead of opening the
+                // browser, so the signed-in tool window can be exercised where the Okta login fails.
+                var options = this.ServiceProvider.Options;
+                options.AuthenticationMethod = AuthenticationType.OAuth;
+                options.ApiToken = new AuthenticationToken(
+                    AuthenticationType.OAuth,
+                    "{\"access_token\":\"fake-sign-in\",\"token_type\":\"Bearer\",\"refresh_token\":\"fake\",\"expiry\":\"2099-01-01T00:00:00Z\"}");
+                options.HadSession = true;
+                this.ServiceProvider.SnykOptionsManager.Save(options, triggerSettingsChangedEvent: false, updateOverrideTracker: false);
+                // TODO: REMOVE BEFORE MERGING - end; restore the line below.
+                // this.ServiceProvider.AuthenticationFlowService.Authenticate();
             }
             catch (FileNotFoundException)
             {
