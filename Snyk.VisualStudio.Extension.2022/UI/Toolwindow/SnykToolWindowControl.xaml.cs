@@ -44,6 +44,10 @@ namespace Snyk.VisualStudio.Extension.UI.Toolwindow
 
         private bool disposed;
 
+        private GridLength resultsColumnWidth = new GridLength(3, GridUnitType.Star);
+
+        private GridLength splitterColumnWidth = new GridLength(6);
+
         // 1 when this control stopped the language server so a download could overwrite its binary.
         // An int rather than a bool so it can be read-and-cleared in one atomic step: it is written on
         // whichever thread raised DownloadStarted and consumed on whichever thread raised the outcome.
@@ -360,7 +364,13 @@ namespace Snyk.VisualStudio.Extension.UI.Toolwindow
         /// </summary>
         /// <param name="sender">Source object.</param>
         /// <param name="eventArgs">Event args.</param>
-        public void OnScanningFinished(object sender, SnykOssScanEventArgs eventArgs) => this.context.TransitionTo(ScanResultsState.Instance);
+        public void OnScanningFinished(object sender, SnykOssScanEventArgs eventArgs)
+        {
+            if (!this.context.IsOverviewState())
+            {
+                this.context.TransitionTo(ScanResultsState.Instance);
+            }
+        }
 
         /// <summary>
         /// Handle Cli error.
@@ -755,23 +765,55 @@ namespace Snyk.VisualStudio.Extension.UI.Toolwindow
             this.DetermineInitScreen();
         }
 
+        /// <summary>
+        /// Shows or hides the LS summary and tree column. Hidden while signed out so the
+        /// untrusted-folder banner and the filters are only offered once there is a session.
+        /// </summary>
+        public void SetResultsPaneVisible(bool visible)
+        {
+            ThreadHelper.ThrowIfNotOnUIThread();
+            var isVisible = this.resultsPane.Visibility == Visibility.Visible;
+            if (visible == isVisible)
+            {
+                return;
+            }
+
+            if (visible)
+            {
+                this.resultsColumn.Width = this.resultsColumnWidth;
+                this.splitterColumn.Width = this.splitterColumnWidth;
+                this.resultsPane.Visibility = Visibility.Visible;
+                this.verticalSplitter.Visibility = Visibility.Visible;
+                this.verticalDivider.Visibility = Visibility.Visible;
+                return;
+            }
+
+            this.resultsColumnWidth = this.resultsColumn.Width;
+            this.splitterColumnWidth = this.splitterColumn.Width;
+            this.resultsColumn.Width = new GridLength(0);
+            this.splitterColumn.Width = new GridLength(0);
+            this.resultsPane.Visibility = Visibility.Collapsed;
+            this.verticalSplitter.Visibility = Visibility.Collapsed;
+            this.verticalDivider.Visibility = Visibility.Collapsed;
+        }
+
         // On scan completion, surface the "select an issue" prompt in the right pane; the issue
         // tree itself is rendered by the LS via the $/snyk.treeView notification.
-        private async Task OnOssScanningFinishedAsync()
-        {
-            this.context.TransitionTo(ScanResultsState.Instance);
-            await this.UpdateActionsStateAsync();
-        }
+        // The LS also reports "success" when it republishes cached results after a settings change,
+        // without a scan; that must not move a signed-out user off the Overview screen.
+        private async Task OnOssScanningFinishedAsync() => await this.ShowScanResultsAsync();
 
-        private async Task OnSnykCodeScanningFinishedAsync()
-        {
-            this.context.TransitionTo(ScanResultsState.Instance);
-            await this.UpdateActionsStateAsync();
-        }
+        private async Task OnSnykCodeScanningFinishedAsync() => await this.ShowScanResultsAsync();
 
-        private async Task OnIacScanningFinishedAsync()
+        private async Task OnIacScanningFinishedAsync() => await this.ShowScanResultsAsync();
+
+        private async Task ShowScanResultsAsync()
         {
-            this.context.TransitionTo(ScanResultsState.Instance);
+            if (!this.context.IsOverviewState())
+            {
+                this.context.TransitionTo(ScanResultsState.Instance);
+            }
+
             await this.UpdateActionsStateAsync();
         }
 
