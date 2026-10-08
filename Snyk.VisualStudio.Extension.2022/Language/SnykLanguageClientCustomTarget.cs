@@ -239,8 +239,9 @@ namespace Snyk.VisualStudio.Extension.Language
                 else
                 {
                     // Another VS window may have signed in since; its token is on disk and must not be dropped.
+                    // The token that just failed may still be on disk too, that one must not be re-adopted.
                     var onDisk = serviceProvider.SnykOptionsManager?.ReadTokenFromFile();
-                    if (onDisk != null && onDisk.IsValid())
+                    if (onDisk != null && onDisk.IsValid() && onDisk.ToString() != oldToken)
                     {
                         serviceProvider.Options.AuthenticationMethod = onDisk.Type;
                         token = onDisk.ToString();

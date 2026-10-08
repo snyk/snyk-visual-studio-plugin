@@ -458,6 +458,23 @@ namespace Snyk.VisualStudio.Extension.Tests.Language
         }
 
         [Fact]
+        public async Task OnHasAuthenticated_EmptyToken_DoesNotReadoptTheTokenThatJustFailed()
+        {
+            var rejected = "{\"access_token\":\"a\",\"token_type\":\"Bearer\",\"refresh_token\":\"r\",\"expiry\":\"2099-01-01T00:00:00Z\"}";
+            var toolWindow = SetupToolWindow();
+            toolWindow.Setup(t => t.UpdateScreenStateAsync()).Returns(Task.CompletedTask);
+            optionsMock.SetupGet(o => o.AuthenticationMethod).Returns(AuthenticationType.OAuth);
+            optionsMock.Object.ApiToken = new AuthenticationToken(AuthenticationType.OAuth, rejected);
+            snykOptionsManagerMock.Setup(m => m.ReadTokenFromFile())
+                .Returns(new AuthenticationToken(AuthenticationType.OAuth, rejected));
+
+            await cut.OnHasAuthenticated(new JObject { ["token"] = "" });
+
+            Assert.Equal(string.Empty, optionsMock.Object.ApiToken.ToString());
+            toolWindow.Verify(t => t.UpdateScreenStateAsync(), Times.Once);
+        }
+
+        [Fact]
         public async Task OnHasAuthenticated_EmptyToken_KeepsSessionMarkerForExpiredSession()
         {
             var expired = "{\"access_token\":\"a\",\"token_type\":\"Bearer\",\"refresh_token\":\"r\",\"expiry\":\"2000-01-01T00:00:00Z\"}";
