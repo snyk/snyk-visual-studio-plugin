@@ -20,6 +20,7 @@ namespace Snyk.VisualStudio.Extension.UI.Toolwindow
         {
             await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
 
+            this.ToolWindowControl.SetResultsPaneVisible(false);
             this.ToolWindowControl.messagePanel.Visibility = Visibility.Visible;
 
             this.ToolWindowControl.messagePanel.ShowOverviewScreenMessage();
@@ -35,6 +36,7 @@ namespace Snyk.VisualStudio.Extension.UI.Toolwindow
             await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
 
             this.ToolWindowControl.messagePanel.Visibility = Visibility.Collapsed;
+            this.ToolWindowControl.SetResultsPaneVisible(true);
 
             await this.ToolWindowControl.UpdateActionsStateAsync();
         });

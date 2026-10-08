@@ -81,6 +81,7 @@ namespace Snyk.VisualStudio.Extension.Settings
 
         public bool AutoScan { get; set; } = true;
         public string Token { get; set; } = string.Empty;
+        public bool HadSession { get; set; }
         public bool IacEnabled { get; set; } = DefaultIacEnabled;
         public string CliReleaseChannel { get; set; } = SnykCliDownloader.DefaultReleaseChannel;
         public string CliBaseDownloadURL { get; set; } = SnykCliDownloader.DefaultBaseDownloadUrl;

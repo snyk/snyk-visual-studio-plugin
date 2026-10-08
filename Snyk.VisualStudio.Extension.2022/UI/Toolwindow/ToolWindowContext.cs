@@ -57,5 +57,7 @@
         /// </summary>
         /// <returns>True if current state type is EmptyState.</returns>
         public bool IsEmptyState() => this.state.GetType() == typeof(EmptyState);
+
+        public bool IsOverviewState() => this.state.GetType() == typeof(OverviewState);
     }
 }

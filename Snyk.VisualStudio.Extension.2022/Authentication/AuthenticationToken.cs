@@ -37,7 +37,7 @@ namespace Snyk.VisualStudio.Extension.Authentication
                 case AuthenticationType.Token:
                     return Guid.TryParse(this.value, out _);
                 case AuthenticationType.Pat:
-                    return Regex.IsMatch(this.value, @"^snyk_(?:uat|sat)\.[a-z0-9]{8}\.[a-zA-Z0-9-_]+\.[a-zA-Z0-9-_]+$^snyk_(?:uat|sat)\.[a-z0-9]{8}\.[a-zA-Z0-9-_]+\.[a-zA-Z0-9-_]+$"); ;
+                    return Regex.IsMatch(this.value, @"^snyk_(?:uat|sat)\.[a-z0-9]{8}\.[a-zA-Z0-9-_]+\.[a-zA-Z0-9-_]+$");
                 case AuthenticationType.OAuth:
                     {
                         var tokenState = GetTokenState(this.value);

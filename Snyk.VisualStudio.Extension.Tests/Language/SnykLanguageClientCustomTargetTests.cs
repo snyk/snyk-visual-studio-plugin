@@ -421,6 +421,139 @@ namespace Snyk.VisualStudio.Extension.Tests.Language
         }
 
         [Fact]
+        public async Task OnHasAuthenticated_RefreshOfExpiredToken_LeavesOverviewScreen()
+        {
+            var expired = "{\"access_token\":\"a\",\"token_type\":\"Bearer\",\"refresh_token\":\"r\",\"expiry\":\"2000-01-01T00:00:00Z\"}";
+            var refreshed = "{\"access_token\":\"b\",\"token_type\":\"Bearer\",\"refresh_token\":\"r2\",\"expiry\":\"2099-01-01T00:00:00Z\"}";
+            var toolWindowMock = SetupToolWindow();
+            toolWindowMock.Setup(t => t.LeaveOverviewIfAuthenticatedAsync()).Returns(Task.CompletedTask);
+            optionsMock.SetupGet(o => o.AuthenticationMethod).Returns(AuthenticationType.OAuth);
+            optionsMock.Object.ApiToken = new AuthenticationToken(AuthenticationType.OAuth, expired);
+
+            await cut.OnHasAuthenticated(new JObject { ["token"] = refreshed });
+
+            toolWindowMock.Verify(t => t.LeaveOverviewIfAuthenticatedAsync(), Times.Once);
+            authenticationFlowServiceMock.Verify(o => o.HandleAuthenticationSuccessAsync(It.IsAny<string>(), It.IsAny<string>()), Times.Never);
+            tasksServiceMock.Verify(t => t.ScanAsync(), Times.Never);
+        }
+
+        [Fact]
+        public async Task OnHasAuthenticated_EmptyToken_KeepsValidTokenSavedByAnotherWindow()
+        {
+            var expired = "{\"access_token\":\"a\",\"token_type\":\"Bearer\",\"refresh_token\":\"r\",\"expiry\":\"2000-01-01T00:00:00Z\"}";
+            var valid = "{\"access_token\":\"b\",\"token_type\":\"Bearer\",\"refresh_token\":\"r2\",\"expiry\":\"2099-01-01T00:00:00Z\"}";
+            var toolWindow = SetupToolWindow();
+            toolWindow.Setup(t => t.LeaveOverviewIfAuthenticatedAsync()).Returns(Task.CompletedTask);
+            optionsMock.SetupGet(o => o.AuthenticationMethod).Returns(AuthenticationType.OAuth);
+            optionsMock.Object.ApiToken = new AuthenticationToken(AuthenticationType.OAuth, expired);
+            snykOptionsManagerMock.Setup(m => m.ReadTokenFromFile())
+                .Returns(new AuthenticationToken(AuthenticationType.OAuth, valid));
+
+            await cut.OnHasAuthenticated(new JObject { ["token"] = "" });
+
+            Assert.Equal(valid, optionsMock.Object.ApiToken.ToString());
+            Assert.True(optionsMock.Object.HadSession);
+            toolWindow.Verify(t => t.UpdateScreenStateAsync(), Times.Never);
+            toolWindow.Verify(t => t.LeaveOverviewIfAuthenticatedAsync(), Times.Once);
+        }
+
+        [Fact]
+        public async Task OnHasAuthenticated_EmptyToken_DoesNotReadoptTheTokenThatJustFailed()
+        {
+            var rejected = "{\"access_token\":\"a\",\"token_type\":\"Bearer\",\"refresh_token\":\"r\",\"expiry\":\"2099-01-01T00:00:00Z\"}";
+            var toolWindow = SetupToolWindow();
+            toolWindow.Setup(t => t.UpdateScreenStateAsync()).Returns(Task.CompletedTask);
+            optionsMock.SetupGet(o => o.AuthenticationMethod).Returns(AuthenticationType.OAuth);
+            optionsMock.Object.ApiToken = new AuthenticationToken(AuthenticationType.OAuth, rejected);
+            snykOptionsManagerMock.Setup(m => m.ReadTokenFromFile())
+                .Returns(new AuthenticationToken(AuthenticationType.OAuth, rejected));
+
+            await cut.OnHasAuthenticated(new JObject { ["token"] = "" });
+
+            Assert.Equal(string.Empty, optionsMock.Object.ApiToken.ToString());
+            toolWindow.Verify(t => t.UpdateScreenStateAsync(), Times.Once);
+        }
+
+        [Fact]
+        public async Task OnHasAuthenticated_EmptyToken_KeepsSessionMarkerForExpiredSession()
+        {
+            var expired = "{\"access_token\":\"a\",\"token_type\":\"Bearer\",\"refresh_token\":\"r\",\"expiry\":\"2000-01-01T00:00:00Z\"}";
+            var toolWindow = SetupToolWindow();
+            toolWindow.Setup(t => t.UpdateScreenStateAsync()).Returns(Task.CompletedTask);
+            optionsMock.SetupGet(o => o.AuthenticationMethod).Returns(AuthenticationType.OAuth);
+            optionsMock.Object.ApiToken = new AuthenticationToken(AuthenticationType.OAuth, expired);
+            optionsMock.Object.HadSession = true;
+
+            await cut.OnHasAuthenticated(new JObject { ["token"] = "" });
+
+            Assert.Equal(string.Empty, optionsMock.Object.ApiToken.ToString());
+            Assert.True(optionsMock.Object.HadSession);
+            toolWindow.Verify(t => t.UpdateScreenStateAsync(), Times.Once);
+        }
+
+        [Fact]
+        public async Task OnHasAuthenticated_EmptyToken_ExplicitLogoutClearsSessionMarker()
+        {
+            var expired = "{\"access_token\":\"a\",\"token_type\":\"Bearer\",\"refresh_token\":\"r\",\"expiry\":\"2000-01-01T00:00:00Z\"}";
+            var toolWindow = SetupToolWindow();
+            toolWindow.Setup(t => t.UpdateScreenStateAsync()).Returns(Task.CompletedTask);
+            optionsMock.SetupGet(o => o.AuthenticationMethod).Returns(AuthenticationType.OAuth);
+            optionsMock.Object.ApiToken = new AuthenticationToken(AuthenticationType.OAuth, expired);
+            optionsMock.Object.HadSession = true;
+            authenticationFlowServiceMock.Setup(s => s.ConsumeExplicitLogout()).Returns(true);
+
+            await cut.OnHasAuthenticated(new JObject { ["token"] = "" });
+
+            Assert.False(optionsMock.Object.HadSession);
+            toolWindow.Verify(t => t.UpdateScreenStateAsync(), Times.Once);
+        }
+
+        [Fact]
+        public async Task OnHasAuthenticated_EmptyToken_ExplicitLogoutDoesNotReadTokenFromDisk()
+        {
+            var valid = "{\"access_token\":\"b\",\"token_type\":\"Bearer\",\"refresh_token\":\"r2\",\"expiry\":\"2099-01-01T00:00:00Z\"}";
+            var toolWindow = SetupToolWindow();
+            toolWindow.Setup(t => t.UpdateScreenStateAsync()).Returns(Task.CompletedTask);
+            optionsMock.SetupGet(o => o.AuthenticationMethod).Returns(AuthenticationType.OAuth);
+            optionsMock.Object.ApiToken = new AuthenticationToken(AuthenticationType.OAuth, valid);
+            snykOptionsManagerMock.Setup(m => m.ReadTokenFromFile())
+                .Returns(new AuthenticationToken(AuthenticationType.OAuth, valid));
+            authenticationFlowServiceMock.Setup(s => s.ConsumeExplicitLogout()).Returns(true);
+
+            await cut.OnHasAuthenticated(new JObject { ["token"] = "" });
+
+            Assert.Equal(string.Empty, optionsMock.Object.ApiToken.ToString());
+            snykOptionsManagerMock.Verify(m => m.ReadTokenFromFile(), Times.Never);
+        }
+
+        [Fact]
+        public async Task OnHasAuthenticated_NewToken_SetsSessionMarker()
+        {
+            var valid = "{\"access_token\":\"b\",\"token_type\":\"Bearer\",\"refresh_token\":\"r2\",\"expiry\":\"2099-01-01T00:00:00Z\"}";
+            SetupToolWindow();
+            optionsMock.SetupGet(o => o.AuthenticationMethod).Returns(AuthenticationType.OAuth);
+            optionsMock.Object.ApiToken = new AuthenticationToken(AuthenticationType.OAuth, string.Empty);
+
+            await cut.OnHasAuthenticated(new JObject { ["token"] = valid });
+
+            Assert.True(optionsMock.Object.HadSession);
+        }
+
+        [Fact]
+        public async Task OnHasAuthenticated_RefreshOfValidToken_DoesNotTouchScreen()
+        {
+            var valid = "{\"access_token\":\"a\",\"token_type\":\"Bearer\",\"refresh_token\":\"r\",\"expiry\":\"2099-01-01T00:00:00Z\"}";
+            var refreshed = "{\"access_token\":\"b\",\"token_type\":\"Bearer\",\"refresh_token\":\"r2\",\"expiry\":\"2099-06-01T00:00:00Z\"}";
+            var toolWindowMock = SetupToolWindow();
+            optionsMock.SetupGet(o => o.AuthenticationMethod).Returns(AuthenticationType.OAuth);
+            optionsMock.Object.ApiToken = new AuthenticationToken(AuthenticationType.OAuth, valid);
+
+            await cut.OnHasAuthenticated(new JObject { ["token"] = refreshed });
+
+            toolWindowMock.Verify(t => t.LeaveOverviewIfAuthenticatedAsync(), Times.Never);
+        }
+
+        [Fact]
         public async Task OnHasAuthenticated_AlwaysUpdatesTokenAndEndpoint()
         {
             // Arrange — always stores token and endpoint regardless of whether it is a new login or refresh.
@@ -455,6 +588,48 @@ namespace Snyk.VisualStudio.Extension.Tests.Language
             snykOptionsManagerMock.Verify(s => s.Save(It.IsAny<IPersistableOptions>(), false, false, It.IsAny<System.Collections.Generic.IReadOnlyCollection<string>>(), It.IsAny<System.Collections.Generic.IReadOnlyCollection<string>>()), Times.Once);
             // Note: DidChangeConfigurationAsync is intentionally not called to avoid infinite loop
             languageClientManagerMock.Verify(s => s.DidChangeConfigurationAsync(It.IsAny<CancellationToken>()), Times.Never);
+        }
+
+        [Fact]
+        public async Task OnAddTrustedFolders_RefreshesTheTreeAndTheScreen()
+        {
+            var arg = JObject.Parse("{'trustedFolders':['/folder1']}");
+            optionsMock.SetupProperty(o => o.TrustedFolders);
+            var treePanelMock = new Mock<ITreeHtmlPanel>();
+            var toolWindowMock = SetupToolWindow();
+            toolWindowMock.SetupGet(t => t.TreeHtmlPanel).Returns(treePanelMock.Object);
+            toolWindowMock.Setup(t => t.RefreshScreenAsync()).Returns(Task.CompletedTask);
+
+            await cut.OnAddTrustedFolders(arg);
+
+            treePanelMock.Verify(t => t.RequestInitialTree(), Times.Once);
+            toolWindowMock.Verify(t => t.RefreshScreenAsync(), Times.Once);
+        }
+
+        [Fact]
+        public async Task OnSnykScan_SuccessWithoutInProgress_IsNotAFinishedScan()
+        {
+            var arg = JObject.Parse(@"{'status':'success','product':'oss','folderPath':'/repo'}");
+            tasksServiceMock.Setup(t => t.SnykScanTokenSource).Returns(new CancellationTokenSource());
+            tasksServiceMock.SetupGet(t => t.IsOssScanning).Returns(false);
+
+            await cut.OnSnykScan(arg);
+
+            tasksServiceMock.Verify(t => t.FireOssScanningFinishedEvent(), Times.Never);
+            tasksServiceMock.Verify(t => t.FireTaskFinished(), Times.Never);
+        }
+
+        [Fact]
+        public async Task OnSnykScan_SuccessAfterInProgress_FiresFinished()
+        {
+            var arg = JObject.Parse(@"{'status':'success','product':'oss','folderPath':'/repo'}");
+            tasksServiceMock.Setup(t => t.SnykScanTokenSource).Returns(new CancellationTokenSource());
+            tasksServiceMock.SetupGet(t => t.IsOssScanning).Returns(true);
+
+            await cut.OnSnykScan(arg);
+
+            tasksServiceMock.Verify(t => t.FireOssScanningFinishedEvent(), Times.Once);
+            tasksServiceMock.Verify(t => t.FireTaskFinished(), Times.Once);
         }
 
         [Fact]
@@ -885,6 +1060,7 @@ namespace Snyk.VisualStudio.Extension.Tests.Language
             // Arrange
             var arg = JObject.Parse(@"{'status':'success','product':'secrets','folderPath':'/repo'}");
             tasksServiceMock.Setup(t => t.SnykScanTokenSource).Returns(new CancellationTokenSource());
+            tasksServiceMock.SetupGet(t => t.IsSecretsScanning).Returns(true);
 
             // Act
             await cut.OnSnykScan(arg);

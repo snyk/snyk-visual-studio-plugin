@@ -104,6 +104,12 @@ namespace Snyk.VisualStudio.Extension.Settings
             }
         }
 
+        public AuthenticationToken ReadTokenFromFile()
+        {
+            var onDisk = this.settingsLoader.ReadFromDisk();
+            return onDisk == null ? null : new AuthenticationToken(onDisk.AuthenticationMethod, onDisk.Token);
+        }
+
         public void SaveSettingsToFile()
         {
             // Serialize + write under persistGate so two persisting threads never write the file
@@ -292,6 +298,7 @@ namespace Snyk.VisualStudio.Extension.Settings
 
                 AuthenticationMethod = snykSettings.AuthenticationMethod,
                 ApiToken = new AuthenticationToken(snykSettings.AuthenticationMethod, snykSettings.Token),
+                HadSession = snykSettings.HadSession || !string.IsNullOrEmpty(snykSettings.Token),
                 CustomEndpoint = snykSettings.CustomEndpoint,
                 Organization = snykSettings.Organization,
 
@@ -515,6 +522,7 @@ namespace Snyk.VisualStudio.Extension.Settings
 
             snykSettings.AuthenticationMethod = options.AuthenticationMethod;
             snykSettings.Token = options.ApiToken.ToString();
+            snykSettings.HadSession = options.HadSession;
 
             snykSettings.CustomEndpoint = options.CustomEndpoint;
             snykSettings.Organization = options.Organization;

@@ -8,6 +8,7 @@ using System.Windows.Controls;
 using Microsoft.VisualStudio.Shell;
 using Microsoft.VisualStudio.Threading;
 using Serilog;
+using Snyk.VisualStudio.Extension.Authentication;
 using Snyk.VisualStudio.Extension.Language;
 using Snyk.VisualStudio.Extension.Service;
 
@@ -20,7 +21,6 @@ namespace Snyk.VisualStudio.Extension.UI.Toolwindow
     {
         private static readonly ILogger Logger = LogManager.ForContext<MessagePanel>();
         private readonly IList<StackPanel> panels;
-
         /// <summary>
         /// Initializes a new instance of the <see cref="MessagePanel"/> class.
         /// </summary>
@@ -33,6 +33,7 @@ namespace Snyk.VisualStudio.Extension.UI.Toolwindow
                 this.selectIssueMessagePanel,
                 this.noIssuesMessagePanel,
                 this.runScanMessagePanel,
+                this.trustFolderMessagePanel,
                 this.messagePanel,
                 this.overviewPanel,
                 this.scanningProjectMessagePanel,
@@ -81,6 +82,43 @@ namespace Snyk.VisualStudio.Extension.UI.Toolwindow
         public void ShowRunScanMessage() => this.ShowPanel(this.runScanMessagePanel);
 
         /// <summary>
+        /// Show the run scan message, or the trust prompt when the open folder is not trusted yet.
+        /// </summary>
+        /// <returns>True when the trust prompt is shown.</returns>
+        public async Task<bool> ShowRunScanOrTrustFolderMessageAsync()
+        {
+            var untrustedFolder = await this.GetUntrustedSolutionFolderAsync();
+
+            await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
+            if (untrustedFolder == null)
+            {
+                this.ShowRunScanMessage();
+                return false;
+            }
+
+            this.untrustedFolderPath.Text = untrustedFolder;
+            this.trustFolderButton.IsEnabled = true;
+            this.ShowPanel(this.trustFolderMessagePanel);
+            return true;
+        }
+
+        private async Task<string> GetUntrustedSolutionFolderAsync()
+        {
+            if (this.ServiceProvider?.SolutionService == null || this.ServiceProvider.WorkspaceTrustService == null)
+            {
+                return null;
+            }
+
+            var folder = await this.ServiceProvider.SolutionService.GetSolutionFolderAsync();
+            if (string.IsNullOrEmpty(folder) || this.ServiceProvider.WorkspaceTrustService.IsFolderTrusted(folder))
+            {
+                return null;
+            }
+
+            return folder;
+        }
+
+        /// <summary>
         /// Show select issue message.
         /// </summary>
         public void ShowSelectIssueMessage() => this.ShowPanel(this.selectIssueMessagePanel);
@@ -93,12 +131,20 @@ namespace Snyk.VisualStudio.Extension.UI.Toolwindow
         /// <summary>
         /// Show overview screen message.
         /// </summary>
-        public void ShowOverviewScreenMessage()
+        public void ShowOverviewScreenMessage(bool signInCancelled = false)
         {
             if (!LanguageClientHelper.IsLanguageServerReady())
             {
                 testCodeNowButton.IsEnabled = false;
             }
+
+            // The overview is only shown while the token is not valid, so a user who had a session is seeing an expired one.
+            var options = this.ServiceProvider?.Options;
+            var sessionExpired = options?.HadSession == true || !string.IsNullOrEmpty(options?.ApiToken?.ToString());
+
+            this.welcomePanel.Visibility = sessionExpired ? Visibility.Collapsed : Visibility.Visible;
+            this.sessionExpiredPanel.Visibility = sessionExpired ? Visibility.Visible : Visibility.Collapsed;
+            this.signInCancelledPanel.Visibility = signInCancelled ? Visibility.Visible : Visibility.Collapsed;
 
             this.ShowPanel(this.overviewPanel);
         }
@@ -110,6 +156,31 @@ namespace Snyk.VisualStudio.Extension.UI.Toolwindow
 
         private void RunButton_Click(object sender, RoutedEventArgs e) => ThreadHelper.JoinableTaskFactory.RunAsync(SnykTasksService.Instance.ScanAsync).FireAndForget();
 
+        private void TrustFolder_Click(object sender, RoutedEventArgs e)
+        {
+            var folder = this.untrustedFolderPath.Text;
+            if (string.IsNullOrEmpty(folder))
+            {
+                return;
+            }
+
+            this.trustFolderButton.IsEnabled = false;
+            ThreadHelper.JoinableTaskFactory.RunAsync(async () =>
+            {
+                try
+                {
+                    await this.ServiceProvider.LanguageClientManager.InvokeExecuteCommandAsync(
+                        LsConstants.SnykTrustWorkspaceFolders, new object[] { folder }, SnykVSPackage.Instance.DisposalToken);
+                }
+                catch (Exception ex)
+                {
+                    Logger.Error(ex, "Failed to trust folder {Folder}", folder);
+                    await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
+                    this.trustFolderButton.IsEnabled = true;
+                }
+            }).FireAndForget();
+        }
+
         private void ShowPanel(StackPanel panel)
         {
             foreach (var stackPanel in this.panels)
@@ -120,44 +191,30 @@ namespace Snyk.VisualStudio.Extension.UI.Toolwindow
             panel.Visibility = Visibility.Visible;
         }
 
-        private void TestCodeNow_Click(object sender, RoutedEventArgs e)
+        private void SignIn_Click(object sender, RoutedEventArgs e)
         {
             this.testCodeNowButton.IsEnabled = false;
-            ThreadHelper.JoinableTaskFactory.RunAsync(RunTestCodeNowAsync).FireAndForget();
+            ThreadHelper.JoinableTaskFactory.RunAsync(SignInAsync).FireAndForget();
         }
-        private async Task RunTestCodeNowAsync()
+
+        // Folder trust is not touched here: the language server asks for it in the tree view before the first scan.
+        private async Task SignInAsync()
         {
-            // Add folder to trusted
-            Logger.Information("Enter RunTestCodeNowAsync");
-            var solutionFolderPath = await this.ServiceProvider.SolutionService.GetSolutionFolderAsync();
-            if (!string.IsNullOrEmpty(solutionFolderPath))
-            {
-                Logger.Information("Solution Folder Is {SolutionFolder}", solutionFolderPath);
-
-                try
-                {
-                    ThreadHelper.JoinableTaskFactory.RunAsync(async () =>
-                    {
-                        Logger.Information("Adding Folder {SolutionFolder} to trusted folders", solutionFolderPath);
-
-                        this.ServiceProvider.WorkspaceTrustService.AddFolderToTrusted(solutionFolderPath);
-                        Logger.Information("Workspace folder was trusted: {SolutionFolderPath}", solutionFolderPath);
-                        await this.ServiceProvider.LanguageClientManager.DidChangeConfigurationAsync(SnykVSPackage
-                            .Instance.DisposalToken);
-                    }).FireAndForget();
-                    
-                }
-                catch (ArgumentException ex)
-                {
-                    Logger.Error(ex, "Failed to add folder to trusted list.");
-                    throw;
-                }
-            }
-
             try
             {
                 Logger.Information("Attempting to Auth");
-                this.ServiceProvider.AuthenticationFlowService.Authenticate();
+
+                // TODO: REMOVE BEFORE MERGING - fakes a successful OAuth sign-in instead of opening the
+                // browser, so the signed-in tool window can be exercised where the Okta login fails.
+                var options = this.ServiceProvider.Options;
+                options.AuthenticationMethod = AuthenticationType.OAuth;
+                options.ApiToken = new AuthenticationToken(
+                    AuthenticationType.OAuth,
+                    "{\"access_token\":\"fake-sign-in\",\"token_type\":\"Bearer\",\"refresh_token\":\"fake\",\"expiry\":\"2099-01-01T00:00:00Z\"}");
+                options.HadSession = true;
+                this.ServiceProvider.SnykOptionsManager.Save(options, triggerSettingsChangedEvent: false, updateOverrideTracker: false);
+                // TODO: REMOVE BEFORE MERGING - end; restore the line below.
+                // this.ServiceProvider.AuthenticationFlowService.Authenticate();
             }
             catch (FileNotFoundException)
             {
@@ -169,8 +226,14 @@ namespace Snyk.VisualStudio.Extension.UI.Toolwindow
             await ThreadHelper.JoinableTaskFactory.SwitchToMainThreadAsync();
             this.testCodeNowButton.IsEnabled = true;
 
-
-            this.Context.TransitionTo(RunScanState.Instance);
+            if (this.ServiceProvider.Options.ApiToken.IsValid())
+            {
+                this.Context.TransitionTo(RunScanState.Instance);
+            }
+            else if (this.ServiceProvider.Options.AuthenticationMethod != AuthenticationType.Pat)
+            {
+                this.ShowOverviewScreenMessage(signInCancelled: true);
+            }
         }
 
 

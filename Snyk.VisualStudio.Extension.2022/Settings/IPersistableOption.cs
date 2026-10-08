@@ -19,6 +19,9 @@ public interface IPersistableOptions
     /// </summary>
     AuthenticationToken ApiToken { get; set; }
 
+    /// <summary>True once the user has signed in; cleared only by an explicit logout, not by an expired token.</summary>
+    bool HadSession { get; set; }
+
     /// <summary>
     /// Gets Value of Authentication Token Type.
     /// </summary>

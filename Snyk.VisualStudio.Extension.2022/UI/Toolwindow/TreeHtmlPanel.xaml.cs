@@ -126,7 +126,9 @@ namespace Snyk.VisualStudio.Extension.UI.Toolwindow
         /// <c>snyk.getTreeView</c> fetch (pull). HTML and count move together so a stale empty tree
         /// can't be pinned while the count reflects a newer scan.
         /// </summary>
-        public void SetContent(string html, int totalIssues)
+        public void SetContent(string html, int totalIssues) => SetContent(html, (int?)totalIssues);
+
+        private void SetContent(string html, int? totalIssues)
         {
             if (_disposed || string.IsNullOrEmpty(html)) return;
 
@@ -156,7 +158,11 @@ namespace Snyk.VisualStudio.Extension.UI.Toolwindow
                     // a superseded SetContent never commits its count or resolves theme colours.
                     // TotalIssues is UI-thread-confined: all reads (IsTreeContentNotEmpty) and
                     // writes (Clean, here) switch to the UI thread before touching it.
-                    TotalIssues = totalIssues;
+                    if (totalIssues.HasValue)
+                    {
+                        TotalIssues = totalIssues.Value;
+                    }
+
                     var themedHtml = htmlProvider.ReplaceCssVariables(html);
 
                     // Reveal the WebView2 now that real content is ready and hide the WPF
@@ -227,13 +233,20 @@ namespace Snyk.VisualStudio.Extension.UI.Toolwindow
                         LsConstants.SnykGetTreeView, Array.Empty<object>(), ctsToken);
                     if (_disposed) return;
 
-                    // The reply uses the same envelope as the push ({ treeViewHtml, totalIssues }),
-                    // so parse it as TreeViewParams. Calling result.ToString() would feed the raw
-                    // JSON serialisation to the WebView2 as literal page text.
-                    var treeViewParam = (result as JToken)?.ToObject<TreeViewParams>();
-                    if (treeViewParam?.TreeViewHtml != null)
+                    // snyk.getTreeView replies with the HTML string itself, unlike the
+                    // $/snyk.treeView push which wraps it in { treeViewHtml, totalIssues }.
+                    switch (result)
                     {
-                        SetContent(treeViewParam.TreeViewHtml, treeViewParam.TotalIssues);
+                        case string html:
+                            SetContent(html, null);
+                            break;
+                        case JValue value when value.Type == JTokenType.String:
+                            SetContent(value.Value<string>(), null);
+                            break;
+                        case JObject envelope:
+                            var treeViewParam = envelope.ToObject<TreeViewParams>();
+                            SetContent(treeViewParam?.TreeViewHtml, treeViewParam?.TotalIssues);
+                            break;
                     }
                 }
                 catch (OperationCanceledException)
@@ -264,6 +277,9 @@ namespace Snyk.VisualStudio.Extension.UI.Toolwindow
                     InvokeCommandCallback(callbackId, "null");
                 return;
             }
+
+            if (command == LsConstants.SnykLogout)
+                SnykVSPackage.ServiceProvider.AuthenticationFlowService?.MarkExplicitLogout();
 
             ThreadHelper.JoinableTaskFactory.RunAsync(async () =>
             {

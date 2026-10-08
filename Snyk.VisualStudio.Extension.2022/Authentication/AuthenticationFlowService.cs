@@ -10,6 +10,7 @@ using Serilog;
 using Snyk.VisualStudio.Extension.CLI;
 using Snyk.VisualStudio.Extension.Language;
 using Snyk.VisualStudio.Extension.Service;
+using Snyk.VisualStudio.Extension.Settings;
 
 namespace Snyk.VisualStudio.Extension.Authentication
 {
@@ -23,6 +24,7 @@ namespace Snyk.VisualStudio.Extension.Authentication
         // Re-entrancy guard for Authenticate(): 0 = idle, 1 = in flight. Interlocked because the
         // method can be invoked off the UI thread, so a plain check-then-set bool would race.
         private int authInProgress;
+        private int explicitLogout;
 
         // Resolve the dialog lazily: production passes null and falls back to the WPF singleton at
         // first use (unchanged timing — constructing it eagerly here could run off the UI thread),
@@ -74,6 +76,19 @@ namespace Snyk.VisualStudio.Extension.Authentication
                                 .RunAsync(serviceProvider.TasksService.ScanAsync)
                                 .FireAndForget();
                         }
+                        return;
+                    }
+
+                    if (TryAdoptTokenFromFile(options))
+                    {
+                        Logger.Information("Using the valid token saved by another window instead of logging out");
+                        ThreadHelper.JoinableTaskFactory.RunAsync(async () =>
+                        {
+                            await serviceProvider.LanguageClientManager.DidChangeConfigurationAsync(serviceProvider.DisposalToken);
+                            await serviceProvider.ToolWindow.UpdateScreenStateAsync();
+                            if (options.AutoScan)
+                                await serviceProvider.TasksService.ScanAsync();
+                        }).FireAndForget();
                         return;
                     }
 
@@ -144,6 +159,21 @@ namespace Snyk.VisualStudio.Extension.Authentication
                 Interlocked.Exchange(ref this.authInProgress, 0);
             }
         }
+
+        internal bool TryAdoptTokenFromFile(ISnykOptions options)
+        {
+            var onDisk = serviceProvider.SnykOptionsManager?.ReadTokenFromFile();
+            if (onDisk == null || !onDisk.IsValid() || onDisk.ToString() == options.ApiToken?.ToString())
+                return false;
+
+            options.AuthenticationMethod = onDisk.Type;
+            options.ApiToken = onDisk;
+            return true;
+        }
+
+        public void MarkExplicitLogout() => Interlocked.Exchange(ref this.explicitLogout, 1);
+
+        public bool ConsumeExplicitLogout() => Interlocked.Exchange(ref this.explicitLogout, 0) == 1;
 
         public async Task HandleAuthenticationSuccessAsync(string token, string apiUrl)
         {

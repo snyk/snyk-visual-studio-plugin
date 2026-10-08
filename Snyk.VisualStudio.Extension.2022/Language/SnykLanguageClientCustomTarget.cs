@@ -227,6 +227,32 @@ namespace Snyk.VisualStudio.Extension.Language
             var apiUrl = arg["apiUrl"]?.ToString();
 
             var oldToken = serviceProvider.Options.ApiToken?.ToString() ?? string.Empty;
+            var oldTokenWasValid = serviceProvider.Options.ApiToken?.IsValid() == true;
+
+            if (string.IsNullOrEmpty(token))
+            {
+                var explicitLogout = serviceProvider.AuthenticationFlowService.ConsumeExplicitLogout();
+                if (explicitLogout)
+                {
+                    serviceProvider.Options.HadSession = false;
+                }
+                else
+                {
+                    // Another VS window may have signed in since; its token is on disk and must not be dropped.
+                    // The token that just failed may still be on disk too, that one must not be re-adopted.
+                    var onDisk = serviceProvider.SnykOptionsManager?.ReadTokenFromFile();
+                    if (onDisk != null && onDisk.IsValid() && onDisk.ToString() != oldToken)
+                    {
+                        serviceProvider.Options.AuthenticationMethod = onDisk.Type;
+                        token = onDisk.ToString();
+                    }
+                }
+            }
+
+            if (!string.IsNullOrEmpty(token))
+            {
+                serviceProvider.Options.HadSession = true;
+            }
 
             // Queue the token for the HTML settings page so the token field updates after an OAuth
             // round-trip. Queuing (rather than a direct push to a live instance) guarantees delivery
@@ -260,11 +286,25 @@ namespace Snyk.VisualStudio.Extension.Language
                 triggerSettingsChangedEvent: false,
                 updateOverrideTracker: false);
 
+            if (string.IsNullOrEmpty(token))
+            {
+                var toolWindow = serviceProvider.ToolWindow;
+                if (toolWindow != null)
+                    await toolWindow.UpdateScreenStateAsync();
+                return;
+            }
+
             // Scan only when this is a new login (old token was blank).
             // Token refresh also has old token non-blank, so no scan.
             var isNewLogin = string.IsNullOrEmpty(oldToken) && !string.IsNullOrEmpty(token);
             if (!isNewLogin)
+            {
+                // The welcome screen was chosen while the stored token was expired; re-evaluate once a refresh revives it.
+                var toolWindow = serviceProvider.ToolWindow;
+                if (!oldTokenWasValid && serviceProvider.Options.ApiToken.IsValid() && toolWindow != null)
+                    await toolWindow.LeaveOverviewIfAuthenticatedAsync();
                 return;
+            }
 
             await serviceProvider.AuthenticationFlowService.HandleAuthenticationSuccessAsync(token, apiUrl);
 
@@ -322,6 +362,12 @@ namespace Snyk.VisualStudio.Extension.Language
             this.serviceProvider.SnykOptionsManager.Save(serviceProvider.Options, triggerSettingsChangedEvent: false, updateOverrideTracker: false);
             // Don't call DidChangeConfigurationAsync here as it creates an infinite loop
             // The Language Server already knows about the trusted folders changes
+
+            var toolWindow = serviceProvider.ToolWindow;
+            if (toolWindow == null) return;
+
+            toolWindow.TreeHtmlPanel?.RequestInitialTree();
+            await toolWindow.RefreshScreenAsync();
         }
 
         private async Task ProcessCodeScanAsync(LsAnalysisResult lsAnalysisResult)
@@ -338,6 +384,7 @@ namespace Snyk.VisualStudio.Extension.Language
                 serviceProvider.TasksService.FireTaskFinished();
                 return;
             }
+            if (!serviceProvider.TasksService.IsSnykCodeScanning) return;
 
             serviceProvider.TasksService.FireSnykCodeScanningFinishedEvent();
             serviceProvider.TasksService.FireTaskFinished();
@@ -356,6 +403,7 @@ namespace Snyk.VisualStudio.Extension.Language
                 serviceProvider.TasksService.FireTaskFinished();
                 return;
             }
+            if (!serviceProvider.TasksService.IsOssScanning) return;
 
             serviceProvider.TasksService.FireOssScanningFinishedEvent();
             serviceProvider.TasksService.FireTaskFinished();
@@ -375,6 +423,7 @@ namespace Snyk.VisualStudio.Extension.Language
                 serviceProvider.TasksService.FireTaskFinished();
                 return;
             }
+            if (!serviceProvider.TasksService.IsIacScanning) return;
 
             serviceProvider.TasksService.FireIacScanningFinishedEvent();
             serviceProvider.TasksService.FireTaskFinished();
@@ -393,6 +442,7 @@ namespace Snyk.VisualStudio.Extension.Language
                 serviceProvider.TasksService.FireTaskFinished();
                 return;
             }
+            if (!serviceProvider.TasksService.IsSecretsScanning) return;
 
             serviceProvider.TasksService.FireSecretsScanningFinishedEvent();
             serviceProvider.TasksService.FireTaskFinished();

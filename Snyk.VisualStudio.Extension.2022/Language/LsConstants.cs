@@ -34,6 +34,7 @@
         public const string SnykGetFeatureFlagStatus = "snyk.getFeatureFlagStatus";
         public const string SnykGenerateIssueDescription = "snyk.generateIssueDescription";
         public const string SnykGetTreeView = "snyk.getTreeView";
+        public const string SnykTrustWorkspaceFolders = "snyk.trustWorkspaceFolders";
         public const string SnykReportAnalytics = "snyk.reportAnalytics";
         public const string SnykCodeFixDiffs = "snyk.code.fixDiffs";
         public const string SnykCodeFixApplyEdit = "snyk.code.fixApplyEdit";

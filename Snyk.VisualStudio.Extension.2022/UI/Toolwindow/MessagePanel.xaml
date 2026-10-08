@@ -37,6 +37,28 @@
                 </StackPanel>
             </StackPanel>
 
+            <StackPanel Name="trustFolderMessagePanel" Visibility="Collapsed" HorizontalAlignment="Center" VerticalAlignment="Center" Orientation="Vertical">
+                <TextBlock FontWeight="Bold">
+                    Trust this folder to scan it
+                </TextBlock>
+                <TextBlock Margin="0,10,0,0" TextWrapping="Wrap" Width="550">
+                    Scanning may run project code and tools such as your package manager. Only trust folders you know.
+                    <Hyperlink NavigateUri="https://docs.snyk.io/ide-tools/visual-studio-extension/workspace-trust" RequestNavigate="Hyperlink_RequestNavigate">
+                        More info
+                    </Hyperlink>
+                </TextBlock>
+                <TextBlock x:Name="untrustedFolderPath" Margin="0,10,0,0" FontFamily="Consolas" TextTrimming="CharacterEllipsis" Width="550"/>
+                <StackPanel HorizontalAlignment="Left" Margin="0,20,0,0">
+                    <Button x:Name="trustFolderButton" Content="Trust folder and scan" Click="TrustFolder_Click" Padding="20,6,20,8">
+                        <Button.Resources>
+                            <Style TargetType="Border">
+                                <Setter Property="CornerRadius" Value="3"/>
+                            </Style>
+                        </Button.Resources>
+                    </Button>
+                </StackPanel>
+            </StackPanel>
+
             <StackPanel Name="messagePanel" Visibility="Collapsed" HorizontalAlignment="Center" VerticalAlignment="Center">
                 <c:TextField x:Name="message" FontWeight="Bold"/>
             </StackPanel>
@@ -45,32 +67,47 @@
                 <Image x:Name="snykDogLogo" Width="48" Margin="0,-30,0,30" />
 
                 <StackPanel HorizontalAlignment="Center" Orientation="Vertical" Margin="40,20,20,20">
-                    <TextBlock FontWeight="Bold">
-                        Welcome to Snyk for Visual Studio!
-                    </TextBlock>
-                    <TextBlock Margin="0,20,0,0">
-                        1. Authenticate to Snyk.io
-                    </TextBlock>
-                    <TextBlock>
-                        2. Analyze code for issues and vulnerabilities
-                    </TextBlock>
-                    <TextBlock>
-                        3. Improve your code and upgrade dependencies
-                    </TextBlock>
-                    <TextBlock Margin="0,10,0,0" TextWrapping="Wrap" Width="550">
-                        When scanning project files, Snyk may automatically execute code and configuration, such as invoking the package manager to get dependency information. You should only scan projects you trust.
-                        <Hyperlink NavigateUri="https://docs.snyk.io/ide-tools/visual-studio-extension/workspace-trust" RequestNavigate="Hyperlink_RequestNavigate">
-                            More info
-                        </Hyperlink>
-                    </TextBlock>
+                    <StackPanel Name="welcomePanel">
+                        <TextBlock FontWeight="Bold">
+                            Welcome to Snyk for Visual Studio!
+                        </TextBlock>
+                        <TextBlock Margin="0,20,0,0">
+                            1. Sign in to Snyk
+                        </TextBlock>
+                        <TextBlock>
+                            2. Trust your project when asked, then scan it for issues and vulnerabilities
+                        </TextBlock>
+                        <TextBlock>
+                            3. Improve your code and upgrade dependencies
+                        </TextBlock>
+                        <TextBlock Margin="0,10,0,0" TextWrapping="Wrap" Width="550">
+                            Scanning may run project code and tools such as your package manager, so Snyk asks you to trust a project before its first scan.
+                            <Hyperlink NavigateUri="https://docs.snyk.io/ide-tools/visual-studio-extension/workspace-trust" RequestNavigate="Hyperlink_RequestNavigate">
+                                More info
+                            </Hyperlink>
+                        </TextBlock>
+                    </StackPanel>
+                    <StackPanel Name="sessionExpiredPanel" Visibility="Collapsed">
+                        <TextBlock FontWeight="Bold">
+                            Your Snyk session has expired
+                        </TextBlock>
+                        <TextBlock Margin="0,20,0,0" TextWrapping="Wrap" Width="550">
+                            Sign in again to continue scanning. Your trusted folders and settings are kept.
+                        </TextBlock>
+                    </StackPanel>
+                    <StackPanel Name="signInCancelledPanel" Visibility="Collapsed">
+                        <TextBlock Margin="0,10,0,0" TextWrapping="Wrap" Width="550">
+                            Sign-in was not completed. You can try again at any time.
+                        </TextBlock>
+                    </StackPanel>
                     <StackPanel HorizontalAlignment="Left" Margin="0,25,0,0">
-                        <Button Name="testCodeNowButton" Click="TestCodeNow_Click" Padding="20,6,20,8">
+                        <Button Name="testCodeNowButton" Click="SignIn_Click" Padding="20,6,20,8">
                             <Button.Resources>
                                 <Style TargetType="Border">
                                     <Setter Property="CornerRadius" Value="3"/>
                                 </Style>
                             </Button.Resources>
-                            Trust project and scan
+                            Sign in
                         </Button>
                     </StackPanel>
                     <TextBlock Margin="0, 20, 0, 0" FontSize="11">

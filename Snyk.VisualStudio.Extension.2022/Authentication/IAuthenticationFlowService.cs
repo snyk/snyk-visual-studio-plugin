@@ -15,6 +15,12 @@ namespace Snyk.VisualStudio.Extension.Authentication
         /// </summary>
         void Authenticate();
 
+        /// <summary>The next empty token from the language server is an explicit logout, not an expired session.</summary>
+        void MarkExplicitLogout();
+
+        /// <summary>Returns and clears <see cref="MarkExplicitLogout"/>.</summary>
+        bool ConsumeExplicitLogout();
+
         /// <summary>
         /// Called on LS-driven authentication success. Closes the modal auth dialog and
         /// refreshes the Snyk tool window. The visible HTML settings form is updated
