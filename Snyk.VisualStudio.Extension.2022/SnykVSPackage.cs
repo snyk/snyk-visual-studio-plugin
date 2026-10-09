@@ -76,7 +76,10 @@ namespace Snyk.VisualStudio.Extension
 
         private const string UnknownVsVersion = "Unknown Visual Studio version";
 
-        private static readonly ILogger Logger = LogManager.ForContext<SnykVSPackage>();
+        // No static Logger field: LogManager.ForContext<T>() touches Serilog, and a static field
+        // initializer runs as part of the type's .cctor — forcing that load before InitializeAsync's
+        // own try/catch can ever run. See docs/plans/IDE-2558-serilog-assembly-resolution.md.
+        private static ILogger Logger => LogManager.ForContext<SnykVSPackage>();
 
         private static readonly TaskCompletionSource<bool> initializationTaskCompletionSource =
             new TaskCompletionSource<bool>();
