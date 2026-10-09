@@ -27,7 +27,7 @@ namespace Snyk.VisualStudio.Extension.UI.Html
     /// </summary>
     public class HtmlSettingsScriptingBridge
     {
-        private static readonly ILogger Logger = LogManager.ForContext<HtmlSettingsScriptingBridge>();
+        private static ILogger Logger => LogManager.ForContext<HtmlSettingsScriptingBridge>();
         private readonly ISnykServiceProvider serviceProvider;
         private readonly Action onModified;
         private readonly Action onReset;

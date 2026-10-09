@@ -19,7 +19,7 @@ namespace Snyk.VisualStudio.Extension.Theme
         /// </summary>
         public event EventHandler<SnykVsThemeChangedEventArgs> ThemeChanged;
 
-        private static readonly ILogger Logger = LogManager.ForContext<SnykVsThemeService>();
+        private static ILogger Logger => LogManager.ForContext<SnykVsThemeService>();
 
         private readonly ISnykServiceProvider serviceProvider;
 

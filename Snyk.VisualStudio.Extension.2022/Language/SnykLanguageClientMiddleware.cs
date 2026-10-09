@@ -10,7 +10,7 @@ namespace Snyk.VisualStudio.Extension.Language
 {
     public class SnykLanguageClientMiddleware : ILanguageClientMiddleLayer
     {
-        private static readonly ILogger Logger = LogManager.ForContext<SnykLanguageClientMiddleware>();
+        private static ILogger Logger => LogManager.ForContext<SnykLanguageClientMiddleware>();
 
         public SnykLanguageClientMiddleware() { }
 

@@ -67,6 +67,7 @@ namespace Snyk.VisualStudio.Extension
     [ProvideMenuResource("Menus.ctmenu", 1)]
     [ProvideToolWindow(typeof(SnykToolWindow), Style = VsDockStyle.Tabbed)]
     [ProvideOptionPage(typeof(HtmlSettingsDialogPage), "Snyk", "General", 1000, 1001, true)]
+    [ProvideBindingPath]
     public sealed class SnykVSPackage : AsyncPackage
     {
         /// <summary>
@@ -78,7 +79,7 @@ namespace Snyk.VisualStudio.Extension
 
         // No static Logger field: LogManager.ForContext<T>() touches Serilog, and a static field
         // initializer runs as part of the type's .cctor — forcing that load before InitializeAsync's
-        // own try/catch can ever run. See docs/plans/IDE-2558-serilog-assembly-resolution.md.
+        // own try/catch can ever run.
         private static ILogger Logger => LogManager.ForContext<SnykVSPackage>();
 
         private static readonly TaskCompletionSource<bool> initializationTaskCompletionSource =

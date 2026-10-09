@@ -7,7 +7,7 @@ namespace Snyk.VisualStudio.Extension.Service
 {
     public class WorkspaceTrustService : IWorkspaceTrustService
     {
-        private static readonly ILogger Logger = LogManager.ForContext<WorkspaceTrustService>();
+        private static ILogger Logger => LogManager.ForContext<WorkspaceTrustService>();
 
         private readonly ISnykServiceProvider serviceProvider;
 

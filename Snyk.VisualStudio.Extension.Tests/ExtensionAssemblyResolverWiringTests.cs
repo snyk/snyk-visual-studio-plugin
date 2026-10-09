@@ -1,7 +1,6 @@
 // In-process coverage for the wiring around ExtensionAssemblyResolver.ResolveCandidatePath:
 // Initialize()'s idempotency guard and OnAssemblyResolve's own try/catch. No real VS host is
-// needed — both are exercised directly via InternalsVisibleTo. See
-// docs/plans/IDE-2558-serilog-assembly-resolution.md.
+// needed — both are exercised directly via InternalsVisibleTo.
 using System;
 using System.Reflection;
 using System.Reflection.Emit;

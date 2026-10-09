@@ -21,7 +21,7 @@ namespace Snyk.VisualStudio.Extension.Service
     /// </summary>
     public class SnykTasksService : ISnykTasksService
     {
-        private static readonly ILogger Logger = LogManager.ForContext<SnykTasksService>();
+        private static ILogger Logger => LogManager.ForContext<SnykTasksService>();
 
         private static SnykTasksService instance;
 

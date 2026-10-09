@@ -14,7 +14,7 @@ namespace Snyk.VisualStudio.Extension.CLI
         /// </summary>
         public const string CliFileName = "snyk-win.exe";
 
-        private static readonly ILogger Logger = LogManager.ForContext<SnykCli>();
+        private static ILogger Logger => LogManager.ForContext<SnykCli>();
 
         private ISnykOptions options;
 

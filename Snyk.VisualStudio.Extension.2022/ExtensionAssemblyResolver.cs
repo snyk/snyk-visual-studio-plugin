@@ -24,8 +24,7 @@ namespace Snyk.VisualStudio.Extension
     /// <summary>
     /// A narrow, extension-scoped <see cref="AppDomain.AssemblyResolve"/> fallback: given a failed
     /// default resolution, looks for <c>&lt;simple name&gt;.dll</c> next to the Snyk extension
-    /// assembly and loads it if found. See
-    /// docs/plans/IDE-2558-serilog-assembly-resolution.md for the full design rationale.
+    /// assembly and loads it if found.
     ///
     /// Every catch here is silent by necessity: this handler may itself be in the middle of
     /// resolving Serilog, so it must never call into Serilog/LogManager or throw. It traces via
@@ -75,7 +74,10 @@ namespace Snyk.VisualStudio.Extension
 
                 if (candidatePath == null)
                 {
-                    Trace.WriteLine($"Snyk ExtensionAssemblyResolver: declining '{args.Name}'.");
+                    // Not traced: this handler is on the process-wide AssemblyResolve event, so it
+                    // sees every failed bind in the process, including routine satellite-resource
+                    // culture-probing misses from every extension. Declining is the expected
+                    // outcome, not a diagnosable one — tracing it here would be a hot path.
                     return null;
                 }
 
@@ -191,6 +193,14 @@ namespace Snyk.VisualStudio.Extension
         // The simple name flows straight into Path.Combine below; a rooted path or one containing
         // a separator (e.g. "..\..\evil") would let a crafted assembly name escape the extension
         // directory entirely.
+        //
+        // The three checks below overlap on Windows — GetInvalidFileNameChars() already rejects
+        // both separators and a drive-letter colon, so the separator and IsPathRooted checks never
+        // fire on their own on that platform. They stay anyway: this guard sits on a path-traversal
+        // boundary, and Path.GetInvalidFileNameChars() is documented as platform- and
+        // implementation-dependent rather than a fixed, guaranteed set. The separator and
+        // IsPathRooted checks encode the two traversal shapes we actually care about directly,
+        // so the guard keeps rejecting them even if the invalid-chars set ever narrows.
         private static bool IsSafeSimpleAssemblyName(string simpleName)
         {
             if (simpleName.IndexOfAny(new[] { Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar }) >= 0)

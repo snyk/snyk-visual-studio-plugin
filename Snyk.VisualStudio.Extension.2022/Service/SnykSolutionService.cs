@@ -19,7 +19,7 @@ namespace Snyk.VisualStudio.Extension.Service
     /// </summary>
     public class SnykSolutionService : ISolutionService
     {
-        private static readonly ILogger Logger = LogManager.ForContext<SnykSolutionService>();
+        private static ILogger Logger => LogManager.ForContext<SnykSolutionService>();
 
         private static SnykSolutionService instance;
 

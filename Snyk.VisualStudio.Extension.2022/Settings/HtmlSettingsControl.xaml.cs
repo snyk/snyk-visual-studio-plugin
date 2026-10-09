@@ -23,7 +23,7 @@ namespace Snyk.VisualStudio.Extension.Settings
     /// </summary>
     public partial class HtmlSettingsControl : UserControl, IDisposable
     {
-        protected static readonly ILogger Logger = LogManager.ForContext<HtmlSettingsControl>();
+        protected static ILogger Logger => LogManager.ForContext<HtmlSettingsControl>();
 
         // Live control instance, updated on Loaded/Unloaded. Used by SnykLanguageClientCustomTarget
         // to push LS-driven auth tokens into the currently-visible settings page after an OAuth

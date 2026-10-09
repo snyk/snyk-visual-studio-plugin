@@ -11,7 +11,7 @@ public class SnykFeatureFlagService : IFeatureFlagService
 {
     private readonly ILanguageClientManager languageClient;
     private readonly ISnykOptions settings;
-    private static readonly ILogger Logger = LogManager.ForContext<SnykFeatureFlagService>();
+    private static ILogger Logger => LogManager.ForContext<SnykFeatureFlagService>();
 
     public SnykFeatureFlagService(ILanguageClientManager languageClient, ISnykOptions settings)
     {

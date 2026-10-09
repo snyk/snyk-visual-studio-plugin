@@ -34,7 +34,7 @@ namespace Snyk.VisualStudio.Extension.UI.Toolwindow
     /// </summary>
     public partial class SnykToolWindowControl : UserControl, ISnykToolWindow, IDisposable
     {
-        private static readonly ILogger Logger = LogManager.ForContext<SnykToolWindowControl>();
+        private static ILogger Logger => LogManager.ForContext<SnykToolWindowControl>();
 
         private SnykToolWindow toolWindow;
 

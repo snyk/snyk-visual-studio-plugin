@@ -15,7 +15,7 @@ namespace Snyk.VisualStudio.Extension.Authentication
 {
     public class AuthenticationFlowService : IAuthenticationFlowService
     {
-        private static readonly ILogger Logger = LogManager.ForContext<AuthenticationFlowService>();
+        private static ILogger Logger => LogManager.ForContext<AuthenticationFlowService>();
 
         private readonly ISnykServiceProvider serviceProvider;
         private readonly IAuthDialog injectedAuthDialog;
