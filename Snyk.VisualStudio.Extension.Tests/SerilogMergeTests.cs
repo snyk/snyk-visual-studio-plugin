@@ -1,4 +1,5 @@
 using System.Linq;
+using Snyk.VisualStudio.Extension.Language;
 using Xunit;
 
 namespace Snyk.VisualStudio.Extension.Tests
@@ -17,6 +18,20 @@ namespace Snyk.VisualStudio.Extension.Tests
         public void SerilogTypes_AreDefinedInExtensionAssembly()
         {
             Assert.Same(typeof(SnykVSPackage).Assembly, typeof(Serilog.ILogger).Assembly);
+        }
+
+        [Fact]
+        public void SnykLanguageClient_KeepsEveryDeclaredContentType()
+        {
+            var contentTypes = typeof(SnykLanguageClient)
+                .GetCustomAttributes(typeof(SnykContentTypeAttribute), false)
+                .Cast<SnykContentTypeAttribute>()
+                .Select(a => a.ContentTypes)
+                .ToList();
+
+            Assert.Contains("CSharp", contentTypes);
+            Assert.True(contentTypes.Count > 40);
+            Assert.Equal(contentTypes.Count, contentTypes.Distinct().Count());
         }
     }
 }

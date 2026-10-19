@@ -27,10 +27,22 @@ ILRepack. Nothing asks VS for a separate `Serilog` assembly any more, so no redi
 - Serilog types stay public in the merged assembly (`LogManager.ForContext` returns
   `Serilog.ILogger`), so there is no `/internalize`.
 
+## Repeated attributes are dropped by ILRepack
+
+ILRepack drops repeated attributes whose `AllowMultiple` comes from a base class. `[ContentType]`
+is one (`MultipleBaseMetadataAttribute` declares it). After the merge `SnykLanguageClient` kept one
+of its 56 content types, so VS never loaded the language client for `.cs` files and the tool window
+stayed on "waiting for Visual Studio to initialize". Checked with ILRepack 2.0.18, 2.0.34 and 2.0.48.
+
+`SnykContentTypeAttribute` is a metadata attribute that declares `AllowMultiple` itself, with the
+same `ContentTypes` property, and replaces `[ContentType]` on `SnykLanguageClient`. ILRepack keeps
+every repeat of it.
+
 ## Tests
 
-`SerilogMergeTests`: the extension assembly has no reference to any `Serilog*` assembly, and
-`Serilog.ILogger` is defined in the extension assembly.
+`SerilogMergeTests`: the extension assembly has no reference to any `Serilog*` assembly,
+`Serilog.ILogger` is defined in the extension assembly, and `SnykLanguageClient` keeps all its
+content types.
 
 ## Manual check (needs Windows, VS and GitLab for Visual Studio)
 
@@ -39,4 +51,3 @@ ILRepack. Nothing asks VS for a separate `Serilog` assembly any more, so no redi
 3. Open and dock the Snyk tool window, close VS, open VS again.
 4. Expect no error dialog, and no `CreateInstance failed` or Serilog `FileNotFoundException` in
    `ActivityLog.xml`. `snyk-extension.log` should have new entries.
-
