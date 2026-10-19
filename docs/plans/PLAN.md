@@ -9,5 +9,9 @@ detailed sub-plan. Update on creation (Pending) and on merge (Completed + commit
   [IDE-1752-vs-init-no-solution.md](./IDE-1752-vs-init-no-solution.md). Branch:
   `fix/IDE-1752-vs-init-no-solution`.
 
+- **IDE-2558** — Snyk fails to load next to GitLab for Visual Studio (Serilog binding redirect).
+  Merge Serilog into the extension assembly. Sub-plan:
+  [IDE-2558-merge-serilog.md](./IDE-2558-merge-serilog.md).
+
 ## Completed
 _(none yet)_
