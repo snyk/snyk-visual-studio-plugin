@@ -401,6 +401,24 @@ namespace Snyk.VisualStudio.Extension.Tests.Language
                 "the key must reach the LS in the initialize handshake, not just in BuildSettingsMap");
         }
 
+        [Fact]
+        public void BuildSettingsMap_SnykLearnCodeActions_AlwaysSentFalse()
+        {
+            SetupDefaults();
+            var realTracker = new UserOverrideTracker();
+            realTracker.SeedFrom(BuildDefaultOptionsForSeed());
+            optionsManagerMock.Setup(m => m.OverrideTracker).Returns(realTracker);
+
+            var map = cut.BuildSettingsMap(optionsMock.Object);
+
+            Assert.Equal(false, map[PflagKeys.EnableSnykLearnCodeActions].Value);
+            Assert.True(map[PflagKeys.EnableSnykLearnCodeActions].Changed,
+                "the LS ignores write-only settings sent with changed:false");
+            Assert.Equal(
+                false,
+                cut.GetInitializationOptions().Settings[PflagKeys.EnableSnykLearnCodeActions].Value);
+        }
+
         // ACC-004: A peeked pending reset is folded into the map as {value:null, changed:true}.
         // BuildSettingsMap peeks non-destructively (IDE-2152 CP 2.2); the caller commits on send success.
         [Fact]

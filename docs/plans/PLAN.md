@@ -4,6 +4,10 @@ Single source of truth for in-flight and completed implementation work. Each ent
 detailed sub-plan. Update on creation (Pending) and on merge (Completed + commit SHA).
 
 ## Pending
+- **Snyk Learn deprecation** — Remove Snyk Learn code actions and issue-detail links from
+  the Visual Studio extension. Sub-plan:
+  [deprecate-snyk-learn.md](./deprecate-snyk-learn.md).
+
 - **IDE-1752** — Activate Snyk language server when Visual Studio opens with no solution/folder
   (fixes indefinite "waiting for Visual Studio to initialize" hang). Sub-plan:
   [IDE-1752-vs-init-no-solution.md](./IDE-1752-vs-init-no-solution.md). Branch:

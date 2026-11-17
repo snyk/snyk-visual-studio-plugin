@@ -111,6 +111,10 @@ namespace Snyk.VisualStudio.Extension.Language
                 // which is what pushes the issue tree, so the tree never populates for the rest of
                 // the session. See snyk-ls infrastructure/authentication/initializer.go.
                 [PflagKeys.AutomaticAuthentication] = ConfigSetting.Of(false),
+                // Snyk Learn is deprecated in this IDE. This write-only LS setting prevents Learn
+                // code actions from being created; the HTML provider separately removes lesson UI
+                // embedded in server-rendered issue descriptions.
+                [PflagKeys.EnableSnykLearnCodeActions] = ConfigSetting.Of(false),
                 [PflagKeys.ProxyInsecure]           = Cs(PflagKeys.ProxyInsecure,          options.IgnoreUnknownCA),
 
                 [PflagKeys.AutomaticDownload]       = Cs(PflagKeys.AutomaticDownload,      options.BinariesAutoUpdate),

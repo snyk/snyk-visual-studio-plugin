@@ -227,6 +227,7 @@
     <Compile Include="UI\Html\OssHtmlProvider.cs" />
     <Compile Include="UI\Html\CodeHtmlProvider.cs" />
     <Compile Include="UI\Html\SecretsHtmlProvider.cs" />
+    <Compile Include="UI\Html\SnykLearnHtmlFilter.cs" />
     <Compile Include="UI\Html\HtmlProviderFactory.cs" />
     <Compile Include="UI\Html\WebView2BridgeBindings.cs" />
     <Compile Include="UI\Html\WebView2EnvironmentCache.cs" />

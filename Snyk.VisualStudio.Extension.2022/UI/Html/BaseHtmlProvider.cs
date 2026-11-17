@@ -116,6 +116,11 @@ namespace Snyk.VisualStudio.Extension.UI.Html
 
         public virtual string ReplaceCssVariables(string html)
         {
+            // snyk-ls owns the shared issue-description templates, but Snyk Learn is deprecated in
+            // this IDE only. Filter its UI at the common rendering boundary before any product
+            // provider sends the HTML to WebView2.
+            html = SnykLearnHtmlFilter.RemoveSnykLearn(html);
+
             string backgroundColor;
             string textColor;
             string borderColor;

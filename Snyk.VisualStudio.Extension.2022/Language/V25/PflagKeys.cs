@@ -49,6 +49,7 @@ namespace Snyk.VisualStudio.Extension.Language
         // Emitted as an unconditional false by BuildSettingsMap via ConfigSetting.Of, so it is
         // deliberately NOT in the always-changed set below — that set is for tracker-gated keys.
         public const string AutomaticAuthentication = "automatic_authentication";
+        public const string EnableSnykLearnCodeActions = "enable_snyk_learn_code_actions";
 
         // Folder-level
         public const string AdditionalParameters = "additional_parameters";
